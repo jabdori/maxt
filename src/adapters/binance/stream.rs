@@ -1693,10 +1693,20 @@ mod tests {
         assert!(differed, "every mint returned the same frame: {first:?}");
     }
 
+    /// Captured 2026-07-31 off
+    /// `wss://fstream.binance.com/private/ws?listenKey=<key>&events=…`, by
+    /// sending `DELETE /fapi/v1/listenKey` while the socket was open. The key
+    /// itself is replaced by a placeholder of the same length; nothing reads
+    /// that field.
+    ///
+    /// Binance's own page prints `E` as a number here. The wire sends a string,
+    /// which is why this fixture is the capture and not the page.
+    const FUTURES_LISTEN_KEY_EXPIRED: &str = r#"{"e": "listenKeyExpired","E": "1785449618659","listenKey": "0000000000000000000000000000000000000000000000000000000000000000"}"#;
+
     #[test]
     fn an_expired_listen_key_ends_the_stream_rather_than_going_quiet() {
-        let error = decode_account(&perp(), r#"{"e":"listenKeyExpired","E":1699596037418}"#)
-            .expect_err("an expired listen key");
+        let error =
+            decode_account(&perp(), FUTURES_LISTEN_KEY_EXPIRED).expect_err("an expired listen key");
 
         // The event name is the code, so the two ways Binance ends a
         // subscription stay apart.
@@ -1704,6 +1714,47 @@ mod tests {
             matches!(&error, Error::Exchange { code, .. } if code == "listenKeyExpired"),
             "{error:?}"
         );
+    }
+
+    /// A USD-M socket receives only the events its URL's `events` filter names,
+    /// and the filter is exhaustive: measured 2026-07-31 on four sockets
+    /// sharing one listen key, the three whose filter named `listenKeyExpired`
+    /// (or named nothing at all) received it when the key was deleted, and the
+    /// one filtered to `ORDER_TRADE_UPDATE/ACCOUNT_UPDATE` did not.
+    ///
+    /// So an event the decoder acts on and the filter does not name is an event
+    /// the decoder can never see, and the handler written for it is dead. That
+    /// is what shipped: `listenKeyExpired` was decoded, mapped, and tested, and
+    /// never requested.
+    ///
+    /// Asserting the URL contains a literal cannot catch this, because a
+    /// truncated filter is a substring of a complete one. This walks the frames
+    /// instead: each one has to be acted on, and named.
+    #[test]
+    fn the_usd_m_events_filter_names_every_frame_the_decoder_acts_on() {
+        let frames = [
+            ("ACCOUNT_UPDATE", FUTURES_ACCOUNT_UPDATE),
+            ("ORDER_TRADE_UPDATE", FUTURES_ORDER_UPDATE),
+            ("listenKeyExpired", FUTURES_LISTEN_KEY_EXPIRED),
+        ];
+
+        for (name, frame) in frames {
+            // Acted on means read into an event or raised as an error. A frame
+            // `maxt` drops has nothing to gain from being subscribed to, and
+            // belongs out of this table rather than in the filter.
+            let acted_on = match decode_account(&perp(), frame) {
+                Ok(events) => !events.is_empty(),
+                Err(_) => true,
+            };
+            assert!(acted_on, "the decoder drops {name}");
+
+            assert!(
+                private::USD_M_ACCOUNT_EVENTS.split('/').any(|e| e == name),
+                "the decoder acts on {name}, which the subscription never asks \
+                 for: {}",
+                private::USD_M_ACCOUNT_EVENTS
+            );
+        }
     }
 
     /// The one frame a spot user data socket is guaranteed to produce on an

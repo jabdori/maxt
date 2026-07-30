@@ -613,9 +613,32 @@ pub(super) async fn positions(
     market: Option<&Market>,
 ) -> Result<Vec<Position>> {
     let body = adapter.send(positions_request(adapter, market)?).await?;
-    parse::json::<Vec<RawPosition>>(&body, "positionRisk")?
-        .iter()
+    let raw: Vec<RawPosition> = parse::json(&body, "positionRisk")?;
+    open_positions(adapter, &raw)
+}
+
+/// Keeps the rows that are positions.
+///
+/// `/fapi/v3/positionRisk` opens a zero-amount row for any symbol that merely
+/// has a resting order on it, and reporting one as a position contradicts what
+/// [`Client::positions`](crate::Client::positions) promises. Measured
+/// 2026-07-31 on a funded USD-M account: with one resting XRPUSDT limit order
+/// the endpoint returned one row with `positionAmt` `0.0`, and cancelling the
+/// order emptied it again. Nothing else moved, so a resting order is the whole
+/// of the trigger, and an empty account never shows it.
+///
+/// Dropping the row costs a caller nothing. What it carried beyond the mark
+/// price, which is public, was that an order rests on the symbol, and
+/// `open_orders` says that outright. Hyperliquid already answers an empty list
+/// for a market it holds no position on, so this is the venues agreeing rather
+/// than Binance being singled out.
+///
+/// A row that failed to parse is kept, so it is reported rather than hidden by
+/// the filter.
+fn open_positions(adapter: &BinanceAdapter, raw: &[RawPosition]) -> Result<Vec<Position>> {
+    raw.iter()
         .map(|raw| position(adapter, raw))
+        .filter(|position| !matches!(position, Ok(position) if position.is_flat()))
         .collect()
 }
 
@@ -930,10 +953,31 @@ pub(super) async fn close_listen_key(
 /// The user data events USD-M is asked for, slash-separated as Binance's own
 /// example spells them.
 ///
-/// Both are needed and neither is spare: an order change arrives as
-/// `ORDER_TRADE_UPDATE` and a balance change as `ACCOUNT_UPDATE`, and
-/// [`AccountEvent`](crate::AccountEvent) is built from the two.
-const USD_M_ACCOUNT_EVENTS: &str = "ORDER_TRADE_UPDATE/ACCOUNT_UPDATE";
+/// The filter is exhaustive, measured 2026-07-31: a socket whose `events` named
+/// only the two order and balance events was told nothing when the key behind
+/// it was deleted, while sockets naming `listenKeyExpired`, and one naming no
+/// `events` at all, all received the event. So an event `maxt` acts on and does
+/// not name here is an event `maxt` can never receive.
+///
+/// Every event USD-M publishes, and why it is here or is not:
+///
+/// | Event | Named | Why |
+/// | --- | --- | --- |
+/// | `ORDER_TRADE_UPDATE` | yes | an order change, read into [`AccountEvent::Order`](crate::AccountEvent::Order) |
+/// | `ACCOUNT_UPDATE` | yes | a balance change, read into [`AccountEvent::Balance`](crate::AccountEvent::Balance) |
+/// | `listenKeyExpired` | yes | the key behind this socket lapsed, raised as an [`Error::Exchange`](crate::Error::Exchange) so the consumer stops waiting on a stream that has nothing left to say |
+/// | `TRADE_LITE` | no | the same fill `ORDER_TRADE_UPDATE` already carries, sooner and with fewer fields. Naming it would report one fill twice, and the fields `maxt` reads are the ones it drops |
+/// | `MARGIN_CALL` | no | risk guidance, which Binance's own page says not to trade on. `maxt` has no type for it and would drop it |
+/// | `ACCOUNT_CONFIG_UPDATE` | no | leverage and multi-assets mode. `maxt` reports neither: `Position::leverage` and `margin_mode` are always `None` |
+/// | `CONDITIONAL_ORDER_TRIGGER_REJECT` | no | a rejected TP/SL trigger, and `maxt` places no conditional orders |
+/// | `STRATEGY_UPDATE` | no | Binance's own grid strategies, which `maxt` does not create |
+/// | `GRID_UPDATE` | no | a sub-order of one of those strategies, and deprecated on Binance's page |
+/// | `ALGO_UPDATE` | no | an algo order, and `maxt` places none |
+///
+/// The five `maxt` does not name are all dropped by `stream::decode_account`
+/// today, so naming them would buy frames nothing reads. What the ones named
+/// buy is pinned by `stream::the_usd_m_events_filter_names_every_frame_the_decoder_acts_on`.
+pub(super) const USD_M_ACCOUNT_EVENTS: &str = "ORDER_TRADE_UPDATE/ACCOUNT_UPDATE/listenKeyExpired";
 
 /// The URL a USD-M user data stream opens at.
 ///
@@ -942,27 +986,32 @@ const USD_M_ACCOUNT_EVENTS: &str = "ORDER_TRADE_UPDATE/ACCOUNT_UPDATE";
 /// connection naming no entry point stops receiving `/private` channels, in the
 /// same sentence that says it stops receiving `/market` ones.
 ///
-/// What is verified and what is not, precisely:
+/// What is verified and what is not, precisely. Everything below was measured
+/// on 2026-07-31 against a live USD-M account, by opening sockets on one shared
+/// key and then sending `DELETE /fapi/v1/listenKey`, which is the one push a
+/// socket produces on an account that holds nothing and trades nothing:
 ///
 /// | Claim | Standing |
 /// | --- | --- |
 /// | The `/market` half of that sentence is true | measured; see `stream::entry_point_url` for frame counts |
 /// | Binance publishes this `/private` form | quoted from the change notice's own worked example |
-/// | This URL delivers account events | **not tested.** `POST /fapi/v1/listenKey` answers `-4109 This account is inactive`, measured 2026-07-31, so no key exists to open a socket with. Activating the futures account is done in Binance's own interface and cannot be reached from here |
+/// | This URL carries that account's events | **measured.** Deleting the key pushed `listenKeyExpired` down this exact URL, so the socket was carrying the account rather than merely open |
+/// | The unrouted `/ws/<key>` path is dead | **measured.** The same key on `wss://fstream.binance.com/ws/<key>` was told nothing across the same deletion |
+/// | `events` filters, and filters exhaustively | **measured**, four sockets on one key. No `events` parameter: received. `events=listenKeyExpired`: received. `events=ORDER_TRADE_UPDATE/ACCOUNT_UPDATE/listenKeyExpired`: received. `events=ORDER_TRADE_UPDATE/ACCOUNT_UPDATE`: **not** received |
+/// | `ORDER_TRADE_UPDATE` and `ACCOUNT_UPDATE` arrive | **not tested.** The account holds no balance and nothing was traded, so neither has ever been observed. What the deletion proves is that this socket delivers the events its filter names |
 ///
-/// Opening a user data stream needs a credential the public checks do not
-/// carry, and the handshake refuses nothing: a fabricated key is accepted on
-/// every path shape tried, including one naming an event that does not exist.
-/// So the socket opening says nothing, and only a run with a real key can tell
-/// a right URL from a wrong one.
+/// The last row is why the filter is treated as exhaustive rather than as a
+/// hint: the one event that could be provoked was provoked, and the filter
+/// decided it.
 ///
-/// Whether `listenKeyExpired` still arrives once `events` names two other
-/// events is unverified too. A lapsed key is reported to the caller either way:
+/// A lapsed key is now reported twice over, and both are wanted.
 /// `stream::refresh_listen_key` extends the key over REST and sends its own
-/// failure down the stream, without relying on the socket to announce it.
+/// failure down the stream, which covers a refresher that cannot reach Binance;
+/// the event covers a key invalidated some other way, which no REST call of
+/// `maxt`'s would notice.
 pub(super) fn usd_m_user_data_stream_url(key: &BinanceListenKey) -> String {
-    // The slash between the two event names is a separator, so it stays
-    // literal; only the key is encoded.
+    // The slash between event names is a separator, so it stays literal; only
+    // the key is encoded.
     format!(
         "wss://fstream.binance.com/private/ws?listenKey={}&events={USD_M_ACCOUNT_EVENTS}",
         encode(&key.0)
@@ -1567,20 +1616,51 @@ mod tests {
         // `/fapi/v3/positionRisk` publishes neither.
         assert_eq!(position.leverage, None);
         assert_eq!(position.margin_mode, None);
+        // And a position with size survives the filter that drops the
+        // zero-amount rows Binance opens for a symbol carrying only an order.
+        assert_eq!(
+            open_positions(&perp(), &raw)
+                .expect("a position list")
+                .len(),
+            1
+        );
     }
 
+    /// Captured 2026-07-31 off `GET /fapi/v3/positionRisk` on a funded USD-M
+    /// account holding no position and one resting XRPUSDT limit order. The
+    /// same endpoint on the same account returned `[]` once the order was
+    /// cancelled, and `[]` again on a later read naming the symbol outright, so
+    /// the resting order is the whole of what puts this row there.
+    const POSITION_RISK_WITH_A_RESTING_ORDER: &str = r#"[{
+      "symbol": "XRPUSDT",
+      "positionSide": "BOTH",
+      "positionAmt": "0.0",
+      "entryPrice": "0.0",
+      "markPrice": "1.08710784",
+      "unRealizedProfit": "0.00000000",
+      "notional": "0"
+    }]"#;
+
+    /// Binance opens a position row for a symbol that has only an order on it,
+    /// and `positions` promises open positions. The row maps cleanly, which is
+    /// why nothing upstream rejects it: it has to be dropped on the way out.
     #[test]
-    fn a_flat_position_has_no_side() {
-        let raw: Vec<RawPosition> = parse::json(
-            r#"[{"symbol":"BTCUSDT","positionAmt":"0","entryPrice":"0","markPrice":"0","unRealizedProfit":"0","notional":"0"}]"#,
-            "positionRisk",
-        )
-        .expect("a position payload");
+    fn a_symbol_with_only_a_resting_order_is_not_reported_as_a_position() {
+        let raw: Vec<RawPosition> = parse::json(POSITION_RISK_WITH_A_RESTING_ORDER, "positionRisk")
+            .expect("the captured payload");
 
-        let position = position(&perp(), &raw[0]).expect("a position");
+        // The row is real and maps: this is not a payload that decodes to
+        // nothing, so an empty answer below is the filter and not the parser.
+        let mapped = position(&perp(), &raw[0]).expect("a position");
+        assert!(mapped.is_flat());
+        assert_eq!(mapped.side, None);
+        assert_eq!(mapped.market.kind, MarketKind::Perpetual);
 
-        assert!(position.is_flat());
-        assert_eq!(position.side, None);
+        assert_eq!(
+            open_positions(&perp(), &raw).expect("a position list"),
+            Vec::new(),
+            "a symbol carrying only a resting order was reported as a position"
+        );
     }
 
     #[test]
@@ -1636,7 +1716,7 @@ mod tests {
             usd_m_user_data_stream_url(&key),
             format!(
                 "wss://fstream.binance.com/private/ws?listenKey={}\
-                 &events=ORDER_TRADE_UPDATE/ACCOUNT_UPDATE",
+                 &events=ORDER_TRADE_UPDATE/ACCOUNT_UPDATE/listenKeyExpired",
                 key.as_str()
             )
         );
@@ -1726,8 +1806,13 @@ mod tests {
     /// the decommissioned unrouted path opens and is never told anything, the
     /// same way `Feed::Ticker` was, so the shape is worth pinning rather than
     /// leaving to a string literal nobody rereads.
+    ///
+    /// Which events the query has to name is not pinned here, because a
+    /// substring assertion cannot tell a complete filter from a truncated one.
+    /// `stream::the_usd_m_events_filter_names_every_frame_the_decoder_acts_on`
+    /// pins that against the decoder instead.
     #[test]
-    fn the_usd_m_account_socket_names_an_entry_point_and_both_events_it_reads() {
+    fn the_usd_m_account_socket_names_an_entry_point_and_the_events_it_reads() {
         let key = BinanceListenKey("listen-key".to_string());
         let url = usd_m_user_data_stream_url(&key);
 
@@ -1735,9 +1820,8 @@ mod tests {
             url.starts_with("wss://fstream.binance.com/private/"),
             "{url}"
         );
-        // Every event `decode_account` turns into an `AccountEvent` on USD-M.
         assert!(
-            url.contains("events=ORDER_TRADE_UPDATE/ACCOUNT_UPDATE"),
+            url.contains(&format!("&events={USD_M_ACCOUNT_EVENTS}")),
             "{url}"
         );
         // The separator is a separator, not part of an event name.

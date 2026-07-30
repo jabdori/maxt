@@ -640,7 +640,8 @@ impl<A: Adapter> Client<A> {
     ///
     /// let mut exposure = Decimal::ZERO;
     /// for position in client.positions().await? {
-    ///     // A flat position is still a position an exchange may report.
+    ///     // No adapter reports a flat position. This skip is what keeps a
+    ///     // venue that starts to from reaching the sum below.
     ///     if position.is_flat() {
     ///         continue;
     ///     }

@@ -142,7 +142,7 @@ naming neither is served as if it had named `/public`.
 | --- | --- | --- |
 | `wss://fstream.binance.com/public/stream` | what the matching engine pushes on change: `@trade`, `@depth*`, `@bookTicker` | `Feed::Trades`, `Feed::OrderBook` |
 | `wss://fstream.binance.com/market/stream` | what an aggregator produces: `@aggTrade`, `@kline_*`, `@ticker`, `@miniTicker`, `@markPrice`, `@forceOrder`, `@compositeIndex`, `!contractInfo`, `!assetIndex@arr` | `Feed::Ticker`, `Feed::Candles` |
-| `wss://fstream.binance.com/private/ws` | the account: `ORDER_TRADE_UPDATE`, `ACCOUNT_UPDATE` | `subscribe_account` |
+| `wss://fstream.binance.com/private/ws` | the account: `ORDER_TRADE_UPDATE`, `ACCOUNT_UPDATE`, `listenKeyExpired` | `subscribe_account` |
 
 Nothing rejects a mismatch. A socket on one entry point accepts a `SUBSCRIBE`
 naming the other's streams, acknowledges it with `{"result": null, "id": 1}`,
@@ -167,20 +167,63 @@ carries no decommission notice, so only USD-M's market data moved. Do not
 assume both venues did.
 
 The USD-M account socket moved with the rest: `subscribe_account` now opens
-`wss://fstream.binance.com/private/ws?listenKey=<key>&events=ORDER_TRADE_UPDATE/ACCOUNT_UPDATE`.
-`events` names both because `AccountEvent` is built from both, orders from the
-first and balances from the second.
+`wss://fstream.binance.com/private/ws?listenKey=<key>&events=ORDER_TRADE_UPDATE/ACCOUNT_UPDATE/listenKeyExpired`.
 
-**That last URL is not measured, unlike every other row above.** Opening a user
-data stream needs a credential the public checks do not carry, so the form is
-Binance's own worked example rather than something observed working. The
-handshake refuses nothing either: a fabricated key is accepted on every path
-shape, including one naming an event that does not exist, so a socket opening
-proves nothing. `POST /fapi/v1/listenKey` answered `-4109 This account is
-inactive, please activate the account first` on 2026-07-31, so no key existed
-to open one with. Activating a futures account is done in Binance's own
-interface. If you run `subscribe_account` against an active USD-M account, the
-result is worth reporting either way.
+**`events` is an allow list, not a hint.** A socket receives the events its
+filter names and nothing else, so an event `maxt` acts on and does not name is
+an event `maxt` can never receive. Measured 2026-07-31 on four sockets sharing
+one listen key, by sending `DELETE /fapi/v1/listenKey` to make the server push
+the expiry:
+
+| The socket's `events` | `listenKeyExpired` |
+| --- | --- |
+| no `events` parameter | received |
+| `listenKeyExpired` | received |
+| `ORDER_TRADE_UPDATE/ACCOUNT_UPDATE/listenKeyExpired`, what `maxt` sends | received |
+| `ORDER_TRADE_UPDATE/ACCOUNT_UPDATE` | **not** received |
+| the decommissioned `wss://fstream.binance.com/ws/<key>`, no filter | **not** received |
+
+Every event USD-M publishes, and whether `maxt` asks for it:
+
+| Event | Asked for | Why |
+| --- | --- | --- |
+| `ORDER_TRADE_UPDATE` | yes | an order change, read into `AccountEvent::Order` |
+| `ACCOUNT_UPDATE` | yes | a balance change, read into `AccountEvent::Balance` |
+| `listenKeyExpired` | yes | the key behind the socket lapsed, raised as `Error::Exchange` so you stop waiting on a stream that has nothing left to say |
+| `TRADE_LITE` | no | the same fill `ORDER_TRADE_UPDATE` already carries, sooner and with fewer fields. Asking for it would report one fill twice |
+| `MARGIN_CALL` | no | risk guidance, which Binance's own page says not to trade on. `AccountEvent` has no shape for it |
+| `ACCOUNT_CONFIG_UPDATE` | no | leverage and multi-assets mode, and `maxt` reports neither: `leverage` and `margin_mode` on a Binance position are always `None` |
+| `CONDITIONAL_ORDER_TRIGGER_REJECT` | no | a rejected TP/SL trigger, and `maxt` places no conditional orders |
+| `STRATEGY_UPDATE` | no | Binance's own grid strategies, which `maxt` does not create |
+| `GRID_UPDATE` | no | a sub-order of one of those strategies, and deprecated on Binance's page |
+| `ALGO_UPDATE` | no | an algo order, and `maxt` places none |
+
+The five `maxt` does not ask for are the five it would drop on arrival.
+
+What that leaves measured and unmeasured on this URL:
+
+| Claim | Standing |
+| --- | --- |
+| Binance publishes this `/private` form | quoted from the change notice's own worked example |
+| The socket carries this account rather than merely opening | measured. Deleting the key pushed `listenKeyExpired` down it |
+| The decommissioned unrouted path is dead for user data | measured. The same key on `wss://fstream.binance.com/ws/<key>` was told nothing across the same deletion |
+| A lapsed key reaches the consumer | measured through `maxt`. `subscribe_account` yielded `Error::Exchange` with code `listenKeyExpired`; the same run before this filter was fixed yielded nothing at all |
+| `ORDER_TRADE_UPDATE` arrives | measured. Placing a limit order pushed `x=NEW`, `X=NEW`; cancelling it pushed `x=CANCELED`, `X=CANCELED`, and the order id matched the REST placement response and the REST read |
+| `ACCOUNT_UPDATE` arrives | **not measured.** Neither placing nor cancelling that order produced one. Binance pushes `ACCOUNT_UPDATE` when a balance or position actually changes, and a resting order changes neither. Its decoder is pinned against Binance's own published payload instead |
+
+**Reserved margin does not arrive as `ACCOUNT_UPDATE`.** A resting order locks
+margin without moving a balance or a position, so waiting for `ACCOUNT_UPDATE`
+to learn about it waits forever. The figure rides on `ORDER_TRADE_UPDATE`'s `b`
+field, the reserved bid notional: measured 2026-07-31, `b` read `"5"` while the
+order rested and `"0"` after the cancel, against `Balance::locked` of
+`0.25000000` and then `0.00000000`, which is that notional over 20x leverage.
+`maxt` does not surface `b`; read `balances()` for the locked figure.
+
+A lapsed key now reaches you twice over, and both routes are wanted. The
+refresher extends the key over REST every thirty minutes and sends its own
+failure down the stream, which covers a refresher that cannot reach Binance;
+the event covers a key invalidated some other way, which no REST call of
+`maxt`'s would notice.
 
 ### The spot account stream
 
@@ -199,6 +242,11 @@ now says only to subscribe via the WebSocket API using an API key.
 `userDataStream.subscribe.signature`. The socket is opened unauthenticated and
 the frame names the account, so nothing secret is in the URL and there is no key
 to keep alive.
+
+Nothing filters events on this side. The subscribe frame carries no event list
+and there is no `events` parameter to get wrong, so a spot socket receives
+everything the account produces and `maxt` drops what it does not model after
+the fact rather than before.
 
 Two methods reach the same subscription, and which one is open to you depends on
 your key type:
@@ -296,6 +344,30 @@ HTTP 429, reported by `Error::is_rate_limited()`. Ignoring a 429 earns an
 automated IP ban that scales from two minutes to three days, so back off on the
 first one.
 
+## Phantom positions
+
+`/fapi/v3/positionRisk` opens a zero-amount row for any symbol that merely has
+an order resting on it. `positions()` returns open positions, and a row with no
+size is not one, so `maxt` drops it.
+
+Measured 2026-07-31 on a funded USD-M account with no position at all:
+
+| Account state | Raw endpoint | `positions()` | `open_orders()` | `Balance::locked` |
+| --- | --- | --- | --- | --- |
+| one resting XRPUSDT limit order | 1 row, `positionAmt` `0.0` | 0 | 1 | 0.25000000 |
+| that order cancelled | `[]` | 0 | 0 | 0.00000000 |
+
+The middle column is what changed. Before the filter, the resting order gave
+`positions()` one `Position` with `quantity: 0` and `side: None` on a market the
+account had never traded.
+
+| Question | Answer |
+| --- | --- |
+| What triggers the row | an open order on the symbol, and nothing else. An empty account never shows it, which is why it went unnoticed for seven review rounds |
+| What `positions_on(&market)` does | the same. A market carrying only an order answers with an empty list, matching Hyperliquid, which answers an empty list for a market it holds no position on |
+| Whether the zero row is preserved anywhere | no. Beyond the mark price, which is public, it said an order rests on that symbol, and `open_orders()` says so outright |
+| Whether a row `maxt` cannot parse is dropped too | no. Only rows that parse and are flat are dropped; a malformed row is still reported as `Error::Decode` |
+
 ## Surprises
 
 | Field or call | What to expect |
@@ -303,7 +375,8 @@ first one.
 | `Ticker::last_trade_time` | always `None`; Binance never says when the last price traded |
 | `Ticker::timestamp` | end of the 24-hour window, not a trade time |
 | Spot book timestamp | read time; Binance publishes no clock on spot depth |
-| `Position::leverage`, `margin_mode` | `None`; the endpoint no longer publishes them |
+| `Position::leverage`, `margin_mode` | `None`; `/fapi/v3/positionRisk`, the endpoint `maxt` reads, dropped both fields its v2 predecessor carried. Binance still publishes them on `/fapi/v2/positionRisk` and on `/fapi/v2/account`, so a caller who needs them reads one of those itself |
+| A symbol carrying only a resting order | not a position. Binance reports one; `maxt` drops it. See [phantom positions](#phantom-positions) |
 | `FundingPayment::rate` | `None`; the ledger records the charge, not the rate |
 | `MarginSummary::equity` | `totalMarginBalance`: wallet plus unrealized PnL |
 | `MarginSummary::margin_balance` | `totalInitialMargin`: margin already consumed by open positions and orders. A cost, not a budget |

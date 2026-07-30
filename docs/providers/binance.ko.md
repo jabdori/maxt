@@ -137,7 +137,7 @@ Binance는 USD-M 시장 데이터를 한 호스트의 진입점 두 개로 나�
 | --- | --- | --- |
 | `wss://fstream.binance.com/public/stream` | 체결 엔진이 변화 때마다 밀어 주는 것. `@trade`, `@depth*`, `@bookTicker` | `Feed::Trades`, `Feed::OrderBook` |
 | `wss://fstream.binance.com/market/stream` | 집계 서비스가 만들어 내는 것. `@aggTrade`, `@kline_*`, `@ticker`, `@miniTicker`, `@markPrice`, `@forceOrder`, `@compositeIndex`, `!contractInfo`, `!assetIndex@arr` | `Feed::Ticker`, `Feed::Candles` |
-| `wss://fstream.binance.com/private/ws` | 계정. `ORDER_TRADE_UPDATE`, `ACCOUNT_UPDATE` | `subscribe_account` |
+| `wss://fstream.binance.com/private/ws` | 계정. `ORDER_TRADE_UPDATE`, `ACCOUNT_UPDATE`, `listenKeyExpired` | `subscribe_account` |
 
 어긋난 요청을 거절하는 장치는 없습니다. 한쪽 진입점의 소켓도 다른 쪽 스트림을
 지정한 `SUBSCRIBE`를 받아들이고 `{"result": null, "id": 1}`로 응답한 뒤,
@@ -162,20 +162,64 @@ Binance는 USD-M 시장 데이터를 한 호스트의 진입점 두 개로 나�
 두 거래 시장이 함께 옮겼다고 넘겨짚지 마세요.
 
 USD-M의 계정 소켓도 함께 옮겼습니다. `subscribe_account`는 이제
-`wss://fstream.binance.com/private/ws?listenKey=<키>&events=ORDER_TRADE_UPDATE/ACCOUNT_UPDATE`
-를 엽니다. `AccountEvent`가 둘 다에서 만들어지기 때문에 `events`에 둘을 모두
-적습니다. 주문은 앞의 것에서, 잔고는 뒤의 것에서 옵니다.
+`wss://fstream.binance.com/private/ws?listenKey=<키>&events=ORDER_TRADE_UPDATE/ACCOUNT_UPDATE/listenKeyExpired`
+를 엽니다.
 
-**위의 다른 줄과 달리 이 마지막 URL만은 측정한 것이 아닙니다.** 사용자 데이터
-스트림을 열려면 공개 검사가 갖고 있지 않은 인증 정보가 필요하므로, 이 형식은
-동작을 확인한 것이 아니라 Binance 자신의 예시를 옮긴 것입니다. 핸드셰이크도
-아무것도 거절하지 않습니다. 지어낸 키가 모든 경로 형태에서, 존재하지 않는 이벤트
-이름을 적었을 때까지 받아들여지므로 소켓이 열렸다는 사실은 아무것도 증명하지
-않습니다. 2026-07-31에 `POST /fapi/v1/listenKey`는 `-4109 This account is
-inactive, please activate the account first`로 답했고, 그래서 소켓을 열 키 자체가
-없었습니다. 선물 계정 활성화는 Binance 자신의 화면에서 하는 일입니다. 활성화된
-USD-M 계정으로 `subscribe_account`를 돌려 보셨다면 결과가 어느 쪽이든 알려 주시면
-좋겠습니다.
+**`events`는 참고 사항이 아니라 허용 목록입니다.** 소켓은 필터에 적힌 이벤트만
+받고 그 밖의 것은 받지 않으므로, `maxt`가 처리하면서 적지 않은 이벤트는 `maxt`가
+영영 받을 수 없는 이벤트입니다. 2026-07-31에 listen key 하나를 공유한 소켓 넷으로,
+`DELETE /fapi/v1/listenKey`를 보내 만료 이벤트를 서버가 밀어내게 하고 잰
+결과입니다.
+
+| 소켓의 `events` | `listenKeyExpired` |
+| --- | --- |
+| `events` 매개변수 없음 | 받음 |
+| `listenKeyExpired` | 받음 |
+| `maxt`가 보내는 `ORDER_TRADE_UPDATE/ACCOUNT_UPDATE/listenKeyExpired` | 받음 |
+| `ORDER_TRADE_UPDATE/ACCOUNT_UPDATE` | **못 받음** |
+| 폐지된 `wss://fstream.binance.com/ws/<키>`. 필터 없음 | **못 받음** |
+
+USD-M이 발행하는 이벤트 전부와, `maxt`가 요청하는지 여부입니다.
+
+| 이벤트 | 요청 | 이유 |
+| --- | --- | --- |
+| `ORDER_TRADE_UPDATE` | 예 | 주문 변화. `AccountEvent::Order`로 읽습니다 |
+| `ACCOUNT_UPDATE` | 예 | 잔고 변화. `AccountEvent::Balance`로 읽습니다 |
+| `listenKeyExpired` | 예 | 이 소켓의 키가 만료됐다는 뜻. `Error::Exchange`로 올려서, 더 할 말이 없는 스트림을 계속 기다리지 않게 합니다 |
+| `TRADE_LITE` | 아니요 | `ORDER_TRADE_UPDATE`가 이미 싣는 같은 체결을 더 일찍, 더 적은 필드로 보냅니다. 요청하면 체결 하나를 두 번 보고하게 됩니다 |
+| `MARGIN_CALL` | 아니요 | Binance 자신의 문서가 매매 판단에 쓰지 말라고 한 위험 안내입니다. `AccountEvent`에 담을 자리가 없습니다 |
+| `ACCOUNT_CONFIG_UPDATE` | 아니요 | 레버리지와 멀티에셋 모드인데, `maxt`는 둘 다 보고하지 않습니다. Binance 포지션의 `leverage`와 `margin_mode`는 언제나 `None`입니다 |
+| `CONDITIONAL_ORDER_TRIGGER_REJECT` | 아니요 | 발동된 TP/SL이 거절됐다는 뜻이고, `maxt`는 조건부 주문을 넣지 않습니다 |
+| `STRATEGY_UPDATE` | 아니요 | `maxt`가 만들지 않는 Binance 자체 그리드 전략입니다 |
+| `GRID_UPDATE` | 아니요 | 그 전략의 하위 주문이고, Binance 문서에서 폐기 예정입니다 |
+| `ALGO_UPDATE` | 아니요 | 알고리즘 주문이고, `maxt`는 넣지 않습니다 |
+
+`maxt`가 요청하지 않는 다섯은 받아도 그대로 버릴 다섯입니다.
+
+이 URL에서 측정한 것과 측정하지 않은 것입니다.
+
+| 주장 | 근거 |
+| --- | --- |
+| Binance가 이 `/private` 형식을 발행합니다 | 변경 공지 자신의 예시를 옮긴 것 |
+| 소켓이 열리기만 한 것이 아니라 이 계정을 싣고 있습니다 | 측정. 키를 삭제하자 이 URL로 `listenKeyExpired`가 밀려왔습니다 |
+| 사용자 데이터에서 폐지된 경로는 죽었습니다 | 측정. 같은 키로 연 `wss://fstream.binance.com/ws/<키>`는 같은 삭제에서 아무것도 받지 못했습니다 |
+| 만료된 키가 소비자에게 도달합니다 | `maxt`로 측정. `subscribe_account`가 코드 `listenKeyExpired`를 담은 `Error::Exchange`를 냈고, 이 필터를 고치기 전의 같은 실행은 아무것도 내지 않았습니다 |
+| `ORDER_TRADE_UPDATE`가 도착합니다 | 측정. 지정가 주문을 넣자 `x=NEW`, `X=NEW`가, 취소하자 `x=CANCELED`, `X=CANCELED`가 밀려왔고, 주문 식별자가 REST 등록 응답 및 REST 조회와 일치했습니다 |
+| `ACCOUNT_UPDATE`가 도착합니다 | **측정하지 않았습니다.** 그 주문을 넣을 때도 취소할 때도 오지 않았습니다. Binance는 잔고나 포지션이 실제로 바뀔 때 `ACCOUNT_UPDATE`를 밀어 주는데, 호가창에 얹힌 주문은 둘 다 바꾸지 않습니다. 해석기는 Binance가 발행한 페이로드로 대신 고정해 두었습니다 |
+
+**잡아 둔 증거금은 `ACCOUNT_UPDATE`로 오지 않습니다.** 호가창에 얹힌 주문은
+잔고도 포지션도 움직이지 않으면서 증거금만 잡으므로, 그것을 알려고
+`ACCOUNT_UPDATE`를 기다리면 영영 기다리게 됩니다. 이 값은
+`ORDER_TRADE_UPDATE`의 `b` 필드, 즉 잡아 둔 매수 주문 금액에 실립니다.
+2026-07-31 측정으로 주문이 얹혀 있는 동안 `b`는 `"5"`, 취소 뒤에는 `"0"`이었고,
+같은 시점의 `Balance::locked`는 각각 `0.25000000`과 `0.00000000`으로 그 금액을
+20배 레버리지로 나눈 값이었습니다. `maxt`는 `b`를 노출하지 않습니다. 잡힌 금액은
+`balances()`로 읽으세요.
+
+이제 만료된 키는 두 경로로 알려지고, 둘 다 필요합니다. 갱신기는 30분마다 REST로
+키를 연장하고 실패를 스트림에 흘려보내는데, 이것은 갱신기가 Binance에 닿지 못하는
+경우를 덮습니다. 이벤트는 키가 다른 경로로 무효가 된 경우를 덮고, 이쪽은 `maxt`의
+어떤 REST 호출로도 알아챌 수 없습니다.
 
 ### 현물 계정 스트림
 
@@ -193,6 +237,10 @@ Binance는 2025-04-07에 `wss://stream.binance.com:9443`의 `listenKey`를 폐�
 열고 서명된 `userDataStream.subscribe.signature` 하나를 보냅니다. 소켓은 인증
 없이 열리고 그 프레임이 계정을 지목하므로, URL에 비밀이 들어가지 않고 살려 둘
 키도 없습니다.
+
+이쪽에는 이벤트를 거르는 장치가 없습니다. 구독 프레임에 이벤트 목록이 없고 잘못
+적을 `events` 매개변수도 없으므로, 현물 소켓은 계정이 만들어 내는 것을 모두 받고
+`maxt`는 다루지 않는 것을 미리가 아니라 받은 뒤에 버립니다.
 
 같은 구독에 이르는 방법이 둘 있고, 어느 쪽을 쓸 수 있는지는 인증 정보의 종류가
 정합니다.
@@ -283,6 +331,30 @@ Binance는 상한이 아니라 방식을 문서로 밝힙니다. 각 시장이 �
 429이고 `Error::is_rate_limited()`가 알려 줍니다. 429를 무시하면 2분에서 3일까지
 자동으로 IP가 차단되니 첫 번째에서 물러서세요.
 
+## 유령 포지션
+
+`/fapi/v3/positionRisk`는 주문 하나만 얹혀 있어도 그 심볼에 수량 0짜리 행을
+만듭니다. `positions()`가 돌려주는 것은 보유 포지션이고 크기 없는 행은 그것이
+아니므로, `maxt`는 이 행을 버립니다.
+
+포지션이 하나도 없는 입금된 USD-M 계정에서 2026-07-31에 잰 결과입니다.
+
+| 계정 상태 | 원본 엔드포인트 | `positions()` | `open_orders()` | `Balance::locked` |
+| --- | --- | --- | --- | --- |
+| XRPUSDT 지정가 주문 하나가 얹힘 | 1행, `positionAmt` `0.0` | 0 | 1 | 0.25000000 |
+| 그 주문을 취소함 | `[]` | 0 | 0 | 0.00000000 |
+
+바뀐 것은 가운데 열입니다. 필터를 넣기 전에는 얹힌 주문 하나 때문에
+`positions()`가 계정이 거래한 적도 없는 거래 시장에 `quantity: 0`, `side: None`인
+`Position` 하나를 돌려줬습니다.
+
+| 물음 | 답 |
+| --- | --- |
+| 무엇이 이 행을 만드는가 | 그 심볼의 미체결 주문뿐이고 그 밖에는 없습니다. 빈 계정에서는 절대 보이지 않으며, 검토를 일곱 번 도는 동안 드러나지 않은 이유가 이것입니다 |
+| `positions_on(&market)`은 어떻게 하는가 | 똑같이 합니다. 주문만 얹힌 거래 시장은 빈 목록으로 답하고, 이는 포지션이 없는 거래 시장에 빈 목록으로 답하는 Hyperliquid와 같습니다 |
+| 그 0짜리 행을 어딘가에 남겨 두는가 | 아니요. 공개 정보인 마크 가격 말고 그 행이 하던 말은 그 심볼에 주문이 얹혀 있다는 것뿐이고, `open_orders()`가 그것을 그대로 말합니다 |
+| `maxt`가 해석하지 못한 행도 버리는가 | 아니요. 해석에 성공하고 크기가 0인 행만 버립니다. 형식이 어긋난 행은 그대로 `Error::Decode`로 보고합니다 |
+
 ## 주의할 점
 
 | 필드 또는 호출 | 예상할 것 |
@@ -290,7 +362,8 @@ Binance는 상한이 아니라 방식을 문서로 밝힙니다. 각 시장이 �
 | `Ticker::last_trade_time` | 언제나 `None`. 마지막 가격이 언제 체결됐는지 Binance는 밝히지 않습니다 |
 | `Ticker::timestamp` | 체결 시각이 아니라 24시간 구간의 끝 |
 | 현물 호가창 타임스탬프 | 읽은 시각. Binance는 현물 depth에 시계를 싣지 않습니다 |
-| `Position::leverage`, `margin_mode` | `None`. 엔드포인트가 두 값을 더 이상 게시하지 않습니다 |
+| `Position::leverage`, `margin_mode` | `None`. `maxt`가 읽는 `/fapi/v3/positionRisk`가 v2 선행 버전이 싣던 두 필드를 버렸습니다. Binance는 `/fapi/v2/positionRisk`와 `/fapi/v2/account`에서는 지금도 게시하므로, 필요한 호출자는 둘 중 하나를 직접 읽습니다 |
+| 주문만 얹혀 있는 심볼 | 포지션이 아닙니다. Binance는 하나로 보고하고 `maxt`는 버립니다. [유령 포지션](#유령-포지션) 참고 |
 | `FundingPayment::rate` | `None`. 원장은 비율이 아니라 청구액을 기록합니다 |
 | `MarginSummary::equity` | `totalMarginBalance`. 지갑 잔고에 미실현 손익을 더한 값 |
 | `MarginSummary::margin_balance` | `totalInitialMargin`. 보유 포지션과 주문이 이미 잡아먹은 증거금입니다. 예산이 아니라 비용입니다 |

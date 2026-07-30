@@ -309,7 +309,7 @@ async fn buy_a_little_bitcoin(client: &Client<UpbitAdapter>) -> maxt::Result<()>
 
 | 호출 | 답하는 것 | 인증 정보 |
 | --- | --- | --- |
-| `positions()`, `positions_on(&market)` | 보유 포지션 | 필요 |
+| `positions()`, `positions_on(&market)` | 보유 포지션. 크기가 0인 포지션은 포지션이 아니며, 거래소가 무엇을 게시하든 어느 어댑터도 그런 것을 보고하지 않습니다 | 필요 |
 | `margin_summary()` | 계좌 전체의 마진 상태 | 필요 |
 | `funding_rates(&HistoryRequest)` | 마켓의 펀딩 비율 이력. 계좌가 아니라 마켓의 성질입니다 | 불필요 |
 | `funding_payments(&HistoryRequest)` | 한 계좌가 실제로 물린 금액 | 필요 |
@@ -338,7 +338,7 @@ async fn buy_a_little_bitcoin(client: &Client<UpbitAdapter>) -> maxt::Result<()>
 | `quantity` | 부호가 없습니다. 방향은 `side`에 있고 포지션이 비어 있으면 `None`입니다 |
 | `is_flat()` | 크기를 판별합니다. 거래소는 이미 들고 있지도 않은 마켓의 빈 포지션을 보고하기도 하므로 그런 항목은 건너뛰세요. 하나하나가 열린 위험은 아닙니다 |
 | 발행되지 않는 모든 필드 | `None`이고 `None`은 0이 아닙니다 |
-| Binance의 `leverage`, `margin_mode` | 언제나 `None`입니다. `maxt`가 읽는 포지션 엔드포인트가 두 필드를 더는 발행하지 않습니다(`src/adapters/binance/private.rs`). 그곳의 `None`은 포지션에 마진이 어떻게 걸렸는지를 두고 아무 말도 하지 않습니다. `leverage`를 `1`로 채우면 20배로 연 포지션을 레버리지 없는 포지션으로 보고해 위험을 스무 배 낮춰 말하게 됩니다 |
+| Binance의 `leverage`, `margin_mode` | 언제나 `None`입니다. `maxt`가 읽는 포지션 엔드포인트가 두 필드를 더는 발행하지 않습니다(`src/adapters/binance/private.rs`). 그곳의 `None`은 포지션에 마진이 어떻게 걸렸는지를 두고 아무 말도 하지 않습니다. `leverage`를 `1`로 채우면 20배로 연 포지션을 레버리지 없는 포지션으로 보고해 위험을 스무 배 낮춰 말하게 됩니다. 같은 이유로 `maxt`는 계정 스트림에서 `ACCOUNT_CONFIG_UPDATE`도 구독하지 않습니다. 이 이벤트가 싣는 레버리지 변화를 `maxt`가 보고할 곳이 없습니다 |
 
 ### 파생상품 읽기 예제
 

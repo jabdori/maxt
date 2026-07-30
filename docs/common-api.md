@@ -314,7 +314,7 @@ it is `Error::Unsupported` too.
 
 | Call | Answers | Credentials |
 | --- | --- | --- |
-| `positions()`, `positions_on(&market)` | open positions | yes |
+| `positions()`, `positions_on(&market)` | open positions. A position with no size is not one, and no adapter reports one, whatever its venue publishes | yes |
 | `margin_summary()` | account-wide margin state | yes |
 | `funding_rates(&HistoryRequest)` | a market's funding rate history, a property of the market rather than of any account | no |
 | `funding_payments(&HistoryRequest)` | what one account was actually charged | yes |
@@ -344,7 +344,7 @@ opens far too much. Read `None` as "the exchange did not say" and stop.
 | `quantity` | unsigned. The direction is in `side`, which is `None` when the position is flat |
 | `is_flat()` | the size test. An exchange may report flat positions on markets you no longer hold, so skip those; each one is not an open risk |
 | any unpublished field | `None`, and `None` is not zero |
-| `leverage`, `margin_mode` on Binance | always `None`: the position endpoint `maxt` reads stopped publishing either (`src/adapters/binance/private.rs`). `None` there says nothing about how the position is margined. Defaulting `leverage` to `1` would report a position opened at 20x as unleveraged and understate the risk twentyfold |
+| `leverage`, `margin_mode` on Binance | always `None`: the position endpoint `maxt` reads stopped publishing either (`src/adapters/binance/private.rs`). `None` there says nothing about how the position is margined. Defaulting `leverage` to `1` would report a position opened at 20x as unleveraged and understate the risk twentyfold. `maxt` does not subscribe to `ACCOUNT_CONFIG_UPDATE` on the account stream either, for the same reason: it carries a leverage change `maxt` has nowhere to report |
 
 ### A worked derivatives read
 

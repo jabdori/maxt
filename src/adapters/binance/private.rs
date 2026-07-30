@@ -662,8 +662,12 @@ fn position(adapter: &BinanceAdapter, raw: &RawPosition) -> Result<Position> {
         mark_price: parse::decimal_or_none(&raw.mark_price, "markPrice")?,
         notional: Some(parse::decimal(&raw.notional, "notional")?.abs()),
         unrealized_pnl: Some(parse::decimal(&raw.unrealized_profit, "unRealizedProfit")?),
-        // `/fapi/v3/positionRisk` dropped both fields that its v2 predecessor
-        // carried. Reporting them as unknown beats reporting a stale guess.
+        // `/fapi/v3/positionRisk` carries neither. Binance keeps a symbol's
+        // configured leverage and margin mode on `/fapi/v1/symbolConfig`, which
+        // this does not read: it answers per symbol rather than per position,
+        // and fetching it would double the weight of every `positions()` call
+        // for two fields most callers never look at. Reporting them as unknown
+        // beats reporting a stale guess, and `None` is not `1`.
         leverage: None,
         margin_mode: None,
     })

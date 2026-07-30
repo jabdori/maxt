@@ -375,7 +375,7 @@ account had never traded.
 | `Ticker::last_trade_time` | always `None`; Binance never says when the last price traded |
 | `Ticker::timestamp` | end of the 24-hour window, not a trade time |
 | Spot book timestamp | read time; Binance publishes no clock on spot depth |
-| `Position::leverage`, `margin_mode` | `None`; `/fapi/v3/positionRisk`, the endpoint `maxt` reads, dropped both fields its v2 predecessor carried. Binance still publishes them on `/fapi/v2/positionRisk` and on `/fapi/v2/account`, so a caller who needs them reads one of those itself |
+| `Position::leverage`, `margin_mode` | `None`; `/fapi/v3/positionRisk` carries neither. Binance keeps a symbol's configured leverage and margin mode on `/fapi/v1/symbolConfig` instead, at the same weight, so a caller who needs them reads that |
 | A symbol carrying only a resting order | not a position. Binance reports one; `maxt` drops it. See [phantom positions](#phantom-positions) |
 | `FundingPayment::rate` | `None`; the ledger records the charge, not the rate |
 | `MarginSummary::equity` | `totalMarginBalance`: wallet plus unrealized PnL |

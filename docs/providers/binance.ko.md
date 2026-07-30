@@ -362,7 +362,7 @@ Binance는 상한이 아니라 방식을 문서로 밝힙니다. 각 시장이 �
 | `Ticker::last_trade_time` | 언제나 `None`. 마지막 가격이 언제 체결됐는지 Binance는 밝히지 않습니다 |
 | `Ticker::timestamp` | 체결 시각이 아니라 24시간 구간의 끝 |
 | 현물 호가창 타임스탬프 | 읽은 시각. Binance는 현물 depth에 시계를 싣지 않습니다 |
-| `Position::leverage`, `margin_mode` | `None`. `maxt`가 읽는 `/fapi/v3/positionRisk`가 v2 선행 버전이 싣던 두 필드를 버렸습니다. Binance는 `/fapi/v2/positionRisk`와 `/fapi/v2/account`에서는 지금도 게시하므로, 필요한 호출자는 둘 중 하나를 직접 읽습니다 |
+| `Position::leverage`, `margin_mode` | `None`. `/fapi/v3/positionRisk`는 둘 다 싣지 않습니다. Binance는 심볼에 설정된 레버리지와 마진 모드를 `/fapi/v1/symbolConfig`에 두며 가중치도 같으므로, 필요한 호출자는 그것을 읽습니다 |
 | 주문만 얹혀 있는 심볼 | 포지션이 아닙니다. Binance는 하나로 보고하고 `maxt`는 버립니다. [유령 포지션](#유령-포지션) 참고 |
 | `FundingPayment::rate` | `None`. 원장은 비율이 아니라 청구액을 기록합니다 |
 | `MarginSummary::equity` | `totalMarginBalance`. 지갑 잔고에 미실현 손익을 더한 값 |

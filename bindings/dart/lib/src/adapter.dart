@@ -38,7 +38,11 @@ abstract interface class Adapter {
 /// 선택 기능에 정직한 기본 실패 동작을 제공하는 어댑터 기반 클래스입니다.
 abstract base class AdapterBase implements Adapter {
   Future<T> _unsupported<T>(Feature feature) => Future<T>.error(
-    UnsupportedError('${exchange.id} has no endpoint for ${feature.wireName}'),
+    UnsupportedError(
+      feature: feature,
+      exchange: exchange,
+      detail: '${exchange.id} has no endpoint for ${feature.wireName}',
+    ),
   );
 
   @override

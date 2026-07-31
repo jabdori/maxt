@@ -84,6 +84,7 @@ final class FailingNaturalCloseAdapter extends AdapterBase {
 
 void main() {
   setUpAll(Maxt.initialize);
+  tearDownAll(Maxt.dispose);
 
   test('ReplayAdapter는 REST·비공개 조회와 비종료 오류 스트림을 제공한다', () async {
     final market = Market.spot(Exchange.upbit, 'BTC', 'KRW');

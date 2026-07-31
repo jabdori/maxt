@@ -5,6 +5,7 @@ import 'package:test/test.dart';
 
 void main() {
   setUpAll(Maxt.initialize);
+  tearDownAll(Maxt.dispose);
 
   test('native close는 대기 중인 next를 End로 깨우고 정리를 기다린다', () async {
     final subscription = native.pendingMarketSubscriptionForTest();

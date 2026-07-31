@@ -9,6 +9,8 @@ Exchange _exchangeFromWire(wire.WireExchange value) =>
     _enumByName(Exchange.values, value);
 wire.WireFeature _featureToWire(Feature value) =>
     _enumByName(wire.WireFeature.values, value);
+Feature _featureFromWire(wire.WireFeature value) =>
+    _enumByName(Feature.values, value);
 wire.WireMarketKind _marketKindToWire(MarketKind value) =>
     _enumByName(wire.WireMarketKind.values, value);
 MarketKind _marketKindFromWire(wire.WireMarketKind value) =>
@@ -718,7 +720,7 @@ Object _nativeError(wire.NativeError value) => switch (value.kind) {
     field: value.field ?? 'request',
     detail: value.detail ?? value.message,
   ),
-  wire.NativeErrorKind.unsupported => UnsupportedError(value.message),
+  wire.NativeErrorKind.unsupported => _unsupportedErrorFromWire(value),
   wire.NativeErrorKind.adapter => AdapterError(value.detail ?? value.message),
   wire.NativeErrorKind.auth => AuthenticationError(
     value.detail ?? value.message,
@@ -748,9 +750,9 @@ wire.NativeError _errorToWire(
     UnsupportedError error => wire.NativeError(
       kind: wire.NativeErrorKind.unsupported,
       message: message,
-      detail: error.message?.toString() ?? message,
-      feature: feature == null ? null : _featureToWire(feature),
-      exchange: exchange?.id,
+      detail: error.detail,
+      feature: _featureToWire(error.feature),
+      exchange: error.exchange.id,
       retryable: false,
       rateLimited: false,
     ),
@@ -801,6 +803,27 @@ wire.NativeError _errorToWire(
       rateLimited: false,
     ),
   };
+}
+
+MaxtError _unsupportedErrorFromWire(wire.NativeError value) {
+  final feature = value.feature;
+  final exchange = switch (value.exchange) {
+    'upbit' => Exchange.upbit,
+    'bithumb' => Exchange.bithumb,
+    'binance' => Exchange.binance,
+    'hyperliquid' => Exchange.hyperliquid,
+    _ => null,
+  };
+  if (feature == null || exchange == null) {
+    return const AdapterError(
+      'native unsupported error has no known feature or exchange',
+    );
+  }
+  return UnsupportedError(
+    feature: _featureFromWire(feature),
+    exchange: exchange,
+    detail: value.detail ?? value.message,
+  );
 }
 
 ExchangeError _exchangeErrorFromWire(wire.NativeError value) => ExchangeError(

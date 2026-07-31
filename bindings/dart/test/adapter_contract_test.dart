@@ -52,11 +52,15 @@ void main() {
       await expectLater(
         call(),
         throwsA(
-          isA<UnsupportedError>().having(
-            (error) => error.message,
-            'message',
-            'upbit has no endpoint for ${feature.wireName}',
-          ),
+          isA<UnsupportedError>()
+              .having((error) => error.feature, 'feature', feature)
+              .having((error) => error.exchange, 'exchange', Exchange.upbit)
+              .having(
+                (error) => error.detail,
+                'detail',
+                'upbit has no endpoint for ${feature.wireName}',
+              )
+              .having((error) => error.isRetryable, 'isRetryable', isFalse),
         ),
         reason: feature.name,
       );
@@ -78,11 +82,10 @@ void main() {
       await expectLater(
         adapter.subscribe(subscription, const StreamConfig()),
         throwsA(
-          isA<UnsupportedError>().having(
-            (error) => error.message,
-            'message',
-            'upbit has no endpoint for ${feature.wireName}',
-          ),
+          isA<UnsupportedError>()
+              .having((error) => error.feature, 'feature', feature)
+              .having((error) => error.exchange, 'exchange', Exchange.upbit)
+              .having((error) => error.isRetryable, 'isRetryable', isFalse),
         ),
       );
     }

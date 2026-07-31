@@ -87,8 +87,23 @@ base class _CloseableStream<T> extends Stream<StreamItem<T>>
 
   Future<void> _close({bool cancelSubscription = true}) async {
     _closed = true;
-    await _onClose?.call();
-    if (cancelSubscription) await _subscription?.cancel();
+    Object? closeError;
+    StackTrace? closeStack;
+    try {
+      await _onClose?.call();
+    } catch (error, stackTrace) {
+      closeError = error;
+      closeStack = stackTrace;
+    }
+    try {
+      if (cancelSubscription) await _subscription?.cancel();
+    } catch (error, stackTrace) {
+      closeError ??= error;
+      closeStack ??= stackTrace;
+    }
+    if (closeError != null) {
+      Error.throwWithStackTrace(closeError, closeStack!);
+    }
   }
 }
 

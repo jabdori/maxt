@@ -403,19 +403,19 @@ mod tests {
     fn every_limit_above_upbits_cap_is_refused_rather_than_clamped() {
         assert!(matches!(
             trades_request(&btc_krw(), Some(501)),
-            Err(Error::InvalidRequest { field: "limit", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "limit"
         ));
         assert!(matches!(
             trades_request(&btc_krw(), Some(0)),
-            Err(Error::InvalidRequest { field: "limit", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "limit"
         ));
         assert!(matches!(
             order_book_request(&[btc_krw()], Some(31)),
-            Err(Error::InvalidRequest { field: "depth", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "depth"
         ));
         assert!(matches!(
             order_book_request(&[btc_krw()], Some(0)),
-            Err(Error::InvalidRequest { field: "depth", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "depth"
         ));
     }
 
@@ -449,17 +449,11 @@ mod tests {
     fn an_empty_market_list_is_a_caller_mistake_not_an_empty_request() {
         assert!(matches!(
             ticker_request(&[]),
-            Err(Error::InvalidRequest {
-                field: "markets",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "markets"
         ));
         assert!(matches!(
             order_book_request(&[], None),
-            Err(Error::InvalidRequest {
-                field: "markets",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "markets"
         ));
     }
 

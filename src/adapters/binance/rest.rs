@@ -421,15 +421,15 @@ mod tests {
         assert!(order_book_request(&spot(), &btc_usdt(), Some(5_000)).is_ok());
         assert!(matches!(
             order_book_request(&spot(), &btc_usdt(), Some(5_001)),
-            Err(Error::InvalidRequest { field: "depth", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "depth"
         ));
         assert!(matches!(
             order_book_request(&perp(), &btc_usdt_perp(), Some(30)),
-            Err(Error::InvalidRequest { field: "depth", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "depth"
         ));
         assert!(matches!(
             order_book_request(&perp(), &btc_usdt_perp(), Some(5_000)),
-            Err(Error::InvalidRequest { field: "depth", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "depth"
         ));
     }
 
@@ -539,11 +539,11 @@ mod tests {
     fn every_limit_above_binances_cap_is_refused_rather_than_clamped() {
         assert!(matches!(
             trades_request(&spot(), &btc_usdt(), Some(1_001)),
-            Err(Error::InvalidRequest { field: "limit", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "limit"
         ));
         assert!(matches!(
             trades_request(&spot(), &btc_usdt(), Some(0)),
-            Err(Error::InvalidRequest { field: "limit", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "limit"
         ));
         assert!(trades_request(&spot(), &btc_usdt(), Some(MAX_TRADE_LIMIT)).is_ok());
     }

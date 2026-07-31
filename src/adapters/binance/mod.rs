@@ -633,17 +633,11 @@ mod tests {
 
         assert!(matches!(
             spot.symbol(&Market::perpetual(Exchange::Binance, "BTC", "USDT")),
-            Err(Error::InvalidRequest {
-                field: "market",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "market"
         ));
         assert!(matches!(
             spot.symbol(&Market::spot(Exchange::Upbit, "BTC", "KRW")),
-            Err(Error::InvalidRequest {
-                field: "market",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "market"
         ));
     }
 
@@ -653,7 +647,7 @@ mod tests {
 
         assert!(matches!(
             BinanceAdapter::spot().symbol(&injected),
-            Err(Error::InvalidRequest { field: "base", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "base"
         ));
     }
 

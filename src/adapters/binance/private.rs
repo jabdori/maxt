@@ -1078,7 +1078,7 @@ mod tests {
         );
         assert!(matches!(
             place_order_request(&perp(), &futures_quote_sized),
-            Err(Error::InvalidRequest { field: "size", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "size"
         ));
     }
 
@@ -1142,10 +1142,7 @@ mod tests {
         );
         assert!(matches!(
             place_order_request(&spot(), &order.clone().time_in_force(TimeInForce::PostOnly)),
-            Err(Error::InvalidRequest {
-                field: "time_in_force",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "time_in_force"
         ));
     }
 
@@ -1180,10 +1177,7 @@ mod tests {
             assert!(
                 matches!(
                     cancel_order_request(&spot(), &btc_usdt(), bad),
-                    Err(Error::InvalidRequest {
-                        field: "order_id",
-                        ..
-                    })
+                    Err(Error::InvalidRequest { field, .. }) if field == "order_id"
                 ),
                 "{bad}"
             );
@@ -1287,10 +1281,7 @@ mod tests {
                 &perp(),
                 &HistoryRequest::new(btc_usdt_perp()).cursor(Cursor("page-2".to_string()))
             ),
-            Err(Error::InvalidRequest {
-                field: "cursor",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "cursor"
         ));
     }
 
@@ -1318,7 +1309,7 @@ mod tests {
 
         assert!(matches!(
             funding_rates_request(&perp(), &request),
-            Err(Error::InvalidRequest { field: "limit", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "limit"
         ));
     }
 
@@ -1346,20 +1337,14 @@ mod tests {
     fn a_margin_request_that_changes_nothing_is_a_caller_mistake() {
         assert!(matches!(
             set_margin_requests(&perp(), &MarginRequest::new(btc_usdt_perp())),
-            Err(Error::InvalidRequest {
-                field: "leverage",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "leverage"
         ));
         assert!(matches!(
             set_margin_requests(
                 &perp(),
                 &MarginRequest::new(btc_usdt_perp()).leverage(Decimal::new(15, 1))
             ),
-            Err(Error::InvalidRequest {
-                field: "leverage",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "leverage"
         ));
         assert_eq!(
             leverage_code(Decimal::from(125)).expect("a multiplier"),

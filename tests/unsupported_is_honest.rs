@@ -478,11 +478,13 @@ async fn a_start_time_and_an_over_cap_count_are_things_every_exchange_accepts() 
             .await
             .expect_err("a market from another exchange is not a valid request");
 
+        let refused = match &error {
+            Error::Unsupported { .. } => true,
+            Error::InvalidRequest { field, .. } if field == "limit" => true,
+            _ => false,
+        };
         assert!(
-            !matches!(
-                error,
-                Error::Unsupported { .. } | Error::InvalidRequest { field: "limit", .. }
-            ),
+            !refused,
             "{} refused a start time or a paged count: {error:?}",
             case.name
         );

@@ -1202,17 +1202,11 @@ pub(crate) mod tests {
 
         assert!(matches!(
             universe.asset(&Market::spot(Exchange::Upbit, "BTC", "KRW")),
-            Err(Error::InvalidRequest {
-                field: "market",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "market"
         ));
         assert!(matches!(
             universe.asset(&Market::spot(Exchange::Hyperliquid, "NOPE", "USDC")),
-            Err(Error::InvalidRequest {
-                field: "market",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "market"
         ));
     }
 

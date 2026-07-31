@@ -385,7 +385,7 @@ mod tests {
             assert!(
                 matches!(
                     trades_request(&btc_krw(), Some(limit)),
-                    Err(Error::InvalidRequest { field: "limit", .. })
+                    Err(Error::InvalidRequest { field, .. }) if field == "limit"
                 ),
                 "{limit}"
             );
@@ -393,11 +393,11 @@ mod tests {
         assert!(trades_request(&btc_krw(), Some(MAX_TRADE_COUNT)).is_ok());
         assert!(matches!(
             order_book_request(&btc_krw(), Some(0)),
-            Err(Error::InvalidRequest { field: "depth", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "depth"
         ));
         assert!(matches!(
             order_book_request(&btc_krw(), Some(31)),
-            Err(Error::InvalidRequest { field: "depth", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "depth"
         ));
         assert!(order_book_request(&btc_krw(), Some(30)).is_ok());
     }

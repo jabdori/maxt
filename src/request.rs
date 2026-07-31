@@ -9,32 +9,8 @@ use crate::types::{
 /// Which candles to read.
 ///
 /// The market and interval are required; everything else narrows the range.
-/// With no range the exchange returns its most recent candles.
-///
-/// ```
-/// use maxt::{CandleRequest, Exchange, Interval, Market, Timestamp};
-///
-/// let market = Market::spot(Exchange::Upbit, "BTC", "KRW");
-///
-/// // The newest 200 one-minute candles.
-/// let latest = CandleRequest::new(market.clone(), Interval::Min1).limit(200);
-///
-/// // The same 200, counted forward from a start time. That is what a backfill
-/// // walking towards the present asks for. `limit` alone would have given the
-/// // newest 200 and skipped everything between.
-/// let backfill = latest
-///     .clone()
-///     .from(Timestamp::from_millis(1_700_000_000_000));
-///
-/// // A bounded window: both ends set, and `limit` left to the range.
-/// let window = CandleRequest::new(market, Interval::Hour1)
-///     .from(Timestamp::from_millis(1_700_000_000_000))
-///     .to(Timestamp::from_millis(1_700_086_400_000));
-///
-/// assert_eq!(latest.from, None);
-/// assert_eq!(backfill.limit, Some(200));
-/// assert_eq!(window.limit, None);
-/// ```
+/// With no range, the exchange's most recent page is returned. Results are
+/// oldest first.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CandleRequest {
     /// The market to read candles for.
@@ -43,13 +19,10 @@ pub struct CandleRequest {
     pub interval: Interval,
     /// Oldest candle to return, by open time, inclusive.
     ///
-    /// With no `limit` this is the only thing bounding the read, and `maxt`
-    /// walks backwards one page at a time to reach it. A window needing more
-    /// than a hundred pages is refused as
+    /// With no `limit`, `maxt` walks backwards to this bound from [`Self::to`]
+    /// or the present. A window needing more than a hundred pages is refused as
     /// [`Error::InvalidRequest`](crate::Error::InvalidRequest) before the first
-    /// call, rather than begun and abandoned by a rate limit: at Upbit's two
-    /// hundred candles a call that is twenty thousand candles. Set `limit` to
-    /// take a wide history in batches.
+    /// exchange call. Set `limit` to read wider histories in batches.
     pub from: Option<Timestamp>,
     /// Newest candle to return, by open time, exclusive.
     pub to: Option<Timestamp>,
@@ -63,9 +36,8 @@ pub struct CandleRequest {
     /// behind the scenes to reach a larger `limit`, so the cap does not bound
     /// this field. Paging is itself bounded at a hundred calls, so a `limit`
     /// above a hundred times the exchange's per-response cap is refused, and
-    /// the refusal says what the ceiling is there. That ceiling is the only thing
-    /// that refuses a count, at every interval including [`Interval::Month1`],
-    /// whose pages are walked in calendar months.
+    /// the refusal says what the ceiling is there. Zero is also refused; a set
+    /// limit must be at least one.
     pub limit: Option<u32>,
 }
 
@@ -108,27 +80,6 @@ impl CandleRequest {
 /// Build it with [`OrderRequest::market`] or [`OrderRequest::limit`], which
 /// keep price and size in step. A market order has no price, and a limit order
 /// always has one.
-///
-/// ```
-/// use maxt::{Exchange, Market, OrderRequest, Side, Size};
-/// use rust_decimal::Decimal;
-///
-/// let btc_krw = Market::spot(Exchange::Upbit, "BTC", "KRW");
-///
-/// // Spend 10,000 KRW at whatever the book offers.
-/// let buy = OrderRequest::market(btc_krw.clone(), Side::Buy, Size::Quote(Decimal::from(10_000)));
-///
-/// // Offer 0.01 BTC at 100,000,000 KRW.
-/// let sell = OrderRequest::limit(
-///     btc_krw,
-///     Side::Sell,
-///     Size::Base(Decimal::new(1, 2)),
-///     Decimal::from(100_000_000),
-/// );
-///
-/// assert!(buy.price.is_none());
-/// assert!(sell.price.is_some());
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OrderRequest {
     /// The market to trade.
@@ -187,22 +138,6 @@ impl OrderRequest {
     ///
     /// Rejected as [`Error::Unsupported`](crate::Error::Unsupported) on spot
     /// markets, which have no positions to reduce.
-    ///
-    /// ```
-    /// use maxt::{Exchange, Market, OrderRequest, Side, Size};
-    /// use rust_decimal::Decimal;
-    ///
-    /// // Closing half a long. Reduce-only stops a late fill from opening a
-    /// // short if the position shrank in the meantime.
-    /// let close = OrderRequest::market(
-    ///     Market::perpetual(Exchange::Binance, "BTC", "USDT"),
-    ///     Side::Sell,
-    ///     Size::Base(Decimal::new(25, 2)),
-    /// )
-    /// .reduce_only();
-    ///
-    /// assert!(close.reduce_only);
-    /// ```
     #[must_use]
     pub fn reduce_only(mut self) -> Self {
         self.reduce_only = true;
@@ -214,26 +149,6 @@ impl OrderRequest {
 ///
 /// Leave [`HistoryRequest::cursor`] unset for the first page, then pass the
 /// [`Page::next`](crate::Page::next) cursor back for each page after that.
-///
-/// ```
-/// use maxt::{Cursor, Exchange, HistoryRequest, Market, Timestamp};
-///
-/// let market = Market::perpetual(Exchange::Binance, "BTC", "USDT");
-///
-/// let first = HistoryRequest::new(market)
-///     .from(Timestamp::from_millis(1_700_000_000_000))
-///     .to(Timestamp::from_millis(1_700_086_400_000))
-///     // Per page, not in total: the window is what bounds the walk.
-///     .limit(100);
-///
-/// // Each later page keeps the window and changes only the cursor, so the
-/// // range is read the same way throughout the walk.
-/// let second = first.clone().cursor(Cursor::new("after-page-1"));
-///
-/// assert_eq!(first.cursor, None);
-/// assert_eq!(second.from, first.from);
-/// assert_eq!(second.cursor.as_ref().map(Cursor::as_str), Some("after-page-1"));
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HistoryRequest {
     /// The market to read history for.
@@ -244,8 +159,8 @@ pub struct HistoryRequest {
     pub to: Option<Timestamp>,
     /// Where to resume from. `None` starts at the beginning of the window.
     pub cursor: Option<Cursor>,
-    /// Roughly how many entries to return per page. See
-    /// [`HistoryRequest::limit`] for why a page may be a little longer.
+    /// Roughly how many entries to return per page. A provider may return more
+    /// to avoid splitting entries that share one timestamp.
     pub limit: Option<u32>,
 }
 
@@ -284,18 +199,10 @@ impl HistoryRequest {
 
     /// Sets the page size. A total is what the window and the cursor decide.
     ///
-    /// Read it as "about this many per page", not as a hard ceiling. A page may
-    /// come back slightly longer: Hyperliquid reads 500 entries at a time and
-    /// trims to this figure, and because the next cursor resumes one
-    /// millisecond past the last entry kept, a cut landing inside a run of
-    /// entries that share one millisecond would strand the rest of that run.
-    /// The trim backs up to the start of the run, and when the run reaches the
-    /// front of the page there is nothing to back up to, so the whole run is
-    /// kept. Extra entries a caller can drop beat entries the cursor has
-    /// already moved past.
-    ///
-    /// So do not size a fixed buffer off this, and do not assert
-    /// `page.items.len() <= limit`. A busy millisecond breaks both.
+    /// This is not a hard ceiling. A page may be longer when trimming it would
+    /// split entries sharing one timestamp and make the cursor skip entries.
+    /// Do not size a fixed buffer from this value. Zero is invalid; provider
+    /// maximums differ.
     #[must_use]
     pub fn limit(mut self, limit: u32) -> Self {
         self.limit = Some(limit);
@@ -309,24 +216,8 @@ impl HistoryRequest {
 /// nothing is rejected as
 /// [`Error::InvalidRequest`](crate::Error::InvalidRequest).
 ///
-/// ```
-/// use maxt::{Exchange, MarginMode, MarginRequest, Market};
-/// use rust_decimal::Decimal;
-///
-/// let market = Market::perpetual(Exchange::Binance, "BTC", "USDT");
-///
-/// // Both at once. Two requests would briefly leave the account isolated at
-/// // whatever leverage it already had.
-/// let both = MarginRequest::new(market.clone())
-///     .leverage(Decimal::from(5))
-///     .margin_mode(MarginMode::Isolated);
-///
-/// // Either alone is fine. A field left unset is left alone on the exchange.
-/// let leverage_only = MarginRequest::new(market).leverage(Decimal::from(3));
-///
-/// assert_eq!(both.margin_mode, Some(MarginMode::Isolated));
-/// assert_eq!(leverage_only.margin_mode, None);
-/// ```
+/// Provider constraints differ. Some accept either field; others require both.
+/// Applying both is not guaranteed to be atomic.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MarginRequest {
     /// The market to configure.

@@ -1,8 +1,7 @@
-//! The data `maxt` speaks in.
+//! Common exchange data types.
 //!
-//! Every type here means the same thing on every exchange. Where an exchange
-//! cannot express something, the field is `Option` and the adapter leaves it
-//! `None`.
+//! Provider-specific missing values are represented as `None` on optional
+//! fields rather than as invented defaults.
 
 mod account;
 mod data;

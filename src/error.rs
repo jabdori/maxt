@@ -9,84 +9,14 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 /// Anything that can go wrong while talking to an exchange.
 ///
-/// The variants separate the four cases a caller has to tell apart: a bad
-/// request from the caller, a feature the exchange does not offer, a rejection
-/// from the exchange, and a connection that failed.
+/// Variants distinguish local validation, unavailable capabilities, local
+/// authentication, exchange verdicts, transport failures, and unreadable
+/// payloads.
 ///
-/// [`Error::Auth`] is drawn at the process boundary rather than at the
-/// credential. It means `maxt` could not build a credentialed request and so
-/// sent nothing. A credential the exchange itself read and refused comes back
-/// as [`Error::Exchange`] under that exchange's own code, because what counts
-/// as a refused credential is answered per exchange and `maxt` does not answer
-/// it on their behalf:
-///
-/// | Exchange | A refused credential arrives as |
-/// | --- | --- |
-/// | Binance | HTTP 400 `-1022` for a bad signature, HTTP 401 `-2015` for a bad key |
-/// | Upbit | HTTP 401 with a JWT error name, HTTP 403 `out_of_scope` |
-/// | Bithumb | HTTP 401 with a JWT error name, under names of its own |
-/// | Hyperliquid | HTTP 200, `status: "err"`, an English sentence, no code |
-///
-/// Each provider page lists its own. Nothing here flattens them, because a
-/// rule that did would have to be right about four exchanges at once and would
-/// go quietly wrong the first time one of them renamed a code.
-///
-/// [`Error::Auth`] and [`Error::Unsupported`] are the two that get confused.
-/// Missing credentials are always `Auth`, on every adapter, because the
-/// endpoint exists and a key would reach it. `Unsupported` means `maxt` maps no
-/// endpoint there, which no credential can change.
-///
-/// ```
-/// use maxt::{Client, Error, adapters::UpbitAdapter};
-///
-/// /// What a caller can actually do about an error.
-/// fn advice(error: &Error) -> &'static str {
-///     // Both checked before the variants: either one is answered by waiting
-///     // rather than by reading what failed, and a rate limit asks for a
-///     // longer pause than the other retryable failures do.
-///     if error.is_rate_limited() {
-///         return "back off, then retry";
-///     }
-///     if error.is_retryable() {
-///         return "retry behind a backoff";
-///     }
-///     match error {
-///         // Nothing was sent: no credentials, or none `maxt` could sign with.
-///         Error::Auth { .. } => "supply credentials",
-///         Error::Unsupported { feature, exchange, .. } => {
-///             let _ = (feature, exchange); // both name what is missing, for a log
-///             "ask another exchange"
-///         }
-///         Error::InvalidRequest { field, .. } => {
-///             let _ = field;
-///             "fix the request"
-///         }
-///         // The exchange read the request and refused it. A credential it
-///         // rejected is here rather than in `Auth`, under that exchange's own
-///         // code: a wrong Binance secret is `-1022`, a wrong Binance key is
-///         // `-2015`. The provider page lists the codes worth branching on.
-///         Error::Exchange { exchange, code, .. } => {
-///             let _ = (exchange, code);
-///             "read the exchange's own verdict"
-///         }
-///         _ => "report it",
-///     }
-/// }
-///
-/// #[tokio::main]
-/// async fn main() {
-///     let public = Client::new(UpbitAdapter::new());
-///
-///     // Neither call reaches the network: both are decided before a request
-///     // is built, so this example runs as a test.
-///     let no_key = public.balances().await.err();
-///     assert_eq!(no_key.as_ref().map(advice), Some("supply credentials"));
-///
-///     // Upbit lists no derivatives, so there is nothing to authenticate to.
-///     let no_endpoint = public.positions().await.err();
-///     assert_eq!(no_endpoint.as_ref().map(advice), Some("ask another exchange"));
-/// }
-/// ```
+/// [`Error::Auth`] means no credentialed request could be built locally.
+/// Credentials sent to and rejected by an exchange remain [`Error::Exchange`]
+/// with the exchange's code and message. [`Error::Unsupported`] is structural:
+/// configuring credentials cannot make the operation available.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Error {
@@ -166,28 +96,9 @@ pub enum Error {
 impl Error {
     /// Whether retrying the identical request could plausibly succeed.
     ///
-    /// Rate limits, exchange-side failures, and transport faults are worth
-    /// retrying behind a backoff. Validation errors, unsupported features, and
-    /// missing credentials will fail identically every time.
-    ///
-    /// The identical request is what this asks about, and a request the
-    /// exchange rejected is `false` here even where building a fresh one would
-    /// succeed. A refused credential is the clear case, a stale timestamp the
-    /// arguable one: see [`ExchangeErrorKind::Rejected`].
-    ///
-    /// ```
-    /// use maxt::{Client, adapters::BithumbAdapter};
-    ///
-    /// #[tokio::main]
-    /// async fn main() {
-    ///     let public = Client::new(BithumbAdapter::new());
-    ///
-    ///     // A missing key is not a blip. A retry loop that ignored this would
-    ///     // spin through its whole attempt budget and report the same failure.
-    ///     let error = public.open_orders().await.err();
-    ///     assert_eq!(error.map(|error| error.is_retryable()), Some(false));
-    /// }
-    /// ```
+    /// Returns `true` for rate limits, exchange unavailability, and transport
+    /// failures. A rejected request is `false`, even when rebuilding a request
+    /// with a fresh timestamp could succeed.
     pub fn is_retryable(&self) -> bool {
         match self {
             Self::Exchange { kind, .. } => kind.is_retryable(),
@@ -203,34 +114,6 @@ impl Error {
     ///
     /// Worth branching on separately from [`Error::is_retryable`]: a rate limit
     /// asks for a longer pause than a transport blip does.
-    ///
-    /// ```
-    /// use std::time::Duration;
-    ///
-    /// use maxt::{Client, Error, adapters::UpbitAdapter};
-    ///
-    /// /// How long to wait before sending the identical request again.
-    /// fn pause_after(error: &Error, attempt: u32) -> Option<Duration> {
-    ///     if error.is_rate_limited() {
-    ///         // A quota refills on the exchange's clock. An exponential step
-    ///         // measured in milliseconds just spends the next window as soon
-    ///         // as it opens.
-    ///         Some(Duration::from_secs(30))
-    ///     } else if error.is_retryable() {
-    ///         Some(Duration::from_millis(100 << attempt.min(6)))
-    ///     } else {
-    ///         None
-    ///     }
-    /// }
-    ///
-    /// #[tokio::main]
-    /// async fn main() {
-    ///     let error = Client::new(UpbitAdapter::new()).balances().await.err();
-    ///
-    ///     // Not rate limited, not retryable: this one never waits at all.
-    ///     assert_eq!(error.as_ref().and_then(|error| pause_after(error, 0)), None);
-    /// }
-    /// ```
     pub fn is_rate_limited(&self) -> bool {
         matches!(
             self,
@@ -345,15 +228,8 @@ pub enum ExchangeErrorKind {
     /// The request was wrong: a bad symbol, an insufficient balance, a
     /// signature or a credential the exchange would not accept.
     ///
-    /// A timestamp outside the exchange's receive window is here too, and not
-    /// under [`Self::Unavailable`], although clock drift is transient. The two
-    /// causes want opposite things from a retry loop: a clock that is genuinely
-    /// wrong fails every rebuild until someone corrects it, so a loop spends
-    /// its whole budget learning that, while a request merely delayed in flight
-    /// wants one request built again and sent once. Neither is a loop, and
-    /// [`Error::is_retryable`] is about sending the identical request again,
-    /// which for a signed timestamp can only fail further outside the window
-    /// than it did the first time.
+    /// This includes timestamps outside the exchange's receive window. Retrying
+    /// the identical signed request cannot refresh its timestamp.
     Rejected,
     /// The caller exceeded a rate limit or is temporarily banned.
     RateLimited,
@@ -365,17 +241,6 @@ pub enum ExchangeErrorKind {
 
 impl ExchangeErrorKind {
     /// Whether an error of this kind is worth retrying behind a backoff.
-    ///
-    /// ```
-    /// use maxt::ExchangeErrorKind;
-    ///
-    /// // The exchange's own fault, or ours for being too fast: both pass.
-    /// assert!(ExchangeErrorKind::Unavailable.is_retryable());
-    /// assert!(ExchangeErrorKind::RateLimited.is_retryable());
-    ///
-    /// // A rejection is a verdict on the request itself.
-    /// assert!(!ExchangeErrorKind::Rejected.is_retryable());
-    /// ```
     pub fn is_retryable(self) -> bool {
         matches!(self, Self::RateLimited | Self::Unavailable)
     }

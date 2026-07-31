@@ -8,38 +8,31 @@ use crate::feature::Feature;
 use crate::request::{CandleRequest, HistoryRequest, MarginRequest, OrderRequest};
 use crate::stream::{AccountStream, MarketStream};
 use crate::types::{
-    Balance, Candle, Exchange, FundingPayment, FundingRate, MarginSummary, Market, MarketInfo,
-    MarketKind, Order, OrderBook, Page, Position, StreamConfig, Subscription, Ticker, Trade,
+    Balance, Candle, Exchange, Feed, FundingPayment, FundingRate, MarginSummary, Market,
+    MarketInfo, MarketKind, Order, OrderBook, Page, Position, StreamConfig, Subscription, Ticker,
+    Trade,
 };
 
-/// A boxed future, so that [`Adapter`] stays usable behind `dyn`.
-///
-/// Holding four exchanges in one `Vec<Box<dyn Adapter>>` requires the trait's
-/// methods to return a concrete type. This alias is what `async fn` in a trait
-/// desugars to.
+/// A boxed future used to keep [`Adapter`] dyn-compatible.
 pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 
-/// One exchange, behind the common API.
+/// Exchange adapter contract used by [`Client`](crate::Client).
 ///
-/// Implementable from outside this crate, which is what a mock adapter, a
-/// backtester, or a harness over recorded data needs. Such an implementation
-/// borrows an existing [`Exchange`] to identify itself, since that enum names
-/// only the exchanges `maxt` ships.
+/// Implementations must preserve the ordering, validation, and normalization
+/// documented by the corresponding [`Client`](crate::Client) methods. All
+/// optional methods default to [`Error::Unsupported`].
 ///
-/// Adding a real exchange happens in this crate: it needs an [`Exchange`]
-/// variant of its own, and `CONTRIBUTING.md` lists the rest.
-///
-/// Every method except [`Adapter::exchange`] and [`Adapter::supports`] defaults
-/// to [`Error::Unsupported`], so an adapter implements only what its exchange
-/// offers. A missing feature is reported at the call, never emulated.
+/// External implementations can provide mocks, backtests, or recorded-data
+/// adapters. A new real exchange also requires a new [`Exchange`] variant.
 pub trait Adapter: Send + Sync + 'static {
     /// Which exchange this adapter talks to.
     fn exchange(&self) -> Exchange;
 
-    /// Whether this adapter offers a feature.
+    /// Whether this configured adapter can use a feature.
     ///
-    /// Answers for the adapter as configured. One built without credentials
-    /// reports `false` for every feature that needs them.
+    /// Structural absence is returned from the corresponding method as
+    /// [`Error::Unsupported`]. A supported private endpoint without usable
+    /// credentials returns [`Error::Auth`](crate::Error::Auth).
     fn supports(&self, feature: Feature) -> bool;
 
     /// Lists the exchange's markets of one kind.
@@ -60,7 +53,7 @@ pub trait Adapter: Send + Sync + 'static {
         unsupported(self.exchange(), Feature::OrderBook)
     }
 
-    /// Reads a market's rolling 24-hour summary.
+    /// Reads a provider ticker summary for one market.
     fn ticker(&self, market: &Market) -> BoxFuture<'_, Result<Ticker>> {
         let _ = market;
         unsupported(self.exchange(), Feature::Ticker)
@@ -72,19 +65,40 @@ pub trait Adapter: Send + Sync + 'static {
         unsupported(self.exchange(), Feature::Candles)
     }
 
-    /// Opens a live market data subscription.
+    /// Opens a live market-data subscription.
     ///
-    /// Build the return value with [`MarketStream::new`], which takes any
-    /// stream of events. Reconnecting, and announcing it with
-    /// [`MarketEvent::Reconnected`](crate::MarketEvent::Reconnected), are the
-    /// implementation's own work.
+    /// The default rejects an empty subscription, then reports the first
+    /// requested feed as its matching unsupported stream feature. Implementors
+    /// build successful results with [`MarketStream::new`] and own reconnects.
     fn subscribe(
         &self,
         subscription: &Subscription,
         config: &StreamConfig,
     ) -> BoxFuture<'_, Result<MarketStream>> {
-        let _ = (subscription, config);
-        unsupported(self.exchange(), Feature::TradeStream)
+        if subscription.markets().is_empty() {
+            return Box::pin(async {
+                Err(Error::invalid_request(
+                    "markets",
+                    "a subscription needs at least one market",
+                ))
+            });
+        }
+        if subscription.feeds().is_empty() {
+            return Box::pin(async {
+                Err(Error::invalid_request(
+                    "feeds",
+                    "a subscription needs at least one feed",
+                ))
+            });
+        }
+        let _ = config;
+        let feature = match subscription.feeds()[0] {
+            Feed::Trades => Feature::TradeStream,
+            Feed::OrderBook => Feature::OrderBookStream,
+            Feed::Ticker => Feature::TickerStream,
+            Feed::Candles(_) => Feature::CandleStream,
+        };
+        unsupported(self.exchange(), feature)
     }
 
     /// Reads the account's balances.

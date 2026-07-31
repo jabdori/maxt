@@ -1,27 +1,13 @@
-//! `supports` and the call behind it must agree, in both directions.
+//! Checks `Client::supports` against the call behind each feature for every
+//! adapter configuration.
 //!
-//! `Client::supports` is what documentation, capability checks, and routing
-//! logic all read. If it disagrees with what the call does, every one of them
-//! is wrong. A `true` that then fails is worse than a `false`, because callers
-//! branch on it.
+//! * A structural `false` returns `Unsupported` naming the requested feature.
+//! * A credential-gated `false` on an unauthenticated adapter returns `Auth`.
+//! * A `true` never returns `Unsupported` in the offline probes available here.
 //!
-//! Both directions are checked here, over the whole `Feature` × adapter
-//! configuration cross product.
-//!
-//! * `supports(f) == false` → the call refuses, as `Unsupported`, naming `f`.
-//! * `supports(f) == true` → the call does not answer `Unsupported`.
-//!
-//! These assertions never touch the network. An adapter that does not offer a
-//! feature answers before it would open a connection, which is itself part of
-//! what is checked here. A test that hung would mean an adapter is reaching for
-//! the wire to report something it already knows.
-//!
-//! The second direction is harder to check offline, because a feature an
-//! adapter *does* offer is usually answered by the exchange. Where a probe
-//! resolves before the wire, such as a market belonging to a different exchange
-//! or a malformed wallet address, it is used. What it asserts is narrow:
-//! whatever else comes back, it must not be `Unsupported`. Where no such probe
-//! exists, [`offline_probe`] returns `None` and says why.
+//! No probe intentionally reaches the network. Claimed features are checked only
+//! where an invalid market or credential shape produces an offline result;
+//! [`offline_probe`] returns `None` otherwise.
 
 use maxt::adapters::{BinanceAdapter, BithumbAdapter, HyperliquidAdapter, UpbitAdapter};
 use maxt::{
@@ -29,7 +15,7 @@ use maxt::{
     MarginRequest, Market, MarketKind, OrderRequest, Side, Size, Subscription, Timestamp,
 };
 
-/// Every feature, so the cross product below is a cross product.
+/// All features covered by the adapter-configuration cross product.
 ///
 /// Written out rather than iterated because [`Feature`] is `#[non_exhaustive]`
 /// and has no iterator; the length in the type is what fails when a variant is
@@ -56,44 +42,11 @@ const ALL_FEATURES: [Feature; 19] = [
     Feature::ReduceOnlyOrders,
 ];
 
-/// The intervals all four exchanges publish an endpoint for.
+/// Candle intervals common to every venue that advertises [`Feature::CandleStream`].
 ///
-/// This list is read off the exchanges' own documentation, not off `maxt`. A
-/// baseline copied from whatever the adapters happen to implement would assert
-/// the code against itself and pass no matter how much an adapter left out,
-/// which is exactly how three intervals stayed missing while the errors called
-/// them absent from the exchange.
-///
-/// * Upbit serves `/v1/candles/minutes/{unit}` for units 1, 3, 5, 10, 15, 30,
-///   60 and 240, plus `days`, `weeks`, `months`, `years` and a one-second
-///   `seconds` endpoint.
-/// * Bithumb serves the same minute units, plus `days`, `weeks` and `months`.
-/// * Binance and Hyperliquid both take an interval parameter spanning `1m`
-///   through `1M`.
-///
-/// The intersection, restricted to what [`Interval`] can name, is below.
-/// Ten-minute candles and Upbit's years are served by exchanges and unnameable
-/// here; two, eight and twelve hours, three days and the one-second candle are
-/// nameable and served by only some. Both kinds are outside the baseline, so a
-/// caller who needs one asks the adapter rather than the feature.
-/// The intervals every exchange that streams candles at all publishes a feed for.
-///
-/// A stream is not the REST endpoint, and the previous list cannot stand in for
-/// it: Upbit serves daily, weekly and monthly candles over REST and streams
-/// none of them. Read off the exchanges' own documentation, same as above.
-///
-/// * Upbit streams `candle.{1s,1m,3m,5m,10m,15m,30m,60m,240m}`.
-/// * Binance streams every interval its klines endpoint serves, `1s` through
-///   `1M`, one-second candles on spot only.
-/// * Hyperliquid's `candle` subscription takes the same names its
-///   `candleSnapshot` does, `1m` through `1M`.
-/// * Bithumb publishes no candle stream at all, so it constrains nothing here
-///   and declines [`Feature::CandleStream`] outright, which the refusing
-///   direction above already covers.
-///
-/// The intersection, restricted to what [`Interval`] can name, is below. One
-/// second is out because Hyperliquid does not aggregate it; a day and longer are
-/// out because Upbit's stream stops at four hours.
+/// This is the documented intersection for Upbit, Binance, and Hyperliquid.
+/// Bithumb advertises no candle stream; Upbit's stream excludes daily and longer
+/// intervals, and Hyperliquid excludes one second.
 const BASELINE_STREAM_INTERVALS: [Interval; 7] = [
     Interval::Min1,
     Interval::Min3,
@@ -104,6 +57,10 @@ const BASELINE_STREAM_INTERVALS: [Interval; 7] = [
     Interval::Hour4,
 ];
 
+/// The [`Interval`] values common to all four REST candle APIs.
+///
+/// This documented baseline is independent of the adapter mappings so the test
+/// does not certify an implementation from its own interval table.
 const BASELINE_INTERVALS: [Interval; 10] = [
     Interval::Min1,
     Interval::Min3,
@@ -150,8 +107,7 @@ fn upbit(credentials: bool) -> Case {
         market: Market::spot(Exchange::Upbit, "BTC", "KRW"),
         elsewhere: Market::spot(Exchange::Binance, "BTC", "USDT"),
         checks_markets_offline: true,
-        // An API key is any string until an exchange refuses it, so nothing
-        // about one is wrong before the wire.
+        // API keys are validated only by the exchange.
         checks_credentials_offline: false,
         credentialed: credentials,
     }
@@ -215,18 +171,14 @@ fn hyperliquid(wallet: bool) -> Case {
             "hyperliquid"
         },
         client: if wallet {
-            // Deliberately malformed. `with_wallet` takes it without complaint,
-            // so the address is only found to be wrong at the call, which is
-            // what makes it a probe that answers offline.
+            // The malformed wallet is rejected at the call before network I/O.
             boxed(HyperliquidAdapter::new().with_wallet("0xabc", "0xdef"))
         } else {
             boxed(HyperliquidAdapter::new())
         },
         market: Market::perpetual(Exchange::Hyperliquid, "BTC", "USDC"),
         elsewhere: Market::spot(Exchange::Upbit, "BTC", "KRW"),
-        // Every public call builds the symbol table first, and that is a
-        // request; there is nothing Hyperliquid rejects about a market before
-        // it knows which markets exist.
+        // Public probes require Hyperliquid's network-built symbol table.
         checks_markets_offline: false,
         checks_credentials_offline: wallet,
         credentialed: wallet,
@@ -307,13 +259,8 @@ async fn call(case: &Case, feature: Feature, market: &Market) -> Option<Error> {
     }
 }
 
-/// A call for a feature the adapter claims, arranged to answer without a
-/// network, or `None` when this adapter cannot answer that one offline.
-///
-/// What comes back is only ever inspected for one thing: that it is not
-/// `Unsupported`. A rejected market, a malformed wallet, and an empty listing
-/// are all fine answers; "this exchange does not do that" is not, because
-/// `supports` just said it does.
+/// Probes a claimed feature offline, or returns `None` when network I/O is required.
+/// Any offline result except `Unsupported` satisfies the claim.
 async fn offline_probe(case: &Case, feature: Feature) -> Option<Error> {
     match feature {
         // Answerable from memory everywhere except Hyperliquid, which builds
@@ -349,10 +296,7 @@ async fn offline_probe(case: &Case, feature: Feature) -> Option<Error> {
         {
             call(case, feature, &case.market).await
         }
-        // Everything else is a question only the exchange can answer, and this
-        // file does not ask it. The refusing direction still covers every
-        // feature on every configuration, and each adapter's own request tests
-        // cover what it accepts without a network.
+        // Other claimed features require the network; adapter unit tests cover them.
         _ => None,
     }
 }
@@ -369,13 +313,8 @@ async fn a_feature_an_adapter_declines_is_declined_by_the_call_behind_it() {
                 panic!("{} answered {feature:?} instead of declining it", case.name);
             };
 
-            // A `false` here means one of two things, and they are not
-            // interchangeable. The exchange may not have the feature at all,
-            // which is `Unsupported` and tells a caller to stop asking. Or this
-            // client may simply not have authenticated for it, which is `Auth`
-            // and tells them to supply a key. Both are honest refusals; what
-            // would not be is refusing for one reason and reporting the other,
-            // or naming a feature the caller did not ask about.
+            // Structural gaps are `Unsupported`; missing credentials are `Auth`.
+            // An `Unsupported` result must name the feature that was requested.
             match error {
                 Error::Unsupported {
                     feature: reported, ..
@@ -418,10 +357,7 @@ async fn a_feature_an_adapter_claims_is_never_answered_with_unsupported() {
         }
     }
 
-    // Every probe returning `None` would make the loop above pass while
-    // asserting nothing. The count is a floor, not a fixture: the public
-    // features of the three exchanges that reject a market offline are eight
-    // apiece across eight configurations, before the private ones.
+    // Prevent every claimed-feature probe from being skipped.
     assert!(
         probed >= 48,
         "only {probed} claimed features were actually exercised"
@@ -430,15 +366,9 @@ async fn a_feature_an_adapter_claims_is_never_answered_with_unsupported() {
 
 #[tokio::test]
 async fn every_baseline_interval_is_mapped_on_the_exchanges_that_can_be_asked_offline() {
-    // The one place `supports(Feature::Candles)` could be true and the call
-    // still refuse: an interval the adapter maps to no endpoint.
-    //
-    // Not every exchange, despite what the baseline covers. The probe is a
-    // market from somewhere else, and only an adapter that rejects one before
-    // opening a connection can answer it offline. Hyperliquid builds its symbol
-    // table first, so it is skipped here and its interval map is asserted in
-    // its own unit tests instead. A name claiming all four would be the same
-    // kind of overstatement this file exists to catch.
+    // An unsupported result here would expose a missing REST interval mapping.
+    // Hyperliquid needs a network-built symbol table, so its mapping is covered
+    // by adapter unit tests rather than this offline probe.
     let mut asserted = 0;
 
     for case in every_configuration() {
@@ -468,14 +398,9 @@ async fn every_baseline_interval_is_mapped_on_the_exchanges_that_can_be_asked_of
 
 #[tokio::test]
 async fn every_baseline_stream_interval_is_mapped_on_the_exchanges_that_can_be_asked_offline() {
-    // The same hole as the test above, on the streaming side: `supports` says
-    // `CandleStream` and the subscription then refuses one interval of it.
-    //
-    // Nothing here asserts that a refused interval is wrong to refuse. Upbit
-    // genuinely streams no daily candle, and refusing that is the honest answer.
-    // What it asserts is that the intervals every candle-streaming exchange
-    // publishes a feed for are all reachable, so `supports(CandleStream) == true`
-    // means the same thing on each of them.
+    // An unsupported result here would expose a missing stream interval mapping.
+    // The baseline contains only intervals shared by candle-streaming venues;
+    // venue-specific gaps such as Upbit daily candles remain valid refusals.
     let mut asserted = 0;
 
     for case in every_configuration() {
@@ -504,14 +429,8 @@ async fn every_baseline_stream_interval_is_mapped_on_the_exchanges_that_can_be_a
 
 #[tokio::test]
 async fn an_interval_an_exchange_does_not_stream_is_refused_as_the_exchanges_gap() {
-    // Both refusals are `Unsupported`, and they are not the same sentence: an
-    // interval `maxt` has not mapped is an issue to open here, and one the
-    // exchange does not publish is not. A caller who cannot tell them apart files
-    // against the wrong project.
-    //
-    // Upbit's candle stream stops at four hours while its REST endpoints go to a
-    // month, so these three are the clearest case of the second kind anywhere in
-    // the crate.
+    // Distinguish an unmapped maxt interval from a venue's stream gap.
+    // Upbit serves day, week, and month candles only over REST.
     let upbit = upbit(false);
 
     for interval in [Interval::Day1, Interval::Week1, Interval::Month1] {
@@ -529,8 +448,7 @@ async fn an_interval_an_exchange_does_not_stream_is_refused_as_the_exchanges_gap
             !detail.contains("no stream mapped"),
             "{interval:?} was refused as a gap in `maxt`: {detail}"
         );
-        // And the same interval over REST is served, which is the thing a caller
-        // reading the refusal most needs to know.
+        // REST serves the same interval.
         assert!(
             upbit
                 .client
@@ -544,12 +462,7 @@ async fn an_interval_an_exchange_does_not_stream_is_refused_as_the_exchanges_gap
 
 #[tokio::test]
 async fn a_start_time_and_an_over_cap_count_are_things_every_exchange_accepts() {
-    // Two of the four exchanges have no start-time parameter at all. Refusing
-    // `from` there would make `CandleRequest::from` mean something different
-    // per exchange, which is exactly what a common API exists to prevent. The
-    // count is past every per-response cap on purpose: the cap is on one
-    // response, and `CandleRequest::limit` documents that `maxt` pages behind
-    // the scenes rather than refusing.
+    // `from` and a paged `limit` remain common inputs across adapters.
     for case in every_configuration() {
         if !case.checks_markets_offline {
             continue;
@@ -596,11 +509,7 @@ async fn a_spot_exchange_reports_no_perpetuals_rather_than_refusing_the_question
 
 #[tokio::test]
 async fn missing_credentials_read_the_same_way_on_every_exchange() {
-    // An exchange that has an endpoint the caller has not authenticated for is
-    // an auth failure, not a missing feature. `Unsupported` would tell a caller
-    // to stop asking when the fix is to supply a key, and a caller that
-    // branches on the error variant would then behave differently per exchange,
-    // which is exactly what a common API exists to prevent.
+    // Missing credentials are `Auth`; `Unsupported` is structural.
     let anonymous: [(&str, Box<dyn Adapter>); 4] = [
         ("upbit", Box::new(UpbitAdapter::new())),
         ("bithumb", Box::new(BithumbAdapter::new())),
@@ -650,12 +559,7 @@ async fn every_private_feature_is_closed_until_credentials_are_supplied() {
 async fn hyperliquid_serves_recent_trades_over_rest_as_well_as_live() {
     let client = Client::new(HyperliquidAdapter::new());
 
-    // `recentTrades` is not on Hyperliquid's info reference page, only on its
-    // rate-limit list. Absent from the documentation is not absent from the API,
-    // and this crate claimed the opposite for a while.
-    // What the endpoint does *not* offer is a count. Ten is the whole window, and
-    // a wider `limit` is `InvalidRequest` on `limit` rather than a quiet cut,
-    // which `rest`'s own unit tests assert without a network.
+    // `recentTrades` has a fixed ten-item window; wider limits are invalid.
     assert!(client.supports(Feature::Trades));
     assert!(client.supports(Feature::TradeStream));
 }

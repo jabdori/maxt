@@ -1,7 +1,4 @@
-//! Bithumb's public REST market data.
-//!
-//! Request building is kept as plain functions returning [`HttpRequest`] so
-//! that every path, query, and rejection below is testable without a network.
+//! Bithumb public REST requests and response handling.
 
 use serde_json::Value;
 
@@ -16,16 +13,14 @@ use crate::types::{
 
 use super::parse::{self, EXCHANGE};
 
-/// Bithumb returns at most this many trade ticks per call.
+/// Maximum recent trades in one Bithumb response.
 const MAX_TRADE_COUNT: u32 = 500;
-/// Bithumb returns at most this many candles per call, and offers no way to ask
-/// for more in one request.
+/// Maximum order-book levels per side in one Bithumb response.
+const MAX_BOOK_DEPTH: u32 = 30;
+/// Maximum candles in one Bithumb response.
 const MAX_CANDLE_COUNT: u32 = 200;
 
-/// Percent-encodes a query value.
-///
-/// Market codes and decimals are unreserved and survive untouched; the colons
-/// in a `to` cursor do not.
+/// Percent-encodes one query value.
 fn encode(raw: &str) -> String {
     raw.bytes()
         .map(|byte| match byte {
@@ -46,13 +41,11 @@ pub(crate) fn query(params: &[(&str, String)]) -> String {
 }
 
 pub(crate) fn markets_request() -> HttpRequest {
-    // `isDetails` is what adds `market_warning`, Bithumb's 유의 종목 flag and
-    // the only designation that reaches `MarketStatus`. The other one, 주의
-    // 종목, is a separate endpoint; see `market_alerts_request`.
+    // `isDetails` adds the investment-warning flag used by `MarketStatus`.
     HttpRequest::get("/v1/market/all").query("isDetails=true")
 }
 
-/// Bithumb's 경보제, which the market list does not carry at any `isDetails`.
+/// Builds the separate alert-system request (경보제).
 pub(crate) fn market_alerts_request() -> HttpRequest {
     HttpRequest::get("/v1/market/virtual_asset_warning")
 }
@@ -73,15 +66,16 @@ pub(crate) fn trades_request(market: &Market, limit: Option<u32>) -> Result<Http
 }
 
 pub(crate) fn order_book_request(market: &Market, depth: Option<u32>) -> Result<HttpRequest> {
-    if depth == Some(0) {
-        return Err(Error::invalid_request(
-            "depth",
-            "an order book of zero levels is not a book",
-        ));
+    if let Some(depth) = depth {
+        if !(1..=MAX_BOOK_DEPTH).contains(&depth) {
+            return Err(Error::invalid_request(
+                "depth",
+                format!("bithumb serves 1 to {MAX_BOOK_DEPTH} levels per side, not {depth}"),
+            ));
+        }
     }
 
-    // Bithumb takes no depth parameter: it serves the whole book, and levels
-    // past `depth` are dropped once the sides are in best-first order.
+    // Bithumb has no depth parameter; the parsed book is truncated locally.
     let params = [("markets", parse::native_symbol(market)?)];
 
     Ok(HttpRequest::get("/v1/orderbook").query(query(&params)))
@@ -93,18 +87,9 @@ pub(crate) fn ticker_request(market: &Market) -> Result<HttpRequest> {
     Ok(HttpRequest::get("/v1/ticker").query(query(&params)))
 }
 
-/// The endpoint `maxt` sends an interval to, or `None` when Bithumb has none.
+/// Returns the endpoint for an interval supported by both Bithumb and `Interval`.
 ///
-/// Bithumb splits candles across four endpoints instead of taking an interval
-/// parameter: `minutes/{unit}` for units 1, 3, 5, 10, 15, 30, 60 and 240, then
-/// `days`, `weeks` and `months`. The ones below are the intervals [`Interval`]
-/// can name and Bithumb serves; the ten-minute unit has no [`Interval`] to ask
-/// with, which is a gap in `maxt`, not in Bithumb.
-///
-/// Every `None` here is the other gap, the exchange's: Bithumb publishes no
-/// second-candle endpoint and no two-, eight- or twelve-hour or three-day unit,
-/// so those are absent from the exchange rather than missing from this match.
-/// [`candles_request`] says which of the two it is refusing.
+/// Bithumb also serves ten-minute candles, which `Interval` cannot represent.
 pub(crate) fn candle_path(interval: Interval) -> Option<&'static str> {
     Some(match interval {
         Interval::Min1 => "/v1/candles/minutes/1",
@@ -121,12 +106,7 @@ pub(crate) fn candle_path(interval: Interval) -> Option<&'static str> {
     })
 }
 
-/// One page of candles, ending at `cursor` and reaching at most `count` back.
-///
-/// An interval [`candle_path`] does not map is refused as something Bithumb does
-/// not publish, because that is what every one of them is. Saying `maxt` had not
-/// mapped it would send a caller to file an issue here about a candle Bithumb
-/// has never served.
+/// Builds one candle page ending before the optional exclusive cursor.
 pub(crate) fn candles_request(
     request: &CandleRequest,
     cursor: Option<Timestamp>,
@@ -154,36 +134,44 @@ pub(crate) fn candles_request(
     Ok(HttpRequest::get(path).query(query(&params)))
 }
 
-/// Formats a cursor the way Bithumb's `to` parameter reads it.
+/// Formats an exclusive UTC cursor as Bithumb's second-resolution KST wall clock.
 ///
-/// Bithumb takes a bare `YYYY-MM-DDTHH:MM:SS` with no zone marker and reads it
-/// as Korean time, so the instant is shifted by nine hours on the way out.
-/// Sending UTC digits would silently ask for candles nine hours too late.
+/// Subsecond values round up so the exclusive bound is preserved.
 fn kst_wall_clock(cursor: Timestamp) -> Result<String> {
     const KST_OFFSET_SECS: i64 = 9 * 3_600;
 
-    cursor
-        .as_secs()
-        .checked_add(KST_OFFSET_SECS)
+    let nanos = cursor.as_nanos();
+    let secs = nanos.div_euclid(1_000_000_000) + i64::from(nanos.rem_euclid(1_000_000_000) != 0);
+
+    secs.checked_add(KST_OFFSET_SECS)
         .and_then(|secs| chrono::DateTime::<chrono::Utc>::from_timestamp(secs, 0))
         .map(|kst| kst.format("%Y-%m-%dT%H:%M:%S").to_string())
         .ok_or_else(|| Error::invalid_request("to", format!("{cursor} is not a calendar date")))
 }
 
-/// Sends a request and hands back a 2xx body, turning anything else into
-/// Bithumb's own error.
-pub(crate) async fn send(http: &HttpTransport, request: &HttpRequest) -> Result<Value> {
-    let response = http.send(request).await?;
-    if !response.is_success() {
-        return Err(parse::exchange_error(response.status, &response.body));
+fn read_response(status: u16, body: &str) -> Result<Value> {
+    if !(200..300).contains(&status) {
+        return Err(parse::exchange_error(status, body));
     }
 
-    parse::body(&response.body)
+    let value = parse::body(body)?;
+    if value.get("error").is_some() {
+        return Err(parse::exchange_error(status, body));
+    }
+
+    Ok(value)
+}
+
+/// Sends a request and maps Bithumb error envelopes to [`Error::Exchange`],
+/// including envelopes returned with a successful HTTP status.
+pub(crate) async fn send(http: &HttpTransport, request: &HttpRequest) -> Result<Value> {
+    let response = http.send(request).await?;
+
+    read_response(response.status, &response.body)
 }
 
 pub(crate) async fn markets(http: &HttpTransport, kind: MarketKind) -> Result<Vec<MarketInfo>> {
-    // Bithumb lists no derivatives. The question is meaningful and the answer is
-    // "none", so it is not an error.
+    // Bithumb lists spot markets only.
     if kind != MarketKind::Spot {
         return Ok(Vec::new());
     }
@@ -227,8 +215,7 @@ pub(crate) async fn ticker(http: &HttpTransport, market: &Market) -> Result<Tick
     parse::ticker(only(&body, market)?, market.clone())
 }
 
-/// Pulls the single entry out of a response Bithumb models as a list because
-/// the endpoint can take several markets at once.
+/// Extracts the only entry expected from a single-market request.
 fn only<'a>(body: &'a Value, market: &Market) -> Result<&'a Value> {
     match body.as_array().map(Vec::as_slice) {
         Some([entry]) => Ok(entry),
@@ -240,21 +227,19 @@ fn only<'a>(body: &'a Value, market: &Market) -> Result<&'a Value> {
     }
 }
 
-/// Reads candles, oldest first, paging backwards when one response cannot hold
-/// the answer.
+/// Reads candles oldest-first, paging backward from Bithumb's exclusive cursor.
 ///
-/// Bithumb serves candles newest-first from a `to` cursor, caps a response at
-/// [`MAX_CANDLE_COUNT`], and offers no way to name a start time. That is the
-/// shape [`crate::adapters::candles::read`] walks, so the window, the start
-/// time, and any count above the cap are handled there, the same way they are
-/// on every other exchange.
+/// Each response is capped at [`MAX_CANDLE_COUNT`]. Paging follows Bithumb's
+/// UTC+09:00 candle grid.
 pub(crate) async fn candles(http: &HttpTransport, request: &CandleRequest) -> Result<Vec<Candle>> {
     let now = Timestamp::now();
+    let interval = request.interval;
 
-    candle_pages::read(
+    candle_pages::read_on_grid(
         request,
         EXCHANGE,
         MAX_CANDLE_COUNT,
+        move |at, count| parse::advance_open(interval, at, count),
         |end, count| async move {
             let body = send(http, &candles_request(request, end, count)?).await?;
 
@@ -300,8 +285,8 @@ mod tests {
 
     #[test]
     fn each_interval_reaches_the_endpoint_that_serves_it() {
-        // https://apidocs.bithumb.com/reference/분minute-캔들-조회
-        // https://apidocs.bithumb.com/reference/월month-캔들-조회
+        // Shape references: https://apidocs.bithumb.com/reference/분minute-캔들-조회.md
+        // and https://apidocs.bithumb.com/reference/월month-캔들-조회.md
         let cases = [
             (Interval::Min1, "/v1/candles/minutes/1"),
             (Interval::Min3, "/v1/candles/minutes/3"),
@@ -328,13 +313,7 @@ mod tests {
 
     #[test]
     fn an_interval_bithumb_does_not_aggregate_is_refused_as_the_exchanges_gap() {
-        // Bithumb publishes no endpoint for any of these, and the refusal must
-        // not be silently answered with a neighbouring interval.
-        //
-        // Nor may it read as `maxt`'s omission. Every interval Bithumb serves and
-        // `Interval` can name has an endpoint here, so "no endpoint mapped for
-        // Hour2" would send a caller to open an issue against this crate for a
-        // candle Bithumb has never published.
+        // Unsupported intervals must not be mapped to a neighboring endpoint.
         for interval in [
             Interval::Sec1,
             Interval::Hour2,
@@ -363,7 +342,7 @@ mod tests {
 
     #[test]
     fn a_cursor_is_sent_as_korean_wall_clock_and_percent_encoded() {
-        // 2017-07-03T00:00:00Z is 09:00 the same day in Seoul.
+        // 2017-07-03T00:00:00Z is 09:00 KST.
         let cursor = Timestamp::from_secs(1_499_040_000);
 
         assert_eq!(
@@ -375,6 +354,28 @@ mod tests {
                 .expect("a served interval")
                 .target(),
             "/v1/candles/minutes/5?market=KRW-BTC&to=2017-07-03T09%3A00%3A00&count=2"
+        );
+    }
+
+    #[test]
+    fn a_sub_second_cursor_is_rounded_up_before_kst_formatting() {
+        let half_past = Timestamp::from_millis(1_785_394_320_500);
+
+        assert_eq!(
+            kst_wall_clock(half_past).expect("a representable date"),
+            "2026-07-30T15:52:01"
+        );
+        assert_eq!(
+            candles_request(&candle_request(Interval::Min1), Some(half_past), 1)
+                .expect("a served interval")
+                .target(),
+            "/v1/candles/minutes/1?market=KRW-BTC&to=2026-07-30T15%3A52%3A01&count=1"
+        );
+
+        let whole_second = Timestamp::from_secs(1_785_394_320);
+        assert_eq!(
+            kst_wall_clock(whole_second).expect("a representable date"),
+            "2026-07-30T15:52:00"
         );
     }
 
@@ -394,11 +395,17 @@ mod tests {
             order_book_request(&btc_krw(), Some(0)),
             Err(Error::InvalidRequest { field: "depth", .. })
         ));
+        assert!(matches!(
+            order_book_request(&btc_krw(), Some(31)),
+            Err(Error::InvalidRequest { field: "depth", .. })
+        ));
+        assert!(order_book_request(&btc_krw(), Some(30)).is_ok());
     }
 
     #[test]
     fn the_caps_are_the_ones_bithumb_documents() {
         assert_eq!(MAX_TRADE_COUNT, 500);
+        assert_eq!(MAX_BOOK_DEPTH, 30);
         assert_eq!(MAX_CANDLE_COUNT, 200);
     }
 
@@ -409,6 +416,25 @@ mod tests {
         assert!(trades_request(&elsewhere, None).is_err());
         assert!(ticker_request(&elsewhere).is_err());
         assert!(order_book_request(&elsewhere, None).is_err());
+    }
+
+    #[test]
+    fn an_error_envelope_on_a_success_status_is_an_exchange_error() {
+        let error = read_response(200, r#"{"error":{"name":404,"message":"Code not found"}}"#)
+            .expect_err("Bithumb returned an error envelope");
+
+        let Error::Exchange {
+            code,
+            message,
+            status,
+            ..
+        } = error
+        else {
+            panic!("expected an exchange error");
+        };
+        assert_eq!(code, "404");
+        assert_eq!(message, "Code not found");
+        assert_eq!(status, Some(200));
     }
 
     #[test]

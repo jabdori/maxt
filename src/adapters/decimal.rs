@@ -1,42 +1,24 @@
-//! The one decimal reader every adapter parses money with.
+//! Exact decimal parsing for exchange payloads.
 //!
-//! Exchanges quote prices and sizes as text: a JSON string on Binance and
-//! Hyperliquid, a `serde_json` number kept at its original digits on Upbit and
-//! Bithumb. Some of them switch to exponent form for small values, so the same
-//! field arrives as `0.00008428` one day and `8.428e-05` the next. Both
-//! spellings name the same number and both are read here, by the same rule.
+//! Plain and scientific notation are accepted without rounding.
 
 use rust_decimal::Decimal;
 
-/// The largest decimal-point shift an exponent form may ask for.
+/// Maximum decimal-point shift expanded from scientific notation.
 ///
-/// Beyond this many places either side of the point no number is
-/// representable, so a larger exponent is refused before it is expanded.
-///
-/// [`Decimal`] holds at most 29 significant digits and 28 fractional ones. The
-/// bound exists as much to keep a hostile `1e2000000000` from asking for two
-/// gigabytes of zeroes as to reject the value.
+/// This bounds allocation before [`Decimal`] validates representability.
 const MAX_POINT_SHIFT: i64 = 64;
 
-/// Reads a decimal from the digits an exchange sent, never rounding.
+/// Parses a decimal exactly, including scientific notation.
 ///
-/// Plain and exponent forms are both accepted and both held to the same
-/// standard. A number [`Decimal`] cannot represent exactly is an error.
-///
-/// Exponent form is expanded by moving the decimal point through the text, not
-/// by arithmetic, because `Decimal::from_scientific` rounds. It reads
-/// `1.2345678901234567890123456789012e5` as `123456.78901234567890123456789`,
-/// three digits short, and that silently loses the last digit of a price.
-///
-/// Surrounding whitespace is ignored. The error is `rust_decimal`'s own, so
-/// each adapter can wrap it in the wording its own decode failures use.
+/// Scientific notation is expanded as text because arithmetic conversion may
+/// round. Whitespace is ignored and unrepresentable values return an error.
 pub(crate) fn exact(text: &str) -> Result<Decimal, rust_decimal::Error> {
     let text = text.trim();
 
     match Decimal::from_str_exact(text) {
         Ok(value) => Ok(value),
-        // Only the exponent form can still be readable here, and only as the
-        // plain digits it stands for.
+        // Retry only after expanding valid scientific notation.
         Err(err) => match without_exponent(text) {
             Some(plain) => Decimal::from_str_exact(&plain),
             None => Err(err),
@@ -44,11 +26,10 @@ pub(crate) fn exact(text: &str) -> Result<Decimal, rust_decimal::Error> {
     }
 }
 
-/// Rewrites `8.428e-05` as `0.00008428`, keeping every digit.
+/// Expands scientific notation without changing its digits or scale.
 ///
-/// `None` means the text is not an exponent-form number this can rewrite,
-/// including an exponent so large that no rewrite could be representable. The
-/// caller then reports the original parse failure, which names the input.
+/// Returns `None` for invalid syntax or an expansion beyond the allocation
+/// bound.
 fn without_exponent(text: &str) -> Option<String> {
     let marker = text.find(['e', 'E'])?;
     let (mantissa, exponent) = text.split_at(marker);
@@ -70,8 +51,7 @@ fn without_exponent(text: &str) -> Option<String> {
         return None;
     }
 
-    // Where the point lands in the digit run once the exponent is applied,
-    // counted from the left. Negative means leading zeroes are needed.
+    // Negative positions require leading fractional zeroes.
     let digits = format!("{whole}{fraction}");
     let point = exponent.checked_add(i64::try_from(whole.len()).ok()?)?;
     if !(-MAX_POINT_SHIFT..=MAX_POINT_SHIFT).contains(&point) {
@@ -101,8 +81,6 @@ mod tests {
 
     #[test]
     fn an_exponent_names_the_same_number_as_the_digits_it_stands_for() {
-        // Each pair is one value written both ways; the reader must not be able
-        // to tell them apart.
         for (exponent_form, plain_form) in [
             ("8.428e-05", "0.00008428"),
             ("8.428E-5", "0.00008428"),
@@ -120,9 +98,6 @@ mod tests {
 
     #[test]
     fn a_value_too_precise_to_hold_is_refused_in_either_spelling() {
-        // 32 significant digits. `Decimal` holds 29, and `from_scientific`
-        // would answer `123456.78901234567890123456789`, three digits short
-        // of what the exchange sent, with no error.
         let plain = "123456.78901234567890123456789012";
         let exponent = "1.2345678901234567890123456789012e5";
 
@@ -136,8 +111,6 @@ mod tests {
 
     #[test]
     fn a_value_too_small_to_hold_is_refused_rather_than_flattened_to_zero() {
-        // `Decimal` has 28 fractional places; 1e-30 has 30, and rounding it
-        // gives zero, a size that would read as "nothing traded".
         for text in ["1e-30", "0.000000000000000000000000000001"] {
             assert!(exact(text).is_err(), "{text}");
         }
@@ -165,8 +138,7 @@ mod tests {
 
     #[test]
     fn the_scale_an_exchange_sent_survives_the_rewrite() {
-        // Trailing zeroes carry the tick size an exchange quoted at, so a
-        // rewrite that dropped them would change what the price says.
+        // Preserve the scale encoded by trailing zeroes.
         assert_eq!(ok("1.2300e2").to_string(), "123.00");
         assert_eq!(ok("100e-2").to_string(), "1.00");
     }

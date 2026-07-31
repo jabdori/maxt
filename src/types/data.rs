@@ -27,36 +27,6 @@ impl Side {
 ///
 /// [`Trade::taker_side`] is the aggressor's side on every supported exchange,
 /// so a run of trades from two of them is comparable.
-///
-/// ```
-/// use maxt::{Exchange, Market, Side, Timestamp, Trade};
-/// use rust_decimal::Decimal;
-///
-/// /// Buy volume minus sell volume: positive means buyers lifted more.
-/// fn signed_volume(trades: &[Trade]) -> Decimal {
-///     trades
-///         .iter()
-///         .map(|trade| match trade.taker_side {
-///             Side::Buy => trade.quantity,
-///             Side::Sell => -trade.quantity,
-///         })
-///         .sum()
-/// }
-///
-/// # let market = Market::spot(Exchange::Upbit, "BTC", "KRW");
-/// // Two trades as `Client::trades` would have reported them.
-/// # let trade = |taker_side, quantity| Trade {
-/// #     market: market.clone(),
-/// #     timestamp: Timestamp::from_millis(1_700_000_000_000),
-/// #     price: Decimal::from(100_000_000),
-/// #     quantity: Decimal::from(quantity),
-/// #     taker_side,
-/// #     id: None,
-/// # };
-/// let trades = [trade(Side::Buy, 3), trade(Side::Sell, 1)];
-///
-/// assert_eq!(signed_volume(&trades), Decimal::from(2));
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Trade {
     /// The market it executed on.
@@ -90,31 +60,6 @@ pub struct Level {
 /// [`OrderBook::bids`] is sorted best-first (descending price) and
 /// [`OrderBook::asks`] is sorted best-first (ascending price), on every
 /// exchange. Adapters re-sort where the exchange does not.
-///
-/// ```
-/// use maxt::{Exchange, Level, Market, OrderBook, Timestamp};
-/// use rust_decimal::Decimal;
-///
-/// let level = |price: i64, quantity: i64| Level {
-///     price: Decimal::from(price),
-///     quantity: Decimal::from(quantity),
-/// };
-/// let book = OrderBook {
-///     market: Market::spot(Exchange::Upbit, "BTC", "KRW"),
-///     timestamp: Timestamp::from_millis(1_700_000_000_000),
-///     bids: vec![level(100, 2), level(99, 5)],
-///     asks: vec![level(102, 1), level(103, 4)],
-/// };
-///
-/// // Best-first on both sides, so the top of book is the front of each.
-/// assert_eq!(book.best_bid().map(|level| level.price), Some(Decimal::from(100)));
-/// assert_eq!(book.spread(), Some(Decimal::from(2)));
-/// assert_eq!(book.mid_price(), Some(Decimal::from(101)));
-///
-/// // How much of the ask side a market buy would eat, in quote terms.
-/// let cost: Decimal = book.asks.iter().take(2).map(|level| level.price * level.quantity).sum();
-/// assert_eq!(cost, Decimal::from(514));
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OrderBook {
     /// The market it describes.
@@ -123,9 +68,9 @@ pub struct OrderBook {
     /// the exchange does not say.
     ///
     /// Binance publishes no clock on a spot depth response, over REST or on
-    /// the stream, so a spot book from there carries the read time. Treat this
-    /// as an upper bound on the snapshot's age. Measuring staleness against it
-    /// will under-report on those books.
+    /// the stream, so a spot book from there carries the read time. Staleness
+    /// measured from that fallback is only a lower bound and may under-report
+    /// the snapshot's actual age.
     pub timestamp: Timestamp,
     /// Buy side, best (highest) price first.
     pub bids: Vec<Level>,
@@ -160,46 +105,11 @@ impl OrderBook {
     }
 }
 
-/// A rolling 24-hour summary of one market.
+/// A provider ticker summary for one market.
 ///
 /// Fields the exchange does not publish are `None`. A market that genuinely
 /// traded zero volume is different from one whose exchange does not report
 /// volume.
-///
-/// ```
-/// use maxt::{Ticker, Timestamp};
-///
-/// /// How long ago the price traded, when the exchange says at all.
-/// ///
-/// /// `timestamp` is not a substitute: on the exchanges that publish no clock
-/// /// it is `maxt`'s read time, which would report a week-old price as fresh.
-/// fn price_age_nanos(ticker: &Ticker, now: Timestamp) -> Option<i64> {
-///     Some(now.as_nanos() - ticker.last_trade_time?.as_nanos())
-/// }
-///
-/// // `timed` reports when its price traded; `blank` comes from an exchange
-/// // that never says, and leaves the field `None`.
-/// # use maxt::{Exchange, Market};
-/// # use rust_decimal::Decimal;
-/// # let blank = Ticker {
-/// #     market: Market::perpetual(Exchange::Hyperliquid, "BTC", "USDC"),
-/// #     timestamp: Timestamp::from_secs(1_700_000_060),
-/// #     last_trade_time: None,
-/// #     last_price: Decimal::from(60_000),
-/// #     change: None,
-/// #     change_rate: None,
-/// #     high: None,
-/// #     low: None,
-/// #     volume: None,
-/// #     quote_volume: None,
-/// # };
-/// # let timed = Ticker { last_trade_time: Some(Timestamp::from_secs(1_700_000_000)), ..blank.clone() };
-/// let now = Timestamp::from_secs(1_700_000_060);
-///
-/// assert_eq!(price_age_nanos(&timed, now), Some(60_000_000_000));
-/// // Unknown, and reported as unknown.
-/// assert_eq!(price_age_nanos(&blank, now), None);
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Ticker {
     /// The market it summarizes.
@@ -208,25 +118,27 @@ pub struct Ticker {
     /// exchange does not say.
     ///
     /// Hyperliquid publishes no clock with its asset contexts, so a ticker
-    /// from there carries the read time. Treat this as an upper bound on the
-    /// summary's age.
+    /// from there carries the read time. Staleness measured from that fallback
+    /// is only a lower bound and may under-report the summary's actual age.
     pub timestamp: Timestamp,
-    /// When the trade behind [`Ticker::last_price`] executed.
+    /// When the trade behind [`Ticker::last_price`] executed, if the primary
+    /// price is a trade price.
     ///
     /// Distinct from [`Ticker::timestamp`], which is when the exchange built
     /// the summary. On a quiet market the two drift apart, and the gap between
     /// them is how stale the price is.
     ///
-    /// `None` when the exchange does not report it. Binance and Hyperliquid
-    /// both publish a last price without saying when it traded. `maxt` leaves
-    /// the field empty, because filling it from the read time would claim a
-    /// freshness the exchange never stated.
+    /// `None` when the exchange does not report it or when the provider's
+    /// primary ticker price is not a trade price.
     pub last_trade_time: Option<Timestamp>,
-    /// The most recent trade price.
+    /// The provider summary's primary price.
+    ///
+    /// This is usually the most recent trade price. Hyperliquid uses `midPx`,
+    /// falling back to `markPx`; use the trades API for its latest fill.
     pub last_price: Decimal,
-    /// Change against the previous session's close, signed.
+    /// Signed change against the provider's reference price.
     pub change: Option<Decimal>,
-    /// Change against the previous session's close, as a signed ratio.
+    /// The same change as a signed ratio.
     ///
     /// `0.05` means five percent up.
     pub change_rate: Option<Decimal>,
@@ -246,44 +158,10 @@ pub struct Ticker {
 /// [`Error::Unsupported`](crate::Error::Unsupported) rather than silently
 /// rounded to a neighbour.
 ///
-/// # An interval names a length, not a grid
-///
-/// Where a candle of that length opens is the exchange's own decision, and the
-/// four do not agree. Read live on 2026-07-30 through
-/// [`Client::candles`](crate::Client::candles) for BTC on each, at every
-/// interval each one serves:
-///
-/// | Interval | Upbit | Bithumb | Binance | Hyperliquid |
-/// | --- | --- | --- | --- | --- |
-/// | `Sec1` | whole UTC second | not served | whole UTC second | not served |
-/// | `Min1` to `Min30` | whole UTC minute, on the interval's own grid from the hour | same | same | same |
-/// | `Hour1` | whole UTC hour | whole UTC hour | whole UTC hour | whole UTC hour |
-/// | `Hour2` | not served | not served | 00:00, 02:00, ... UTC | 00:00, 02:00, ... UTC |
-/// | `Hour4` | 00:00, 04:00, ... UTC | **03:00, 07:00, 11:00, 15:00, 19:00, 23:00 UTC** | 00:00, 04:00, ... UTC | 00:00, 04:00, ... UTC |
-/// | `Hour8` | not served | not served | 00:00, 08:00, 16:00 UTC | 00:00, 08:00, 16:00 UTC |
-/// | `Hour12` | not served | not served | 00:00, 12:00 UTC | 00:00, 12:00 UTC |
-/// | `Day1` | 00:00 UTC | **15:00 UTC** | 00:00 UTC | 00:00 UTC |
-/// | `Day3` | not served | not served | **a 3-day grid at 00:00 UTC, one day ahead of Hyperliquid's** | **a 3-day grid at 00:00 UTC, measured from the epoch** |
-/// | `Week1` | Monday 00:00 UTC | **Sunday 15:00 UTC** | Monday 00:00 UTC | **Thursday 00:00 UTC** |
-/// | `Month1` | the 1st, 00:00 UTC | **the last day of the previous UTC month, 15:00 UTC** | the 1st, 00:00 UTC | **a 30-day grid measured from the epoch** |
-///
-/// Two things explain every bold cell:
-///
-/// | Exchange | Why its grid differs |
-/// | --- | --- |
-/// | Bithumb | it cuts every window in Korean time, nine hours ahead of UTC, so it matches the other three at every interval that divides nine hours and misses at every interval that does not |
-/// | Hyperliquid | it measures `Day3`, `Week1` and `Month1` from the Unix epoch rather than from the calendar, and 1 January 1970 was a Thursday |
-///
-/// Binance's `Day3` is a 3-day grid too, one day ahead of Hyperliquid's:
-/// counting whole days from the epoch, Binance opens where that count leaves
-/// remainder 1 on division by three and Hyperliquid where it leaves 0. Read
-/// live from 2025-01-01: Binance answers 2025-01-01, 01-04, 01-07 and
-/// Hyperliquid 2024-12-31, 01-03, 01-06.
-///
-/// So a [`Candle::open_time`] is comparable across two exchanges only where the
-/// row above says the same thing about both. Joining Upbit and Bithumb daily
-/// candles on `open_time` matches nothing at all, and joining them by position
-/// lines up windows nine hours apart.
+/// An interval specifies a length, not an exchange-independent opening grid.
+/// Providers may anchor daily, weekly, monthly, and multi-day candles to
+/// different time zones or epochs. Compare [`Candle::open_time`] across
+/// exchanges only after accounting for each provider's grid.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[non_exhaustive]
 pub enum Interval {
@@ -322,11 +200,8 @@ pub enum Interval {
 impl Interval {
     /// The interval's length in seconds.
     ///
-    /// [`Interval::Month1`] has no fixed length and returns `None`. Moving a
-    /// candle's open time by whole intervals is [`Interval::advance`], which
-    /// answers for every interval including that one; a caller that reaches for
-    /// this and then invents a length for a month has to guess, and every guess
-    /// disagrees with the calendar somewhere.
+    /// [`Interval::Month1`] has no fixed length and returns `None`. Use
+    /// [`Interval::advance`] to move by whole intervals including months.
     pub const fn as_secs(self) -> Option<u64> {
         Some(match self {
             Self::Sec1 => 1,
@@ -349,70 +224,13 @@ impl Interval {
 
     /// The open time `count` intervals along from the candle opening at `at`.
     ///
-    /// A negative `count` walks backwards, and `0` gives `at` back. This is
-    /// where the calendar lives: [`Interval::Month1`] steps whole months, so one
-    /// step from 1 February is 1 March whether that is 28 days later or 29, and
-    /// every other interval steps its own fixed length. Everything a caller
-    /// might want a month's length *for*, where a candle's window ends, how
-    /// wide a `count`-candle window is, where a backwards walk should start, is
-    /// this one question, asked with a different `count`.
+    /// A negative count moves backwards and zero returns `at`. Fixed intervals
+    /// use their exact nanosecond length. [`Interval::Month1`] uses UTC calendar
+    /// months and clamps a day absent from the target month to its last day.
+    /// Because of that clamp, month movement is not generally reversible.
     ///
-    /// The month it steps is a **UTC** calendar month, and a step that would
-    /// land on a day the target month does not have is pulled back to its last
-    /// day: one month on from 31 January is 28 February.
-    ///
-    /// This steps the length; it does not know any exchange's grid. Which
-    /// exchange's own candle opens it lands on was read off their candles
-    /// rather than assumed, and [`Interval`] carries the whole table. At
-    /// [`Interval::Month1`], the interval where the step is not a fixed length:
-    ///
-    /// | Exchange | Where a monthly candle opens | UTC month steps between them |
-    /// | --- | --- | --- |
-    /// | Binance | midnight UTC on the 1st | yes |
-    /// | Upbit | midnight UTC on the 1st | yes |
-    /// | Bithumb | midnight KST on the 1st, which is 15:00 UTC on the last day of the previous UTC month | no |
-    /// | Hyperliquid | a 30-day bucket measured from the epoch, not a calendar month at all | no |
-    ///
-    /// So a caller holding a Bithumb or Hyperliquid open time cannot reach the
-    /// next one from here, and neither can `maxt`. Bithumb shifts into Korean
-    /// time before stepping, because a UTC step from 28 February lands on 28
-    /// March and its next candle opens on 31 March; Hyperliquid's own adapter
-    /// measures a monthly window in 30-day buckets instead of calling this.
-    /// [`Candle::closed`] on Bithumb is read off a clock and on Hyperliquid off
-    /// the frame that opens the next window, so neither needs this either.
-    ///
-    /// `None` when the result leaves the range [`Timestamp`] can hold, roughly
-    /// 1677 to 2262. Nothing here wraps or saturates, so a caller never gets a
-    /// silently wrong instant back.
-    ///
-    /// ```
-    /// use maxt::{Interval, Timestamp};
-    ///
-    /// // 1 February 2024, in a leap year.
-    /// let february = Timestamp::from_secs(1_706_745_600);
-    ///
-    /// // A month is as long as the month actually is: 29 days, not 30 or 31.
-    /// let march = Interval::Month1.advance(february, 1).expect("a month later");
-    /// assert_eq!(march.as_secs() - february.as_secs(), 29 * 86_400);
-    ///
-    /// // And it is reversible, which is what a backwards page walk needs.
-    /// assert_eq!(Interval::Month1.advance(march, -1), Some(february));
-    ///
-    /// // The clamp, and why an open time in a zone ahead of UTC needs its own
-    /// // arithmetic: 2026-02-28T15:00Z is the first of March in Korea, and a
-    /// // UTC month on lands three days before the first of April there.
-    /// let korean_march = Timestamp::from_secs(1_772_290_800);
-    /// assert_eq!(
-    ///     Interval::Month1.advance(korean_march, 1),
-    ///     Some(Timestamp::from_secs(1_774_710_000)) // 2026-03-28T15:00Z
-    /// );
-    ///
-    /// // Fixed intervals are the same question with a known answer.
-    /// assert_eq!(
-    ///     Interval::Hour1.advance(february, 3),
-    ///     Some(Timestamp::from_secs(1_706_745_600 + 3 * 3_600))
-    /// );
-    /// ```
+    /// This method does not apply a provider's candle grid. It returns `None`
+    /// if the result cannot be represented by [`Timestamp`].
     pub fn advance(self, at: Timestamp, count: i64) -> Option<Timestamp> {
         if let Some(secs) = self.as_secs() {
             let span = i64::try_from(secs)
@@ -436,44 +254,7 @@ impl Interval {
     }
 }
 
-/// One OHLCV candle.
-///
-/// ```
-/// use maxt::{Candle, Interval, Timestamp};
-/// use rust_decimal::Decimal;
-///
-/// /// The close of the last *finished* interval.
-/// ///
-/// /// An open candle is republished every time a trade moves it, so an
-/// /// indicator fed the unfiltered run would recompute itself on a price that
-/// /// is still changing.
-/// fn last_settled_close(candles: &[Candle]) -> Option<Decimal> {
-///     candles.iter().rev().find(|candle| candle.closed).map(|candle| candle.close)
-/// }
-///
-/// // A closed minute followed by the one still forming.
-/// # use maxt::{Exchange, Market};
-/// # let market = Market::spot(Exchange::Upbit, "BTC", "KRW");
-/// # let candle = |minute: i64, close: i64, closed| Candle {
-/// #     market: market.clone(),
-/// #     interval: Interval::Min1,
-/// #     open_time: Timestamp::from_secs(minute * 60),
-/// #     open: Decimal::from(close),
-/// #     high: Decimal::from(close),
-/// #     low: Decimal::from(close),
-/// #     close: Decimal::from(close),
-/// #     volume: Decimal::ONE,
-/// #     quote_volume: None,
-/// #     closed,
-/// # };
-/// // Oldest first, which is the order every `candles` call returns.
-/// let run = [candle(28_333_333, 100, true), candle(28_333_334, 101, false)];
-///
-/// assert_eq!(last_settled_close(&run), Some(Decimal::from(100)));
-/// // `open_time` is the start of the interval, so this candle covers the
-/// // minute that begins here, not the one that ends here.
-/// assert_eq!(run[0].open_time.as_secs() % 60, 0);
-/// ```
+/// One open-high-low-close-volume (OHLCV) candle.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Candle {
     /// The market it aggregates.
@@ -498,29 +279,14 @@ pub struct Candle {
     pub quote_volume: Option<Decimal>,
     /// Whether the interval has closed.
     ///
-    /// A streamed window arrives repeatedly while it is still open, each frame
-    /// superseding the last, and gets **exactly one** emission with this set,
-    /// carrying that window's own final figures. Nothing after it belongs to
-    /// that window. A read over REST answers for the window as it stood when the
-    /// exchange was asked, so every candle but the newest is closed and the
-    /// newest one usually is not.
+    /// A live window may be emitted repeatedly with `false`. A settled live
+    /// window is emitted at most once with `true`. Providers without a native
+    /// close flag usually infer settlement when a later window arrives. A
+    /// reconnect discards uncertain held state, but a snapshot may identify an
+    /// already ended window and emit it as settled.
     ///
-    /// What each exchange's stream is asked, since only one of them states it
-    /// outright:
-    ///
-    /// | Exchange | How a live window is known to have closed |
-    /// | --- | --- |
-    /// | Binance | its own `x` flag on the frame |
-    /// | Upbit | the arrival of a frame opening a later window. No frame of a window is ever stamped at or past that window's end |
-    /// | Hyperliquid | the arrival of a frame opening a later window. It stops publishing a window a couple of seconds before that window's close time |
-    /// | Bithumb | there is no candle stream |
-    ///
-    /// So on Upbit and Hyperliquid the settled emission arrives *after* its
-    /// window ended, one frame late, and a window that never sees a successor
-    /// never settles. A reconnect drops whatever was being held rather than
-    /// settling it across a gap of unknown length, so the window a
-    /// [`MarketEvent::Reconnected`](crate::MarketEvent::Reconnected) interrupts
-    /// gets no settled emission at all.
+    /// REST candles are classified from the window end relative to the read
+    /// time, so every candle in a historical range may be closed.
     pub closed: bool,
 }
 

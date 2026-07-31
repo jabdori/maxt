@@ -1,15 +1,8 @@
-//! Binance's JSON, and what it means in `maxt` terms.
+//! Binance payloads shared by Spot and USD-M REST and streams.
 //!
-//! Spot and USD-M futures answer with the same field names for everything in
-//! here, so one set of shapes covers both venues. Several shapes also read the
-//! WebSocket spelling of the same payload through `serde` aliases: Binance
-//! abbreviates every key on the streams (`c` for `lastPrice`, `b` for `bids`)
-//! but changes neither the meaning nor the value, and one struct that accepts
-//! both spellings is one conversion to keep correct instead of two.
-//!
-//! Numbers never pass through `f64`. Binance quotes every price and quantity as
-//! a JSON *string*, so the digits it sent are the digits [`Decimal`] is built
-//! from.
+//! `serde` aliases cover REST names and abbreviated stream names. Prices and
+//! quantities are parsed directly from strings into [`Decimal`] without an
+//! `f64` conversion.
 
 use rust_decimal::Decimal;
 use serde::Deserialize;
@@ -314,10 +307,7 @@ pub(super) fn ticker(market: &Market, raw: &RawTicker) -> Result<Ticker> {
     Ok(Ticker {
         market: market.clone(),
         timestamp: millis(raw.close_time),
-        // Binance's 24-hour summary reports the last price but never when it
-        // traded, so the gap between the summary and the fill is unknowable
-        // here. Reusing the summary time would claim a freshness nothing
-        // measured.
+        // The 24-hour summary has no last-trade timestamp.
         last_trade_time: None,
         last_price: decimal(&raw.last_price, "lastPrice")?,
         change,
@@ -329,16 +319,7 @@ pub(super) fn ticker(market: &Market, raw: &RawTicker) -> Result<Ticker> {
     })
 }
 
-/// Converts a candle.
-///
-/// `now_millis` decides [`Candle::closed`]: Binance serves the in-progress
-/// candle alongside the closed ones and marks it in no other way.
-///
-/// The seventh element of a kline is the *last* millisecond the window covers,
-/// not the first one after it: a one-minute candle opening at `t` closes at
-/// `t + 59_999`. The bar is therefore still forming while the clock reads that
-/// value and settled once it has moved past. Hyperliquid's `T` means the same
-/// thing and is read at the same boundary.
+/// Converts a candle and marks it closed after its inclusive close millisecond.
 pub(super) fn candle(
     market: &Market,
     interval: Interval,
@@ -466,9 +447,7 @@ mod tests {
       }
     ]"#;
 
-    // Captured 2026-07-30 off wss://fstream.binance.com/stream, subscribed to
-    // `dogeusdt@trade`. `X` and `st` are USD-M additions the spot stream does
-    // not send, and neither reaches a `Trade`.
+    // USD-M adds `X` and `st`; neither reaches the common `Trade`.
     const USD_M_STREAM_TRADE: &str = r#"{
       "e": "trade",
       "E": 1785407770046,

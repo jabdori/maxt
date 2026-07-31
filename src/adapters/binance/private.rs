@@ -1,16 +1,14 @@
-//! Binance's signed REST API: balances, orders, positions, margin, funding.
+//! Binance account, order, margin, funding, and user-data requests.
 //!
-//! Every call here carries the API key in a header and an HMAC-SHA256
-//! signature over the query string. Binance signs the *bytes* of that query,
-//! not the set of parameters, so the query is built once, hashed, and sent
-//! verbatim. Re-encoding it between those two steps is the classic way to
-//! produce a request the exchange rejects with `-1022`.
+//! Private calls use an API key and HMAC-SHA-256 secret. The exact encoded query
+//! bytes are signed and sent unchanged. RSA and Ed25519 keys are not supported.
 
 use hmac::{Hmac, KeyInit, Mac};
 use rust_decimal::Decimal;
 use serde::Deserialize;
 use sha2::Sha256;
 
+use crate::adapters::{inclusive_millis_at_or_after, inclusive_millis_before};
 use crate::error::{Error, Result};
 use crate::feature::Feature;
 use crate::request::{HistoryRequest, MarginRequest, OrderRequest};
@@ -208,13 +206,8 @@ fn open_orders_path(venue: BinanceMarket) -> &'static str {
     }
 }
 
-/// Where USD-M mints, extends, and closes a listen key.
-///
-/// USD-M only, and there is no spot counterpart to pair it with. Binance
-/// removed `POST`, `PUT`, and `DELETE /api/v3/userDataStream` on
-/// 2026-02-20 07:00 UTC; the host answers all three with `410 Gone`, measured
-/// 2026-07-31. Spot subscribes over the WebSocket API instead, which needs no
-/// key at all: see [`spot_user_data_subscribe_frame`].
+/// The USD-M endpoint for creating, extending, and closing listen keys.
+/// Spot account streams use a signed WebSocket API request instead.
 const USD_M_LISTEN_KEY_PATH: &str = "/fapi/v1/listenKey";
 
 pub(super) fn balances_request(adapter: &BinanceAdapter) -> Result<HttpRequest> {
@@ -443,7 +436,7 @@ fn history_window(request: &HistoryRequest) -> Result<Vec<(&'static str, String)
 
     let start = match &request.cursor {
         Some(cursor) => Some(decode_cursor(cursor)?),
-        None => request.from.map(Timestamp::as_millis),
+        None => request.from.map(inclusive_millis_at_or_after),
     };
 
     let mut params = Vec::new();
@@ -451,8 +444,9 @@ fn history_window(request: &HistoryRequest) -> Result<Vec<(&'static str, String)
         params.push(("startTime", start.to_string()));
     }
     if let Some(to) = request.to {
-        // Binance's `endTime` is inclusive; `HistoryRequest::to` is not.
-        params.push(("endTime", to.as_millis().saturating_sub(1).to_string()));
+        // Convert the exclusive nanosecond boundary to Binance's inclusive
+        // millisecond `endTime` without discarding a partial millisecond.
+        params.push(("endTime", inclusive_millis_before(to).to_string()));
     }
     params.push(("limit", limit.to_string()));
 
@@ -608,23 +602,9 @@ pub(super) async fn cancel_order(
     parse::order(market, &raw)
 }
 
-/// Reads `/fapi/v3/positionRisk` into positions, flat rows included.
-///
-/// The endpoint opens a zero-amount row for any symbol that merely has a
-/// resting order on it. Measured 2026-07-31 on a funded USD-M account: with one
-/// resting XRPUSDT limit order the endpoint returned one row with `positionAmt`
-/// `0.0`, and cancelling the order emptied it again. Nothing else moved, so a
-/// resting order is the whole of the trigger, and an empty account never shows
-/// it.
-///
-/// Such a row is not an open position and no caller ever sees one:
-/// [`Client::positions`](crate::Client::positions) drops it, on the common API
-/// where the promise is made and where every adapter is held to it. This
-/// reports what Binance said.
-///
-/// Dropping it costs a caller nothing. What it carried beyond the mark price,
-/// which is public, was that an order rests on the symbol, and `open_orders`
-/// says that outright.
+/// Reads `/fapi/v3/positionRisk`, including Binance's zero-size rows.
+/// [`Client::positions`](crate::Client::positions) filters flat rows from the
+/// result exposed to callers.
 pub(super) async fn positions(
     adapter: &BinanceAdapter,
     market: Option<&Market>,
@@ -654,12 +634,7 @@ fn position(adapter: &BinanceAdapter, raw: &RawPosition) -> Result<Position> {
         mark_price: parse::decimal_or_none(&raw.mark_price, "markPrice")?,
         notional: Some(parse::decimal(&raw.notional, "notional")?.abs()),
         unrealized_pnl: Some(parse::decimal(&raw.unrealized_profit, "unRealizedProfit")?),
-        // `/fapi/v3/positionRisk` carries neither. Binance keeps a symbol's
-        // configured leverage and margin mode on `/fapi/v1/symbolConfig`, which
-        // this does not read: it answers per symbol rather than per position,
-        // and fetching it would double the weight of every `positions()` call
-        // for two fields most callers never look at. Reporting them as unknown
-        // beats reporting a stale guess, and `None` is not `1`.
+        // `positionRisk` carries neither field; `None` means unpublished.
         leverage: None,
         margin_mode: None,
     })
@@ -799,14 +774,7 @@ pub(super) async fn set_margin(adapter: &BinanceAdapter, request: &MarginRequest
 // Binance-shaped reads
 // ---------------------------------------------------------------------------
 
-/// One spot order, with the fields the common [`Order`] has no room for.
-///
-/// Two things keep this off the common API. `maxt` reads *open* orders
-/// everywhere, and a lookup by id that also answers for a filled or cancelled
-/// order exists on Binance but not on every exchange behind the common API.
-/// The extra fields also have no counterpart on the other venues: Binance's own
-/// order type spelling, its client order id, and the quote total it
-/// accumulated.
+/// A Spot order lookup, including Binance-specific fields and terminal orders.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct BinanceSpotOrderDetail {
@@ -862,20 +830,12 @@ pub(super) async fn spot_order(
     })
 }
 
-/// The token that opens a USD-M user data stream.
+/// A bearer token for a USD-M user-data stream.
 ///
-/// USD-M authenticates its user data stream by URL. The key is created over
-/// REST and then becomes part of the socket address, which makes it a bearer
-/// secret. [`Debug`] redacts it, so it does not reach a log through a `{:?}` on
-/// the struct that holds it.
-///
-/// A key expires sixty minutes after it was created or last extended. Keep it
-/// alive with [`BinanceAdapter::usd_m_keepalive_listen_key`], or let
-/// [`Client::subscribe_account`](crate::Client::subscribe_account) manage its
-/// own.
-///
-/// Spot never mints one. Its listen key endpoints were removed on
-/// 2026-02-20 07:00 UTC and it subscribes over the WebSocket API instead.
+/// [`Debug`] redacts the value. Keep it alive with
+/// [`BinanceAdapter::usd_m_keepalive_listen_key`], or let
+/// [`Client::subscribe_account`](crate::Client::subscribe_account) manage it.
+/// Spot account streams do not use listen keys.
 #[derive(Clone, PartialEq, Eq)]
 pub struct BinanceListenKey(String);
 
@@ -894,15 +854,7 @@ impl std::fmt::Debug for BinanceListenKey {
     }
 }
 
-/// Creates the USD-M listen key, or extends the account's existing one.
-///
-/// Binance answers `POST` with the account's current key when it already has
-/// one, and pushes its expiry another sixty minutes out either way. The same
-/// call therefore serves as the keepalive below.
-///
-/// Reached on USD-M only. Every caller checks the venue first:
-/// [`BinanceAdapter::usd_m_create_listen_key`] through `check_usd_m`, and
-/// `stream::subscribe_account` by dispatching spot to the WebSocket API.
+/// Creates or extends the account's USD-M listen key.
 pub(super) async fn create_listen_key(adapter: &BinanceAdapter) -> Result<BinanceListenKey> {
     let request = api_key_only(adapter, HttpMethod::Post, USD_M_LISTEN_KEY_PATH, &[])?;
     let body = adapter.send(request).await?;
@@ -946,72 +898,16 @@ pub(super) async fn close_listen_key(
     adapter.send(request).await.map(|_| ())
 }
 
-/// The user data events USD-M is asked for, slash-separated as Binance's own
-/// example spells them.
+/// USD-M account events requested in the socket URL.
 ///
-/// The filter is exhaustive, measured 2026-07-31: a socket whose `events` named
-/// only the two order and balance events was told nothing when the key behind
-/// it was deleted, while sockets naming `listenKeyExpired`, and one naming no
-/// `events` at all, all received the event. So an event `maxt` acts on and does
-/// not name here is an event `maxt` can never receive.
-///
-/// Every event USD-M publishes, and why it is here or is not:
-///
-/// | Event | Named | Why |
-/// | --- | --- | --- |
-/// | `ORDER_TRADE_UPDATE` | yes | an order change, read into [`AccountEvent::Order`](crate::AccountEvent::Order) |
-/// | `ACCOUNT_UPDATE` | yes | a balance change, read into [`AccountEvent::Balance`](crate::AccountEvent::Balance) |
-/// | `listenKeyExpired` | yes | the key behind this socket lapsed, raised as an [`Error::Exchange`](crate::Error::Exchange) so the consumer stops waiting on a stream that has nothing left to say |
-/// | `TRADE_LITE` | no | the same fill `ORDER_TRADE_UPDATE` already carries, sooner and with fewer fields. Naming it would report one fill twice, and the fields `maxt` reads are the ones it drops |
-/// | `MARGIN_CALL` | no | risk guidance, which Binance's own page says not to trade on. `maxt` has no type for it and would drop it |
-/// | `ACCOUNT_CONFIG_UPDATE` | no | leverage and multi-assets mode. `maxt` reports neither: `Position::leverage` and `margin_mode` are always `None` |
-/// | `CONDITIONAL_ORDER_TRIGGER_REJECT` | no | a rejected TP/SL trigger, and `maxt` places no conditional orders |
-/// | `STRATEGY_UPDATE` | no | Binance's own grid strategies, which `maxt` does not create |
-/// | `GRID_UPDATE` | no | a sub-order of one of those strategies, and deprecated on Binance's page |
-/// | `ALGO_UPDATE` | no | an algo order, and `maxt` places none |
-///
-/// Every event above that `maxt` does not name is one `stream::decode_account`
-/// drops on arrival, so naming it would buy frames nothing reads.
-///
-/// `eventStreamTerminated` is absent from the table because USD-M does not
-/// publish it: it ends a WebSocket API session, and only the spot socket has
-/// one. The decoder the two venues share does act on it, so it is the one
-/// event acted on and deliberately not named here.
-///
-/// Both halves are pinned against each other by
-/// `stream::the_usd_m_filter_and_the_decoder_name_the_same_events`.
+/// These are the order, balance, and expiry events consumed by the decoder.
+/// `eventStreamTerminated` is Spot-only and is not requested here.
 pub(super) const USD_M_ACCOUNT_EVENTS: &str = "ORDER_TRADE_UPDATE/ACCOUNT_UPDATE/listenKeyExpired";
 
-/// The URL a USD-M user data stream opens at.
+/// Builds the USD-M `/private` user-data URL.
 ///
-/// The key rides in the query under the `/private` entry point, because Binance
-/// decommissioned the unrouted `/ws` path on 2026-04-23 and states that a
-/// connection naming no entry point stops receiving `/private` channels, in the
-/// same sentence that says it stops receiving `/market` ones.
-///
-/// What is verified and what is not, precisely. Everything below was measured
-/// on 2026-07-31 against a live USD-M account, by opening sockets on one shared
-/// key and then sending `DELETE /fapi/v1/listenKey`, which is the one push a
-/// socket produces on an account that holds nothing and trades nothing:
-///
-/// | Claim | Standing |
-/// | --- | --- |
-/// | The `/market` half of that sentence is true | measured; see `stream::entry_point_url` for frame counts |
-/// | Binance publishes this `/private` form | quoted from the change notice's own worked example |
-/// | This URL carries that account's events | **measured.** Deleting the key pushed `listenKeyExpired` down this exact URL, so the socket was carrying the account rather than merely open |
-/// | The unrouted `/ws/<key>` path is dead | **measured.** The same key on `wss://fstream.binance.com/ws/<key>` was told nothing across the same deletion |
-/// | `events` filters, and filters exhaustively | **measured**, four sockets on one key. No `events` parameter: received. `events=listenKeyExpired`: received. `events=ORDER_TRADE_UPDATE/ACCOUNT_UPDATE/listenKeyExpired`: received. `events=ORDER_TRADE_UPDATE/ACCOUNT_UPDATE`: **not** received |
-/// | `ORDER_TRADE_UPDATE` and `ACCOUNT_UPDATE` arrive | **not tested.** The account holds no balance and nothing was traded, so neither has ever been observed. What the deletion proves is that this socket delivers the events its filter names |
-///
-/// The last row is why the filter is treated as exhaustive rather than as a
-/// hint: the one event that could be provoked was provoked, and the filter
-/// decided it.
-///
-/// A lapsed key is now reported twice over, and both are wanted.
-/// `stream::refresh_listen_key` extends the key over REST and sends its own
-/// failure down the stream, which covers a refresher that cannot reach Binance;
-/// the event covers a key invalidated some other way, which no REST call of
-/// `maxt`'s would notice.
+/// The bearer key is percent-encoded and the requested event names retain `/`
+/// as their separator.
 pub(super) fn usd_m_user_data_stream_url(key: &BinanceListenKey) -> String {
     // The slash between event names is a separator, so it stays literal; only
     // the key is encoded.
@@ -1021,48 +917,11 @@ pub(super) fn usd_m_user_data_stream_url(key: &BinanceListenKey) -> String {
     )
 }
 
-/// The request that subscribes a spot WebSocket API socket to its own account.
+/// Builds a signed Spot account-subscription frame.
 ///
-/// Binance removed the spot listen key on 2026-02-20 07:00 UTC, so there is no
-/// URL to authenticate by any more: the socket opens unauthenticated at
-/// [`SPOT_WEBSOCKET_API_URL`](super::SPOT_WEBSOCKET_API_URL) and this frame
-/// names the account.
-///
-/// Two methods reach the same subscription and only one of them is open to this
-/// key, measured 2026-07-31:
-///
-/// | Method | Result with this HMAC-SHA-256 key |
-/// | --- | --- |
-/// | `session.logon` then `userDataStream.subscribe` | `-2028 HMAC-SHA-256 API key is not supported`, then `-1193 WebSocket session not authenticated` |
-/// | `userDataStream.subscribe.signature` | `{"status":200,"result":{"subscriptionId":0}}` |
-///
-/// So the per-request signature is the path, and session authentication stays
-/// an Ed25519-only alternative `maxt` does not need.
-///
-/// The frame is signed over `params` sorted by name and carries an `id`. Both
-/// are load-bearing: a frame with no `id` is answered by closing the connection
-/// with code 1006, measured 2026-07-31.
-///
-/// Called once per handshake, so a reconnect subscribes with a signature minted
-/// for it rather than the one the first socket used. One signature is only good
-/// for `recvWindow`, and a reconnect loop re-sending an expired one opens socket
-/// after socket that carries nothing: measured 2026-07-31, a frame replayed onto
-/// a socket opened 75 s later was refused `-1021` where a freshly signed one was
-/// answered `{"status":200,"result":{"subscriptionId":0}}`.
-///
-/// `recvWindow` still sets how much of a reconnect's own latency one signature
-/// covers. Measured 2026-07-31 with a frame signed 50 s earlier:
-///
-/// | `recvWindow` | Answer |
-/// | --- | --- |
-/// | absent, so Binance's own 5 000 ms | `-1021 Timestamp for this request is outside of the recvWindow` |
-/// | `60000` | `{"status":200,"result":{"subscriptionId":0}}` |
-///
-/// So it is set to the documented maximum, which is a twelvefold widening for
-/// one field. Past it the frame is refused whatever this says: the same 60 000
-/// against a frame signed 90 s earlier was `-1021` too. A stream that
-/// reconnects after longer reports that refusal rather than resuming, which is
-/// the outcome to subscribe again on.
+/// HMAC-SHA-256 covers the parameters sorted by name. A fresh timestamp and
+/// signature are generated for every handshake, with Binance's 60-second
+/// maximum `recvWindow`.
 pub(super) fn spot_user_data_subscribe_frame(adapter: &BinanceAdapter) -> Result<String> {
     let credentials = adapter.credentials()?;
     let timestamp = now_millis();
@@ -1086,12 +945,7 @@ pub(super) fn spot_user_data_subscribe_frame(adapter: &BinanceAdapter) -> Result
     .to_string())
 }
 
-/// How long Binance will still accept the spot subscribe frame's timestamp.
-///
-/// Binance's documented maximum. Nothing here benefits from a shorter one. The
-/// frame is signed again per handshake, so this is not what bounds an outage any
-/// more; what it bounds is the gap between signing a frame and Binance reading
-/// it, and a shorter window only makes a slow handshake fail for no gain.
+/// Binance's maximum receive window for the signed Spot subscribe frame.
 const SPOT_SUBSCRIBE_RECV_WINDOW_MS: u64 = 60_000;
 
 #[cfg(test)]
@@ -1396,6 +1250,24 @@ mod tests {
                 .iter()
                 .any(|(name, _)| name == API_KEY_HEADER)
         );
+
+        let sub_millisecond_end = HistoryRequest::new(btc_usdt_perp())
+            .to(Timestamp::from_nanos(1_570_636_800_000_000_001));
+        assert!(
+            funding_rates_request(&perp(), &sub_millisecond_end)
+                .expect("a sub-millisecond exclusive end")
+                .target()
+                .contains("endTime=1570636800000")
+        );
+
+        let sub_millisecond_start = HistoryRequest::new(btc_usdt_perp())
+            .from(Timestamp::from_nanos(1_570_608_000_000_000_001));
+        assert!(
+            funding_rates_request(&perp(), &sub_millisecond_start)
+                .expect("a sub-millisecond inclusive start")
+                .target()
+                .contains("startTime=1570608000001")
+        );
     }
 
     #[test]
@@ -1534,11 +1406,7 @@ mod tests {
     fn a_margin_summary_reads_each_figure_off_the_field_that_means_it() {
         // https://developers.binance.com/docs/derivatives/usds-margined-futures/account/rest-api/Account-Information-V3
         //
-        // Chosen so the four totals are all different: an account holding 1,000
-        // USDT, 250 of it posted against open positions, 12.5 of unrealized
-        // profit on top, leaving 750 free. Binance names three of them and the
-        // right one for "posted as margin" is `totalInitialMargin`, the same
-        // quantity Hyperliquid calls `totalMarginUsed`.
+        // Distinct totals make field swaps visible.
         let raw: RawFuturesAccount = parse::json(
             r#"{
               "totalInitialMargin": "250.00000000",
@@ -1625,11 +1493,7 @@ mod tests {
         assert_eq!(crate::client::open_positions(vec![position]).len(), 1);
     }
 
-    /// Captured 2026-07-31 off `GET /fapi/v3/positionRisk` on a funded USD-M
-    /// account holding no position and one resting XRPUSDT limit order. The
-    /// same endpoint on the same account returned `[]` once the order was
-    /// cancelled, and `[]` again on a later read naming the symbol outright, so
-    /// the resting order is the whole of what puts this row there.
+    /// A flat `positionRisk` row associated with a resting order.
     const POSITION_RISK_WITH_A_RESTING_ORDER: &str = r#"[{
       "symbol": "XRPUSDT",
       "positionSide": "BOTH",
@@ -1640,19 +1504,13 @@ mod tests {
       "notional": "0"
     }]"#;
 
-    /// Binance opens a position row for a symbol that has only an order on it,
-    /// and `positions` promises open positions. The row maps cleanly, which is
-    /// why nothing upstream rejects it: it has to be dropped on the way out.
-    ///
-    /// This walks the captured payload the whole way, parser and filter, so
-    /// neither half can be pinned by the other's assumption about it.
+    /// Flat rows decode successfully and are filtered from open positions.
     #[test]
     fn a_symbol_with_only_a_resting_order_is_not_reported_as_a_position() {
         let raw: Vec<RawPosition> = parse::json(POSITION_RISK_WITH_A_RESTING_ORDER, "positionRisk")
             .expect("the captured payload");
 
-        // The row is real and maps: this is not a payload that decodes to
-        // nothing, so an empty answer below is the filter and not the parser.
+        // The parser preserves the row; the common API removes it.
         let mapped = position(&perp(), &raw[0]).expect("a position");
         assert!(mapped.is_flat());
         assert_eq!(mapped.side, None);
@@ -1725,14 +1583,7 @@ mod tests {
         assert_eq!(USD_M_LISTEN_KEY_PATH, "/fapi/v1/listenKey");
     }
 
-    /// Binance removed `POST`, `PUT`, and `DELETE /api/v3/userDataStream` on
-    /// 2026-02-20 07:00 UTC. `POST` was measured answering `410 Gone` with an
-    /// nginx error page on 2026-07-31, before a socket was ever opened, so a
-    /// spot account subscription that reaches for a listen key cannot work at
-    /// all.
-    ///
-    /// This pins that no request `maxt` builds names that path, whichever venue
-    /// it is built for.
+    /// No request builder uses the removed Spot listen-key endpoints.
     #[test]
     fn no_request_reaches_for_the_removed_spot_listen_key_endpoints() {
         let key = BinanceListenKey("listen-key".to_string());
@@ -1753,15 +1604,7 @@ mod tests {
         assert!(!USD_M_LISTEN_KEY_PATH.contains("userDataStream"));
     }
 
-    /// A spot subscription is a signed request on the WebSocket API, not a URL
-    /// carrying a listen key.
-    ///
-    /// Every field here was measured against a live HMAC-SHA-256 key on
-    /// 2026-07-31: the method, because `session.logon` answers `-2028
-    /// HMAC-SHA-256 API key is not supported`; the `id`, because a frame
-    /// without one is answered by closing the connection with code 1006; and
-    /// the signature's payload order, because Binance signs `params` sorted by
-    /// name and a wrong order is answered `-1022`.
+    /// Spot subscribes with a per-request HMAC signature, not a listen-key URL.
     #[test]
     fn the_spot_subscribe_frame_is_signed_over_its_parameters_in_binances_own_order() {
         let frame = spot_user_data_subscribe_frame(&spot()).expect("credentials are set");
@@ -1791,8 +1634,7 @@ mod tests {
         .expect("a signature");
         assert_eq!(parsed["params"]["signature"], expected);
 
-        // A frame signed 50 s earlier is refused without this and accepted with
-        // it, so it sets how long an outage the stream can reconnect through.
+        // Binance's documented maximum receive window.
         assert_eq!(parsed["params"]["recvWindow"], 60_000);
     }
 
@@ -1804,18 +1646,7 @@ mod tests {
         ));
     }
 
-    /// USD-M user data moved to `/private` with the key in the query. A URL on
-    /// the decommissioned unrouted path opens and is never told anything, the
-    /// same way `Feed::Ticker` was, so the shape is worth pinning rather than
-    /// leaving to a string literal nobody rereads.
-    ///
-    /// Which events the query names is not pinned here. Asserting that the URL
-    /// contains `USD_M_ACCOUNT_EVENTS` compares the constant to the format
-    /// string it was interpolated into and holds for any value of it, garbage
-    /// included. The event list is pinned literally by
-    /// `a_listen_key_stays_out_of_a_debug_line_and_goes_into_the_stream_url`
-    /// and against the decoder by
-    /// `stream::the_usd_m_filter_and_the_decoder_name_the_same_events`.
+    /// USD-M user data uses the `/private` entry point and a literal event separator.
     #[test]
     fn the_usd_m_account_socket_names_an_entry_point_and_leaves_the_separator_literal() {
         let key = BinanceListenKey("listen-key".to_string());

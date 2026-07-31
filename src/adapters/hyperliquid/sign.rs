@@ -1,19 +1,8 @@
-//! Signing a Hyperliquid action with a wallet key.
+//! Hyperliquid action encoding and local wallet signing.
 //!
-//! Hyperliquid is an exchange on a chain, so a private request is a signed
-//! transaction rather than a header and a secret. The signing key never leaves
-//! this process. What goes on the wire is the action, a nonce, and a secp256k1
-//! signature over an EIP-712 digest.
-//!
-//! The digest is built in three steps, and all three have to match Hyperliquid
-//! byte for byte or the recovered address is somebody else's:
-//!
-//! 1. The action is encoded as **msgpack**, with map keys in declaration order.
-//! 2. Those bytes, plus the nonce and the vault flag, are hashed with Keccak-256
-//!    into the *action hash*.
-//! 3. The action hash becomes the `connectionId` of an EIP-712 `Agent` struct,
-//!    signed under a fixed `Exchange` domain on chain id 1337. That id is a
-//!    constant, not the chain the order settles on.
+//! Actions are encoded as named-key msgpack, hashed with the nonce and vault
+//! flag, and signed as an EIP-712 `Agent` with secp256k1. The private key is used
+//! only inside this module; requests contain the action, nonce, and signature.
 
 use k256::ecdsa::SigningKey;
 use serde::Serialize;
@@ -24,15 +13,12 @@ use crate::error::{Error, Result};
 use super::HyperliquidNetwork;
 use super::parse::EXCHANGE;
 
-/// The EIP-712 chain id Hyperliquid signs L1 actions under.
-///
-/// Fixed at 1337 regardless of network. Testnet and mainnet are told apart by
-/// the `Agent`'s `source` field instead.
+/// Fixed EIP-712 chain id for L1 action signatures.
+/// Network separation is encoded by the `Agent.source` field.
 const AGENT_CHAIN_ID: u64 = 1337;
 
 impl HyperliquidNetwork {
-    /// The `source` an EIP-712 `Agent` carries, which is what separates a
-    /// mainnet signature from a testnet one.
+    /// EIP-712 `Agent.source` value for network separation.
     const fn agent_source(self) -> &'static str {
         match self {
             Self::Mainnet => "a",
@@ -45,11 +31,8 @@ impl HyperliquidNetwork {
 // Actions
 // ---------------------------------------------------------------------------
 
-/// One order in an `order` action.
-///
-/// The single-letter names are Hyperliquid's, and their *order* is part of the
-/// contract: msgpack preserves declaration order, and the action hash is taken
-/// over those bytes.
+/// One wire order in an `order` action.
+/// Field declaration order is preserved by named-key msgpack and affects the hash.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub(crate) struct OrderWire {
     /// Asset id.
@@ -66,10 +49,7 @@ pub(crate) struct OrderWire {
     pub(crate) t: OrderKind,
 }
 
-/// The `t` of an order.
-///
-/// Only the limit shape is modelled: Hyperliquid has no market order type, and
-/// its trigger orders carry a shape the common API cannot express.
+/// Limit-order payload stored under the wire field `t`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub(crate) struct OrderKind {
     pub(crate) limit: LimitKind,
@@ -88,8 +68,7 @@ pub(crate) struct OrderAction {
     #[serde(rename = "type")]
     pub(crate) action_type: &'static str,
     pub(crate) orders: Vec<OrderWire>,
-    /// `na` for a plain order. The other groupings attach take-profit and
-    /// stop-loss legs, which the common API does not model.
+    /// `na` for an ungrouped order.
     pub(crate) grouping: &'static str,
 }
 
@@ -131,10 +110,7 @@ impl CancelAction {
     }
 }
 
-/// An `updateLeverage` action.
-///
-/// Hyperliquid sets leverage and margin mode together in one action, so neither
-/// can be changed without stating the other.
+/// An `updateLeverage` action carrying leverage and margin mode together.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub(crate) struct LeverageAction {
     #[serde(rename = "type")]
@@ -169,10 +145,8 @@ pub(crate) struct Signature {
     pub(crate) v: u8,
 }
 
-/// Reads a hex private key into a signing key.
-///
-/// Accepts it with or without the `0x` prefix. The key is only ever used to
-/// sign locally; nothing here can transmit it.
+/// Parses a 32-byte hexadecimal secp256k1 private key.
+/// The `0x` prefix is optional.
 pub(crate) fn signing_key(private_key: &str) -> Result<SigningKey> {
     let text = private_key.trim();
     let text = text.strip_prefix("0x").unwrap_or(text);
@@ -189,11 +163,7 @@ pub(crate) fn signing_key(private_key: &str) -> Result<SigningKey> {
         .map_err(|err| Error::auth(format!("not a valid secp256k1 key: {err}")))
 }
 
-/// The Ethereum address a signing key controls.
-///
-/// The low twenty bytes of the Keccak-256 hash of the uncompressed public key,
-/// minus its leading tag byte. Only used to prove, in tests, that the key
-/// handling agrees with Hyperliquid's documented example wallet.
+/// Derives the Ethereum address for a signing-key test vector.
 #[cfg(test)]
 pub(crate) fn address_of(key: &SigningKey) -> String {
     let public = key.verifying_key().to_encoded_point(false);
@@ -202,18 +172,12 @@ pub(crate) fn address_of(key: &SigningKey) -> String {
     format!("0x{}", hex::encode(&hash[12..]))
 }
 
-/// Hashes an action the way Hyperliquid's L1 does.
-///
-/// The msgpack bytes come first, then the nonce as eight big-endian bytes, then
-/// a single byte saying whether a vault address follows. Getting the trailing
-/// byte wrong produces a valid signature over the wrong thing, which the
-/// exchange rejects as coming from an unknown address.
+/// Hashes named-key msgpack, an eight-byte big-endian nonce, and the vault flag.
 fn action_hash(action_bytes: &[u8], nonce: u64) -> [u8; 32] {
     let mut data = Vec::with_capacity(action_bytes.len() + 9);
     data.extend_from_slice(action_bytes);
     data.extend_from_slice(&nonce.to_be_bytes());
-    // `maxt` signs for the wallet itself, never for a vault or a subaccount, so
-    // the vault flag is always absent.
+    // Vault signing is not exposed, so the optional-vault flag is false.
     data.push(0);
 
     keccak(&data)
@@ -253,19 +217,15 @@ fn keccak(input: &[u8]) -> [u8; 32] {
     Keccak256::digest(input).into()
 }
 
-/// Builds the `/exchange` request body for an action: the action itself, the
-/// nonce it was signed with, and the signature.
-///
-/// The nonce is a millisecond timestamp, and Hyperliquid rejects one it has
-/// already seen or one too far from its own clock.
+/// Builds an `/exchange` body containing the action, millisecond nonce, and
+/// EIP-712 signature.
 pub(crate) fn signed_body<A: Serialize>(
     action: &A,
     private_key: &str,
     nonce: u64,
     network: HyperliquidNetwork,
 ) -> Result<String> {
-    // msgpack, not JSON: the action hash is taken over the msgpack encoding,
-    // and `to_vec_named` is what keeps the keys as names rather than positions.
+    // Named-key msgpack is the signed representation.
     let action_bytes = rmp_serde::to_vec_named(action)
         .map_err(|err| Error::decode(format!("could not encode hyperliquid action: {err}")))?;
     let digest = agent_digest(action_hash(&action_bytes, nonce), network.agent_source());
@@ -295,8 +255,7 @@ fn sign(private_key: &str, digest: [u8; 32]) -> Result<Signature> {
     })
 }
 
-/// Writes a signature scalar the way Ethereum tooling does: `0x`, then the
-/// digits with leading zeros dropped.
+/// Formats a signature scalar as minimal `0x`-prefixed hexadecimal.
 fn scalar_hex(bytes: &[u8]) -> String {
     let encoded = hex::encode(bytes);
     let trimmed = encoded.trim_start_matches('0');
@@ -308,12 +267,9 @@ fn scalar_hex(bytes: &[u8]) -> String {
     }
 }
 
-/// Checks a wallet before its first request leaves the process.
-///
-/// Returns the account address, lowercased, which is the casing every `/info`
-/// query needs. The key is only parsed, never compared against the address.
-/// Hyperliquid lets an approved *API wallet* sign for an account it does not
-/// own, so a derived address that differs is the normal safe setup.
+/// Validates the account-address shape and signing key, then lowercases the
+/// address. The key is not required to derive the account address because an
+/// approved API wallet may sign for another account.
 pub(crate) fn check_wallet(address: &str, private_key: &str) -> Result<String> {
     let lowered = address.trim().to_ascii_lowercase();
     let is_address = lowered.len() == 42
@@ -329,10 +285,7 @@ pub(crate) fn check_wallet(address: &str, private_key: &str) -> Result<String> {
     Ok(lowered)
 }
 
-/// Reads the address a signature came from, given the digest it signed.
-///
-/// Only used to prove, in tests, that the whole chain agrees with itself:
-/// msgpack, action hash, EIP-712 digest, recovery id.
+/// Recovers an Ethereum address from a digest and signature in tests.
 #[cfg(test)]
 pub(crate) fn recover(digest: [u8; 32], signature: &Signature) -> Result<String> {
     use k256::ecdsa::{RecoveryId, VerifyingKey};
@@ -365,7 +318,7 @@ pub(crate) fn recover(digest: [u8; 32], signature: &Signature) -> Result<String>
     ))
 }
 
-/// The complaint a private call makes when no wallet was supplied.
+/// Builds the authentication error returned when no wallet is configured.
 pub(crate) fn missing_wallet() -> Error {
     Error::auth(format!(
         "{EXCHANGE} signs private requests with a wallet; build the adapter with `with_wallet`"
@@ -376,9 +329,7 @@ pub(crate) fn missing_wallet() -> Error {
 mod tests {
     use super::*;
 
-    /// The example key from Hyperliquid's own SDK documentation, and the
-    /// address it controls. Publishing it is safe. It holds nothing, and it is
-    /// the vector every Hyperliquid client checks its key handling against.
+    /// Public SDK test vector. Never use this key outside tests.
     ///
     /// https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint
     const TEST_KEY: &str = "0x0123456789012345678901234567890123456789012345678901234567890123";
@@ -402,19 +353,14 @@ mod tests {
         let key = signing_key(TEST_KEY).expect("a documented key");
 
         assert_eq!(address_of(&key), TEST_ADDRESS);
-        // The `0x` prefix is optional and must not change the answer.
+        // The optional prefix does not affect the derived address.
         assert_eq!(
             address_of(&signing_key(&TEST_KEY[2..]).expect("the same key")),
             TEST_ADDRESS
         );
     }
 
-    /// One order, at one nonce, whose action hash Hyperliquid's own reference
-    /// client publishes.
-    ///
-    /// Asset 4, buying 0.0147 at 1670.1, immediate-or-cancel. The numbers are
-    /// already in the text form the wire carries, because rounding them is the
-    /// caller's job and not this file's.
+    /// Order from the reference client's published action-hash vector.
     fn published_order() -> OrderAction {
         OrderAction::new(OrderWire {
             a: 4,
@@ -428,24 +374,16 @@ mod tests {
         })
     }
 
-    /// The nonce [`published_order`] was published at.
+    /// Nonce used by the published action-hash vector.
     const PUBLISHED_NONCE: u64 = 1_677_777_606_040;
 
-    /// The `connectionId` Hyperliquid's reference Python client publishes for
-    /// [`published_order`] at [`PUBLISHED_NONCE`].
+    /// Expected action hash for [`published_order`] at [`PUBLISHED_NONCE`].
     const PUBLISHED_ACTION_HASH: &str =
         "0fcbeda5ae3c4950a548021552a4fea2226858c4453571bf3f24ba017eac2908";
 
     #[test]
     fn the_published_action_hash_comes_out_byte_for_byte() {
-        // Hyperliquid's reference Python client asserts that this action at
-        // this nonce becomes this `connectionId`, in
-        // `tests/signing_test.py::test_phantom_agent_creation_matches_production`.
-        // Nothing in `maxt` produced the digits below, which is the point: they
-        // pin the msgpack encoding, the key order inside it, the eight
-        // big-endian nonce bytes and the trailing vault flag to what the chain
-        // hashes. A signature over a wrong hash is still a valid signature, and
-        // recovers to an address that is not the wallet's.
+        // Independent vector covers msgpack order, nonce bytes, and vault flag.
         let bytes = rmp_serde::to_vec_named(&published_order()).expect("an encodable action");
 
         assert_eq!(
@@ -456,18 +394,8 @@ mod tests {
 
     #[test]
     fn the_signed_body_signs_the_nonce_it_sends() {
-        // Every signature vector the reference client publishes is taken at
-        // nonce 0, where a `signed_body` that hashed the wrong nonce is
-        // invisible: all nine `sign_l1_action` cases in its `tests/signing_test.py`
-        // pass `timestamp=0`. So this drives `signed_body` at the one nonzero
-        // nonce Hyperliquid does publish an answer for, and checks the answer
-        // the published digits already fix rather than recording new ones.
-        //
-        // The digest below is rebuilt from `PUBLISHED_ACTION_HASH`, not from
-        // this file's `action_hash`. A `signed_body` that hashed any other
-        // nonce signs a different digest, and recovering that signature against
-        // this one hands back an address that is not the wallet's, which is
-        // exactly how Hyperliquid rejects it.
+        // Recover against the independent nonzero-nonce hash, not a hash
+        // produced by the implementation under test.
         let mut published = [0u8; 32];
         published.copy_from_slice(&hex::decode(PUBLISHED_ACTION_HASH).expect("published hex"));
 
@@ -493,14 +421,8 @@ mod tests {
 
     #[test]
     fn the_published_signature_comes_out_scalar_for_scalar() {
-        // The same reference client, `test_l1_action_signing_order_matches`:
-        // the documented key, asset 1, buying 100 at 100 good-till-cancelled,
-        // nonce 0, signed for each network. This carries the whole chain: the
-        // action hash, the `Agent` type hash, the `Exchange` domain on chain id
-        // 1337, the source that separates the networks, and the 27 offset on
-        // the recovery id. It runs through [`signed_body`] rather than around
-        // it, so the msgpack call the wire actually uses is covered too. Break
-        // any one step and these digits change.
+        // Reference signatures cover action encoding, EIP-712 domain, network
+        // source, and recovery-id formatting.
         let action = OrderAction::new(OrderWire {
             a: 1,
             b: true,
@@ -543,10 +465,7 @@ mod tests {
 
     #[test]
     fn a_signature_recovers_to_the_wallet_that_made_it() {
-        // Weaker than the two vectors above and not a substitute for them: both
-        // sides read the same digest, so this would still pass with every step
-        // that built it wrong. What it does cover is the round trip `recover`
-        // itself makes, which the network-separation test below relies on.
+        // This isolates signature recovery from the independent vectors above.
         let bytes = rmp_serde::to_vec_named(&order()).expect("an encodable action");
         let digest = agent_digest(action_hash(&bytes, 1_700_000_000_000), "a");
         let signature = sign(TEST_KEY, digest).expect("a signature");
@@ -556,8 +475,7 @@ mod tests {
 
     #[test]
     fn mainnet_and_testnet_signatures_are_not_interchangeable() {
-        // The `source` is the only thing separating them, so a testnet signature
-        // must not recover on mainnet's digest.
+        // Different `source` values produce non-interchangeable digests.
         let bytes = rmp_serde::to_vec_named(&order()).expect("an encodable action");
         let hash = action_hash(&bytes, 1_700_000_000_000);
         let mainnet = agent_digest(hash, HyperliquidNetwork::Mainnet.agent_source());
@@ -581,8 +499,7 @@ mod tests {
 
     #[test]
     fn an_action_is_msgpacked_as_named_keys_in_declaration_order() {
-        // Positional encoding would msgpack this as nested arrays, and every
-        // hash below it would be wrong while still looking like a signature.
+        // Positional msgpack would encode arrays instead of named maps.
         let bytes = rmp_serde::to_vec_named(&order()).expect("an encodable action");
         let readable: serde_json::Value =
             rmp_serde::from_slice(&bytes).expect("a map, not an array");
@@ -595,7 +512,7 @@ mod tests {
         assert_eq!(readable["orders"][0]["s"], "1.2345");
         assert_eq!(readable["orders"][0]["r"], false);
         assert_eq!(readable["orders"][0]["t"]["limit"]["tif"], "Gtc");
-        // The first byte of a msgpack map is 0x80 | len; an array would be 0x9n.
+        // A three-field msgpack map starts with `0x83`.
         assert_eq!(bytes[0], 0x83);
     }
 
@@ -619,16 +536,14 @@ mod tests {
                 .as_str()
                 .is_some_and(|r| r.starts_with("0x"))
         );
-        // The key itself never reaches the wire.
+        // The request body contains no private-key material.
         assert!(!body.contains(TEST_KEY));
         assert!(!body.contains(&TEST_KEY[2..]));
     }
 
     #[test]
     fn signing_is_deterministic_so_a_retry_sends_the_identical_bytes() {
-        // secp256k1 with a deterministic nonce: the same action and the same
-        // Hyperliquid nonce must produce byte-identical requests, or a retried
-        // order could be signed two different ways.
+        // Identical inputs produce byte-identical signed requests.
         let first =
             signed_body(&order(), TEST_KEY, 42, HyperliquidNetwork::Mainnet).expect("a body");
         let second =

@@ -10,24 +10,9 @@ use crate::types::{
     MarketKind, Order, OrderBook, Page, Position, StreamConfig, Subscription, Ticker, Trade,
 };
 
-/// Everything the supported exchanges have in common, in one type.
+/// The common API over one exchange adapter.
 ///
-/// Wrap an adapter and the calls below mean the same thing whichever exchange
-/// is underneath. Exchange-specific behaviour stays off the common API, where
-/// flattening it would change what it means. To reach it, use
-/// [`Client::adapter`] and call that adapter's own typed methods.
-///
-/// ```no_run
-/// use maxt::{Client, Exchange, Market, adapters::UpbitAdapter};
-///
-/// # async fn run() -> maxt::Result<()> {
-/// let client = Client::new(UpbitAdapter::new());
-/// let ticker = client.ticker(&Market::spot(Exchange::Upbit, "BTC", "KRW")).await?;
-///
-/// println!("{}", ticker.last_price);
-/// # Ok(())
-/// # }
-/// ```
+/// Exchange-specific operations are available through [`Client::adapter`].
 #[derive(Debug, Clone)]
 pub struct Client<A> {
     adapter: A,
@@ -36,146 +21,46 @@ pub struct Client<A> {
 impl<A: Adapter> Client<A> {
     /// Wraps an adapter.
     ///
-    /// Credentials belong on the adapter, since each exchange issues a
-    /// different pair of them. An adapter built without any serves public
-    /// market data.
-    ///
-    /// ```
-    /// use maxt::{Client, Feature, adapters::UpbitAdapter};
-    ///
-    /// // Keys come from the environment. An absent key yields a public client.
-    /// let adapter = match (std::env::var("UPBIT_ACCESS_KEY"), std::env::var("UPBIT_SECRET_KEY")) {
-    ///     (Ok(access), Ok(secret)) => UpbitAdapter::new().with_credentials(access, secret),
-    ///     _ => UpbitAdapter::new(),
-    /// };
-    /// let client = Client::new(adapter);
-    ///
-    /// // True either way: reading a ticker needs no key.
-    /// assert!(client.supports(Feature::Ticker));
-    /// ```
+    /// Credentials are configured on the adapter before it is wrapped.
     pub fn new(adapter: A) -> Self {
         Self { adapter }
     }
 
     /// Which exchange this client talks to.
     ///
-    /// This names the exchange, not the venue. Binance spot and Binance USD-M
-    /// futures are two adapters that answer the same way here, and are told
-    /// apart by the [`MarketKind`] of the markets they trade.
-    ///
-    /// ```
-    /// use maxt::{Client, Exchange, adapters::BinanceAdapter};
-    ///
-    /// let spot = Client::new(BinanceAdapter::spot());
-    /// let perp = Client::new(BinanceAdapter::usd_m_futures());
-    ///
-    /// assert_eq!(spot.exchange(), Exchange::Binance);
-    /// assert_eq!(perp.exchange(), spot.exchange());
-    /// assert_eq!(spot.exchange().id(), "binance");
-    /// ```
+    /// This identifies the exchange, not an exchange-specific venue. For
+    /// example, both Binance spot and Binance USD-M return [`Exchange::Binance`].
     pub fn exchange(&self) -> Exchange {
         self.adapter.exchange()
     }
 
-    /// Whether this client offers a feature.
+    /// Whether this configured client offers a feature.
     ///
-    /// Ask here when the answer should change what your program does. Calling
-    /// an unsupported feature returns
-    /// [`Error::Unsupported`](crate::Error::Unsupported).
-    ///
-    /// ```
-    /// use maxt::{Client, Feed, Feature, Interval, Subscription, adapters::BithumbAdapter};
-    ///
-    /// let client = Client::new(BithumbAdapter::new());
-    ///
-    /// // Bithumb publishes no candle stream, so live candles there have to be
-    /// // aggregated from trades.
-    /// let feed = if client.supports(Feature::CandleStream) {
-    ///     Feed::Candles(Interval::Min1)
-    /// } else {
-    ///     Feed::Trades
-    /// };
-    /// let subscription = Subscription::new().feed(feed);
-    ///
-    /// assert_eq!(subscription.feeds(), [Feed::Trades]);
-    /// ```
+    /// Credential-dependent features return `false` until credentials are
+    /// configured. A call may still fail for request-specific validation or an
+    /// exchange-side rejection.
     pub fn supports(&self, feature: Feature) -> bool {
         self.adapter.supports(feature)
     }
 
-    /// The underlying adapter, for the exchange's own typed calls.
-    ///
-    /// What the common API has no shape for stays here: Upbit's batched book
-    /// reads, Bithumb's caution labels, Hyperliquid's ledger. Reaching for the
-    /// adapter is the supported way to use them.
-    ///
-    /// ```
-    /// use maxt::{Client, adapters::{BinanceAdapter, BinanceMarket}};
-    ///
-    /// let client = Client::new(BinanceAdapter::usd_m_futures());
-    ///
-    /// // `venue` exists on the adapter alone: no other exchange splits its
-    /// // markets across two hosts this way.
-    /// assert_eq!(client.adapter().venue(), BinanceMarket::UsdMFutures);
-    /// ```
+    /// The underlying adapter, for exchange-specific operations.
     pub fn adapter(&self) -> &A {
         &self.adapter
     }
 
-    /// Unwraps back to the adapter.
-    ///
-    /// Adapters take their credentials by value, so this is how a public client
-    /// becomes an authenticated one without being rebuilt from scratch.
-    ///
-    /// ```
-    /// use maxt::{Client, Feature, adapters::BithumbAdapter};
-    ///
-    /// let public = Client::new(BithumbAdapter::new());
-    /// assert!(!public.supports(Feature::Trading));
-    ///
-    /// let trading = Client::new(public.into_adapter().with_credentials("access", "secret"));
-    /// assert!(trading.supports(Feature::Trading));
-    /// ```
+    /// Unwraps this client and returns its adapter.
     pub fn into_adapter(self) -> A {
         self.adapter
     }
 
     /// Lists the exchange's markets of one kind.
     ///
-    /// A spot-only exchange returns an empty list for
-    /// [`MarketKind::Perpetual`]. The question is meaningful there, and the
-    /// answer is "none".
-    ///
-    /// ```no_run
-    /// use maxt::{Client, MarketKind, MarketStatus, adapters::UpbitAdapter};
-    ///
-    /// # async fn run() -> maxt::Result<()> {
-    /// let client = Client::new(UpbitAdapter::new());
-    ///
-    /// let krw: Vec<_> = client
-    ///     .markets(MarketKind::Spot)
-    ///     .await?
-    ///     .into_iter()
-    ///     // A listing is not a promise that it trades right now.
-    ///     .filter(|info| info.market.quote == "KRW" && info.status == MarketStatus::Active)
-    ///     .collect();
-    ///
-    /// for info in &krw {
-    ///     // `market` is what other calls take; `native_symbol` is what the
-    ///     // exchange's own UI calls the same thing.
-    ///     println!("{} is {} upstream", info.market, info.native_symbol);
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
+    /// A venue that lists none of the requested kind returns an empty vector.
     pub async fn markets(&self, kind: MarketKind) -> Result<Vec<MarketInfo>> {
         self.adapter.markets(kind).await
     }
 
     /// Reads the most recent trades on a market, newest first.
-    ///
-    /// Newest first on every adapter that offers this at all, whatever order
-    /// the exchange sent.
     ///
     /// # Errors
     ///
@@ -184,31 +69,7 @@ impl<A: Adapter> Client<A> {
     /// than a short answer, and the ceiling is not the same everywhere: 1 000 on
     /// Binance, 500 on Upbit and Bithumb, 10 on Hyperliquid, whose endpoint takes
     /// no count at all. Leave `limit` unset to take whatever the exchange sends.
-    /// A window wider than that is [`Feed::Trades`](crate::Feed).
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// use maxt::{Client, Exchange, Market, Side, adapters::BinanceAdapter};
-    ///
-    /// # async fn run() -> maxt::Result<()> {
-    /// let client = Client::new(BinanceAdapter::spot());
-    /// let market = Market::spot(Exchange::Binance, "BTC", "USDT");
-    ///
-    /// let trades = client.trades(&market, Some(100)).await?;
-    ///
-    /// // Newest first, so the head is the last print. No sorting needed.
-    /// if let Some(latest) = trades.first() {
-    ///     println!("{} at {}", latest.price, latest.timestamp);
-    /// }
-    ///
-    /// // `taker_side` is the aggressor's side, the same convention on every
-    /// // supported exchange, so it compares across them.
-    /// let bought = trades.iter().filter(|trade| trade.taker_side == Side::Buy).count();
-    /// println!("{bought} of {} lifted an ask", trades.len());
-    /// # Ok(())
-    /// # }
-    /// ```
+    /// A continuous history is available through [`Feed::Trades`](crate::Feed).
     pub async fn trades(&self, market: &Market, limit: Option<u32>) -> Result<Vec<Trade>> {
         self.adapter.trades(market, limit).await
     }
@@ -220,77 +81,18 @@ impl<A: Adapter> Client<A> {
     /// # Errors
     ///
     /// A depth the exchange cannot serve is refused with
-    /// [`Error::InvalidRequest`](crate::Error::InvalidRequest). Binance serves
-    /// a fixed set of depths, so asking it for 30 levels fails instead of
-    /// returning 50. Each provider page lists what its exchange accepts.
+    /// [`Error::InvalidRequest`](crate::Error::InvalidRequest). Providers may
+    /// accept a range or a fixed set; each provider page lists its limits.
     ///
-    /// # Examples
-    ///
-    /// ```
-    /// use maxt::{Client, Error, Exchange, Market, adapters::BinanceAdapter};
-    ///
-    /// #[tokio::main]
-    /// async fn main() {
-    ///     let client = Client::new(BinanceAdapter::spot());
-    ///     let market = Market::spot(Exchange::Binance, "BTC", "USDT");
-    ///
-    ///     // Refused locally, before a request is sent: 30 is not one of the
-    ///     // depths Binance serves.
-    ///     let rejected = client.order_book(&market, Some(30)).await;
-    ///     assert!(matches!(rejected, Err(Error::InvalidRequest { field: "depth", .. })));
-    /// }
-    /// ```
-    ///
-    /// Pass `None` for the exchange's own default depth, which every exchange
-    /// accepts.
-    ///
-    /// ```no_run
-    /// use maxt::{Client, Exchange, Market, adapters::BinanceAdapter};
-    ///
-    /// # async fn run() -> maxt::Result<()> {
-    /// let client = Client::new(BinanceAdapter::spot());
-    /// let book = client
-    ///     .order_book(&Market::spot(Exchange::Binance, "BTC", "USDT"), None)
-    ///     .await?;
-    ///
-    /// // Both sides are best-first, so the top of book is the front of each.
-    /// if let (Some(bid), Some(ask)) = (book.best_bid(), book.best_ask()) {
-    ///     println!("{} / {}", bid.price, ask.price);
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
+    /// Pass `None` for the exchange's default depth. Returned bids and asks are
+    /// best-first; see [`OrderBook`](crate::OrderBook).
     pub async fn order_book(&self, market: &Market, depth: Option<u32>) -> Result<OrderBook> {
         self.adapter.order_book(market, depth).await
     }
 
-    /// Reads a market's rolling 24-hour summary.
+    /// Reads a provider ticker summary for one market.
     ///
-    /// ```no_run
-    /// use maxt::{Client, Exchange, Market, adapters::HyperliquidAdapter};
-    ///
-    /// # async fn run() -> maxt::Result<()> {
-    /// let client = Client::new(HyperliquidAdapter::new());
-    /// let ticker = client
-    ///     .ticker(&Market::perpetual(Exchange::Hyperliquid, "BTC", "USDC"))
-    ///     .await?;
-    ///
-    /// // Hyperliquid publishes no clock with its summaries, so `timestamp` is
-    /// // the read time there and says nothing about when the price traded.
-    /// // `last_trade_time` stays `None`.
-    /// match ticker.last_trade_time {
-    ///     Some(traded_at) => println!("{} as of {traded_at}", ticker.last_price),
-    ///     None => println!("{} (age unknown, read at {})", ticker.last_price, ticker.timestamp),
-    /// }
-    ///
-    /// // Anything the exchange does not report stays `None`. A market that
-    /// // truly traded nothing reports `Some(0)`.
-    /// if let Some(volume) = ticker.volume {
-    ///     println!("{volume} traded");
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
+    /// Fields the exchange does not publish are `None`; see [`Ticker`].
     pub async fn ticker(&self, market: &Market) -> Result<Ticker> {
         self.adapter.ticker(market).await
     }
@@ -298,43 +100,11 @@ impl<A: Adapter> Client<A> {
     /// Reads historical candles, oldest first.
     ///
     /// [`CandleRequest::limit`] is honoured past what one response can carry.
-    /// `maxt` pages to reach it, so a five-hundred-candle backfill is one call
-    /// here whatever the exchange's per-response cap is.
+    /// `maxt` pages internally up to one hundred exchange calls.
     ///
-    /// Paging is bounded. A request needing more than a hundred calls, whether
-    /// a `from` far in the past with no `limit` or a `limit` past a hundred
-    /// pages, is refused as
+    /// A request estimated to exceed that bound returns
     /// [`Error::InvalidRequest`](crate::Error::InvalidRequest) before the first
-    /// call, naming the field and the ceiling. Read a long history by looping
-    /// on `from` with a `limit`, as the example below does.
-    ///
-    /// ```no_run
-    /// use maxt::{CandleRequest, Client, Exchange, Interval, Market, Timestamp, adapters::UpbitAdapter};
-    ///
-    /// # async fn run() -> maxt::Result<()> {
-    /// let client = Client::new(UpbitAdapter::new());
-    /// let market = Market::spot(Exchange::Upbit, "BTC", "KRW");
-    ///
-    /// // With `from` set, `limit` counts forward: the oldest 500 candles at or
-    /// // after that instant.
-    /// let mut cursor = Timestamp::from_millis(1_700_000_000_000);
-    /// let batch = client
-    ///     .candles(&CandleRequest::new(market.clone(), Interval::Min1).from(cursor).limit(500))
-    ///     .await?;
-    ///
-    /// // Oldest first, so the last candle is where the next batch starts.
-    /// if let Some(newest) = batch.last() {
-    ///     cursor = newest.open_time;
-    /// }
-    ///
-    /// // Without `from`, the same `limit` counts back from now instead.
-    /// let latest = client
-    ///     .candles(&CandleRequest::new(market, Interval::Hour1).limit(24))
-    ///     .await?;
-    /// println!("{} candles, resuming at {cursor}", latest.len());
-    /// # Ok(())
-    /// # }
-    /// ```
+    /// exchange call. Use bounded `from`/`limit` batches for longer histories.
     pub async fn candles(&self, request: &CandleRequest) -> Result<Vec<Candle>> {
         self.adapter.candles(request).await
     }
@@ -342,71 +112,17 @@ impl<A: Adapter> Client<A> {
     /// Opens a live market data subscription with default connection settings.
     ///
     /// Use [`Client::subscribe_with`] to change reconnect and buffering
-    /// behaviour.
-    ///
-    /// ```no_run
-    /// use futures_util::StreamExt;
-    /// use maxt::{Client, Exchange, Feed, Market, MarketEvent, Subscription, adapters::UpbitAdapter};
-    ///
-    /// # async fn run() -> maxt::Result<()> {
-    /// let client = Client::new(UpbitAdapter::new());
-    /// let subscription = Subscription::new()
-    ///     .market(Market::spot(Exchange::Upbit, "BTC", "KRW"))
-    ///     .feed(Feed::Trades);
-    ///
-    /// let mut stream = client.subscribe(&subscription).await?;
-    ///
-    /// while let Some(event) = stream.next().await {
-    ///     match event {
-    ///         Ok(MarketEvent::Trade(trade)) => println!("{} {}", trade.price, trade.quantity),
-    ///         Ok(MarketEvent::Reconnected) => println!("gap: anything sent while down was missed"),
-    ///         Ok(_) => {}
-    ///         // An error is a report, not the end: the subscription may
-    ///         // recover on its own. Only `None` means nothing more is coming.
-    ///         Err(error) => eprintln!("{error}"),
-    ///     }
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
+    /// behaviour. See [`MarketStream`] for item and termination semantics.
     pub async fn subscribe(&self, subscription: &Subscription) -> Result<MarketStream> {
         self.subscribe_with(subscription, &StreamConfig::default())
             .await
     }
 
-    /// Opens a live market data subscription.
+    /// Opens a live market data subscription with explicit connection settings.
     ///
-    /// ```no_run
-    /// use maxt::{
-    ///     Client, Exchange, Feed, Market, Overflow, StreamConfig, Subscription,
-    ///     adapters::BinanceAdapter,
-    /// };
-    ///
-    /// # async fn run() -> maxt::Result<()> {
-    /// let config = StreamConfig {
-    ///     // The default. A dropped trade is gone: no later event restates
-    ///     // it, so a volume total computed from the rest is silently short.
-    ///     // The cost is latency, and the risk is a socket Binance closes if
-    ///     // the consumer stalls for long enough.
-    ///     overflow: Overflow::Backpressure,
-    ///     buffer_size: 16_384,
-    ///     // Give up after ten attempts, so a supervisor above this can
-    ///     // restart the whole process.
-    ///     max_reconnect_attempts: Some(10),
-    ///     ..StreamConfig::default()
-    /// };
-    ///
-    /// let subscription = Subscription::new()
-    ///     .market(Market::perpetual(Exchange::Binance, "BTC", "USDT"))
-    ///     .feed(Feed::Trades);
-    ///
-    /// let stream = Client::new(BinanceAdapter::usd_m_futures())
-    ///     .subscribe_with(&subscription, &config)
-    ///     .await?;
-    /// drop(stream); // dropping closes the connection
-    /// # Ok(())
-    /// # }
-    /// ```
+    /// One subscription may use more than one underlying connection when an
+    /// adapter must split feeds across endpoints. Reconnect budgets and notices
+    /// then apply per connection.
     pub async fn subscribe_with(
         &self,
         subscription: &Subscription,
@@ -424,74 +140,21 @@ impl<A: Adapter> Client<A> {
     /// An adapter built without credentials fails with
     /// [`Error::Auth`](crate::Error::Auth) before anything is sent, on every
     /// exchange.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// use maxt::{Client, adapters::BithumbAdapter};
-    /// use rust_decimal::Decimal;
-    ///
-    /// # async fn run() -> maxt::Result<()> {
-    /// let client = Client::new(BithumbAdapter::new().with_credentials("access", "secret"));
-    ///
-    /// let holdings = client.balances().await?;
-    ///
-    /// // `available` is what can be spent now. `total` adds what open orders
-    /// // have reserved, and is the figure a portfolio should report.
-    /// let krw = holdings.iter().find(|balance| balance.asset == "KRW");
-    /// println!("{}", krw.map_or(Decimal::ZERO, |balance| balance.total()));
-    /// # Ok(())
-    /// # }
-    /// ```
     pub async fn balances(&self) -> Result<Vec<Balance>> {
         self.adapter.balances().await
     }
 
     /// Reads the account's open orders across every market.
     ///
-    /// Requires credentials.
-    ///
-    /// ```no_run
-    /// use maxt::{Client, adapters::UpbitAdapter};
-    ///
-    /// # async fn run() -> maxt::Result<()> {
-    /// let client = Client::new(UpbitAdapter::new().with_credentials("access", "secret"));
-    ///
-    /// for order in client.open_orders().await? {
-    ///     // An order listed here may already be finished. Read the status
-    ///     // before assuming it can still fill.
-    ///     if order.status.is_live() {
-    ///         println!("{} on {}: {} left", order.id, order.market, order.remaining_quantity);
-    ///     }
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
+    /// Requires credentials. A returned order may have completed between the
+    /// exchange snapshot and receipt; inspect [`Order::status`](crate::Order::status).
     pub async fn open_orders(&self) -> Result<Vec<Order>> {
         self.adapter.open_orders(None).await
     }
 
     /// Reads the account's open orders on one market.
     ///
-    /// Requires credentials. The exchange does the filtering in one request,
-    /// which matters on an account that trades many markets and on exchanges
-    /// that charge the wider query more quota.
-    ///
-    /// ```no_run
-    /// use maxt::{Client, Exchange, Market, adapters::UpbitAdapter};
-    ///
-    /// # async fn run() -> maxt::Result<()> {
-    /// let client = Client::new(UpbitAdapter::new().with_credentials("access", "secret"));
-    /// let market = Market::spot(Exchange::Upbit, "BTC", "KRW");
-    ///
-    /// // Cancelling by identifier is the only safe way: the exchange's own id
-    /// // is what `cancel_order` matches on.
-    /// for order in client.open_orders_on(&market).await? {
-    ///     client.cancel_order(&order.market, &order.id).await?;
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
+    /// Requires credentials. The exchange performs the market filter.
     pub async fn open_orders_on(&self, market: &Market) -> Result<Vec<Order>> {
         self.adapter.open_orders(Some(market)).await
     }
@@ -503,59 +166,15 @@ impl<A: Adapter> Client<A> {
     /// A Binance USD-M order arrives with no `created_at`: that stream
     /// publishes no creation time, so a USD-M order's age comes from the REST
     /// read.
-    ///
-    /// ```no_run
-    /// use futures_util::StreamExt;
-    /// use maxt::{AccountEvent, Client, adapters::BinanceAdapter};
-    ///
-    /// # async fn run() -> maxt::Result<()> {
-    /// let client = Client::new(BinanceAdapter::spot().with_credentials("key", "secret"));
-    /// let mut stream = client.subscribe_account().await?;
-    ///
-    /// while let Some(event) = stream.next().await {
-    ///     match event {
-    ///         Ok(AccountEvent::Order(order)) => println!("{} is {:?}", order.id, order.status),
-    ///         Ok(AccountEvent::Balance(balance)) => println!("{} {}", balance.asset, balance.total()),
-    ///         // Updates published while the socket was down were missed, so
-    ///         // the local view is stale until it is read back over REST.
-    ///         Ok(AccountEvent::Reconnected) => {
-    ///             let _ = client.open_orders().await?;
-    ///         }
-    ///         Ok(_) => {}
-    ///         Err(error) => eprintln!("{error}"),
-    ///     }
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
+    /// See [`AccountStream`] for error, reconnect, and termination semantics.
     pub async fn subscribe_account(&self) -> Result<AccountStream> {
         self.subscribe_account_with(&StreamConfig::default()).await
     }
 
-    /// Opens a live private account subscription.
+    /// Opens a live private account subscription with explicit connection settings.
     ///
-    /// Requires credentials.
-    ///
-    /// ```no_run
-    /// use maxt::{Client, StreamConfig, adapters::BinanceAdapter};
-    ///
-    /// # async fn run() -> maxt::Result<()> {
-    /// let config = StreamConfig {
-    ///     // A quiet account is not a broken one. Binance pings a private
-    ///     // socket every three minutes, so anything under that would tear
-    ///     // down a healthy connection. The adapter raises a too-short value
-    ///     // to what its exchange can meet, and honours a longer one.
-    ///     idle_timeout_ms: 300_000,
-    ///     ..StreamConfig::default()
-    /// };
-    ///
-    /// let stream = Client::new(BinanceAdapter::spot().with_credentials("key", "secret"))
-    ///     .subscribe_account_with(&config)
-    ///     .await?;
-    /// drop(stream);
-    /// # Ok(())
-    /// # }
-    /// ```
+    /// Requires credentials. An adapter may raise an idle timeout below the
+    /// minimum its exchange can satisfy.
     pub async fn subscribe_account_with(&self, config: &StreamConfig) -> Result<AccountStream> {
         self.adapter.subscribe_account(config).await
     }
@@ -564,65 +183,14 @@ impl<A: Adapter> Client<A> {
     ///
     /// Requires credentials. The returned [`Order`] carries the exchange's own
     /// identifier, which is what [`Client::cancel_order`] takes.
-    ///
-    /// ```no_run
-    /// use maxt::{
-    ///     Client, Exchange, Market, OrderRequest, Side, Size, TimeInForce,
-    ///     adapters::UpbitAdapter,
-    /// };
-    /// use rust_decimal::Decimal;
-    ///
-    /// # async fn run() -> maxt::Result<()> {
-    /// let client = Client::new(UpbitAdapter::new().with_credentials("access", "secret"));
-    /// let market = Market::spot(Exchange::Upbit, "BTC", "KRW");
-    ///
-    /// let order = client
-    ///     .place_order(
-    ///         &OrderRequest::limit(
-    ///             market,
-    ///             Side::Buy,
-    ///             // Base sizing: 0.001 BTC. `Size::Quote` would mean 0.001 KRW.
-    ///             Size::Base(Decimal::new(1, 3)),
-    ///             Decimal::from(100_000_000),
-    ///         )
-    ///         // Post-only: if the price has moved, the order is rejected.
-    ///         .time_in_force(TimeInForce::PostOnly),
-    ///     )
-    ///     .await?;
-    ///
-    /// // Accepted is not filled: the status says which, and the id is what
-    /// // cancels it.
-    /// println!("{} is {:?}", order.id, order.status);
-    /// # Ok(())
-    /// # }
-    /// ```
     pub async fn place_order(&self, request: &OrderRequest) -> Result<Order> {
         self.adapter.place_order(request).await
     }
 
     /// Cancels an order.
     ///
-    /// Requires credentials.
-    ///
-    /// ```no_run
-    /// use maxt::{Client, Exchange, Market, OrderStatus, adapters::UpbitAdapter};
-    ///
-    /// # async fn run() -> maxt::Result<()> {
-    /// let client = Client::new(UpbitAdapter::new().with_credentials("access", "secret"));
-    /// let market = Market::spot(Exchange::Upbit, "BTC", "KRW");
-    ///
-    /// let cancelled = client.cancel_order(&market, "order-id-from-place-order").await?;
-    ///
-    /// // A cancel races the book. Part of the order may have filled on the way,
-    /// // so trust the returned order.
-    /// if cancelled.status == OrderStatus::Filled {
-    ///     println!("filled before the cancel landed");
-    /// } else {
-    ///     println!("{} filled, {} withdrawn", cancelled.filled_quantity, cancelled.remaining_quantity);
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
+    /// Requires credentials. Cancellation races execution; the returned
+    /// [`Order`] is the resulting state and may be partially or fully filled.
     pub async fn cancel_order(&self, market: &Market, order_id: &str) -> Result<Order> {
         self.adapter.cancel_order(market, order_id).await
     }
@@ -635,25 +203,6 @@ impl<A: Adapter> Client<A> {
     /// whatever the venue publishes and whichever adapter is underneath. The
     /// drop happens here rather than in each adapter, so an adapter written
     /// outside this crate answers the same way.
-    ///
-    /// ```no_run
-    /// use maxt::{Client, adapters::HyperliquidAdapter};
-    /// use rust_decimal::Decimal;
-    ///
-    /// # async fn run() -> maxt::Result<()> {
-    /// let client = Client::new(HyperliquidAdapter::new().with_wallet("0xaddress", "0xkey"));
-    ///
-    /// let mut exposure = Decimal::ZERO;
-    /// for position in client.positions().await? {
-    ///     // Every one carries size, so there is nothing to skip. `None` means
-    ///     // the exchange did not publish the figure, and summing it as zero
-    ///     // would understate the account's exposure.
-    ///     exposure += position.notional.unwrap_or_default();
-    /// }
-    /// println!("{exposure} at risk");
-    /// # Ok(())
-    /// # }
-    /// ```
     pub async fn positions(&self) -> Result<Vec<Position>> {
         Ok(open_positions(self.adapter.positions(None).await?))
     }
@@ -664,83 +213,23 @@ impl<A: Adapter> Client<A> {
     ///
     /// A market the account holds nothing on answers an empty list rather than
     /// one flat position, on the same terms as [`Client::positions`].
-    ///
-    /// ```
-    /// use maxt::{Client, Error, Exchange, Feature, Market, adapters::UpbitAdapter};
-    ///
-    /// #[tokio::main]
-    /// async fn main() {
-    ///     let client = Client::new(UpbitAdapter::new());
-    ///     let market = Market::spot(Exchange::Upbit, "BTC", "KRW");
-    ///
-    ///     // Upbit lists no derivatives at all, so this is structural: no key
-    ///     // and no argument makes it work. That is what `Unsupported` reports.
-    ///     assert!(!client.supports(Feature::Positions));
-    ///     let answer = client.positions_on(&market).await;
-    ///     assert!(matches!(answer, Err(Error::Unsupported { feature: Feature::Positions, .. })));
-    /// }
-    /// ```
     pub async fn positions_on(&self, market: &Market) -> Result<Vec<Position>> {
         Ok(open_positions(self.adapter.positions(Some(market)).await?))
     }
 
     /// Reads account-wide margin state.
     ///
-    /// Requires credentials. Derivatives markets only.
-    ///
-    /// ```no_run
-    /// use maxt::{Client, adapters::BinanceAdapter};
-    ///
-    /// # async fn run() -> maxt::Result<()> {
-    /// let client = Client::new(
-    ///     BinanceAdapter::usd_m_futures().with_credentials("key", "secret"),
-    /// );
-    ///
-    /// let margin = client.margin_summary().await?;
-    ///
-    /// // Every figure is optional because not every exchange publishes all of
-    /// // them. A sizing rule that reads a missing one as zero opens nothing,
-    /// // and one that reads it as unlimited opens far too much.
-    /// match margin.available_balance {
-    ///     Some(free) => println!("{free} {} free to commit", margin.asset),
-    ///     None => println!("{} does not publish free margin", client.exchange()),
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
+    /// Requires credentials. Derivatives markets only. Values an exchange does
+    /// not publish remain `None`.
     pub async fn margin_summary(&self) -> Result<MarginSummary> {
         self.adapter.margin_summary().await
     }
 
-    /// Reads a market's funding rate history, one page at a time.
+    /// Reads a market's funding-rate history, one page at a time.
     ///
-    /// Public: this is a property of the market, not of any account.
-    ///
-    /// ```no_run
-    /// use maxt::{Client, Exchange, HistoryRequest, Market, Timestamp, adapters::BinanceAdapter};
-    /// use rust_decimal::Decimal;
-    ///
-    /// # async fn run() -> maxt::Result<()> {
-    /// let client = Client::new(BinanceAdapter::usd_m_futures());
-    /// let market = Market::perpetual(Exchange::Binance, "BTC", "USDT");
-    ///
-    /// let mut request = HistoryRequest::new(market)
-    ///     .from(Timestamp::from_millis(1_700_000_000_000))
-    ///     .limit(100);
-    /// let mut total = Decimal::ZERO;
-    ///
-    /// // The cursor, not the item count, is what says whether more follows.
-    /// loop {
-    ///     let page = client.funding_rates(&request).await?;
-    ///     total += page.items.iter().map(|rate| rate.rate).sum::<Decimal>();
-    ///
-    ///     let Some(next) = page.next else { break };
-    ///     request = request.cursor(next);
-    /// }
-    /// println!("{total} paid per unit of notional over the window");
-    /// # Ok(())
-    /// # }
-    /// ```
+    /// This public operation needs no account credentials. Continue only when
+    /// [`Page::next`](crate::Page::next) is `Some`; item count does not mark the
+    /// final page.
     pub async fn funding_rates(&self, request: &HistoryRequest) -> Result<Page<FundingRate>> {
         self.adapter.funding_rates(request).await
     }
@@ -748,56 +237,18 @@ impl<A: Adapter> Client<A> {
     /// Reads the account's funding payment history, one page at a time.
     ///
     /// Requires credentials. Unlike [`Client::funding_rates`], this is what the
-    /// account was actually charged.
-    ///
-    /// ```no_run
-    /// use maxt::{Client, Exchange, HistoryRequest, Market, adapters::HyperliquidAdapter};
-    /// use rust_decimal::Decimal;
-    ///
-    /// # async fn run() -> maxt::Result<()> {
-    /// let client = Client::new(HyperliquidAdapter::new().with_wallet("0xaddress", "0xkey"));
-    /// let market = Market::perpetual(Exchange::Hyperliquid, "BTC", "USDC");
-    ///
-    /// let page = client.funding_payments(&HistoryRequest::new(market).limit(50)).await?;
-    ///
-    /// // Signed: negative is what the account paid out. Summing the absolute
-    /// // values would turn a funding income into a funding cost.
-    /// let net: Decimal = page.items.iter().map(|payment| payment.amount).sum();
-    /// println!("{net} net funding over {} entries", page.items.len());
-    /// # Ok(())
-    /// # }
-    /// ```
+    /// account was actually charged or credited. Amounts are signed; negative
+    /// means the account paid.
     pub async fn funding_payments(&self, request: &HistoryRequest) -> Result<Page<FundingPayment>> {
         self.adapter.funding_payments(request).await
     }
 
-    /// Sets leverage or margin mode on a market.
+    /// Changes leverage and/or margin mode on a market.
     ///
-    /// Requires credentials. Derivatives markets only.
-    ///
-    /// ```no_run
-    /// use maxt::{
-    ///     Client, Exchange, MarginMode, MarginRequest, Market, adapters::BinanceAdapter,
-    /// };
-    /// use rust_decimal::Decimal;
-    ///
-    /// # async fn run() -> maxt::Result<()> {
-    /// let client = Client::new(
-    ///     BinanceAdapter::usd_m_futures().with_credentials("key", "secret"),
-    /// );
-    ///
-    /// // Setting both in one request avoids the half-applied state that two
-    /// // calls would leave behind.
-    /// client
-    ///     .set_margin(
-    ///         &MarginRequest::new(Market::perpetual(Exchange::Binance, "BTC", "USDT"))
-    ///             .leverage(Decimal::from(5))
-    ///             .margin_mode(MarginMode::Isolated),
-    ///     )
-    ///     .await?;
-    /// # Ok(())
-    /// # }
-    /// ```
+    /// Requires credentials. Derivatives markets only. Provider requirements
+    /// differ: some accept either field, while others require both. When both
+    /// are accepted, the change is not guaranteed to be atomic; one provider
+    /// operation may succeed before another fails.
     pub async fn set_margin(&self, request: &MarginRequest) -> Result<()> {
         self.adapter.set_margin(request).await
     }
@@ -809,23 +260,7 @@ impl<A: Adapter> From<A> for Client<A> {
     }
 }
 
-/// Drops the rows that carry no size.
-///
-/// [`Client::positions`] and [`Client::positions_on`] promise open positions,
-/// and a zero-size row is something else. Binance opens one on
-/// `/fapi/v3/positionRisk` for any symbol that merely carries a resting order,
-/// measured 2026-07-31; Hyperliquid omits closed positions from
-/// `assetPositions` and so has never been seen to publish one, but its parser
-/// maps a zero `szi` rather than rejecting it, and a venue is free to change.
-///
-/// This runs on the common API rather than in each adapter, which is what makes
-/// the promise hold for every adapter, including one written outside this crate
-/// against the public [`Adapter`] trait. An adapter stays free to report what
-/// its venue said.
-///
-/// A row that fails to parse is untouched: the adapter's `Result` has already
-/// resolved to `Err` by here, so a malformed row is still reported rather than
-/// filtered away.
+/// Keeps the common positions API limited to non-flat rows.
 pub(crate) fn open_positions(mut positions: Vec<Position>) -> Vec<Position> {
     positions.retain(|position| !position.is_flat());
     positions

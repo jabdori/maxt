@@ -1,4 +1,4 @@
-//! Binance, global spot and USD-margined perpetual futures.
+//! Binance Spot and USD-margined perpetual futures.
 
 mod parse;
 mod private;
@@ -24,22 +24,12 @@ pub use rest::BinanceSymbolFilters;
 
 pub(crate) const SPOT_REST_BASE_URL: &str = "https://api.binance.com";
 pub(crate) const SPOT_WEBSOCKET_URL: &str = "wss://stream.binance.com:9443/stream";
-/// Where a spot user data stream is subscribed to.
-///
-/// Not the market data host. Binance removed the spot listen key endpoints on
-/// 2026-02-20 07:00 UTC, and an account subscription is now a signed request on
-/// the WebSocket API, which answers on its own host. See
-/// `private::spot_user_data_subscribe_frame` for the request.
+/// The Spot WebSocket API used for signed account subscriptions.
 pub(crate) const SPOT_WEBSOCKET_API_URL: &str = "wss://ws-api.binance.com:443/ws-api/v3";
 pub(crate) const USD_M_REST_BASE_URL: &str = "https://fapi.binance.com";
-/// The USD-M entry point carrying the streams the matching engine pushes.
-///
-/// Binance splits USD-M market data across two entry points on one host and
-/// decommissioned the unrouted `/stream` and `/ws` paths on 2026-04-23. A
-/// connection that names no entry point is served as if it had named
-/// `/public`. The stream module decides which feed goes where.
+/// The USD-M entry point for trades and order books.
 pub(crate) const USD_M_PUBLIC_WEBSOCKET_URL: &str = "wss://fstream.binance.com/public/stream";
-/// The USD-M entry point carrying the streams an aggregator produces.
+/// The USD-M entry point for tickers and candles.
 pub(crate) const USD_M_MARKET_WEBSOCKET_URL: &str = "wss://fstream.binance.com/market/stream";
 
 /// The header every authenticated Binance request carries its API key in.
@@ -115,25 +105,11 @@ impl BinanceMarket {
     }
 }
 
-/// Talks to Binance.
+/// Binance Spot or USD-M perpetual futures.
 ///
-/// Pick the venue with [`BinanceAdapter::spot`] or
-/// [`BinanceAdapter::usd_m_futures`]. USD-M carries [`Feature::Positions`],
-/// [`Feature::Margin`] and [`Feature::FundingRates`]; the spot venue answers
-/// `Error::Unsupported` for all three. Binance does sell a cross and isolated
-/// margin product on spot, but it is a separate set of endpoints that `maxt`
-/// does not reach, so [`Feature::Margin`] here means the USD-M contract
-/// account and nothing else.
-///
-/// ```
-/// use maxt::{Client, Feature, adapters::BinanceAdapter};
-///
-/// let spot = Client::new(BinanceAdapter::spot());
-/// let perp = Client::new(BinanceAdapter::usd_m_futures());
-///
-/// assert!(!spot.supports(Feature::FundingRates));
-/// assert!(perp.supports(Feature::FundingRates));
-/// ```
+/// Select one venue with [`Self::spot`] or [`Self::usd_m_futures`]. One adapter
+/// uses that venue's hosts and market kind for its lifetime. Spot margin is a
+/// separate Binance product and is not exposed here.
 #[derive(Debug, Clone)]
 pub struct BinanceAdapter {
     venue: BinanceMarket,
@@ -168,11 +144,10 @@ impl BinanceAdapter {
         }
     }
 
-    /// Adds the API credentials that account, order, and private stream calls
-    /// need.
+    /// Adds the HMAC-SHA-256 API key and secret used by private calls.
     ///
-    /// Binance issues an API key and a secret key together. A key restricted to
-    /// spot will be rejected by the futures API and the other way round.
+    /// RSA and Ed25519 credentials are not supported. Binance also enforces the
+    /// key's venue and permissions.
     #[must_use]
     pub fn with_credentials(
         mut self,
@@ -245,11 +220,11 @@ impl BinanceAdapter {
         Ok(format!("{}{}", market.base, market.quote))
     }
 
-    /// The market a Binance symbol names, on this adapter's venue.
+    /// Resolves a symbol-only REST or account payload on this adapter's venue.
     ///
-    /// Used wherever a payload identifies its market by symbol alone, which
-    /// every stream frame does. See [`split_symbol`] for how the split is
-    /// decided.
+    /// Public market streams instead use the markets supplied at subscription
+    /// time, because a concatenated symbol does not uniquely identify its
+    /// base and quote assets.
     pub(crate) fn market(&self, symbol: &str) -> Result<Market> {
         let (base, quote) = split_symbol(symbol).ok_or_else(|| {
             Error::decode(format!(
@@ -264,25 +239,17 @@ impl BinanceAdapter {
         ))
     }
 
-    /// Reads the trading rules Binance attaches to one spot symbol.
+    /// Reads Binance's price, quantity, and notional filters for one Spot market.
     ///
-    /// Tick size, lot step, and minimum notional decide whether an order is
-    /// accepted at all. Every exchange expresses them differently enough that
-    /// [`BinanceSymbolFilters`] stays Binance-shaped. See that type for why.
-    ///
-    /// Reports [`Error::Unsupported`] on a USD-M adapter, whose listing carries
-    /// a different set of filters.
+    /// Returns [`Error::Unsupported`] on a USD-M adapter.
     pub async fn spot_symbol_filters(&self, market: &Market) -> Result<BinanceSymbolFilters> {
         rest::spot_symbol_filters(self, market).await
     }
 
-    /// Looks one spot order up by the identifier Binance issued for it.
+    /// Looks up a Spot order by Binance's numeric order id.
     ///
-    /// Answers for filled and cancelled orders as well as resting ones, which
-    /// [`Client::open_orders`](crate::Client::open_orders) by definition does
-    /// not. See [`BinanceSpotOrderDetail`] for why the answer is Binance-shaped.
-    ///
-    /// Reports [`Error::Unsupported`] on a USD-M adapter.
+    /// Includes filled and cancelled orders. Returns [`Error::Unsupported`] on
+    /// a USD-M adapter.
     pub async fn spot_order(
         &self,
         market: &Market,
@@ -291,37 +258,25 @@ impl BinanceAdapter {
         private::spot_order(self, market, order_id).await
     }
 
-    /// Opens a USD-M user data stream and returns its listen key.
+    /// Creates or extends the account's USD-M user-data listen key.
     ///
-    /// [`Client::subscribe_account`](crate::Client::subscribe_account) does
-    /// this for you and keeps the key alive. Reach for these three methods
-    /// only when driving the socket yourself, such as sharing one key across
-    /// two consumers or holding it across a process restart.
-    ///
-    /// Binance returns the account's existing key when it already has one, and
-    /// extends it either way.
+    /// [`Client::subscribe_account`](crate::Client::subscribe_account) manages
+    /// this lifecycle when it owns the socket.
     pub async fn usd_m_create_listen_key(&self) -> Result<BinanceListenKey> {
         self.check_usd_m("listen keys")?;
         private::create_listen_key(self).await
     }
 
-    /// Pushes a USD-M listen key's expiry another sixty minutes out.
+    /// Extends the USD-M listen key owned by the configured API key.
     ///
-    /// `key` names the stream being kept alive and is not sent: USD-M extends
-    /// whichever key the API key currently owns and refuses a `listenKey`
-    /// parameter. A key that has already lapsed is therefore not detectable
-    /// here, and what comes back is Binance's own verdict on the extension
-    /// under [`Error::Exchange`], not an [`Error::Auth`] of this crate's
-    /// invention.
+    /// Binance's keepalive endpoint does not accept the listen key as a
+    /// parameter; `key` identifies the caller's stream but is not sent.
     pub async fn usd_m_keepalive_listen_key(&self, key: &BinanceListenKey) -> Result<()> {
         self.check_usd_m("listen keys")?;
         private::keepalive_listen_key(self, key).await
     }
 
-    /// Closes a USD-M user data stream.
-    ///
-    /// The socket stays open for a short while afterwards but stops carrying
-    /// events, so drop the stream as well.
+    /// Closes a USD-M listen key.
     pub async fn usd_m_close_listen_key(&self, key: &BinanceListenKey) -> Result<()> {
         self.check_usd_m("listen keys")?;
         private::close_listen_key(self, key).await
@@ -345,22 +300,25 @@ impl Default for BinanceAdapter {
     }
 }
 
-/// Rejects an asset code that would change meaning inside a query string.
+/// Rejects an asset code that could disguise query or stream syntax.
 ///
-/// Binance's own codes are uppercase ASCII letters and digits. Anything else
-/// would let a `&` in a market name append a parameter, and would break the
-/// signature that private calls hash the query string into.
+/// Binance uses uppercase ASCII letters and digits as well as UTF-8 letter and
+/// number names. ASCII punctuation remains invalid; REST percent-encodes the
+/// accepted UTF-8 bytes and WebSocket subscriptions serialize them as JSON.
 fn check_asset(field: &'static str, value: &str) -> Result<()> {
     if value.is_empty() {
         return Err(Error::invalid_request(field, "must not be empty"));
     }
-    if !value
-        .bytes()
-        .all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit())
-    {
+    if !value.chars().all(|character| {
+        character.is_ascii_uppercase()
+            || character.is_ascii_digit()
+            || (!character.is_ascii() && character.is_alphanumeric())
+    }) {
         return Err(Error::invalid_request(
             field,
-            format!("`{value}` is not a Binance asset code: expected uppercase ASCII and digits"),
+            format!(
+                "`{value}` is not a Binance asset code: expected uppercase ASCII or UTF-8 letters and digits"
+            ),
         ));
     }
     Ok(())
@@ -377,16 +335,10 @@ const QUOTE_ASSETS: &[&str] = &[
     "ZAR", "COP", "CZK", "PLN", "RON", "UAH", "NGN", "RUB", "AUD", "VAI", "PAX",
 ];
 
-/// Splits a Binance symbol into base and quote.
+/// Splits a symbol-only private payload on the longest known quote suffix.
 ///
-/// Binance concatenates the two assets with no separator, so `BTCUSDT` read as
-/// text alone is genuinely ambiguous. The split is resolved against the set of
-/// assets Binance actually quotes in, taking the longest matching suffix, which
-/// is what makes `ETHBTC`, `BTCUSDC`, and `USDCUSDT` come out right.
-///
-/// `None` when no known quote asset ends the symbol. Listing markets never
-/// needs this: `exchangeInfo` publishes `baseAsset` and `quoteAsset`
-/// separately, and that listing is the authority this table approximates.
+/// Listings use Binance's explicit `baseAsset` and `quoteAsset`, and public
+/// streams use their subscription mapping. `None` means no known suffix fits.
 fn split_symbol(symbol: &str) -> Option<(&str, &str)> {
     QUOTE_ASSETS
         .iter()
@@ -768,19 +720,7 @@ mod tests {
         assert!(!error.is_retryable());
     }
 
-    /// A credential Binance read and refused keeps Binance's own code instead
-    /// of becoming [`Error::Auth`].
-    ///
-    /// `Auth` says `maxt` sent nothing. These three were sent, answered, and
-    /// refused, and they are three different problems: the secret is wrong, the
-    /// key is wrong or unpermitted, or no key was presented. Folding them into
-    /// one variant would drop the only field that tells them apart, and the
-    /// rule doing the folding would have to be right about Upbit, Bithumb and
-    /// Hyperliquid too, which spell a refused credential in three further ways.
-    ///
-    /// Bodies and statuses captured verbatim on 2026-07-31 from
-    /// `GET https://api.binance.com/api/v3/account`, signed with a live key and
-    /// broken one field at a time.
+    /// A credential rejected by Binance remains an exchange error with its code.
     #[test]
     fn a_credential_binance_refused_keeps_binances_own_code() {
         let cases = [
@@ -814,14 +754,7 @@ mod tests {
         }
     }
 
-    /// A clock outside Binance's receive window is a rejection, not an outage.
-    ///
-    /// Both bodies captured verbatim on 2026-07-31 from
-    /// `GET https://api.binance.com/api/v3/account`, by signing a timestamp ten
-    /// minutes behind and then ten seconds ahead of Binance's own clock. Both
-    /// arrived as HTTP 400, which is what puts them here rather than under
-    /// `Unavailable`: the identical request carries the identical timestamp and
-    /// can only be further outside the window the second time.
+    /// A timestamp outside Binance's receive window is rejected, not retried.
     #[test]
     fn a_timestamp_outside_the_receive_window_is_rejected_rather_than_retried() {
         for body in [

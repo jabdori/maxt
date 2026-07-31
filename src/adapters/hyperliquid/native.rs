@@ -1,8 +1,4 @@
-//! The parts of Hyperliquid the common API cannot carry.
-//!
-//! Everything here is reached through [`HyperliquidAdapter`]'s own methods,
-//! because generalizing it would change what it means. Each type below names
-//! the idea that does not survive the trip.
+//! Hyperliquid-specific data exposed by [`HyperliquidAdapter`].
 
 use rust_decimal::Decimal;
 use serde_json::Value;
@@ -12,16 +8,12 @@ use crate::types::Timestamp;
 
 use super::parse::{self, RawAssetCtx, RawLedgerUpdate};
 
-/// One entry from Hyperliquid's non-funding ledger.
+/// One account-wide entry from Hyperliquid's non-funding ledger.
 ///
-/// This is deliberately not a [`FundingPayment`](crate::FundingPayment).
-/// Funding is a periodic charge against a position in one market. This ledger
-/// records the account's cash movements: deposits, withdrawals, transfers
-/// between wallets, and liquidations. Reporting a withdrawal as a funding
-/// payment against some market would state something that never happened.
+/// These entries describe deposits, withdrawals, transfers, and liquidations;
+/// they are not market-scoped [`FundingPayment`](crate::FundingPayment) records.
 ///
-/// Fields an entry's kind does not carry are `None`. A deposit has no
-/// counterparty; a liquidation has no single amount.
+/// Fields not supplied for an entry kind are `None`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct HyperliquidLedgerEntry {
@@ -29,16 +21,15 @@ pub struct HyperliquidLedgerEntry {
     pub kind: HyperliquidLedgerKind,
     /// When Hyperliquid recorded it.
     pub time: Timestamp,
-    /// The on-chain transaction hash, which is also its identity.
+    /// The on-chain transaction hash.
     pub hash: String,
-    /// The asset that moved, uppercase. Almost always `USDC`; a spot transfer
-    /// names the token instead.
+    /// The asset that moved, uppercase. Spot transfers name their token;
+    /// other amount-bearing entries use `USDC`.
     pub asset: Option<String>,
     /// How much moved, **unsigned**.
     ///
-    /// Hyperliquid reports a magnitude and leaves the direction to
-    /// [`HyperliquidLedgerEntry::kind`], so a withdrawal and a deposit of the
-    /// same size are the same number here. Read the kind, not the sign.
+    /// Direction is represented by [`HyperliquidLedgerEntry::kind`], not by the
+    /// sign of this value.
     pub amount: Option<Decimal>,
     /// The fee charged on top, when the kind has one.
     pub fee: Option<Decimal>,
@@ -48,9 +39,8 @@ pub struct HyperliquidLedgerEntry {
 
 /// What kind of movement a [`HyperliquidLedgerEntry`] records.
 ///
-/// [`HyperliquidLedgerKind::Other`] exists because Hyperliquid adds kinds
-/// faster than a release cycle. An unrecognized one arrives under its own name,
-/// and the rest of the page still reads.
+/// Unrecognized wire values are preserved by
+/// [`HyperliquidLedgerKind::Other`].
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum HyperliquidLedgerKind {
@@ -96,40 +86,36 @@ impl HyperliquidLedgerKind {
     }
 }
 
-/// Hyperliquid's live context for one market.
+/// Hyperliquid's current context and order precision for one market.
 ///
-/// Four of these five numbers have no home in the common API and would have to
-/// be dropped to fit one. [`FundingRate`](crate::FundingRate) is a record of
-/// what funding *was* charged; [`HyperliquidAssetContext::funding_rate`] is what
-/// the next charge is currently running at, which is a different question.
-/// Open interest and the oracle price have no common counterpart at all.
+/// [`HyperliquidAssetContext::funding_rate`] is the provider's current market
+/// rate. [`FundingRate`](crate::FundingRate) contains historical market-rate
+/// observations, while [`FundingPayment`](crate::FundingPayment) contains
+/// amounts actually charged or credited to an account.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct HyperliquidAssetContext {
-    /// The midpoint of the book, absent when a side is empty.
+    /// The provider's mid price, or `None` when unavailable.
     pub mid_price: Option<Decimal>,
-    /// Hyperliquid's own mark price, which is what positions are valued against.
+    /// The provider's mark price.
     pub mark_price: Option<Decimal>,
-    /// The external oracle price funding is computed against.
+    /// The provider's oracle price. Perpetual markets only.
     pub oracle_price: Option<Decimal>,
-    /// The hourly funding rate currently accruing, as a signed ratio.
+    /// The current funding rate as a signed ratio.
     ///
     /// Perpetual markets only; `None` on spot, which pays no funding.
     pub funding_rate: Option<Decimal>,
     /// Open interest in the base asset. Perpetual markets only.
     pub open_interest: Option<Decimal>,
-    /// How many decimals a size may carry on this market.
+    /// Maximum decimal places accepted for order size.
     ///
-    /// Hyperliquid rejects an order whose size is finer than this. `maxt`
-    /// checks it before signing, so an order built from this figure is refused
-    /// locally rather than by the exchange.
+    /// Finer sizes are rejected locally before signing.
     pub size_decimals: u32,
-    /// How many decimals a price may carry on this market.
+    /// Maximum decimal places accepted for a fractional order price.
     ///
-    /// Hyperliquid caps a price's total decimals at six for perpetuals and
-    /// eight for spot, less [`HyperliquidAssetContext::size_decimals`]. There
-    /// is a second rule this figure cannot express: a fractional price may
-    /// carry at most five significant digits.
+    /// This is `6 - size_decimals` for perpetuals and `8 - size_decimals` for
+    /// spot. Fractional prices are also limited to five significant digits;
+    /// integer prices are exempt from the significant-digit limit.
     pub price_decimals: u32,
 }
 
@@ -145,9 +131,8 @@ fn ledger_entry(raw: &RawLedgerUpdate) -> Result<HyperliquidLedgerEntry> {
         .and_then(Value::as_str)
         .unwrap_or("unknown");
 
-    // A spot transfer names its token and puts the size in `amount`; every
-    // other kind moves USDC and puts it in `usdc`. A liquidation has neither,
-    // and stays `None` rather than borrowing a number that means something else.
+    // Spot transfers use `token`/`amount`; other amount-bearing entries use
+    // `USDC`/`usdc`. Liquidations carry neither amount field.
     let (asset, amount) = match text(&raw.delta, "token") {
         Some(token) => (token.to_ascii_uppercase(), text(&raw.delta, "amount")),
         None => (parse::SETTLE_ASSET.to_string(), text(&raw.delta, "usdc")),
@@ -173,7 +158,7 @@ fn text<'a>(delta: &'a Value, field: &str) -> Option<&'a str> {
     delta.get(field).and_then(Value::as_str)
 }
 
-/// Reads the live context of one market.
+/// Reads the current context of one market.
 pub(crate) fn asset_context(
     raw: &RawAssetCtx,
     asset: &parse::Asset,
@@ -262,8 +247,7 @@ mod tests {
         assert_eq!(entries[0].fee, None);
         assert_eq!(entries[0].time, Timestamp::from_millis(1_681_222_254_710));
 
-        // A withdrawal is not a negative deposit: the direction is the kind, and
-        // the amount stays a magnitude.
+        // Direction is encoded by the kind; amount remains a magnitude.
         assert_eq!(entries[1].kind, HyperliquidLedgerKind::Withdraw);
         assert_eq!(entries[1].amount, Some(Decimal::from(250)));
         assert_eq!(entries[1].fee, Some(Decimal::ONE));
@@ -289,7 +273,6 @@ mod tests {
         assert_eq!(entries[3].kind, HyperliquidLedgerKind::Liquidation);
         assert_eq!(entries[3].amount, None);
         assert_eq!(entries[3].asset, None);
-        // The hash still identifies it, which is what makes it reconcilable.
         assert!(entries[3].hash.ends_with("04"));
     }
 
@@ -306,7 +289,7 @@ mod tests {
 
     #[test]
     fn an_asset_context_carries_the_numbers_the_common_api_has_no_field_for() {
-        // The `ctx` object of Hyperliquid's own `activeAssetCtx` sample.
+        // `activeAssetCtx` context payload.
         // https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/subscriptions
         let body = r#"{
           "dayNtlVlm": "1169046.29406",
@@ -318,8 +301,7 @@ mod tests {
           "prevDayPx": "15.322"
         }"#;
         let raw: RawAssetCtx = parse::json(body).expect("official asset context payload");
-        // The context carries the market's order precision, which lives on the
-        // symbol table rather than in the payload.
+        // Order precision comes from market metadata, not the context payload.
         let asset = parse::Asset {
             market: Market::perpetual(Exchange::Hyperliquid, "HYPE", "USDC"),
             native: "HYPE".to_string(),
@@ -331,7 +313,7 @@ mod tests {
         };
         let context = asset_context(&raw, &asset).expect("a context");
 
-        // Six decimals for a perpetual, less the two a size may carry.
+        // Perpetual price decimals are `6 - size_decimals`.
         assert_eq!(context.size_decimals, 2);
         assert_eq!(context.price_decimals, 4);
         assert_eq!(context.funding_rate, Some(Decimal::new(125, 7)));

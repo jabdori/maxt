@@ -44,8 +44,8 @@ async fn main() -> maxt::Result<()> {
         return Ok(());
     }
 
-    // One subscription becomes one connection, however many markets and feeds
-    // it names.
+    // A subscription names the requested market/feed pairs. Socket layout is an
+    // adapter detail; Binance USD-M may split mixed feeds across two sockets.
     let subscription = Subscription::new()
         .market(market.clone())
         .feed(Feed::Trades);
@@ -63,9 +63,7 @@ async fn main() -> maxt::Result<()> {
             println!("no trade before the {TIME_LIMIT:?} deadline. A quiet market, not a failure");
             break;
         };
-        // Only `None` ends a stream. An `Err` item is a report it polls past,
-        // one malformed frame is not a reason to stop reading a healthy socket,
-        // so print it and take the next one.
+        // Only `None` ends the stream. Report an `Err` item and keep polling.
         let Some(event) = item else {
             break;
         };
@@ -85,9 +83,8 @@ async fn main() -> maxt::Result<()> {
                     trade.price, trade.quantity, trade.taker_side, trade.timestamp
                 );
             }
-            // Reconnects are handled inside the stream, but they are not hidden:
-            // whatever the exchange published while the socket was down was
-            // missed, and only the consumer knows whether that matters.
+            // A reconnect leaves a gap in events even though the adapter restores
+            // the subscription.
             MarketEvent::Reconnected => {
                 println!("-- reconnected; trades during the gap were missed")
             }
@@ -95,13 +92,12 @@ async fn main() -> maxt::Result<()> {
         }
     }
 
-    // Dropping the stream closes the connection.
+    // Dropping the stream closes every connection it owns.
     println!("done after {} trades in {:?}", seen, started.elapsed());
     Ok(())
 }
 
-/// The client for an exchange named on the command line, plus the asset that
-/// exchange usually quotes in.
+/// Selects a boxed adapter and its default quote asset.
 fn client_for(name: &str) -> Option<(Client<Box<dyn Adapter>>, &'static str)> {
     Some(match name {
         "upbit" => (Client::new(Box::new(UpbitAdapter::new()) as _), "KRW"),

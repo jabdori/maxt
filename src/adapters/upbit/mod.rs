@@ -1,4 +1,4 @@
-//! Upbit, a Korean spot exchange.
+//! Upbit spot adapter for Korea, Singapore, Indonesia, and Thailand.
 
 mod parse;
 mod private;
@@ -19,11 +19,9 @@ use crate::types::{
     OrderBook, StreamConfig, Subscription, Ticker, Trade,
 };
 
-/// Which of Upbit's regional deployments to talk to.
+/// Selects an Upbit regional deployment.
 ///
-/// Upbit runs separate exchanges per region with separate listings, order
-/// books, and accounts. A credential issued for one region does not work on
-/// another.
+/// Listings, order books, accounts, and credentials are isolated by region.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 #[non_exhaustive]
 pub enum UpbitRegion {
@@ -58,61 +56,35 @@ impl UpbitRegion {
     }
 }
 
-/// What Upbit has flagged about one listing, beyond whether it trades.
+/// Warning and caution data for one listing.
 ///
-/// Upbit publishes two designations and they do not mean the same thing, so
-/// [`MarketStatus`](crate::MarketStatus) carries only the first and this
-/// carries both. Read it from
-/// [`UpbitAdapter::market_events`](UpbitAdapter::market_events).
+/// Returned by [`UpbitAdapter::market_events`].
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 #[non_exhaustive]
 pub struct UpbitMarketEvent {
-    /// Upbit's investment warning, 유의 종목.
+    /// Whether Upbit marks the listing with an investment warning (`유의 종목`).
     ///
-    /// Designated by hand and announced, while the market keeps trading. Upbit
-    /// asks the project to resolve whatever caused it, and may end trading
-    /// support for the asset if it is not resolved. This is what makes
-    /// [`Client::markets`](crate::Client::markets) report the market as
-    /// [`MarketStatus::Unknown`](crate::MarketStatus::Unknown).
+    /// [`Client::markets`](crate::Client::markets) maps this to
+    /// [`MarketStatus::Unknown`](crate::MarketStatus::Unknown). The value does
+    /// not state whether new orders are currently accepted.
     pub warning: bool,
-    /// Upbit's investment cautions, 주의 종목, under Upbit's own names for
-    /// them, sorted, and only the ones currently raised.
+    /// Active investment-caution (`주의 종목`) criteria, sorted by Upbit's
+    /// criterion name.
     ///
-    /// Raised and cleared automatically against published criteria such as
-    /// `PRICE_FLUCTUATIONS` and `GLOBAL_PRICE_DIFFERENCES`. They describe how
-    /// the market is trading rather than anything about the listing, they are
-    /// common, and they do not reach `MarketStatus`. Match on the strings you
-    /// care about rather than on the list being non-empty; Upbit has added
-    /// criteria before.
-    ///
-    /// Always empty outside [`UpbitRegion::Korea`], which is the only
-    /// deployment that publishes them.
+    /// These criteria do not change [`MarketStatus`](crate::MarketStatus).
+    /// The list is empty outside [`UpbitRegion::Korea`], whose payload is the
+    /// only regional payload that includes the criteria.
     pub cautions: Vec<String>,
 }
 
-/// Talks to Upbit.
+/// Adapter for Upbit spot markets.
 ///
-/// Spot only. Upbit lists no derivatives, so the position, margin, and funding
-/// half of [`Client`](crate::Client) reports
-/// [`Error::Unsupported`](crate::Error::Unsupported) here.
-///
-/// ```
-/// use maxt::{Client, Feature, adapters::UpbitAdapter};
-///
-/// let public = Client::new(UpbitAdapter::new());
-/// assert!(public.supports(Feature::Candles));
-/// assert!(!public.supports(Feature::Balances)); // no credentials
-/// assert!(!public.supports(Feature::Positions)); // spot exchange
-/// ```
+/// Derivative features return [`Error::Unsupported`](crate::Error::Unsupported).
 #[derive(Debug, Clone)]
 pub struct UpbitAdapter {
     region: UpbitRegion,
     credentials: Option<UpbitCredentials>,
-    /// Built once, at construction.
-    ///
-    /// Building it fails only if the TLS backend refuses to initialize. The
-    /// constructors stay infallible, so that failure is kept here and reported
-    /// at the first call that needs the network.
+    /// Cached transport initialization result, reported on first use.
     http: std::result::Result<HttpTransport, Error>,
 }
 
@@ -123,12 +95,12 @@ pub(crate) struct UpbitCredentials {
 }
 
 impl UpbitAdapter {
-    /// An adapter for public market data on Upbit Korea.
+    /// Creates an unauthenticated adapter for Upbit Korea.
     pub fn new() -> Self {
         Self::with_region(UpbitRegion::Korea)
     }
 
-    /// An adapter for public market data in one region.
+    /// Creates an unauthenticated adapter for `region`.
     pub fn with_region(region: UpbitRegion) -> Self {
         Self {
             region,
@@ -137,11 +109,9 @@ impl UpbitAdapter {
         }
     }
 
-    /// Adds the API credentials that account, order, and private stream calls
-    /// need.
+    /// Adds credentials for account, order, and private-stream calls.
     ///
-    /// Upbit issues an access key and a secret key together; both come from the
-    /// same region as this adapter.
+    /// The key pair must be issued by the adapter's selected region.
     #[must_use]
     pub fn with_credentials(
         mut self,
@@ -155,16 +125,23 @@ impl UpbitAdapter {
         self
     }
 
-    /// Which region this adapter talks to.
+    /// Returns the selected region.
     pub fn region(&self) -> UpbitRegion {
         self.region
     }
 
-    /// Reads several order books in one call.
+    /// Fetches order books for one or more markets in one REST request.
     ///
-    /// Most exchanges answer for one market per request, so the common API has
-    /// no shape for this. Asking Upbit for thirty books costs one call, which
-    /// matters against Upbit's per-second quota.
+    /// `depth` is the number of levels per side and must be from 1 through 30.
+    /// `None` uses Upbit's 30-level default.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::InvalidRequest`](crate::Error::InvalidRequest) for an
+    /// empty market list, an invalid depth, a different exchange, or an invalid
+    /// asset code. Non-spot markets return
+    /// [`Error::Unsupported`](crate::Error::Unsupported). Transport, exchange,
+    /// and decoding errors are propagated.
     pub async fn order_books(
         &self,
         markets: &[Market],
@@ -173,22 +150,25 @@ impl UpbitAdapter {
         rest::order_books(self.http()?, markets, depth).await
     }
 
-    /// Reads several tickers in one call.
+    /// Fetches tickers for one or more markets in one REST request.
     ///
-    /// Batched for the same reason as [`UpbitAdapter::order_books`]: one call
-    /// covers every market Upbit lists, and the common API has no shape for
-    /// that.
+    /// # Errors
+    ///
+    /// Returns [`Error::InvalidRequest`](crate::Error::InvalidRequest) for an
+    /// empty market list, a different exchange, or an invalid asset code.
+    /// Non-spot markets return [`Error::Unsupported`](crate::Error::Unsupported).
+    /// Transport, exchange, and decoding errors are propagated.
     pub async fn tickers(&self, markets: &[Market]) -> Result<Vec<Ticker>> {
         rest::tickers(self.http()?, markets).await
     }
 
-    /// Every listed market paired with what Upbit has flagged about it.
+    /// Fetches warning and caution data for every listed market.
     ///
-    /// [`Client::markets`](crate::Client::markets) reports a warned market as
-    /// [`MarketStatus::Unknown`](crate::MarketStatus::Unknown) and says nothing
-    /// about a caution, because the two designations do not mean the same thing
-    /// and `MarketStatus` has one value between them. This is where both are
-    /// readable, and the only place the caution criteria are.
+    /// Caution criteria are empty outside [`UpbitRegion::Korea`].
+    ///
+    /// # Errors
+    ///
+    /// Propagates transport, exchange, and decoding errors.
     pub async fn market_events(&self) -> Result<Vec<(Market, UpbitMarketEvent)>> {
         rest::market_events(self.http()?).await
     }
@@ -285,8 +265,7 @@ impl Adapter for UpbitAdapter {
             )
             .await?;
 
-            // One decoder per connection: it carries the candle window that is
-            // still open, which is what lets a closed one be reported.
+            // Candle completion state belongs to one WebSocket connection.
             let mut decoder = stream::Decoder::default();
 
             Ok(MarketStream::new(events(
@@ -328,19 +307,12 @@ impl Adapter for UpbitAdapter {
         let config = config.clone();
 
         Box::pin(async move {
-            // Cloned into the signing closure below, which outlives this call:
-            // it is called again for every reconnect.
+            // The reconnect callback owns the credentials it signs with.
             let credentials = self.credentials()?.clone();
             let session = ws::connect(
                 WsConnect {
                     url,
-                    // Upbit authenticates the private socket in the opening
-                    // handshake rather than in a frame. Its token claims no
-                    // expiry, so replaying one would in fact still open a
-                    // socket hours later; it is signed per handshake anyway, so
-                    // that the freshness of a private connection is one
-                    // property of this crate rather than one per exchange, and
-                    // a nonce is never reused across connections.
+                    // Mint a fresh authorization value for every handshake.
                     headers: Some(Box::new(move || {
                         Ok(vec![(
                             private::AUTHORIZATION.to_string(),
@@ -363,21 +335,12 @@ impl Adapter for UpbitAdapter {
     }
 }
 
-/// A fresh label for one connection. Upbit echoes it back in its support
-/// tooling and does not otherwise interpret it.
+/// Generates a unique subscription ticket.
 fn ticket() -> String {
     uuid::Uuid::new_v4().to_string()
 }
 
-/// Turns a connection into the events an adapter promised.
-///
-/// Shared by the public and private streams, which differ only in what a frame
-/// decodes to. One frame can carry several events, because Upbit publishes a
-/// whole wallet in a single private frame and because a candle frame that opens
-/// a new window also settles the one before it.
-///
-/// `decode` is called once per frame in arrival order and may keep state
-/// between calls, which is how [`stream::Decoder`] recognises a window ending.
+/// Decodes frames in arrival order and flattens each into zero or more events.
 fn events<T: Clone + Send + 'static>(
     session: WsSession,
     mut decode: impl FnMut(&str) -> Result<Vec<T>> + Send + 'static,
@@ -400,8 +363,7 @@ fn events<T: Clone + Send + 'static>(
     })
 }
 
-/// Spreads one frame's outcome over the items it produced, so a failed frame
-/// becomes one failed item and the stream continues.
+/// Converts one decoded frame into stream items.
 fn split<T>(decoded: Result<Vec<T>>) -> Vec<Result<T>> {
     match decoded {
         Ok(items) => items.into_iter().map(Ok).collect(),
@@ -507,8 +469,6 @@ mod tests {
 
     #[tokio::test]
     async fn upbit_lists_no_derivatives_and_says_so_with_an_empty_answer() {
-        // The question is meaningful and the answer is "none", which is not the
-        // same as the exchange having no way to answer it.
         let markets = UpbitAdapter::new()
             .markets(MarketKind::Perpetual)
             .await

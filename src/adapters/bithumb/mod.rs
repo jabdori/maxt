@@ -1,4 +1,4 @@
-//! Bithumb, a Korean spot exchange.
+//! Bithumb spot adapter.
 
 mod parse;
 mod private;
@@ -18,95 +18,47 @@ use crate::types::{
 
 pub(crate) const REST_BASE_URL: &str = "https://api.bithumb.com";
 pub(crate) const WEBSOCKET_URL: &str = "wss://ws-api.bithumb.com/websocket/v1";
-/// Private frames are served from the v2 socket even though the public feeds
-/// are v1; the two version numbers are unrelated.
+/// Private account events use a separate v2 WebSocket endpoint.
 pub(crate) const PRIVATE_WEBSOCKET_URL: &str = "wss://ws-api.bithumb.com/websocket/v2/private";
 
-/// How serious Bithumb calls one alert, ranked the way Bithumb ranks them.
+/// Severity of a Bithumb market alert (경보제), ordered from least to most severe.
 ///
-/// Ordering follows severity, so `step >= BithumbAlertStep::Warning` is the
-/// filter for "past the mildest".
-///
-/// `Caution` here is Bithumb's 주의, the gentlest of three steps. It is not the
-/// `CAUTION` that [`BithumbAdapter::market_warnings`] returns: that spelling
-/// belongs to the other designation entirely and means 유의.
+/// This is separate from the `CAUTION` investment-warning flag returned by
+/// [`BithumbAdapter::market_warnings`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[non_exhaustive]
 pub enum BithumbAlertStep {
-    /// 주의. The step Bithumb raises first, and the one that corresponds to
-    /// Upbit having any 주의 종목 criterion raised at all.
+    /// Caution (주의), the lowest alert level.
     Caution,
-    /// 경고. The middle step, rare enough that a day's list can hold one.
+    /// Warning (경고), the middle alert level.
     Warning,
-    /// 위험. The gravest step Bithumb documents, and the commonest one in
-    /// practice, because the volume and deposit criteria tend to arrive here.
+    /// Danger (위험), the highest documented alert level.
     Danger,
-    /// A step Bithumb has begun sending since, ranked above [`Danger`] so a
-    /// severity threshold surfaces it instead of quietly passing it.
-    ///
-    /// [`Danger`]: BithumbAlertStep::Danger
+    /// An unrecognized level, ordered above [`Self::Danger`] so thresholds surface it.
     Unknown,
 }
 
-/// One alert Bithumb's 경보제 has raised on one market.
-///
-/// This is the counterpart of Upbit's 주의 종목: raised and cleared
-/// automatically against published criteria, describing how a market is
-/// trading rather than anything about the listing, and leaving the market
-/// [`MarketStatus::Active`](crate::MarketStatus::Active). Bithumb states two
-/// things Upbit does not publish at all, a severity step and the moment the
-/// alert lapses. Read it from
-/// [`BithumbAdapter::market_alerts`](BithumbAdapter::market_alerts).
+/// An active Bithumb market alert for one market and criterion.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct BithumbMarketAlert {
-    /// Bithumb's criterion, 경보 유형, verbatim as Bithumb spells it:
-    /// `PRICE_SUDDEN_FLUCTUATION`, `PRICE_DIFFERENCE_HIGH`,
-    /// `SPECIFIC_ACCOUNT_HIGH_TRANSACTION`,
-    /// `TRADING_VOLUME_SUDDEN_FLUCTUATION` or
-    /// `DEPOSIT_AMOUNT_SUDDEN_FLUCTUATION`.
-    ///
-    /// Text rather than an enum, because the list of criteria is the part an
-    /// exchange extends. Match on the ones you act on.
+    /// Bithumb's criterion code, preserved verbatim for forward compatibility.
     pub kind: String,
-    /// How serious Bithumb calls this one.
+    /// Alert severity.
     pub step: BithumbAlertStep,
-    /// When Bithumb has said the alert runs out, 경보 종료 일시.
-    ///
-    /// Bithumb states it as a Korean wall clock carrying no zone marker; this
-    /// is that same instant written in UTC. Alerts on one criterion tend to
-    /// share an expiry across every market carrying them, because the criteria
-    /// are re-read on a schedule rather than per market.
+    /// Alert expiry, converted from Bithumb's KST wall-clock value to UTC.
     pub ends_at: Timestamp,
 }
 
-/// Talks to Bithumb.
+/// Adapter for Bithumb spot markets.
 ///
-/// Spot only. Bithumb lists no derivatives, so the position, margin, and
-/// funding half of [`Client`](crate::Client) reports
-/// [`Error::Unsupported`](crate::Error::Unsupported) here.
-///
-/// Bithumb also publishes no candle stream. Trades, order books, and tickers
-/// stream normally, and historical candles are available over REST, but
-/// [`Feature::CandleStream`] is unsupported. Build candles from
-/// [`Feed::Trades`](crate::Feed::Trades) if you need them live.
-///
-/// ```
-/// use maxt::{Client, Feature, adapters::BithumbAdapter};
-///
-/// let client = Client::new(BithumbAdapter::new());
-///
-/// assert!(client.supports(Feature::Candles));      // REST: yes
-/// assert!(client.supports(Feature::TradeStream));  // stream: yes
-/// assert!(!client.supports(Feature::CandleStream)); // stream: not published
-/// ```
+/// Public REST supports markets, trades, order books, tickers, and candles.
+/// Public WebSocket supports trades, order books, and tickers. Derivatives and
+/// candle streams return [`Error::Unsupported`](crate::Error::Unsupported).
 #[derive(Debug, Clone)]
 pub struct BithumbAdapter {
     credentials: Option<BithumbCredentials>,
-    /// Built once at construction, and held as a `Result` because `new` is
-    /// infallible by design. A client that cannot be built is a defect in the
-    /// process, so the failure is reported at the first call that needs the
-    /// network.
+    // Stored as a result because `new` is infallible.
     http: Result<HttpTransport>,
 }
 
@@ -117,7 +69,7 @@ pub(crate) struct BithumbCredentials {
 }
 
 impl BithumbAdapter {
-    /// An adapter for public market data.
+    /// Creates an adapter for public market data.
     pub fn new() -> Self {
         Self {
             credentials: None,
@@ -125,10 +77,7 @@ impl BithumbAdapter {
         }
     }
 
-    /// Adds the API credentials that account, order, and private stream calls
-    /// need.
-    ///
-    /// Bithumb issues an access key and a secret key together.
+    /// Adds the access key and secret key required by private APIs.
     #[must_use]
     pub fn with_credentials(
         mut self,
@@ -142,38 +91,19 @@ impl BithumbAdapter {
         self
     }
 
-    /// Every listed market paired with Bithumb's investment-warning
-    /// designation, 유의 종목.
+    /// Returns every listed market with its raw investment-warning flag.
     ///
-    /// Bithumb spells the flag `CAUTION` while documenting the field itself as
-    /// 유의 종목 여부, and `NONE` is the only other value the enum holds. A
-    /// designated market keeps trading, and the common
-    /// [`MarketStatus`](crate::MarketStatus) has no value meaning "trading,
-    /// but flagged", so [`Client::markets`](crate::Client::markets) reports it
-    /// as [`MarketStatus::Unknown`](crate::MarketStatus::Unknown), which is
-    /// where Upbit's warning lands too. The label itself is available only
-    /// here, verbatim as Bithumb spells it.
-    ///
-    /// This is not Bithumb's 주의 종목. That designation is published by a
-    /// separate alert system, read through
-    /// [`market_alerts`](Self::market_alerts), and never reaches
-    /// `MarketStatus`.
+    /// The value is `NONE` or `CAUTION` (유의 종목). A warned market remains
+    /// tradable and maps to [`MarketStatus::Unknown`](crate::MarketStatus::Unknown).
+    /// This flag is separate from [`Self::market_alerts`].
     pub async fn market_warnings(&self) -> Result<Vec<(Market, String)>> {
         rest::market_warnings(self.http()?).await
     }
 
-    /// What Bithumb's alert system, 경보제, currently has raised, one entry per
-    /// alert.
+    /// Returns active alert-system rows, one per market and criterion.
     ///
-    /// A market flagged on several criteria appears once per criterion, and a
-    /// market flagged on none is absent, so unlike
-    /// [`market_warnings`](Self::market_warnings) this is no substitute for a
-    /// market list. Every market here is
-    /// [`MarketStatus::Active`](crate::MarketStatus::Active) unless it also
-    /// carries the separate warning: an alert describes trading conditions,
-    /// not the listing, and folding it into
-    /// [`MarketStatus::Unknown`](crate::MarketStatus::Unknown) would bury the
-    /// handful of warned markets inside it.
+    /// Markets without alerts are omitted. Alerts do not change the common
+    /// [`MarketStatus`](crate::MarketStatus).
     pub async fn market_alerts(&self) -> Result<Vec<(Market, BithumbMarketAlert)>> {
         rest::market_alerts(self.http()?).await
     }
@@ -182,12 +112,7 @@ impl BithumbAdapter {
         self.credentials.is_some()
     }
 
-    /// The credentials a private call needs, or the error it should fail with.
-    ///
-    /// Missing credentials are an authentication failure, not a missing
-    /// feature: Bithumb has these endpoints, this adapter just cannot reach
-    /// them yet. Reporting `Unsupported` here would tell a caller to stop
-    /// asking, when the fix is to supply a key.
+    /// Returns credentials or an authentication error before network I/O.
     fn credentials(&self) -> Result<&BithumbCredentials> {
         self.credentials
             .as_ref()
@@ -214,8 +139,7 @@ impl Adapter for BithumbAdapter {
         if feature.is_derivatives_only() {
             return false;
         }
-        // Bithumb's public WebSocket carries trades, order books, and tickers,
-        // but no candles.
+        // Bithumb does not publish a public candle stream.
         if matches!(feature, Feature::CandleStream) {
             return false;
         }
@@ -355,9 +279,7 @@ mod tests {
             .await
             .expect_err("no credentials were supplied");
 
-        // Bithumb has this endpoint; the adapter just cannot reach it yet.
-        // `Unsupported` would tell a caller to stop asking, when the fix is to
-        // supply a key, and it would disagree with the other three adapters.
+        // The feature exists, but the request lacks credentials.
         assert!(
             matches!(error, Error::Auth { .. }),
             "expected an auth failure, got {error:?}"

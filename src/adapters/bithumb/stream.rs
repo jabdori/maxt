@@ -1,8 +1,6 @@
-//! Bithumb's WebSockets, public and private.
+//! Bithumb public and private WebSocket transport.
 //!
-//! One socket carries every market and every feed: the subscribe payload is a
-//! list whose first element is a client-chosen ticket, followed by one element
-//! per feed naming the market codes it applies to.
+//! One public connection can subscribe to multiple markets and feed types.
 
 use std::time::Duration;
 
@@ -18,31 +16,20 @@ use crate::types::{AccountEvent, Feed, MarketEvent, StreamConfig, Subscription};
 use super::parse::{self, EXCHANGE};
 use super::{BithumbCredentials, PRIVATE_WEBSOCKET_URL, WEBSOCKET_URL, private};
 
-/// The frame layout Bithumb calls `DEFAULT`: full field names, one JSON object
-/// per event. The alternative, `SIMPLE`, abbreviates every key.
+/// Bithumb frame format with full field names.
 const FRAME_FORMAT: &str = "DEFAULT";
 
-/// What holds a Bithumb socket open when the market is asleep.
+/// Heartbeat shared by public and private sockets.
 ///
-/// Bithumb reads the bare text `PING` as a keepalive and answers it with
-/// `{"status":"UP"}`, the status frame [`decode`] drops. One heartbeat both
-/// tells Bithumb the client is alive and produces the inbound traffic the idle
-/// timer is watching for. Bithumb closes a connection it has exchanged nothing
-/// with for about 120 seconds, so eight heartbeats fit inside one such window.
-///
-/// Both sockets use it. The private one carries nothing until the account
-/// moves, which on a quiet account is never.
+/// Bithumb answers text `PING` with `{"status":"UP"}` and may close an idle
+/// connection after about 120 seconds.
 pub(crate) const HEARTBEAT: Heartbeat = Heartbeat {
     interval: Duration::from_secs(15),
     frame: HeartbeatFrame::Text("PING"),
-    // Four unanswered heartbeats before a socket is written off.
     min_idle_timeout: Duration::from_secs(60),
 };
 
-/// Builds the frame sent on connect and again after every reconnect.
-///
-/// `ticket` labels the connection on Bithumb's side; it appears in their
-/// support tooling and is not otherwise interpreted.
+/// Builds the public subscription frame used on connect and reconnect.
 pub(crate) fn subscribe_frame(subscription: &Subscription, ticket: &str) -> Result<String> {
     if subscription.markets().is_empty() {
         return Err(Error::invalid_request(
@@ -74,12 +61,9 @@ pub(crate) fn subscribe_frame(subscription: &Subscription, ticket: &str) -> Resu
         .map_err(|err| Error::decode(format!("could not build Bithumb subscribe frame: {err}")))
 }
 
-/// The `type` Bithumb expects for a feed.
+/// Maps supported public feeds to Bithumb type names.
 ///
-/// Bithumb's public socket carries trades, order books, and tickers and
-/// nothing else. Candles exist over REST only, so a candle feed is refused
-/// here. Dropping it from the subscription or rebuilding it from trades would
-/// hand back a stream that quietly is not what was asked for.
+/// Candle feeds are rejected because Bithumb publishes them only over REST.
 fn feed_type(feed: Feed) -> Result<&'static str> {
     match feed {
         Feed::Trades => Ok("trade"),
@@ -96,11 +80,7 @@ fn feed_type(feed: Feed) -> Result<&'static str> {
     }
 }
 
-/// Builds the private subscribe frame.
-///
-/// `myAsset` is account-wide and `myOrder` covers every market when no codes
-/// are named, which is what the common API asks for: it subscribes an account,
-/// not a market list.
+/// Builds an account-wide private subscription for orders and balances.
 fn account_subscribe_frame(ticket: &str) -> Result<String> {
     let payload = serde_json::json!([
         { "ticket": ticket },
@@ -137,16 +117,7 @@ pub(crate) async fn subscribe(
     ))
 }
 
-/// How to open one private connection, and how to authenticate every one of
-/// them.
-///
-/// Bithumb authenticates the private socket in the opening handshake rather
-/// than in a frame, and its token carries the millisecond clock it was signed
-/// at. One token therefore opens one handshake: a socket that reconnects an
-/// hour later and presented the token it opened with would be refused, and the
-/// reconnect loop would retry that same dead token forever. The header is
-/// signed here, per handshake, so what a reconnect presents is as fresh as what
-/// the first connection did.
+/// Builds a private connection that signs a fresh JWT for each handshake.
 fn account_connect(credentials: &BithumbCredentials, ticket: &str) -> Result<WsConnect> {
     let credentials = credentials.clone();
 
@@ -158,9 +129,7 @@ fn account_connect(credentials: &BithumbCredentials, ticket: &str) -> Result<WsC
                 private::websocket_authorization(&credentials)?,
             )])
         })),
-        // Fixed: the frame names a ticket and two channels and signs nothing,
-        // so it is as good on the tenth reconnect as on the first. The
-        // credential this socket presents is in the header above.
+        // The subscription frame is reusable; the handshake header is regenerated.
         subscribe: WsConnect::fixed(vec![account_subscribe_frame(ticket)?]),
         heartbeat: Some(HEARTBEAT),
     })
@@ -206,10 +175,7 @@ fn account_items(item: Result<WsCommand>) -> Vec<Result<AccountEvent>> {
     }
 }
 
-/// Reads one public frame.
-///
-/// `None` means the frame carried no market data. Bithumb answers a keepalive
-/// with a status frame, which a caller has no use for.
+/// Decodes one public frame; status frames return `Ok(None)`.
 pub(crate) fn decode(frame: &str) -> Result<Option<MarketEvent>> {
     let object = frame_object(frame)?;
     if object.get("status").and_then(Value::as_str).is_some() {
@@ -219,7 +185,7 @@ pub(crate) fn decode(frame: &str) -> Result<Option<MarketEvent>> {
     parse::market_event(&Value::Object(object))
 }
 
-/// Reads one private frame, which may describe several balances at once.
+/// Decodes one private frame into zero or more account events.
 pub(crate) fn decode_account(frame: &str) -> Vec<Result<AccountEvent>> {
     let events = frame_object(frame).and_then(|object| {
         if object.get("status").and_then(Value::as_str).is_some() {
@@ -234,10 +200,7 @@ pub(crate) fn decode_account(frame: &str) -> Vec<Result<AccountEvent>> {
     }
 }
 
-/// Unwraps a frame to its object.
-///
-/// Bithumb sends bare objects but wraps them in a single-element list on some
-/// endpoints, so both are accepted.
+/// Accepts a bare object or a single-object list.
 fn frame_object(frame: &str) -> Result<Map<String, Value>> {
     let value: Value = serde_json::from_str(frame)
         .map_err(|err| Error::decode(format!("unreadable Bithumb frame: {err}")))?;
@@ -254,7 +217,7 @@ fn frame_object(frame: &str) -> Result<Map<String, Value>> {
     }
 }
 
-/// Bithumb answers some subscriptions with the same JSON in a binary frame.
+/// Decodes a UTF-8 binary frame.
 fn utf8(bytes: &[u8]) -> Result<String> {
     std::str::from_utf8(bytes)
         .map(str::to_string)
@@ -266,7 +229,7 @@ mod tests {
     use super::*;
     use crate::types::{Exchange, Interval, Market, Side, Timestamp};
 
-    // https://apidocs.bithumb.com/reference/체결-trade.md
+    // Shape reference: https://apidocs.bithumb.com/reference/체결-trade.md
     const TRADE: &str = r#"{
       "type": "trade",
       "code": "KRW-BTC",
@@ -283,7 +246,7 @@ mod tests {
       "sequential_id": 17819173230000000
     }"#;
 
-    // https://apidocs.bithumb.com/reference/내-자산-myasset.md
+    // Documentation example: https://apidocs.bithumb.com/reference/내-자산-myasset.md
     const MY_ASSET: &str = r#"{
       "type": "myAsset",
       "assets": [
@@ -325,8 +288,7 @@ mod tests {
 
     #[test]
     fn a_candle_feed_is_refused_because_bithumb_publishes_none() {
-        // Every interval, including the ones the REST endpoints do serve: the
-        // gap is the stream, not the interval.
+        // Candle streaming is unsupported for every interval.
         for interval in [
             Interval::Sec1,
             Interval::Min1,
@@ -414,10 +376,7 @@ mod tests {
         assert_eq!(first.len(), 1);
         assert_eq!(first[0].0, "authorization");
         assert!(first[0].1.starts_with("Bearer "));
-        // The token names the millisecond it was signed at, so the one that
-        // opened the first handshake is not one a reconnect may present: an
-        // hour-old token is refused, and a connection that replayed it would
-        // retry the same dead credential forever.
+        // Each handshake receives a newly signed token.
         assert_ne!(first, second);
     }
 
@@ -454,20 +413,16 @@ mod tests {
 
     #[test]
     fn the_heartbeat_is_the_frame_bithumb_answers_rather_than_one_it_errors_on() {
-        // Bithumb reads every text frame on these sockets as a command. `PING`
-        // is the one it answers with a status frame; anything else comes back
-        // as an error that would take the subscription down with it.
+        // `PING` is the documented text heartbeat.
         assert_eq!(HEARTBEAT.frame, HeartbeatFrame::Text("PING"));
-        // That answer is the inbound traffic the idle timer is waiting for, and
-        // it reaches both sockets, so neither may read it as data or as a fault.
+        // The heartbeat response is a control frame on both sockets.
         assert!(
             decode(r#"{"status":"UP"}"#)
                 .expect("the answer to this heartbeat")
                 .is_none()
         );
         assert!(decode_account(r#"{"status":"UP"}"#).is_empty());
-        // Bithumb hangs up after about 120 seconds with nothing sent or
-        // received, so several heartbeats have to fit inside one such window.
+        // Several heartbeats fit within the documented idle window.
         assert!(HEARTBEAT.interval * 4 <= Duration::from_secs(120));
         assert!(HEARTBEAT.min_idle_timeout >= HEARTBEAT.interval * 3);
     }

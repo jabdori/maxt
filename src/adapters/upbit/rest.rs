@@ -1,7 +1,4 @@
 //! Upbit's public quotation REST API.
-//!
-//! Request building is kept as plain functions returning [`HttpRequest`] so
-//! that every path, query, and rejection below is testable without a network.
 
 use crate::adapters::candles as candle_pages;
 use crate::error::{Error, Result};
@@ -18,15 +15,10 @@ use super::parse::{self, EXCHANGE};
 const MAX_TRADE_COUNT: u32 = 500;
 /// Upbit returns at most this many book levels per side.
 const MAX_BOOK_DEPTH: u32 = 30;
-/// Upbit returns at most this many candles per call, and offers no way to ask
-/// for more in one request.
+/// Upbit returns at most this many candles per call.
 pub(crate) const MAX_CANDLE_COUNT: u32 = 200;
 
-/// Percent-encodes a query value.
-///
-/// Public quotation requests are unsigned, so unlike the private ones they can
-/// be encoded freely; market codes are validated separately, and this covers
-/// the `to` cursor's colons.
+/// Percent-encodes a query value using the RFC 3986 unreserved set.
 fn encode(raw: &str) -> String {
     raw.bytes()
         .map(|byte| match byte {
@@ -47,9 +39,7 @@ fn query(params: &[(&str, String)]) -> String {
 }
 
 pub(crate) fn markets_request() -> HttpRequest {
-    // Without `is_details` the listing is just codes and names. It is what adds
-    // the designation field: `market_event` on Upbit Korea, the older
-    // `market_warning` on the other three deployments.
+    // Detailed listings include the region-specific warning fields.
     HttpRequest::get("/v1/market/all").query("is_details=true")
 }
 
@@ -112,23 +102,11 @@ pub(crate) fn ticker_request(markets: &[Market]) -> Result<HttpRequest> {
     Ok(HttpRequest::get("/v1/ticker").query(query(&[("markets", codes)])))
 }
 
-/// The endpoint `maxt` sends an interval to, or `None` when Upbit has none.
+/// Returns the candle endpoint for an interval exposed by `maxt`.
 ///
-/// Upbit splits candles across a family of endpoints instead of taking an
-/// interval parameter: `seconds`, `minutes/{unit}` for units 1, 3, 5, 10, 15,
-/// 30, 60 and 240, then `days`, `weeks`, `months` and `years`. The ones below
-/// are the intervals [`Interval`] can name and Upbit serves. Ten and two
-/// hundred forty seconds, ten minutes, and a year have no [`Interval`] to ask
-/// with, which is a gap in `maxt`, not in Upbit.
-///
-/// The two gaps are not the same thing, and only one of them is `maxt`'s. Every
-/// interval [`Interval`] *can* name and Upbit publishes is mapped here, so a
-/// `None` means Upbit aggregates no such candle: two, eight and twelve hours
-/// and three days are absent from the list above, not missing from this match.
-/// [`candles_request`] says which of the two it is refusing.
-///
-/// `seconds` carries only one-second candles and, unlike the rest, only about
-/// three months of them.
+/// Upbit also provides 10-minute and yearly candles, but [`Interval`] has no
+/// corresponding variants. Other unmapped intervals are not available from
+/// Upbit. One-second history is limited to the most recent three months.
 pub(crate) fn candle_path(interval: Interval) -> Option<&'static str> {
     Some(match interval {
         Interval::Sec1 => "/v1/candles/seconds",
@@ -146,15 +124,10 @@ pub(crate) fn candle_path(interval: Interval) -> Option<&'static str> {
     })
 }
 
-/// One page of candles, ending at `cursor` and reaching at most `count` back.
+/// Builds one candle-page request ending before `cursor`.
 ///
-/// Upbit walks backwards from a `to` cursor and has no start-time parameter,
-/// so [`candles`] honours a start time by moving the cursor.
-///
-/// An interval [`candle_path`] does not map is refused as something Upbit does
-/// not publish, because that is what every one of them is. Saying `maxt` had not
-/// mapped it would send a caller to file an issue here about a candle Upbit has
-/// never served.
+/// `count` is the requested page size. An unmapped interval returns
+/// [`Error::Unsupported`].
 pub(crate) fn candles_request(
     request: &CandleRequest,
     cursor: Option<Timestamp>,
@@ -182,8 +155,7 @@ pub(crate) fn candles_request(
     Ok(HttpRequest::get(path).query(query(&params)))
 }
 
-/// Sends a request and hands back a 2xx body, turning anything else into
-/// Upbit's own error.
+/// Returns a successful response body or maps the exchange error envelope.
 pub(crate) async fn send(http: &HttpTransport, request: &HttpRequest) -> Result<String> {
     let response = http.send(request).await?;
     if response.is_success() {
@@ -194,8 +166,7 @@ pub(crate) async fn send(http: &HttpTransport, request: &HttpRequest) -> Result<
 }
 
 pub(crate) async fn markets(http: &HttpTransport, kind: MarketKind) -> Result<Vec<MarketInfo>> {
-    // Upbit lists no derivatives. The question is meaningful and the answer is
-    // "none", so it is not an error.
+    // Upbit lists spot markets only.
     if kind != MarketKind::Spot {
         return Ok(Vec::new());
     }
@@ -224,14 +195,10 @@ pub(crate) async fn trades(
     newest_first(&parse::json::<Vec<parse::RawTrade>>(&body)?)
 }
 
-/// Puts a trades payload in the order the common API promises.
+/// Sorts trades newest first.
 ///
-/// Upbit already answers `/v1/trades/ticks` newest-first, walking backwards
-/// from `to`, so this changes nothing today. It keeps
-/// [`Client::trades`](crate::Client::trades) holding its promise as a property
-/// of this adapter. The sort is stable, which leaves trades sharing one
-/// millisecond in the order Upbit ranked them. `sequential_id` does not break
-/// the tie, because Upbit documents that it does not order trades.
+/// The stable sort preserves server order for equal timestamps. Upbit's
+/// `sequential_id` identifies a trade but is not an ordering key.
 fn newest_first(raw: &[parse::RawTrade]) -> Result<Vec<Trade>> {
     let mut trades = raw.iter().map(parse::trade).collect::<Result<Vec<_>>>()?;
     trades.sort_by(|left, right| right.timestamp.cmp(&left.timestamp));
@@ -259,15 +226,10 @@ pub(crate) async fn tickers(http: &HttpTransport, markets: &[Market]) -> Result<
         .collect()
 }
 
-/// Reads candles, oldest first, paging backwards when one response cannot hold
-/// the answer.
+/// Reads candles oldest first, paging backward as needed.
 ///
-/// Upbit serves candles newest-first from a `to` cursor, caps a response at
-/// [`MAX_CANDLE_COUNT`], and offers no way to name a start time. That is the
-/// shape [`crate::adapters::candles::read`] walks, so the window, the start
-/// time, and any count above the cap are handled there, the same way they are
-/// on every other exchange. Bithumb's endpoint is a copy of this one and goes
-/// through the same walk.
+/// Upbit returns at most [`MAX_CANDLE_COUNT`] newest-first rows per request and
+/// provides only an exclusive end cursor.
 pub(crate) async fn candles(http: &HttpTransport, request: &CandleRequest) -> Result<Vec<Candle>> {
     let now = Timestamp::now();
 
@@ -282,8 +244,7 @@ pub(crate) async fn candles(http: &HttpTransport, request: &CandleRequest) -> Re
                 .map(|raw| parse::candle(raw, request.interval, now))
                 .collect::<Result<Vec<_>>>()?;
 
-            // Upbit answers newest-first; the walk and the common API both read
-            // oldest-first.
+            // The shared candle reader expects each page oldest first.
             page.reverse();
             Ok(page)
         },
@@ -291,8 +252,7 @@ pub(crate) async fn candles(http: &HttpTransport, request: &CandleRequest) -> Re
     .await
 }
 
-/// Pulls the single entry out of a response Upbit models as a list because the
-/// endpoint can take several markets at once.
+/// Extracts one market from a batch-shaped response.
 pub(crate) fn only<T>(mut items: Vec<T>, market: &Market) -> Result<T> {
     if items.len() == 1 {
         Ok(items.remove(0))
@@ -346,9 +306,6 @@ mod tests {
 
     #[test]
     fn each_interval_reaches_the_endpoint_that_serves_it() {
-        // https://docs.upbit.com/kr/reference/list-candles-seconds
-        // https://docs.upbit.com/kr/reference/list-candles-minutes
-        // https://docs.upbit.com/kr/reference/list-candles-months
         let cases = [
             (Interval::Sec1, "/v1/candles/seconds"),
             (Interval::Min1, "/v1/candles/minutes/1"),
@@ -377,14 +334,7 @@ mod tests {
 
     #[test]
     fn an_interval_upbit_does_not_aggregate_is_refused_as_the_exchanges_gap() {
-        // Upbit aggregates none of these under any unit its endpoints accept,
-        // and the refusal must not be silently answered with a neighbour.
-        //
-        // Nor may it read as `maxt`'s omission. Every interval Upbit serves and
-        // `Interval` can name has an endpoint here, so "no endpoint mapped for
-        // Hour2" would send a caller to open an issue against this crate for a
-        // candle Upbit has never published. The two cases are both `Unsupported`
-        // and they are not the same sentence.
+        // Unavailable intervals must not be substituted with nearby intervals.
         for interval in [
             Interval::Hour2,
             Interval::Hour8,
@@ -425,9 +375,7 @@ mod tests {
 
     #[test]
     fn every_interval_in_the_common_baseline_reaches_an_endpoint() {
-        // What `supports(Feature::Candles) == true` is worth on this exchange:
-        // the intervals all four exchanges document. Upbit serves one more on
-        // top, the one-second candle, which the streaming side already used.
+        // Every Upbit interval representable by `Interval` is mapped.
         for interval in [
             Interval::Sec1,
             Interval::Min1,
@@ -517,9 +465,7 @@ mod tests {
 
     #[test]
     fn recent_trades_come_back_newest_first() {
-        // https://global-docs.upbit.com/reference/list-pair-trades.md
-        // Upbit returns trades in reverse chronological order from `to`, so the
-        // payload below is in its own order and 12:00:03 must stay in front.
+        // The fixture is already in Upbit's newest-first response order.
         let raw: Vec<parse::RawTrade> = parse::json(
             r#"[
               {"market":"KRW-BTC","trade_date_utc":"2024-01-01","trade_time_utc":"12:00:03",
@@ -551,8 +497,7 @@ mod tests {
 
     #[test]
     fn trades_are_reordered_rather_than_trusted_to_arrive_sorted() {
-        // The same three trades shuffled: the guarantee has to survive an order
-        // upbit does not currently send.
+        // Sorting is enforced even if the payload order changes.
         let raw: Vec<parse::RawTrade> = parse::json(
             r#"[
               {"market":"KRW-BTC","timestamp":1704110401000,"trade_price":51800000,

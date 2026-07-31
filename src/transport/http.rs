@@ -1,10 +1,10 @@
-//! REST requests.
+//! Buffered HTTP transport for adapter REST requests.
 
 use std::time::Duration;
 
 use crate::error::{Error, Result};
 
-/// The HTTP methods the supported exchanges use.
+/// HTTP methods used by provider adapters.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum HttpMethod {
     Get,
@@ -24,11 +24,7 @@ impl HttpMethod {
     }
 }
 
-/// One REST request, described without reference to any HTTP client.
-///
-/// Adapters build these and hand them to a [`HttpTransport`]. Keeping the
-/// description separate from the sending lets an adapter's request building be
-/// tested without a network.
+/// Client-independent REST request description.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct HttpRequest {
     pub(crate) method: HttpMethod,
@@ -90,7 +86,7 @@ impl HttpRequest {
     }
 }
 
-/// What came back.
+/// Buffered HTTP response.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct HttpResponse {
     pub(crate) status: u16,
@@ -103,7 +99,7 @@ impl HttpResponse {
     }
 }
 
-/// Sends REST requests to one host.
+/// Sends REST requests to one base URL.
 #[derive(Debug, Clone)]
 pub(crate) struct HttpTransport {
     client: reqwest::Client,
@@ -125,12 +121,10 @@ impl HttpTransport {
         })
     }
 
-    /// Sends a request and reads the whole response.
+    /// Sends a request and buffers the response body.
     ///
-    /// A non-2xx status comes back as an ordinary [`HttpResponse`]. Only the
-    /// adapter knows how to read its exchange's error body, so only the adapter
-    /// can turn it into an [`Error::Exchange`] carrying the exchange's own
-    /// code.
+    /// Non-2xx statuses remain [`HttpResponse`] values for provider-specific
+    /// error decoding by the adapter.
     pub(crate) async fn send(&self, request: &HttpRequest) -> Result<HttpResponse> {
         let url = format!("{}{}", self.base_url, request.target());
         let mut builder = self.client.request(

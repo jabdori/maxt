@@ -4,24 +4,7 @@ use rust_decimal::Decimal;
 
 use crate::types::{Market, Side, Timestamp};
 
-/// How much of one asset an account holds.
-///
-/// ```
-/// use maxt::Balance;
-/// use rust_decimal::Decimal;
-///
-/// let krw = Balance {
-///     asset: "KRW".to_string(),
-///     available: Decimal::from(750_000),
-///     locked: Decimal::from(250_000),
-/// };
-///
-/// // Size an order off `available`. The locked part is promised to resting
-/// // orders, and spending it is what the exchange rejects.
-/// assert_eq!(krw.available, Decimal::from(750_000));
-/// // Report `total`, which is what the account is actually worth.
-/// assert_eq!(krw.total(), Decimal::from(1_000_000));
-/// ```
+/// How much of one asset an account reports as available and locked.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Balance {
     /// The asset, uppercase. For example `KRW` or `BTC`.
@@ -33,7 +16,11 @@ pub struct Balance {
 }
 
 impl Balance {
-    /// Available plus locked.
+    /// The reported available amount plus the reported locked amount.
+    ///
+    /// This is an asset quantity, not a price-valued account total. On margin
+    /// venues it may also differ from a wallet-balance field the exchange
+    /// exposes outside this common shape.
     pub fn total(&self) -> Decimal {
         self.available + self.locked
     }
@@ -104,38 +91,7 @@ impl OrderStatus {
     }
 }
 
-/// An order as the exchange currently sees it.
-///
-/// ```
-/// use maxt::{Order, OrderStatus};
-/// use rust_decimal::Decimal;
-///
-/// /// Whether it is worth asking about this order again.
-/// fn still_working(order: &Order) -> bool {
-///     // Partially filled counts: the rest can still fill, and dropping it
-///     // from a tracking table would leak the remainder.
-///     order.status.is_live() && !order.remaining_quantity.is_zero()
-/// }
-///
-/// // The same order part-filled, then finished.
-/// # use maxt::{Exchange, Market, Side};
-/// # let partial = Order {
-/// #     id: "9c8f".to_string(),
-/// #     market: Market::spot(Exchange::Upbit, "BTC", "KRW"),
-/// #     side: Side::Buy,
-/// #     status: OrderStatus::PartiallyFilled,
-/// #     filled_quantity: Decimal::new(4, 1),
-/// #     remaining_quantity: Decimal::new(6, 1),
-/// #     price: Some(Decimal::from(100_000_000)),
-/// #     created_at: None,
-/// # };
-/// # let done = Order { status: OrderStatus::Filled, remaining_quantity: Decimal::ZERO, ..partial.clone() };
-/// assert!(still_working(&partial));
-/// assert!(!still_working(&done));
-///
-/// // `id` is the exchange's own, and is what cancels the order.
-/// assert_eq!(partial.id, "9c8f");
-/// ```
+/// An order as the exchange currently reports it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Order {
     /// The exchange's own order identifier. Pass this to cancel.
@@ -158,37 +114,8 @@ pub struct Order {
 
 /// An open derivatives position.
 ///
-/// Fields an exchange does not publish are `None`. Reading `None` as zero would
-/// misreport an unleveraged position as a missing one.
-///
-/// ```
-/// use maxt::{Exchange, Market, Position, Side};
-/// use rust_decimal::Decimal;
-///
-/// let long = Position {
-///     market: Market::perpetual(Exchange::Binance, "BTC", "USDT"),
-///     side: Some(Side::Buy),
-///     // Always unsigned: the direction lives in `side`, so a short does not
-///     // arrive here as a negative quantity.
-///     quantity: Decimal::new(5, 1),
-///     entry_price: Some(Decimal::from(60_000)),
-///     mark_price: Some(Decimal::from(61_000)),
-///     notional: Some(Decimal::from(30_500)),
-///     unrealized_pnl: Some(Decimal::from(500)),
-///     leverage: None,
-///     margin_mode: None,
-/// };
-///
-/// assert!(!long.is_flat());
-/// // Unset means the exchange did not say. Defaulting it to 1 would understate
-/// // the risk of a position opened at 20x.
-/// assert_eq!(long.leverage, None);
-///
-/// // Built here, not read from an exchange: `Client::positions` drops a row
-/// // with no size, so one never arrives from there.
-/// let closed = Position { quantity: Decimal::ZERO, side: None, ..long };
-/// assert!(closed.is_flat());
-/// ```
+/// Quantity is unsigned; direction is carried by [`Position::side`]. Fields an
+/// exchange does not publish are `None` and must not be interpreted as zero.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Position {
     /// The market the position is in.
@@ -234,29 +161,7 @@ pub enum MarginMode {
 
 /// Account-wide margin state.
 ///
-/// ```
-/// use maxt::MarginSummary;
-/// use rust_decimal::Decimal;
-///
-/// /// The largest notional this account may open at `leverage`.
-/// ///
-/// /// `None` when the exchange did not publish free margin. A zero default
-/// /// would silently disable trading, and a guess would over-commit the
-/// /// account.
-/// fn budget(margin: &MarginSummary, leverage: Decimal) -> Option<Decimal> {
-///     Some(margin.available_balance? * leverage)
-/// }
-///
-/// let summary = MarginSummary {
-///     asset: "USDT".to_string(),
-///     equity: Some(Decimal::from(12_000)),
-///     margin_balance: Some(Decimal::from(10_000)),
-///     available_balance: Some(Decimal::from(4_000)),
-/// };
-///
-/// assert_eq!(budget(&summary, Decimal::from(3)), Some(Decimal::from(12_000)));
-/// assert_eq!(budget(&MarginSummary { available_balance: None, ..summary }, Decimal::from(3)), None);
-/// ```
+/// Values an exchange does not publish are `None`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MarginSummary {
     /// The asset the figures are denominated in.
@@ -301,22 +206,6 @@ pub struct FundingPayment {
 ///
 /// Produced by the exchange, and only meaningful to the exchange that produced
 /// it. Pass it back unchanged to fetch the next page; do not parse it.
-///
-/// ```
-/// use maxt::{Cursor, Exchange, HistoryRequest, Market};
-///
-/// // What a previous `Page::next` handed back.
-/// let cursor = Cursor::new("1700000000000");
-///
-/// // Store the string, not what it looks like. One exchange's cursor is a
-/// // timestamp, another's is an order id, and neither is a promise.
-/// let saved: String = cursor.as_str().to_string();
-///
-/// let resumed = HistoryRequest::new(Market::perpetual(Exchange::Binance, "BTC", "USDT"))
-///     .cursor(Cursor::new(saved));
-///
-/// assert_eq!(resumed.cursor.as_ref().map(Cursor::as_str), Some("1700000000000"));
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Cursor(pub(crate) String);
 
@@ -339,40 +228,8 @@ impl Cursor {
 /// One page of a paginated history.
 ///
 /// A history is walked by feeding [`Page::next`] back into the request until it
-/// comes back `None`. The loop below stands in for
-/// [`Client::funding_rates`](crate::Client::funding_rates) or
-/// [`Client::funding_payments`](crate::Client::funding_payments), whose pages
-/// behave the same way:
-///
-/// ```
-/// use maxt::{Cursor, Page};
-///
-/// fn read_page(cursor: Option<&Cursor>) -> Page<u32> {
-///     match cursor.map(Cursor::as_str) {
-///         None => Page { items: vec![1, 2], next: Some(Cursor::new("after-2")) },
-///         // The middle page is empty here on purpose: a window that filters
-///         // out everything on one page is not the end of the history.
-///         Some("after-2") => Page { items: vec![], next: Some(Cursor::new("after-3")) },
-///         _ => Page { items: vec![3], next: None },
-///     }
-/// }
-///
-/// let mut cursor: Option<Cursor> = None;
-/// let mut history = Vec::new();
-///
-/// loop {
-///     let page = read_page(cursor.as_ref());
-///     history.extend(page.items);
-///
-///     // Only an absent cursor ends the walk. Stopping on an empty or short
-///     // page truncates the history, since a page is only as full as the
-///     // exchange made it.
-///     let Some(next) = page.next else { break };
-///     cursor = Some(next);
-/// }
-///
-/// assert_eq!(history, [1, 2, 3]);
-/// ```
+/// comes back `None`. An empty or short page is not an end marker when `next`
+/// is present.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Page<T> {
     /// The entries on this page.

@@ -1,5 +1,4 @@
-//! Reads an account: balances and open orders. Read-only. It places, cancels,
-//! and modifies nothing.
+//! Reads balances and open orders without modifying the account.
 //!
 //! Credentials come from the environment, never from a file and never from the
 //! source.
@@ -10,10 +9,7 @@
 //! cargo run --example private_account
 //! ```
 //!
-//! Upbit here, because it needs only a key pair. Another exchange is a
-//! one-line change of adapter: `BinanceAdapter::spot().with_credentials(..)`
-//! or `HyperliquidAdapter::new().with_wallet(..)`. Each takes credentials in
-//! the form its own exchange issues.
+//! This credentialed path is not exercised by automated live tests.
 
 use maxt::adapters::UpbitAdapter;
 use maxt::{Client, Feature};
@@ -33,15 +29,14 @@ async fn main() -> maxt::Result<()> {
 
     let client = Client::new(UpbitAdapter::new().with_credentials(access_key, secret_key));
 
-    // `supports` answers for the adapter as configured, so an adapter built
-    // without credentials reports false here rather than failing at the call.
+    // Capability checks reflect the adapter's credential state.
     if !client.supports(Feature::Balances) {
         println!("{} cannot read balances as configured", client.exchange());
         return Ok(());
     }
 
     let balances = client.balances().await?;
-    // An exchange may report every asset it lists, most of them empty.
+    // Filter zero-total assets before printing.
     let funded: Vec<_> = balances.iter().filter(|b| !b.total().is_zero()).collect();
     println!(
         "{} holds {} funded assets:",
@@ -63,8 +58,7 @@ async fn main() -> maxt::Result<()> {
 
     println!("\n{} open orders:", orders.len());
     for order in &orders {
-        // A price of None means the order was sized at market, not that the
-        // exchange withheld it.
+        // `None` means a market-sized order.
         let price = order
             .price
             .map_or_else(|| "market".to_string(), |price| price.to_string());

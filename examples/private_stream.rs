@@ -1,6 +1,4 @@
-//! A live account subscription: balance and order updates as the exchange
-//! publishes them. Read-only. It places and cancels nothing, so it only prints
-//! when something else moves the account.
+//! Prints live balance and order updates without placing or cancelling orders.
 //!
 //! Credentials come from the environment, never from a file and never from the
 //! source.
@@ -10,6 +8,8 @@
 //! export UPBIT_SECRET_KEY=...
 //! cargo run --example private_stream
 //! ```
+//!
+//! This credentialed path is not exercised by automated live tests.
 //!
 //! It exits after 20 events or 60 seconds, whichever comes first. An idle
 //! account prints nothing and still exits cleanly.
@@ -59,9 +59,7 @@ async fn main() -> maxt::Result<()> {
             println!("no event before the {TIME_LIMIT:?} deadline. An idle account, not a failure");
             break;
         };
-        // Only `None` ends a stream. An `Err` item is a report it polls past,
-        // so a single decode failure must not be mistaken for a dead account
-        // feed and send the program off to reconnect something that is fine.
+        // Only `None` ends the stream; report `Err` items and keep polling.
         let Some(event) = item else {
             break;
         };
@@ -88,10 +86,7 @@ async fn main() -> maxt::Result<()> {
                 order.remaining_quantity,
                 order.id
             ),
-            // The stream reconnected, so everything the exchange published while
-            // it was down was missed, including fills. A local view of balances
-            // and open orders is now a guess, and the only way back to certainty
-            // is re-reading both over REST, as private_account.rs does.
+            // Reconnects may miss fills; re-read balances and orders over REST.
             AccountEvent::Reconnected => {
                 println!("-- reconnected; re-read balances and open orders to resynchronize")
             }

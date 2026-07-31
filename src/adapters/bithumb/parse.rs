@@ -1,17 +1,7 @@
-//! Bithumb's JSON, read into `maxt` types.
+//! Bithumb JSON parsing into `maxt` types.
 //!
-//! Bithumb's v1 API is shaped like Upbit's: market codes read `QUOTE-BASE`,
-//! and money arrives as bare JSON numbers, and sometimes as strings on the
-//! private endpoints. Every money field is read out of the raw JSON text,
-//! never through `f64`, so the digits Bithumb sent are the digits a caller
-//! sees.
-//!
-//! Timestamps arrive as Unix milliseconds everywhere except the public
-//! `orderbook` frame, which Bithumb
-//! [documents](https://apidocs.bithumb.com/reference/호가-orderbook.md) and
-//! sends as microseconds. Each field is read at its own documented scale by
-//! [`millis`] or [`micros`]; see [`epoch`] for why the scale is not inferred
-//! from the value.
+//! Market codes use `QUOTE-BASE`. Decimal values are parsed without `f64`, and
+//! timestamp units are selected by field rather than inferred from magnitude.
 
 use rust_decimal::Decimal;
 use serde_json::Value;
@@ -24,12 +14,10 @@ use crate::types::{
 
 use super::{BithumbAlertStep, BithumbMarketAlert};
 
-/// The identifier carried in every error this adapter raises.
+/// Exchange identifier used in adapter errors.
 pub(crate) const EXCHANGE: &str = Exchange::Bithumb.id();
 
-/// The exchange's own code for a market, for example `KRW-BTC`.
-///
-/// Bithumb names the quote asset first, the opposite of most exchanges.
+/// Returns Bithumb's quote-first market code, for example `KRW-BTC`.
 pub(crate) fn native_symbol(market: &Market) -> Result<String> {
     if market.exchange != Exchange::Bithumb {
         return Err(Error::invalid_request(
@@ -49,11 +37,7 @@ pub(crate) fn native_symbol(market: &Market) -> Result<String> {
     Ok(format!("{}-{}", market.quote, market.base))
 }
 
-/// The market a Bithumb response names.
-///
-/// A code this adapter cannot read in a *response* is a response `maxt` does
-/// not understand, so this reports [`Error::Decode`] where [`native_symbol`]
-/// reports [`Error::InvalidRequest`].
+/// Parses a response market code, reporting malformed payloads as decode errors.
 fn market_field(value: &Value, name: &'static str) -> Result<Market> {
     let symbol = text(value, name)?;
     split_symbol(symbol)
@@ -63,8 +47,7 @@ fn market_field(value: &Value, name: &'static str) -> Result<Market> {
 fn split_symbol(symbol: &str) -> Option<Market> {
     let (quote, base) = symbol.split_once('-')?;
     let market = Market::spot(Exchange::Bithumb, base, quote);
-    // Round-trip rather than trust the split: it is what rejects lowercase,
-    // empty, and punctuation-bearing halves in one place instead of three.
+    // Round-trip through request validation to reject malformed asset codes.
     native_symbol(&market).ok().filter(|code| code == symbol)?;
     Some(market)
 }
@@ -83,36 +66,39 @@ fn asset(field: &'static str, value: &str) -> Result<()> {
     Ok(())
 }
 
-/// Turns a non-2xx REST body into the exchange's own verdict.
+/// Maps a REST error envelope to [`Error::Exchange`].
 ///
-/// Bithumb reports failures as `{"error":{"name":..,"message":..}}`. A body
-/// that does not fit that shape is still surfaced verbatim, which is when a
-/// caller most wants to see what arrived.
+/// `error.name` may be text or a number. Unrecognized bodies are preserved as
+/// the error message.
 pub(crate) fn exchange_error(status: u16, body: &str) -> Error {
     match serde_json::from_str::<Value>(body)
         .ok()
         .as_ref()
         .and_then(|value| value.get("error").cloned())
     {
-        Some(error) => Error::exchange_http(
-            EXCHANGE,
-            status,
-            error
-                .get("name")
-                .and_then(Value::as_str)
-                .unwrap_or("bithumb_error"),
-            error
-                .get("message")
-                .and_then(Value::as_str)
-                .unwrap_or(body)
-                .trim()
-                .to_string(),
-        ),
+        Some(error) => {
+            let code = match error.get("name") {
+                Some(Value::String(name)) => name.clone(),
+                Some(Value::Number(name)) => name.to_string(),
+                _ => "bithumb_error".to_string(),
+            };
+            Error::exchange_http(
+                EXCHANGE,
+                status,
+                code,
+                error
+                    .get("message")
+                    .and_then(Value::as_str)
+                    .unwrap_or(body)
+                    .trim()
+                    .to_string(),
+            )
+        }
         None => Error::exchange_http(EXCHANGE, status, "bithumb_error", body.trim().to_string()),
     }
 }
 
-/// Reads a response body, refusing anything that is not JSON.
+/// Parses a JSON response body.
 pub(crate) fn body(raw: &str) -> Result<Value> {
     serde_json::from_str(raw).map_err(|err| Error::decode(format!("response is not JSON: {err}")))
 }
@@ -136,10 +122,7 @@ fn text<'a>(value: &'a Value, name: &'static str) -> Result<&'a str> {
         .ok_or_else(|| Error::decode(format!("`{name}` is not a string")))
 }
 
-/// Reads a money field, from a JSON number or a JSON string.
-///
-/// `serde_json` is configured to keep numbers as their original digits, so the
-/// text below is exactly what Bithumb sent.
+/// Parses an exact decimal from a JSON number or string.
 pub(crate) fn dec(value: &Value, name: &'static str) -> Result<Decimal> {
     match field(value, name)? {
         Value::Number(number) => decimal(&number.to_string(), name),
@@ -155,55 +138,33 @@ fn dec_opt(value: &Value, name: &'static str) -> Result<Option<Decimal>> {
     }
 }
 
-/// Parses an exact decimal, rejecting anything that would need rounding.
-///
-/// A price Bithumb sent that `Decimal` cannot hold exactly is a decode
-/// failure. Rounding it would silently drop the last digit of a price.
+/// Parses a decimal and rejects values that require rounding.
 pub(crate) fn decimal(raw: &str, name: &'static str) -> Result<Decimal> {
-    // Bithumb prints small sizes with an exponent;
-    // [`crate::adapters::decimal::exact`] reads that spelling without relaxing
-    // the no-rounding rule above, and is what every adapter uses.
+    // The shared parser accepts exponent notation without rounding.
     crate::adapters::decimal::exact(raw)
         .map_err(|err| Error::decode(format!("`{name}` is not an exact decimal `{raw}`: {err}")))
 }
 
-/// Reads one of Bithumb's millisecond timestamps, which is all of them bar one.
+/// Parses a Bithumb millisecond timestamp.
 pub(crate) fn millis(value: &Value, name: &'static str) -> Result<Timestamp> {
     epoch(value, name, 1_000_000, "millisecond")
 }
 
-/// Reads the one microsecond timestamp Bithumb publishes.
-///
-/// Only the public `orderbook` frame uses this scale. Bithumb's field table
-/// calls it `타임스탬프 (microseconds)` where the `trade` and `ticker` frames
-/// beside it say `milliseconds`, and a capture on 2026-07-30 agrees: a book
-/// frame stamped `1785397747576054` and a ticker frame stamped
-/// `1785397735276` name the same second.
+/// Parses the microsecond timestamp used by public order-book frames.
 fn micros(value: &Value, name: &'static str) -> Result<Timestamp> {
     epoch(value, name, 1_000, "microsecond")
 }
 
-/// Reads a Unix timestamp at the scale its field is documented to use.
+/// Parses a Unix timestamp with an explicit unit scale.
 ///
-/// The scale is declared per field rather than inferred from the magnitude.
-/// Bithumb states a unit on every timestamp it publishes and those units
-/// differ between two frames of the same socket, so a value that stops
-/// matching its documented unit means the response shape changed. Sizing the
-/// value at read time would absorb exactly that change in silence, which is
-/// how a book feed can decode into the year 58545 with a green test suite.
-///
-/// [`EARLIEST`] is what makes a wrong scale loud in both directions. Reading
-/// microseconds as milliseconds overflows the multiply; reading milliseconds
-/// as microseconds does not, and would land in 1970 without the floor.
+/// Values before the supported floor are rejected to detect a unit mismatch.
 fn epoch(
     value: &Value,
     name: &'static str,
     nanos_per_unit: i64,
     unit: &'static str,
 ) -> Result<Timestamp> {
-    /// 2001-09-09T01:46:40Z. Older than every exchange `maxt` speaks to, and
-    /// still a thousandfold away from a present-day instant read one scale
-    /// too small.
+    // 2001-09-09T01:46:40Z, used as a unit-mismatch floor.
     const EARLIEST: i64 = 1_000_000_000_000_000_000;
 
     let raw = field(value, name)?
@@ -223,11 +184,7 @@ fn millis_opt(value: &Value, name: &'static str) -> Result<Option<Timestamp>> {
     }
 }
 
-/// `BID` means the taker lifted an ask, which is a buy in `maxt` terms.
-///
-/// Bithumb spells the same distinction three ways depending on the endpoint:
-/// `BID`/`ASK` on public data, `bid`/`ask` on private REST, `buy`/`sell` on the
-/// private stream.
+/// Parses the side spellings used by public REST, private REST, and WebSocket.
 fn side(value: &Value, name: &'static str) -> Result<Side> {
     match text(value, name)? {
         "BID" | "bid" | "buy" => Ok(Side::Buy),
@@ -238,10 +195,7 @@ fn side(value: &Value, name: &'static str) -> Result<Side> {
     }
 }
 
-/// Bithumb's own identifier for a trade, kept verbatim.
-///
-/// It arrives as a large integer that outruns an `f64` mantissa, so it is
-/// carried as the digits Bithumb sent, never through a numeric type.
+/// Preserves Bithumb's trade identifier as text.
 fn trade_id(value: &Value) -> Option<String> {
     match value.get("sequential_id")? {
         Value::Number(number) => Some(number.to_string()),
@@ -250,14 +204,10 @@ fn trade_id(value: &Value) -> Option<String> {
     }
 }
 
-/// Reads `/v1/market/all`.
+/// Parses `/v1/market/all`.
 ///
-/// `market_warning` carries Bithumb's investment-warning designation, 유의
-/// 종목, which the common [`MarketStatus`] has no room for; the label itself is
-/// reachable through
-/// [`BithumbAdapter::market_warnings`](super::BithumbAdapter::market_warnings).
-/// Bithumb's other designation, 주의 종목, is absent from this payload
-/// altogether and is read by [`market_alerts`].
+/// Investment warnings map to [`MarketStatus::Unknown`]; alert-system rows are
+/// parsed separately by [`market_alerts`].
 pub(crate) fn markets(value: &Value) -> Result<Vec<MarketInfo>> {
     entries(value)?
         .iter()
@@ -265,10 +215,7 @@ pub(crate) fn markets(value: &Value) -> Result<Vec<MarketInfo>> {
             Ok(MarketInfo {
                 market: market_field(entry, "market")?,
                 native_symbol: text(entry, "market")?.to_string(),
-                // A warned market still trades, so it is not `Paused`; it is
-                // not plainly healthy either, so it is not `Active`. Upbit puts
-                // its own warning here too, which is what makes the two Korean
-                // adapters agree.
+                // Warned markets remain tradable but are not plainly active.
                 status: match entry.get("market_warning").and_then(Value::as_str) {
                     None | Some("NONE") => MarketStatus::Active,
                     Some(_) => MarketStatus::Unknown,
@@ -286,10 +233,7 @@ pub(crate) fn markets(value: &Value) -> Result<Vec<MarketInfo>> {
         .collect()
 }
 
-/// Reads `/v1/market/all` for the warning label the common API drops.
-///
-/// The label is `CAUTION` or `NONE`, spellings that describe 유의 종목 despite
-/// the first one reading like the other designation's name.
+/// Parses raw `NONE` or `CAUTION` investment-warning flags.
 pub(crate) fn market_warnings(value: &Value) -> Result<Vec<(Market, String)>> {
     entries(value)?
         .iter()
@@ -306,11 +250,7 @@ pub(crate) fn market_warnings(value: &Value) -> Result<Vec<(Market, String)>> {
         .collect()
 }
 
-/// Reads `/v1/market/virtual_asset_warning`, Bithumb's 경보제.
-///
-/// One row is one raised alert, so a market flagged on several criteria is
-/// listed once per criterion and a market flagged on none is absent. The order
-/// Bithumb sends is kept: it groups a market's rows together but ranks nothing.
+/// Parses active alert-system rows, one per market and criterion.
 pub(crate) fn market_alerts(value: &Value) -> Result<Vec<(Market, BithumbMarketAlert)>> {
     entries(value)?
         .iter()
@@ -332,13 +272,7 @@ pub(crate) fn market_alerts(value: &Value) -> Result<Vec<(Market, BithumbMarketA
         .collect()
 }
 
-/// Bithumb dates an alert's end on a Korean wall clock carrying no zone marker.
-///
-/// Korea has kept a fixed nine-hour offset with no daylight saving since 1988,
-/// so the shift is a constant rather than a zone lookup, the same reasoning
-/// [`next_open`] runs on. Reading the string as UTC would put every expiry nine
-/// hours late, which for an alert lapsing this evening is the difference
-/// between live and finished.
+/// Parses a zone-less KST alert expiry and converts it to UTC.
 fn alert_end(raw: &str) -> Result<Timestamp> {
     const KST_OFFSET_SECS: i64 = 9 * 3_600;
 
@@ -349,13 +283,7 @@ fn alert_end(raw: &str) -> Result<Timestamp> {
         .map_err(|err| Error::decode(format!("`end_date` is not a Korean wall clock: {err}")))
 }
 
-/// Reads `/v1/trades/ticks`, newest first.
-///
-/// Bithumb already answers newest-first, walking backwards from `to` the same
-/// way Upbit's twin of this endpoint does, so the sort changes nothing today.
-/// It keeps [`Client::trades`](crate::Client::trades) holding its promise as a
-/// property of this adapter. The sort is stable, so trades sharing one
-/// millisecond keep the order Bithumb ranked them in.
+/// Parses `/v1/trades/ticks` and returns a stable newest-first order.
 pub(crate) fn trades(value: &Value) -> Result<Vec<Trade>> {
     let mut trades = entries(value)?
         .iter()
@@ -378,8 +306,8 @@ pub(crate) fn trades(value: &Value) -> Result<Vec<Trade>> {
 /// Reads one entry of `/v1/orderbook`, or one public `orderbook` frame.
 ///
 /// Bithumb pairs each bid with an ask inside one `orderbook_units` entry and
-/// does not promise an order across them, so both sides are sorted here rather
-/// than assumed.
+/// sometimes leaves one side at zero quantity. Empty sides are dropped before
+/// both remaining sides are sorted and truncated.
 pub(crate) fn order_book(
     entry: &Value,
     market: Market,
@@ -391,21 +319,27 @@ pub(crate) fn order_book(
     let mut asks = Vec::with_capacity(units.len());
 
     for unit in units {
-        bids.push(Level {
+        let bid = Level {
             price: dec(unit, "bid_price")?,
             quantity: dec(unit, "bid_size")?,
-        });
-        asks.push(Level {
+        };
+        if !bid.quantity.is_zero() {
+            bids.push(bid);
+        }
+
+        let ask = Level {
             price: dec(unit, "ask_price")?,
             quantity: dec(unit, "ask_size")?,
-        });
+        };
+        if !ask.quantity.is_zero() {
+            asks.push(ask);
+        }
     }
 
     bids.sort_by(|left, right| right.price.cmp(&left.price));
     asks.sort_by(|left, right| left.price.cmp(&right.price));
 
-    // Truncating after the sort is what makes `depth` mean "the best levels"
-    // rather than "the levels Bithumb happened to list first".
+    // Apply depth after sorting so it selects the best levels.
     if let Some(depth) = depth {
         let depth = usize::try_from(depth).unwrap_or(usize::MAX);
         bids.truncate(depth);
@@ -420,16 +354,10 @@ pub(crate) fn order_book(
     })
 }
 
-/// Reads one entry of `/v1/ticker`, or one public `ticker` frame.
+/// Parses one REST or WebSocket ticker.
 ///
-/// Bithumb publishes two clocks and they are not interchangeable: `timestamp`
-/// is when the summary was built, `trade_timestamp` is when the fill behind
-/// `trade_price` happened. On a quiet market they drift apart by however long
-/// it has been since anyone traded, and `/v1/ticker` currently sends one
-/// number for both.
-///
-/// Both are pulled back onto the UTC epoch by [`ticker_clock_shift`], which is
-/// a no-op on the stream frame.
+/// `timestamp` is the summary time and `trade_timestamp` is the last trade time.
+/// REST epoch fields are normalized by [`ticker_clock_shift`].
 pub(crate) fn ticker(entry: &Value, market: Market) -> Result<Ticker> {
     let shift = ticker_clock_shift(entry)?;
     let onto_utc = |stamp: Timestamp| Timestamp::from_nanos(stamp.as_nanos().saturating_add(shift));
@@ -439,37 +367,22 @@ pub(crate) fn ticker(entry: &Value, market: Market) -> Result<Ticker> {
         timestamp: onto_utc(millis(entry, "timestamp")?),
         last_trade_time: millis_opt(entry, "trade_timestamp")?.map(onto_utc),
         last_price: dec(entry, "trade_price")?,
-        // `change_price` and `change_rate` are unsigned; only the signed pair
-        // says which way the market moved.
+        // Use signed change fields to preserve direction.
         change: dec_opt(entry, "signed_change_price")?,
         change_rate: dec_opt(entry, "signed_change_rate")?,
         high: dec_opt(entry, "high_price")?,
         low: dec_opt(entry, "low_price")?,
-        // The plain `acc_trade_*` fields cover the current session, not a
-        // rolling window; only the `_24h` pair is what `Ticker` promises.
+        // `Ticker` exposes the rolling 24-hour volume fields.
         volume: dec_opt(entry, "acc_trade_volume_24h")?,
         quote_volume: dec_opt(entry, "acc_trade_price_24h")?,
     })
 }
 
-/// How far a ticker's epoch fields sit from the UTC instant beside them, in
-/// nanoseconds.
+/// Returns the UTC correction for Bithumb REST ticker epoch fields.
 ///
-/// `/v1/ticker` documents `timestamp` and `trade_timestamp` as
-/// `Unix timestamp, Unit: ms` but stamps both with the Korean wall clock, nine
-/// hours ahead of the UTC instant the same payload spells out in `trade_date`
-/// and `trade_time`. Observed on 2026-07-30 across `KRW-BTC`, `KRW-ETH` and
-/// `BTC-ETH`, on every poll, at exactly nine hours.
-///
-/// The gap is measured against those two fields rather than assumed, so a
-/// payload whose clocks already agree is left alone and the correction lapses
-/// on its own the day Bithumb repairs the epoch fields. Any third gap is a
-/// response `maxt` does not understand.
-///
-/// The public `ticker` frame gets no correction and needs none: its epoch
-/// fields are already UTC. Its `trade_time` is Korean, so it carries no UTC
-/// wall clock to measure against, and `trade_date_kst` is what tells the two
-/// shapes apart, since only `/v1/ticker` sends it.
+/// REST payloads include UTC date/time fields. Their epoch fields must either
+/// match or be exactly nine hours ahead; any other offset is a decode error.
+/// Public WebSocket tickers omit `trade_date_kst` and require no correction.
 fn ticker_clock_shift(entry: &Value) -> Result<i64> {
     const KST_OFFSET_SECS: i64 = 9 * 3_600;
 
@@ -502,24 +415,17 @@ fn ticker_clock_shift(entry: &Value) -> Result<i64> {
     }
 }
 
-/// Reads any of the `/v1/candles/...` responses.
+/// Parses a candle response.
 ///
-/// Bithumb dates candles by a naive UTC wall clock, and stamps `timestamp`
-/// with when the candle was last *touched*. `candle_date_time_utc` is the only
-/// field that gives the interval's start.
-///
-/// `now` decides [`Candle::closed`]: Bithumb serves the running interval
-/// alongside the finished ones and does not mark which is which, so the only
-/// thing separating them is whether the window has ended. [`next_open`] says
-/// when that is, at every interval including [`Interval::Month1`]: the month in
-/// progress is the running interval here as much as the minute in progress is.
+/// `candle_date_time_utc` defines the open time. `now` determines
+/// [`Candle::closed`] because Bithumb does not publish a closed flag.
 pub(crate) fn candles(value: &Value, interval: Interval, now: Timestamp) -> Result<Vec<Candle>> {
     entries(value)?
         .iter()
         .map(|entry| {
             let open_time = candle_open_time(text(entry, "candle_date_time_utc")?)?;
-            let closed =
-                next_open(interval, open_time).is_some_and(|end_of_window| end_of_window <= now);
+            let closed = advance_open(interval, open_time, 1)
+                .is_some_and(|end_of_window| end_of_window <= now);
 
             Ok(Candle {
                 market: market_field(entry, "market")?,
@@ -537,30 +443,18 @@ pub(crate) fn candles(value: &Value, interval: Interval, now: Timestamp) -> Resu
         .collect()
 }
 
-/// When the candle opening at `open_time` stops moving, which is when the next
-/// one opens.
-///
-/// Bithumb cuts every interval on a Korean-time boundary, and for a month that
-/// is not a UTC month. `/v1/candles/months?market=KRW-BTC` dates the March 2026
-/// candle `2026-02-28T15:00:00`, which is `2026-03-01T00:00` in KST, and the
-/// next one `2026-03-31T15:00:00`. [`Interval::advance`] steps whole UTC
-/// calendar months, and one of those from 28 February is 28 March, three days
-/// before the bar is finished. Five months in twelve end early that way, so a
-/// consumer reading [`Candle::closed`] would commit a monthly bar that is still
-/// running.
-///
-/// Shifting into KST, stepping, and shifting back is the arithmetic Bithumb's
-/// own boundaries follow. Korea has kept a fixed nine-hour offset with no
-/// daylight saving since 1988, so the shift is a constant rather than a zone
-/// lookup. At every interval that does have a fixed length the two shifts
-/// cancel and this is exactly [`Interval::advance`].
-fn next_open(interval: Interval, open_time: Timestamp) -> Option<Timestamp> {
+/// Advances on Bithumb's UTC+09:00 candle grid.
+pub(super) fn advance_open(
+    interval: Interval,
+    open_time: Timestamp,
+    count: i64,
+) -> Option<Timestamp> {
     const KST_OFFSET_NANOS: i64 = 9 * 3_600 * 1_000_000_000;
 
     let in_kst = Timestamp::from_nanos(open_time.as_nanos().checked_add(KST_OFFSET_NANOS)?);
 
     interval
-        .advance(in_kst, 1)?
+        .advance(in_kst, count)?
         .as_nanos()
         .checked_sub(KST_OFFSET_NANOS)
         .map(Timestamp::from_nanos)
@@ -572,7 +466,7 @@ fn candle_open_time(raw: &str) -> Result<Timestamp> {
         .map_err(|err| Error::decode(format!("`candle_date_time_utc` is not a UTC time: {err}")))
 }
 
-/// Reads `/v1/accounts`, and the `assets` of a private `myAsset` frame.
+/// Parses balances from REST or a private asset frame.
 pub(crate) fn balances(value: &Value) -> Result<Vec<Balance>> {
     entries(value)?
         .iter()
@@ -586,12 +480,12 @@ pub(crate) fn balances(value: &Value) -> Result<Vec<Balance>> {
         .collect()
 }
 
-/// Reads `/v1/orders`.
+/// Parses an order list.
 pub(crate) fn orders(value: &Value) -> Result<Vec<Order>> {
     entries(value)?.iter().map(order).collect()
 }
 
-/// Reads one order from a private REST response.
+/// Parses one private REST order.
 pub(crate) fn order(entry: &Value) -> Result<Order> {
     let filled_quantity = dec(entry, "executed_volume")?;
     let remaining_quantity = dec(entry, "remaining_volume")?;
@@ -611,7 +505,7 @@ pub(crate) fn order(entry: &Value) -> Result<Order> {
     })
 }
 
-/// `wait` and `watch` are both live; `watch` is a stop order waiting to trigger.
+/// Maps Bithumb REST order states to the common status.
 fn rest_order_status(state: &str, filled: Decimal) -> OrderStatus {
     match state {
         "wait" | "watch" if filled.is_zero() => OrderStatus::Open,
@@ -622,7 +516,7 @@ fn rest_order_status(state: &str, filled: Decimal) -> OrderStatus {
     }
 }
 
-/// Bithumb stamps order acknowledgements in Korean time with an explicit offset.
+/// Parses an RFC 3339 timestamp with its explicit offset.
 fn offset_time(raw: &str) -> Option<Timestamp> {
     chrono::DateTime::parse_from_rfc3339(raw)
         .ok()
@@ -630,10 +524,7 @@ fn offset_time(raw: &str) -> Option<Timestamp> {
         .map(Timestamp::from_nanos)
 }
 
-/// Reads the acknowledgement `/v2/orders` and `/v2/order` answer with.
-///
-/// The acknowledgement carries no fill state, so the caller supplies what it
-/// asked for: an accepted order is unfilled, and a cancelled one is finished.
+/// Parses a minimal placement or cancellation acknowledgement.
 pub(crate) fn order_ack(
     entry: &Value,
     market: Market,
@@ -657,11 +548,7 @@ pub(crate) fn order_ack(
     })
 }
 
-/// Reads one public WebSocket frame.
-///
-/// `Ok(None)` is a frame that carries no market data. Bithumb answers a
-/// subscription and a client keepalive on the same socket the data arrives
-/// on.
+/// Parses one public WebSocket frame; control frames return `Ok(None)`.
 pub(crate) fn market_event(frame: &Value) -> Result<Option<MarketEvent>> {
     if let Some(error) = frame.get("error") {
         return Err(frame_error(error));
@@ -673,9 +560,7 @@ pub(crate) fn market_event(frame: &Value) -> Result<Option<MarketEvent>> {
     let event = match kind {
         "trade" => MarketEvent::Trade(Trade {
             market: market_field(frame, "code")?,
-            // Two clocks again: `timestamp` is when Bithumb published the
-            // frame, `trade_timestamp` is when the trade matched. The match
-            // time is the one comparable against another exchange's trades.
+            // Trade events use the match time, not the publish time.
             timestamp: millis(frame, "trade_timestamp")?,
             price: dec(frame, "trade_price")?,
             quantity: dec(frame, "trade_volume")?,
@@ -684,8 +569,7 @@ pub(crate) fn market_event(frame: &Value) -> Result<Option<MarketEvent>> {
         }),
         "orderbook" => {
             let market = market_field(frame, "code")?;
-            // Microseconds here and milliseconds on every other frame; see
-            // [`micros`].
+            // Public order-book timestamps are microseconds.
             let timestamp = micros(frame, "timestamp")?;
             MarketEvent::OrderBook(order_book(frame, market, timestamp, None)?)
         }
@@ -699,9 +583,7 @@ pub(crate) fn market_event(frame: &Value) -> Result<Option<MarketEvent>> {
     Ok(Some(event))
 }
 
-/// Reads one private WebSocket frame.
-///
-/// One `myAsset` frame carries every changed balance, so this yields a list.
+/// Parses one private WebSocket frame into zero or more account events.
 pub(crate) fn account_events(frame: &Value) -> Result<Vec<AccountEvent>> {
     if let Some(error) = frame.get("error") {
         return Err(frame_error(error));
@@ -719,9 +601,7 @@ pub(crate) fn account_events(frame: &Value) -> Result<Vec<AccountEvent>> {
 
 fn my_order(frame: &Value) -> Result<Order> {
     let state = text(frame, "state")?;
-    // Bithumb omits the cumulative quantities on a resting order, where they
-    // are knowable, and sends them on every other state. Inferring them
-    // anywhere else would invent a fill that may not have happened.
+    // Only resting orders may omit quantities that can be derived safely.
     let filled_quantity = match dec_opt(frame, "executed_quantity")? {
         Some(quantity) => quantity,
         None if state == "wait" => Decimal::ZERO,
@@ -753,8 +633,7 @@ fn my_order(frame: &Value) -> Result<Order> {
     })
 }
 
-/// `done` means the order left the book. That is a fill only when nothing is
-/// left on it. Otherwise the remainder was cancelled.
+/// Maps private stream states; `done` is filled only when nothing remains.
 fn stream_order_status(state: &str, remaining: Decimal) -> OrderStatus {
     match state {
         "wait" => OrderStatus::Open,
@@ -766,8 +645,7 @@ fn stream_order_status(state: &str, remaining: Decimal) -> OrderStatus {
     }
 }
 
-/// Reads Bithumb's WebSocket error frame, which uses `name`/`message` like the
-/// REST envelope but arrives without an HTTP status.
+/// Maps a WebSocket error frame to [`Error::Exchange`].
 fn frame_error(error: &Value) -> Error {
     Error::exchange(
         EXCHANGE,
@@ -787,13 +665,7 @@ fn frame_error(error: &Value) -> Error {
 mod tests {
     use super::*;
 
-    // https://apidocs.bithumb.com/reference/거래-대상-목록-조회.md
-    //
-    // Three of the 486 entries captured on 2026-07-30 from
-    // `/v1/market/all?isDetails=true`. `KRW-ZIL` was one of the 15 markets
-    // carrying Bithumb's 유의 종목 flag that day, spelled `CAUTION`. `KRW-ACS`
-    // carried none of it while sitting under two 경보제 alerts, both at the
-    // gravest step, which is why it is here.
+    // Shape reference: https://apidocs.bithumb.com/reference/거래-대상-목록-조회.md
     const MARKET_LIST: &str = r#"[
       {
         "market": "KRW-BTC",
@@ -815,11 +687,7 @@ mod tests {
       }
     ]"#;
 
-    // https://apidocs.bithumb.com/reference/경보제-조회.md
-    //
-    // Five of the 22 rows captured on 2026-07-30 from
-    // `/v1/market/virtual_asset_warning`. All three documented steps appear,
-    // `KRW-OBSR` twice because two criteria were raised on it at once.
+    // Shape reference: https://apidocs.bithumb.com/reference/경보제-조회.md
     const MARKET_ALERTS: &str = r#"[
       {
         "market": "KRW-ZIL",
@@ -853,14 +721,7 @@ mod tests {
       }
     ]"#;
 
-    // https://apidocs.bithumb.com/reference/현재가-조회.md
-    //
-    // Captured verbatim on 2026-07-30 from `/v1/ticker?markets=KRW-BTC`.
-    // `trade_time` is `074830` UTC while both epoch fields decode to
-    // `16:48:30`, the Korean wall clock: this is the nine-hour gap
-    // [`ticker_clock_shift`] measures and undoes. Bithumb also sends one
-    // number for `timestamp` and `trade_timestamp` here, though it documents
-    // them as two clocks.
+    // Shape reference: https://apidocs.bithumb.com/reference/현재가-조회.md
     const TICKER: &str = r#"[
       {
         "market": "KRW-BTC",
@@ -892,13 +753,7 @@ mod tests {
       }
     ]"#;
 
-    // https://apidocs.bithumb.com/reference/체결-내역-조회.md
-    //
-    // Captured verbatim on 2026-07-30 from
-    // `/v1/trades/ticks?market=KRW-ETC&count=3`. A market quiet enough that
-    // the three fills land in three different seconds; on a busy one Bithumb
-    // returns several sharing a millisecond, and a `sequential_id` that is
-    // that millisecond times ten thousand rather than a per-fill number.
+    // Shape reference: https://apidocs.bithumb.com/reference/체결-내역-조회.md
     const TRADES: &str = r#"[
       {
         "market": "KRW-ETC",
@@ -938,13 +793,7 @@ mod tests {
       }
     ]"#;
 
-    // https://apidocs.bithumb.com/reference/호가-조회.md
-    //
-    // Captured verbatim on 2026-07-30 from `/v1/orderbook?markets=KRW-BTC`.
-    // Thirty units, twice what the stream frame carries, and no `level` key:
-    // that one belongs to the stream frame only. `maxt` sorts both sides
-    // anyway, because Bithumb promises nothing about `orderbook_units`
-    // ordering and `maxt` does.
+    // Shape reference: https://apidocs.bithumb.com/reference/호가-조회.md
     const ORDER_BOOK: &str = r#"[
       {
         "market": "KRW-BTC",
@@ -986,12 +835,7 @@ mod tests {
       }
     ]"#;
 
-    // https://apidocs.bithumb.com/reference/분minute-캔들-조회.md
-    //
-    // Captured verbatim on 2026-07-30 from
-    // `/v1/candles/minutes/1?market=KRW-BTC&count=1`, mid-minute: the bar
-    // opens 07:48:00 UTC and `timestamp` is the 07:48:30 fill that last
-    // touched it.
+    // Shape reference: https://apidocs.bithumb.com/reference/분minute-캔들-조회.md
     const MINUTE_CANDLES: &str = r#"[
       {
         "market": "KRW-BTC",
@@ -1008,12 +852,7 @@ mod tests {
       }
     ]"#;
 
-    // https://apidocs.bithumb.com/reference/주week-캔들-조회.md
-    //
-    // Captured verbatim on 2026-07-30 from
-    // `/v1/candles/weeks?market=KRW-BTC&count=1&to=2026-06-29T00:00:00`. A
-    // Bithumb week opens on a Korean Monday, so this one is dated
-    // `2026-06-21T15:00:00` UTC.
+    // Shape reference: https://apidocs.bithumb.com/reference/주week-캔들-조회.md
     const WEEK_CANDLES: &str = r#"[
       {
         "market": "KRW-BTC",
@@ -1030,14 +869,7 @@ mod tests {
       }
     ]"#;
 
-    // https://apidocs.bithumb.com/reference/월month-캔들-조회.md
-    //
-    // Captured verbatim on 2026-07-30 from
-    // `/v1/candles/months?market=KRW-BTC&count=3&to=2026-04-01T00:00:00`.
-    // Note where a Bithumb month opens: `2026-02-28T15:00:00` UTC, which is
-    // `2026-03-01T00:00` in KST. The boundaries are Korean months, not UTC
-    // ones, and the entries below are one month apart on that calendar even
-    // though their UTC day numbers are 28, 31 and 31.
+    // Shape reference: https://apidocs.bithumb.com/reference/월month-캔들-조회.md
     const MONTH_CANDLES: &str = r#"[
       {
         "market": "KRW-BTC",
@@ -1080,12 +912,7 @@ mod tests {
       }
     ]"#;
 
-    // https://apidocs.bithumb.com/reference/체결-trade.md
-    //
-    // Captured verbatim on 2026-07-30 from `wss://ws-api.bithumb.com/websocket/v1`,
-    // subscribed to `trade` on `KRW-BTC`. Both epoch fields are milliseconds
-    // and UTC; `trade_time` beside them is Korean, which is why nothing reads
-    // it.
+    // Shape reference: https://apidocs.bithumb.com/reference/체결-trade.md
     const WS_TRADE: &str = r#"{
       "type": "trade",
       "code": "KRW-BTC",
@@ -1103,12 +930,7 @@ mod tests {
       "stream_type": "SNAPSHOT"
     }"#;
 
-    // https://apidocs.bithumb.com/reference/호가-orderbook.md
-    //
-    // Captured verbatim on 2026-07-30 from `wss://ws-api.bithumb.com/websocket/v1`,
-    // subscribed to `orderbook` on `KRW-BTC`. Fifteen units, `level` 1, and a
-    // sixteen-digit `timestamp`: this frame's clock is microseconds while
-    // every other frame on the same socket is milliseconds.
+    // Shape reference: https://apidocs.bithumb.com/reference/호가-orderbook.md
     const WS_ORDER_BOOK: &str = r#"{
       "type": "orderbook",
       "code": "KRW-BTC",
@@ -1136,12 +958,7 @@ mod tests {
       "stream_type": "SNAPSHOT"
     }"#;
 
-    // https://apidocs.bithumb.com/reference/현재가-ticker.md
-    //
-    // Captured verbatim on 2026-07-30 from `wss://ws-api.bithumb.com/websocket/v1`,
-    // subscribed to `ticker` on `KRW-BTC`. Both epoch fields are milliseconds
-    // and UTC, unlike the `/v1/ticker` twin of this payload, and the frame
-    // sends no `trade_date_kst`, which is what [`ticker_clock_shift`] keys off.
+    // Shape reference: https://apidocs.bithumb.com/reference/현재가-ticker.md
     const WS_TICKER: &str = r#"{
       "type": "ticker",
       "code": "KRW-BTC",
@@ -1177,12 +994,7 @@ mod tests {
       "stream_type": "SNAPSHOT"
     }"#;
 
-    // https://apidocs.bithumb.com/reference/내-자산-myasset.md
-    //
-    // Bithumb's own documented example, not a capture: the private socket
-    // needs credentials, and this round was run against public endpoints
-    // only. Bithumb documents `asset_timestamp` and `timestamp` here as
-    // milliseconds, which is the scale [`account_events`] reads them at.
+    // Documentation example: https://apidocs.bithumb.com/reference/내-자산-myasset.md
     const WS_MY_ASSET: &str = r#"{
       "type": "myAsset",
       "assets": [
@@ -1196,11 +1008,7 @@ mod tests {
       "timestamp": 1727052537687
     }"#;
 
-    // https://apidocs.bithumb.com/reference/내-주문-및-체결-myorder.md
-    //
-    // Bithumb's own documented example, not a capture, for the reason given
-    // above [`WS_MY_ASSET`]. Bithumb documents `order_timestamp`,
-    // `trade_timestamp` and `timestamp` here as milliseconds.
+    // Documentation example: https://apidocs.bithumb.com/reference/내-주문-및-체결-myorder.md
     const WS_MY_ORDER: &str = r#"{
       "type": "myOrder",
       "code": "KRW-BTC",
@@ -1274,8 +1082,6 @@ mod tests {
 
     #[test]
     fn the_quote_asset_comes_first_in_a_bithumb_code() {
-        // The one mistake this mapping invites: reading `KRW-BTC` as KRW priced
-        // in BTC would invert every price on the market.
         let market = split_symbol("KRW-BTC").expect("a listed code");
 
         assert_eq!(market.base, "BTC");
@@ -1337,8 +1143,7 @@ mod tests {
         )
         .expect("week candles parse");
 
-        // 313245537093.97363 is not representable in f64: routing it through
-        // one would land on 313245537093.9736328125.
+        // This value is not exactly representable as `f64`.
         assert_eq!(
             candles[0].quote_volume.expect("quote volume"),
             exact("313245537093.97363")
@@ -1381,8 +1186,7 @@ mod tests {
         assert_eq!(markets[0].native_symbol, "KRW-BTC");
         assert_eq!(markets[0].korean_name.as_deref(), Some("비트코인"));
         assert_eq!(markets[0].status, MarketStatus::Active);
-        // The designation itself has no home in `MarketStatus`, so it is only
-        // reachable through the Bithumb-specific call.
+        // The raw warning remains available through the Bithumb-specific call.
         assert_eq!(markets[1].status, MarketStatus::Unknown);
         assert_eq!(
             market_warnings(&parsed(MARKET_LIST)).expect("warnings parse")[1].1,
@@ -1395,10 +1199,7 @@ mod tests {
         let markets = markets(&parsed(MARKET_LIST)).expect("market list parses");
         let alerts = market_alerts(&parsed(MARKET_ALERTS)).expect("alerts parse");
 
-        // `KRW-ACS` was under two alerts at the gravest step on the capture
-        // day and still carried no 유의 종목 flag. Reporting it as `Unknown`
-        // would put a fifth of the exchange there and hide the 15 that are
-        // actually warned.
+        // Alert rows do not alter the separate investment-warning status.
         assert_eq!(markets[2].market, acs_krw());
         assert_eq!(markets[2].status, MarketStatus::Active);
         assert!(
@@ -1407,7 +1208,6 @@ mod tests {
                 .any(|(market, alert)| *market == acs_krw()
                     && alert.step == BithumbAlertStep::Danger)
         );
-        // And the reverse: a warned market need not be alerted at the top step.
         assert_eq!(markets[1].status, MarketStatus::Unknown);
     }
 
@@ -1419,9 +1219,7 @@ mod tests {
         assert_eq!(alerts[0].0, zil_krw());
         assert_eq!(alerts[0].1.kind, "TRADING_VOLUME_SUDDEN_FLUCTUATION");
         assert_eq!(alerts[0].1.step, BithumbAlertStep::Danger);
-        // `2026-07-31 06:59:59` is a Korean wall clock, so the instant is nine
-        // hours earlier in UTC. Reading it as UTC would keep a lapsed alert
-        // looking live for those nine hours.
+        // The zone-less expiry is interpreted as KST.
         assert_eq!(alerts[0].1.ends_at, Timestamp::from_secs(1_785_448_799));
         assert_eq!(alerts[3].1.step, BithumbAlertStep::Caution);
         assert_eq!(alerts[3].1.ends_at, Timestamp::from_secs(1_785_449_399));
@@ -1436,8 +1234,6 @@ mod tests {
             .map(|(_, alert)| alert)
             .collect();
 
-        // One row per criterion, not one row per market: collapsing them would
-        // lose either the second criterion or the step that differs.
         assert_eq!(obsr.len(), 2);
         assert_eq!(obsr[0].step, BithumbAlertStep::Danger);
         assert_eq!(obsr[1].step, BithumbAlertStep::Warning);
@@ -1448,7 +1244,7 @@ mod tests {
     fn steps_compare_by_severity_and_an_unfamiliar_one_outranks_the_gravest() {
         assert!(BithumbAlertStep::Caution < BithumbAlertStep::Warning);
         assert!(BithumbAlertStep::Warning < BithumbAlertStep::Danger);
-        // A step Bithumb adds later must not slip under a severity threshold.
+        // Unknown future levels remain visible to severity thresholds.
         assert!(BithumbAlertStep::Unknown > BithumbAlertStep::Danger);
 
         let odd = market_alerts(&parsed(
@@ -1476,22 +1272,18 @@ mod tests {
 
         assert_eq!(trades[0].market, etc_krw());
         assert_eq!(trades[0].taker_side, Side::Buy);
-        // 07:47:41 UTC, the `trade_time_utc` beside it. Unlike `/v1/ticker`,
-        // this endpoint's clock needs no correction.
+        // Recent-trade timestamps are already UTC milliseconds.
         assert_eq!(
             trades[0].timestamp,
             Timestamp::from_millis(1_785_397_661_964)
         );
         assert_eq!(trades[0].price, Decimal::from(9_620));
-        // Seventeen digits: past what an f64 mantissa holds exactly.
+        // Preserve the large identifier as text.
         assert_eq!(trades[0].id.as_deref(), Some("17853976619640000"));
     }
 
     #[test]
     fn recent_trades_come_back_newest_first() {
-        // Bithumb answers `/v1/trades/ticks` in reverse chronological order,
-        // which is what the fixture holds; the common API promises the same,
-        // so 07:47:41 must stay in front of 07:40:04.
         let trades = trades(&parsed(TRADES)).expect("trades parse");
 
         assert_eq!(
@@ -1505,8 +1297,6 @@ mod tests {
 
     #[test]
     fn trades_are_reordered_rather_than_trusted_to_arrive_sorted() {
-        // The same three trades shuffled: the guarantee has to survive an order
-        // bithumb does not currently send.
         let mut shuffled = parsed(TRADES);
         shuffled
             .as_array_mut()
@@ -1535,7 +1325,7 @@ mod tests {
             panic!("expected a trade event");
         };
         assert_eq!(trade.taker_side, Side::Sell);
-        // `trade_timestamp`, not the 270-millisecond-later `timestamp`.
+        // Use `trade_timestamp`, not the later publish timestamp.
         assert_eq!(trade.timestamp, Timestamp::from_millis(1_785_397_735_004));
         assert_eq!(trade.id.as_deref(), Some("921046844841158138"));
     }
@@ -1551,10 +1341,9 @@ mod tests {
         )
         .expect("book parses");
 
-        // The whole `/v1/orderbook` reply, which is thirty levels a side and
-        // not the fifteen the socket sends.
-        assert_eq!(book.bids.len(), 30);
-        assert_eq!(book.asks.len(), 30);
+        // Zero-quantity sides are excluded from the thirty paired slots.
+        assert_eq!(book.bids.len(), 29);
+        assert_eq!(book.asks.len(), 29);
         assert_eq!(book.bids[0].price, Decimal::from(91_196_000));
         assert_eq!(book.bids[1].price, Decimal::from(91_172_000));
         assert_eq!(book.asks[0].price, Decimal::from(91_226_000));
@@ -1564,8 +1353,6 @@ mod tests {
 
     #[test]
     fn a_book_is_reordered_rather_than_trusted_to_arrive_sorted() {
-        // Bithumb happens to answer sorted, so the guarantee has to survive an
-        // order it does not currently send: the same real book, reversed.
         let mut entry = parsed(ORDER_BOOK)[0].clone();
         entry["orderbook_units"]
             .as_array_mut()
@@ -1617,36 +1404,57 @@ mod tests {
     }
 
     #[test]
+    fn zero_quantity_levels_are_removed_before_depth_is_applied() {
+        let entry = parsed(
+            r#"{
+              "orderbook_units": [
+                { "ask_price": 100, "ask_size": 0, "bid_price": 99, "bid_size": 0 },
+                { "ask_price": 101, "ask_size": 2, "bid_price": 98, "bid_size": 3 },
+                { "ask_price": 102, "ask_size": 4, "bid_price": 97, "bid_size": 5 }
+              ]
+            }"#,
+        );
+
+        let book = order_book(
+            &entry,
+            btc_krw(),
+            Timestamp::from_millis(1_785_397_720_965),
+            Some(1),
+        )
+        .expect("book parses");
+
+        assert_eq!(book.bids.len(), 1);
+        assert_eq!(book.asks.len(), 1);
+        assert_eq!(book.bids[0].price, Decimal::from(98));
+        assert_eq!(book.bids[0].quantity, Decimal::from(3));
+        assert_eq!(book.asks[0].price, Decimal::from(101));
+        assert_eq!(book.asks[0].quantity, Decimal::from(2));
+    }
+
+    #[test]
     fn a_stream_book_is_sorted_and_timestamped_in_microseconds() {
         let event = market_event(&parsed(WS_ORDER_BOOK)).expect("frame parses");
 
         let Some(MarketEvent::OrderBook(book)) = event else {
             panic!("expected an order book event");
         };
-        // 2026-07-30T07:49:07Z. Read as milliseconds this lands in the year
-        // 58545, which is the shape of the bug that made this feed produce
-        // nothing but decode errors.
+        // The public order-book field is a microsecond timestamp.
         assert_eq!(
             book.timestamp,
             Timestamp::from_micros(1_785_397_747_576_054)
         );
         assert_eq!(book.timestamp.as_secs(), 1_785_397_747);
-        // Fifteen levels a side, which is what the socket sends and half what
-        // `/v1/orderbook` does.
-        assert_eq!(book.bids.len(), 15);
-        assert_eq!(book.asks.len(), 15);
+        // Empty sides are removed from the fifteen paired slots.
+        assert_eq!(book.bids.len(), 12);
+        assert_eq!(book.asks.len(), 14);
         assert_eq!(
             book.best_bid().expect("a bid").price,
-            Decimal::from(91_175_000)
+            Decimal::from(91_171_000)
         );
     }
 
     #[test]
     fn a_millisecond_clock_offered_as_microseconds_is_refused() {
-        // The mirror of the book bug: a stream frame that starts sending
-        // milliseconds must fail loudly rather than decode to 1970. Nothing
-        // about the value's magnitude is guessed at, so this is the only thing
-        // standing between a unit change and a silent wrong answer.
         let mut frame = parsed(WS_ORDER_BOOK);
         frame["timestamp"] = serde_json::json!(1_785_397_747_576i64);
 
@@ -1662,28 +1470,25 @@ mod tests {
     fn a_rest_ticker_is_pulled_back_off_the_korean_wall_clock() {
         let rest = ticker(&parsed(TICKER)[0], btc_krw()).expect("ticker parses");
 
-        // The raw field reads 1785430110156, which is 16:48:30 UTC: the Korean
-        // wall clock served as if it were the UTC epoch. `trade_time` in the
-        // same payload says 074830, and that is the instant a caller gets.
+        // Normalize the epoch fields against the payload's UTC trade time.
         assert_eq!(
             rest.timestamp,
             Timestamp::from_millis(1_785_397_710_156),
             "the ticker clock was not pulled back nine hours"
         );
         assert_eq!(rest.timestamp.to_string(), "2026-07-30T07:48:30.156Z");
-        // `/v1/ticker` sends one number for both clocks, so both land together.
+        // This REST payload uses one value for both clocks.
         assert_eq!(rest.last_trade_time, Some(rest.timestamp));
         assert_eq!(rest.last_price, Decimal::from(91_171_000));
         assert_eq!(rest.change, Some(Decimal::from(-973_000)));
         assert_eq!(rest.change_rate, Some(exact("-0.0106")));
-        // The rolling 24-hour volume, not the 216.55 of the current session.
+        // Use the rolling 24-hour volume field.
         assert_eq!(rest.volume, Some(exact("294.0810771")));
     }
 
     #[test]
     fn a_ticker_whose_clocks_already_agree_is_left_alone() {
-        // What the correction does the day Bithumb repairs the epoch fields:
-        // nothing. The gap is measured, never assumed.
+        // Matching UTC clocks require no correction.
         let mut entry = parsed(TICKER)[0].clone();
         entry["trade_timestamp"] = serde_json::json!(1_785_397_710_156i64);
         entry["timestamp"] = serde_json::json!(1_785_397_710_156i64);
@@ -1710,10 +1515,9 @@ mod tests {
         let Some(MarketEvent::Ticker(stream)) = stream else {
             panic!("expected a ticker event");
         };
-        // The socket's epoch fields are already UTC, and the frame carries no
-        // `trade_date_kst`, so nothing is subtracted.
+        // Public WebSocket ticker clocks are already UTC.
         assert_eq!(stream.timestamp, Timestamp::from_millis(1_785_397_735_276));
-        // The summary was built 272 milliseconds after the fill it reports.
+        // Preserve the distinct summary and trade times.
         assert_eq!(
             stream.last_trade_time,
             Some(Timestamp::from_millis(1_785_397_735_004))
@@ -1728,7 +1532,7 @@ mod tests {
         let candles = candles(&parsed(MINUTE_CANDLES), Interval::Min1, after_the_minute)
             .expect("candles parse");
 
-        // 2026-07-30T07:48:00Z, not the 07:48:30 the `timestamp` field carries.
+        // `candle_date_time_utc` is the open time, not `timestamp`.
         assert_eq!(candles[0].open_time, Timestamp::from_secs(1_785_397_680));
         assert_eq!(candles[0].open, Decimal::from(91_226_000));
         assert_eq!(candles[0].close, Decimal::from(91_171_000));
@@ -1746,11 +1550,7 @@ mod tests {
 
     #[test]
     fn the_month_in_progress_is_running_like_any_other_interval() {
-        // The newest entry is the Korean month of March 2026, opening
-        // 2026-02-28T15:00Z. It is not over in the middle of it. Answering
-        // `true` because a month has no fixed length hands a consumer weeks of
-        // a month as a settled bar, and `Candle::closed` is what a consumer
-        // commits on.
+        // The March KST candle remains open until 2026-03-31T15:00Z.
         let mid_march = Timestamp::from_secs(1_773_500_000); // 2026-03-14T20:13:20Z
         let april = Timestamp::from_secs(1_774_969_200); // 2026-03-31T15:00:00Z
 
@@ -1765,11 +1565,7 @@ mod tests {
 
     #[test]
     fn a_monthly_candle_closes_on_the_korean_month_boundary_it_was_cut_on() {
-        // Bithumb's months are Korean months, so the candle in `MONTH_CANDLES`
-        // opening 2026-02-28T15:00Z runs until the next one opens at
-        // 2026-03-31T15:00Z, three days later than a UTC calendar step from 28
-        // February reaches. Those three days are the window in which a bar that
-        // is still moving would be handed over as settled.
+        // Monthly boundaries follow the KST calendar rather than the UTC calendar.
         let utc_month_step = Timestamp::from_secs(1_774_710_000); // 2026-03-28T15:00:00Z
         let korean_month_step = Timestamp::from_secs(1_774_969_200); // 2026-03-31T15:00:00Z
 
@@ -1783,14 +1579,12 @@ mod tests {
             "the March candle still has three days to run on 28 March"
         );
         assert!(at_the_boundary[0].closed);
-        // The one behind it is settled throughout, on either reading, so the
-        // assertions above are about the boundary and not about the payload.
         assert!(mid_window[1].closed);
     }
 
     #[test]
     fn an_error_body_keeps_bithumbs_own_code_and_message() {
-        // https://apidocs.bithumb.com/reference/api-주요-에러-코드-목록
+        // Shape reference: https://apidocs.bithumb.com/docs/api-주요-에러-코드.md
         let error = exchange_error(
             401,
             r#"{"error":{"name":"invalid_access_key","message":"잘못된 액세스 키"}}"#,
@@ -1811,6 +1605,17 @@ mod tests {
         assert_eq!(message, "잘못된 액세스 키");
         assert_eq!(*status, Some(401));
         assert!(!error.is_retryable());
+    }
+
+    #[test]
+    fn a_numeric_error_name_is_kept_as_the_exchange_code() {
+        let error = exchange_error(200, r#"{"error":{"name":404,"message":"Code not found"}}"#);
+
+        let Error::Exchange { code, message, .. } = &error else {
+            panic!("expected an exchange error");
+        };
+        assert_eq!(code, "404");
+        assert_eq!(message, "Code not found");
     }
 
     #[test]
@@ -1913,7 +1718,7 @@ mod tests {
 
     #[test]
     fn private_rest_orders_read_bid_and_ask_as_buy_and_sell() {
-        // https://apidocs.bithumb.com/reference/대기-주문-조회
+        // Shape reference: https://apidocs.bithumb.com/reference/대기-주문-목록-조회.md
         let raw = r#"[{
           "market": "KRW-BTC",
           "uuid": "C0661000000000760010",

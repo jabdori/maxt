@@ -7,7 +7,7 @@
 
 use rust_decimal::Decimal;
 
-use crate::adapters::candles as candle_pages;
+use crate::adapters::{candles as candle_pages, inclusive_millis_before};
 use crate::error::{Error, Result};
 use crate::feature::Feature;
 use crate::request::CandleRequest;
@@ -19,11 +19,10 @@ use super::{BinanceAdapter, BinanceMarket, EXCHANGE, now_millis, parse};
 /// The most recent trades either venue will return in one call.
 const MAX_TRADE_LIMIT: u32 = 1_000;
 
-/// The depths Binance accepts, per venue.
-///
-/// Not a range. An unlisted value is rejected outright, so asking for 30
-/// levels fails instead of quietly returning 50.
-const SPOT_DEPTHS: &[u32] = &[5, 10, 20, 50, 100, 500, 1_000, 5_000];
+/// The largest spot depth Binance returns in one response.
+const MAX_SPOT_DEPTH: u32 = 5_000;
+
+/// The fixed depths USD-M accepts.
 const USD_M_DEPTHS: &[u32] = &[5, 10, 20, 50, 100, 500, 1_000];
 
 /// The candles each venue will return in one call. USD-M serves more.
@@ -36,13 +35,6 @@ impl BinanceMarket {
         match self {
             Self::Spot => "/api/v3",
             Self::UsdMFutures => "/fapi/v1",
-        }
-    }
-
-    fn depths(self) -> &'static [u32] {
-        match self {
-            Self::Spot => SPOT_DEPTHS,
-            Self::UsdMFutures => USD_M_DEPTHS,
         }
     }
 
@@ -117,13 +109,18 @@ pub(super) fn order_book_request(
     let venue = adapter.venue();
     let mut params = vec![("symbol", adapter.symbol(market)?)];
     if let Some(depth) = depth {
-        if !venue.depths().contains(&depth) {
+        let accepted = match venue {
+            BinanceMarket::Spot => (1..=MAX_SPOT_DEPTH).contains(&depth),
+            BinanceMarket::UsdMFutures => USD_M_DEPTHS.contains(&depth),
+        };
+        if !accepted {
+            let expected = match venue {
+                BinanceMarket::Spot => format!("1 to {MAX_SPOT_DEPTH}"),
+                BinanceMarket::UsdMFutures => format!("one of {USD_M_DEPTHS:?}"),
+            };
             return Err(Error::invalid_request(
                 "depth",
-                format!(
-                    "binance serves book depths {:?} on this venue, not {depth}",
-                    venue.depths()
-                ),
+                format!("binance serves book depths {expected} on this venue, not {depth}"),
             ));
         }
         params.push(("limit", depth.to_string()));
@@ -162,13 +159,9 @@ pub(super) fn candles_request(
         ),
     ];
     if let Some(cursor) = cursor {
-        // `endTime` is inclusive on Binance and the walk's cursor is not, so
-        // the last millisecond is trimmed rather than returning one candle too
-        // many at an exact boundary.
-        params.push((
-            "endTime",
-            (cursor.as_millis().saturating_sub(1)).to_string(),
-        ));
+        // Binance includes `endTime`; convert the exclusive nanosecond cursor
+        // to the latest whole millisecond still inside the requested window.
+        params.push(("endTime", inclusive_millis_before(cursor).to_string()));
     }
     params.push(("limit", count.to_string()));
 
@@ -224,8 +217,8 @@ pub(super) async fn order_book(
         .send(order_book_request(adapter, market, depth)?)
         .await?;
     let raw: parse::RawDepth = parse::json(&body, "depth")?;
-    // Spot depth carries no clock; the moment the body arrived is the closest
-    // honest answer, and USD-M's own stamp overrides it.
+    // Spot depth carries no clock, so it uses the response read time. USD-M's
+    // exchange timestamp overrides this fallback.
     parse::order_book(market, Timestamp::now(), &raw)
 }
 
@@ -262,18 +255,10 @@ pub(super) async fn candles(
     .await
 }
 
-/// The trading rules Binance attaches to one spot symbol.
+/// Binance Spot order filters for one symbol.
 ///
-/// Not part of the common API because no two exchanges express these the same
-/// way: Upbit publishes a price-band table keyed by price range, Hyperliquid a
-/// decimal count, and Binance a set of named filters whose membership varies
-/// per symbol. Flattening them would either lose Binance's semantics or invent
-/// fields the other exchanges cannot fill. Read them through
-/// [`Client::adapter`](crate::Client::adapter).
-///
-/// Every field is `None` when the symbol carries no filter of that kind, which
-/// is common. A newly listed pair often has only `PRICE_FILTER` and
-/// `LOT_SIZE`.
+/// Read through [`Client::adapter`](crate::Client::adapter). A field is `None`
+/// when the symbol has no filter that supplies it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct BinanceSymbolFilters {
@@ -425,13 +410,23 @@ mod tests {
     }
 
     #[test]
-    fn a_depth_binance_does_not_serve_is_refused_rather_than_rounded() {
-        assert!(matches!(
-            order_book_request(&spot(), &btc_usdt(), Some(30)),
-            Err(Error::InvalidRequest { field: "depth", .. })
-        ));
+    fn spot_accepts_any_depth_through_5000_while_futures_keeps_its_fixed_set() {
+        assert_eq!(
+            order_book_request(&spot(), &btc_usdt(), Some(30))
+                .expect("spot accepts every depth through 5000")
+                .target(),
+            "/api/v3/depth?symbol=BTCUSDT&limit=30"
+        );
         // 5000 levels are a spot-only depth.
         assert!(order_book_request(&spot(), &btc_usdt(), Some(5_000)).is_ok());
+        assert!(matches!(
+            order_book_request(&spot(), &btc_usdt(), Some(5_001)),
+            Err(Error::InvalidRequest { field: "depth", .. })
+        ));
+        assert!(matches!(
+            order_book_request(&perp(), &btc_usdt_perp(), Some(30)),
+            Err(Error::InvalidRequest { field: "depth", .. })
+        ));
         assert!(matches!(
             order_book_request(&perp(), &btc_usdt_perp(), Some(5_000)),
             Err(Error::InvalidRequest { field: "depth", .. })
@@ -461,6 +456,18 @@ mod tests {
             .expect("a valid request")
             .target(),
             "/api/v3/klines?symbol=BTCUSDT&interval=15m&endTime=1499644799999&limit=250"
+        );
+
+        assert_eq!(
+            candles_request(
+                &spot(),
+                &request,
+                Some(Timestamp::from_nanos(1_499_644_800_000_000_001)),
+                250
+            )
+            .expect("a sub-millisecond exclusive end")
+            .target(),
+            "/api/v3/klines?symbol=BTCUSDT&interval=15m&endTime=1499644800000&limit=250"
         );
     }
 
@@ -549,6 +556,18 @@ mod tests {
         assert_eq!(
             query(&[("a", "1".to_string()), ("b", "x y".to_string())]),
             "a=1&b=x%20y"
+        );
+    }
+
+    #[test]
+    fn a_non_ascii_spot_asset_is_percent_encoded_in_public_rest_queries() {
+        let market = Market::spot(Exchange::Binance, "币安人生", "USDT");
+
+        assert_eq!(
+            trades_request(&spot(), &market, Some(1))
+                .expect("Binance lists UTF-8 asset names")
+                .target(),
+            "/api/v3/trades?symbol=%E5%B8%81%E5%AE%89%E4%BA%BA%E7%94%9FUSDT&limit=1"
         );
     }
 

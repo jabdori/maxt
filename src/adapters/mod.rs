@@ -1,18 +1,10 @@
-//! One adapter per exchange.
+//! Exchange adapter implementations.
 //!
-//! An adapter is what [`Client`](crate::Client) wraps. Build the one you want,
-//! hand it to a client, and use the common API. When you need something only
-//! that exchange offers, reach back to the adapter with
-//! [`Client::adapter`](crate::Client::adapter) and call its own typed methods.
-//!
-//! Adapters built with no credentials serve public market data only. Every
-//! adapter takes credentials in the form its own exchange uses. Upbit and
-//! Bithumb issue an access key and a secret key, Binance an API key and a
-//! secret, Hyperliquid a wallet address and a signing key. `maxt` keeps those
-//! three shapes distinct.
-//!
-//! `docs/providers.md` covers which to pick. `docs/providers/` has one page
-//! per exchange.
+//! Adapters support public data without credentials and expose
+//! provider-specific methods through [`Client::adapter`](crate::Client::adapter).
+//! See `docs/providers.md` for capabilities and credential types.
+
+use crate::Timestamp;
 
 mod binance;
 mod bithumb;
@@ -21,6 +13,18 @@ mod upbit;
 
 pub(crate) mod candles;
 pub(crate) mod decimal;
+
+/// Last whole millisecond strictly before an exclusive timestamp.
+pub(crate) fn inclusive_millis_before(end: Timestamp) -> i64 {
+    let nanos = end.as_nanos();
+    nanos.div_euclid(1_000_000) - i64::from(nanos.rem_euclid(1_000_000) == 0)
+}
+
+/// First whole millisecond at or after an inclusive timestamp.
+pub(crate) fn inclusive_millis_at_or_after(start: Timestamp) -> i64 {
+    let nanos = start.as_nanos();
+    nanos.div_euclid(1_000_000) + i64::from(nanos.rem_euclid(1_000_000) != 0)
+}
 
 pub use binance::{
     BinanceAdapter, BinanceListenKey, BinanceMarket, BinanceSpotOrderDetail, BinanceSymbolFilters,

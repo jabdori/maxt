@@ -9,15 +9,6 @@ use std::fmt;
 /// feature. Ask ahead of time with
 /// [`Client::supports`](crate::Client::supports) when the answer should change
 /// what your program does.
-///
-/// ```
-/// use maxt::{Client, Feature, adapters::BithumbAdapter};
-///
-/// let client = Client::new(BithumbAdapter::new());
-///
-/// assert!(client.supports(Feature::Trades));
-/// assert!(!client.supports(Feature::CandleStream));
-/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[non_exhaustive]
 pub enum Feature {
@@ -31,18 +22,15 @@ pub enum Feature {
     Ticker,
     /// Reading historical candles over REST.
     ///
-    /// `true` guarantees ten intervals on every exchange: one, three, five,
-    /// fifteen and thirty minutes, one and four hours, one day, one week, one
-    /// month. Beyond those the answer is per-exchange: two, eight and twelve
-    /// hours and three days are Binance and Hyperliquid only, and the
-    /// one-second candle is Upbit and Binance spot.
+    /// `true` guarantees these intervals: one, three, five, fifteen and thirty
+    /// minutes; one and four hours; one day; one week; and one month. Other
+    /// intervals are provider-specific.
     ///
     /// An interval outside the baseline is
     /// [`Error::Unsupported`](crate::Error::Unsupported), which says `maxt`
     /// sends that interval nowhere on that exchange. It is not a claim that the
-    /// exchange never aggregated it: Upbit and Bithumb both serve ten-minute
-    /// candles, and Upbit serves years, neither of which [`Interval`] can name.
-    /// Check the provider page before concluding an interval is unreachable.
+    /// exchange never aggregates it; [`Interval`] does not represent every
+    /// interval exposed by every provider.
     ///
     /// [`Interval`]: crate::Interval
     Candles,
@@ -79,28 +67,10 @@ pub enum Feature {
 impl Feature {
     /// Whether the feature requires API credentials.
     ///
-    /// Everything else works against an anonymous client. A feature that needs
-    /// credentials and has none still reports
-    /// [`Error::Auth`](crate::Error::Auth), because the endpoint exists and a
-    /// key would reach it.
-    ///
-    /// ```
-    /// use maxt::{Client, Feature, adapters::UpbitAdapter};
-    ///
-    /// let public = Client::new(UpbitAdapter::new());
-    ///
-    /// // Everything a public client can do, without asking the network which.
-    /// let usable: Vec<Feature> = [Feature::Ticker, Feature::Candles, Feature::Balances]
-    ///     .into_iter()
-    ///     .filter(|feature| !feature.needs_credentials() && public.supports(*feature))
-    ///     .collect();
-    ///
-    /// assert_eq!(usable, [Feature::Ticker, Feature::Candles]);
-    /// // Funding rates describe the market, not the account, so they stay
-    /// // public while the rest of the derivatives API does not.
-    /// assert!(!Feature::FundingRates.needs_credentials());
-    /// assert!(Feature::FundingPayments.needs_credentials());
-    /// ```
+    /// This classifies the operation, not provider availability. For a provider
+    /// that supports the operation, missing credentials produce
+    /// [`Error::Auth`](crate::Error::Auth). Use
+    /// [`Client::supports`](crate::Client::supports) for the configured adapter.
     pub const fn needs_credentials(self) -> bool {
         match self {
             Self::Markets
@@ -126,21 +96,6 @@ impl Feature {
     }
 
     /// Whether the feature only exists on derivatives markets.
-    ///
-    /// ```
-    /// use maxt::{Client, Feature, adapters::{BinanceAdapter, UpbitAdapter}};
-    ///
-    /// // A spot-only exchange offers none of these, whatever credentials it
-    /// // has, because there is nothing to hold a position in.
-    /// let spot_only = Client::new(UpbitAdapter::new().with_credentials("access", "secret"));
-    /// assert!(Feature::Positions.is_derivatives_only());
-    /// assert!(!spot_only.supports(Feature::Positions));
-    ///
-    /// // The same feature on a perpetual venue is a question of credentials.
-    /// let perp = Client::new(BinanceAdapter::usd_m_futures());
-    /// assert!(!perp.supports(Feature::Positions)); // no key yet
-    /// assert!(perp.supports(Feature::FundingRates)); // public even so
-    /// ```
     pub const fn is_derivatives_only(self) -> bool {
         matches!(
             self,

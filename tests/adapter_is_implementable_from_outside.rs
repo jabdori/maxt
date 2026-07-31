@@ -1,25 +1,7 @@
-//! A fifth exchange, written the way a stranger would write it.
+//! Verifies that external crates can implement [`Adapter`].
 //!
-//! `Adapter` is documented as the way to add an exchange, so it has to be
-//! implementable by a crate that is not this one. Integration tests compile as
-//! separate crates, which makes this file the only place that check is real.
-//! Everything inside `src/` can build types that outside code may not.
-//!
-//! `Fictional` implements every method of `Adapter`, with none left to the
-//! trait's `Unsupported` defaults. That is the whole point: a default turns a
-//! method that cannot be written from outside into a silent pass, so a guard
-//! that skipped a method would certify an extension point it never touched.
-//! Both `subscribe` methods are here for that reason, and each returns a real
-//! stream carrying real events.
-//!
-//! Every domain type an adapter has to return is therefore constructed below,
-//! including the two stream types and an `Error`. If any of them becomes
-//! unbuildable from outside, this file stops compiling and the extension point
-//! the documentation promises is gone. A `#[non_exhaustive]` on a struct does
-//! exactly that, and so does a `pub(crate)` constructor.
-//!
-//! It also stands in for every mock adapter, backtester, and recorded-data
-//! harness a user might write, none of which can exist if this file cannot.
+//! Integration tests compile as a separate crate. `Fictional` exercises every
+//! method and `BareMinimum` exercises the defaults.
 
 use futures_util::StreamExt;
 use futures_util::stream;
@@ -33,20 +15,17 @@ use maxt::{
     Subscription, Ticker, Timestamp, Trade,
 };
 
-/// An exchange that exists only here.
+/// A complete external adapter fixture.
 struct Fictional;
 
 impl Fictional {
-    /// The one market it lists. Reused as the identity on everything it returns.
+    /// The market used by every returned value.
     fn market() -> Market {
-        // A stranger's exchange is not in `Exchange`, so it borrows one. That
-        // `Exchange` is a closed enum is a separate design question; it does not
-        // stop the trait from being implemented.
+        // External adapters currently reuse an existing `Exchange` identity.
         Market::perpetual(Exchange::Hyperliquid, "BTC", "USDC")
     }
 
-    /// One executed trade. Returned over REST and over the live stream, since
-    /// an adapter has to build the same type for both.
+    /// One trade returned over REST and the live stream.
     fn trade() -> Trade {
         Trade {
             market: Self::market(),
@@ -78,8 +57,8 @@ impl Adapter for Fictional {
         Exchange::Hyperliquid
     }
 
-    fn supports(&self, feature: Feature) -> bool {
-        !feature.needs_credentials() || matches!(feature, Feature::Balances)
+    fn supports(&self, _feature: Feature) -> bool {
+        true
     }
 
     fn markets(&self, kind: MarketKind) -> BoxFuture<'_, Result<Vec<MarketInfo>>> {
@@ -176,8 +155,7 @@ impl Adapter for Fictional {
         subscription: &Subscription,
         config: &StreamConfig,
     ) -> BoxFuture<'_, Result<MarketStream>> {
-        // Read here rather than ignored, because an adapter that could not see
-        // what it was asked for would have nothing to build a stream from.
+        // Use both inputs to exercise the full subscription signature.
         let wanted = subscription.feeds().contains(&Feed::Trades);
         let overflow = config.overflow;
 
@@ -191,9 +169,7 @@ impl Adapter for Fictional {
             Ok(MarketStream::new(stream::iter(vec![
                 Ok(MarketEvent::Reconnected),
                 Ok(MarketEvent::Trade(Self::trade())),
-                // An error is an item the consumer polls past, so a stream that
-                // could not report one would be a stream with no way to say a
-                // frame was unreadable.
+                // A following event proves stream errors are non-terminal items.
                 Err(Error::Decode {
                     detail: format!("a frame this adapter could not read under {overflow:?}"),
                 }),
@@ -266,10 +242,7 @@ impl Adapter for Fictional {
                     leverage: Some(Decimal::from(3)),
                     margin_mode: Some(MarginMode::Cross),
                 },
-                // A venue that keeps reporting a market after the position on it
-                // closed. Whether an adapter filters this is not the adapter's
-                // promise to keep: `Adapter` is implementable from outside this
-                // crate, so the guarantee has to hold for one nobody here wrote.
+                // `Client` owns the zero-size filter for external adapters.
                 Position {
                     market: Self::market(),
                     side: None,
@@ -323,8 +296,7 @@ impl Adapter for Fictional {
                     rate: Some(Decimal::new(1, 4)),
                     id: Some("payment-1".to_string()),
                 }],
-                // Constructing a cursor from outside proves paging can be
-                // implemented, not only consumed.
+                // External adapters must be able to construct resume cursors.
                 next: Some(Cursor::new("page-2")),
             })
         })
@@ -380,14 +352,11 @@ async fn an_outside_adapter_can_return_a_market_stream_that_yields_events() {
     assert_eq!(events.len(), 4);
     assert!(matches!(events[0], Ok(MarketEvent::Reconnected)));
     assert!(matches!(events[1], Ok(MarketEvent::Trade(_))));
-    // An error in the middle, with an event after it: what the stream's own
-    // documentation promises a consumer, written by the adapter that produces
-    // it rather than by this crate.
+    // An error item does not terminate the stream.
     assert!(matches!(events[2], Err(Error::Decode { .. })));
     assert!(matches!(events[3], Ok(MarketEvent::Trade(_))));
 
-    // The adapter read the subscription it was handed, so an unsatisfiable one
-    // is refused rather than answered with an empty stream.
+    // Reject an unsatisfiable subscription instead of returning an empty stream.
     let error = client
         .subscribe(&Subscription::new().feed(Feed::Ticker))
         .await
@@ -442,9 +411,7 @@ async fn an_outside_adapter_can_answer_and_refuse_the_order_calls() {
         .await
         .unwrap();
 
-    // Building an `Error` is part of the extension point: an adapter that
-    // could not report the exchange's own refusal would have to invent a
-    // success.
+    // External adapters must be able to preserve exchange rejections.
     let refused = client
         .set_margin(&MarginRequest::new(Fictional::market()).leverage(Decimal::from(50)))
         .await
@@ -460,11 +427,7 @@ async fn an_outside_adapter_can_answer_and_refuse_the_order_calls() {
     assert!(!refused.is_retryable());
 }
 
-/// An adapter that implements only the two methods the trait requires.
-///
-/// Everything `Fictional` fills in is left to the defaults here, so the two of
-/// them together cover both halves of the contract: that every method can be
-/// written from outside, and that a method left unwritten still answers.
+/// An adapter that inherits every optional default.
 struct BareMinimum;
 
 impl Adapter for BareMinimum {
@@ -493,11 +456,36 @@ async fn an_outside_adapter_that_implements_nothing_optional_inherits_the_defaul
         }
     ));
 
-    // Including the two that `Fictional` exists to prove are writable.
+    // Empty subscriptions are invalid before feature support is considered.
     assert!(matches!(
         client.subscribe(&Subscription::new()).await.unwrap_err(),
-        Error::Unsupported { .. }
+        Error::InvalidRequest {
+            field: "markets",
+            ..
+        }
     ));
+    assert!(matches!(
+        client
+            .subscribe(&Subscription::new().market(Fictional::market()))
+            .await
+            .unwrap_err(),
+        Error::InvalidRequest { field: "feeds", .. }
+    ));
+    for (feed, expected) in [
+        (Feed::Trades, Feature::TradeStream),
+        (Feed::OrderBook, Feature::OrderBookStream),
+        (Feed::Ticker, Feature::TickerStream),
+        (Feed::Candles(maxt::Interval::Min1), Feature::CandleStream),
+    ] {
+        let error = client
+            .subscribe(&Subscription::new().market(Fictional::market()).feed(feed))
+            .await
+            .unwrap_err();
+        assert!(
+            matches!(error, Error::Unsupported { feature, .. } if feature == expected),
+            "{feed:?} returned {error:?}"
+        );
+    }
     assert!(matches!(
         client.subscribe_account().await.unwrap_err(),
         Error::Unsupported {
@@ -509,8 +497,6 @@ async fn an_outside_adapter_that_implements_nothing_optional_inherits_the_defaul
 
 #[test]
 fn an_outside_crate_can_configure_a_stream() {
-    // Six public fields that only ever held one reachable combination would be
-    // six fields of decoration.
     let config = StreamConfig {
         idle_timeout_ms: 120_000,
         overflow: Overflow::DropNewest,
@@ -527,11 +513,6 @@ fn an_outside_crate_can_configure_a_stream() {
 
 #[test]
 fn every_field_of_a_stream_config_can_be_named_from_outside() {
-    // The documented contract, spelled out: the struct is exhaustive, so a
-    // caller may name all six fields and skip `..StreamConfig::default()`
-    // entirely. `#[non_exhaustive]` would stop this file compiling, which is
-    // the whole cost of adding it and the reason the doc no longer promises a
-    // future field would arrive silently.
     let config = StreamConfig {
         max_reconnect_attempts: None,
         initial_reconnect_delay_ms: 250,

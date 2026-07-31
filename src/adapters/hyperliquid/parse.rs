@@ -1,12 +1,7 @@
-//! Hyperliquid's JSON, and what it means in `maxt` terms.
+//! Hyperliquid payload deserialization and domain mapping.
 //!
-//! Everything that reads a Hyperliquid payload lives here, so the REST, stream,
-//! and signing modules above only have to decide *which* payload they are
-//! looking at.
-//!
-//! Hyperliquid sends every price, size, and amount as a JSON **string**. That is
-//! a gift: the digits arrive intact and [`Decimal`] is built from the text, so
-//! nothing ever passes through `f64`.
+//! Numeric strings and WebSocket candle numbers are converted directly to
+//! [`Decimal`] without an `f64` round trip.
 
 use rust_decimal::Decimal;
 use serde::Deserialize;
@@ -22,11 +17,10 @@ use crate::types::{
 
 pub(crate) const EXCHANGE: &str = Exchange::Hyperliquid.id();
 
-/// Every Hyperliquid market is quoted and settled in USDC.
+/// Settlement asset for default perpetuals and account-wide USDC values.
 pub(crate) const SETTLE_ASSET: &str = "USDC";
 
-/// Spot asset ids are the pair's universe index offset by this much, which is
-/// how one `/exchange` action namespace addresses two universes.
+/// Offset applied to spot pair indices in `/exchange` actions.
 pub(crate) const SPOT_ASSET_ID_OFFSET: u32 = 10_000;
 
 // ---------------------------------------------------------------------------
@@ -91,10 +85,8 @@ pub(crate) struct RawLevel {
     pub(crate) sz: String,
 }
 
-/// One entry of `candleSnapshot`, and of the `candle` stream frame.
-///
-/// The keys are single letters. `t` opens the window and `T` closes it, which
-/// is the only pair where the casing carries the meaning.
+/// One `candleSnapshot` item or `candle` stream item.
+/// `t` is the opening millisecond and `T` is the inclusive closing millisecond.
 #[derive(Debug, Deserialize)]
 pub(crate) struct RawCandle {
     #[serde(rename = "t")]
@@ -129,17 +121,13 @@ pub(crate) struct RawTrade {
     pub(crate) tid: Number,
 }
 
-/// One asset context from `metaAndAssetCtxs` or `spotMetaAndAssetCtxs`.
+/// One context from `metaAndAssetCtxs` or `spotMetaAndAssetCtxs`.
 ///
-/// The response is a two-element list of `[meta, contexts]`. A spot context
-/// names its own market in `coin` and is matched on that; a perpetual context
-/// carries no name and is matched on position. `rest::pick_context` records
-/// what was read live to settle which is which.
+/// Spot contexts are matched by `coin`. Default perpetual contexts omit `coin`
+/// and are matched to the metadata array by position.
 #[derive(Debug, Deserialize)]
 pub(crate) struct RawAssetCtx {
-    /// The market this context describes, in Hyperliquid's own spelling.
-    /// Present on every `spotMetaAndAssetCtxs` context and on none of the
-    /// `metaAndAssetCtxs` ones.
+    /// Native market name supplied by spot contexts.
     #[serde(default)]
     pub(crate) coin: Option<String>,
     #[serde(rename = "midPx", default)]
@@ -155,7 +143,7 @@ pub(crate) struct RawAssetCtx {
     /// The external price funding is computed against. Perpetuals only.
     #[serde(rename = "oraclePx", default)]
     pub(crate) oracle_px: Option<String>,
-    /// The hourly funding rate currently accruing. Perpetuals only.
+    /// The current funding rate. Perpetuals only.
     #[serde(default)]
     pub(crate) funding: Option<String>,
     #[serde(rename = "openInterest", default)]
@@ -254,6 +242,7 @@ pub(crate) struct RawFundingDelta {
 }
 
 /// One entry of `fundingHistory`.
+/// This is a market-rate observation, not an account funding payment.
 #[derive(Debug, Deserialize)]
 pub(crate) struct RawFundingHistory {
     #[serde(rename = "fundingRate")]
@@ -310,8 +299,7 @@ pub(crate) struct RawActionResponse {
     pub(crate) response: Value,
 }
 
-/// Reads a field Hyperliquid sends as a string over REST and as a bare number
-/// on the WebSocket. Its candles do exactly this.
+/// Reads a field represented as either a JSON string or number.
 fn number_or_string<'de, D>(deserializer: D) -> std::result::Result<String, D::Error>
 where
     D: serde::Deserializer<'de>,
@@ -333,14 +321,9 @@ where
 // Scalars
 // ---------------------------------------------------------------------------
 
-/// Reads one of Hyperliquid's string-encoded numbers as a [`Decimal`].
-///
-/// A number that `Decimal` cannot hold exactly is a decode failure. Rounding
-/// it would silently lose the last digit of a price.
+/// Reads a string-encoded number exactly or returns [`Error::Decode`].
 pub(crate) fn decimal(text: &str, field: &str) -> Result<Decimal> {
-    // Hyperliquid prints very small funding rates and sizes with an exponent;
-    // [`crate::adapters::decimal::exact`] reads that spelling without relaxing
-    // the no-rounding rule above, and is what every adapter uses.
+    // Exponent notation is accepted without rounding.
     crate::adapters::decimal::exact(text)
         .map_err(|err| Error::decode(format!("`{field}` is not a decimal: {text} ({err})")))
 }
@@ -365,11 +348,7 @@ pub(crate) fn side(raw: &str) -> Result<Side> {
     }
 }
 
-/// Maps a candle interval to Hyperliquid's spelling, or `None` when it serves
-/// none.
-///
-/// One second is the only interval `maxt` names that Hyperliquid does not
-/// aggregate.
+/// Maps a supported candle interval to Hyperliquid's spelling.
 pub(crate) fn interval_name(interval: Interval) -> Option<&'static str> {
     Some(match interval {
         Interval::Min1 => "1m",
@@ -512,12 +491,10 @@ pub(crate) struct Asset {
     pub(crate) status: MarketStatus,
 }
 
-/// Every market Hyperliquid lists, spot and perpetual together.
+/// Default perpetual and spot markets loaded from `meta` and `spotMeta`.
 ///
-/// This is the one place symbols are mapped, in both directions. It is a table
-/// and not a formula, because Hyperliquid names most spot pairs by index.
-/// `HYPE/USDC` is `@107` on the wire, and the pairing can only be read out of
-/// `spotMeta`.
+/// Spot wire symbols are read from metadata rather than derived from asset
+/// names.
 #[derive(Debug, Clone, Default)]
 pub(crate) struct Universe {
     assets: Vec<Asset>,
@@ -529,9 +506,7 @@ impl Universe {
         let mut assets = Vec::with_capacity(perp.universe.len() + spot.universe.len());
 
         for (index, asset) in perp.universe.iter().enumerate() {
-            // A name like `test:ABC` belongs to a builder-deployed perpetual
-            // market, which lives in its own universe reached with a `dex`
-            // parameter. Its asset ids do not share this numbering.
+            // HIP-3 markets belong to separate DEX metadata and asset-id spaces.
             if asset.name.contains(':') {
                 continue;
             }
@@ -604,11 +579,7 @@ impl Universe {
         Ok(&self.asset(market)?.native)
     }
 
-    /// Reads one of Hyperliquid's names back into a [`Market`].
-    ///
-    /// Both spellings of a spot pair resolve: the `@107` index form Hyperliquid
-    /// uses on most feeds, and the `PURR/USDC` slash form it uses for the pairs
-    /// that predate the index scheme.
+    /// Resolves either an indexed or slash-form native spot symbol.
     pub(crate) fn market_from_native_symbol(&self, native: &str) -> Result<&Market> {
         self.assets
             .iter()
@@ -619,8 +590,7 @@ impl Universe {
 }
 
 impl Asset {
-    /// The `@{index}` spelling of a spot pair, which Hyperliquid uses on the
-    /// feeds even for pairs whose `spotMeta` name is the slash form.
+    /// Returns the indexed spot symbol used by market-data feeds.
     fn index_symbol(&self) -> String {
         match self.market.kind {
             MarketKind::Spot => {
@@ -630,10 +600,11 @@ impl Asset {
         }
     }
 
-    /// Decimal places allowed in an order price for this asset.
+    /// Maximum decimal places allowed in a fractional order price.
     ///
-    /// Hyperliquid caps a price's total decimals at six for perpetuals and
-    /// eight for spot, less the asset's size decimals.
+    /// The cap is `6 - size_decimals` for perpetuals and
+    /// `8 - size_decimals` for spot. Significant digits are validated
+    /// separately when an order is built.
     pub(crate) fn price_decimals(&self) -> u32 {
         let max: u32 = match self.market.kind {
             MarketKind::Perpetual => 6,
@@ -708,16 +679,15 @@ pub(crate) fn trade(raw: &RawTrade, universe: &Universe) -> Result<Trade> {
     })
 }
 
-/// Maps an asset context into a rolling summary.
+/// Maps an asset context into a ticker summary.
 ///
-/// `at` becomes [`Ticker::timestamp`]. Hyperliquid publishes no clock alongside
-/// its asset contexts, so the honest reading is when `maxt` asked.
-/// [`Ticker::last_trade_time`] stays `None` for the same reason. Hyperliquid
-/// never says when the last fill happened, and putting the read time there
-/// would claim a freshness the exchange did not report.
+/// [`Ticker::last_price`] uses `midPx`, falling back to `markPx`; neither field
+/// is a recent execution price. [`Ticker::change`] and
+/// [`Ticker::change_rate`] compare that selected price with `prevDayPx`.
+/// Asset contexts contain no timestamp or trade time, so `at` becomes
+/// [`Ticker::timestamp`] and [`Ticker::last_trade_time`] is `None`.
 pub(crate) fn ticker(raw: &RawAssetCtx, market: &Market, at: Timestamp) -> Result<Ticker> {
-    // `midPx` is absent on a market with an empty side; the mark price is the
-    // exchange's own answer to "what is this worth" and is always present.
+    // `midPx` is optional; `markPx` is the provider-summary fallback.
     let last_price = match (&raw.mid_px, &raw.mark_px) {
         (Some(mid), _) => decimal(mid, "midPx")?,
         (None, Some(mark)) => decimal(mark, "markPx")?,
@@ -760,17 +730,8 @@ pub(crate) fn ticker(raw: &RawAssetCtx, market: &Market, at: Timestamp) -> Resul
     })
 }
 
-/// Maps a candle.
-///
-/// `now` decides [`Candle::closed`]: Hyperliquid serves the window in progress
-/// alongside the finished ones and marks neither, so the only thing separating
-/// them is whether `T` has passed.
-///
-/// `T` is the *last* millisecond the window covers, not the first one after it:
-/// a 15-minute candle opening at `t` closes at `t + 899_999`. The bar is
-/// therefore still forming while the clock reads `T` and settled once it has
-/// moved past, which is the same boundary Binance's `closeTime` is read at; the
-/// two fields mean the same thing and used to be compared one millisecond apart.
+/// Maps a candle and marks it closed when `now` is later than the inclusive
+/// close millisecond `T`.
 pub(crate) fn candle(raw: &RawCandle, universe: &Universe, now: Timestamp) -> Result<Candle> {
     let interval = interval_from_name(&raw.interval).ok_or_else(|| {
         Error::decode(format!(
@@ -878,16 +839,8 @@ pub(crate) fn order_status(status: &str, filled: Decimal) -> OrderStatus {
     }
 }
 
-/// Reads one `assetPositions` row, flat rows included.
-///
-/// Hyperliquid leaves a closed position out of `clearinghouseState` entirely,
-/// so a zero `szi` has not been seen from it. This maps one rather than
-/// rejecting it, because a rejection would turn a venue change into
-/// `Error::Decode` on a payload that is well formed.
-///
-/// A flat row never reaches a caller:
-/// [`Client::positions`](crate::Client::positions) drops it, on the common API
-/// where the promise is made and where every adapter is held to it.
+/// Reads one `assetPositions` row, including a syntactically valid zero size.
+/// The common client filters flat positions from the returned list.
 pub(crate) fn position(raw: &RawPosition, universe: &Universe) -> Result<Position> {
     let signed = decimal(&raw.szi, "szi")?;
 
@@ -1197,15 +1150,14 @@ pub(crate) mod tests {
         let hype = Market::spot(Exchange::Hyperliquid, "HYPE", "USDC");
         let purr = Market::spot(Exchange::Hyperliquid, "PURR", "USDC");
 
-        // HYPE/USDC is `@107` on the wire; nothing in the name says "HYPE".
+        // Indexed spot symbols resolve through `spotMeta`.
         assert_eq!(universe.native_symbol(&hype).expect("listed"), "@107");
         assert_eq!(
             universe.market_from_native_symbol("@107").expect("listed"),
             &hype
         );
 
-        // PURR predates the index scheme and keeps a slash form in `spotMeta`,
-        // but the feeds still address it by index.
+        // Slash-form metadata symbols also resolve from their feed index.
         assert_eq!(universe.native_symbol(&purr).expect("listed"), "PURR/USDC");
         assert_eq!(
             universe
@@ -1227,8 +1179,7 @@ pub(crate) mod tests {
             .expect("listed");
         let btc_perp = universe.asset(&btc_perp()).expect("listed");
 
-        // The two universes share one asset id namespace only because spot is
-        // pushed past the offset.
+        // Spot and perpetual action ids occupy separate ranges.
         assert_eq!(btc_perp.asset_id, 0);
         assert_eq!(purr_spot.asset_id, SPOT_ASSET_ID_OFFSET);
         assert_eq!(purr_spot.market.kind, MarketKind::Spot);
@@ -1237,8 +1188,7 @@ pub(crate) mod tests {
 
     #[test]
     fn a_builder_deployed_perpetual_is_left_out_of_the_main_universe() {
-        // `test:ABC` numbers its assets in its own universe, so folding it in
-        // here would hand every later perpetual the wrong asset id.
+        // A separate DEX cannot share the default perpetual index space.
         let universe = universe();
 
         assert!(universe.market_from_native_symbol("test:ABC").is_err());
@@ -1268,8 +1218,7 @@ pub(crate) mod tests {
 
     #[test]
     fn decimals_keep_every_digit_hyperliquid_sent() {
-        // 113376.0 through an f64 is fine; a funding rate of 0.0000125 and a
-        // 20-digit balance are the cases that would lose their tail.
+        // Exact parsing preserves small rates and large balances.
         assert_eq!(decimal_of("0.0000125").to_string(), "0.0000125");
         assert_eq!(
             decimal_of("1386929.37231066771348207123").to_string(),
@@ -1288,8 +1237,7 @@ pub(crate) mod tests {
 
     #[test]
     fn a_book_comes_back_best_first_on_both_sides() {
-        // The payload lists the second bid ahead of the first and the asks
-        // descending, so nothing here is sorted by accident.
+        // The fixture is deliberately unsorted.
         let raw: RawBook = json(L2_BOOK).expect("official l2Book payload");
         let book = order_book(&raw, &universe()).expect("a book");
 
@@ -1350,12 +1298,7 @@ pub(crate) mod tests {
 
     #[test]
     fn the_last_millisecond_a_window_covers_is_still_inside_it() {
-        // `T` is 1681924499999: the final millisecond of the 15 minutes opening at
-        // 1681923600000, not the first one after them. A clock reading exactly `T`
-        // is inside the window, so the bar is still forming; one millisecond later
-        // it is settled. Binance's `closeTime` is read at the same boundary, and
-        // one field per exchange answering the same question differently is how a
-        // caller comparing two venues sees a bar settle twice.
+        // `T` is inclusive: the candle closes only after that millisecond.
         let raw: Vec<RawCandle> = json(CANDLE_SNAPSHOT).expect("official candleSnapshot payload");
         let universe = universe();
         let at_the_boundary = candle(
@@ -1423,8 +1366,7 @@ pub(crate) mod tests {
         assert_eq!(ticker.change, Some(decimal_of("-1.008")));
         assert_eq!(ticker.volume, Some(decimal_of("81584.5")));
         assert_eq!(ticker.quote_volume, Some(decimal_of("1169046.29406")));
-        // Hyperliquid puts no clock on an asset context, so the summary time is
-        // when `maxt` read it and the last fill time stays unknown.
+        // Asset contexts supply neither a context time nor a trade time.
         assert_eq!(ticker.timestamp, at);
         assert_eq!(ticker.last_trade_time, None);
     }
@@ -1469,14 +1411,7 @@ pub(crate) mod tests {
         assert!(!short.is_flat());
     }
 
-    /// `position` maps a zero `szi` rather than rejecting it, so what keeps a
-    /// flat row out of `positions()` is the common API's filter.
-    ///
-    /// The payload is the official one with its size edited to zero, because
-    /// Hyperliquid leaves closed positions out of `assetPositions` and has
-    /// never been observed publishing such a row. So this pins the two halves
-    /// against each other rather than against the venue: whatever Hyperliquid
-    /// starts sending, a size of zero is not answered as an open position.
+    /// A synthetic zero-size row verifies the common flat-position filter.
     #[test]
     fn a_zero_size_row_maps_to_a_flat_position_the_common_api_drops() {
         let mut raw: RawPerpState =
@@ -1486,8 +1421,7 @@ pub(crate) mod tests {
         let flat = position(&raw.asset_positions[0].position, &universe()).expect("a position");
 
         assert!(flat.is_flat());
-        // Zero has no direction, and `Side::Buy` is what an unsigned-zero test
-        // would have reported.
+        // The mapped placeholder side does not escape the common filter.
         assert_eq!(flat.side, None);
 
         assert_eq!(

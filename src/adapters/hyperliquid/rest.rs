@@ -1,12 +1,7 @@
-//! Hyperliquid's REST API, which is two endpoints.
+//! Hyperliquid REST request construction and response handling.
 //!
-//! Everything readable goes to `POST /info` and everything that changes state
-//! goes to `POST /exchange`. Neither takes a path or a query string: the request
-//! *is* the JSON body, and its `type` field is what a URL would be anywhere
-//! else.
-//!
-//! Request building is kept as plain functions returning [`HttpRequest`] so that
-//! every body and rejection below is testable without a network.
+//! Reads use `POST /info`; signed actions use `POST /exchange`. Request type and
+//! parameters are encoded in the JSON body.
 
 use rust_decimal::Decimal;
 use serde_json::{Value, json};
@@ -35,18 +30,13 @@ pub(crate) const EXCHANGE_PATH: &str = "/exchange";
 /// Hyperliquid returns at most this many book levels per side.
 pub(crate) const MAX_BOOK_DEPTH: u32 = 20;
 
-/// Hyperliquid returns at most this many candles per `candleSnapshot`.
+/// Number of recent candles retained by `candleSnapshot` per interval.
 pub(crate) const MAX_CANDLE_COUNT: u32 = 5_000;
 
-/// Hyperliquid returns at most this many trades per `recentTrades`.
-///
-/// Not a parameter. `recentTrades` takes the market and nothing else, so this is
-/// the whole window the endpoint offers and a larger `limit` cannot be served by
-/// asking differently.
+/// Fixed number of recent trades exposed by `recentTrades`.
 pub(crate) const MAX_TRADE_COUNT: u32 = 10;
 
-/// Hyperliquid returns at most this many entries per time-ranged history call,
-/// which is how a page knows another one may follow.
+/// Maximum entries returned by one time-ranged history request.
 pub(crate) const MAX_HISTORY_PAGE: usize = 500;
 
 /// A non-integer price carries at most this many significant figures.
@@ -69,8 +59,7 @@ pub(crate) fn spot_meta_request() -> HttpRequest {
     info(json!({ "type": "spotMeta" }))
 }
 
-/// The universe plus a live context per asset, which is as close as Hyperliquid
-/// comes to a ticker endpoint.
+/// Builds the metadata-plus-context request used for ticker summaries.
 pub(crate) fn asset_contexts_request(kind: MarketKind) -> HttpRequest {
     info(json!({
         "type": match kind {
@@ -84,13 +73,8 @@ pub(crate) fn book_request(native: &str) -> HttpRequest {
     info(json!({ "type": "l2Book", "coin": native }))
 }
 
-/// The recent-trades read, which Hyperliquid's info reference does not list but
-/// its rate-limit page names.
-///
-/// The body carries the market and nothing else: `recentTrades` takes no count
-/// and no time range. `limit` is therefore checked here and applied to the
-/// response rather than sent, and one above [`MAX_TRADE_COUNT`] is refused before
-/// a request is built, because no way of asking would serve it.
+/// Builds a `recentTrades` request after validating its local result limit.
+/// The endpoint accepts neither a count nor a time range.
 pub(crate) fn trades_request(native: &str, limit: Option<u32>) -> Result<HttpRequest> {
     if let Some(limit) = limit
         && !(1..=MAX_TRADE_COUNT).contains(&limit)
@@ -174,11 +158,10 @@ fn time_ranged(request_type: &str, user: &str, start_ms: i64, end_ms: Option<i64
     info(body)
 }
 
-/// Sends a request and hands back a 2xx body.
+/// Sends a request and returns its successful response body.
 ///
-/// A 2xx is only half the answer here, because `/exchange` reports a rejected
-/// action inside a 200. Callers that post an action must also read the envelope
-/// with [`parse::action_response`].
+/// Signed-action callers must also inspect the `/exchange` envelope with
+/// [`parse::action_response`], because action rejection can use HTTP 200.
 pub(crate) async fn post(http: &HttpTransport, request: &HttpRequest) -> Result<String> {
     let response = http.send(request).await?;
 
@@ -233,15 +216,8 @@ pub(crate) async fn order_book(
     Ok(book)
 }
 
-/// Reads a market's recent trades, newest first.
-///
-/// The same `coin` name the `trades` subscription uses, which is what makes one
-/// [`parse::trade`] serve both paths: the perpetual coin name, or a spot pair's
-/// `@107` index form or its legacy slash form. A never-traded market answers with
-/// an empty list rather than an error.
-///
-/// `limit` trims the page, and [`trades_request`] refuses one the endpoint's
-/// fixed window cannot reach.
+/// Reads up to ten recent executions, newest first.
+/// `limit`, when set, must be in `1..=10` and is applied locally.
 pub(crate) async fn trades(
     http: &HttpTransport,
     universe: &Universe,
@@ -254,14 +230,8 @@ pub(crate) async fn trades(
     newest_first(&parse::json::<Vec<_>>(&body)?, universe, limit)
 }
 
-/// Puts a `recentTrades` payload in the order the common API promises and cuts it
-/// to `limit`.
-///
-/// Hyperliquid already answers newest-first, and
-/// [`Client::trades`](crate::Client::trades) promises it, so it is enforced here
-/// instead of trusted. The sort is stable, which leaves trades sharing a
-/// millisecond in the order Hyperliquid listed them; several routinely do,
-/// because one aggressive order fills against several resting ones at once.
+/// Sorts recent trades newest first and applies the local result limit.
+/// Stable sorting preserves provider order for equal timestamps.
 fn newest_first(
     raw: &[parse::RawTrade],
     universe: &Universe,
@@ -280,20 +250,17 @@ fn newest_first(
     Ok(trades)
 }
 
-/// Reads a market's rolling summary out of its asset context.
-///
-/// `at` becomes the summary's timestamp. See [`parse::ticker`] for why the
-/// exchange cannot supply one.
+/// Reads a ticker summary from the market's asset context.
 pub(crate) async fn ticker(
     http: &HttpTransport,
     universe: &Universe,
     market: &Market,
-    at: Timestamp,
 ) -> Result<crate::types::Ticker> {
-    parse::ticker(&context(http, universe, market).await?, market, at)
+    let context = context(http, universe, market).await?;
+    parse::ticker(&context, market, Timestamp::now())
 }
 
-/// Fetches one market's live context.
+/// Fetches one market's current asset context.
 pub(crate) async fn context(
     http: &HttpTransport,
     universe: &Universe,
@@ -305,28 +272,10 @@ pub(crate) async fn context(
     pick_context(&body, market.kind, &native)
 }
 
-/// Picks the context belonging to `native` out of a `[meta, contexts]` response.
+/// Selects one context from a `[meta, contexts]` response.
 ///
-/// The two endpoints identify a context differently, so this does too. Both
-/// were read live on 2026-07-30:
-///
-/// | Endpoint | Universe | Contexts | What names a context |
-/// | --- | --- | --- | --- |
-/// | `spotMetaAndAssetCtxs` | 319 | 710 | every context carries `coin` |
-/// | `metaAndAssetCtxs` | 232 | 232 | nothing; position is all there is |
-///
-/// Spot therefore matches on `coin` and never on position. The two arrays are
-/// not the same length, and 248 of the 319 spot markets sit at a position
-/// holding another market's prices: `@107`, which is `HYPE/USDC`, is at
-/// universe index 105, and the context at index 105 is `@105`, quoted 450 times
-/// lower.
-///
-/// Perpetuals have no name to match, so position is the only pairing available.
-/// That it is the right one was checked against `allMids`: all 232 positional
-/// pairs agreed to within 0.11 percent, which is the drift between two separate
-/// calls, while shifting the pairing by one put them 12 million percent apart.
-/// The equal lengths are the only evidence that alignment still holds, so a
-/// response where they differ is refused rather than paired.
+/// Spot contexts are matched by `coin`. Default perpetual contexts omit a name,
+/// so they are matched by metadata position after equal lengths are verified.
 fn pick_context(body: &str, kind: MarketKind, native: &str) -> Result<parse::RawAssetCtx> {
     match kind {
         MarketKind::Spot => {
@@ -365,20 +314,9 @@ fn pick_context(body: &str, kind: MarketKind, native: &str) -> Result<parse::Raw
     }
 }
 
-/// Reads candles, oldest first, paging when one snapshot cannot hold the
-/// answer.
-///
-/// `candleSnapshot` takes a time range instead of a count, and caps what it
-/// returns at [`MAX_CANDLE_COUNT`]. A page of "the newest `count` before this
-/// instant" is therefore a window that many intervals wide, which is what
-/// [`crate::adapters::candles::read`] asks for on every exchange.
-///
-/// The interval is looked up inside the page fetch, not before it, so a request
-/// that is wrong in more than one way is answered the same way here as on the
-/// other three exchanges: the checks
-/// [`candle_pages::read`](crate::adapters::candles::read) makes on `limit` and
-/// on the window come first, and an interval Hyperliquid does not publish is
-/// reported after them.
+/// Reads candles oldest first using time-window pagination.
+/// Only the provider's most recent [`MAX_CANDLE_COUNT`] candles per interval are
+/// available.
 pub(crate) async fn candles(
     http: &HttpTransport,
     universe: &Universe,
@@ -387,71 +325,53 @@ pub(crate) async fn candles(
 ) -> Result<Vec<Candle>> {
     let native = universe.native_symbol(&request.market)?.to_string();
 
-    candle_pages::read(request, EXCHANGE, MAX_CANDLE_COUNT, |cursor, count| {
-        let native = native.clone();
-        async move {
-            let Some(interval) = parse::interval_name(request.interval) else {
-                return Err(parse::unsupported_interval(
-                    request.interval,
-                    Feature::Candles,
-                ));
-            };
-            let end_ms = cursor.unwrap_or(now).as_millis();
-            let start_ms = candle_start_ms(request, end_ms, count);
-            let body = post(
-                http,
-                &candles_request(
-                    &native,
-                    interval,
-                    start_ms,
-                    Some(candle_query_end_ms(request.interval, end_ms)),
-                ),
-            )
-            .await?;
+    let interval = request.interval;
+    candle_pages::read_on_grid(
+        request,
+        EXCHANGE,
+        MAX_CANDLE_COUNT,
+        move |at, count| advance_candle_grid(interval, at, count),
+        |cursor, count| {
+            let native = native.clone();
+            async move {
+                let Some(interval) = parse::interval_name(request.interval) else {
+                    return Err(parse::unsupported_interval(
+                        request.interval,
+                        Feature::Candles,
+                    ));
+                };
+                let end_ms = cursor.unwrap_or(now).as_millis();
+                let start_ms = candle_start_ms(request, end_ms, count);
+                let body = post(
+                    http,
+                    &candles_request(
+                        &native,
+                        interval,
+                        start_ms,
+                        Some(candle_query_end_ms(request.interval, end_ms)),
+                    ),
+                )
+                .await?;
 
-            let mut page = parse::json::<Vec<parse::RawCandle>>(&body)?
-                .iter()
-                .map(|raw| parse::candle(raw, universe, now))
-                .collect::<Result<Vec<_>>>()?;
-            // Back to the window that was asked for. `candle_query_end_ms`
-            // reaches one interval past it, and on the buckets that answer
-            // `endTime` by their open rather than by their close that brings
-            // back one too many.
-            page.retain(|candle| candle.open_time.as_millis() <= end_ms);
+                let mut page = parse::json::<Vec<parse::RawCandle>>(&body)?
+                    .iter()
+                    .map(|raw| parse::candle(raw, universe, now))
+                    .collect::<Result<Vec<_>>>()?;
+                // Remove the possible extra bucket requested for endpoint compatibility.
+                page.retain(|candle| candle.open_time.as_millis() <= end_ms);
 
-            Ok(page)
-        }
-    })
+                Ok(page)
+            }
+        },
+    )
     .await
 }
 
-/// How long one Hyperliquid `1M` candle is.
-///
-/// `candleSnapshot` at interval `1M` answers on a fixed 30-day grid measured
-/// from the Unix epoch, not on calendar months. Read live on 2026-07-30 for
-/// BTC, ETH and SOL: every bucket of all three spans exactly 30 days and opens
-/// at a whole multiple of 30 days after the epoch, so the three share the same
-/// boundaries. Recent opens are 2026-05-07, 2026-06-06 and 2026-07-06, all at
-/// 00:00 UTC. There is no June bucket, and none closes on 1 July.
+/// Duration used for Hyperliquid `1M` request windows.
 const MONTH_MS: i64 = 30 * 24 * 60 * 60 * 1_000;
 
-/// Where a bucket boundary `count` steps from `at_ms` falls, on Hyperliquid's
-/// own grid.
-///
-/// The single answer to "how long is one interval here", used by both ends of
-/// every `candleSnapshot` window. It is
-/// [`Interval::advance`](crate::Interval::advance) at every interval whose
-/// length Hyperliquid and `maxt` agree on.
-/// [`Interval::Month1`](crate::Interval::Month1) is not one of them: `advance`
-/// steps calendar months and Hyperliquid's `1M` is [`MONTH_MS`], so a monthly
-/// window is measured in the buckets the exchange will actually send. Stepping
-/// calendar months against a 30-day grid over-fetches across a 31-day month and
-/// under-fetches across February, and a page short of what it asked for is what
-/// [`candle_pages`](crate::adapters::candles) reads as the end of a market's
-/// history.
-///
-/// `None` past the range a [`Timestamp`] can name. Each caller says what it
-/// wants done about that, because the two ends want opposite things.
+/// Moves a candle boundary by `count` provider intervals.
+/// Returns `None` when the result is outside [`Timestamp`]'s range.
 fn candle_step_ms(interval: Interval, at_ms: i64, count: i64) -> Option<i64> {
     match interval {
         Interval::Month1 => MONTH_MS.checked_mul(count)?.checked_add(at_ms),
@@ -461,52 +381,25 @@ fn candle_step_ms(interval: Interval, at_ms: i64, count: i64) -> Option<i64> {
     }
 }
 
-/// Works out what `endTime` one `candleSnapshot` should carry.
-///
-/// [`candle_pages`](crate::adapters::candles) asks for the candles opening at or
-/// before `end_ms`, and `endTime` does not mean that over the whole of
-/// Hyperliquid's history. Read live on 2026-07-30, holding `startTime` well
-/// before each bucket and moving `endTime`:
-///
-/// | Interval | Bucket opening at | Arrives at `endTime` = its open | Arrives at `endTime` = its close |
-/// | --- | --- | --- | --- |
-/// | `1M` | 2020-07-07 | no | yes |
-/// | `1M` | 2022-12-24 | no | yes |
-/// | `1M` | 2023-05-23 | yes | yes |
-/// | `1M` | 2024-01-18 | yes | yes |
-/// | `1w` | 2020-02-06 | no | yes |
-/// | `1d` | 2023-01-19 | no | yes |
-/// | `1d` | 2023-06-20 | yes | yes |
-/// | `1m` | within the last hour | yes | yes |
-///
-/// So a bucket from before roughly mid-2023 arrives only once `endTime` reaches
-/// its close, and a newer one as soon as `endTime` reaches its open. Asking one
-/// interval further on covers both eras at every interval, and the only thing it
-/// can add is a bucket opening inside that extra interval, which the caller
-/// drops.
-///
-/// `end_ms` unchanged when a step past it leaves the range a [`Timestamp`] can
-/// name: a window ending there needs no room past its end.
+/// Moves a timestamp on Hyperliquid's candle grid.
+fn advance_candle_grid(interval: Interval, at: Timestamp, count: i64) -> Option<Timestamp> {
+    match interval {
+        Interval::Month1 => {
+            let delta = MONTH_MS.checked_mul(count)?.checked_mul(1_000_000)?;
+            at.as_nanos().checked_add(delta).map(Timestamp::from_nanos)
+        }
+        interval => interval.advance(at, count),
+    }
+}
+
+/// Extends `endTime` by one interval so responses gated by candle close still
+/// include the requested final bucket. The caller removes any extra bucket.
 fn candle_query_end_ms(interval: Interval, end_ms: i64) -> i64 {
     candle_step_ms(interval, end_ms, 1).unwrap_or(end_ms)
 }
 
-/// Works out where one `candleSnapshot` should start.
-///
-/// Hyperliquid has no count parameter, so `count` candles is expressed as a
-/// window `count` intervals wide ending at `end_ms`, measured by
-/// [`candle_step_ms`].
-///
-/// A window reaching further back than a [`Timestamp`] can name starts at the
-/// epoch instead, which Hyperliquid reads as the beginning of history. That is
-/// the plain default page of monthly candles: `limit` unset asks for
-/// [`MAX_CANDLE_COUNT`] of them, and 5000 buckets before now is the year 1615.
-/// Refusing it named `to`, a field such a caller never set.
-///
-/// Hyperliquid reads both ends of the window inclusively, so the snapshot
-/// carries the candle at `end_ms` as well and a full page is `count + 1` long.
-/// Read live: a `1m` window one interval wide returns two candles and one five
-/// wide returns six.
+/// Calculates a `candleSnapshot` start time `count` intervals before `end_ms`.
+/// Values before the Unix epoch are clamped to zero.
 fn candle_start_ms(request: &CandleRequest, end_ms: i64, count: u32) -> i64 {
     // Hyperliquid reads a start at or below zero as no start at all.
     candle_step_ms(request.interval, end_ms, -i64::from(count))
@@ -579,6 +472,8 @@ pub(crate) async fn margin_summary(http: &HttpTransport, user: &str) -> Result<M
 // History
 // ---------------------------------------------------------------------------
 
+/// Reads historical market funding-rate observations.
+/// These are rates, not amounts charged to an account.
 pub(crate) async fn funding_rates(
     http: &HttpTransport,
     universe: &Universe,
@@ -601,8 +496,7 @@ pub(crate) async fn funding_rates(
                     market: asset.market.clone(),
                     timestamp: parse::millis(entry.time, "time")?,
                     rate: parse::decimal(&entry.funding_rate, "fundingRate")?,
-                    // `premium` is the gap between mark and oracle, not a price,
-                    // so there is no mark price to report here.
+                    // `fundingHistory` does not provide a mark price.
                     mark_price: None,
                 },
                 entry.time,
@@ -617,6 +511,7 @@ pub(crate) async fn funding_rates(
     )
 }
 
+/// Reads funding amounts charged or credited to the configured account.
 pub(crate) async fn funding_payments(
     http: &HttpTransport,
     universe: &Universe,
@@ -627,8 +522,7 @@ pub(crate) async fn funding_payments(
     let (start_ms, end_ms) = history_window(request)?;
     let body = post(http, &user_funding_request(user, start_ms, end_ms)).await?;
 
-    // `userFunding` answers for the whole account, so the market narrowing is
-    // ours to do.
+    // `userFunding` is account-wide; filter it to the requested market.
     let raw: Vec<parse::RawUserFunding> = parse::json(&body)?;
     let items = raw
         .iter()
@@ -647,8 +541,7 @@ pub(crate) async fn funding_payments(
         })
         .collect::<Result<Vec<_>>>()?;
 
-    // The unfiltered page decides whether another one follows: a page made
-    // entirely of some other market's funding is still a full page.
+    // Pagination is based on the unfiltered account-wide response.
     page(
         items,
         newest(raw.iter().map(|entry| entry.time)),
@@ -656,10 +549,7 @@ pub(crate) async fn funding_payments(
     )
 }
 
-/// Reads a page of the account's non-funding ledger.
-///
-/// Account-wide, not market-scoped, which is one reason it cannot be a
-/// [`FundingPayment`]. See [`native::HyperliquidLedgerEntry`].
+/// Reads account-wide non-funding ledger entries.
 pub(crate) async fn ledger(
     http: &HttpTransport,
     user: &str,
@@ -687,28 +577,17 @@ pub(crate) async fn ledger(
     page(items, newest(raw.iter().map(|entry| entry.time)), limit)
 }
 
-/// The newest entry time on a page, and whether the page came back full.
-///
-/// A full page is Hyperliquid's only signal that more history follows: these
-/// endpoints report no total and no cursor of their own.
-///
-/// The largest time is taken, not the last one. Hyperliquid answers
-/// oldest-first today, but a cursor built from a page that arrived in any other
-/// order would move backwards, and a backwards cursor re-reads the same page
-/// forever.
+/// Returns the greatest entry time and whether the provider page was full.
+/// History responses provide neither a total nor a native cursor.
 fn newest(times: impl Iterator<Item = i64>) -> (Option<i64>, bool) {
     let times: Vec<i64> = times.collect();
 
     (times.iter().max().copied(), times.len() >= MAX_HISTORY_PAGE)
 }
 
-/// Assembles a page and the cursor that continues it.
-///
-/// Each item carries the time of the entry it came from, so that trimming to a
-/// limit moves the cursor back to the last item the caller actually saw. Every
-/// item is paired, not counted, because a filtered page has fewer items than
-/// the page it was read from. Funding payments for one market come out of an
-/// account-wide answer.
+/// Assembles a page and a time-based continuation cursor.
+/// Filtering and local truncation preserve the timestamp of the last item
+/// visible to the caller.
 fn page<T>(
     mut items: Vec<(T, i64)>,
     page_end: (Option<i64>, bool),
@@ -724,8 +603,7 @@ fn page<T>(
         truncated = true;
     }
 
-    // A trimmed page resumes just past its own last item; an untrimmed full one
-    // resumes past the raw page, which may end on another market's entry.
+    // Resume after the visible item when truncated, otherwise after the raw page.
     let resume_from = match (truncated, full) {
         (true, _) => items.last().map(|(_, time)| *time),
         (false, true) => page_newest,
@@ -739,16 +617,9 @@ fn page<T>(
     })
 }
 
-/// Where a page of `limit` entries may be cut without the cursor skipping any.
-///
-/// The next page resumes one millisecond past the last entry kept, so a cut
-/// that lands inside a run of entries sharing one millisecond would strand the
-/// rest of that run: the caller never saw them and the cursor has already moved
-/// past them. Cutting back to the start of the straddling run avoids that and
-/// stays under `limit`. When the run reaches the front of the page there is
-/// nothing to cut back to, so the whole run is kept. That hands back a few more
-/// entries than asked for, which a caller can drop, instead of fewer than
-/// exist, which it cannot recover.
+/// Finds a cut that does not split entries sharing one millisecond.
+/// A leading same-millisecond run may exceed `limit` because the next cursor
+/// advances past the entire millisecond.
 fn millisecond_boundary<T>(items: &[(T, i64)], limit: usize) -> usize {
     let Some(head) = items.get(..limit) else {
         return limit;
@@ -769,19 +640,24 @@ fn millisecond_boundary<T>(items: &[(T, i64)], limit: usize) -> usize {
     }
 }
 
-/// Reads the start and end of a history window in milliseconds.
+/// Converts a history request to provider millisecond boundaries.
 ///
-/// A cursor wins over `from`: it is where the previous page stopped, and
-/// honouring `from` instead would fetch it a second time.
+/// `from` is inclusive and `to` is exclusive. Hyperliquid's `endTime` is
+/// inclusive, so `to` is converted to the last millisecond strictly before it.
+/// A cursor takes precedence over `from`.
 fn history_window(request: &HistoryRequest) -> Result<(i64, Option<i64>)> {
     let start = match &request.cursor {
         Some(cursor) => parse::cursor_start_ms(cursor)?,
-        // Hyperliquid demands a start time. Zero is the earliest one it accepts
-        // and means "as far back as you keep".
-        None => request.from.map(Timestamp::as_millis).unwrap_or(0),
+        // The API requires `startTime`; zero requests the earliest retained data.
+        None => request
+            .from
+            .map(crate::adapters::inclusive_millis_at_or_after)
+            .unwrap_or(0),
     };
+    // Convert the exclusive nanosecond boundary to an inclusive millisecond.
+    let end = request.to.map(crate::adapters::inclusive_millis_before);
 
-    Ok((start, request.to.map(Timestamp::as_millis)))
+    Ok((start, end))
 }
 
 fn perpetual_asset<'a>(
@@ -828,9 +704,7 @@ pub(crate) async fn place_order(
         market: request.market.clone(),
         side: request.side,
         status,
-        // Hyperliquid's acknowledgement says whether the order rested or filled,
-        // not how much of it filled, so a fill is reported as complete and a
-        // rest as untouched.
+        // The acknowledgement exposes only resting versus filled status.
         filled_quantity: if status == OrderStatus::Filled {
             size
         } else {
@@ -842,8 +716,7 @@ pub(crate) async fn place_order(
             size
         },
         price: request.price,
-        // Hyperliquid's acknowledgement carries no time, and the nonce is this
-        // process's clock rather than the exchange's.
+        // The acknowledgement has no exchange timestamp.
         created_at: None,
     })
 }
@@ -913,10 +786,8 @@ fn time_in_force(time_in_force: Option<TimeInForce>) -> Result<&'static str> {
     )
 }
 
-/// Formats a price, enforcing the two rules Hyperliquid applies to one.
-///
-/// Both are checked here, before anything is sent. A rejected order costs a
-/// round trip and reads as a rate limit's worth of noise in a log.
+/// Formats a positive price and enforces decimal-place and significant-digit
+/// limits before signing.
 fn price_text(price: Decimal, asset: &Asset) -> Result<String> {
     if price <= Decimal::ZERO {
         return Err(Error::invalid_request("price", "must be greater than zero"));
@@ -972,12 +843,7 @@ fn size_text(size: Decimal, asset: &Asset) -> Result<String> {
     Ok(text)
 }
 
-/// Writes a decimal the way Hyperliquid wants it: plain digits, no exponent, no
-/// trailing zeros.
-///
-/// Trailing zeros matter because the text is what gets hashed and signed, and
-/// Hyperliquid compares it against its own canonical spelling: `1.20` and `1.2`
-/// are the same number but two different signatures, and only one is accepted.
+/// Formats a signed-action decimal as plain digits without trailing zeros.
 fn wire_decimal(value: Decimal) -> String {
     let text = value.to_string();
 
@@ -991,8 +857,7 @@ fn significant_figures(text: &str) -> usize {
     let digits: String = text.chars().filter(char::is_ascii_digit).collect();
     let significant = digits.trim_start_matches('0');
 
-    // Trailing zeros are already gone, so what is left is exactly the
-    // significant part.
+    // Leading zeros are not significant; trailing zeros were removed above.
     significant.len().max(1)
 }
 
@@ -1022,8 +887,7 @@ pub(crate) async fn cancel_order(
     Ok(Order {
         id: order_id.to_string(),
         market: market.clone(),
-        // Hyperliquid's cancel acknowledgement carries nothing but the verdict:
-        // no side, no sizes, no price. Reading the order back is `open_orders`.
+        // The cancel acknowledgement provides no order fields beyond its verdict.
         side: crate::types::Side::Buy,
         status: OrderStatus::Cancelled,
         filled_quantity: Decimal::ZERO,
@@ -1033,8 +897,7 @@ pub(crate) async fn cancel_order(
     })
 }
 
-/// Reads the per-cancel verdict, which is a second rejection point inside an
-/// envelope that already said `ok`.
+/// Reads the per-cancel verdict inside a successful action envelope.
 fn cancel_ack(response: &Value) -> Result<()> {
     let status = response
         .get("data")
@@ -1065,8 +928,7 @@ pub(crate) async fn set_margin(
 ) -> Result<()> {
     let asset = perpetual_asset(universe, &request.market, Feature::MarginConfig)?;
 
-    // `updateLeverage` sets both at once, so neither can be changed alone
-    // without first reading back the other and risking a stale value.
+    // `updateLeverage` requires leverage and margin mode in one action.
     let (Some(leverage), Some(mode)) = (request.leverage, request.margin_mode) else {
         return Err(Error::invalid_request(
             "leverage",
@@ -1115,8 +977,7 @@ pub(crate) async fn set_margin(
     Ok(())
 }
 
-/// A nonce, which Hyperliquid requires to be a millisecond timestamp near its
-/// own clock and never reused.
+/// Builds the millisecond nonce used by a signed action.
 pub(crate) fn nonce(now: Timestamp) -> u64 {
     u64::try_from(now.as_millis()).unwrap_or(0)
 }
@@ -1127,15 +988,7 @@ mod tests {
     use super::*;
     use crate::types::{Exchange, Side};
 
-    /// A `spotMetaAndAssetCtxs` response, cut down from the live one read on
-    /// 2026-07-30 with every number and name kept as it came back.
-    ///
-    /// The misalignment is the live one, not an invented shape. `@107` is
-    /// `HYPE/USDC`; in the real response it is at universe index 105 while the
-    /// context at index 105 is `@105`, and the contexts array is 710 long
-    /// against a 319-entry universe. Here `@107` sits at universe index 1 and
-    /// `@105` at context index 1, which is the same defect at a size a test can
-    /// read.
+    /// Spot context fixture whose metadata and context arrays are not aligned.
     const SPOT_ASSET_CTXS: &str = r#"[
       {
         "tokens": [
@@ -1182,9 +1035,7 @@ mod tests {
       ]
     ]"#;
 
-    /// A `metaAndAssetCtxs` response, cut down from the live one read on
-    /// 2026-07-30. The universe and the contexts are the same length there, and
-    /// no context carries a name, so the two are kept the same length here.
+    /// Default perpetual context fixture with position-aligned arrays.
     const PERP_ASSET_CTXS: &str = r#"[
       {
         "universe": [
@@ -1256,13 +1107,10 @@ mod tests {
         let hype = pick_context(SPOT_ASSET_CTXS, MarketKind::Spot, "@107").expect("a context");
         let purr = pick_context(SPOT_ASSET_CTXS, MarketKind::Spot, "PURR/USDC").expect("a context");
 
-        // Pairing by universe position hands back `@105` here, which quotes
-        // 0.118805 against HYPE/USDC's real 53.6865: a different market's price,
-        // silently, 450 times out.
+        // Position-based matching would select the unrelated `@105` context.
         assert_eq!(hype.coin.as_deref(), Some("@107"));
         assert_eq!(hype.mid_px.as_deref(), Some("53.6865"));
-        // The pairs that predate the index scheme keep their slash name in both
-        // the universe and the context, and resolve the same way.
+        // Slash-form contexts resolve by their native name.
         assert_eq!(purr.mid_px.as_deref(), Some("0.061726"));
     }
 
@@ -1285,8 +1133,7 @@ mod tests {
 
     #[test]
     fn a_perpetual_response_whose_two_arrays_disagree_in_length_is_refused() {
-        // The equal lengths are the only evidence the positional pairing still
-        // holds, so losing them has to stop the read rather than shift it.
+        // Positional matching is unsafe when the arrays differ in length.
         let whole: Value = serde_json::from_str(PERP_ASSET_CTXS).expect("valid JSON");
         let one_short = json!([whole[0], [whole[1][0].clone()]]).to_string();
 
@@ -1309,28 +1156,13 @@ mod tests {
         assert_eq!(body["req"]["interval"], "15m");
         assert_eq!(body["req"]["startTime"], 1_681_923_600_000_i64);
         assert_eq!(body["req"]["endTime"], 1_681_924_500_000_i64);
-        // An open-ended window omits the end rather than inventing one.
+        // Open-ended requests omit `endTime`.
         assert!(body_of(&candles_request("BTC", "1m", 0, None))["req"]["endTime"].is_null());
     }
 
     #[test]
     fn a_window_asks_one_interval_past_its_end_because_older_buckets_answer_by_their_close() {
-        // Hyperliquid serves a bucket from before roughly mid-2023 only once
-        // `endTime` has reached the bucket's close, and a newer one as soon as
-        // `endTime` reaches its open. Read live on 2026-07-30 against
-        // `candleSnapshot` for BTC, `startTime` 2020-01-01 throughout:
-        //
-        // | interval | endTime | newest bucket returned |
-        // | --- | --- | --- |
-        // | `1M` | 2020-07-07, the open of a bucket | 2020-06-07, the one before |
-        // | `1M` | 2020-08-06, that bucket's close  | 2020-07-07 |
-        // | `1w` | 2020-02-06, the open of a bucket | 2020-01-30, the one before |
-        // | `1w` | 2020-02-13, that bucket's close  | 2020-02-06 |
-        //
-        // Asking one interval on turns both eras into the one thing
-        // `candle_pages` asked for, the candles opening at or before the
-        // cursor, and the page fetch cuts off whatever the extra interval
-        // added.
+        // The request end advances one interval; the page reader trims extras.
         const JULY_7_2020: i64 = 1_594_080_000_000;
         const FEB_6_2020: i64 = 1_580_947_200_000;
 
@@ -1344,7 +1176,7 @@ mod tests {
             FEB_6_2020 + 7 * 86_400_000,
             "2020-02-13, the close of the week opening at the cursor"
         );
-        // A calendar month is not what `1M` is, at either end of the window.
+        // `1M` request windows use the provider's fixed duration.
         assert_ne!(
             candle_query_end_ms(Interval::Month1, JULY_7_2020),
             Interval::Month1
@@ -1352,8 +1184,7 @@ mod tests {
                 .expect("a month on")
                 .as_millis()
         );
-        // A cursor at the end of what a `Timestamp` holds has no room past it,
-        // and a window ending there does not need any.
+        // Overflow leaves the requested end unchanged.
         let end_of_time = Timestamp::from_nanos(i64::MAX).as_millis();
         assert_eq!(
             candle_query_end_ms(Interval::Min1, end_of_time),
@@ -1367,8 +1198,7 @@ mod tests {
         let request = CandleRequest::new(btc_perp(), Interval::Min1);
 
         assert_eq!(candle_start_ms(&request, END, 100), END - 100 * 60 * 1_000);
-        // Hyperliquid reads a negative start as no start at all, so a window
-        // reaching past the epoch stops there.
+        // Starts before the epoch clamp to zero.
         assert_eq!(candle_start_ms(&request, 60_000, 100), 0);
     }
 
@@ -1377,19 +1207,16 @@ mod tests {
         const END: i64 = 1_700_000_000_000;
         let monthly = CandleRequest::new(btc_perp(), Interval::Month1);
 
-        // Hyperliquid's `1M` sits on a 30-day grid measured from the epoch.
-        // Read live for BTC, ETH and SOL on 2026-07-30: consecutive buckets
-        // open 2026-05-07, 2026-06-06 and 2026-07-06 on all three, no June
-        // bucket, nothing closing on 1 July, and every open a whole multiple of
-        // 30 days after the epoch. A window measured in calendar months counts
-        // something the exchange does not serve, and lands 92 days back here
-        // where three of its buckets are 90.
+        // Three provider `1M` request intervals span ninety days.
         assert_eq!(candle_start_ms(&monthly, END, 3), END - 3 * MONTH_MS);
         assert_eq!((END - candle_start_ms(&monthly, END, 3)) / 86_400_000, 90);
         assert_eq!(1_783_296_000_000_i64 % MONTH_MS, 0, "2026-07-06T00:00:00Z");
-        // The caller's own `from` is not consulted, so a monthly window is not
-        // the whole span from `from` to `end` in one snapshot however wide the
-        // caller's `limit` was.
+        let boundary = Timestamp::from_millis(1_783_296_000_000);
+        assert_eq!(
+            advance_candle_grid(Interval::Month1, boundary, 12),
+            Some(Timestamp::from_millis(boundary.as_millis() + 12 * MONTH_MS))
+        );
+        // Page width is determined by count; the outer walker applies `from`.
         assert_eq!(
             candle_start_ms(
                 &monthly.from(Timestamp::from_millis(1_600_000_000_000)),
@@ -1402,12 +1229,7 @@ mod tests {
 
     #[test]
     fn the_default_page_of_monthly_candles_reads_from_the_beginning_of_history() {
-        // `CandleRequest::new(market, Interval::Month1)` with nothing else set
-        // asks `candle_pages` for `MAX_CANDLE_COUNT` candles, and that many
-        // months before now is the year 1615, which is not a `Timestamp`. It
-        // used to be refused as an invalid `to`, a field this caller never set.
-        // Hyperliquid reads a start of zero as the beginning of history, which
-        // is the honest answer to "more candles than exist".
+        // A request window wider than `Timestamp` starts at the epoch.
         const NOW: i64 = 1_785_000_000_000;
         let monthly = CandleRequest::new(btc_perp(), Interval::Month1);
 
@@ -1421,15 +1243,11 @@ mod tests {
 
     #[tokio::test]
     async fn limit_and_window_are_checked_before_the_interval_is_looked_up() {
-        // The other three exchanges look the interval up inside the page fetch,
-        // so `candle_pages` reports a `limit` of zero first. Hyperliquid used to
-        // check the interval ahead of the walk and answer `Unsupported` to a
-        // request that was also asking for no candles at all.
+        // Common request validation runs before provider interval mapping.
         let http = HttpTransport::new("http://127.0.0.1:1").expect("a transport");
         let request = CandleRequest::new(btc_perp(), Interval::Sec1).limit(0);
 
-        // Nothing is fetched: `candle_pages` refuses before the first call, so
-        // the unreachable host above is never dialled.
+        // The invalid limit prevents a network request.
         let refused = candles(&http, &universe(), &request, Timestamp::default()).await;
 
         assert!(
@@ -1440,8 +1258,7 @@ mod tests {
 
     #[test]
     fn every_interval_in_the_common_baseline_has_a_hyperliquid_spelling() {
-        // What `supports(Feature::Candles) == true` is worth: the eight
-        // intervals every `maxt` adapter serves.
+        // Every common baseline interval has a native spelling.
         for interval in [
             Interval::Min1,
             Interval::Min5,
@@ -1474,8 +1291,7 @@ mod tests {
     #[test]
     fn a_depth_beyond_what_hyperliquid_serves_is_refused_rather_than_clamped() {
         assert_eq!(MAX_BOOK_DEPTH, 20);
-        // The check lives in `order_book`, which needs a transport; this proves
-        // the boundary the check uses is the documented one.
+        // The documented depth boundary is inclusive.
         assert!(!(1..=MAX_BOOK_DEPTH).contains(&21));
         assert!(!(1..=MAX_BOOK_DEPTH).contains(&0));
     }
@@ -1486,17 +1302,11 @@ mod tests {
 
         assert_eq!(body["type"], "recentTrades");
         assert_eq!(body["coin"], "@107");
-        // The count the caller asked for is not on the wire, because
-        // `recentTrades` has nowhere to put it. `trades` trims the response.
+        // `recentTrades` has no wire-level count parameter.
         assert!(body.get("n").is_none() && body.get("limit").is_none());
     }
 
-    /// Four consecutive trades as `recentTrades` sent them, newest first.
-    ///
-    /// The first two share a `hash` and a millisecond: one aggressive sell filled
-    /// against two resting bids, and the fill hash names the order, not the
-    /// trade. `tid` is the per-trade identifier, and it is what
-    /// [`parse::trade`] reads.
+    /// Recent-trade fixture with equal timestamps and repeated transaction hashes.
     const RECENT_TRADES: &str = r#"[
       {"coin":"BTC","side":"A","px":"64307.0","sz":"0.06854","time":1785378501507,
        "hash":"0x0ba8656f473eef6f0d22044109ec2b0207ac0054e2320e41af7110c20632c959",
@@ -1525,8 +1335,7 @@ mod tests {
                 .all(|pair| pair[0].timestamp >= pair[1].timestamp),
             "{trades:?}"
         );
-        // A fill hash names the order that swept the book, so two of these four
-        // carry the same one. Keying on it would drop a trade; `tid` does not.
+        // `tid`, not the repeated transaction hash, identifies each trade.
         let ids: std::collections::BTreeSet<_> =
             trades.iter().filter_map(|trade| trade.id.clone()).collect();
         assert_eq!(ids.len(), 4);
@@ -1538,7 +1347,7 @@ mod tests {
         let raw: Vec<parse::RawTrade> = parse::json(RECENT_TRADES).expect("a recentTrades payload");
         let trades = newest_first(&raw, &universe(), Some(2)).expect("two trades");
 
-        // Newest two, not the oldest two: the cut happens after the ordering.
+        // Apply the limit after newest-first ordering.
         assert_eq!(trades.len(), 2);
         assert_eq!(
             trades[0].timestamp,
@@ -1591,7 +1400,7 @@ mod tests {
         assert_eq!(perp.p, "27123");
         assert_eq!(perp.s, "0.12345");
         assert_eq!(perp.t.limit.tif, "Gtc");
-        // Spot ids are the same numbers, pushed past the offset.
+        // Spot action ids include the spot offset.
         assert_eq!(spot.a, 10_107);
         assert!(!spot.b);
         assert_eq!(spot.s, "1.5");
@@ -1602,7 +1411,7 @@ mod tests {
         let universe = universe();
         let btc = universe.asset(&btc_perp()).expect("listed");
 
-        // BTC carries five size decimals, so a sixth is not expressible.
+        // Size precision comes from `szDecimals`.
         assert!(matches!(
             order_wire(
                 btc,
@@ -1615,7 +1424,7 @@ mod tests {
             ),
             Err(Error::InvalidRequest { field: "size", .. })
         ));
-        // A fractional price is capped at five significant figures.
+        // Fractional prices are capped at five significant digits.
         assert!(matches!(
             order_wire(
                 btc,
@@ -1628,7 +1437,7 @@ mod tests {
             ),
             Err(Error::InvalidRequest { field: "price", .. })
         ));
-        // A whole-number price of any length is fine.
+        // Integer prices are exempt from the significant-digit cap.
         assert!(
             order_wire(
                 btc,
@@ -1760,6 +1569,40 @@ mod tests {
             history_window(&HistoryRequest::new(btc_perp())).expect("a window"),
             (0, None)
         );
+
+        let inside_millisecond =
+            HistoryRequest::new(btc_perp()).from(Timestamp::from_nanos(5_000_000_001));
+        assert_eq!(
+            history_window(&inside_millisecond).expect("an inclusive start"),
+            (5_001, None)
+        );
+    }
+
+    #[test]
+    fn a_history_end_becomes_the_last_inclusive_millisecond_before_it() {
+        let exact_millisecond = HistoryRequest::new(btc_perp()).to(Timestamp::from_millis(5_000));
+        let inside_millisecond =
+            HistoryRequest::new(btc_perp()).to(Timestamp::from_nanos(5_000_000_001));
+        let negative_exact = HistoryRequest::new(btc_perp()).to(Timestamp::from_millis(-5_000));
+        let negative_inside =
+            HistoryRequest::new(btc_perp()).to(Timestamp::from_nanos(-4_999_999_999));
+
+        assert_eq!(
+            history_window(&exact_millisecond).expect("a window"),
+            (0, Some(4_999))
+        );
+        assert_eq!(
+            history_window(&inside_millisecond).expect("a window"),
+            (0, Some(5_000))
+        );
+        assert_eq!(
+            history_window(&negative_exact).expect("a window"),
+            (0, Some(-5_001))
+        );
+        assert_eq!(
+            history_window(&negative_inside).expect("a window"),
+            (0, Some(-5_000))
+        );
     }
 
     #[test]
@@ -1779,14 +1622,11 @@ mod tests {
 
     #[test]
     fn a_filtered_page_resumes_past_the_whole_page_not_past_what_survived() {
-        // `userFunding` answers for the whole account. If only one entry in a
-        // full page belonged to the market asked about, resuming from that
-        // entry's time would re-read every later entry for good.
+        // An untrimmed filtered page resumes after the raw account-wide page.
         let one_survivor = page(vec![(1, 10)], (Some(500), true), None).expect("a page");
         assert_eq!(one_survivor.next.expect("a cursor").as_str(), "501");
 
-        // Trimming is the one case where the caller has not seen the rest of
-        // the page, so the cursor steps back to what they did see.
+        // A locally trimmed page resumes after the last visible entry.
         let trimmed = page(vec![(1, 10), (2, 20)], (Some(500), true), Some(1)).expect("a page");
         assert_eq!(trimmed.items, vec![1]);
         assert_eq!(trimmed.next.expect("a cursor").as_str(), "11");
@@ -1794,10 +1634,7 @@ mod tests {
 
     #[test]
     fn a_page_is_never_cut_through_the_middle_of_one_millisecond() {
-        // Four entries, the last three stamped the same millisecond: funding
-        // for several markets settles in one batch, so this is the ordinary
-        // shape rather than a corner case. A cut at 2 would resume at 21 and
-        // entries 3 and 4 would never be read by anyone.
+        // Splitting a timestamp group would skip unseen entries on resume.
         let batched = vec![(1, 10), (2, 20), (3, 20), (4, 20)];
 
         let page = page(batched, (Some(20), true), Some(2)).expect("a page");
@@ -1812,8 +1649,7 @@ mod tests {
 
     #[test]
     fn a_page_that_is_one_long_millisecond_is_kept_whole_so_the_cursor_can_move() {
-        // Cutting back to a boundary would empty this page, and an empty page
-        // carries no cursor, so the caller would be stuck re-reading it.
+        // Keep a leading timestamp group whole so the cursor can advance.
         let one_batch = vec![(1, 20), (2, 20), (3, 20)];
 
         let page = page(one_batch, (Some(20), true), Some(2)).expect("a page");
@@ -1824,9 +1660,7 @@ mod tests {
 
     #[test]
     fn a_page_that_did_not_arrive_oldest_first_still_resumes_forwards() {
-        // `newest` takes the largest time, not the last one: a cursor built
-        // from the last entry of a descending page would move backwards, and
-        // the same page would be fetched forever.
+        // Cursor progress uses the greatest timestamp regardless of response order.
         let descending = [30, 20, 10];
 
         assert_eq!(newest(descending.into_iter()), (Some(30), false));

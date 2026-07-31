@@ -1,8 +1,6 @@
 //! Upbit's public market data WebSocket.
 //!
-//! One socket carries every market and every feed: the subscribe payload is a
-//! list whose first element is a client-chosen ticket, followed by one element
-//! per feed naming the market codes it applies to.
+//! One connection can carry multiple markets and feed types.
 
 use std::collections::HashMap;
 use std::time::Duration;
@@ -12,35 +10,21 @@ use serde_json::{Map, Value};
 use crate::error::{Error, Result};
 use crate::feature::Feature;
 use crate::transport::{Heartbeat, HeartbeatFrame};
-use crate::types::{Candle, Feed, Interval, Market, MarketEvent, Subscription};
+use crate::types::{Candle, Feed, Interval, Market, MarketEvent, Subscription, Timestamp};
 
 use super::parse::{self, EXCHANGE, RawStreamCandle};
 
-/// The frame layout Upbit calls `DEFAULT`: full field names, one JSON object
-/// per event. The alternative, `SIMPLE`, abbreviates every key.
+/// Full-name JSON frame format.
 const FRAME_FORMAT: &str = "DEFAULT";
 
-/// What holds an Upbit socket open when the market is asleep.
-///
-/// Upbit reads the bare text `PING` as a keepalive and answers it with
-/// `{"status":"UP"}`, the status frame [`decode`] drops. One heartbeat both
-/// tells Upbit the client is alive and produces the inbound traffic the idle
-/// timer is watching for. A WebSocket ping would be answered by the protocol
-/// stack, which says nothing about the subscription behind it.
-///
-/// Both sockets use it. The private one carries nothing until the account
-/// moves, which on a quiet account is never.
+/// Sends text `PING` every 15 seconds and waits at least 60 seconds for traffic.
 pub(crate) const HEARTBEAT: Heartbeat = Heartbeat {
     interval: Duration::from_secs(15),
     frame: HeartbeatFrame::Text("PING"),
-    // Four unanswered heartbeats before a socket is written off.
     min_idle_timeout: Duration::from_secs(60),
 };
 
-/// Builds the frame sent on connect and again after every reconnect.
-///
-/// `ticket` labels the connection on Upbit's side; it appears in their support
-/// tooling and is not otherwise interpreted.
+/// Builds the public subscription frame used on connect and reconnect.
 pub(crate) fn subscribe_frame(subscription: &Subscription, ticket: &str) -> Result<String> {
     if subscription.markets().is_empty() {
         return Err(Error::invalid_request(
@@ -95,14 +79,10 @@ fn feed_type(feed: Feed) -> Result<String> {
     })
 }
 
-/// Upbit names its candle feeds by minute count, so the hour intervals are
-/// `candle.60m` and `candle.240m`.
+/// Returns the WebSocket candle type for an interval exposed by `maxt`.
 ///
-/// Upbit also streams `candle.10m`, which [`Interval`] cannot name. That is a
-/// gap in `maxt`, not in the exchange, and it is the opposite of every `None`
-/// this returns: Upbit's candle stream stops at four hours, so a day, a week and
-/// a month are absent from the exchange rather than unmapped here. They are
-/// served over REST, where [`super::rest::candle_path`] maps them.
+/// Upbit also streams 10-minute candles, but [`Interval`] has no matching
+/// variant. Daily and longer candles are REST-only.
 fn candle_type(interval: Interval) -> Option<&'static str> {
     Some(match interval {
         Interval::Sec1 => "candle.1s",
@@ -131,43 +111,31 @@ fn candle_interval(frame_type: &str) -> Option<Interval> {
     })
 }
 
-/// Reads the frames of one public connection, in order.
+/// Decodes frames for one public connection in arrival order.
 ///
-/// Every frame but a candle is a self-contained event, so the decoder holds
-/// nothing for it. A candle is the exception: Upbit republishes the forming
-/// window on every update, marks none of them finished, and stops publishing a
-/// window the instant the next one opens, so no frame of a window is ever
-/// stamped at or past that window's end. A frame read on its own therefore
-/// cannot say that a bar has settled, and neither can a clock.
-///
-/// What Upbit does publish is the moment a window is over: the first frame
-/// carrying the next `candle_date_time_utc`. So the decoder keeps the most
-/// recent frame of each candle feed, and when a later window opens it emits the
-/// held one with [`Candle::closed`] set, ahead of the new forming one. That is
-/// the contract [`Candle::closed`] states, of one settled emission per window
-/// after a run of forming ones, and it is reached without ever calling a window
-/// finished before Upbit itself moved on from it.
-///
-/// One decoder belongs to one connection. It holds one candle per market and
-/// interval subscribed, and nothing else.
+/// Non-candle frames are stateless. For each candle market and interval, the
+/// decoder holds the latest forming window until a later window settles it.
 #[derive(Debug, Default)]
 pub(crate) struct Decoder {
-    /// The last frame seen of each candle feed, held until the next window
-    /// opens or a snapshot replaces it.
+    /// Latest forming candle per market and interval.
     latest: HashMap<(Market, Interval), Candle>,
+    /// Latest candle already emitted as settled per market and interval.
+    settled: HashMap<(Market, Interval), Timestamp>,
 }
 
-/// The `stream_type` Upbit puts on the first frame a subscription gets for a
-/// market, after a connect and after every reconnect.
+/// Initial frame type after a connection or reconnection.
 const SNAPSHOT: &str = "SNAPSHOT";
 
 impl Decoder {
-    /// Reads one frame into the events it carries.
+    /// Decodes one frame into zero or more events.
     ///
-    /// Empty means the frame carried no market data. Upbit answers a keepalive
-    /// with a status frame, which a caller has no use for. Two events means a
-    /// candle window ended: the settled one comes first.
+    /// Status frames produce no events. A candle transition produces the
+    /// settled candle first and the new forming candle second.
     pub(crate) fn decode(&mut self, frame: &str) -> Result<Vec<MarketEvent>> {
+        self.decode_at(frame, Timestamp::now())
+    }
+
+    fn decode_at(&mut self, frame: &str, now: Timestamp) -> Result<Vec<MarketEvent>> {
         let object = frame_object(frame)?;
 
         if let Some(error) = object.get("error") {
@@ -191,7 +159,7 @@ impl Decoder {
                 let interval = candle_interval(candle).ok_or_else(|| {
                     Error::decode(format!("upbit sent an unmapped candle feed `{candle}`"))
                 })?;
-                return self.candle(&parse::json(&body)?, interval);
+                return self.candle(&parse::json(&body)?, interval, now);
             }
             other => {
                 return Err(Error::decode(format!(
@@ -203,54 +171,55 @@ impl Decoder {
         Ok(vec![event])
     }
 
-    /// Reads one candle frame, settling the window before it when this frame
-    /// opens a new one.
+    /// Applies one candle frame to the per-feed completion state.
     ///
-    /// Three orderings reach here, and only one of them settles anything.
-    ///
-    /// | This frame's window, against the held one | What happens |
-    /// | --- | --- |
-    /// | later | the held bar is emitted settled, then this one forming |
-    /// | the same | this bar replaces the held one and is emitted forming |
-    /// | earlier | nothing is emitted and the held bar is left alone |
-    ///
-    /// The last row is what keeps the contract of one settled emission per
-    /// window under a frame that arrives after a later one. Replacing the held
-    /// bar with an older frame would settle the older window a second time when
-    /// the next one opened, with the late frame's figures, while the window in
-    /// between was never settled at all. The held map survives reconnects, so
-    /// one such frame would go on doing that for the life of the subscription.
-    /// The late frame is not emitted forming either: its window has already
-    /// been reported settled, and [`Candle::closed`] promises nothing follows
-    /// that.
-    ///
-    /// A snapshot is the exception to all three. It follows a connect or a
-    /// reconnect, so whatever is held is from before a gap the decoder cannot
-    /// measure and its window may have moved on unseen; reporting stale figures
-    /// as a settled bar would be the one mistake that matters here. So a
-    /// snapshot always replaces the held bar and never settles it, whichever
-    /// window it is for, and after a reconnect the first window to settle is
-    /// the one that opens next.
-    fn candle(&mut self, raw: &RawStreamCandle, interval: Interval) -> Result<Vec<MarketEvent>> {
+    /// A same-window frame replaces and emits the forming candle. A later
+    /// real-time window settles the held candle at most once, then emits the new
+    /// forming candle; an older frame is ignored. An ended snapshot is emitted
+    /// closed immediately, while a current snapshot replaces the held state
+    /// without settling pre-reconnect data.
+    fn candle(
+        &mut self,
+        raw: &RawStreamCandle,
+        interval: Interval,
+        now: Timestamp,
+    ) -> Result<Vec<MarketEvent>> {
         let forming = parse::stream_candle(raw, interval)?;
         let snapshot = raw.stream_type.as_deref() == Some(SNAPSHOT);
         let key = (forming.market.clone(), interval);
 
-        if !snapshot
-            && self
-                .latest
-                .get(&key)
-                .is_some_and(|held| forming.open_time < held.open_time)
+        if self
+            .settled
+            .get(&key)
+            .is_some_and(|settled| forming.open_time <= *settled)
         {
             return Ok(Vec::new());
         }
 
+        if self
+            .latest
+            .get(&key)
+            .is_some_and(|held| forming.open_time < held.open_time)
+        {
+            return Ok(Vec::new());
+        }
+
+        if snapshot && parse::has_ended(forming.open_time, interval, now) {
+            self.latest.remove(&key);
+            self.settled.insert(key, forming.open_time);
+            return Ok(vec![MarketEvent::Candle(Candle {
+                closed: true,
+                ..forming
+            })]);
+        }
+
         let settled = self
             .latest
-            .insert(key, forming.clone())
+            .insert(key.clone(), forming.clone())
             .filter(|_| !snapshot)
             .filter(|held| held.open_time < forming.open_time)
             .map(|held| {
+                self.settled.insert(key, held.open_time);
                 MarketEvent::Candle(Candle {
                     closed: true,
                     ..held
@@ -318,7 +287,7 @@ mod tests {
     use crate::types::{Exchange, Market, Side, Timestamp};
     use rust_decimal::Decimal;
 
-    // https://global-docs.upbit.com/reference/websocket-trade.md
+    // Representative public trade frame.
     const TRADE: &str = r#"{
       "type": "trade",
       "code": "KRW-BTC",
@@ -338,7 +307,7 @@ mod tests {
       "best_bid_size": 0.01202163
     }"#;
 
-    // https://global-docs.upbit.com/reference/websocket-orderbook.md
+    // Representative public order-book frame.
     const ORDER_BOOK: &str = r#"{
       "type": "orderbook",
       "code": "KRW-BTC",
@@ -355,7 +324,7 @@ mod tests {
       ]
     }"#;
 
-    // https://global-docs.upbit.com/reference/websocket-ticker.md
+    // Representative public ticker frame.
     const TICKER: &str = r#"{
       "type": "ticker",
       "code": "KRW-BTC",
@@ -391,23 +360,8 @@ mod tests {
       "acc_trade_volume_24h": 0.22569412
     }"#;
 
-    // https://global-docs.upbit.com/reference/websocket-candle.md
-    //
-    // Every candle frame below was captured from
-    // `wss://api.upbit.com/websocket/v1` on 2026-07-30 and is pasted unedited.
-    // Two connections ran at once on that capture, both subscribed to
-    // `candle.1m` on `KRW-BTC`: connection A from 07:45 to 07:48, and
-    // connection B opening at 07:47, which is what a reconnect landing in a
-    // later window than the one held looks like.
-    //
-    // Across A's three complete window transitions, no frame's own `timestamp`
-    // ever reached its own window's end: the last frame of the 07:46 minute is
-    // stamped 07:46:58.309, and that minute runs to 07:47:00.000. Upbit stops
-    // publishing a window the moment the next one opens, so no clock reading of
-    // one frame can report a settled bar and the transition itself is the only
-    // signal there is.
-
-    /// Connection A's opening snapshot, for the 07:45 minute.
+    // Candle fixtures cover snapshots, transitions, markets, and intervals.
+    /// Initial snapshot for one minute window.
     const CANDLE_SNAPSHOT: &str = r#"{"type":"candle.1m","code":"KRW-BTC",
       "candle_date_time_utc":"2026-07-30T07:45:00","candle_date_time_kst":"2026-07-30T16:45:00",
       "opening_price":91154000.00000000,"high_price":91157000.00000000,
@@ -415,7 +369,7 @@ mod tests {
       "candle_acc_trade_volume":0.15511395,"candle_acc_trade_price":14139448.26754000,
       "timestamp":1785397531885,"stream_type":"SNAPSHOT"}"#;
 
-    /// The last frame connection A was sent for the 07:46 minute.
+    /// Forming update for the preceding minute.
     const CANDLE_LAST_OF_ITS_MINUTE: &str = r#"{"type":"candle.1m","code":"KRW-BTC",
       "candle_date_time_utc":"2026-07-30T07:46:00","candle_date_time_kst":"2026-07-30T16:46:00",
       "opening_price":91157000.00000000,"high_price":91157000.00000000,
@@ -423,7 +377,7 @@ mod tests {
       "candle_acc_trade_volume":0.80044670,"candle_acc_trade_price":72957159.34596000,
       "timestamp":1785397618309,"stream_type":"REALTIME"}"#;
 
-    /// The first frame of 07:46's successor, which is what ends 07:46.
+    /// First update for its successor window.
     const CANDLE_NEXT_MINUTE: &str = r#"{"type":"candle.1m","code":"KRW-BTC",
       "candle_date_time_utc":"2026-07-30T07:47:00","candle_date_time_kst":"2026-07-30T16:47:00",
       "opening_price":91157000.00000000,"high_price":91157000.00000000,
@@ -431,7 +385,7 @@ mod tests {
       "candle_acc_trade_volume":0.00098728,"candle_acc_trade_price":89997.48296000,
       "timestamp":1785397620706,"stream_type":"REALTIME"}"#;
 
-    /// The first frame of the minute after that, which is what ends 07:47.
+    /// First update for the following successor window.
     const CANDLE_MINUTE_AFTER_NEXT: &str = r#"{"type":"candle.1m","code":"KRW-BTC",
       "candle_date_time_utc":"2026-07-30T07:48:00","candle_date_time_kst":"2026-07-30T16:48:00",
       "opening_price":91134000.00000000,"high_price":91134000.00000000,
@@ -439,12 +393,7 @@ mod tests {
       "candle_acc_trade_volume":0.00109721,"candle_acc_trade_price":99993.13614000,
       "timestamp":1785397680638,"stream_type":"REALTIME"}"#;
 
-    /// Connection B's opening snapshot, for 07:47.
-    ///
-    /// It is a snapshot for a *later* window than the 07:46 frame connection A
-    /// was holding, which is the case the snapshot rule exists for: a reconnect
-    /// that crossed a window boundary. Its figures are not 07:47's final ones
-    /// either, since B connected partway through that minute.
+    /// Current-window snapshot after reconnecting.
     const CANDLE_SNAPSHOT_AFTER_RECONNECT: &str = r#"{"type":"candle.1m","code":"KRW-BTC",
       "candle_date_time_utc":"2026-07-30T07:47:00","candle_date_time_kst":"2026-07-30T16:47:00",
       "opening_price":91157000.00000000,"high_price":91157000.00000000,
@@ -452,13 +401,7 @@ mod tests {
       "candle_acc_trade_volume":0.01011827,"candle_acc_trade_price":922159.13839000,
       "timestamp":1785397627219,"stream_type":"SNAPSHOT"}"#;
 
-    // Three more from the same day, on one connection subscribed to `candle.1m`
-    // for `KRW-BTC` and `KRW-ETH` and to `candle.5m` for `KRW-BTC`. They are
-    // one market's two intervals and two markets' one interval, all for the
-    // same 07:50 window.
-
-    /// `candle.5m` on `KRW-BTC`, the same market as the frames above at a
-    /// second interval.
+    /// A second interval for the same market.
     const CANDLE_OTHER_INTERVAL: &str = r#"{"type":"candle.5m","code":"KRW-BTC",
       "candle_date_time_utc":"2026-07-30T07:50:00","candle_date_time_kst":"2026-07-30T16:50:00",
       "opening_price":91134000.00000000,"high_price":91134000.00000000,
@@ -466,7 +409,7 @@ mod tests {
       "candle_acc_trade_volume":0.03684166,"candle_acc_trade_price":3357485.11323000,
       "timestamp":1785397829625,"stream_type":"SNAPSHOT"}"#;
 
-    /// `candle.1m` on `KRW-BTC` for that same 07:50 window.
+    /// A one-minute feed for the first market.
     const CANDLE_ONE_MINUTE_0750: &str = r#"{"type":"candle.1m","code":"KRW-BTC",
       "candle_date_time_utc":"2026-07-30T07:50:00","candle_date_time_kst":"2026-07-30T16:50:00",
       "opening_price":91134000.00000000,"high_price":91134000.00000000,
@@ -474,7 +417,7 @@ mod tests {
       "candle_acc_trade_volume":0.03684166,"candle_acc_trade_price":3357485.11323000,
       "timestamp":1785397829625,"stream_type":"SNAPSHOT"}"#;
 
-    /// `candle.1m` on `KRW-ETH`, a second market on the same connection.
+    /// The same interval for a second market.
     const CANDLE_OTHER_MARKET: &str = r#"{"type":"candle.1m","code":"KRW-ETH",
       "candle_date_time_utc":"2026-07-30T07:50:00","candle_date_time_kst":"2026-07-30T16:50:00",
       "opening_price":2715000.00000000,"high_price":2716000.00000000,
@@ -482,19 +425,19 @@ mod tests {
       "candle_acc_trade_volume":37.95606020,"candle_acc_trade_price":103034054.24344000,
       "timestamp":1785397818983,"stream_type":"SNAPSHOT"}"#;
 
-    /// 2026-07-30T07:45:00Z, the first window the capture above covers. Each
-    /// later one is a minute on from it.
+    /// Start of the first fixture window, in Unix seconds.
     const MINUTE_0745: i64 = 1_785_397_500;
     const MINUTE_0746: i64 = MINUTE_0745 + 60;
     const MINUTE_0747: i64 = MINUTE_0745 + 120;
     const MINUTE_0748: i64 = MINUTE_0745 + 180;
+    const MINUTE_0750: i64 = MINUTE_0745 + 300;
 
-    /// One frame through a decoder that has seen nothing else.
+    /// Decodes one frame with fresh state.
     fn decode(frame: &str) -> Result<Vec<MarketEvent>> {
-        Decoder::default().decode(frame)
+        Decoder::default().decode_at(frame, Timestamp::from_secs(MINUTE_0745 + 30))
     }
 
-    /// The single event a self-contained frame carries.
+    /// Extracts the single event from a stateless frame.
     fn one(frame: &str) -> MarketEvent {
         let mut events = decode(frame).expect("a data frame");
         assert_eq!(events.len(), 1, "expected one event from {frame}");
@@ -560,9 +503,6 @@ mod tests {
 
     #[test]
     fn a_candle_interval_upbit_does_not_stream_is_refused() {
-        // The stream and the REST endpoints do not cover the same set. Upbit
-        // streams one-second candles but serves no daily, weekly or monthly
-        // ones live, so these are gaps in the exchange rather than in `maxt`.
         for interval in [Interval::Day1, Interval::Week1, Interval::Month1] {
             assert!(
                 matches!(
@@ -586,7 +526,6 @@ mod tests {
         assert_eq!(trade.market, Market::spot(Exchange::Upbit, "BTC", "KRW"));
         assert_eq!(trade.taker_side, Side::Sell);
         assert_eq!(trade.quantity, Decimal::new(8_428, 8));
-        // `trade_timestamp`, not the later `timestamp` the frame was published at.
         assert_eq!(trade.timestamp, Timestamp::from_millis(1_696_585_056_846));
     }
 
@@ -625,12 +564,31 @@ mod tests {
         };
 
         assert_eq!(candle.interval, Interval::Min1);
-        // 2026-07-30T07:45:00Z, the start of the minute it covers.
         assert_eq!(candle.open_time, Timestamp::from_secs(MINUTE_0745));
         assert_eq!(candle.volume, Decimal::new(15_511_395, 8));
     }
 
-    /// The settled and forming bars a frame produced, in that order.
+    #[test]
+    fn a_snapshot_for_an_ended_window_is_closed_immediately() {
+        let mut decoder = Decoder::default();
+        let events = decoder
+            .decode_at(CANDLE_SNAPSHOT, Timestamp::from_secs(MINUTE_0746))
+            .expect("an ended snapshot");
+        let [MarketEvent::Candle(candle)] = events.as_slice() else {
+            panic!("expected a candle event");
+        };
+
+        assert!(candle.closed);
+        assert!(
+            decoder
+                .decode_at(CANDLE_SNAPSHOT, Timestamp::from_secs(MINUTE_0746))
+                .expect("the same snapshot after reconnect")
+                .is_empty(),
+            "a settled snapshot must not be emitted twice"
+        );
+    }
+
+    /// Extracts a settled candle followed by its forming successor.
     fn rollover(events: Vec<MarketEvent>) -> (Candle, Candle) {
         let candles = events
             .into_iter()
@@ -649,10 +607,6 @@ mod tests {
 
     #[test]
     fn the_frame_that_opens_a_window_settles_the_one_before_it() {
-        // Every frame of a minute is a forming bar, including the last one
-        // Upbit sends for it: at 07:46:58.309 that minute still had 1.691s to
-        // run, and no later frame for it exists. The bar becomes settled when
-        // Upbit opens 07:47, and that frame carries both answers, oldest first.
         let mut decoder = Decoder::default();
 
         let forming = decoder
@@ -670,21 +624,13 @@ mod tests {
                 .expect("the first frame of 07:47"),
         );
 
-        // The settled one is 07:46, carrying the figures of its own last frame
-        // rather than the ones from the frame that ended it.
         assert_eq!(settled.open_time, forming.open_time);
         assert_eq!(settled.volume, Decimal::new(80_044_670, 8));
-        // And 07:47 opens as a forming bar like every other window does.
         assert_eq!(next.open_time, Timestamp::from_secs(MINUTE_0747));
     }
 
     #[test]
     fn a_frame_for_a_window_already_settled_neither_reopens_it_nor_displaces_the_held_one() {
-        // Upbit republishes the forming window on every update, so a frame that
-        // arrives after a later one has already opened is out of order rather
-        // than new. Holding it would settle its window a second time when the
-        // next one opened, with the late frame's figures, while the window in
-        // between was never settled at all.
         let mut decoder = Decoder::default();
 
         decoder
@@ -697,9 +643,6 @@ mod tests {
         );
         assert_eq!(settled.open_time, Timestamp::from_secs(MINUTE_0746));
 
-        // The same 07:46 frame again, now that 07:47 is the open window. It
-        // carries nothing: 07:46 has had its one settled emission, and
-        // `Candle::closed` promises no further event for that window.
         let late = decoder
             .decode(CANDLE_LAST_OF_ITS_MINUTE)
             .expect("a frame for a window that already settled");
@@ -708,9 +651,6 @@ mod tests {
             "a frame behind the held window carried events: {late:?}"
         );
 
-        // And 07:47 is still what is held, so it is what 07:48 settles, with
-        // its own figures. Before the ordering test above, this settled 07:46 a
-        // second time and lost 07:47 entirely.
         let (settled, forming) = rollover(
             decoder
                 .decode(CANDLE_MINUTE_AFTER_NEXT)
@@ -723,23 +663,16 @@ mod tests {
 
     #[test]
     fn a_snapshot_for_a_later_window_replaces_the_held_one_rather_than_settling_it() {
-        // A snapshot is the first frame after a connect or a reconnect, so
-        // whatever the decoder holds is from before a gap it cannot measure and
-        // its window may have run on unseen. Reporting those figures as a
-        // settled bar would be the one error `closed` must never make.
-        //
-        // The frames are a real pair: connection A's last 07:46 frame, then
-        // connection B's opening snapshot, which is for 07:47. A reconnect that
-        // crossed a window boundary looks exactly like this, and it is the only
-        // shape in which the snapshot rule does any work: a snapshot for the
-        // *held* window, or for an earlier one, settles nothing anyway.
         let mut decoder = Decoder::default();
 
         decoder
             .decode(CANDLE_LAST_OF_ITS_MINUTE)
             .expect("the last frame of 07:46");
         let after_reconnect = decoder
-            .decode(CANDLE_SNAPSHOT_AFTER_RECONNECT)
+            .decode_at(
+                CANDLE_SNAPSHOT_AFTER_RECONNECT,
+                Timestamp::from_secs(MINUTE_0747 + 30),
+            )
             .expect("a snapshot for the minute after the held one");
 
         assert!(
@@ -752,8 +685,6 @@ mod tests {
              frames: {after_reconnect:?}"
         );
 
-        // The dropped window does not come back either: what the snapshot
-        // opened is what settles next.
         let (settled, _) = rollover(
             decoder
                 .decode(CANDLE_MINUTE_AFTER_NEXT)
@@ -764,17 +695,16 @@ mod tests {
 
     #[test]
     fn a_snapshot_for_the_window_already_held_replaces_it_without_settling_anything() {
-        // A reconnect inside one window, the common case. The snapshot's
-        // figures are the exchange's current truth for that window and the held
-        // ones are from before the gap, so the snapshot wins, and nothing
-        // settles because no window has ended.
         let mut decoder = Decoder::default();
 
         decoder
             .decode(CANDLE_NEXT_MINUTE)
             .expect("the first frame of 07:47");
         let after_reconnect = decoder
-            .decode(CANDLE_SNAPSHOT_AFTER_RECONNECT)
+            .decode_at(
+                CANDLE_SNAPSHOT_AFTER_RECONNECT,
+                Timestamp::from_secs(MINUTE_0747 + 30),
+            )
             .expect("a snapshot for the minute already held");
         assert_eq!(after_reconnect.len(), 1);
 
@@ -784,17 +714,11 @@ mod tests {
                 .expect("the first frame of 07:48"),
         );
         assert_eq!(settled.open_time, Timestamp::from_secs(MINUTE_0747));
-        // The snapshot's volume, not the 07:47 frame the decoder held first.
         assert_eq!(settled.volume, Decimal::new(1_011_827, 8));
     }
 
     #[test]
     fn the_held_bars_are_one_per_market_and_interval_however_long_the_subscription_runs() {
-        // `latest` outlives every reconnect, so anything that could make it
-        // grow would grow for the life of the subscription. It is keyed by the
-        // market and interval a frame names, and a subscription's markets and
-        // intervals are fixed when the socket opens, so the bound is that
-        // product and nothing about it moves with time or frame count.
         let mut decoder = Decoder::default();
 
         for _ in 0..1_000 {
@@ -807,28 +731,27 @@ mod tests {
                 CANDLE_OTHER_INTERVAL,
                 CANDLE_OTHER_MARKET,
             ] {
-                decoder.decode(frame).expect("a candle frame");
+                decoder
+                    .decode_at(frame, Timestamp::from_secs(MINUTE_0750 + 30))
+                    .expect("a candle frame");
             }
         }
 
-        // KRW-BTC at 1m, KRW-BTC at 5m, KRW-ETH at 1m. Three feeds, three bars.
         assert_eq!(decoder.latest.len(), 3);
     }
 
     #[test]
     fn two_intervals_on_one_market_settle_independently() {
-        // The same market's 1m and 5m feeds share a socket and a decoder, and
-        // the 07:50 window they both name opens at the same instant. A frame
-        // for one must not be read as the other's, in either direction.
         let mut decoder = Decoder::default();
 
         decoder
             .decode(CANDLE_LAST_OF_ITS_MINUTE)
             .expect("the last 1m frame of 07:46");
-        // The 5m feed has seen nothing yet, so its 07:50 frame opens that feed
-        // rather than settling the minute bar the decoder is holding.
         let opened = decoder
-            .decode(CANDLE_OTHER_INTERVAL)
+            .decode_at(
+                CANDLE_OTHER_INTERVAL,
+                Timestamp::from_secs(MINUTE_0750 + 30),
+            )
             .expect("the first 5m frame");
         assert!(matches!(
             opened.as_slice(),
@@ -836,8 +759,6 @@ mod tests {
                 if candle.interval == Interval::Min5 && !candle.closed
         ));
 
-        // And the minute feed still holds 07:46, so 07:47 settles it as a
-        // one-minute bar.
         let (settled, _) = rollover(
             decoder
                 .decode(CANDLE_NEXT_MINUTE)
@@ -865,21 +786,13 @@ mod tests {
 
     #[test]
     fn the_heartbeat_is_the_frame_upbit_answers_rather_than_one_it_errors_on() {
-        // Upbit reads every text frame on this socket as a command. `PING` is
-        // the one it answers with a status frame; anything else comes back as
-        // an error that would take the subscription down with it.
         assert_eq!(HEARTBEAT.frame, HeartbeatFrame::Text("PING"));
-        // And that answer is the inbound traffic the idle timer is waiting for,
-        // so it has to decode to nothing rather than to an error.
         assert!(
             decode(r#"{"status":"UP"}"#)
                 .expect("the answer to this heartbeat")
                 .is_empty()
         );
-        // Upbit hangs up after 120 seconds with nothing sent or received, so
-        // several heartbeats have to fit inside one such window.
         assert!(HEARTBEAT.interval * 4 <= Duration::from_secs(120));
-        // And the idle timer must outlast more than one lost heartbeat.
         assert!(HEARTBEAT.min_idle_timeout >= HEARTBEAT.interval * 3);
     }
 

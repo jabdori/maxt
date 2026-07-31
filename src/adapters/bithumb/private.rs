@@ -1,9 +1,7 @@
-//! Bithumb's authenticated REST calls, and the JWT they are signed with.
+//! Bithumb authenticated REST requests and JWT signing.
 //!
-//! Every private call carries `Authorization: Bearer <jwt>`. The token is
-//! HS256 over the secret key and names the access key, a nonce, and a
-//! millisecond timestamp; a call that carries parameters also names a SHA-512
-//! hash of them, so a tampered query invalidates the signature.
+//! Private requests use an HS256 JWT. Parameterized requests also include a
+//! SHA-512 query hash.
 
 use jsonwebtoken::{Algorithm, EncodingKey, Header};
 use rust_decimal::Decimal;
@@ -20,10 +18,7 @@ use super::BithumbCredentials;
 use super::parse::{self, EXCHANGE};
 use super::rest;
 
-/// The claims Bithumb reads out of the token.
-///
-/// `query_hash` and its algorithm are absent on a call with no parameters, and
-/// Bithumb rejects a token that names them anyway.
+/// JWT claims sent to Bithumb; query fields are omitted for parameterless calls.
 #[derive(Debug, Serialize)]
 struct Claims<'a> {
     access_key: &'a str,
@@ -45,8 +40,7 @@ pub(crate) fn authorization(credentials: &BithumbCredentials, query: &str) -> Re
     )
 }
 
-/// The signing step with the two values a caller cannot choose pinned, so that
-/// the token is reproducible under test.
+/// Signs with an explicit nonce and timestamp for deterministic tests.
 fn authorization_with(
     credentials: &BithumbCredentials,
     query: &str,
@@ -82,12 +76,7 @@ fn sha512_hex(bytes: &[u8]) -> String {
     hex::encode(Sha512::digest(bytes))
 }
 
-/// The query string a private call signs.
-///
-/// Signing and sending must agree on one spelling of the parameters or the
-/// hash will not match, so both come from here, unencoded. That is safe only
-/// because every value reaching it has been checked against
-/// [`signed_value`].
+/// Builds the exact validated query string covered by the signature.
 fn signed_query(params: &[(&str, String)]) -> Result<String> {
     for (name, value) in params {
         signed_value(name, value)?;
@@ -100,11 +89,7 @@ fn signed_query(params: &[(&str, String)]) -> Result<String> {
         .join("&"))
 }
 
-/// Rejects anything that would change the meaning of the signed query.
-///
-/// An order identifier is the only value here that `maxt` did not build itself,
-/// and an `&` inside one would append a parameter to a request the caller
-/// already signed.
+/// Rejects values that could alter the signed query structure.
 fn signed_value(name: &str, value: &str) -> Result<()> {
     if value.is_empty() {
         return Err(Error::invalid_request(
@@ -148,8 +133,7 @@ pub(crate) fn open_orders_request(
     if let Some(market) = market {
         params.push(("market", parse::native_symbol(market)?));
     }
-    // Bithumb serves every order state from one endpoint; `wait` is the resting
-    // ones, which is what "open" means in the common API.
+    // `wait` is Bithumb's resting-order state.
     params.push(("state", "wait".to_string()));
 
     signed_get(credentials, "/v1/orders", &params)
@@ -166,22 +150,14 @@ pub(crate) fn cancel_order_request(
         .header("authorization", authorization(credentials, &query)?))
 }
 
-/// What an order acknowledgement cannot tell us, taken from the request.
+/// Request data needed to interpret Bithumb's minimal order acknowledgement.
 pub(crate) struct PlacedOrder {
     pub(crate) params: Vec<(&'static str, String)>,
-    /// The base quantity still working once the order is accepted.
-    ///
-    /// Zero when the request was sized in the quote asset, because Bithumb's
-    /// acknowledgement then reports no base figure.
+    /// Remaining base quantity; zero when a quote-sized request has no base amount.
     pub(crate) remaining_quantity: Decimal,
 }
 
-/// Translates an order into the parameters Bithumb's `/v2/orders` takes.
-///
-/// Bithumb encodes the market/limit distinction in `order_type` together with
-/// which of `price` and `volume` is present, and the three combinations below
-/// are the only ones it accepts. Anything else is refused here, before it is
-/// sent.
+/// Validates an order and maps it to `/v2/orders` parameters.
 pub(crate) fn placed_order(request: &OrderRequest) -> Result<PlacedOrder> {
     if request.reduce_only {
         return Err(Error::unsupported(
@@ -221,8 +197,7 @@ pub(crate) fn placed_order(request: &OrderRequest) -> Result<PlacedOrder> {
             params.push(("volume", amount("volume", *quantity)?));
             *quantity
         }
-        // A market buy spends an amount of the quote asset, and Bithumb calls
-        // that `price` rather than giving it a name of its own.
+        // Bithumb encodes a market-buy quote amount as `price`.
         (OrderType::Market, Size::Quote(amount_to_spend), Side::Buy) => {
             params.push(("order_type", "price".to_string()));
             params.push(("price", amount("price", *amount_to_spend)?));
@@ -259,11 +234,7 @@ pub(crate) fn placed_order(request: &OrderRequest) -> Result<PlacedOrder> {
     })
 }
 
-/// Renders a price or quantity as the digits Bithumb should see.
-///
-/// The caller's own scale is sent as given. `0.0100` and `0.01` buy the same
-/// amount, and this adapter does not quietly reshape a size on its way to an
-/// exchange.
+/// Validates a positive amount and preserves its decimal spelling.
 fn amount(field: &'static str, value: Decimal) -> Result<String> {
     if value <= Decimal::ZERO {
         return Err(Error::invalid_request(
@@ -278,8 +249,7 @@ pub(crate) fn place_order_request(
     credentials: &BithumbCredentials,
     placed: &PlacedOrder,
 ) -> Result<HttpRequest> {
-    // The body is JSON but the signature covers the same fields written as a
-    // query string; Bithumb checks the two against each other.
+    // The JWT hashes these body fields in query-string form.
     let query = signed_query(&placed.params)?;
     let body: serde_json::Map<String, Value> = placed
         .params
@@ -321,8 +291,7 @@ pub(crate) async fn place_order(
         &body,
         request.market.clone(),
         request.side,
-        // Bithumb answers a placement with an identifier and nothing about
-        // fills, so the order is accepted and not yet known to be on the book.
+        // The acknowledgement contains no fill state.
         OrderStatus::Accepted,
         placed.remaining_quantity,
         request.price,
@@ -335,17 +304,14 @@ pub(crate) async fn cancel_order(
     market: &Market,
     order_id: &str,
 ) -> Result<Order> {
-    // Bithumb cancels by identifier alone, but the market is still checked so
-    // that a caller who names the wrong one hears about it here.
+    // Validate the caller's market even though Bithumb cancels by identifier.
     parse::native_symbol(market)?;
     let body = rest::send(http, &cancel_order_request(credentials, order_id)?).await?;
 
     parse::order_ack(
         &body,
         market.clone(),
-        // The acknowledgement echoes no side; a cancelled order has nothing
-        // working either way, so the request's own market and a zero remainder
-        // are all that can honestly be reported.
+        // The acknowledgement may omit the side.
         side_of(&body),
         OrderStatus::Cancelled,
         Decimal::ZERO,
@@ -360,9 +326,7 @@ fn side_of(body: &Value) -> Side {
     }
 }
 
-/// The handshake header the private WebSocket authenticates with.
-///
-/// The socket carries no parameters, so the token names no query hash.
+/// Builds a parameterless authorization header for a private WebSocket handshake.
 pub(crate) fn websocket_authorization(credentials: &BithumbCredentials) -> Result<String> {
     authorization(credentials, "")
 }
@@ -403,7 +367,7 @@ mod tests {
 
     #[test]
     fn a_parameterised_request_is_signed_over_the_sha512_of_its_query() {
-        // The hash is over the query string exactly as sent.
+        // The hash covers the exact query string.
         assert_eq!(
             sha512_hex(b"market=KRW-BTC&limit=10"),
             "d8214a07d0b7181ac91485f885d4349e9de6733bbd0806fec3102519a0ba1479\
@@ -438,7 +402,7 @@ mod tests {
         assert_eq!(claims["access_key"], "test-access");
         assert_eq!(claims["nonce"], "nonce-1");
         assert_eq!(claims["timestamp"], 1_717_000_000_123_i64);
-        // Present-but-null would be rejected: the fields must be absent.
+        // Parameterless tokens omit both query claims.
         assert!(claims.get("query_hash").is_none());
         assert!(claims.get("query_hash_alg").is_none());
     }
@@ -476,12 +440,12 @@ mod tests {
 
     #[test]
     fn private_requests_target_the_documented_paths() {
-        // https://apidocs.bithumb.com/reference/전체-계좌-조회
+        // Shape reference: https://apidocs.bithumb.com/reference/전체-자산-조회.md
         assert_eq!(
             balances_request(&credentials()).expect("signed").target(),
             "/v1/accounts"
         );
-        // https://apidocs.bithumb.com/reference/대기-주문-조회
+        // Shape reference: https://apidocs.bithumb.com/reference/대기-주문-목록-조회.md
         assert_eq!(
             open_orders_request(&credentials(), Some(&btc_krw()))
                 .expect("signed")
@@ -494,7 +458,7 @@ mod tests {
                 .target(),
             "/v1/orders?state=wait"
         );
-        // https://apidocs.bithumb.com/reference/주문-취소-접수
+        // Shape reference: https://apidocs.bithumb.com/reference/주문-취소-접수.md
         assert_eq!(
             cancel_order_request(&credentials(), "C0101000000001818113")
                 .expect("signed")
@@ -565,8 +529,7 @@ mod tests {
             signed_query(&market_sell.params).expect("signable"),
             "market=KRW-BTC&side=ask&order_type=market&volume=0.01"
         );
-        // A market buy is sized in KRW, so no base quantity is known to be
-        // working once it is accepted.
+        // A quote-sized market buy has no known base remainder.
         assert_eq!(market_buy.remaining_quantity, Decimal::ZERO);
         assert_eq!(limit.remaining_quantity, Decimal::new(1, 2));
     }

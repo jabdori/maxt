@@ -1,9 +1,4 @@
-//! How requests actually leave the process.
-//!
-//! Private to the crate. Adapters describe *what* to send in exchange-neutral
-//! terms; the implementations here decide how it goes over the wire, and own
-//! reconnects, heartbeats, and backpressure so that four adapters do not each
-//! reimplement them.
+//! Shared HTTP and WebSocket transport implementations.
 
 pub(crate) mod http;
 pub(crate) mod ws;

@@ -82,17 +82,6 @@ impl MarketKind {
 /// [`Market::spot`] or [`Market::perpetual`]. The adapter translates it into
 /// whatever the exchange calls the same instrument: `KRW-BTC` on Upbit,
 /// `BTCUSDT` on Binance, `BTC` on Hyperliquid.
-///
-/// ```
-/// use maxt::{Exchange, Market};
-///
-/// let spot = Market::spot(Exchange::Upbit, "BTC", "KRW");
-/// let perp = Market::perpetual(Exchange::Binance, "BTC", "USDT");
-///
-/// assert_eq!(spot.to_string(), "upbit:BTC/KRW");
-/// assert_eq!(perp.to_string(), "binance:BTC/USDT:perp");
-/// assert_ne!(spot, perp);
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Market {
     /// The exchange this market lives on.

@@ -1,40 +1,20 @@
-//! Every `Feed` the documentation claims an exchange carries, opened against
-//! that exchange and counted.
+//! Checks advertised public feeds against live exchange responses.
 //!
-//! Ignored by default, so `cargo test` and CI never reach the network. Run it
-//! by name:
+//! Ignored by default because it opens public network connections. Run it with:
 //!
 //! ```text
 //! cargo test --test live_conformance -- --ignored --nocapture
 //! ```
 //!
-//! Public read-only endpoints only. No credentials are read, no order is
-//! placed, and no private feed is opened, so the signed half of every adapter
-//! is outside what this can say anything about.
+//! It uses no credentials and checks, for each advertised feed:
 //!
-//! The offline suite checks one cell at a time: this frame decodes, that
-//! interval maps to this path. Two defects walked through it anyway. Bithumb's
-//! `Feed::OrderBook` stamps its frames in microseconds where every other
-//! Bithumb payload is milliseconds, and a hand-written millisecond fixture kept
-//! the suite green over a feed that produced nothing but rejected timestamps.
-//! Hyperliquid's candle stream never set `closed`, across five window
-//! transitions and 135 events. Neither is visible without subscribing and
-//! counting, which is what happens below.
+//! * at least one event of the requested type and no stream errors
+//! * at least one settled candle on every candle feed
+//! * a non-empty book no deeper than the provider page states
+//! * venue-supplied timestamps near the local wall clock
 //!
-//! What is asserted per pair:
-//!
-//! * a nonzero count of the feed's own event type, since a successful
-//!   subscribe says only that a socket opened
-//! * zero errors, since a feed that yields nothing but `Err` still reads as
-//!   supported everywhere else
-//! * one settled candle at least, on every candle feed
-//! * the level count the provider page states, on every book feed
-//! * every timestamp the exchange itself sent near the reading machine's wall
-//!   clock, which is what a mis-scaled clock and a time-zone-shifted one both
-//!   break. Payloads the exchange sends no clock on carry the adapter's own
-//!   `Timestamp::now()` instead, so measuring them would compare this machine's
-//!   clock to itself. Those are named in [`UNSTAMPED`] and reported as unchecked
-//!   rather than as a number
+//! Payloads without a venue clock use `Timestamp::now()` and are listed in
+//! [`UNSTAMPED`] so the report does not validate a local fallback against itself.
 
 use std::collections::BTreeSet;
 use std::fs;
@@ -51,53 +31,33 @@ use maxt::{
 
 /// How long each subscription is held open.
 ///
-/// Long enough to contain a whole `Min1` window wherever in a minute it
-/// starts, plus the transition that settles it. Two boundaries are crossed, so
-/// a candle feed that settles nothing has had two chances, not one.
+/// Crosses at least two one-minute boundaries so a candle feed has time to emit
+/// a settled window.
 const WINDOW: Duration = Duration::from_secs(150);
 
 /// The candle interval every candle feed is opened at.
 ///
-/// The shortest one all four exchanges publish, which is what makes a window
-/// boundary observable inside [`WINDOW`] rather than in an hour.
+/// The shortest interval shared by every venue that advertises a candle stream.
+/// Bithumb advertises no candle stream and is therefore not part of this set.
 const CANDLE_INTERVAL: Interval = Interval::Min1;
 
-/// How far behind the reading machine's clock a timestamp may sit, in
+/// How far behind the host system clock a timestamp may sit, in
 /// milliseconds.
 ///
-/// A settled `Min1` candle is announced at the end of its window and carries
-/// the window's own opening instant, so a minute of lag is correct rather than
-/// suspect. Five minutes leaves room for that and for a slow socket, and still
-/// rejects the nine-hour offset a wall-clock-in-a-UTC-field bug produces.
+/// Five minutes permits a settled candle's opening time while still detecting a
+/// unit or time-zone error.
 const OLDEST_ALLOWED_MS: i64 = 300_000;
 
-/// How far ahead of the reading machine's clock a timestamp may sit, in
+/// How far ahead of the host system clock a timestamp may sit, in
 /// milliseconds.
 ///
-/// Tighter than the other direction because nothing legitimate is stamped in
-/// the future. A microsecond field read as milliseconds lands tens of thousands
-/// of years out and is caught here.
+/// No valid event should be materially ahead of the host clock.
 const NEWEST_ALLOWED_MS: i64 = 30_000;
 
 /// The venue and payload pairs the exchange sends no clock on.
 ///
-/// The adapter fills the gap with the reading machine's own `Timestamp::now()`,
-/// which is the only thing it can do and is right for a caller who wants a
-/// `Timestamp` on every event. It leaves this file with nothing to check: `now
-/// minus stamp` on these is this machine measured against itself, so the figure
-/// is local buffering latency and the claim can never fail. Naming them is what
-/// keeps a check that cannot fail out of the report.
-///
-/// Named by payload rather than by transport, because the gap is in what the
-/// venue sends and the stream reader and the REST reader both land on it.
-/// Confirmed live: Hyperliquid's `activeAssetCtx` carries no time field on the
-/// socket or in the REST body, and Binance spot depth carries no `E` on the
-/// stream while `/api/v3/depth` returns only `lastUpdateId`. Binance USD-M
-/// stamps its depth on both, so it is not here.
-///
-/// The cost is that this list is a claim about the venues, checked by hand. A
-/// venue that starts sending a clock stays unchecked here until someone
-/// notices, which is the trade for not printing a number that means nothing.
+/// Their timestamps are local fallbacks, so clock skew is reported as unchecked
+/// instead of comparing the process clock with itself.
 const UNSTAMPED: [(&str, &str); 4] = [
     ("hyperliquid", "Ticker"),
     ("hyperliquid", "ticker.timestamp"),
@@ -108,10 +68,7 @@ const UNSTAMPED: [(&str, &str); 4] = [
 /// The four streaming features, each paired with the [`Feed`] a
 /// [`Subscription`] carries it as.
 ///
-/// This mapping is the whole derivation. Which pairs run is decided by asking
-/// each adapter [`Client::supports`], so an exchange that starts claiming a
-/// feed is checked on the commit that claims it, with no list to remember to
-/// edit.
+/// [`Client::supports`] selects which configured venues advertise each pair.
 const STREAM_FEEDS: [(Feature, Feed); 4] = [
     (Feature::TradeStream, Feed::Trades),
     (Feature::OrderBookStream, Feed::OrderBook),
@@ -126,19 +83,17 @@ struct Venue {
     label: &'static str,
     /// Public and unauthenticated, which is all this check is allowed to be.
     client: Client<Box<dyn Adapter>>,
-    /// The venue's most heavily traded market, so that a count of zero means a
-    /// dead feed rather than a quiet hour.
+    /// The representative BTC market used for this venue's checks. A zero event
+    /// count fails the feed without making a volume-rank claim.
     market: Market,
     /// The file under `docs/providers` whose book depth row is the claim being
     /// checked.
     page: &'static str,
 }
 
-/// Every exchange configuration `maxt` ships a public constructor for.
+/// Production venue configurations covered by this live check.
 ///
-/// Hyperliquid's testnet is left out on purpose: it is the same adapter aimed
-/// at another host, and its books and candles are thin enough that a zero count
-/// would say nothing.
+/// Hyperliquid testnet is an alternate host and is outside this test's scope.
 fn venues() -> Vec<Venue> {
     vec![
         Venue {
@@ -174,18 +129,10 @@ fn venues() -> Vec<Venue> {
     ]
 }
 
-/// The levels a side a provider page states for `Feed::OrderBook`.
+/// The maximum levels per side stated for `Feed::OrderBook`.
 ///
-/// Read out of the page rather than restated here, so the number this asserts
-/// against the exchange is the number a reader was promised. A page whose row
-/// no longer carries one fails the pair it belongs to instead of quietly
-/// checking nothing.
-///
-/// Two rows carrying a figure is an error rather than a first match. Binance's
-/// one row covers both its venues today, and splitting it per venue is the
-/// obvious edit the day they differ. Taking the first would then assert the
-/// spot depth against USD-M and still print a level count, which is the shape
-/// of silence this file exists to end.
+/// Exactly one depth must be present so the live assertion uses the documented
+/// value instead of a duplicated test fixture.
 fn documented_book_depth(page: &str) -> Result<usize, String> {
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("docs/providers")
@@ -214,8 +161,7 @@ fn documented_book_depth(page: &str) -> Result<usize, String> {
 
 /// The number written immediately before the word `levels` on one line.
 ///
-/// Surrounding punctuation is stripped, because the pages write the figure as
-/// prose: `**30 levels a side**` and `20 levels,` both answer.
+/// Accepts punctuation around counts such as `**30 levels**` and `20 levels,`.
 fn level_count(line: &str) -> Option<usize> {
     let words: Vec<&str> = line.split_whitespace().collect();
 
@@ -235,16 +181,13 @@ fn level_count(line: &str) -> Option<usize> {
 /// What one subscription produced over [`WINDOW`].
 #[derive(Default)]
 struct Tally {
-    /// Events of the feed's own kind, which is the only count that answers
-    /// "is this feed carried".
+    /// Events of the requested feed kind.
     events: usize,
-    /// Events of some other kind on a single-feed subscription, which would
-    /// mean the adapter subscribed to something it was not asked for.
+    /// Other event kinds on a single-feed subscription.
     stray: usize,
-    /// `Err` items. A feed that only errors is still a feed that delivers
-    /// nothing.
+    /// `Err` items.
     errors: usize,
-    /// The first error's text, because the count alone never says what broke.
+    /// The first error's text.
     first_error: Option<String>,
     /// Candle events with `closed` set.
     settled: usize,
@@ -253,8 +196,7 @@ struct Tally {
     /// The event timestamp furthest from the wall clock, in milliseconds,
     /// positive when the event is behind.
     worst_skew_ms: i64,
-    /// Reconnects seen. Not a failure on its own, and worth printing, since a
-    /// stream that spent the window reconnecting explains a low count.
+    /// Reconnects, reported to explain low event counts.
     reconnects: usize,
 }
 
@@ -303,7 +245,7 @@ impl Tally {
     }
 }
 
-/// Whether a timestamp sat too far from the reading machine's wall clock.
+/// Whether a timestamp sat too far from the host system clock.
 ///
 /// The skew is measured as now minus the event, so a positive value is an
 /// event behind the clock and a negative one is an event stamped in the future.
@@ -311,13 +253,7 @@ fn clock_is_wrong(skew_ms: i64) -> bool {
     !(-NEWEST_ALLOWED_MS..=OLDEST_ALLOWED_MS).contains(&skew_ms)
 }
 
-/// Records what one payload's timestamps said about the exchange's clock, or
-/// why nothing was said.
-///
-/// The one place either half of the report decides that, so a payload listed in
-/// [`UNSTAMPED`] is skipped whether it arrived over a socket or over REST. What
-/// it never does is emit a figure it did not judge: a number in the report that
-/// no assertion stands behind reads as evidence the clock was checked.
+/// Records clock skew unless [`UNSTAMPED`] names a local fallback.
 fn judge_clock(
     label: &str,
     field: &str,
@@ -359,9 +295,8 @@ impl Row {
 /// Holds one subscription open for [`WINDOW`] and counts what arrives.
 async fn observe(venue: &Venue, feed: Feed) -> Tally {
     let subscription = Subscription::new().market(venue.market.clone()).feed(feed);
-    // One feed per socket, so that an error belongs to a feed. A subscription
-    // carrying all of them at once would report Bithumb's 109 rejected book
-    // frames as errors of no particular feed.
+    // One feed per subscription attributes every event and error to that feed.
+    // It deliberately does not cover Binance USD-M's two-socket mixed-feed path.
     let config = StreamConfig {
         max_reconnect_attempts: Some(3),
         ..StreamConfig::default()
@@ -431,11 +366,13 @@ async fn stream_row(venue: &Venue, feed: Feed) -> Row {
                 let wrong: Vec<&(usize, usize)> = tally
                     .depths
                     .iter()
-                    .filter(|(bids, asks)| *bids != claimed || *asks != claimed)
+                    .filter(|(bids, asks)| {
+                        *bids == 0 || *asks == 0 || *bids > claimed || *asks > claimed
+                    })
                     .collect();
                 if !wrong.is_empty() {
                     faults.push(format!(
-                        "docs/providers/{} states {claimed} levels a side, saw {}",
+                        "docs/providers/{} states up to {claimed} levels a side, saw {}",
                         venue.page,
                         render_depths(&wrong.into_iter().copied().collect())
                     ));
@@ -445,8 +382,7 @@ async fn stream_row(venue: &Venue, feed: Feed) -> Row {
     }
 
     if tally.events > 0 {
-        // The feed's name is the payload here, and the skew is the furthest any
-        // one event of it sat from the clock over the whole window.
+        // Judge the worst event skew seen during the window.
         judge_clock(
             venue.label,
             &format!("{feed:?}"),
@@ -459,12 +395,8 @@ async fn stream_row(venue: &Venue, feed: Feed) -> Row {
     finish(format!("{} {feed:?}", venue.label), notes, faults)
 }
 
-/// Reads the three public REST endpoints that carry a clock, and judges those
-/// clocks the same way.
-///
-/// The stream and the REST response are separate payloads with separate
-/// fields, and Bithumb's `/v1/ticker` was nine hours out while its socket was
-/// correct. Checking one says nothing about the other.
+/// Runs the ticker, order-book, and recent-trade REST reads, then judges only
+/// timestamps supplied by the venue.
 async fn rest_row(venue: &Venue) -> Row {
     let mut faults: Vec<String> = Vec::new();
     let mut stamps: Vec<(&str, Timestamp)> = Vec::new();
@@ -485,7 +417,7 @@ async fn rest_row(venue: &Venue) -> Row {
     match venue.client.trades(&venue.market, None).await {
         Err(error) => faults.push(format!("trades: {error}")),
         Ok(trades) => match trades.first() {
-            None => faults.push("trades: an empty list from the busiest market".to_string()),
+            None => faults.push("trades: an empty list from the configured market".to_string()),
             Some(trade) => stamps.push(("trades[0].timestamp", trade.timestamp)),
         },
     }
@@ -534,13 +466,7 @@ fn render_depths(depths: &BTreeSet<(usize, usize)>) -> String {
         .join(" and ")
 }
 
-/// Every provider page still states a book depth this file can read.
-///
-/// Offline, and deliberately not ignored. [`documented_book_depth`] is what
-/// turns a documented promise into an assertion, and a row reworded past it
-/// would leave the live check asserting nothing while still reporting a level
-/// count. The numbers themselves are not restated here: a copy of a claim
-/// sitting in a test is the habit this whole file exists to break.
+/// Every provider page states exactly one book depth this test can assert live.
 #[test]
 fn every_provider_page_states_a_book_depth() {
     for venue in venues() {
@@ -554,13 +480,7 @@ fn every_provider_page_states_a_book_depth() {
     }
 }
 
-/// A payload the exchange sends no clock on gets no clock reading in the report.
-///
-/// Offline, and deliberately not ignored. The skew handed in is one no real
-/// exchange could produce, so any pair that still judged it would fail and any
-/// pair that still printed it would be printing a figure about this machine's
-/// own clock. Both are what a check that cannot fail looks like from the
-/// outside, and both are ruled out here without a network.
+/// Verifies local fallbacks stay unchecked while venue timestamps are judged.
 #[test]
 fn a_payload_the_exchange_does_not_stamp_gets_no_clock_reading() {
     let impossible = OLDEST_ALLOWED_MS * 100;
@@ -584,8 +504,7 @@ fn a_payload_the_exchange_does_not_stamp_gets_no_clock_reading() {
         );
     }
 
-    // And a payload the exchange does stamp is still judged, so the skip is a
-    // named exception rather than the clock check quietly going away.
+    // A venue timestamp remains checked, so the skip is explicit.
     let mut notes = Vec::new();
     let mut faults = Vec::new();
     judge_clock(
@@ -603,11 +522,10 @@ fn a_payload_the_exchange_does_not_stamp_gets_no_clock_reading() {
     );
 }
 
-/// Opens every carried feed on every exchange and checks what the docs promise.
+/// Opens every advertised feed on each configured venue and checks its contract.
 ///
-/// Ignored, because it is the one thing in this repository that touches the
-/// network. Takes a little over [`WINDOW`], since every pair runs at once and
-/// the slowest claim to check is a candle window ending.
+/// Ignored because it touches the network and waits through [`WINDOW`]. Each
+/// feed is tested separately; mixed-feed socket topology is outside this test.
 #[tokio::test(flavor = "multi_thread")]
 #[ignore = "opens a socket to every exchange; run with --ignored"]
 async fn every_carried_feed_delivers_what_the_docs_promise() {

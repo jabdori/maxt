@@ -1,11 +1,7 @@
 //! Upbit's authenticated REST and WebSocket API.
 //!
-//! Upbit does not sign a request. It signs a *statement about* the request.
-//! The caller mints a JWT whose claims name the access key and a nonce, plus a
-//! SHA-512 hash of the request parameters written as a query string when the
-//! request carries any. Upbit recomputes that hash from what it received, so a
-//! token is only good for the exact call it was minted for. The secret key
-//! signs the token and never leaves the process.
+//! Authentication uses an HS256 JWT. Parameterized calls include the SHA-512
+//! hash of the exact query string in the token claims.
 
 use std::future::Future;
 
@@ -24,31 +20,22 @@ use crate::types::{AccountEvent, Balance, Market, Order, OrderType, Side, Size, 
 use super::parse::{self, EXCHANGE};
 use super::{UpbitCredentials, rest, stream};
 
-/// The header Upbit reads the token out of, on REST and on the private socket
-/// alike.
+/// Authentication header used by REST and private WebSocket handshakes.
 pub(crate) const AUTHORIZATION: &str = "Authorization";
 
 const BALANCES_PATH: &str = "/v1/accounts";
 const OPEN_ORDERS_PATH: &str = "/v1/orders/open";
 const PLACE_ORDER_PATH: &str = "/v1/orders";
-/// Singular, unlike the plural path orders are placed on.
+/// The cancellation endpoint uses the singular `order` path.
 const CANCEL_ORDER_PATH: &str = "/v1/order";
 
-/// The only hash Upbit accepts, and it has to be named in the claims.
+/// Query-hash algorithm declared in the JWT claims.
 const QUERY_HASH_ALG: &str = "SHA512";
 
 /// Upbit serves at most this many open orders per call.
 const MAX_OPEN_ORDER_COUNT: u32 = 100;
 
-/// The most pages of open orders one walk reads before it gives up.
-///
-/// The same ceiling the candle walk keeps, for the same reason: every page is a
-/// sequential round trip, and an exchange that answers a full page forever,
-/// whether from a `page` it ignored or a cursor that stopped moving, describes
-/// a walk with no end, inside one `await` nothing above it will time out. At
-/// [`MAX_OPEN_ORDER_COUNT`] orders a page this reads ten thousand resting
-/// orders first, past which a broken cursor is the likelier explanation than an
-/// account.
+/// Maximum pages read before pagination is treated as stalled.
 const MAX_OPEN_ORDER_PAGES: u32 = 100;
 
 // ---------------------------------------------------------------------------
@@ -66,12 +53,10 @@ struct Claims<'a> {
     query_hash: Option<String>,
 }
 
-/// Signs one call.
+/// Signs one request with a caller-provided nonce.
 ///
-/// `query` is the parameter list written as `a=1&b=2`, or empty for a call that
-/// carries none. An empty query leaves both hash claims off entirely rather
-/// than hashing the empty string: Upbit rejects a token that claims a hash the
-/// request has nothing to match it against.
+/// `query` is the exact `a=1&b=2` parameter string. An empty query omits both
+/// query-hash claims.
 fn token(credentials: &UpbitCredentials, nonce: &str, query: &str) -> Result<String> {
     if nonce.trim().is_empty() {
         return Err(Error::auth("an Upbit token needs a nonce"));
@@ -103,13 +88,10 @@ pub(crate) fn authorization(credentials: &UpbitCredentials, query: &str) -> Resu
 // Parameters
 // ---------------------------------------------------------------------------
 
-/// Writes a parameter list the way Upbit hashes it.
+/// Builds the unencoded parameter string used for signing.
 ///
-/// Unencoded, because Upbit hashes the decoded form. The request has to carry
-/// the same text that was signed, so nothing may be percent-encoded on the way
-/// out. That holds only while every value is made of characters a URL carries
-/// unchanged, which the check below enforces. A value containing `&` would
-/// otherwise append a parameter Upbit never saw the hash of.
+/// Values must contain only RFC 3986 unreserved bytes so the request target and
+/// signed string have identical meaning.
 fn query(params: &[(&'static str, String)]) -> Result<String> {
     for (name, value) in params {
         if !value.bytes().all(is_url_safe) {
@@ -127,16 +109,14 @@ fn query(params: &[(&'static str, String)]) -> Result<String> {
         .join("&"))
 }
 
-/// The unreserved set of RFC 3986, which survives a URL untouched.
+/// Returns whether a byte is in the RFC 3986 unreserved set.
 fn is_url_safe(byte: u8) -> bool {
     byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~')
 }
 
-/// Re-emits a parameter list as the JSON body Upbit's order endpoint takes.
+/// Builds the string-valued JSON body used by the order endpoint.
 ///
-/// Every value goes out as a string, including the numbers: Upbit reads them as
-/// text, and turning `0.0100` into a JSON number would hand it whatever a float
-/// round trip left behind.
+/// Decimal parameters remain strings to preserve their exact representation.
 fn json_body(params: &[(&'static str, String)]) -> Result<String> {
     let object = params
         .iter()
@@ -147,7 +127,7 @@ fn json_body(params: &[(&'static str, String)]) -> Result<String> {
         .map_err(|err| Error::decode(format!("could not build the Upbit order body: {err}")))
 }
 
-/// Reads an amount destined for the wire, rejecting the ones Upbit would.
+/// Formats a positive amount without rounding.
 fn amount(value: &Decimal, field: &'static str) -> Result<String> {
     if value.is_zero() || value.is_sign_negative() {
         return Err(Error::invalid_request(
@@ -156,8 +136,6 @@ fn amount(value: &Decimal, field: &'static str) -> Result<String> {
         ));
     }
 
-    // The caller's digits, unrounded: `Decimal` prints them plainly, with no
-    // exponent for Upbit to misread.
     Ok(value.to_string())
 }
 
@@ -179,9 +157,7 @@ pub(crate) fn open_orders_request(
     if let Some(market) = market {
         params.push(("market", parse::native_symbol(market)?));
     }
-    // Upbit splits a live order across two states: `wait` is on the book,
-    // `watch` is waiting for its trigger. Taking the endpoint's default would
-    // report only the first and quietly lose the second.
+    // Include resting (`wait`) and trigger-pending (`watch`) orders.
     params.push(("states[]", "wait".to_string()));
     params.push(("states[]", "watch".to_string()));
     params.push(("page", page.to_string()));
@@ -198,8 +174,7 @@ pub(crate) fn place_order_request(
     request: &OrderRequest,
 ) -> Result<HttpRequest> {
     let params = order_params(request)?;
-    // The parameters travel as a JSON body, but the hash is still taken over
-    // their query-string form. Upbit signs the parameters, not the encoding.
+    // The JWT hashes the query representation of the JSON parameters.
     let query = query(&params)?;
 
     Ok(HttpRequest::post(PLACE_ORDER_PATH)
@@ -212,8 +187,7 @@ pub(crate) fn cancel_order_request(
     market: &Market,
     order_id: &str,
 ) -> Result<HttpRequest> {
-    // Upbit cancels by uuid alone. The market is still checked, so that an
-    // order id belonging to another exchange cannot be sent here by mistake.
+    // Validate the market even though cancellation is keyed by order UUID.
     parse::native_symbol(market)?;
     if order_id.trim().is_empty() {
         return Err(Error::invalid_request("order_id", "must not be empty"));
@@ -225,12 +199,10 @@ pub(crate) fn cancel_order_request(
         .header(AUTHORIZATION, authorization(credentials, &query)?))
 }
 
-/// Maps an order onto the parameters Upbit's endpoint takes.
+/// Maps an order request to Upbit parameters.
 ///
-/// Upbit names an order type after how it is *sized*, not after how it matches.
-/// A market buy spends a quote amount and is called `price`, while a market
-/// sell offers a base quantity and is called `market`. Pairings Upbit does not
-/// have are refused here, before anything is sent.
+/// Limit orders use base size and quote price. Market buys use quote size;
+/// market sells use base size. Other pairings return `InvalidRequest`.
 fn order_params(request: &OrderRequest) -> Result<Vec<(&'static str, String)>> {
     if request.reduce_only {
         return Err(Error::unsupported(
@@ -301,17 +273,14 @@ fn order_params(request: &OrderRequest) -> Result<Vec<(&'static str, String)>> {
     Ok(params)
 }
 
-/// Upbit's spelling for a time in force, or `None` when the order type already
-/// means it and saying so again would be rejected.
+/// Maps time in force, omitting values implicit in the order type.
 fn time_in_force(order_type: &OrderType, requested: TimeInForce) -> Result<Option<&'static str>> {
     Ok(match (order_type, requested) {
-        // What a resting Upbit order does with no `time_in_force` at all.
         (OrderType::Limit, TimeInForce::GoodTilCancelled) => None,
         (OrderType::Limit, TimeInForce::ImmediateOrCancel) => Some("ioc"),
         (OrderType::Limit, TimeInForce::FillOrKill) => Some("fok"),
         (OrderType::Limit, TimeInForce::PostOnly) => Some("post_only"),
-        // A market order is immediate-or-cancel by construction, and Upbit's
-        // market order types carry no `time_in_force` field to say it in.
+        // Immediate-or-cancel is implicit for Upbit market orders.
         (OrderType::Market, TimeInForce::ImmediateOrCancel) => None,
         (OrderType::Market, other) => {
             return Err(Error::invalid_request(
@@ -337,15 +306,10 @@ pub(crate) async fn balances(
         .collect()
 }
 
-/// Reads every open order, a page at a time.
+/// Reads open orders until a short page is returned.
 ///
-/// The common API asks for all of them and offers no cursor to ask for the
-/// rest. Upbit serves at most [`MAX_OPEN_ORDER_COUNT`] per page, so a single
-/// call would silently drop the orders past the first page. The walk ends on
-/// the first short page, and at [`MAX_OPEN_ORDER_PAGES`] with an error rather
-/// than reading on forever. An account with more resting orders than Upbit
-/// itself permits ends the walk against the rate limit, which surfaces as an
-/// error too.
+/// Each page contains at most [`MAX_OPEN_ORDER_COUNT`] orders. Reaching
+/// [`MAX_OPEN_ORDER_PAGES`] full pages returns an exchange error.
 pub(crate) async fn open_orders(
     credentials: &UpbitCredentials,
     http: &HttpTransport,
@@ -362,16 +326,7 @@ pub(crate) async fn open_orders(
     .await
 }
 
-/// Reads pages of open orders until one comes back short, or until the ceiling.
-///
-/// `read(page)` answers with the orders on the page it names, numbered from one,
-/// and a page holding fewer than [`MAX_OPEN_ORDER_COUNT`] is the last one. An
-/// exchange that never answers with one is a stalled walk and is reported as
-/// such, in the same error class the candle walk raises for a cursor that stops
-/// moving.
-///
-/// Separate from [`open_orders`] so that the ceiling is reachable in a test
-/// without a hundred round trips.
+/// Implements the bounded open-order page walk.
 async fn walk_open_orders<F, Fut>(read: F) -> Result<Vec<Order>>
 where
     F: Fn(u32) -> Fut,
@@ -422,10 +377,9 @@ pub(crate) async fn cancel_order(
 // Private WebSocket
 // ---------------------------------------------------------------------------
 
-/// The frame that opens a private subscription.
+/// Builds an account-wide `myOrder` and `myAsset` subscription frame.
 ///
-/// Naming no codes on `myOrder` is what asks for every market: the common API's
-/// account subscription is account-wide, and Upbit narrows only when asked.
+/// Omitting `codes` requests events across all markets.
 pub(crate) fn subscribe_frame(ticket: &str) -> Result<String> {
     let payload = serde_json::json!([
         { "ticket": ticket },
@@ -441,10 +395,10 @@ pub(crate) fn subscribe_frame(ticket: &str) -> Result<String> {
     })
 }
 
-/// Reads one private frame.
+/// Decodes one private WebSocket frame.
 ///
-/// A keepalive answer yields no events and no error. A wallet yields several,
-/// because Upbit publishes every changed asset in one `myAsset` frame.
+/// Keepalive responses produce no events. A `myAsset` frame produces one
+/// balance event per included asset.
 pub(crate) fn account_events(frame: &str) -> Result<Vec<AccountEvent>> {
     let object = stream::frame_object(frame)?;
 
@@ -501,7 +455,7 @@ mod tests {
 
     const ORDER_ID: &str = "ac2dc2a3-fce9-40a2-a4f6-5987c25c438f";
 
-    // https://global-docs.upbit.com/reference/websocket-myorder.md
+    // Representative private order frame used only by offline parsing tests.
     const MY_ORDER: &str = r#"{
       "type": "myOrder",
       "code": "KRW-BTC",
@@ -529,7 +483,7 @@ mod tests {
       "timestamp": 1781917323001
     }"#;
 
-    // https://global-docs.upbit.com/reference/websocket-myasset.md
+    // Representative private asset frame used only by offline parsing tests.
     const MY_ASSET: &str = r#"{
       "type": "myAsset",
       "asset_uuid": "00000000-0000-0000-0000-000000000003",
@@ -549,7 +503,7 @@ mod tests {
       "timestamp": 1781917323001
     }"#;
 
-    /// The claims as they come back off the wire.
+    /// Decoded test representation of the JWT claims.
     #[derive(Debug, Deserialize)]
     struct DecodedClaims {
         access_key: String,
@@ -569,10 +523,10 @@ mod tests {
         Market::spot(Exchange::Upbit, "BTC", "KRW")
     }
 
-    /// Reads a token back, checking the signature against the same secret.
+    /// Decodes a token after verifying its signature.
     fn verified_claims(token: &str, secret: &str) -> DecodedClaims {
         let mut validation = Validation::new(Algorithm::HS256);
-        // Upbit's claims carry no expiry, so there is nothing to validate.
+        // `Claims` has no expiry field.
         validation.required_spec_claims.clear();
         validation.validate_exp = false;
 
@@ -585,8 +539,7 @@ mod tests {
         .claims
     }
 
-    /// The claims without checking the signature, for asserting on a header
-    /// whose token was minted with a nonce the test did not choose.
+    /// Decodes claims from a generated authorization header.
     fn claims_of(authorization: &str) -> DecodedClaims {
         let token = authorization
             .strip_prefix("Bearer ")
@@ -646,8 +599,6 @@ mod tests {
 
     #[test]
     fn a_request_without_parameters_claims_no_hash_at_all() {
-        // Not the hash of the empty string: a hash claim with nothing to match
-        // against is what Upbit rejects.
         let token = token(&credentials(), "nonce-3", "").expect("a signable request");
         let claims = verified_claims(&token, SECRET_KEY);
 
@@ -705,7 +656,6 @@ mod tests {
             request.target(),
             "/v1/orders/open?market=KRW-BTC&states[]=wait&states[]=watch&page=1&limit=100"
         );
-        // The hash covers exactly the query the request carries.
         assert_eq!(
             claims_of(&authorization_of(&request)).query_hash.as_deref(),
             Some(hex::encode(Sha512::digest(request.query.as_bytes())).as_str())
@@ -754,7 +704,6 @@ mod tests {
                 r#"{"market":"KRW-BTC","ord_type":"limit","price":"100000000","side":"bid","volume":"0.01"}"#
             )
         );
-        // The body travels as JSON; the hash is still over the query form.
         assert_eq!(
             claims_of(&authorization_of(&request)).query_hash.as_deref(),
             Some(LIMIT_ORDER_HASH)
@@ -774,8 +723,6 @@ mod tests {
         )
         .expect("a signable request");
 
-        // A market buy spends quote and is `price`; a market sell offers base
-        // and is `market`.
         assert_eq!(
             buy.body.as_deref(),
             Some(r#"{"market":"KRW-BTC","ord_type":"price","price":"10000","side":"bid"}"#)
@@ -789,16 +736,13 @@ mod tests {
     #[test]
     fn a_size_upbit_cannot_express_is_refused_rather_than_reinterpreted() {
         let cases = [
-            // A limit order priced by the amount to spend.
             OrderRequest::limit(
                 btc_krw(),
                 Side::Buy,
                 Size::Quote(Decimal::from(10_000)),
                 Decimal::from(100_000_000),
             ),
-            // A market buy sized in the asset it is buying.
             OrderRequest::market(btc_krw(), Side::Buy, Size::Base(Decimal::ONE)),
-            // A market sell sized in the asset it is receiving.
             OrderRequest::market(btc_krw(), Side::Sell, Size::Quote(Decimal::from(10_000))),
         ];
 
@@ -856,7 +800,6 @@ mod tests {
             (TimeInForce::ImmediateOrCancel, Some("ioc")),
             (TimeInForce::FillOrKill, Some("fok")),
             (TimeInForce::PostOnly, Some("post_only")),
-            // Upbit's default, and it has no spelling of its own.
             (TimeInForce::GoodTilCancelled, None),
         ];
 
@@ -938,9 +881,7 @@ mod tests {
 
     #[test]
     fn a_value_that_would_change_the_query_it_signs_is_refused() {
-        // Nothing builds a parameter like this today; the check is what keeps
-        // that true, because an unencoded `&` would append a parameter Upbit
-        // never saw in the hash.
+        // `&` would change the signed parameter list.
         assert!(matches!(
             query(&[("uuid", "one&market=KRW-DOGE".to_string())]),
             Err(Error::InvalidRequest { field: "uuid", .. })
@@ -950,8 +891,7 @@ mod tests {
 
     #[test]
     fn an_authentication_failure_comes_back_as_upbits_own_verdict() {
-        // Upbit no longer publishes an error-code reference; this body is
-        // quoted from a live 401.
+        // Representative authentication error envelopes.
         for (name, message) in [
             ("invalid_access_key", "Invalid access key"),
             ("jwt_verification", "Failed to verify JWT token"),
@@ -979,7 +919,6 @@ mod tests {
 
         assert_eq!(value[0]["ticket"], "ticket-1");
         assert_eq!(value[1]["type"], "myOrder");
-        // No `codes`: every market the account trades.
         assert!(value[1].get("codes").is_none());
         assert_eq!(value[2]["type"], "myAsset");
         assert_eq!(value[3]["format"], "DEFAULT");
@@ -995,7 +934,6 @@ mod tests {
         assert_eq!(order.id, ORDER_ID);
         assert_eq!(order.market, btc_krw());
         assert_eq!(order.side, Side::Buy);
-        // `trade` with nothing remaining is a completed order.
         assert_eq!(order.status, OrderStatus::Filled);
         assert_eq!(
             order.created_at,
@@ -1011,7 +949,6 @@ mod tests {
             panic!("expected one event per asset");
         };
         assert_eq!(krw.asset, "KRW");
-        // Twenty significant digits, kept exactly.
         assert_eq!(krw.available.to_string(), "1386929.37231066771348207123");
         assert_eq!(btc.asset, "BTC");
         assert_eq!(btc.available, Decimal::new(1, 2));
@@ -1045,8 +982,7 @@ mod tests {
         ));
     }
 
-    /// One resting order. The walk reads how many came back, never what they
-    /// say, so every field here is filler.
+    /// Builds one placeholder order for pagination tests.
     fn resting_order() -> Order {
         Order {
             id: ORDER_ID.to_string(),
@@ -1084,10 +1020,7 @@ mod tests {
     async fn a_walk_that_never_reaches_a_short_page_gives_up_instead_of_spinning() {
         let asked = std::sync::atomic::AtomicU32::new(0);
 
-        // A `page` parameter the exchange ignored, or a cursor that stopped
-        // moving: a full page every time, for as long as it is asked. There is
-        // no timeout above this call, so a walk without a ceiling never returns
-        // and the caller never learns why.
+        // A full page forever represents stalled pagination.
         let error = walk_open_orders(|_| {
             asked.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             async { Ok(vec![resting_order(); MAX_OPEN_ORDER_COUNT as usize]) }

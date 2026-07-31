@@ -1,13 +1,8 @@
-//! One Rust API for several cryptocurrency exchanges.
+//! A common Rust API for Upbit, Bithumb, Binance, and Hyperliquid.
 //!
-//! `maxt` hides the differences between exchange APIs behind a single
-//! [`Client`], so reading a ticker, subscribing to trades, or placing an order
-//! looks the same on Upbit, Bithumb, Binance, and Hyperliquid.
-//!
-//! The exchanges are not identical, and the API does not pretend otherwise.
-//! Anything that would lose meaning once generalized stays on the exchange's
-//! own adapter as a typed method. Anything an exchange does not offer is
-//! reported as [`Error::Unsupported`].
+//! [`Client`] exposes operations with common semantics. Exchange-specific
+//! operations remain on the concrete types in [`adapters`], and unavailable
+//! operations return [`Error::Unsupported`].
 //!
 //! # Getting started
 //!
@@ -29,19 +24,16 @@
 //! # }
 //! ```
 //!
-//! Market data needs no credentials. Account and order calls do, and each
-//! adapter takes them in whatever form its own exchange uses.
+//! Public market data needs no credentials. Account and order operations do;
+//! each adapter documents the credential form it accepts.
 //!
-//! # Where things live
+//! # Main types
 //!
-//! - [`Client`]: the common API for market data, account, orders, derivatives.
-//! - [`adapters`]: one adapter per exchange, plus their exchange-specific
-//!   methods.
-//! - [`Feature`]: what an exchange can do, askable ahead of time with
-//!   [`Client::supports`].
-//! - [`Error`]: what can go wrong, split by what a caller can do about it.
-//!
-//! Runnable programs live in the repository's `examples/` directory.
+//! - [`Client`]: common market-data, account, order, and derivatives operations.
+//! - [`adapters`]: exchange constructors and exchange-specific operations.
+//! - [`Feature`]: capabilities reported by [`Client::supports`].
+//! - [`Error`]: validation, capability, authentication, exchange, transport,
+//!   and decoding failures.
 
 #![doc(html_no_source)]
 
@@ -71,21 +63,14 @@ pub use types::{
 
 /// The exact decimal type used for every price, quantity, and amount.
 ///
-/// Re-exported so callers need no direct dependency on `rust_decimal`, and
-/// cannot end up on a different version of it.
+/// Import this re-export when constructing values for `maxt`; a direct
+/// `rust_decimal` dependency is not required.
 pub use rust_decimal::Decimal;
 
-/// Every Markdown file in the repository, compiled.
+/// Repository Markdown included only while running documentation tests.
 ///
-/// The `docs/` tree and both READMEs carry Rust the reader is meant to copy,
-/// and nothing in the crate reached it: `cargo test --doc` collects only what
-/// `src/` writes. Six rounds of review each rebuilt a scratch crate by hand to
-/// find out whether those blocks still compiled, which is the shape of a check
-/// that exists in nobody's habit.
-///
-/// `cfg(doctest)` keeps these out of the rendered documentation. They exist so
-/// that a block a reader copies is a block CI compiled, in both editions, so
-/// that the Korean translation cannot drift away from the code it carries.
+/// This keeps Rust examples in the READMEs and `docs/` compiled without adding
+/// them to the rendered API documentation.
 #[cfg(doctest)]
 mod markdown {
     macro_rules! compiled {

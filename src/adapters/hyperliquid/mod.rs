@@ -1,4 +1,4 @@
-//! Hyperliquid, on-chain spot and perpetual futures.
+//! Hyperliquid spot and perpetual market adapter.
 
 mod native;
 mod parse;
@@ -30,35 +30,26 @@ pub(crate) const MAINNET_WEBSOCKET_URL: &str = "wss://api.hyperliquid.xyz/ws";
 pub(crate) const TESTNET_REST_BASE_URL: &str = "https://api.hyperliquid-testnet.xyz";
 pub(crate) const TESTNET_WEBSOCKET_URL: &str = "wss://api.hyperliquid-testnet.xyz/ws";
 
-/// Talks to Hyperliquid.
+/// Adapter for Hyperliquid spot and default perpetual markets.
 ///
-/// Both spot and perpetual markets live on one venue here, so one adapter
-/// serves both. The distinction is carried by
-/// [`MarketKind`](crate::MarketKind) on each [`Market`](crate::Market).
+/// Public market-data calls do not require a wallet. Account data, orders,
+/// margin changes, and private streams require
+/// [`HyperliquidAdapter::with_wallet`].
 ///
-/// Authentication is not an API key. Hyperliquid is an exchange on a chain, and
-/// private requests are signed with a wallet key. Supply the account address
-/// and a signing key with [`HyperliquidAdapter::with_wallet`].
+/// Markets are loaded from `meta` and `spotMeta`. HIP-3 DEXes and outcome
+/// markets are not exposed by this adapter.
 ///
-/// One shape to know about: [`Client::trades`](crate::Client::trades) is served
-/// by `recentTrades`, which takes no count and answers with at most ten, so a
-/// larger `limit` is refused rather than quietly under-served. The unbroken
-/// sequence is [`Feed::Trades`](crate::Feed::Trades).
+/// [`Client::trades`](crate::Client::trades) uses `recentTrades`, which exposes
+/// at most ten recent executions and no historical range. Use
+/// [`Feed::Trades`](crate::Feed::Trades) to collect a continuous trade stream.
 ///
-/// Two things Hyperliquid offers that the common API has no shape for live on
-/// this type instead: [`HyperliquidAdapter::non_funding_ledger`] and
+/// [`Ticker::last_price`](crate::Ticker::last_price) uses `midPx`, falling back
+/// to `markPx`; it is not the latest execution price. Use the trades API when
+/// an execution price and trade time are required.
+///
+/// Provider-specific data is available through
+/// [`HyperliquidAdapter::non_funding_ledger`] and
 /// [`HyperliquidAdapter::asset_context`].
-///
-/// ```
-/// use maxt::{Client, Feature, adapters::HyperliquidAdapter};
-///
-/// let client = Client::new(HyperliquidAdapter::new());
-///
-/// // Every public read is open with no wallet; the account half is not.
-/// assert!(client.supports(Feature::Trades));
-/// assert!(client.supports(Feature::TradeStream));
-/// assert!(!client.supports(Feature::Balances));
-/// ```
 #[derive(Debug, Clone)]
 pub struct HyperliquidAdapter {
     network: HyperliquidNetwork,
@@ -66,12 +57,8 @@ pub struct HyperliquidAdapter {
     connection: OnceCell<Connection>,
 }
 
-/// The HTTP client and the symbol table, both built on the first call.
-///
-/// Hyperliquid names most spot pairs by index, so `HYPE/USDC` is `@107` on the
-/// wire and a symbol cannot be translated without first reading the universe.
-/// The universe is read once and kept for the adapter's lifetime. Build a fresh
-/// adapter to pick up markets listed since.
+/// Lazily initialized HTTP transport and cached `meta`/`spotMeta` symbol table.
+/// A new adapter is required to refresh listed markets.
 #[derive(Debug, Clone)]
 struct Connection {
     http: HttpTransport,
@@ -120,23 +107,16 @@ impl HyperliquidAdapter {
         }
     }
 
-    /// Adds the wallet that account, order, and private stream calls need.
+    /// Configures the account and signing key used by private calls.
     ///
-    /// `address` is the account the requests act on. `private_key` is the hex
-    /// key that signs them, either the account's own key or an approved API
-    /// wallet key. The API wallet key is the safer choice, because it cannot
-    /// withdraw.
+    /// `address` is the account acted on. `private_key` is either that account's
+    /// key or an approved API wallet key. The key is used only for local signing
+    /// and is redacted from [`Debug`] output.
     ///
-    /// The key is used only to sign requests locally. It is never sent, and it
-    /// is redacted from this type's [`Debug`] output.
+    /// The values are validated when a private call is made. Invalid values
+    /// return [`Error::Auth`](crate::Error::Auth). Feature discovery treats the
+    /// private features as configured as soon as a wallet is present.
     #[must_use]
-    /// Neither value is checked here. A malformed address or key is reported
-    /// as [`Error::Auth`](crate::Error::Auth) by the first call that needs it,
-    /// not by this builder, which stays infallible so an adapter can be built
-    /// in a `const`-like position. [`Client::supports`](crate::Client::supports)
-    /// answers `true` for the private features as soon as a wallet is present,
-    /// because whether it is a *usable* wallet is not something this crate can
-    /// know without asking the exchange.
     pub fn with_wallet(
         mut self,
         address: impl Into<String>,
@@ -172,20 +152,19 @@ impl HyperliquidAdapter {
         }
     }
 
-    /// Reads a page of the account's non-funding ledger.
+    /// Reads account-wide non-funding ledger entries.
     ///
-    /// The ledger records deposits, withdrawals, transfers between wallets, and
-    /// liquidations.
+    /// Entries include deposits, withdrawals, transfers, and liquidations. They
+    /// are distinct from market-scoped [`FundingPayment`](crate::FundingPayment)
+    /// records. See [`HyperliquidLedgerEntry`].
     ///
-    /// Not part of the common API, and not a
-    /// [`FundingPayment`](crate::FundingPayment). Funding is a periodic charge
-    /// against a position in one market; these are the account's cash movements,
-    /// which belong to no market at all. Squeezing a withdrawal into the funding
-    /// shape would have to name a market it never touched, so it stays here
-    /// with a shape that fits. See [`HyperliquidLedgerEntry`].
+    /// Pass [`Page::next`] back as `cursor` until it is `None`.
     ///
-    /// Pages the same way [`Client::funding_payments`](crate::Client::funding_payments)
-    /// does: pass [`Page::next`] back as `cursor` until it is `None`.
+    /// # Errors
+    ///
+    /// Returns [`Error::Auth`](crate::Error::Auth) when no valid wallet is
+    /// configured. Invalid cursors, transport failures, exchange errors, and
+    /// payload changes are also returned.
     pub async fn non_funding_ledger(
         &self,
         from: Option<Timestamp>,
@@ -199,16 +178,18 @@ impl HyperliquidAdapter {
         rest::ledger(&connection.http, &user, from, to, cursor, limit).await
     }
 
-    /// Reads Hyperliquid's live context for one market.
+    /// Reads the current asset context for one market.
     ///
-    /// The context carries mark, mid, and oracle prices, the funding rate
-    /// currently accruing, and open interest.
-    ///
-    /// Not part of the common API. [`FundingRate`](crate::FundingRate) records
-    /// what funding *was* charged, which is a different question from what the
-    /// next charge is running at, and neither open interest nor an oracle price
-    /// has a common counterpart to be carried in. See
+    /// The context includes mid, mark, and oracle prices; the current funding
+    /// rate; open interest; and order precision. Historical market-rate
+    /// observations use [`FundingRate`](crate::FundingRate), while actual
+    /// account charges use [`FundingPayment`](crate::FundingPayment). See
     /// [`HyperliquidAssetContext`].
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for an unlisted or non-Hyperliquid market, a transport
+    /// or exchange failure, or an invalid response payload.
     pub async fn asset_context(&self, market: &Market) -> Result<HyperliquidAssetContext> {
         let connection = self.connect().await?;
         let raw = rest::context(&connection.http, &connection.universe, market).await?;
@@ -217,7 +198,7 @@ impl HyperliquidAdapter {
         native::asset_context(&raw, asset)
     }
 
-    /// Opens the HTTP client and reads the symbol table, once.
+    /// Initializes the HTTP client and symbol table once.
     async fn connect(&self) -> Result<&Connection> {
         self.connection
             .get_or_try_init(|| async {
@@ -229,11 +210,7 @@ impl HyperliquidAdapter {
             .await
     }
 
-    /// The account address and the key that signs for it.
-    ///
-    /// The address is lowercased here because Hyperliquid matches `user`
-    /// fields literally, and a checksummed address reads back as an empty
-    /// account with no error.
+    /// Returns the normalized account address and validated signing key.
     fn account(&self) -> Result<(String, &str)> {
         let wallet = self.wallet.as_ref().ok_or_else(sign::missing_wallet)?;
         let address = sign::check_wallet(&wallet.address, &wallet.private_key)?;
@@ -298,13 +275,7 @@ impl Adapter for HyperliquidAdapter {
         Box::pin(async move {
             let connection = self.connect().await?;
 
-            rest::ticker(
-                &connection.http,
-                &connection.universe,
-                &market,
-                Timestamp::now(),
-            )
-            .await
+            rest::ticker(&connection.http, &connection.universe, &market).await
         })
     }
 
@@ -347,8 +318,7 @@ impl Adapter for HyperliquidAdapter {
             .await?;
 
             let universe = connection.universe.clone();
-            // One decoder per connection: it carries the candle window that is
-            // still open, which is what lets a closed one be reported.
+            // Candle state is scoped to one connection and cleared on reconnect.
             let mut decoder = stream::Decoder::default();
 
             Ok(MarketStream::new(session.flat_map(move |command| {
@@ -410,8 +380,7 @@ impl Adapter for HyperliquidAdapter {
     fn place_order(&self, request: &OrderRequest) -> BoxFuture<'_, Result<Order>> {
         let request = request.clone();
         Box::pin(async move {
-            // Reads as a permission check, and is also what rejects a
-            // malformed wallet before a request is built.
+            // Validate the wallet before building the request.
             self.account()?;
             let connection = self.connect().await?;
 
@@ -514,17 +483,10 @@ impl Adapter for HyperliquidAdapter {
     }
 }
 
-/// Turns one connection event into however many market events it carried.
+/// Decodes one connection event into zero or more market events.
 ///
-/// A frame can hold several trades, a candle frame that opens a new window also
-/// settles the one before it, and a reconnect holds none, so the result is a
-/// list.
-///
-/// `decoder` is the one belonging to this connection, called in arrival order
-/// and keeping state between calls, which is how a candle window ending is
-/// recognised. A reconnect goes through it too: the window it was holding is
-/// from before a gap of unknown length, so it is dropped rather than settled by
-/// whatever arrives next.
+/// The decoder preserves candle state between frames and clears it on
+/// reconnect, because a gap prevents the prior window from being settled.
 fn market_events(
     command: Result<WsCommand>,
     universe: &Universe,
@@ -532,8 +494,7 @@ fn market_events(
 ) -> Vec<Result<MarketEvent>> {
     let text = match command {
         Ok(WsCommand::Text(text)) => text,
-        // Hyperliquid sends text only, but a compressing proxy in front of it
-        // does not always agree.
+        // Accept UTF-8 binary frames from intermediaries.
         Ok(WsCommand::Binary(bytes)) => match String::from_utf8(bytes) {
             Ok(text) => text,
             Err(err) => return vec![Err(Error::decode(format!("frame is not UTF-8: {err}")))],
@@ -551,7 +512,7 @@ fn market_events(
     }
 }
 
-/// The private half of [`market_events`].
+/// Decodes one private connection event into zero or more account events.
 fn account_events(command: Result<WsCommand>, universe: &Universe) -> Vec<Result<AccountEvent>> {
     let text = match command {
         Ok(WsCommand::Text(text)) => text,
@@ -574,10 +535,7 @@ mod tests {
     use super::*;
     use parse::tests::universe;
 
-    /// A one-minute candle frame for BTC, opening at `open_ms`.
-    ///
-    /// Cut from the `candle` channel read live on 2026-07-30, subscribed to
-    /// `{"type":"candle","coin":"BTC","interval":"1m"}`.
+    /// Builds a one-minute BTC candle frame opening at `open_ms`.
     fn candle_frame(open_ms: i64) -> String {
         format!(
             r#"{{"channel":"candle","data":{{"T":{},"c":100,"h":100,"i":"1m","l":100,"n":12,"o":100,"s":"BTC","t":{},"v":1}}}}"#,
@@ -588,10 +546,7 @@ mod tests {
 
     #[test]
     fn a_reconnect_drops_the_held_window_instead_of_settling_it_across_the_gap() {
-        // The connection was replaced, so the held frame is from before a gap of
-        // unknown length and its window may have ended unseen. Settling it with
-        // whatever arrives next would report a window's final state from a
-        // reading taken before the trades that finished it.
+        // A pre-gap candle cannot be settled from a post-gap frame.
         const WINDOW_ONE_MS: i64 = 1_785_397_500_000;
         const WINDOW_TWO_MS: i64 = 1_785_397_560_000;
 
@@ -605,9 +560,7 @@ mod tests {
         let events = market_events(Ok(WsCommand::Reconnected), &universe, &mut decoder);
         assert!(matches!(events.as_slice(), [Ok(MarketEvent::Reconnected)]));
 
-        // A later window opening after the gap settles nothing, because nothing
-        // is held any more. Without the drop this frame carries a settled bar
-        // ahead of it and the count here is two.
+        // Reconnect cleared the held candle, so only the new forming one emits.
         let events = market_events(text(candle_frame(WINDOW_TWO_MS)), &universe, &mut decoder);
         assert_eq!(
             events.len(),
@@ -620,8 +573,7 @@ mod tests {
         assert!(!forming.closed);
         assert_eq!(forming.open_time, Timestamp::from_millis(WINDOW_TWO_MS));
 
-        // And the window that opened after the gap still settles normally, so
-        // the drop cost one window rather than the feed.
+        // Candle settlement resumes within the new connection.
         let events = market_events(
             text(candle_frame(WINDOW_TWO_MS + 60_000)),
             &universe,
@@ -681,8 +633,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_private_call_without_a_wallet_says_so_before_it_reaches_the_network() {
-        // The wallet check runs ahead of the first connection, so an
-        // unauthenticated caller never spends a request finding out.
+        // Authentication fails before a network connection is attempted.
         let public = HyperliquidAdapter::new();
         let market = Market::perpetual(Exchange::Hyperliquid, "BTC", "USDC");
 

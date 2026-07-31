@@ -1,17 +1,12 @@
-//! Binance's WebSocket streams, public and private.
+//! Binance public and account WebSocket streams.
 //!
-//! Both venues are addressed through their *combined* stream endpoint, where
-//! every frame arrives wrapped as `{"stream": "btcusdt@trade", "data": {…}}`.
-//! The plain endpoint is one byte shorter to type and unusable here: a partial
-//! depth frame on spot carries no symbol of its own, so without the wrapper
-//! there is no way to say which book changed.
-//!
-//! USD-M futures splits those streams across two entry points on one host, and
-//! a subscription that spans both is opened as two sockets and merged. See
-//! [`entry_point_url`].
+//! Public data uses combined-stream wrappers so every payload has a stream
+//! name. USD-M routes feeds across `/public` and `/market` sockets.
 
+use std::collections::HashMap;
 use std::time::Duration;
 
+use futures_core::Stream;
 use futures_util::StreamExt;
 use futures_util::stream::select_all;
 use serde::Deserialize;
@@ -41,18 +36,11 @@ const DEPTH_STREAM: &str = "depth20@100ms";
 /// How long Binance keeps a listen key alive without being asked again.
 const LISTEN_KEY_LIFETIME: Duration = Duration::from_secs(60 * 60);
 
-/// What holds a Binance socket open when nothing is trading.
+/// Protocol-level keepalive and the minimum safe idle timeout.
 ///
-/// Binance is the one exchange here with no client-side text ping: its sockets
-/// read every text frame as a command and answer an unknown one with an error,
-/// so the keepalive has to be a protocol ping, which Binance's stack pongs
-/// without the API ever seeing it.
-///
-/// The floor is what matters. Binance drives the liveness itself, pinging the
-/// client every three minutes and hanging up only after ten minutes with no
-/// pong back. On an account that never moves, three minutes of silence is a
-/// perfectly healthy socket. Below that floor the idle timer would tear down
-/// and rebuild a working connection on a fixed cycle forever.
+/// Text frames are API commands, so the adapter sends protocol pings. The idle
+/// floor stays above Binance's server-ping interval to avoid reconnecting a
+/// healthy but quiet account stream.
 const HEARTBEAT: Heartbeat = Heartbeat {
     interval: Duration::from_secs(60),
     frame: HeartbeatFrame::Ping,
@@ -61,14 +49,7 @@ const HEARTBEAT: Heartbeat = Heartbeat {
     min_idle_timeout: Duration::from_secs(240),
 };
 
-/// Binance's own name for a feed on one venue.
-///
-/// Both venues publish every fill on `@trade`, under the same trade id
-/// `Client::trades` returns over REST. USD-M also offers `@aggTrade`, which
-/// collapses the fills that matched one taker order at one price into a single
-/// message carrying a second, unrelated id; `maxt` does not subscribe to it,
-/// because that second id space is what forces a caller to reconcile the two
-/// transports on something other than an id.
+/// Binance's stream suffix for one public feed.
 fn feed_name(venue: BinanceMarket, feed: Feed) -> Result<String> {
     Ok(match feed {
         Feed::Trades => "trade".to_string(),
@@ -101,32 +82,10 @@ fn interval_from_code(code: &str) -> Option<Interval> {
     })
 }
 
-/// The endpoint that carries one feed on one venue.
+/// The public endpoint that carries a feed.
 ///
-/// Binance serves USD-M market data from two entry points on
-/// `fstream.binance.com`, and decommissioned the unrouted `/stream` and `/ws`
-/// paths on 2026-04-23. `/public` carries what the matching engine pushes on
-/// change: `@trade`, `@depth*`, `@bookTicker`. `/market` carries what an
-/// aggregator produces: `@kline_*`, `@ticker`, `@aggTrade`, `@markPrice`,
-/// `@forceOrder`. A connection naming neither is served as if it had named
-/// `/public`.
-///
-/// Nothing rejects a mismatch. A socket on one entry point accepts a
-/// `SUBSCRIBE` for the other's streams, acknowledges it with
-/// `{"result": null, "id": 1}`, and then never sends a frame for it, which is
-/// why the endpoint has to be chosen per feed rather than per venue.
-///
-/// Measured 2026-07-30 over 25 s on BTCUSDT, one `SUBSCRIBE` naming all seven
-/// streams on each endpoint, counting frames by `stream` name:
-///
-/// | Endpoint | `@trade` | `@depth20@100ms` | `@bookTicker` | `@aggTrade` | `@kline_1m` | `@ticker` | `@markPrice@1s` |
-/// | --- | --- | --- | --- | --- | --- | --- | --- |
-/// | `/stream` | 141 | 229 | 896 | 0 | 0 | 0 | 0 |
-/// | `/public/stream` | 149 | 229 | 1993 | 0 | 0 | 0 | 0 |
-/// | `/market/stream` | 0 | 0 | 0 | 117 | 47 | 12 | 25 |
-///
-/// Spot is not split. Both entry points name the one spot endpoint, so a spot
-/// subscription always groups into a single socket.
+/// Spot uses one endpoint. USD-M routes trades and order books to `/public`,
+/// and tickers and candles to `/market`.
 fn entry_point_url(venue: BinanceMarket, feed: Feed) -> &'static str {
     match (venue, feed) {
         (BinanceMarket::Spot, _) => SPOT_WEBSOCKET_URL,
@@ -135,13 +94,7 @@ fn entry_point_url(venue: BinanceMarket, feed: Feed) -> &'static str {
     }
 }
 
-/// The stream names one subscription covers, grouped by the endpoint that
-/// carries them.
-///
-/// One group is one socket. Spot yields one; USD-M yields one or two,
-/// depending on whether the subscription spans both entry points. Groups come
-/// back in the order their endpoint was first named, and names within a group
-/// keep the subscription's market-then-feed order.
+/// Groups subscription names by endpoint; each group opens one socket.
 pub(super) fn stream_groups(
     adapter: &BinanceAdapter,
     subscription: &Subscription,
@@ -174,6 +127,18 @@ pub(super) fn stream_groups(
     }
 
     Ok(groups)
+}
+
+/// Markets keyed exactly as the combined-stream wrapper names them.
+fn subscribed_markets(
+    adapter: &BinanceAdapter,
+    subscription: &Subscription,
+) -> Result<HashMap<String, Market>> {
+    subscription
+        .markets()
+        .iter()
+        .map(|market| Ok((adapter.symbol(market)?.to_ascii_lowercase(), market.clone())))
+        .collect()
 }
 
 /// The frame each socket sends on connect and again after every reconnect,
@@ -230,7 +195,10 @@ struct RawKline {
 /// subscribe with `{"result": null, "id": 1}`, and USD-M announces a trade id
 /// it published no fill for as a `@trade` frame priced and sized at zero.
 /// Neither is something a caller should see.
-pub(super) fn decode(adapter: &BinanceAdapter, frame: &str) -> Result<Option<MarketEvent>> {
+pub(super) fn decode(
+    markets: &HashMap<String, Market>,
+    frame: &str,
+) -> Result<Option<MarketEvent>> {
     let value: Value = serde_json::from_str(frame)
         .map_err(|err| Error::decode(format!("unreadable binance frame: {err}")))?;
 
@@ -252,7 +220,11 @@ pub(super) fn decode(adapter: &BinanceAdapter, frame: &str) -> Result<Option<Mar
             "`{name}` is not a binance stream name: expected symbol@feed"
         )));
     };
-    let market = adapter.market(&symbol.to_ascii_uppercase())?;
+    let market = markets.get(symbol).cloned().ok_or_else(|| {
+        Error::decode(format!(
+            "binance frame names `{symbol}`, which was not in this socket's subscription"
+        ))
+    })?;
 
     let Some(data) = value.get("data") else {
         return Err(Error::decode(format!(
@@ -337,18 +309,34 @@ fn frame_error(error: &Value) -> Error {
     Error::exchange(EXCHANGE, code, message)
 }
 
+/// Merges split endpoint sessions and ends when any session ends.
+fn merge_until_any_ends<S>(sessions: Vec<S>) -> impl Stream<Item = S::Item>
+where
+    S: Stream + Send + Unpin,
+{
+    select_all(
+        sessions
+            .into_iter()
+            .map(|session| session.map(Some).chain(futures_util::stream::iter([None]))),
+    )
+    .take_while(|item| std::future::ready(item.is_some()))
+    .filter_map(std::future::ready)
+}
+
 /// Opens one socket per endpoint the subscription reaches and merges them.
 ///
 /// A USD-M subscription that names both a book feed and an aggregated one
 /// spans two entry points, and one socket cannot serve both. Each socket
 /// reconnects on its own, so such a subscription reports
 /// [`MarketEvent::Reconnected`] once per socket that comes back rather than
-/// once per outage. Dropping the stream closes every socket under it.
+/// once per outage. If either socket ends, the merged stream ends and drops the
+/// other socket instead of silently losing half its feeds.
 pub(super) async fn subscribe(
     adapter: &BinanceAdapter,
     subscription: &Subscription,
     config: &StreamConfig,
 ) -> Result<MarketStream> {
+    let markets = subscribed_markets(adapter, subscription)?;
     let mut sessions = Vec::new();
     for (url, frame) in subscribe_frames(adapter, subscription)? {
         sessions.push(
@@ -365,11 +353,10 @@ pub(super) async fn subscribe(
         );
     }
 
-    let adapter = adapter.clone();
-    Ok(MarketStream::new(select_all(sessions).filter_map(
-        move |item| {
+    Ok(MarketStream::new(
+        merge_until_any_ends(sessions).filter_map(move |item| {
             let event = match item {
-                Ok(WsCommand::Text(frame)) => decode(&adapter, &frame).transpose(),
+                Ok(WsCommand::Text(frame)) => decode(&markets, &frame).transpose(),
                 // Binance's public streams are text only; a binary frame means
                 // something changed on their side that `maxt` has not read.
                 Ok(WsCommand::Binary(_)) => Some(Err(Error::decode(
@@ -379,8 +366,8 @@ pub(super) async fn subscribe(
                 Err(error) => Some(Err(error)),
             };
             std::future::ready(event)
-        },
-    )))
+        }),
+    ))
 }
 
 // ---------------------------------------------------------------------------
@@ -418,17 +405,8 @@ enum RawAccountEvent {
         filled: String,
         #[serde(rename = "p")]
         price: String,
-        /// When the order was created, which is what
-        /// [`Order::created_at`] means.
-        ///
-        /// Spot publishes this alongside `T`, the transaction time of the
-        /// event in hand. They are equal on the report that opens an order
-        /// and diverge from the first fill on, so reading `T` would date a
-        /// resting order to whenever it last traded and disagree with the
-        /// same order read back over REST.
-        ///
-        /// Optional only because USD-M shares this reading and publishes no
-        /// `O` at all. Every spot `executionReport` carries one.
+        /// Spot order creation time `O`. Transaction time `T` is not a
+        /// substitute. Optional because the shared USD-M shape omits it.
         #[serde(rename = "O", default)]
         created_at: Option<i64>,
     },
@@ -447,12 +425,7 @@ enum RawAccountEvent {
     /// USD-M: the listen key this socket was opened with has lapsed.
     #[serde(rename = "listenKeyExpired")]
     ListenKeyExpired,
-    /// Spot: this socket's subscription is over.
-    ///
-    /// Binance sends it when the subscription is unsubscribed, when the session
-    /// logs out, and when the subscription expires. It is the only frame a spot
-    /// user data socket is guaranteed to produce on an account that never
-    /// trades, which is what makes it the proof that one is really connected.
+    /// Spot: the account subscription ended.
     #[serde(rename = "eventStreamTerminated")]
     EventStreamTerminated,
     /// Anything else Binance publishes on the same socket.
@@ -502,38 +475,15 @@ struct RawFuturesOrderUpdate {
     filled: String,
     #[serde(rename = "p")]
     price: String,
-    /// When the order was created, which USD-M does not publish and this
-    /// therefore never carries.
-    ///
-    /// The only clock in an `ORDER_TRADE_UPDATE` is `T`, the transaction time of
-    /// the event in hand, and on an order that rests and later fills that is the
-    /// fill. Reporting it as a creation time gave one order two different ages
-    /// depending on whether it was read here or over REST, drifting further
-    /// apart with every amendment. So this stays `None`, which
-    /// [`Order::created_at`] already carries the meaning of: the exchange did
-    /// not say. A USD-M order's age comes from the REST read, which does.
-    ///
-    /// Named after the field spot publishes rather than dropped, so that a
-    /// venue which starts sending one is read without a change here.
+    /// Order creation time. USD-M currently omits it; transaction time `T` is
+    /// not substituted because it dates the update rather than the order.
     #[serde(rename = "O", default)]
     created_at: Option<i64>,
 }
 
-/// One frame off a spot WebSocket API socket.
-///
-/// The socket carries two kinds of frame and every field here is optional
-/// because no frame has them all. An answer to a request carries `status` and
-/// either `result` or `error`; a pushed account event carries `subscriptionId`
-/// and `event`. `maxt` reads the answer only to find out whether the
-/// subscription took, and reads nothing from `result` beyond that.
-///
-/// Captured 2026-07-31 off `wss://ws-api.binance.com:443/ws-api/v3`:
-///
-/// ```text
-/// {"id":"1785442705539","status":200,"result":{"subscriptionId":0},"rateLimits":[…]}
-/// {"subscriptionId":0,"event":{"e":"eventStreamTerminated","E":1785442715366}}
-/// {"id":"st1","status":400,"error":{"code":-1021,"msg":"Timestamp for this request is outside of the recvWindow."}}
-/// ```
+/// A Spot WebSocket API response or pushed account event.
+/// Response fields and event fields are mutually exclusive, so they are
+/// optional in the shared envelope.
 #[derive(Debug, Deserialize)]
 struct RawWsApiFrame {
     /// Present on an answer, absent on a pushed event.
@@ -549,15 +499,8 @@ struct RawWsApiError {
     msg: String,
 }
 
-/// Reads one private frame into the events it carries.
-///
-/// One frame can describe several balances, so this returns a list. An empty
-/// list means the frame was about something `maxt` does not model.
-///
-/// The two venues are framed differently and neither wrapper is optional. Spot
-/// speaks the WebSocket API, which wraps every event and answers the subscribe
-/// request on the same socket; USD-M pushes bare events down a socket that was
-/// authenticated by its URL.
+/// Decodes one private frame. Balance frames can expand into several events;
+/// unsupported event types return an empty list.
 pub(super) fn decode_account(adapter: &BinanceAdapter, frame: &str) -> Result<Vec<AccountEvent>> {
     match adapter.venue() {
         BinanceMarket::Spot => decode_spot_account(adapter, frame),
@@ -567,18 +510,8 @@ pub(super) fn decode_account(adapter: &BinanceAdapter, frame: &str) -> Result<Ve
     }
 }
 
-/// Reads one frame off a spot WebSocket API socket.
-///
-/// A refused subscription is an error rather than silence. Binance answers a
-/// rejected `userDataStream.subscribe.signature` with a frame and then leaves
-/// the socket open and empty, and an account that never trades is empty on a
-/// working socket too, so a consumer told nothing could not tell them apart.
-///
-/// The refusal keeps Binance's own code rather than becoming
-/// [`Error::Auth`](crate::Error::Auth): the frame's `status` and `code` are
-/// what say whether the secret is wrong (`-1022`), the key type is
-/// (`-2028`), or only the clock is (`-1021`), and the three want different
-/// things done about them.
+/// Reads a Spot WebSocket API response or account event.
+/// A refused subscription keeps Binance's HTTP status and exchange code.
 fn decode_spot_account(adapter: &BinanceAdapter, frame: &str) -> Result<Vec<AccountEvent>> {
     let raw: RawWsApiFrame = parse::json(frame, "user data frame")?;
 
@@ -620,14 +553,8 @@ fn decode_account_event(
                 let cross = parse::decimal(&raw.cross_wallet_balance, "cw")?;
                 Ok(AccountEvent::Balance(Balance {
                     asset: raw.asset.to_ascii_uppercase(),
-                    // This event carries only `wb` and `cw`, never the free
-                    // balance the REST account read reports. `cw` is the wallet
-                    // less whatever is ring-fenced by isolated positions, so it
-                    // still counts margin held by open *cross* positions and is
-                    // therefore an upper bound on what is free to trade: the
-                    // same account read over REST will report less. Re-read
-                    // there when the exact figure matters; Binance publishes
-                    // nothing here that would narrow it.
+                    // The stream omits free balance. `cw` is the closest value
+                    // available but can include margin held by cross positions.
                     available: cross,
                     locked: (wallet - cross).max(rust_decimal::Decimal::ZERO),
                 }))
@@ -675,11 +602,8 @@ fn decode_account_event(
                 created_at: created_at.map(parse::millis),
             })]
         }
-        // Both are Binance ending the subscription, pushed as an event rather
-        // than answered as an error, and neither carries a message of its own.
-        // The event name is the code, because that is the whole of what Binance
-        // said and a caller telling the two apart is telling apart a key that
-        // lapsed from a stream Binance closed.
+        // Termination events have no message; their event names remain distinct
+        // exchange error codes.
         RawAccountEvent::ListenKeyExpired => {
             return Err(Error::exchange(
                 EXCHANGE,
@@ -708,19 +632,8 @@ pub(super) async fn subscribe_account(
     }
 }
 
-/// Opens a spot user data stream over the WebSocket API.
-///
-/// There is no listen key and so nothing to keep alive: Binance removed
-/// `POST /api/v3/userDataStream` on 2026-02-20 07:00 UTC and the host has
-/// answered it `410 Gone` ever since, measured 2026-07-31. The socket opens
-/// unauthenticated and the first frame out names the account.
-///
-/// Verified 2026-07-31 against a live HMAC-SHA-256 key: the subscribe was
-/// answered `{"status":200,"result":{"subscriptionId":0}}`, the socket stayed
-/// open through 150 s of silence on an account with no balances and no open
-/// orders, and a `userDataStream.unsubscribe` at the end of it was answered by
-/// a pushed `eventStreamTerminated`, which is what proves the socket was still
-/// carrying that account's events rather than merely still open.
+/// Opens a Spot account stream on the WebSocket API.
+/// Spot uses a signed subscription frame and no listen key.
 async fn subscribe_spot_account(
     adapter: &BinanceAdapter,
     config: &StreamConfig,
@@ -732,17 +645,7 @@ async fn subscribe_spot_account(
     ))
 }
 
-/// How a spot account socket is opened, and how every one of them is
-/// authenticated.
-///
-/// The credential is in the first frame out rather than in the URL or a header,
-/// which is what the WebSocket API's `userDataStream.subscribe.signature` takes,
-/// and that frame signs the millisecond clock it was built at. One signature
-/// therefore subscribes one socket: a reconnect that re-sent the frame it first
-/// subscribed with would be refused `-1021` once the outage outlasted
-/// `recvWindow`, and the reconnect loop would replay that dead frame onto every
-/// socket after it. So the frame is signed per handshake, and what a reconnect
-/// presents is as fresh as what the first connection did.
+/// Builds a Spot account connection that signs a fresh frame per handshake.
 fn spot_account_connect(adapter: &BinanceAdapter) -> Result<WsConnect> {
     // Cloned into the signing closure below, which outlives this call: it is
     // called again for every reconnect.
@@ -775,12 +678,8 @@ async fn subscribe_usd_m_account(
     )
     .await?;
 
-    // A listen key lapses an hour after it was last extended, which would end
-    // the stream mid-session with nothing said. This channel is both halves of
-    // the refresher's contract with the stream: it carries a failed extension
-    // out to the consumer, and its closing is how dropping the stream stops the
-    // refresher, at once, rather than at the end of whatever sleep the
-    // refresher happened to be in.
+    // The channel forwards a refresh failure and stops the task when the stream
+    // is dropped.
     let (failures, failed) = mpsc::channel(1);
     tokio::spawn(refresh_listen_key(adapter.clone(), key, failures));
 
@@ -810,20 +709,14 @@ fn account_events(
     })
 }
 
-/// Merges the refresher's one possible failure into the socket's own events.
-///
-/// The socket alone decides when the stream is over. A refresher still sleeping
-/// on a healthy key must not hold a subscription open past the connection
-/// giving up, or the consumer waits forever on a stream that has nothing left
-/// to say.
+/// Merges a listen-key refresh failure without keeping a finished socket open.
 fn with_refresher_failures(
     events: futures_util::stream::BoxStream<'static, Result<AccountEvent>>,
     failed: mpsc::Receiver<Error>,
 ) -> impl futures_core::Stream<Item = Result<AccountEvent>> + Send {
     futures_util::stream::unfold((events, failed), |(mut events, mut failed)| async move {
         tokio::select! {
-            // A failure already waiting is reported before the next frame: it
-            // says the socket is on borrowed time, which is worth knowing early.
+            // Report an already queued refresh failure before another frame.
             biased;
             Some(error) = failed.recv() => Some((Err(error), (events, failed))),
             item = events.next() => item.map(|item| (item, (events, failed))),
@@ -831,14 +724,7 @@ fn with_refresher_failures(
     })
 }
 
-/// Waits out one refresh interval, unless the stream goes first.
-///
-/// `false` once the consumer has dropped the stream and taken the receiving
-/// half of `failures` with it, which is the whole reason to stop refreshing.
-/// Waiting out the half-hour before noticing would leave a task alive, holding
-/// a cloned adapter, for up to that long after the stream it serves is gone,
-/// and a process that opens and drops account streams accumulates one per
-/// stream.
+/// Waits for the refresh interval, or returns `false` when the stream is dropped.
 async fn due(interval: Duration, failures: &mpsc::Sender<Error>) -> bool {
     tokio::select! {
         () = tokio::time::sleep(interval) => true,
@@ -846,20 +732,8 @@ async fn due(interval: Duration, failures: &mpsc::Sender<Error>) -> bool {
     }
 }
 
-/// Keeps the listen key behind an open user data stream from lapsing.
-///
-/// Runs until the stream is dropped or an extension fails. A failure is
-/// reported to the consumer, because the socket stays up until the key actually
-/// lapses. Binance then rejects every reconnect, and a consumer told nothing
-/// would await a stream that is never going to speak again.
-///
-/// The failure is forwarded as it arrived rather than restated as an
-/// [`Error::Auth`](crate::Error::Auth). Binance's own verdict is what says
-/// whether the key is gone, the key was never this account's, or the network
-/// was merely down for a moment, and a stream that flattened the three would
-/// leave a caller unable to tell a lost subscription from a blip. What it costs
-/// is stated on the provider page: an extension that keeps failing ends the
-/// stream's usefulness within the hour.
+/// Extends a USD-M listen key until the stream is dropped or a refresh fails.
+/// The first failure is forwarded unchanged to the account stream.
 async fn refresh_listen_key(
     adapter: BinanceAdapter,
     key: super::BinanceListenKey,
@@ -940,10 +814,7 @@ mod tests {
       }
     }"#;
 
-    // Captured 2026-07-30 off wss://fstream.binance.com/stream, one SUBSCRIBE
-    // frame for `dogeusdt@trade`. Trade 3417626319 is in
-    // https://fapi.binance.com/fapi/v1/trades?symbol=DOGEUSDT with the same
-    // price, quantity, time and `isBuyerMaker`.
+    // A representative USD-M combined-stream trade frame.
     const FUTURES_TRADE_FRAME: &str = r#"{
       "stream": "dogeusdt@trade",
       "data": {
@@ -960,11 +831,7 @@ mod tests {
       }
     }"#;
 
-    // Captured 2026-07-30 off the same socket, `ethusdt@trade`. USD-M spends
-    // trade ids it publishes no fill for and announces each one like this.
-    // Trade 8520420588 falls inside the window
-    // https://fapi.binance.com/fapi/v1/trades?symbol=ETHUSDT returned
-    // (8520419586 to 8520420589) and is not in it.
+    // USD-M can announce a consumed trade id with zero price and quantity.
     const FUTURES_SPENT_TRADE_ID_FRAME: &str = r#"{
       "stream": "ethusdt@trade",
       "data": {
@@ -981,10 +848,7 @@ mod tests {
       }
     }"#;
 
-    // Spot pushes every user data event down the WebSocket API socket inside
-    // this envelope. The envelope is not optional: an event on its own is what
-    // the removed listen key transport sent, and Binance's current page shows
-    // every example wrapped.
+    // Spot WebSocket API events use a subscription envelope.
     // https://developers.binance.com/docs/binance-spot-api-docs/user-data-stream
     const SPOT_BALANCE_FRAME: &str = r#"{
       "subscriptionId": 0,
@@ -998,28 +862,21 @@ mod tests {
       }
     }"#;
 
-    // Captured verbatim on 2026-07-31 off `wss://ws-api.binance.com:443/ws-api/v3`,
-    // by subscribing with `userDataStream.subscribe.signature` and then sending
-    // `userDataStream.unsubscribe`. On an account with no balances and no open
-    // orders this is the only frame the socket will produce, which is what makes
-    // it the proof that one is connected rather than merely open.
+    // Spot reports a terminated user-data subscription as an event.
     const SPOT_STREAM_TERMINATED: &str =
         r#"{"subscriptionId":0,"event":{"e":"eventStreamTerminated","E":1785442936161}}"#;
 
-    // Captured verbatim on 2026-07-31 off the same socket: what Binance answers
-    // a `userDataStream.subscribe.signature` that took.
+    // Successful Spot account-subscription response.
     const SPOT_SUBSCRIBE_ACCEPTED: &str = r#"{"id":"1785442705539","status":200,
       "result":{"subscriptionId":0},
       "rateLimits":[{"rateLimitType":"REQUEST_WEIGHT","interval":"MINUTE","intervalNum":1,"limit":6000,"count":4}]}"#;
 
-    // Captured verbatim on 2026-07-31 off the same socket, by sending a frame
-    // signed ninety seconds earlier: what a replayed subscribe is answered with.
+    // Spot response to a subscription whose timestamp is stale.
     const SPOT_SUBSCRIBE_STALE: &str = r#"{"id":"st1","status":400,
       "error":{"code":-1021,"msg":"Timestamp for this request is outside of the recvWindow."},
       "rateLimits":[{"rateLimitType":"REQUEST_WEIGHT","interval":"MINUTE","intervalNum":1,"limit":6000,"count":16}]}"#;
 
-    // Captured verbatim on 2026-07-31 off the same socket, by sending
-    // `session.logon` with this HMAC-SHA-256 key.
+    // Spot response when HMAC credentials are used with `session.logon`.
     const SPOT_LOGON_REFUSED: &str = r#"{"id":"l1","status":400,
       "error":{"code":-2028,"msg":"HMAC-SHA-256 API key is not supported."}}"#;
 
@@ -1170,6 +1027,45 @@ mod tests {
             .feed(Feed::Candles(Interval::Min1))
     }
 
+    fn decode_for(
+        adapter: &BinanceAdapter,
+        market: Market,
+        frame: &str,
+    ) -> Result<Option<MarketEvent>> {
+        let subscription = Subscription::new().market(market).feed(Feed::Trades);
+        decode(&subscribed_markets(adapter, &subscription)?, frame)
+    }
+
+    fn decode_spot(frame: &str) -> Result<Option<MarketEvent>> {
+        decode_for(
+            &spot(),
+            Market::spot(Exchange::Binance, "BNB", "BTC"),
+            frame,
+        )
+    }
+
+    fn decode_perp(frame: &str) -> Result<Option<MarketEvent>> {
+        decode_for(
+            &perp(),
+            Market::perpetual(Exchange::Binance, "DOGE", "USDT"),
+            frame,
+        )
+    }
+
+    #[tokio::test]
+    async fn a_split_subscription_ends_when_either_socket_ends() {
+        type TestStream = std::pin::Pin<Box<dyn futures_core::Stream<Item = u8> + Send + 'static>>;
+
+        let ending: TestStream = Box::pin(futures_util::stream::iter([1]));
+        let still_open: TestStream = Box::pin(futures_util::stream::pending());
+
+        let items: Vec<_> = merge_until_any_ends(vec![ending, still_open])
+            .collect()
+            .await;
+
+        assert_eq!(items, [1]);
+    }
+
     #[test]
     fn spot_names_every_market_and_feed_in_lowercase_on_one_socket() {
         let subscription = subscription(Market::spot(Exchange::Binance, "BNB", "BTC"))
@@ -1195,12 +1091,19 @@ mod tests {
         );
     }
 
-    /// USD-M serves `@trade` and `@depth*` only under `/public`, and
-    /// `@kline_*` and `@ticker` only under `/market`. Measured 2026-07-30: a
-    /// `/public/stream` socket subscribed to all four returned 149 `@trade`
-    /// and 229 `@depth20@100ms` frames in 25 s and zero `@kline_1m` or
-    /// `@ticker`; a `/market/stream` socket returned 47 and 12 of those and
-    /// zero of the first two. Both acknowledged the whole subscription.
+    #[test]
+    fn a_non_ascii_spot_asset_is_escaped_by_the_subscription_json() {
+        let subscription = Subscription::new()
+            .market(Market::spot(Exchange::Binance, "币安人生", "USDT"))
+            .feed(Feed::Trades);
+
+        let frames = subscribe_frames(&spot(), &subscription).expect("a valid subscription");
+        let value: Value = serde_json::from_str(&frames[0].1).expect("valid JSON");
+
+        assert_eq!(value["params"], serde_json::json!(["币安人生usdt@trade"]));
+    }
+
+    /// USD-M routes trades and books to `/public`, and tickers and candles to `/market`.
     #[test]
     fn usd_m_sends_each_feed_to_the_entry_point_that_carries_it() {
         let subscription = Subscription::new()
@@ -1230,10 +1133,7 @@ mod tests {
         );
     }
 
-    /// Binance decommissioned the unrouted USD-M paths on 2026-04-23. A socket
-    /// that names no entry point is served as if it had named `/public`, so it
-    /// acknowledges a `@kline_*` or `@ticker` subscription and then delivers
-    /// nothing for it, with no error and no close.
+    /// Every USD-M feed uses an explicit `/public` or `/market` entry point.
     #[test]
     fn no_usd_m_socket_opens_on_a_path_that_names_no_entry_point() {
         for feed in [
@@ -1257,8 +1157,7 @@ mod tests {
             feed_name(BinanceMarket::Spot, Feed::Trades).expect("a feed"),
             "trade"
         );
-        // Not `aggTrade`: it numbers its messages out of a second id space
-        // that no REST call answers, and on 2026-07-30 it delivered nothing.
+        // `aggTrade` has a different id space and is not the common trade feed.
         assert_eq!(
             feed_name(BinanceMarket::UsdMFutures, Feed::Trades).expect("a feed"),
             "trade"
@@ -1329,7 +1228,7 @@ mod tests {
 
     #[test]
     fn a_trade_frame_becomes_a_trade_on_the_market_its_stream_names() {
-        let Some(MarketEvent::Trade(trade)) = decode(&spot(), SPOT_TRADE_FRAME).expect("a frame")
+        let Some(MarketEvent::Trade(trade)) = decode_spot(SPOT_TRADE_FRAME).expect("a frame")
         else {
             panic!("expected a trade event");
         };
@@ -1341,9 +1240,54 @@ mod tests {
     }
 
     #[test]
-    fn a_futures_trade_lands_on_a_perpetual_market_under_its_rest_id() {
+    fn an_ambiguous_stream_symbol_uses_the_market_that_was_subscribed() {
+        for (base, quote, symbol) in [("ADA", "EUR", "adaeur"), ("USDT", "USD", "usdtusd")] {
+            let market = Market::spot(Exchange::Binance, base, quote);
+            let frame = SPOT_TRADE_FRAME.replace("bnbbtc", symbol);
+            let Some(MarketEvent::Trade(trade)) =
+                decode_for(&spot(), market.clone(), &frame).expect("a trade frame")
+            else {
+                panic!("expected a trade event");
+            };
+
+            assert_eq!(trade.market, market);
+        }
+    }
+
+    #[test]
+    fn a_new_quote_asset_stream_uses_the_market_that_was_subscribed() {
+        let frame = FUTURES_TRADE_FRAME.replace("dogeusdt@trade", "btcu@trade");
+        let Some(MarketEvent::Trade(trade)) = decode_for(
+            &perp(),
+            Market::perpetual(Exchange::Binance, "BTC", "U"),
+            &frame,
+        )
+        .expect("a trade frame") else {
+            panic!("expected a trade event");
+        };
+
+        assert_eq!(
+            trade.market,
+            Market::perpetual(Exchange::Binance, "BTC", "U")
+        );
+    }
+
+    #[test]
+    fn a_non_ascii_stream_frame_uses_the_market_that_was_subscribed() {
+        let market = Market::spot(Exchange::Binance, "币安人生", "USDT");
+        let frame = SPOT_TRADE_FRAME.replace("bnbbtc", "币安人生usdt");
         let Some(MarketEvent::Trade(trade)) =
-            decode(&perp(), FUTURES_TRADE_FRAME).expect("a frame")
+            decode_for(&spot(), market.clone(), &frame).expect("a trade frame")
+        else {
+            panic!("expected a trade event");
+        };
+
+        assert_eq!(trade.market, market);
+    }
+
+    #[test]
+    fn a_futures_trade_lands_on_a_perpetual_market_under_its_rest_id() {
+        let Some(MarketEvent::Trade(trade)) = decode_perp(FUTURES_TRADE_FRAME).expect("a frame")
         else {
             panic!("expected a trade event");
         };
@@ -1364,14 +1308,19 @@ mod tests {
     #[test]
     fn a_spent_futures_trade_id_is_not_reported_as_a_trade_at_zero() {
         assert_eq!(
-            decode(&perp(), FUTURES_SPENT_TRADE_ID_FRAME).expect("a frame"),
+            decode_for(
+                &perp(),
+                Market::perpetual(Exchange::Binance, "ETH", "USDT"),
+                FUTURES_SPENT_TRADE_ID_FRAME,
+            )
+            .expect("a frame"),
             None
         );
     }
 
     #[test]
     fn a_streamed_candle_says_for_itself_whether_it_has_closed() {
-        let Some(MarketEvent::Candle(candle)) = decode(&spot(), SPOT_KLINE_FRAME).expect("a frame")
+        let Some(MarketEvent::Candle(candle)) = decode_spot(SPOT_KLINE_FRAME).expect("a frame")
         else {
             panic!("expected a candle event");
         };
@@ -1390,8 +1339,7 @@ mod tests {
 
     #[test]
     fn a_partial_depth_frame_becomes_a_sorted_book() {
-        let Some(MarketEvent::OrderBook(book)) =
-            decode(&spot(), SPOT_DEPTH_FRAME).expect("a frame")
+        let Some(MarketEvent::OrderBook(book)) = decode_spot(SPOT_DEPTH_FRAME).expect("a frame")
         else {
             panic!("expected an order book event");
         };
@@ -1405,7 +1353,7 @@ mod tests {
     #[test]
     fn a_subscribe_acknowledgement_is_not_reported_as_market_data() {
         assert!(
-            decode(&spot(), r#"{"result":null,"id":1}"#)
+            decode_spot(r#"{"result":null,"id":1}"#)
                 .expect("a control frame")
                 .is_none()
         );
@@ -1413,8 +1361,7 @@ mod tests {
 
     #[test]
     fn an_error_frame_carries_binances_own_code_and_message() {
-        let error = decode(
-            &spot(),
+        let error = decode_spot(
             r#"{"error":{"code":2,"msg":"Invalid request: request ID must be an unsigned integer"},"id":1}"#,
         )
         .expect_err("an error frame");
@@ -1428,21 +1375,18 @@ mod tests {
     #[test]
     fn a_frame_maxt_cannot_place_is_an_error_not_a_silent_drop() {
         assert!(matches!(
-            decode(&spot(), r#"{"data":{"e":"trade"}}"#),
+            decode_spot(r#"{"data":{"e":"trade"}}"#),
             Err(Error::Decode { .. })
         ));
         assert!(matches!(
-            decode(&spot(), r#"{"stream":"bnbbtc","data":{}}"#),
+            decode_spot(r#"{"stream":"bnbbtc","data":{}}"#),
             Err(Error::Decode { .. })
         ));
         assert!(matches!(
-            decode(&spot(), r#"{"stream":"bnbbtc@somethingNew","data":{}}"#),
+            decode_spot(r#"{"stream":"bnbbtc@somethingNew","data":{}}"#),
             Err(Error::Decode { .. })
         ));
-        assert!(matches!(
-            decode(&spot(), "not json"),
-            Err(Error::Decode { .. })
-        ));
+        assert!(matches!(decode_spot("not json"), Err(Error::Decode { .. })));
     }
 
     #[test]
@@ -1625,13 +1569,7 @@ mod tests {
         assert!(!carry_on);
     }
 
-    /// A spot account socket opens on the WebSocket API host with no
-    /// credential in the URL, and names the account in its first frame.
-    ///
-    /// The old shape put a listen key in the URL of the market data host and
-    /// minted it at `POST /api/v3/userDataStream`, which Binance removed on
-    /// 2026-02-20 07:00 UTC and now answers `410 Gone`. Restoring either half
-    /// fails here.
+    /// Spot account credentials are carried in the first frame, not the URL.
     #[test]
     fn a_spot_account_socket_opens_on_the_websocket_api_and_names_the_account_in_a_frame() {
         let adapter = spot().with_credentials("key", "secret");
@@ -1660,20 +1598,7 @@ mod tests {
         assert!(connect.heartbeat.is_some());
     }
 
-    /// Every socket a spot account stream opens subscribes with a signature
-    /// minted for it.
-    ///
-    /// The frame signs the millisecond clock it was built at, and Binance
-    /// refuses it `-1021` once `recvWindow` has passed, measured 2026-07-31 at
-    /// 90 s against a window of 60 000 ms. A stream that kept the frame it
-    /// first subscribed with would replay a dead signature onto every socket
-    /// after a longer outage, and the refusal reaches the consumer over and
-    /// over instead of the account's events.
-    ///
-    /// What is asserted is that the frames differ eventually, never how fast
-    /// the clock moves: the deadline is loose enough to mean nothing but
-    /// "never", and a frame captured once at construction never differs however
-    /// long it is given.
+    /// Each Spot account handshake signs a frame with a fresh timestamp.
     #[test]
     fn every_spot_account_socket_signs_its_own_subscribe_frame() {
         let adapter = spot().with_credentials("key", "secret");
@@ -1693,14 +1618,7 @@ mod tests {
         assert!(differed, "every mint returned the same frame: {first:?}");
     }
 
-    /// Captured 2026-07-31 off
-    /// `wss://fstream.binance.com/private/ws?listenKey=<key>&events=…`, by
-    /// sending `DELETE /fapi/v1/listenKey` while the socket was open. The key
-    /// itself is replaced by a placeholder of the same length; nothing reads
-    /// that field.
-    ///
-    /// Binance's own page prints `E` as a number here. The wire sends a string,
-    /// which is why this fixture is the capture and not the page.
+    /// A USD-M listen-key expiry event; its unused `E` field may be a string.
     const FUTURES_LISTEN_KEY_EXPIRED: &str = r#"{"e": "listenKeyExpired","E": "1785449618659","listenKey": "0000000000000000000000000000000000000000000000000000000000000000"}"#;
 
     #[test]
@@ -1716,33 +1634,7 @@ mod tests {
         );
     }
 
-    /// A USD-M socket receives only the events its URL's `events` filter names,
-    /// and the filter is exhaustive: measured 2026-07-31 on four sockets
-    /// sharing one listen key, the three whose filter named `listenKeyExpired`
-    /// (or named nothing at all) received it when the key was deleted, and the
-    /// one filtered to `ORDER_TRADE_UPDATE/ACCOUNT_UPDATE` did not.
-    ///
-    /// So an event the decoder acts on and the filter does not name is an event
-    /// the decoder can never see, and the handler written for it is dead. That
-    /// is what shipped: `listenKeyExpired` was decoded, mapped, and tested, and
-    /// never requested. An event named and not acted on is the mirror waste: a
-    /// frame subscribed to and thrown away.
-    ///
-    /// The table below is Binance's published USD-M event list plus
-    /// `eventStreamTerminated`, the one event acted on and deliberately not
-    /// named. It ends a WebSocket API session, which only the spot socket has,
-    /// so USD-M never publishes it; the decoder the two venues share acts on it
-    /// all the same, and naming it in a USD-M filter would ask for a frame that
-    /// cannot arrive. It is a row here rather than an omission, so the
-    /// exemption is stated and not merely invisible.
-    ///
-    /// A row `maxt` drops names its event and carries nothing else, because
-    /// `decode_account` routes on `e` alone and the fields beside it are never
-    /// read. The three it acts on carry their captured payloads instead.
-    ///
-    /// The trailing loop is what stops the table from being a hand-maintained
-    /// list the filter can outgrow: an event added to the filter and to no row
-    /// here fails.
+    /// The USD-M event filter and decoder must cover the same event set.
     #[test]
     fn the_usd_m_filter_and_the_decoder_name_the_same_events() {
         /// Acted on, and not asked for, because USD-M cannot send it.
@@ -1797,11 +1689,7 @@ mod tests {
         }
     }
 
-    /// The one frame a spot user data socket is guaranteed to produce on an
-    /// account that never trades, and so the only proof available that the
-    /// socket is carrying that account rather than merely open. A stream that
-    /// swallowed it would leave a consumer waiting on a subscription Binance
-    /// has already ended.
+    /// A Spot termination event ends the account stream.
     #[test]
     fn a_terminated_spot_subscription_ends_the_stream_rather_than_going_quiet() {
         let error =
@@ -1814,16 +1702,7 @@ mod tests {
         assert!(error.to_string().contains("subscribe again"), "{error}");
     }
 
-    /// Binance answers a refused subscription and then leaves the socket open
-    /// and silent, and an account with no balances and no open orders is silent
-    /// on a working socket too. A consumer told nothing could not tell the two
-    /// apart, so the refusal is an error on the stream.
-    ///
-    /// It carries Binance's own code rather than becoming
-    /// [`Error::Auth`](crate::Error::Auth), and these two are why: a stale
-    /// timestamp and a key of the wrong type are both refusals of the same
-    /// frame, and a caller who cannot tell them apart cannot tell a clock
-    /// worth fixing from a key worth replacing.
+    /// A refused Spot subscription keeps Binance's status, code, and message.
     #[test]
     fn a_refused_spot_subscription_reaches_the_consumer_with_binances_own_code() {
         for (frame, expected) in [
@@ -1843,12 +1722,10 @@ mod tests {
                 panic!("expected the exchange's own verdict, got {error:?}");
             };
             assert_eq!(code, expected, "{error:?}");
-            // The status is inside the frame on this socket, not on an HTTP
-            // response, and it is what classifies the refusal.
+            // The WebSocket frame carries the HTTP-style status.
             assert_eq!(*status, Some(400), "{error:?}");
             assert_eq!(*kind, crate::ExchangeErrorKind::Rejected, "{error:?}");
-            // Binance's sentence, unedited: it is the difference between a
-            // signature problem and a clock problem.
+            // The message distinguishes signature and clock failures.
             assert!(!message.is_empty(), "{error:?}");
             assert!(error.to_string().contains(expected), "{error}");
         }

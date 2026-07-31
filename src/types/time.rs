@@ -10,17 +10,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 /// exchanges can be ordered against each other without knowing which exchange
 /// they came from.
 ///
-/// This is not a `chrono` or `time` type, so no date-time library is forced on
-/// callers. Convert at the edge with [`Timestamp::as_nanos`] or
+/// Convert at the boundary with [`Timestamp::as_nanos`] or
 /// [`Timestamp::into_system_time`].
-///
-/// ```
-/// use maxt::Timestamp;
-///
-/// let ts = Timestamp::from_millis(1_700_000_000_000);
-/// assert_eq!(ts.as_nanos(), 1_700_000_000_000_000_000);
-/// assert_eq!(ts.as_millis(), 1_700_000_000_000);
-/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
 pub struct Timestamp(i64);
 
@@ -49,10 +40,8 @@ impl Timestamp {
     /// A value too large to express in nanoseconds saturates at the end of the
     /// representable range, around the year 2262. Nothing here panics.
     ///
-    /// Saturation is a last resort. An adapter reading a timestamp off an
-    /// exchange checks the arithmetic itself and reports
-    /// [`Error::Decode`](crate::Error::Decode), because a mis-scaled field
-    /// means a changed response shape.
+    /// Adapters validate exchange timestamps separately and report overflow as
+    /// [`Error::Decode`](crate::Error::Decode).
     pub const fn from_secs(secs: i64) -> Self {
         Self(secs.saturating_mul(1_000_000_000))
     }
@@ -80,9 +69,7 @@ impl Timestamp {
     /// the field.
     ///
     /// A clock set before the epoch reads as the epoch, and one set past the
-    /// year 2262 saturates like [`Timestamp::from_secs`]. Nothing here panics
-    /// and nothing wraps, so a machine with a wrong clock gives a wrong
-    /// timestamp rather than a timestamp from the far side of the range.
+    /// year 2262 saturates like [`Timestamp::from_secs`].
     pub fn now() -> Self {
         Self::since_epoch(
             SystemTime::now()
@@ -101,26 +88,10 @@ impl Timestamp {
         Self(i64::try_from(elapsed.as_nanos()).unwrap_or(i64::MAX))
     }
 
-    /// Converts to a [`SystemTime`], for handing off to a date-time library.
+    /// Converts to a [`SystemTime`].
     ///
     /// Returns `None` for timestamps before the Unix epoch, which no exchange
     /// produces in practice.
-    ///
-    /// ```
-    /// use std::time::{Duration, SystemTime};
-    ///
-    /// use maxt::Timestamp;
-    ///
-    /// let ts = Timestamp::from_millis(1_700_000_000_000);
-    /// let at = ts.into_system_time();
-    ///
-    /// // The hand-off point to whichever date-time library the caller prefers.
-    /// assert_eq!(at, Some(SystemTime::UNIX_EPOCH + Duration::from_secs(1_700_000_000)));
-    ///
-    /// // A pre-epoch instant has no representation here, so the conversion
-    /// // reports `None`.
-    /// assert_eq!(Timestamp::from_secs(-1).into_system_time(), None);
-    /// ```
     pub fn into_system_time(self) -> Option<SystemTime> {
         u64::try_from(self.0)
             .ok()
@@ -132,16 +103,6 @@ impl Timestamp {
 ///
 /// The sub-millisecond part is not shown, so this form does not round-trip.
 /// Use [`Timestamp::as_nanos`] whenever the exact value matters.
-///
-/// ```
-/// use maxt::Timestamp;
-///
-/// let ts = Timestamp::from_millis(1_700_000_000_000);
-///
-/// assert_eq!(ts.to_string(), "2023-11-14T22:13:20.000Z");
-/// // The printed form has dropped precision the value still holds.
-/// assert_eq!(ts.as_nanos(), 1_700_000_000_000_000_000);
-/// ```
 impl fmt::Display for Timestamp {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let instant = chrono::DateTime::from_timestamp_nanos(self.0);

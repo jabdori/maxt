@@ -66,6 +66,20 @@ void main() {
     await source.close();
   });
 
+  test('close callback 오류가 발생해도 원본 구독을 취소한다', () async {
+    final source = StreamController<StreamItem<MarketEvent>>();
+    final stream = MarketStream(
+      source.stream,
+      onClose: () async => throw StateError('close failed'),
+    );
+    stream.listen((_) {});
+
+    await expectLater(stream.close(), throwsA(isA<StateError>()));
+
+    expect(source.hasListener, isFalse);
+    await source.close();
+  });
+
   test('natural done의 close 오류를 zone에 누출하지 않고 명시적 close에 보존한다', () async {
     final zoneErrors = <Object>[];
     Object? explicitCloseError;

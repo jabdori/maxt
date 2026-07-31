@@ -3,6 +3,7 @@ import 'package:test/test.dart';
 
 void main() {
   setUpAll(Maxt.initialize);
+  tearDownAll(Maxt.dispose);
 
   test('built-in Adapter는 private Rust handle의 설정과 기능을 노출한다', () {
     final upbit = UpbitAdapter.withRegion(UpbitRegion.singapore);

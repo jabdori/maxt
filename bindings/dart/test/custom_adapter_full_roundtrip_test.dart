@@ -232,6 +232,7 @@ final class FullContractAdapter extends AdapterBase {
 
 void main() {
   setUpAll(Maxt.initialize);
+  tearDownAll(Maxt.dispose);
 
   test('Dart Adapter의 공개·비공개·주문·증거금·이력을 Rust Client로 왕복한다', () async {
     final market = Market.perpetual(Exchange.binance, 'BTC', 'USDT');

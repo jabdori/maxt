@@ -14,6 +14,7 @@ final class EmptyFeedAdapter extends AdapterBase {
 
 void main() {
   setUpAll(Maxt.initialize);
+  tearDownAll(Maxt.dispose);
 
   test('Subscribe 초기 실패는 원래 오류를 보존하고 registry를 비운다', () async {
     final adapter = EmptyFeedAdapter();

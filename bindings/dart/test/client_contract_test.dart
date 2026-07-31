@@ -25,6 +25,11 @@ void main() {
 
   group('native 초기화 후', () {
     setUpAll(Maxt.initialize);
+    tearDownAll(() async {
+      await Maxt.dispose();
+      expect(Maxt.isInitialized, isFalse);
+      await expectLater(Maxt.initialize(), throwsA(isA<StateError>()));
+    });
 
     test('Client는 사용자 Adapter 원 객체를 보존한다', () {
       final adapter = BareAdapter();
@@ -35,6 +40,39 @@ void main() {
       expect(client.supports(Feature.markets), isTrue);
       expect(client.supports(Feature.balances), isFalse);
     });
+
+    test('사용자 Adapter의 미지원 오류는 Rust 왕복 후에도 필드를 보존한다', () async {
+      final client = Client(BareAdapter());
+
+      await expectLater(
+        client.balances(),
+        throwsA(
+          isA<UnsupportedError>()
+              .having((error) => error.feature, 'feature', Feature.balances)
+              .having((error) => error.exchange, 'exchange', Exchange.upbit)
+              .having(
+                (error) => error.detail,
+                'detail',
+                'upbit has no endpoint for balances',
+              )
+              .having((error) => error.isRetryable, 'isRetryable', isFalse),
+        ),
+      );
+    });
+
+    test('Rust 미지원 오류도 구조화된 Dart 오류로 변환한다', () async {
+      final client = Client(UpbitAdapter());
+
+      await expectLater(
+        client.positions(),
+        throwsA(
+          isA<UnsupportedError>()
+              .having((error) => error.feature, 'feature', Feature.positions)
+              .having((error) => error.exchange, 'exchange', Exchange.upbit)
+              .having((error) => error.isRetryable, 'isRetryable', isFalse),
+        ),
+      );
+    });
   });
 
   test('Adapter 기본 메서드는 해당 기능의 UnsupportedError를 반환한다', () async {
@@ -43,11 +81,14 @@ void main() {
     await expectLater(
       adapter.balances(),
       throwsA(
-        isA<UnsupportedError>().having(
-          (error) => error.message,
-          'message',
-          'upbit has no endpoint for balances',
-        ),
+        isA<UnsupportedError>()
+            .having((error) => error.feature, 'feature', Feature.balances)
+            .having((error) => error.exchange, 'exchange', Exchange.upbit)
+            .having(
+              (error) => error.detail,
+              'detail',
+              'upbit has no endpoint for balances',
+            ),
       ),
     );
   });

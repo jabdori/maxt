@@ -29,7 +29,7 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/jabdori/maxt"
 Repository = "https://github.com/jabdori/maxt"
-Documentation = "https://docs.rs/maxt"
+Documentation = "https://github.com/jabdori/maxt/blob/main/bindings/python/PYPI.md"
 Issues = "https://github.com/jabdori/maxt/issues"
 
 [dependency-groups]
@@ -43,7 +43,6 @@ dev = [
 [tool.maturin]
 python-source = "python"
 module-name = "maxt._native"
-locked = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

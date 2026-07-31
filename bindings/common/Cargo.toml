@@ -8,6 +8,7 @@ description = "Language-neutral adapter bridge for maxt language bindings."
 repository = "https://github.com/jabdori/maxt"
 homepage = "https://github.com/jabdori/maxt"
 documentation = "https://docs.rs/maxt-bindings-common"
+exclude = ["/tests/language_binding_inventory.rs"]
 
 [dependencies]
 maxt = { version = "0.1.0", path = "../.." }

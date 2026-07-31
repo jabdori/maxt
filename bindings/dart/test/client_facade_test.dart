@@ -54,6 +54,7 @@ final class RecordingAdapter extends AdapterBase {
 
 void main() {
   setUpAll(Maxt.initialize);
+  tearDownAll(Maxt.dispose);
 
   test('Client는 선택 인자와 기본 StreamConfig를 그대로 전달한다', () async {
     final adapter = RecordingAdapter();

@@ -23,6 +23,18 @@ final class InvalidRequestError extends MaxtError {
   String toString() => 'invalid request: `$field`: $detail';
 }
 
+/// 어댑터가 기능 또는 요청 형식을 지원하지 않습니다.
+final class UnsupportedError extends MaxtError {
+  const UnsupportedError({
+    required this.feature,
+    required this.exchange,
+    required String detail,
+  }) : super(detail);
+
+  final Feature feature;
+  final Exchange exchange;
+}
+
 /// 인증된 요청을 로컬에서 만들 수 없었습니다.
 final class AuthenticationError extends MaxtError {
   const AuthenticationError(super.detail);

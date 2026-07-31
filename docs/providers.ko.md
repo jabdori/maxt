@@ -1,53 +1,62 @@
+# 제공자 선택
+
 [English](providers.md) | [한국어](providers.ko.md)
 
-# 거래소 고르기
+함께 제공되는 모든 어댑터는 공개 시장 데이터를 읽을 때 인증 정보가 필요하지
+않습니다.
 
-## 어떤 일에 어떤 어댑터
+## 용도별 선택
 
-| 필요한 것 | 어댑터 |
+| 필요한 기능 | 어댑터 |
 | --- | --- |
-| 원화 마켓 | [Upbit](providers/upbit.ko.md) 또는 [Bithumb](providers/bithumb.ko.md), 둘 다 현물 전용 |
-| 글로벌 현물 | [Binance](providers/binance.ko.md), `BinanceAdapter::spot()` |
-| 무기한 선물 | [Binance USD-M](providers/binance.ko.md), `BinanceAdapter::usd_m_futures()`, 또는 [Hyperliquid](providers/hyperliquid.ko.md) |
-| API 키 대신 지갑 서명 | [Hyperliquid](providers/hyperliquid.ko.md) 하나뿐 |
-| 테스트 네트워크 | [Hyperliquid](providers/hyperliquid.ko.md), `HyperliquidAdapter::testnet()`. 나머지 셋은 여기에 테스트 환경이 없습니다 |
-
-공개 시세는 넷 다 인증 정보가 필요 없습니다.
+| 원화 현물 마켓 | [Upbit](providers/upbit.ko.md) 또는 [Bithumb](providers/bithumb.ko.md) |
+| 글로벌 현물 마켓 | [Binance Spot](providers/binance.ko.md) |
+| USD 연동 자산 증거금 무기한 선물 | [Binance USD-M](providers/binance.ko.md) 또는 [Hyperliquid](providers/hyperliquid.ko.md) |
+| API 키 대신 지갑(wallet) 서명 | [Hyperliquid](providers/hyperliquid.ko.md) |
+| 크레이트가 직접 연결하는 테스트 네트워크 | `HyperliquidAdapter::testnet()`; Binance 테스트넷 호스트는 이 크레이트에서 노출하지 않습니다 |
 
 ## 생성자와 인증 정보
 
-| 어댑터 | 만드는 법 | 인증 정보 |
+| 제공자 | 공개 기능 생성자 | 비공개 기능 활성화 |
 | --- | --- | --- |
-| Upbit | `UpbitAdapter::new()`, 싱가포르·인도네시아·태국은 `::with_region(..)` | `with_credentials(access_key, secret_key)` |
+| Upbit | 한국은 `UpbitAdapter::new()`, 싱가포르·인도네시아·태국은 `with_region(...)` | `with_credentials(access_key, secret_key)` |
 | Bithumb | `BithumbAdapter::new()` | `with_credentials(access_key, secret_key)` |
-| Binance | `BinanceAdapter::spot()` 또는 `::usd_m_futures()` | `with_credentials(api_key, secret_key)` |
-| Hyperliquid | `HyperliquidAdapter::new()`, 또는 `::testnet()` | `with_wallet(address, private_key)`, 계정 키보다 [승인된 API wallet 키](providers/hyperliquid.ko.md#인증-정보)를 쓰세요 |
+| Binance Spot | `BinanceAdapter::spot()` | `with_credentials(api_key, secret_key)` |
+| Binance USD-M | `BinanceAdapter::usd_m_futures()` | `with_credentials(api_key, secret_key)` |
+| Hyperliquid 메인넷/테스트넷 | `HyperliquidAdapter::new()` 또는 `::testnet()` | `with_wallet(address, private_key)` |
 
-인증 정보를 넣기 전까지 `Client::supports`는 모든 계좌 기능에 `false`로
-답합니다.
+인증 정보가 없으면 `Client::supports`는 비공개 기능에 `false`를 반환하고, 해당
+호출은 `Error::Auth`를 반환합니다. 구조적으로 제공할 수 없는 기능도 `false`를
+반환하지만, 이때 호출 결과는 `Error::Unsupported`입니다. [기능 확인](common-api.ko.md#기능-확인)을
+참고하세요.
 
-## 설계를 바꾸는 차이
+## 설계에 영향을 주는 차이
 
-| 어댑터 | 차이 |
+| 제공자 | 설계 경계 |
 | --- | --- |
-| Upbit | 상장된 파생상품이 없어서 포지션, 마진, 펀딩 비율, 펀딩 지급, 레버리지 설정, reduce-only 주문은 `Error::Unsupported`입니다. 게다가 [별개의 거래소 넷](providers/upbit.ko.md#지원-범위)이라 어댑터 하나가 그중 한 곳만 봅니다. 한국, 싱가포르, 인도네시아, 태국은 상장 목록도 호가창도 인증 정보도 각각입니다 |
-| Bithumb | 상장된 파생상품이 없는 것은 Upbit과 같습니다. 여기에 [캔들 스트림도 없습니다](providers/bithumb.ko.md#스트림). `Feed::Candles(_)`가 든 구독은 소켓을 열기 전에 통째로 `Error::Unsupported`로 실패합니다 |
-| Binance | 현물과 USD-M 선물, [거래 시장 설정이 둘](providers/binance.ko.md#거래-시장)이고 생성할 때 정해집니다. 호스트도 잔고도 상장 목록도 따로이고 `BTCUSDT`는 양쪽에 서로 다른 가격으로 있습니다 |
-| Hyperliquid | 설정 하나가 현물과 무기한 선물을 함께 다루고 그 구분은 `Market::kind`가 집니다. 그래서 파생상품 기능은 어댑터 차원에서 지원한다고 나오면서 마켓별로 거절합니다. Hyperliquid *현물* 마켓의 펀딩, 포지션, reduce-only 주문은 `Error::Unsupported`입니다 |
+| Upbit | 현물만 지원합니다. 네 지역은 호스트, 상장 목록, 호가창, 인증 정보가 서로 분리되어 있으며 한국이 기본값입니다. |
+| Bithumb | 현물만 지원하고 캔들 스트림은 없습니다. 현재 `open_orders` 구현은 한 페이지만 읽어 최대 100개 주문을 반환합니다. |
+| Binance | Spot과 USD-M은 별도 어댑터 구성입니다. 마켓 종류(`MarketKind`)가 구성과 맞지 않으면 잘못된 요청입니다. 하나의 논리적 USD-M 구독이 여러 소켓을 사용한 뒤 이벤트를 합칠 수 있습니다. |
+| Hyperliquid | 어댑터 하나가 현물과 무기한 선물 마켓을 함께 처리합니다. 펀딩, 마진 설정, 포지션 감소 전용 주문은 현물 인자를 거절하지만 `positions_on(spot)`은 빈 목록을 반환합니다. `Ticker::last_price`는 최근 체결가가 아니라 `midPx`이며, 값이 없으면 `markPx`를 사용합니다. |
 
-## 이제는 다르지 않은 것
+제공자와 관계없이 REST 체결은 최신순, 캔들은 오래된 순, 호가창의 양쪽은 최우선
+호가부터 정렬됩니다. 숫자는 `maxt::Decimal`을 사용하고, 제공자가 공개하지 않은
+필드는 `None`으로 남습니다. 캔들 범위, 스트림 재연결, 재시도 안전성, 비공개 호출의
+경계는 [공통 API 레퍼런스](common-api.ko.md)를 참고하세요.
 
-| 항목 | 네 거래소 공통 |
-| --- | --- |
-| 캔들 | 오래된 순입니다. `CandleRequest::from`은 넷 모두에서 지켜지고 `limit`은 응답당 상한을 넘어서도 최대 100페이지까지 넘겨 가며 지켜집니다 |
-| 캔들 간격 | `supports(Feature::Candles) == true`는 `Min1`, `Min3`, `Min5`, `Min15`, `Min30`, `Hour1`, `Hour4`, `Day1`, `Week1`, `Month1`이 REST에서 모두 동작한다는 뜻입니다. 그 밖은 거래소마다 다르고 스트림이 싣는 집합은 또 다릅니다 |
-| 최근 체결 | 이를 제공하는 모든 어댑터에서 최신 순입니다 |
+제공자 전용 일괄 처리, 마켓 경보, 네이티브 컨텍스트, 원장 호출은 구체적인 어댑터에
+남아 있습니다. `Client::adapter()`로 접근할 수 있으며 이식 가능한 공통 API에는
+추가하지 않습니다.
 
-`Client::supports`가 답하는 단위는 기능이지 인자가 아니어서 `true`가 나와도
-호출 지점에서 거절될 수 있습니다.
-[공통 API](common-api.ko.md#true도-호출-지점에서-다시-확인해야-합니다)를 보세요.
+## 실시간 검증 범위
 
-## 거래소별 페이지
+2026-07-31에 Upbit 한국 `BTC/KRW`, Bithumb `BTC/KRW`, Binance Spot
+`BTC/USDT`, Binance USD-M `BTC/USDT` 무기한 선물, Hyperliquid 메인넷
+`BTC/USDC` 무기한 선물을 대상으로 공개 REST와 지원되는 공개 스트림을 실시간
+검증했습니다. 이 검사는 인증 정보를 사용하지 않았습니다. 비공개 계좌와 거래 경로는
+실시간으로 검증하지 않았습니다.
+
+## 제공자별 레퍼런스
 
 - [Upbit](providers/upbit.ko.md) ([English](providers/upbit.md))
 - [Bithumb](providers/bithumb.ko.md) ([English](providers/bithumb.md))

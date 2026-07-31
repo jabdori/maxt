@@ -2,8 +2,9 @@
 
 # Upbit
 
-Spot only, in four regional deployments, one per adapter, chosen at
-construction.
+`UpbitAdapter` supports Upbit's four separate spot exchanges. Choose one region when constructing the adapter.
+
+## Connect
 
 ```rust
 use maxt::{Client, adapters::{UpbitAdapter, UpbitRegion}};
@@ -12,231 +13,128 @@ let korea = Client::new(UpbitAdapter::new());
 let singapore = Client::new(UpbitAdapter::with_region(UpbitRegion::Singapore));
 ```
 
-## What is supported
+| Region | Value | REST base URL | Public WebSocket |
+| --- | --- | --- | --- |
+| Korea, default | `UpbitRegion::Korea` | `https://api.upbit.com` | `wss://api.upbit.com/websocket/v1` |
+| Singapore | `UpbitRegion::Singapore` | `https://sg-api.upbit.com` | `wss://sg-api.upbit.com/websocket/v1` |
+| Indonesia | `UpbitRegion::Indonesia` | `https://id-api.upbit.com` | `wss://id-api.upbit.com/websocket/v1` |
+| Thailand | `UpbitRegion::Thailand` | `https://th-api.upbit.com` | `wss://th-api.upbit.com/websocket/v1` |
 
-`UpbitRegion::Korea` is the default; `Singapore`, `Indonesia` and `Thailand`
-are the others. They are separate exchanges, not mirrors: neither a listing nor
-a credential carries across. `UpbitAdapter::region()` reports which.
+Listings, books, accounts, and credentials are isolated by region. A key issued in one region cannot authenticate another; `UpbitAdapter::region()` returns the selected region.
 
-Upbit writes the quote asset first, `KRW-BTC`. Pass
-`Market::spot(Exchange::Upbit, "BTC", "KRW")`; `MarketInfo::native_symbol`
-gives Upbit's own spelling back.
+Upbit writes the quote asset first: `KRW-BTC`. In `maxt`, pass `Market::spot(Exchange::Upbit, "BTC", "KRW")`; `MarketInfo::native_symbol` returns the Upbit spelling.
 
-| Call | Condition |
+```text
+cargo run --example public_rest -- upbit BTC KRW
+```
+
+## Feature support
+
+| Surface | Support |
 | --- | --- |
-| `markets`, `trades`, `order_book`, `ticker`, `candles`, `subscribe`, `subscribe_with` | no credentials |
-| `balances`, `open_orders`, `open_orders_on`, `place_order`, `cancel_order`, `subscribe_account`, `subscribe_account_with` | credentials |
-| `positions`, `positions_on`, `margin_summary`, `funding_rates`, `funding_payments`, `set_margin` | `Error::Unsupported`, always. Upbit lists no derivatives |
-| `reduce_only` on an order | `Error::Unsupported`. A spot order has no position to reduce |
-| `markets(MarketKind::Perpetual)` | an empty list, not an error |
+| Public REST | `markets`, `trades`, `order_book`, `ticker`, and `candles`, without credentials |
+| Public stream | trades, order books, tickers, and candles through `subscribe` or `subscribe_with` |
+| Account and orders | balances, open orders, trading, and account streams after `with_credentials` |
+| Derivatives | unsupported; Upbit lists spot markets only |
+| `markets(MarketKind::Perpetual)` | empty list |
 
-## Limits
+## REST limits and candle intervals
 
-Checked before the request is built.
+| Input | Accepted value |
+| --- | --- |
+| `trades` limit | 1–500 |
+| `order_book` depth | 1–30 levels per side; omitted means Upbit's 30-level default |
+| `candles` page | 200 candles per Upbit response; `maxt` walks at most 100 pages, or 20,000 candles |
+| `candles` request | `limit > 0`, and `from < to` when both are present |
+| Asset code | uppercase ASCII letters and digits |
 
-| Call | Accepted range | Error |
+| Surface | Upbit officially supports | Exposed by `maxt` |
 | --- | --- | --- |
-| `trades` | `limit` 1 to 500 | `Error::InvalidRequest` on `limit` |
-| `order_book` | `depth` 1 to 30 per side | `Error::InvalidRequest` on `depth` |
-| `candles` | any `limit`; 200 per Upbit response, paged for you over at most a hundred calls | `limit` of 0, a `from` not earlier than `to`, or a window past 20 000 candles, is `Error::InvalidRequest` |
-| Asset codes | uppercase ASCII letters and digits | `Error::InvalidRequest` |
+| REST candles | 1s; 1, 3, 5, 10, 15, 30, 60, 240m; 1d, 1w, 1M, 1y | 1s, 1m, 3m, 5m, 15m, 30m, 1h, 4h, 1d, 1w, 1M |
+| WebSocket candles | 1s; 1, 3, 5, 10, 15, 30, 60, 240m | 1s, 1m, 3m, 5m, 15m, 30m, 1h, 4h |
 
-| Interval | REST `candles` | `Feed::Candles` |
-| --- | --- | --- |
-| 1s | yes | yes |
-| 1m, 3m, 5m, 15m, 30m, 1h, 4h | yes | yes |
-| 1d, 1w, 1M | yes | no |
-
-The eleven REST intervals are the [baseline](../common-api.md#intervals) ten
-plus `Sec1`. Upbit's ten-minute and yearly candles have no `Interval` name.
-
-`Sec1` is the exception on history: about three months, against full history
-elsewhere ([Upbit](https://global-docs.upbit.com/reference/list-candles-seconds)).
-
-An interval outside a column is `Error::Unsupported` naming `Feature::Candles`
-or `Feature::CandleStream`, **but only if the request is otherwise valid**. The
-`limit`, window and paging checks above run first and name their own field
-instead. Match both.
+`Interval` has no 10-minute or yearly variant, so those official Upbit intervals are not exposed. Second-candle REST history covers only the most recent three months. REST candles are returned oldest first by `maxt`.
 
 ## Streams
 
-| Subject | Behaviour |
+| Feed | Behaviour |
 | --- | --- |
-| `Feed::OrderBook` | **30 levels a side**, Upbit's own [default](https://global-docs.upbit.com/reference/websocket-orderbook). `Subscription` cannot narrow it |
-| Book events | full snapshots, not diffs. Overwrite your copy on every one |
-| A depth you chose | `Client::order_book` over REST, 1 to 30 levels |
-| `Candle::closed` | `true` on one emission per window, sent when Upbit opens the next one |
-| Candle events per window | many with `closed` false, then exactly one with it `true`. The settled one carries the figures of that window's own last frame |
-| `subscribe_account` | the whole account, not a market list, one event per changed asset |
+| `Feed::OrderBook` | full snapshots, 30 levels per side by default; `Subscription` cannot select a smaller depth |
+| Trades | one event per execution; `Trade::id` is Upbit's `sequential_id` |
+| Tickers | full snapshots; later events replace earlier state |
+| Candles | repeated forming bars plus the completion rules below |
 
-### `Candle::closed` on the stream
+For streamed candles:
 
-Upbit stops publishing a window the instant the next one opens, so a frame's
-own `timestamp` never reaches `open_time + interval`. `closed` is read off the
-transition to a later window, not off a clock.
+- A snapshot whose window has already ended is emitted immediately with `closed = true`.
+- A snapshot or update for the current window has `closed = false` and replaces the held forming bar.
+- When a later window arrives, the held window is emitted settled at most once, before the new forming bar.
+- If no trade creates a candle, or no later frame arrives, there is no transition-based settled event.
 
-| Frame on `candle.1m` `KRW-BTC`, 2026-07-30 | `candle_date_time_utc` | frame `timestamp` | Window end |
-| --- | --- | --- | --- |
-| last one 07:46 ever got | 07:46:00 | 07:46:58.309 | 07:47:00.000 |
-| first one of the next window | 07:47:00 | 07:47:00.706 | 07:48:00.000 |
+REST candle completion is determined from the window end and the reading clock, including calendar-month boundaries.
 
-| Situation | Emission |
-| --- | --- |
-| A window is running | the forming bar, republished on every update, `closed` false |
-| The next window opens | the settled bar first, then the new forming one |
-| After a reconnect | the held bar is dropped, not settled. The first window to settle is the next one to open |
-| A frame arrives behind one already seen | nothing |
-| The final window when you drop the subscription | never settled |
-
-Over REST, `closed` is decided against the reading machine's clock. `Month1`
-is no exception, settling by the calendar: the June candle closes on 1 July.
-
-## Quotas
+## Rate limits
 
 | Group | Limit | Scope |
 | --- | --- | --- |
-| Public quotation: `markets`, `candles`, `trades`, `ticker`, `order_book` | 10 a second | IP |
-| Exchange default: `balances`, `open_orders`, `cancel_order` | 30 a second | account |
-| Order placement: `place_order` | 8 a second | account |
-| New WebSocket connections | 5 a second | IP unauthenticated, account authenticated |
-| Frames sent on one WebSocket | 5 a second and 100 a minute | connection |
+| `market` | 10 requests/second | IP |
+| `candle` | 10 requests/second | IP |
+| `trade` | 10 requests/second | IP |
+| `ticker` | 10 requests/second | IP |
+| `orderbook` | 10 requests/second | IP |
+| WebSocket connections | 5/second | IP without authentication; account with authentication |
+| WebSocket request messages | 5/second and 100/minute | connection |
 
-A cancel-and-replace loop is bounded by `place_order`, not by `cancel_order`.
+The five public REST groups have independent counters. `maxt` does not throttle; use `Error::is_rate_limited()` and Upbit's `Remaining-Req` response header.
 
-`maxt` does not throttle. Pacing is yours, and `Error::is_rate_limited()` is how
-you learn you were too fast.
+## Upbit-specific methods
 
-## Orders
+Use these through `Client::adapter()` when one request should cover several markets.
 
-| Order | Size | Price |
+| Method | Result | Rate-limit group |
 | --- | --- | --- |
-| Limit, either side | `Size::Base` | required |
-| Market buy | `Size::Quote`, the amount to spend | none |
-| Market sell | `Size::Base`, the quantity to offer | none |
+| `tickers(&[Market])` | one ticker per returned market | `ticker` |
+| `order_books(&[Market], Option<u32>)` | one book per returned market, up to 30 levels per side | `orderbook` |
+| `market_events()` | each market's warning and available caution criteria | `market` |
 
-Any other pairing is `Error::InvalidRequest` on `size`, as is a zero or
-negative price or quantity. `maxt` refuses it before signing.
+Upbit publishes no maximum batch market count; the practical bound is the accepted request-URL length.
 
-| `TimeInForce` on a limit order | Wire value |
-| --- | --- |
-| `GoodTilCancelled` | nothing at all, which is the default |
-| `ImmediateOrCancel` | `ioc` |
-| `FillOrKill` | `fok` |
-| `PostOnly` | `post_only` |
+### Warnings and cautions
 
-On a market order, `ImmediateOrCancel` is accepted and sent as nothing;
-anything else fails on `time_in_force`.
-
-## Order precision and minimum size
-
-`maxt` checks only that a price and a quantity are above zero, so a price off
-Upbit's tick or an order under their minimum is rejected by Upbit, not by
-`Error::InvalidRequest` from here. Upbit publishes tick sizes as a band table
-keyed by price range, and a minimum order amount per quote asset; no type in
-`maxt` carries either. Read both from Upbit before your first order.
-
-## Surprises
-
-| Field or call | Behaviour |
-| --- | --- |
-| `Trade::id` | Upbit's `sequential_id`, kept as the digits it sent, the same value on the stream and over REST. Deduplicate on it |
-| Ordering by `Trade::id` | do not. Upbit [documents](https://global-docs.upbit.com/reference/today-trades-history) it as a basis for uniqueness and does not guarantee the order of trades. Order by `Trade::timestamp` |
-| `trades` order | newest-first, sorted here. The sort is stable, so trades sharing one millisecond keep Upbit's own order |
-| `candles` order | oldest-first, though Upbit answers newest-first |
-| An investment warning | `MarketStatus::Unknown`. Such a market is fully tradable. See [Warnings and cautions](#warnings-and-cautions) |
-| An investment caution | `MarketStatus::Active`, unchanged. See [Warnings and cautions](#warnings-and-cautions) |
-| `open_orders` | walks every page, 100 per page, asking for resting orders and orders waiting on a trigger |
-| `cancel_order` | takes the market and the order id, though Upbit cancels by id alone |
-| No credentials | `Error::Auth`, not `Error::Unsupported`, even though `supports(Feature::Balances)` is `false`. Match on both |
-| A credential Upbit refused | `Error::Exchange`, not `Error::Auth`, carrying Upbit's own name: HTTP 401 `jwt_verification`, `invalid_query_payload`, `expired_access_key`, `nonce_used`, `no_authorization_ip`, `no_authorization_token`, and HTTP 403 `out_of_scope`. **Documented, not measured** |
-
-## Warnings and cautions
-
-`MarketStatus` has one value between Upbit's two designations, so only the
-first reaches it.
-
-| Designation | Meaning | `MarketStatus` | Source |
-| --- | --- | --- | --- |
-| Warning, 유의 종목 | designated by hand and announced. Upbit asks the project to resolve the cause and may end trading support if it is not resolved | `Unknown` | `MarketInfo::status`, or `market_events` |
-| Caution, 주의 종목 | raised and cleared automatically against published criteria, one flag per criterion | `Active` | `market_events` only |
-
-On 2026-07-30 Upbit listed 800 markets: 11 carried a warning and 190 carried at
-least one caution, 175 of those `GLOBAL_PRICE_DIFFERENCES` alone. The caution
-count moves through the day; the warning count does not. Bithumb's
-`market_warning` is the same designation, and its caution sits on a
-[separate endpoint](bithumb.md#warnings-and-alerts).
-
-**The four deployments do not send the same field.** Korea sends
-`market_event`, carrying both designations; the other three send the older
-`market_warning`, the warning only. `MarketInfo::status` still means the same
-thing on all four, and `UpbitMarketEvent::cautions` is empty outside Korea.
-
-## Upbit-only calls
-
-Through `Client::adapter()`. One call answers for many markets at once.
-
-| Method | Returns | Cost |
+| Designation | Common status | Detailed source |
 | --- | --- | --- |
-| `tickers(&[Market])` | one ticker per market | one of the ten public requests a second |
-| `order_books(&[Market], Option<u32>)` | one book per market, depth capped at 30 per side | the same one |
-| `market_events()` | one `UpbitMarketEvent` per market: the warning flag and the caution criteria by name | the same one |
+| Investment warning | `MarketStatus::Unknown` | `MarketInfo::status` and `market_events()` |
+| Investment caution criteria | status remains `MarketStatus::Active` | `market_events()` |
 
-`Client::ticker` and `Client::order_book` are the first two, with one market.
-
-**Where the batch stops is undocumented on both sides.** Neither method caps
-the market codes it joins, and Upbit publishes no cap, so the bound is whatever
-URL length Upbit or a proxy in front of it accepts. Past it the call is
-`Error::Exchange`, not `Error::InvalidRequest`. Thirty is well inside; test a
-few hundred on your own path first.
-
-```rust
-use maxt::{Client, Exchange, Market, adapters::UpbitAdapter};
-
-async fn breadth(client: &Client<UpbitAdapter>) -> maxt::Result<()> {
-    let markets = [Market::spot(Exchange::Upbit, "BTC", "KRW")];
-    let _tickers = client.adapter().tickers(&markets).await?;
-    let _books = client.adapter().order_books(&markets, Some(5)).await?;
-    Ok(())
-}
-```
+Korea returns `market_event` with the warning and caution flags. Singapore, Indonesia, and Thailand return the older `market_warning`, so `UpbitMarketEvent::cautions` is empty there. `MarketStatus::Active` is not a guarantee that an order is currently accepted; check the current market and order policy before relying on availability.
 
 ## Credentials
 
-An access key and a secret key, issued together, from the adapter's own region.
-They unlock `Feature::Balances`, `Feature::OpenOrders`, `Feature::Trading` and
-`Feature::AccountStream`.
+```rust,no_run
+use maxt::{Client, adapters::{UpbitAdapter, UpbitRegion}};
 
-```rust
-use maxt::{Client, adapters::UpbitAdapter};
-
-fn client() -> Client<UpbitAdapter> {
-    let access_key = std::env::var("UPBIT_ACCESS_KEY").expect("UPBIT_ACCESS_KEY");
-    let secret = std::env::var("UPBIT_SECRET_KEY").expect("UPBIT_SECRET_KEY");
-    Client::new(UpbitAdapter::new().with_credentials(access_key, secret))
-}
+let access_key = std::env::var("UPBIT_ACCESS_KEY").expect("UPBIT_ACCESS_KEY");
+let secret_key = std::env::var("UPBIT_SECRET_KEY").expect("UPBIT_SECRET_KEY");
+let adapter = UpbitAdapter::with_region(UpbitRegion::Korea)
+    .with_credentials(access_key, secret_key);
+let client = Client::new(adapter);
 ```
 
-The secret never leaves the process. Keep keys out of source and give them the
-narrowest permissions your program uses: read-only if you never place an order.
+Use a key pair from the same region and grant only the permissions required. The [`private_account`](../../examples/private_account.rs) and [`private_stream`](../../examples/private_stream.rs) examples are Upbit-specific and read-only.
 
-## Examples
+## Verification scope
 
-`cargo run --example public_rest`
+- On 2026-07-31, Korea received a representative public REST and WebSocket smoke test; the documented example command completed successfully.
+- Singapore, Indonesia, and Thailand received public REST spot checks for listings, ticker, book, trades, and minute candles.
+- Private live calls were not verified. Private behaviour is covered by offline tests and official documentation only.
 
-- [`public_rest.rs`](../../examples/public_rest.rs)
-- [`public_stream.rs`](../../examples/public_stream.rs)
-- [`private_account.rs`](../../examples/private_account.rs)
-- [`private_stream.rs`](../../examples/private_stream.rs)
+## Official documentation
 
-## Upbit's own docs
-
-| Subject | Pages |
+| Subject | Links |
 | --- | --- |
-| Quotas | [rate limits](https://global-docs.upbit.com/reference/rate-limits) |
-| Public REST | [markets](https://global-docs.upbit.com/reference/list-trading-pairs.md) · [tickers](https://global-docs.upbit.com/reference/list-tickers.md) · [order books](https://global-docs.upbit.com/reference/list-orderbooks.md) · [trades](https://global-docs.upbit.com/reference/list-pair-trades.md) · [minute candles](https://global-docs.upbit.com/reference/list-candles-minutes.md) · [second candles](https://global-docs.upbit.com/reference/list-candles-seconds) |
-| Private REST | [accounts](https://global-docs.upbit.com/reference/get-balance.md) · [open orders](https://global-docs.upbit.com/reference/list-open-orders.md) |
-| WebSocket | [trades](https://global-docs.upbit.com/reference/websocket-trade.md) · [order books](https://global-docs.upbit.com/reference/websocket-orderbook) · [candles](https://global-docs.upbit.com/reference/websocket-candle.md) · [account orders](https://global-docs.upbit.com/reference/websocket-myorder.md) · [account assets](https://global-docs.upbit.com/reference/websocket-myasset.md) |
-
----
+| Regions and endpoints | [Global overview](https://global-docs.upbit.com/reference/api-overview) |
+| Public REST | [pairs](https://global-docs.upbit.com/reference/list-trading-pairs) · [trades](https://global-docs.upbit.com/reference/list-pair-trades) · [tickers](https://global-docs.upbit.com/reference/list-tickers) · [order books](https://global-docs.upbit.com/reference/list-orderbooks) · [candles](https://global-docs.upbit.com/reference/list-candles-minutes) |
+| WebSocket | [guide](https://global-docs.upbit.com/reference/websocket-guide) · [trades](https://global-docs.upbit.com/reference/websocket-trade) · [tickers](https://global-docs.upbit.com/reference/websocket-ticker) · [order books](https://global-docs.upbit.com/reference/websocket-orderbook) · [candles](https://global-docs.upbit.com/reference/websocket-candle) |
+| Limits and authentication | [rate limits](https://global-docs.upbit.com/reference/rate-limits) · [authentication](https://global-docs.upbit.com/reference/auth) |
 
 [The common API](../common-api.md) · [Choosing an exchange](../providers.md)

@@ -156,8 +156,8 @@ impl<A: Adapter> Client<A> {
 
     /// Reads the account's open orders on one market.
     ///
-    /// Requires credentials. Results are scoped to `market`; the adapter may
-    /// filter a provider-wide response locally.
+    /// Requires credentials. Results are scoped to `market`; the provider or
+    /// adapter applies the market filter.
     pub async fn open_orders_on(&self, market: &Market) -> Result<Vec<Order>> {
         self.adapter.open_orders(Some(market)).await
     }
@@ -341,10 +341,7 @@ mod tests {
         ));
     }
 
-    /// An adapter that hands back exactly what its venue published, flat rows
-    /// included. Every shipped adapter maps a zero-size row rather than
-    /// rejecting it, and the [`Adapter`] trait is implementable from outside
-    /// this crate, so this is the shape the common API has to hold.
+    /// An adapter fixture that includes a flat position.
     #[derive(Debug, Clone)]
     struct ReportsWhatTheVenueSaid;
 
@@ -391,23 +388,17 @@ mod tests {
         }
     }
 
-    /// `positions()` promises open positions, and a row with no size is not
-    /// one. The drop lives on the common API rather than in an adapter, so it
-    /// holds for an adapter written outside this crate too, which is the only
-    /// place a crate-wide guarantee can hold.
+    /// The common client removes flat rows from both position queries.
     #[tokio::test]
     async fn a_flat_row_an_adapter_reports_is_not_answered_as_an_open_position() {
         let client = Client::new(ReportsWhatTheVenueSaid);
 
-        // The adapter really did report two, so an answer of one below is the
-        // filter rather than the adapter having nothing to say.
         assert_eq!(client.adapter().positions(None).await.unwrap().len(), 2);
 
         let open = client.positions().await.unwrap();
         assert_eq!(open.len(), 1, "a flat row was answered as an open position");
         assert_eq!(open[0].quantity, Decimal::ONE);
 
-        // The narrowed read is the same promise, not a looser one.
         let narrowed = client
             .positions_on(&ReportsWhatTheVenueSaid::market("USDT"))
             .await

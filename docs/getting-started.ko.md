@@ -79,7 +79,8 @@ async fn main() -> maxt::Result<()> {
 | `Some(Err(error))` | 비종료 오류 |
 | `None` | 스트림 종료 |
 | `MarketEvent::Reconnected` | 연결 단절 구간의 이벤트 유실 |
-| 스트림 `Drop` | 내부 연결 종료 |
+| 내장 스트림 `Drop` | 내장 연결 작업 전체에 종료 신호 전달 |
+| `close().await` | 어댑터의 비동기 정리 완료 대기 |
 
 계좌 스트림의 `AccountEvent::Reconnected` 이후에는 `balances()`와
 `open_orders()`로 상태를 다시 읽습니다.

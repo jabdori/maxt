@@ -27,7 +27,7 @@ may use that name or `@{index}`. Use the returned `MarketInfo::native_symbol`.
 | Call | Hyperliquid request | Contract |
 | --- | --- | --- |
 | `markets(kind)` | `meta`, `spotMeta` | Markets in the support table |
-| `trades(market, limit)` | `recentTrades` | `limit in 1..=10`; `None -> provider window <= 10`; local truncation; newest-first |
+| `trades(market, limit)` | `recentTrades` | `limit in 1..=10`; no provider count parameter; `None -> full provider window (<= 10)`; `Some(limit)` truncates locally; newest-first |
 | `order_book(market, depth)` | `l2Book` | `depth in 1..=20`; local truncation |
 | `ticker(market)` | `metaAndAssetCtxs`, `spotMetaAndAssetCtxs` | Reference-price summary |
 | `funding_rates(request)` | `fundingHistory` | Public; Perpetual only; provider page `<= 500` |
@@ -90,8 +90,11 @@ local signing and is redacted from `Debug`.
 
 | Market | Private features |
 | --- | --- |
-| Spot | Balances, open orders, place/cancel order, account stream; `positions_on(spot) == Ok(vec![])` |
+| Spot | Balances, open orders, place/cancel order, account stream |
 | Perpetual | Spot features plus positions, margin summary/configuration, funding payments, and reduce-only orders |
+
+`positions()` returns all open perpetual positions;
+`positions_on(spot) == Ok(vec![])`.
 
 | Order input | Contract |
 | --- | --- |

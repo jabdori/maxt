@@ -68,12 +68,12 @@
 
 | 요청 | 선택 |
 | --- | --- |
-| `from + to + limit` | `from <= open_time < to` 중 첫 `limit`; 반환 `open_time ASC` |
-| `from + to` | 전체 `from <= open_time < to`; 반환 `open_time ASC` |
-| `from + limit` | `open_time >= from` 중 첫 `limit`; 반환 `open_time ASC` |
-| `to + limit` | `open_time < to` 중 마지막 `limit`; 반환 `open_time ASC` |
-| `limit` | 최신 `limit`; 반환 `open_time ASC` |
-| `from` | 전체 `open_time >= from`; 반환 `open_time ASC` |
+| `from + to + limit` | `from <= open_time < to`; 가장 이른 `limit`개; `open_time ASC` |
+| `from + to` | `from <= open_time < to`; 전체; `open_time ASC` |
+| `from + limit` | `open_time >= from`; 가장 이른 `limit`개; `open_time ASC` |
+| `to + limit` | `open_time < to`; 가장 최근 `limit`개; `open_time ASC` |
+| `limit` | 가장 최근 `limit`개; `open_time ASC` |
+| `from` | `open_time >= from`; 전체; `open_time ASC` |
 | `to` | `open_time < to`인 제공자 페이지 1개 |
 | 범위 없음 | 최신 제공자 페이지 1개 |
 
@@ -128,7 +128,9 @@
 | `None` | 스트림 종료 |
 | `MarketEvent::Reconnected` | 연결 단절 구간의 시장 이벤트 유실 |
 | `AccountEvent::Reconnected` | 연결 단절 구간의 계좌 이벤트 유실 |
-| 스트림 `Drop` | 모든 내부 연결 종료 |
+| 내장 스트림 `Drop` | 소스 폐기; 내장 연결 작업 전체에 종료 신호 전달 |
+| 사용자 스트림 `Drop` | 소스 폐기; 정리는 생산자 책임 |
+| `close().await` | 어댑터의 비동기 정리 완료 대기 후 소스 폐기 |
 
 재연결 횟수는 내부 연결별로 적용하며 정상 트래픽 이후에도 초기화하지 않습니다.
 `AccountEvent::Reconnected` 이후 `balances()`와 `open_orders()`로 상태를 다시
@@ -150,6 +152,7 @@
 | --- | --- | --- |
 | `InvalidRequest` | 네트워크 호출 전 로컬 검증 | `false` |
 | `Unsupported` | 작업 매핑 없음 | `false` |
+| `Adapter` | 어댑터 또는 외부 디스패처 계약 위반 | `false` |
 | `Auth` | 로컬에서 인증 요청 생성 불가 | `false` |
 | `Exchange` | 거래소 오류 응답 | `kind.is_retryable()` |
 | `Transport` | DNS·TLS·소켓·시간 초과 | `true` |

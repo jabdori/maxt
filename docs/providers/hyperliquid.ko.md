@@ -28,7 +28,7 @@
 | 호출 | Hyperliquid 요청 | 계약 |
 | --- | --- | --- |
 | `markets(kind)` | `meta`, `spotMeta` | 표의 지원 범위 |
-| `trades(market, limit)` | `recentTrades` | `limit in 1..=10`; `None -> 거래소 창 <= 10`; 로컬 절단; 최신순 |
+| `trades(market, limit)` | `recentTrades` | `limit in 1..=10`; 거래소 개수 인자 없음; `None -> 거래소 창 전체 (<= 10)`; `Some(limit)`는 로컬 절단; 최신순 |
 | `order_book(market, depth)` | `l2Book` | `depth in 1..=20`; 로컬 절단 |
 | `ticker(market)` | `metaAndAssetCtxs`, `spotMetaAndAssetCtxs` | 기준 가격 요약 |
 | `funding_rates(request)` | `fundingHistory` | 공개·무기한 선물 전용; 원격 응답 최대 500건 |
@@ -88,8 +88,11 @@
 
 | 시장 | 인증 후 기능 |
 | --- | --- |
-| 현물 | 잔고, 미체결 주문, 주문 생성·취소, 계정 스트림; `positions_on(spot) == Ok(vec![])` |
+| 현물 | 잔고, 미체결 주문, 주문 생성·취소, 계정 스트림 |
 | 무기한 선물 | 현물 기능 + 포지션, 증거금 요약·설정, 펀딩 지급 이력, reduce-only 주문 |
+
+`positions()`는 모든 미결 무기한 선물 포지션을 반환하고,
+`positions_on(spot) == Ok(vec![])`입니다.
 
 | 주문 입력 | 계약 |
 | --- | --- |

@@ -68,12 +68,12 @@ Other intervals are provider-specific. No mapping returns
 
 | Request | Selection |
 | --- | --- |
-| `from + to + limit` | First `limit` in `from <= open_time < to`; return `open_time ASC` |
-| `from + to` | All `from <= open_time < to`; return `open_time ASC` |
-| `from + limit` | First `limit` with `open_time >= from`; return `open_time ASC` |
-| `to + limit` | Last `limit` with `open_time < to`; return `open_time ASC` |
-| `limit` | Latest `limit`; return `open_time ASC` |
-| `from` | All `open_time >= from`; return `open_time ASC` |
+| `from + to + limit` | Earliest `limit` with `from <= open_time < to`; `open_time ASC` |
+| `from + to` | All with `from <= open_time < to`; `open_time ASC` |
+| `from + limit` | Earliest `limit` with `open_time >= from`; `open_time ASC` |
+| `to + limit` | Most recent `limit` with `open_time < to`; `open_time ASC` |
+| `limit` | Most recent `limit`; `open_time ASC` |
+| `from` | All with `open_time >= from`; `open_time ASC` |
 | `to` | One provider page with `open_time < to` |
 | No bounds | Latest provider page |
 
@@ -128,7 +128,9 @@ events are not replaceable.
 | `None` | Stream terminated |
 | `MarketEvent::Reconnected` | Market events were lost during the disconnect |
 | `AccountEvent::Reconnected` | Account events were lost during the disconnect |
-| Stream `Drop` | Close all underlying connections |
+| Built-in stream `Drop` | Drop the source and signal all built-in connection tasks to stop |
+| Custom stream `Drop` | Drop the source; the producer owns cleanup |
+| `close().await` | Await adapter-provided async cleanup, then drop the source |
 
 Reconnect limits apply per underlying connection and do not reset after
 healthy traffic. After `AccountEvent::Reconnected`, reload state with
@@ -150,6 +152,7 @@ healthy traffic. After `AccountEvent::Reconnected`, reload state with
 | --- | --- | --- |
 | `InvalidRequest` | Local validation before network I/O | `false` |
 | `Unsupported` | No mapped operation | `false` |
+| `Adapter` | Adapter or foreign-dispatcher contract failure | `false` |
 | `Auth` | Credentialed request cannot be built locally | `false` |
 | `Exchange` | Provider error response | `kind.is_retryable()` |
 | `Transport` | DNS, TLS, socket, timeout | `true` |

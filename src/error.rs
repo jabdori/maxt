@@ -7,16 +7,7 @@ use crate::Feature;
 /// Result type returned by every fallible `maxt` operation.
 pub type Result<T> = std::result::Result<T, Error>;
 
-/// Anything that can go wrong while talking to an exchange.
-///
-/// Variants distinguish local validation, unavailable capabilities, adapter
-/// contract failures, local authentication, exchange verdicts, transport
-/// failures, and unreadable payloads.
-///
-/// [`Error::Auth`] means no credentialed request could be built locally.
-/// Credentials sent to and rejected by an exchange remain [`Error::Exchange`]
-/// with the exchange's code and message. [`Error::Unsupported`] is structural:
-/// configuring credentials cannot make the operation available.
+/// Local request, adapter, authentication, exchange, transport, and decoding failures.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Error {

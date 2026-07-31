@@ -147,7 +147,6 @@ impl Feature {
                 | Self::ReduceOnlyOrders
         )
     }
-
 }
 
 impl fmt::Display for Feature {

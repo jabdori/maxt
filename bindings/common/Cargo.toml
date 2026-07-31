@@ -11,6 +11,7 @@ maxt = { path = "../.." }
 
 [dev-dependencies]
 futures-util = { version = "0.3", default-features = false, features = ["std"] }
+syn = { version = "2", features = ["full"] }
 tokio = { version = "1", features = ["macros", "rt"] }
 
 [lints.rust]

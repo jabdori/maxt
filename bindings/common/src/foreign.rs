@@ -171,8 +171,8 @@ impl Adapter for ForeignAdapter {
             AdapterCall::PlaceOrder {
                 request: request.clone(),
             },
-            AdapterReply::Order,
-            "Order"
+            AdapterReply::PlaceOrder,
+            "PlaceOrder"
         )
     }
 
@@ -183,8 +183,8 @@ impl Adapter for ForeignAdapter {
                 market: market.clone(),
                 order_id: order_id.to_owned(),
             },
-            AdapterReply::Order,
-            "Order"
+            AdapterReply::CancelOrder,
+            "CancelOrder"
         )
     }
 

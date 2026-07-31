@@ -2,13 +2,11 @@
 
 [English](getting-started.md) | [한국어](getting-started.ko.md)
 
-Five steps, each runnable on its own. Only the last two need an API key.
+The last two steps need an API key.
 
 ## Install
 
-`maxt` is not published to a package registry, so depend on the repository. Rust
-1.85 or newer. `futures-util` supplies the `StreamExt` that step 3 uses to pull
-events off a subscription.
+`maxt` is not published to a package registry. Rust 1.85 or newer.
 
 ```toml
 [dependencies]
@@ -18,9 +16,6 @@ futures-util = "0.3"
 ```
 
 ## 1. Pick an adapter
-
-An adapter talks to one exchange. `Client` wraps it and gives you the common
-API.
 
 ```rust
 use maxt::adapters::{
@@ -39,20 +34,18 @@ fn adapters() {
     // One exchange, two venues, fixed at construction.
     assert_eq!(binance_spot.adapter().venue(), BinanceMarket::Spot);
     assert_eq!(binance_perp.adapter().venue(), BinanceMarket::UsdMFutures);
-    // What each one can do is answered locally, before any request.
+    // Answered locally, before any request.
     assert!(hyperliquid.supports(Feature::FundingRates));
     assert!(!binance_spot.supports(Feature::FundingRates));
     assert!(!bithumb.supports(Feature::CandleStream));
 }
 ```
 
-Those five are separate types, so a variable holding one cannot later hold
-another. To choose the exchange at runtime, box the adapter as
-`Client<Box<dyn Adapter>>`, the way
-[`examples/public_rest.rs`](../examples/public_rest.rs) does. When the exchange
-is a runtime value the market's kind usually is too, and
-`Market::new(exchange, kind, base, quote)` is the constructor for that case.
-[Choosing an exchange](providers.md) covers what each one cannot do.
+Four adapter types, five venue configurations: `BinanceAdapter` covers both
+Binance venues. Across exchanges the types differ, so one variable cannot hold
+two of them. For a runtime choice, box the adapter as `Client<Box<dyn Adapter>>`,
+the way [`examples/public_rest.rs`](../examples/public_rest.rs) does, and build
+markets with `Market::new(exchange, kind, base, quote)`.
 
 ## 2. Read public market data
 
@@ -79,19 +72,14 @@ async fn main() -> maxt::Result<()> {
 }
 ```
 
-Three rules hold everywhere in `maxt`:
-
-- A `Market` is an exchange, a kind, a base asset, and a quote asset. The
-  adapter translates it into whatever the exchange calls the same instrument.
-  Spot and perpetual on one pair are two markets, not one with a flag.
+- A `Market` is an exchange, a kind, a base asset, and a quote asset. Spot and
+  perpetual on one pair are two markets, not one with a flag.
 - Prices and quantities are `Decimal`, never `f64`.
-- A field the exchange does not publish is `None`, not zero. A `None`
-  `ticker.volume` means the exchange said nothing about volume.
+- A field the exchange does not publish is `None`, not zero.
 
 ## 3. Subscribe to a live feed
 
-A subscription names markets and feeds, and becomes one connection however many
-of each it names.
+One subscription is one connection, however many markets and feeds it names.
 
 ```rust,no_run
 use futures_util::StreamExt;
@@ -120,27 +108,18 @@ async fn main() -> maxt::Result<()> {
 }
 ```
 
-Match on the item, do not `?` it.
-
-- An `Err` is a report the stream polls past: a frame that could not be read, or
-  a reconnect that has stopped looking transient. Only `None` means nothing more
-  is coming, so returning on the first `Err` abandons a subscription that was
-  about to recover.
+- Only `None` ends a stream. Match on the item, do not `?` it.
 - Dropping the stream closes the connection.
-- Not every exchange carries every feed. Bithumb publishes no candle stream, and
-  a subscription that asks for one fails as a whole; the feed is not silently
-  dropped. Ask `client.supports(Feature::CandleStream)` first when the answer
-  should change what your program does.
-- A `true` from `supports` is not a promise about every argument. Upbit claims
-  `Feature::CandleStream` and still refuses `Feed::Candles(Interval::Day1)`,
-  because it streams no daily candle. Handle `Error::Unsupported` at the call
-  even after checking, and see
-  [the common API](common-api.md#feature-and-clientsupports).
+- Bithumb publishes no candle stream, and a subscription that asks for one fails
+  as a whole. Ask `client.supports(Feature::CandleStream)` first.
+- `supports` answers per feature, not per argument: Upbit claims
+  `Feature::CandleStream` and still refuses `Feed::Candles(Interval::Day1)` with
+  `Error::Unsupported`
+  ([the common API](common-api.md#feature-and-clientsupports)).
 
 ## 4. Add credentials and read the account
 
-Credentials come from the environment, never from the source. Each adapter takes
-them in the form its exchange issues. Upbit's is an access key and a secret key.
+Credentials come from the environment, never from the source.
 
 ```rust,no_run
 use maxt::adapters::UpbitAdapter;
@@ -152,8 +131,7 @@ async fn main() -> maxt::Result<()> {
     let secret_key = std::env::var("UPBIT_SECRET_KEY").expect("UPBIT_SECRET_KEY");
     let client = Client::new(UpbitAdapter::new().with_credentials(access_key, secret_key));
 
-    // `supports` answers for the adapter as configured. Without credentials
-    // this is false, and the call is never made.
+    // Without credentials this is false, and the call is never made.
     if !client.supports(Feature::Balances) {
         return Ok(());
     }
@@ -172,22 +150,18 @@ async fn main() -> maxt::Result<()> {
 
 A read-only key is enough for the above.
 
-`client.subscribe_account()` has the same shape as step 3 and yields
-`AccountEvent::Balance` and `AccountEvent::Order`. Its `Reconnected` is heavier
-than the market one: fills may have happened during the gap, so re-read balances
-and open orders over REST before trusting a local view again.
+`client.subscribe_account()` streams `AccountEvent::Balance` and
+`AccountEvent::Order`. After `AccountEvent::Reconnected`, re-read balances and
+open orders over REST.
 
 ## 5. Place an order
 
-This one needs a trading key, and of the four exchanges only Hyperliquid
-publishes a test network. On Upbit the order below is a real order against real
-money, which is why it is priced at the deepest bid the book carries and
-cancelled straight away.
+Needs a trading key. Only Hyperliquid publishes a test network; on Upbit the
+order below is real money.
 
-`OrderRequest::limit` takes four things in order: the market, the side, the size
-as a `Size`, and the price. `Size::Base` and `Size::Quote` name the asset the
-number is in, so a market buy sized in won cannot be confused with one sized in
-bitcoin. Cancelling takes the exchange's own order id off the returned `Order`.
+`OrderRequest::limit` takes the market, the side, a `Size`, and the price, in
+that order. Cancelling takes the exchange's own order id off the returned
+`Order`.
 
 ```rust,no_run
 use maxt::adapters::UpbitAdapter;
@@ -200,11 +174,9 @@ async fn main() -> maxt::Result<()> {
     let client = Client::new(UpbitAdapter::new().with_credentials(access_key, secret_key));
     let market = Market::spot(Exchange::Upbit, "BTC", "KRW");
 
-    // The price comes off the book, not out of this page. A figure written here
-    // rests only while the market stays above it and fills as a taker the day it
-    // does not, with nothing to announce the change. The deepest bid the exchange
-    // returned is below every other bid by construction, so a buy at it cannot
-    // cross the ask whatever the market is doing.
+    // The price comes off the book, not out of this page: a figure written here
+    // fills as a taker the day the market drops to it. The deepest bid returned
+    // is below every other bid, so a buy at it cannot cross the ask.
     let book = client.order_book(&market, None).await?;
     let Some(deepest_bid) = book.bids.last() else {
         println!("no bids on the book");
@@ -238,29 +210,20 @@ async fn main() -> maxt::Result<()> {
 }
 ```
 
-Tick size, lot step, and minimum order value are per-exchange. Two of the five
-venue configurations expose them, and only one of those checks an order against
-them before signing; see
-[Order precision and minimum size](common-api.md#order-precision-and-minimum-size)
-before sizing anything real. Hyperliquid has no market order type at all, and
-quote-denominated sizing is not universal, so read the provider page for the
-exchange you picked. Full details are in
-[the common API](common-api.md#orders).
+Tick size, lot step, and minimum order value are per-exchange, and only
+Hyperliquid checks an order against them before signing:
+[Order precision and minimum size](common-api.md#order-precision-and-minimum-size).
+Hyperliquid has no market order type, and quote-denominated sizing is not
+universal. Full order reference: [the common API](common-api.md#orders).
 
 ## Next
 
-- [`examples/`](../examples/) holds the four programs behind these steps:
-  [`public_rest.rs`](../examples/public_rest.rs),
-  [`public_stream.rs`](../examples/public_stream.rs),
-  [`private_account.rs`](../examples/private_account.rs),
-  [`private_stream.rs`](../examples/private_stream.rs). Run one with `cargo run
-  --example public_rest`. `public_stream.rs` is step 3 with a trade count and a
-  deadline, so it exits on its own.
-- [The common API](common-api.md): errors, `Decimal`, timestamps, subscriptions,
-  paging, and reaching an exchange's own typed methods. Nothing above touches
-  the derivatives half, which is
-  [worked through there](common-api.md#a-worked-derivatives-read): positions,
-  margin, funding, and leverage on a perpetual venue.
-- [Choosing an exchange](providers.md), then the page for the one you picked:
-  [Upbit](providers/upbit.md), [Bithumb](providers/bithumb.md),
-  [Binance](providers/binance.md), [Hyperliquid](providers/hyperliquid.md).
+- `cargo run --example` [`public_rest`](../examples/public_rest.rs),
+  [`public_stream`](../examples/public_stream.rs),
+  [`private_account`](../examples/private_account.rs),
+  [`private_stream`](../examples/private_stream.rs)
+- [The common API](common-api.md), including
+  [derivatives](common-api.md#a-worked-derivatives-read)
+- [Choosing an exchange](providers.md): [Upbit](providers/upbit.md),
+  [Bithumb](providers/bithumb.md), [Binance](providers/binance.md),
+  [Hyperliquid](providers/hyperliquid.md)

@@ -13,8 +13,16 @@ native binaries.
 
 ## Install
 
-Add `maxt` to your application's `pubspec.yaml`, then run `dart pub get` or
-`flutter pub get`.
+After the first pub.dev release, add `maxt` to your application's
+`pubspec.yaml`, then run `dart pub get` or `flutter pub get`.
+
+Before that release, use a repository checkout:
+
+```yaml
+dependencies:
+  maxt:
+    path: ../maxt/bindings/dart
+```
 
 ## Initialize and call the common API
 
@@ -31,12 +39,39 @@ Future<void> main() async {
   final markets = await client.markets(MarketKind.spot);
 
   print('Loaded ${markets.length} Upbit spot markets');
+  await Maxt.dispose();
 }
 ```
 
 Credentials are optional for public data and required for private account or
 trading methods. Pass both fields together when constructing an authenticated
 adapter.
+
+## API surface
+
+`Client` provides markets, trades, order books, tickers, candles, public and
+account streams, balances, orders, positions, margin, and funding history.
+
+| Adapter | Provider-specific API |
+| --- | --- |
+| `UpbitAdapter` | `region`, `orderBooks`, `tickers`, `marketEvents` |
+| `BithumbAdapter` | `marketWarnings`, `marketAlerts` |
+| `BinanceAdapter` | `venue`, `spotSymbolFilters`, `spotOrder`, `usdMCreateListenKey`, `usdMKeepaliveListenKey`, `usdMCloseListenKey` |
+| `HyperliquidAdapter` | `isTestnet`, `nonFundingLedger`, `assetContext` |
+
+Calls throw structured `InvalidRequestError`, `UnsupportedError`,
+`AdapterError`, `AuthenticationError`, `ExchangeError`, `TransportError`, or
+`DecodeError` values. `ExchangeError` preserves the provider code, status, and
+retry classification.
+
+## Streams
+
+Streams emit `StreamEvent` or non-terminal `StreamError` values. Call
+`await stream.close()` or cancel its subscription to await native cleanup;
+cleanup errors are returned to the caller.
+
+Call `await Maxt.dispose()` before an isolate exits. A disposed isolate cannot
+initialize the native runtime again.
 
 See the [maxt repository](https://github.com/jabdori/maxt) for the common API
 and provider contracts.

@@ -28,13 +28,13 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 공개 시장 데이터에는 인증 정보가 필요하지 않습니다.
 
 ```rust,no_run
-use maxt::adapters::UpbitAdapter;
+use maxt::adapters::BinanceAdapter;
 use maxt::{Client, Exchange, Market};
 
 #[tokio::main]
 async fn main() -> maxt::Result<()> {
-    let client = Client::new(UpbitAdapter::new());
-    let market = Market::spot(Exchange::Upbit, "BTC", "KRW");
+    let client = Client::new(BinanceAdapter::spot());
+    let market = Market::spot(Exchange::Binance, "BTC", "USDT");
     let ticker = client.ticker(&market).await?;
 
     println!("{market}: {}", ticker.last_price);
@@ -54,6 +54,8 @@ cargo run --example public_rest
 - [공통 API 레퍼런스](docs/common-api.ko.md)
 - [제공자 선택](docs/providers.ko.md)
 - [API 문서](https://docs.rs/maxt)
+- [Python 바인딩](bindings/python/PYPI.md)
+- [Dart / Flutter 바인딩](bindings/dart/README.md)
 - [실행 가능한 예제](examples/)
 - [변경 기록](CHANGELOG.md)
 - [기여 가이드](CONTRIBUTING.ko.md)
@@ -66,26 +68,26 @@ Rust 어댑터와 동일한 지원 기능과 동작을 제공하면 거래소 �
 
 - [ ] Upbit
   - [x] Rust
-  - [ ] Python
-  - [ ] Dart / Flutter
+  - [x] Python
+  - [x] Dart / Flutter
   - [ ] TypeScript / Node.js
   - [ ] TypeScript / Browser (WebAssembly)
 - [ ] Bithumb
   - [x] Rust
-  - [ ] Python
-  - [ ] Dart / Flutter
+  - [x] Python
+  - [x] Dart / Flutter
   - [ ] TypeScript / Node.js
   - [ ] TypeScript / Browser (WebAssembly)
 - [ ] Binance
   - [x] Rust
-  - [ ] Python
-  - [ ] Dart / Flutter
+  - [x] Python
+  - [x] Dart / Flutter
   - [ ] TypeScript / Node.js
   - [ ] TypeScript / Browser (WebAssembly)
 - [ ] Hyperliquid
   - [x] Rust
-  - [ ] Python
-  - [ ] Dart / Flutter
+  - [x] Python
+  - [x] Dart / Flutter
   - [ ] TypeScript / Node.js
   - [ ] TypeScript / Browser (WebAssembly)
 

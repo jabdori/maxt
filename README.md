@@ -30,13 +30,13 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 Public REST and market streams require no credentials.
 
 ```rust,no_run
-use maxt::adapters::UpbitAdapter;
+use maxt::adapters::BinanceAdapter;
 use maxt::{Client, Exchange, Market};
 
 #[tokio::main]
 async fn main() -> maxt::Result<()> {
-    let client = Client::new(UpbitAdapter::new());
-    let market = Market::spot(Exchange::Upbit, "BTC", "KRW");
+    let client = Client::new(BinanceAdapter::spot());
+    let market = Market::spot(Exchange::Binance, "BTC", "USDT");
     let ticker = client.ticker(&market).await?;
 
     println!("{market}: {}", ticker.last_price);
@@ -56,6 +56,8 @@ cargo run --example public_rest
 - [Common API reference](docs/common-api.md)
 - [Provider matrix](docs/providers.md)
 - [API documentation](https://docs.rs/maxt)
+- [Python binding](bindings/python/PYPI.md)
+- [Dart / Flutter binding](bindings/dart/README.md)
 - [Runnable examples](examples/)
 - [Changelog](CHANGELOG.md)
 - [Contributing](CONTRIBUTING.md)
@@ -68,26 +70,26 @@ behavior. Bindings are listed in current priority order.
 
 - [ ] Upbit
   - [x] Rust
-  - [ ] Python
-  - [ ] Dart / Flutter
+  - [x] Python
+  - [x] Dart / Flutter
   - [ ] TypeScript / Node.js
   - [ ] TypeScript / Browser (WebAssembly)
 - [ ] Bithumb
   - [x] Rust
-  - [ ] Python
-  - [ ] Dart / Flutter
+  - [x] Python
+  - [x] Dart / Flutter
   - [ ] TypeScript / Node.js
   - [ ] TypeScript / Browser (WebAssembly)
 - [ ] Binance
   - [x] Rust
-  - [ ] Python
-  - [ ] Dart / Flutter
+  - [x] Python
+  - [x] Dart / Flutter
   - [ ] TypeScript / Node.js
   - [ ] TypeScript / Browser (WebAssembly)
 - [ ] Hyperliquid
   - [x] Rust
-  - [ ] Python
-  - [ ] Dart / Flutter
+  - [x] Python
+  - [x] Dart / Flutter
   - [ ] TypeScript / Node.js
   - [ ] TypeScript / Browser (WebAssembly)
 

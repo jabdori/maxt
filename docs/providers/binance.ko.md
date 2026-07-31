@@ -50,7 +50,7 @@ REST와 `Feed::Candles`의 지원 간격은 같습니다. Binance native `6h`는
 | --- | --- | --- |
 | `Feed::Trades` | `{symbol}@trade` | 체결 1건당 이벤트 1건; 수량 `== 0` 프레임은 버림 |
 | `Feed::OrderBook` | `{symbol}@depth20@100ms` | 각 측 20단계 전체 스냅샷; 100ms; 깊이 변경 미지원 |
-| `Feed::Ticker` | `{symbol}@ticker` | 24시간 이동 ticker |
+| `Feed::Ticker` | `{symbol}@ticker` | 24시간 이동 요약 |
 | `Feed::Candles(interval)` | `{symbol}@kline_<interval>` | Binance `closed` 값을 유지 |
 
 마켓은 `Subscription`의 native symbol로 조회합니다. USD-M은 `Trades`와
@@ -70,7 +70,7 @@ REST와 `Feed::Candles`의 지원 간격은 같습니다. Binance native `6h`는
 | 주문 입력 | 현물 | USD-M |
 | --- | --- | --- |
 | `Size::Base` | 모든 주문 | 모든 주문 |
-| `Size::Quote` | 시장가 주문만 지원 | `Error::InvalidRequest` |
+| `Size::Quote` | 시장가 주문만 지원; 지정가 -> `Error::InvalidRequest` | `Error::InvalidRequest` |
 | `time_in_force` | `GTC`, `IOC`, `FOK`; `PostOnly -> LIMIT_MAKER` | `GTC`, `IOC`, `FOK`; `PostOnly -> GTX` |
 | `reduce_only == true` | `Error::Unsupported` | 지원 |
 

@@ -98,9 +98,7 @@ pub enum MarketEvent {
     /// missed. Order book consumers should discard their local book and rebuild
     /// from the next snapshot.
     ///
-    /// [`Overflow::DropNewest`] never discards this. A full buffer delays it to
-    /// the first event that finds room, and it still arrives ahead of that
-    /// event.
+    /// [`Overflow::DropNewest`] delays this until buffer capacity is available.
     Reconnected,
 }
 
@@ -118,9 +116,7 @@ pub enum AccountEvent {
     /// Account state changes published while the connection was down were
     /// missed. Re-read balances and open orders over REST to resynchronize.
     ///
-    /// [`Overflow::DropNewest`] never discards this. A full buffer delays it to
-    /// the first event that finds room, and it still arrives ahead of that
-    /// event, so the instruction to re-read is not one a slow consumer can miss.
+    /// [`Overflow::DropNewest`] delays this until buffer capacity is available.
     Reconnected,
 }
 
@@ -191,11 +187,8 @@ pub enum Overflow {
     /// [`Feed::OrderBook`]. It is lossy for trades and candles: later events do
     /// not restate a trade or a candle's single settled emission.
     ///
-    /// What this never discards is
-    /// [`MarketEvent::Reconnected`](crate::MarketEvent::Reconnected) and
-    /// [`AccountEvent::Reconnected`](crate::AccountEvent::Reconnected). A full
-    /// buffer delays that notice until room is available and delivers it before
-    /// later events. Other items, including errors, may be discarded silently.
+    /// Reconnected events wait for capacity; other items, including errors, may
+    /// be discarded.
     DropNewest,
 }
 

@@ -167,7 +167,7 @@ pub enum MarketStatus {
     Paused,
     /// Delisted.
     Delisted,
-    /// Provider state not mapped to `Active`, `Paused`, or `Delisted`.
+    /// A common trading status cannot be determined from the provider state.
     Unknown,
 }
 

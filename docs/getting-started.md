@@ -79,7 +79,8 @@ async fn main() -> maxt::Result<()> {
 | `Some(Err(error))` | Non-terminal error |
 | `None` | Stream terminated |
 | `MarketEvent::Reconnected` | Events were lost during the disconnect |
-| Stream `Drop` | Close all underlying connections |
+| Built-in stream `Drop` | Signal all built-in connection tasks to stop |
+| `close().await` | Await adapter-provided asynchronous cleanup |
 
 After `AccountEvent::Reconnected`, reload state with `balances()` and
 `open_orders()`.

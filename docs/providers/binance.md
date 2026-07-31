@@ -74,7 +74,7 @@ adapter supports HMAC-SHA-256 keys; RSA and Ed25519 keys are unsupported.
 | Order input | Spot | USD-M |
 | --- | --- | --- |
 | `Size::Base` | All orders | All orders |
-| `Size::Quote` | Market order only | `Error::InvalidRequest` |
+| `Size::Quote` | Market order only; Limit -> `Error::InvalidRequest` | `Error::InvalidRequest` |
 | `time_in_force` | `GTC`, `IOC`, `FOK`; `PostOnly -> LIMIT_MAKER` | `GTC`, `IOC`, `FOK`; `PostOnly -> GTX` |
 | `reduce_only == true` | `Error::Unsupported` | Supported |
 

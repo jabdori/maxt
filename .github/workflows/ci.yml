@@ -5,15 +5,18 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 env:
   CARGO_TERM_COLOR: always
-  RUSTFLAGS: -D warnings
 
 jobs:
-  check:
+  rust:
+    name: Rust
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -24,32 +27,149 @@ jobs:
       - name: Format
         run: cargo fmt --all --check
 
-      - name: Lint
-        run: cargo clippy --all-targets -- -D warnings
+      - name: Lint workspace
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
 
-      - name: Forbid panics outside tests
+      - name: Forbid panics in maxt library
         run: >
-          cargo clippy --lib --
+          cargo clippy -p maxt --lib --locked --
+          -D warnings
           -D clippy::unwrap_used
           -D clippy::expect_used
           -D clippy::panic
 
-      - name: Test
-        run: cargo test --all-targets
+      - name: Test workspace
+        run: cargo test --workspace --all-targets --no-default-features --locked
 
-      - name: Doctests
-        run: cargo test --doc
+      - name: Test documentation
+        run: cargo test --workspace --doc --no-default-features --locked
 
-      - name: Examples build
-        run: cargo build --examples
+      - name: Build examples
+        run: cargo build -p maxt --examples --locked
 
-      - name: Docs
-        run: cargo doc --no-deps
+      - name: Build documentation
+        env:
+          RUSTDOCFLAGS: -D warnings
+        run: cargo doc --workspace --no-deps --locked
+
+      - name: Package root crate
+        run: cargo package -p maxt --locked
+
+  python:
+    name: Python
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bindings/python
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14.2"
+
+      - uses: astral-sh/setup-uv@v9.0.0
+        with:
+          version: "0.10.4"
+          python-version: "3.14.2"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+          working-directory: bindings/python
+
+      - name: Check locked dependencies
+        run: uv lock --check
+
+      - name: Install locked dependencies
+        run: uv sync --frozen --all-groups
+
+      - name: Lint native extension
+        run: cargo clippy -p maxt-python --all-targets --locked -- -D warnings
+
+      - name: Test native extension
+        run: cargo test -p maxt-python --all-targets --no-default-features --locked
+
+      - name: Build native extension
+        run: uv run --frozen maturin develop --locked
+
+      - name: Test Python package
+        env:
+          MAXT_REQUIRE_NATIVE_TESTS: "1"
+        run: uv run --frozen pytest
+
+      - name: Type check
+        run: uv run --frozen mypy python/maxt
+
+      - name: Check distribution packages
+        run: |
+          uv build --out-dir dist
+          uv run --frozen twine check dist/*
+
+  dart:
+    name: Dart and Flutter
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bindings/dart
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Lint Rust bridge
+        run: cargo clippy -p maxt_dart_bridge --all-targets --locked -- -D warnings
+
+      - name: Test Rust bridge
+        run: cargo test -p maxt_dart_bridge --all-targets --locked
+
+      - name: Install Dart dependencies
+        run: dart pub get
+
+      - name: Install pinned bridge generator
+        run: cargo install flutter_rust_bridge_codegen --version 2.12.0 --locked
+
+      - name: Check generated bridge
+        run: |
+          flutter_rust_bridge_codegen generate
+          perl -pi -e 's/[ \t]+$//' lib/src/rust/*.freezed.dart
+          cargo fmt --all
+          git diff --exit-code -- lib/src/rust rust/src/frb_generated.rs
+          test -z "$(git status --porcelain --untracked-files=all -- lib/src/rust rust/src/frb_generated.rs)"
+
+      - name: Check Dart format
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze Dart package
+        run: dart analyze --fatal-warnings
+
+      - name: Test Dart package
+        run: dart test --chain-stack-traces
+
+      - name: Test Flutter package
+        run: flutter test
+
+      - name: Check pub.dev package
+        run: dart pub publish --dry-run
 
   scope:
+    name: Repository scope
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: No absolute paths from a contributor's machine
         run: |

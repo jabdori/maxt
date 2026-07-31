@@ -8,8 +8,6 @@
 //! export UPBIT_SECRET_KEY=...
 //! cargo run --example private_account
 //! ```
-//!
-//! This credentialed path is not exercised by automated live tests.
 
 use maxt::adapters::UpbitAdapter;
 use maxt::{Client, Feature};

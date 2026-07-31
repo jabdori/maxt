@@ -9,8 +9,6 @@
 //! cargo run --example private_stream
 //! ```
 //!
-//! This credentialed path is not exercised by automated live tests.
-//!
 //! It exits after 20 events or 60 seconds, whichever comes first. An idle
 //! account prints nothing and still exits cleanly.
 

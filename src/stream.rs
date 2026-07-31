@@ -11,8 +11,9 @@ use crate::types::{AccountEvent, MarketEvent};
 
 /// A live market data subscription.
 ///
-/// Yields [`MarketEvent`]s until it ends by yielding `None`. Reconnects are
-/// handled internally and surface as [`MarketEvent::Reconnected`].
+/// Yields [`MarketEvent`]s until it ends with `None`. Built-in adapters handle
+/// reconnects and emit [`MarketEvent::Reconnected`]; custom producers define
+/// their own reconnect behavior.
 ///
 /// An `Err` item reports a failed frame or connection operation but does not by
 /// itself end the stream. Consumers may continue polling after it.
@@ -63,8 +64,9 @@ impl fmt::Debug for MarketStream {
 
 /// A live private account subscription.
 ///
-/// Yields [`AccountEvent`]s until it ends by yielding `None`. Reconnects are
-/// handled internally and surface as [`AccountEvent::Reconnected`].
+/// Yields [`AccountEvent`]s until it ends with `None`. Built-in adapters handle
+/// reconnects and emit [`AccountEvent::Reconnected`]; custom producers define
+/// their own reconnect behavior.
 ///
 /// An `Err` item is a report, not the end, exactly as on [`MarketStream`].
 /// Errors may include frame decoding, reconnect failures, and credential

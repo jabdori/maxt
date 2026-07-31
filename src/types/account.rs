@@ -141,9 +141,8 @@ pub struct Position {
 impl Position {
     /// Whether the position carries no size.
     ///
-    /// Never true for a position [`Client::positions`](crate::Client::positions)
-    /// answered with, since a row with no size is dropped there. This reads one
-    /// you built, or one you have been holding since before it closed.
+    /// [`Client::positions`](crate::Client::positions) and
+    /// [`Client::positions_on`](crate::Client::positions_on) remove flat rows.
     pub fn is_flat(&self) -> bool {
         self.quantity.is_zero()
     }
@@ -204,13 +203,13 @@ pub struct FundingPayment {
 
 /// An opaque position in a paginated history.
 ///
-/// Produced by the exchange, and only meaningful to the exchange that produced
-/// it. Pass it back unchanged to fetch the next page; do not parse it.
+/// Produced by an adapter from a native or synthesized resume point. Pass it
+/// back unchanged to the same adapter; do not parse it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Cursor(pub(crate) String);
 
 impl Cursor {
-    /// Wraps a resume point produced by an exchange.
+    /// Wraps an adapter resume point.
     ///
     /// For adapters, and for restoring a cursor that was persisted between
     /// runs. Callers reading a history get theirs from

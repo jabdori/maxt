@@ -279,11 +279,11 @@ pub struct Candle {
     pub quote_volume: Option<Decimal>,
     /// Whether the interval has closed.
     ///
-    /// A live window may be emitted repeatedly with `false`. A settled live
-    /// window is emitted at most once with `true`. Providers without a native
-    /// close flag usually infer settlement when a later window arrives. A
-    /// reconnect discards uncertain held state, but a snapshot may identify an
-    /// already ended window and emit it as settled.
+    /// A live window may be emitted repeatedly with `false`. Within one
+    /// uninterrupted connection, a settled window is emitted at most once with
+    /// `true`. Providers without a native close flag infer settlement when a
+    /// later window arrives. Reconnection clears held state; a new snapshot may
+    /// emit an already ended window again.
     ///
     /// REST candles are classified from the window end relative to the read
     /// time, so every candle in a historical range may be closed.
@@ -321,14 +321,7 @@ mod tests {
         assert_eq!(book.best_bid().unwrap().price, Decimal::from(100));
         assert_eq!(book.best_ask().unwrap().price, Decimal::from(101));
         assert_eq!(book.spread().unwrap(), Decimal::from(1));
-        assert_eq!(
-            book.mid_price().unwrap(),
-            // Written as unscaled digits and a scale rather than 100.5: this
-            // crate's whole claim about numbers is that a price never passes
-            // through a binary float, and a test that reaches for one to state
-            // its expectation undercuts the claim it is checking.
-            Decimal::new(1005, 1)
-        );
+        assert_eq!(book.mid_price().unwrap(), Decimal::new(1005, 1));
     }
 
     #[test]

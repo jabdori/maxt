@@ -60,6 +60,39 @@ cargo run --example public_rest
 - [Changelog](CHANGELOG.md)
 - [Contributing](CONTRIBUTING.md)
 
+## Binding roadmap
+
+The Rust adapter for each exchange is the reference contract. An exchange is
+complete when every listed binding provides the same supported features and
+behavior. Bindings are listed in current priority order.
+
+- [ ] Upbit
+  - [x] Rust
+  - [ ] Python
+  - [ ] Dart / Flutter
+  - [ ] TypeScript / Node.js
+  - [ ] TypeScript / Browser (WebAssembly)
+- [ ] Bithumb
+  - [x] Rust
+  - [ ] Python
+  - [ ] Dart / Flutter
+  - [ ] TypeScript / Node.js
+  - [ ] TypeScript / Browser (WebAssembly)
+- [ ] Binance
+  - [x] Rust
+  - [ ] Python
+  - [ ] Dart / Flutter
+  - [ ] TypeScript / Node.js
+  - [ ] TypeScript / Browser (WebAssembly)
+- [ ] Hyperliquid
+  - [x] Rust
+  - [ ] Python
+  - [ ] Dart / Flutter
+  - [ ] TypeScript / Node.js
+  - [ ] TypeScript / Browser (WebAssembly)
+
+Swift and Kotlin are under consideration.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).

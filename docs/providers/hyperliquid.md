@@ -190,6 +190,7 @@ budget; `maxt` sends one order per action, so the two agree here.
 | Place-order acknowledgement | says filled or rested, not how much filled: a fill reads as complete, a rest as untouched |
 | Cancel acknowledgement | the verdict and nothing else; the returned `Order` carries placeholder side, size, and price. Read the order back with `open_orders`. |
 | `open_orders_on`, `positions_on` | filter client-side. Hyperliquid answers both questions for the whole account and takes no market. |
+| A closed position | absent from `clearinghouseState` rather than reported at size zero, so `positions()` here has never had one to drop. Should Hyperliquid start sending one, the common API drops it: the guarantee is `maxt`'s, not the venue's. |
 | `set_margin` | one action, so leverage and margin mode must both be given; one alone is `Error::InvalidRequest`. Leverage is a whole number within the asset's own cap, and some assets take isolated margin only. |
 | Builder-deployed perpetuals | the ones whose name contains a colon. Separate universe, separate asset numbering, absent from `markets()`. |
 | Wallet shape | checked by the first call that needs it, not by `with_wallet`, which stays infallible |

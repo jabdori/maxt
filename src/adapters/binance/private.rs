@@ -608,38 +608,30 @@ pub(super) async fn cancel_order(
     parse::order(market, &raw)
 }
 
+/// Reads `/fapi/v3/positionRisk` into positions, flat rows included.
+///
+/// The endpoint opens a zero-amount row for any symbol that merely has a
+/// resting order on it. Measured 2026-07-31 on a funded USD-M account: with one
+/// resting XRPUSDT limit order the endpoint returned one row with `positionAmt`
+/// `0.0`, and cancelling the order emptied it again. Nothing else moved, so a
+/// resting order is the whole of the trigger, and an empty account never shows
+/// it.
+///
+/// Such a row is not an open position and no caller ever sees one:
+/// [`Client::positions`](crate::Client::positions) drops it, on the common API
+/// where the promise is made and where every adapter is held to it. This
+/// reports what Binance said.
+///
+/// Dropping it costs a caller nothing. What it carried beyond the mark price,
+/// which is public, was that an order rests on the symbol, and `open_orders`
+/// says that outright.
 pub(super) async fn positions(
     adapter: &BinanceAdapter,
     market: Option<&Market>,
 ) -> Result<Vec<Position>> {
     let body = adapter.send(positions_request(adapter, market)?).await?;
     let raw: Vec<RawPosition> = parse::json(&body, "positionRisk")?;
-    open_positions(adapter, &raw)
-}
-
-/// Keeps the rows that are positions.
-///
-/// `/fapi/v3/positionRisk` opens a zero-amount row for any symbol that merely
-/// has a resting order on it, and reporting one as a position contradicts what
-/// [`Client::positions`](crate::Client::positions) promises. Measured
-/// 2026-07-31 on a funded USD-M account: with one resting XRPUSDT limit order
-/// the endpoint returned one row with `positionAmt` `0.0`, and cancelling the
-/// order emptied it again. Nothing else moved, so a resting order is the whole
-/// of the trigger, and an empty account never shows it.
-///
-/// Dropping the row costs a caller nothing. What it carried beyond the mark
-/// price, which is public, was that an order rests on the symbol, and
-/// `open_orders` says that outright. Hyperliquid already answers an empty list
-/// for a market it holds no position on, so this is the venues agreeing rather
-/// than Binance being singled out.
-///
-/// A row that failed to parse is kept, so it is reported rather than hidden by
-/// the filter.
-fn open_positions(adapter: &BinanceAdapter, raw: &[RawPosition]) -> Result<Vec<Position>> {
-    raw.iter()
-        .map(|raw| position(adapter, raw))
-        .filter(|position| !matches!(position, Ok(position) if position.is_flat()))
-        .collect()
+    raw.iter().map(|raw| position(adapter, raw)).collect()
 }
 
 fn position(adapter: &BinanceAdapter, raw: &RawPosition) -> Result<Position> {
@@ -978,9 +970,16 @@ pub(super) async fn close_listen_key(
 /// | `GRID_UPDATE` | no | a sub-order of one of those strategies, and deprecated on Binance's page |
 /// | `ALGO_UPDATE` | no | an algo order, and `maxt` places none |
 ///
-/// The five `maxt` does not name are all dropped by `stream::decode_account`
-/// today, so naming them would buy frames nothing reads. What the ones named
-/// buy is pinned by `stream::the_usd_m_events_filter_names_every_frame_the_decoder_acts_on`.
+/// Every event above that `maxt` does not name is one `stream::decode_account`
+/// drops on arrival, so naming it would buy frames nothing reads.
+///
+/// `eventStreamTerminated` is absent from the table because USD-M does not
+/// publish it: it ends a WebSocket API session, and only the spot socket has
+/// one. The decoder the two venues share does act on it, so it is the one
+/// event acted on and deliberately not named here.
+///
+/// Both halves are pinned against each other by
+/// `stream::the_usd_m_filter_and_the_decoder_name_the_same_events`.
 pub(super) const USD_M_ACCOUNT_EVENTS: &str = "ORDER_TRADE_UPDATE/ACCOUNT_UPDATE/listenKeyExpired";
 
 /// The URL a USD-M user data stream opens at.
@@ -1620,14 +1619,10 @@ mod tests {
         // `/fapi/v3/positionRisk` publishes neither.
         assert_eq!(position.leverage, None);
         assert_eq!(position.margin_mode, None);
-        // And a position with size survives the filter that drops the
-        // zero-amount rows Binance opens for a symbol carrying only an order.
-        assert_eq!(
-            open_positions(&perp(), &raw)
-                .expect("a position list")
-                .len(),
-            1
-        );
+        // And a position with size survives the common API's filter, which
+        // drops the zero-amount rows Binance opens for a symbol carrying only
+        // an order.
+        assert_eq!(crate::client::open_positions(vec![position]).len(), 1);
     }
 
     /// Captured 2026-07-31 off `GET /fapi/v3/positionRisk` on a funded USD-M
@@ -1648,6 +1643,9 @@ mod tests {
     /// Binance opens a position row for a symbol that has only an order on it,
     /// and `positions` promises open positions. The row maps cleanly, which is
     /// why nothing upstream rejects it: it has to be dropped on the way out.
+    ///
+    /// This walks the captured payload the whole way, parser and filter, so
+    /// neither half can be pinned by the other's assumption about it.
     #[test]
     fn a_symbol_with_only_a_resting_order_is_not_reported_as_a_position() {
         let raw: Vec<RawPosition> = parse::json(POSITION_RISK_WITH_A_RESTING_ORDER, "positionRisk")
@@ -1661,7 +1659,7 @@ mod tests {
         assert_eq!(mapped.market.kind, MarketKind::Perpetual);
 
         assert_eq!(
-            open_positions(&perp(), &raw).expect("a position list"),
+            crate::client::open_positions(vec![mapped]),
             Vec::new(),
             "a symbol carrying only a resting order was reported as a position"
         );
@@ -1811,12 +1809,15 @@ mod tests {
     /// same way `Feed::Ticker` was, so the shape is worth pinning rather than
     /// leaving to a string literal nobody rereads.
     ///
-    /// Which events the query has to name is not pinned here, because a
-    /// substring assertion cannot tell a complete filter from a truncated one.
-    /// `stream::the_usd_m_events_filter_names_every_frame_the_decoder_acts_on`
-    /// pins that against the decoder instead.
+    /// Which events the query names is not pinned here. Asserting that the URL
+    /// contains `USD_M_ACCOUNT_EVENTS` compares the constant to the format
+    /// string it was interpolated into and holds for any value of it, garbage
+    /// included. The event list is pinned literally by
+    /// `a_listen_key_stays_out_of_a_debug_line_and_goes_into_the_stream_url`
+    /// and against the decoder by
+    /// `stream::the_usd_m_filter_and_the_decoder_name_the_same_events`.
     #[test]
-    fn the_usd_m_account_socket_names_an_entry_point_and_the_events_it_reads() {
+    fn the_usd_m_account_socket_names_an_entry_point_and_leaves_the_separator_literal() {
         let key = BinanceListenKey("listen-key".to_string());
         let url = usd_m_user_data_stream_url(&key);
 
@@ -1824,12 +1825,12 @@ mod tests {
             url.starts_with("wss://fstream.binance.com/private/"),
             "{url}"
         );
-        assert!(
-            url.contains(&format!("&events={USD_M_ACCOUNT_EVENTS}")),
-            "{url}"
-        );
-        // The separator is a separator, not part of an event name.
-        assert!(!url.contains("%2F"), "{url}");
+        // The separator between event names is a separator, not part of one, so
+        // it stays literal where the key beside it is encoded. This key carries
+        // no slash of its own, so the one in the query is the separator.
+        let query = url.split_once('?').expect("a query").1;
+        assert!(query.contains('/'), "{url}");
+        assert!(!query.contains("%2F"), "{url}");
     }
 
     #[test]

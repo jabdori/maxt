@@ -631,6 +631,11 @@ impl<A: Adapter> Client<A> {
     ///
     /// Requires credentials. Derivatives markets only.
     ///
+    /// A row with no size is not an open position and never reaches the caller,
+    /// whatever the venue publishes and whichever adapter is underneath. The
+    /// drop happens here rather than in each adapter, so an adapter written
+    /// outside this crate answers the same way.
+    ///
     /// ```no_run
     /// use maxt::{Client, adapters::HyperliquidAdapter};
     /// use rust_decimal::Decimal;
@@ -640,13 +645,9 @@ impl<A: Adapter> Client<A> {
     ///
     /// let mut exposure = Decimal::ZERO;
     /// for position in client.positions().await? {
-    ///     // No adapter reports a flat position. This skip is what keeps a
-    ///     // venue that starts to from reaching the sum below.
-    ///     if position.is_flat() {
-    ///         continue;
-    ///     }
-    ///     // `None` means the exchange did not publish the figure. Summing it
-    ///     // as zero would understate the account's exposure.
+    ///     // Every one carries size, so there is nothing to skip. `None` means
+    ///     // the exchange did not publish the figure, and summing it as zero
+    ///     // would understate the account's exposure.
     ///     exposure += position.notional.unwrap_or_default();
     /// }
     /// println!("{exposure} at risk");
@@ -654,12 +655,15 @@ impl<A: Adapter> Client<A> {
     /// # }
     /// ```
     pub async fn positions(&self) -> Result<Vec<Position>> {
-        self.adapter.positions(None).await
+        Ok(open_positions(self.adapter.positions(None).await?))
     }
 
     /// Reads the open position on one market.
     ///
     /// Requires credentials. Derivatives markets only.
+    ///
+    /// A market the account holds nothing on answers an empty list rather than
+    /// one flat position, on the same terms as [`Client::positions`].
     ///
     /// ```
     /// use maxt::{Client, Error, Exchange, Feature, Market, adapters::UpbitAdapter};
@@ -677,7 +681,7 @@ impl<A: Adapter> Client<A> {
     /// }
     /// ```
     pub async fn positions_on(&self, market: &Market) -> Result<Vec<Position>> {
-        self.adapter.positions(Some(market)).await
+        Ok(open_positions(self.adapter.positions(Some(market)).await?))
     }
 
     /// Reads account-wide margin state.
@@ -805,11 +809,33 @@ impl<A: Adapter> From<A> for Client<A> {
     }
 }
 
+/// Drops the rows that carry no size.
+///
+/// [`Client::positions`] and [`Client::positions_on`] promise open positions,
+/// and a zero-size row is something else. Binance opens one on
+/// `/fapi/v3/positionRisk` for any symbol that merely carries a resting order,
+/// measured 2026-07-31; Hyperliquid omits closed positions from
+/// `assetPositions` and so has never been seen to publish one, but its parser
+/// maps a zero `szi` rather than rejecting it, and a venue is free to change.
+///
+/// This runs on the common API rather than in each adapter, which is what makes
+/// the promise hold for every adapter, including one written outside this crate
+/// against the public [`Adapter`] trait. An adapter stays free to report what
+/// its venue said.
+///
+/// A row that fails to parse is untouched: the adapter's `Result` has already
+/// resolved to `Err` by here, so a malformed row is still reported rather than
+/// filtered away.
+pub(crate) fn open_positions(mut positions: Vec<Position>) -> Vec<Position> {
+    positions.retain(|position| !position.is_flat());
+    positions
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Error;
     use crate::adapter::BoxFuture;
+    use crate::{Decimal, Error, Side};
 
     #[derive(Debug, Clone)]
     struct PublicOnly;
@@ -877,6 +903,81 @@ mod tests {
                 ..
             }
         ));
+    }
+
+    /// An adapter that hands back exactly what its venue published, flat rows
+    /// included. Every shipped adapter maps a zero-size row rather than
+    /// rejecting it, and the [`Adapter`] trait is implementable from outside
+    /// this crate, so this is the shape the common API has to hold.
+    #[derive(Debug, Clone)]
+    struct ReportsWhatTheVenueSaid;
+
+    impl ReportsWhatTheVenueSaid {
+        fn market(quote: &str) -> Market {
+            Market::perpetual(Exchange::Binance, "BTC", quote)
+        }
+
+        fn position(quantity: Decimal, quote: &str) -> Position {
+            Position {
+                market: Self::market(quote),
+                side: if quantity.is_zero() {
+                    None
+                } else {
+                    Some(Side::Buy)
+                },
+                quantity,
+                entry_price: None,
+                mark_price: None,
+                notional: Some(Decimal::from(30_000)),
+                unrealized_pnl: None,
+                leverage: None,
+                margin_mode: None,
+            }
+        }
+    }
+
+    impl Adapter for ReportsWhatTheVenueSaid {
+        fn exchange(&self) -> Exchange {
+            Exchange::Binance
+        }
+
+        fn supports(&self, _feature: Feature) -> bool {
+            true
+        }
+
+        fn positions(&self, _market: Option<&Market>) -> BoxFuture<'_, Result<Vec<Position>>> {
+            Box::pin(async move {
+                Ok(vec![
+                    Self::position(Decimal::ZERO, "USDT"),
+                    Self::position(Decimal::ONE, "USDC"),
+                ])
+            })
+        }
+    }
+
+    /// `positions()` promises open positions, and a row with no size is not
+    /// one. The drop lives on the common API rather than in an adapter, so it
+    /// holds for an adapter written outside this crate too, which is the only
+    /// place a crate-wide guarantee can hold.
+    #[tokio::test]
+    async fn a_flat_row_an_adapter_reports_is_not_answered_as_an_open_position() {
+        let client = Client::new(ReportsWhatTheVenueSaid);
+
+        // The adapter really did report two, so an answer of one below is the
+        // filter rather than the adapter having nothing to say.
+        assert_eq!(client.adapter().positions(None).await.unwrap().len(), 2);
+
+        let open = client.positions().await.unwrap();
+        assert_eq!(open.len(), 1, "a flat row was answered as an open position");
+        assert_eq!(open[0].quantity, Decimal::ONE);
+
+        // The narrowed read is the same promise, not a looser one.
+        let narrowed = client
+            .positions_on(&ReportsWhatTheVenueSaid::market("USDT"))
+            .await
+            .unwrap();
+        assert_eq!(narrowed.len(), 1, "{narrowed:?}");
+        assert!(!narrowed[0].is_flat(), "{narrowed:?}");
     }
 
     #[tokio::test]

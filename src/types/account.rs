@@ -184,6 +184,8 @@ pub struct Order {
 /// // the risk of a position opened at 20x.
 /// assert_eq!(long.leverage, None);
 ///
+/// // Built here, not read from an exchange: `Client::positions` drops a row
+/// // with no size, so one never arrives from there.
 /// let closed = Position { quantity: Decimal::ZERO, side: None, ..long };
 /// assert!(closed.is_flat());
 /// ```
@@ -211,6 +213,10 @@ pub struct Position {
 
 impl Position {
     /// Whether the position carries no size.
+    ///
+    /// Never true for a position [`Client::positions`](crate::Client::positions)
+    /// answered with, since a row with no size is dropped there. This reads one
+    /// you built, or one you have been holding since before it closed.
     pub fn is_flat(&self) -> bool {
         self.quantity.is_zero()
     }

@@ -878,11 +878,23 @@ pub(crate) fn order_status(status: &str, filled: Decimal) -> OrderStatus {
     }
 }
 
+/// Reads one `assetPositions` row, flat rows included.
+///
+/// Hyperliquid leaves a closed position out of `clearinghouseState` entirely,
+/// so a zero `szi` has not been seen from it. This maps one rather than
+/// rejecting it, because a rejection would turn a venue change into
+/// `Error::Decode` on a payload that is well formed.
+///
+/// A flat row never reaches a caller:
+/// [`Client::positions`](crate::Client::positions) drops it, on the common API
+/// where the promise is made and where every adapter is held to it.
 pub(crate) fn position(raw: &RawPosition, universe: &Universe) -> Result<Position> {
     let signed = decimal(&raw.szi, "szi")?;
 
     Ok(Position {
         market: universe.market_from_native_symbol(&raw.coin)?.clone(),
+        // Zero has no direction, so it is tested before the sign: an unsigned
+        // zero would otherwise read as a long.
         side: match signed.is_sign_negative() {
             _ if signed.is_zero() => None,
             true => Some(Side::Sell),
@@ -1455,6 +1467,34 @@ pub(crate) mod tests {
         assert_eq!(short.side, Some(Side::Sell));
         assert_eq!(short.quantity, decimal_of("0.0335"));
         assert!(!short.is_flat());
+    }
+
+    /// `position` maps a zero `szi` rather than rejecting it, so what keeps a
+    /// flat row out of `positions()` is the common API's filter.
+    ///
+    /// The payload is the official one with its size edited to zero, because
+    /// Hyperliquid leaves closed positions out of `assetPositions` and has
+    /// never been observed publishing such a row. So this pins the two halves
+    /// against each other rather than against the venue: whatever Hyperliquid
+    /// starts sending, a size of zero is not answered as an open position.
+    #[test]
+    fn a_zero_size_row_maps_to_a_flat_position_the_common_api_drops() {
+        let mut raw: RawPerpState =
+            json(CLEARINGHOUSE_STATE).expect("official clearinghouseState payload");
+
+        raw.asset_positions[0].position.szi = "0.0".to_string();
+        let flat = position(&raw.asset_positions[0].position, &universe()).expect("a position");
+
+        assert!(flat.is_flat());
+        // Zero has no direction, and `Side::Buy` is what an unsigned-zero test
+        // would have reported.
+        assert_eq!(flat.side, None);
+
+        assert_eq!(
+            crate::client::open_positions(vec![flat]),
+            Vec::new(),
+            "a zero-size row was answered as an open position"
+        );
     }
 
     #[test]

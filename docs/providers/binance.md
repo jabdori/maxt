@@ -198,7 +198,12 @@ Every event USD-M publishes, and whether `maxt` asks for it:
 | `GRID_UPDATE` | no | a sub-order of one of those strategies, and deprecated on Binance's page |
 | `ALGO_UPDATE` | no | an algo order, and `maxt` places none |
 
-The five `maxt` does not ask for are the five it would drop on arrival.
+Every event above that `maxt` does not ask for is one it would drop on arrival.
+
+`eventStreamTerminated` is absent from the table because USD-M does not publish
+it: it ends a WebSocket API session, and only the spot socket has one. `maxt`
+does act on it, so it is the one event acted on and deliberately not asked for
+here.
 
 What that leaves measured and unmeasured on this URL:
 
@@ -364,7 +369,8 @@ account had never traded.
 | Question | Answer |
 | --- | --- |
 | What triggers the row | an open order on the symbol, and nothing else. An empty account never shows it, which is why it went unnoticed for seven review rounds |
-| What `positions_on(&market)` does | the same. A market carrying only an order answers with an empty list, matching Hyperliquid, which answers an empty list for a market it holds no position on |
+| What `positions_on(&market)` does | the same. A market carrying only an order answers with an empty list, matching Hyperliquid, which leaves a closed position out of `assetPositions` at the venue |
+| Where the drop happens | on the common API, not in this adapter. `positions()` and `positions_on()` drop every flat row whichever adapter is underneath, so the guarantee is one filter rather than one per venue |
 | Whether the zero row is preserved anywhere | no. Beyond the mark price, which is public, it said an order rests on that symbol, and `open_orders()` says so outright |
 | Whether a row `maxt` cannot parse is dropped too | no. Only rows that parse and are flat are dropped; a malformed row is still reported as `Error::Decode` |
 

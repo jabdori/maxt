@@ -254,17 +254,34 @@ impl Adapter for Fictional {
 
     fn positions(&self, _market: Option<&Market>) -> BoxFuture<'_, Result<Vec<Position>>> {
         Box::pin(async move {
-            Ok(vec![Position {
-                market: Self::market(),
-                side: Some(Side::Buy),
-                quantity: Decimal::ONE,
-                entry_price: Some(Decimal::from(29_500)),
-                mark_price: Some(Decimal::from(30_000)),
-                notional: Some(Decimal::from(30_000)),
-                unrealized_pnl: Some(Decimal::from(500)),
-                leverage: Some(Decimal::from(3)),
-                margin_mode: Some(MarginMode::Cross),
-            }])
+            Ok(vec![
+                Position {
+                    market: Self::market(),
+                    side: Some(Side::Buy),
+                    quantity: Decimal::ONE,
+                    entry_price: Some(Decimal::from(29_500)),
+                    mark_price: Some(Decimal::from(30_000)),
+                    notional: Some(Decimal::from(30_000)),
+                    unrealized_pnl: Some(Decimal::from(500)),
+                    leverage: Some(Decimal::from(3)),
+                    margin_mode: Some(MarginMode::Cross),
+                },
+                // A venue that keeps reporting a market after the position on it
+                // closed. Whether an adapter filters this is not the adapter's
+                // promise to keep: `Adapter` is implementable from outside this
+                // crate, so the guarantee has to hold for one nobody here wrote.
+                Position {
+                    market: Self::market(),
+                    side: None,
+                    quantity: Decimal::ZERO,
+                    entry_price: None,
+                    mark_price: Some(Decimal::from(30_000)),
+                    notional: Some(Decimal::ZERO),
+                    unrealized_pnl: Some(Decimal::ZERO),
+                    leverage: None,
+                    margin_mode: None,
+                },
+            ])
         })
     }
 
@@ -336,7 +353,11 @@ async fn a_crate_that_is_not_maxt_can_implement_an_adapter_end_to_end() {
         1
     );
     assert_eq!(client.balances().await.unwrap().len(), 1);
-    assert_eq!(client.positions().await.unwrap().len(), 1);
+    assert_eq!(
+        client.positions().await.unwrap().len(),
+        1,
+        "a flat row an outside adapter reported was answered as an open position"
+    );
     assert!(
         client
             .funding_payments(&HistoryRequest::new(Fictional::market()))

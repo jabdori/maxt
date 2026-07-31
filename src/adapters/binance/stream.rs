@@ -1725,34 +1725,74 @@ mod tests {
     /// So an event the decoder acts on and the filter does not name is an event
     /// the decoder can never see, and the handler written for it is dead. That
     /// is what shipped: `listenKeyExpired` was decoded, mapped, and tested, and
-    /// never requested.
+    /// never requested. An event named and not acted on is the mirror waste: a
+    /// frame subscribed to and thrown away.
     ///
-    /// Asserting the URL contains a literal cannot catch this, because a
-    /// truncated filter is a substring of a complete one. This walks the frames
-    /// instead: each one has to be acted on, and named.
+    /// The table below is Binance's published USD-M event list plus
+    /// `eventStreamTerminated`, the one event acted on and deliberately not
+    /// named. It ends a WebSocket API session, which only the spot socket has,
+    /// so USD-M never publishes it; the decoder the two venues share acts on it
+    /// all the same, and naming it in a USD-M filter would ask for a frame that
+    /// cannot arrive. It is a row here rather than an omission, so the
+    /// exemption is stated and not merely invisible.
+    ///
+    /// A row `maxt` drops names its event and carries nothing else, because
+    /// `decode_account` routes on `e` alone and the fields beside it are never
+    /// read. The three it acts on carry their captured payloads instead.
+    ///
+    /// The trailing loop is what stops the table from being a hand-maintained
+    /// list the filter can outgrow: an event added to the filter and to no row
+    /// here fails.
     #[test]
-    fn the_usd_m_events_filter_names_every_frame_the_decoder_acts_on() {
-        let frames = [
-            ("ACCOUNT_UPDATE", FUTURES_ACCOUNT_UPDATE),
-            ("ORDER_TRADE_UPDATE", FUTURES_ORDER_UPDATE),
-            ("listenKeyExpired", FUTURES_LISTEN_KEY_EXPIRED),
+    fn the_usd_m_filter_and_the_decoder_name_the_same_events() {
+        /// Acted on, and not asked for, because USD-M cannot send it.
+        const SPOT_ONLY: &str = "eventStreamTerminated";
+
+        // (event, one frame carrying it, whether `maxt` acts on it)
+        let events = [
+            ("ORDER_TRADE_UPDATE", FUTURES_ORDER_UPDATE, true),
+            ("ACCOUNT_UPDATE", FUTURES_ACCOUNT_UPDATE, true),
+            ("listenKeyExpired", FUTURES_LISTEN_KEY_EXPIRED, true),
+            (SPOT_ONLY, r#"{"e":"eventStreamTerminated"}"#, true),
+            ("TRADE_LITE", r#"{"e":"TRADE_LITE"}"#, false),
+            ("MARGIN_CALL", r#"{"e":"MARGIN_CALL"}"#, false),
+            (
+                "ACCOUNT_CONFIG_UPDATE",
+                r#"{"e":"ACCOUNT_CONFIG_UPDATE"}"#,
+                false,
+            ),
+            (
+                "CONDITIONAL_ORDER_TRIGGER_REJECT",
+                r#"{"e":"CONDITIONAL_ORDER_TRIGGER_REJECT"}"#,
+                false,
+            ),
+            ("STRATEGY_UPDATE", r#"{"e":"STRATEGY_UPDATE"}"#, false),
+            ("GRID_UPDATE", r#"{"e":"GRID_UPDATE"}"#, false),
+            ("ALGO_UPDATE", r#"{"e":"ALGO_UPDATE"}"#, false),
         ];
 
-        for (name, frame) in frames {
+        for (name, frame, acts) in events {
             // Acted on means read into an event or raised as an error. A frame
-            // `maxt` drops has nothing to gain from being subscribed to, and
-            // belongs out of this table rather than in the filter.
+            // `maxt` drops has nothing to gain from being subscribed to.
             let acted_on = match decode_account(&perp(), frame) {
                 Ok(events) => !events.is_empty(),
                 Err(_) => true,
             };
-            assert!(acted_on, "the decoder drops {name}");
+            assert_eq!(acted_on, acts, "what the decoder does with {name} moved");
 
-            assert!(
+            assert_eq!(
                 private::USD_M_ACCOUNT_EVENTS.split('/').any(|e| e == name),
-                "the decoder acts on {name}, which the subscription never asks \
-                 for: {}",
+                acts && name != SPOT_ONLY,
+                "the subscription and the decoder disagree about {name}: {}",
                 private::USD_M_ACCOUNT_EVENTS
+            );
+        }
+
+        for name in private::USD_M_ACCOUNT_EVENTS.split('/') {
+            assert!(
+                events.iter().any(|(event, ..)| *event == name),
+                "the subscription asks for {name}, which this table does not \
+                 weigh against the decoder"
             );
         }
     }

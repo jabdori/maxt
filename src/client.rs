@@ -69,7 +69,9 @@ impl<A: Adapter> Client<A> {
     /// than a short answer, and the ceiling is not the same everywhere: 1 000 on
     /// Binance, 500 on Upbit and Bithumb, 10 on Hyperliquid, whose endpoint takes
     /// no count at all. Leave `limit` unset to take whatever the exchange sends.
-    /// A continuous history is available through [`Feed::Trades`](crate::Feed).
+    /// Use [`Feed::Trades`](crate::Feed) for live updates. A
+    /// [`MarketEvent::Reconnected`](crate::MarketEvent::Reconnected) marks a
+    /// gap that may require backfill and deduplication.
     pub async fn trades(&self, market: &Market, limit: Option<u32>) -> Result<Vec<Trade>> {
         self.adapter.trades(market, limit).await
     }
@@ -154,7 +156,8 @@ impl<A: Adapter> Client<A> {
 
     /// Reads the account's open orders on one market.
     ///
-    /// Requires credentials. The exchange performs the market filter.
+    /// Requires credentials. Results are scoped to `market`; the adapter may
+    /// filter a provider-wide response locally.
     pub async fn open_orders_on(&self, market: &Market) -> Result<Vec<Order>> {
         self.adapter.open_orders(Some(market)).await
     }
@@ -189,8 +192,9 @@ impl<A: Adapter> Client<A> {
 
     /// Cancels an order.
     ///
-    /// Requires credentials. Cancellation races execution; the returned
-    /// [`Order`] is the resulting state and may be partially or fully filled.
+    /// Requires credentials. Cancellation races execution. The returned
+    /// [`Order`] is the provider acknowledgement; some providers omit final
+    /// fill state. Reconcile the order when the final outcome matters.
     pub async fn cancel_order(&self, market: &Market, order_id: &str) -> Result<Order> {
         self.adapter.cancel_order(market, order_id).await
     }
@@ -199,10 +203,7 @@ impl<A: Adapter> Client<A> {
     ///
     /// Requires credentials. Derivatives markets only.
     ///
-    /// A row with no size is not an open position and never reaches the caller,
-    /// whatever the venue publishes and whichever adapter is underneath. The
-    /// drop happens here rather than in each adapter, so an adapter written
-    /// outside this crate answers the same way.
+    /// Rows with `quantity == 0` are removed.
     pub async fn positions(&self) -> Result<Vec<Position>> {
         Ok(open_positions(self.adapter.positions(None).await?))
     }

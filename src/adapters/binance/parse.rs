@@ -807,12 +807,7 @@ mod tests {
 
     #[test]
     fn the_last_millisecond_a_window_covers_is_still_inside_it() {
-        // The close time in this payload is 1499644799999, the final millisecond
-        // the window covers. A clock reading exactly that is inside the window, so
-        // the bar is still forming; one millisecond later it is settled. This is
-        // the boundary Hyperliquid's `T` is read at too, and the two used to sit a
-        // millisecond apart, enough for a caller comparing two venues to watch
-        // the same bar settle twice.
+        // Binance close time is inclusive; the candle closes one millisecond later.
         let raw: Vec<RawCandle> = json(SPOT_CANDLES, "klines").expect("official kline payload");
 
         let at_the_boundary =

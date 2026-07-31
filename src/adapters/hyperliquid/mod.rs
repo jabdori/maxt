@@ -40,8 +40,9 @@ pub(crate) const TESTNET_WEBSOCKET_URL: &str = "wss://api.hyperliquid-testnet.xy
 /// markets are not exposed by this adapter.
 ///
 /// [`Client::trades`](crate::Client::trades) uses `recentTrades`, which exposes
-/// at most ten recent executions and no historical range. Use
-/// [`Feed::Trades`](crate::Feed::Trades) to collect a continuous trade stream.
+/// at most ten recent executions and no historical range.
+/// [`Feed::Trades`](crate::Feed::Trades) provides live updates but may have a
+/// gap after reconnection.
 ///
 /// [`Ticker::last_price`](crate::Ticker::last_price) uses `midPx`, falling back
 /// to `markPx`; it is not the latest execution price. Use the trades API when

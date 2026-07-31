@@ -37,11 +37,8 @@ impl Timestamp {
 
     /// From whole seconds since the Unix epoch.
     ///
-    /// A value too large to express in nanoseconds saturates at the end of the
-    /// representable range, around the year 2262. Nothing here panics.
-    ///
-    /// Adapters validate exchange timestamps separately and report overflow as
-    /// [`Error::Decode`](crate::Error::Decode).
+    /// Values outside the nanosecond range saturate. This constructor does not
+    /// report overflow.
     pub const fn from_secs(secs: i64) -> Self {
         Self(secs.saturating_mul(1_000_000_000))
     }
@@ -141,10 +138,7 @@ mod tests {
 
     #[test]
     fn a_clock_past_the_representable_range_saturates_rather_than_wrapping() {
-        // A `Duration` counts nanoseconds in 128 bits and this type in 64, so
-        // reading a clock is a narrowing conversion. An `as` cast turns a
-        // machine whose clock is set past the year 2262 into a plausible
-        // instant somewhere else, which no caller can tell from a real one.
+        // Narrowing from `u128` nanoseconds must saturate, not wrap.
         let ordinary = Duration::from_secs(1_700_000_000);
         assert_eq!(
             Timestamp::since_epoch(ordinary),

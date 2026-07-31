@@ -128,8 +128,6 @@ pub enum AccountEvent {
 ///
 /// The defaults reconnect without a count limit, use exponential backoff, and
 /// apply [`Overflow::Backpressure`] when the buffer fills.
-///
-/// This struct is exhaustive; adding a field is a breaking change.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StreamConfig {
     /// Give up after this many reconnects, whatever came of them.

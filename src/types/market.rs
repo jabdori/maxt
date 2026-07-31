@@ -138,7 +138,7 @@ impl fmt::Display for Market {
     }
 }
 
-/// Whether an exchange is currently accepting orders on a market.
+/// Common listing and trading status.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum MarketStatus {
@@ -148,7 +148,7 @@ pub enum MarketStatus {
     Paused,
     /// Delisted.
     Delisted,
-    /// The exchange did not say.
+    /// Provider state not mapped to `Active`, `Paused`, or `Delisted`.
     Unknown,
 }
 

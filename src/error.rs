@@ -30,48 +30,34 @@ pub enum Error {
         detail: String,
     },
 
-    /// The exchange does not offer this feature at all.
+    /// The adapter does not map this feature or request shape.
     ///
-    /// A permanent, structural answer. Bithumb publishes no candle stream, for
-    /// example, so [`Feature::CandleStream`] is unsupported there however the
-    /// request is phrased.
+    /// Retrying the same request or adding credentials cannot change this
+    /// result. The exchange may still expose a native API outside `maxt`.
     Unsupported {
-        /// The feature `maxt` maps no endpoint for.
+        /// The unmapped feature.
         feature: Feature,
-        /// The exchange it was asked of.
+        /// The configured exchange.
         exchange: &'static str,
-        /// Why it is unmapped, and the closest alternative if there is one.
+        /// Mapping details and any available alternative.
         detail: String,
     },
 
-    /// `maxt` could not build a credentialed request, so none was sent.
-    ///
-    /// The credentials are missing, malformed, or unusable for signing, and
-    /// every one of those is decided inside this process. An exchange that read
-    /// a credential and refused it answers with [`Error::Exchange`] under its
-    /// own code instead, which is the only place that code survives.
+    /// A credentialed request could not be built locally, so none was sent.
     Auth {
-        /// What failed about the credentials.
+        /// Credential or signing failure.
         detail: String,
     },
 
-    /// The exchange accepted the connection and answered with an error.
-    ///
-    /// Including a credential it read and refused. `code` and `message` stay
-    /// the exchange's own rather than being folded into [`Error::Auth`],
-    /// because no two of the four exchanges spell a refused credential alike
-    /// and the code is what a caller branches on.
+    /// Error response from the exchange, including rejected credentials.
     Exchange {
         /// The exchange that answered.
         exchange: &'static str,
-        /// The exchange's own error code, verbatim. The name of a pushed event
-        /// where the exchange sent no code, as Binance's `listenKeyExpired` is.
+        /// Provider error code or event name.
         code: String,
-        /// The exchange's own error message, verbatim where it sent one, and
-        /// what happened where it sent only an event name.
+        /// Provider error message.
         message: String,
-        /// HTTP status, where the exchange gave one. Binance's WebSocket API
-        /// puts one inside the frame, so this is set there too.
+        /// HTTP status when available.
         status: Option<u16>,
         /// How the error classifies for retry purposes.
         kind: ExchangeErrorKind,
@@ -83,12 +69,9 @@ pub enum Error {
         detail: String,
     },
 
-    /// The exchange answered, but the payload could not be read.
-    ///
-    /// In practice this means the exchange changed a response shape. It is
-    /// worth reporting as a bug against `maxt`.
+    /// The response payload could not be decoded.
     Decode {
-        /// What could not be read.
+        /// Decode failure.
         detail: String,
     },
 }
@@ -201,7 +184,7 @@ impl fmt::Display for Error {
                 feature,
                 exchange,
                 detail,
-            } => write!(f, "{exchange} does not support {feature}: {detail}"),
+            } => write!(f, "{exchange} adapter does not support {feature}: {detail}"),
             Self::Auth { detail } => write!(f, "authentication failed: {detail}"),
             Self::Exchange {
                 exchange,

@@ -11,7 +11,11 @@ documentation = "https://docs.rs/maxt"
 keywords = ["exchange", "trading", "crypto", "websocket", "async"]
 categories = ["api-bindings", "asynchronous", "finance"]
 readme = "README.md"
-exclude = ["/.github", "/docs/superpowers"]
+exclude = ["/.github", "/bindings", "/docs/superpowers"]
+
+[workspace]
+members = ["bindings/common"]
+resolver = "3"
 
 [dependencies]
 base64 = "0.22"

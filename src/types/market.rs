@@ -2,42 +2,61 @@
 
 use std::fmt;
 
-/// An exchange `maxt` can talk to.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-#[non_exhaustive]
-pub enum Exchange {
-    /// Upbit, a Korean spot exchange.
-    Upbit,
-    /// Bithumb, a Korean spot exchange.
-    Bithumb,
-    /// Binance, global spot and USD-margined perpetual futures.
-    Binance,
-    /// Hyperliquid, on-chain spot and perpetual futures.
-    Hyperliquid,
+macro_rules! define_exchanges {
+    (
+        $(
+            $(#[$meta:meta])*
+            $variant:ident => ($id:literal, $display_name:literal),
+        )+
+    ) => {
+        /// An exchange `maxt` can talk to.
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+        #[non_exhaustive]
+        pub enum Exchange {
+            $(
+                $(#[$meta])*
+                $variant,
+            )+
+        }
+
+        impl Exchange {
+            /// Every exchange variant in stable binding order.
+            pub const ALL: [Self; define_exchanges!(@count $($variant),+)] = [
+                $(Self::$variant,)+
+            ];
+
+            /// The lowercase identifier used in symbols, logs, and error messages.
+            ///
+            /// Stable across releases, so it is safe to persist and to match on.
+            pub const fn id(self) -> &'static str {
+                match self {
+                    $(Self::$variant => $id,)+
+                }
+            }
+
+            /// The exchange's own preferred spelling, for display to people.
+            pub const fn display_name(self) -> &'static str {
+                match self {
+                    $(Self::$variant => $display_name,)+
+                }
+            }
+        }
+    };
+    (@count $($variant:ident),+) => {
+        <[()]>::len(&[$(define_exchanges!(@unit $variant)),+])
+    };
+    (@unit $variant:ident) => { () };
 }
 
-impl Exchange {
-    /// The lowercase identifier used in symbols, logs, and error messages.
-    ///
-    /// Stable across releases, so it is safe to persist and to match on.
-    pub const fn id(self) -> &'static str {
-        match self {
-            Self::Upbit => "upbit",
-            Self::Bithumb => "bithumb",
-            Self::Binance => "binance",
-            Self::Hyperliquid => "hyperliquid",
-        }
-    }
-
-    /// The exchange's own preferred spelling, for display to people.
-    pub const fn display_name(self) -> &'static str {
-        match self {
-            Self::Upbit => "Upbit",
-            Self::Bithumb => "Bithumb",
-            Self::Binance => "Binance",
-            Self::Hyperliquid => "Hyperliquid",
-        }
-    }
+define_exchanges! {
+    /// Upbit, a Korean spot exchange.
+    Upbit => ("upbit", "Upbit"),
+    /// Bithumb, a Korean spot exchange.
+    Bithumb => ("bithumb", "Bithumb"),
+    /// Binance, global spot and USD-margined perpetual futures.
+    Binance => ("binance", "Binance"),
+    /// Hyperliquid, on-chain spot and perpetual futures.
+    Hyperliquid => ("hyperliquid", "Hyperliquid"),
 }
 
 impl fmt::Display for Exchange {

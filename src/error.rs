@@ -9,9 +9,9 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 /// Anything that can go wrong while talking to an exchange.
 ///
-/// Variants distinguish local validation, unavailable capabilities, local
-/// authentication, exchange verdicts, transport failures, and unreadable
-/// payloads.
+/// Variants distinguish local validation, unavailable capabilities, adapter
+/// contract failures, local authentication, exchange verdicts, transport
+/// failures, and unreadable payloads.
 ///
 /// [`Error::Auth`] means no credentialed request could be built locally.
 /// Credentials sent to and rejected by an exchange remain [`Error::Exchange`]
@@ -40,6 +40,13 @@ pub enum Error {
         /// The configured exchange.
         exchange: &'static str,
         /// Mapping details and any available alternative.
+        detail: String,
+    },
+
+    /// An adapter or foreign dispatcher violated the [`Adapter`](crate::Adapter)
+    /// contract.
+    Adapter {
+        /// What contract boundary failed.
         detail: String,
     },
 
@@ -88,6 +95,7 @@ impl Error {
             Self::Transport { .. } => true,
             Self::InvalidRequest { .. }
             | Self::Unsupported { .. }
+            | Self::Adapter { .. }
             | Self::Auth { .. }
             | Self::Decode { .. } => false,
         }
@@ -122,6 +130,13 @@ impl Error {
         Self::Unsupported {
             feature,
             exchange,
+            detail: detail.into(),
+        }
+    }
+
+    /// Builds an adapter contract error.
+    pub fn adapter(detail: impl Into<String>) -> Self {
+        Self::Adapter {
             detail: detail.into(),
         }
     }
@@ -185,6 +200,7 @@ impl fmt::Display for Error {
                 exchange,
                 detail,
             } => write!(f, "{exchange} adapter does not support {feature}: {detail}"),
+            Self::Adapter { detail } => write!(f, "adapter failed: {detail}"),
             Self::Auth { detail } => write!(f, "authentication failed: {detail}"),
             Self::Exchange {
                 exchange,

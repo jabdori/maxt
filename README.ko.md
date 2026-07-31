@@ -2,15 +2,13 @@
 
 [English](README.md) | [한국어](README.ko.md)
 
-`maxt`(Multi-Asset eXchange Toolkit)는 여러 암호화폐 거래소의 시세, 계좌, 주문을
-하나의 Rust API로 다룹니다.
-
-지원 거래소: Upbit, Bithumb, Binance(현물과 USD 마진 무기한 선물),
-Hyperliquid(현물과 무기한 선물).
+`maxt`(Multi-Asset eXchange Toolkit)는 암호화폐 거래소 네 곳의 시세, 계좌, 주문을
+하나의 Rust API로 다룹니다. Upbit, Bithumb, Binance(현물과 USD 마진 무기한 선물),
+Hyperliquid(현물과 무기한 선물)를 지원합니다.
 
 ## 빠르게 시작하기
 
-`maxt`는 패키지 레지스트리에 없습니다. 저장소를 의존성으로 지정하세요.
+`maxt`는 패키지 레지스트리에 없습니다.
 
 ```toml
 [dependencies]
@@ -35,17 +33,16 @@ async fn main() -> maxt::Result<()> {
 }
 ```
 
-[`examples/public_rest.rs`](examples/public_rest.rs)의 첫 부분입니다. 전체는
-`cargo run --example public_rest`로 실행합니다.
+`cargo run --example public_rest`로
+[프로그램 전체](examples/public_rest.rs)를 실행합니다.
 
 ## 문서
 
-- [시작하기](docs/getting-started.ko.md): 공개 데이터 조회, 실시간 피드, 이어서
-  계좌 조회.
-- [공통 API](docs/common-api.ko.md): `Client`에 무엇이 있는지.
-- [거래소 고르기](docs/providers.ko.md): 어떤 일에 어떤 어댑터를 쓸지.
-- [`examples/`](examples/): 실행 가능한 프로그램 넷.
-- [기여 안내](CONTRIBUTING.ko.md): 검사 항목과 거래소를 추가하는 방법.
+- [시작하기](docs/getting-started.ko.md)
+- [공통 API](docs/common-api.ko.md)
+- [거래소 고르기](docs/providers.ko.md)
+- [`examples/`](examples/)
+- [기여 안내](CONTRIBUTING.ko.md)
 
 ## 라이선스
 

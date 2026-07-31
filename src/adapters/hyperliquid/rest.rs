@@ -1364,7 +1364,7 @@ mod tests {
             assert!(
                 matches!(
                     trades_request("BTC", Some(limit)),
-                    Err(Error::InvalidRequest { field: "limit", .. })
+                    Err(Error::InvalidRequest { field, .. }) if field == "limit"
                 ),
                 "{limit} was accepted"
             );
@@ -1422,7 +1422,7 @@ mod tests {
                     Decimal::from(27_123),
                 ),
             ),
-            Err(Error::InvalidRequest { field: "size", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "size"
         ));
         // Fractional prices are capped at five significant digits.
         assert!(matches!(
@@ -1435,7 +1435,7 @@ mod tests {
                     Decimal::new(271_231, 1),
                 ),
             ),
-            Err(Error::InvalidRequest { field: "price", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "price"
         ));
         // Integer prices are exempt from the significant-digit cap.
         assert!(
@@ -1495,7 +1495,7 @@ mod tests {
                     Decimal::from(27_123),
                 ),
             ),
-            Err(Error::InvalidRequest { field: "size", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "size"
         ));
     }
 

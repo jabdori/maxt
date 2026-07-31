@@ -1215,14 +1215,11 @@ mod tests {
 
         assert!(matches!(
             stream_groups(&spot(), &no_feed),
-            Err(Error::InvalidRequest { field: "feeds", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "feeds"
         ));
         assert!(matches!(
             stream_groups(&spot(), &no_market),
-            Err(Error::InvalidRequest {
-                field: "markets",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "markets"
         ));
     }
 

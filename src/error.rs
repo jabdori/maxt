@@ -25,7 +25,7 @@ pub enum Error {
     /// The request is malformed and retrying it unchanged will fail again.
     InvalidRequest {
         /// The request field that failed validation.
-        field: &'static str,
+        field: String,
         /// What was wrong with it.
         detail: String,
     },
@@ -115,9 +115,9 @@ impl Error {
         )
     }
 
-    pub(crate) fn invalid_request(field: &'static str, detail: impl Into<String>) -> Self {
+    pub(crate) fn invalid_request(field: impl Into<String>, detail: impl Into<String>) -> Self {
         Self::InvalidRequest {
-            field,
+            field: field.into(),
             detail: detail.into(),
         }
     }
@@ -288,6 +288,17 @@ mod tests {
             !Error::unsupported(Feature::CandleStream, "bithumb", "no public candle stream")
                 .is_retryable()
         );
+    }
+
+    #[test]
+    fn invalid_request_keeps_a_runtime_defined_field_name() {
+        let field = format!("custom_{}", "field");
+        let error = Error::invalid_request(field.clone(), "bad value");
+
+        assert!(matches!(
+            error,
+            Error::InvalidRequest { field: actual, .. } if actual == field
+        ));
     }
 
     #[test]

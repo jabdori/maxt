@@ -997,11 +997,11 @@ mod tests {
 
         assert!(matches!(
             native_symbol(&injected),
-            Err(Error::InvalidRequest { field: "base", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "base"
         ));
         assert!(matches!(
             market_from_native_symbol("KRW-BTC&count=500"),
-            Err(Error::InvalidRequest { field: "base", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "base"
         ));
     }
 
@@ -1009,14 +1009,11 @@ mod tests {
     fn a_code_without_a_separator_is_not_an_upbit_market() {
         assert!(matches!(
             market_from_native_symbol("BTCKRW"),
-            Err(Error::InvalidRequest {
-                field: "symbol",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "symbol"
         ));
         assert!(matches!(
             market_from_native_symbol("KRW-"),
-            Err(Error::InvalidRequest { field: "base", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "base"
         ));
     }
 
@@ -1027,10 +1024,7 @@ mod tests {
 
         assert!(matches!(
             native_symbol(&elsewhere),
-            Err(Error::InvalidRequest {
-                field: "market",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "market"
         ));
         assert!(matches!(
             native_symbol(&perpetual),

@@ -1099,17 +1099,11 @@ mod tests {
 
         assert!(matches!(
             native_symbol(&upbit),
-            Err(Error::InvalidRequest {
-                field: "market.exchange",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "market.exchange"
         ));
         assert!(matches!(
             native_symbol(&perpetual),
-            Err(Error::InvalidRequest {
-                field: "market.kind",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "market.kind"
         ));
     }
 
@@ -1126,10 +1120,7 @@ mod tests {
 
         assert!(matches!(
             native_symbol(&injected),
-            Err(Error::InvalidRequest {
-                field: "market.base",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "market.base"
         ));
         assert!(split_symbol("KRW-BTC&count=500").is_none());
     }

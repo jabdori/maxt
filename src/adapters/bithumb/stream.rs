@@ -342,14 +342,11 @@ mod tests {
 
         assert!(matches!(
             subscribe_frame(&no_feed, "t"),
-            Err(Error::InvalidRequest { field: "feeds", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "feeds"
         ));
         assert!(matches!(
             subscribe_frame(&no_market, "t"),
-            Err(Error::InvalidRequest {
-                field: "markets",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "markets"
         ));
     }
 

@@ -4,10 +4,13 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
 license = "MIT"
-publish = false
+description = "Language-neutral adapter bridge for maxt language bindings."
+repository = "https://github.com/jabdori/maxt"
+homepage = "https://github.com/jabdori/maxt"
+documentation = "https://docs.rs/maxt-bindings-common"
 
 [dependencies]
-maxt = { path = "../.." }
+maxt = "0.1.0"
 
 [dev-dependencies]
 futures-util = { version = "0.3", default-features = false, features = ["std"] }

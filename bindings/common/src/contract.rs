@@ -115,8 +115,10 @@ pub enum AdapterReply {
     OpenOrders(Vec<Order>),
     /// Result of [`AdapterCall::SubscribeAccount`].
     AccountStream(AccountStream),
-    /// Result of an order placement or cancellation.
-    Order(Order),
+    /// Result of [`AdapterCall::PlaceOrder`].
+    PlaceOrder(Order),
+    /// Result of [`AdapterCall::CancelOrder`].
+    CancelOrder(Order),
     /// Result of [`AdapterCall::Positions`].
     Positions(Vec<Position>),
     /// Result of [`AdapterCall::MarginSummary`].
@@ -132,7 +134,7 @@ pub enum AdapterReply {
 /// Executes owned adapter calls in a foreign runtime.
 pub trait ForeignDispatcher: Send + Sync + 'static {
     /// Dispatches one call and returns its typed reply.
-    fn dispatch(&self, call: AdapterCall) -> BoxFuture<'static, Result<AdapterReply>>;
+    fn dispatch(&self, call: AdapterCall) -> BoxFuture<'_, Result<AdapterReply>>;
 }
 
 impl AdapterReply {
@@ -147,7 +149,8 @@ impl AdapterReply {
             Self::Balances(_) => "Balances",
             Self::OpenOrders(_) => "OpenOrders",
             Self::AccountStream(_) => "AccountStream",
-            Self::Order(_) => "Order",
+            Self::PlaceOrder(_) => "PlaceOrder",
+            Self::CancelOrder(_) => "CancelOrder",
             Self::Positions(_) => "Positions",
             Self::MarginSummary(_) => "MarginSummary",
             Self::FundingRates(_) => "FundingRates",

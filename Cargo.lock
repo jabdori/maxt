@@ -989,6 +989,7 @@ version = "0.1.0"
 dependencies = [
  "futures-util",
  "maxt",
+ "syn 2.0.119",
  "tokio",
 ]
 

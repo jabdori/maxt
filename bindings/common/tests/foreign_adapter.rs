@@ -4,7 +4,7 @@ use std::collections::VecDeque;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
-use std::task::{Context, Poll};
+use std::task::{Context, Poll, Waker};
 
 use futures_util::stream;
 use futures_util::{Stream, StreamExt};
@@ -35,7 +35,7 @@ impl RecordingDispatcher {
 }
 
 impl ForeignDispatcher for RecordingDispatcher {
-    fn dispatch(&self, call: AdapterCall) -> BoxFuture<'static, Result<AdapterReply>> {
+    fn dispatch(&self, call: AdapterCall) -> BoxFuture<'_, Result<AdapterReply>> {
         self.calls.lock().unwrap().push(call);
         let reply = self
             .replies
@@ -44,6 +44,23 @@ impl ForeignDispatcher for RecordingDispatcher {
             .pop_front()
             .expect("테스트 응답이 호출마다 있어야 합니다");
         Box::pin(async move { reply })
+    }
+}
+
+struct BorrowingDispatcher {
+    reply: Mutex<Option<AdapterReply>>,
+}
+
+impl ForeignDispatcher for BorrowingDispatcher {
+    fn dispatch(&self, _call: AdapterCall) -> BoxFuture<'_, Result<AdapterReply>> {
+        Box::pin(async move {
+            Ok(self
+                .reply
+                .lock()
+                .unwrap()
+                .take()
+                .expect("빌린 디스패처 응답은 한 번 존재해야 합니다"))
+        })
     }
 }
 
@@ -64,6 +81,14 @@ impl<S> Drop for DropAware<S> {
     fn drop(&mut self) {
         self.dropped.store(true, Ordering::SeqCst);
     }
+}
+
+fn assert_pending(stream: &mut (impl Stream + Unpin)) {
+    let mut context = Context::from_waker(Waker::noop());
+    assert!(matches!(
+        Pin::new(stream).poll_next(&mut context),
+        Poll::Pending
+    ));
 }
 
 fn market() -> Market {
@@ -115,6 +140,20 @@ fn adapter(
 }
 
 #[tokio::test]
+async fn dispatcher_can_borrow_self_behind_a_trait_object() {
+    let dispatcher: Arc<dyn ForeignDispatcher> = Arc::new(BorrowingDispatcher {
+        reply: Mutex::new(Some(AdapterReply::Trades(vec![]))),
+    });
+    let client = Client::new(ForeignAdapter::new(
+        Exchange::Binance,
+        [Feature::Trades],
+        dispatcher,
+    ));
+
+    assert!(client.trades(&market(), Some(1)).await.unwrap().is_empty());
+}
+
+#[tokio::test]
 async fn every_current_adapter_method_forwards_an_owned_call() {
     let dispatcher = RecordingDispatcher::new([
         AdapterReply::Markets(vec![]),
@@ -122,16 +161,12 @@ async fn every_current_adapter_method_forwards_an_owned_call() {
         AdapterReply::OrderBook(order_book()),
         AdapterReply::Ticker(ticker()),
         AdapterReply::Candles(vec![]),
-        AdapterReply::MarketStream(MarketStream::new(stream::empty::<
-            Result<MarketEvent>,
-        >())),
+        AdapterReply::MarketStream(MarketStream::new(stream::empty::<Result<MarketEvent>>())),
         AdapterReply::Balances(vec![]),
         AdapterReply::OpenOrders(vec![]),
-        AdapterReply::AccountStream(AccountStream::new(stream::empty::<
-            Result<AccountEvent>,
-        >())),
-        AdapterReply::Order(order("placed")),
-        AdapterReply::Order(order("cancelled")),
+        AdapterReply::AccountStream(AccountStream::new(stream::empty::<Result<AccountEvent>>())),
+        AdapterReply::PlaceOrder(order("placed")),
+        AdapterReply::CancelOrder(order("cancelled")),
         AdapterReply::Positions(vec![]),
         AdapterReply::MarginSummary(MarginSummary {
             asset: "USDT".to_string(),
@@ -258,6 +293,25 @@ async fn a_reply_variant_mismatch_is_an_adapter_error() {
 }
 
 #[tokio::test]
+async fn place_and_cancel_order_replies_are_not_interchangeable() {
+    let request = OrderRequest::market(market(), Side::Buy, Size::Base(Decimal::ONE));
+    let place_dispatcher = RecordingDispatcher::new([AdapterReply::CancelOrder(order("wrong"))]);
+    let place_client = Client::new(adapter(place_dispatcher, [Feature::Trading]));
+
+    let place_error = place_client.place_order(&request).await.unwrap_err();
+    assert!(matches!(place_error, Error::Adapter { .. }));
+
+    let cancel_dispatcher = RecordingDispatcher::new([AdapterReply::PlaceOrder(order("wrong"))]);
+    let cancel_client = Client::new(adapter(cancel_dispatcher, [Feature::Trading]));
+
+    let cancel_error = cancel_client
+        .cancel_order(&market(), "order-1")
+        .await
+        .unwrap_err();
+    assert!(matches!(cancel_error, Error::Adapter { .. }));
+}
+
+#[tokio::test]
 async fn market_stream_continues_after_error_and_drop_cancels_the_source() {
     let dropped = Arc::new(AtomicBool::new(false));
     let source = DropAware {
@@ -265,16 +319,14 @@ async fn market_stream_continues_after_error_and_drop_cancels_the_source() {
             Ok(MarketEvent::Reconnected),
             Err(Error::adapter("bad market item")),
             Ok(MarketEvent::Reconnected),
-        ]),
+        ])
+        .chain(stream::pending()),
         dropped: dropped.clone(),
     };
-    let dispatcher = RecordingDispatcher::new([AdapterReply::MarketStream(MarketStream::new(
-        source,
-    ))]);
+    let dispatcher =
+        RecordingDispatcher::new([AdapterReply::MarketStream(MarketStream::new(source))]);
     let adapter = adapter(dispatcher, [Feature::TradeStream]);
-    let subscription = Subscription::new()
-        .market(market())
-        .feed(Feed::Trades);
+    let subscription = Subscription::new().market(market()).feed(Feed::Trades);
     let mut events = adapter
         .subscribe(&subscription, &StreamConfig::default())
         .await
@@ -284,12 +336,15 @@ async fn market_stream_continues_after_error_and_drop_cancels_the_source() {
         events.next().await,
         Some(Ok(MarketEvent::Reconnected))
     ));
-    assert!(matches!(events.next().await, Some(Err(Error::Adapter { .. }))));
+    assert!(matches!(
+        events.next().await,
+        Some(Err(Error::Adapter { .. }))
+    ));
     assert!(matches!(
         events.next().await,
         Some(Ok(MarketEvent::Reconnected))
     ));
-    assert!(events.next().await.is_none());
+    assert_pending(&mut events);
     assert!(!dropped.load(Ordering::SeqCst));
 
     drop(events);
@@ -304,12 +359,12 @@ async fn account_stream_continues_after_error_and_drop_cancels_the_source() {
             Ok(AccountEvent::Reconnected),
             Err(Error::adapter("bad account item")),
             Ok(AccountEvent::Reconnected),
-        ]),
+        ])
+        .chain(stream::pending()),
         dropped: dropped.clone(),
     };
-    let dispatcher = RecordingDispatcher::new([AdapterReply::AccountStream(AccountStream::new(
-        source,
-    ))]);
+    let dispatcher =
+        RecordingDispatcher::new([AdapterReply::AccountStream(AccountStream::new(source))]);
     let adapter = adapter(dispatcher, [Feature::AccountStream]);
     let mut events = adapter
         .subscribe_account(&StreamConfig::default())
@@ -320,14 +375,45 @@ async fn account_stream_continues_after_error_and_drop_cancels_the_source() {
         events.next().await,
         Some(Ok(AccountEvent::Reconnected))
     ));
-    assert!(matches!(events.next().await, Some(Err(Error::Adapter { .. }))));
+    assert!(matches!(
+        events.next().await,
+        Some(Err(Error::Adapter { .. }))
+    ));
     assert!(matches!(
         events.next().await,
         Some(Ok(AccountEvent::Reconnected))
     ));
-    assert!(events.next().await.is_none());
+    assert_pending(&mut events);
     assert!(!dropped.load(Ordering::SeqCst));
 
     drop(events);
     assert!(dropped.load(Ordering::SeqCst));
+}
+
+#[tokio::test]
+async fn finite_foreign_streams_end_with_none() {
+    let dispatcher = RecordingDispatcher::new([
+        AdapterReply::MarketStream(MarketStream::new(stream::iter([Ok(
+            MarketEvent::Reconnected,
+        )]))),
+        AdapterReply::AccountStream(AccountStream::new(stream::iter([Ok(
+            AccountEvent::Reconnected,
+        )]))),
+    ]);
+    let adapter = adapter(dispatcher, [Feature::TradeStream, Feature::AccountStream]);
+    let subscription = Subscription::new().market(market()).feed(Feed::Trades);
+
+    let mut market_events = adapter
+        .subscribe(&subscription, &StreamConfig::default())
+        .await
+        .unwrap();
+    assert!(market_events.next().await.is_some());
+    assert!(market_events.next().await.is_none());
+
+    let mut account_events = adapter
+        .subscribe_account(&StreamConfig::default())
+        .await
+        .unwrap();
+    assert!(account_events.next().await.is_some());
+    assert!(account_events.next().await.is_none());
 }

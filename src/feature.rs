@@ -2,24 +2,64 @@
 
 use std::fmt;
 
-/// A capability an exchange may or may not offer.
-///
-/// `maxt` reports a missing capability as
-/// [`Error::Unsupported`](crate::Error::Unsupported) at the call, naming the
-/// feature. Ask ahead of time with
-/// [`Client::supports`](crate::Client::supports) when the answer should change
-/// what your program does.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-#[non_exhaustive]
-pub enum Feature {
+macro_rules! define_features {
+    (
+        $(
+            $(#[$meta:meta])*
+            $variant:ident => ($id:literal, $label:literal),
+        )+
+    ) => {
+        /// A capability an exchange may or may not offer.
+        ///
+        /// `maxt` reports a missing capability as
+        /// [`Error::Unsupported`](crate::Error::Unsupported) at the call, naming the
+        /// feature. Ask ahead of time with
+        /// [`Client::supports`](crate::Client::supports) when the answer should change
+        /// what your program does.
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+        #[non_exhaustive]
+        pub enum Feature {
+            $(
+                $(#[$meta])*
+                $variant,
+            )+
+        }
+
+        impl Feature {
+            /// Every feature variant in stable binding order.
+            pub const ALL: [Self; define_features!(@count $($variant),+)] = [
+                $(Self::$variant,)+
+            ];
+
+            /// The stable lowercase identifier used by language bindings.
+            pub const fn id(self) -> &'static str {
+                match self {
+                    $(Self::$variant => $id,)+
+                }
+            }
+
+            const fn label(self) -> &'static str {
+                match self {
+                    $(Self::$variant => $label,)+
+                }
+            }
+        }
+    };
+    (@count $($variant:ident),+) => {
+        <[()]>::len(&[$(define_features!(@unit $variant)),+])
+    };
+    (@unit $variant:ident) => { () };
+}
+
+define_features! {
     /// Listing the exchange's markets.
-    Markets,
+    Markets => ("markets", "listing markets"),
     /// Reading recent trades over REST.
-    Trades,
+    Trades => ("trades", "reading recent trades"),
     /// Reading an order book snapshot over REST.
-    OrderBook,
+    OrderBook => ("order_book", "reading order books"),
     /// Reading a ticker over REST.
-    Ticker,
+    Ticker => ("ticker", "reading tickers"),
     /// Reading historical candles over REST.
     ///
     /// `true` guarantees these intervals: one, three, five, fifteen and thirty
@@ -33,35 +73,35 @@ pub enum Feature {
     /// interval exposed by every provider.
     ///
     /// [`Interval`]: crate::Interval
-    Candles,
+    Candles => ("candles", "reading candles"),
     /// Streaming trades.
-    TradeStream,
+    TradeStream => ("trade_stream", "streaming trades"),
     /// Streaming order book updates.
-    OrderBookStream,
+    OrderBookStream => ("order_book_stream", "streaming order books"),
     /// Streaming tickers.
-    TickerStream,
+    TickerStream => ("ticker_stream", "streaming tickers"),
     /// Streaming candles.
-    CandleStream,
+    CandleStream => ("candle_stream", "streaming candles"),
     /// Reading account balances.
-    Balances,
+    Balances => ("balances", "reading balances"),
     /// Reading open orders.
-    OpenOrders,
+    OpenOrders => ("open_orders", "reading open orders"),
     /// Streaming account balance and order updates.
-    AccountStream,
+    AccountStream => ("account_stream", "streaming account updates"),
     /// Placing and cancelling orders.
-    Trading,
+    Trading => ("trading", "placing and cancelling orders"),
     /// Reading open positions.
-    Positions,
+    Positions => ("positions", "reading positions"),
     /// Reading account margin state.
-    Margin,
+    Margin => ("margin", "reading margin state"),
     /// Reading a market's funding rate history.
-    FundingRates,
+    FundingRates => ("funding_rates", "reading funding rates"),
     /// Reading an account's funding payment history.
-    FundingPayments,
+    FundingPayments => ("funding_payments", "reading funding payments"),
     /// Setting leverage and margin mode.
-    MarginConfig,
+    MarginConfig => ("margin_config", "setting leverage and margin mode"),
     /// Placing orders that can only reduce a position.
-    ReduceOnlyOrders,
+    ReduceOnlyOrders => ("reduce_only_orders", "placing reduce-only orders"),
 }
 
 impl Feature {
@@ -108,29 +148,6 @@ impl Feature {
         )
     }
 
-    const fn label(self) -> &'static str {
-        match self {
-            Self::Markets => "listing markets",
-            Self::Trades => "reading recent trades",
-            Self::OrderBook => "reading order books",
-            Self::Ticker => "reading tickers",
-            Self::Candles => "reading candles",
-            Self::TradeStream => "streaming trades",
-            Self::OrderBookStream => "streaming order books",
-            Self::TickerStream => "streaming tickers",
-            Self::CandleStream => "streaming candles",
-            Self::Balances => "reading balances",
-            Self::OpenOrders => "reading open orders",
-            Self::AccountStream => "streaming account updates",
-            Self::Trading => "placing and cancelling orders",
-            Self::Positions => "reading positions",
-            Self::Margin => "reading margin state",
-            Self::FundingRates => "reading funding rates",
-            Self::FundingPayments => "reading funding payments",
-            Self::MarginConfig => "setting leverage and margin mode",
-            Self::ReduceOnlyOrders => "placing reduce-only orders",
-        }
-    }
 }
 
 impl fmt::Display for Feature {

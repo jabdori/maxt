@@ -10,7 +10,7 @@ homepage = "https://github.com/jabdori/maxt"
 documentation = "https://docs.rs/maxt-bindings-common"
 
 [dependencies]
-maxt = "0.1.0"
+maxt = { version = "0.1.0", path = "../.." }
 
 [dev-dependencies]
 futures-util = { version = "0.3", default-features = false, features = ["std"] }

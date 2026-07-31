@@ -1,0 +1,49 @@
+[build-system]
+requires = ["maturin>=1.14,<2"]
+build-backend = "maturin"
+
+[project]
+name = "maxt"
+version = "0.1.0"
+description = "Async Python API for Upbit, Bithumb, Binance, and Hyperliquid market data, accounts, and orders"
+readme = "PYPI.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE.txt"]
+authors = [{ name = "jabdori" }]
+keywords = ["cryptocurrency", "exchange", "market-data", "trading"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Rust",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.urls]
+Homepage = "https://github.com/jabdori/maxt"
+Repository = "https://github.com/jabdori/maxt"
+Documentation = "https://docs.rs/maxt"
+Issues = "https://github.com/jabdori/maxt/issues"
+
+[dependency-groups]
+dev = [
+    "maturin>=1.14,<2",
+    "mypy>=1.18,<2",
+    "pytest>=8.4,<9",
+    "twine>=6,<7",
+]
+
+[tool.maturin]
+python-source = "python"
+module-name = "maxt._native"
+locked = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

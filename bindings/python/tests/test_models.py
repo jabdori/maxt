@@ -1,0 +1,330 @@
+import unittest
+from decimal import Decimal
+
+from maxt import (
+    Balance,
+    Candle,
+    CandleRequest,
+    Decimal as MaxtDecimal,
+    Exchange,
+    FundingPayment,
+    FundingRate,
+    HistoryRequest,
+    Interval,
+    MarketInfo,
+    MarketStatus,
+    Market,
+    MarginSummary,
+    MarginMode,
+    MarginRequest,
+    Order,
+    OrderBook,
+    OrderRequest,
+    OrderStatus,
+    OrderType,
+    Position,
+    Page,
+    Side,
+    Ticker,
+    TimeInForce,
+    Timestamp,
+    Trade,
+    Size,
+    StreamConfig,
+    _model_from_wire,
+    _model_to_wire,
+)
+
+
+class WireModelTests(unittest.TestCase):
+    def test_decimal_and_nanosecond_timestamp_round_trip_exactly(self) -> None:
+        self.assertIs(MaxtDecimal, Decimal)
+        self.assertIs(Timestamp, int)
+        payload = {
+            "market": {
+                "exchange": "upbit",
+                "kind": "spot",
+                "base": "BTC",
+                "quote": "KRW",
+            },
+            "timestamp": 1_700_000_000_123_456_789,
+            "price": "12345678901234567890.12345678",
+            "quantity": "0.00000001",
+            "taker_side": "buy",
+            "id": "trade-1",
+        }
+
+        trade = _model_from_wire("Trade", payload)
+
+        self.assertIsInstance(trade, Trade)
+        self.assertIsInstance(trade.price, Decimal)
+        self.assertEqual(trade.price, Decimal("12345678901234567890.12345678"))
+        self.assertIs(type(trade.timestamp), int)
+        self.assertEqual(trade.timestamp, 1_700_000_000_123_456_789)
+        self.assertEqual(_model_to_wire(trade), payload)
+
+    def test_request_wire_values_use_uppercase_assets_and_exact_timestamps(self) -> None:
+        market = Market.spot(Exchange.UPBIT, "btc", "krw")
+        request = CandleRequest(
+            market=market,
+            interval=Interval.MIN1,
+            from_=1_700_000_000_123_456_789,
+            limit=10,
+        )
+
+        self.assertEqual(market.base, "BTC")
+        self.assertEqual(market.quote, "KRW")
+        self.assertEqual(
+            request.to_wire(),
+            {
+                "market": {
+                    "exchange": "upbit",
+                    "kind": "spot",
+                    "base": "BTC",
+                    "quote": "KRW",
+                },
+                "interval": "min1",
+                "from": 1_700_000_000_123_456_789,
+                "to": None,
+                "limit": 10,
+            },
+        )
+
+    def test_asset_normalization_uppercases_ascii_only(self) -> None:
+        market = Market.spot(Exchange.BINANCE, "éth", "usdt")
+        balance = Balance("éth", Decimal("1"), Decimal("0"))
+
+        self.assertEqual(market.base, "éTH")
+        self.assertEqual(market.quote, "USDT")
+        self.assertEqual(balance.asset, "éTH")
+
+    def test_stream_config_rejects_values_rust_unsigned_fields_cannot_hold(self) -> None:
+        fields = (
+            "max_reconnect_attempts",
+            "initial_reconnect_delay_ms",
+            "max_reconnect_delay_ms",
+            "idle_timeout_ms",
+            "buffer_size",
+        )
+
+        for field_name in fields:
+            with self.subTest(field=field_name):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    f"^{field_name} must be non-negative$",
+                ):
+                    StreamConfig(**{field_name: -1})
+
+    def test_public_market_data_wire_objects_become_typed_values(self) -> None:
+        market_wire = {
+            "exchange": "binance",
+            "kind": "spot",
+            "base": "BTC",
+            "quote": "USDT",
+        }
+        info = _model_from_wire(
+            "MarketInfo",
+            {
+                "market": market_wire,
+                "native_symbol": "BTCUSDT",
+                "status": "active",
+                "korean_name": None,
+                "english_name": "Bitcoin",
+            },
+        )
+        book = _model_from_wire(
+            "OrderBook",
+            {
+                "market": market_wire,
+                "timestamp": 1_700_000_000_000_000_001,
+                "bids": [{"price": "100.10", "quantity": "2.5"}],
+                "asks": [{"price": "100.30", "quantity": "1.5"}],
+            },
+        )
+        ticker = _model_from_wire(
+            "Ticker",
+            {
+                "market": market_wire,
+                "timestamp": 1_700_000_000_000_000_002,
+                "last_trade_time": None,
+                "last_price": "100.20",
+                "change": "0.20",
+                "change_rate": "0.002",
+                "high": None,
+                "low": None,
+                "volume": "20",
+                "quote_volume": None,
+            },
+        )
+        candle = _model_from_wire(
+            "Candle",
+            {
+                "market": market_wire,
+                "interval": "min1",
+                "open_time": 1_700_000_000_000_000_003,
+                "open": "100",
+                "high": "101",
+                "low": "99",
+                "close": "100.5",
+                "volume": "12.25",
+                "quote_volume": None,
+                "closed": True,
+            },
+        )
+
+        self.assertIsInstance(info, MarketInfo)
+        self.assertEqual(info.status, MarketStatus.ACTIVE)
+        self.assertIsInstance(book, OrderBook)
+        self.assertEqual(book.spread(), Decimal("0.2"))
+        self.assertIsInstance(ticker, Ticker)
+        self.assertEqual(ticker.last_price, Decimal("100.20"))
+        self.assertIsInstance(candle, Candle)
+        self.assertEqual(candle.open_time, 1_700_000_000_000_000_003)
+
+    def test_private_order_position_and_margin_wire_objects_are_typed(self) -> None:
+        market_wire = {
+            "exchange": "binance",
+            "kind": "perpetual",
+            "base": "BTC",
+            "quote": "USDT",
+        }
+        order = _model_from_wire(
+            "Order",
+            {
+                "id": "42",
+                "market": market_wire,
+                "side": "buy",
+                "status": "partially_filled",
+                "filled_quantity": "0.25",
+                "remaining_quantity": "0.75",
+                "price": "50000.125",
+                "created_at": 1_700_000_000_000_000_004,
+            },
+        )
+        position = _model_from_wire(
+            "Position",
+            {
+                "market": market_wire,
+                "side": "sell",
+                "quantity": "1.5",
+                "entry_price": "51000",
+                "mark_price": "50500",
+                "notional": "75750",
+                "unrealized_pnl": "750",
+                "leverage": "3",
+                "margin_mode": "isolated",
+            },
+        )
+        margin = _model_from_wire(
+            "MarginSummary",
+            {
+                "asset": "USDT",
+                "equity": "1000.01",
+                "margin_balance": "900",
+                "available_balance": None,
+            },
+        )
+
+        self.assertIsInstance(order, Order)
+        self.assertEqual(order.status, OrderStatus.PARTIALLY_FILLED)
+        self.assertEqual(order.price, Decimal("50000.125"))
+        self.assertIsInstance(position, Position)
+        self.assertEqual(position.quantity, Decimal("1.5"))
+        self.assertFalse(position.is_flat())
+        self.assertIsInstance(margin, MarginSummary)
+        self.assertEqual(margin.equity, Decimal("1000.01"))
+
+    def test_history_pages_keep_typed_items_and_opaque_cursors(self) -> None:
+        market_wire = {
+            "exchange": "hyperliquid",
+            "kind": "perpetual",
+            "base": "ETH",
+            "quote": "USDC",
+        }
+        rates = _model_from_wire(
+            "FundingRatePage",
+            {
+                "items": [
+                    {
+                        "market": market_wire,
+                        "timestamp": 1_700_000_000_000_000_005,
+                        "rate": "0.0001",
+                        "mark_price": "3500.25",
+                    }
+                ],
+                "next": "opaque-rate-cursor",
+            },
+        )
+        payments = _model_from_wire(
+            "FundingPaymentPage",
+            {
+                "items": [
+                    {
+                        "market": market_wire,
+                        "timestamp": 1_700_000_000_000_000_006,
+                        "amount": "-1.25",
+                        "rate": None,
+                        "id": "payment-1",
+                    }
+                ],
+                "next": None,
+            },
+        )
+
+        self.assertIsInstance(rates, Page)
+        self.assertIsInstance(rates.items[0], FundingRate)
+        self.assertEqual(rates.next.as_str(), "opaque-rate-cursor")
+        self.assertTrue(rates.has_more())
+        self.assertIsInstance(payments.items[0], FundingPayment)
+        self.assertFalse(payments.has_more())
+
+        request = HistoryRequest(
+            market=rates.items[0].market,
+            from_=1_700_000_000_000_000_000,
+            cursor=rates.next,
+            limit=100,
+        )
+        self.assertEqual(request.to_wire()["cursor"], "opaque-rate-cursor")
+        self.assertEqual(request.to_wire()["from"], 1_700_000_000_000_000_000)
+
+    def test_order_and_margin_requests_preserve_decimal_scale_on_wire(self) -> None:
+        market = Market.perpetual(Exchange.BINANCE, "BTC", "USDT")
+        market_order = OrderRequest.market_order(
+            market,
+            Side.BUY,
+            Size.quote(Decimal("100.00")),
+            reduce_only=True,
+        )
+        limit_order = OrderRequest.limit_order(
+            market,
+            Side.SELL,
+            Size.base(Decimal("0.25")),
+            Decimal("50000.2500"),
+            time_in_force=TimeInForce.POST_ONLY,
+        )
+        margin = MarginRequest(
+            market,
+            leverage=Decimal("3.0"),
+            margin_mode=MarginMode.ISOLATED,
+        )
+
+        self.assertEqual(market_order.order_type, OrderType.MARKET)
+        self.assertEqual(
+            market_order.to_wire(),
+            {
+                "market": market.to_wire(),
+                "side": "buy",
+                "order_type": "market",
+                "size": {"kind": "quote", "value": "100.00"},
+                "price": None,
+                "time_in_force": None,
+                "reduce_only": True,
+            },
+        )
+        self.assertEqual(limit_order.to_wire()["price"], "50000.2500")
+        self.assertEqual(limit_order.to_wire()["time_in_force"], "post_only")
+        self.assertEqual(margin.to_wire()["leverage"], "3.0")
+
+
+if __name__ == "__main__":
+    unittest.main()

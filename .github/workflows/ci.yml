@@ -27,10 +27,6 @@ jobs:
       - name: Lint
         run: cargo clippy --all-targets -- -D warnings
 
-      # Nothing outside a test module may unwrap, expect, or panic: a library
-      # that aborts its caller's process on a malformed exchange response is not
-      # usable in the programs this one is for. `--lib` is what excludes the
-      # test modules, where these are all fine.
       - name: Forbid panics outside tests
         run: >
           cargo clippy --lib --
@@ -41,11 +37,6 @@ jobs:
       - name: Test
         run: cargo test --all-targets
 
-      # `cargo test --all-targets` skips doctests, and doctests are where every
-      # Rust block in the repository is compiled: every type's examples, and
-      # every block in all eighteen Markdown files through the `markdown`
-      # module in `src/lib.rs`. Until that module existed nothing here compiled
-      # a single line the documentation hands a reader.
       - name: Doctests
         run: cargo test --doc
 
@@ -55,25 +46,11 @@ jobs:
       - name: Docs
         run: cargo doc --no-deps
 
-  # Two mistakes that cannot be undone once pushed to a public remote: telling
-  # readers to install a crate that is not on a registry, and leaking the path
-  # a file happened to sit at on somebody's machine. Both are cheap to check.
   scope:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      # A version dependency is the likeliest of these to be written by
-      # accident, and it was the one the first spelling of this job missed:
-      # `maxt = "0.1"` names a release that does not exist. The install
-      # commands and the hosted links are caught in every spelling they have,
-      # not just the one that came to mind first.
-      - name: No unpublished-crate claims
-        run: |
-          ! grep -rniE 'cargo +(add|install) +maxt|crates\.io/crates/maxt|docs\.rs/maxt|^ *maxt *= *"[0-9]' \
-            --include='*.md' --include='*.rs' --include='*.toml' .
-
-      # `[a-z]` here used to let `/Users/Alice` through on the capital alone.
       - name: No absolute paths from a contributor's machine
         run: |
           ! grep -rniE '/(users|home)/[a-z0-9]' \

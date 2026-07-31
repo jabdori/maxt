@@ -6,9 +6,12 @@ rust-version = "1.85"
 license = "MIT"
 description = "One Rust API for Upbit, Bithumb, Binance, and Hyperliquid market data, accounts, and orders."
 repository = "https://github.com/jabdori/maxt"
+homepage = "https://github.com/jabdori/maxt"
+documentation = "https://docs.rs/maxt"
 keywords = ["exchange", "trading", "crypto", "websocket", "async"]
 categories = ["api-bindings", "asynchronous", "finance"]
 readme = "README.md"
+exclude = ["/.github", "/docs/superpowers"]
 
 [dependencies]
 base64 = "0.22"

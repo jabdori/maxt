@@ -58,6 +58,39 @@ cargo run --example public_rest
 - [변경 기록](CHANGELOG.md)
 - [기여 가이드](CONTRIBUTING.ko.md)
 
+## 바인딩 로드맵
+
+각 거래소의 Rust 어댑터를 기준 계약으로 사용합니다. 아래의 모든 바인딩이 해당
+Rust 어댑터와 동일한 지원 기능과 동작을 제공하면 거래소 항목을 완료로 표시합니다.
+바인딩은 현재 우선순위 순입니다.
+
+- [ ] Upbit
+  - [x] Rust
+  - [ ] Python
+  - [ ] Dart / Flutter
+  - [ ] TypeScript / Node.js
+  - [ ] TypeScript / Browser (WebAssembly)
+- [ ] Bithumb
+  - [x] Rust
+  - [ ] Python
+  - [ ] Dart / Flutter
+  - [ ] TypeScript / Node.js
+  - [ ] TypeScript / Browser (WebAssembly)
+- [ ] Binance
+  - [x] Rust
+  - [ ] Python
+  - [ ] Dart / Flutter
+  - [ ] TypeScript / Node.js
+  - [ ] TypeScript / Browser (WebAssembly)
+- [ ] Hyperliquid
+  - [x] Rust
+  - [ ] Python
+  - [ ] Dart / Flutter
+  - [ ] TypeScript / Node.js
+  - [ ] TypeScript / Browser (WebAssembly)
+
+Swift와 Kotlin은 지원 후보로 검토하고 있습니다.
+
 ## 라이선스
 
 MIT. [LICENSE](LICENSE)를 참고하세요.

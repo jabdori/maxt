@@ -2,19 +2,21 @@
 
 [English](README.md) | [한국어](README.ko.md)
 
-`maxt`는 Upbit, Bithumb, Binance, Hyperliquid의 시장 데이터, 계좌, 주문을
-정적 타입으로 다루는 Rust API입니다. 거래소에만 있는 기능은 각 어댑터에서
-그대로 사용할 수 있습니다.
+Upbit, Bithumb, Binance, Hyperliquid의 시장 데이터·계좌·주문을 위한 비동기 Rust
+API입니다. 거래소가 달라도 같은 `Client` 메서드와 타입을 사용합니다. 거래소 전용
+메서드는 각 어댑터에 남겨 둡니다.
 
-## 빠른 시작
+## 설치
 
-`maxt`는 Rust 1.85 이상이 필요하며 패키지 레지스트리에는 배포되지 않았습니다.
+Rust 1.85 이상이 필요합니다.
 
 ```toml
 [dependencies]
-maxt = { git = "https://github.com/jabdori/maxt" }
+maxt = "0.1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
+
+## 예제
 
 공개 시장 데이터에는 인증 정보가 필요하지 않습니다.
 
@@ -33,7 +35,7 @@ async fn main() -> maxt::Result<()> {
 }
 ```
 
-전체 공개 REST 예제는 다음 명령으로 실행합니다.
+공개 REST 예제:
 
 ```sh
 cargo run --example public_rest
@@ -41,18 +43,13 @@ cargo run --example public_rest
 
 ## 문서
 
-- [시작하기](docs/getting-started.ko.md): 공개 REST와 스트리밍
-- [공통 API 레퍼런스](docs/common-api.ko.md): 타입, 정렬, 오류, 비공개 호출
-- [제공자 선택](docs/providers.ko.md): 생성자와 제공자별 차이
+- [시작하기](docs/getting-started.ko.md)
+- [공통 API 레퍼런스](docs/common-api.ko.md)
+- [제공자 선택](docs/providers.ko.md)
+- [API 문서](https://docs.rs/maxt)
 - [실행 가능한 예제](examples/)
-- [기여 안내](CONTRIBUTING.ko.md)
-
-## 검증 범위
-
-2026-07-31에 Upbit 한국, Bithumb, Binance Spot, Binance USD-M, Hyperliquid
-메인넷의 대표 마켓 하나씩을 대상으로 공개 REST와 스트리밍 API를 실시간
-검증했습니다. 이 검사는 인증 정보를 사용하지 않습니다. 비공개 계좌와 거래 경로는
-오프라인에서 테스트했지만 실시간으로 검증하지 않았습니다.
+- [변경 기록](CHANGELOG.md)
+- [기여 가이드](CONTRIBUTING.ko.md)
 
 ## 라이선스
 

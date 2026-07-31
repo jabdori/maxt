@@ -2,21 +2,24 @@
 
 [English](README.md) | [한국어](README.ko.md)
 
-`maxt` is a typed Rust API for market data, accounts, and orders across Upbit,
-Bithumb, Binance, and Hyperliquid. Exchange-specific operations remain available
-on each adapter.
+`maxt` is a typed async Rust API for market data, accounts, and orders on
+Upbit, Bithumb, Binance, and Hyperliquid. Applications use the same `Client`
+methods and types across exchanges. Provider-specific methods remain on each
+adapter.
 
-## Quick start
+## Install
 
-`maxt` requires Rust 1.85 or newer and is not published to a package registry.
+`maxt` requires Rust 1.85 or newer.
 
 ```toml
 [dependencies]
-maxt = { git = "https://github.com/jabdori/maxt" }
+maxt = "0.1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
-Public market data needs no credentials:
+## Example
+
+Public REST and market streams require no credentials.
 
 ```rust,no_run
 use maxt::adapters::UpbitAdapter;
@@ -33,7 +36,7 @@ async fn main() -> maxt::Result<()> {
 }
 ```
 
-Run the complete public REST example with:
+Run the public REST example:
 
 ```sh
 cargo run --example public_rest
@@ -41,18 +44,13 @@ cargo run --example public_rest
 
 ## Documentation
 
-- [Getting started](docs/getting-started.md): public REST and streaming
-- [Common API reference](docs/common-api.md): types, ordering, errors, and private calls
-- [Choosing a provider](docs/providers.md): constructors and provider differences
+- [Getting started](docs/getting-started.md)
+- [Common API reference](docs/common-api.md)
+- [Provider matrix](docs/providers.md)
+- [API documentation](https://docs.rs/maxt)
 - [Runnable examples](examples/)
+- [Changelog](CHANGELOG.md)
 - [Contributing](CONTRIBUTING.md)
-
-## Verification scope
-
-On 2026-07-31, the public REST and streaming surface was checked live on one
-representative market for Upbit Korea, Bithumb, Binance Spot, Binance USD-M, and
-Hyperliquid mainnet. The live check uses no credentials. Private account and
-trading paths are tested offline but have not been verified live.
 
 ## License
 

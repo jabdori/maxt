@@ -1,127 +1,147 @@
-[English](hyperliquid.md) | [한국어](hyperliquid.ko.md)
-
 # Hyperliquid
 
-`HyperliquidAdapter` exposes public spot and the default perpetual DEX through one API. Public calls need no wallet.
+[English](hyperliquid.md) | [한국어](hyperliquid.ko.md)
 
-## Constructors
+## Venue and constructor
 
-| Constructor | Use |
+| Constructor | Network |
 | --- | --- |
-| `HyperliquidAdapter::new()` | Mainnet public client |
-| `HyperliquidAdapter::testnet()` | Testnet public client |
-| `.with_wallet(address, private_key)` | Adds credentials for account and trading calls; validation happens on the first private call |
+| `HyperliquidAdapter::new()` | Mainnet |
+| `HyperliquidAdapter::testnet()` | Testnet |
 
-## Market coverage
+One adapter exposes Spot and the default perpetual DEX.
 
-| Market | Source | Coverage |
+| Market | Metadata | Support |
 | --- | --- | --- |
-| Spot | `spotMeta` | Exposed, including pairs whose quote asset is not USDC |
-| Default perpetual DEX | `meta` without `dex` | Exposed as `MarketKind::Perpetual` |
-| HIP-3 perpetual DEXs | `perpDexs`, `meta` with `dex` | Not exposed |
+| Spot | `spotMeta` | Included; non-USDC quote assets included |
+| Default perpetual DEX | `meta` without `dex` | `MarketKind::Perpetual` |
+| HIP-3 perpetual DEX | `perpDexs`, `meta` with `dex` | Not exposed |
 | Outcome assets | `outcomeMeta` | Not exposed |
 
-The adapter caches `meta` and `spotMeta` on first use. Create a new adapter to discover listings added later. Spot wire symbols are usually `@{index}`; use `markets(MarketKind::Spot)` instead of guessing them.
+The adapter caches `meta` and `spotMeta` on first use. Create a new adapter to
+reload listings. Spot metadata uses `spotMeta.universe[].name`; stream frames
+may use that name or `@{index}`. Use the returned `MarketInfo::native_symbol`.
 
-## Public REST
+## REST
 
 | Call | Hyperliquid request | Contract |
 | --- | --- | --- |
-| `markets(kind)` | `meta`, `spotMeta` | Lists the covered markets above |
-| `trades(market, limit)` | `recentTrades` | Newest first; when set, `limit` must be `1..=10`; unset returns the endpoint's ten-trade window |
-| `order_book(market, depth)` | `l2Book` | When set, `depth` must be `1..=20`; the adapter trims the full response locally |
-| `ticker(market)` | `metaAndAssetCtxs`, `spotMetaAndAssetCtxs` | A reference-price summary, not a last-trade ticker; see below |
-| `candles(request)` | `candleSnapshot` | Fourteen intervals from `1m` through `1M`; `Sec1` is unsupported |
-| `funding_rates(request)` | `fundingHistory` | Public and perpetual-only; time-ranged responses are at most 500 entries |
+| `markets(kind)` | `meta`, `spotMeta` | Markets in the support table |
+| `trades(market, limit)` | `recentTrades` | `limit in 1..=10`; `None -> provider window <= 10`; local truncation; newest-first |
+| `order_book(market, depth)` | `l2Book` | `depth in 1..=20`; local truncation |
+| `ticker(market)` | `metaAndAssetCtxs`, `spotMetaAndAssetCtxs` | Reference-price summary |
+| `funding_rates(request)` | `fundingHistory` | Public; Perpetual only; provider page `<= 500` |
 
-Hyperliquid serves only the most recent 5,000 candles for an interval. This is a retention window, not a page size. A larger local `limit` cannot recover data the venue no longer serves.
-
-Hyperliquid's `1M` candles use a fixed 30-day grid rather than calendar months.
-
-For `HistoryRequest`, `from` is inclusive and `to` is exclusive. Hyperliquid's `endTime` is inclusive and has millisecond precision, so the adapter sends the last millisecond strictly before `to`. Follow `Page::next` until it is `None`.
-
-## Ticker semantics
-
-| Field | Meaning on Hyperliquid |
+| `HistoryRequest` field | Provider value |
 | --- | --- |
-| `last_price` | `midPx`, falling back to `markPx`; despite the field name, this is not the most recent trade price |
-| `last_trade_time` | `None`; asset contexts carry no trade timestamp |
-| `timestamp` | When `maxt` read the context; the context has no timestamp |
-| `change`, `change_rate` | The reference price above compared with `prevDayPx` |
+| Range | `from <= time < to` |
+| `startTime` | `ceil_ms(from)` |
+| `endTime` | `ceil_ms(to) - 1` |
+| `cursor` | Replaces `from` when present |
+| Continuation | Read until `Page::next == None` |
 
-Use `trades` or `Feed::Trades` when the exact recent execution price and time matter.
+Ticker mapping:
 
-## Public streams
+| `Ticker` field | Source |
+| --- | --- |
+| `last_price` | `midPx ?? markPx`; not the latest execution price |
+| `last_trade_time` | `None` |
+| `timestamp` | Local read time |
+| `change` | `last_price - prevDayPx` |
+| `change_rate` | `(last_price - prevDayPx) / prevDayPx`; `prevDayPx == 0 -> None` |
 
-| Feed | Subscription | Behaviour |
+Use `trades` or `Feed::Trades` for execution prices and times.
+
+## Candles
+
+| Contract | Value |
+| --- | --- |
+| Exposed intervals | `Min1`, `Min3`, `Min5`, `Min15`, `Min30`, `Hour1`, `Hour2`, `Hour4`, `Hour8`, `Hour12`, `Day1`, `Day3`, `Week1`, `Month1` |
+| `Sec1` | `Error::Unsupported` |
+| Retention | Latest 5,000 candles per interval |
+| `Month1` grid | Fixed 30 days |
+| `quote_volume` | `None` |
+
+## Streams
+
+| Feed | Subscription | Contract |
 | --- | --- | --- |
-| `Feed::Trades` | `trades` | Executions with exchange timestamps |
-| `Feed::OrderBook` | `l2Book` | Full snapshots with 20 levels per side, not diffs |
-| `Feed::Ticker` | `activeAssetCtx` | The same reference-price semantics as REST ticker |
-| `Feed::Candles(interval)` | `candle` | Forming updates plus one locally marked closed candle when the next window opens |
-| Keepalive | `{"method":"ping"}` | Sent every 15 seconds; Hyperliquid closes an idle connection after 60 seconds |
+| `Feed::Trades` | `trades` | Executions with provider timestamps |
+| `Feed::OrderBook` | `l2Book` | Full snapshot; up to 20 levels per side; no diffs |
+| `Feed::Ticker` | `activeAssetCtx` | REST ticker mapping |
+| `Feed::Candles(interval)` | `candle` | Forming and closed candles |
 
-The official `l2Book` aggregation options are `nSigFigs` and `mantissa`. The common API does not expose them and sends neither.
-
-## Hyperliquid-only calls
-
-| Method | Use |
+| Candle transition | Events |
 | --- | --- |
-| `asset_context(&market)` | Public mark, mid and oracle prices, current funding, open interest, and order precision |
-| `non_funding_ledger(from, to, cursor, limit)` | Wallet-required deposits, withdrawals, transfers and liquidations that are not funding payments |
+| `new.open_time > held.open_time` | `held(closed = true)`, then `new(closed = false)` |
+| `new.open_time == held.open_time` | Replace `held`; emit `new(closed = false)` |
+| `new.open_time < held.open_time` | Drop frame |
+| Reconnect | Drop `held`; no cross-connection close event |
 
-## Precision and minimum notional
+The adapter sends `{"method":"ping"}` every 15 seconds. `l2Book.nSigFigs` and
+`l2Book.mantissa` are not exposed.
 
-| Rule | Value |
+## Private and provider-specific APIs
+
+Configure private calls with `.with_wallet(address, private_key)`. Wallet values
+are validated on the first private call; `Client::supports` treats the feature
+as configured as soon as a wallet is present. The private key is used only for
+local signing and is redacted from `Debug`.
+
+| Market | Private features |
 | --- | --- |
-| Size decimals | The asset's `szDecimals` |
-| Perpetual price decimals | `6 - szDecimals` |
-| Spot price decimals | `8 - szDecimals` |
-| Significant digits | A non-integer price may carry at most five significant digits |
-| Minimum notional | Set by Hyperliquid and not pre-validated by `maxt` |
+| Spot | Balances, open orders, place/cancel order, account stream; `positions_on(spot) == Ok(vec![])` |
+| Perpetual | Spot features plus positions, margin summary/configuration, funding payments, and reduce-only orders |
 
-`asset_context` exposes the decimal-place limits. Both the decimal-place limit and significant-digit rule apply to an order price.
-
-## Rate limits
-
-| Scope | Official limit |
+| Order input | Contract |
 | --- | --- |
-| REST | 1,200 aggregate request weight per minute per IP; endpoint weights differ |
-| WebSocket connections | 10 concurrent and 30 new connections per minute |
+| `order_type` | `Limit`; `Market -> Error::Unsupported` |
+| `size` | `Size::Base`; `size > 0` |
+| `price` | `price > 0`; max decimal places: Perpetual `6 - szDecimals`, Spot `8 - szDecimals`; non-integer prices: `significant_figures <= 5`; integer prices exempt |
+| `time_in_force` | `GTC`, `IOC`, `PostOnly`; `FOK -> Error::Unsupported` |
+| `reduce_only` | `MarketKind::Perpetual` only |
+| Minimum notional | Provider validation; no `maxt` preflight validation |
+
+| `set_margin` input | Contract |
+| --- | --- |
+| Fields | `leverage.is_some() && margin_mode.is_some()` |
+| `leverage` | Positive integer; `leverage <= asset.max_leverage` |
+| `margin_mode == Cross` | `Error::InvalidRequest` when `asset.only_isolated == true` |
+
+Provider-specific methods are available through `Client::adapter()`:
+
+| Method | Contract |
+| --- | --- |
+| `asset_context(&market)` | Mid, mark, oracle, funding, open interest, and order precision. |
+| `non_funding_ledger(from, to, cursor, limit)` | Deposits, withdrawals, transfers, and liquidations; funding excluded; wallet required; provider page `<= 500` |
+
+| `non_funding_ledger` field | Contract |
+| --- | --- |
+| Provider range | `from_ms <= time <= to_ms` |
+| `cursor` | Replaces `from` when present |
+| `limit` | Local target; a same-millisecond group may exceed it |
+
+## Limits and official links
+
+| Scope | Limit |
+| --- | --- |
+| REST | 1,200 aggregate request weight per minute per IP |
+| WebSocket connections | 10 concurrent; 30 new per minute |
 | WebSocket subscriptions | 1,000 |
 | WebSocket messages sent | 2,000 per minute across all connections |
 
-`maxt` does not throttle requests. Budget by weight and back off on `Error::is_rate_limited()`.
+`l2Book` weight is 2. A generic `info` request weight is 20.
+`candleSnapshot` adds weight per 60 returned items. `maxt` does not throttle
+requests.
 
-## Wallet security
-
-- Hyperliquid uses a wallet address and private key, not an API key.
-- Prefer an approved API wallet key over the account key. It can trade but cannot withdraw.
-- Signing is local. The private key is never sent and is redacted from `Debug` output.
-- Public REST and streams work without `.with_wallet(...)`.
-
-## Verification scope
-
-On 2026-07-31, representative mainnet spot and default-perpetual markets passed public REST and `Trades`, `OrderBook`, `Ticker`, and `Candles` stream smoke checks. Private live calls were not verified.
-
-## Examples
-
-```text
-cargo run --example public_rest -- hyperliquid HYPE USDC
-cargo run --example public_stream -- hyperliquid HYPE USDC
-```
-
-## Official documentation
+HIP-3, outcome assets, `Sec1`, market orders, `FOK`, `l2Book.nSigFigs`, and
+`l2Book.mantissa` are not exposed.
 
 - [API overview](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api)
 - [Info endpoint](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)
 - [Perpetual info](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals)
 - [Spot info](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/spot)
-- [Asset IDs](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/asset-ids)
 - [WebSocket subscriptions](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/subscriptions)
-- [Timeouts and heartbeats](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/timeouts-and-heartbeats)
 - [Rate limits](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits)
 
----
-
-[The common API](../common-api.md) · [Choosing an exchange](../providers.md)
+[Common API](../common-api.md) · [Provider matrix](../providers.md)

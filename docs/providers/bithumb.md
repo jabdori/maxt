@@ -1,111 +1,107 @@
-[English](bithumb.md) | [한국어](bithumb.ko.md)
-
 # Bithumb
 
-The Bithumb adapter is spot-only. It provides public REST market data and public trade, order-book, and ticker streams; derivatives and a candle stream are not available.
+[English](bithumb.md) | [한국어](bithumb.ko.md)
 
-## Construction and scope
+## Venue and constructor
 
-```rust
-use maxt::{Client, adapters::BithumbAdapter};
+Spot only.
 
-let public = Client::new(BithumbAdapter::new());
-let access_key = "your access key";
-let secret_key = "your secret key";
-let authenticated = Client::new(
-    BithumbAdapter::new().with_credentials(access_key, secret_key),
-);
-```
-
-`BithumbAdapter::new()` needs no credentials. `with_credentials(access_key, secret_key)` adds the access key and secret key required by account, order, and private-stream calls; it does not change the spot-only scope.
-
-Use `Market::spot(Exchange::Bithumb, "BTC", "KRW")`. Bithumb's native symbol for that market is `KRW-BTC`.
-
-## Public REST
-
-| Call | Bithumb behavior and limits |
+| Constructor | Features |
 | --- | --- |
-| `markets(MarketKind::Spot)` | Returns the listed spot markets; other market kinds return an empty list |
-| `trades` | `limit` must be `1..=500`; when omitted, Bithumb's default is 1 |
-| `order_book` | `depth` must be above 0. `maxt` makes a single-market request, removes zero-quantity slots, sorts both sides best-first, and returns up to 30 valid levels per side, further truncated to `depth` |
-| `ticker` | Returns one snapshot for the requested market |
-| `candles` | Bithumb caps every supported candle response at 200. `maxt` pages at most 100 calls, so one request can assemble at most 20,000 candles; a wider `limit` or time window is rejected |
+| `BithumbAdapter::new()` | Public REST and streams |
+| `.with_credentials(access_key, secret_key)` | Account, order, and private-stream methods |
 
-Supported candle intervals are `Min1`, `Min3`, `Min5`, `Min15`, `Min30`, `Hour1`, `Hour4`, `Day1`, `Week1`, and `Month1`.
-
-## Public streams
-
-| Feed | Behavior |
+| Field | Value |
 | --- | --- |
-| `Feed::Trades` | Public trade events |
-| `Feed::OrderBook` | Full snapshots with up to 15 levels per side after zero-quantity slots are removed; the wire timestamp is in microseconds |
-| `Feed::Ticker` | Public ticker snapshots and real-time updates |
-| `Feed::Candles(_)` | `Error::Unsupported` before the socket opens; Bithumb publishes no public candle stream and `maxt` does not synthesize one |
+| `Market` | `Market::spot(Exchange::Bithumb, "BTC", "KRW")` |
+| `MarketInfo::native_symbol` | `KRW-BTC` |
 
-## Candle ranges and grid
+## REST
 
-`CandleRequest::from` is inclusive and `CandleRequest::to` is exclusive. The Bithumb `to` parameter is a KST wall-clock value and is also exclusive; `maxt` converts the caller's UTC `Timestamp` and preserves subsecond exclusivity. Results are returned oldest-first.
+| Call | Endpoint | Contract |
+| --- | --- | --- |
+| `markets(MarketKind::Spot)` | `/v1/market/all?isDetails=true` | Listed Spot markets |
+| `markets(MarketKind::Perpetual)` | — | `Ok(vec![])` |
+| `trades(market, limit)` | `/v1/trades/ticks` | `limit in 1..=500`; `None -> 1`; newest-first |
+| `order_book(market, depth)` | `/v1/orderbook` | `depth in 1..=30`; `None -> 30`; remove `quantity == 0`, sort, then truncate locally |
+| `ticker(market)` | `/v1/ticker` | One market snapshot |
 
-| Interval | Candle opens in UTC |
+`HTTP 2xx + {"error": ...} -> Error::Exchange`. Numeric `error.name` values
+remain string codes.
+
+## Candles
+
+| Contract | Value |
 | --- | --- |
-| `Min1` through `Hour1` | Normal UTC unit boundaries |
-| `Hour4` | 03:00, 07:00, 11:00, 15:00, 19:00, and 23:00 |
-| `Day1` | 15:00, which is 00:00 KST on the following date |
-| `Week1` | Sunday 15:00, which is Monday 00:00 KST |
-| `Month1` | 15:00 on the last UTC day of the previous month, which is 00:00 KST on the first day |
+| Exposed intervals | `Min1`, `Min3`, `Min5`, `Min15`, `Min30`, `Hour1`, `Hour4`, `Day1`, `Week1`, `Month1` |
+| Native interval not exposed | `10m` |
+| Provider page cap | 200 |
+| Provider calls per request | `<= 100` |
+| Preflight candle estimate | `<= 20_000` |
+| Provider `to` | `format_kst(ceil_second(to))`; exclusive |
 
-## Bithumb-only market flags
-
-These methods are available through `Client::adapter()` and describe different Bithumb designations.
-
-| Method | Meaning |
+| Interval | UTC `open_time` grid |
 | --- | --- |
-| `market_warnings()` | Reads `/v1/market/all?isDetails=true` and returns every listed market with its raw `market_warning` label (`NONE` or `CAUTION`). `CAUTION` means an investment-warning market (유의 종목); it still trades and maps to `MarketStatus::Unknown` |
-| `market_alerts()` | Reads the alert-system endpoint (경보제) and returns only active alert rows, one per market and criterion, with the criterion, severity step, and KST expiry converted to UTC. Markets without an alert are absent, and alerts do not change `MarketStatus` |
+| `Min1`, `Min3`, `Min5`, `Min15`, `Min30`, `Hour1` | UTC unit boundaries |
+| `Hour4` | `03:00`, `07:00`, `11:00`, `15:00`, `19:00`, `23:00` |
+| `Day1` | `15:00` |
+| `Week1` | Sunday `15:00` |
+| `Month1` | `15:00` on the final UTC day of the previous month |
 
-The word `CAUTION` therefore has two contexts: a `market_warning` value means 유의 종목, while `BithumbAlertStep::Caution` is the mildest alert-system step (주의).
+## Streams
 
-## Credentials and current private limitations
-
-Credentials enable balances, open orders, order placement and cancellation, and the private account stream. Missing credentials produce `Error::Auth` before a private request is built.
-
-Bithumb's current API supports time-in-force (TIF) values such as IOC, FOK, and Post-Only for eligible orders. The current `maxt` Bithumb adapter does not expose that capability: any `OrderRequest::time_in_force` is rejected as `Error::InvalidRequest`.
-
-## Rate limits
-
-| Official scope | Limit |
+| Feed | Contract |
 | --- | --- |
-| Public REST API | At most 150 requests per second |
-| Private REST API | At most 140 requests per second |
-| Order-related REST API | Additional restriction above 10 requests per second |
-| WebSocket connection requests | At most 10 per second per IP, the same for Public and Private; excess requests receive HTTP 429, and sustained excess can block WebSocket use for 10 minutes |
+| `Feed::Trades` | Public execution events |
+| `Feed::OrderBook` | Full snapshot; remove `quantity == 0`; up to 15 levels per side; raw provider `timestamp` unit: µs |
+| `Feed::Ticker` | Snapshot and real-time updates |
+| `Feed::Candles(_)` | `Error::Unsupported` before connection |
 
-Bithumb may lower REST limits without prior notice during excessive traffic.
+## Private and provider-specific APIs
 
-## Errors
+Credentials enable balances, open orders, place/cancel order, and account
+streams. `open_orders()` performs one `/v1/orders` call and returns at most 100
+orders.
 
-Local range and request-shape failures are `Error::InvalidRequest`. A Bithumb `{"error": ...}` envelope is `Error::Exchange` even when the HTTP status is 2xx; a numeric `error.name` is preserved as its string code. Non-2xx Bithumb failures are also `Error::Exchange`.
-
-## Verification
-
-On 2026-07-31, a representative BTC/KRW public smoke test covered market discovery, ticker, order book, recent trades, candles, and the public Trades, OrderBook, and Ticker streams. Private live account and order operations were not verified.
-
-Run the public REST example with:
-
-```text
-cargo run --example public_rest -- bithumb BTC KRW
-```
-
-## Official documentation
-
-| Subject | Current Bithumb pages |
+| Order | Required `Size` |
 | --- | --- |
-| Index and limits | [documentation index](https://apidocs.bithumb.com/llms.txt) · [API request limits](https://apidocs.bithumb.com/docs/api-요청-수-제한-안내.md) |
-| Public REST | [markets](https://apidocs.bithumb.com/reference/거래-대상-목록-조회.md) · [alerts](https://apidocs.bithumb.com/reference/경보제-조회.md) · [recent trades](https://apidocs.bithumb.com/reference/체결-내역-조회.md) · [ticker](https://apidocs.bithumb.com/reference/현재가-조회.md) · [order book](https://apidocs.bithumb.com/reference/호가-조회.md) |
-| Candles | [minute](https://apidocs.bithumb.com/reference/분minute-캔들-조회.md) · [day](https://apidocs.bithumb.com/reference/일day-캔들-조회.md) · [week](https://apidocs.bithumb.com/reference/주week-캔들-조회.md) · [month](https://apidocs.bithumb.com/reference/월month-캔들-조회.md) |
-| Public WebSocket | [basics and connection limits](https://apidocs.bithumb.com/reference/기본-정보.md) · [ticker](https://apidocs.bithumb.com/reference/현재가-ticker.md) · [trades](https://apidocs.bithumb.com/reference/체결-trade.md) · [order book](https://apidocs.bithumb.com/reference/호가-orderbook.md) |
-| Time in force | [order request](https://apidocs.bithumb.com/reference/주문-요청.md) |
+| Limit buy or sell | `Size::Base` |
+| Market buy | `Size::Quote` |
+| Market sell | `Size::Base` |
 
----
+| Input | Result |
+| --- | --- |
+| `OrderRequest::time_in_force.is_some()` | `Error::InvalidRequest` |
+| `OrderRequest::reduce_only == true` | `Error::Unsupported` |
+| `cancel_order(...)` | Cancellation acknowledgement; `status = Cancelled`; fill fields unavailable |
 
-[The common API](../common-api.md) · [Choosing an exchange](../providers.md)
+| Method | Contract |
+| --- | --- |
+| `market_warnings()` | One raw `NONE` or `CAUTION` value per listed market |
+| `market_alerts()` | Active rows only; one row per market and criterion; `ends_at` converted from KST to UTC |
+
+| Provider state | Mapping |
+| --- | --- |
+| `market_warning == CAUTION` | `MarketStatus::Unknown` |
+| `BithumbAlertStep::Caution` | Alert-system step `주의`; no `MarketStatus` change |
+
+## Limits and official links
+
+| Scope | Limit |
+| --- | --- |
+| Public REST | 150/s |
+| Private REST | 140/s |
+| Order REST | Additional throttling above 10/s |
+| WebSocket connections | 10/s per IP; HTTP 429; repeated excess may block for 10 minutes |
+
+`maxt` does not throttle requests. Derivatives, `MarketKind::Perpetual`, public
+candle streams, and `time_in_force` are not supported.
+
+- [Documentation index](https://apidocs.bithumb.com/llms.txt)
+- [Request limits](https://apidocs.bithumb.com/docs/api-%EC%9A%94%EC%B2%AD-%EC%88%98-%EC%A0%9C%ED%95%9C-%EC%95%88%EB%82%B4.md)
+- [Recent trades](https://apidocs.bithumb.com/reference/%EC%B2%B4%EA%B2%B0-%EB%82%B4%EC%97%AD-%EC%A1%B0%ED%9A%8C.md)
+- [Candles](https://apidocs.bithumb.com/reference/%EB%B6%84minute-%EC%BA%94%EB%93%A4-%EC%A1%B0%ED%9A%8C.md)
+- [WebSocket](https://apidocs.bithumb.com/reference/%EA%B8%B0%EB%B3%B8-%EC%A0%95%EB%B3%B4.md)
+- [Orders](https://apidocs.bithumb.com/reference/%EC%A3%BC%EB%AC%B8-%EC%9A%94%EC%B2%AD.md)
+
+[Common API](../common-api.md) · [Provider matrix](../providers.md)

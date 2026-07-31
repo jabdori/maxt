@@ -7,6 +7,14 @@ Upbit, Bithumb, Binance, and Hyperliquid. Applications use the same `Client`
 methods and types across exchanges. Provider-specific methods remain on each
 adapter.
 
+## Why maxt
+
+Using several exchanges in one application usually introduces
+provider-specific branches for request shapes, ordering, time ranges, numeric
+formats, missing fields, and errors. `maxt` normalizes those contracts behind
+the same `Client` methods and types, while provider-specific capabilities
+remain on the concrete adapter.
+
 ## Install
 
 `maxt` requires Rust 1.85 or newer.

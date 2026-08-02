@@ -297,8 +297,9 @@ fn resolve_use_path(module: &[String], path: &[String]) -> Vec<String> {
     resolved
 }
 
-fn public_struct_definitions(
+fn public_definitions(
     modules: &BTreeMap<Vec<String>, String>,
+    include_enums_and_macros: bool,
 ) -> BTreeMap<Vec<String>, (String, String)> {
     let mut definitions = BTreeMap::new();
     for (module, source) in modules {
@@ -306,13 +307,20 @@ fn public_struct_definitions(
             .expect("scanned Rust source must parse")
             .items
         {
-            let Item::Struct(item) = item else {
-                continue;
+            let (name, public) = match item {
+                Item::Struct(item) => (
+                    item.ident.to_string(),
+                    matches!(item.vis, Visibility::Public(_)),
+                ),
+                Item::Enum(item) if include_enums_and_macros => (
+                    item.ident.to_string(),
+                    matches!(item.vis, Visibility::Public(_)),
+                ),
+                _ => continue,
             };
-            if !matches!(item.vis, Visibility::Public(_)) {
+            if !public {
                 continue;
             }
-            let name = item.ident.to_string();
             let mut path = module.clone();
             path.push(name.clone());
             assert!(
@@ -322,6 +330,31 @@ fn public_struct_definitions(
                 "duplicate public Rust struct path {}",
                 path.join("::")
             );
+        }
+
+        if include_enums_and_macros && source.contains("macro_rules!") {
+            for line in source.lines().map(str::trim) {
+                let Some(name) = ["pub struct ", "pub enum "]
+                    .into_iter()
+                    .find_map(|prefix| line.strip_prefix(prefix))
+                    .map(|declaration| {
+                        declaration
+                            .chars()
+                            .take_while(|character| {
+                                *character == '_' || character.is_ascii_alphanumeric()
+                            })
+                            .collect::<String>()
+                    })
+                else {
+                    continue;
+                };
+                if name.is_empty() {
+                    continue;
+                }
+                let mut path = module.clone();
+                path.push(name.clone());
+                definitions.entry(path).or_insert((name, source.clone()));
+            }
         }
     }
     definitions
@@ -407,7 +440,32 @@ fn resolve_public_struct_sources(
     modules: &BTreeMap<Vec<String>, String>,
     entry_modules: &[Vec<String>],
 ) -> BTreeMap<String, (String, String)> {
-    let definitions = public_struct_definitions(modules);
+    resolve_public_sources(
+        modules,
+        entry_modules,
+        public_definitions(modules, false),
+        "struct",
+    )
+}
+
+fn resolve_public_type_sources(
+    modules: &BTreeMap<Vec<String>, String>,
+    entry_modules: &[Vec<String>],
+) -> BTreeMap<String, (String, String)> {
+    resolve_public_sources(
+        modules,
+        entry_modules,
+        public_definitions(modules, true),
+        "type",
+    )
+}
+
+fn resolve_public_sources(
+    modules: &BTreeMap<Vec<String>, String>,
+    entry_modules: &[Vec<String>],
+    definitions: BTreeMap<Vec<String>, (String, String)>,
+    definition_kind: &str,
+) -> BTreeMap<String, (String, String)> {
     let (edges, public_bindings) = use_binding_graph(modules);
     let mut exported = BTreeMap::new();
 
@@ -430,7 +488,7 @@ fn resolve_public_struct_sources(
             if let Some(previous) = exported.insert(public_name.clone(), source.clone()) {
                 assert_eq!(
                     previous, source,
-                    "duplicate public Rust struct name {public_name}"
+                    "duplicate public Rust {definition_kind} name {public_name}"
                 );
             }
         }
@@ -443,6 +501,13 @@ fn exported_public_struct_sources(root: &Path) -> BTreeMap<String, (String, Stri
     let mut modules = BTreeMap::new();
     collect_rust_sources(&src, &src, &mut modules);
     resolve_public_struct_sources(&modules, &[Vec::new(), vec!["adapters".to_owned()]])
+}
+
+fn exported_public_type_sources(root: &Path) -> BTreeMap<String, (String, String)> {
+    let src = root.join("src");
+    let mut modules = BTreeMap::new();
+    collect_rust_sources(&src, &src, &mut modules);
+    resolve_public_type_sources(&modules, &[Vec::new()])
 }
 
 fn qualified_variants(source: &str, prefix: &str) -> BTreeSet<String> {
@@ -516,11 +581,24 @@ fn rust_without_outer_attributes(mut declaration: &str) -> &str {
     declaration
 }
 
-fn rust_public_value_methods(source: &str, name: &str) -> BTreeSet<String> {
-    let mut methods = rust_public_methods(source, name, false);
+fn rust_macro_public_methods(source: &str, name: &str) -> Vec<ImplItemFn> {
+    if !source.contains("macro_rules!") {
+        return Vec::new();
+    }
     let marker = format!("impl {name}");
-    if source.contains(&marker) {
-        let block = dart_block(source, &marker);
+    let mut remainder = source;
+    let mut methods = Vec::new();
+    while let Some(index) = remainder.find(&marker) {
+        let candidate = &remainder[index..];
+        remainder = &candidate[marker.len()..];
+        if remainder
+            .chars()
+            .next()
+            .is_some_and(|character| character == '_' || character.is_ascii_alphanumeric())
+        {
+            continue;
+        }
+        let block = dart_block(candidate, &marker);
         let mut without_lifetime_apostrophes = String::with_capacity(block.len());
         for (offset, character) in block.char_indices() {
             if character == '\'' {
@@ -530,6 +608,7 @@ fn rust_public_value_methods(source: &str, name: &str) -> BTreeSet<String> {
                     .collect::<String>();
                 let after_lifetime = offset + character.len_utf8() + lifetime.len();
                 if !lifetime.is_empty() && !block[after_lifetime..].starts_with('\'') {
+                    without_lifetime_apostrophes.push_str("__RUST_LIFETIME_");
                     continue;
                 }
             }
@@ -540,16 +619,28 @@ fn rust_public_value_methods(source: &str, name: &str) -> BTreeSet<String> {
                 .into_iter()
                 .filter_map(|declaration| {
                     let declaration = rust_without_outer_attributes(&declaration);
-                    let tokens = declaration.split_whitespace().collect::<Vec<_>>();
-                    if tokens.first() != Some(&"pub") {
+                    if !declaration.split_whitespace().any(|token| token == "fn") {
                         return None;
                     }
-                    let function = tokens.iter().position(|token| *token == "fn")?;
-                    let name = tokens.get(function + 1)?.split(['<', '(']).next()?;
-                    is_identifier(name).then(|| name.to_owned())
+                    let declaration = declaration.replace("__RUST_LIFETIME_", "'");
+                    let method = syn::parse_str::<ImplItemFn>(&format!("{declaration} {{}}"))
+                        .unwrap_or_else(|error| {
+                            panic!("Rust macro method must parse: {declaration}: {error}")
+                        });
+                    matches!(method.vis, Visibility::Public(_)).then_some(method)
                 }),
         );
     }
+    methods
+}
+
+fn rust_public_value_methods(source: &str, name: &str) -> BTreeSet<String> {
+    let mut methods = rust_public_methods(source, name, false);
+    methods.extend(
+        rust_macro_public_methods(source, name)
+            .into_iter()
+            .map(|method| method.sig.ident.to_string()),
+    );
     methods
 }
 
@@ -558,11 +649,14 @@ enum BindingMemberKind {
     Method,
     Property,
     ClassMethod,
+    StaticMethod,
+    Constructor,
     Getter,
     Factory,
     Field,
     EnumValue,
     IntRepresentation,
+    StringRepresentation,
 }
 
 impl BindingMemberKind {
@@ -571,11 +665,14 @@ impl BindingMemberKind {
             Self::Method => "method",
             Self::Property => "property",
             Self::ClassMethod => "class_method",
+            Self::StaticMethod => "static_method",
+            Self::Constructor => "constructor",
             Self::Getter => "getter",
             Self::Factory => "factory",
             Self::Field => "field",
             Self::EnumValue => "enum_value",
             Self::IntRepresentation => "int_representation",
+            Self::StringRepresentation => "string_representation",
         }
     }
 }
@@ -589,6 +686,7 @@ struct BindingMember {
 #[derive(Clone, Copy)]
 struct ValueMemberContract {
     rust: &'static str,
+    rust_shape: Option<&'static str>,
     python: Option<BindingMember>,
     dart: Option<BindingMember>,
 }
@@ -602,6 +700,8 @@ enum RustValueSurface {
 #[derive(Clone, Copy)]
 enum PythonValueSurface {
     Class,
+    Dataclass { fields: bool },
+    String,
     Enum,
     Int,
 }
@@ -609,6 +709,7 @@ enum PythonValueSurface {
 #[derive(Clone, Copy)]
 enum DartValueSurface {
     Class { fields: bool },
+    ConstructibleClass { fields: bool },
     Extension,
 }
 
@@ -634,6 +735,21 @@ const fn value_member(
 ) -> ValueMemberContract {
     ValueMemberContract {
         rust,
+        rust_shape: None,
+        python: Some(python),
+        dart: Some(dart),
+    }
+}
+
+const fn shaped_value_member(
+    rust: &'static str,
+    rust_shape: &'static str,
+    python: BindingMember,
+    dart: BindingMember,
+) -> ValueMemberContract {
+    ValueMemberContract {
+        rust,
+        rust_shape: Some(rust_shape),
         python: Some(python),
         dart: Some(dart),
     }
@@ -642,6 +758,7 @@ const fn value_member(
 const fn rust_only_value_member(rust: &'static str) -> ValueMemberContract {
     ValueMemberContract {
         rust,
+        rust_shape: None,
         python: None,
         dart: None,
     }
@@ -684,6 +801,36 @@ const MARKET_KIND_VALUE_MEMBERS: &[ValueMemberContract] = &[value_member(
     binding_member(BindingMemberKind::Getter, "isDerivative"),
 )];
 
+const MARKET_VALUE_MEMBERS: &[ValueMemberContract] = &[
+    shaped_value_member(
+        "spot",
+        "associated:spot(base,exchange,quote)",
+        binding_member(BindingMemberKind::ClassMethod, "spot(base,exchange,quote)"),
+        binding_member(BindingMemberKind::Factory, "spot(base,exchange,quote)"),
+    ),
+    shaped_value_member(
+        "perpetual",
+        "associated:perpetual(base,exchange,quote)",
+        binding_member(
+            BindingMemberKind::ClassMethod,
+            "perpetual(base,exchange,quote)",
+        ),
+        binding_member(BindingMemberKind::Factory, "perpetual(base,exchange,quote)"),
+    ),
+    shaped_value_member(
+        "new",
+        "associated:new(base,exchange,kind,quote)",
+        binding_member(
+            BindingMemberKind::Constructor,
+            "Market(base,exchange,kind,quote)",
+        ),
+        binding_member(
+            BindingMemberKind::Constructor,
+            "Market(base,exchange,kind,quote)",
+        ),
+    ),
+];
+
 const SIDE_VALUE_MEMBERS: &[ValueMemberContract] = &[value_member(
     "flip",
     binding_member(BindingMemberKind::Method, "flip"),
@@ -719,10 +866,11 @@ const INTERVAL_VALUE_MEMBERS: &[ValueMemberContract] = &[
         binding_member(BindingMemberKind::Method, "as_secs"),
         binding_member(BindingMemberKind::Getter, "seconds"),
     ),
-    value_member(
+    shaped_value_member(
         "advance",
-        binding_member(BindingMemberKind::Method, "advance"),
-        binding_member(BindingMemberKind::Method, "advance"),
+        "instance:advance(at,count)",
+        binding_member(BindingMemberKind::Method, "advance(count,timestamp_ns)"),
+        binding_member(BindingMemberKind::Method, "advance(at,count)"),
     ),
 ];
 
@@ -756,26 +904,84 @@ const PAGE_VALUE_MEMBERS: &[ValueMemberContract] = &[value_member(
     binding_member(BindingMemberKind::Getter, "hasMore"),
 )];
 
+const CURSOR_VALUE_MEMBERS: &[ValueMemberContract] = &[
+    shaped_value_member(
+        "new",
+        "associated:new(cursor)",
+        binding_member(BindingMemberKind::StringRepresentation, "Cursor(value)"),
+        binding_member(BindingMemberKind::Constructor, "Cursor(value)"),
+    ),
+    value_member(
+        "as_str",
+        binding_member(BindingMemberKind::Method, "as_str"),
+        binding_member(BindingMemberKind::Field, "value"),
+    ),
+];
+
+const SUBSCRIPTION_VALUE_MEMBERS: &[ValueMemberContract] = &[
+    shaped_value_member(
+        "new",
+        "associated:new",
+        binding_member(
+            BindingMemberKind::Constructor,
+            "Subscription(feeds,markets)",
+        ),
+        binding_member(BindingMemberKind::Constructor, "Subscription"),
+    ),
+    shaped_value_member(
+        "market",
+        "instance:market(market)",
+        binding_member(BindingMemberKind::Field, "markets"),
+        binding_member(BindingMemberKind::Method, "withMarket(market)"),
+    ),
+    shaped_value_member(
+        "markets_iter",
+        "instance:markets_iter(markets)",
+        binding_member(BindingMemberKind::Field, "markets"),
+        binding_member(BindingMemberKind::Method, "withMarkets(values)"),
+    ),
+    shaped_value_member(
+        "feed",
+        "instance:feed(feed)",
+        binding_member(BindingMemberKind::Field, "feeds"),
+        binding_member(BindingMemberKind::Method, "withFeed(feed)"),
+    ),
+    value_member(
+        "markets",
+        binding_member(BindingMemberKind::Field, "markets"),
+        binding_member(BindingMemberKind::Field, "markets"),
+    ),
+    value_member(
+        "feeds",
+        binding_member(BindingMemberKind::Field, "feeds"),
+        binding_member(BindingMemberKind::Field, "feeds"),
+    ),
+];
+
 const TIMESTAMP_VALUE_MEMBERS: &[ValueMemberContract] = &[
-    value_member(
+    shaped_value_member(
         "from_nanos",
+        "associated:from_nanos(nanos)",
         binding_member(BindingMemberKind::IntRepresentation, "Timestamp"),
-        binding_member(BindingMemberKind::Factory, "fromNanoseconds"),
+        binding_member(BindingMemberKind::Factory, "fromNanoseconds(nanoseconds)"),
     ),
-    value_member(
+    shaped_value_member(
         "from_micros",
+        "associated:from_micros(micros)",
         binding_member(BindingMemberKind::IntRepresentation, "Timestamp"),
-        binding_member(BindingMemberKind::Factory, "fromMicroseconds"),
+        binding_member(BindingMemberKind::Factory, "fromMicroseconds(microseconds)"),
     ),
-    value_member(
+    shaped_value_member(
         "from_millis",
+        "associated:from_millis(millis)",
         binding_member(BindingMemberKind::IntRepresentation, "Timestamp"),
-        binding_member(BindingMemberKind::Factory, "fromMilliseconds"),
+        binding_member(BindingMemberKind::Factory, "fromMilliseconds(milliseconds)"),
     ),
-    value_member(
+    shaped_value_member(
         "from_secs",
+        "associated:from_secs(secs)",
         binding_member(BindingMemberKind::IntRepresentation, "Timestamp"),
-        binding_member(BindingMemberKind::Factory, "fromSeconds"),
+        binding_member(BindingMemberKind::Factory, "fromSeconds(seconds)"),
     ),
     value_member(
         "as_nanos",
@@ -792,8 +998,9 @@ const TIMESTAMP_VALUE_MEMBERS: &[ValueMemberContract] = &[
         binding_member(BindingMemberKind::IntRepresentation, "Timestamp"),
         binding_member(BindingMemberKind::Getter, "secondsSinceEpoch"),
     ),
-    value_member(
+    shaped_value_member(
         "now",
+        "associated:now",
         binding_member(BindingMemberKind::IntRepresentation, "Timestamp"),
         binding_member(BindingMemberKind::Factory, "now"),
     ),
@@ -803,23 +1010,23 @@ const TIMESTAMP_VALUE_MEMBERS: &[ValueMemberContract] = &[
 const MARKET_EVENT_VALUE_MEMBERS: &[ValueMemberContract] = &[
     value_member(
         "Trade",
-        binding_member(BindingMemberKind::ClassMethod, "trade"),
-        binding_member(BindingMemberKind::Factory, "trade"),
+        binding_member(BindingMemberKind::ClassMethod, "trade(trade)"),
+        binding_member(BindingMemberKind::Factory, "trade(value)"),
     ),
     value_member(
         "OrderBook",
-        binding_member(BindingMemberKind::ClassMethod, "order_book"),
-        binding_member(BindingMemberKind::Factory, "orderBook"),
+        binding_member(BindingMemberKind::ClassMethod, "order_book(order_book)"),
+        binding_member(BindingMemberKind::Factory, "orderBook(value)"),
     ),
     value_member(
         "Ticker",
-        binding_member(BindingMemberKind::ClassMethod, "ticker"),
-        binding_member(BindingMemberKind::Factory, "ticker"),
+        binding_member(BindingMemberKind::ClassMethod, "ticker(ticker)"),
+        binding_member(BindingMemberKind::Factory, "ticker(value)"),
     ),
     value_member(
         "Candle",
-        binding_member(BindingMemberKind::ClassMethod, "candle"),
-        binding_member(BindingMemberKind::Factory, "candle"),
+        binding_member(BindingMemberKind::ClassMethod, "candle(candle)"),
+        binding_member(BindingMemberKind::Factory, "candle(value)"),
     ),
     value_member(
         "Reconnected",
@@ -831,19 +1038,45 @@ const MARKET_EVENT_VALUE_MEMBERS: &[ValueMemberContract] = &[
 const ACCOUNT_EVENT_VALUE_MEMBERS: &[ValueMemberContract] = &[
     value_member(
         "Balance",
-        binding_member(BindingMemberKind::ClassMethod, "balance"),
-        binding_member(BindingMemberKind::Factory, "balance"),
+        binding_member(BindingMemberKind::ClassMethod, "balance(balance)"),
+        binding_member(BindingMemberKind::Factory, "balance(value)"),
     ),
     value_member(
         "Order",
-        binding_member(BindingMemberKind::ClassMethod, "order"),
-        binding_member(BindingMemberKind::Factory, "order"),
+        binding_member(BindingMemberKind::ClassMethod, "order(order)"),
+        binding_member(BindingMemberKind::Factory, "order(value)"),
     ),
     value_member(
         "Reconnected",
         binding_member(BindingMemberKind::ClassMethod, "reconnected"),
         binding_member(BindingMemberKind::Factory, "reconnected"),
     ),
+];
+
+const MARKET_PYTHON_ONLY_MEMBERS: &[BindingMember] = &[binding_member(
+    BindingMemberKind::ClassMethod,
+    "from_wire(value)",
+)];
+const CURSOR_PYTHON_ONLY_MEMBERS: &[BindingMember] =
+    &[binding_member(BindingMemberKind::Method, "to_wire")];
+
+fn python_language_only_members(name: &str) -> &'static [BindingMember] {
+    match name {
+        "Market" => MARKET_PYTHON_ONLY_MEMBERS,
+        "Cursor" => CURSOR_PYTHON_ONLY_MEMBERS,
+        _ => &[],
+    }
+}
+
+const VERIFIED_PUBLIC_METHOD_TYPE_EXCLUSIONS: &[&str] = &[
+    "AccountStream",
+    "CandleRequest",
+    "Client",
+    "Error",
+    "HistoryRequest",
+    "MarginRequest",
+    "MarketStream",
+    "OrderRequest",
 ];
 
 const VALUE_TYPE_CONTRACTS: &[ValueTypeContract<'static>] = &[
@@ -878,6 +1111,16 @@ const VALUE_TYPE_CONTRACTS: &[ValueTypeContract<'static>] = &[
         members: MARKET_KIND_VALUE_MEMBERS,
     },
     ValueTypeContract {
+        name: "Market",
+        rust_source: include_str!("../../../src/types/market.rs"),
+        python_source: PYTHON_MODELS,
+        dart_source: DART_MODELS,
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::Dataclass { fields: false },
+        dart_surface: DartValueSurface::ConstructibleClass { fields: false },
+        members: MARKET_VALUE_MEMBERS,
+    },
+    ValueTypeContract {
         name: "Side",
         rust_source: include_str!("../../../src/types/data.rs"),
         python_source: PYTHON_MODELS,
@@ -906,6 +1149,16 @@ const VALUE_TYPE_CONTRACTS: &[ValueTypeContract<'static>] = &[
         python_surface: PythonValueSurface::Class,
         dart_surface: DartValueSurface::Extension,
         members: INTERVAL_VALUE_MEMBERS,
+    },
+    ValueTypeContract {
+        name: "Subscription",
+        rust_source: include_str!("../../../src/types/stream.rs"),
+        python_source: PYTHON_MODELS,
+        dart_source: DART_MODELS,
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::Dataclass { fields: true },
+        dart_surface: DartValueSurface::ConstructibleClass { fields: true },
+        members: SUBSCRIPTION_VALUE_MEMBERS,
     },
     ValueTypeContract {
         name: "Balance",
@@ -946,6 +1199,16 @@ const VALUE_TYPE_CONTRACTS: &[ValueTypeContract<'static>] = &[
         python_surface: PythonValueSurface::Class,
         dart_surface: DartValueSurface::Class { fields: false },
         members: PAGE_VALUE_MEMBERS,
+    },
+    ValueTypeContract {
+        name: "Cursor",
+        rust_source: include_str!("../../../src/types/account.rs"),
+        python_source: PYTHON_MODELS,
+        dart_source: DART_MODELS,
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::String,
+        dart_surface: DartValueSurface::ConstructibleClass { fields: true },
+        members: CURSOR_VALUE_MEMBERS,
     },
     ValueTypeContract {
         name: "Timestamp",
@@ -989,6 +1252,15 @@ const VALUE_TYPE_CONTRACTS: &[ValueTypeContract<'static>] = &[
     },
 ];
 
+fn member_shape_key<T: AsRef<str>>(kind: &str, name: &str, required: &[T]) -> String {
+    let mut required = required.iter().map(AsRef::as_ref).collect::<Vec<_>>();
+    required.sort_unstable();
+    if required.is_empty() {
+        return format!("{kind}:{name}");
+    }
+    format!("{kind}:{name}({})", required.join(","))
+}
+
 fn binding_member_key(member: BindingMember) -> String {
     format!("{}:{}", member.kind.label(), member.name)
 }
@@ -1019,12 +1291,34 @@ fn assert_value_type_contract(contract: &ValueTypeContract<'_>) {
         &expected,
         &actual,
     );
+    if matches!(contract.rust_surface, RustValueSurface::Methods) {
+        let expected_rust_shapes = contract
+            .members
+            .iter()
+            .map(|member| {
+                member
+                    .rust_shape
+                    .map_or_else(|| format!("instance:{}", member.rust), str::to_owned)
+            })
+            .collect::<BTreeSet<_>>();
+        assert_inventory(
+            &format!("Rust {} value member shapes", contract.name),
+            &expected_rust_shapes,
+            &rust_public_value_method_shapes(contract.rust_source, contract.name),
+        );
+    }
 
-    let expected_python = contract
+    let mut expected_python = contract
         .members
         .iter()
         .filter_map(|member| member.python.map(binding_member_key))
         .collect::<BTreeSet<_>>();
+    expected_python.extend(
+        python_language_only_members(contract.name)
+            .iter()
+            .copied()
+            .map(binding_member_key),
+    );
     assert_inventory(
         &format!("Python {} value members", contract.name),
         &expected_python,
@@ -1072,6 +1366,36 @@ fn rust_typed_parameter_names(method: &ImplItemFn) -> BTreeSet<String> {
         );
     }
     parameters
+}
+
+fn rust_method_shape(method: &ImplItemFn) -> String {
+    let instance = method
+        .sig
+        .inputs
+        .iter()
+        .any(|input| matches!(input, FnArg::Receiver(_)));
+    let required = rust_typed_parameter_names(method)
+        .into_iter()
+        .collect::<Vec<_>>();
+    member_shape_key(
+        if instance { "instance" } else { "associated" },
+        &method.sig.ident.to_string(),
+        &required,
+    )
+}
+
+fn rust_public_value_method_shapes(source: &str, name: &str) -> BTreeSet<String> {
+    let mut shapes = rust_impl_methods(source, name)
+        .into_iter()
+        .filter(|method| matches!(method.vis, Visibility::Public(_)))
+        .map(|method| rust_method_shape(&method))
+        .collect::<BTreeSet<_>>();
+    shapes.extend(
+        rust_macro_public_methods(source, name)
+            .iter()
+            .map(rust_method_shape),
+    );
+    shapes
 }
 
 fn rust_method_parameters(source: &str, name: &str, method: &str) -> BTreeSet<String> {
@@ -1268,7 +1592,12 @@ fn python_class_fields(source: &str, name: &str) -> BTreeSet<String> {
         .collect()
 }
 
-fn python_method_parameters(source: &str, name: &str, method: &str) -> BTreeSet<String> {
+fn python_parameters(
+    source: &str,
+    name: &str,
+    method: &str,
+    required_only: bool,
+) -> BTreeSet<String> {
     let body = python_class_body(source, name);
     let member_depth = python_member_depth(body);
     let marker = format!("def {method}(");
@@ -1289,7 +1618,7 @@ fn python_method_parameters(source: &str, name: &str, method: &str) -> BTreeSet<
     let mut parameters = BTreeMap::new();
     for parameter in split_top_level_commas(parenthesized_contents(declaration, &label)) {
         let parameter = parameter.trim();
-        if matches!(parameter, "" | "/" | "*") {
+        if matches!(parameter, "" | "/" | "*") || (required_only && parameter.contains('=')) {
             continue;
         }
         let parameter = parameter.trim_start_matches('*').trim_start();
@@ -1304,6 +1633,16 @@ fn python_method_parameters(source: &str, name: &str, method: &str) -> BTreeSet<
         }
     }
     parameters.into_keys().collect()
+}
+
+fn python_method_parameters(source: &str, name: &str, method: &str) -> BTreeSet<String> {
+    python_parameters(source, name, method, false)
+}
+
+fn python_required_method_parameters(source: &str, name: &str, method: &str) -> Vec<String> {
+    python_parameters(source, name, method, true)
+        .into_iter()
+        .collect()
 }
 
 fn python_decorated_method_names(source: &str, name: &str, decorator: &str) -> BTreeSet<String> {
@@ -1343,6 +1682,10 @@ fn python_classmethod_names(source: &str, name: &str) -> BTreeSet<String> {
 
 fn python_property_names(source: &str, name: &str) -> BTreeSet<String> {
     python_decorated_method_names(source, name, "@property")
+}
+
+fn python_staticmethod_names(source: &str, name: &str) -> BTreeSet<String> {
+    python_decorated_method_names(source, name, "@staticmethod")
 }
 
 fn python_classmethod_parameters(source: &str, name: &str) -> BTreeMap<String, BTreeSet<String>> {
@@ -1392,6 +1735,28 @@ fn python_class_methods(source: &str, name: &str, async_only: bool) -> BTreeSet<
     methods
 }
 
+fn python_class_field_names(source: &str, name: &str, required_only: bool) -> Vec<String> {
+    let body = python_class_body(source, name);
+    let member_depth = python_member_depth(body);
+    body.lines()
+        .filter(|line| line.len() - line.trim_start_matches([' ', '\t']).len() == member_depth)
+        .filter_map(|line| {
+            let member = line.trim();
+            let (field, annotation) = member.split_once(':')?;
+            if !is_identifier(field)
+                || field.starts_with('_')
+                || annotation
+                    .split(|character: char| character != '_' && !character.is_ascii_alphanumeric())
+                    .any(|part| part == "ClassVar")
+                || (required_only && annotation.contains('='))
+            {
+                return None;
+            }
+            Some(field.to_owned())
+        })
+        .collect()
+}
+
 fn python_value_members(source: &str, name: &str, surface: PythonValueSurface) -> BTreeSet<String> {
     if matches!(surface, PythonValueSurface::Int) {
         let expected = format!("{name} = int");
@@ -1413,42 +1778,93 @@ fn python_value_members(source: &str, name: &str, surface: PythonValueSurface) -
 
     let classmethods = python_classmethod_names(source, name);
     let properties = python_property_names(source, name);
+    let staticmethods = python_staticmethod_names(source, name);
     assert!(
-        classmethods.is_disjoint(&properties),
-        "Python {name} methods cannot be both classmethod and property"
+        classmethods.is_disjoint(&properties)
+            && classmethods.is_disjoint(&staticmethods)
+            && properties.is_disjoint(&staticmethods),
+        "Python {name} method decorators must select one call form"
     );
     let mut members = python_class_methods(source, name, false)
         .into_iter()
         .map(|method| {
             let kind = if classmethods.contains(&method) {
                 BindingMemberKind::ClassMethod
+            } else if staticmethods.contains(&method) {
+                BindingMemberKind::StaticMethod
             } else if properties.contains(&method) {
                 BindingMemberKind::Property
             } else {
                 BindingMemberKind::Method
             };
-            format!("{}:{method}", kind.label())
+            let required = if matches!(kind, BindingMemberKind::Property) {
+                Vec::new()
+            } else {
+                python_required_method_parameters(source, name, &method)
+            };
+            member_shape_key(kind.label(), &method, &required)
         })
         .collect::<BTreeSet<_>>();
-    if matches!(surface, PythonValueSurface::Enum) {
-        let declaration = source
-            .lines()
-            .find(|line| line.starts_with(&format!("class {name}(")))
-            .unwrap_or_else(|| panic!("Python enum {name} must exist"));
-        assert!(
-            parenthesized_contents(declaration, &format!("Python enum {name}"))
-                .split(',')
-                .any(|base| base.trim() == "Enum"),
-            "Python {name} enum values require an Enum class"
-        );
-        assert!(
-            !python_enum_values(source, name).is_empty(),
-            "Python enum {name} must contain values"
-        );
-        members.insert(binding_member_key(binding_member(
-            BindingMemberKind::EnumValue,
-            "value",
-        )));
+    match surface {
+        PythonValueSurface::Enum => {
+            let declaration = source
+                .lines()
+                .find(|line| line.starts_with(&format!("class {name}(")))
+                .unwrap_or_else(|| panic!("Python enum {name} must exist"));
+            assert!(
+                parenthesized_contents(declaration, &format!("Python enum {name}"))
+                    .split(',')
+                    .any(|base| base.trim() == "Enum"),
+                "Python {name} enum values require an Enum class"
+            );
+            assert!(
+                !python_enum_values(source, name).is_empty(),
+                "Python enum {name} must contain values"
+            );
+            members.insert(binding_member_key(binding_member(
+                BindingMemberKind::EnumValue,
+                "value",
+            )));
+        }
+        PythonValueSurface::Dataclass { fields } => {
+            let required = python_class_field_names(source, name, true);
+            members.insert(member_shape_key(
+                BindingMemberKind::Constructor.label(),
+                name,
+                &required,
+            ));
+            if fields {
+                members.extend(
+                    python_class_field_names(source, name, false)
+                        .into_iter()
+                        .map(|field| {
+                            member_shape_key::<String>(
+                                BindingMemberKind::Field.label(),
+                                &field,
+                                &[],
+                            )
+                        }),
+                );
+            }
+        }
+        PythonValueSurface::String => {
+            let declaration = source
+                .lines()
+                .find(|line| line.starts_with(&format!("class {name}(")))
+                .unwrap_or_else(|| panic!("Python string value {name} must exist"));
+            assert!(
+                parenthesized_contents(declaration, &format!("Python string value {name}"))
+                    .split(',')
+                    .any(|base| base.trim() == "str"),
+                "Python {name} string representation requires a str class"
+            );
+            members.insert(member_shape_key(
+                BindingMemberKind::StringRepresentation.label(),
+                name,
+                &["value"],
+            ));
+        }
+        PythonValueSurface::Class | PythonValueSurface::Int => {}
     }
     members
 }
@@ -1828,7 +2244,12 @@ fn dart_extension_bodies<'a>(source: &'a str, name: &str) -> Vec<&'a str> {
     bodies
 }
 
-fn dart_value_member(declaration: &str, class_name: &str, include_fields: bool) -> Option<String> {
+fn dart_value_member(
+    declaration: &str,
+    class_name: &str,
+    include_fields: bool,
+    include_constructor: bool,
+) -> Option<String> {
     let declaration = declaration.trim().trim_end_matches(';').trim();
     if declaration.starts_with("@override ") {
         return None;
@@ -1847,8 +2268,34 @@ fn dart_value_member(declaration: &str, class_name: &str, include_fields: bool) 
     if let Some(factory) = unmodified.strip_prefix("factory ") {
         let factory = factory.strip_prefix(class_name)?.strip_prefix('.')?;
         let name = factory.split_once('(')?.0.trim();
-        return (!name.starts_with('_') && is_identifier(name))
-            .then(|| format!("{}:{name}", BindingMemberKind::Factory.label()));
+        return (!name.starts_with('_') && is_identifier(name)).then(|| {
+            member_shape_key(
+                BindingMemberKind::Factory.label(),
+                name,
+                &dart_required_parameter_names(declaration, &format!("Dart {class_name}.{name}")),
+            )
+        });
+    }
+
+    if dart_is_constructor(declaration, class_name) {
+        if !include_constructor {
+            return None;
+        }
+        let constructor = unmodified.strip_prefix(class_name)?;
+        let name = if constructor.trim_start().starts_with('(') {
+            class_name
+        } else {
+            let name = constructor.trim_start().strip_prefix('.')?;
+            name.split_once('(')?.0.trim()
+        };
+        if name.starts_with('_') || !is_identifier(name) {
+            return None;
+        }
+        return Some(member_shape_key(
+            BindingMemberKind::Constructor.label(),
+            name,
+            &dart_required_parameter_names(declaration, &format!("Dart {class_name}.{name}")),
+        ));
     }
 
     let tokens = declaration.split_whitespace().collect::<Vec<_>>();
@@ -1857,13 +2304,23 @@ fn dart_value_member(declaration: &str, class_name: &str, include_fields: bool) 
         return (!name.starts_with('_') && is_identifier(name))
             .then(|| format!("{}:{name}", BindingMemberKind::Getter.label()));
     }
-    if dart_is_constructor(declaration, class_name) || tokens.contains(&"operator") {
+    if tokens.contains(&"operator") {
         return None;
     }
     if let Some((prefix, _)) = declaration.split_once('(') {
         let name = prefix.split_whitespace().next_back()?;
-        return (!name.starts_with('_') && is_identifier(name))
-            .then(|| format!("{}:{name}", BindingMemberKind::Method.label()));
+        let kind = if tokens.contains(&"static") {
+            BindingMemberKind::StaticMethod
+        } else {
+            BindingMemberKind::Method
+        };
+        return (!name.starts_with('_') && is_identifier(name)).then(|| {
+            member_shape_key(
+                kind.label(),
+                name,
+                &dart_required_parameter_names(declaration, &format!("Dart {class_name}.{name}")),
+            )
+        });
     }
     if !include_fields {
         return None;
@@ -1882,20 +2339,31 @@ fn dart_value_member(declaration: &str, class_name: &str, include_fields: bool) 
 }
 
 fn dart_value_members(source: &str, name: &str, surface: DartValueSurface) -> BTreeSet<String> {
-    let (blocks, include_fields) = match surface {
+    let (blocks, include_fields, include_constructor) = match surface {
         DartValueSurface::Class { fields } => (
             vec![
                 find_dart_class_body(source, name)
                     .unwrap_or_else(|| panic!("Dart class {name} must exist")),
             ],
             fields,
+            false,
         ),
-        DartValueSurface::Extension => (dart_extension_bodies(source, name), false),
+        DartValueSurface::ConstructibleClass { fields } => (
+            vec![
+                find_dart_class_body(source, name)
+                    .unwrap_or_else(|| panic!("Dart class {name} must exist")),
+            ],
+            fields,
+            true,
+        ),
+        DartValueSurface::Extension => (dart_extension_bodies(source, name), false, false),
     };
     let mut members = BTreeSet::new();
     for block in blocks {
         for declaration in dart_top_level_members(block, name) {
-            let Some(member) = dart_value_member(&declaration, name, include_fields) else {
+            let Some(member) =
+                dart_value_member(&declaration, name, include_fields, include_constructor)
+            else {
                 continue;
             };
             assert!(
@@ -1923,23 +2391,47 @@ fn dart_class_fields(source: &str, name: &str) -> BTreeSet<String> {
         .collect()
 }
 
-fn dart_parameter_names(declaration: &str, label: &str) -> BTreeSet<String> {
-    fn collect(source: &str, label: &str, parameters: &mut BTreeMap<String, String>) {
+fn dart_parameters(declaration: &str, label: &str, required_only: bool) -> BTreeSet<String> {
+    #[derive(Clone, Copy)]
+    enum Group {
+        Positional,
+        Named,
+        Optional,
+    }
+
+    fn collect(
+        source: &str,
+        label: &str,
+        required_only: bool,
+        group: Group,
+        parameters: &mut BTreeMap<String, String>,
+    ) {
         for parameter in split_top_level_commas(source) {
             let parameter = parameter.trim();
             if parameter.is_empty() {
                 continue;
             }
-            if let Some(group) = parameter
+            if let Some(nested) = parameter
                 .strip_prefix('{')
                 .and_then(|parameter| parameter.strip_suffix('}'))
-                .or_else(|| {
-                    parameter
-                        .strip_prefix('[')
-                        .and_then(|parameter| parameter.strip_suffix(']'))
-                })
             {
-                collect(group, label, parameters);
+                collect(nested, label, required_only, Group::Named, parameters);
+                continue;
+            }
+            if let Some(nested) = parameter
+                .strip_prefix('[')
+                .and_then(|parameter| parameter.strip_suffix(']'))
+            {
+                collect(nested, label, required_only, Group::Optional, parameters);
+                continue;
+            }
+
+            let required = match group {
+                Group::Positional => !parameter.contains('='),
+                Group::Named => parameter.starts_with("required "),
+                Group::Optional => false,
+            };
+            if required_only && !required {
                 continue;
             }
 
@@ -1966,9 +2458,21 @@ fn dart_parameter_names(declaration: &str, label: &str) -> BTreeSet<String> {
     collect(
         parenthesized_contents(declaration, label),
         label,
+        required_only,
+        Group::Positional,
         &mut parameters,
     );
     parameters.into_keys().collect()
+}
+
+fn dart_parameter_names(declaration: &str, label: &str) -> BTreeSet<String> {
+    dart_parameters(declaration, label, false)
+}
+
+fn dart_required_parameter_names(declaration: &str, label: &str) -> Vec<String> {
+    dart_parameters(declaration, label, true)
+        .into_iter()
+        .collect()
 }
 
 fn dart_factory_parameters(source: &str, class_name: &str) -> BTreeMap<String, BTreeSet<String>> {
@@ -2866,6 +3370,24 @@ final class Example {
     );
 }
 
+fn assert_example_value_contract(
+    rust_source: &str,
+    python_source: &str,
+    dart_source: &str,
+    members: &[ValueMemberContract],
+) {
+    assert_value_type_contract(&ValueTypeContract {
+        name: "Example",
+        rust_source,
+        python_source,
+        dart_source,
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::Class,
+        dart_surface: DartValueSurface::Class { fields: false },
+        members,
+    });
+}
+
 #[test]
 #[should_panic(expected = "Rust Example value members differ; missing: {}; extra: {\"future\"}")]
 fn value_contract_rejects_unmapped_macro_method() {
@@ -3045,6 +3567,75 @@ define_example!();
     };
 
     assert_value_type_contract(&contract);
+}
+
+#[test]
+#[should_panic(
+    expected = "Rust Example value member shapes differ; missing: {\"associated:create\"}; extra: {\"instance:create\"}"
+)]
+fn value_contract_rejects_rust_call_form_mismatch() {
+    let members = [shaped_value_member(
+        "create",
+        "associated:create",
+        binding_member(BindingMemberKind::ClassMethod, "create"),
+        binding_member(BindingMemberKind::Factory, "create"),
+    )];
+    assert_example_value_contract(
+        "struct Example; impl Example { pub fn create(&self) {} }",
+        "class Example(object):\n    @classmethod\n    def create(cls):\n        return cls()\n",
+        "final class Example { factory Example.create() => Example._(); Example._(); }",
+        &members,
+    );
+}
+
+#[test]
+#[should_panic(
+    expected = "Python Example value members differ; missing: {\"class_method:create(value)\"}; extra: {\"class_method:create\"}"
+)]
+fn value_contract_rejects_required_parameter_drift() {
+    let members = [shaped_value_member(
+        "create",
+        "associated:create(value)",
+        binding_member(BindingMemberKind::ClassMethod, "create(value)"),
+        binding_member(BindingMemberKind::Factory, "create(value)"),
+    )];
+    assert_example_value_contract(
+        "struct Example; impl Example { pub fn create(value: u32) -> Self { Self } }",
+        "class Example(object):\n    @classmethod\n    def create(cls):\n        return cls()\n",
+        "final class Example { factory Example.create(int value) => Example._(); Example._(); }",
+        &members,
+    );
+}
+
+#[test]
+#[should_panic(expected = "Rust Example value members differ; missing: {}; extra: {\"future\"}")]
+fn value_contract_reads_every_macro_impl_for_one_type() {
+    let rust = r#"
+macro_rules! define_example {
+    () => {
+        impl Example {
+            pub fn known(&self) {}
+        }
+
+        impl Example {
+            pub fn future(&self) {}
+        }
+    };
+}
+
+define_example!();
+"#;
+    let members = [value_member(
+        "known",
+        binding_member(BindingMemberKind::Method, "known"),
+        binding_member(BindingMemberKind::Getter, "known"),
+    )];
+    assert_example_value_contract(
+        rust,
+        "class Example(object):\n    def known(self):\n        pass\n",
+        "final class Example { bool get known => true; }",
+        &members,
+    );
 }
 
 #[test]
@@ -3647,6 +4238,59 @@ fn provider_specific_methods_match_every_language() {
             provider.adapter
         );
     }
+}
+
+fn public_inherent_method_types(exported: &BTreeMap<String, (String, String)>) -> BTreeSet<String> {
+    exported
+        .iter()
+        .filter(|(_, (rust_name, source))| !rust_public_value_methods(source, rust_name).is_empty())
+        .map(|(public_name, _)| public_name.clone())
+        .collect()
+}
+
+#[test]
+#[should_panic(
+    expected = "Public Rust inherent method types differ; missing: {}; extra: {\"Future\"}"
+)]
+fn public_method_type_inventory_rejects_unclassified_export() {
+    let modules = BTreeMap::from([(
+        Vec::new(),
+        "pub struct Known; impl Known { pub fn current(&self) {} }\n\
+         pub struct Future; impl Future { pub fn added(&self) {} }"
+            .to_owned(),
+    )]);
+    let actual =
+        public_inherent_method_types(&resolve_public_type_sources(&modules, &[Vec::new()]));
+
+    assert_inventory(
+        "Public Rust inherent method types",
+        &BTreeSet::from(["Known".to_owned()]),
+        &actual,
+    );
+}
+
+#[test]
+fn every_public_inherent_method_type_is_classified() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let exported = exported_public_type_sources(&root);
+    let actual = public_inherent_method_types(&exported);
+    let mut expected = VALUE_TYPE_CONTRACTS
+        .iter()
+        .filter(|contract| matches!(contract.rust_surface, RustValueSurface::Methods))
+        .map(|contract| contract.name.to_owned())
+        .collect::<BTreeSet<_>>();
+    for exclusion in VERIFIED_PUBLIC_METHOD_TYPE_EXCLUSIONS {
+        assert!(
+            !expected.contains(*exclusion),
+            "Public method type {exclusion} cannot be both contracted and excluded"
+        );
+        assert!(
+            expected.insert((*exclusion).to_owned()),
+            "Public method type exclusion {exclusion} repeats"
+        );
+    }
+
+    assert_inventory("Public Rust inherent method types", &expected, &actual);
 }
 
 #[test]

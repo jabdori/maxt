@@ -7,16 +7,21 @@ use std::{
 };
 
 use maxt::{Exchange, Feature};
-use syn::{Fields, ImplItem, Item, TraitItem, Type, UseTree, Visibility};
+use syn::{
+    Fields, FnArg, ImplItem, ImplItemFn, Item, Pat, ReturnType, TraitItem, Type, UseTree,
+    Visibility,
+};
 
 const CORE_ADAPTER: &str = include_str!("../../../src/adapter.rs");
 const CORE_CLIENT: &str = include_str!("../../../src/client.rs");
 const COMMON_CONTRACT: &str = include_str!("../src/contract.rs");
 const PYTHON_RUST_ADAPTER: &str = include_str!("../../python/src/adapter.rs");
+const PYTHON_BUILTIN: &str = include_str!("../../python/src/builtin.rs");
 const PYTHON_MODELS: &str = include_str!("../../python/python/maxt/models.py");
 const PYTHON_API: &str = include_str!("../../python/python/maxt/_api.py");
 const PYTHON_ADAPTERS: &str = include_str!("../../python/python/maxt/adapters.py");
 const DART_RUST_ADAPTER: &str = include_str!("../../dart/rust/src/adapter.rs");
+const DART_RUST_API: &str = include_str!("../../dart/rust/src/api.rs");
 const DART_MODELS: &str = include_str!("../../dart/lib/src/models.dart");
 const DART_ADAPTER: &str = include_str!("../../dart/lib/src/adapter.dart");
 const DART_CLIENT: &str = include_str!("../../dart/lib/src/client.dart");
@@ -24,6 +29,65 @@ const DART_ADAPTERS: &str = include_str!("../../dart/lib/src/adapters.dart");
 const DART_ERRORS: &str = include_str!("../../dart/lib/src/errors.dart");
 const DART_PROVIDERS: &str = include_str!("../../dart/lib/src/providers.dart");
 const DART_GENERATED_CONVERT: &str = include_str!("../../dart/lib/src/rust/convert.dart");
+
+struct ProviderDescriptor {
+    exchange: &'static str,
+    adapter: &'static str,
+    rust_source: &'static str,
+    python_native: &'static str,
+    dart_native_methods: &'static [&'static str],
+    modes: &'static [&'static str],
+    mode_axis: Option<&'static str>,
+    python_default_mode: &'static str,
+    python_factories: &'static [&'static str],
+}
+
+const PROVIDERS: &[ProviderDescriptor] = &[
+    ProviderDescriptor {
+        exchange: "upbit",
+        adapter: "UpbitAdapter",
+        rust_source: include_str!("../../../src/adapters/upbit/mod.rs"),
+        python_native: "NativeUpbitAdapter",
+        dart_native_methods: &["upbit"],
+        modes: &["new"],
+        mode_axis: None,
+        python_default_mode: "new",
+        python_factories: &[],
+    },
+    ProviderDescriptor {
+        exchange: "bithumb",
+        adapter: "BithumbAdapter",
+        rust_source: include_str!("../../../src/adapters/bithumb/mod.rs"),
+        python_native: "NativeBithumbAdapter",
+        dart_native_methods: &["bithumb"],
+        modes: &["new"],
+        mode_axis: None,
+        python_default_mode: "new",
+        python_factories: &[],
+    },
+    ProviderDescriptor {
+        exchange: "binance",
+        adapter: "BinanceAdapter",
+        rust_source: include_str!("../../../src/adapters/binance/mod.rs"),
+        python_native: "NativeBinanceAdapter",
+        dart_native_methods: &["binance_spot", "binance_usd_m_futures"],
+        modes: &["spot", "usd_m_futures"],
+        mode_axis: Some("venue"),
+        python_default_mode: "spot",
+        python_factories: &["spot", "usd_m_futures"],
+    },
+    ProviderDescriptor {
+        exchange: "hyperliquid",
+        adapter: "HyperliquidAdapter",
+        rust_source: include_str!("../../../src/adapters/hyperliquid/mod.rs"),
+        python_native: "NativeHyperliquidAdapter",
+        dart_native_methods: &["hyperliquid"],
+        modes: &["new", "testnet"],
+        mode_axis: Some("testnet"),
+        python_default_mode: "new",
+        python_factories: &["testnet"],
+    },
+];
 
 fn rust_trait_methods(source: &str, name: &str) -> BTreeSet<String> {
     syn::parse_file(source)
@@ -396,7 +460,7 @@ fn qualified_variants(source: &str, prefix: &str) -> BTreeSet<String> {
     variants
 }
 
-fn rust_public_methods(source: &str, name: &str, async_only: bool) -> BTreeSet<String> {
+fn rust_impl_methods(source: &str, name: &str) -> Vec<ImplItemFn> {
     syn::parse_file(source)
         .expect("Rust impl source must parse")
         .items
@@ -418,15 +482,112 @@ fn rust_public_methods(source: &str, name: &str, async_only: bool) -> BTreeSet<S
         })
         .flatten()
         .filter_map(|item| match item {
-            ImplItem::Fn(method)
-                if matches!(method.vis, Visibility::Public(_))
-                    && (!async_only || method.sig.asyncness.is_some()) =>
-            {
-                Some(method.sig.ident.to_string())
-            }
+            ImplItem::Fn(method) => Some(method),
             _ => None,
         })
         .collect()
+}
+
+fn rust_public_methods(source: &str, name: &str, async_only: bool) -> BTreeSet<String> {
+    rust_impl_methods(source, name)
+        .into_iter()
+        .filter(|method| {
+            matches!(method.vis, Visibility::Public(_))
+                && (!async_only || method.sig.asyncness.is_some())
+        })
+        .map(|method| method.sig.ident.to_string())
+        .collect()
+}
+
+fn rust_typed_parameter_names(method: &ImplItemFn) -> BTreeSet<String> {
+    let mut parameters = BTreeSet::new();
+    for input in &method.sig.inputs {
+        let FnArg::Typed(input) = input else {
+            continue;
+        };
+        let Pat::Ident(pattern) = input.pat.as_ref() else {
+            panic!(
+                "Rust method {} parameter must use an identifier pattern",
+                method.sig.ident
+            );
+        };
+        assert!(
+            pattern.subpat.is_none(),
+            "Rust method {} parameter must use an identifier pattern",
+            method.sig.ident
+        );
+        assert!(
+            parameters.insert(pattern.ident.to_string()),
+            "Rust method {} has duplicate parameter {}",
+            method.sig.ident,
+            pattern.ident
+        );
+    }
+    parameters
+}
+
+fn rust_method_parameters(source: &str, name: &str, method: &str) -> BTreeSet<String> {
+    let mut matches = rust_impl_methods(source, name)
+        .into_iter()
+        .filter(|candidate| candidate.sig.ident == method)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        matches.len(),
+        1,
+        "Rust {name}::{method} must exist exactly once"
+    );
+    rust_typed_parameter_names(&matches.pop().expect("one Rust method"))
+}
+
+fn rust_self_returning_methods(source: &str, name: &str) -> BTreeMap<String, BTreeSet<String>> {
+    rust_impl_methods(source, name)
+        .into_iter()
+        .filter(|method| {
+            matches!(method.vis, Visibility::Public(_))
+                && matches!(
+                    &method.sig.output,
+                    ReturnType::Type(_, output)
+                        if matches!(
+                            output.as_ref(),
+                            Type::Path(path)
+                                if path.qself.is_none() && path.path.is_ident("Self")
+                        )
+                )
+        })
+        .map(|method| {
+            let name = method.sig.ident.to_string();
+            let parameters = rust_typed_parameter_names(&method);
+            (name, parameters)
+        })
+        .collect()
+}
+
+fn rust_constructor_settings(
+    name: &str,
+    methods: &BTreeMap<String, BTreeSet<String>>,
+    modes: &[&str],
+    mode_axis: Option<&str>,
+) -> BTreeSet<String> {
+    let actual_modes = methods
+        .iter()
+        .filter(|(_, parameters)| parameters.is_empty())
+        .map(|(method, _)| method.clone())
+        .collect::<BTreeSet<_>>();
+    let expected_modes = modes
+        .iter()
+        .map(|mode| (*mode).to_owned())
+        .collect::<BTreeSet<_>>();
+    assert_inventory(
+        &format!("Rust {name} constructor modes"),
+        &expected_modes,
+        &actual_modes,
+    );
+
+    let mut settings = methods.values().flatten().cloned().collect::<BTreeSet<_>>();
+    if let Some(mode_axis) = mode_axis {
+        settings.insert(mode_axis.to_owned());
+    }
+    settings
 }
 
 fn is_identifier(value: &str) -> bool {
@@ -482,15 +643,18 @@ fn python_wire_name(line: &str) -> Option<&str> {
         })
 }
 
-fn python_class_fields(source: &str, name: &str) -> BTreeSet<String> {
-    let body = python_class_body(source, name);
-    let member_depth = body
-        .lines()
+fn python_member_depth(body: &str) -> usize {
+    body.lines()
         .filter(|line| !line.trim().is_empty())
         .map(|line| line.len() - line.trim_start_matches([' ', '\t']).len())
         .filter(|depth| *depth > 0)
         .min()
-        .unwrap_or(0);
+        .unwrap_or(0)
+}
+
+fn python_class_fields(source: &str, name: &str) -> BTreeSet<String> {
+    let body = python_class_body(source, name);
+    let member_depth = python_member_depth(body);
 
     body.lines()
         .filter(|line| line.len() - line.trim_start_matches([' ', '\t']).len() == member_depth)
@@ -507,6 +671,76 @@ fn python_class_fields(source: &str, name: &str) -> BTreeSet<String> {
             Some(python_wire_name(member).unwrap_or(field).to_owned())
         })
         .collect()
+}
+
+fn python_method_parameters(source: &str, name: &str, method: &str) -> BTreeSet<String> {
+    let body = python_class_body(source, name);
+    let member_depth = python_member_depth(body);
+    let marker = format!("def {method}(");
+    let mut offset = 0;
+    let declaration = body
+        .split_inclusive('\n')
+        .find_map(|line| {
+            let depth = line.len() - line.trim_start_matches([' ', '\t']).len();
+            let trimmed = line.trim_start();
+            let result = (depth == member_depth && trimmed.starts_with(&marker))
+                .then_some(&body[offset + depth..]);
+            offset += line.len();
+            result
+        })
+        .unwrap_or_else(|| panic!("Python class {name} method {method} must exist"));
+
+    split_top_level_commas(parenthesized_contents(
+        declaration,
+        &format!("Python {name}.{method}"),
+    ))
+    .into_iter()
+    .filter_map(|parameter| {
+        let parameter = parameter.trim();
+        if matches!(parameter, "" | "/" | "*") {
+            return None;
+        }
+        let parameter = parameter.trim_start_matches('*').trim_start();
+        let end = parameter.find([':', '=']).unwrap_or(parameter.len());
+        let identifier = parameter[..end].trim();
+        assert!(
+            is_identifier(identifier),
+            "Python {name}.{method} parameter must use an identifier: {parameter}"
+        );
+        (identifier != "self" && identifier != "cls").then(|| snake_case(identifier))
+    })
+    .collect()
+}
+
+fn python_classmethod_names(source: &str, name: &str) -> BTreeSet<String> {
+    let body = python_class_body(source, name);
+    let member_depth = python_member_depth(body);
+    let mut classmethod = false;
+    let mut methods = BTreeSet::new();
+    for line in body.lines() {
+        let depth = line.len() - line.trim_start_matches([' ', '\t']).len();
+        if depth != member_depth {
+            continue;
+        }
+        let member = line.trim();
+        if member == "@classmethod" {
+            classmethod = true;
+        } else if member.starts_with('@') {
+            continue;
+        } else if let Some(declaration) = member.strip_prefix("def ") {
+            let method = declaration
+                .split_once('(')
+                .map(|(method, _)| method)
+                .unwrap_or(declaration);
+            if classmethod && is_identifier(method) && !method.starts_with('_') {
+                methods.insert(method.to_owned());
+            }
+            classmethod = false;
+        } else {
+            classmethod = false;
+        }
+    }
+    methods
 }
 
 fn python_class_methods(source: &str, name: &str, async_only: bool) -> BTreeSet<String> {
@@ -759,6 +993,35 @@ impl DartNesting {
     }
 }
 
+fn parenthesized_contents<'a>(source: &'a str, label: &str) -> &'a str {
+    let open = source
+        .find('(')
+        .unwrap_or_else(|| panic!("{label} signature must have parameters"));
+    let mut nesting = DartNesting::default();
+    for (offset, character) in source[open..].char_indices() {
+        nesting.consume(character);
+        if character == ')' && nesting.parentheses == 0 {
+            return &source[open + 1..open + offset];
+        }
+    }
+    panic!("{label} signature has unterminated parameters")
+}
+
+fn split_top_level_commas(source: &str) -> Vec<&str> {
+    let mut values = Vec::new();
+    let mut start = 0;
+    let mut nesting = DartNesting::default();
+    for (offset, character) in source.char_indices() {
+        let top_level = nesting.is_top_level();
+        if nesting.consume(character) && top_level && character == ',' {
+            values.push(&source[start..offset]);
+            start = offset + character.len_utf8();
+        }
+    }
+    values.push(&source[start..]);
+    values
+}
+
 fn dart_has_top_level_comma(declaration: &str) -> bool {
     let mut nesting = DartNesting::default();
     declaration.chars().any(|character| {
@@ -830,10 +1093,7 @@ fn dart_top_level_members(block: &str, class_name: &str) -> Vec<String> {
                 assignment_prefix = Some(member.clone());
             }
             if syntax && top_level && character == '{' {
-                member_block = assignment_prefix
-                    .as_deref()
-                    .and_then(|prefix| dart_instance_field_name(prefix, class_name))
-                    .is_none();
+                member_block = assignment_prefix.is_none();
             }
             member.push(character);
             if !syntax {
@@ -876,6 +1136,152 @@ fn dart_class_fields(source: &str, name: &str) -> BTreeSet<String> {
         .collect()
 }
 
+fn dart_parameter_names(declaration: &str, label: &str) -> BTreeSet<String> {
+    fn collect(source: &str, label: &str, parameters: &mut BTreeSet<String>) {
+        for parameter in split_top_level_commas(source) {
+            let parameter = parameter.trim();
+            if parameter.is_empty() {
+                continue;
+            }
+            if let Some(group) = parameter
+                .strip_prefix('{')
+                .and_then(|parameter| parameter.strip_suffix('}'))
+                .or_else(|| {
+                    parameter
+                        .strip_prefix('[')
+                        .and_then(|parameter| parameter.strip_suffix(']'))
+                })
+            {
+                collect(group, label, parameters);
+                continue;
+            }
+
+            let declaration = parameter
+                .split_once('=')
+                .map_or(parameter, |(value, _)| value);
+            let identifier = declaration
+                .split_whitespace()
+                .next_back()
+                .unwrap_or_else(|| panic!("{label} parameter must have an identifier"));
+            let identifier = identifier
+                .strip_prefix("this.")
+                .or_else(|| identifier.strip_prefix("super."))
+                .unwrap_or(identifier);
+            assert!(
+                is_identifier(identifier),
+                "{label} parameter must use an identifier: {parameter}"
+            );
+            assert!(
+                parameters.insert(snake_case(identifier)),
+                "{label} has duplicate parameter {identifier}"
+            );
+        }
+    }
+
+    let mut parameters = BTreeSet::new();
+    collect(
+        parenthesized_contents(declaration, label),
+        label,
+        &mut parameters,
+    );
+    parameters
+}
+
+fn dart_factory_parameters(source: &str, class_name: &str) -> BTreeMap<String, BTreeSet<String>> {
+    let block = find_dart_class_body(source, class_name)
+        .unwrap_or_else(|| panic!("Dart class {class_name} must exist"));
+    let mut factories = BTreeMap::new();
+    for declaration in dart_top_level_members(block, class_name) {
+        let mut declaration = declaration.trim_start();
+        for modifier in ["const ", "external "] {
+            if let Some(rest) = declaration.strip_prefix(modifier) {
+                declaration = rest.trim_start();
+            }
+        }
+        let Some(declaration) = declaration.strip_prefix("factory ") else {
+            continue;
+        };
+        let Some(declaration) = declaration.strip_prefix(class_name) else {
+            continue;
+        };
+        let declaration = declaration.trim_start();
+        let factory = if declaration.starts_with('(') {
+            "new"
+        } else {
+            let Some(factory) = declaration.strip_prefix('.') else {
+                continue;
+            };
+            factory
+                .split_once('(')
+                .map(|(factory, _)| factory)
+                .unwrap_or(factory)
+        };
+        if factory.starts_with('_') {
+            continue;
+        }
+        assert!(
+            is_identifier(factory),
+            "Dart {class_name} factory must use an identifier: {factory}"
+        );
+        let parameters =
+            dart_parameter_names(declaration, &format!("Dart {class_name}.{factory} factory"));
+        assert!(
+            factories.insert(snake_case(factory), parameters).is_none(),
+            "Dart {class_name} has duplicate factory {factory}"
+        );
+    }
+    factories
+}
+
+fn dart_self_returning_method_parameters(
+    source: &str,
+    class_name: &str,
+) -> BTreeMap<String, BTreeSet<String>> {
+    let block = find_dart_class_body(source, class_name)
+        .unwrap_or_else(|| panic!("Dart class {class_name} must exist"));
+    let mut methods = BTreeMap::new();
+    for declaration in dart_top_level_members(block, class_name) {
+        let Some((prefix, _)) = declaration.split_once('(') else {
+            continue;
+        };
+        let mut tokens = prefix.split_whitespace().rev();
+        let Some(method) = tokens.next() else {
+            continue;
+        };
+        let Some(return_type) = tokens.next() else {
+            continue;
+        };
+        if return_type != class_name || !method.starts_with("with") || method.starts_with('_') {
+            continue;
+        }
+        assert!(
+            is_identifier(method),
+            "Dart {class_name} self-returning method must use an identifier: {method}"
+        );
+        let parameters =
+            dart_parameter_names(&declaration, &format!("Dart {class_name}.{method} method"));
+        assert!(
+            methods.insert(snake_case(method), parameters).is_none(),
+            "Dart {class_name} has duplicate self-returning method {method}"
+        );
+    }
+    methods
+}
+
+fn dart_construction_method_parameters(
+    source: &str,
+    class_name: &str,
+) -> BTreeMap<String, BTreeSet<String>> {
+    let mut methods = dart_factory_parameters(source, class_name);
+    for (method, parameters) in dart_self_returning_method_parameters(source, class_name) {
+        assert!(
+            methods.insert(method.clone(), parameters).is_none(),
+            "Dart {class_name} has duplicate construction method {method}"
+        );
+    }
+    methods
+}
+
 fn dart_public_model_fields(name: &str) -> BTreeSet<String> {
     let sources = [DART_MODELS, DART_PROVIDERS]
         .into_iter()
@@ -889,12 +1295,7 @@ fn dart_public_model_fields(name: &str) -> BTreeSet<String> {
     dart_class_fields(sources[0], name)
 }
 
-fn assert_inventory(
-    language: &str,
-    model: &str,
-    expected: &BTreeSet<String>,
-    actual: &BTreeSet<String>,
-) {
+fn assert_inventory(label: &str, expected: &BTreeSet<String>, actual: &BTreeSet<String>) {
     let missing = expected
         .difference(actual)
         .cloned()
@@ -905,7 +1306,7 @@ fn assert_inventory(
         .collect::<BTreeSet<_>>();
     assert!(
         missing.is_empty() && extra.is_empty(),
-        "{language} {model} fields differ; missing: {missing:?}; extra: {extra:?}"
+        "{label} differ; missing: {missing:?}; extra: {extra:?}"
     );
 }
 
@@ -1030,6 +1431,135 @@ fn dart_variant_ids(source: &str, name: &str) -> BTreeSet<String> {
         .collect()
 }
 
+fn assert_provider_constructor_settings() {
+    let exchanges = Exchange::ALL
+        .map(|exchange| exchange.id().to_owned())
+        .into_iter()
+        .collect::<BTreeSet<_>>();
+    let descriptors = PROVIDERS
+        .iter()
+        .map(|provider| provider.exchange.to_owned())
+        .collect::<BTreeSet<_>>();
+    assert_inventory("Provider descriptors", &exchanges, &descriptors);
+
+    for provider in PROVIDERS {
+        let rust_methods = rust_self_returning_methods(provider.rust_source, provider.adapter);
+        let rust_settings = rust_constructor_settings(
+            provider.adapter,
+            &rust_methods,
+            provider.modes,
+            provider.mode_axis,
+        );
+        let rust_modes = provider
+            .modes
+            .iter()
+            .map(|mode| (*mode).to_owned())
+            .collect::<BTreeSet<_>>();
+
+        let python_native = rust_method_parameters(PYTHON_BUILTIN, provider.python_native, "new");
+        assert_inventory(
+            &format!(
+                "Python {}::new constructor settings",
+                provider.python_native
+            ),
+            &rust_settings,
+            &python_native,
+        );
+
+        let mut dart_native = BTreeSet::new();
+        for method in provider.dart_native_methods {
+            dart_native.extend(rust_method_parameters(
+                DART_RUST_API,
+                "NativeClient",
+                method,
+            ));
+        }
+        if provider.dart_native_methods.len() > 1 {
+            dart_native.insert(
+                provider
+                    .mode_axis
+                    .expect("split Dart native constructors need a mode axis")
+                    .to_owned(),
+            );
+        }
+        assert_inventory(
+            &format!(
+                "Dart NativeClient::{} constructor settings",
+                provider.dart_native_methods.join(" + ")
+            ),
+            &rust_settings,
+            &dart_native,
+        );
+
+        let python_settings =
+            python_method_parameters(PYTHON_ADAPTERS, provider.adapter, "__init__");
+        assert_inventory(
+            &format!("Python {} constructor settings", provider.adapter),
+            &rust_settings,
+            &python_settings,
+        );
+
+        let python_factories = python_classmethod_names(PYTHON_ADAPTERS, provider.adapter);
+        let expected_python_factories = provider
+            .python_factories
+            .iter()
+            .map(|factory| (*factory).to_owned())
+            .collect::<BTreeSet<_>>();
+        assert_inventory(
+            &format!("Python {} classmethod factories", provider.adapter),
+            &expected_python_factories,
+            &python_factories,
+        );
+        let mut python_modes = python_factories;
+        python_modes.insert(provider.python_default_mode.to_owned());
+        assert_inventory(
+            &format!("Python {} constructor modes", provider.adapter),
+            &rust_modes,
+            &python_modes,
+        );
+
+        let dart_factories = dart_factory_parameters(DART_ADAPTERS, provider.adapter);
+        let dart_methods = dart_construction_method_parameters(DART_ADAPTERS, provider.adapter);
+        let rust_method_names = rust_methods.keys().cloned().collect::<BTreeSet<_>>();
+        let dart_method_names = dart_methods.keys().cloned().collect::<BTreeSet<_>>();
+        assert_inventory(
+            &format!("Dart {} construction methods", provider.adapter),
+            &rust_method_names,
+            &dart_method_names,
+        );
+
+        let dart_modes = dart_factories
+            .keys()
+            .filter(|factory| rust_modes.contains(*factory))
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        assert_inventory(
+            &format!("Dart {} constructor modes", provider.adapter),
+            &rust_modes,
+            &dart_modes,
+        );
+
+        let mut dart_settings = dart_methods
+            .values()
+            .flatten()
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        if provider.modes.len() > 1 {
+            dart_settings.insert(
+                provider
+                    .mode_axis
+                    .expect("multiple Dart factories need a mode axis")
+                    .to_owned(),
+            );
+        }
+        assert_inventory(
+            &format!("Dart {} constructor settings", provider.adapter),
+            &rust_settings,
+            &dart_settings,
+        );
+    }
+}
+
 #[test]
 fn rust_struct_field_parser_includes_private_named_fields() {
     let source = r#"
@@ -1043,6 +1573,79 @@ pub struct Subscription {
         rust_struct_fields(source, "Subscription"),
         BTreeSet::from(["feeds".to_owned(), "markets".to_owned()])
     );
+}
+
+#[test]
+fn rust_constructor_parser_extracts_self_returning_method_settings() {
+    let source = r#"
+struct Example;
+
+impl Example {
+    pub fn new() -> Self {
+        Self
+    }
+
+    pub fn with_region(self, region: String) -> Self {
+        self
+    }
+
+    pub fn with_credentials(
+        self,
+        access_key: String,
+        secret_key: String,
+    ) -> Self {
+        self
+    }
+
+    pub fn operation(&self, request: String) {
+        drop(request);
+    }
+
+    fn private_constructor() -> Self {
+        Self
+    }
+}
+"#;
+
+    let methods = rust_self_returning_methods(source, "Example");
+    assert_eq!(
+        methods,
+        BTreeMap::from([
+            ("new".to_owned(), BTreeSet::new()),
+            (
+                "with_credentials".to_owned(),
+                BTreeSet::from(["access_key".to_owned(), "secret_key".to_owned()]),
+            ),
+            (
+                "with_region".to_owned(),
+                BTreeSet::from(["region".to_owned()]),
+            ),
+        ])
+    );
+    assert_eq!(
+        rust_constructor_settings("Example", &methods, &["new"], None),
+        BTreeSet::from([
+            "access_key".to_owned(),
+            "region".to_owned(),
+            "secret_key".to_owned(),
+        ])
+    );
+}
+
+#[test]
+#[should_panic(expected = "Rust method with_pair parameter must use an identifier pattern")]
+fn rust_constructor_parser_rejects_non_identifier_parameter_patterns() {
+    let source = r#"
+struct Example;
+
+impl Example {
+    pub fn with_pair(self, (access_key, secret_key): (String, String)) -> Self {
+        self
+    }
+}
+"#;
+
+    rust_self_returning_methods(source, "Example");
 }
 
 #[test]
@@ -1072,6 +1675,51 @@ class Example(WireModel):
     assert_eq!(
         python_class_fields(source, "Example"),
         BTreeSet::from(["from".to_owned(), "ordinary_".to_owned()])
+    );
+}
+
+#[test]
+fn python_constructor_parser_reads_multiline_parameters_and_factories() {
+    let source = r#"
+class Example(Base):
+    def __init__(
+        self,
+        /,
+        region: Region = Region.default(),
+        *,
+        accessKey: Optional[str] = None,
+        secret_key: Optional[str] = None,
+    ) -> None:
+        pass
+
+    @classmethod
+    def spot(cls) -> Example:
+        return cls()
+
+    @classmethod
+    def usd_m_futures(
+        cls,
+        *,
+        accessKey: Optional[str] = None,
+    ) -> Example:
+        return cls(access_key=accessKey)
+
+    @classmethod
+    def _private_factory(cls) -> Example:
+        return cls()
+"#;
+
+    assert_eq!(
+        python_method_parameters(source, "Example", "__init__"),
+        BTreeSet::from([
+            "access_key".to_owned(),
+            "region".to_owned(),
+            "secret_key".to_owned(),
+        ])
+    );
+    assert_eq!(
+        python_classmethod_names(source, "Example"),
+        BTreeSet::from(["spot".to_owned(), "usd_m_futures".to_owned()])
     );
 }
 
@@ -1129,6 +1777,46 @@ final class Example {
 }
 
 #[test]
+fn dart_constructor_parser_reads_factories_and_self_returning_methods() {
+    let source = r#"
+final class Example {
+  factory Example({String? accessKey}) => Example._();
+
+  factory Example.testnet({
+    String? address,
+    String? privateKey,
+  }) => Example._();
+
+  Example._();
+
+  Example withCredentials(
+    String accessKey,
+    String secretKey,
+  ) => Example(accessKey: accessKey);
+
+  Future<void> operation(String request) async {}
+}
+"#;
+
+    let mut methods = dart_factory_parameters(source, "Example");
+    methods.extend(dart_self_returning_method_parameters(source, "Example"));
+    assert_eq!(
+        methods,
+        BTreeMap::from([
+            ("new".to_owned(), BTreeSet::from(["access_key".to_owned()]),),
+            (
+                "testnet".to_owned(),
+                BTreeSet::from(["address".to_owned(), "private_key".to_owned()]),
+            ),
+            (
+                "with_credentials".to_owned(),
+                BTreeSet::from(["access_key".to_owned(), "secret_key".to_owned()]),
+            ),
+        ])
+    );
+}
+
+#[test]
 #[should_panic(expected = "comma-separated field declaration")]
 fn dart_field_parser_rejects_comma_separated_fields() {
     dart_class_fields(
@@ -1143,8 +1831,7 @@ fn dart_field_parser_rejects_comma_separated_fields() {
 )]
 fn inventory_assertion_reports_language_model_missing_and_extra_fields() {
     assert_inventory(
-        "Python",
-        "Example",
+        "Python Example fields",
         &BTreeSet::from(["missing".to_owned(), "shared".to_owned()]),
         &BTreeSet::from(["extra".to_owned(), "shared".to_owned()]),
     );
@@ -1359,14 +2046,22 @@ fn public_data_model_fields_match_every_language() {
             "public fieldless Rust struct {model} needs explicit runtime handle or opaque value classification"
         );
         let python_fields = python_class_fields(PYTHON_MODELS, &model);
-        assert_inventory("Python", &model, &rust_fields, &python_fields);
+        assert_inventory(
+            &format!("Python {model} fields"),
+            &rust_fields,
+            &python_fields,
+        );
 
         let mut dart_expected = rust_fields;
         if matches!(model.as_str(), "UpbitMarketEvent" | "BithumbMarketAlert") {
             dart_expected.insert("market".to_owned());
         }
         let dart_fields = dart_public_model_fields(&model);
-        assert_inventory("Dart", &model, &dart_expected, &dart_fields);
+        assert_inventory(
+            &format!("Dart {model} fields"),
+            &dart_expected,
+            &dart_fields,
+        );
     }
     assert_eq!(
         record_count, 26,
@@ -1672,70 +2367,44 @@ fn public_enum_variants_match_every_language() {
 
 #[test]
 fn provider_specific_methods_match_every_language() {
-    let providers = [
-        (
-            "upbit",
-            "UpbitAdapter",
-            include_str!("../../../src/adapters/upbit/mod.rs"),
-        ),
-        (
-            "bithumb",
-            "BithumbAdapter",
-            include_str!("../../../src/adapters/bithumb/mod.rs"),
-        ),
-        (
-            "binance",
-            "BinanceAdapter",
-            include_str!("../../../src/adapters/binance/mod.rs"),
-        ),
-        (
-            "hyperliquid",
-            "HyperliquidAdapter",
-            include_str!("../../../src/adapters/hyperliquid/mod.rs"),
-        ),
-    ];
-    assert_eq!(
-        providers
-            .iter()
-            .map(|(exchange, _, _)| (*exchange).to_owned())
-            .collect::<BTreeSet<_>>(),
-        Exchange::ALL
-            .map(|value| value.id().to_owned())
-            .into_iter()
-            .collect()
-    );
-
-    for (_, adapter, rust_source) in providers {
-        let mut methods = rust_public_methods(rust_source, adapter, false);
-        for constructor in [
-            "new",
-            "with_region",
-            "with_credentials",
-            "spot",
-            "usd_m_futures",
-            "testnet",
-            "with_wallet",
-        ] {
+    for provider in PROVIDERS {
+        let mut methods = rust_public_methods(provider.rust_source, provider.adapter, false);
+        for constructor in
+            rust_self_returning_methods(provider.rust_source, provider.adapter).keys()
+        {
             methods.remove(constructor);
         }
 
-        let mut python_methods = python_class_methods(PYTHON_ADAPTERS, adapter, false);
-        for constructor in ["spot", "usd_m_futures", "testnet"] {
-            python_methods.remove(constructor);
+        let mut python_methods = python_class_methods(PYTHON_ADAPTERS, provider.adapter, false);
+        for factory in python_classmethod_names(PYTHON_ADAPTERS, provider.adapter) {
+            python_methods.remove(&factory);
         }
         assert_eq!(
             python_methods, methods,
-            "Python {adapter} provider methods differ"
+            "Python {} provider methods differ",
+            provider.adapter
         );
 
-        let mut dart_methods =
-            dart_class_members(DART_ADAPTERS, &format!("final class {adapter}"), false);
-        dart_methods.remove("withCredentials");
-        dart_methods.remove("withWallet");
+        let mut dart_methods = dart_class_members(
+            DART_ADAPTERS,
+            &format!("final class {}", provider.adapter),
+            false,
+        );
+        for constructor in
+            dart_construction_method_parameters(DART_ADAPTERS, provider.adapter).keys()
+        {
+            dart_methods.remove(&camel_case(constructor));
+        }
         assert_eq!(
             dart_methods,
             methods.iter().map(|value| camel_case(value)).collect(),
-            "Dart {adapter} provider methods differ"
+            "Dart {} provider methods differ",
+            provider.adapter
         );
     }
+}
+
+#[test]
+fn provider_constructor_settings_match_every_language() {
+    assert_provider_constructor_settings();
 }

@@ -88,10 +88,14 @@ extension FeatureProperties on Feature {
 }
 
 /// 부동소수점 변환 없이 문자열을 보존하는 정확한 소수입니다.
+///
+/// 절댓값 계수(coefficient)는 96-bit이고 소수 자릿수(scale)는 0~28입니다.
 final class Decimal implements Comparable<Decimal> {
   Decimal._(this._value, this._coefficient, this._scale);
 
-  /// 일반 표기법이나 과학 표기법의 유한 소수를 읽습니다.
+  /// 일반 표기법이나 과학 표기법의 유한 소수를 반올림 없이 읽습니다.
+  ///
+  /// maxt Decimal 범위를 벗어나면 [FormatException]을 던집니다.
   factory Decimal.parse(String value) {
     final match = _pattern.firstMatch(value);
     if (match == null) {
@@ -101,34 +105,39 @@ final class Decimal implements Comparable<Decimal> {
     final integer = match.group(2) ?? '';
     final fraction = match.group(3) ?? match.group(4) ?? '';
     final exponentText = match.group(5);
-    final exponent = exponentText == null
-        ? BigInt.zero
-        : BigInt.parse(exponentText);
+    var exponent = 0;
     if (exponentText != null) {
-      final point = exponent + BigInt.from(integer.length);
-      if (point < -_maxPointShift || point > _maxPointShift) {
+      final parsed = _boundedExponent(exponentText, integer.length);
+      if (parsed == null) {
         throw FormatException(
           'Decimal scientific notation is too large',
           value,
         );
       }
+      exponent = parsed;
+    }
+    if (exponent < fraction.length - _maxScale) {
+      throw FormatException('Decimal is outside the maxt Decimal range', value);
     }
 
     final digits = '$integer$fraction';
-    var coefficient = BigInt.parse(digits);
-    if (match.group(1) == '-') coefficient = -coefficient;
-    final expandedScale = BigInt.from(fraction.length) - exponent;
-    if (!_isRepresentable(coefficient, expandedScale)) {
-      throw FormatException('Decimal is outside the Rust Decimal range', value);
+    final coefficientDigits = _coefficientDigits(
+      digits,
+      fraction.length - exponent,
+    );
+    if (coefficientDigits == null) {
+      throw FormatException('Decimal is outside the maxt Decimal range', value);
     }
 
-    var scale = expandedScale.toInt();
+    var coefficient = BigInt.parse(coefficientDigits);
+    if (match.group(1) == '-') coefficient = -coefficient;
+    var scale = fraction.length - exponent;
 
     if (coefficient == BigInt.zero) {
       scale = 0;
     } else {
-      while (coefficient.remainder(BigInt.from(10)) == BigInt.zero) {
-        coefficient ~/= BigInt.from(10);
+      while (coefficient.remainder(_ten) == BigInt.zero) {
+        coefficient ~/= _ten;
         scale--;
       }
     }
@@ -139,15 +148,13 @@ final class Decimal implements Comparable<Decimal> {
     r'^([+-]?)(?:(\d+)(?:\.(\d*))?|\.(\d+))(?:[eE]([+-]?\d+))?$',
   );
 
+  static const String _maxCoefficientText = '79228162514264337593543950335';
+  static const int _maxScale = 28;
+  static const int _maxPointShift = 64;
   static final Decimal zero = Decimal.parse('0');
   static final Decimal one = Decimal.parse('1');
-  static final BigInt _maxCoefficient = BigInt.parse(
-    '79228162514264337593543950335',
-  );
+  static final BigInt _maxCoefficient = BigInt.parse(_maxCoefficientText);
   static final BigInt _ten = BigInt.from(10);
-  static final BigInt _maxPointShift = BigInt.from(64);
-  static final BigInt _maxScaleBigInt = BigInt.from(_maxScale);
-  static const int _maxScale = 28;
 
   final String _value;
   final BigInt _coefficient;
@@ -155,8 +162,14 @@ final class Decimal implements Comparable<Decimal> {
 
   bool get isZero => _coefficient == BigInt.zero;
 
+  /// 두 값을 더합니다.
+  ///
+  /// 정밀도를 줄이면 half-even으로 반올림하고, 범위를 넘으면 [RangeError]를 던집니다.
   Decimal operator +(Decimal other) => _addOrSubtract(other, subtract: false);
 
+  /// 다른 값을 뺍니다.
+  ///
+  /// 정밀도를 줄이면 half-even으로 반올림하고, 범위를 넘으면 [RangeError]를 던집니다.
   Decimal operator -(Decimal other) => _addOrSubtract(other, subtract: true);
 
   bool operator <(Decimal other) => compareTo(other) < 0;
@@ -201,14 +214,82 @@ final class Decimal implements Comparable<Decimal> {
     return _fromArithmetic(_coefficient * BigInt.from(5), _scale + 1);
   }
 
-  static bool _isRepresentable(BigInt coefficient, BigInt scale) {
-    if (scale > _maxScaleBigInt) return false;
-    if (scale >= BigInt.zero) return coefficient.abs() <= _maxCoefficient;
-    if (coefficient == BigInt.zero) return true;
+  static int? _boundedExponent(String text, int wholeLength) {
+    final minimum = -_maxPointShift - wholeLength;
+    final maximum = _maxPointShift - wholeLength;
+    var start = 0;
+    var negative = false;
+    final sign = text.codeUnitAt(0);
+    if (sign == 45 || sign == 43) {
+      negative = sign == 45;
+      start++;
+    }
+    while (start < text.length && text.codeUnitAt(start) == 48) {
+      start++;
+    }
+    if (start == text.length) {
+      return minimum <= 0 && maximum >= 0 ? 0 : null;
+    }
+    if (_compareSignedDigits(negative, text, start, minimum) < 0 ||
+        _compareSignedDigits(negative, text, start, maximum) > 0) {
+      return null;
+    }
 
-    final shift = -scale;
-    if (shift > _maxScaleBigInt) return false;
-    return coefficient.abs() <= _maxCoefficient ~/ _pow10(shift.toInt());
+    var result = 0;
+    for (var index = start; index < text.length; index++) {
+      final digit = text.codeUnitAt(index) - 48;
+      result = negative ? result * 10 - digit : result * 10 + digit;
+    }
+    return result;
+  }
+
+  static int _compareSignedDigits(
+    bool negative,
+    String text,
+    int start,
+    int bound,
+  ) {
+    final boundText = bound.toString();
+    final boundNegative = boundText.codeUnitAt(0) == 45;
+    if (negative != boundNegative) return negative ? -1 : 1;
+
+    final boundStart = boundNegative ? 1 : 0;
+    final length = text.length - start;
+    final boundLength = boundText.length - boundStart;
+    var comparison = length.compareTo(boundLength);
+    if (comparison == 0) {
+      for (var index = 0; index < length; index++) {
+        comparison = text
+            .codeUnitAt(start + index)
+            .compareTo(boundText.codeUnitAt(boundStart + index));
+        if (comparison != 0) break;
+      }
+    }
+    return negative ? -comparison : comparison;
+  }
+
+  static String? _coefficientDigits(String digits, int scale) {
+    var start = 0;
+    while (start < digits.length && digits.codeUnitAt(start) == 48) {
+      start++;
+    }
+    if (start == digits.length) return '0';
+
+    final significantLength = digits.length - start;
+    final appendedZeros = scale < 0 ? -scale : 0;
+    final expandedLength = significantLength + appendedZeros;
+    if (expandedLength > _maxCoefficientText.length) return null;
+    if (expandedLength == _maxCoefficientText.length) {
+      for (var index = 0; index < expandedLength; index++) {
+        final digit = index < significantLength
+            ? digits.codeUnitAt(start + index)
+            : 48;
+        final maximum = _maxCoefficientText.codeUnitAt(index);
+        if (digit < maximum) break;
+        if (digit > maximum) return null;
+      }
+    }
+    return digits.substring(start);
   }
 
   static Decimal _fromArithmetic(BigInt coefficient, int scale) {
@@ -618,13 +699,15 @@ final class OrderBook {
   Level? get bestAsk => asks.firstOrNull;
 
   /// 최우선 매도 가격에서 최우선 매수 가격을 뺀 값입니다.
+  ///
+  /// 한쪽 호가가 비면 `null`이며, 교차 호가창은 음수를 반환합니다.
   Decimal? get spread {
     final bid = bestBid;
     final ask = bestAsk;
     return bid == null || ask == null ? null : ask.price - bid.price;
   }
 
-  /// 최우선 매수·매도 가격의 중간값입니다.
+  /// 최우선 매수·매도 가격의 중간값입니다. 한쪽 호가가 비면 `null`입니다.
   Decimal? get midPrice {
     final bid = bestBid;
     final ask = bestAsk;

@@ -72,7 +72,7 @@ Rust API가 기준 계약입니다. 체크된 바인딩은 같은 거래소 어�
 - [x] Rust
 - [x] Python
 - [x] Dart / Flutter
-- [ ] TypeScript / Node.js
+- [x] TypeScript / Node.js
 - [ ] TypeScript / WebAssembly
 
 ## 라이선스

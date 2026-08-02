@@ -73,7 +73,7 @@ exchange adapters and common behavior.
 - [x] Rust
 - [x] Python
 - [x] Dart / Flutter
-- [ ] TypeScript / Node.js
+- [x] TypeScript / Node.js
 - [ ] TypeScript / WebAssembly
 
 ## License

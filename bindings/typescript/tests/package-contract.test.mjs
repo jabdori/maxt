@@ -73,7 +73,11 @@ test("pins the TypeScript and napi-rs toolchain", () => {
     "@types/node": "24.13.3",
     typescript: "7.0.2",
   });
-  assert.equal(packageJson.scripts.build, "tsc -p tsconfig.json");
+  assert.equal(
+    packageJson.scripts.clean,
+    "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+  );
+  assert.equal(packageJson.scripts.build, "npm run clean && tsc -p tsconfig.json");
   assert.match(packageJson.scripts.typecheck, /^tsc -p tsconfig\.json --noEmit/);
   assert.match(packageJson.scripts.typecheck, /node -e/);
   assert.match(packageJson.scripts.typecheck, /--ignoreConfig/);
@@ -90,7 +94,11 @@ test("pins the TypeScript and napi-rs toolchain", () => {
   );
   assert.equal(
     packageJson.scripts["test:node"],
-    "npm run build:node && npm run test:unit",
+    "npm run build:node && npm run test:unit && npm run test:integration",
+  );
+  assert.equal(
+    packageJson.scripts["test:integration"],
+    "node --expose-gc --test tests/node.integration.mjs rust/tests/*.test.cjs",
   );
   assert.equal(
     packageJson.scripts.test,
@@ -100,7 +108,7 @@ test("pins the TypeScript and napi-rs toolchain", () => {
   assert.equal(packageJson.scripts.artifacts, "napi artifacts");
 });
 
-test("compiles only handwritten source with the strict Node project", () => {
+test("compiles the complete checked-in source tree with strict settings", () => {
   assert.deepEqual(tsConfig, {
     compilerOptions: {
       target: "ES2022",

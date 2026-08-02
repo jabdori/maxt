@@ -1,4 +1,4 @@
-import { BinanceAdapter, Client, Exchange, Market, type Ticker } from "../src/index.js";
+import { BinanceAdapter, Client, Exchange, Market, type Ticker } from "../src/node.js";
 
 const adapter = BinanceAdapter.spot();
 const client = new Client(adapter);

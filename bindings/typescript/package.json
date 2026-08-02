@@ -37,11 +37,13 @@
     "./dist/node.js"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit && node -e \"if(require('node:fs').existsSync('tests/types.ts'))require('node:child_process').execFileSync(process.execPath,['node_modules/typescript/bin/tsc','--ignoreConfig','--noEmit','--strict','--target','ES2022','--module','NodeNext','--moduleResolution','NodeNext','tests/types.ts'],{stdio:'inherit'})\"",
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "build": "npm run clean && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && node -e \"if(require('node:fs').existsSync('tests/types.ts'))require('node:child_process').execFileSync(process.execPath,['node_modules/typescript/bin/tsc','--ignoreConfig','--noEmit','--strict','--target','ES2022','--module','NodeNext','--moduleResolution','NodeNext','--types','node','tests/types.ts'],{stdio:'inherit'})\"",
     "build:node": "napi build --manifest-path rust/Cargo.toml --platform --output-dir . --js native.cjs --dts native.d.ts --js-package-name @jabdori/maxt -- --locked",
     "test:unit": "npm run build && node --test tests/*.test.mjs",
-    "test:node": "npm run build:node && npm run test:unit",
+    "test:integration": "node --expose-gc --test tests/node.integration.mjs rust/tests/*.test.cjs",
+    "test:node": "npm run build:node && npm run test:unit && npm run test:integration",
     "test": "npm run typecheck && npm run test:node",
     "package:dirs": "napi create-npm-dirs",
     "artifacts": "napi artifacts"

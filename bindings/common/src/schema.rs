@@ -7,6 +7,9 @@ pub enum Type {
     String,
     Boolean,
     Number,
+    Decimal,
+    Timestamp,
+    Identifier(&'static str),
     Named(&'static str),
     Optional(Box<Type>),
     List(Box<Type>),
@@ -57,19 +60,78 @@ pub struct TaggedUnion {
 pub struct Operation {
     pub rust_name: &'static str,
     pub language_name: &'static str,
+    pub feature: &'static str,
+    pub arguments: &'static [Argument],
+    pub result: ApiType,
+    pub client_methods: &'static [ClientMethod],
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Argument {
+    pub name: &'static str,
+    pub ty: ApiType,
+    pub default: Option<&'static str>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ApiType {
+    String,
+    Boolean,
+    Number,
+    Named(&'static str),
+    OptionalString,
+    OptionalNumber,
+    OptionalNamed(&'static str),
+    List(&'static str),
+    PairList(&'static str, &'static str),
+    Page(&'static str),
+    Handle(&'static str),
+    HandleToken(&'static str),
+    MarketStream,
+    AccountStream,
+    Unit,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ClientMethod {
+    pub name: &'static str,
+    pub native_name: &'static str,
+    pub arguments: &'static [Argument],
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProviderMethodKind {
+    Property,
+    Async,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProviderMethod {
+    pub rust_name: &'static str,
+    pub name: &'static str,
+    pub kind: ProviderMethodKind,
+    pub arguments: &'static [Argument],
+    pub result: ApiType,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Provider {
     pub exchange: &'static str,
     pub adapter: &'static str,
-    pub methods: &'static [&'static str],
+    pub native_handle: &'static str,
+    pub native_factory: &'static str,
+    pub options_wire: &'static str,
+    pub constructors: &'static [&'static str],
+    pub methods: &'static [ProviderMethod],
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Schema {
+    pub native_api_version: u32,
     pub exchanges: Vec<&'static str>,
     pub features: Vec<&'static str>,
+    pub identifiers: &'static [&'static str],
+    pub models: &'static [&'static str],
     pub errors: &'static [&'static str],
     pub adapter_operations: &'static [Operation],
     pub client_members: &'static [&'static str],
@@ -78,70 +140,281 @@ pub struct Schema {
     pub unions: Vec<TaggedUnion>,
 }
 
+const fn argument(name: &'static str, ty: ApiType, default: Option<&'static str>) -> Argument {
+    Argument { name, ty, default }
+}
+
+const KIND: &[Argument] = &[argument("kind", ApiType::Named("MarketKind"), None)];
+const MARKET_LIMIT: &[Argument] = &[
+    argument("market", ApiType::Named("Market"), None),
+    argument("limit", ApiType::OptionalNumber, Some("null")),
+];
+const MARKET_DEPTH: &[Argument] = &[
+    argument("market", ApiType::Named("Market"), None),
+    argument("depth", ApiType::OptionalNumber, Some("null")),
+];
+const MARKET: &[Argument] = &[argument("market", ApiType::Named("Market"), None)];
+const OPTIONAL_MARKET: &[Argument] = &[argument(
+    "market",
+    ApiType::OptionalNamed("Market"),
+    Some("null"),
+)];
+const CANDLE_REQUEST: &[Argument] = &[argument("request", ApiType::Named("CandleRequest"), None)];
+const SUBSCRIPTION: &[Argument] = &[argument(
+    "subscription",
+    ApiType::Named("Subscription"),
+    None,
+)];
+const SUBSCRIPTION_CONFIG: &[Argument] = &[
+    argument("subscription", ApiType::Named("Subscription"), None),
+    argument("config", ApiType::Named("StreamConfig"), None),
+];
+const CONFIG: &[Argument] = &[argument("config", ApiType::Named("StreamConfig"), None)];
+const ORDER_REQUEST: &[Argument] = &[argument("request", ApiType::Named("OrderRequest"), None)];
+const CANCEL_ORDER: &[Argument] = &[
+    argument("market", ApiType::Named("Market"), None),
+    argument("orderId", ApiType::String, None),
+];
+const HISTORY_REQUEST: &[Argument] = &[argument("request", ApiType::Named("HistoryRequest"), None)];
+const MARGIN_REQUEST: &[Argument] = &[argument("request", ApiType::Named("MarginRequest"), None)];
+
+const CLIENT_MARKETS: &[ClientMethod] = &[ClientMethod {
+    name: "markets",
+    native_name: "markets",
+    arguments: KIND,
+}];
+const CLIENT_TRADES: &[ClientMethod] = &[ClientMethod {
+    name: "trades",
+    native_name: "trades",
+    arguments: MARKET_LIMIT,
+}];
+const CLIENT_ORDER_BOOK: &[ClientMethod] = &[ClientMethod {
+    name: "orderBook",
+    native_name: "orderBook",
+    arguments: MARKET_DEPTH,
+}];
+const CLIENT_TICKER: &[ClientMethod] = &[ClientMethod {
+    name: "ticker",
+    native_name: "ticker",
+    arguments: MARKET,
+}];
+const CLIENT_CANDLES: &[ClientMethod] = &[ClientMethod {
+    name: "candles",
+    native_name: "candles",
+    arguments: CANDLE_REQUEST,
+}];
+const CLIENT_SUBSCRIBE: &[ClientMethod] = &[
+    ClientMethod {
+        name: "subscribe",
+        native_name: "subscribe",
+        arguments: SUBSCRIPTION,
+    },
+    ClientMethod {
+        name: "subscribeWith",
+        native_name: "subscribeWith",
+        arguments: SUBSCRIPTION_CONFIG,
+    },
+];
+const CLIENT_BALANCES: &[ClientMethod] = &[ClientMethod {
+    name: "balances",
+    native_name: "balances",
+    arguments: &[],
+}];
+const CLIENT_OPEN_ORDERS: &[ClientMethod] = &[
+    ClientMethod {
+        name: "openOrders",
+        native_name: "openOrders",
+        arguments: &[],
+    },
+    ClientMethod {
+        name: "openOrdersOn",
+        native_name: "openOrdersOn",
+        arguments: MARKET,
+    },
+];
+const CLIENT_ACCOUNT_STREAM: &[ClientMethod] = &[
+    ClientMethod {
+        name: "subscribeAccount",
+        native_name: "subscribeAccount",
+        arguments: &[],
+    },
+    ClientMethod {
+        name: "subscribeAccountWith",
+        native_name: "subscribeAccountWith",
+        arguments: CONFIG,
+    },
+];
+const CLIENT_PLACE_ORDER: &[ClientMethod] = &[ClientMethod {
+    name: "placeOrder",
+    native_name: "placeOrder",
+    arguments: ORDER_REQUEST,
+}];
+const CLIENT_CANCEL_ORDER: &[ClientMethod] = &[ClientMethod {
+    name: "cancelOrder",
+    native_name: "cancelOrder",
+    arguments: CANCEL_ORDER,
+}];
+const CLIENT_POSITIONS: &[ClientMethod] = &[
+    ClientMethod {
+        name: "positions",
+        native_name: "positions",
+        arguments: &[],
+    },
+    ClientMethod {
+        name: "positionsOn",
+        native_name: "positionsOn",
+        arguments: MARKET,
+    },
+];
+const CLIENT_MARGIN_SUMMARY: &[ClientMethod] = &[ClientMethod {
+    name: "marginSummary",
+    native_name: "marginSummary",
+    arguments: &[],
+}];
+const CLIENT_FUNDING_RATES: &[ClientMethod] = &[ClientMethod {
+    name: "fundingRates",
+    native_name: "fundingRates",
+    arguments: HISTORY_REQUEST,
+}];
+const CLIENT_FUNDING_PAYMENTS: &[ClientMethod] = &[ClientMethod {
+    name: "fundingPayments",
+    native_name: "fundingPayments",
+    arguments: HISTORY_REQUEST,
+}];
+const CLIENT_SET_MARGIN: &[ClientMethod] = &[ClientMethod {
+    name: "setMargin",
+    native_name: "setMargin",
+    arguments: MARGIN_REQUEST,
+}];
+
 const ADAPTER_OPERATIONS: &[Operation] = &[
     Operation {
         rust_name: "markets",
         language_name: "markets",
+        feature: "markets",
+        arguments: KIND,
+        result: ApiType::List("MarketInfo"),
+        client_methods: CLIENT_MARKETS,
     },
     Operation {
         rust_name: "trades",
         language_name: "trades",
+        feature: "trades",
+        arguments: MARKET_LIMIT,
+        result: ApiType::List("Trade"),
+        client_methods: CLIENT_TRADES,
     },
     Operation {
         rust_name: "order_book",
         language_name: "orderBook",
+        feature: "order_book",
+        arguments: MARKET_DEPTH,
+        result: ApiType::Named("OrderBook"),
+        client_methods: CLIENT_ORDER_BOOK,
     },
     Operation {
         rust_name: "ticker",
         language_name: "ticker",
+        feature: "ticker",
+        arguments: MARKET,
+        result: ApiType::Named("Ticker"),
+        client_methods: CLIENT_TICKER,
     },
     Operation {
         rust_name: "candles",
         language_name: "candles",
+        feature: "candles",
+        arguments: CANDLE_REQUEST,
+        result: ApiType::List("Candle"),
+        client_methods: CLIENT_CANDLES,
     },
     Operation {
         rust_name: "subscribe",
         language_name: "subscribe",
+        feature: "trade_stream",
+        arguments: SUBSCRIPTION_CONFIG,
+        result: ApiType::MarketStream,
+        client_methods: CLIENT_SUBSCRIBE,
     },
     Operation {
         rust_name: "balances",
         language_name: "balances",
+        feature: "balances",
+        arguments: &[],
+        result: ApiType::List("Balance"),
+        client_methods: CLIENT_BALANCES,
     },
     Operation {
         rust_name: "open_orders",
         language_name: "openOrders",
+        feature: "open_orders",
+        arguments: OPTIONAL_MARKET,
+        result: ApiType::List("Order"),
+        client_methods: CLIENT_OPEN_ORDERS,
     },
     Operation {
         rust_name: "subscribe_account",
         language_name: "subscribeAccount",
+        feature: "account_stream",
+        arguments: CONFIG,
+        result: ApiType::AccountStream,
+        client_methods: CLIENT_ACCOUNT_STREAM,
     },
     Operation {
         rust_name: "place_order",
         language_name: "placeOrder",
+        feature: "trading",
+        arguments: ORDER_REQUEST,
+        result: ApiType::Named("Order"),
+        client_methods: CLIENT_PLACE_ORDER,
     },
     Operation {
         rust_name: "cancel_order",
         language_name: "cancelOrder",
+        feature: "trading",
+        arguments: CANCEL_ORDER,
+        result: ApiType::Named("Order"),
+        client_methods: CLIENT_CANCEL_ORDER,
     },
     Operation {
         rust_name: "positions",
         language_name: "positions",
+        feature: "positions",
+        arguments: OPTIONAL_MARKET,
+        result: ApiType::List("Position"),
+        client_methods: CLIENT_POSITIONS,
     },
     Operation {
         rust_name: "margin_summary",
         language_name: "marginSummary",
+        feature: "margin",
+        arguments: &[],
+        result: ApiType::Named("MarginSummary"),
+        client_methods: CLIENT_MARGIN_SUMMARY,
     },
     Operation {
         rust_name: "funding_rates",
         language_name: "fundingRates",
+        feature: "funding_rates",
+        arguments: HISTORY_REQUEST,
+        result: ApiType::Page("FundingRate"),
+        client_methods: CLIENT_FUNDING_RATES,
     },
     Operation {
         rust_name: "funding_payments",
         language_name: "fundingPayments",
+        feature: "funding_payments",
+        arguments: HISTORY_REQUEST,
+        result: ApiType::Page("FundingPayment"),
+        client_methods: CLIENT_FUNDING_PAYMENTS,
     },
     Operation {
         rust_name: "set_margin",
         language_name: "setMargin",
+        feature: "margin_config",
+        arguments: MARGIN_REQUEST,
+        result: ApiType::Unit,
+        client_methods: CLIENT_SET_MARGIN,
     },
 ];
 
@@ -181,33 +454,219 @@ const ERRORS: &[&str] = &[
     "Decode",
 ];
 
+const IDENTIFIERS: &[&str] = &[
+    "Exchange",
+    "Feature",
+    "MarketKind",
+    "MarketStatus",
+    "Side",
+    "Interval",
+    "Overflow",
+    "MarginMode",
+    "OrderStatus",
+    "OrderType",
+    "TimeInForce",
+    "SizeKind",
+    "UpbitRegion",
+    "BithumbAlertStep",
+    "BinanceMarket",
+    "HyperliquidLedgerKind",
+];
+
+const MODELS: &[&str] = &[
+    "Market",
+    "MarketInfo",
+    "Trade",
+    "Level",
+    "OrderBook",
+    "Ticker",
+    "Candle",
+    "Balance",
+    "Order",
+    "Position",
+    "MarginSummary",
+    "FundingRate",
+    "FundingPayment",
+    "CandleRequest",
+    "OrderRequest",
+    "StreamConfig",
+    "Subscription",
+    "HistoryRequest",
+    "MarginRequest",
+    "UpbitMarketEvent",
+    "BithumbMarketAlert",
+    "BinanceSymbolFilters",
+    "BinanceSpotOrderDetail",
+    "HyperliquidLedgerEntry",
+    "HyperliquidAssetContext",
+];
+
+const MARKETS_DEPTH: &[Argument] = &[
+    argument("markets", ApiType::List("Market"), None),
+    argument("depth", ApiType::OptionalNumber, Some("null")),
+];
+const MARKETS: &[Argument] = &[argument("markets", ApiType::List("Market"), None)];
+const LISTEN_KEY: &[Argument] = &[argument(
+    "key",
+    ApiType::HandleToken("BinanceListenKey"),
+    None,
+)];
+const LEDGER_RANGE: &[Argument] = &[
+    argument("from", ApiType::OptionalNamed("Timestamp"), Some("null")),
+    argument("to", ApiType::OptionalNamed("Timestamp"), Some("null")),
+    argument("cursor", ApiType::OptionalNamed("Cursor"), Some("null")),
+    argument("limit", ApiType::OptionalNumber, Some("null")),
+];
+const UPBIT_METHODS: &[ProviderMethod] = &[
+    ProviderMethod {
+        rust_name: "region",
+        name: "region",
+        kind: ProviderMethodKind::Property,
+        arguments: &[],
+        result: ApiType::Named("UpbitRegion"),
+    },
+    ProviderMethod {
+        rust_name: "order_books",
+        name: "orderBooks",
+        kind: ProviderMethodKind::Async,
+        arguments: MARKETS_DEPTH,
+        result: ApiType::List("OrderBook"),
+    },
+    ProviderMethod {
+        rust_name: "tickers",
+        name: "tickers",
+        kind: ProviderMethodKind::Async,
+        arguments: MARKETS,
+        result: ApiType::List("Ticker"),
+    },
+    ProviderMethod {
+        rust_name: "market_events",
+        name: "marketEvents",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::PairList("Market", "UpbitMarketEvent"),
+    },
+];
+const BITHUMB_METHODS: &[ProviderMethod] = &[
+    ProviderMethod {
+        rust_name: "market_warnings",
+        name: "marketWarnings",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::PairList("Market", "String"),
+    },
+    ProviderMethod {
+        rust_name: "market_alerts",
+        name: "marketAlerts",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::PairList("Market", "BithumbMarketAlert"),
+    },
+];
+const BINANCE_METHODS: &[ProviderMethod] = &[
+    ProviderMethod {
+        rust_name: "venue",
+        name: "venue",
+        kind: ProviderMethodKind::Property,
+        arguments: &[],
+        result: ApiType::Named("BinanceMarket"),
+    },
+    ProviderMethod {
+        rust_name: "spot_symbol_filters",
+        name: "spotSymbolFilters",
+        kind: ProviderMethodKind::Async,
+        arguments: MARKET,
+        result: ApiType::Named("BinanceSymbolFilters"),
+    },
+    ProviderMethod {
+        rust_name: "spot_order",
+        name: "spotOrder",
+        kind: ProviderMethodKind::Async,
+        arguments: CANCEL_ORDER,
+        result: ApiType::Named("BinanceSpotOrderDetail"),
+    },
+    ProviderMethod {
+        rust_name: "usd_m_create_listen_key",
+        name: "usdMCreateListenKey",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::Handle("BinanceListenKey"),
+    },
+    ProviderMethod {
+        rust_name: "usd_m_keepalive_listen_key",
+        name: "usdMKeepaliveListenKey",
+        kind: ProviderMethodKind::Async,
+        arguments: LISTEN_KEY,
+        result: ApiType::Unit,
+    },
+    ProviderMethod {
+        rust_name: "usd_m_close_listen_key",
+        name: "usdMCloseListenKey",
+        kind: ProviderMethodKind::Async,
+        arguments: LISTEN_KEY,
+        result: ApiType::Unit,
+    },
+];
+const HYPERLIQUID_METHODS: &[ProviderMethod] = &[
+    ProviderMethod {
+        rust_name: "is_testnet",
+        name: "isTestnet",
+        kind: ProviderMethodKind::Property,
+        arguments: &[],
+        result: ApiType::Boolean,
+    },
+    ProviderMethod {
+        rust_name: "non_funding_ledger",
+        name: "nonFundingLedger",
+        kind: ProviderMethodKind::Async,
+        arguments: LEDGER_RANGE,
+        result: ApiType::Page("HyperliquidLedgerEntry"),
+    },
+    ProviderMethod {
+        rust_name: "asset_context",
+        name: "assetContext",
+        kind: ProviderMethodKind::Async,
+        arguments: MARKET,
+        result: ApiType::Named("HyperliquidAssetContext"),
+    },
+];
+
 const PROVIDERS: &[Provider] = &[
     Provider {
         exchange: "upbit",
         adapter: "UpbitAdapter",
-        methods: &["region", "orderBooks", "tickers", "marketEvents"],
+        native_handle: "NativeUpbitHandle",
+        native_factory: "createUpbit",
+        options_wire: "UpbitOptionsWire",
+        constructors: &["constructor", "withRegion"],
+        methods: UPBIT_METHODS,
     },
     Provider {
         exchange: "bithumb",
         adapter: "BithumbAdapter",
-        methods: &["marketWarnings", "marketAlerts"],
+        native_handle: "NativeBithumbHandle",
+        native_factory: "createBithumb",
+        options_wire: "BithumbOptionsWire",
+        constructors: &["constructor"],
+        methods: BITHUMB_METHODS,
     },
     Provider {
         exchange: "binance",
         adapter: "BinanceAdapter",
-        methods: &[
-            "venue",
-            "spotSymbolFilters",
-            "spotOrder",
-            "usdMCreateListenKey",
-            "usdMKeepaliveListenKey",
-            "usdMCloseListenKey",
-        ],
+        native_handle: "NativeBinanceHandle",
+        native_factory: "createBinance",
+        options_wire: "BinanceOptionsWire",
+        constructors: &["spot", "usdMFutures"],
+        methods: BINANCE_METHODS,
     },
     Provider {
         exchange: "hyperliquid",
         adapter: "HyperliquidAdapter",
-        methods: &["isTestnet", "nonFundingLedger", "assetContext"],
+        native_handle: "NativeHyperliquidHandle",
+        native_factory: "createHyperliquid",
+        options_wire: "HyperliquidOptionsWire",
+        constructors: &["constructor", "testnet"],
+        methods: HYPERLIQUID_METHODS,
     },
 ];
 
@@ -243,13 +702,13 @@ pub fn binding_schema() -> Schema {
     use Type::{Boolean, Number};
 
     let market = Type::named("MarketWire");
-    let decimal = Type::named("DecimalWire");
-    let timestamp = Type::named("TimestampWire");
+    let decimal = Type::Decimal;
+    let timestamp = Type::Timestamp;
     let records = vec![
         record(
             "MarketWire",
             vec![
-                field("exchange", Type::String),
+                field("exchange", Type::Identifier("Exchange")),
                 field("kind", Type::named("MarketKindWire")),
                 field("base", Type::String),
                 field("quote", Type::String),
@@ -260,7 +719,7 @@ pub fn binding_schema() -> Schema {
             vec![
                 field("market", market.clone()),
                 field("native_symbol", Type::String),
-                field("status", Type::String),
+                field("status", Type::Identifier("MarketStatus")),
                 field("korean_name", Type::optional(Type::String)),
                 field("english_name", Type::optional(Type::String)),
             ],
@@ -272,7 +731,7 @@ pub fn binding_schema() -> Schema {
                 field("timestamp", timestamp.clone()),
                 field("price", decimal.clone()),
                 field("quantity", decimal.clone()),
-                field("taker_side", Type::String),
+                field("taker_side", Type::Identifier("Side")),
                 field("id", Type::optional(Type::String)),
             ],
         ),
@@ -311,7 +770,7 @@ pub fn binding_schema() -> Schema {
             "CandleWire",
             vec![
                 field("market", market.clone()),
-                field("interval", Type::String),
+                field("interval", Type::Identifier("Interval")),
                 field("open_time", timestamp.clone()),
                 field("open", decimal.clone()),
                 field("high", decimal.clone()),
@@ -335,8 +794,8 @@ pub fn binding_schema() -> Schema {
             vec![
                 field("id", Type::String),
                 field("market", market.clone()),
-                field("side", Type::String),
-                field("status", Type::String),
+                field("side", Type::Identifier("Side")),
+                field("status", Type::Identifier("OrderStatus")),
                 field("filled_quantity", decimal.clone()),
                 field("remaining_quantity", decimal.clone()),
                 field("price", Type::optional(decimal.clone())),
@@ -347,14 +806,17 @@ pub fn binding_schema() -> Schema {
             "PositionWire",
             vec![
                 field("market", market.clone()),
-                field("side", Type::optional(Type::String)),
+                field("side", Type::optional(Type::Identifier("Side"))),
                 field("quantity", decimal.clone()),
                 field("entry_price", Type::optional(decimal.clone())),
                 field("mark_price", Type::optional(decimal.clone())),
                 field("notional", Type::optional(decimal.clone())),
                 field("unrealized_pnl", Type::optional(decimal.clone())),
                 field("leverage", Type::optional(decimal.clone())),
-                field("margin_mode", Type::optional(Type::String)),
+                field(
+                    "margin_mode",
+                    Type::optional(Type::Identifier("MarginMode")),
+                ),
             ],
         ),
         record(
@@ -389,7 +851,7 @@ pub fn binding_schema() -> Schema {
             "CandleRequestWire",
             vec![
                 field("market", market.clone()),
-                field("interval", Type::String),
+                field("interval", Type::Identifier("Interval")),
                 field("from", Type::optional(timestamp.clone())),
                 field("to", Type::optional(timestamp.clone())),
                 field("limit", Type::optional(Number)),
@@ -399,11 +861,14 @@ pub fn binding_schema() -> Schema {
             "OrderRequestWire",
             vec![
                 field("market", market.clone()),
-                field("side", Type::String),
-                field("order_type", Type::String),
+                field("side", Type::Identifier("Side")),
+                field("order_type", Type::Identifier("OrderType")),
                 field("size", Type::named("SizeWire")),
                 field("price", Type::optional(decimal.clone())),
-                field("time_in_force", Type::optional(Type::String)),
+                field(
+                    "time_in_force",
+                    Type::optional(Type::Identifier("TimeInForce")),
+                ),
                 field("reduce_only", Boolean),
             ],
         ),
@@ -415,7 +880,7 @@ pub fn binding_schema() -> Schema {
                 field("max_reconnect_delay_ms", Type::String),
                 field("idle_timeout_ms", Type::String),
                 field("buffer_size", Type::String),
-                field("overflow", Type::String),
+                field("overflow", Type::Identifier("Overflow")),
             ],
         ),
         record(
@@ -440,7 +905,10 @@ pub fn binding_schema() -> Schema {
             vec![
                 field("market", market),
                 field("leverage", Type::optional(decimal.clone())),
-                field("margin_mode", Type::optional(Type::String)),
+                field(
+                    "margin_mode",
+                    Type::optional(Type::Identifier("MarginMode")),
+                ),
             ],
         ),
         generic_record(
@@ -462,7 +930,7 @@ pub fn binding_schema() -> Schema {
             "BithumbMarketAlertWire",
             vec![
                 field("kind", Type::String),
-                field("step", Type::String),
+                field("step", Type::Identifier("BithumbAlertStep")),
                 field("ends_at", timestamp.clone()),
             ],
         ),
@@ -497,7 +965,7 @@ pub fn binding_schema() -> Schema {
         record(
             "HyperliquidLedgerEntryWire",
             vec![
-                field("kind", Type::String),
+                field("kind", Type::Identifier("HyperliquidLedgerKind")),
                 field("time", timestamp),
                 field("hash", Type::String),
                 field("asset", Type::optional(Type::String)),
@@ -521,7 +989,7 @@ pub fn binding_schema() -> Schema {
         record(
             "UpbitOptionsWire",
             vec![
-                field("region", Type::String),
+                field("region", Type::Identifier("UpbitRegion")),
                 field("access_key", Type::optional(Type::String)),
                 field("secret_key", Type::optional(Type::String)),
             ],
@@ -536,7 +1004,7 @@ pub fn binding_schema() -> Schema {
         record(
             "BinanceOptionsWire",
             vec![
-                field("venue", Type::String),
+                field("venue", Type::Identifier("BinanceMarket")),
                 field("api_key", Type::optional(Type::String)),
                 field("secret_key", Type::optional(Type::String)),
             ],
@@ -791,8 +1259,11 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
+        native_api_version: 1,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
+        identifiers: IDENTIFIERS,
+        models: MODELS,
         errors: ERRORS,
         adapter_operations: ADAPTER_OPERATIONS,
         client_members: CLIENT_MEMBERS,
@@ -819,5 +1290,36 @@ mod tests {
         let count = names.len();
         names.dedup();
         assert_eq!(names.len(), count);
+    }
+
+    #[test]
+    fn client_inventory_is_derived_from_operations() {
+        let schema = binding_schema();
+        let mut generated = schema
+            .adapter_operations
+            .iter()
+            .flat_map(|operation| operation.client_methods)
+            .map(|method| method.name)
+            .collect::<Vec<_>>();
+        generated.extend(["exchange", "supports", "adapter"]);
+        generated.sort_unstable();
+        let mut declared = schema.client_members.to_vec();
+        declared.sort_unstable();
+        assert_eq!(generated, declared);
+    }
+
+    #[test]
+    fn provider_method_names_are_unique() {
+        for provider in binding_schema().providers {
+            let mut names = provider
+                .methods
+                .iter()
+                .map(|method| method.name)
+                .collect::<Vec<_>>();
+            let count = names.len();
+            names.sort_unstable();
+            names.dedup();
+            assert_eq!(names.len(), count, "{} methods", provider.adapter);
+        }
     }
 }

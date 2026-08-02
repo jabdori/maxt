@@ -31,10 +31,15 @@ test("Decimal preserves its exact text and rejects unrepresentable inputs", () =
   assert.equal(scientificZero.coefficient, 0n);
   assert.equal(scientificZero.scale, 0);
   assert.equal(scientificZero.toString(), "0e+30");
+  assert.equal(Decimal.parse(".0e+64").toString(), ".0e+64");
+  assert.throws(() => Decimal.parse(".0e+65"), RangeError);
+  assert.throws(() => Decimal.parse("0e100"), RangeError);
+  assert.throws(() => Decimal.parse("0e9223372036854775807"), RangeError);
   assert.throws(() => Decimal.parse("1e+30"), RangeError);
   assert.throws(() => Decimal.parse("2.5e-28"), RangeError);
   assert.throws(() => Decimal.parse("0.00000000000000000000000000001"), RangeError);
   assert.throws(() => Decimal.parse("79228162514264337593543950336"), RangeError);
+  assert.throws(() => Decimal.parse("9".repeat(10_000)), RangeError);
   assert.throws(() => new Decimal(1n, 29), RangeError);
   assert.throws(() => Number(value), TypeError);
 });
@@ -52,6 +57,10 @@ test("Decimal compares numerically and arithmetic uses half-even rounding", () =
   assert.equal(
     Decimal.parse("0.0000000000000000000000000015").divideByInteger(2n).toString(),
     "0.0000000000000000000000000008",
+  );
+  assert.equal(
+    new Decimal(17040610785213832950n, 1).divideByInteger(-184146665451776816n).toString(),
+    "-9.253825337215417658162271385",
   );
 });
 

@@ -1,5 +1,6 @@
 const MAX_DECIMAL_COEFFICIENT = 79228162514264337593543950335n;
 const MAX_DECIMAL_SCALE = 28;
+const MAX_DECIMAL_POINT_SHIFT = 64;
 const I64_MIN = -(1n << 63n);
 const I64_MAX = (1n << 63n) - 1n;
 const U32_MAX = 0xffff_ffff;
@@ -46,24 +47,25 @@ export class Decimal {
 
     const integer = match[2] ?? "";
     const fraction = match[3] ?? match[4] ?? "";
-    const exponent = BigInt(match[5] ?? "0");
-    const scaleValue = BigInt(fraction.length) - exponent;
-    if (scaleValue > BigInt(MAX_DECIMAL_SCALE)) throw new RangeError("Decimal scale exceeds 28");
+    const exponentText = match[5];
+    const exponent = exponentText === undefined
+      ? 0
+      : Decimal.boundedExponent(exponentText, integer.length);
+    if (exponent === null) throw new RangeError("Decimal scientific notation is too large");
+    if (exponent < fraction.length - MAX_DECIMAL_SCALE) {
+      throw new RangeError("Decimal scale exceeds 28");
+    }
 
-    const unsignedDigits = `${integer}${fraction}`.replace(/^0+(?=\d)/, "");
-    if (/^0+$/.test(unsignedDigits)) return Decimal.create(0n, 0, text);
-    let coefficient: bigint;
-    let scale: number;
-    if (scaleValue < 0n) {
-      const shift = -scaleValue;
-      if (shift > 29n || BigInt(unsignedDigits.length) + shift > 29n) {
-        throw new RangeError("Decimal coefficient exceeds 96 bits");
-      }
-      coefficient = BigInt(unsignedDigits) * pow10(Number(shift));
+    const scaleValue = fraction.length - exponent;
+    const coefficientDigits = Decimal.coefficientDigits(`${integer}${fraction}`, scaleValue);
+    if (coefficientDigits === null) throw new RangeError("Decimal coefficient exceeds 96 bits");
+    let coefficient = BigInt(coefficientDigits);
+    let scale = scaleValue;
+    if (coefficient === 0n) {
       scale = 0;
-    } else {
-      coefficient = BigInt(unsignedDigits);
-      scale = Number(scaleValue);
+    } else if (scale < 0) {
+      coefficient *= pow10(-scale);
+      scale = 0;
     }
     if (match[1] === "-") coefficient = -coefficient;
     return Decimal.create(coefficient, scale, text);
@@ -79,17 +81,27 @@ export class Decimal {
 
   divideByInteger(divisor: bigint): Decimal {
     if (divisor === 0n) throw new RangeError("Decimal division by zero");
-    const extraScale = MAX_DECIMAL_SCALE - this.scale;
-    const numerator = this.coefficient * pow10(extraScale);
-    const negative = (numerator < 0n) !== (divisor < 0n);
-    const absoluteNumerator = numerator < 0n ? -numerator : numerator;
-    const absoluteDivisor = divisor < 0n ? -divisor : divisor;
-    let quotient = absoluteNumerator / absoluteDivisor;
-    const doubled = (absoluteNumerator % absoluteDivisor) * 2n;
-    if (doubled > absoluteDivisor || (doubled === absoluteDivisor && quotient % 2n !== 0n)) {
-      quotient += 1n;
+    let finalScale = -1;
+    let finalNumerator = 0n;
+    let finalDenominator = 1n;
+    for (let targetScale = MAX_DECIMAL_SCALE; targetScale >= 0; targetScale -= 1) {
+      const shift = targetScale - this.scale;
+      const numerator = shift >= 0 ? this.coefficient * pow10(shift) : this.coefficient;
+      const denominator = shift >= 0 ? divisor : divisor * pow10(-shift);
+      const absoluteNumerator = numerator < 0n ? -numerator : numerator;
+      const absoluteDenominator = denominator < 0n ? -denominator : denominator;
+      if (absoluteNumerator * 2n < (MAX_DECIMAL_COEFFICIENT * 2n + 1n) * absoluteDenominator) {
+        finalScale = targetScale;
+        finalNumerator = numerator;
+        finalDenominator = denominator;
+        break;
+      }
     }
-    return Decimal.fromArithmetic(negative ? -quotient : quotient, MAX_DECIMAL_SCALE);
+    if (finalScale < 0) throw new RangeError("Decimal arithmetic overflow");
+    return Decimal.canonical(
+      Decimal.roundRationalHalfEven(finalNumerator, finalDenominator),
+      finalScale,
+    );
   }
 
   compareTo(other: Decimal): number {
@@ -125,16 +137,101 @@ export class Decimal {
     for (let drop = minimumDrop; drop <= scale; drop += 1) {
       const rounded = roundHalfEven(coefficient, drop);
       if ((rounded < 0n ? -rounded : rounded) <= MAX_DECIMAL_COEFFICIENT) {
-        let canonical = rounded;
-        let canonicalScale = scale - drop;
-        while (canonicalScale > 0 && canonical % 10n === 0n) {
-          canonical /= 10n;
-          canonicalScale -= 1;
-        }
-        return Decimal.create(canonical, canonicalScale, plainDecimal(canonical, canonicalScale));
+        return Decimal.canonical(rounded, scale - drop);
       }
     }
     throw new RangeError("Decimal arithmetic overflow");
+  }
+
+  private static boundedExponent(text: string, wholeLength: number): number | null {
+    const minimum = -MAX_DECIMAL_POINT_SHIFT - wholeLength;
+    const maximum = MAX_DECIMAL_POINT_SHIFT - wholeLength;
+    let start = 0;
+    let negative = false;
+    const sign = text.charCodeAt(0);
+    if (sign === 45 || sign === 43) {
+      negative = sign === 45;
+      start += 1;
+    }
+    while (start < text.length && text.charCodeAt(start) === 48) start += 1;
+    if (start === text.length) return minimum <= 0 && maximum >= 0 ? 0 : null;
+    if (
+      Decimal.compareSignedDigits(negative, text, start, minimum) < 0
+      || Decimal.compareSignedDigits(negative, text, start, maximum) > 0
+    ) return null;
+
+    let result = 0;
+    for (let index = start; index < text.length; index += 1) {
+      const digit = text.charCodeAt(index) - 48;
+      result = negative ? result * 10 - digit : result * 10 + digit;
+    }
+    return result;
+  }
+
+  private static compareSignedDigits(
+    negative: boolean,
+    text: string,
+    start: number,
+    bound: number,
+  ): number {
+    const boundText = bound.toString();
+    const boundNegative = boundText.charCodeAt(0) === 45;
+    if (negative !== boundNegative) return negative ? -1 : 1;
+
+    const boundStart = boundNegative ? 1 : 0;
+    const length = text.length - start;
+    const boundLength = boundText.length - boundStart;
+    let comparison = length - boundLength;
+    if (comparison === 0) {
+      for (let index = 0; index < length; index += 1) {
+        comparison = text.charCodeAt(start + index) - boundText.charCodeAt(boundStart + index);
+        if (comparison !== 0) break;
+      }
+    }
+    return negative ? -comparison : comparison;
+  }
+
+  private static coefficientDigits(digits: string, scale: number): string | null {
+    let start = 0;
+    while (start < digits.length && digits.charCodeAt(start) === 48) start += 1;
+    if (start === digits.length) return "0";
+
+    const significantLength = digits.length - start;
+    const appendedZeros = scale < 0 ? -scale : 0;
+    const expandedLength = significantLength + appendedZeros;
+    const maximum = MAX_DECIMAL_COEFFICIENT.toString();
+    if (expandedLength > maximum.length) return null;
+    if (expandedLength === maximum.length) {
+      for (let index = 0; index < expandedLength; index += 1) {
+        const digit = index < significantLength ? digits.charCodeAt(start + index) : 48;
+        const maximumDigit = maximum.charCodeAt(index);
+        if (digit < maximumDigit) break;
+        if (digit > maximumDigit) return null;
+      }
+    }
+    return digits.slice(start);
+  }
+
+  private static roundRationalHalfEven(numerator: bigint, denominator: bigint): bigint {
+    const negative = (numerator < 0n) !== (denominator < 0n);
+    const absoluteNumerator = numerator < 0n ? -numerator : numerator;
+    const absoluteDenominator = denominator < 0n ? -denominator : denominator;
+    let quotient = absoluteNumerator / absoluteDenominator;
+    const doubled = (absoluteNumerator % absoluteDenominator) * 2n;
+    if (
+      doubled > absoluteDenominator
+      || (doubled === absoluteDenominator && quotient % 2n !== 0n)
+    ) quotient += 1n;
+    return negative ? -quotient : quotient;
+  }
+
+  private static canonical(coefficient: bigint, scale: number): Decimal {
+    if (coefficient === 0n) return Decimal.zero;
+    while (scale > 0 && coefficient % 10n === 0n) {
+      coefficient /= 10n;
+      scale -= 1;
+    }
+    return Decimal.create(coefficient, scale, plainDecimal(coefficient, scale));
   }
 
   private static create(coefficient: bigint, scale: number, text: string): Decimal {

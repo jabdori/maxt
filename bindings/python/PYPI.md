@@ -1,10 +1,8 @@
 # maxt
 
-`maxt` provides one async Python API for public market data, account state,
-orders, margin, history, and streams across Upbit, Bithumb, Binance, and
-Hyperliquid. Public numeric values use `decimal.Decimal`; timestamps are Unix
-epoch nanosecond integers. Decimal strings preserve exact values across the
-Rust boundary.
+`maxt` provides one async Python API for Upbit, Bithumb, Binance, and
+Hyperliquid. The Python binding follows the Rust request, result, error, and
+stream contracts.
 
 After the first PyPI release:
 
@@ -35,28 +33,46 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-## API surface
+## Value contracts
 
-`Client` provides markets, trades, order books, tickers, candles, public and
-account streams, balances, orders, positions, margin, and funding history.
-
-| Adapter | Provider-specific API |
+| Value | Contract |
 | --- | --- |
-| `UpbitAdapter` | `region`, `order_books`, `tickers`, `market_events` |
-| `BithumbAdapter` | `market_warnings`, `market_alerts` |
-| `BinanceAdapter` | `venue`, `spot_symbol_filters`, `spot_order`, `usd_m_create_listen_key`, `usd_m_keepalive_listen_key`, `usd_m_close_listen_key` |
-| `HyperliquidAdapter` | `is_testnet`, `non_funding_ledger`, `asset_context` |
+| `decimal.Decimal` | Native requests accept only values representable by a 96-bit coefficient and scale `0..=28`; validation never rounds or truncates |
+| `Timestamp` | `int` nanoseconds since the Unix epoch |
+| `Interval` | `as_secs()` returns `None` for `MONTH1`; `advance()` uses UTC calendar months and returns `None` on overflow |
+| Common models | `OrderBook` exposes best prices, spread, and midpoint; `Balance.total()`, `Position.is_flat()`, and `Page.has_more()` match the Rust helpers |
+| Common enums | Exchange, feature, market-kind, side, order-status, and exchange-error helpers expose the same classifications as Rust |
+| `HyperliquidLedgerKind` | Unknown provider names remain available as the dynamic `OTHER` member's value |
 
-Calls raise structured `InvalidRequestError`, `UnsupportedError`,
-`AdapterError`, `AuthError`, `ExchangeError`, `TransportError`, or
-`DecodeError` values. `ExchangeError` preserves the provider code, status, and
-retry classification.
+Plain and scientific decimal strings are accepted when exact. Values outside
+the native range raise `InvalidRequestError` at the Rust boundary.
+
+## Errors
+
+Calls raise structured exceptions such as `InvalidRequestError`,
+`UnsupportedError`, `AuthError`, `ExchangeError`, `TransportError`, and
+`DecodeError`. `ExchangeError` preserves the provider code, status, and retry
+classification.
 
 ## Streams
 
 Stream items are `StreamEvent` or non-terminal `StreamError` values. Use
 `async with stream` or `await stream.aclose()` to await native cleanup; garbage
 collection is best-effort only.
+
+## Adapters
+
+For a custom adapter, subclass `Adapter`, provide `exchange` and `features`,
+and override the methods for every advertised feature. Unimplemented methods
+raise `UnsupportedError`.
+
+Provider-specific methods remain on the concrete adapter:
+
+```python
+adapter = client.adapter
+```
+
+See the provider references for those methods and their contracts.
 
 Project source and provider notes are available at
 [github.com/jabdori/maxt](https://github.com/jabdori/maxt).

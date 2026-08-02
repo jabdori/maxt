@@ -27,7 +27,7 @@ accounts, and credentials are not shared across regions.
 | `markets(MarketKind::Spot)` | `/v1/market/all?is_details=true` | Listed Spot markets |
 | `markets(MarketKind::Perpetual)` | — | `Ok(vec![])` |
 | `trades(market, limit)` | `/v1/trades/ticks` | `limit in 1..=500`; newest-first |
-| `order_book(market, depth)` | `/v1/orderbook` | `depth in 1..=30`; `None -> 30` |
+| `order_book(market, depth)` | `/v1/orderbook` | `depth in 1..=30`; at most `depth` levels per side; `None -> 30` |
 | `ticker(market)` | `/v1/ticker` | One market snapshot |
 
 Derivative methods return `Error::Unsupported`.
@@ -68,6 +68,8 @@ Derivative methods return `Error::Unsupported`.
 Configure private calls with `.with_credentials(access_key, secret_key)`. The
 credentials must belong to `UpbitAdapter::region()`. Private features are
 balances, open orders, place/cancel order, and account streams.
+
+Access the following provider-specific methods through `Client::adapter()`.
 
 | Method | Contract | Rate-limit group |
 | --- | --- | --- |

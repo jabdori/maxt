@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 - 2026-07-31
+## Unreleased
 
 - Common typed API for market data, accounts, orders, and streams.
 - Upbit, Bithumb, Binance Spot/USD-M, and Hyperliquid adapters.

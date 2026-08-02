@@ -48,25 +48,20 @@ impl Timestamp {
         self.0
     }
 
-    /// Milliseconds since the Unix epoch, truncated toward the epoch.
+    /// Milliseconds since the Unix epoch, truncated toward zero.
     pub const fn as_millis(self) -> i64 {
         self.0 / 1_000_000
     }
 
-    /// Seconds since the Unix epoch, truncated toward the epoch.
+    /// Seconds since the Unix epoch, truncated toward zero.
     pub const fn as_secs(self) -> i64 {
         self.0 / 1_000_000_000
     }
 
     /// The current time, read from the system clock.
     ///
-    /// Used for signing request timestamps. It is also the read time an
-    /// adapter falls back to where an exchange publishes a payload with no
-    /// clock of its own. Every type that can carry such a fallback says so on
-    /// the field.
-    ///
-    /// A clock set before the epoch reads as the epoch, and one set past the
-    /// year 2262 saturates like [`Timestamp::from_secs`].
+    /// Times before the Unix epoch map to the epoch. Later values that exceed
+    /// the representable range saturate.
     pub fn now() -> Self {
         Self::since_epoch(
             SystemTime::now()
@@ -87,8 +82,7 @@ impl Timestamp {
 
     /// Converts to a [`SystemTime`].
     ///
-    /// Returns `None` for timestamps before the Unix epoch, which no exchange
-    /// produces in practice.
+    /// Returns `None` for timestamps before the Unix epoch.
     pub fn into_system_time(self) -> Option<SystemTime> {
         u64::try_from(self.0)
             .ok()

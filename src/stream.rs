@@ -44,9 +44,8 @@ impl MarketStream {
     /// outside this crate needs it to return from
     /// [`Adapter::subscribe`](crate::Adapter::subscribe).
     ///
-    /// What is handed over is polled unchanged. Reconnecting, and announcing it
-    /// with [`MarketEvent::Reconnected`], belong to whatever produces the
-    /// events; this type adds neither.
+    /// The inner stream is polled unchanged. Its producer handles reconnects
+    /// and emits [`MarketEvent::Reconnected`].
     pub fn new(inner: impl Stream<Item = Result<MarketEvent>> + Send + 'static) -> Self {
         Self {
             inner: Some(Box::pin(inner)),
@@ -135,10 +134,9 @@ impl AccountStream {
     /// outside this crate needs it to return from
     /// [`Adapter::subscribe_account`](crate::Adapter::subscribe_account).
     ///
-    /// What is handed over is polled unchanged. Reconnecting, renewing a
-    /// credential the exchange's private socket holds, and announcing either
-    /// with [`AccountEvent::Reconnected`], belong to whatever produces the
-    /// events; this type adds none of them.
+    /// The inner stream is polled unchanged. Its producer handles reconnects,
+    /// emits [`AccountEvent::Reconnected`], and reports credential-renewal
+    /// failures as `Err` items.
     pub fn new(inner: impl Stream<Item = Result<AccountEvent>> + Send + 'static) -> Self {
         Self {
             inner: Some(Box::pin(inner)),

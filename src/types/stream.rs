@@ -126,7 +126,7 @@ pub enum AccountEvent {
 /// apply [`Overflow::Backpressure`] when the buffer fills.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StreamConfig {
-    /// Give up after this many reconnects, whatever came of them.
+    /// Maximum number of reconnect attempts.
     ///
     /// Every reconnect counts; successful traffic does not reset the total.
     /// `None`, the default, retries without a count limit. When a finite limit

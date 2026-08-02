@@ -25,8 +25,7 @@ impl Side {
 
 /// A single executed trade.
 ///
-/// [`Trade::taker_side`] is the aggressor's side on every supported exchange,
-/// so a run of trades from two of them is comparable.
+/// [`Trade::taker_side`] has the same meaning across exchanges.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Trade {
     /// The market it executed on.
@@ -37,10 +36,9 @@ pub struct Trade {
     pub price: Decimal,
     /// Executed quantity, in the base asset.
     pub quantity: Decimal,
-    /// Which side the *taker* was on.
+    /// The aggressor's side.
     ///
-    /// A `Buy` means the taker lifted an ask. This is the convention every
-    /// supported exchange uses, so it is comparable across all of them.
+    /// A `Buy` means the taker lifted an ask.
     pub taker_side: Side,
     /// The exchange's own trade identifier, when it publishes one.
     pub id: Option<String>,
@@ -67,10 +65,7 @@ pub struct OrderBook {
     /// When the exchange says the snapshot was taken, or when `maxt` read it if
     /// the exchange does not say.
     ///
-    /// Binance publishes no clock on a spot depth response, over REST or on
-    /// the stream, so a spot book from there carries the read time. Staleness
-    /// measured from that fallback is only a lower bound and may under-report
-    /// the snapshot's actual age.
+    /// Staleness measured from a read-time fallback is only a lower bound.
     pub timestamp: Timestamp,
     /// Buy side, best (highest) price first.
     pub bids: Vec<Level>,
@@ -117,9 +112,7 @@ pub struct Ticker {
     /// When the exchange produced the summary, or when `maxt` read it if the
     /// exchange does not say.
     ///
-    /// Hyperliquid publishes no clock with its asset contexts, so a ticker
-    /// from there carries the read time. Staleness measured from that fallback
-    /// is only a lower bound and may under-report the summary's actual age.
+    /// Staleness measured from a read-time fallback is only a lower bound.
     pub timestamp: Timestamp,
     /// When the trade behind [`Ticker::last_price`] executed, if the primary
     /// price is a trade price.
@@ -133,8 +126,8 @@ pub struct Ticker {
     pub last_trade_time: Option<Timestamp>,
     /// The provider summary's primary price.
     ///
-    /// This is usually the most recent trade price. Hyperliquid uses `midPx`,
-    /// falling back to `markPx`; use the trades API for its latest fill.
+    /// This is usually the most recent trade price, but providers may use
+    /// another reference price. Use the trades API for execution prices.
     pub last_price: Decimal,
     /// Signed change against the provider's reference price.
     pub change: Option<Decimal>,
@@ -222,7 +215,7 @@ impl Interval {
         })
     }
 
-    /// The open time `count` intervals along from the candle opening at `at`.
+    /// `at` shifted by `count` intervals.
     ///
     /// A negative count moves backwards and zero returns `at`. Fixed intervals
     /// use their exact nanosecond length. [`Interval::Month1`] uses UTC calendar

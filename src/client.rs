@@ -28,8 +28,7 @@ impl<A: Adapter> Client<A> {
 
     /// Which exchange this client talks to.
     ///
-    /// This identifies the exchange, not an exchange-specific venue. For
-    /// example, both Binance spot and Binance USD-M return [`Exchange::Binance`].
+    /// This identifies the exchange, not an exchange-specific venue.
     pub fn exchange(&self) -> Exchange {
         self.adapter.exchange()
     }
@@ -62,32 +61,29 @@ impl<A: Adapter> Client<A> {
 
     /// Reads the most recent trades on a market, newest first.
     ///
+    /// `limit` caps the number returned. `None` uses the exchange default.
+    ///
     /// # Errors
     ///
-    /// A `limit` past what one call serves is
-    /// [`Error::InvalidRequest`](crate::Error::InvalidRequest) on `limit` rather
-    /// than a short answer, and the ceiling is not the same everywhere: 1 000 on
-    /// Binance, 500 on Upbit and Bithumb, 10 on Hyperliquid, whose endpoint takes
-    /// no count at all. Leave `limit` unset to take whatever the exchange sends.
-    /// Use [`Feed::Trades`](crate::Feed) for live updates. A
-    /// [`MarketEvent::Reconnected`](crate::MarketEvent::Reconnected) marks a
-    /// gap that may require backfill and deduplication.
+    /// Built-in adapters return
+    /// [`Error::InvalidRequest`](crate::Error::InvalidRequest) when `limit` is
+    /// zero or exceeds the exchange's per-request limit.
     pub async fn trades(&self, market: &Market, limit: Option<u32>) -> Result<Vec<Trade>> {
         self.adapter.trades(market, limit).await
     }
 
     /// Reads an order book snapshot.
     ///
-    /// `depth` asks for that many levels per side.
+    /// `depth` is the maximum number of levels per side. `None` uses the
+    /// exchange default.
     ///
     /// # Errors
     ///
-    /// A depth the exchange cannot serve is refused with
-    /// [`Error::InvalidRequest`](crate::Error::InvalidRequest). Providers may
-    /// accept a range or a fixed set; each provider page lists its limits.
+    /// Built-in adapters return
+    /// [`Error::InvalidRequest`](crate::Error::InvalidRequest) when `depth` is
+    /// zero or unsupported by the exchange.
     ///
-    /// Pass `None` for the exchange's default depth. Returned bids and asks are
-    /// best-first; see [`OrderBook`](crate::OrderBook).
+    /// Returned bids and asks are best-first; see [`OrderBook`](crate::OrderBook).
     pub async fn order_book(&self, market: &Market, depth: Option<u32>) -> Result<OrderBook> {
         self.adapter.order_book(market, depth).await
     }
@@ -101,8 +97,8 @@ impl<A: Adapter> Client<A> {
 
     /// Reads historical candles, oldest first.
     ///
-    /// [`CandleRequest::limit`] is honoured past what one response can carry.
-    /// `maxt` pages internally up to one hundred exchange calls.
+    /// [`CandleRequest::limit`] may span multiple responses. One request makes
+    /// at most 100 exchange calls.
     ///
     /// A request estimated to exceed that bound returns
     /// [`Error::InvalidRequest`](crate::Error::InvalidRequest) before the first
@@ -166,9 +162,6 @@ impl<A: Adapter> Client<A> {
     ///
     /// Requires credentials.
     ///
-    /// A Binance USD-M order arrives with no `created_at`: that stream
-    /// publishes no creation time, so a USD-M order's age comes from the REST
-    /// read.
     /// See [`AccountStream`] for error, reconnect, and termination semantics.
     pub async fn subscribe_account(&self) -> Result<AccountStream> {
         self.subscribe_account_with(&StreamConfig::default()).await

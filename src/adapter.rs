@@ -67,9 +67,9 @@ pub trait Adapter: Send + Sync + 'static {
 
     /// Opens a live market-data subscription.
     ///
-    /// The default rejects an empty subscription, then reports the first
-    /// requested feed as its matching unsupported stream feature. Implementors
-    /// build successful results with [`MarketStream::new`] and own reconnects.
+    /// The default rejects empty markets or feeds, then returns
+    /// [`Error::Unsupported`] for the first requested feed. Implementors build
+    /// streams with [`MarketStream::new`] and handle reconnects.
     fn subscribe(
         &self,
         subscription: &Subscription,
@@ -114,9 +114,8 @@ pub trait Adapter: Send + Sync + 'static {
 
     /// Opens a live private account subscription.
     ///
-    /// Build the return value with [`AccountStream::new`]. Renewing a
-    /// credential the exchange's private socket holds is the implementation's
-    /// own work, and a failure to renew belongs on the stream as an `Err`.
+    /// Implementors build streams with [`AccountStream::new`] and report
+    /// credential-renewal failures as `Err` stream items.
     fn subscribe_account(&self, config: &StreamConfig) -> BoxFuture<'_, Result<AccountStream>> {
         let _ = config;
         unsupported(self.exchange(), Feature::AccountStream)

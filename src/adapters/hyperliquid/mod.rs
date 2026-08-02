@@ -318,14 +318,18 @@ impl Adapter for HyperliquidAdapter {
                 &config,
             )
             .await?;
+            let close = session.close_handle();
 
             let universe = connection.universe.clone();
             // Candle state is scoped to one connection and cleared on reconnect.
             let mut decoder = stream::Decoder::default();
 
-            Ok(MarketStream::new(session.flat_map(move |command| {
-                futures_util::stream::iter(market_events(command, &universe, &mut decoder))
-            })))
+            Ok(MarketStream::new_with_close(
+                session.flat_map(move |command| {
+                    futures_util::stream::iter(market_events(command, &universe, &mut decoder))
+                }),
+                move || async move { close.close().await },
+            ))
         })
     }
 
@@ -371,11 +375,15 @@ impl Adapter for HyperliquidAdapter {
                 &config,
             )
             .await?;
+            let close = session.close_handle();
 
             let universe = connection.universe.clone();
-            Ok(AccountStream::new(session.flat_map(move |command| {
-                futures_util::stream::iter(account_events(command, &universe))
-            })))
+            Ok(AccountStream::new_with_close(
+                session.flat_map(move |command| {
+                    futures_util::stream::iter(account_events(command, &universe))
+                }),
+                move || async move { close.close().await },
+            ))
         })
     }
 

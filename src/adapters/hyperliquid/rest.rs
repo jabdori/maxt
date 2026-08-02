@@ -558,7 +558,7 @@ pub(crate) async fn ledger(
     cursor: Option<&Cursor>,
     limit: Option<u32>,
 ) -> Result<Page<native::HyperliquidLedgerEntry>> {
-    validate_history_limit(limit)?;
+    validate_page_limit(limit)?;
 
     let start_ms = match cursor {
         Some(cursor) => parse::cursor_start_ms(cursor)?,
@@ -587,7 +587,7 @@ fn newest(times: impl Iterator<Item = i64>) -> (Option<i64>, bool) {
     (times.iter().max().copied(), times.len() >= MAX_HISTORY_PAGE)
 }
 
-fn validate_history_limit(limit: Option<u32>) -> Result<()> {
+pub(crate) fn validate_page_limit(limit: Option<u32>) -> Result<()> {
     if limit == Some(0) {
         return Err(Error::invalid_request("limit", "must be greater than zero"));
     }
@@ -603,7 +603,7 @@ fn page<T>(
     page_end: (Option<i64>, bool),
     limit: Option<u32>,
 ) -> Result<Page<T>> {
-    validate_history_limit(limit)?;
+    validate_page_limit(limit)?;
 
     let (page_newest, full) = page_end;
     let mut truncated = false;
@@ -658,7 +658,7 @@ fn millisecond_boundary<T>(items: &[(T, i64)], limit: usize) -> usize {
 /// inclusive, so `to` is converted to the last millisecond strictly before it.
 /// A cursor takes precedence over `from`.
 fn history_window(request: &HistoryRequest) -> Result<(i64, Option<i64>)> {
-    validate_history_limit(request.limit)?;
+    validate_page_limit(request.limit)?;
 
     let start = match &request.cursor {
         Some(cursor) => parse::cursor_start_ms(cursor)?,

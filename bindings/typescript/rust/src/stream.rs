@@ -6,7 +6,7 @@ use futures_util::StreamExt;
 use maxt::{AccountStream, Error, MarketStream};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use tokio::sync::{Mutex, watch};
+use tokio::sync::{Mutex, OnceCell, watch};
 
 use crate::convert::{account_stream_item, market_stream_item};
 
@@ -78,7 +78,7 @@ impl NativeStreamRegistry {
                     detail: format!("unknown native stream `{id}`"),
                 })?;
         let item = subscription.next().await?;
-        if item.is_none() {
+        if item.is_none() && !subscription.close_requested() {
             let mut streams = self.streams.lock().await;
             if streams
                 .get(id)
@@ -91,11 +91,19 @@ impl NativeStreamRegistry {
     }
 
     pub(crate) async fn close(&self, id: &str) -> maxt::Result<()> {
-        let subscription = self.streams.lock().await.remove(id);
-        match subscription {
-            Some(subscription) => subscription.close().await,
-            None => Ok(()),
+        let subscription = self.streams.lock().await.get(id).cloned();
+        let Some(subscription) = subscription else {
+            return Ok(());
+        };
+        let result = subscription.close().await;
+        let mut streams = self.streams.lock().await;
+        if streams
+            .get(id)
+            .is_some_and(|stored| Arc::ptr_eq(stored, &subscription))
+        {
+            streams.remove(id);
         }
+        result
     }
 
     #[cfg(test)]
@@ -107,6 +115,7 @@ impl NativeStreamRegistry {
 struct NativeSubscription {
     inner: Mutex<Option<NativeStream>>,
     closed: watch::Sender<bool>,
+    close_result: OnceCell<maxt::Result<()>>,
 }
 
 impl NativeSubscription {
@@ -115,6 +124,7 @@ impl NativeSubscription {
         Self {
             inner: Mutex::new(Some(stream)),
             closed,
+            close_result: OnceCell::new(),
         }
     }
 
@@ -156,7 +166,18 @@ impl NativeSubscription {
         Ok(item)
     }
 
+    fn close_requested(&self) -> bool {
+        *self.closed.borrow()
+    }
+
     async fn close(&self) -> maxt::Result<()> {
+        self.close_result
+            .get_or_init(|| self.close_inner())
+            .await
+            .clone()
+    }
+
+    async fn close_inner(&self) -> maxt::Result<()> {
         self.closed.send_replace(true);
         let mut inner = self.inner.lock().await;
         let result = match inner.as_mut() {
@@ -185,6 +206,7 @@ mod tests {
     use futures_core::Stream;
     use futures_util::stream;
     use maxt::{AccountEvent, AccountStream, Error, MarketEvent, MarketStream};
+    use tokio::sync::oneshot;
 
     use super::*;
 
@@ -268,6 +290,132 @@ mod tests {
         assert!(released.load(Ordering::SeqCst));
         assert!(pending.await.unwrap().unwrap().is_none());
         registry.close(&handle.id).await.unwrap();
+        assert_eq!(registry.len().await, 0);
+    }
+
+    #[tokio::test]
+    async fn concurrent_close_callers_wait_for_and_receive_the_same_cleanup_error() {
+        let (started_tx, started_rx) = oneshot::channel();
+        let (release_tx, release_rx) = oneshot::channel();
+        let registry = Arc::new(NativeStreamRegistry::default());
+        let handle = registry
+            .insert_account(AccountStream::new_with_close(
+                PendingAccount,
+                move || async move {
+                    let _ = started_tx.send(());
+                    let _ = release_rx.await;
+                    Err(Error::Transport {
+                        detail: "cleanup failed".to_owned(),
+                    })
+                },
+            ))
+            .await
+            .unwrap();
+
+        let first = tokio::spawn({
+            let registry = Arc::clone(&registry);
+            let id = handle.id.clone();
+            async move { registry.close(&id).await }
+        });
+        started_rx.await.unwrap();
+
+        let mut second = tokio::spawn({
+            let registry = Arc::clone(&registry);
+            let id = handle.id.clone();
+            async move { registry.close(&id).await }
+        });
+        assert!(
+            tokio::time::timeout(Duration::from_millis(20), &mut second)
+                .await
+                .is_err(),
+            "a concurrent close must wait for the in-flight cleanup"
+        );
+
+        release_tx.send(()).unwrap();
+        let first_error = first.await.unwrap().unwrap_err();
+        let second_error = second.await.unwrap().unwrap_err();
+        assert_eq!(first_error, second_error);
+        assert_eq!(registry.len().await, 0);
+    }
+
+    #[tokio::test]
+    async fn cancelled_close_keeps_the_cleanup_available_for_retry() {
+        let (started_tx, started_rx) = oneshot::channel();
+        let (release_tx, release_rx) = oneshot::channel();
+        let registry = Arc::new(NativeStreamRegistry::default());
+        let handle = registry
+            .insert_account(AccountStream::new_with_close(
+                PendingAccount,
+                move || async move {
+                    let _ = started_tx.send(());
+                    let _ = release_rx.await;
+                    Ok(())
+                },
+            ))
+            .await
+            .unwrap();
+
+        let first = tokio::spawn({
+            let registry = Arc::clone(&registry);
+            let id = handle.id.clone();
+            async move { registry.close(&id).await }
+        });
+        started_rx.await.unwrap();
+        first.abort();
+        assert!(first.await.unwrap_err().is_cancelled());
+        assert_eq!(registry.len().await, 1);
+
+        let mut retry = tokio::spawn({
+            let registry = Arc::clone(&registry);
+            let id = handle.id.clone();
+            async move { registry.close(&id).await }
+        });
+        assert!(
+            tokio::time::timeout(Duration::from_millis(20), &mut retry)
+                .await
+                .is_err(),
+            "the retry must resume and await the original cleanup"
+        );
+        release_tx.send(()).unwrap();
+        retry.await.unwrap().unwrap();
+        assert_eq!(registry.len().await, 0);
+    }
+
+    #[tokio::test]
+    async fn close_wakeup_does_not_remove_the_registry_entry_before_cleanup_finishes() {
+        let (started_tx, started_rx) = oneshot::channel();
+        let (release_tx, release_rx) = oneshot::channel();
+        let registry = Arc::new(NativeStreamRegistry::default());
+        let handle = registry
+            .insert_account(AccountStream::new_with_close(
+                PendingAccount,
+                move || async move {
+                    let _ = started_tx.send(());
+                    let _ = release_rx.await;
+                    Ok(())
+                },
+            ))
+            .await
+            .unwrap();
+
+        let pending = tokio::spawn({
+            let registry = Arc::clone(&registry);
+            let id = handle.id.clone();
+            async move { registry.next(&id).await }
+        });
+        tokio::task::yield_now().await;
+        let closing = tokio::spawn({
+            let registry = Arc::clone(&registry);
+            let id = handle.id.clone();
+            async move { registry.close(&id).await }
+        });
+
+        started_rx.await.unwrap();
+        assert!(pending.await.unwrap().unwrap().is_none());
+        assert_eq!(registry.len().await, 1);
+
+        release_tx.send(()).unwrap();
+        closing.await.unwrap().unwrap();
         assert_eq!(registry.len().await, 0);
     }
 }

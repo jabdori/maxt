@@ -127,6 +127,17 @@ test("request models reject values outside their Rust unsigned integer boundarie
   assert.equal(config.maxReconnectAttempts, null);
   assert.equal(config.bufferSize, 4096);
   assert.equal(config.overflow, Overflow.DropNewest);
+
+  const boundary = new StreamConfig({
+    initialReconnectDelayMs: 4294967296,
+    maxReconnectDelayMs: Number.MAX_SAFE_INTEGER,
+    idleTimeoutMs: Number.MAX_SAFE_INTEGER,
+    bufferSize: Number.MAX_SAFE_INTEGER,
+  });
+  assert.equal(boundary.initialReconnectDelayMs, 4294967296);
+  assert.equal(boundary.maxReconnectDelayMs, Number.MAX_SAFE_INTEGER);
+  assert.equal(boundary.idleTimeoutMs, Number.MAX_SAFE_INTEGER);
+  assert.equal(boundary.bufferSize, Number.MAX_SAFE_INTEGER);
 });
 
 test("feeds and subscriptions keep immutable snapshots", () => {

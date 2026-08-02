@@ -106,4 +106,4 @@ candle streams, and `time_in_force` are not supported.
 - [WebSocket](https://apidocs.bithumb.com/reference/%EA%B8%B0%EB%B3%B8-%EC%A0%95%EB%B3%B4.md)
 - [Orders](https://apidocs.bithumb.com/reference/%EC%A3%BC%EB%AC%B8-%EC%9A%94%EC%B2%AD.md)
 
-[Common API](../common-api.md) · [Provider matrix](../providers.md)
+[Common API](../common-api.md) · [Provider support](../providers.md)

@@ -163,4 +163,4 @@ HIP-3, outcome asset, `Sec1`, 시장가 주문, `FOK`, `l2Book.nSigFigs`,
 - [WebSocket 구독](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/subscriptions)
 - [요청 한도](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits)
 
-[공통 API](../common-api.ko.md) · [거래소 지원표](../providers.ko.md)
+[공통 API](../common-api.ko.md) · [거래소 지원](../providers.ko.md)

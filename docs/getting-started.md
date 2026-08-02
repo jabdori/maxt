@@ -39,7 +39,7 @@ async fn main() -> maxt::Result<()> {
 ```
 
 - Common types and contracts: [Common API reference](common-api.md)
-- Provider limits and field sources: [Provider matrix](providers.md)
+- Provider limits and field sources: [Provider support](providers.md)
 
 ## Open a market stream
 
@@ -78,6 +78,6 @@ reconnection, termination, and explicit cleanup.
 
 ## Next steps
 
-- [Provider matrix](providers.md): constructors, credentials, and provider limits
+- [Provider support](providers.md): constructors, credentials, and provider limits
 - [Common API reference](common-api.md): requests, streams, errors, and private calls
 - [Runnable examples](../examples/)

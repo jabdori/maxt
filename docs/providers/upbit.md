@@ -105,4 +105,4 @@ satisfy `Error::is_rate_limited() == true`.
 - [Rate limits](https://global-docs.upbit.com/reference/rate-limits)
 - [Authentication](https://global-docs.upbit.com/reference/auth)
 
-[Common API](../common-api.md) · [Provider matrix](../providers.md)
+[Common API](../common-api.md) · [Provider support](../providers.md)

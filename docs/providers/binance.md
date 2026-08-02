@@ -110,4 +110,4 @@ consume that header. HTTP 429 and 418 satisfy
 - [USD-M public streams](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/public)
 - [USD-M market streams](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market)
 
-[Common API](../common-api.md) · [Provider matrix](../providers.md)
+[Common API](../common-api.md) · [Provider support](../providers.md)

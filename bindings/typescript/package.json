@@ -1,11 +1,14 @@
 {
   "name": "@jabdori/maxt",
   "version": "0.1.0",
+  "description": "One TypeScript API for Upbit, Bithumb, Binance, and Hyperliquid.",
   "type": "module",
   "license": "MIT",
+  "main": "./dist/node.js",
+  "types": "./dist/node.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jabdori/maxt.git"
+    "url": "git+https://github.com/jabdori/maxt.git"
   },
   "engines": {
     "node": ">=22.0.0"
@@ -13,12 +16,11 @@
   "exports": {
     ".": {
       "types": "./dist/node.d.ts",
-      "import": "./dist/node.js",
+      "node": "./dist/node.js",
       "default": "./dist/node.js"
     },
     "./node": {
       "types": "./dist/node.d.ts",
-      "import": "./dist/node.js",
       "default": "./dist/node.js"
     },
     "./package.json": "./package.json"
@@ -30,13 +32,16 @@
     "README.md",
     "LICENSE"
   ],
+  "sideEffects": [
+    "./dist/node.js"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit --rootDir .",
+    "typecheck": "tsc -p tsconfig.json --noEmit && node -e \"if(require('node:fs').existsSync('tests/types.ts'))require('node:child_process').execFileSync(process.execPath,['node_modules/typescript/bin/tsc','--ignoreConfig','--noEmit','--strict','--target','ES2022','--module','NodeNext','--moduleResolution','NodeNext','tests/types.ts'],{stdio:'inherit'})\"",
     "build:node": "napi build --manifest-path rust/Cargo.toml --platform --output-dir . --js native.cjs --dts native.d.ts --js-package-name @jabdori/maxt -- --locked",
-    "test:unit": "node --test tests/package-contract.test.mjs",
-    "test:node": "npm run build:node",
-    "test": "npm run test:unit && npm run typecheck && npm run test:node",
+    "test:unit": "npm run build && node --test tests/*.test.mjs",
+    "test:node": "npm run build:node && npm run test:unit",
+    "test": "npm run typecheck && npm run test:node",
     "package:dirs": "napi create-npm-dirs",
     "artifacts": "napi artifacts"
   },

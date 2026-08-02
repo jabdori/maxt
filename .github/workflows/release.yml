@@ -166,9 +166,6 @@ jobs:
           check_url common_version_exists \
             "https://crates.io/api/v1/crates/maxt-bindings-common/$RELEASE_VERSION"
 
-          check_url pypi_version_exists \
-            "https://pypi.org/pypi/maxt/$RELEASE_VERSION/json"
-
           pub_response="$(mktemp)"
           pub_status="$(curl --silent --show-error --location \
             --retry 3 --retry-delay 2 \
@@ -209,7 +206,7 @@ jobs:
       contents: read
 
   python-wheel:
-    name: Python wheel (${{ matrix.target }})
+    name: Python wheel (${{ matrix.platform }})
     needs: validate
     runs-on: ${{ matrix.runner }}
     strategy:
@@ -219,18 +216,23 @@ jobs:
           - runner: ubuntu-latest
             target: x86_64
             manylinux: "2014"
+            platform: manylinux-x86_64
           - runner: ubuntu-latest
             target: aarch64
             manylinux: "2014"
+            platform: manylinux-aarch64
           - runner: windows-latest
             target: x64
             manylinux: "off"
+            platform: windows-x86_64
           - runner: macos-15-intel
             target: x86_64
             manylinux: "off"
+            platform: macos-x86_64
           - runner: macos-latest
             target: aarch64
             manylinux: "off"
+            platform: macos-aarch64
     steps:
       - uses: actions/checkout@v7
 
@@ -249,7 +251,7 @@ jobs:
 
       - uses: actions/upload-artifact@v7
         with:
-          name: python-wheel-${{ matrix.target }}
+          name: python-wheel-${{ matrix.platform }}
           path: bindings/python/dist/*.whl
           if-no-files-found: error
 
@@ -330,12 +332,15 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
 
-      - name: Select crates.io authentication
+      - name: Check crates.io bootstrap token
         id: credentials
+        if: >-
+          needs.validate.outputs.maxt_package_exists != 'true' ||
+          needs.validate.outputs.common_package_exists != 'true'
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         shell: bash
@@ -357,53 +362,53 @@ jobs:
 
       - name: Authenticate with crates.io
         id: crates-auth
-        if: steps.credentials.outputs.configured != 'true'
+        if: >-
+          needs.validate.outputs.maxt_package_exists == 'true' &&
+          needs.validate.outputs.common_package_exists == 'true'
         uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
 
       - name: Publish maxt
         if: needs.validate.outputs.maxt_version_exists != 'true'
         env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN || steps.crates-auth.outputs.token }}
+          CARGO_REGISTRY_TOKEN: ${{ steps.crates-auth.outputs.token || secrets.CARGO_REGISTRY_TOKEN }}
         run: cargo publish -p maxt --registry crates-io --locked
 
       - name: Wait for maxt registry propagation
         env:
+          CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
           RELEASE_VERSION: ${{ needs.validate.outputs.version }}
         shell: bash
         run: |
           for attempt in {1..30}; do
-            if curl --silent --show-error --fail --location \
-              --user-agent 'maxt-release-workflow/1.0' \
-              --output /dev/null \
-              "https://crates.io/api/v1/crates/maxt/$RELEASE_VERSION"; then
+            if cargo info "maxt@$RELEASE_VERSION" \
+              --registry crates-io >/dev/null 2>&1; then
               exit 0
             fi
             sleep 10
           done
-          echo "::error::maxt $RELEASE_VERSION did not reach the crates.io API."
+          echo "::error::Cargo could not resolve maxt $RELEASE_VERSION from crates.io."
           exit 1
 
       - name: Publish maxt-bindings-common
         if: needs.validate.outputs.common_version_exists != 'true'
         env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN || steps.crates-auth.outputs.token }}
+          CARGO_REGISTRY_TOKEN: ${{ steps.crates-auth.outputs.token || secrets.CARGO_REGISTRY_TOKEN }}
         run: cargo publish -p maxt-bindings-common --registry crates-io --locked
 
       - name: Wait for maxt-bindings-common registry propagation
         env:
+          CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
           RELEASE_VERSION: ${{ needs.validate.outputs.version }}
         shell: bash
         run: |
           for attempt in {1..30}; do
-            if curl --silent --show-error --fail --location \
-              --user-agent 'maxt-release-workflow/1.0' \
-              --output /dev/null \
-              "https://crates.io/api/v1/crates/maxt-bindings-common/$RELEASE_VERSION"; then
+            if cargo info "maxt-bindings-common@$RELEASE_VERSION" \
+              --registry crates-io >/dev/null 2>&1; then
               exit 0
             fi
             sleep 10
           done
-          echo "::error::maxt-bindings-common $RELEASE_VERSION did not reach the crates.io API."
+          echo "::error::Cargo could not resolve maxt-bindings-common $RELEASE_VERSION from crates.io."
           exit 1
 
   rust-ready:
@@ -426,7 +431,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           name: python-distributions
           path: dist
@@ -439,7 +444,7 @@ jobs:
 
   dart-publish:
     name: Publish Dart and Flutter package
-    needs: [validate, ci, rust-ready, python-publish]
+    needs: [validate, ci, rust-ready]
     if: >-
       github.event_name == 'push' &&
       needs.validate.outputs.dart_package_exists == 'true' &&
@@ -453,7 +458,7 @@ jobs:
 
   dart-notice:
     name: Dart publication status
-    needs: [validate, ci, rust-ready, python-publish, dart-publish]
+    needs: [validate, ci, rust-ready, dart-publish]
     if: always() && needs.validate.result == 'success' && needs.dart-publish.result == 'skipped'
     runs-on: ubuntu-latest
     steps:

@@ -80,3 +80,32 @@ test("installBackend accepts only the same backend object", async () => {
     { name: "AdapterError" },
   );
 });
+
+test("initialize rejects a non-boolean browser credential gate before backend use", async () => {
+  const { initialize: initializeFresh, installBackend: installFresh } = await freshNative("invalid-gate");
+  let calls = 0;
+  installFresh({ initialize: async () => { calls += 1; } });
+
+  const result = initializeFresh({ allowInsecureBrowserCredentials: "false" });
+  assert.equal(result instanceof Promise, true);
+  await assert.rejects(
+    result,
+    (error) => error.name === "InvalidRequestError"
+      && error.field === "allowInsecureBrowserCredentials",
+  );
+  assert.equal(calls, 0);
+});
+
+test("initialize rejects an invalid wasm URL asynchronously with a structured error", async () => {
+  const { initialize: initializeFresh } = await freshNative("invalid-wasm-url");
+  let result;
+
+  assert.doesNotThrow(() => {
+    result = initializeFresh({ wasmUrl: "http://[" });
+  });
+  assert.equal(result instanceof Promise, true);
+  await assert.rejects(
+    result,
+    (error) => error.name === "InvalidRequestError" && error.field === "wasmUrl",
+  );
+});

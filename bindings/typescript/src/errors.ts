@@ -46,7 +46,7 @@ export abstract class MaxtError extends Error {
 
   protected constructor(message: string, options?: ErrorOptions) {
     super(message, options);
-    this.name = new.target.name;
+    this.name = "MaxtError";
   }
 
   isRetryable(): boolean {
@@ -63,6 +63,7 @@ export class InvalidRequestError extends MaxtError {
 
   constructor(readonly field: string, readonly detail: string) {
     super(`invalid request: \`${field}\`: ${detail}`);
+    this.name = "InvalidRequestError";
   }
 }
 
@@ -71,6 +72,7 @@ export class UnsupportedError extends MaxtError {
 
   constructor(readonly feature: Feature, readonly exchange: Exchange, readonly detail: string) {
     super(`${exchange.id} adapter does not support ${feature.id}: ${detail}`);
+    this.name = "UnsupportedError";
   }
 }
 
@@ -79,6 +81,7 @@ export class AdapterError extends MaxtError {
 
   constructor(readonly detail: string, options?: ErrorOptions) {
     super(`adapter failed: ${detail}`, options);
+    this.name = "AdapterError";
   }
 }
 
@@ -87,6 +90,7 @@ export class AuthError extends MaxtError {
 
   constructor(readonly detail: string) {
     super(`authentication failed: ${detail}`);
+    this.name = "AuthError";
   }
 }
 
@@ -103,6 +107,7 @@ export class ExchangeError extends MaxtError {
     super(status === null
       ? `${exchange.id} returned ${code}: ${providerMessage}`
       : `${exchange.id} returned ${status} ${code}: ${providerMessage}`);
+    this.name = "ExchangeError";
   }
 
   override isRetryable(): boolean {
@@ -119,6 +124,7 @@ export class TransportError extends MaxtError {
 
   constructor(readonly detail: string) {
     super(`transport failed: ${detail}`);
+    this.name = "TransportError";
   }
 
   override isRetryable(): boolean {
@@ -131,6 +137,7 @@ export class DecodeError extends MaxtError {
 
   constructor(readonly detail: string) {
     super(`could not read exchange response: ${detail}`);
+    this.name = "DecodeError";
   }
 }
 
@@ -172,42 +179,40 @@ export function errorFromWire(wire: ErrorWire): MaxtError {
 }
 
 export function errorToWire(error: unknown): ErrorWire {
-  if (!(error instanceof MaxtError)) {
-    return { kind: "adapter", detail: adapterFailureDetail(error) };
+  try {
+    return errorToWireUnsafe(error);
+  } catch {
+    return unreadableAdapterFailure();
   }
-  switch (error.kind) {
-    case "invalid_request": {
-      const value = error as InvalidRequestError;
-      return { kind: value.kind, field: value.field, detail: value.detail };
-    }
-    case "unsupported": {
-      const value = error as UnsupportedError;
-      return {
-        kind: value.kind,
-        feature: value.feature.id,
-        exchange: value.exchange.id,
-        detail: value.detail,
-      };
-    }
-    case "adapter":
-    case "auth":
-    case "transport":
-    case "decode":
-      return { kind: error.kind, detail: (error as AdapterError | AuthError | TransportError | DecodeError).detail };
-    case "exchange": {
-      const value = error as ExchangeError;
-      return {
-        kind: value.kind,
-        exchange: value.exchange.id,
-        code: value.code,
-        message: value.providerMessage,
-        status: value.status,
-        exchange_kind: value.exchangeKind.id,
-      };
-    }
-    default:
-      return assertNever(error.kind);
+}
+
+function errorToWireUnsafe(error: unknown): ErrorWire {
+  if (error instanceof InvalidRequestError) {
+    return { kind: "invalid_request", field: error.field, detail: error.detail };
   }
+  if (error instanceof UnsupportedError) {
+    return {
+      kind: "unsupported",
+      feature: error.feature.id,
+      exchange: error.exchange.id,
+      detail: error.detail,
+    };
+  }
+  if (error instanceof AdapterError) return { kind: "adapter", detail: error.detail };
+  if (error instanceof AuthError) return { kind: "auth", detail: error.detail };
+  if (error instanceof ExchangeError) {
+    return {
+      kind: "exchange",
+      exchange: error.exchange.id,
+      code: error.code,
+      message: error.providerMessage,
+      status: error.status,
+      exchange_kind: error.exchangeKind.id,
+    };
+  }
+  if (error instanceof TransportError) return { kind: "transport", detail: error.detail };
+  if (error instanceof DecodeError) return { kind: "decode", detail: error.detail };
+  return { kind: "adapter", detail: adapterFailureDetail(error) };
 }
 
 function adapterFailureDetail(error: unknown): string {
@@ -216,6 +221,10 @@ function adapterFailureDetail(error: unknown): string {
     if (typeof stack === "string") return stack;
   }
   return String(error);
+}
+
+function unreadableAdapterFailure(): ErrorWire {
+  return { kind: "adapter", detail: "JavaScript adapter threw an unreadable value" };
 }
 
 function assertNever(value: never): never {

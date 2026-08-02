@@ -109,6 +109,21 @@ void main() {
     await explicitStream.close();
   });
 
+  test('Client는 유효한 u32 경곗값을 사용자 정의 Adapter에 그대로 전달한다', () async {
+    final adapter = RecordingAdapter();
+    final client = Client(adapter);
+    final market = Market.perpetual(Exchange.binance, 'BTC', 'USDT');
+
+    for (final limit in [0, 4294967295]) {
+      await client.trades(market, limit);
+    }
+
+    expect(adapter.calls, [
+      ('trades', market, 0),
+      ('trades', market, 4294967295),
+    ]);
+  });
+
   test('Client positions는 수량이 0인 행만 전체·시장별 결과에서 제거한다', () async {
     final adapter = RecordingAdapter();
     final client = Client(adapter);

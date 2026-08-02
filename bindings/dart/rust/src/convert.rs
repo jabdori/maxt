@@ -470,7 +470,7 @@ fn decimal_option_from_wire(value: Option<String>, field: &str) -> Result<Option
 }
 
 pub(crate) fn decimal_from_wire(value: &str, field: &str) -> Result<Decimal, Error> {
-    value.parse().map_err(|error| Error::InvalidRequest {
+    maxt::parse_decimal_exact(value).map_err(|error| Error::InvalidRequest {
         field: field.to_owned(),
         detail: format!("`{value}` is not an exact decimal: {error}"),
     })
@@ -1628,6 +1628,22 @@ impl TryFrom<NativeError> for Error {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn decimal_input은_표현할_수_없는_값을_반올림하지_않는다() {
+        let rejected = [
+            "2.5e-28",
+            "0.00000000000000000000000000001",
+            "79228162514264337593543950335.4",
+        ]
+        .map(|value| decimal_from_wire(value, "price").is_err());
+
+        assert_eq!(rejected, [true, true, true]);
+        assert_eq!(
+            decimal_from_wire("8.428e-05", "price").unwrap().to_string(),
+            "0.00008428",
+        );
+    }
 
     #[test]
     fn decimal과_timestamp는_정밀도를_잃지_않는다() {

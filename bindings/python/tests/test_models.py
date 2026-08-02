@@ -218,12 +218,21 @@ class WireModelTests(unittest.TestCase):
         )
 
     def test_asset_normalization_uppercases_ascii_only(self) -> None:
-        market = Market.spot(Exchange.BINANCE, "éth", "usdt")
-        balance = Balance("éth", Decimal("1"), Decimal("0"))
+        for value, expected in (
+            ("éth", "éTH"),
+            ("ıbtc", "ıBTC"),
+            ("σbtc", "σBTC"),
+            ("ßtc", "ßTC"),
+        ):
+            with self.subTest(value=value):
+                market = Market.spot(Exchange.BINANCE, value, value)
+                balance = Balance(value, Decimal("1"), Decimal("0"))
+                margin = MarginSummary(value, None, None, None)
 
-        self.assertEqual(market.base, "éTH")
-        self.assertEqual(market.quote, "USDT")
-        self.assertEqual(balance.asset, "éTH")
+                self.assertEqual(market.base, expected)
+                self.assertEqual(market.quote, expected)
+                self.assertEqual(balance.asset, expected)
+                self.assertEqual(margin.asset, expected)
 
     def test_stream_config_rejects_values_rust_unsigned_fields_cannot_hold(self) -> None:
         fields = (

@@ -227,6 +227,39 @@ void main() {
     expect(stream.bufferSize, 4096);
     expect(stream.overflow, Overflow.backpressure);
   });
+
+  test('자산 식별자는 ASCII 소문자만 대문자로 정규화한다', () {
+    const cases = {'éth': 'éTH', 'ıbtc': 'ıBTC', 'σbtc': 'σBTC', 'ßtc': 'ßTC'};
+
+    for (final MapEntry(key: input, value: expected) in cases.entries) {
+      final market = Market.spot(Exchange.binance, input, input);
+      final balance = Balance(
+        asset: input,
+        available: Decimal.zero,
+        locked: Decimal.zero,
+      );
+      final margin = MarginSummary(asset: input);
+
+      expect(market.base, expected, reason: input);
+      expect(market.quote, expected, reason: input);
+      expect(balance.asset, expected, reason: input);
+      expect(margin.asset, expected, reason: input);
+    }
+  });
+
+  test('비 ASCII 자산 식별자는 시장 동등성과 구독 중복 제거에서 구분한다', () {
+    final lowercaseAccent = Market.spot(Exchange.binance, 'éth', 'usdt');
+    final uppercaseAccent = Market.spot(Exchange.binance, 'Éth', 'usdt');
+    final dotless = Market.spot(Exchange.binance, 'ıbtc', 'usdt');
+    final ascii = Market.spot(Exchange.binance, 'ibtc', 'usdt');
+    final subscription = Subscription(
+      markets: [lowercaseAccent, uppercaseAccent, dotless, ascii],
+    );
+
+    expect(lowercaseAccent, isNot(uppercaseAccent));
+    expect(dotless, isNot(ascii));
+    expect(subscription.markets, hasLength(4));
+  });
 }
 
 OrderBook _orderBook({

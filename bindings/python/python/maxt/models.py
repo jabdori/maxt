@@ -688,6 +688,9 @@ class MarginSummary(WireModel):
     margin_balance: Optional[Decimal]
     available_balance: Optional[Decimal]
 
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "asset", _ascii_upper(self.asset))
+
 
 @dataclass(frozen=True)
 class FundingRate(WireModel):

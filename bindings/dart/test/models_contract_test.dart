@@ -10,7 +10,7 @@ void main() {
     expect(Decimal.parse('-0.000e9').isZero, isTrue);
   });
 
-  test('Decimal은 Rust Decimal의 범위와 정확도를 벗어난 값을 거절한다', () {
+  test('Decimal은 maxt Decimal의 범위와 정확도를 벗어난 값을 거절한다', () {
     for (final value in [
       '2.5e-28',
       '2e-29',
@@ -25,6 +25,39 @@ void main() {
     ]) {
       expect(() => Decimal.parse(value), throwsFormatException, reason: value);
     }
+  });
+
+  test('Decimal은 긴 숫자를 제한된 범위의 사전 검사에서 판정한다', () {
+    final nines = List.filled(10000, '9').join();
+    final zeros = List.filled(10000, '0').join();
+
+    for (final value in [
+      nines,
+      '1e$nines',
+      '1e-$nines',
+      '${zeros}79228162514264337593543950336',
+    ]) {
+      expect(
+        () => Decimal.parse(value),
+        throwsFormatException,
+        reason: 'input length: ${value.length}',
+      );
+    }
+    expect(Decimal.parse('${zeros}1.25'), Decimal.parse('1.25'));
+    expect(Decimal.parse('1e+${zeros}1'), Decimal.parse('10'));
+  });
+
+  test('Decimal 범위 오류는 maxt 값 계약을 가리킨다', () {
+    expect(
+      () => Decimal.parse('1e29'),
+      throwsA(
+        isA<FormatException>().having(
+          (error) => error.message,
+          'message',
+          contains('maxt Decimal'),
+        ),
+      ),
+    );
   });
 
   test('Decimal은 수치 비교와 정확한 덧셈·뺄셈을 제공한다', () {

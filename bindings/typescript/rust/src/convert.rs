@@ -142,6 +142,7 @@ pub(crate) struct WireMarginRequest {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+#[allow(dead_code, reason = "Task 9 제공자 브리지 입력으로 사용될 예정")]
 pub(crate) struct WireUpbitMarketEvent {
     pub(crate) warning: bool,
     pub(crate) cautions: Vec<String>,
@@ -149,6 +150,7 @@ pub(crate) struct WireUpbitMarketEvent {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+#[allow(dead_code, reason = "Task 9 제공자 브리지 입력으로 사용될 예정")]
 pub(crate) struct WireBithumbMarketAlert {
     pub(crate) kind: String,
     pub(crate) step: String,
@@ -157,6 +159,7 @@ pub(crate) struct WireBithumbMarketAlert {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+#[allow(dead_code, reason = "Task 9 제공자 브리지 입력으로 사용될 예정")]
 pub(crate) struct WireBinanceSymbolFilters {
     pub(crate) symbol: String,
     #[serde(deserialize_with = "explicit_option")]
@@ -177,6 +180,7 @@ pub(crate) struct WireBinanceSymbolFilters {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+#[allow(dead_code, reason = "Task 9 제공자 브리지 입력으로 사용될 예정")]
 pub(crate) struct WireBinanceSpotOrderDetail {
     pub(crate) order: WireOrder,
     pub(crate) client_order_id: String,
@@ -189,6 +193,7 @@ pub(crate) struct WireBinanceSpotOrderDetail {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+#[allow(dead_code, reason = "Task 9 제공자 브리지 입력으로 사용될 예정")]
 pub(crate) struct WireHyperliquidLedgerEntry {
     pub(crate) kind: String,
     pub(crate) time: String,
@@ -205,6 +210,7 @@ pub(crate) struct WireHyperliquidLedgerEntry {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+#[allow(dead_code, reason = "Task 9 제공자 브리지 입력으로 사용될 예정")]
 pub(crate) struct WireHyperliquidAssetContext {
     #[serde(deserialize_with = "explicit_option")]
     pub(crate) mid_price: Option<String>,
@@ -1572,6 +1578,7 @@ fn overflow_to_wire(value: Overflow) -> maxt::Result<&'static str> {
     }
 }
 
+#[allow(dead_code, reason = "Task 9 제공자 브리지 입력으로 사용될 예정")]
 fn bithumb_alert_step_to_wire(value: BithumbAlertStep) -> maxt::Result<&'static str> {
     match value {
         BithumbAlertStep::Caution => Ok("caution"),
@@ -1582,6 +1589,7 @@ fn bithumb_alert_step_to_wire(value: BithumbAlertStep) -> maxt::Result<&'static 
     }
 }
 
+#[allow(dead_code, reason = "Task 9 제공자 브리지 입력으로 사용될 예정")]
 fn hyperliquid_ledger_kind_to_wire(value: HyperliquidLedgerKind) -> maxt::Result<String> {
     Ok(match value {
         HyperliquidLedgerKind::Deposit => "deposit".to_owned(),

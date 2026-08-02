@@ -219,7 +219,7 @@ jobs:
             platform: manylinux-x86_64
           - runner: ubuntu-latest
             target: aarch64
-            manylinux: "2014"
+            manylinux: "2_28"
             platform: manylinux-aarch64
           - runner: windows-latest
             target: x64

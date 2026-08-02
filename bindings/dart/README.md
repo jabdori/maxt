@@ -1,9 +1,8 @@
 # maxt for Dart and Flutter
 
 `maxt` exposes one native Dart API for Upbit, Bithumb, Binance, and
-Hyperliquid market data, accounts, orders, and live streams. The package builds
-the bundled Rust crate through Dart build hooks; it does not ship prebuilt
-native binaries.
+Hyperliquid. The package builds its Rust crate through Dart build hooks; it
+does not ship prebuilt native binaries.
 
 ## Requirements
 
@@ -47,21 +46,25 @@ Credentials are optional for public data and required for private account or
 trading methods. Pass both fields together when constructing an authenticated
 adapter.
 
-## API surface
+## Value contracts
 
-`Client` provides markets, trades, order books, tickers, candles, public and
-account streams, balances, orders, positions, margin, and funding history.
-
-| Adapter | Provider-specific API |
+| Value | Contract |
 | --- | --- |
-| `UpbitAdapter` | `region`, `orderBooks`, `tickers`, `marketEvents` |
-| `BithumbAdapter` | `marketWarnings`, `marketAlerts` |
-| `BinanceAdapter` | `venue`, `spotSymbolFilters`, `spotOrder`, `usdMCreateListenKey`, `usdMKeepaliveListenKey`, `usdMCloseListenKey` |
-| `HyperliquidAdapter` | `isTestnet`, `nonFundingLedger`, `assetContext` |
+| `Decimal` | `parse()` accepts only exact values with a 96-bit coefficient and scale `0..=28`; comparison, `+`, and `-` use decimal arithmetic; native validation never rounds or truncates |
+| `Timestamp` | Signed 64-bit Unix epoch nanoseconds; unit constructors saturate, while smaller-unit getters truncate toward the epoch |
+| `Interval` | `seconds` is `null` for `month1`; `advance()` uses UTC calendar months and returns `null` on overflow |
+| Common models | `OrderBook` exposes best prices, spread, and midpoint; `Balance.total`, `Position.isFlat`, and `Page.hasMore` match the Rust helpers |
+| Common enums | Exchange, feature, market-kind, side, order-status, and exchange-error helpers expose the same classifications as Rust |
+| `HyperliquidLedgerKind` | Unknown provider names preserve `providerName` with `isOther == true` |
 
-Calls throw structured `InvalidRequestError`, `UnsupportedError`,
-`AdapterError`, `AuthenticationError`, `ExchangeError`, `TransportError`, or
-`DecodeError` values. `ExchangeError` preserves the provider code, status, and
+Plain and scientific decimal strings are accepted when exact. Values outside
+the native range throw before crossing the Rust boundary.
+
+## Errors
+
+Calls throw structured exceptions such as `InvalidRequestError`,
+`UnsupportedError`, `AuthenticationError`, `ExchangeError`, `TransportError`,
+and `DecodeError`. `ExchangeError` preserves the provider code, status, and
 retry classification.
 
 ## Streams
@@ -72,6 +75,20 @@ cleanup errors are returned to the caller.
 
 Call `await Maxt.dispose()` before an isolate exits. A disposed isolate cannot
 initialize the native runtime again.
+
+## Adapters
+
+For a custom adapter, extend `AdapterBase`, provide `exchange` and `features`,
+and override the methods for every advertised feature. Unimplemented methods
+return `UnsupportedError`.
+
+Provider-specific methods remain on the concrete adapter:
+
+```dart
+final adapter = client.adapter;
+```
+
+See the provider references for those methods and their contracts.
 
 See the [maxt repository](https://github.com/jabdori/maxt) for the common API
 and provider contracts.

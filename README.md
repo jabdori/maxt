@@ -3,17 +3,13 @@
 [English](README.md) | [한국어](README.ko.md)
 
 `maxt` is a typed async Rust API for market data, accounts, and orders on
-Upbit, Bithumb, Binance, and Hyperliquid. Applications use the same `Client`
-methods and types across exchanges. Provider-specific methods remain on each
-adapter.
+Upbit, Bithumb, Binance, and Hyperliquid.
 
 ## Why maxt
 
-Using several exchanges in one application usually introduces
-provider-specific branches for request shapes, ordering, time ranges, numeric
-formats, missing fields, and errors. `maxt` normalizes those contracts behind
-the same `Client` methods and types, while provider-specific capabilities
-remain on the concrete adapter.
+`maxt` gives every supported exchange the same operations, request and result
+types, structured errors, and stream lifecycle. Provider-only capabilities
+remain available on the concrete adapter through `Client::adapter()`.
 
 ## Install
 
@@ -55,7 +51,7 @@ cargo run --example public_rest
 - [Getting started](docs/getting-started.md)
 - [Common API reference](docs/common-api.md)
 - [Provider matrix](docs/providers.md)
-- [API documentation](https://docs.rs/maxt)
+- Rust API reference: `cargo doc --open`
 - [Python binding](bindings/python/PYPI.md)
 - [Dart / Flutter binding](bindings/dart/README.md)
 - [Runnable examples](examples/)
@@ -64,36 +60,16 @@ cargo run --example public_rest
 
 ## Binding roadmap
 
-The Rust adapter for each exchange is the reference contract. An exchange is
-complete when every listed binding provides the same supported features and
-behavior. Bindings are listed in current priority order.
+The Rust API is the reference contract. `Complete` means the binding exposes
+the same exchange adapters and common behavior.
 
-- [ ] Upbit
-  - [x] Rust
-  - [x] Python
-  - [x] Dart / Flutter
-  - [ ] TypeScript / Node.js
-  - [ ] TypeScript / Browser (WebAssembly)
-- [ ] Bithumb
-  - [x] Rust
-  - [x] Python
-  - [x] Dart / Flutter
-  - [ ] TypeScript / Node.js
-  - [ ] TypeScript / Browser (WebAssembly)
-- [ ] Binance
-  - [x] Rust
-  - [x] Python
-  - [x] Dart / Flutter
-  - [ ] TypeScript / Node.js
-  - [ ] TypeScript / Browser (WebAssembly)
-- [ ] Hyperliquid
-  - [x] Rust
-  - [x] Python
-  - [x] Dart / Flutter
-  - [ ] TypeScript / Node.js
-  - [ ] TypeScript / Browser (WebAssembly)
-
-Swift and Kotlin are under consideration.
+| Binding | Upbit | Bithumb | Binance | Hyperliquid |
+| --- | --- | --- | --- | --- |
+| Rust | Complete | Complete | Complete | Complete |
+| Python | Complete | Complete | Complete | Complete |
+| Dart / Flutter | Complete | Complete | Complete | Complete |
+| TypeScript / Node.js | Planned | Planned | Planned | Planned |
+| TypeScript / WebAssembly | Planned | Planned | Planned | Planned |
 
 ## License
 

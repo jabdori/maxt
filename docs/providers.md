@@ -44,8 +44,8 @@ Binance testnet hosts are not exposed.
 | Binance USD-M | `MarketKind::Perpetual` | One `Subscription` may merge multiple WebSockets |
 | Hyperliquid | `Spot`, `Perpetual` | `positions_on(spot) == Ok(vec![])`; `Ticker::last_price = midPx.or(markPx)` |
 
-Provider-only methods remain on the concrete adapter and are available through
-`Client::adapter()`.
+Use common operations through `Client`. Access provider-only methods through
+the concrete adapter returned by `Client::adapter()`.
 
 ## Provider references
 

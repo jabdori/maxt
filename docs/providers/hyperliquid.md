@@ -27,18 +27,19 @@ may use that name or `@{index}`. Use the returned `MarketInfo::native_symbol`.
 | Call | Hyperliquid request | Contract |
 | --- | --- | --- |
 | `markets(kind)` | `meta`, `spotMeta` | Markets in the support table |
-| `trades(market, limit)` | `recentTrades` | `limit in 1..=10`; no provider count parameter; `None -> full provider window (<= 10)`; `Some(limit)` truncates locally; newest-first |
-| `order_book(market, depth)` | `l2Book` | `depth in 1..=20`; local truncation |
+| `trades(market, limit)` | `recentTrades` | `limit in 1..=10`; no provider count parameter; `None -> provider page (<= 10)`; `Some(limit)` truncates locally; newest-first |
+| `order_book(market, depth)` | `l2Book` | `depth in 1..=20`; at most `depth` levels per side; local truncation |
 | `ticker(market)` | `metaAndAssetCtxs`, `spotMetaAndAssetCtxs` | Reference-price summary |
 | `funding_rates(request)` | `fundingHistory` | Public; Perpetual only; provider page `<= 500` |
 
-| `HistoryRequest` field | Provider value |
+| `HistoryRequest` field or state | Contract |
 | --- | --- |
-| Range | `from <= time < to` |
+| `from`, `to` | `from <= timestamp < to` |
 | `startTime` | `ceil_ms(from)` |
 | `endTime` | `ceil_ms(to) - 1` |
-| `cursor` | Replaces `from` when present |
-| Continuation | Read until `Page::next == None` |
+| `cursor` | Opaque resume point; overrides `from` |
+| `limit` | Local page-size target; one millisecond group is never split, so `items.len()` may be below or above `limit` |
+| Continuation | Set `cursor = page.next` until `page.next == None` |
 
 Ticker mapping:
 
@@ -111,18 +112,23 @@ local signing and is redacted from `Debug`.
 | `leverage` | Positive integer; `leverage <= asset.max_leverage` |
 | `margin_mode == Cross` | `Error::InvalidRequest` when `asset.only_isolated == true` |
 
-Provider-specific methods are available through `Client::adapter()`:
+Access the following provider-specific methods through `Client::adapter()`:
 
 | Method | Contract |
 | --- | --- |
-| `asset_context(&market)` | Mid, mark, oracle, funding, open interest, and order precision. |
+| `asset_context(&market)` | Mid, mark, oracle, funding, open interest, and order precision |
 | `non_funding_ledger(from, to, cursor, limit)` | Deposits, withdrawals, transfers, and liquidations; funding excluded; wallet required; provider page `<= 500` |
 
-| `non_funding_ledger` field | Contract |
+| `non_funding_ledger` field or state | Contract |
 | --- | --- |
-| Provider range | `from_ms <= time <= to_ms` |
-| `cursor` | Replaces `from` when present |
-| `limit` | Local target; a same-millisecond group may exceed it |
+| `from`, `to` | Provider millisecond range `from_ms <= time <= to_ms` |
+| `cursor` | Opaque resume point; overrides `from` |
+| `limit` | Local page-size target; one millisecond group is never split, so `items.len()` may be below or above `limit` |
+| Continuation | Set `cursor = page.next` until `page.next == None` |
+
+Unknown ledger `type` strings are preserved as
+`HyperliquidLedgerKind::Other(provider_name)` instead of being collapsed to a
+generic value.
 
 ## Limits and official links
 

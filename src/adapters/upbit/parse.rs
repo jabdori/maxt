@@ -3,6 +3,7 @@
 //! Numeric payloads are parsed from their original digits without an `f64`
 //! conversion.
 
+use std::cmp::Reverse;
 use std::collections::BTreeMap;
 
 use chrono::{DateTime, NaiveDateTime, Utc};
@@ -516,8 +517,8 @@ fn book(symbol: &str, timestamp: i64, units: &[RawOrderBookUnit]) -> Result<Orde
     }
 
     // Enforce the common order-book sort contract.
-    bids.sort_by(|left, right| right.price.cmp(&left.price));
-    asks.sort_by(|left, right| left.price.cmp(&right.price));
+    bids.sort_by_key(|level| Reverse(level.price));
+    asks.sort_by_key(|level| level.price);
 
     Ok(OrderBook {
         market: market_from_native_symbol(symbol)?,
@@ -997,11 +998,11 @@ mod tests {
 
         assert!(matches!(
             native_symbol(&injected),
-            Err(Error::InvalidRequest { field: "base", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "base"
         ));
         assert!(matches!(
             market_from_native_symbol("KRW-BTC&count=500"),
-            Err(Error::InvalidRequest { field: "base", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "base"
         ));
     }
 
@@ -1009,14 +1010,11 @@ mod tests {
     fn a_code_without_a_separator_is_not_an_upbit_market() {
         assert!(matches!(
             market_from_native_symbol("BTCKRW"),
-            Err(Error::InvalidRequest {
-                field: "symbol",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "symbol"
         ));
         assert!(matches!(
             market_from_native_symbol("KRW-"),
-            Err(Error::InvalidRequest { field: "base", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "base"
         ));
     }
 
@@ -1027,10 +1025,7 @@ mod tests {
 
         assert!(matches!(
             native_symbol(&elsewhere),
-            Err(Error::InvalidRequest {
-                field: "market",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "market"
         ));
         assert!(matches!(
             native_symbol(&perpetual),

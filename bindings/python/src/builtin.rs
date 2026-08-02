@@ -1,0 +1,602 @@
+use std::sync::Arc;
+
+use maxt::adapters::{
+    BinanceAdapter, BinanceListenKey, BinanceMarket, BinanceSpotOrderDetail, BinanceSymbolFilters,
+    BithumbAdapter, BithumbAlertStep, BithumbMarketAlert, HyperliquidAdapter,
+    HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind, UpbitAdapter,
+    UpbitMarketEvent, UpbitRegion,
+};
+use maxt::{Cursor, Market, Page, Timestamp};
+use pyo3::exceptions::PyValueError;
+use pyo3::prelude::*;
+use pyo3::types::PyDict;
+
+use crate::client::{NativeClient, operation};
+use crate::convert::{
+    decimal_to_wire, list_to_wire, market_from_wire, market_to_wire, markets_from_wire,
+    order_book_to_wire, order_to_wire, ticker_to_wire, timestamp_to_wire,
+};
+
+macro_rules! provider_dict {
+    ($py:expr, $($key:literal => $value:expr),* $(,)?) => {{
+        let dict = PyDict::new($py);
+        $(dict.set_item($key, $value)?;)*
+        Ok::<Py<PyAny>, PyErr>(dict.into_any().unbind())
+    }};
+}
+
+fn upbit_region(value: &str) -> PyResult<UpbitRegion> {
+    match value {
+        "korea" => Ok(UpbitRegion::Korea),
+        "singapore" => Ok(UpbitRegion::Singapore),
+        "indonesia" => Ok(UpbitRegion::Indonesia),
+        "thailand" => Ok(UpbitRegion::Thailand),
+        _ => Err(PyValueError::new_err(format!(
+            "invalid Upbit region: {value}"
+        ))),
+    }
+}
+
+fn upbit_region_name(value: UpbitRegion) -> PyResult<&'static str> {
+    match value {
+        UpbitRegion::Korea => Ok("korea"),
+        UpbitRegion::Singapore => Ok("singapore"),
+        UpbitRegion::Indonesia => Ok("indonesia"),
+        UpbitRegion::Thailand => Ok("thailand"),
+        _ => Err(PyValueError::new_err(
+            "maxt binding contract does not map a new UpbitRegion variant",
+        )),
+    }
+}
+
+fn binance_venue(value: &str) -> PyResult<BinanceMarket> {
+    match value {
+        "spot" => Ok(BinanceMarket::Spot),
+        "usd_m" => Ok(BinanceMarket::UsdMFutures),
+        _ => Err(PyValueError::new_err(format!(
+            "invalid Binance venue: {value}"
+        ))),
+    }
+}
+
+fn binance_venue_name(value: BinanceMarket) -> PyResult<&'static str> {
+    match value {
+        BinanceMarket::Spot => Ok("spot"),
+        BinanceMarket::UsdMFutures => Ok("usd_m"),
+        _ => Err(PyValueError::new_err(
+            "maxt binding contract does not map a new BinanceMarket variant",
+        )),
+    }
+}
+
+fn credential_pair(
+    first: Option<String>,
+    second: Option<String>,
+    names: (&str, &str),
+) -> PyResult<Option<(String, String)>> {
+    match (first, second) {
+        (None, None) => Ok(None),
+        (Some(first), Some(second)) => Ok(Some((first, second))),
+        _ => Err(PyValueError::new_err(format!(
+            "{} and {} must be provided together",
+            names.0, names.1
+        ))),
+    }
+}
+
+#[pyclass(module = "maxt._native", frozen)]
+pub(crate) struct NativeUpbitAdapter {
+    inner: Arc<UpbitAdapter>,
+    authenticated: bool,
+}
+
+#[pymethods]
+impl NativeUpbitAdapter {
+    #[new]
+    #[pyo3(signature = (*, region="korea", access_key=None, secret_key=None))]
+    fn new(region: &str, access_key: Option<String>, secret_key: Option<String>) -> PyResult<Self> {
+        let credentials = credential_pair(access_key, secret_key, ("access_key", "secret_key"))?;
+        let mut adapter = UpbitAdapter::with_region(upbit_region(region)?);
+        if let Some((access_key, secret_key)) = credentials.as_ref() {
+            adapter = adapter.with_credentials(access_key, secret_key);
+        }
+        Ok(Self {
+            inner: Arc::new(adapter),
+            authenticated: credentials.is_some(),
+        })
+    }
+
+    #[getter]
+    fn region(&self) -> PyResult<&'static str> {
+        upbit_region_name(self.inner.region())
+    }
+
+    #[getter]
+    fn authenticated(&self) -> bool {
+        self.authenticated
+    }
+
+    fn client(&self) -> NativeClient {
+        NativeClient::from_boxed(Box::new((*self.inner).clone()))
+    }
+
+    #[pyo3(signature = (markets, depth=None))]
+    fn order_books<'py>(
+        &self,
+        py: Python<'py>,
+        markets: &Bound<'_, PyAny>,
+        depth: Option<u32>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let markets = markets_from_wire(markets)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.order_books(&markets, depth).await },
+            |py, values| list_to_wire(py, &values, order_book_to_wire),
+        )
+    }
+
+    fn tickers<'py>(
+        &self,
+        py: Python<'py>,
+        markets: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let markets = markets_from_wire(markets)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.tickers(&markets).await },
+            |py, values| list_to_wire(py, &values, ticker_to_wire),
+        )
+    }
+
+    fn market_events<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.market_events().await },
+            |py, values| list_to_wire(py, &values, upbit_market_event_to_wire),
+        )
+    }
+}
+
+#[pyclass(module = "maxt._native", frozen)]
+pub(crate) struct NativeBithumbAdapter {
+    inner: Arc<BithumbAdapter>,
+    authenticated: bool,
+}
+
+#[pymethods]
+impl NativeBithumbAdapter {
+    #[new]
+    #[pyo3(signature = (*, access_key=None, secret_key=None))]
+    fn new(access_key: Option<String>, secret_key: Option<String>) -> PyResult<Self> {
+        let credentials = credential_pair(access_key, secret_key, ("access_key", "secret_key"))?;
+        let mut adapter = BithumbAdapter::new();
+        if let Some((access_key, secret_key)) = credentials.as_ref() {
+            adapter = adapter.with_credentials(access_key, secret_key);
+        }
+        Ok(Self {
+            inner: Arc::new(adapter),
+            authenticated: credentials.is_some(),
+        })
+    }
+
+    #[getter]
+    fn authenticated(&self) -> bool {
+        self.authenticated
+    }
+
+    fn client(&self) -> NativeClient {
+        NativeClient::from_boxed(Box::new((*self.inner).clone()))
+    }
+
+    fn market_warnings<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.market_warnings().await },
+            |py, values| list_to_wire(py, &values, bithumb_market_warning_to_wire),
+        )
+    }
+
+    fn market_alerts<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.market_alerts().await },
+            |py, values| list_to_wire(py, &values, bithumb_market_alert_to_wire),
+        )
+    }
+}
+
+#[pyclass(module = "maxt._native", frozen)]
+pub(crate) struct NativeBinanceAdapter {
+    inner: Arc<BinanceAdapter>,
+    authenticated: bool,
+}
+
+#[pymethods]
+impl NativeBinanceAdapter {
+    #[new]
+    #[pyo3(signature = (*, venue="spot", api_key=None, secret_key=None))]
+    fn new(venue: &str, api_key: Option<String>, secret_key: Option<String>) -> PyResult<Self> {
+        let venue = binance_venue(venue)?;
+        let credentials = credential_pair(api_key, secret_key, ("api_key", "secret_key"))?;
+        let mut adapter = match venue {
+            BinanceMarket::Spot => BinanceAdapter::spot(),
+            BinanceMarket::UsdMFutures => BinanceAdapter::usd_m_futures(),
+            _ => return Err(PyValueError::new_err("unsupported Binance venue")),
+        };
+        if let Some((api_key, secret_key)) = credentials.as_ref() {
+            adapter = adapter.with_credentials(api_key, secret_key);
+        }
+        Ok(Self {
+            inner: Arc::new(adapter),
+            authenticated: credentials.is_some(),
+        })
+    }
+
+    #[getter]
+    fn venue(&self) -> PyResult<&'static str> {
+        binance_venue_name(self.inner.venue())
+    }
+
+    #[getter]
+    fn authenticated(&self) -> bool {
+        self.authenticated
+    }
+
+    fn client(&self) -> NativeClient {
+        NativeClient::from_boxed(Box::new((*self.inner).clone()))
+    }
+
+    fn spot_symbol_filters<'py>(
+        &self,
+        py: Python<'py>,
+        market: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let market = market_from_wire(market)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.spot_symbol_filters(&market).await },
+            |py, value| binance_symbol_filters_to_wire(py, &value),
+        )
+    }
+
+    fn spot_order<'py>(
+        &self,
+        py: Python<'py>,
+        market: &Bound<'_, PyAny>,
+        order_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let market = market_from_wire(market)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.spot_order(&market, &order_id).await },
+            |py, value| binance_spot_order_to_wire(py, &value),
+        )
+    }
+
+    fn usd_m_create_listen_key<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.usd_m_create_listen_key().await },
+            |py, inner| Ok(Py::new(py, NativeBinanceListenKey { inner })?.into_any()),
+        )
+    }
+
+    fn usd_m_keepalive_listen_key<'py>(
+        &self,
+        py: Python<'py>,
+        key: PyRef<'_, NativeBinanceListenKey>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let key = key.inner.clone();
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.usd_m_keepalive_listen_key(&key).await },
+            |py, ()| Ok(py.None()),
+        )
+    }
+
+    fn usd_m_close_listen_key<'py>(
+        &self,
+        py: Python<'py>,
+        key: PyRef<'_, NativeBinanceListenKey>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let key = key.inner.clone();
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.usd_m_close_listen_key(&key).await },
+            |py, ()| Ok(py.None()),
+        )
+    }
+}
+
+#[pyclass(module = "maxt._native", frozen)]
+pub(crate) struct NativeBinanceListenKey {
+    inner: BinanceListenKey,
+}
+
+#[pymethods]
+impl NativeBinanceListenKey {
+    #[getter]
+    fn value(&self) -> String {
+        self.inner.as_str().to_owned()
+    }
+}
+
+#[pyclass(module = "maxt._native", frozen)]
+pub(crate) struct NativeHyperliquidAdapter {
+    inner: Arc<HyperliquidAdapter>,
+    authenticated: bool,
+}
+
+#[pymethods]
+impl NativeHyperliquidAdapter {
+    #[new]
+    #[pyo3(signature = (*, testnet=false, address=None, private_key=None))]
+    fn new(testnet: bool, address: Option<String>, private_key: Option<String>) -> PyResult<Self> {
+        let wallet = credential_pair(address, private_key, ("address", "private_key"))?;
+        let mut adapter = if testnet {
+            HyperliquidAdapter::testnet()
+        } else {
+            HyperliquidAdapter::new()
+        };
+        if let Some((address, private_key)) = wallet.as_ref() {
+            adapter = adapter.with_wallet(address, private_key);
+        }
+        Ok(Self {
+            inner: Arc::new(adapter),
+            authenticated: wallet.is_some(),
+        })
+    }
+
+    #[getter]
+    fn is_testnet(&self) -> bool {
+        self.inner.is_testnet()
+    }
+
+    #[getter]
+    fn authenticated(&self) -> bool {
+        self.authenticated
+    }
+
+    fn client(&self) -> NativeClient {
+        NativeClient::from_boxed(Box::new((*self.inner).clone()))
+    }
+
+    #[pyo3(signature = (from_ns=None, to_ns=None, cursor=None, limit=None))]
+    fn non_funding_ledger<'py>(
+        &self,
+        py: Python<'py>,
+        from_ns: Option<i64>,
+        to_ns: Option<i64>,
+        cursor: Option<String>,
+        limit: Option<u32>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let from = from_ns.map(Timestamp::from_nanos);
+        let to = to_ns.map(Timestamp::from_nanos);
+        let cursor = cursor.map(Cursor::new);
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move {
+                adapter
+                    .non_funding_ledger(from, to, cursor.as_ref(), limit)
+                    .await
+            },
+            |py, value| hyperliquid_ledger_page_to_wire(py, &value),
+        )
+    }
+
+    fn asset_context<'py>(
+        &self,
+        py: Python<'py>,
+        market: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let market = market_from_wire(market)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.asset_context(&market).await },
+            |py, value| hyperliquid_asset_context_to_wire(py, &value),
+        )
+    }
+}
+
+fn upbit_market_event_to_wire(
+    py: Python<'_>,
+    value: &(Market, UpbitMarketEvent),
+) -> PyResult<Py<PyAny>> {
+    provider_dict!(
+        py,
+        "market" => market_to_wire(py, &value.0)?,
+        "warning" => value.1.warning,
+        "cautions" => &value.1.cautions,
+    )
+}
+
+fn bithumb_market_warning_to_wire(py: Python<'_>, value: &(Market, String)) -> PyResult<Py<PyAny>> {
+    provider_dict!(
+        py,
+        "market" => market_to_wire(py, &value.0)?,
+        "warning" => &value.1,
+    )
+}
+
+fn bithumb_alert_step(value: BithumbAlertStep) -> PyResult<&'static str> {
+    match value {
+        BithumbAlertStep::Caution => Ok("caution"),
+        BithumbAlertStep::Warning => Ok("warning"),
+        BithumbAlertStep::Danger => Ok("danger"),
+        BithumbAlertStep::Unknown => Ok("unknown"),
+        _ => Err(PyValueError::new_err(
+            "maxt binding contract does not map a new BithumbAlertStep variant",
+        )),
+    }
+}
+
+fn bithumb_market_alert_to_wire(
+    py: Python<'_>,
+    value: &(Market, BithumbMarketAlert),
+) -> PyResult<Py<PyAny>> {
+    provider_dict!(
+        py,
+        "market" => market_to_wire(py, &value.0)?,
+        "kind" => &value.1.kind,
+        "step" => bithumb_alert_step(value.1.step)?,
+        "ends_at" => timestamp_to_wire(value.1.ends_at),
+    )
+}
+
+fn binance_symbol_filters_to_wire(
+    py: Python<'_>,
+    value: &BinanceSymbolFilters,
+) -> PyResult<Py<PyAny>> {
+    provider_dict!(
+        py,
+        "symbol" => &value.symbol,
+        "tick_size" => value.tick_size.map(decimal_to_wire),
+        "min_price" => value.min_price.map(decimal_to_wire),
+        "max_price" => value.max_price.map(decimal_to_wire),
+        "step_size" => value.step_size.map(decimal_to_wire),
+        "min_quantity" => value.min_quantity.map(decimal_to_wire),
+        "max_quantity" => value.max_quantity.map(decimal_to_wire),
+        "min_notional" => value.min_notional.map(decimal_to_wire),
+    )
+}
+
+fn binance_spot_order_to_wire(
+    py: Python<'_>,
+    value: &BinanceSpotOrderDetail,
+) -> PyResult<Py<PyAny>> {
+    provider_dict!(
+        py,
+        "order" => order_to_wire(py, &value.order)?,
+        "client_order_id" => &value.client_order_id,
+        "order_type" => &value.order_type,
+        "time_in_force" => &value.time_in_force,
+        "filled_quote_quantity" => decimal_to_wire(value.filled_quote_quantity),
+        "updated_at" => value.updated_at.map(timestamp_to_wire),
+    )
+}
+
+fn hyperliquid_ledger_kind(value: &HyperliquidLedgerKind) -> PyResult<&str> {
+    match value {
+        HyperliquidLedgerKind::Deposit => Ok("deposit"),
+        HyperliquidLedgerKind::Withdraw => Ok("withdraw"),
+        HyperliquidLedgerKind::InternalTransfer => Ok("internal_transfer"),
+        HyperliquidLedgerKind::SubAccountTransfer => Ok("sub_account_transfer"),
+        HyperliquidLedgerKind::SpotTransfer => Ok("spot_transfer"),
+        HyperliquidLedgerKind::AccountClassTransfer => Ok("account_class_transfer"),
+        HyperliquidLedgerKind::VaultDeposit => Ok("vault_deposit"),
+        HyperliquidLedgerKind::VaultWithdraw => Ok("vault_withdraw"),
+        HyperliquidLedgerKind::VaultDistribution => Ok("vault_distribution"),
+        HyperliquidLedgerKind::Liquidation => Ok("liquidation"),
+        HyperliquidLedgerKind::Other(value) => Ok(value),
+        _ => Err(PyValueError::new_err(
+            "maxt binding contract does not map a new HyperliquidLedgerKind variant",
+        )),
+    }
+}
+
+fn hyperliquid_ledger_entry_to_wire(
+    py: Python<'_>,
+    value: &HyperliquidLedgerEntry,
+) -> PyResult<Py<PyAny>> {
+    provider_dict!(
+        py,
+        "kind" => hyperliquid_ledger_kind(&value.kind)?,
+        "time" => timestamp_to_wire(value.time),
+        "hash" => &value.hash,
+        "asset" => &value.asset,
+        "amount" => value.amount.map(decimal_to_wire),
+        "fee" => value.fee.map(decimal_to_wire),
+        "counterparty" => &value.counterparty,
+    )
+}
+
+fn hyperliquid_ledger_page_to_wire(
+    py: Python<'_>,
+    value: &Page<HyperliquidLedgerEntry>,
+) -> PyResult<Py<PyAny>> {
+    provider_dict!(
+        py,
+        "items" => list_to_wire(py, &value.items, hyperliquid_ledger_entry_to_wire)?,
+        "next" => value.next.as_ref().map(Cursor::as_str),
+    )
+}
+
+fn hyperliquid_asset_context_to_wire(
+    py: Python<'_>,
+    value: &HyperliquidAssetContext,
+) -> PyResult<Py<PyAny>> {
+    provider_dict!(
+        py,
+        "mid_price" => value.mid_price.map(decimal_to_wire),
+        "mark_price" => value.mark_price.map(decimal_to_wire),
+        "oracle_price" => value.oracle_price.map(decimal_to_wire),
+        "funding_rate" => value.funding_rate.map(decimal_to_wire),
+        "open_interest" => value.open_interest.map(decimal_to_wire),
+        "size_decimals" => value.size_decimals,
+        "price_decimals" => value.price_decimals,
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn credentials_must_be_complete_pairs() {
+        assert!(credential_pair(None, None, ("access_key", "secret_key")).is_ok());
+        assert!(credential_pair(Some("key".into()), None, ("access_key", "secret_key")).is_err());
+        assert!(
+            credential_pair(None, Some("secret".into()), ("access_key", "secret_key")).is_err()
+        );
+        assert_eq!(
+            credential_pair(
+                Some("key".into()),
+                Some("secret".into()),
+                ("access_key", "secret_key")
+            )
+            .unwrap(),
+            Some(("key".into(), "secret".into()))
+        );
+    }
+
+    #[test]
+    fn constructor_names_select_every_rust_adapter_variant() {
+        assert_eq!(upbit_region("korea").unwrap(), UpbitRegion::Korea);
+        assert_eq!(upbit_region("singapore").unwrap(), UpbitRegion::Singapore);
+        assert_eq!(upbit_region("indonesia").unwrap(), UpbitRegion::Indonesia);
+        assert_eq!(upbit_region("thailand").unwrap(), UpbitRegion::Thailand);
+        assert_eq!(binance_venue("spot").unwrap(), BinanceMarket::Spot);
+        assert_eq!(binance_venue("usd_m").unwrap(), BinanceMarket::UsdMFutures);
+        assert!(upbit_region("global").is_err());
+        assert!(binance_venue("coin_m").is_err());
+    }
+
+    #[test]
+    fn constructors_keep_credentials_and_network_selection() {
+        let upbit = NativeUpbitAdapter::new("singapore", Some("key".into()), Some("secret".into()))
+            .unwrap();
+        assert_eq!(upbit.region().unwrap(), "singapore");
+        assert!(upbit.authenticated());
+
+        let binance =
+            NativeBinanceAdapter::new("usd_m", Some("key".into()), Some("secret".into())).unwrap();
+        assert_eq!(binance.venue().unwrap(), "usd_m");
+        assert!(binance.authenticated());
+
+        let hyperliquid = NativeHyperliquidAdapter::new(true, None, None).unwrap();
+        assert!(hyperliquid.is_testnet());
+        assert!(!hyperliquid.authenticated());
+    }
+}

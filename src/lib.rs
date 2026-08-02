@@ -67,6 +67,14 @@ pub use types::{
 /// `rust_decimal` dependency is not required.
 pub use rust_decimal::Decimal;
 
+/// Parses decimal text without rounding or truncating it.
+///
+/// Plain and scientific notation are accepted. Values that [`Decimal`] cannot
+/// represent exactly return an error.
+pub fn parse_decimal_exact(text: &str) -> std::result::Result<Decimal, rust_decimal::Error> {
+    adapters::decimal::exact(text)
+}
+
 /// Repository Markdown included only while running documentation tests.
 ///
 /// This keeps Rust examples in the READMEs and `docs/` compiled without adding

@@ -50,11 +50,7 @@ pub enum TimeInForce {
     PostOnly,
 }
 
-/// How an order's size is expressed.
-///
-/// A market buy is usually sized in the quote asset ("spend 10,000 KRW") while
-/// a market sell is sized in the base asset ("sell 0.01 BTC"). Making that
-/// explicit at the type level keeps the two from being confused.
+/// An order size expressed in either the base or quote asset.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Size {

@@ -1,12 +1,12 @@
 //! Public REST reads with no credentials: a market list, a ticker, an order book
 //! with its spread, and the last few trades.
 //!
-//! Run it with no arguments for Upbit's BTC/KRW, or name an exchange and a
+//! Run it with no arguments for Binance's BTC/USDT, or name an exchange and a
 //! pair.
 //!
 //! ```text
 //! cargo run --example public_rest
-//! cargo run --example public_rest -- binance BTC USDT
+//! cargo run --example public_rest -- upbit BTC KRW
 //! cargo run --example public_rest -- bithumb ETH KRW
 //! cargo run --example public_rest -- hyperliquid HYPE USDC
 //! ```
@@ -19,7 +19,7 @@ use maxt::{Adapter, Client, Decimal, Market, MarketKind};
 #[tokio::main]
 async fn main() -> maxt::Result<()> {
     let mut args = std::env::args().skip(1);
-    let name = args.next().unwrap_or_else(|| "upbit".to_string());
+    let name = args.next().unwrap_or_else(|| "binance".to_string());
     let Some((client, home_quote)) = client_for(&name) else {
         eprintln!("unknown exchange {name:?}: try upbit, bithumb, binance, or hyperliquid");
         return Ok(());

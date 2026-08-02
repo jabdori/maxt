@@ -485,10 +485,7 @@ mod tests {
             assert!(
                 matches!(
                     cancel_order_request(&credentials(), order_id),
-                    Err(Error::InvalidRequest {
-                        field: "order_id",
-                        ..
-                    })
+                    Err(Error::InvalidRequest { field, .. }) if field == "order_id"
                 ),
                 "{order_id}"
             );
@@ -550,7 +547,7 @@ mod tests {
         for request in [market_buy_in_base, market_sell_in_quote, limit_in_quote] {
             assert!(matches!(
                 placed_order(&request),
-                Err(Error::InvalidRequest { field: "size", .. })
+                Err(Error::InvalidRequest { field, .. }) if field == "size"
             ));
         }
     }
@@ -578,10 +575,7 @@ mod tests {
 
         assert!(matches!(
             placed_order(&request),
-            Err(Error::InvalidRequest {
-                field: "time_in_force",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "time_in_force"
         ));
     }
 
@@ -597,14 +591,11 @@ mod tests {
 
         assert!(matches!(
             placed_order(&free),
-            Err(Error::InvalidRequest { field: "price", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "price"
         ));
         assert!(matches!(
             placed_order(&empty),
-            Err(Error::InvalidRequest {
-                field: "volume",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "volume"
         ));
     }
 

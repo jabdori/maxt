@@ -32,20 +32,24 @@ Public REST and market streams require no credentials. Provider and
 | `OrderBook::bids` | `price DESC` |
 | `OrderBook::asks` | `price ASC` |
 | `Ticker` | Provider summary; field source and aggregation window are provider-specific |
-| `Decimal` | Exact decimal for prices, quantities, rates, and amounts; no `f64` |
+| `Decimal` | 96-bit coefficient and scale `0..=28`; prices, quantities, rates, and amounts never use `f64` |
 | `Option<T>` | Provider omission maps to `None`; no inference or zero fill |
 | `Timestamp` | UTC nanoseconds since Unix epoch; `Display` is millisecond RFC 3339; exact value via `as_nanos()` |
 
 A `timestamp` documented as local read time records when `maxt` read the
 response, not provider event time.
 
+`parse_decimal_exact()` accepts plain or scientific notation only when the
+value fits `Decimal` exactly. It returns an error instead of rounding or
+truncating.
+
 ## Public REST
 
 | Method | Contract |
 | --- | --- |
-| `markets(kind)` | Listed `MarketInfo`; no listings for a valid `kind` returns `[]` |
+| `markets(kind)` | Listed `MarketInfo`; a valid `kind` with no listings returns `[]` |
 | `trades(market, limit)` | Recent trades, newest-first |
-| `order_book(market, depth)` | One snapshot; `levels_per_side = depth` |
+| `order_book(market, depth)` | One snapshot; if `depth` is set, `bids.len() <= depth` and `asks.len() <= depth` |
 | `ticker(market)` | One provider summary |
 | `candles(request)` | Historical candles, `open_time ASC` |
 | `funding_rates(request)` | Public perpetual funding-rate `Page<FundingRate>` |
@@ -61,21 +65,23 @@ Limits, book depths, and timestamp sources are provider-specific.
 `Min1`, `Min3`, `Min5`, `Min15`, `Min30`, `Hour1`, `Hour4`, `Day1`, `Week1`,
 `Month1`
 
-Other intervals are provider-specific. No mapping returns
-`Error::Unsupported`; intervals are never rounded.
+Other intervals are provider-specific. An interval without a provider mapping
+returns `Error::Unsupported`; it is never rounded to another interval.
 
 ### `CandleRequest`
 
-| Request | Selection |
+Results are always sorted by `open_time ASC`.
+
+| Fields set | Selection |
 | --- | --- |
-| `from + to + limit` | First `limit` in `from <= open_time < to`; return `open_time ASC` |
-| `from + to` | All `from <= open_time < to`; return `open_time ASC` |
-| `from + limit` | First `limit` with `open_time >= from`; return `open_time ASC` |
-| `to + limit` | Last `limit` with `open_time < to`; return `open_time ASC` |
-| `limit` | Latest `limit`; return `open_time ASC` |
-| `from` | All `open_time >= from`; return `open_time ASC` |
-| `to` | One provider page with `open_time < to` |
-| No bounds | Latest provider page |
+| `from`, `to`, `limit` | Earliest `limit` rows where `from <= open_time < to` |
+| `from`, `to` | All rows where `from <= open_time < to` |
+| `from`, `limit` | Earliest `limit` rows where `from <= open_time` |
+| `to`, `limit` | Latest `limit` rows where `open_time < to` |
+| `limit` | Latest `limit` rows |
+| `from` | All rows where `from <= open_time` |
+| `to` | One provider page where `open_time < to` |
+| None | Latest provider page |
 
 | Validation | Result |
 | --- | --- |
@@ -128,7 +134,9 @@ events are not replaceable.
 | `None` | Stream terminated |
 | `MarketEvent::Reconnected` | Market events were lost during the disconnect |
 | `AccountEvent::Reconnected` | Account events were lost during the disconnect |
-| Stream `Drop` | Close all underlying connections |
+| Built-in stream `Drop` | Drop the source and signal all built-in connection tasks to stop |
+| Custom stream `Drop` | Drop the source; the producer owns cleanup |
+| `close().await` | Await adapter-provided async cleanup, then drop the source |
 
 Reconnect limits apply per underlying connection and do not reset after
 healthy traffic. After `AccountEvent::Reconnected`, reload state with
@@ -150,6 +158,7 @@ healthy traffic. After `AccountEvent::Reconnected`, reload state with
 | --- | --- | --- |
 | `InvalidRequest` | Local validation before network I/O | `false` |
 | `Unsupported` | No mapped operation | `false` |
+| `Adapter` | Adapter or foreign-dispatcher contract failure | `false` |
 | `Auth` | Credentialed request cannot be built locally | `false` |
 | `Exchange` | Provider error response | `kind.is_retryable()` |
 | `Transport` | DNS, TLS, socket, timeout | `true` |
@@ -177,14 +186,17 @@ rules are provider-specific.
 
 ### `HistoryRequest`
 
-| Input or state | Contract |
+| Field or state | Contract |
 | --- | --- |
-| `from + to` | `from <= item.timestamp < to` |
-| `limit` | Page-size target; a page may exceed it to avoid splitting equal timestamps |
-| Next request | `request.cursor = page.next` |
-| Continue | `page.next.is_some()` |
+| `from` | `from <= item.timestamp` |
+| `to` | `item.timestamp < to` |
+| `cursor` | Opaque resume point from `Page::next`; overrides `from` and must be passed back unchanged to the same adapter |
+| `limit` | Page-size target, not a hard maximum |
+| `limit == 0` | `Error::InvalidRequest` before network I/O |
+| Same-timestamp group crosses `limit` | The page may stop below `limit` and defer the group, or exceed `limit` when the first group alone is larger |
+| Next request | Set `request.cursor = page.next` |
+| Continue | `page.next.is_some()`, even when `items.is_empty()` |
 | Stop | `page.next == None` |
-| `items.is_empty()` | Not a stop condition while `page.next.is_some()` |
 
 ### `MarginRequest`
 

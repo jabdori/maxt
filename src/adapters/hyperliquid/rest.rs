@@ -3,6 +3,8 @@
 //! Reads use `POST /info`; signed actions use `POST /exchange`. Request type and
 //! parameters are encoded in the JSON body.
 
+use std::cmp::Reverse;
+
 use rust_decimal::Decimal;
 use serde_json::{Value, json};
 
@@ -242,7 +244,7 @@ fn newest_first(
         .map(|raw| parse::trade(raw, universe))
         .collect::<Result<Vec<_>>>()?;
 
-    trades.sort_by(|left, right| right.timestamp.cmp(&left.timestamp));
+    trades.sort_by_key(|trade| Reverse(trade.timestamp));
     if let Some(limit) = limit {
         trades.truncate(limit as usize);
     }
@@ -558,6 +560,8 @@ pub(crate) async fn ledger(
     cursor: Option<&Cursor>,
     limit: Option<u32>,
 ) -> Result<Page<native::HyperliquidLedgerEntry>> {
+    validate_page_limit(limit)?;
+
     let start_ms = match cursor {
         Some(cursor) => parse::cursor_start_ms(cursor)?,
         None => from.map(Timestamp::as_millis).unwrap_or(0),
@@ -585,6 +589,14 @@ fn newest(times: impl Iterator<Item = i64>) -> (Option<i64>, bool) {
     (times.iter().max().copied(), times.len() >= MAX_HISTORY_PAGE)
 }
 
+pub(crate) fn validate_page_limit(limit: Option<u32>) -> Result<()> {
+    if limit == Some(0) {
+        return Err(Error::invalid_request("limit", "must be greater than zero"));
+    }
+
+    Ok(())
+}
+
 /// Assembles a page and a time-based continuation cursor.
 /// Filtering and local truncation preserve the timestamp of the last item
 /// visible to the caller.
@@ -593,6 +605,8 @@ fn page<T>(
     page_end: (Option<i64>, bool),
     limit: Option<u32>,
 ) -> Result<Page<T>> {
+    validate_page_limit(limit)?;
+
     let (page_newest, full) = page_end;
     let mut truncated = false;
 
@@ -646,6 +660,8 @@ fn millisecond_boundary<T>(items: &[(T, i64)], limit: usize) -> usize {
 /// inclusive, so `to` is converted to the last millisecond strictly before it.
 /// A cursor takes precedence over `from`.
 fn history_window(request: &HistoryRequest) -> Result<(i64, Option<i64>)> {
+    validate_page_limit(request.limit)?;
+
     let start = match &request.cursor {
         Some(cursor) => parse::cursor_start_ms(cursor)?,
         // The API requires `startTime`; zero requests the earliest retained data.
@@ -1364,7 +1380,7 @@ mod tests {
             assert!(
                 matches!(
                     trades_request("BTC", Some(limit)),
-                    Err(Error::InvalidRequest { field: "limit", .. })
+                    Err(Error::InvalidRequest { field, .. }) if field == "limit"
                 ),
                 "{limit} was accepted"
             );
@@ -1422,7 +1438,7 @@ mod tests {
                     Decimal::from(27_123),
                 ),
             ),
-            Err(Error::InvalidRequest { field: "size", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "size"
         ));
         // Fractional prices are capped at five significant digits.
         assert!(matches!(
@@ -1435,7 +1451,7 @@ mod tests {
                     Decimal::new(271_231, 1),
                 ),
             ),
-            Err(Error::InvalidRequest { field: "price", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "price"
         ));
         // Integer prices are exempt from the significant-digit cap.
         assert!(
@@ -1495,7 +1511,7 @@ mod tests {
                     Decimal::from(27_123),
                 ),
             ),
-            Err(Error::InvalidRequest { field: "size", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "size"
         ));
     }
 
@@ -1603,6 +1619,56 @@ mod tests {
             history_window(&negative_inside).expect("a window"),
             (0, Some(-5_000))
         );
+    }
+
+    #[test]
+    fn a_zero_history_limit_is_rejected_before_building_the_request_window() {
+        let request = HistoryRequest::new(btc_perp()).limit(0);
+
+        assert!(matches!(
+            history_window(&request),
+            Err(Error::InvalidRequest { field, .. }) if field == "limit"
+        ));
+    }
+
+    #[tokio::test]
+    async fn a_zero_ledger_limit_is_rejected_before_the_network() {
+        let http = HttpTransport::new("http://127.0.0.1:1").expect("a transport");
+
+        let refused = ledger(&http, "0xabc", None, None, None, Some(0)).await;
+
+        assert!(
+            matches!(&refused, Err(Error::InvalidRequest { field, .. }) if *field == "limit"),
+            "{refused:?}"
+        );
+    }
+
+    #[test]
+    fn a_zero_page_limit_is_rejected_instead_of_losing_items_and_the_cursor() {
+        let refused = page(vec![(1, 10)], (Some(10), true), Some(0));
+
+        assert!(matches!(
+            refused,
+            Err(Error::InvalidRequest { field, .. }) if field == "limit"
+        ));
+    }
+
+    #[test]
+    fn valid_history_limits_preserve_page_and_timestamp_group_semantics() {
+        let unlimited =
+            page(vec![(1, 10), (2, 20)], (Some(20), true), None).expect("an unlimited page");
+        assert_eq!(unlimited.items, vec![1, 2]);
+        assert_eq!(unlimited.next.expect("a cursor").as_str(), "21");
+
+        let one = page(vec![(1, 20), (2, 20), (3, 30)], (Some(30), false), Some(1))
+            .expect("a one-item target");
+        assert_eq!(one.items, vec![1, 2]);
+        assert_eq!(one.next.expect("a cursor").as_str(), "21");
+
+        let large = page(vec![(1, 10), (2, 20)], (Some(20), false), Some(u32::MAX))
+            .expect("a large provider-independent limit");
+        assert_eq!(large.items, vec![1, 2]);
+        assert!(!large.has_more());
     }
 
     #[test]

@@ -26,8 +26,8 @@ accounts, and credentials are not shared across regions.
 | --- | --- | --- |
 | `markets(MarketKind::Spot)` | `/v1/market/all?is_details=true` | Listed Spot markets |
 | `markets(MarketKind::Perpetual)` | — | `Ok(vec![])` |
-| `trades(market, limit)` | `/v1/trades/ticks` | `limit in 1..=500`; newest-first |
-| `order_book(market, depth)` | `/v1/orderbook` | `depth in 1..=30`; `None -> 30` |
+| `trades(market, limit)` | `/v1/trades/ticks` | `limit: 1..=500`; newest-first |
+| `order_book(market, depth)` | `/v1/orderbook` | `depth: 1..=30`; at most `depth` levels per side; `None -> 30` |
 | `ticker(market)` | `/v1/ticker` | One market snapshot |
 
 Derivative methods return `Error::Unsupported`.
@@ -69,10 +69,12 @@ Configure private calls with `.with_credentials(access_key, secret_key)`. The
 credentials must belong to `UpbitAdapter::region()`. Private features are
 balances, open orders, place/cancel order, and account streams.
 
+Access the following provider-specific methods through `Client::adapter()`.
+
 | Method | Contract | Rate-limit group |
 | --- | --- | --- |
 | `tickers(&[Market])` | `markets.len() >= 1`; one ticker per market | `ticker` |
-| `order_books(&[Market], depth)` | `markets.len() >= 1`; `depth in 1..=30` or `None` | `orderbook` |
+| `order_books(&[Market], depth)` | `markets.len() >= 1`; `depth: 1..=30` or `None` | `orderbook` |
 | `market_events()` | Investment warning and caution criteria by market | `market` |
 
 | Market event | Mapping |

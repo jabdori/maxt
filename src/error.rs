@@ -7,25 +7,16 @@ use crate::Feature;
 /// Result type returned by every fallible `maxt` operation.
 pub type Result<T> = std::result::Result<T, Error>;
 
-/// Anything that can go wrong while talking to an exchange.
-///
-/// Variants distinguish local validation, unavailable capabilities, local
-/// authentication, exchange verdicts, transport failures, and unreadable
-/// payloads.
-///
-/// [`Error::Auth`] means no credentialed request could be built locally.
-/// Credentials sent to and rejected by an exchange remain [`Error::Exchange`]
-/// with the exchange's code and message. [`Error::Unsupported`] is structural:
-/// configuring credentials cannot make the operation available.
+/// Local request, adapter, authentication, exchange, transport, and decoding failures.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Error {
-    /// The request was rejected before it left the process.
+    /// A request field failed validation.
     ///
-    /// The request is malformed and retrying it unchanged will fail again.
+    /// Retrying the same request unchanged returns the same error.
     InvalidRequest {
         /// The request field that failed validation.
-        field: &'static str,
+        field: String,
         /// What was wrong with it.
         detail: String,
     },
@@ -40,6 +31,13 @@ pub enum Error {
         /// The configured exchange.
         exchange: &'static str,
         /// Mapping details and any available alternative.
+        detail: String,
+    },
+
+    /// An adapter or foreign dispatcher violated the [`Adapter`](crate::Adapter)
+    /// contract.
+    Adapter {
+        /// What contract boundary failed.
         detail: String,
     },
 
@@ -88,6 +86,7 @@ impl Error {
             Self::Transport { .. } => true,
             Self::InvalidRequest { .. }
             | Self::Unsupported { .. }
+            | Self::Adapter { .. }
             | Self::Auth { .. }
             | Self::Decode { .. } => false,
         }
@@ -107,9 +106,9 @@ impl Error {
         )
     }
 
-    pub(crate) fn invalid_request(field: &'static str, detail: impl Into<String>) -> Self {
+    pub(crate) fn invalid_request(field: impl Into<String>, detail: impl Into<String>) -> Self {
         Self::InvalidRequest {
-            field,
+            field: field.into(),
             detail: detail.into(),
         }
     }
@@ -122,6 +121,13 @@ impl Error {
         Self::Unsupported {
             feature,
             exchange,
+            detail: detail.into(),
+        }
+    }
+
+    /// Builds an adapter contract error.
+    pub fn adapter(detail: impl Into<String>) -> Self {
+        Self::Adapter {
             detail: detail.into(),
         }
     }
@@ -185,6 +191,7 @@ impl fmt::Display for Error {
                 exchange,
                 detail,
             } => write!(f, "{exchange} adapter does not support {feature}: {detail}"),
+            Self::Adapter { detail } => write!(f, "adapter failed: {detail}"),
             Self::Auth { detail } => write!(f, "authentication failed: {detail}"),
             Self::Exchange {
                 exchange,
@@ -272,6 +279,17 @@ mod tests {
             !Error::unsupported(Feature::CandleStream, "bithumb", "no public candle stream")
                 .is_retryable()
         );
+    }
+
+    #[test]
+    fn invalid_request_keeps_a_runtime_defined_field_name() {
+        let field = format!("custom_{}", "field");
+        let error = Error::invalid_request(field.clone(), "bad value");
+
+        assert!(matches!(
+            error,
+            Error::InvalidRequest { field: actual, .. } if actual == field
+        ));
     }
 
     #[test]

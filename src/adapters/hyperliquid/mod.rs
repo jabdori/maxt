@@ -173,6 +173,7 @@ impl HyperliquidAdapter {
         cursor: Option<&Cursor>,
         limit: Option<u32>,
     ) -> Result<Page<HyperliquidLedgerEntry>> {
+        rest::validate_page_limit(limit)?;
         let (user, _) = self.account()?;
         let connection = self.connect().await?;
 
@@ -446,6 +447,7 @@ impl Adapter for HyperliquidAdapter {
     fn funding_rates(&self, request: &HistoryRequest) -> BoxFuture<'_, Result<Page<FundingRate>>> {
         let request = request.clone();
         Box::pin(async move {
+            rest::validate_page_limit(request.limit)?;
             let connection = self.connect().await?;
 
             rest::funding_rates(&connection.http, &connection.universe, &request).await
@@ -458,6 +460,7 @@ impl Adapter for HyperliquidAdapter {
     ) -> BoxFuture<'_, Result<Page<FundingPayment>>> {
         let request = request.clone();
         Box::pin(async move {
+            rest::validate_page_limit(request.limit)?;
             let (user, _) = self.account()?;
             let connection = self.connect().await?;
 
@@ -655,6 +658,49 @@ mod tests {
             public.non_funding_ledger(None, None, None, None).await,
             Err(Error::Auth { .. })
         ));
+    }
+
+    #[tokio::test]
+    async fn a_zero_funding_payment_limit_is_rejected_before_authentication() {
+        let public = HyperliquidAdapter::new();
+        let request =
+            HistoryRequest::new(Market::perpetual(Exchange::Hyperliquid, "BTC", "USDC")).limit(0);
+
+        let refused = public.funding_payments(&request).await;
+
+        assert!(
+            matches!(&refused, Err(Error::InvalidRequest { field, .. }) if *field == "limit"),
+            "{refused:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_zero_funding_rate_limit_is_rejected_on_the_first_poll() {
+        let public = HyperliquidAdapter::new();
+        let request =
+            HistoryRequest::new(Market::perpetual(Exchange::Hyperliquid, "BTC", "USDC")).limit(0);
+        let mut call = public.funding_rates(&request);
+        let waker = futures_util::task::noop_waker();
+        let mut context = std::task::Context::from_waker(&waker);
+
+        let first_poll = std::future::Future::poll(call.as_mut(), &mut context);
+
+        assert!(matches!(
+            first_poll,
+            std::task::Poll::Ready(Err(Error::InvalidRequest { field, .. })) if field == "limit"
+        ));
+    }
+
+    #[tokio::test]
+    async fn a_zero_ledger_limit_is_rejected_before_authentication() {
+        let public = HyperliquidAdapter::new();
+
+        let refused = public.non_funding_ledger(None, None, None, Some(0)).await;
+
+        assert!(
+            matches!(&refused, Err(Error::InvalidRequest { field, .. }) if *field == "limit"),
+            "{refused:?}"
+        );
     }
 
     #[tokio::test]

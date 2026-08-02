@@ -96,7 +96,7 @@ fn query(params: &[(&'static str, String)]) -> Result<String> {
     for (name, value) in params {
         if !value.bytes().all(is_url_safe) {
             return Err(Error::invalid_request(
-                name,
+                *name,
                 format!("`{value}` is not safe to send to Upbit unencoded"),
             ));
         }
@@ -750,7 +750,7 @@ mod tests {
             assert!(
                 matches!(
                     place_order_request(&credentials(), &request),
-                    Err(Error::InvalidRequest { field: "size", .. })
+                    Err(Error::InvalidRequest { field, .. }) if field == "size"
                 ),
                 "{request:?}"
             );
@@ -763,7 +763,7 @@ mod tests {
             let request = OrderRequest::market(btc_krw(), Side::Sell, size);
             assert!(matches!(
                 place_order_request(&credentials(), &request),
-                Err(Error::InvalidRequest { field: "size", .. })
+                Err(Error::InvalidRequest { field, .. }) if field == "size"
             ));
         }
 
@@ -775,7 +775,7 @@ mod tests {
         );
         assert!(matches!(
             place_order_request(&credentials(), &free),
-            Err(Error::InvalidRequest { field: "price", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "price"
         ));
     }
 
@@ -828,10 +828,7 @@ mod tests {
             assert!(
                 matches!(
                     time_in_force(&OrderType::Market, requested),
-                    Err(Error::InvalidRequest {
-                        field: "time_in_force",
-                        ..
-                    })
+                    Err(Error::InvalidRequest { field, .. }) if field == "time_in_force"
                 ),
                 "{requested:?}"
             );
@@ -857,10 +854,7 @@ mod tests {
     fn a_cancel_without_an_order_is_a_caller_mistake() {
         assert!(matches!(
             cancel_order_request(&credentials(), &btc_krw(), "  "),
-            Err(Error::InvalidRequest {
-                field: "order_id",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "order_id"
         ));
     }
 
@@ -884,7 +878,7 @@ mod tests {
         // `&` would change the signed parameter list.
         assert!(matches!(
             query(&[("uuid", "one&market=KRW-DOGE".to_string())]),
-            Err(Error::InvalidRequest { field: "uuid", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "uuid"
         ));
         assert!(query(&[("uuid", ORDER_ID.to_string())]).is_ok());
     }

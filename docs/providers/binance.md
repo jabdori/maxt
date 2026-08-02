@@ -19,10 +19,10 @@ One `BinanceAdapter` is fixed to Spot or USD-M perpetual futures.
 | Call | Spot | USD-M |
 | --- | --- | --- |
 | `markets(kind)` | `/api/v3/exchangeInfo`; Spot listings | `/fapi/v1/exchangeInfo`; `contractType == PERPETUAL` |
-| `trades(market, limit)` | `/api/v3/trades`; `limit in 1..=1000` | `/fapi/v1/trades`; `limit in 1..=1000` |
-| `order_book(market, depth)` | `/api/v3/depth`; `depth in 1..=5000` | `/fapi/v1/depth`; `depth in {5, 10, 20, 50, 100, 500, 1000}` |
+| `trades(market, limit)` | `/api/v3/trades`; `limit: 1..=1000` | `/fapi/v1/trades`; `limit: 1..=1000` |
+| `order_book(market, depth)` | `/api/v3/depth`; `depth: 1..=5000`; at most `depth` levels per side | `/fapi/v1/depth`; `depth: {5, 10, 20, 50, 100, 500, 1000}`; at most `depth` levels per side |
 | `ticker(market)` | `/api/v3/ticker/24hr`; rolling 24-hour summary | `/fapi/v1/ticker/24hr`; rolling 24-hour summary |
-| `funding_rates(request)` | `Error::Unsupported` | `/fapi/v1/fundingRate`; `limit in 1..=1000`; `None -> 100` |
+| `funding_rates(request)` | `Error::Unsupported` | `/fapi/v1/fundingRate`; `limit: 1..=1000`; `None -> 100` |
 
 Trades are newest-first. Spot order books have no provider timestamp and use
 local read time; USD-M order books retain the provider timestamp. Unknown
@@ -74,11 +74,11 @@ adapter supports HMAC-SHA-256 keys; RSA and Ed25519 keys are unsupported.
 | Order input | Spot | USD-M |
 | --- | --- | --- |
 | `Size::Base` | All orders | All orders |
-| `Size::Quote` | Market order only | `Error::InvalidRequest` |
+| `Size::Quote` | Market order only; Limit -> `Error::InvalidRequest` | `Error::InvalidRequest` |
 | `time_in_force` | `GTC`, `IOC`, `FOK`; `PostOnly -> LIMIT_MAKER` | `GTC`, `IOC`, `FOK`; `PostOnly -> GTX` |
 | `reduce_only == true` | `Error::Unsupported` | Supported |
 
-Provider-specific methods are available through `Client::adapter()`:
+Access the following provider-specific methods through `Client::adapter()`:
 
 | Method | Contract |
 | --- | --- |

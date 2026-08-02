@@ -647,6 +647,8 @@ async fn subscribe_spot_account(
 
 /// Builds a Spot account connection that signs a fresh frame per handshake.
 fn spot_account_connect(adapter: &BinanceAdapter) -> Result<WsConnect> {
+    adapter.credentials()?;
+
     // Cloned into the signing closure below, which outlives this call: it is
     // called again for every reconnect.
     let adapter = adapter.clone();
@@ -1215,14 +1217,11 @@ mod tests {
 
         assert!(matches!(
             stream_groups(&spot(), &no_feed),
-            Err(Error::InvalidRequest { field: "feeds", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "feeds"
         ));
         assert!(matches!(
             stream_groups(&spot(), &no_market),
-            Err(Error::InvalidRequest {
-                field: "markets",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "markets"
         ));
     }
 
@@ -1567,6 +1566,16 @@ mod tests {
             .expect("the wait to end with the stream")
             .expect("no panic");
         assert!(!carry_on);
+    }
+
+    /// Spot account credentials are carried in the first frame, not the URL.
+    #[test]
+    fn a_spot_account_socket_requires_credentials_before_connecting() {
+        let Err(error) = spot_account_connect(&spot()) else {
+            panic!("an account socket without credentials was prepared");
+        };
+
+        assert!(matches!(error, Error::Auth { .. }));
     }
 
     /// Spot account credentials are carried in the first frame, not the URL.

@@ -28,8 +28,7 @@ impl<A: Adapter> Client<A> {
 
     /// Which exchange this client talks to.
     ///
-    /// This identifies the exchange, not an exchange-specific venue. For
-    /// example, both Binance spot and Binance USD-M return [`Exchange::Binance`].
+    /// This identifies the exchange, not an exchange-specific venue.
     pub fn exchange(&self) -> Exchange {
         self.adapter.exchange()
     }
@@ -62,32 +61,29 @@ impl<A: Adapter> Client<A> {
 
     /// Reads the most recent trades on a market, newest first.
     ///
+    /// `limit` caps the number returned. `None` uses the exchange default.
+    ///
     /// # Errors
     ///
-    /// A `limit` past what one call serves is
-    /// [`Error::InvalidRequest`](crate::Error::InvalidRequest) on `limit` rather
-    /// than a short answer, and the ceiling is not the same everywhere: 1 000 on
-    /// Binance, 500 on Upbit and Bithumb, 10 on Hyperliquid, whose endpoint takes
-    /// no count at all. Leave `limit` unset to take whatever the exchange sends.
-    /// Use [`Feed::Trades`](crate::Feed) for live updates. A
-    /// [`MarketEvent::Reconnected`](crate::MarketEvent::Reconnected) marks a
-    /// gap that may require backfill and deduplication.
+    /// Built-in adapters return
+    /// [`Error::InvalidRequest`](crate::Error::InvalidRequest) when `limit` is
+    /// zero or exceeds the exchange's per-request limit.
     pub async fn trades(&self, market: &Market, limit: Option<u32>) -> Result<Vec<Trade>> {
         self.adapter.trades(market, limit).await
     }
 
     /// Reads an order book snapshot.
     ///
-    /// `depth` asks for that many levels per side.
+    /// `depth` is the maximum number of levels per side. `None` uses the
+    /// exchange default.
     ///
     /// # Errors
     ///
-    /// A depth the exchange cannot serve is refused with
-    /// [`Error::InvalidRequest`](crate::Error::InvalidRequest). Providers may
-    /// accept a range or a fixed set; each provider page lists its limits.
+    /// Built-in adapters return
+    /// [`Error::InvalidRequest`](crate::Error::InvalidRequest) when `depth` is
+    /// zero or unsupported by the exchange.
     ///
-    /// Pass `None` for the exchange's default depth. Returned bids and asks are
-    /// best-first; see [`OrderBook`](crate::OrderBook).
+    /// Returned bids and asks are best-first; see [`OrderBook`](crate::OrderBook).
     pub async fn order_book(&self, market: &Market, depth: Option<u32>) -> Result<OrderBook> {
         self.adapter.order_book(market, depth).await
     }
@@ -101,8 +97,8 @@ impl<A: Adapter> Client<A> {
 
     /// Reads historical candles, oldest first.
     ///
-    /// [`CandleRequest::limit`] is honoured past what one response can carry.
-    /// `maxt` pages internally up to one hundred exchange calls.
+    /// [`CandleRequest::limit`] may span multiple responses. One request makes
+    /// at most 100 exchange calls.
     ///
     /// A request estimated to exceed that bound returns
     /// [`Error::InvalidRequest`](crate::Error::InvalidRequest) before the first
@@ -156,8 +152,8 @@ impl<A: Adapter> Client<A> {
 
     /// Reads the account's open orders on one market.
     ///
-    /// Requires credentials. Results are scoped to `market`; the adapter may
-    /// filter a provider-wide response locally.
+    /// Requires credentials. Results are scoped to `market`; the provider or
+    /// adapter applies the market filter.
     pub async fn open_orders_on(&self, market: &Market) -> Result<Vec<Order>> {
         self.adapter.open_orders(Some(market)).await
     }
@@ -166,9 +162,6 @@ impl<A: Adapter> Client<A> {
     ///
     /// Requires credentials.
     ///
-    /// A Binance USD-M order arrives with no `created_at`: that stream
-    /// publishes no creation time, so a USD-M order's age comes from the REST
-    /// read.
     /// See [`AccountStream`] for error, reconnect, and termination semantics.
     pub async fn subscribe_account(&self) -> Result<AccountStream> {
         self.subscribe_account_with(&StreamConfig::default()).await
@@ -341,10 +334,7 @@ mod tests {
         ));
     }
 
-    /// An adapter that hands back exactly what its venue published, flat rows
-    /// included. Every shipped adapter maps a zero-size row rather than
-    /// rejecting it, and the [`Adapter`] trait is implementable from outside
-    /// this crate, so this is the shape the common API has to hold.
+    /// An adapter fixture that includes a flat position.
     #[derive(Debug, Clone)]
     struct ReportsWhatTheVenueSaid;
 
@@ -391,23 +381,17 @@ mod tests {
         }
     }
 
-    /// `positions()` promises open positions, and a row with no size is not
-    /// one. The drop lives on the common API rather than in an adapter, so it
-    /// holds for an adapter written outside this crate too, which is the only
-    /// place a crate-wide guarantee can hold.
+    /// The common client removes flat rows from both position queries.
     #[tokio::test]
     async fn a_flat_row_an_adapter_reports_is_not_answered_as_an_open_position() {
         let client = Client::new(ReportsWhatTheVenueSaid);
 
-        // The adapter really did report two, so an answer of one below is the
-        // filter rather than the adapter having nothing to say.
         assert_eq!(client.adapter().positions(None).await.unwrap().len(), 2);
 
         let open = client.positions().await.unwrap();
         assert_eq!(open.len(), 1, "a flat row was answered as an open position");
         assert_eq!(open[0].quantity, Decimal::ONE);
 
-        // The narrowed read is the same promise, not a looser one.
         let narrowed = client
             .positions_on(&ReportsWhatTheVenueSaid::market("USDT"))
             .await

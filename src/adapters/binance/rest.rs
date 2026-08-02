@@ -5,6 +5,8 @@
 //! building is kept as plain functions returning [`HttpRequest`] so that every
 //! path, query, and rejection below is testable without a network.
 
+use std::cmp::Reverse;
+
 use rust_decimal::Decimal;
 
 use crate::adapters::{candles as candle_pages, inclusive_millis_before};
@@ -204,7 +206,7 @@ pub(super) async fn trades(
 /// where several trades routinely share a timestamp, and does not assume the
 /// payload arrived sorted.
 fn newest_first(market: &Market, mut raw: Vec<parse::RawTrade>) -> Result<Vec<Trade>> {
-    raw.sort_unstable_by(|left, right| right.id.cmp(&left.id));
+    raw.sort_unstable_by_key(|trade| Reverse(trade.id));
     raw.iter().map(|raw| parse::trade(market, raw)).collect()
 }
 
@@ -421,15 +423,15 @@ mod tests {
         assert!(order_book_request(&spot(), &btc_usdt(), Some(5_000)).is_ok());
         assert!(matches!(
             order_book_request(&spot(), &btc_usdt(), Some(5_001)),
-            Err(Error::InvalidRequest { field: "depth", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "depth"
         ));
         assert!(matches!(
             order_book_request(&perp(), &btc_usdt_perp(), Some(30)),
-            Err(Error::InvalidRequest { field: "depth", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "depth"
         ));
         assert!(matches!(
             order_book_request(&perp(), &btc_usdt_perp(), Some(5_000)),
-            Err(Error::InvalidRequest { field: "depth", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "depth"
         ));
     }
 
@@ -539,11 +541,11 @@ mod tests {
     fn every_limit_above_binances_cap_is_refused_rather_than_clamped() {
         assert!(matches!(
             trades_request(&spot(), &btc_usdt(), Some(1_001)),
-            Err(Error::InvalidRequest { field: "limit", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "limit"
         ));
         assert!(matches!(
             trades_request(&spot(), &btc_usdt(), Some(0)),
-            Err(Error::InvalidRequest { field: "limit", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "limit"
         ));
         assert!(trades_request(&spot(), &btc_usdt(), Some(MAX_TRADE_LIMIT)).is_ok());
     }

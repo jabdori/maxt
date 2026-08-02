@@ -11,13 +11,23 @@ use std::task::{Context, Poll};
 use std::time::Duration;
 
 use futures_core::Stream;
+#[cfg(all(test, not(target_arch = "wasm32")))]
 use futures_util::{SinkExt, StreamExt};
 use tokio::sync::{mpsc, watch};
+#[cfg(all(test, not(target_arch = "wasm32")))]
 use tokio_tungstenite::tungstenite::Message;
-use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 
 use crate::error::{Error, Result};
 use crate::types::{Overflow, StreamConfig};
+
+#[cfg(target_arch = "wasm32")]
+#[path = "ws/browser.rs"]
+mod platform;
+#[cfg(not(target_arch = "wasm32"))]
+#[path = "ws/native.rs"]
+mod platform;
+
+use platform::{Idle, Pulse, Socket};
 
 /// Events emitted by a WebSocket session.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -80,8 +90,8 @@ pub(crate) enum HeartbeatFrame {
     Ping,
 }
 
+#[cfg(all(test, not(target_arch = "wasm32")))]
 impl HeartbeatFrame {
-    /// The message actually written to the socket.
     fn message(self) -> Message {
         match self {
             Self::Text(text) => Message::Text(text.into()),
@@ -170,15 +180,26 @@ impl Drop for WsSession {
 }
 
 /// Opens the initial connection and starts its lifecycle task.
+#[cfg(target_arch = "wasm32")]
 pub(crate) async fn connect(connect: WsConnect, config: &StreamConfig) -> Result<WsSession> {
+    send_wrapper::SendWrapper::new(connect_inner(connect, config)).await
+}
+
+/// Opens the initial connection and starts its lifecycle task.
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) async fn connect(connect: WsConnect, config: &StreamConfig) -> Result<WsSession> {
+    connect_inner(connect, config).await
+}
+
+async fn connect_inner(connect: WsConnect, config: &StreamConfig) -> Result<WsSession> {
     let (sender, events) = mpsc::channel(config.buffer_size.max(1));
     let (close, cancelled, completed) = close_channels();
     let config = config.clone();
 
     // Initial connection failures are returned directly to the caller.
-    let socket = open(&connect).await?;
+    let socket = open(&connect, &config).await?;
 
-    tokio::spawn(async move {
+    platform::spawn(async move {
         run(connect, config, socket, sender, cancelled).await;
         completed.send_replace(true);
     });
@@ -186,42 +207,17 @@ pub(crate) async fn connect(connect: WsConnect, config: &StreamConfig) -> Result
     Ok(WsSession { events, close })
 }
 
-type Socket =
-    tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>;
+async fn open(connect: &WsConnect, config: &StreamConfig) -> Result<Socket> {
+    platform::open(connect, config).await
+}
 
-async fn open(connect: &WsConnect) -> Result<Socket> {
-    let mut request = connect
-        .url
-        .as_str()
-        .into_client_request()
-        .map_err(|err| Error::transport(format!("invalid WebSocket URL: {err}")))?;
-
-    // Recreate time-sensitive headers for every handshake.
-    if let Some(headers) = &connect.headers {
-        for (name, value) in headers()? {
-            let parsed: http::HeaderName = name
-                .parse()
-                .map_err(|_| Error::transport(format!("invalid header name `{name}`")))?;
-            let value: http::HeaderValue = value
-                .parse()
-                .map_err(|_| Error::transport(format!("invalid value for header `{name}`")))?;
-            request.headers_mut().insert(parsed, value);
-        }
-    }
-
-    let (mut socket, _) = tokio_tungstenite::connect_async(request)
-        .await
-        .map_err(|err| Error::transport(err.to_string()))?;
-
-    // Recreate time-sensitive subscription frames for every connection.
-    for frame in (connect.subscribe)()? {
-        socket
-            .send(Message::Text(frame.into()))
-            .await
-            .map_err(|err| Error::transport(err.to_string()))?;
-    }
-
-    Ok(socket)
+enum SocketMessage {
+    Text(String),
+    Binary(Vec<u8>),
+    /// Protocol control traffic that only resets the idle timer.
+    #[cfg(not(target_arch = "wasm32"))]
+    Activity,
+    Closed,
 }
 
 /// Returns the caller timeout raised to the provider's minimum when necessary.
@@ -321,13 +317,13 @@ async fn run(
             tokio::select! {
                 biased;
                 () = wait_for_cancel(&mut cancelled) => return,
-                () = tokio::time::sleep(backoff) => {}
+                () = platform::sleep(backoff) => {}
             }
 
             let reopened = tokio::select! {
                 biased;
                 () = wait_for_cancel(&mut cancelled) => return,
-                reopened = open(&connect) => reopened,
+                reopened = open(&connect, &config) => reopened,
             };
             match reopened {
                 Ok(reopened) => {
@@ -375,17 +371,9 @@ async fn pump(
     cancelled: &mut watch::Receiver<bool>,
 ) -> Pump {
     // The first heartbeat is one full interval after the handshake.
-    let mut pulse = connect.heartbeat.as_ref().map(|heartbeat| {
-        let mut ticks = tokio::time::interval_at(
-            tokio::time::Instant::now() + heartbeat.interval,
-            heartbeat.interval,
-        );
-        // Do not burst missed heartbeats after backpressure clears.
-        ticks.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
-        (heartbeat.frame, ticks)
-    });
+    let mut pulse = platform::pulse(connect.heartbeat.as_ref());
     // Only inbound traffic resets the deadline; consumer waits do not count as idle.
-    let mut deadline = tokio::time::Instant::now() + idle_timeout;
+    let mut idle = Idle::new(idle_timeout, connect.heartbeat.as_ref());
     // This controls backoff only; reconnect budget accounting is separate.
     let mut carried = false;
     // Retry a dropped reconnect notice before delivering post-gap data.
@@ -406,7 +394,7 @@ async fn pump(
             Handover::ConsumerGone => return Pump::ConsumerGone,
             Handover::SocketDead => return Pump::Disconnected { carried },
         }
-        deadline = tokio::time::Instant::now() + idle_timeout;
+        idle.reset(idle_timeout);
     }
 
     loop {
@@ -414,9 +402,9 @@ async fn pump(
             biased;
             () = wait_for_cancel(cancelled) => return Pump::Cancelled,
             // Treat inbound silence as a disconnected socket.
-            () = tokio::time::sleep_until(deadline) => return Pump::Disconnected { carried },
-            frame = due(pulse.as_mut()) => {
-                if socket.send(frame).await.is_err() {
+            () = &mut idle => return Pump::Disconnected { carried },
+            frame = platform::due(pulse.as_mut()) => {
+                if socket.send_heartbeat(frame).await.is_err() {
                     return Pump::Disconnected { carried };
                 }
                 continue;
@@ -429,14 +417,14 @@ async fn pump(
             Some(Err(_)) => return Pump::Disconnected { carried },
             Some(Ok(message)) => message,
         };
-        deadline = tokio::time::Instant::now() + idle_timeout;
+        idle.reset(idle_timeout);
 
         let event = match message {
-            Message::Text(text) => WsCommand::Text(text.to_string()),
-            Message::Binary(bytes) => WsCommand::Binary(bytes.to_vec()),
-            // tokio-tungstenite handles protocol pings; control traffic resets idle time.
-            Message::Ping(_) | Message::Pong(_) | Message::Frame(_) => continue,
-            Message::Close(_) => return Pump::Disconnected { carried },
+            SocketMessage::Text(text) => WsCommand::Text(text),
+            SocketMessage::Binary(bytes) => WsCommand::Binary(bytes),
+            #[cfg(not(target_arch = "wasm32"))]
+            SocketMessage::Activity => continue,
+            SocketMessage::Closed => return Pump::Disconnected { carried },
         };
         carried = true;
 
@@ -456,7 +444,7 @@ async fn pump(
                 Handover::ConsumerGone => return Pump::ConsumerGone,
                 Handover::SocketDead => return Pump::Disconnected { carried },
             }
-            deadline = tokio::time::Instant::now() + idle_timeout;
+            idle.reset(idle_timeout);
             if owed {
                 // Post-gap data cannot overtake a pending reconnect notice.
                 continue;
@@ -469,21 +457,7 @@ async fn pump(
             Handover::SocketDead => return Pump::Disconnected { carried },
         }
         // Exclude time spent waiting on a backpressured consumer from idle time.
-        deadline = tokio::time::Instant::now() + idle_timeout;
-    }
-}
-
-/// Heartbeat frame and clock owned by one socket.
-type Pulse = (HeartbeatFrame, tokio::time::Interval);
-
-/// Waits for the next heartbeat, or forever when heartbeats are disabled.
-async fn due(pulse: Option<&mut Pulse>) -> Message {
-    match pulse {
-        Some((frame, ticks)) => {
-            ticks.tick().await;
-            frame.message()
-        }
-        None => std::future::pending().await,
+        idle.reset(idle_timeout);
     }
 }
 
@@ -529,8 +503,8 @@ async fn hand_over(
                 }
                 Err(_) => Handover::ConsumerGone,
             },
-            frame = due(pulse.as_mut()) => {
-                if socket.send(frame).await.is_err() {
+            frame = platform::due(pulse.as_mut()) => {
+                if socket.send_heartbeat(frame).await.is_err() {
                     // Backpressure still guarantees delivery of the already-read event.
                     return match sender.reserve().await {
                         Ok(permit) => {
@@ -595,7 +569,7 @@ fn backoff_delay(config: &StreamConfig, mute_run: u32) -> Duration {
     Duration::from_millis(delay)
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests {
     use std::sync::Arc;
     use std::sync::atomic::{AtomicUsize, Ordering};
@@ -1591,18 +1565,21 @@ mod tests {
     /// Returns a locally closed socket whose writes fail immediately.
     async fn write_dead_socket() -> Socket {
         let (address, _received) = one_shot_server(true).await;
-        let mut socket = open(&WsConnect {
-            url: format!("ws://{address}"),
-            headers: None,
-            subscribe: WsConnect::fixed(Vec::new()),
-            heartbeat: None,
-        })
+        let mut socket = open(
+            &WsConnect {
+                url: format!("ws://{address}"),
+                headers: None,
+                subscribe: WsConnect::fixed(Vec::new()),
+                heartbeat: None,
+            },
+            &StreamConfig::default(),
+        )
         .await
         .expect("a connection to the local server");
 
-        let _ = socket.close(None).await;
+        socket.close_for_test().await;
         assert!(
-            socket.send(Message::Ping(Vec::new().into())).await.is_err(),
+            socket.send_heartbeat(HeartbeatFrame::Ping).await.is_err(),
             "a closed socket should refuse writes"
         );
 

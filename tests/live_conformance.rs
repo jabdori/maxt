@@ -526,7 +526,8 @@ fn a_payload_the_exchange_does_not_stamp_gets_no_clock_reading() {
 ///
 /// Ignored because it touches the network and waits through [`WINDOW`]. Each
 /// feed is tested separately; mixed-feed socket topology is outside this test.
-#[tokio::test(flavor = "multi_thread")]
+#[cfg_attr(target_arch = "wasm32", tokio::test)]
+#[cfg_attr(not(target_arch = "wasm32"), tokio::test(flavor = "multi_thread"))]
 #[ignore = "opens a socket to every exchange; run with --ignored"]
 async fn every_carried_feed_delivers_what_the_docs_promise() {
     let venues = venues();

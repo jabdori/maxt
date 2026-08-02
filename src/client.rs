@@ -109,10 +109,16 @@ impl<A: Adapter> Client<A> {
 
     /// Opens a live market data subscription with default connection settings.
     ///
+    /// Browser WebAssembly uses [`Overflow::DropNewest`](crate::Overflow::DropNewest)
+    /// because the browser WebSocket API cannot pause inbound delivery. Native
+    /// clients retain the default backpressure policy. Use
+    /// [`Client::subscribe_with`] for an explicit policy; browser WebSockets
+    /// reject [`Overflow::Backpressure`](crate::Overflow::Backpressure).
+    ///
     /// Use [`Client::subscribe_with`] to change reconnect and buffering
     /// behaviour. See [`MarketStream`] for item and termination semantics.
     pub async fn subscribe(&self, subscription: &Subscription) -> Result<MarketStream> {
-        self.subscribe_with(subscription, &StreamConfig::default())
+        self.subscribe_with(subscription, &default_stream_config())
             .await
     }
 
@@ -162,9 +168,13 @@ impl<A: Adapter> Client<A> {
     ///
     /// Requires credentials.
     ///
+    /// Browser WebAssembly uses [`Overflow::DropNewest`](crate::Overflow::DropNewest)
+    /// for the same browser WebSocket limitation as [`Client::subscribe`].
+    /// Native clients retain the default backpressure policy.
+    ///
     /// See [`AccountStream`] for error, reconnect, and termination semantics.
     pub async fn subscribe_account(&self) -> Result<AccountStream> {
-        self.subscribe_account_with(&StreamConfig::default()).await
+        self.subscribe_account_with(&default_stream_config()).await
     }
 
     /// Opens a live private account subscription with explicit connection settings.
@@ -248,6 +258,20 @@ impl<A: Adapter> Client<A> {
     }
 }
 
+fn default_stream_config() -> StreamConfig {
+    #[cfg(target_arch = "wasm32")]
+    {
+        StreamConfig {
+            overflow: crate::types::Overflow::DropNewest,
+            ..StreamConfig::default()
+        }
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        StreamConfig::default()
+    }
+}
+
 impl<A: Adapter> From<A> for Client<A> {
     fn from(adapter: A) -> Self {
         Self::new(adapter)
@@ -262,9 +286,11 @@ pub(crate) fn open_positions(mut positions: Vec<Position>) -> Vec<Position> {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::{Arc, Mutex};
+
     use super::*;
     use crate::adapter::BoxFuture;
-    use crate::{Decimal, Error, Side};
+    use crate::{Decimal, Error, Feed, MarketEvent, Overflow, Side};
 
     #[derive(Debug, Clone)]
     struct PublicOnly;
@@ -407,5 +433,87 @@ mod tests {
         for client in &clients {
             assert!(!client.markets(MarketKind::Spot).await.unwrap().is_empty());
         }
+    }
+
+    #[derive(Debug, Clone, Default)]
+    struct RecordsStreamConfig(Arc<Mutex<Vec<StreamConfig>>>);
+
+    impl Adapter for RecordsStreamConfig {
+        fn exchange(&self) -> Exchange {
+            Exchange::Bithumb
+        }
+
+        fn supports(&self, _feature: Feature) -> bool {
+            true
+        }
+
+        fn subscribe(
+            &self,
+            _subscription: &Subscription,
+            config: &StreamConfig,
+        ) -> BoxFuture<'_, Result<MarketStream>> {
+            self.0.lock().unwrap().push(config.clone());
+            Box::pin(async {
+                Ok(MarketStream::new(futures_util::stream::empty::<
+                    Result<MarketEvent>,
+                >()))
+            })
+        }
+
+        fn subscribe_account(&self, config: &StreamConfig) -> BoxFuture<'_, Result<AccountStream>> {
+            self.0.lock().unwrap().push(config.clone());
+            Box::pin(async {
+                Ok(AccountStream::new(futures_util::stream::empty::<
+                    Result<crate::AccountEvent>,
+                >()))
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn default_stream_methods_use_the_platform_supported_overflow() {
+        let adapter = RecordsStreamConfig::default();
+        let seen = Arc::clone(&adapter.0);
+        let client = Client::new(adapter);
+        let subscription = Subscription::new()
+            .market(Market::spot(Exchange::Bithumb, "BTC", "KRW"))
+            .feed(Feed::Trades);
+
+        client.subscribe(&subscription).await.unwrap();
+        client.subscribe_account().await.unwrap();
+
+        #[cfg(target_arch = "wasm32")]
+        let expected = Overflow::DropNewest;
+        #[cfg(not(target_arch = "wasm32"))]
+        let expected = Overflow::Backpressure;
+        assert_eq!(
+            seen.lock()
+                .unwrap()
+                .iter()
+                .map(|config| config.overflow)
+                .collect::<Vec<_>>(),
+            vec![expected, expected]
+        );
+    }
+
+    #[tokio::test]
+    async fn explicit_stream_methods_preserve_backpressure() {
+        let adapter = RecordsStreamConfig::default();
+        let seen = Arc::clone(&adapter.0);
+        let client = Client::new(adapter);
+        let subscription = Subscription::new()
+            .market(Market::spot(Exchange::Bithumb, "BTC", "KRW"))
+            .feed(Feed::Trades);
+        let config = StreamConfig::default();
+
+        client.subscribe_with(&subscription, &config).await.unwrap();
+        client.subscribe_account_with(&config).await.unwrap();
+
+        assert!(
+            seen.lock()
+                .unwrap()
+                .iter()
+                .all(|config| config.overflow == Overflow::Backpressure)
+        );
     }
 }

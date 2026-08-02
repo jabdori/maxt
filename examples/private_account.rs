@@ -15,7 +15,7 @@ use maxt::{Client, Feature};
 const ACCESS_KEY: &str = "UPBIT_ACCESS_KEY";
 const SECRET_KEY: &str = "UPBIT_SECRET_KEY";
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> maxt::Result<()> {
     let (Ok(access_key), Ok(secret_key)) = (std::env::var(ACCESS_KEY), std::env::var(SECRET_KEY))
     else {

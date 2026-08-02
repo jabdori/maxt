@@ -3,11 +3,12 @@
 //! Private requests use an HS256 JWT. Parameterized requests also include a
 //! SHA-512 query hash.
 
-use jsonwebtoken::{Algorithm, EncodingKey, Header};
+use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
+use hmac::{Hmac, KeyInit, Mac};
 use rust_decimal::Decimal;
 use serde::Serialize;
 use serde_json::Value;
-use sha2::{Digest, Sha512};
+use sha2::{Digest, Sha256, Sha512};
 
 use crate::error::{Error, Result};
 use crate::request::OrderRequest;
@@ -62,14 +63,27 @@ fn authorization_with(
         query_hash,
     };
 
-    let token = jsonwebtoken::encode(
-        &Header::new(Algorithm::HS256),
-        &claims,
-        &EncodingKey::from_secret(credentials.secret_key.as_bytes()),
-    )
-    .map_err(|err| Error::auth(format!("could not sign the Bithumb request: {err}")))?;
+    let token = encode_hs256(&claims, credentials.secret_key.as_bytes())?;
 
     Ok(format!("Bearer {token}"))
+}
+
+fn encode_hs256(claims: &impl Serialize, secret: &[u8]) -> Result<String> {
+    let header = URL_SAFE_NO_PAD.encode(br#"{"typ":"JWT","alg":"HS256"}"#);
+    let payload =
+        URL_SAFE_NO_PAD
+            .encode(serde_json::to_vec(claims).map_err(|err| {
+                Error::auth(format!("could not sign the Bithumb request: {err}"))
+            })?);
+    let message = format!("{header}.{payload}");
+    let mut mac = Hmac::<Sha256>::new_from_slice(secret)
+        .map_err(|err| Error::auth(format!("could not sign the Bithumb request: {err}")))?;
+    mac.update(message.as_bytes());
+
+    Ok(format!(
+        "{message}.{}",
+        URL_SAFE_NO_PAD.encode(mac.finalize().into_bytes())
+    ))
 }
 
 fn sha512_hex(bytes: &[u8]) -> String {

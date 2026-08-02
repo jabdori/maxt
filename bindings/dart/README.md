@@ -32,11 +32,16 @@ Future<void> main() async {
   final client = Client(BinanceAdapter.spot());
   final market = Market.spot(Exchange.binance, 'BTC', 'USDT');
   final ticker = await client.ticker(market);
+  final filters = await client.adapter.spotSymbolFilters(market);
 
   print('$market: ${ticker.lastPrice}');
+  print('${filters.symbol} tick size: ${filters.tickSize}');
   await Maxt.dispose();
 }
 ```
+
+`ticker()` is part of the common API. `spotSymbolFilters()` is available only
+on `BinanceAdapter`, through `client.adapter`.
 
 Credentials are optional for public data and required for private account or
 trading methods. Pass both fields together when constructing an authenticated

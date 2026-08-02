@@ -129,6 +129,13 @@ void _validateUnsigned(
   }
 }
 
+int? _checkedUint32(int? value, {required String field}) {
+  if (value != null) {
+    _validateUnsigned(value, field: field, max: _uint32Max);
+  }
+  return value;
+}
+
 StreamConfig _streamConfigFromWire(native_adapter.WireStreamConfig value) =>
     StreamConfig(
       maxReconnectAttempts: value.maxReconnectAttempts,
@@ -164,7 +171,7 @@ wire.WireCandleRequest _candleRequestToWire(CandleRequest value) =>
       interval: _intervalToWire(value.interval),
       fromNs: value.from?.nanosecondsSinceEpoch,
       toNs: value.to?.nanosecondsSinceEpoch,
-      limit: value.limit,
+      limit: _checkedUint32(value.limit, field: 'limit'),
     );
 
 CandleRequest _candleRequestFromWire(wire.WireCandleRequest value) =>
@@ -182,7 +189,7 @@ wire.WireHistoryRequest _historyRequestToWire(HistoryRequest value) =>
       fromNs: value.from?.nanosecondsSinceEpoch,
       toNs: value.to?.nanosecondsSinceEpoch,
       cursor: value.cursor?.value,
-      limit: value.limit,
+      limit: _checkedUint32(value.limit, field: 'limit'),
     );
 
 HistoryRequest _historyRequestFromWire(wire.WireHistoryRequest value) =>

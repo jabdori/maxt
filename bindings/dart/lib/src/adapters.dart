@@ -119,12 +119,18 @@ abstract base class _NativeAdapterBase extends AdapterBase
 
   @override
   Future<List<Trade>> trades(Market market, [int? limit]) => _nativeFuture(
-    () => _handle.trades(market: _marketToWire(market), limit: limit),
+    () => _handle.trades(
+      market: _marketToWire(market),
+      limit: _checkedUint32(limit, field: 'limit'),
+    ),
   ).then((values) => values.map(_tradeFromWire).toList(growable: false));
 
   @override
   Future<OrderBook> orderBook(Market market, [int? depth]) => _nativeFuture(
-    () => _handle.orderBook(market: _marketToWire(market), depth: depth),
+    () => _handle.orderBook(
+      market: _marketToWire(market),
+      depth: _checkedUint32(depth, field: 'depth'),
+    ),
   ).then(_orderBookFromWire);
 
   @override
@@ -259,7 +265,7 @@ final class UpbitAdapter extends _NativeAdapterBase {
       _nativeFuture(
         () => _handle.upbitOrderBooks(
           markets: markets.map(_marketToWire).toList(growable: false),
-          depth: depth,
+          depth: _checkedUint32(depth, field: 'depth'),
         ),
       ).then(
         (values) => values.map(_orderBookFromWire).toList(growable: false),
@@ -426,7 +432,7 @@ final class HyperliquidAdapter extends _NativeAdapterBase {
       fromNs: from?.nanosecondsSinceEpoch,
       toNs: to?.nanosecondsSinceEpoch,
       cursor: cursor?.value,
-      limit: limit,
+      limit: _checkedUint32(limit, field: 'limit'),
     ),
   ).then(_hyperliquidLedgerPageFromWire);
 

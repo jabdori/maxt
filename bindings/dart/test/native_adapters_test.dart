@@ -33,4 +33,35 @@ void main() {
       ),
     );
   });
+
+  test('공급자 전용 u32 인자를 native 호출 전에 범위 검증한다', () async {
+    final upbit = UpbitAdapter();
+    final hyperliquid = HyperliquidAdapter();
+    final cases =
+        <({String field, Future<Object?> Function(int value) invoke})>[
+          (
+            field: 'depth',
+            invoke: (value) => upbit.orderBooks(const [], value),
+          ),
+          (
+            field: 'limit',
+            invoke: (value) => hyperliquid.nonFundingLedger(limit: value),
+          ),
+        ];
+
+    for (final testCase in cases) {
+      for (final value in [-1, 4294967296]) {
+        await expectLater(
+          testCase.invoke(value),
+          throwsA(
+            isA<InvalidRequestError>().having(
+              (error) => error.field,
+              'field',
+              testCase.field,
+            ),
+          ),
+        );
+      }
+    }
+  });
 }

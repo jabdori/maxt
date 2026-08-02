@@ -7,7 +7,7 @@ license = "MIT"
 description = "Native extension for the maxt Python package."
 repository = "https://github.com/jabdori/maxt"
 homepage = "https://github.com/jabdori/maxt"
-readme = "PYPI.md"
+readme = "README.md"
 publish = false
 
 [features]

@@ -52,7 +52,7 @@ cargo run --example public_rest
 - [Common API reference](docs/common-api.md)
 - [Provider matrix](docs/providers.md)
 - Rust API reference: `cargo doc --open`
-- [Python binding](bindings/python/PYPI.md)
+- [Python binding](bindings/python/README.md)
 - [Dart / Flutter binding](bindings/dart/README.md)
 - [Runnable examples](examples/)
 - [Changelog](CHANGELOG.md)

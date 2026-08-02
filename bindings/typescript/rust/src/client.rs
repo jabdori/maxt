@@ -1,6 +1,13 @@
 use std::sync::Arc;
 
+#[cfg(not(test))]
+use std::future::Future;
+
 use maxt::{Adapter, Client, Error};
+#[cfg(not(test))]
+use napi::bindgen_prelude::{Either, PromiseRaw};
+#[cfg(not(test))]
+use napi::{Env, Unknown};
 #[cfg(not(test))]
 use napi_derive::napi;
 use serde::Serialize;
@@ -11,7 +18,7 @@ use crate::convert::{
     WireBalance, WireCandle, WireCandleRequest, WireFundingPayment, WireFundingRate,
     WireHistoryRequest, WireMarginRequest, WireMarginSummary, WireMarket, WireMarketInfo,
     WireOrder, WireOrderBook, WireOrderRequest, WirePage, WirePosition, WireStreamConfig,
-    WireSubscription, WireTicker, WireTrade, feature_from_id, from_wire_value,
+    WireSubscription, WireTicker, WireTrade, feature_from_id, from_wire_text,
     market_kind_from_wire, outcome,
 };
 use crate::stream::NativeStreamRegistry;
@@ -34,23 +41,10 @@ impl NativeClient {
     pub(crate) fn for_test(adapter: Box<dyn Adapter>) -> Self {
         Self::from_boxed(adapter)
     }
-}
 
-#[cfg_attr(not(test), napi)]
-impl NativeClient {
-    #[cfg_attr(not(test), napi(js_name = "exchange"))]
-    pub fn exchange(&self) -> String {
-        self.inner.exchange().id().to_owned()
-    }
-
-    #[cfg_attr(not(test), napi(js_name = "supports"))]
-    pub fn supports(&self, feature: String) -> bool {
-        feature_from_id(&feature).is_some_and(|feature| self.inner.supports(feature))
-    }
-
-    #[cfg_attr(not(test), napi(js_name = "markets"))]
-    pub async fn markets(&self, kind: Value) -> Value {
-        let kind = from_wire_value::<String>(kind, "kind")
+    async fn markets(&self, kind: maxt::Result<String>) -> Value {
+        let kind = kind
+            .and_then(|kind| from_wire_text::<String>(&kind, "kind"))
             .and_then(|kind| market_kind_from_wire(&kind, "kind"));
         match kind {
             Ok(kind) => outcome(wire_vec::<_, WireMarketInfo>(
@@ -59,11 +53,20 @@ impl NativeClient {
             Err(error) => outcome::<Value>(Err(error)),
         }
     }
+}
 
-    #[cfg_attr(not(test), napi(js_name = "trades"))]
-    pub async fn trades(&self, market: Value, limit: Value) -> Value {
+impl NativeClient {
+    fn exchange(&self) -> String {
+        self.inner.exchange().id().to_owned()
+    }
+
+    fn supports(&self, feature: String) -> bool {
+        feature_from_id(&feature).is_some_and(|feature| self.inner.supports(feature))
+    }
+
+    async fn trades(&self, market: maxt::Result<String>, limit: maxt::Result<String>) -> Value {
         let market = parse_wire::<maxt::Market, WireMarket>(market, "market");
-        let limit = from_wire_value::<Option<u32>>(limit, "limit");
+        let limit = parse_wire_text::<Option<u32>>(limit, "limit");
         match (market, limit) {
             (Ok(market), Ok(limit)) => outcome(wire_vec::<_, WireTrade>(
                 self.inner.trades(&market, limit).await,
@@ -72,10 +75,9 @@ impl NativeClient {
         }
     }
 
-    #[cfg_attr(not(test), napi(js_name = "orderBook"))]
-    pub async fn order_book(&self, market: Value, depth: Value) -> Value {
+    async fn order_book(&self, market: maxt::Result<String>, depth: maxt::Result<String>) -> Value {
         let market = parse_wire::<maxt::Market, WireMarket>(market, "market");
-        let depth = from_wire_value::<Option<u32>>(depth, "depth");
+        let depth = parse_wire_text::<Option<u32>>(depth, "depth");
         match (market, depth) {
             (Ok(market), Ok(depth)) => outcome(wire_one::<_, WireOrderBook>(
                 self.inner.order_book(&market, depth).await,
@@ -84,16 +86,14 @@ impl NativeClient {
         }
     }
 
-    #[cfg_attr(not(test), napi(js_name = "ticker"))]
-    pub async fn ticker(&self, market: Value) -> Value {
+    async fn ticker(&self, market: maxt::Result<String>) -> Value {
         match parse_wire::<maxt::Market, WireMarket>(market, "market") {
             Ok(market) => outcome(wire_one::<_, WireTicker>(self.inner.ticker(&market).await)),
             Err(error) => outcome::<Value>(Err(error)),
         }
     }
 
-    #[cfg_attr(not(test), napi(js_name = "candles"))]
-    pub async fn candles(&self, request: Value) -> Value {
+    async fn candles(&self, request: maxt::Result<String>) -> Value {
         match parse_wire::<maxt::CandleRequest, WireCandleRequest>(request, "request") {
             Ok(request) => outcome(wire_vec::<_, WireCandle>(
                 self.inner.candles(&request).await,
@@ -102,19 +102,16 @@ impl NativeClient {
         }
     }
 
-    #[cfg_attr(not(test), napi(js_name = "balances"))]
-    pub async fn balances(&self) -> Value {
+    async fn balances(&self) -> Value {
         outcome(wire_vec::<_, WireBalance>(self.inner.balances().await))
     }
 
-    #[cfg_attr(not(test), napi(js_name = "openOrders"))]
-    pub async fn open_orders(&self) -> Value {
+    async fn open_orders(&self) -> Value {
         outcome(wire_vec::<_, WireOrder>(self.inner.open_orders().await))
     }
 
-    #[cfg_attr(not(test), napi(js_name = "openOrdersOn"))]
-    pub async fn open_orders_on(&self, market: Value) -> Value {
-        let market = from_wire_value::<WireMarket>(market, "market").and_then(TryInto::try_into);
+    async fn open_orders_on(&self, market: maxt::Result<String>) -> Value {
+        let market = parse_wire_text::<WireMarket>(market, "market").and_then(TryInto::try_into);
         match market {
             Ok(market) => outcome(wire_vec::<_, WireOrder>(
                 self.inner.open_orders_on(&market).await,
@@ -123,13 +120,11 @@ impl NativeClient {
         }
     }
 
-    #[cfg_attr(not(test), napi(js_name = "positions"))]
-    pub async fn positions(&self) -> Value {
+    async fn positions(&self) -> Value {
         outcome(wire_vec::<_, WirePosition>(self.inner.positions().await))
     }
 
-    #[cfg_attr(not(test), napi(js_name = "placeOrder"))]
-    pub async fn place_order(&self, request: Value) -> Value {
+    async fn place_order(&self, request: maxt::Result<String>) -> Value {
         match parse_wire::<maxt::OrderRequest, WireOrderRequest>(request, "request") {
             Ok(request) => outcome(wire_one::<_, WireOrder>(
                 self.inner.place_order(&request).await,
@@ -138,10 +133,13 @@ impl NativeClient {
         }
     }
 
-    #[cfg_attr(not(test), napi(js_name = "cancelOrder"))]
-    pub async fn cancel_order(&self, market: Value, order_id: Value) -> Value {
+    async fn cancel_order(
+        &self,
+        market: maxt::Result<String>,
+        order_id: maxt::Result<String>,
+    ) -> Value {
         let market = parse_wire::<maxt::Market, WireMarket>(market, "market");
-        let order_id = from_wire_value::<String>(order_id, "order_id");
+        let order_id = parse_wire_text::<String>(order_id, "order_id");
         match (market, order_id) {
             (Ok(market), Ok(order_id)) => outcome(wire_one::<_, WireOrder>(
                 self.inner.cancel_order(&market, &order_id).await,
@@ -150,8 +148,7 @@ impl NativeClient {
         }
     }
 
-    #[cfg_attr(not(test), napi(js_name = "positionsOn"))]
-    pub async fn positions_on(&self, market: Value) -> Value {
+    async fn positions_on(&self, market: maxt::Result<String>) -> Value {
         match parse_wire::<maxt::Market, WireMarket>(market, "market") {
             Ok(market) => outcome(wire_vec::<_, WirePosition>(
                 self.inner.positions_on(&market).await,
@@ -160,15 +157,13 @@ impl NativeClient {
         }
     }
 
-    #[cfg_attr(not(test), napi(js_name = "marginSummary"))]
-    pub async fn margin_summary(&self) -> Value {
+    async fn margin_summary(&self) -> Value {
         outcome(wire_one::<_, WireMarginSummary>(
             self.inner.margin_summary().await,
         ))
     }
 
-    #[cfg_attr(not(test), napi(js_name = "fundingRates"))]
-    pub async fn funding_rates(&self, request: Value) -> Value {
+    async fn funding_rates(&self, request: maxt::Result<String>) -> Value {
         match parse_wire::<maxt::HistoryRequest, WireHistoryRequest>(request, "request") {
             Ok(request) => outcome(wire_one::<_, WirePage<WireFundingRate>>(
                 self.inner.funding_rates(&request).await,
@@ -177,8 +172,7 @@ impl NativeClient {
         }
     }
 
-    #[cfg_attr(not(test), napi(js_name = "fundingPayments"))]
-    pub async fn funding_payments(&self, request: Value) -> Value {
+    async fn funding_payments(&self, request: maxt::Result<String>) -> Value {
         match parse_wire::<maxt::HistoryRequest, WireHistoryRequest>(request, "request") {
             Ok(request) => outcome(wire_one::<_, WirePage<WireFundingPayment>>(
                 self.inner.funding_payments(&request).await,
@@ -187,17 +181,15 @@ impl NativeClient {
         }
     }
 
-    #[cfg_attr(not(test), napi(js_name = "setMargin"))]
-    pub async fn set_margin(&self, request: Value) -> Value {
+    async fn set_margin(&self, request: maxt::Result<String>) -> Value {
         match parse_wire::<maxt::MarginRequest, WireMarginRequest>(request, "request") {
             Ok(request) => outcome(self.inner.set_margin(&request).await.map(|()| Value::Null)),
             Err(error) => outcome::<Value>(Err(error)),
         }
     }
 
-    #[cfg_attr(not(test), napi(js_name = "subscribe"))]
-    pub async fn subscribe(&self, subscription: Value) -> Value {
-        let subscription = from_wire_value::<WireSubscription>(subscription, "subscription")
+    async fn subscribe(&self, subscription: maxt::Result<String>) -> Value {
+        let subscription = parse_wire_text::<WireSubscription>(subscription, "subscription")
             .and_then(TryInto::try_into);
         let result = match subscription {
             Ok(subscription) => match self.inner.subscribe(&subscription).await {
@@ -209,12 +201,15 @@ impl NativeClient {
         outcome(result)
     }
 
-    #[cfg_attr(not(test), napi(js_name = "subscribeWith"))]
-    pub async fn subscribe_with(&self, subscription: Value, config: Value) -> Value {
-        let subscription = from_wire_value::<WireSubscription>(subscription, "subscription")
+    async fn subscribe_with(
+        &self,
+        subscription: maxt::Result<String>,
+        config: maxt::Result<String>,
+    ) -> Value {
+        let subscription = parse_wire_text::<WireSubscription>(subscription, "subscription")
             .and_then(TryInto::try_into);
         let config =
-            from_wire_value::<WireStreamConfig>(config, "config").and_then(TryInto::try_into);
+            parse_wire_text::<WireStreamConfig>(config, "config").and_then(TryInto::try_into);
         let result = match (subscription, config) {
             (Ok(subscription), Ok(config)) => {
                 match self.inner.subscribe_with(&subscription, &config).await {
@@ -227,8 +222,7 @@ impl NativeClient {
         outcome(result)
     }
 
-    #[cfg_attr(not(test), napi(js_name = "subscribeAccount"))]
-    pub async fn subscribe_account(&self) -> Value {
+    async fn subscribe_account(&self) -> Value {
         let result = match self.inner.subscribe_account().await {
             Ok(stream) => self.streams.insert_account(stream).await,
             Err(error) => Err(error),
@@ -236,10 +230,9 @@ impl NativeClient {
         outcome(result)
     }
 
-    #[cfg_attr(not(test), napi(js_name = "subscribeAccountWith"))]
-    pub async fn subscribe_account_with(&self, config: Value) -> Value {
+    async fn subscribe_account_with(&self, config: maxt::Result<String>) -> Value {
         let config =
-            from_wire_value::<WireStreamConfig>(config, "config").and_then(TryInto::try_into);
+            parse_wire_text::<WireStreamConfig>(config, "config").and_then(TryInto::try_into);
         let result = match config {
             Ok(config) => match self.inner.subscribe_account_with(&config).await {
                 Ok(stream) => self.streams.insert_account(stream).await,
@@ -250,18 +243,16 @@ impl NativeClient {
         outcome(result)
     }
 
-    #[cfg_attr(not(test), napi(js_name = "streamNext"))]
-    pub async fn stream_next(&self, id: Value) -> Value {
-        let result = match from_wire_value::<String>(id, "stream_id") {
+    async fn stream_next(&self, id: maxt::Result<String>) -> Value {
+        let result = match parse_wire_text::<String>(id, "stream_id") {
             Ok(id) => self.streams.next(&id).await,
             Err(error) => Err(error),
         };
         outcome(result)
     }
 
-    #[cfg_attr(not(test), napi(js_name = "streamClose"))]
-    pub async fn stream_close(&self, id: Value) -> Value {
-        let result = match from_wire_value::<String>(id, "stream_id") {
+    async fn stream_close(&self, id: maxt::Result<String>) -> Value {
+        let result = match parse_wire_text::<String>(id, "stream_id") {
             Ok(id) => self.streams.close(&id).await,
             Err(error) => Err(error),
         };
@@ -269,12 +260,303 @@ impl NativeClient {
     }
 }
 
-fn parse_wire<T, W>(value: Value, field: &str) -> maxt::Result<T>
+#[cfg(not(test))]
+#[napi]
+impl NativeClient {
+    #[napi(js_name = "exchange")]
+    pub fn exchange_native(&self) -> String {
+        self.exchange()
+    }
+
+    #[napi(js_name = "supports")]
+    pub fn supports_native(&self, feature: String) -> bool {
+        self.supports(feature)
+    }
+
+    #[napi(js_name = "markets", ts_args_type = "kind: string")]
+    pub fn markets_native<'env>(
+        &self,
+        env: &'env Env,
+        kind: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let kind = native_json_text(kind, "kind");
+        spawn_native(env, async move { client.markets(kind).await })
+    }
+
+    #[napi(js_name = "trades", ts_args_type = "market: string, limit: string")]
+    pub fn trades_native<'env>(
+        &self,
+        env: &'env Env,
+        market: NativeJsonText<'env>,
+        limit: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let market = native_json_text(market, "market");
+        let limit = native_json_text(limit, "limit");
+        spawn_native(env, async move { client.trades(market, limit).await })
+    }
+
+    #[napi(js_name = "orderBook", ts_args_type = "market: string, depth: string")]
+    pub fn order_book_native<'env>(
+        &self,
+        env: &'env Env,
+        market: NativeJsonText<'env>,
+        depth: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let market = native_json_text(market, "market");
+        let depth = native_json_text(depth, "depth");
+        spawn_native(env, async move { client.order_book(market, depth).await })
+    }
+
+    #[napi(js_name = "ticker", ts_args_type = "market: string")]
+    pub fn ticker_native<'env>(
+        &self,
+        env: &'env Env,
+        market: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let market = native_json_text(market, "market");
+        spawn_native(env, async move { client.ticker(market).await })
+    }
+
+    #[napi(js_name = "candles", ts_args_type = "request: string")]
+    pub fn candles_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { client.candles(request).await })
+    }
+
+    #[napi(js_name = "balances")]
+    pub async fn balances_native(&self) -> Value {
+        self.balances().await
+    }
+
+    #[napi(js_name = "openOrders")]
+    pub async fn open_orders_native(&self) -> Value {
+        self.open_orders().await
+    }
+
+    #[napi(js_name = "openOrdersOn", ts_args_type = "market: string")]
+    pub fn open_orders_on_native<'env>(
+        &self,
+        env: &'env Env,
+        market: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let market = native_json_text(market, "market");
+        spawn_native(env, async move { client.open_orders_on(market).await })
+    }
+
+    #[napi(js_name = "positions")]
+    pub async fn positions_native(&self) -> Value {
+        self.positions().await
+    }
+
+    #[napi(js_name = "placeOrder", ts_args_type = "request: string")]
+    pub fn place_order_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { client.place_order(request).await })
+    }
+
+    #[napi(
+        js_name = "cancelOrder",
+        ts_args_type = "market: string, orderId: string"
+    )]
+    pub fn cancel_order_native<'env>(
+        &self,
+        env: &'env Env,
+        market: NativeJsonText<'env>,
+        order_id: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let market = native_json_text(market, "market");
+        let order_id = native_json_text(order_id, "order_id");
+        spawn_native(
+            env,
+            async move { client.cancel_order(market, order_id).await },
+        )
+    }
+
+    #[napi(js_name = "positionsOn", ts_args_type = "market: string")]
+    pub fn positions_on_native<'env>(
+        &self,
+        env: &'env Env,
+        market: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let market = native_json_text(market, "market");
+        spawn_native(env, async move { client.positions_on(market).await })
+    }
+
+    #[napi(js_name = "marginSummary")]
+    pub async fn margin_summary_native(&self) -> Value {
+        self.margin_summary().await
+    }
+
+    #[napi(js_name = "fundingRates", ts_args_type = "request: string")]
+    pub fn funding_rates_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { client.funding_rates(request).await })
+    }
+
+    #[napi(js_name = "fundingPayments", ts_args_type = "request: string")]
+    pub fn funding_payments_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { client.funding_payments(request).await })
+    }
+
+    #[napi(js_name = "setMargin", ts_args_type = "request: string")]
+    pub fn set_margin_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { client.set_margin(request).await })
+    }
+
+    #[napi(js_name = "subscribe", ts_args_type = "subscription: string")]
+    pub fn subscribe_native<'env>(
+        &self,
+        env: &'env Env,
+        subscription: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let subscription = native_json_text(subscription, "subscription");
+        spawn_native(env, async move { client.subscribe(subscription).await })
+    }
+
+    #[napi(
+        js_name = "subscribeWith",
+        ts_args_type = "subscription: string, config: string"
+    )]
+    pub fn subscribe_with_native<'env>(
+        &self,
+        env: &'env Env,
+        subscription: NativeJsonText<'env>,
+        config: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let subscription = native_json_text(subscription, "subscription");
+        let config = native_json_text(config, "config");
+        spawn_native(env, async move {
+            client.subscribe_with(subscription, config).await
+        })
+    }
+
+    #[napi(js_name = "subscribeAccount")]
+    pub async fn subscribe_account_native(&self) -> Value {
+        self.subscribe_account().await
+    }
+
+    #[napi(js_name = "subscribeAccountWith", ts_args_type = "config: string")]
+    pub fn subscribe_account_with_native<'env>(
+        &self,
+        env: &'env Env,
+        config: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let config = native_json_text(config, "config");
+        spawn_native(
+            env,
+            async move { client.subscribe_account_with(config).await },
+        )
+    }
+
+    #[napi(js_name = "streamNext", ts_args_type = "id: string")]
+    pub fn stream_next_native<'env>(
+        &self,
+        env: &'env Env,
+        id: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let id = native_json_text(id, "stream_id");
+        spawn_native(env, async move { client.stream_next(id).await })
+    }
+
+    #[napi(js_name = "streamClose", ts_args_type = "id: string")]
+    pub fn stream_close_native<'env>(
+        &self,
+        env: &'env Env,
+        id: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let id = native_json_text(id, "stream_id");
+        spawn_native(env, async move { client.stream_close(id).await })
+    }
+}
+
+impl Clone for NativeClient {
+    fn clone(&self) -> Self {
+        Self {
+            inner: Arc::clone(&self.inner),
+            streams: Arc::clone(&self.streams),
+        }
+    }
+}
+
+#[cfg(not(test))]
+type NativeJsonText<'env> = Either<String, Unknown<'env>>;
+
+#[cfg(not(test))]
+fn native_json_text(value: NativeJsonText<'_>, field: &str) -> maxt::Result<String> {
+    match value {
+        Either::A(text) => Ok(text),
+        Either::B(value) => {
+            let value_type = value.get_type().map_err(|error| {
+                Error::adapter(format!("could not inspect native `{field}` input: {error}"))
+            })?;
+            Err(Error::InvalidRequest {
+                field: field.to_owned(),
+                detail: format!("must be a JSON text string, got {value_type}"),
+            })
+        }
+    }
+}
+
+#[cfg(not(test))]
+fn spawn_native<'env, F>(env: &'env Env, future: F) -> napi::Result<PromiseRaw<'env, Value>>
+where
+    F: Future<Output = Value> + Send + 'static,
+{
+    env.spawn_future(async move { Ok(future.await) })
+}
+
+fn parse_wire<T, W>(value: maxt::Result<String>, field: &str) -> maxt::Result<T>
 where
     W: DeserializeOwned,
     T: TryFrom<W, Error = Error>,
 {
-    from_wire_value::<W>(value, field).and_then(TryInto::try_into)
+    parse_wire_text::<W>(value, field).and_then(TryInto::try_into)
+}
+
+fn parse_wire_text<T: DeserializeOwned>(
+    value: maxt::Result<String>,
+    field: &str,
+) -> maxt::Result<T> {
+    value.and_then(|text| from_wire_text(&text, field))
 }
 
 fn wire_one<T, W>(result: maxt::Result<T>) -> maxt::Result<W>
@@ -543,11 +825,35 @@ mod tests {
         assert_eq!(value["value"].as_array().unwrap().len(), 1);
 
         assert_eq!(client.open_orders().await["ok"], true);
-        assert_eq!(client.open_orders_on(market_wire()).await["ok"], true);
+        assert_eq!(
+            client.open_orders_on(json_text(market_wire())).await["ok"],
+            true
+        );
         assert_eq!(
             *calls.lock().unwrap(),
             vec!["positions:none", "open_orders:none", "open_orders:some"]
         );
+    }
+
+    #[tokio::test]
+    async fn native_client_rejects_invalid_json_text_before_adapter_dispatch() {
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let client = NativeClient::for_test(Box::new(RecordingAdapter {
+            calls: Arc::clone(&calls),
+        }));
+
+        let deep = format!("{}null{}", "[".repeat(65), "]".repeat(65));
+        let non_string = Err(Error::InvalidRequest {
+            field: "kind".to_owned(),
+            detail: "must be a JSON text string, got Undefined".to_owned(),
+        });
+        for input in [Ok("undefined".to_owned()), Ok(deep), non_string] {
+            let value = client.markets(input).await;
+            assert_eq!(value["ok"], false);
+            assert_eq!(value["error"]["kind"], "invalid_request");
+            assert_eq!(value["error"]["field"], "kind");
+        }
+        assert!(calls.lock().unwrap().is_empty());
     }
 
     fn market_wire() -> serde_json::Value {
@@ -557,6 +863,10 @@ mod tests {
             "base": "BTC",
             "quote": "USDT"
         })
+    }
+
+    fn json_text(value: Value) -> maxt::Result<String> {
+        Ok(serde_json::to_string(&value).unwrap())
     }
 
     #[tokio::test]
@@ -571,17 +881,19 @@ mod tests {
         });
         let config = serde_json::json!({
             "max_reconnect_attempts": null,
-            "initial_reconnect_delay_ms": 1,
-            "max_reconnect_delay_ms": 2,
-            "idle_timeout_ms": 3,
-            "buffer_size": 1,
+            "initial_reconnect_delay_ms": "1",
+            "max_reconnect_delay_ms": "2",
+            "idle_timeout_ms": "3",
+            "buffer_size": "1",
             "overflow": "backpressure"
         });
 
-        let market_default = client.subscribe(subscription.clone()).await;
-        let market_custom = client.subscribe_with(subscription, config.clone()).await;
+        let market_default = client.subscribe(json_text(subscription.clone())).await;
+        let market_custom = client
+            .subscribe_with(json_text(subscription), json_text(config.clone()))
+            .await;
         let account_default = client.subscribe_account().await;
-        let account_custom = client.subscribe_account_with(config).await;
+        let account_custom = client.subscribe_account_with(json_text(config)).await;
 
         for handle in [
             &market_default["value"],
@@ -589,8 +901,14 @@ mod tests {
             &account_default["value"],
             &account_custom["value"],
         ] {
-            assert_eq!(client.stream_next(handle["id"].clone()).await["ok"], true);
-            assert_eq!(client.stream_close(handle["id"].clone()).await["ok"], true);
+            assert_eq!(
+                client.stream_next(json_text(handle["id"].clone())).await["ok"],
+                true
+            );
+            assert_eq!(
+                client.stream_close(json_text(handle["id"].clone())).await["ok"],
+                true
+            );
         }
         assert_eq!(
             *calls.lock().unwrap(),
@@ -642,24 +960,35 @@ mod tests {
         assert_eq!(client.exchange(), "binance");
         assert!(client.supports("ticker".to_owned()));
         let results = [
-            client.markets(serde_json::json!("spot")).await,
-            client.trades(market.clone(), Value::Null).await,
-            client.order_book(market.clone(), Value::Null).await,
-            client.ticker(market.clone()).await,
-            client.candles(candle_request).await,
+            client
+                .markets(Ok(serde_json::json!("spot").to_string()))
+                .await,
+            client
+                .trades(json_text(market.clone()), json_text(Value::Null))
+                .await,
+            client
+                .order_book(json_text(market.clone()), json_text(Value::Null))
+                .await,
+            client.ticker(json_text(market.clone())).await,
+            client.candles(json_text(candle_request)).await,
             client.balances().await,
             client.open_orders().await,
-            client.open_orders_on(market.clone()).await,
-            client.place_order(order_request).await,
+            client.open_orders_on(json_text(market.clone())).await,
+            client.place_order(json_text(order_request)).await,
             client
-                .cancel_order(market.clone(), serde_json::json!("order-1"))
+                .cancel_order(
+                    json_text(market.clone()),
+                    json_text(serde_json::json!("order-1")),
+                )
                 .await,
             client.positions().await,
-            client.positions_on(market).await,
+            client.positions_on(json_text(market)).await,
             client.margin_summary().await,
-            client.funding_rates(history_request.clone()).await,
-            client.funding_payments(history_request).await,
-            client.set_margin(margin_request).await,
+            client
+                .funding_rates(json_text(history_request.clone()))
+                .await,
+            client.funding_payments(json_text(history_request)).await,
+            client.set_margin(json_text(margin_request)).await,
         ];
         assert!(results.iter().all(|value| value["ok"] == true));
         assert_eq!(

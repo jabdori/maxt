@@ -150,10 +150,10 @@ export interface SubscriptionWire {
 
 export interface StreamConfigWire {
   readonly max_reconnect_attempts: number | null;
-  readonly initial_reconnect_delay_ms: number;
-  readonly max_reconnect_delay_ms: number;
-  readonly idle_timeout_ms: number;
-  readonly buffer_size: number;
+  readonly initial_reconnect_delay_ms: string;
+  readonly max_reconnect_delay_ms: string;
+  readonly idle_timeout_ms: string;
+  readonly buffer_size: string;
   readonly overflow: string;
 }
 

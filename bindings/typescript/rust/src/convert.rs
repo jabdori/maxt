@@ -13,6 +13,9 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+const MAX_WIRE_JSON_DEPTH: usize = 64;
+const MAX_JSON_SAFE_INTEGER: u64 = 9_007_199_254_740_991;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct WireMarket {
@@ -109,10 +112,10 @@ pub(crate) struct WireSubscription {
 pub(crate) struct WireStreamConfig {
     #[serde(deserialize_with = "explicit_option")]
     pub(crate) max_reconnect_attempts: Option<u32>,
-    pub(crate) initial_reconnect_delay_ms: u64,
-    pub(crate) max_reconnect_delay_ms: u64,
-    pub(crate) idle_timeout_ms: u64,
-    pub(crate) buffer_size: usize,
+    pub(crate) initial_reconnect_delay_ms: String,
+    pub(crate) max_reconnect_delay_ms: String,
+    pub(crate) idle_timeout_ms: String,
+    pub(crate) buffer_size: String,
     pub(crate) overflow: String,
 }
 
@@ -403,6 +406,74 @@ pub(crate) fn from_wire_value<T: DeserializeOwned>(value: Value, field: &str) ->
         field: field.to_owned(),
         detail: error.to_string(),
     })
+}
+
+pub(crate) fn from_wire_text<T: DeserializeOwned>(text: &str, field: &str) -> maxt::Result<T> {
+    let value = serde_json::from_str(text).map_err(|error| Error::InvalidRequest {
+        field: field.to_owned(),
+        detail: format!("invalid JSON text: {error}"),
+    })?;
+    validate_wire_json_depth(&value, field)?;
+    from_wire_value(value, field)
+}
+
+fn validate_wire_json_depth(value: &Value, field: &str) -> maxt::Result<()> {
+    let mut pending = vec![(value, 0_usize)];
+    while let Some((value, parent_depth)) = pending.pop() {
+        let children: Box<dyn Iterator<Item = &Value> + '_> = match value {
+            Value::Array(values) => Box::new(values.iter()),
+            Value::Object(values) => Box::new(values.values()),
+            _ => continue,
+        };
+        let depth = parent_depth + 1;
+        if depth > MAX_WIRE_JSON_DEPTH {
+            return Err(Error::InvalidRequest {
+                field: field.to_owned(),
+                detail: format!("maximum JSON nesting depth is {MAX_WIRE_JSON_DEPTH}"),
+            });
+        }
+        pending.extend(children.map(|child| (child, depth)));
+    }
+    Ok(())
+}
+
+fn safe_u64_from_wire(value: &str, field: &str) -> maxt::Result<u64> {
+    if value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {
+        return Err(invalid_safe_integer(field, value));
+    }
+    let value = value
+        .parse::<u64>()
+        .map_err(|_| invalid_safe_integer(field, value))?;
+    if value > MAX_JSON_SAFE_INTEGER {
+        return Err(invalid_safe_integer(field, &value.to_string()));
+    }
+    Ok(value)
+}
+
+fn safe_usize_from_wire(value: &str, field: &str) -> maxt::Result<usize> {
+    usize::try_from(safe_u64_from_wire(value, field)?)
+        .map_err(|_| invalid_safe_integer(field, value))
+}
+
+fn safe_u64_to_wire(value: u64, field: &str) -> maxt::Result<String> {
+    if value > MAX_JSON_SAFE_INTEGER {
+        return Err(invalid_safe_integer(field, &value.to_string()));
+    }
+    Ok(value.to_string())
+}
+
+fn safe_usize_to_wire(value: usize, field: &str) -> maxt::Result<String> {
+    let value = u64::try_from(value).map_err(|_| invalid_safe_integer(field, "usize overflow"))?;
+    safe_u64_to_wire(value, field)
+}
+
+fn invalid_safe_integer(field: &str, value: &str) -> Error {
+    Error::InvalidRequest {
+        field: field.to_owned(),
+        detail: format!(
+            "`{value}` must be an unsigned decimal integer no greater than {MAX_JSON_SAFE_INTEGER}"
+        ),
+    }
 }
 
 pub(crate) fn outcome<T: Serialize>(result: maxt::Result<T>) -> Value {
@@ -751,10 +822,16 @@ impl TryFrom<StreamConfig> for WireStreamConfig {
     fn try_from(value: StreamConfig) -> Result<Self, Self::Error> {
         Ok(Self {
             max_reconnect_attempts: value.max_reconnect_attempts,
-            initial_reconnect_delay_ms: value.initial_reconnect_delay_ms,
-            max_reconnect_delay_ms: value.max_reconnect_delay_ms,
-            idle_timeout_ms: value.idle_timeout_ms,
-            buffer_size: value.buffer_size,
+            initial_reconnect_delay_ms: safe_u64_to_wire(
+                value.initial_reconnect_delay_ms,
+                "initial_reconnect_delay_ms",
+            )?,
+            max_reconnect_delay_ms: safe_u64_to_wire(
+                value.max_reconnect_delay_ms,
+                "max_reconnect_delay_ms",
+            )?,
+            idle_timeout_ms: safe_u64_to_wire(value.idle_timeout_ms, "idle_timeout_ms")?,
+            buffer_size: safe_usize_to_wire(value.buffer_size, "buffer_size")?,
             overflow: overflow_to_wire(value.overflow)?.to_owned(),
         })
     }
@@ -766,10 +843,16 @@ impl TryFrom<WireStreamConfig> for StreamConfig {
     fn try_from(value: WireStreamConfig) -> Result<Self, Self::Error> {
         Ok(Self {
             max_reconnect_attempts: value.max_reconnect_attempts,
-            initial_reconnect_delay_ms: value.initial_reconnect_delay_ms,
-            max_reconnect_delay_ms: value.max_reconnect_delay_ms,
-            idle_timeout_ms: value.idle_timeout_ms,
-            buffer_size: value.buffer_size,
+            initial_reconnect_delay_ms: safe_u64_from_wire(
+                &value.initial_reconnect_delay_ms,
+                "initial_reconnect_delay_ms",
+            )?,
+            max_reconnect_delay_ms: safe_u64_from_wire(
+                &value.max_reconnect_delay_ms,
+                "max_reconnect_delay_ms",
+            )?,
+            idle_timeout_ms: safe_u64_from_wire(&value.idle_timeout_ms, "idle_timeout_ms")?,
+            buffer_size: safe_usize_from_wire(&value.buffer_size, "buffer_size")?,
             overflow: overflow_from_wire(&value.overflow, "overflow")?,
         })
     }
@@ -1669,7 +1752,12 @@ impl From<Error> for WireError {
                     detail,
                 },
                 None => Self::Adapter {
-                    detail: format!("maxt error has unknown exchange `{exchange}`"),
+                    detail: unsupported_error_diagnostic(
+                        "maxt error has unknown metadata",
+                        feature.id(),
+                        exchange,
+                        &detail,
+                    ),
                 },
             },
             Error::Adapter { detail } => Self::Adapter { detail },
@@ -1680,21 +1768,32 @@ impl From<Error> for WireError {
                 message,
                 status,
                 kind,
-            } => match (
-                exchange_from_id(exchange),
-                exchange_error_kind_to_wire(kind),
-            ) {
-                (Some(exchange), Ok(exchange_kind)) => Self::Exchange {
-                    exchange: exchange.id().to_owned(),
-                    code,
-                    message,
-                    status,
-                    exchange_kind: exchange_kind.to_owned(),
-                },
-                _ => Self::Adapter {
-                    detail: format!("maxt error has unknown exchange metadata for `{exchange}`"),
-                },
-            },
+            } => {
+                let exchange_id = exchange_from_id(exchange);
+                let exchange_kind = exchange_error_kind_to_wire(kind);
+                match (exchange_id, exchange_kind) {
+                    (Some(exchange), Ok(exchange_kind)) => Self::Exchange {
+                        exchange: exchange.id().to_owned(),
+                        code,
+                        message,
+                        status,
+                        exchange_kind: exchange_kind.to_owned(),
+                    },
+                    (_, exchange_kind) => Self::Adapter {
+                        detail: exchange_error_diagnostic(
+                            "maxt error has unknown metadata",
+                            exchange,
+                            &code,
+                            &message,
+                            status,
+                            exchange_kind
+                                .map(str::to_owned)
+                                .unwrap_or_else(|_| format!("{kind:?}"))
+                                .as_str(),
+                        ),
+                    },
+                }
+            }
             Error::Transport { detail } => Self::Transport { detail },
             Error::Decode { detail } => Self::Decode { detail },
             _ => Self::Adapter {
@@ -1716,21 +1815,19 @@ impl TryFrom<WireError> for Error {
                 feature,
                 exchange,
                 detail,
-            } => Ok(Self::Unsupported {
-                feature: feature_from_id(&feature).ok_or_else(|| {
-                    Self::adapter(format!(
-                        "foreign unsupported error has unknown feature `{feature}`"
-                    ))
-                })?,
-                exchange: exchange_from_id(&exchange)
-                    .map(Exchange::id)
-                    .ok_or_else(|| {
-                        Self::adapter(format!(
-                            "foreign unsupported error has unknown exchange `{exchange}`"
-                        ))
-                    })?,
-                detail,
-            }),
+            } => match (feature_from_id(&feature), exchange_from_id(&exchange)) {
+                (Some(feature), Some(exchange)) => Ok(Self::Unsupported {
+                    feature,
+                    exchange: exchange.id(),
+                    detail,
+                }),
+                _ => Err(Self::adapter(unsupported_error_diagnostic(
+                    "foreign unsupported error has unknown metadata",
+                    &feature,
+                    &exchange,
+                    &detail,
+                ))),
+            },
             WireError::Adapter { detail } => Ok(Self::Adapter { detail }),
             WireError::Auth { detail } => Ok(Self::Auth { detail }),
             WireError::Exchange {
@@ -1739,27 +1836,52 @@ impl TryFrom<WireError> for Error {
                 message,
                 status,
                 exchange_kind,
-            } => Ok(Self::Exchange {
-                exchange: exchange_from_id(&exchange)
-                    .map(Exchange::id)
-                    .ok_or_else(|| {
-                        Self::adapter(format!(
-                            "foreign exchange error has unknown exchange `{exchange}`"
-                        ))
-                    })?,
-                code,
-                message,
-                status,
-                kind: exchange_error_kind_from_wire(&exchange_kind).ok_or_else(|| {
-                    Self::adapter(format!(
-                        "foreign exchange error has unknown retry classification `{exchange_kind}`"
-                    ))
-                })?,
-            }),
+            } => match (
+                exchange_from_id(&exchange),
+                exchange_error_kind_from_wire(&exchange_kind),
+            ) {
+                (Some(exchange), Some(kind)) => Ok(Self::Exchange {
+                    exchange: exchange.id(),
+                    code,
+                    message,
+                    status,
+                    kind,
+                }),
+                _ => Err(Self::adapter(exchange_error_diagnostic(
+                    "foreign exchange error has unknown metadata",
+                    &exchange,
+                    &code,
+                    &message,
+                    status,
+                    &exchange_kind,
+                ))),
+            },
             WireError::Transport { detail } => Ok(Self::Transport { detail }),
             WireError::Decode { detail } => Ok(Self::Decode { detail }),
         }
     }
+}
+
+fn unsupported_error_diagnostic(
+    context: &str,
+    feature: &str,
+    exchange: &str,
+    detail: &str,
+) -> String {
+    format!("{context}: feature={feature:?}, exchange={exchange:?}, detail={detail:?}")
+}
+
+fn exchange_error_diagnostic(
+    context: &str,
+    exchange: &str,
+    code: &str,
+    message: &str,
+    status: Option<u16>,
+    classification: &str,
+) -> String {
+    format!(
+        "{context}: exchange={exchange:?}, code={code:?}, message={message:?}, status={status:?}, classification={classification:?}"
+    )
 }
 
 fn exchange_from_id(value: &str) -> Option<Exchange> {
@@ -1868,6 +1990,30 @@ mod tests {
     }
 
     #[test]
+    fn json_text_inputs_reject_non_json_as_structured_invalid_requests() {
+        for text in ["undefined", "NaN", "Infinity", "-Infinity"] {
+            assert!(matches!(
+                from_wire_text::<Value>(text, "request"),
+                Err(Error::InvalidRequest { field, .. }) if field == "request"
+            ));
+        }
+    }
+
+    #[test]
+    fn json_text_inputs_enforce_the_explicit_nesting_limit() {
+        let at_limit = format!("{}null{}", "[".repeat(64), "]".repeat(64));
+        assert!(from_wire_text::<Value>(&at_limit, "request").is_ok());
+
+        let too_deep = format!("{}null{}", "[".repeat(65), "]".repeat(65));
+        let error = from_wire_text::<Value>(&too_deep, "request").unwrap_err();
+        assert!(matches!(
+            error,
+            Error::InvalidRequest { field, detail }
+                if field == "request" && detail.contains("maximum JSON nesting depth is 64")
+        ));
+    }
+
+    #[test]
     fn every_core_error_round_trips_with_its_fields() {
         let errors = [
             Error::InvalidRequest {
@@ -1945,6 +2091,71 @@ mod tests {
             },
         ] {
             assert!(matches!(WireError::from(error), WireError::Adapter { .. }));
+        }
+    }
+
+    #[test]
+    fn unknown_error_metadata_downgrades_without_losing_original_diagnostics() {
+        let unsupported = WireError::from(Error::Unsupported {
+            feature: Feature::Markets,
+            exchange: "future_exchange",
+            detail: "provider-specific capability".to_owned(),
+        });
+        let WireError::Adapter { detail } = unsupported else {
+            panic!("unknown exchange must downgrade to an adapter error");
+        };
+        for expected in ["markets", "future_exchange", "provider-specific capability"] {
+            assert!(
+                detail.contains(expected),
+                "missing `{expected}` in `{detail}`"
+            );
+        }
+
+        let exchange = WireError::from(Error::Exchange {
+            exchange: "future_exchange",
+            code: "-9000".to_owned(),
+            message: "future failure".to_owned(),
+            status: Some(599),
+            kind: ExchangeErrorKind::RateLimited,
+        });
+        let WireError::Adapter { detail } = exchange else {
+            panic!("unknown exchange must downgrade to an adapter error");
+        };
+        for expected in [
+            "future_exchange",
+            "-9000",
+            "future failure",
+            "599",
+            "rate_limited",
+        ] {
+            assert!(
+                detail.contains(expected),
+                "missing `{expected}` in `{detail}`"
+            );
+        }
+
+        let inbound = Error::try_from(WireError::Exchange {
+            exchange: "binance".to_owned(),
+            code: "FUTURE_CODE".to_owned(),
+            message: "future classification".to_owned(),
+            status: Some(418),
+            exchange_kind: "future_kind".to_owned(),
+        })
+        .unwrap_err();
+        let Error::Adapter { detail } = inbound else {
+            panic!("unknown classification must downgrade to an adapter error");
+        };
+        for expected in [
+            "binance",
+            "FUTURE_CODE",
+            "future classification",
+            "418",
+            "future_kind",
+        ] {
+            assert!(
+                detail.contains(expected),
+                "missing `{expected}` in `{detail}`"
+            );
         }
     }
 
@@ -2163,11 +2374,61 @@ mod tests {
         assert_wire_round_trip::<_, WireStreamConfig>(StreamConfig {
             max_reconnect_attempts: None,
             initial_reconnect_delay_ms: 1,
-            max_reconnect_delay_ms: u64::MAX,
+            max_reconnect_delay_ms: MAX_JSON_SAFE_INTEGER,
             idle_timeout_ms: 30_000,
             buffer_size: 1,
             overflow: Overflow::DropNewest,
         });
+    }
+
+    #[test]
+    fn stream_config_wire_preserves_safe_integer_boundaries_as_decimal_strings() {
+        for boundary in ["4294967296", "9007199254740991"] {
+            let wire = WireStreamConfig {
+                max_reconnect_attempts: None,
+                initial_reconnect_delay_ms: boundary.to_owned(),
+                max_reconnect_delay_ms: boundary.to_owned(),
+                idle_timeout_ms: boundary.to_owned(),
+                buffer_size: boundary.to_owned(),
+                overflow: "backpressure".to_owned(),
+            };
+            let core = StreamConfig::try_from(wire).unwrap();
+            assert_eq!(
+                core.initial_reconnect_delay_ms,
+                boundary.parse::<u64>().unwrap()
+            );
+            assert_eq!(core.buffer_size, boundary.parse::<usize>().unwrap());
+
+            let restored = WireStreamConfig::try_from(core).unwrap();
+            assert_eq!(restored.initial_reconnect_delay_ms, boundary);
+            assert_eq!(restored.buffer_size, boundary);
+        }
+
+        let too_large = WireStreamConfig {
+            max_reconnect_attempts: None,
+            initial_reconnect_delay_ms: "9007199254740992".to_owned(),
+            max_reconnect_delay_ms: "1".to_owned(),
+            idle_timeout_ms: "1".to_owned(),
+            buffer_size: "1".to_owned(),
+            overflow: "backpressure".to_owned(),
+        };
+        assert!(matches!(
+            StreamConfig::try_from(too_large),
+            Err(Error::InvalidRequest { field, .. }) if field == "initial_reconnect_delay_ms"
+        ));
+
+        let numeric_wire = serde_json::json!({
+            "max_reconnect_attempts": null,
+            "initial_reconnect_delay_ms": 4294967296_u64,
+            "max_reconnect_delay_ms": "1",
+            "idle_timeout_ms": "1",
+            "buffer_size": "1",
+            "overflow": "backpressure"
+        });
+        assert!(matches!(
+            from_wire_value::<WireStreamConfig>(numeric_wire, "config"),
+            Err(Error::InvalidRequest { field, .. }) if field == "config"
+        ));
     }
 
     #[test]

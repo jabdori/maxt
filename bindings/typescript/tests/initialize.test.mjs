@@ -45,6 +45,7 @@ test("concurrent initialization shares one promise and normalized options", asyn
   assert.deepEqual(captured, {
     wasmUrl: absoluteWasmUrl,
     allowInsecureBrowserCredentials: false,
+    relayUrl: null,
   });
 
   release();
@@ -108,4 +109,29 @@ test("initialize rejects an invalid wasm URL asynchronously with a structured er
     result,
     (error) => error.name === "InvalidRequestError" && error.field === "wasmUrl",
   );
+});
+
+test("initialize normalizes and compares the relay URL", async () => {
+  const { initialize: initializeFresh, installBackend: installFresh } = await freshNative("relay-url");
+  let captured;
+  installFresh({ initialize: async (options) => { captured = options; } });
+
+  await initializeFresh({ relayUrl: "https://relay.example.test/api" });
+  assert.equal(captured.relayUrl, "https://relay.example.test/api");
+  await assert.rejects(
+    initializeFresh({ relayUrl: "https://other.example.test/api" }),
+    (error) => error.name === "InvalidRequestError" && error.field === "initialize",
+  );
+});
+
+test("initialize rejects invalid URL option types before backend use", async () => {
+  const { initialize: initializeFresh, installBackend: installFresh } = await freshNative("invalid-url-type");
+  let calls = 0;
+  installFresh({ initialize: async () => { calls += 1; } });
+
+  await assert.rejects(
+    initializeFresh({ relayUrl: false }),
+    (error) => error.name === "InvalidRequestError" && error.field === "relayUrl",
+  );
+  assert.equal(calls, 0);
 });

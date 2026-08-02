@@ -1,18 +1,20 @@
 use std::sync::Arc;
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 use std::future::Future;
 
 use maxt::{Adapter, Client, Error};
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 use napi::bindgen_prelude::{Either, PromiseRaw};
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 use napi::{Env, Unknown};
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 use napi_derive::napi;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::prelude::*;
 
 use crate::convert::{
     WireBalance, WireCandle, WireCandleRequest, WireFundingPayment, WireFundingRate,
@@ -23,7 +25,8 @@ use crate::convert::{
 };
 use crate::stream::NativeStreamRegistry;
 
-#[cfg_attr(not(test), napi)]
+#[cfg_attr(all(not(test), not(target_arch = "wasm32")), napi)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 pub struct NativeClient {
     inner: Arc<Client<Box<dyn Adapter>>>,
     streams: Arc<NativeStreamRegistry>,
@@ -260,7 +263,7 @@ impl NativeClient {
     }
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 #[napi]
 impl NativeClient {
     #[napi(js_name = "exchange")]
@@ -517,10 +520,134 @@ impl Clone for NativeClient {
     }
 }
 
-#[cfg(not(test))]
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+impl NativeClient {
+    #[wasm_bindgen(js_name = "exchange")]
+    pub fn exchange_wasm(&self) -> String {
+        self.exchange()
+    }
+
+    #[wasm_bindgen(js_name = "supports")]
+    pub fn supports_wasm(&self, feature: String) -> bool {
+        self.supports(feature)
+    }
+
+    #[wasm_bindgen(js_name = "markets")]
+    pub async fn markets_wasm(&self, kind: String) -> JsValue {
+        crate::web::value(self.markets(Ok(kind)).await)
+    }
+
+    #[wasm_bindgen(js_name = "trades")]
+    pub async fn trades_wasm(&self, market: String, limit: String) -> JsValue {
+        crate::web::value(self.trades(Ok(market), Ok(limit)).await)
+    }
+
+    #[wasm_bindgen(js_name = "orderBook")]
+    pub async fn order_book_wasm(&self, market: String, depth: String) -> JsValue {
+        crate::web::value(self.order_book(Ok(market), Ok(depth)).await)
+    }
+
+    #[wasm_bindgen(js_name = "ticker")]
+    pub async fn ticker_wasm(&self, market: String) -> JsValue {
+        crate::web::value(self.ticker(Ok(market)).await)
+    }
+
+    #[wasm_bindgen(js_name = "candles")]
+    pub async fn candles_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.candles(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "balances")]
+    pub async fn balances_wasm(&self) -> JsValue {
+        crate::web::value(self.balances().await)
+    }
+
+    #[wasm_bindgen(js_name = "openOrders")]
+    pub async fn open_orders_wasm(&self) -> JsValue {
+        crate::web::value(self.open_orders().await)
+    }
+
+    #[wasm_bindgen(js_name = "openOrdersOn")]
+    pub async fn open_orders_on_wasm(&self, market: String) -> JsValue {
+        crate::web::value(self.open_orders_on(Ok(market)).await)
+    }
+
+    #[wasm_bindgen(js_name = "positions")]
+    pub async fn positions_wasm(&self) -> JsValue {
+        crate::web::value(self.positions().await)
+    }
+
+    #[wasm_bindgen(js_name = "placeOrder")]
+    pub async fn place_order_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.place_order(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "cancelOrder")]
+    pub async fn cancel_order_wasm(&self, market: String, order_id: String) -> JsValue {
+        crate::web::value(self.cancel_order(Ok(market), Ok(order_id)).await)
+    }
+
+    #[wasm_bindgen(js_name = "positionsOn")]
+    pub async fn positions_on_wasm(&self, market: String) -> JsValue {
+        crate::web::value(self.positions_on(Ok(market)).await)
+    }
+
+    #[wasm_bindgen(js_name = "marginSummary")]
+    pub async fn margin_summary_wasm(&self) -> JsValue {
+        crate::web::value(self.margin_summary().await)
+    }
+
+    #[wasm_bindgen(js_name = "fundingRates")]
+    pub async fn funding_rates_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.funding_rates(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "fundingPayments")]
+    pub async fn funding_payments_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.funding_payments(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "setMargin")]
+    pub async fn set_margin_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.set_margin(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "subscribe")]
+    pub async fn subscribe_wasm(&self, subscription: String) -> JsValue {
+        crate::web::value(self.subscribe(Ok(subscription)).await)
+    }
+
+    #[wasm_bindgen(js_name = "subscribeWith")]
+    pub async fn subscribe_with_wasm(&self, subscription: String, config: String) -> JsValue {
+        crate::web::value(self.subscribe_with(Ok(subscription), Ok(config)).await)
+    }
+
+    #[wasm_bindgen(js_name = "subscribeAccount")]
+    pub async fn subscribe_account_wasm(&self) -> JsValue {
+        crate::web::value(self.subscribe_account().await)
+    }
+
+    #[wasm_bindgen(js_name = "subscribeAccountWith")]
+    pub async fn subscribe_account_with_wasm(&self, config: String) -> JsValue {
+        crate::web::value(self.subscribe_account_with(Ok(config)).await)
+    }
+
+    #[wasm_bindgen(js_name = "streamNext")]
+    pub async fn stream_next_wasm(&self, id: String) -> JsValue {
+        crate::web::value(self.stream_next(Ok(id)).await)
+    }
+
+    #[wasm_bindgen(js_name = "streamClose")]
+    pub async fn stream_close_wasm(&self, id: String) -> JsValue {
+        crate::web::value(self.stream_close(Ok(id)).await)
+    }
+}
+
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 type NativeJsonText<'env> = Either<String, Unknown<'env>>;
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 fn native_json_text(value: NativeJsonText<'_>, field: &str) -> maxt::Result<String> {
     match value {
         Either::A(text) => Ok(text),
@@ -536,7 +663,7 @@ fn native_json_text(value: NativeJsonText<'_>, field: &str) -> maxt::Result<Stri
     }
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 fn spawn_native<'env, F>(env: &'env Env, future: F) -> napi::Result<PromiseRaw<'env, Value>>
 where
     F: Future<Output = Value> + Send + 'static,

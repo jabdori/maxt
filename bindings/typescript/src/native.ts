@@ -4,11 +4,13 @@ import type { NativeBackend } from "./generated/api.js";
 export interface InitializeOptions {
   readonly wasmUrl?: string | URL;
   readonly allowInsecureBrowserCredentials?: boolean;
+  readonly relayUrl?: string | URL;
 }
 
 export interface NormalizedInitializeOptions {
   readonly wasmUrl: string | null;
   readonly allowInsecureBrowserCredentials: boolean;
+  readonly relayUrl: string | null;
 }
 
 let installedBackend: NativeBackend | undefined;
@@ -61,17 +63,21 @@ function normalizeInitializeOptions(options: InitializeOptions): NormalizedIniti
     );
   }
   return {
-    wasmUrl: normalizeWasmUrl(options.wasmUrl),
+    wasmUrl: normalizeUrl(options.wasmUrl, "wasmUrl"),
     allowInsecureBrowserCredentials: allowInsecureBrowserCredentials ?? false,
+    relayUrl: normalizeUrl(options.relayUrl, "relayUrl"),
   };
 }
 
-function normalizeWasmUrl(wasmUrl: string | URL | undefined): string | null {
-  if (wasmUrl === undefined) return null;
+function normalizeUrl(value: string | URL | undefined, field: string): string | null {
+  if (value === undefined) return null;
+  if (typeof value !== "string" && !(value instanceof URL)) {
+    throw new InvalidRequestError(field, "must be a string or URL");
+  }
   try {
-    return new URL(String(wasmUrl), import.meta.url).href;
+    return new URL(value, import.meta.url).href;
   } catch {
-    throw new InvalidRequestError("wasmUrl", "must be a valid URL");
+    throw new InvalidRequestError(field, "must be a valid URL");
   }
 }
 
@@ -80,5 +86,6 @@ function sameInitializeOptions(
   right: NormalizedInitializeOptions,
 ): boolean {
   return left.wasmUrl === right.wasmUrl
-    && left.allowInsecureBrowserCredentials === right.allowInsecureBrowserCredentials;
+    && left.allowInsecureBrowserCredentials === right.allowInsecureBrowserCredentials
+    && left.relayUrl === right.relayUrl;
 }

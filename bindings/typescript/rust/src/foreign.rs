@@ -1,39 +1,47 @@
+#[cfg(not(target_arch = "wasm32"))]
 use std::future::Future;
+#[cfg(not(target_arch = "wasm32"))]
 use std::pin::Pin;
+#[cfg(not(target_arch = "wasm32"))]
 use std::sync::Arc;
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 use std::sync::atomic::AtomicU64;
+#[cfg(not(target_arch = "wasm32"))]
 use std::sync::atomic::{AtomicBool, Ordering};
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 use futures_util::stream;
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 use maxt::{AccountEvent, AccountStream, MarketEvent, MarketStream};
 use maxt::{Error, Exchange, Feature, MarketKind};
 use maxt_bindings_common::AdapterCall;
 #[cfg(not(test))]
 use maxt_bindings_common::{AdapterReply, ForeignAdapter, ForeignDispatcher};
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 use napi::bindgen_prelude::{Function, Promise};
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 use napi::threadsafe_function::ThreadsafeFunction;
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 use napi_derive::napi;
 #[cfg(not(test))]
 use serde::Deserialize;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
+#[cfg(not(target_arch = "wasm32"))]
 use tokio::runtime::Handle;
+#[cfg(not(target_arch = "wasm32"))]
 use tokio::sync::watch;
 
 #[cfg(not(test))]
 use crate::client::NativeClient;
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
+use crate::convert::outcome;
 #[cfg(not(test))]
 use crate::convert::{
     WireAccountStreamItem, WireBalance, WireCandle, WireFundingPayment, WireFundingRate,
     WireMarginSummary, WireMarketInfo, WireMarketStreamItem, WireOrder, WireOrderBook, WirePage,
-    WirePosition, WireTicker, WireTrade, outcome,
+    WirePosition, WireTicker, WireTrade,
 };
 use crate::convert::{
     WireCandleRequest, WireError, WireHistoryRequest, WireMarginRequest, WireMarket,
@@ -257,13 +265,16 @@ fn parse_features(values: Vec<String>) -> maxt::Result<Vec<Feature>> {
         .collect()
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 type AsyncCallback =
     ThreadsafeFunction<String, Promise<String>, String, napi::Status, false, true, 0>;
 
+#[cfg(not(target_arch = "wasm32"))]
 type CloseFuture = Pin<Box<dyn Future<Output = maxt::Result<()>> + Send + 'static>>;
+#[cfg(not(target_arch = "wasm32"))]
 type CloseCallback = Arc<dyn Fn(String) -> CloseFuture + Send + Sync>;
 
+#[cfg(not(target_arch = "wasm32"))]
 struct StreamClose {
     id: String,
     runtime: Handle,
@@ -272,6 +283,7 @@ struct StreamClose {
     result: watch::Sender<Option<maxt::Result<()>>>,
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl StreamClose {
     fn new(id: String, runtime: Handle, callback: CloseCallback) -> Arc<Self> {
         let (result, _) = watch::channel(None);
@@ -316,10 +328,12 @@ impl StreamClose {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 struct StreamLease {
     close: Arc<StreamClose>,
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl StreamLease {
     fn new(id: String, runtime: Handle, callback: CloseCallback) -> Self {
         Self {
@@ -332,20 +346,21 @@ impl StreamLease {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl Drop for StreamLease {
     fn drop(&mut self) {
         self.close.request();
     }
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 struct JsForeignCallbacks {
     dispatch: AsyncCallback,
     stream_next: AsyncCallback,
     stream_close: AsyncCallback,
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 impl JsForeignCallbacks {
     async fn invoke(callback: &AsyncCallback, value: String, name: &str) -> maxt::Result<String> {
         let promise = callback.call_async_catch(value).await.map_err(|error| {
@@ -393,13 +408,13 @@ impl JsForeignCallbacks {
     }
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 struct JsForeignDispatcher {
     callbacks: Arc<JsForeignCallbacks>,
     next_stream_id: AtomicU64,
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 impl JsForeignDispatcher {
     fn allocate_stream_lease(&self) -> maxt::Result<StreamLease> {
         let id = self
@@ -514,7 +529,7 @@ impl JsForeignDispatcher {
     }
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 impl ForeignDispatcher for JsForeignDispatcher {
     fn dispatch(&self, call: AdapterCall) -> maxt::BoxFuture<'_, maxt::Result<AdapterReply>> {
         Box::pin(async move {
@@ -551,7 +566,7 @@ fn verify_stream_id(actual: &str, expected: Option<&str>) -> maxt::Result<()> {
     }
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 fn async_callback(function: Function<'_, String, Promise<String>>) -> napi::Result<AsyncCallback> {
     function
         .build_threadsafe_function::<String>()
@@ -559,12 +574,12 @@ fn async_callback(function: Function<'_, String, Promise<String>>) -> napi::Resu
         .build()
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 fn factory_error(error: Error) -> napi::Error {
     napi::Error::from_reason(outcome::<Value>(Err(error)).to_string())
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 #[napi(
     js_name = "createCustomClient",
     ts_args_type = "exchange: string, features: string[], dispatch: (call: string) => Promise<string>, streamNext: (id: string) => Promise<string>, streamClose: (id: string) => Promise<string>"
@@ -591,6 +606,10 @@ pub fn create_custom_client(
         exchange, features, dispatcher,
     ))))
 }
+
+#[cfg(target_arch = "wasm32")]
+#[path = "foreign_web.rs"]
+mod web;
 
 #[cfg(test)]
 mod tests {

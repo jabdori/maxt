@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 use std::future::Future;
 
 #[cfg(test)]
@@ -12,15 +12,17 @@ use maxt::adapters::{
     UpbitAdapter, UpbitRegion,
 };
 use maxt::{Cursor, Error, Market};
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 use napi::bindgen_prelude::{Either, PromiseRaw};
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 use napi::{Env, Unknown};
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 use napi_derive::napi;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::sync::Mutex;
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::prelude::*;
 
 use crate::client::NativeClient;
 use crate::convert::{
@@ -149,7 +151,8 @@ where
     })
 }
 
-#[cfg_attr(not(test), napi)]
+#[cfg_attr(all(not(test), not(target_arch = "wasm32")), napi)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 pub struct NativeUpbit {
     adapter: Arc<UpbitAdapter>,
 }
@@ -238,7 +241,7 @@ impl NativeUpbit {
     }
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 #[napi]
 impl NativeUpbit {
     #[napi(js_name = "client")]
@@ -292,7 +295,8 @@ impl Clone for NativeUpbit {
     }
 }
 
-#[cfg_attr(not(test), napi)]
+#[cfg_attr(all(not(test), not(target_arch = "wasm32")), napi)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 pub struct NativeBithumb {
     #[cfg_attr(
         test,
@@ -342,7 +346,7 @@ impl NativeBithumb {
     }
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 #[napi]
 impl NativeBithumb {
     #[napi(js_name = "client")]
@@ -361,7 +365,8 @@ impl NativeBithumb {
     }
 }
 
-#[cfg_attr(not(test), napi)]
+#[cfg_attr(all(not(test), not(target_arch = "wasm32")), napi)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 pub struct NativeBinance {
     adapter: Arc<BinanceAdapter>,
     listen_keys: Arc<Mutex<HashMap<String, BinanceListenKey>>>,
@@ -499,7 +504,7 @@ impl NativeBinance {
     }
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 #[napi]
 impl NativeBinance {
     #[napi(js_name = "client")]
@@ -580,7 +585,8 @@ impl Clone for NativeBinance {
     }
 }
 
-#[cfg_attr(not(test), napi)]
+#[cfg_attr(all(not(test), not(target_arch = "wasm32")), napi)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 pub struct NativeHyperliquid {
     adapter: Arc<HyperliquidAdapter>,
 }
@@ -667,7 +673,7 @@ impl NativeHyperliquid {
     }
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 #[napi]
 impl NativeHyperliquid {
     #[napi(js_name = "client")]
@@ -722,10 +728,10 @@ impl Clone for NativeHyperliquid {
     }
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 type NativeJsonText<'env> = Either<String, Unknown<'env>>;
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 fn native_json_text(value: NativeJsonText<'_>, field: &str) -> maxt::Result<String> {
     match value {
         Either::A(text) => Ok(text),
@@ -741,7 +747,7 @@ fn native_json_text(value: NativeJsonText<'_>, field: &str) -> maxt::Result<Stri
     }
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 fn spawn_native<'env, F>(env: &'env Env, future: F) -> napi::Result<PromiseRaw<'env, Value>>
 where
     F: Future<Output = Value> + Send + 'static,
@@ -756,34 +762,178 @@ fn invalid_enum(field: &str, value: &str) -> Error {
     }
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 fn factory_error(error: Error) -> napi::Error {
     let wire = outcome::<Value>(Err(error));
     napi::Error::from_reason(wire.to_string())
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 #[napi(js_name = "createUpbit", ts_args_type = "options: string")]
 pub fn create_upbit(options: NativeJsonText<'_>) -> napi::Result<NativeUpbit> {
     NativeUpbit::create(native_json_text(options, "options")).map_err(factory_error)
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 #[napi(js_name = "createBithumb", ts_args_type = "options: string")]
 pub fn create_bithumb(options: NativeJsonText<'_>) -> napi::Result<NativeBithumb> {
     NativeBithumb::create(native_json_text(options, "options")).map_err(factory_error)
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 #[napi(js_name = "createBinance", ts_args_type = "options: string")]
 pub fn create_binance(options: NativeJsonText<'_>) -> napi::Result<NativeBinance> {
     NativeBinance::create(native_json_text(options, "options")).map_err(factory_error)
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 #[napi(js_name = "createHyperliquid", ts_args_type = "options: string")]
 pub fn create_hyperliquid(options: NativeJsonText<'_>) -> napi::Result<NativeHyperliquid> {
     NativeHyperliquid::create(native_json_text(options, "options")).map_err(factory_error)
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+impl NativeUpbit {
+    #[wasm_bindgen(js_name = "client")]
+    pub fn client_wasm(&self) -> NativeClient {
+        self.client()
+    }
+
+    #[wasm_bindgen(js_name = "region")]
+    pub fn region_wasm(&self) -> String {
+        self.region().to_owned()
+    }
+
+    #[wasm_bindgen(js_name = "orderBooks")]
+    pub async fn order_books_wasm(&self, markets: String, depth: String) -> JsValue {
+        crate::web::value(self.order_books(Ok(markets), Ok(depth)).await)
+    }
+
+    #[wasm_bindgen(js_name = "tickers")]
+    pub async fn tickers_wasm(&self, markets: String) -> JsValue {
+        crate::web::value(self.tickers(Ok(markets)).await)
+    }
+
+    #[wasm_bindgen(js_name = "marketEvents")]
+    pub async fn market_events_wasm(&self) -> JsValue {
+        crate::web::value(self.market_events().await)
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+impl NativeBithumb {
+    #[wasm_bindgen(js_name = "client")]
+    pub fn client_wasm(&self) -> NativeClient {
+        self.client()
+    }
+
+    #[wasm_bindgen(js_name = "marketWarnings")]
+    pub async fn market_warnings_wasm(&self) -> JsValue {
+        crate::web::value(self.market_warnings().await)
+    }
+
+    #[wasm_bindgen(js_name = "marketAlerts")]
+    pub async fn market_alerts_wasm(&self) -> JsValue {
+        crate::web::value(self.market_alerts().await)
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+impl NativeBinance {
+    #[wasm_bindgen(js_name = "client")]
+    pub fn client_wasm(&self) -> NativeClient {
+        self.client()
+    }
+
+    #[wasm_bindgen(js_name = "venue")]
+    pub fn venue_wasm(&self) -> String {
+        self.venue().to_owned()
+    }
+
+    #[wasm_bindgen(js_name = "spotSymbolFilters")]
+    pub async fn spot_symbol_filters_wasm(&self, market: String) -> JsValue {
+        crate::web::value(self.spot_symbol_filters(Ok(market)).await)
+    }
+
+    #[wasm_bindgen(js_name = "spotOrder")]
+    pub async fn spot_order_wasm(&self, market: String, order_id: String) -> JsValue {
+        crate::web::value(self.spot_order(Ok(market), Ok(order_id)).await)
+    }
+
+    #[wasm_bindgen(js_name = "usdMCreateListenKey")]
+    pub async fn usd_m_create_listen_key_wasm(&self) -> JsValue {
+        crate::web::value(self.usd_m_create_listen_key().await)
+    }
+
+    #[wasm_bindgen(js_name = "usdMKeepaliveListenKey")]
+    pub async fn usd_m_keepalive_listen_key_wasm(&self, id: String) -> JsValue {
+        crate::web::value(self.usd_m_keepalive_listen_key(Ok(id)).await)
+    }
+
+    #[wasm_bindgen(js_name = "usdMCloseListenKey")]
+    pub async fn usd_m_close_listen_key_wasm(&self, id: String) -> JsValue {
+        crate::web::value(self.usd_m_close_listen_key(Ok(id)).await)
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+impl NativeHyperliquid {
+    #[wasm_bindgen(js_name = "client")]
+    pub fn client_wasm(&self) -> NativeClient {
+        self.client()
+    }
+
+    #[wasm_bindgen(js_name = "isTestnet")]
+    pub fn is_testnet_wasm(&self) -> bool {
+        self.is_testnet()
+    }
+
+    #[wasm_bindgen(js_name = "nonFundingLedger")]
+    pub async fn non_funding_ledger_wasm(
+        &self,
+        from: String,
+        to: String,
+        cursor: String,
+        limit: String,
+    ) -> JsValue {
+        crate::web::value(
+            self.non_funding_ledger(Ok(from), Ok(to), Ok(cursor), Ok(limit))
+                .await,
+        )
+    }
+
+    #[wasm_bindgen(js_name = "assetContext")]
+    pub async fn asset_context_wasm(&self, market: String) -> JsValue {
+        crate::web::value(self.asset_context(Ok(market)).await)
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen(js_name = "createUpbit")]
+pub fn create_upbit_wasm(options: String) -> Result<NativeUpbit, JsValue> {
+    NativeUpbit::create(Ok(options)).map_err(crate::web::factory_error)
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen(js_name = "createBithumb")]
+pub fn create_bithumb_wasm(options: String) -> Result<NativeBithumb, JsValue> {
+    NativeBithumb::create(Ok(options)).map_err(crate::web::factory_error)
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen(js_name = "createBinance")]
+pub fn create_binance_wasm(options: String) -> Result<NativeBinance, JsValue> {
+    NativeBinance::create(Ok(options)).map_err(crate::web::factory_error)
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen(js_name = "createHyperliquid")]
+pub fn create_hyperliquid_wasm(options: String) -> Result<NativeHyperliquid, JsValue> {
+    NativeHyperliquid::create(Ok(options)).map_err(crate::web::factory_error)
 }
 
 #[cfg(test)]

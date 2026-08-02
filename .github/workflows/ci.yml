@@ -128,6 +128,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
+          targets: wasm32-unknown-unknown
 
       - uses: Swatinem/rust-cache@v2
 
@@ -146,11 +147,54 @@ jobs:
       - name: Test native bridge
         run: cargo test -p maxt-typescript --all-targets --locked
 
+      - name: Check, lint, and build WebAssembly bridge
+        run: |
+          cargo check -p maxt-typescript --target wasm32-unknown-unknown --locked
+          cargo clippy -p maxt-typescript --target wasm32-unknown-unknown --locked -- -D warnings
+          cargo build -p maxt-typescript --target wasm32-unknown-unknown --locked
+
       - name: Test Node package
         run: npm test
 
-      - name: Check npm package
-        run: npm pack --dry-run
+      - name: Install WebAssembly build and browser tools
+        run: |
+          cargo install wasm-pack --version 0.15.0 --locked
+          npx playwright install --with-deps chromium
+
+      - name: Test browser package
+        run: npm run test:web -- --project=chromium
+
+      - name: Require WebAssembly in npm package
+        shell: bash
+        run: |
+          tarball="$(npm pack --silent)"
+          tar -tzf "$tarball" | grep -Fx package/wasm/maxt_wasm_bg.wasm
+
+  relay:
+    name: Relay
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: relay
+
+      - name: Format
+        run: cargo fmt --manifest-path relay/Cargo.toml --all -- --check
+
+      - name: Check
+        run: cargo check --manifest-path relay/Cargo.toml --all-targets --locked
+
+      - name: Lint
+        run: cargo clippy --manifest-path relay/Cargo.toml --all-targets --locked -- -D warnings
+
+      - name: Test
+        run: cargo test --manifest-path relay/Cargo.toml --all-targets --locked
 
   dart:
     name: Dart and Flutter

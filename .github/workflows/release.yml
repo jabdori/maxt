@@ -27,8 +27,23 @@ jobs:
       common_package_exists: ${{ steps.registry.outputs.common_package_exists }}
       maxt_version_exists: ${{ steps.registry.outputs.maxt_version_exists }}
       common_version_exists: ${{ steps.registry.outputs.common_version_exists }}
+      python_package_exists: ${{ steps.registry.outputs.python_package_exists }}
+      python_version_exists: ${{ steps.registry.outputs.python_version_exists }}
       dart_package_exists: ${{ steps.registry.outputs.dart_package_exists }}
       dart_version_exists: ${{ steps.registry.outputs.dart_version_exists }}
+      npm_bootstrap_needed: ${{ steps.registry.outputs.npm_bootstrap_needed }}
+      npm_root_package_exists: ${{ steps.registry.outputs.npm_root_package_exists }}
+      npm_root_version_exists: ${{ steps.registry.outputs.npm_root_version_exists }}
+      npm_linux_x64_gnu_package_exists: ${{ steps.registry.outputs.npm_linux_x64_gnu_package_exists }}
+      npm_linux_x64_gnu_version_exists: ${{ steps.registry.outputs.npm_linux_x64_gnu_version_exists }}
+      npm_linux_arm64_gnu_package_exists: ${{ steps.registry.outputs.npm_linux_arm64_gnu_package_exists }}
+      npm_linux_arm64_gnu_version_exists: ${{ steps.registry.outputs.npm_linux_arm64_gnu_version_exists }}
+      npm_darwin_x64_package_exists: ${{ steps.registry.outputs.npm_darwin_x64_package_exists }}
+      npm_darwin_x64_version_exists: ${{ steps.registry.outputs.npm_darwin_x64_version_exists }}
+      npm_darwin_arm64_package_exists: ${{ steps.registry.outputs.npm_darwin_arm64_package_exists }}
+      npm_darwin_arm64_version_exists: ${{ steps.registry.outputs.npm_darwin_arm64_version_exists }}
+      npm_win32_x64_msvc_package_exists: ${{ steps.registry.outputs.npm_win32_x64_msvc_package_exists }}
+      npm_win32_x64_msvc_version_exists: ${{ steps.registry.outputs.npm_win32_x64_msvc_version_exists }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -67,6 +82,15 @@ jobs:
             exit 1
           fi
 
+          release_tag="v$version"
+          if git rev-parse --verify --quiet "$release_tag^{commit}" >/dev/null; then
+            tagged_commit="$(git rev-parse "$release_tag^{commit}")"
+            if [[ "$tagged_commit" != "$GITHUB_SHA" ]]; then
+              echo "::error::$release_tag points to $tagged_commit, not $GITHUB_SHA."
+              exit 1
+            fi
+          fi
+
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Check manifest versions
@@ -74,6 +98,7 @@ jobs:
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
         run: |
           python3 - <<'PY'
+          import json
           import os
           import pathlib
           import re
@@ -93,6 +118,15 @@ jobs:
               "bindings/python/pyproject.toml": read_toml("bindings/python/pyproject.toml")["project"]["version"],
               "bindings/dart/rust/Cargo.toml": read_toml("bindings/dart/rust/Cargo.toml")["package"]["version"],
           }
+
+          typescript_package = json.loads(
+              (root / "bindings/typescript/package.json").read_text()
+          )
+          typescript_rust = read_toml("bindings/typescript/rust/Cargo.toml")
+          manifests.update({
+              "bindings/typescript/package.json": typescript_package["version"],
+              "bindings/typescript/rust/Cargo.toml": typescript_rust["package"]["version"],
+          })
 
           pubspec = (root / "bindings/dart/pubspec.yaml").read_text()
           match = re.search(r"(?m)^version:\s*([^\s#]+)", pubspec)
@@ -119,6 +153,8 @@ jobs:
               "bindings/python -> maxt-bindings-common": python["dependencies"]["maxt-bindings-common"]["version"],
               "bindings/dart -> maxt": dart["dependencies"]["maxt"],
               "bindings/dart -> maxt-bindings-common": dart["dependencies"]["maxt-bindings-common"],
+              "bindings/typescript -> maxt": typescript_rust["dependencies"]["maxt"]["version"].removeprefix("="),
+              "bindings/typescript -> maxt-bindings-common": typescript_rust["dependencies"]["maxt-bindings-common"]["version"].removeprefix("="),
           }
           mismatches = {
               dependency: version
@@ -129,6 +165,22 @@ jobs:
               raise SystemExit(
                   f"release version {expected} does not match dependencies: {mismatches}"
               )
+
+          expected_optional = {
+              "@jabdori/maxt-linux-x64-gnu": expected,
+              "@jabdori/maxt-linux-arm64-gnu": expected,
+              "@jabdori/maxt-darwin-x64": expected,
+              "@jabdori/maxt-darwin-arm64": expected,
+              "@jabdori/maxt-win32-x64-msvc": expected,
+          }
+          if typescript_package["optionalDependencies"] != expected_optional:
+              raise SystemExit(
+                  "TypeScript optionalDependencies must use exact release versions: "
+                  f"{typescript_package['optionalDependencies']}"
+              )
+
+          if typescript_package["repository"]["url"] != "git+https://github.com/jabdori/maxt.git":
+              raise SystemExit("npm provenance requires the jabdori/maxt repository URL")
           PY
 
       - name: Check registry state
@@ -165,6 +217,10 @@ jobs:
             "https://crates.io/api/v1/crates/maxt/$RELEASE_VERSION"
           check_url common_version_exists \
             "https://crates.io/api/v1/crates/maxt-bindings-common/$RELEASE_VERSION"
+          check_url python_package_exists \
+            "https://pypi.org/pypi/maxt/json"
+          check_url python_version_exists \
+            "https://pypi.org/pypi/maxt/$RELEASE_VERSION/json"
 
           pub_response="$(mktemp)"
           pub_status="$(curl --silent --show-error --location \
@@ -198,12 +254,137 @@ jobs:
               ;;
           esac
 
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import os
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          version = os.environ["RELEASE_VERSION"]
+          packages = {
+              "root": "@jabdori/maxt",
+              "linux_x64_gnu": "@jabdori/maxt-linux-x64-gnu",
+              "linux_arm64_gnu": "@jabdori/maxt-linux-arm64-gnu",
+              "darwin_x64": "@jabdori/maxt-darwin-x64",
+              "darwin_arm64": "@jabdori/maxt-darwin-arm64",
+              "win32_x64_msvc": "@jabdori/maxt-win32-x64-msvc",
+          }
+          states = {}
+          for key, package in packages.items():
+              url = "https://registry.npmjs.org/" + urllib.parse.quote(package, safe="")
+              request = urllib.request.Request(
+                  url, headers={"User-Agent": "maxt-release-workflow/1.0"}
+              )
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      if response.status != 200:
+                          raise SystemExit(
+                              f"npm registry returned HTTP {response.status} for {package}"
+                          )
+                      metadata = json.load(response)
+              except urllib.error.HTTPError as error:
+                  if error.code == 404:
+                      states[key] = (False, False)
+                      continue
+                  raise
+              states[key] = (True, version in metadata.get("versions", {}))
+
+          print(
+              "npm_bootstrap_needed="
+              + str(any(not exists for exists, _ in states.values())).lower()
+          )
+          for key, (exists, version_exists) in states.items():
+              print(f"npm_{key}_package_exists={str(exists).lower()}")
+              print(f"npm_{key}_version_exists={str(version_exists).lower()}")
+          PY
+
   ci:
     name: Full CI gate
     needs: validate
     uses: ./.github/workflows/ci.yml
     permissions:
       contents: read
+
+  npm-native:
+    name: npm native (${{ matrix.suffix }})
+    needs: validate
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            suffix: linux-x64-gnu
+            cross: --use-napi-cross
+          - runner: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            suffix: linux-arm64-gnu
+            cross: --use-napi-cross
+          - runner: macos-15-intel
+            target: x86_64-apple-darwin
+            suffix: darwin-x64
+            cross: ""
+          - runner: macos-latest
+            target: aarch64-apple-darwin
+            suffix: darwin-arm64
+            cross: ""
+          - runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            suffix: win32-x64-msvc
+            cross: ""
+    defaults:
+      run:
+        working-directory: bindings/typescript
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: bindings/typescript/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Build native package
+        shell: bash
+        run: >-
+          npx napi build
+          --manifest-path rust/Cargo.toml
+          --platform
+          --release
+          --target "${{ matrix.target }}"
+          ${{ matrix.cross }}
+          --output-dir .
+          --js native.cjs
+          --dts native.d.ts
+          --js-package-name @jabdori/maxt
+          -- --locked
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: npm-native-${{ matrix.suffix }}
+          path: bindings/typescript/maxt.${{ matrix.suffix }}.node
+          if-no-files-found: error
+
+      - name: Upload root native loader
+        if: matrix.suffix == 'linux-x64-gnu'
+        uses: actions/upload-artifact@v7
+        with:
+          name: npm-loader
+          path: |
+            bindings/typescript/native.cjs
+            bindings/typescript/native.d.ts
+          if-no-files-found: error
 
   python-wheel:
     name: Python wheel (${{ matrix.platform }})
@@ -320,9 +501,103 @@ jobs:
           path: dist/*
           if-no-files-found: error
 
+  npm-package:
+    name: Assemble npm package set
+    needs: [validate, npm-native, python-distributions]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bindings/typescript
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: bindings/typescript/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Install WebAssembly build tool
+        run: cargo install wasm-pack --version 0.15.0 --locked
+
+      - name: Create platform packages
+        run: npm run package:dirs
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: npm-native-*
+          path: bindings/typescript/artifacts/native
+          merge-multiple: true
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: npm-loader
+          path: bindings/typescript
+
+      - name: Move native artifacts into platform packages
+        run: npm run artifacts -- --output-dir artifacts/native --npm-dir npm
+
+      - name: Build WebAssembly and TypeScript packages
+        run: |
+          npm run build:browser
+          npm run build
+
+      - name: Assemble and verify six tarballs
+        env:
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for suffix in \
+            linux-x64-gnu \
+            linux-arm64-gnu \
+            darwin-x64 \
+            darwin-arm64 \
+            win32-x64-msvc
+          do
+            test -f "npm/$suffix/maxt.$suffix.node"
+          done
+          test -f native.cjs
+          test -f native.d.ts
+          test -f wasm/maxt_wasm_bg.wasm
+
+          mkdir package-set
+          for directory in npm/*; do
+            npm pack "$directory" --pack-destination package-set --silent
+          done
+          npm pack . --pack-destination package-set --silent
+
+          test "$(find package-set -maxdepth 1 -name '*.tgz' | wc -l)" -eq 6
+          root_tarball="package-set/jabdori-maxt-$RELEASE_VERSION.tgz"
+          test -f "$root_tarball"
+          tar -tzf "$root_tarball" | grep -Fx package/wasm/maxt_wasm_bg.wasm
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: npm-package-set
+          path: bindings/typescript/package-set/*.tgz
+          if-no-files-found: error
+
+  release-artifacts-ready:
+    name: All runtime artifacts ready
+    needs:
+      - ci
+      - python-distributions
+      - npm-package
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Rust, Python, Dart, Node, and browser artifacts passed their release gates."
+
   rust-publish:
     name: Publish Rust crates
-    needs: [validate, ci]
+    needs: [validate, release-artifacts-ready]
     if: >-
       needs.validate.outputs.maxt_version_exists != 'true' ||
       needs.validate.outputs.common_version_exists != 'true'
@@ -379,7 +654,7 @@ jobs:
           RELEASE_VERSION: ${{ needs.validate.outputs.version }}
         shell: bash
         run: |
-          for attempt in {1..30}; do
+          for _ in {1..30}; do
             if cargo info "maxt@$RELEASE_VERSION" \
               --registry crates-io >/dev/null 2>&1; then
               exit 0
@@ -401,7 +676,7 @@ jobs:
           RELEASE_VERSION: ${{ needs.validate.outputs.version }}
         shell: bash
         run: |
-          for attempt in {1..30}; do
+          for _ in {1..30}; do
             if cargo info "maxt-bindings-common@$RELEASE_VERSION" \
               --registry crates-io >/dev/null 2>&1; then
               exit 0
@@ -413,19 +688,32 @@ jobs:
 
   rust-ready:
     name: Rust release ready
-    needs: [validate, ci, rust-publish]
+    needs: [validate, ci, release-artifacts-ready, rust-publish]
     if: >-
       always() &&
       needs.validate.result == 'success' &&
       needs.ci.result == 'success' &&
+      needs.release-artifacts-ready.result == 'success' &&
       (needs.rust-publish.result == 'success' || needs.rust-publish.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - run: echo "Rust crates are available for dependent packages."
 
+  dart-bootstrap-ready:
+    name: pub.dev bootstrap ready
+    needs: [validate, rust-ready]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require the first pub.dev package bootstrap
+        if: needs.validate.outputs.dart_package_exists != 'true'
+        run: |
+          echo "::error::Rust crates are available. Now publish bindings/dart 0.1.0 manually to pub.dev, then rerun this release. Python and npm were not published."
+          exit 1
+
   python-publish:
     name: Publish Python package
-    needs: [ci, python-distributions, rust-ready]
+    needs: [validate, ci, python-distributions, rust-ready, dart-bootstrap-ready]
+    if: needs.validate.outputs.python_version_exists != 'true'
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
@@ -442,9 +730,143 @@ jobs:
           packages-dir: dist
           skip-existing: true
 
+  npm-publish:
+    name: Publish npm packages
+    needs: [validate, rust-ready, dart-bootstrap-ready, npm-package]
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Install npm with Trusted Publishing support
+        run: |
+          npm install --global npm@11.19.0
+          node --version
+          npm --version
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: npm-package-set
+          path: package-set
+
+      - name: Prepare ordered idempotent publisher
+        shell: bash
+        run: |
+          cat > "$RUNNER_TEMP/publish-npm.sh" <<'BASH'
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          mode="$1"
+          directory="$2"
+          version="$3"
+
+          registry_status() {
+            local package="$1"
+            local encoded="${package/@/%40}"
+            encoded="${encoded/\//%2F}"
+            curl --silent --show-error --location \
+              --retry 3 --retry-delay 2 \
+              --user-agent 'maxt-release-workflow/1.0' \
+              --output /dev/null --write-out '%{http_code}' \
+              "https://registry.npmjs.org/$encoded/$version"
+          }
+
+          wait_for_version() {
+            local package="$1"
+            local status
+            for _ in {1..30}; do
+              status="$(registry_status "$package")"
+              case "$status" in
+                200) return ;;
+                404) sleep 10 ;;
+                *)
+                  echo "::error::npm registry returned HTTP $status for $package@$version."
+                  exit 1
+                  ;;
+              esac
+            done
+            echo "::error::npm did not expose $package@$version after publication."
+            exit 1
+          }
+
+          publish_one() {
+            local package="$1"
+            local filename="$2"
+            local status
+            status="$(registry_status "$package")"
+            case "$status" in
+              200)
+                echo "$package@$version already exists; skipping."
+                return
+                ;;
+              404) ;;
+              *)
+                echo "::error::npm registry returned HTTP $status for $package@$version."
+                exit 1
+                ;;
+            esac
+
+            args=(publish "$directory/$filename" --access public)
+            if [[ "$mode" == bootstrap ]]; then
+              args+=(--provenance)
+            fi
+            npm "${args[@]}"
+            wait_for_version "$package"
+          }
+
+          publish_one @jabdori/maxt-linux-x64-gnu \
+            "jabdori-maxt-linux-x64-gnu-$version.tgz"
+          publish_one @jabdori/maxt-linux-arm64-gnu \
+            "jabdori-maxt-linux-arm64-gnu-$version.tgz"
+          publish_one @jabdori/maxt-darwin-x64 \
+            "jabdori-maxt-darwin-x64-$version.tgz"
+          publish_one @jabdori/maxt-darwin-arm64 \
+            "jabdori-maxt-darwin-arm64-$version.tgz"
+          publish_one @jabdori/maxt-win32-x64-msvc \
+            "jabdori-maxt-win32-x64-msvc-$version.tgz"
+          publish_one @jabdori/maxt "jabdori-maxt-$version.tgz"
+          BASH
+          chmod +x "$RUNNER_TEMP/publish-npm.sh"
+
+      - name: Require npm token only for package-name bootstrap
+        if: needs.validate.outputs.npm_bootstrap_needed == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        shell: bash
+        run: |
+          if [[ -z "$NODE_AUTH_TOKEN" ]]; then
+            echo "::error::The first npm release requires the NPM_TOKEN secret."
+            exit 1
+          fi
+
+      - name: Bootstrap npm package names with token
+        if: needs.validate.outputs.npm_bootstrap_needed == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: >-
+          "$RUNNER_TEMP/publish-npm.sh"
+          bootstrap
+          "$GITHUB_WORKSPACE/package-set"
+          "${{ needs.validate.outputs.version }}"
+
+      - name: Publish through npm Trusted Publishing
+        if: needs.validate.outputs.npm_bootstrap_needed != 'true'
+        run: >-
+          "$RUNNER_TEMP/publish-npm.sh"
+          trusted
+          "$GITHUB_WORKSPACE/package-set"
+          "${{ needs.validate.outputs.version }}"
+
   dart-publish:
     name: Publish Dart and Flutter package
-    needs: [validate, ci, rust-ready]
+    needs: [validate, ci, rust-ready, dart-bootstrap-ready]
     if: >-
       github.event_name == 'push' &&
       needs.validate.outputs.dart_package_exists == 'true' &&
@@ -476,3 +898,131 @@ jobs:
           elif [[ "$EVENT_NAME" != "push" ]]; then
             echo "::notice::pub.dev accepts GitHub OIDC publication only from a tag push."
           fi
+
+  release-complete:
+    name: Verify lockstep release
+    needs:
+      - validate
+      - dart-bootstrap-ready
+      - rust-ready
+      - python-publish
+      - dart-publish
+      - npm-publish
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require successful publication jobs
+        env:
+          BOOTSTRAP_RESULT: ${{ needs.dart-bootstrap-ready.result }}
+          RUST_RESULT: ${{ needs.rust-ready.result }}
+          PYTHON_RESULT: ${{ needs.python-publish.result }}
+          DART_RESULT: ${{ needs.dart-publish.result }}
+          NPM_RESULT: ${{ needs.npm-publish.result }}
+          DART_PACKAGE_EXISTS: ${{ needs.validate.outputs.dart_package_exists }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$DART_PACKAGE_EXISTS" != true ]]; then
+            if [[ "$RUST_RESULT" == success ]]; then
+              echo "::error::Release blocked after Rust: publish bindings/dart 0.1.0 manually to pub.dev, then rerun."
+            else
+              echo "::error::Release blocked before the pub.dev bootstrap because Rust is $RUST_RESULT."
+            fi
+            exit 1
+          fi
+          test "$BOOTSTRAP_RESULT" = success
+          test "$RUST_RESULT" = success
+          test "$NPM_RESULT" = success
+          [[ "$PYTHON_RESULT" == success || "$PYTHON_RESULT" == skipped ]]
+          [[ "$DART_RESULT" == success || "$DART_RESULT" == skipped ]]
+
+      - name: Require two crates, PyPI, pub.dev, and six npm packages
+        env:
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          version = os.environ["RELEASE_VERSION"]
+          npm_packages = [
+              "@jabdori/maxt-linux-x64-gnu",
+              "@jabdori/maxt-linux-arm64-gnu",
+              "@jabdori/maxt-darwin-x64",
+              "@jabdori/maxt-darwin-arm64",
+              "@jabdori/maxt-win32-x64-msvc",
+              "@jabdori/maxt",
+          ]
+
+          def fetch_json(url: str):
+              request = urllib.request.Request(
+                  url, headers={"User-Agent": "maxt-release-workflow/1.0"}
+              )
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  if response.status != 200:
+                      raise RuntimeError(f"HTTP {response.status} for {url}")
+                  return json.load(response)
+
+          def missing_versions():
+              missing = []
+              checks = [
+                  (
+                      "crate maxt",
+                      f"https://crates.io/api/v1/crates/maxt/{version}",
+                      lambda payload: payload["version"]["num"] == version,
+                  ),
+                  (
+                      "crate maxt-bindings-common",
+                      f"https://crates.io/api/v1/crates/maxt-bindings-common/{version}",
+                      lambda payload: payload["version"]["num"] == version,
+                  ),
+                  (
+                      "PyPI maxt",
+                      f"https://pypi.org/pypi/maxt/{version}/json",
+                      lambda payload: payload["info"]["version"] == version,
+                  ),
+                  (
+                      "pub.dev maxt",
+                      "https://pub.dev/api/packages/maxt",
+                      lambda payload: any(
+                          release["version"] == version
+                          for release in payload["versions"]
+                      ),
+                  ),
+              ]
+              checks.extend(
+                  (
+                      f"npm {package}",
+                      "https://registry.npmjs.org/"
+                      + urllib.parse.quote(package, safe="")
+                      + f"/{version}",
+                      lambda payload: payload["version"] == version,
+                  )
+                  for package in npm_packages
+              )
+
+              for name, url, matches in checks:
+                  try:
+                      if not matches(fetch_json(url)):
+                          missing.append(name)
+                  except urllib.error.HTTPError as error:
+                      if error.code == 404:
+                          missing.append(name)
+                      else:
+                          raise
+              return missing
+
+          for attempt in range(30):
+              missing = missing_versions()
+              if not missing:
+                  break
+              if attempt == 29:
+                  raise SystemExit(
+                      "release versions did not propagate: " + ", ".join(missing)
+                  )
+              time.sleep(10)
+          PY

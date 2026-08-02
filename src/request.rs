@@ -49,14 +49,14 @@ impl CandleRequest {
         }
     }
 
-    /// Returns candles opening at or after this time.
+    /// Sets the inclusive bound `open_time >= from`.
     #[must_use]
     pub fn from(mut self, from: Timestamp) -> Self {
         self.from = Some(from);
         self
     }
 
-    /// Returns candles opening strictly before this time.
+    /// Sets the exclusive bound `open_time < to`.
     #[must_use]
     pub fn to(mut self, to: Timestamp) -> Self {
         self.to = Some(to);
@@ -174,14 +174,14 @@ impl HistoryRequest {
         }
     }
 
-    /// Returns entries at or after this time.
+    /// Sets the inclusive bound `item.timestamp >= from`.
     #[must_use]
     pub fn from(mut self, from: Timestamp) -> Self {
         self.from = Some(from);
         self
     }
 
-    /// Returns entries strictly before this time.
+    /// Sets the exclusive bound `item.timestamp < to`.
     #[must_use]
     pub fn to(mut self, to: Timestamp) -> Self {
         self.to = Some(to);

@@ -195,7 +195,7 @@ where
     Ok(collected)
 }
 
-/// Reads the oldest `limit` candles at or after `from`.
+/// Reads the oldest `limit` candles where `open_time >= from`.
 ///
 /// Providers may omit empty windows. Each probe therefore expands its end
 /// until it contains the next page of actual candles instead of assuming one

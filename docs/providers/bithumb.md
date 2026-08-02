@@ -22,8 +22,8 @@ Spot only.
 | --- | --- | --- |
 | `markets(MarketKind::Spot)` | `/v1/market/all?isDetails=true` | Listed Spot markets |
 | `markets(MarketKind::Perpetual)` | — | `Ok(vec![])` |
-| `trades(market, limit)` | `/v1/trades/ticks` | `limit in 1..=500`; `None -> 1`; newest-first |
-| `order_book(market, depth)` | `/v1/orderbook` | `depth in 1..=30`; at most `depth` levels per side; `None -> 30`; remove `quantity == 0`, sort, then truncate locally |
+| `trades(market, limit)` | `/v1/trades/ticks` | `limit: 1..=500`; `None -> 1`; newest-first |
+| `order_book(market, depth)` | `/v1/orderbook` | `depth: 1..=30`; at most `depth` levels per side; `None -> 30`; remove `quantity == 0`, sort, then truncate locally |
 | `ticker(market)` | `/v1/ticker` | One market snapshot |
 
 `HTTP 2xx + {"error": ...} -> Error::Exchange`. Numeric `error.name` values

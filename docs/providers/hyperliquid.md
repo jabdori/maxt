@@ -27,8 +27,8 @@ may use that name or `@{index}`. Use the returned `MarketInfo::native_symbol`.
 | Call | Hyperliquid request | Contract |
 | --- | --- | --- |
 | `markets(kind)` | `meta`, `spotMeta` | Markets in the support table |
-| `trades(market, limit)` | `recentTrades` | `limit in 1..=10`; no provider count parameter; `None -> provider page (<= 10)`; `Some(limit)` truncates locally; newest-first |
-| `order_book(market, depth)` | `l2Book` | `depth in 1..=20`; at most `depth` levels per side; local truncation |
+| `trades(market, limit)` | `recentTrades` | `limit: 1..=10`; no provider count parameter; `None -> provider page (<= 10)`; `Some(limit)` truncates locally; newest-first |
+| `order_book(market, depth)` | `l2Book` | `depth: 1..=20`; at most `depth` levels per side; local truncation |
 | `ticker(market)` | `metaAndAssetCtxs`, `spotMetaAndAssetCtxs` | Reference-price summary |
 | `funding_rates(request)` | `fundingHistory` | Public; Perpetual only; provider page `<= 500` |
 
@@ -39,6 +39,7 @@ may use that name or `@{index}`. Use the returned `MarketInfo::native_symbol`.
 | `endTime` | `ceil_ms(to) - 1` |
 | `cursor` | Opaque resume point; overrides `from` |
 | `limit` | Local page-size target; one millisecond group is never split, so `items.len()` may be below or above `limit` |
+| `limit == 0` | `Error::InvalidRequest` before credential checks or network I/O |
 | Continuation | Set `cursor = page.next` until `page.next == None` |
 
 Ticker mapping:
@@ -124,6 +125,7 @@ Access the following provider-specific methods through `Client::adapter()`:
 | `from`, `to` | Provider millisecond range `from_ms <= time <= to_ms` |
 | `cursor` | Opaque resume point; overrides `from` |
 | `limit` | Local page-size target; one millisecond group is never split, so `items.len()` may be below or above `limit` |
+| `limit == 0` | `Error::InvalidRequest` before credential checks or network I/O |
 | Continuation | Set `cursor = page.next` until `page.next == None` |
 
 Unknown ledger `type` strings are preserved as

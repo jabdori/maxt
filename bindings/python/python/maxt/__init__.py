@@ -73,8 +73,6 @@ from .models import (
     Trade,
     UpbitMarketEvent,
     UpbitRegion,
-    _model_from_wire,
-    _model_to_wire,
 )
 
 __all__ = [
@@ -148,6 +146,4 @@ __all__ = [
     "UpbitAdapter",
     "UpbitMarketEvent",
     "UpbitRegion",
-    "_model_from_wire",
-    "_model_to_wire",
 ]

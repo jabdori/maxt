@@ -1,6 +1,8 @@
 import unittest
 from decimal import Decimal
 
+import maxt
+import maxt.models as maxt_models
 from maxt import (
     Balance,
     Candle,
@@ -35,12 +37,18 @@ from maxt import (
     Trade,
     Size,
     StreamConfig,
-    _model_from_wire,
-    _model_to_wire,
 )
+from maxt.models import _model_from_wire, _model_to_wire
 
 
 class WireModelTests(unittest.TestCase):
+    def test_wire_conversion_helpers_are_not_public(self) -> None:
+        for name in ("_model_from_wire", "_model_to_wire"):
+            with self.subTest(name=name):
+                self.assertNotIn(name, maxt.__all__)
+                self.assertFalse(hasattr(maxt, name))
+                self.assertNotIn(name, maxt_models.__all__)
+
     def test_enum_helpers_match_the_rust_value_types(self) -> None:
         self.assertEqual(
             {exchange: exchange.display_name() for exchange in Exchange},

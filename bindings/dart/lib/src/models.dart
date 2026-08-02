@@ -44,7 +44,7 @@ enum Feature {
 }
 
 extension FeatureProperties on Feature {
-  /// Dart/Rust 경계에서 쓰는 snake_case 이름입니다.
+  /// 기능을 나타내는 안정적인 snake_case 식별자입니다.
   String get wireName => switch (this) {
     Feature.orderBook => 'order_book',
     Feature.tradeStream => 'trade_stream',
@@ -360,6 +360,8 @@ final class Timestamp implements Comparable<Timestamp> {
   const Timestamp._(this.nanosecondsSinceEpoch);
 
   /// Unix epoch 기준 나노초에서 시각을 만듭니다.
+  ///
+  /// 64비트 부호 있는 정수(i64) 범위를 벗어나면 [RangeError]를 던집니다.
   factory Timestamp.fromNanoseconds(int nanoseconds) {
     if (nanoseconds < _min || nanoseconds > _max) {
       throw RangeError.range(nanoseconds, _min, _max, 'nanoseconds');
@@ -368,14 +370,20 @@ final class Timestamp implements Comparable<Timestamp> {
   }
 
   /// Unix epoch 기준 마이크로초에서 시각을 만듭니다.
+  ///
+  /// 나노초 변환 결과가 i64 범위를 벗어나면 최솟값 또는 최댓값으로 포화합니다.
   factory Timestamp.fromMicroseconds(int microseconds) =>
       _fromScaled(microseconds, 1000);
 
   /// Unix epoch 기준 밀리초에서 시각을 만듭니다.
+  ///
+  /// 나노초 변환 결과가 i64 범위를 벗어나면 최솟값 또는 최댓값으로 포화합니다.
   factory Timestamp.fromMilliseconds(int milliseconds) =>
       _fromScaled(milliseconds, 1000000);
 
   /// Unix epoch 기준 초에서 시각을 만듭니다.
+  ///
+  /// 나노초 변환 결과가 i64 범위를 벗어나면 최솟값 또는 최댓값으로 포화합니다.
   factory Timestamp.fromSeconds(int seconds) =>
       _fromScaled(seconds, 1000000000);
 
@@ -393,10 +401,10 @@ final class Timestamp implements Comparable<Timestamp> {
 
   final int nanosecondsSinceEpoch;
 
-  /// Unix epoch 기준 밀리초를 epoch(0) 방향으로 절삭한 값입니다.
+  /// Unix epoch 기준 밀리초를 `0` 방향으로 절삭한 값입니다.
   int get millisecondsSinceEpoch => nanosecondsSinceEpoch ~/ 1000000;
 
-  /// Unix epoch 기준 초를 epoch(0) 방향으로 절삭한 값입니다.
+  /// Unix epoch 기준 초를 `0` 방향으로 절삭한 값입니다.
   int get secondsSinceEpoch => nanosecondsSinceEpoch ~/ 1000000000;
 
   static Timestamp _fromScaled(int value, int scale) {
@@ -568,6 +576,10 @@ extension IntervalProperties on Interval {
 }
 
 /// 캔들 이력 조회 조건입니다.
+///
+/// 캔들 시작 시각이 [from] 이상이고 [to] 미만인 범위를 조회하며, 결과는 오래된
+/// 순서입니다. [limit]은 [from]이 있으면 가장 오래된 캔들부터, 없으면 가장 최신
+/// 캔들부터 선택합니다.
 final class CandleRequest {
   const CandleRequest(
     this.market,
@@ -708,6 +720,10 @@ final class OrderBook {
   }
 
   /// 최우선 매수·매도 가격의 중간값입니다. 한쪽 호가가 비면 `null`입니다.
+  ///
+  /// 정확한 중간값의 소수 자릿수(scale)가 28을 넘으면 가장 가까운 짝수로
+  /// 반올림(half-even)합니다. 두 가격의 합이 [Decimal] 범위를 넘으면 [RangeError]를
+  /// 던집니다.
   Decimal? get midPrice {
     final bid = bestBid;
     final ask = bestAsk;
@@ -782,6 +798,9 @@ final class Balance {
   final Decimal locked;
 
   /// 사용 가능한 잔고와 잠긴 잔고의 합입니다.
+  ///
+  /// 합산 과정에서 정밀도를 줄여야 하면 가장 가까운 짝수로 반올림(half-even)하고,
+  /// 합이 [Decimal] 범위를 넘으면 [RangeError]를 던집니다.
   Decimal get total => available + locked;
 }
 
@@ -1024,6 +1043,10 @@ final class OrderRequest {
 }
 
 /// 페이지 단위 이력 조회 조건입니다.
+///
+/// 항목 시각이 [from] 이상이고 [to] 미만인 범위를 조회합니다. [cursor]가 있으면
+/// [from]을 무시하고 이전 페이지의 다음 지점부터 이어집니다. [limit]은 목표 페이지
+/// 크기이며, 같은 시각의 항목을 나누지 않으므로 실제 개수는 더 적거나 많을 수 있습니다.
 final class HistoryRequest {
   const HistoryRequest(
     this.market, {

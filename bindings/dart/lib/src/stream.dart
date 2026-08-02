@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'models.dart';
 
-/// 스트림에서 전달되는 데이터 또는 비종료 오류입니다.
+/// 스트림에서 전달되는 이벤트 또는 스트림을 종료하지 않는 오류입니다.
 sealed class StreamItem<T> {
   const StreamItem();
 
@@ -20,8 +20,11 @@ final class StreamError<T> extends StreamItem<T> {
   final Object error;
 }
 
-/// 명시적으로 비동기 종료할 수 있는 tagged-value 스트림입니다.
+/// 이벤트와 오류를 항목으로 전달하고 명시적으로 닫을 수 있는 단일 구독 스트림입니다.
+///
+/// [StreamError] 항목은 스트림을 종료하지 않습니다.
 abstract interface class CloseableStream<T> implements Stream<StreamItem<T>> {
+  /// 스트림을 닫고 구독과 관련 자원의 정리가 끝날 때까지 기다립니다.
   Future<void> close();
 }
 

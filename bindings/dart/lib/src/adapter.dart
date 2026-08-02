@@ -15,10 +15,22 @@ abstract interface class Adapter {
   bool supports(Feature feature);
 
   Future<List<MarketInfo>> markets(MarketKind kind);
+
+  /// 최근 체결을 최신순으로 반환하며, `limit`은 요청할 최대 개수입니다.
   Future<List<Trade>> trades(Market market, [int? limit]);
+
+  /// 호가창 스냅샷을 반환하며, `depth`는 매수·매도 각 측의 최대 단계 수입니다.
   Future<OrderBook> orderBook(Market market, [int? depth]);
+
   Future<Ticker> ticker(Market market);
+
+  /// [CandleRequest] 조건에 맞는 캔들을 오래된 순서로 반환합니다.
   Future<List<Candle>> candles(CandleRequest request);
+
+  /// 시장 데이터를 구독합니다.
+  ///
+  /// 오류는 [StreamError] 항목으로 전달되어 스트림을 종료하지 않습니다. 사용을 마치면
+  /// 반환된 스트림의 [CloseableStream.close] 완료를 기다려야 합니다.
   Future<MarketStream> subscribe(
     Subscription subscription,
     StreamConfig config,
@@ -35,7 +47,7 @@ abstract interface class Adapter {
   Future<void> setMargin(MarginRequest request);
 }
 
-/// 선택 기능에 정직한 기본 실패 동작을 제공하는 어댑터 기반 클래스입니다.
+/// 구현하지 않은 메서드가 [UnsupportedError]를 반환하는 기본 클래스입니다.
 abstract base class AdapterBase implements Adapter {
   Future<T> _unsupported<T>(Feature feature) => Future<T>.error(
     UnsupportedError(

@@ -1,5 +1,7 @@
 # maxt
 
+[한국어](README.ko.md)
+
 `maxt` provides one async Python API for Upbit, Bithumb, Binance, and
 Hyperliquid. The Python binding follows the Rust request, result, error, and
 stream contracts.

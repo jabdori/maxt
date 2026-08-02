@@ -121,14 +121,15 @@ fn collect_rust_sources(directory: &Path, sources: &mut Vec<String>) {
     }
 }
 
-fn collect_use_names(tree: UseTree, names: &mut BTreeSet<String>) {
+fn collect_use_names(tree: UseTree, names: &mut BTreeSet<(String, String)>) {
     match tree {
         UseTree::Path(path) => collect_use_names(*path.tree, names),
         UseTree::Name(name) => {
-            names.insert(name.ident.to_string());
+            let name = name.ident.to_string();
+            names.insert((name.clone(), name));
         }
         UseTree::Rename(rename) => {
-            names.insert(rename.rename.to_string());
+            names.insert((rename.ident.to_string(), rename.rename.to_string()));
         }
         UseTree::Group(group) => {
             for tree in group.items {
@@ -139,7 +140,7 @@ fn collect_use_names(tree: UseTree, names: &mut BTreeSet<String>) {
     }
 }
 
-fn public_use_names(source: &str) -> BTreeSet<String> {
+fn public_use_names(source: &str) -> BTreeSet<(String, String)> {
     let mut names = BTreeSet::new();
     for item in syn::parse_file(source)
         .expect("Rust re-export source must parse")
@@ -154,7 +155,26 @@ fn public_use_names(source: &str) -> BTreeSet<String> {
     names
 }
 
-fn exported_public_struct_sources(root: &Path) -> BTreeMap<String, String> {
+fn map_exported_struct_sources(
+    structs: BTreeMap<String, String>,
+    exports: BTreeSet<(String, String)>,
+) -> BTreeMap<String, (String, String)> {
+    let mut exported = BTreeMap::new();
+    for (rust_name, public_name) in exports {
+        let Some(source) = structs.get(&rust_name) else {
+            continue;
+        };
+        assert!(
+            exported
+                .insert(public_name.clone(), (rust_name, source.clone()))
+                .is_none(),
+            "duplicate public Rust struct name {public_name} needs path-aware inventory handling"
+        );
+    }
+    exported
+}
+
+fn exported_public_struct_sources(root: &Path) -> BTreeMap<String, (String, String)> {
     let mut sources = Vec::new();
     collect_rust_sources(&root.join("src"), &mut sources);
 
@@ -188,8 +208,7 @@ fn exported_public_struct_sources(root: &Path) -> BTreeMap<String, String> {
             )
         })
         .collect::<BTreeSet<_>>();
-    structs.retain(|name, _| exports.contains(name));
-    structs
+    map_exported_struct_sources(structs, exports)
 }
 
 fn qualified_variants(source: &str, prefix: &str) -> BTreeSet<String> {
@@ -793,6 +812,33 @@ fn inventory_assertion_reports_language_model_missing_and_extra_fields() {
 }
 
 #[test]
+fn public_alias_reexports_map_original_struct_to_exported_name() {
+    let internal = "pub struct InternalRecord { pub value: String }";
+    let other = "pub struct OtherRecord { pub id: String }";
+    let structs = BTreeMap::from([
+        ("InternalRecord".to_owned(), internal.to_owned()),
+        ("OtherRecord".to_owned(), other.to_owned()),
+    ]);
+    let exports =
+        public_use_names("pub use module::{InternalRecord as PublicRecord, OtherRecord};");
+
+    let exported = map_exported_struct_sources(structs, exports);
+
+    assert_eq!(
+        exported
+            .get("PublicRecord")
+            .map(|(rust_name, source)| (rust_name.as_str(), source.as_str())),
+        Some(("InternalRecord", internal))
+    );
+    assert_eq!(
+        exported
+            .get("OtherRecord")
+            .map(|(rust_name, source)| (rust_name.as_str(), source.as_str())),
+        Some(("OtherRecord", other))
+    );
+}
+
+#[test]
 fn public_data_model_fields_match_every_language() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let exported_structs = exported_public_struct_sources(&root);
@@ -814,7 +860,7 @@ fn public_data_model_fields_match_every_language() {
         );
     }
 
-    for (model, source) in exported_structs {
+    for (model, (rust_model, source)) in exported_structs {
         if opaque_values.contains(&model)
             || runtime_handles.contains(&model)
             || model.ends_with("Adapter")
@@ -822,7 +868,7 @@ fn public_data_model_fields_match_every_language() {
             continue;
         }
 
-        let rust_fields = rust_struct_fields(&source, &model);
+        let rust_fields = rust_struct_fields(&source, &rust_model);
         assert!(
             !rust_fields.is_empty(),
             "public fieldless Rust struct {model} needs explicit runtime handle or opaque value classification"

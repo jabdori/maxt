@@ -97,7 +97,44 @@ fn rust_struct_fields(source: &str, name: &str) -> BTreeSet<String> {
         .unwrap_or_else(|| panic!("public Rust struct {name} must exist"))
 }
 
-fn collect_rust_sources(directory: &Path, sources: &mut Vec<String>) {
+fn rust_module_path(root: &Path, path: &Path) -> Vec<String> {
+    let relative = path
+        .strip_prefix(root)
+        .unwrap_or_else(|_| panic!("{} must be below {}", path.display(), root.display()));
+    let file_name = relative
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or_else(|| panic!("{} must have a UTF-8 file name", path.display()));
+    let mut module = relative
+        .parent()
+        .into_iter()
+        .flat_map(Path::components)
+        .map(|component| {
+            component
+                .as_os_str()
+                .to_str()
+                .unwrap_or_else(|| panic!("{} must have a UTF-8 module path", path.display()))
+                .to_owned()
+        })
+        .collect::<Vec<_>>();
+    match file_name {
+        "lib.rs" => assert!(module.is_empty(), "lib.rs must be the crate root"),
+        "mod.rs" => {}
+        _ => module.push(
+            path.file_stem()
+                .and_then(|name| name.to_str())
+                .unwrap_or_else(|| panic!("{} must have a UTF-8 file stem", path.display()))
+                .to_owned(),
+        ),
+    }
+    module
+}
+
+fn collect_rust_sources(
+    root: &Path,
+    directory: &Path,
+    sources: &mut BTreeMap<Vec<String>, String>,
+) {
     let mut entries = fs::read_dir(directory)
         .unwrap_or_else(|error| panic!("failed to read {}: {error}", directory.display()))
         .collect::<Result<Vec<_>, _>>()
@@ -110,105 +147,221 @@ fn collect_rust_sources(directory: &Path, sources: &mut Vec<String>) {
             .file_type()
             .unwrap_or_else(|error| panic!("failed to inspect {}: {error}", path.display()));
         if file_type.is_dir() {
-            collect_rust_sources(&path, sources);
+            collect_rust_sources(root, &path, sources);
         } else if file_type.is_file() && path.extension().is_some_and(|extension| extension == "rs")
         {
-            sources.push(
-                fs::read_to_string(&path)
-                    .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display())),
+            let module = rust_module_path(root, &path);
+            let source = fs::read_to_string(&path)
+                .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
+            assert!(
+                sources.insert(module.clone(), source).is_none(),
+                "duplicate Rust module path {}",
+                module.join("::")
             );
         }
     }
 }
 
-fn collect_use_names(tree: UseTree, names: &mut BTreeSet<(String, String)>) {
+fn collect_use_bindings(
+    tree: UseTree,
+    prefix: Vec<String>,
+    bindings: &mut Vec<(String, Vec<String>)>,
+) {
     match tree {
-        UseTree::Path(path) => collect_use_names(*path.tree, names),
+        UseTree::Path(path) => {
+            let mut prefix = prefix;
+            prefix.push(path.ident.to_string());
+            collect_use_bindings(*path.tree, prefix, bindings);
+        }
         UseTree::Name(name) => {
             let name = name.ident.to_string();
-            names.insert((name.clone(), name));
+            if name == "self" {
+                let public_name = prefix
+                    .last()
+                    .unwrap_or_else(|| panic!("public self re-export needs a path"))
+                    .clone();
+                bindings.push((public_name, prefix));
+            } else {
+                let mut target = prefix;
+                target.push(name.clone());
+                bindings.push((name, target));
+            }
         }
         UseTree::Rename(rename) => {
-            names.insert((rename.ident.to_string(), rename.rename.to_string()));
+            let public_name = rename.rename.to_string();
+            if public_name == "_" {
+                return;
+            }
+            let mut target = prefix;
+            let name = rename.ident.to_string();
+            if name != "self" {
+                target.push(name);
+            }
+            bindings.push((public_name, target));
         }
         UseTree::Group(group) => {
             for tree in group.items {
-                collect_use_names(tree, names);
+                collect_use_bindings(tree, prefix.clone(), bindings);
             }
         }
         UseTree::Glob(_) => panic!("public glob re-exports need explicit inventory handling"),
     }
 }
 
-fn public_use_names(source: &str) -> BTreeSet<(String, String)> {
-    let mut names = BTreeSet::new();
-    for item in syn::parse_file(source)
-        .expect("Rust re-export source must parse")
-        .items
-    {
-        if let Item::Use(item) = item
-            && matches!(item.vis, Visibility::Public(_))
-        {
-            collect_use_names(item.tree, &mut names);
+fn resolve_use_path(module: &[String], path: &[String]) -> Vec<String> {
+    let mut resolved = module.to_vec();
+    let mut index = 0;
+    match path.first().map(String::as_str) {
+        Some("crate") => {
+            resolved.clear();
+            index = 1;
         }
+        Some("self") => index = 1,
+        Some("super") => {
+            while path.get(index).is_some_and(|part| part == "super") {
+                assert!(
+                    resolved.pop().is_some(),
+                    "public re-export has too many super segments"
+                );
+                index += 1;
+            }
+        }
+        _ => {}
     }
-    names
+    resolved.extend_from_slice(&path[index..]);
+    resolved
 }
 
-fn map_exported_struct_sources(
-    structs: BTreeMap<String, String>,
-    exports: BTreeSet<(String, String)>,
+fn public_struct_definitions(
+    modules: &BTreeMap<Vec<String>, String>,
+) -> BTreeMap<Vec<String>, (String, String)> {
+    let mut definitions = BTreeMap::new();
+    for (module, source) in modules {
+        for item in syn::parse_file(source)
+            .expect("scanned Rust source must parse")
+            .items
+        {
+            let Item::Struct(item) = item else {
+                continue;
+            };
+            if !matches!(item.vis, Visibility::Public(_)) {
+                continue;
+            }
+            let name = item.ident.to_string();
+            let mut path = module.clone();
+            path.push(name.clone());
+            assert!(
+                definitions
+                    .insert(path.clone(), (name, source.clone()))
+                    .is_none(),
+                "duplicate public Rust struct path {}",
+                path.join("::")
+            );
+        }
+    }
+    definitions
+}
+
+fn public_reexport_edges(
+    modules: &BTreeMap<Vec<String>, String>,
+) -> BTreeMap<Vec<String>, Vec<String>> {
+    let mut edges = BTreeMap::new();
+    for (module, source) in modules {
+        for item in syn::parse_file(source)
+            .expect("Rust re-export source must parse")
+            .items
+        {
+            let Item::Use(item) = item else {
+                continue;
+            };
+            if !matches!(item.vis, Visibility::Public(_)) {
+                continue;
+            }
+            let prefix = if item.leading_colon.is_some() {
+                vec!["$external".to_owned()]
+            } else {
+                Vec::new()
+            };
+            let mut bindings = Vec::new();
+            collect_use_bindings(item.tree, prefix, &mut bindings);
+            for (public_name, target) in bindings {
+                let mut binding = module.clone();
+                binding.push(public_name);
+                let target = resolve_use_path(module, &target);
+                if let Some(previous) = edges.insert(binding.clone(), target.clone()) {
+                    assert_eq!(
+                        previous,
+                        target,
+                        "duplicate public re-export binding {}",
+                        binding.join("::")
+                    );
+                }
+            }
+        }
+    }
+    edges
+}
+
+fn resolve_struct_source(
+    path: &[String],
+    definitions: &BTreeMap<Vec<String>, (String, String)>,
+    edges: &BTreeMap<Vec<String>, Vec<String>>,
+    visiting: &mut BTreeSet<Vec<String>>,
+) -> Option<(String, String)> {
+    if let Some(definition) = definitions.get(path) {
+        return Some(definition.clone());
+    }
+    let target = edges.get(path)?;
+    assert!(
+        visiting.insert(path.to_vec()),
+        "public re-export cycle detected at {}",
+        path.join("::")
+    );
+    let resolved = resolve_struct_source(target, definitions, edges, visiting);
+    visiting.remove(path);
+    resolved
+}
+
+fn resolve_public_struct_sources(
+    modules: &BTreeMap<Vec<String>, String>,
+    entry_modules: &[Vec<String>],
 ) -> BTreeMap<String, (String, String)> {
+    let definitions = public_struct_definitions(modules);
+    let edges = public_reexport_edges(modules);
     let mut exported = BTreeMap::new();
-    for (rust_name, public_name) in exports {
-        let Some(source) = structs.get(&rust_name) else {
-            continue;
-        };
-        assert!(
-            exported
-                .insert(public_name.clone(), (rust_name, source.clone()))
-                .is_none(),
-            "duplicate public Rust struct name {public_name} needs path-aware inventory handling"
-        );
+
+    for entry_module in entry_modules {
+        let starts = edges
+            .keys()
+            .chain(definitions.keys())
+            .filter(|path| {
+                path.len() == entry_module.len() + 1 && path.starts_with(entry_module.as_slice())
+            })
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        for start in starts {
+            let Some(source) =
+                resolve_struct_source(&start, &definitions, &edges, &mut BTreeSet::new())
+            else {
+                continue;
+            };
+            let public_name = start.last().expect("public binding has a name").clone();
+            if let Some(previous) = exported.insert(public_name.clone(), source.clone()) {
+                assert_eq!(
+                    previous, source,
+                    "duplicate public Rust struct name {public_name}"
+                );
+            }
+        }
     }
     exported
 }
 
 fn exported_public_struct_sources(root: &Path) -> BTreeMap<String, (String, String)> {
-    let mut sources = Vec::new();
-    collect_rust_sources(&root.join("src"), &mut sources);
-
-    let mut structs = BTreeMap::new();
-    for source in sources {
-        let names = syn::parse_file(&source)
-            .expect("scanned Rust source must parse")
-            .items
-            .into_iter()
-            .filter_map(|item| match item {
-                Item::Struct(item) if matches!(item.vis, Visibility::Public(_)) => {
-                    Some(item.ident.to_string())
-                }
-                _ => None,
-            })
-            .collect::<Vec<_>>();
-        for name in names {
-            assert!(
-                structs.insert(name.clone(), source.clone()).is_none(),
-                "duplicate public Rust struct {name} needs path-aware inventory handling"
-            );
-        }
-    }
-
-    let exports = [root.join("src/lib.rs"), root.join("src/adapters/mod.rs")]
-        .into_iter()
-        .flat_map(|path| {
-            public_use_names(
-                &fs::read_to_string(&path)
-                    .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display())),
-            )
-        })
-        .collect::<BTreeSet<_>>();
-    map_exported_struct_sources(structs, exports)
+    let src = root.join("src");
+    let mut modules = BTreeMap::new();
+    collect_rust_sources(&src, &src, &mut modules);
+    resolve_public_struct_sources(&modules, &[Vec::new(), vec!["adapters".to_owned()]])
 }
 
 fn qualified_variants(source: &str, prefix: &str) -> BTreeSet<String> {
@@ -545,6 +698,41 @@ fn find_dart_class_body<'a>(source: &'a str, name: &str) -> Option<&'a str> {
     None
 }
 
+fn dart_has_top_level_comma(declaration: &str) -> bool {
+    let mut angle = 0_u32;
+    let mut parentheses = 0_u32;
+    let mut brackets = 0_u32;
+    let mut braces = 0_u32;
+    let mut quote = None;
+    let mut escaped = false;
+    for character in declaration.chars() {
+        if let Some(active_quote) = quote {
+            if escaped {
+                escaped = false;
+            } else if character == '\\' {
+                escaped = true;
+            } else if character == active_quote {
+                quote = None;
+            }
+            continue;
+        }
+        match character {
+            '\'' | '"' => quote = Some(character),
+            '<' => angle += 1,
+            '>' => angle = angle.saturating_sub(1),
+            '(' => parentheses += 1,
+            ')' => parentheses = parentheses.saturating_sub(1),
+            '[' => brackets += 1,
+            ']' => brackets = brackets.saturating_sub(1),
+            '{' => braces += 1,
+            '}' => braces = braces.saturating_sub(1),
+            ',' if angle == 0 && parentheses == 0 && brackets == 0 && braces == 0 => return true,
+            _ => {}
+        }
+    }
+    false
+}
+
 fn dart_class_fields(source: &str, name: &str) -> BTreeSet<String> {
     let block = find_dart_class_body(source, name)
         .unwrap_or_else(|| panic!("Dart class {name} must exist"));
@@ -555,15 +743,23 @@ fn dart_class_fields(source: &str, name: &str) -> BTreeSet<String> {
         if depth == 0
             && let Some(declaration) = trimmed.strip_suffix(';')
         {
-            let declaration = declaration
+            let field_declaration = declaration
                 .split_once('=')
                 .map_or(declaration, |(before, _)| before)
                 .trim();
-            let tokens = declaration.split_whitespace().collect::<Vec<_>>();
-            if tokens.contains(&"final")
-                && !tokens.contains(&"static")
-                && let Some(field) = tokens.last().filter(|field| is_identifier(field))
+            let tokens = field_declaration.split_whitespace().collect::<Vec<_>>();
+            if tokens.contains(&"static")
+                || tokens
+                    .iter()
+                    .any(|token| matches!(*token, "get" | "set" | "operator" | "typedef"))
             {
+                continue;
+            }
+            assert!(
+                !dart_has_top_level_comma(declaration),
+                "Dart class {name} has a comma-separated field declaration; split it into one field per line"
+            );
+            if let Some(field) = tokens.last().filter(|field| is_identifier(field)) {
                 fields.insert(snake_case(field));
             }
         }
@@ -782,9 +978,17 @@ final class ExampleExtra {
 final class Example {
   final String lowerCamel;
   final String plain;
+  String mutableField;
+  late String lateField;
+  var state;
+  void Function() callback;
   static final String shared = 'shared';
+  static String mutableStatic = 'shared';
 
   bool get derivedValue => true;
+  set derivedValue(bool value) => state = value;
+  String format() => lowerCamel;
+  Example();
 
   void method() {
     final String localValue = 'local';
@@ -794,7 +998,23 @@ final class Example {
 
     assert_eq!(
         dart_class_fields(source, "Example"),
-        BTreeSet::from(["lower_camel".to_owned(), "plain".to_owned()])
+        BTreeSet::from([
+            "callback".to_owned(),
+            "late_field".to_owned(),
+            "lower_camel".to_owned(),
+            "mutable_field".to_owned(),
+            "plain".to_owned(),
+            "state".to_owned(),
+        ])
+    );
+}
+
+#[test]
+#[should_panic(expected = "comma-separated field declaration")]
+fn dart_field_parser_rejects_comma_separated_fields() {
+    dart_class_fields(
+        "final class Example {\n  String first, second;\n}",
+        "Example",
     );
 }
 
@@ -812,29 +1032,117 @@ fn inventory_assertion_reports_language_model_missing_and_extra_fields() {
 }
 
 #[test]
-fn public_alias_reexports_map_original_struct_to_exported_name() {
-    let internal = "pub struct InternalRecord { pub value: String }";
-    let other = "pub struct OtherRecord { pub id: String }";
-    let structs = BTreeMap::from([
-        ("InternalRecord".to_owned(), internal.to_owned()),
-        ("OtherRecord".to_owned(), other.to_owned()),
+fn public_reexports_resolve_same_named_structs_by_module_path() {
+    let modules = BTreeMap::from([
+        (
+            Vec::<String>::new(),
+            "pub use crate::right::Record as PublicRecord;".to_owned(),
+        ),
+        (
+            vec!["left".to_owned()],
+            "pub struct Record { pub left_value: String }".to_owned(),
+        ),
+        (
+            vec!["right".to_owned()],
+            "pub struct Record { pub right_value: String }".to_owned(),
+        ),
     ]);
-    let exports =
-        public_use_names("pub use module::{InternalRecord as PublicRecord, OtherRecord};");
 
-    let exported = map_exported_struct_sources(structs, exports);
+    let exported: BTreeMap<String, (String, String)> =
+        resolve_public_struct_sources(&modules, &[Vec::new()]);
+    let (rust_name, source) = exported
+        .get("PublicRecord")
+        .expect("PublicRecord must resolve");
 
+    assert_eq!(rust_name, "Record");
     assert_eq!(
-        exported
-            .get("PublicRecord")
-            .map(|(rust_name, source)| (rust_name.as_str(), source.as_str())),
-        Some(("InternalRecord", internal))
+        rust_struct_fields(source, rust_name),
+        BTreeSet::from(["right_value".to_owned()])
     );
+}
+
+#[test]
+fn public_reexports_follow_two_alias_steps() {
+    let modules = BTreeMap::from([
+        (
+            Vec::<String>::new(),
+            "pub use self::inner::Public as PublicRecord;".to_owned(),
+        ),
+        (
+            vec!["inner".to_owned()],
+            "pub use super::leaf::Internal as Public;".to_owned(),
+        ),
+        (
+            vec!["leaf".to_owned()],
+            "pub struct Internal { pub value: String }".to_owned(),
+        ),
+    ]);
+
+    let exported: BTreeMap<String, (String, String)> =
+        resolve_public_struct_sources(&modules, &[Vec::new()]);
+    let (rust_name, source) = exported
+        .get("PublicRecord")
+        .expect("PublicRecord must resolve");
+
+    assert_eq!(rust_name, "Internal");
     assert_eq!(
-        exported
-            .get("OtherRecord")
-            .map(|(rust_name, source)| (rust_name.as_str(), source.as_str())),
-        Some(("OtherRecord", other))
+        rust_struct_fields(source, rust_name),
+        BTreeSet::from(["value".to_owned()])
+    );
+}
+
+#[test]
+#[should_panic(expected = "public re-export cycle detected")]
+fn public_reexport_cycles_fail_explicitly() {
+    let modules = BTreeMap::from([
+        (
+            Vec::<String>::new(),
+            "pub use first::Public as PublicRecord;".to_owned(),
+        ),
+        (
+            vec!["first".to_owned()],
+            "pub use super::second::Public;".to_owned(),
+        ),
+        (
+            vec!["second".to_owned()],
+            "pub use super::first::Public;".to_owned(),
+        ),
+    ]);
+
+    resolve_public_struct_sources(&modules, &[Vec::new()]);
+}
+
+#[test]
+fn public_alias_reexports_map_original_struct_to_exported_name() {
+    let modules = BTreeMap::from([
+        (
+            Vec::<String>::new(),
+            "pub use module::{InternalRecord as PublicRecord, OtherRecord};".to_owned(),
+        ),
+        (
+            vec!["module".to_owned()],
+            "pub struct InternalRecord { pub value: String }\n\
+             pub struct OtherRecord { pub id: String }"
+                .to_owned(),
+        ),
+    ]);
+    let exported = resolve_public_struct_sources(&modules, &[Vec::new()]);
+
+    let (rust_name, source) = exported
+        .get("PublicRecord")
+        .expect("PublicRecord must resolve");
+    assert_eq!(rust_name, "InternalRecord");
+    assert_eq!(
+        rust_struct_fields(source, rust_name),
+        BTreeSet::from(["value".to_owned()])
+    );
+    let (rust_name, source) = exported
+        .get("OtherRecord")
+        .expect("OtherRecord must resolve");
+    assert_eq!(rust_name, "OtherRecord");
+    assert_eq!(
+        rust_struct_fields(source, rust_name),
+        BTreeSet::from(["id".to_owned()])
     );
 }
 
@@ -852,6 +1160,7 @@ fn public_data_model_fields_match_every_language() {
         "Client".to_owned(),
         "MarketStream".to_owned(),
     ]);
+    let mut record_count = 0;
 
     for classified in opaque_values.iter().chain(&runtime_handles) {
         assert!(
@@ -867,6 +1176,7 @@ fn public_data_model_fields_match_every_language() {
         {
             continue;
         }
+        record_count += 1;
 
         let rust_fields = rust_struct_fields(&source, &rust_model);
         assert!(
@@ -883,6 +1193,10 @@ fn public_data_model_fields_match_every_language() {
         let dart_fields = dart_public_model_fields(&model);
         assert_inventory("Dart", &model, &dart_expected, &dart_fields);
     }
+    assert_eq!(
+        record_count, 26,
+        "all current public record DTOs must resolve"
+    );
 }
 
 #[test]

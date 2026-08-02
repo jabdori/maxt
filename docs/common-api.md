@@ -192,6 +192,7 @@ rules are provider-specific.
 | `to` | `item.timestamp < to` |
 | `cursor` | Opaque resume point from `Page::next`; overrides `from` and must be passed back unchanged to the same adapter |
 | `limit` | Page-size target, not a hard maximum |
+| `limit == 0` | `Error::InvalidRequest` before network I/O |
 | Same-timestamp group crosses `limit` | The page may stop below `limit` and defer the group, or exceed `limit` when the first group alone is larger |
 | Next request | Set `request.cursor = page.next` |
 | Continue | `page.next.is_some()`, even when `items.is_empty()` |

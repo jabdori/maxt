@@ -4,13 +4,13 @@
 Hyperliquid. The Python binding follows the Rust request, result, error, and
 stream contracts.
 
-After the first PyPI release:
+## Install
 
 ```bash
 pip install maxt
 ```
 
-From a repository checkout:
+For development from a repository checkout:
 
 ```bash
 mise install

@@ -525,7 +525,7 @@ jobs:
         run: npm ci
 
       - name: Install WebAssembly build tool
-        run: cargo install wasm-pack --version 0.15.0 --locked
+        run: cargo +stable install wasm-pack --version 0.15.0 --locked
 
       - name: Create platform packages
         run: npm run package:dirs

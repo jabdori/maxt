@@ -1,9 +1,13 @@
 //! Cross-language public API inventory parity.
 
-use std::collections::BTreeSet;
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fs,
+    path::Path,
+};
 
 use maxt::{Exchange, Feature};
-use syn::{ImplItem, Item, TraitItem, Type, Visibility};
+use syn::{Fields, ImplItem, Item, TraitItem, Type, UseTree, Visibility};
 
 const CORE_ADAPTER: &str = include_str!("../../../src/adapter.rs");
 const CORE_CLIENT: &str = include_str!("../../../src/client.rs");
@@ -58,6 +62,136 @@ fn rust_enum_variants(source: &str, name: &str) -> BTreeSet<String> {
         .unwrap_or_else(|| panic!("Rust enum {name} must exist"))
 }
 
+fn rust_struct_fields(source: &str, name: &str) -> BTreeSet<String> {
+    syn::parse_file(source)
+        .expect("Rust struct source must parse")
+        .items
+        .into_iter()
+        .find_map(|item| match item {
+            Item::Struct(item)
+                if item.ident == name && matches!(item.vis, Visibility::Public(_)) =>
+            {
+                Some(match item.fields {
+                    Fields::Named(fields) => fields
+                        .named
+                        .into_iter()
+                        .map(|field| {
+                            field
+                                .ident
+                                .expect("named field has an identifier")
+                                .to_string()
+                        })
+                        .collect(),
+                    Fields::Unnamed(_) => {
+                        panic!(
+                            "public Rust struct {name} is a tuple struct; classify it explicitly"
+                        )
+                    }
+                    Fields::Unit => {
+                        panic!("public Rust struct {name} is a unit struct; classify it explicitly")
+                    }
+                })
+            }
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("public Rust struct {name} must exist"))
+}
+
+fn collect_rust_sources(directory: &Path, sources: &mut Vec<String>) {
+    let mut entries = fs::read_dir(directory)
+        .unwrap_or_else(|error| panic!("failed to read {}: {error}", directory.display()))
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap_or_else(|error| panic!("failed to read {} entry: {error}", directory.display()));
+    entries.sort_by_key(std::fs::DirEntry::path);
+
+    for entry in entries {
+        let path = entry.path();
+        let file_type = entry
+            .file_type()
+            .unwrap_or_else(|error| panic!("failed to inspect {}: {error}", path.display()));
+        if file_type.is_dir() {
+            collect_rust_sources(&path, sources);
+        } else if file_type.is_file() && path.extension().is_some_and(|extension| extension == "rs")
+        {
+            sources.push(
+                fs::read_to_string(&path)
+                    .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display())),
+            );
+        }
+    }
+}
+
+fn collect_use_names(tree: UseTree, names: &mut BTreeSet<String>) {
+    match tree {
+        UseTree::Path(path) => collect_use_names(*path.tree, names),
+        UseTree::Name(name) => {
+            names.insert(name.ident.to_string());
+        }
+        UseTree::Rename(rename) => {
+            names.insert(rename.rename.to_string());
+        }
+        UseTree::Group(group) => {
+            for tree in group.items {
+                collect_use_names(tree, names);
+            }
+        }
+        UseTree::Glob(_) => panic!("public glob re-exports need explicit inventory handling"),
+    }
+}
+
+fn public_use_names(source: &str) -> BTreeSet<String> {
+    let mut names = BTreeSet::new();
+    for item in syn::parse_file(source)
+        .expect("Rust re-export source must parse")
+        .items
+    {
+        if let Item::Use(item) = item
+            && matches!(item.vis, Visibility::Public(_))
+        {
+            collect_use_names(item.tree, &mut names);
+        }
+    }
+    names
+}
+
+fn exported_public_struct_sources(root: &Path) -> BTreeMap<String, String> {
+    let mut sources = Vec::new();
+    collect_rust_sources(&root.join("src"), &mut sources);
+
+    let mut structs = BTreeMap::new();
+    for source in sources {
+        let names = syn::parse_file(&source)
+            .expect("scanned Rust source must parse")
+            .items
+            .into_iter()
+            .filter_map(|item| match item {
+                Item::Struct(item) if matches!(item.vis, Visibility::Public(_)) => {
+                    Some(item.ident.to_string())
+                }
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        for name in names {
+            assert!(
+                structs.insert(name.clone(), source.clone()).is_none(),
+                "duplicate public Rust struct {name} needs path-aware inventory handling"
+            );
+        }
+    }
+
+    let exports = [root.join("src/lib.rs"), root.join("src/adapters/mod.rs")]
+        .into_iter()
+        .flat_map(|path| {
+            public_use_names(
+                &fs::read_to_string(&path)
+                    .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display())),
+            )
+        })
+        .collect::<BTreeSet<_>>();
+    structs.retain(|name, _| exports.contains(name));
+    structs
+}
+
 fn qualified_variants(source: &str, prefix: &str) -> BTreeSet<String> {
     let mut variants = BTreeSet::new();
     let mut remainder = source;
@@ -103,6 +237,86 @@ fn rust_public_methods(source: &str, name: &str, async_only: bool) -> BTreeSet<S
                 Some(method.sig.ident.to_string())
             }
             _ => None,
+        })
+        .collect()
+}
+
+fn is_identifier(value: &str) -> bool {
+    let mut characters = value.chars();
+    characters
+        .next()
+        .is_some_and(|character| character == '_' || character.is_ascii_alphabetic())
+        && characters.all(|character| character == '_' || character.is_ascii_alphanumeric())
+}
+
+fn python_class_body<'a>(source: &'a str, name: &str) -> &'a str {
+    let lines = source.lines().collect::<Vec<_>>();
+    let start = lines
+        .iter()
+        .position(|line| {
+            line.strip_prefix("class ").is_some_and(|declaration| {
+                declaration
+                    .chars()
+                    .take_while(|character| *character == '_' || character.is_ascii_alphanumeric())
+                    .eq(name.chars())
+            })
+        })
+        .unwrap_or_else(|| panic!("Python class {name} must exist"));
+    let end = lines
+        .iter()
+        .enumerate()
+        .skip(start + 1)
+        .find_map(|(index, line)| (!line.is_empty() && !line.starts_with(' ')).then_some(index))
+        .unwrap_or(lines.len());
+    let start_offset = lines[..=start]
+        .iter()
+        .map(|line| line.len() + 1)
+        .sum::<usize>()
+        .min(source.len());
+    let end_offset = lines[..end]
+        .iter()
+        .map(|line| line.len() + 1)
+        .sum::<usize>()
+        .min(source.len());
+    &source[start_offset..end_offset]
+}
+
+fn python_wire_name(line: &str) -> Option<&str> {
+    ["\"wire_name\"", "'wire_name'"]
+        .into_iter()
+        .find_map(|marker| {
+            let value = line.split_once(marker)?.1.split_once(':')?.1.trim_start();
+            let quote = value
+                .chars()
+                .next()
+                .filter(|quote| matches!(quote, '\'' | '"'))?;
+            value[1..].split_once(quote).map(|(name, _)| name)
+        })
+}
+
+fn python_class_fields(source: &str, name: &str) -> BTreeSet<String> {
+    let body = python_class_body(source, name);
+    let member_depth = body
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| line.len() - line.trim_start_matches([' ', '\t']).len())
+        .filter(|depth| *depth > 0)
+        .min()
+        .unwrap_or(0);
+
+    body.lines()
+        .filter(|line| line.len() - line.trim_start_matches([' ', '\t']).len() == member_depth)
+        .filter_map(|line| {
+            let member = line.trim();
+            let (field, annotation) = member.split_once(':')?;
+            if !is_identifier(field)
+                || annotation
+                    .split(|character: char| character != '_' && !character.is_ascii_alphanumeric())
+                    .any(|part| part == "ClassVar")
+            {
+                return None;
+            }
+            Some(python_wire_name(member).unwrap_or(field).to_owned())
         })
         .collect()
 }
@@ -276,6 +490,103 @@ fn dart_block<'a>(source: &'a str, marker: &str) -> &'a str {
     panic!("Dart declaration {marker} must close its block")
 }
 
+fn dart_class_name(line: &str) -> Option<&str> {
+    if line.chars().next().is_some_and(char::is_whitespace) {
+        return None;
+    }
+    let mut declaration = line;
+    loop {
+        let (modifier, rest) = declaration.split_once(' ')?;
+        if matches!(
+            modifier,
+            "abstract" | "base" | "final" | "interface" | "sealed"
+        ) {
+            declaration = rest.trim_start();
+        } else {
+            break;
+        }
+    }
+    declaration.strip_prefix("class ").map(|rest| {
+        let end = rest
+            .find(|character: char| character != '_' && !character.is_ascii_alphanumeric())
+            .unwrap_or(rest.len());
+        &rest[..end]
+    })
+}
+
+fn find_dart_class_body<'a>(source: &'a str, name: &str) -> Option<&'a str> {
+    let mut offset = 0;
+    for line in source.split_inclusive('\n') {
+        let declaration = line.trim_end_matches(['\r', '\n']);
+        if dart_class_name(declaration) == Some(name) {
+            return Some(dart_block(&source[offset..], declaration));
+        }
+        offset += line.len();
+    }
+    None
+}
+
+fn dart_class_fields(source: &str, name: &str) -> BTreeSet<String> {
+    let block = find_dart_class_body(source, name)
+        .unwrap_or_else(|| panic!("Dart class {name} must exist"));
+    let mut depth = 0_isize;
+    let mut fields = BTreeSet::new();
+    for line in block.lines() {
+        let trimmed = line.trim();
+        if depth == 0
+            && let Some(declaration) = trimmed.strip_suffix(';')
+        {
+            let declaration = declaration
+                .split_once('=')
+                .map_or(declaration, |(before, _)| before)
+                .trim();
+            let tokens = declaration.split_whitespace().collect::<Vec<_>>();
+            if tokens.contains(&"final")
+                && !tokens.contains(&"static")
+                && let Some(field) = tokens.last().filter(|field| is_identifier(field))
+            {
+                fields.insert(snake_case(field));
+            }
+        }
+        depth += line.chars().filter(|character| *character == '{').count() as isize;
+        depth -= line.chars().filter(|character| *character == '}').count() as isize;
+    }
+    fields
+}
+
+fn dart_public_model_fields(name: &str) -> BTreeSet<String> {
+    let sources = [DART_MODELS, DART_PROVIDERS]
+        .into_iter()
+        .filter(|source| find_dart_class_body(source, name).is_some())
+        .collect::<Vec<_>>();
+    assert!(
+        sources.len() == 1,
+        "Dart class {name} must exist in exactly one of models.dart and providers.dart; found {}",
+        sources.len()
+    );
+    dart_class_fields(sources[0], name)
+}
+
+fn assert_inventory(
+    language: &str,
+    model: &str,
+    expected: &BTreeSet<String>,
+    actual: &BTreeSet<String>,
+) {
+    let missing = expected
+        .difference(actual)
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let extra = actual
+        .difference(expected)
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    assert!(
+        missing.is_empty() && extra.is_empty(),
+        "{language} {model} fields differ; missing: {missing:?}; extra: {extra:?}"
+    );
+}
+
 fn dart_enum_values(source: &str, name: &str) -> BTreeSet<String> {
     dart_block(source, &format!("enum {name}"))
         .split(',')
@@ -395,6 +706,173 @@ fn dart_variant_ids(source: &str, name: &str) -> BTreeSet<String> {
         .into_iter()
         .map(|value| snake_case(&value))
         .collect()
+}
+
+#[test]
+fn rust_struct_field_parser_includes_private_named_fields() {
+    let source = r#"
+pub struct Subscription {
+    pub markets: Vec<String>,
+    feeds: Vec<String>,
+}
+"#;
+
+    assert_eq!(
+        rust_struct_fields(source, "Subscription"),
+        BTreeSet::from(["feeds".to_owned(), "markets".to_owned()])
+    );
+}
+
+#[test]
+#[should_panic(expected = "tuple struct; classify it explicitly")]
+fn rust_struct_field_parser_rejects_tuple_structs() {
+    rust_struct_fields("pub struct Cursor(String);", "Cursor");
+}
+
+#[test]
+#[should_panic(expected = "unit struct; classify it explicitly")]
+fn rust_struct_field_parser_rejects_unit_structs() {
+    rust_struct_fields("pub struct Marker;", "Marker");
+}
+
+#[test]
+fn python_field_parser_reads_only_instance_annotations_and_wire_names() {
+    let source = r#"
+class Example(WireModel):
+    from_: int = field(default=0, metadata={"wire_name": "from"})
+    ordinary_: int
+    shared: ClassVar[int] = 0
+
+    def method(self) -> None:
+        local: int = 0
+"#;
+
+    assert_eq!(
+        python_class_fields(source, "Example"),
+        BTreeSet::from(["from".to_owned(), "ordinary_".to_owned()])
+    );
+}
+
+#[test]
+fn dart_field_parser_reads_only_top_level_instance_fields() {
+    let source = r#"
+final class ExampleExtra {
+  final String wrongField;
+}
+
+final class Example {
+  final String lowerCamel;
+  final String plain;
+  static final String shared = 'shared';
+
+  bool get derivedValue => true;
+
+  void method() {
+    final String localValue = 'local';
+  }
+}
+"#;
+
+    assert_eq!(
+        dart_class_fields(source, "Example"),
+        BTreeSet::from(["lower_camel".to_owned(), "plain".to_owned()])
+    );
+}
+
+#[test]
+#[should_panic(
+    expected = "Python Example fields differ; missing: {\"missing\"}; extra: {\"extra\"}"
+)]
+fn inventory_assertion_reports_language_model_missing_and_extra_fields() {
+    assert_inventory(
+        "Python",
+        "Example",
+        &BTreeSet::from(["missing".to_owned(), "shared".to_owned()]),
+        &BTreeSet::from(["extra".to_owned(), "shared".to_owned()]),
+    );
+}
+
+#[test]
+fn public_data_model_fields_match_every_language() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let exported_structs = exported_public_struct_sources(&root);
+    let opaque_values = BTreeSet::from([
+        "BinanceListenKey".to_owned(),
+        "Cursor".to_owned(),
+        "Timestamp".to_owned(),
+    ]);
+    let runtime_handles = BTreeSet::from([
+        "AccountStream".to_owned(),
+        "Client".to_owned(),
+        "MarketStream".to_owned(),
+    ]);
+
+    for classified in opaque_values.iter().chain(&runtime_handles) {
+        assert!(
+            exported_structs.contains_key(classified),
+            "classified Rust struct {classified} must remain publicly exported"
+        );
+    }
+
+    for (model, source) in exported_structs {
+        if opaque_values.contains(&model)
+            || runtime_handles.contains(&model)
+            || model.ends_with("Adapter")
+        {
+            continue;
+        }
+
+        let rust_fields = rust_struct_fields(&source, &model);
+        assert!(
+            !rust_fields.is_empty(),
+            "public fieldless Rust struct {model} needs explicit runtime handle or opaque value classification"
+        );
+        let python_fields = python_class_fields(PYTHON_MODELS, &model);
+        assert_inventory("Python", &model, &rust_fields, &python_fields);
+
+        let mut dart_expected = rust_fields;
+        if matches!(model.as_str(), "UpbitMarketEvent" | "BithumbMarketAlert") {
+            dart_expected.insert("market".to_owned());
+        }
+        let dart_fields = dart_public_model_fields(&model);
+        assert_inventory("Dart", &model, &dart_expected, &dart_fields);
+    }
+}
+
+#[test]
+fn opaque_value_representations_match_every_language() {
+    assert!(PYTHON_MODELS.lines().any(|line| line == "Timestamp = int"));
+    assert!(
+        PYTHON_MODELS
+            .lines()
+            .any(|line| line == "class Cursor(str):")
+    );
+    assert!(
+        python_class_body(PYTHON_ADAPTERS, "BinanceListenKey")
+            .contains("    @property\n    def value(self) -> str:")
+    );
+
+    let dart_timestamp =
+        find_dart_class_body(DART_MODELS, "Timestamp").expect("Dart Timestamp class must exist");
+    assert!(
+        dart_timestamp
+            .lines()
+            .any(|line| line.trim() == "final int nanosecondsSinceEpoch;")
+    );
+    let dart_cursor =
+        find_dart_class_body(DART_MODELS, "Cursor").expect("Dart Cursor class must exist");
+    assert!(
+        dart_cursor
+            .lines()
+            .any(|line| line.trim() == "final String value;")
+    );
+    let dart_listen_key = find_dart_class_body(DART_ADAPTERS, "BinanceListenKey")
+        .expect("Dart BinanceListenKey class must exist");
+    assert!(
+        dart_listen_key
+            .lines()
+            .any(|line| line.trim().starts_with("String get value =>"))
+    );
 }
 
 #[test]

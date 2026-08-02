@@ -5,6 +5,9 @@ import test from "node:test";
 const packageJson = JSON.parse(
   await readFile(new URL("../package.json", import.meta.url), "utf8"),
 );
+const tsConfig = JSON.parse(
+  await readFile(new URL("../tsconfig.json", import.meta.url), "utf8"),
+);
 
 const nativeTargets = [
   "aarch64-apple-darwin",
@@ -25,9 +28,19 @@ const optionalDependencies = {
 test("publishes the @jabdori/maxt Node package identity", () => {
   assert.equal(packageJson.name, "@jabdori/maxt");
   assert.equal(packageJson.version, "0.1.0");
+  assert.equal(
+    packageJson.description,
+    "One TypeScript API for Upbit, Bithumb, Binance, and Hyperliquid.",
+  );
   assert.equal(packageJson.type, "module");
   assert.equal(packageJson.license, "MIT");
-  assert.equal(packageJson.repository?.url, "https://github.com/jabdori/maxt.git");
+  assert.equal(packageJson.main, "./dist/node.js");
+  assert.equal(packageJson.types, "./dist/node.d.ts");
+  assert.deepEqual(packageJson.sideEffects, ["./dist/node.js"]);
+  assert.equal(
+    packageJson.repository?.url,
+    "git+https://github.com/jabdori/maxt.git",
+  );
   assert.deepEqual(packageJson.engines, { node: ">=22.0.0" });
   assert.deepEqual(packageJson.files, [
     "dist/",
@@ -39,18 +52,18 @@ test("publishes the @jabdori/maxt Node package identity", () => {
 });
 
 test("exports only the initial Node entry points", () => {
-  assert.deepEqual(Object.keys(packageJson.exports).sort(), [
-    ".",
-    "./node",
-    "./package.json",
-  ]);
-
-  for (const entry of [".", "./node"]) {
-    assert.equal(packageJson.exports[entry].types, "./dist/node.d.ts");
-    assert.equal(packageJson.exports[entry].import, "./dist/node.js");
-    assert.equal(packageJson.exports[entry].default, "./dist/node.js");
-  }
-  assert.equal(packageJson.exports["./package.json"], "./package.json");
+  assert.deepEqual(packageJson.exports, {
+    ".": {
+      types: "./dist/node.d.ts",
+      node: "./dist/node.js",
+      default: "./dist/node.js",
+    },
+    "./node": {
+      types: "./dist/node.d.ts",
+      default: "./dist/node.js",
+    },
+    "./package.json": "./package.json",
+  });
 });
 
 test("pins the TypeScript and napi-rs toolchain", () => {
@@ -60,24 +73,50 @@ test("pins the TypeScript and napi-rs toolchain", () => {
     typescript: "7.0.2",
   });
   assert.equal(packageJson.scripts.build, "tsc -p tsconfig.json");
-  assert.equal(
-    packageJson.scripts.typecheck,
-    "tsc -p tsconfig.json --noEmit --rootDir .",
-  );
+  assert.match(packageJson.scripts.typecheck, /^tsc -p tsconfig\.json --noEmit/);
+  assert.match(packageJson.scripts.typecheck, /node -e/);
+  assert.match(packageJson.scripts.typecheck, /--ignoreConfig/);
+  assert.match(packageJson.scripts.typecheck, /--strict/);
+  assert.match(packageJson.scripts.typecheck, /tests\/types\.ts/);
+  assert.doesNotMatch(packageJson.scripts.typecheck, /\bif \[/);
   assert.equal(
     packageJson.scripts["build:node"],
     "napi build --manifest-path rust/Cargo.toml --platform --output-dir . --js native.cjs --dts native.d.ts --js-package-name @jabdori/maxt -- --locked",
   );
-  for (const script of [
-    "test:unit",
-    "test:node",
-    "test",
-    "package:dirs",
-    "artifacts",
-  ]) {
-    assert.equal(typeof packageJson.scripts[script], "string");
-    assert.notEqual(packageJson.scripts[script], "");
-  }
+  assert.equal(
+    packageJson.scripts["test:unit"],
+    "npm run build && node --test tests/*.test.mjs",
+  );
+  assert.equal(
+    packageJson.scripts["test:node"],
+    "npm run build:node && npm run test:unit",
+  );
+  assert.equal(
+    packageJson.scripts.test,
+    "npm run typecheck && npm run test:node",
+  );
+  assert.equal(packageJson.scripts["package:dirs"], "napi create-npm-dirs");
+  assert.equal(packageJson.scripts.artifacts, "napi artifacts");
+});
+
+test("compiles only handwritten source with the strict Node project", () => {
+  assert.deepEqual(tsConfig, {
+    compilerOptions: {
+      target: "ES2022",
+      module: "NodeNext",
+      moduleResolution: "NodeNext",
+      rootDir: "src",
+      outDir: "dist",
+      declaration: true,
+      strict: true,
+      exactOptionalPropertyTypes: true,
+      noUncheckedIndexedAccess: true,
+      verbatimModuleSyntax: true,
+      skipLibCheck: false,
+      types: ["node"],
+    },
+    include: ["src/**/*.ts"],
+  });
 });
 
 test("supports exactly five native packages and Rust targets", () => {

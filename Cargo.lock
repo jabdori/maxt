@@ -1322,11 +1322,16 @@ dependencies = [
 name = "maxt-typescript"
 version = "0.1.0"
 dependencies = [
+ "futures-core",
+ "futures-util",
  "maxt",
  "maxt-bindings-common",
  "napi",
  "napi-build",
  "napi-derive",
+ "serde",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]
@@ -1394,6 +1399,8 @@ dependencies = [
  "napi-sys",
  "nohash-hasher",
  "rustc-hash",
+ "serde",
+ "serde_json",
  "tokio",
 ]
 

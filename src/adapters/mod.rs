@@ -20,7 +20,7 @@ pub(crate) fn inclusive_millis_before(end: Timestamp) -> i64 {
     nanos.div_euclid(1_000_000) - i64::from(nanos.rem_euclid(1_000_000) == 0)
 }
 
-/// First whole millisecond at or after an inclusive timestamp.
+/// Smallest millisecond satisfying `millis * 1_000_000 >= timestamp`.
 pub(crate) fn inclusive_millis_at_or_after(start: Timestamp) -> i64 {
     let nanos = start.as_nanos();
     nanos.div_euclid(1_000_000) + i64::from(nanos.rem_euclid(1_000_000) != 0)

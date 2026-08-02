@@ -39,9 +39,7 @@ abstract final class Maxt {
 
   static Future<void> _initialize() async {
     _forceLoadNativeAsset();
-    await MaxtRustLib.init(
-      externalLibrary: _externalLibrary(),
-    );
+    await MaxtRustLib.init(externalLibrary: _externalLibrary());
     _initialized = true;
   }
 

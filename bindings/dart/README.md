@@ -12,15 +12,10 @@ does not ship prebuilt native binaries.
 
 ## Install
 
-After the first pub.dev release, add `maxt` to your application's
-`pubspec.yaml`, then run `dart pub get` or `flutter pub get`.
+Add the package to a Dart or Flutter project:
 
-Before that release, use a repository checkout:
-
-```yaml
-dependencies:
-  maxt:
-    path: ../maxt/bindings/dart
+```sh
+dart pub add maxt
 ```
 
 ## Initialize and call the common API

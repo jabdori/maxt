@@ -51,6 +51,8 @@ impl Socket {
 }
 
 pub(super) async fn open(connect: &WsConnect, _config: &StreamConfig) -> Result<Socket> {
+    crate::transport::ensure_crypto_provider();
+
     let mut request = connect
         .url
         .as_str()

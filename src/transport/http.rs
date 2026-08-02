@@ -130,6 +130,9 @@ pub(crate) struct HttpTransport {
 impl HttpTransport {
     /// A transport pointed at one host, for example `https://api.upbit.com`.
     pub(crate) fn new(base_url: impl Into<String>) -> Result<Self> {
+        #[cfg(not(target_arch = "wasm32"))]
+        crate::transport::ensure_crypto_provider();
+
         let builder = reqwest::Client::builder();
         #[cfg(not(target_arch = "wasm32"))]
         let builder = builder

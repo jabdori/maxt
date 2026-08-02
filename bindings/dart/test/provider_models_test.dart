@@ -2,6 +2,34 @@ import 'package:maxt/maxt.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('기타 원장 종류는 알려진 공급자 이름과 variant를 구분한다', () {
+    final otherDeposit = HyperliquidLedgerKind.other('deposit');
+    final sameOtherDeposit = HyperliquidLedgerKind.other('deposit');
+
+    expect(otherDeposit.isOther, isTrue);
+    expect(otherDeposit, isNot(HyperliquidLedgerKind.deposit));
+    expect(otherDeposit, sameOtherDeposit);
+    expect(otherDeposit.hashCode, sameOtherDeposit.hashCode);
+    expect({
+      HyperliquidLedgerKind.deposit,
+      otherDeposit,
+      sameOtherDeposit,
+    }, hasLength(2));
+  });
+
+  test('빈 공급자 이름도 기타 원장 종류로 보존한다', () {
+    final kind = HyperliquidLedgerKind.other('');
+
+    expect(kind.providerName, isEmpty);
+    expect(kind.isOther, isTrue);
+  });
+
+  test('알려진 원장 종류의 기존 값은 유지한다', () {
+    expect(HyperliquidLedgerKind.deposit.providerName, 'deposit');
+    expect(HyperliquidLedgerKind.deposit.isOther, isFalse);
+    expect(HyperliquidLedgerKind.deposit, same(HyperliquidLedgerKind.deposit));
+  });
+
   test('공급자 전용 모델도 정확 소수와 Timestamp를 유지한다', () {
     final market = Market.perpetual(Exchange.hyperliquid, 'BTC', 'USDC');
     final context = HyperliquidAssetContext(

@@ -106,6 +106,7 @@ class ExchangeErrorKind(str, Enum):
     UNKNOWN = "unknown"
 
     def is_retryable(self) -> bool:
+        """Return whether this kind represents a transient provider failure."""
         return self in {
             ExchangeErrorKind.RATE_LIMITED,
             ExchangeErrorKind.UNAVAILABLE,
@@ -258,7 +259,7 @@ class AccountStream(AsyncStream[T]):
 
 
 class Adapter(ABC):
-    """Contract implemented by exchange and replay adapters."""
+    """Interface implemented by built-in and custom exchange adapters."""
 
     @property
     @abstractmethod
@@ -284,6 +285,7 @@ class Adapter(ABC):
         market: Market,
         limit: Optional[int] = None,
     ) -> list[Trade]:
+        """Return recent trades newest-first."""
         raise self._unsupported(Feature.TRADES)
 
     async def order_book(
@@ -291,6 +293,7 @@ class Adapter(ABC):
         market: Market,
         depth: Optional[int] = None,
     ) -> OrderBook:
+        """Return a snapshot; `depth` limits each side independently."""
         raise self._unsupported(Feature.ORDER_BOOK)
 
     async def ticker(self, market: Market) -> Ticker:
@@ -304,6 +307,7 @@ class Adapter(ABC):
         subscription: Subscription,
         config: StreamConfig,
     ) -> MarketStream[Union[StreamEvent[MarketEvent], StreamError]]:
+        """Open a stream; `StreamError` items do not terminate iteration."""
         if not subscription.markets:
             raise InvalidRequestError(
                 "markets",
@@ -331,6 +335,7 @@ class Adapter(ABC):
         self,
         config: StreamConfig,
     ) -> AccountStream[Union[StreamEvent[AccountEvent], StreamError]]:
+        """Open an account stream; `StreamError` items are non-terminal."""
         raise self._unsupported(Feature.ACCOUNT_STREAM)
 
     async def place_order(self, request: OrderRequest) -> Order:
@@ -356,7 +361,7 @@ class Adapter(ABC):
 
 
 class Client(Generic[A]):
-    """Common API over one adapter."""
+    """Consistent public API over one adapter."""
 
     def __init__(self, adapter: A) -> None:
         self._adapter = adapter
@@ -383,6 +388,7 @@ class Client(Generic[A]):
         market: Market,
         limit: Optional[int] = None,
     ) -> list[Trade]:
+        """Return recent trades newest-first."""
         return await self._delegate.trades(market, limit)
 
     async def order_book(
@@ -390,6 +396,7 @@ class Client(Generic[A]):
         market: Market,
         depth: Optional[int] = None,
     ) -> OrderBook:
+        """Return a snapshot; `depth` limits each side independently."""
         return await self._delegate.order_book(market, depth)
 
     async def ticker(self, market: Market) -> Ticker:
@@ -402,6 +409,7 @@ class Client(Generic[A]):
         self,
         subscription: Subscription,
     ) -> MarketStream[Union[StreamEvent[MarketEvent], StreamError]]:
+        """Open a stream; `StreamError` items do not terminate iteration."""
         return await self.subscribe_with(subscription, StreamConfig())
 
     async def subscribe_with(
@@ -423,6 +431,7 @@ class Client(Generic[A]):
     async def subscribe_account(
         self,
     ) -> AccountStream[Union[StreamEvent[AccountEvent], StreamError]]:
+        """Open an account stream; `StreamError` items are non-terminal."""
         return await self.subscribe_account_with(StreamConfig())
 
     async def subscribe_account_with(

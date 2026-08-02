@@ -26,6 +26,7 @@ class Exchange(str, Enum):
     HYPERLIQUID = "hyperliquid"
 
     def display_name(self) -> str:
+        """Return the user-facing exchange name."""
         return {
             Exchange.UPBIT: "Upbit",
             Exchange.BITHUMB: "Bithumb",
@@ -56,6 +57,7 @@ class Feature(str, Enum):
     REDUCE_ONLY_ORDERS = "reduce_only_orders"
 
     def needs_credentials(self) -> bool:
+        """Return whether this feature requires exchange credentials."""
         return self in {
             Feature.BALANCES,
             Feature.OPEN_ORDERS,
@@ -69,6 +71,7 @@ class Feature(str, Enum):
         }
 
     def is_derivatives_only(self) -> bool:
+        """Return whether this feature applies only to derivatives."""
         return self in {
             Feature.POSITIONS,
             Feature.MARGIN,
@@ -84,6 +87,7 @@ class MarketKind(str, Enum):
     PERPETUAL = "perpetual"
 
     def is_derivative(self) -> bool:
+        """Return whether this is a derivative market kind."""
         return self is MarketKind.PERPETUAL
 
 
@@ -99,6 +103,7 @@ class Side(str, Enum):
     SELL = "sell"
 
     def flip(self) -> Side:
+        """Return the opposite side."""
         return Side.SELL if self is Side.BUY else Side.BUY
 
 
@@ -120,6 +125,7 @@ class Interval(str, Enum):
     MONTH1 = "month1"
 
     def as_secs(self) -> Optional[int]:
+        """Return the fixed length in seconds, or `None` for calendar months."""
         return {
             Interval.SEC1: 1,
             Interval.MIN1: 60,
@@ -139,6 +145,10 @@ class Interval(str, Enum):
         }[self]
 
     def advance(self, timestamp_ns: Timestamp, count: int) -> Optional[Timestamp]:
+        """Advance a UTC nanosecond timestamp by `count` intervals.
+
+        Months clamp to the last valid UTC day; signed 64-bit overflow returns `None`.
+        """
         if not _is_i64(timestamp_ns) or not _is_i64(count):
             return None
 
@@ -410,6 +420,12 @@ class Candle(WireModel):
 
 @dataclass(frozen=True)
 class CandleRequest(WireModel):
+    """Select candles by open time.
+
+    `from_` is inclusive and `to` is exclusive; results are oldest-first.
+    With `from_`, `limit` selects the oldest matches; otherwise the newest.
+    """
+
     market: Market
     interval: Interval
     from_: Optional[Timestamp] = field(default=None, metadata={"wire_name": "from"})
@@ -549,6 +565,7 @@ class Balance(WireModel):
         object.__setattr__(self, "asset", _ascii_upper(self.asset))
 
     def total(self) -> Decimal:
+        """Return the available balance plus the locked balance."""
         return self.available + self.locked
 
 
@@ -571,22 +588,27 @@ class MarketEvent(WireModel):
 
     @classmethod
     def trade(cls, trade: Trade) -> MarketEvent:
+        """Wrap a trade as a market event."""
         return cls("trade", trade)
 
     @classmethod
     def order_book(cls, order_book: OrderBook) -> MarketEvent:
+        """Wrap an order book as a market event."""
         return cls("order_book", order_book)
 
     @classmethod
     def ticker(cls, ticker: Ticker) -> MarketEvent:
+        """Wrap a ticker as a market event."""
         return cls("ticker", ticker)
 
     @classmethod
     def candle(cls, candle: Candle) -> MarketEvent:
+        """Wrap a candle as a market event."""
         return cls("candle", candle)
 
     @classmethod
     def reconnected(cls) -> MarketEvent:
+        """Report a reconnect gap in market events."""
         return cls("reconnected")
 
 
@@ -728,6 +750,12 @@ class Page(WireModel, Generic[T]):
 
 @dataclass(frozen=True)
 class HistoryRequest(WireModel):
+    """Select one page of timestamped history.
+
+    `from_` is inclusive and `to` is exclusive. `cursor` overrides `from_`.
+    `limit` is a target, not a hard maximum; timestamp groups remain whole.
+    """
+
     market: Market
     from_: Optional[Timestamp] = field(default=None, metadata={"wire_name": "from"})
     to: Optional[Timestamp] = None
@@ -898,6 +926,4 @@ __all__ = [
     "Trade",
     "UpbitMarketEvent",
     "UpbitRegion",
-    "_model_from_wire",
-    "_model_to_wire",
 ]

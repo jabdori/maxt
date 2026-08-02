@@ -2,14 +2,14 @@
 
 [English](README.md) | [한국어](README.ko.md)
 
-Upbit, Bithumb, Binance, Hyperliquid의 시장 데이터, 계좌, 주문을 제공하는 타입 기반
-비동기 Rust API입니다.
+Upbit, Bithumb, Binance, Hyperliquid의 시장 데이터, 계좌, 주문, 스트림을
+제공하는 타입 기반 비동기 API입니다.
 
-## 왜 maxt인가
+## 만든 이유
 
-`maxt`는 지원하는 모든 거래소에 같은 작업(operation), 요청·결과 타입, 구조화된
-오류(error), 스트림 수명 주기(lifecycle)를 제공합니다. 공통 API에 없는 거래소
-전용 기능은 `Client::adapter()`가 반환한 어댑터에서 호출할 수 있습니다.
+- 여러 거래소를 같은 작업, 모델, 오류, 스트림 계약으로 사용합니다.
+- 공통 작업은 `Client`, 거래소 전용 작업은 각 어댑터에서 제공합니다.
+- 하나의 스키마에서 언어별 계약을 생성하고, 생성 코드와 컴파일된 네이티브 API의 정합성을 검사합니다.
 
 ## 설치
 
@@ -21,9 +21,7 @@ maxt = "0.1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
-## 예제
-
-공개 REST와 시장 스트림에는 인증 정보가 필요하지 않습니다.
+## Binance 예제
 
 ```rust,no_run
 use maxt::adapters::BinanceAdapter;
@@ -33,17 +31,18 @@ use maxt::{Client, Exchange, Market};
 async fn main() -> maxt::Result<()> {
     let client = Client::new(BinanceAdapter::spot());
     let market = Market::spot(Exchange::Binance, "BTC", "USDT");
+
     let ticker = client.ticker(&market).await?;
     let filters = client.adapter().spot_symbol_filters(&market).await?;
 
-    println!("{market}: {}", ticker.last_price);
-    println!("{} tick size: {:?}", filters.symbol, filters.tick_size);
+    println!("{}", ticker.last_price);
+    println!("{:?}", filters.tick_size);
     Ok(())
 }
 ```
 
-`ticker()`는 공통 API입니다. `spot_symbol_filters()`는
-`Client::adapter()`가 반환한 `BinanceAdapter`에서만 호출할 수 있습니다.
+`ticker()`는 공통 API입니다. `spot_symbol_filters()`는 Binance Spot 전용이며
+`Client::adapter()`를 통해 호출합니다.
 
 공개 REST 예제 실행:
 
@@ -51,29 +50,27 @@ async fn main() -> maxt::Result<()> {
 cargo run --example public_rest
 ```
 
-## 문서
-
-- [시작하기](docs/getting-started.ko.md)
-- [공통 API 레퍼런스](docs/common-api.ko.md)
-- [거래소 지원표](docs/providers.ko.md)
-- Rust API 레퍼런스: `cargo doc --open`
-- [Python 바인딩](bindings/python/README.ko.md)
-- [Dart / Flutter 바인딩](bindings/dart/README.ko.md)
-- [TypeScript 바인딩](bindings/typescript/README.ko.md)
-- [실행 가능한 예제](examples/)
-- [변경 기록](CHANGELOG.md)
-- [기여 가이드](CONTRIBUTING.ko.md)
-
-## 바인딩 로드맵
-
-Rust API가 기준 계약입니다. 체크된 바인딩은 같은 거래소 어댑터와 공통 동작을
-제공합니다.
+## 지원 상태
 
 - [x] Rust
 - [x] Python
-- [x] Dart / Flutter
+- [x] Dart / Flutter 네이티브
 - [x] TypeScript / Node.js
-- [ ] TypeScript / WebAssembly
+- [x] TypeScript / Browser WebAssembly
+
+## 문서
+
+- [시작하기](docs/getting-started.ko.md)
+- [공통 API](docs/common-api.ko.md)
+- [거래소 지원](docs/providers.ko.md)
+- Rust API: `cargo doc --open`
+- [Python](bindings/python/README.ko.md)
+- [Dart / Flutter](bindings/dart/README.ko.md)
+- [TypeScript](bindings/typescript/README.ko.md)
+- [브라우저 릴레이](relay/README.ko.md)
+- [예제](examples/)
+- [변경 기록](CHANGELOG.md)
+- [기여 가이드](CONTRIBUTING.ko.md)
 
 ## 라이선스
 

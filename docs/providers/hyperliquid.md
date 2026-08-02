@@ -155,4 +155,4 @@ HIP-3, outcome assets, `Sec1`, market orders, `FOK`, `l2Book.nSigFigs`, and
 - [WebSocket subscriptions](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/subscriptions)
 - [Rate limits](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits)
 
-[Common API](../common-api.md) · [Provider matrix](../providers.md)
+[Common API](../common-api.md) · [Provider support](../providers.md)

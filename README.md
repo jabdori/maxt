@@ -2,18 +2,18 @@
 
 [English](README.md) | [한국어](README.ko.md)
 
-`maxt` is a typed async Rust API for market data, accounts, and orders on
+`maxt` is a typed async API for market data, accounts, orders, and streams on
 Upbit, Bithumb, Binance, and Hyperliquid.
 
 ## Why maxt
 
-`maxt` gives every supported exchange the same operations, request and result
-types, structured errors, and stream lifecycle. Provider-only capabilities
-remain available on the concrete adapter through `Client::adapter()`.
+- Use the same operations, models, errors, and stream contract across exchanges.
+- Keep common operations on `Client` and exchange-specific operations on each adapter.
+- Generate language contracts from one schema and verify generated code against the compiled native API.
 
 ## Install
 
-`maxt` requires Rust 1.85 or newer.
+Rust 1.85 or newer is required.
 
 ```toml
 [dependencies]
@@ -21,9 +21,7 @@ maxt = "0.1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
-## Example
-
-Public REST and market streams require no credentials.
+## Binance example
 
 ```rust,no_run
 use maxt::adapters::BinanceAdapter;
@@ -33,18 +31,18 @@ use maxt::{Client, Exchange, Market};
 async fn main() -> maxt::Result<()> {
     let client = Client::new(BinanceAdapter::spot());
     let market = Market::spot(Exchange::Binance, "BTC", "USDT");
+
     let ticker = client.ticker(&market).await?;
     let filters = client.adapter().spot_symbol_filters(&market).await?;
 
-    println!("{market}: {}", ticker.last_price);
-    println!("{} tick size: {:?}", filters.symbol, filters.tick_size);
+    println!("{}", ticker.last_price);
+    println!("{:?}", filters.tick_size);
     Ok(())
 }
 ```
 
-`ticker()` is part of the common API. `spot_symbol_filters()` is available only
-on `BinanceAdapter`, through the concrete adapter returned by
-`Client::adapter()`.
+`ticker()` is common. `spot_symbol_filters()` is Binance Spot-specific and is
+available through `Client::adapter()`.
 
 Run the public REST example:
 
@@ -52,29 +50,27 @@ Run the public REST example:
 cargo run --example public_rest
 ```
 
-## Documentation
-
-- [Getting started](docs/getting-started.md)
-- [Common API reference](docs/common-api.md)
-- [Provider matrix](docs/providers.md)
-- Rust API reference: `cargo doc --open`
-- [Python binding](bindings/python/README.md)
-- [Dart / Flutter binding](bindings/dart/README.md)
-- [TypeScript binding](bindings/typescript/README.md)
-- [Runnable examples](examples/)
-- [Changelog](CHANGELOG.md)
-- [Contributing](CONTRIBUTING.md)
-
-## Binding roadmap
-
-The Rust API is the reference contract. Checked bindings expose the same
-exchange adapters and common behavior.
+## Support
 
 - [x] Rust
 - [x] Python
-- [x] Dart / Flutter
+- [x] Dart / Flutter native
 - [x] TypeScript / Node.js
-- [ ] TypeScript / WebAssembly
+- [x] TypeScript / Browser WebAssembly
+
+## Documentation
+
+- [Getting started](docs/getting-started.md)
+- [Common API](docs/common-api.md)
+- [Provider support](docs/providers.md)
+- Rust API: `cargo doc --open`
+- [Python](bindings/python/README.md)
+- [Dart / Flutter](bindings/dart/README.md)
+- [TypeScript](bindings/typescript/README.md)
+- [Browser relay](relay/README.md)
+- [Examples](examples/)
+- [Changelog](CHANGELOG.md)
+- [Contributing](CONTRIBUTING.md)
 
 ## License
 

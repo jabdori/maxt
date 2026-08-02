@@ -20,7 +20,7 @@ Configure credentials on the adapter before `Client::new(adapter)`.
 | Private writes | `place_order`, `cancel_order`, `set_margin` |
 
 Public REST and market streams require no credentials. Provider and
-`MarketKind` support is listed in the [provider matrix](providers.md).
+`MarketKind` support is listed in [provider support](providers.md).
 
 ## Data contracts
 
@@ -74,14 +74,14 @@ Results are always sorted by `open_time ASC`.
 
 | Fields set | Selection |
 | --- | --- |
-| `from`, `to`, `limit` | Earliest `limit` rows where `from <= open_time < to` |
-| `from`, `to` | All rows where `from <= open_time < to` |
-| `from`, `limit` | Earliest `limit` rows where `from <= open_time` |
-| `to`, `limit` | Latest `limit` rows where `open_time < to` |
-| `limit` | Latest `limit` rows |
-| `from` | All rows where `from <= open_time` |
-| `to` | One provider page where `open_time < to` |
-| None | Latest provider page |
+| `from`, `to`, `limit` | `from <= open_time < to`; first `limit` |
+| `from`, `to` | `from <= open_time < to` |
+| `from`, `limit` | `from <= open_time`; first `limit` |
+| `to`, `limit` | `open_time < to`; last `limit` |
+| `limit` | Last `limit` |
+| `from` | `from <= open_time` |
+| `to` | `open_time < to`; one provider page |
+| None | One latest provider page |
 
 | Validation | Result |
 | --- | --- |

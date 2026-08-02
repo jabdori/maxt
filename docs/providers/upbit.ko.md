@@ -105,4 +105,4 @@
 - [요청 한도](https://global-docs.upbit.com/reference/rate-limits)
 - [인증](https://global-docs.upbit.com/reference/auth)
 
-[공통 API](../common-api.ko.md) · [거래소 지원표](../providers.ko.md)
+[공통 API](../common-api.ko.md) · [거래소 지원](../providers.ko.md)

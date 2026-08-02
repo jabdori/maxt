@@ -105,4 +105,4 @@ code로 보존합니다.
 - [WebSocket](https://apidocs.bithumb.com/reference/%EA%B8%B0%EB%B3%B8-%EC%A0%95%EB%B3%B4.md)
 - [주문](https://apidocs.bithumb.com/reference/%EC%A3%BC%EB%AC%B8-%EC%9A%94%EC%B2%AD.md)
 
-[공통 API](../common-api.ko.md) · [거래소 지원표](../providers.ko.md)
+[공통 API](../common-api.ko.md) · [거래소 지원](../providers.ko.md)

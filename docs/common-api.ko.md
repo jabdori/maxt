@@ -20,7 +20,7 @@
 | 비공개 변경 | `place_order`, `cancel_order`, `set_margin` |
 
 공개 REST와 시장 스트림에는 인증 정보가 필요하지 않습니다. 거래소별
-`MarketKind`와 기능 지원 범위는 [거래소 지원표](providers.ko.md)를 참고하세요.
+`MarketKind`와 기능 지원 범위는 [거래소 지원](providers.ko.md)을 참고하세요.
 
 ## 데이터 계약
 
@@ -73,12 +73,12 @@
 
 | 설정 필드 | 선택 |
 | --- | --- |
-| `from`, `to`, `limit` | `from <= open_time < to`; 가장 이른 `limit`건 |
-| `from`, `to` | `from <= open_time < to`; 전체 |
-| `from`, `limit` | `from <= open_time`; 가장 이른 `limit`건 |
-| `to`, `limit` | `open_time < to`; 최신 `limit`건 |
-| `limit` | 최신 `limit`건 |
-| `from` | `from <= open_time`; 전체 |
+| `from`, `to`, `limit` | `from <= open_time < to`; 앞 `limit` |
+| `from`, `to` | `from <= open_time < to` |
+| `from`, `limit` | `from <= open_time`; 앞 `limit` |
+| `to`, `limit` | `open_time < to`; 뒤 `limit` |
+| `limit` | 뒤 `limit` |
+| `from` | `from <= open_time` |
 | `to` | `open_time < to`; 거래소 페이지 1개 |
 | 없음 | 최신 거래소 페이지 1개 |
 

@@ -39,7 +39,7 @@ async fn main() -> maxt::Result<()> {
 ```
 
 - 공통 타입과 계약: [공통 API 레퍼런스](common-api.ko.md)
-- 거래소 한도와 필드 출처: [거래소 지원표](providers.ko.md)
+- 거래소 한도와 필드 출처: [거래소 지원](providers.ko.md)
 
 ## 시장 스트림 열기
 
@@ -78,6 +78,6 @@ async fn main() -> maxt::Result<()> {
 
 ## 다음 단계
 
-- [거래소 지원표](providers.ko.md): 생성자, 인증 정보, 거래소 한도
+- [거래소 지원](providers.ko.md): 생성자, 인증 정보, 거래소 한도
 - [공통 API 레퍼런스](common-api.ko.md): 요청, 스트림, 오류, 비공개 API
 - [실행 가능한 예제](../examples/)

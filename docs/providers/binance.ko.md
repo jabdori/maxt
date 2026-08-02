@@ -111,4 +111,4 @@ Binance는 IP 기준 `REQUEST_WEIGHT`를 부과합니다. 현재 한도는 `exch
 - [USD-M 공개 stream](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/public)
 - [USD-M 시장 stream](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market)
 
-[공통 API](../common-api.ko.md) · [거래소 지원표](../providers.ko.md)
+[공통 API](../common-api.ko.md) · [거래소 지원](../providers.ko.md)

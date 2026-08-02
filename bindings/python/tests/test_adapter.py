@@ -131,6 +131,29 @@ class AdapterContractTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(transport.is_retryable())
         self.assertFalse(adapter.is_retryable())
 
+    async def test_exchange_error_retryability_comes_from_its_kind(self) -> None:
+        retryable = {
+            kind for kind in ExchangeErrorKind if kind.is_retryable()
+        }
+        self.assertEqual(
+            retryable,
+            {
+                ExchangeErrorKind.RATE_LIMITED,
+                ExchangeErrorKind.UNAVAILABLE,
+            },
+        )
+
+        for kind in ExchangeErrorKind:
+            with self.subTest(kind=kind):
+                error = ExchangeError(
+                    Exchange.BINANCE,
+                    "code",
+                    "message",
+                    None,
+                    kind,
+                )
+                self.assertEqual(error.is_retryable(), kind.is_retryable())
+
     async def test_native_error_wires_preserve_variant_details(self) -> None:
         adapter = _error_from_wire(
             {

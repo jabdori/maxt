@@ -7,11 +7,15 @@ from maxt import (
     CandleRequest,
     Decimal as MaxtDecimal,
     Exchange,
+    Feature,
     FundingPayment,
     FundingRate,
     HistoryRequest,
     Interval,
+    Level,
+    MarketEvent,
     MarketInfo,
+    MarketKind,
     MarketStatus,
     Market,
     MarginSummary,
@@ -37,6 +41,129 @@ from maxt import (
 
 
 class WireModelTests(unittest.TestCase):
+    def test_enum_helpers_match_the_rust_value_types(self) -> None:
+        self.assertEqual(
+            {exchange: exchange.display_name() for exchange in Exchange},
+            {
+                Exchange.UPBIT: "Upbit",
+                Exchange.BITHUMB: "Bithumb",
+                Exchange.BINANCE: "Binance",
+                Exchange.HYPERLIQUID: "Hyperliquid",
+            },
+        )
+        self.assertEqual(
+            {feature for feature in Feature if feature.needs_credentials()},
+            {
+                Feature.BALANCES,
+                Feature.OPEN_ORDERS,
+                Feature.ACCOUNT_STREAM,
+                Feature.TRADING,
+                Feature.POSITIONS,
+                Feature.MARGIN,
+                Feature.FUNDING_PAYMENTS,
+                Feature.MARGIN_CONFIG,
+                Feature.REDUCE_ONLY_ORDERS,
+            },
+        )
+        self.assertEqual(
+            {feature for feature in Feature if feature.is_derivatives_only()},
+            {
+                Feature.POSITIONS,
+                Feature.MARGIN,
+                Feature.FUNDING_RATES,
+                Feature.FUNDING_PAYMENTS,
+                Feature.MARGIN_CONFIG,
+                Feature.REDUCE_ONLY_ORDERS,
+            },
+        )
+        self.assertFalse(MarketKind.SPOT.is_derivative())
+        self.assertTrue(MarketKind.PERPETUAL.is_derivative())
+        self.assertIs(Side.BUY.flip(), Side.SELL)
+        self.assertIs(Side.SELL.flip(), Side.BUY)
+
+    def test_intervals_report_fixed_lengths_and_advance_without_overflow(self) -> None:
+        self.assertEqual(
+            {interval: interval.as_secs() for interval in Interval},
+            {
+                Interval.SEC1: 1,
+                Interval.MIN1: 60,
+                Interval.MIN3: 180,
+                Interval.MIN5: 300,
+                Interval.MIN15: 900,
+                Interval.MIN30: 1_800,
+                Interval.HOUR1: 3_600,
+                Interval.HOUR2: 7_200,
+                Interval.HOUR4: 14_400,
+                Interval.HOUR8: 28_800,
+                Interval.HOUR12: 43_200,
+                Interval.DAY1: 86_400,
+                Interval.DAY3: 259_200,
+                Interval.WEEK1: 604_800,
+                Interval.MONTH1: None,
+            },
+        )
+
+        at = 1_700_000_000_123_456_789
+        self.assertEqual(
+            Interval.MIN1.advance(at, 2),
+            1_700_000_120_123_456_789,
+        )
+        self.assertEqual(
+            Interval.WEEK1.advance(at, -1),
+            at - 604_800_000_000_000,
+        )
+
+        late = 9_220_000_000_000_000_000
+        self.assertIsNone(Interval.MONTH1.advance(late, 12))
+        self.assertIsNone(Interval.WEEK1.advance(late, (1 << 63) - 1))
+
+    def test_month_interval_uses_the_utc_calendar_and_preserves_nanoseconds(self) -> None:
+        nanoseconds = 123_456_789
+        january_31_2024 = 1_706_659_200_000_000_000 + nanoseconds
+        february_29_2024 = 1_709_164_800_000_000_000 + nanoseconds
+
+        self.assertEqual(
+            Interval.MONTH1.advance(january_31_2024, 1),
+            february_29_2024,
+        )
+
+    def test_market_event_smart_constructors_preserve_the_payload(self) -> None:
+        market = Market.spot(Exchange.UPBIT, "BTC", "KRW")
+        order_book = OrderBook(market, 1, [Level(Decimal("1"), Decimal("2"))], [])
+        ticker = Ticker(
+            market,
+            2,
+            None,
+            Decimal("1"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        candle = Candle(
+            market,
+            Interval.MIN1,
+            3,
+            Decimal("1"),
+            Decimal("2"),
+            Decimal("0.5"),
+            Decimal("1.5"),
+            Decimal("10"),
+            None,
+            True,
+        )
+
+        for event, kind, value in (
+            (MarketEvent.order_book(order_book), "order_book", order_book),
+            (MarketEvent.ticker(ticker), "ticker", ticker),
+            (MarketEvent.candle(candle), "candle", candle),
+        ):
+            with self.subTest(kind=kind):
+                self.assertEqual(event.kind, kind)
+                self.assertIs(event.value, value)
+
     def test_decimal_and_nanosecond_timestamp_round_trip_exactly(self) -> None:
         self.assertIs(MaxtDecimal, Decimal)
         self.assertIs(Timestamp, int)

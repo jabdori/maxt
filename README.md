@@ -34,11 +34,17 @@ async fn main() -> maxt::Result<()> {
     let client = Client::new(BinanceAdapter::spot());
     let market = Market::spot(Exchange::Binance, "BTC", "USDT");
     let ticker = client.ticker(&market).await?;
+    let filters = client.adapter().spot_symbol_filters(&market).await?;
 
     println!("{market}: {}", ticker.last_price);
+    println!("{} tick size: {:?}", filters.symbol, filters.tick_size);
     Ok(())
 }
 ```
+
+`ticker()` is part of the common API. `spot_symbol_filters()` is available only
+on `BinanceAdapter`, through the concrete adapter returned by
+`Client::adapter()`.
 
 Run the public REST example:
 

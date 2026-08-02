@@ -27,11 +27,17 @@ async def main() -> None:
     client = Client(BinanceAdapter.spot())
     market = Market.spot(Exchange.BINANCE, "BTC", "USDT")
     ticker = await client.ticker(market)
+    filters = await client.adapter.spot_symbol_filters(market)
+
     print(f"{market}: {ticker.last_price}")
+    print(f"{filters.symbol} tick size: {filters.tick_size}")
 
 
 asyncio.run(main())
 ```
+
+`ticker()` is part of the common API. `spot_symbol_filters()` is available only
+on `BinanceAdapter`, through `client.adapter`.
 
 ## Value contracts
 

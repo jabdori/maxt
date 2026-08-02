@@ -10,15 +10,36 @@ final class RecordingAdapter extends AdapterBase {
   @override
   Set<Feature> get features => const {
     Feature.trades,
+    Feature.orderBook,
+    Feature.candles,
     Feature.tradeStream,
     Feature.openOrders,
     Feature.positions,
+    Feature.fundingRates,
   };
 
   @override
   Future<List<Trade>> trades(Market market, [int? limit]) async {
     calls.add(('trades', market, limit));
     return [];
+  }
+
+  @override
+  Future<OrderBook> orderBook(Market market, [int? depth]) async {
+    calls.add(('orderBook', market, depth));
+    throw StateError('unexpected orderBook call');
+  }
+
+  @override
+  Future<List<Candle>> candles(CandleRequest request) async {
+    calls.add(('candles', request));
+    return [];
+  }
+
+  @override
+  Future<Page<FundingRate>> fundingRates(HistoryRequest request) async {
+    calls.add(('fundingRates', request));
+    return Page(items: const []);
   }
 
   @override
@@ -140,6 +161,45 @@ void main() {
           ),
         ),
       );
+    }
+
+    expect(adapter.calls, isEmpty);
+  });
+
+  test('u32 공개 요청 인자를 사용자 정의 Adapter 호출 전에 범위 검증한다', () async {
+    final adapter = RecordingAdapter();
+    final client = Client(adapter);
+    final market = Market.perpetual(Exchange.binance, 'BTC', 'USDT');
+    final cases =
+        <({String field, Future<Object?> Function(int value) invoke})>[
+          (field: 'limit', invoke: (value) => client.trades(market, value)),
+          (field: 'depth', invoke: (value) => client.orderBook(market, value)),
+          (
+            field: 'limit',
+            invoke: (value) => client.candles(
+              CandleRequest(market, Interval.min1, limit: value),
+            ),
+          ),
+          (
+            field: 'limit',
+            invoke: (value) =>
+                client.fundingRates(HistoryRequest(market, limit: value)),
+          ),
+        ];
+
+    for (final testCase in cases) {
+      for (final value in [-1, 4294967296]) {
+        await expectLater(
+          testCase.invoke(value),
+          throwsA(
+            isA<InvalidRequestError>().having(
+              (error) => error.field,
+              'field',
+              testCase.field,
+            ),
+          ),
+        );
+      }
     }
 
     expect(adapter.calls, isEmpty);

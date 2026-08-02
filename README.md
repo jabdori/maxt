@@ -60,16 +60,14 @@ cargo run --example public_rest
 
 ## Binding roadmap
 
-The Rust API is the reference contract. `Complete` means the binding exposes
-the same exchange adapters and common behavior.
+The Rust API is the reference contract. Checked bindings expose the same
+exchange adapters and common behavior.
 
-| Binding | Upbit | Bithumb | Binance | Hyperliquid |
-| --- | --- | --- | --- | --- |
-| Rust | Complete | Complete | Complete | Complete |
-| Python | Complete | Complete | Complete | Complete |
-| Dart / Flutter | Complete | Complete | Complete | Complete |
-| TypeScript / Node.js | Planned | Planned | Planned | Planned |
-| TypeScript / WebAssembly | Planned | Planned | Planned | Planned |
+- [x] Rust
+- [x] Python
+- [x] Dart / Flutter
+- [ ] TypeScript / Node.js
+- [ ] TypeScript / WebAssembly
 
 ## License
 

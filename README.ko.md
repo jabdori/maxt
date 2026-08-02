@@ -60,16 +60,14 @@ cargo run --example public_rest
 
 ## 바인딩 로드맵
 
-Rust API가 기준 계약입니다. `완료`는 해당 바인딩이 같은 거래소 어댑터와 공통
-동작을 제공한다는 뜻입니다.
+Rust API가 기준 계약입니다. 체크된 바인딩은 같은 거래소 어댑터와 공통 동작을
+제공합니다.
 
-| 바인딩 | Upbit | Bithumb | Binance | Hyperliquid |
-| --- | --- | --- | --- | --- |
-| Rust | 완료 | 완료 | 완료 | 완료 |
-| Python | 완료 | 완료 | 완료 | 완료 |
-| Dart / Flutter | 완료 | 완료 | 완료 | 완료 |
-| TypeScript / Node.js | 예정 | 예정 | 예정 | 예정 |
-| TypeScript / WebAssembly | 예정 | 예정 | 예정 | 예정 |
+- [x] Rust
+- [x] Python
+- [x] Dart / Flutter
+- [ ] TypeScript / Node.js
+- [ ] TypeScript / WebAssembly
 
 ## 라이선스
 

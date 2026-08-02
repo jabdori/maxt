@@ -545,7 +545,7 @@ fn rust_public_value_methods(source: &str, name: &str) -> BTreeSet<String> {
                         return None;
                     }
                     let function = tokens.iter().position(|token| *token == "fn")?;
-                    let name = tokens.get(function + 1)?.split_once('(')?.0;
+                    let name = tokens.get(function + 1)?.split(['<', '(']).next()?;
                     is_identifier(name).then(|| name.to_owned())
                 }),
         );
@@ -2988,6 +2988,40 @@ macro_rules! define_example {
             #[doc = "A future public method."]
             #[must_use]
             pub const fn future(&self) -> bool { true }
+        }
+    };
+}
+
+define_example!();
+"#;
+    let members = [value_member(
+        "known",
+        binding_member(BindingMemberKind::Method, "known"),
+        binding_member(BindingMemberKind::Getter, "known"),
+    )];
+    let contract = ValueTypeContract {
+        name: "Example",
+        rust_source: rust,
+        python_source: "class Example(object):\n    def known(self):\n        pass\n",
+        dart_source: "final class Example { bool get known => true; }",
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::Class,
+        dart_surface: DartValueSurface::Class { fields: false },
+        members: &members,
+    };
+
+    assert_value_type_contract(&contract);
+}
+
+#[test]
+#[should_panic(expected = "Rust Example value members differ; missing: {}; extra: {\"future\"}")]
+fn value_contract_rejects_unmapped_generic_macro_method() {
+    let rust = r#"
+macro_rules! define_example {
+    () => {
+        impl Example {
+            pub fn known(&self) {}
+            pub fn future<T>(&self, value: T) -> T { value }
         }
     };
 }

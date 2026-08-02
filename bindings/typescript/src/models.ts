@@ -51,6 +51,7 @@ export class Decimal {
     if (scaleValue > BigInt(MAX_DECIMAL_SCALE)) throw new RangeError("Decimal scale exceeds 28");
 
     const unsignedDigits = `${integer}${fraction}`.replace(/^0+(?=\d)/, "");
+    if (/^0+$/.test(unsignedDigits)) return Decimal.create(0n, 0, text);
     let coefficient: bigint;
     let scale: number;
     if (scaleValue < 0n) {
@@ -750,8 +751,20 @@ export class Subscription {
   readonly markets: readonly Market[];
   readonly feeds: readonly Feed[];
   constructor(markets: readonly Market[] = [], feeds: readonly Feed[] = []) {
-    this.markets = Object.freeze([...markets]);
-    this.feeds = Object.freeze([...feeds]);
+    const marketKeys = new Set<string>();
+    const feedKeys = new Set<string>();
+    this.markets = Object.freeze(markets.filter((market) => {
+      const key = market.toString();
+      if (marketKeys.has(key)) return false;
+      marketKeys.add(key);
+      return true;
+    }));
+    this.feeds = Object.freeze(feeds.filter((feed) => {
+      const key = `${feed.kind}:${feed.interval?.id ?? ""}`;
+      if (feedKeys.has(key)) return false;
+      feedKeys.add(key);
+      return true;
+    }));
     freezeRecord(this);
   }
   withMarket(market: Market): Subscription { return this.withMarkets([market]); }

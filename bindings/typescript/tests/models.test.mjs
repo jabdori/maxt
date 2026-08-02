@@ -27,6 +27,11 @@ test("Decimal preserves its exact text and rejects unrepresentable inputs", () =
   assert.equal(value.scale, 4);
   assert.equal(value.toString(), "1.2300");
   assert.equal(Decimal.parse("+12.30e+2").toString(), "+12.30e+2");
+  const scientificZero = Decimal.parse("0e+30");
+  assert.equal(scientificZero.coefficient, 0n);
+  assert.equal(scientificZero.scale, 0);
+  assert.equal(scientificZero.toString(), "0e+30");
+  assert.throws(() => Decimal.parse("1e+30"), RangeError);
   assert.throws(() => Decimal.parse("2.5e-28"), RangeError);
   assert.throws(() => Decimal.parse("0.00000000000000000000000000001"), RangeError);
   assert.throws(() => Decimal.parse("79228162514264337593543950336"), RangeError);
@@ -117,13 +122,20 @@ test("request models reject values outside their Rust unsigned integer boundarie
 
 test("feeds and subscriptions keep immutable snapshots", () => {
   const market = Market.spot(Exchange.Upbit, "BTC", "KRW");
-  const markets = [market];
-  const feeds = [Feed.Trades, Feed.candles(Interval.Min1)];
+  const duplicateMarket = Market.spot(Exchange.Upbit, "btc", "krw");
+  const candleFeed = Feed.candles(Interval.Min1);
+  const duplicateCandleFeed = Feed.candles(Interval.Min1);
+  const markets = [market, duplicateMarket, market];
+  const feeds = [Feed.Trades, candleFeed, Feed.Trades, duplicateCandleFeed];
   const subscription = new Subscription(markets, feeds);
   markets.length = 0;
   feeds.length = 0;
   assert.deepEqual(subscription.markets, [market]);
-  assert.equal(subscription.feeds[1]?.interval, Interval.Min1);
+  assert.deepEqual(subscription.feeds, [Feed.Trades, candleFeed]);
+  assert.equal(subscription.markets[0], market);
+  assert.equal(subscription.feeds[1], candleFeed);
   assert.equal(Object.isFrozen(subscription.markets), true);
   assert.equal(subscription.withFeed(Feed.Ticker).feeds.length, 3);
+  assert.equal(subscription.withMarket(duplicateMarket).markets.length, 1);
+  assert.equal(subscription.withFeed(duplicateCandleFeed).feeds.length, 2);
 });

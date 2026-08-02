@@ -439,7 +439,12 @@ export function installBackend(backend: NativeBackend): void {
 }
 
 export function initialize(options: InitializeOptions = {}): Promise<void> {
-  const normalized = normalizeInitializeOptions(options);
+  let normalized: NormalizedInitializeOptions;
+  try {
+    normalized = normalizeInitializeOptions(options);
+  } catch (error) {
+    return Promise.reject(error);
+  }
   if (initialization !== undefined) {
     return sameInitializeOptions(initializedOptions!, normalized)
       ? initialization
@@ -462,10 +467,27 @@ export function ensureInitialized(): Promise<void> {
 }
 
 function normalizeInitializeOptions(options: InitializeOptions): NormalizedInitializeOptions {
+  const allowInsecureBrowserCredentials = options.allowInsecureBrowserCredentials;
+  if (allowInsecureBrowserCredentials !== undefined
+    && typeof allowInsecureBrowserCredentials !== "boolean") {
+    throw new InvalidRequestError(
+      "allowInsecureBrowserCredentials",
+      "must be a boolean",
+    );
+  }
   return {
-    wasmUrl: options.wasmUrl === undefined ? null : new URL(String(options.wasmUrl), import.meta.url).href,
-    allowInsecureBrowserCredentials: options.allowInsecureBrowserCredentials ?? false,
+    wasmUrl: normalizeWasmUrl(options.wasmUrl),
+    allowInsecureBrowserCredentials: allowInsecureBrowserCredentials ?? false,
   };
+}
+
+function normalizeWasmUrl(wasmUrl: string | URL | undefined): string | null {
+  if (wasmUrl === undefined) return null;
+  try {
+    return new URL(String(wasmUrl), import.meta.url).href;
+  } catch {
+    throw new InvalidRequestError("wasmUrl", "must be a valid URL");
+  }
 }
 
 function sameInitializeOptions(

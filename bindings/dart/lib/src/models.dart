@@ -721,9 +721,9 @@ final class OrderBook {
 
   /// 최우선 매수·매도 가격의 중간값입니다. 한쪽 호가가 비면 `null`입니다.
   ///
-  /// 정확한 중간값의 소수 자릿수(scale)가 28을 넘으면 가장 가까운 짝수로
-  /// 반올림(half-even)합니다. 두 가격의 합이 [Decimal] 범위를 넘으면 [RangeError]를
-  /// 던집니다.
+  /// 계산 과정에서 [Decimal] 정밀도를 줄여야 하면 가장 가까운 짝수로
+  /// 반올림(half-even)합니다. 두 가격의 합이 [Decimal] 범위를 넘으면
+  /// [RangeError]를 던집니다.
   Decimal? get midPrice {
     final bid = bestBid;
     final ask = bestAsk;

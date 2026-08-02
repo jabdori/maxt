@@ -12,7 +12,7 @@ abstract class MaxtError implements Exception {
   String toString() => detail;
 }
 
-/// 요청이 프로세스를 떠나기 전에 거절됐습니다.
+/// 요청 값 검증에 실패했습니다. 같은 요청을 변경 없이 재시도해도 실패합니다.
 final class InvalidRequestError extends MaxtError {
   const InvalidRequestError({required this.field, required String detail})
     : super(detail);
@@ -35,7 +35,7 @@ final class UnsupportedError extends MaxtError {
   final Exchange exchange;
 }
 
-/// 인증된 요청을 로컬에서 만들 수 없었습니다.
+/// 인증 정보가 없거나 요청 서명에 실패했습니다.
 final class AuthenticationError extends MaxtError {
   const AuthenticationError(super.detail);
 

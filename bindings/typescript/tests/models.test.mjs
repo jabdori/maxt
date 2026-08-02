@@ -139,3 +139,13 @@ test("feeds and subscriptions keep immutable snapshots", () => {
   assert.equal(subscription.withMarket(duplicateMarket).markets.length, 1);
   assert.equal(subscription.withFeed(duplicateCandleFeed).feeds.length, 2);
 });
+
+test("subscription market deduplication compares structural identity without display collisions", () => {
+  const slashInBase = Market.spot(Exchange.Upbit, "A/B", "C");
+  const slashInQuote = Market.spot(Exchange.Upbit, "A", "B/C");
+  assert.equal(slashInBase.toString(), slashInQuote.toString());
+
+  const subscription = new Subscription([slashInBase, slashInQuote, slashInBase]);
+
+  assert.deepEqual(subscription.markets, [slashInBase, slashInQuote]);
+});

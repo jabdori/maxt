@@ -738,15 +738,12 @@ fn python_method_parameters(source: &str, name: &str, method: &str) -> BTreeSet<
         })
         .unwrap_or_else(|| panic!("Python class {name} method {method} must exist"));
 
-    split_top_level_commas(parenthesized_contents(
-        declaration,
-        &format!("Python {name}.{method}"),
-    ))
-    .into_iter()
-    .filter_map(|parameter| {
+    let label = format!("Python {name}.{method}");
+    let mut parameters = BTreeMap::new();
+    for parameter in split_top_level_commas(parenthesized_contents(declaration, &label)) {
         let parameter = parameter.trim();
         if matches!(parameter, "" | "/" | "*") {
-            return None;
+            continue;
         }
         let parameter = parameter.trim_start_matches('*').trim_start();
         let end = parameter.find([':', '=']).unwrap_or(parameter.len());
@@ -755,9 +752,11 @@ fn python_method_parameters(source: &str, name: &str, method: &str) -> BTreeSet<
             is_identifier(identifier),
             "Python {name}.{method} parameter must use an identifier: {parameter}"
         );
-        (identifier != "self" && identifier != "cls").then(|| snake_case(identifier))
-    })
-    .collect()
+        if identifier != "self" && identifier != "cls" {
+            insert_normalized_parameter(&mut parameters, &label, identifier);
+        }
+    }
+    parameters.into_keys().collect()
 }
 
 fn python_classmethod_names(source: &str, name: &str) -> BTreeSet<String> {
@@ -1134,7 +1133,7 @@ fn dart_top_level_members(block: &str, class_name: &str) -> Vec<String> {
     let mut member = String::new();
     let mut nesting = DartNesting::default();
     let mut assignment_prefix = None;
-    let mut member_block = false;
+    let mut member_block_header = None;
 
     for line in block.lines() {
         let line = line.trim();
@@ -1150,24 +1149,28 @@ fn dart_top_level_members(block: &str, class_name: &str) -> Vec<String> {
             if syntax && top_level && character == '=' && assignment_prefix.is_none() {
                 assignment_prefix = Some(member.clone());
             }
-            if syntax && top_level && character == '{' {
-                member_block = assignment_prefix.is_none();
+            if syntax && top_level && character == '{' && assignment_prefix.is_none() {
+                member_block_header = Some(member.trim().to_owned());
             }
             member.push(character);
             if !syntax {
                 continue;
             }
-            if character == '}' && nesting.is_top_level() && member_block {
-                member.clear();
-                assignment_prefix = None;
-                member_block = false;
+            if character == '}' && nesting.is_top_level() {
+                if let Some(declaration) = member_block_header.take() {
+                    member.clear();
+                    if !declaration.is_empty() {
+                        members.push(declaration);
+                    }
+                    assignment_prefix = None;
+                }
             } else if character == ';' && nesting.is_top_level() {
                 let declaration = std::mem::take(&mut member);
                 if !declaration.trim_matches(';').trim().is_empty() {
                     members.push(declaration);
                 }
                 assignment_prefix = None;
-                member_block = false;
+                member_block_header = None;
             }
         }
     }
@@ -1195,7 +1198,7 @@ fn dart_class_fields(source: &str, name: &str) -> BTreeSet<String> {
 }
 
 fn dart_parameter_names(declaration: &str, label: &str) -> BTreeSet<String> {
-    fn collect(source: &str, label: &str, parameters: &mut BTreeSet<String>) {
+    fn collect(source: &str, label: &str, parameters: &mut BTreeMap<String, String>) {
         for parameter in split_top_level_commas(source) {
             let parameter = parameter.trim();
             if parameter.is_empty() {
@@ -1229,20 +1232,17 @@ fn dart_parameter_names(declaration: &str, label: &str) -> BTreeSet<String> {
                 is_identifier(identifier),
                 "{label} parameter must use an identifier: {parameter}"
             );
-            assert!(
-                parameters.insert(snake_case(identifier)),
-                "{label} has duplicate parameter {identifier}"
-            );
+            insert_normalized_parameter(parameters, label, identifier);
         }
     }
 
-    let mut parameters = BTreeSet::new();
+    let mut parameters = BTreeMap::new();
     collect(
         parenthesized_contents(declaration, label),
         label,
         &mut parameters,
     );
-    parameters
+    parameters.into_keys().collect()
 }
 
 fn dart_factory_parameters(source: &str, class_name: &str) -> BTreeMap<String, BTreeSet<String>> {
@@ -1475,6 +1475,17 @@ fn snake_case(value: &str) -> String {
     result
 }
 
+fn insert_normalized_parameter(
+    parameters: &mut BTreeMap<String, String>,
+    label: &str,
+    original: &str,
+) {
+    let normalized = snake_case(original);
+    if let Some(previous) = parameters.insert(normalized.clone(), original.to_owned()) {
+        panic!("{label} parameters {previous} and {original} normalize to duplicate {normalized}");
+    }
+}
+
 fn rust_variant_ids(source: &str, name: &str) -> BTreeSet<String> {
     rust_enum_variants(source, name)
         .into_iter()
@@ -1543,32 +1554,23 @@ fn assert_provider_constructor_settings() {
             &python_native,
         );
 
-        let mut dart_native = BTreeSet::new();
         for method in provider.dart_native_methods {
-            dart_native.extend(
+            let mut expected = rust_settings.clone();
+            if provider.dart_native_methods.len() > 1 {
+                expected.remove(
+                    provider
+                        .mode_axis
+                        .expect("split Dart native constructors need a mode axis"),
+                );
+            }
+            assert_inventory(
+                &format!("Dart NativeClient::{method} constructor settings"),
+                &expected,
                 dart_native_constructors
                     .get(*method)
-                    .unwrap_or_else(|| panic!("Dart NativeClient::{method} must exist"))
-                    .iter()
-                    .cloned(),
+                    .unwrap_or_else(|| panic!("Dart NativeClient::{method} must exist")),
             );
         }
-        if provider.dart_native_methods.len() > 1 {
-            dart_native.insert(
-                provider
-                    .mode_axis
-                    .expect("split Dart native constructors need a mode axis")
-                    .to_owned(),
-            );
-        }
-        assert_inventory(
-            &format!(
-                "Dart NativeClient::{} constructor settings",
-                provider.dart_native_methods.join(" + ")
-            ),
-            &rust_settings,
-            &dart_native,
-        );
 
         let python_settings =
             python_method_parameters(PYTHON_ADAPTERS, provider.adapter, "__init__");
@@ -1796,6 +1798,47 @@ impl NativeClient {
 }
 
 #[test]
+#[should_panic(
+    expected = "Dart NativeClient::binance_usd_m_futures constructor settings differ; missing: {\"api_key\"}; extra: {}"
+)]
+fn dart_native_split_mode_settings_reject_per_mode_missing_parameters() {
+    let source = r#"
+struct NativeClient;
+struct Error;
+
+impl NativeClient {
+    pub fn binance_spot(
+        api_key: Option<String>,
+        secret_key: Option<String>,
+    ) -> Result<Self, Error> {
+        Ok(Self)
+    }
+
+    pub fn binance_usd_m_futures(
+        secret_key: Option<String>,
+    ) -> Result<Self, Error> {
+        Ok(Self)
+    }
+}
+"#;
+
+    let constructors = rust_public_associated_constructors(source, "NativeClient");
+    let mut expected = BTreeSet::from([
+        "api_key".to_owned(),
+        "secret_key".to_owned(),
+        "venue".to_owned(),
+    ]);
+    expected.remove("venue");
+    for method in ["binance_spot", "binance_usd_m_futures"] {
+        assert_inventory(
+            &format!("Dart NativeClient::{method} constructor settings"),
+            &expected,
+            constructors.get(method).expect("fixture method must exist"),
+        );
+    }
+}
+
+#[test]
 #[should_panic(expected = "tuple struct; classify it explicitly")]
 fn rust_struct_field_parser_rejects_tuple_structs() {
     rust_struct_fields("pub struct Cursor(String);", "Cursor");
@@ -1904,6 +1947,20 @@ class Example(Base):
 }
 
 #[test]
+#[should_panic(
+    expected = "Python Example.__init__ parameters accessKey and access_key normalize to duplicate access_key"
+)]
+fn python_parameter_parser_rejects_normalized_name_collisions() {
+    let source = r#"
+class Example(Base):
+    def __init__(self, accessKey: str, access_key: str) -> None:
+        pass
+"#;
+
+    python_method_parameters(source, "Example", "__init__");
+}
+
+#[test]
 fn dart_field_parser_reads_only_top_level_instance_fields() {
     let source = r#"
 final class ExampleExtra {
@@ -1994,6 +2051,74 @@ final class Example {
             ),
         ])
     );
+}
+
+#[test]
+fn dart_constructor_parser_reads_block_bodied_members() {
+    let source = r#"
+final class Example {
+  factory Example.extra({String? accessKey}) {
+    return Example._();
+  }
+
+  Example._();
+
+  Example withCredentials(String accessKey, String secretKey) {
+    return Example.extra(accessKey: accessKey);
+  }
+}
+"#;
+
+    assert_eq!(
+        dart_construction_method_parameters(source, "Example"),
+        BTreeMap::from([
+            (
+                "extra".to_owned(),
+                BTreeSet::from(["access_key".to_owned()]),
+            ),
+            (
+                "with_credentials".to_owned(),
+                BTreeSet::from(["access_key".to_owned(), "secret_key".to_owned()]),
+            ),
+        ])
+    );
+}
+
+#[test]
+#[should_panic(expected = "Dart Example factories differ; missing: {}; extra: {\"extra\"}")]
+fn dart_factory_inventory_rejects_block_bodied_extra_factory() {
+    let source = r#"
+final class Example {
+  factory Example.extra(String factoryOnly) {
+    return Example._();
+  }
+
+  Example._();
+}
+"#;
+
+    assert_inventory(
+        "Dart Example factories",
+        &BTreeSet::new(),
+        &dart_factory_parameters(source, "Example")
+            .keys()
+            .cloned()
+            .collect(),
+    );
+}
+
+#[test]
+#[should_panic(
+    expected = "Dart Example.new factory parameters accessKey and access_key normalize to duplicate access_key"
+)]
+fn dart_parameter_parser_rejects_normalized_name_collisions() {
+    let source = r#"
+final class Example {
+  factory Example({String? accessKey, String? access_key}) => Example._();
+}
+"#;
+
+    dart_factory_parameters(source, "Example");
 }
 
 #[test]

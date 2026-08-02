@@ -2,8 +2,10 @@
 
 use napi_derive::napi;
 
+mod builtins;
 mod client;
 mod convert;
+mod foreign;
 mod stream;
 
 #[napi]

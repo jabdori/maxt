@@ -328,6 +328,7 @@ export type AdapterReplyWire =
   | { readonly kind: "unit"; };
 
 export const EXCHANGES = ["upbit", "bithumb", "binance", "hyperliquid"] as const;
+export const NATIVE_API_VERSION = 1 as const;
 export const FEATURES = ["markets", "trades", "order_book", "ticker", "candles", "trade_stream", "order_book_stream", "ticker_stream", "candle_stream", "balances", "open_orders", "account_stream", "trading", "positions", "margin", "funding_rates", "funding_payments", "margin_config", "reduce_only_orders"] as const;
 export const ERROR_VARIANTS = ["InvalidRequest", "Unsupported", "Adapter", "Auth", "Exchange", "Transport", "Decode"] as const;
 export const ADAPTER_OPERATIONS = ["markets", "trades", "orderBook", "ticker", "candles", "subscribe", "balances", "openOrders", "subscribeAccount", "placeOrder", "cancelOrder", "positions", "marginSummary", "fundingRates", "fundingPayments", "setMargin"] as const;
@@ -337,4 +338,20 @@ export const PROVIDER_METHODS = {
   bithumb: ["marketWarnings", "marketAlerts"],
   binance: ["venue", "spotSymbolFilters", "spotOrder", "usdMCreateListenKey", "usdMKeepaliveListenKey", "usdMCloseListenKey"],
   hyperliquid: ["isTestnet", "nonFundingLedger", "assetContext"],
+} as const;
+export const PROVIDER_CONSTRUCTORS = {
+  upbit: ["constructor", "withRegion"],
+  bithumb: ["constructor"],
+  binance: ["spot", "usdMFutures"],
+  hyperliquid: ["constructor", "testnet"],
+} as const;
+export const IDENTIFIERS = ["Exchange", "Feature", "MarketKind", "MarketStatus", "Side", "Interval", "Overflow", "MarginMode", "OrderStatus", "OrderType", "TimeInForce", "SizeKind", "UpbitRegion", "BithumbAlertStep", "BinanceMarket", "HyperliquidLedgerKind"] as const;
+export const MODELS = ["Market", "MarketInfo", "Trade", "Level", "OrderBook", "Ticker", "Candle", "Balance", "Order", "Position", "MarginSummary", "FundingRate", "FundingPayment", "CandleRequest", "OrderRequest", "StreamConfig", "Subscription", "HistoryRequest", "MarginRequest", "UpbitMarketEvent", "BithumbMarketAlert", "BinanceSymbolFilters", "BinanceSpotOrderDetail", "HyperliquidLedgerEntry", "HyperliquidAssetContext"] as const;
+export const RAW_NATIVE_EXPORTS = ["NATIVE_API_VERSION", "NativeClient", "createCustomClient", "NativeUpbit", "createUpbit", "NativeBithumb", "createBithumb", "NativeBinance", "createBinance", "NativeHyperliquid", "createHyperliquid"] as const;
+export const RAW_NATIVE_CLIENT_MEMBERS = ["exchange", "supports", "markets", "trades", "orderBook", "ticker", "candles", "subscribe", "subscribeWith", "balances", "openOrders", "openOrdersOn", "subscribeAccount", "subscribeAccountWith", "placeOrder", "cancelOrder", "positions", "positionsOn", "marginSummary", "fundingRates", "fundingPayments", "setMargin", "streamNext", "streamClose"] as const;
+export const RAW_PROVIDER_MEMBERS = {
+  upbit: ["client", "region", "orderBooks", "tickers", "marketEvents"],
+  bithumb: ["client", "marketWarnings", "marketAlerts"],
+  binance: ["client", "venue", "spotSymbolFilters", "spotOrder", "usdMCreateListenKey", "usdMKeepaliveListenKey", "usdMCloseListenKey"],
+  hyperliquid: ["client", "isTestnet", "nonFundingLedger", "assetContext"],
 } as const;

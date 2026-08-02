@@ -28,6 +28,11 @@ jobs:
       - name: Format
         run: cargo fmt --all --check
 
+      - name: Check generated binding contracts
+        run: |
+          cargo run -p maxt-bindings-codegen --locked -- --check
+          cargo test -p maxt-bindings-common --features codegen --test schema_inventory --locked
+
       - name: Lint workspace
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
 

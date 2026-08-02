@@ -1,0 +1,15 @@
+[package]
+name = "maxt-bindings-codegen"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+publish = false
+
+[dependencies]
+maxt-bindings-common = { version = "=0.1.0", path = "../common", features = ["codegen"] }
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = "warn"

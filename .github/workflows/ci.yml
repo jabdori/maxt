@@ -116,6 +116,42 @@ jobs:
           uv build --out-dir dist
           uv run --frozen twine check dist/*
 
+  typescript-node:
+    name: TypeScript and Node.js
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bindings/typescript
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: bindings/typescript/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Lint native bridge
+        run: cargo clippy -p maxt-typescript --all-targets --locked -- -D warnings
+
+      - name: Test native bridge
+        run: cargo test -p maxt-typescript --all-targets --locked
+
+      - name: Test Node package
+        run: npm test
+
+      - name: Check npm package
+        run: npm pack --dry-run
+
   dart:
     name: Dart and Flutter
     runs-on: ubuntu-latest

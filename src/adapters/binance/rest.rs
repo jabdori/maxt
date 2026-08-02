@@ -5,6 +5,8 @@
 //! building is kept as plain functions returning [`HttpRequest`] so that every
 //! path, query, and rejection below is testable without a network.
 
+use std::cmp::Reverse;
+
 use rust_decimal::Decimal;
 
 use crate::adapters::{candles as candle_pages, inclusive_millis_before};
@@ -204,7 +206,7 @@ pub(super) async fn trades(
 /// where several trades routinely share a timestamp, and does not assume the
 /// payload arrived sorted.
 fn newest_first(market: &Market, mut raw: Vec<parse::RawTrade>) -> Result<Vec<Trade>> {
-    raw.sort_unstable_by(|left, right| right.id.cmp(&left.id));
+    raw.sort_unstable_by_key(|trade| Reverse(trade.id));
     raw.iter().map(|raw| parse::trade(market, raw)).collect()
 }
 

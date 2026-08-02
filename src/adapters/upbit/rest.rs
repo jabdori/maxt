@@ -1,5 +1,7 @@
 //! Upbit's public quotation REST API.
 
+use std::cmp::Reverse;
+
 use crate::adapters::candles as candle_pages;
 use crate::error::{Error, Result};
 use crate::feature::Feature;
@@ -201,7 +203,7 @@ pub(crate) async fn trades(
 /// `sequential_id` identifies a trade but is not an ordering key.
 fn newest_first(raw: &[parse::RawTrade]) -> Result<Vec<Trade>> {
     let mut trades = raw.iter().map(parse::trade).collect::<Result<Vec<_>>>()?;
-    trades.sort_by(|left, right| right.timestamp.cmp(&left.timestamp));
+    trades.sort_by_key(|trade| Reverse(trade.timestamp));
 
     Ok(trades)
 }

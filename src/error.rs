@@ -11,9 +11,9 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Error {
-    /// The request was rejected before it left the process.
+    /// A request field failed validation.
     ///
-    /// The request is malformed and retrying it unchanged will fail again.
+    /// Retrying the same request unchanged returns the same error.
     InvalidRequest {
         /// The request field that failed validation.
         field: String,

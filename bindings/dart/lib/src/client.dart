@@ -40,8 +40,9 @@ final class Client<A extends Adapter> {
 
   /// 지정한 연결 설정으로 시장 데이터를 구독합니다.
   ///
-  /// 오류는 [StreamError] 항목으로 전달되어 스트림을 종료하지 않습니다. 사용을 마치면
-  /// 반환된 스트림의 [CloseableStream.close] 완료를 기다려야 합니다.
+  /// 구독 초기화 실패는 반환된 [Future]에서 발생합니다. 구독이 열린 뒤의 오류는
+  /// 스트림을 종료하지 않는 [StreamError] 항목입니다. 사용을 마치면 반환된 스트림의
+  /// [CloseableStream.close] 완료를 기다려야 합니다.
   Future<MarketStream> subscribeWith(
     Subscription subscription,
     StreamConfig config,

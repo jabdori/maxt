@@ -28,3 +28,7 @@ cargo test -p maxt-bindings-common --locked
 See the [common API reference](../../docs/common-api.md) and
 [contribution guide](../../CONTRIBUTING.md) for the public contract and the
 required cross-language checks.
+
+The [generated binding contract](generated/api.md) lists Adapter and
+provider-specific method names for every language. Regenerate it with the
+[binding code generator](../codegen/README.md).

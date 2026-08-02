@@ -47,6 +47,7 @@ test("publishes the @jabdori/maxt Node package identity", () => {
     "native.cjs",
     "native.d.ts",
     "README.md",
+    "README.ko.md",
     "LICENSE",
   ]);
 });

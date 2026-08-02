@@ -27,3 +27,7 @@ cargo test -p maxt-bindings-common --locked
 
 공개 계약은 [공통 API 명세](../../docs/common-api.ko.md)와
 [기여 안내](../../CONTRIBUTING.ko.md)를 참고하세요.
+
+[생성된 바인딩 계약](generated/api.md)에는 언어별 Adapter 및 provider 전용
+메서드 이름이 정리되어 있습니다. 변경할 때는
+[바인딩 코드 생성기](../codegen/README.ko.md)를 실행하세요.

@@ -60,6 +60,7 @@ cargo run --example public_rest
 - Rust API reference: `cargo doc --open`
 - [Python binding](bindings/python/README.md)
 - [Dart / Flutter binding](bindings/dart/README.md)
+- [TypeScript binding](bindings/typescript/README.md)
 - [Runnable examples](examples/)
 - [Changelog](CHANGELOG.md)
 - [Contributing](CONTRIBUTING.md)

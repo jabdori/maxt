@@ -837,10 +837,10 @@ fn python_class_methods(source: &str, name: &str, async_only: bool) -> BTreeSet<
     methods
 }
 
-fn python_enum_values(source: &str, name: &str) -> BTreeSet<String> {
+fn python_enum_values(source: &str, name: &str) -> Vec<String> {
     let marker = format!("class {name}(");
     let mut found = false;
-    let mut values = BTreeSet::new();
+    let mut values = Vec::new();
     for line in source.lines() {
         if !found {
             found = line.starts_with(&marker);
@@ -856,7 +856,7 @@ fn python_enum_values(source: &str, name: &str) -> BTreeSet<String> {
             continue;
         }
         if let Some((_, value)) = member.split_once(" = ") {
-            values.insert(value.trim_matches('"').to_owned());
+            values.push(value.trim_matches('"').to_owned());
         }
     }
     assert!(found, "Python enum {name} must exist");
@@ -1368,7 +1368,7 @@ fn assert_inventory(label: &str, expected: &BTreeSet<String>, actual: &BTreeSet<
     );
 }
 
-fn dart_enum_values(source: &str, name: &str) -> BTreeSet<String> {
+fn dart_enum_values(source: &str, name: &str) -> Vec<String> {
     dart_block(source, &format!("enum {name}"))
         .split(',')
         .map(str::trim)
@@ -1666,6 +1666,39 @@ pub struct Subscription {
     assert_eq!(
         rust_struct_fields(source, "Subscription"),
         BTreeSet::from(["feeds".to_owned(), "markets".to_owned()])
+    );
+}
+
+#[test]
+fn python_enum_value_parser_preserves_declaration_order() {
+    let python = r#"
+class Exchange(str, Enum):
+    UPBIT = "upbit"
+    BITHUMB = "bithumb"
+"#;
+
+    assert_eq!(
+        python_enum_values(python, "Exchange")
+            .into_iter()
+            .collect::<Vec<_>>(),
+        ["upbit", "bithumb"]
+    );
+}
+
+#[test]
+fn dart_enum_value_parser_preserves_declaration_order() {
+    let dart = r#"
+enum Exchange {
+  upbit,
+  bithumb,
+}
+"#;
+
+    assert_eq!(
+        dart_enum_values(dart, "Exchange")
+            .into_iter()
+            .collect::<Vec<_>>(),
+        ["upbit", "bithumb"]
     );
 }
 
@@ -2415,11 +2448,11 @@ fn exchange_and_feature_inventories_match_every_language() {
     let exchanges = Exchange::ALL
         .map(|value| value.id().to_owned())
         .into_iter()
-        .collect::<BTreeSet<_>>();
+        .collect::<Vec<_>>();
     let features = Feature::ALL
         .map(|value| value.id().to_owned())
         .into_iter()
-        .collect::<BTreeSet<_>>();
+        .collect::<Vec<_>>();
 
     assert_eq!(python_enum_values(PYTHON_MODELS, "Exchange"), exchanges);
     assert_eq!(python_enum_values(PYTHON_MODELS, "Feature"), features);
@@ -2428,7 +2461,7 @@ fn exchange_and_feature_inventories_match_every_language() {
         dart_enum_values(DART_MODELS, "Feature")
             .into_iter()
             .map(|value| snake_case(&value))
-            .collect::<BTreeSet<_>>(),
+            .collect::<Vec<_>>(),
         features
     );
 }

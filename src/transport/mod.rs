@@ -14,6 +14,13 @@ pub(crate) use http::{HttpMethod, HttpRequest, HttpResponse, HttpTransport};
 #[allow(unused_imports)]
 pub(crate) use ws::{Heartbeat, HeartbeatFrame, WsCommand, WsConnect, WsSession, connect};
 
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) fn ensure_crypto_provider() {
+    if rustls::crypto::CryptoProvider::get_default().is_none() {
+        let _ = rustls::crypto::ring::default_provider().install_default();
+    }
+}
+
 #[cfg(any(test, target_arch = "wasm32"))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct BrowserRelay {

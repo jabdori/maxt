@@ -1034,8 +1034,8 @@ mod tests {
                             *retained_by_dispatcher.lock().unwrap() = Some(sink);
                         }
                         AdapterCall::CancelStream { stream_id } => {
-                            cancelled_tx.send(stream_id).unwrap();
                             retained_by_dispatcher.lock().unwrap().take();
+                            cancelled_tx.send(stream_id).unwrap();
                         }
                         other => panic!("unexpected call: {other:?}"),
                     }

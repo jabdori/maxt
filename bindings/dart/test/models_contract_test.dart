@@ -135,12 +135,20 @@ void main() {
   });
 
   test('Timestamp.now는 Dart 시계 범위와 i64 범위 안의 시각을 반환한다', () {
+    const clockAdjustmentToleranceMicroseconds = 10000;
     final before = DateTime.now().microsecondsSinceEpoch;
     final now = Timestamp.now().nanosecondsSinceEpoch;
     final after = DateTime.now().microsecondsSinceEpoch;
 
     expect(now, inInclusiveRange(0, 9223372036854775807));
-    expect(now, inInclusiveRange(before * 1000, after * 1000));
+    expect(now.remainder(1000), 0);
+    expect(
+      now,
+      inInclusiveRange(
+        (before - clockAdjustmentToleranceMicroseconds) * 1000,
+        (after + clockAdjustmentToleranceMicroseconds) * 1000,
+      ),
+    );
   });
 
   test('Interval은 고정 길이와 정확한 나노초 이동을 제공한다', () {

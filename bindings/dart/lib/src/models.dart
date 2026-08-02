@@ -405,10 +405,15 @@ extension IntervalProperties on Interval {
 
   /// [at]에서 [count]개 구간만큼 이동한 시각입니다.
   ///
-  /// [Interval.month1]은 UTC 달력 월을 사용하며, 결과가 i64 범위를 넘으면 `null`입니다.
+  /// 고정 구간은 초 단위 길이만큼 나노초를 정확히 이동합니다.
+  /// [Interval.month1]은 UTC 달력 월을 사용하고, 대상 월에 없는 일자는
+  /// 말일로 보정합니다. 이 보정 때문에 역방향 이동이 원래 시각을 복원하지 못할 수
+  /// 있습니다.
+  ///
+  /// 거래소별 캔들 시작 격자(provider candle grid)는 적용하지 않습니다.
+  /// 결과를 [Timestamp]로 표현할 수 없으면 `null`입니다.
   Timestamp? advance(Timestamp at, int count) {
     final countBigInt = BigInt.from(count);
-    if (!Timestamp._contains(countBigInt)) return null;
 
     final fixedSeconds = seconds;
     if (fixedSeconds != null) {

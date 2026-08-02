@@ -57,8 +57,8 @@ cargo run --example public_rest
 - [공통 API 레퍼런스](docs/common-api.ko.md)
 - [거래소 지원표](docs/providers.ko.md)
 - Rust API 레퍼런스: `cargo doc --open`
-- [Python 바인딩](bindings/python/README.md)
-- [Dart / Flutter 바인딩](bindings/dart/README.md)
+- [Python 바인딩](bindings/python/README.ko.md)
+- [Dart / Flutter 바인딩](bindings/dart/README.ko.md)
 - [실행 가능한 예제](examples/)
 - [변경 기록](CHANGELOG.md)
 - [기여 가이드](CONTRIBUTING.ko.md)

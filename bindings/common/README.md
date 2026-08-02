@@ -1,5 +1,7 @@
 # maxt binding contracts
 
+[한국어](README.ko.md)
+
 `maxt-bindings-common` contains the language-neutral request, response, error,
 and stream contracts used by maxt language bindings. It also provides the
 `ForeignAdapter` bridge for adapters implemented outside Rust.

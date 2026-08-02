@@ -1,5 +1,7 @@
 # maxt for Dart and Flutter
 
+[한국어](README.ko.md)
+
 `maxt` exposes one native Dart API for Upbit, Bithumb, Binance, and
 Hyperliquid. The package builds its Rust crate through Dart build hooks; it
 does not ship prebuilt native binaries.

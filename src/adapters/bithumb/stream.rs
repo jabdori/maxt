@@ -111,9 +111,11 @@ pub(crate) async fn subscribe(
         config,
     )
     .await?;
+    let close = session.close_handle();
 
-    Ok(MarketStream::new(
+    Ok(MarketStream::new_with_close(
         session.filter_map(|item| std::future::ready(market_item(item))),
+        move || async move { close.close().await },
     ))
 }
 
@@ -141,10 +143,12 @@ pub(crate) async fn subscribe_account(
     config: &StreamConfig,
 ) -> Result<AccountStream> {
     let session = connect(account_connect(credentials, &ticket())?, config).await?;
+    let close = session.close_handle();
 
-    Ok(AccountStream::new(session.flat_map(|item| {
-        futures_util::stream::iter(account_items(item))
-    })))
+    Ok(AccountStream::new_with_close(
+        session.flat_map(|item| futures_util::stream::iter(account_items(item))),
+        move || async move { close.close().await },
+    ))
 }
 
 fn ticket() -> String {

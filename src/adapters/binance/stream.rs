@@ -338,22 +338,23 @@ pub(super) async fn subscribe(
 ) -> Result<MarketStream> {
     let markets = subscribed_markets(adapter, subscription)?;
     let mut sessions = Vec::new();
+    let mut closes = Vec::new();
     for (url, frame) in subscribe_frames(adapter, subscription)? {
-        sessions.push(
-            connect(
-                WsConnect {
-                    url: url.to_string(),
-                    headers: None,
-                    subscribe: WsConnect::fixed(vec![frame]),
-                    heartbeat: Some(HEARTBEAT),
-                },
-                config,
-            )
-            .await?,
-        );
+        let session = connect(
+            WsConnect {
+                url: url.to_string(),
+                headers: None,
+                subscribe: WsConnect::fixed(vec![frame]),
+                heartbeat: Some(HEARTBEAT),
+            },
+            config,
+        )
+        .await?;
+        closes.push(session.close_handle());
+        sessions.push(session);
     }
 
-    Ok(MarketStream::new(
+    Ok(MarketStream::new_with_close(
         merge_until_any_ends(sessions).filter_map(move |item| {
             let event = match item {
                 Ok(WsCommand::Text(frame)) => decode(&markets, &frame).transpose(),
@@ -367,6 +368,14 @@ pub(super) async fn subscribe(
             };
             std::future::ready(event)
         }),
+        move || async move {
+            for result in
+                futures_util::future::join_all(closes.iter().map(|close| close.close())).await
+            {
+                result?;
+            }
+            Ok(())
+        },
     ))
 }
 
@@ -639,9 +648,11 @@ async fn subscribe_spot_account(
     config: &StreamConfig,
 ) -> Result<AccountStream> {
     let session = connect(spot_account_connect(adapter)?, config).await?;
+    let close = session.close_handle();
 
-    Ok(AccountStream::new(
+    Ok(AccountStream::new_with_close(
         account_events(adapter.clone(), session).boxed(),
+        move || async move { close.close().await },
     ))
 }
 
@@ -679,15 +690,23 @@ async fn subscribe_usd_m_account(
         config,
     )
     .await?;
+    let close = session.close_handle();
 
     // The channel forwards a refresh failure and stops the task when the stream
     // is dropped.
     let (failures, failed) = mpsc::channel(1);
-    tokio::spawn(refresh_listen_key(adapter.clone(), key, failures));
+    let refresh = tokio::spawn(refresh_listen_key(adapter.clone(), key, failures));
 
     let events = account_events(adapter.clone(), session).boxed();
 
-    Ok(AccountStream::new(with_refresher_failures(events, failed)))
+    Ok(AccountStream::new_with_close(
+        with_refresher_failures(events, failed),
+        move || async move {
+            let (socket, refresh) = tokio::join!(close.close(), stop_refresh_task(refresh));
+            socket?;
+            refresh
+        },
+    ))
 }
 
 /// Reads a private socket's frames as account events.
@@ -755,11 +774,69 @@ async fn refresh_listen_key(
     }
 }
 
+/// Stops and joins the USD-M listen-key refresh task.
+async fn stop_refresh_task(task: tokio::task::JoinHandle<()>) -> Result<()> {
+    task.abort();
+    match task.await {
+        Ok(()) => Ok(()),
+        Err(error) if error.is_cancelled() => Ok(()),
+        Err(error) => Err(Error::adapter(format!(
+            "Binance listen-key refresh task failed: {error}"
+        ))),
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicBool, Ordering};
+
     use super::*;
     use crate::feature::Feature;
     use crate::types::{Exchange, OrderStatus, Side};
+
+    struct RefreshStopped(Arc<AtomicBool>);
+
+    impl Drop for RefreshStopped {
+        fn drop(&mut self) {
+            self.0.store(true, Ordering::SeqCst);
+        }
+    }
+
+    fn spawn_refresh_fixture(stopped: Arc<AtomicBool>) -> AccountStream {
+        let stopped = RefreshStopped(stopped);
+        let task = tokio::spawn(async move {
+            let _stopped = stopped;
+            std::future::pending::<()>().await;
+        });
+
+        AccountStream::new_with_close(futures_util::stream::pending(), move || {
+            stop_refresh_task(task)
+        })
+    }
+
+    #[tokio::test]
+    async fn closing_a_usd_m_account_source_joins_the_refresh_task() {
+        let stopped = Arc::new(AtomicBool::new(false));
+        let mut task = spawn_refresh_fixture(Arc::clone(&stopped));
+
+        assert!(!stopped.load(Ordering::SeqCst));
+        task.close().await.unwrap();
+        assert!(stopped.load(Ordering::SeqCst));
+    }
+
+    #[tokio::test]
+    async fn a_panicking_refresh_task_is_a_structured_adapter_error() {
+        let task = tokio::spawn(async { panic!("refresh fixture panic") });
+        while !task.is_finished() {
+            tokio::task::yield_now().await;
+        }
+
+        assert!(matches!(
+            stop_refresh_task(task).await,
+            Err(Error::Adapter { detail }) if detail.contains("listen-key refresh task")
+        ));
+    }
 
     // https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams
     const SPOT_TRADE_FRAME: &str = r#"{

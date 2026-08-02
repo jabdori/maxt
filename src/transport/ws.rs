@@ -12,7 +12,7 @@ use std::time::Duration;
 
 use futures_core::Stream;
 use futures_util::{SinkExt, StreamExt};
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, watch};
 use tokio_tungstenite::tungstenite::Message;
 use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 
@@ -90,11 +90,63 @@ impl HeartbeatFrame {
     }
 }
 
+/// Signals a WebSocket lifecycle task and waits until it has stopped.
+#[derive(Clone)]
+pub(crate) struct WsCloseHandle {
+    cancel: watch::Sender<bool>,
+    completed: watch::Receiver<bool>,
+}
+
+impl WsCloseHandle {
+    fn signal(&self) {
+        self.cancel.send_if_modified(|cancelled| {
+            if *cancelled {
+                false
+            } else {
+                *cancelled = true;
+                true
+            }
+        });
+    }
+
+    pub(crate) async fn close(&self) -> Result<()> {
+        self.signal();
+        let mut completed = self.completed.clone();
+        while !*completed.borrow_and_update() {
+            completed.changed().await.map_err(|_| {
+                Error::adapter("WebSocket task ended without publishing completion")
+            })?;
+        }
+        Ok(())
+    }
+}
+
+fn close_channels() -> (WsCloseHandle, watch::Receiver<bool>, watch::Sender<bool>) {
+    let (cancel, cancelled) = watch::channel(false);
+    let (completion, completed) = watch::channel(false);
+    (WsCloseHandle { cancel, completed }, cancelled, completion)
+}
+
+/// Waits until cancellation has been signalled.
+async fn wait_for_cancel(cancelled: &mut watch::Receiver<bool>) {
+    if *cancelled.borrow_and_update() {
+        return;
+    }
+    let _ = cancelled.changed().await;
+}
+
 /// A live WebSocket session exposed as a frame stream.
 ///
 /// Dropping the receiver stops the background task and closes its socket.
 pub(crate) struct WsSession {
     events: mpsc::Receiver<Result<WsCommand>>,
+    close: WsCloseHandle,
+}
+
+impl WsSession {
+    pub(crate) fn close_handle(&self) -> WsCloseHandle {
+        self.close.clone()
+    }
 }
 
 impl std::fmt::Debug for WsSession {
@@ -111,17 +163,27 @@ impl Stream for WsSession {
     }
 }
 
+impl Drop for WsSession {
+    fn drop(&mut self) {
+        self.close.signal();
+    }
+}
+
 /// Opens the initial connection and starts its lifecycle task.
 pub(crate) async fn connect(connect: WsConnect, config: &StreamConfig) -> Result<WsSession> {
     let (sender, events) = mpsc::channel(config.buffer_size.max(1));
+    let (close, cancelled, completed) = close_channels();
     let config = config.clone();
 
     // Initial connection failures are returned directly to the caller.
     let socket = open(&connect).await?;
 
-    tokio::spawn(run(connect, config, socket, sender));
+    tokio::spawn(async move {
+        run(connect, config, socket, sender, cancelled).await;
+        completed.send_replace(true);
+    });
 
-    Ok(WsSession { events })
+    Ok(WsSession { events, close })
 }
 
 type Socket =
@@ -183,6 +245,7 @@ async fn run(
     config: StreamConfig,
     mut socket: Socket,
     sender: mpsc::Sender<Result<WsCommand>>,
+    mut cancelled: watch::Receiver<bool>,
 ) {
     let idle_timeout = idle_timeout(&config, connect.heartbeat.as_ref());
     // Total reconnect budget; inbound traffic does not reset it.
@@ -191,19 +254,24 @@ async fn run(
     let mut mute = 0_u32;
     // A reconnected socket must notify the consumer before new data.
     let mut reconnected = false;
+    let mut pump_cancelled = cancelled.clone();
 
     loop {
-        let carried = match pump(
-            &mut socket,
-            &sender,
-            idle_timeout,
-            &connect,
-            &config,
-            std::mem::take(&mut reconnected),
-        )
-        .await
-        {
-            Pump::ConsumerGone => return,
+        let pumped = tokio::select! {
+            biased;
+            () = wait_for_cancel(&mut cancelled) => return,
+            pumped = pump(
+                &mut socket,
+                &sender,
+                idle_timeout,
+                &connect,
+                &config,
+                std::mem::take(&mut reconnected),
+                &mut pump_cancelled,
+            ) => pumped,
+        };
+        let carried = match pumped {
+            Pump::Cancelled | Pump::ConsumerGone => return,
             Pump::Disconnected { carried } => carried,
         };
 
@@ -212,7 +280,8 @@ async fn run(
             mute = 0;
         } else if worth_reporting(mute) {
             // A repeatedly mute connection is distinguishable from a quiet feed.
-            match deliver(
+            match deliver_until_cancelled(
+                &mut cancelled,
                 &sender,
                 Err(Error::transport(format!(
                     "reconnected {mute} times without the exchange sending anything"
@@ -221,8 +290,8 @@ async fn run(
             )
             .await
             {
-                Delivery::Sent | Delivery::Dropped => {}
-                Delivery::ConsumerGone => return,
+                Some(Delivery::Sent | Delivery::Dropped) => {}
+                Some(Delivery::ConsumerGone) | None => return,
             }
         }
 
@@ -235,7 +304,8 @@ async fn run(
                 .is_some_and(|max| attempt > max)
             {
                 // `DropNewest` may discard this final error; stream termination remains.
-                let _ = deliver(
+                let _ = deliver_until_cancelled(
+                    &mut cancelled,
                     &sender,
                     Err(Error::transport(format!(
                         "gave up reconnecting after {} attempts",
@@ -248,9 +318,18 @@ async fn run(
             }
 
             let backoff = backoff_delay(&config, mute);
-            tokio::time::sleep(backoff).await;
+            tokio::select! {
+                biased;
+                () = wait_for_cancel(&mut cancelled) => return,
+                () = tokio::time::sleep(backoff) => {}
+            }
 
-            match open(&connect).await {
+            let reopened = tokio::select! {
+                biased;
+                () = wait_for_cancel(&mut cancelled) => return,
+                reopened = open(&connect) => reopened,
+            };
+            match reopened {
                 Ok(reopened) => {
                     socket = reopened;
                     reconnected = true;
@@ -258,9 +337,16 @@ async fn run(
                 }
                 Err(error) => {
                     if worth_reporting(mute) {
-                        match deliver(&sender, Err(error), config.overflow).await {
-                            Delivery::Sent | Delivery::Dropped => {}
-                            Delivery::ConsumerGone => return,
+                        match deliver_until_cancelled(
+                            &mut cancelled,
+                            &sender,
+                            Err(error),
+                            config.overflow,
+                        )
+                        .await
+                        {
+                            Some(Delivery::Sent | Delivery::Dropped) => {}
+                            Some(Delivery::ConsumerGone) | None => return,
                         }
                     }
                     continue;
@@ -276,6 +362,7 @@ enum Pump {
         carried: bool,
     },
     ConsumerGone,
+    Cancelled,
 }
 
 async fn pump(
@@ -285,6 +372,7 @@ async fn pump(
     connect: &WsConnect,
     config: &StreamConfig,
     reconnected: bool,
+    cancelled: &mut watch::Receiver<bool>,
 ) -> Pump {
     // The first heartbeat is one full interval after the handshake.
     let mut pulse = connect.heartbeat.as_ref().map(|heartbeat| {
@@ -323,6 +411,8 @@ async fn pump(
 
     loop {
         let next = tokio::select! {
+            biased;
+            () = wait_for_cancel(cancelled) => return Pump::Cancelled,
             // Treat inbound silence as a disconnected socket.
             () = tokio::time::sleep_until(deadline) => return Pump::Disconnected { carried },
             frame = due(pulse.as_mut()) => {
@@ -461,6 +551,19 @@ enum Delivery {
     ConsumerGone,
 }
 
+async fn deliver_until_cancelled(
+    cancelled: &mut watch::Receiver<bool>,
+    sender: &mpsc::Sender<Result<WsCommand>>,
+    event: Result<WsCommand>,
+    overflow: Overflow,
+) -> Option<Delivery> {
+    tokio::select! {
+        biased;
+        () = wait_for_cancel(cancelled) => None,
+        delivered = deliver(sender, event, overflow) => Some(delivered),
+    }
+}
+
 async fn deliver(
     sender: &mpsc::Sender<Result<WsCommand>>,
     event: Result<WsCommand>,
@@ -505,6 +608,36 @@ mod tests {
             max_reconnect_delay_ms: 30_000,
             ..StreamConfig::default()
         }
+    }
+
+    #[tokio::test]
+    async fn close_handle_signals_once_and_waits_for_task_completion() {
+        let (handle, mut cancelled, completed) = close_channels();
+        let close_one = tokio::spawn({
+            let handle = handle.clone();
+            async move { handle.close().await }
+        });
+        let close_two = tokio::spawn({
+            let handle = handle.clone();
+            async move { handle.close().await }
+        });
+
+        cancelled.changed().await.unwrap();
+        assert!(*cancelled.borrow());
+        assert!(!close_one.is_finished());
+        assert!(!close_two.is_finished());
+
+        completed.send_replace(true);
+        close_one.await.unwrap().unwrap();
+        close_two.await.unwrap().unwrap();
+    }
+
+    #[tokio::test]
+    async fn close_handle_reports_a_task_that_omits_completion() {
+        let (handle, _cancelled, completed) = close_channels();
+        drop(completed);
+
+        assert!(matches!(handle.close().await, Err(Error::Adapter { .. })));
     }
 
     /// Accepts one connection, sends a greeting, and optionally remains open.

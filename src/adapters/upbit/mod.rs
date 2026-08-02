@@ -264,15 +264,19 @@ impl Adapter for UpbitAdapter {
                 &config,
             )
             .await?;
+            let close = session.close_handle();
 
             // Candle completion state belongs to one WebSocket connection.
             let mut decoder = stream::Decoder::default();
 
-            Ok(MarketStream::new(events(
-                session,
-                move |frame| decoder.decode(frame),
-                MarketEvent::Reconnected,
-            )))
+            Ok(MarketStream::new_with_close(
+                events(
+                    session,
+                    move |frame| decoder.decode(frame),
+                    MarketEvent::Reconnected,
+                ),
+                move || async move { close.close().await },
+            ))
         })
     }
 
@@ -325,12 +329,12 @@ impl Adapter for UpbitAdapter {
                 &config,
             )
             .await?;
+            let close = session.close_handle();
 
-            Ok(AccountStream::new(events(
-                session,
-                private::account_events,
-                AccountEvent::Reconnected,
-            )))
+            Ok(AccountStream::new_with_close(
+                events(session, private::account_events, AccountEvent::Reconnected),
+                move || async move { close.close().await },
+            ))
         })
     }
 }

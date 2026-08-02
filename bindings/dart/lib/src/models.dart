@@ -136,11 +136,11 @@ final class Decimal {
   int get hashCode => Object.hash(_coefficient, _scale);
 }
 
-/// Unix epoch 이후의 UTC 나노초로 표현한 시각입니다.
+/// Unix epoch 기준 UTC 나노초로 표현한 시각입니다.
 final class Timestamp implements Comparable<Timestamp> {
   const Timestamp._(this.nanosecondsSinceEpoch);
 
-  /// Unix epoch 이후의 나노초에서 시각을 만듭니다.
+  /// Unix epoch 기준 나노초에서 시각을 만듭니다.
   factory Timestamp.fromNanoseconds(int nanoseconds) {
     if (nanoseconds < _min || nanoseconds > _max) {
       throw RangeError.range(nanoseconds, _min, _max, 'nanoseconds');
@@ -148,11 +148,52 @@ final class Timestamp implements Comparable<Timestamp> {
     return Timestamp._(nanoseconds);
   }
 
+  /// Unix epoch 기준 마이크로초에서 시각을 만듭니다.
+  factory Timestamp.fromMicroseconds(int microseconds) =>
+      _fromScaled(microseconds, 1000);
+
+  /// Unix epoch 기준 밀리초에서 시각을 만듭니다.
+  factory Timestamp.fromMilliseconds(int milliseconds) =>
+      _fromScaled(milliseconds, 1000000);
+
+  /// Unix epoch 기준 초에서 시각을 만듭니다.
+  factory Timestamp.fromSeconds(int seconds) =>
+      _fromScaled(seconds, 1000000000);
+
+  /// 현재 시스템 시각입니다.
+  factory Timestamp.now() {
+    final microseconds = DateTime.now().microsecondsSinceEpoch;
+    return microseconds <= 0 ? zero : _fromScaled(microseconds, 1000);
+  }
+
   static const int _min = -9223372036854775808;
   static const int _max = 9223372036854775807;
+  static final BigInt _minBigInt = BigInt.from(_min);
+  static final BigInt _maxBigInt = BigInt.from(_max);
   static const Timestamp zero = Timestamp._(0);
 
   final int nanosecondsSinceEpoch;
+
+  /// Unix epoch 기준 밀리초를 epoch(0) 방향으로 절삭한 값입니다.
+  int get millisecondsSinceEpoch => nanosecondsSinceEpoch ~/ 1000000;
+
+  /// Unix epoch 기준 초를 epoch(0) 방향으로 절삭한 값입니다.
+  int get secondsSinceEpoch => nanosecondsSinceEpoch ~/ 1000000000;
+
+  static Timestamp _fromScaled(int value, int scale) {
+    final nanoseconds = BigInt.from(value) * BigInt.from(scale);
+    if (nanoseconds < _minBigInt) return const Timestamp._(_min);
+    if (nanoseconds > _maxBigInt) return const Timestamp._(_max);
+    return Timestamp._(nanoseconds.toInt());
+  }
+
+  static Timestamp? _checked(BigInt nanoseconds) {
+    if (nanoseconds < _minBigInt || nanoseconds > _maxBigInt) return null;
+    return Timestamp._(nanoseconds.toInt());
+  }
+
+  static bool _contains(BigInt value) =>
+      value >= _minBigInt && value <= _maxBigInt;
 
   @override
   int compareTo(Timestamp other) =>
@@ -226,6 +267,80 @@ enum Interval {
   day3,
   week1,
   month1,
+}
+
+extension IntervalProperties on Interval {
+  /// 고정된 구간의 초 단위 길이입니다. 달력 월인 [Interval.month1]은 `null`입니다.
+  int? get seconds => switch (this) {
+    Interval.sec1 => 1,
+    Interval.min1 => 60,
+    Interval.min3 => 180,
+    Interval.min5 => 300,
+    Interval.min15 => 900,
+    Interval.min30 => 1800,
+    Interval.hour1 => 3600,
+    Interval.hour2 => 7200,
+    Interval.hour4 => 14400,
+    Interval.hour8 => 28800,
+    Interval.hour12 => 43200,
+    Interval.day1 => 86400,
+    Interval.day3 => 259200,
+    Interval.week1 => 604800,
+    Interval.month1 => null,
+  };
+
+  /// [at]에서 [count]개 구간만큼 이동한 시각입니다.
+  ///
+  /// [Interval.month1]은 UTC 달력 월을 사용하며, 결과가 i64 범위를 넘으면 `null`입니다.
+  Timestamp? advance(Timestamp at, int count) {
+    final countBigInt = BigInt.from(count);
+    if (!Timestamp._contains(countBigInt)) return null;
+
+    final fixedSeconds = seconds;
+    if (fixedSeconds != null) {
+      final span =
+          BigInt.from(fixedSeconds) * BigInt.from(1000000000) * countBigInt;
+      if (!Timestamp._contains(span)) return null;
+      return Timestamp._checked(BigInt.from(at.nanosecondsSinceEpoch) + span);
+    }
+
+    if (countBigInt.abs() > BigInt.from(4294967295)) return null;
+
+    var microseconds = at.nanosecondsSinceEpoch ~/ 1000;
+    var nanosecondRemainder = at.nanosecondsSinceEpoch.remainder(1000);
+    if (nanosecondRemainder < 0) {
+      microseconds--;
+      nanosecondRemainder += 1000;
+    }
+    final current = DateTime.fromMicrosecondsSinceEpoch(
+      microseconds,
+      isUtc: true,
+    );
+    final monthIndex =
+        BigInt.from(current.year * 12 + current.month - 1) + countBigInt;
+    if (monthIndex < BigInt.from(1677 * 12) ||
+        monthIndex > BigInt.from(2262 * 12 + 11)) {
+      return null;
+    }
+
+    final targetYear = (monthIndex ~/ BigInt.from(12)).toInt();
+    final targetMonth = monthIndex.remainder(BigInt.from(12)).toInt() + 1;
+    final lastDay = DateTime.utc(targetYear, targetMonth + 1, 0).day;
+    final moved = DateTime.utc(
+      targetYear,
+      targetMonth,
+      current.day > lastDay ? lastDay : current.day,
+      current.hour,
+      current.minute,
+      current.second,
+      current.millisecond,
+      current.microsecond,
+    );
+    return Timestamp._checked(
+      BigInt.from(moved.microsecondsSinceEpoch) * BigInt.from(1000) +
+          BigInt.from(nanosecondRemainder),
+    );
+  }
 }
 
 /// 캔들 이력 조회 조건입니다.

@@ -105,6 +105,12 @@ class ExchangeErrorKind(str, Enum):
     UNAVAILABLE = "unavailable"
     UNKNOWN = "unknown"
 
+    def is_retryable(self) -> bool:
+        return self in {
+            ExchangeErrorKind.RATE_LIMITED,
+            ExchangeErrorKind.UNAVAILABLE,
+        }
+
 
 class ExchangeError(MaxtError):
     kind = "exchange"
@@ -126,10 +132,7 @@ class ExchangeError(MaxtError):
         super().__init__(f"{exchange.value} returned{status_text} {code}: {message}")
 
     def is_retryable(self) -> bool:
-        return self.exchange_kind in {
-            ExchangeErrorKind.RATE_LIMITED,
-            ExchangeErrorKind.UNAVAILABLE,
-        }
+        return self.exchange_kind.is_retryable()
 
     def is_rate_limited(self) -> bool:
         return self.exchange_kind is ExchangeErrorKind.RATE_LIMITED

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from calendar import monthrange
 from dataclasses import dataclass, field, fields, is_dataclass
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
 from typing import (
@@ -22,6 +24,14 @@ class Exchange(str, Enum):
     BITHUMB = "bithumb"
     BINANCE = "binance"
     HYPERLIQUID = "hyperliquid"
+
+    def display_name(self) -> str:
+        return {
+            Exchange.UPBIT: "Upbit",
+            Exchange.BITHUMB: "Bithumb",
+            Exchange.BINANCE: "Binance",
+            Exchange.HYPERLIQUID: "Hyperliquid",
+        }[self]
 
 
 class Feature(str, Enum):
@@ -45,10 +55,36 @@ class Feature(str, Enum):
     MARGIN_CONFIG = "margin_config"
     REDUCE_ONLY_ORDERS = "reduce_only_orders"
 
+    def needs_credentials(self) -> bool:
+        return self in {
+            Feature.BALANCES,
+            Feature.OPEN_ORDERS,
+            Feature.ACCOUNT_STREAM,
+            Feature.TRADING,
+            Feature.POSITIONS,
+            Feature.MARGIN,
+            Feature.FUNDING_PAYMENTS,
+            Feature.MARGIN_CONFIG,
+            Feature.REDUCE_ONLY_ORDERS,
+        }
+
+    def is_derivatives_only(self) -> bool:
+        return self in {
+            Feature.POSITIONS,
+            Feature.MARGIN,
+            Feature.FUNDING_RATES,
+            Feature.FUNDING_PAYMENTS,
+            Feature.MARGIN_CONFIG,
+            Feature.REDUCE_ONLY_ORDERS,
+        }
+
 
 class MarketKind(str, Enum):
     SPOT = "spot"
     PERPETUAL = "perpetual"
+
+    def is_derivative(self) -> bool:
+        return self is MarketKind.PERPETUAL
 
 
 class MarketStatus(str, Enum):
@@ -61,6 +97,9 @@ class MarketStatus(str, Enum):
 class Side(str, Enum):
     BUY = "buy"
     SELL = "sell"
+
+    def flip(self) -> Side:
+        return Side.SELL if self is Side.BUY else Side.BUY
 
 
 class Interval(str, Enum):
@@ -79,6 +118,64 @@ class Interval(str, Enum):
     DAY3 = "day3"
     WEEK1 = "week1"
     MONTH1 = "month1"
+
+    def as_secs(self) -> Optional[int]:
+        return {
+            Interval.SEC1: 1,
+            Interval.MIN1: 60,
+            Interval.MIN3: 180,
+            Interval.MIN5: 300,
+            Interval.MIN15: 900,
+            Interval.MIN30: 1_800,
+            Interval.HOUR1: 3_600,
+            Interval.HOUR2: 7_200,
+            Interval.HOUR4: 14_400,
+            Interval.HOUR8: 28_800,
+            Interval.HOUR12: 43_200,
+            Interval.DAY1: 86_400,
+            Interval.DAY3: 259_200,
+            Interval.WEEK1: 604_800,
+            Interval.MONTH1: None,
+        }[self]
+
+    def advance(self, timestamp_ns: Timestamp, count: int) -> Optional[Timestamp]:
+        if not _is_i64(timestamp_ns) or not _is_i64(count):
+            return None
+
+        seconds = self.as_secs()
+        if seconds is not None:
+            span = seconds * 1_000_000_000 * count
+            if not _is_i64(span):
+                return None
+            result = timestamp_ns + span
+            return result if _is_i64(result) else None
+
+        if abs(count) > (1 << 32) - 1:
+            return None
+
+        whole_seconds, nanoseconds = divmod(timestamp_ns, 1_000_000_000)
+        current = _UNIX_EPOCH + timedelta(seconds=whole_seconds)
+        month_index = current.year * 12 + current.month - 1 + count
+        year, zero_based_month = divmod(month_index, 12)
+        month = zero_based_month + 1
+        if not 1 <= year <= 9999:
+            return None
+
+        moved = datetime(
+            year,
+            month,
+            min(current.day, monthrange(year, month)[1]),
+            current.hour,
+            current.minute,
+            current.second,
+            tzinfo=timezone.utc,
+        )
+        elapsed = moved - _UNIX_EPOCH
+        result = (
+            (elapsed.days * 86_400 + elapsed.seconds) * 1_000_000_000
+            + nanoseconds
+        )
+        return result if _is_i64(result) else None
 
 
 class Overflow(str, Enum):
@@ -168,6 +265,14 @@ class HyperliquidLedgerKind(str, Enum):
 
 Timestamp = int
 T = TypeVar("T")
+
+_I64_MIN = -(1 << 63)
+_I64_MAX = (1 << 63) - 1
+_UNIX_EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+
+def _is_i64(value: int) -> bool:
+    return _I64_MIN <= value <= _I64_MAX
 
 
 def _ascii_upper(value: str) -> str:
@@ -467,6 +572,18 @@ class MarketEvent(WireModel):
     @classmethod
     def trade(cls, trade: Trade) -> MarketEvent:
         return cls("trade", trade)
+
+    @classmethod
+    def order_book(cls, order_book: OrderBook) -> MarketEvent:
+        return cls("order_book", order_book)
+
+    @classmethod
+    def ticker(cls, ticker: Ticker) -> MarketEvent:
+        return cls("ticker", ticker)
+
+    @classmethod
+    def candle(cls, candle: Candle) -> MarketEvent:
+        return cls("candle", candle)
 
     @classmethod
     def reconnected(cls) -> MarketEvent:

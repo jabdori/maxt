@@ -1,0 +1,13 @@
+/node_modules
+/dist
+/native.cjs
+/native.d.ts
+/*.node
+/npm
+/artifacts
+/wasm
+/playwright-report
+/test-results
+/*.tgz
+/rust/target
+/rust/Cargo.lock

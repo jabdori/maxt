@@ -1,0 +1,65 @@
+{
+  "name": "@jabdori/maxt",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jabdori/maxt.git"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js",
+      "default": "./dist/node.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js",
+      "default": "./dist/node.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/",
+    "native.cjs",
+    "native.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit --rootDir .",
+    "build:node": "napi build --manifest-path rust/Cargo.toml --platform --output-dir . --js native.cjs --dts native.d.ts --js-package-name @jabdori/maxt -- --locked",
+    "test:unit": "node --test tests/package-contract.test.mjs",
+    "test:node": "npm run build:node",
+    "test": "npm run test:unit && npm run typecheck && npm run test:node",
+    "package:dirs": "napi create-npm-dirs",
+    "artifacts": "napi artifacts"
+  },
+  "optionalDependencies": {
+    "@jabdori/maxt-linux-x64-gnu": "0.1.0",
+    "@jabdori/maxt-linux-arm64-gnu": "0.1.0",
+    "@jabdori/maxt-darwin-x64": "0.1.0",
+    "@jabdori/maxt-darwin-arm64": "0.1.0",
+    "@jabdori/maxt-win32-x64-msvc": "0.1.0"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "3.8.2",
+    "@types/node": "24.13.3",
+    "typescript": "7.0.2"
+  },
+  "napi": {
+    "binaryName": "maxt",
+    "targets": [
+      "x86_64-unknown-linux-gnu",
+      "aarch64-unknown-linux-gnu",
+      "x86_64-apple-darwin",
+      "aarch64-apple-darwin",
+      "x86_64-pc-windows-msvc"
+    ]
+  }
+}

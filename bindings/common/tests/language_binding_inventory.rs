@@ -500,6 +500,490 @@ fn rust_public_methods(source: &str, name: &str, async_only: bool) -> BTreeSet<S
         .collect()
 }
 
+fn rust_public_value_methods(source: &str, name: &str) -> BTreeSet<String> {
+    let mut methods = rust_public_methods(source, name, false);
+    let marker = format!("impl {name}");
+    if source.contains(&marker) {
+        let block = dart_block(source, &marker);
+        let mut without_lifetime_apostrophes = String::with_capacity(block.len());
+        for (offset, character) in block.char_indices() {
+            if character == '\'' {
+                let lifetime = block[offset + character.len_utf8()..]
+                    .chars()
+                    .take_while(|character| *character == '_' || character.is_ascii_alphanumeric())
+                    .collect::<String>();
+                let after_lifetime = offset + character.len_utf8() + lifetime.len();
+                if !lifetime.is_empty() && !block[after_lifetime..].starts_with('\'') {
+                    continue;
+                }
+            }
+            without_lifetime_apostrophes.push(character);
+        }
+        methods.extend(
+            dart_top_level_members(&without_lifetime_apostrophes, name)
+                .into_iter()
+                .filter_map(|declaration| {
+                    let tokens = declaration.split_whitespace().collect::<Vec<_>>();
+                    if tokens.first() != Some(&"pub") {
+                        return None;
+                    }
+                    let function = tokens.iter().position(|token| *token == "fn")?;
+                    let name = tokens.get(function + 1)?.split_once('(')?.0;
+                    is_identifier(name).then(|| name.to_owned())
+                }),
+        );
+    }
+    methods
+}
+
+#[derive(Clone, Copy)]
+enum BindingMemberKind {
+    Method,
+    ClassMethod,
+    Getter,
+    Factory,
+    Field,
+    EnumValue,
+    IntRepresentation,
+}
+
+impl BindingMemberKind {
+    const fn label(self) -> &'static str {
+        match self {
+            Self::Method => "method",
+            Self::ClassMethod => "class_method",
+            Self::Getter => "getter",
+            Self::Factory => "factory",
+            Self::Field => "field",
+            Self::EnumValue => "enum_value",
+            Self::IntRepresentation => "int_representation",
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+struct BindingMember {
+    kind: BindingMemberKind,
+    name: &'static str,
+}
+
+#[derive(Clone, Copy)]
+struct ValueMemberContract {
+    rust: &'static str,
+    python: Option<BindingMember>,
+    dart: Option<BindingMember>,
+}
+
+#[derive(Clone, Copy)]
+enum RustValueSurface {
+    Methods,
+    Variants,
+}
+
+#[derive(Clone, Copy)]
+enum PythonValueSurface {
+    Class,
+    Enum,
+    Int,
+}
+
+#[derive(Clone, Copy)]
+enum DartValueSurface {
+    Class { fields: bool },
+    Extension,
+}
+
+struct ValueTypeContract<'a> {
+    name: &'static str,
+    rust_source: &'a str,
+    rust_surface: RustValueSurface,
+    python_surface: PythonValueSurface,
+    dart_surface: DartValueSurface,
+    members: &'a [ValueMemberContract],
+}
+
+const fn binding_member(kind: BindingMemberKind, name: &'static str) -> BindingMember {
+    BindingMember { kind, name }
+}
+
+const fn value_member(
+    rust: &'static str,
+    python: BindingMember,
+    dart: BindingMember,
+) -> ValueMemberContract {
+    ValueMemberContract {
+        rust,
+        python: Some(python),
+        dart: Some(dart),
+    }
+}
+
+const fn rust_only_value_member(rust: &'static str) -> ValueMemberContract {
+    ValueMemberContract {
+        rust,
+        python: None,
+        dart: None,
+    }
+}
+
+const EXCHANGE_VALUE_MEMBERS: &[ValueMemberContract] = &[
+    value_member(
+        "id",
+        binding_member(BindingMemberKind::EnumValue, "value"),
+        binding_member(BindingMemberKind::Getter, "id"),
+    ),
+    value_member(
+        "display_name",
+        binding_member(BindingMemberKind::Method, "display_name"),
+        binding_member(BindingMemberKind::Getter, "displayName"),
+    ),
+];
+
+const FEATURE_VALUE_MEMBERS: &[ValueMemberContract] = &[
+    value_member(
+        "id",
+        binding_member(BindingMemberKind::EnumValue, "value"),
+        binding_member(BindingMemberKind::Getter, "wireName"),
+    ),
+    value_member(
+        "needs_credentials",
+        binding_member(BindingMemberKind::Method, "needs_credentials"),
+        binding_member(BindingMemberKind::Getter, "needsCredentials"),
+    ),
+    value_member(
+        "is_derivatives_only",
+        binding_member(BindingMemberKind::Method, "is_derivatives_only"),
+        binding_member(BindingMemberKind::Getter, "isDerivativesOnly"),
+    ),
+];
+
+const MARKET_KIND_VALUE_MEMBERS: &[ValueMemberContract] = &[value_member(
+    "is_derivative",
+    binding_member(BindingMemberKind::Method, "is_derivative"),
+    binding_member(BindingMemberKind::Getter, "isDerivative"),
+)];
+
+const SIDE_VALUE_MEMBERS: &[ValueMemberContract] = &[value_member(
+    "flip",
+    binding_member(BindingMemberKind::Method, "flip"),
+    binding_member(BindingMemberKind::Getter, "flipped"),
+)];
+
+const ORDER_BOOK_VALUE_MEMBERS: &[ValueMemberContract] = &[
+    value_member(
+        "best_bid",
+        binding_member(BindingMemberKind::Method, "best_bid"),
+        binding_member(BindingMemberKind::Getter, "bestBid"),
+    ),
+    value_member(
+        "best_ask",
+        binding_member(BindingMemberKind::Method, "best_ask"),
+        binding_member(BindingMemberKind::Getter, "bestAsk"),
+    ),
+    value_member(
+        "spread",
+        binding_member(BindingMemberKind::Method, "spread"),
+        binding_member(BindingMemberKind::Getter, "spread"),
+    ),
+    value_member(
+        "mid_price",
+        binding_member(BindingMemberKind::Method, "mid_price"),
+        binding_member(BindingMemberKind::Getter, "midPrice"),
+    ),
+];
+
+const INTERVAL_VALUE_MEMBERS: &[ValueMemberContract] = &[
+    value_member(
+        "as_secs",
+        binding_member(BindingMemberKind::Method, "as_secs"),
+        binding_member(BindingMemberKind::Getter, "seconds"),
+    ),
+    value_member(
+        "advance",
+        binding_member(BindingMemberKind::Method, "advance"),
+        binding_member(BindingMemberKind::Method, "advance"),
+    ),
+];
+
+const BALANCE_VALUE_MEMBERS: &[ValueMemberContract] = &[value_member(
+    "total",
+    binding_member(BindingMemberKind::Method, "total"),
+    binding_member(BindingMemberKind::Getter, "total"),
+)];
+
+const ORDER_STATUS_VALUE_MEMBERS: &[ValueMemberContract] = &[value_member(
+    "is_live",
+    binding_member(BindingMemberKind::Method, "is_live"),
+    binding_member(BindingMemberKind::Getter, "isLive"),
+)];
+
+const POSITION_VALUE_MEMBERS: &[ValueMemberContract] = &[value_member(
+    "is_flat",
+    binding_member(BindingMemberKind::Method, "is_flat"),
+    binding_member(BindingMemberKind::Getter, "isFlat"),
+)];
+
+const PAGE_VALUE_MEMBERS: &[ValueMemberContract] = &[value_member(
+    "has_more",
+    binding_member(BindingMemberKind::Method, "has_more"),
+    binding_member(BindingMemberKind::Getter, "hasMore"),
+)];
+
+const TIMESTAMP_VALUE_MEMBERS: &[ValueMemberContract] = &[
+    value_member(
+        "from_nanos",
+        binding_member(BindingMemberKind::IntRepresentation, "Timestamp"),
+        binding_member(BindingMemberKind::Factory, "fromNanoseconds"),
+    ),
+    value_member(
+        "from_micros",
+        binding_member(BindingMemberKind::IntRepresentation, "Timestamp"),
+        binding_member(BindingMemberKind::Factory, "fromMicroseconds"),
+    ),
+    value_member(
+        "from_millis",
+        binding_member(BindingMemberKind::IntRepresentation, "Timestamp"),
+        binding_member(BindingMemberKind::Factory, "fromMilliseconds"),
+    ),
+    value_member(
+        "from_secs",
+        binding_member(BindingMemberKind::IntRepresentation, "Timestamp"),
+        binding_member(BindingMemberKind::Factory, "fromSeconds"),
+    ),
+    value_member(
+        "as_nanos",
+        binding_member(BindingMemberKind::IntRepresentation, "Timestamp"),
+        binding_member(BindingMemberKind::Field, "nanosecondsSinceEpoch"),
+    ),
+    value_member(
+        "as_millis",
+        binding_member(BindingMemberKind::IntRepresentation, "Timestamp"),
+        binding_member(BindingMemberKind::Getter, "millisecondsSinceEpoch"),
+    ),
+    value_member(
+        "as_secs",
+        binding_member(BindingMemberKind::IntRepresentation, "Timestamp"),
+        binding_member(BindingMemberKind::Getter, "secondsSinceEpoch"),
+    ),
+    value_member(
+        "now",
+        binding_member(BindingMemberKind::IntRepresentation, "Timestamp"),
+        binding_member(BindingMemberKind::Factory, "now"),
+    ),
+    rust_only_value_member("into_system_time"),
+];
+
+const MARKET_EVENT_VALUE_MEMBERS: &[ValueMemberContract] = &[
+    value_member(
+        "Trade",
+        binding_member(BindingMemberKind::ClassMethod, "trade"),
+        binding_member(BindingMemberKind::Factory, "trade"),
+    ),
+    value_member(
+        "OrderBook",
+        binding_member(BindingMemberKind::ClassMethod, "order_book"),
+        binding_member(BindingMemberKind::Factory, "orderBook"),
+    ),
+    value_member(
+        "Ticker",
+        binding_member(BindingMemberKind::ClassMethod, "ticker"),
+        binding_member(BindingMemberKind::Factory, "ticker"),
+    ),
+    value_member(
+        "Candle",
+        binding_member(BindingMemberKind::ClassMethod, "candle"),
+        binding_member(BindingMemberKind::Factory, "candle"),
+    ),
+    value_member(
+        "Reconnected",
+        binding_member(BindingMemberKind::ClassMethod, "reconnected"),
+        binding_member(BindingMemberKind::Factory, "reconnected"),
+    ),
+];
+
+const ACCOUNT_EVENT_VALUE_MEMBERS: &[ValueMemberContract] = &[
+    value_member(
+        "Balance",
+        binding_member(BindingMemberKind::ClassMethod, "balance"),
+        binding_member(BindingMemberKind::Factory, "balance"),
+    ),
+    value_member(
+        "Order",
+        binding_member(BindingMemberKind::ClassMethod, "order"),
+        binding_member(BindingMemberKind::Factory, "order"),
+    ),
+    value_member(
+        "Reconnected",
+        binding_member(BindingMemberKind::ClassMethod, "reconnected"),
+        binding_member(BindingMemberKind::Factory, "reconnected"),
+    ),
+];
+
+const VALUE_TYPE_CONTRACTS: &[ValueTypeContract<'static>] = &[
+    ValueTypeContract {
+        name: "Exchange",
+        rust_source: include_str!("../../../src/types/market.rs"),
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::Enum,
+        dart_surface: DartValueSurface::Extension,
+        members: EXCHANGE_VALUE_MEMBERS,
+    },
+    ValueTypeContract {
+        name: "Feature",
+        rust_source: include_str!("../../../src/feature.rs"),
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::Enum,
+        dart_surface: DartValueSurface::Extension,
+        members: FEATURE_VALUE_MEMBERS,
+    },
+    ValueTypeContract {
+        name: "MarketKind",
+        rust_source: include_str!("../../../src/types/market.rs"),
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::Class,
+        dart_surface: DartValueSurface::Extension,
+        members: MARKET_KIND_VALUE_MEMBERS,
+    },
+    ValueTypeContract {
+        name: "Side",
+        rust_source: include_str!("../../../src/types/data.rs"),
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::Class,
+        dart_surface: DartValueSurface::Extension,
+        members: SIDE_VALUE_MEMBERS,
+    },
+    ValueTypeContract {
+        name: "OrderBook",
+        rust_source: include_str!("../../../src/types/data.rs"),
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::Class,
+        dart_surface: DartValueSurface::Class { fields: false },
+        members: ORDER_BOOK_VALUE_MEMBERS,
+    },
+    ValueTypeContract {
+        name: "Interval",
+        rust_source: include_str!("../../../src/types/data.rs"),
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::Class,
+        dart_surface: DartValueSurface::Extension,
+        members: INTERVAL_VALUE_MEMBERS,
+    },
+    ValueTypeContract {
+        name: "Balance",
+        rust_source: include_str!("../../../src/types/account.rs"),
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::Class,
+        dart_surface: DartValueSurface::Class { fields: false },
+        members: BALANCE_VALUE_MEMBERS,
+    },
+    ValueTypeContract {
+        name: "OrderStatus",
+        rust_source: include_str!("../../../src/types/account.rs"),
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::Class,
+        dart_surface: DartValueSurface::Extension,
+        members: ORDER_STATUS_VALUE_MEMBERS,
+    },
+    ValueTypeContract {
+        name: "Position",
+        rust_source: include_str!("../../../src/types/account.rs"),
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::Class,
+        dart_surface: DartValueSurface::Class { fields: false },
+        members: POSITION_VALUE_MEMBERS,
+    },
+    ValueTypeContract {
+        name: "Page",
+        rust_source: include_str!("../../../src/types/account.rs"),
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::Class,
+        dart_surface: DartValueSurface::Class { fields: false },
+        members: PAGE_VALUE_MEMBERS,
+    },
+    ValueTypeContract {
+        name: "Timestamp",
+        rust_source: include_str!("../../../src/types/time.rs"),
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::Int,
+        dart_surface: DartValueSurface::Class { fields: true },
+        members: TIMESTAMP_VALUE_MEMBERS,
+    },
+    ValueTypeContract {
+        name: "MarketEvent",
+        rust_source: include_str!("../../../src/types/stream.rs"),
+        rust_surface: RustValueSurface::Variants,
+        python_surface: PythonValueSurface::Class,
+        dart_surface: DartValueSurface::Class { fields: false },
+        members: MARKET_EVENT_VALUE_MEMBERS,
+    },
+    ValueTypeContract {
+        name: "AccountEvent",
+        rust_source: include_str!("../../../src/types/stream.rs"),
+        rust_surface: RustValueSurface::Variants,
+        python_surface: PythonValueSurface::Class,
+        dart_surface: DartValueSurface::Class { fields: false },
+        members: ACCOUNT_EVENT_VALUE_MEMBERS,
+    },
+];
+
+fn binding_member_key(member: BindingMember) -> String {
+    format!("{}:{}", member.kind.label(), member.name)
+}
+
+fn assert_value_type_contract(
+    contract: &ValueTypeContract<'_>,
+    python_source: &str,
+    dart_source: &str,
+) {
+    let mut expected = BTreeSet::new();
+    for member in contract.members {
+        assert!(
+            expected.insert(member.rust.to_owned()),
+            "Rust {} value mapping repeats {}",
+            contract.name,
+            member.rust
+        );
+        assert_eq!(
+            member.python.is_some(),
+            member.dart.is_some(),
+            "Rust {}::{} must map to both languages or be rust_only",
+            contract.name,
+            member.rust
+        );
+    }
+    let actual = match contract.rust_surface {
+        RustValueSurface::Methods => rust_public_value_methods(contract.rust_source, contract.name),
+        RustValueSurface::Variants => rust_enum_variants(contract.rust_source, contract.name),
+    };
+    assert_inventory(
+        &format!("Rust {} value members", contract.name),
+        &expected,
+        &actual,
+    );
+
+    let expected_python = contract
+        .members
+        .iter()
+        .filter_map(|member| member.python.map(binding_member_key))
+        .collect::<BTreeSet<_>>();
+    assert_inventory(
+        &format!("Python {} value members", contract.name),
+        &expected_python,
+        &python_value_members(python_source, contract.name, contract.python_surface),
+    );
+
+    let expected_dart = contract
+        .members
+        .iter()
+        .filter_map(|member| member.dart.map(binding_member_key))
+        .collect::<BTreeSet<_>>();
+    assert_inventory(
+        &format!("Dart {} value members", contract.name),
+        &expected_dart,
+        &dart_value_members(dart_source, contract.name, contract.dart_surface),
+    );
+}
+
 fn rust_typed_parameter_names(method: &ImplItemFn) -> BTreeSet<String> {
     let mut parameters = BTreeSet::new();
     for input in &method.sig.inputs {
@@ -837,6 +1321,60 @@ fn python_class_methods(source: &str, name: &str, async_only: bool) -> BTreeSet<
     methods
 }
 
+fn python_value_members(source: &str, name: &str, surface: PythonValueSurface) -> BTreeSet<String> {
+    if matches!(surface, PythonValueSurface::Int) {
+        let expected = format!("{name} = int");
+        let actual = source
+            .lines()
+            .filter(|line| line.trim_start().starts_with(&format!("{name} =")))
+            .map(str::trim)
+            .collect::<Vec<_>>();
+        assert_eq!(
+            actual,
+            vec![expected.as_str()],
+            "Python {name} must be represented exactly as int"
+        );
+        return BTreeSet::from([format!(
+            "{}:{name}",
+            BindingMemberKind::IntRepresentation.label()
+        )]);
+    }
+
+    let classmethods = python_classmethod_names(source, name);
+    let mut members = python_class_methods(source, name, false)
+        .into_iter()
+        .map(|method| {
+            let kind = if classmethods.contains(&method) {
+                BindingMemberKind::ClassMethod
+            } else {
+                BindingMemberKind::Method
+            };
+            format!("{}:{method}", kind.label())
+        })
+        .collect::<BTreeSet<_>>();
+    if matches!(surface, PythonValueSurface::Enum) {
+        let declaration = source
+            .lines()
+            .find(|line| line.starts_with(&format!("class {name}(")))
+            .unwrap_or_else(|| panic!("Python enum {name} must exist"));
+        assert!(
+            parenthesized_contents(declaration, &format!("Python enum {name}"))
+                .split(',')
+                .any(|base| base.trim() == "Enum"),
+            "Python {name} enum values require an Enum class"
+        );
+        assert!(
+            !python_enum_values(source, name).is_empty(),
+            "Python enum {name} must contain values"
+        );
+        members.insert(binding_member_key(binding_member(
+            BindingMemberKind::EnumValue,
+            "value",
+        )));
+    }
+    members
+}
+
 fn python_enum_values(source: &str, name: &str) -> Vec<String> {
     let marker = format!("class {name}(");
     let mut found = false;
@@ -1020,6 +1558,10 @@ impl DartNesting {
         self.angle == 0 && self.parentheses == 0 && self.brackets == 0 && self.braces == 0
     }
 
+    fn is_member_top_level(&self) -> bool {
+        self.parentheses == 0 && self.brackets == 0 && self.braces == 0
+    }
+
     fn consume(&mut self, character: char) -> bool {
         if let Some(active_quote) = self.quote {
             if self.escaped {
@@ -1144,7 +1686,7 @@ fn dart_top_level_members(block: &str, class_name: &str) -> Vec<String> {
             member.push(' ');
         }
         for character in line.chars() {
-            let top_level = nesting.is_top_level();
+            let top_level = nesting.is_member_top_level();
             let syntax = nesting.consume(character);
             if syntax && top_level && character == '=' && assignment_prefix.is_none() {
                 assignment_prefix = Some(member.clone());
@@ -1156,7 +1698,7 @@ fn dart_top_level_members(block: &str, class_name: &str) -> Vec<String> {
             if !syntax {
                 continue;
             }
-            if character == '}' && nesting.is_top_level() {
+            if character == '}' && nesting.is_member_top_level() {
                 if let Some(declaration) = member_block_header.take() {
                     member.clear();
                     if !declaration.is_empty() {
@@ -1164,7 +1706,7 @@ fn dart_top_level_members(block: &str, class_name: &str) -> Vec<String> {
                     }
                     assignment_prefix = None;
                 }
-            } else if character == ';' && nesting.is_top_level() {
+            } else if character == ';' && nesting.is_member_top_level() {
                 let declaration = std::mem::take(&mut member);
                 if !declaration.trim_matches(';').trim().is_empty() {
                     members.push(declaration);
@@ -1178,6 +1720,112 @@ fn dart_top_level_members(block: &str, class_name: &str) -> Vec<String> {
         member.trim().is_empty(),
         "Dart class {class_name} has an unterminated top-level member"
     );
+    members
+}
+
+fn dart_extension_target(declaration: &str) -> Option<&str> {
+    let declaration = declaration.strip_prefix("extension ")?;
+    let target = declaration
+        .strip_prefix("on ")
+        .or_else(|| declaration.split_once(" on ").map(|(_, target)| target))?;
+    let end = target
+        .find(|character: char| character != '_' && !character.is_ascii_alphanumeric())
+        .unwrap_or(target.len());
+    Some(&target[..end])
+}
+
+fn dart_extension_bodies<'a>(source: &'a str, name: &str) -> Vec<&'a str> {
+    let mut bodies = Vec::new();
+    let mut offset = 0;
+    for line in source.split_inclusive('\n') {
+        let declaration = line.trim_end_matches(['\r', '\n']);
+        if !declaration.starts_with(char::is_whitespace)
+            && dart_extension_target(declaration) == Some(name)
+        {
+            bodies.push(dart_block(&source[offset..], declaration));
+        }
+        offset += line.len();
+    }
+    assert!(!bodies.is_empty(), "Dart extension on {name} must exist");
+    bodies
+}
+
+fn dart_value_member(declaration: &str, class_name: &str, include_fields: bool) -> Option<String> {
+    let declaration = declaration.trim().trim_end_matches(';').trim();
+    if declaration.starts_with("@override ") {
+        return None;
+    }
+    assert!(
+        !declaration.starts_with('@'),
+        "Dart {class_name} annotated member must be classified explicitly: {declaration}"
+    );
+
+    let mut unmodified = declaration;
+    for modifier in ["const ", "external "] {
+        if let Some(rest) = unmodified.strip_prefix(modifier) {
+            unmodified = rest.trim_start();
+        }
+    }
+    if let Some(factory) = unmodified.strip_prefix("factory ") {
+        let factory = factory.strip_prefix(class_name)?.strip_prefix('.')?;
+        let name = factory.split_once('(')?.0.trim();
+        return (!name.starts_with('_') && is_identifier(name))
+            .then(|| format!("{}:{name}", BindingMemberKind::Factory.label()));
+    }
+
+    let tokens = declaration.split_whitespace().collect::<Vec<_>>();
+    if let Some(getter) = tokens.iter().position(|token| *token == "get") {
+        let name = tokens.get(getter + 1)?.trim_end_matches([';', '{']);
+        return (!name.starts_with('_') && is_identifier(name))
+            .then(|| format!("{}:{name}", BindingMemberKind::Getter.label()));
+    }
+    if dart_is_constructor(declaration, class_name) || tokens.contains(&"operator") {
+        return None;
+    }
+    if let Some((prefix, _)) = declaration.split_once('(') {
+        let name = prefix.split_whitespace().next_back()?;
+        return (!name.starts_with('_') && is_identifier(name))
+            .then(|| format!("{}:{name}", BindingMemberKind::Method.label()));
+    }
+    if !include_fields {
+        return None;
+    }
+    if tokens.contains(&"static") {
+        return None;
+    }
+
+    let field = declaration
+        .split_once('=')
+        .map_or(declaration, |(before, _)| before)
+        .split_whitespace()
+        .next_back()?;
+    (!field.starts_with('_') && is_identifier(field))
+        .then(|| format!("{}:{field}", BindingMemberKind::Field.label()))
+}
+
+fn dart_value_members(source: &str, name: &str, surface: DartValueSurface) -> BTreeSet<String> {
+    let (blocks, include_fields) = match surface {
+        DartValueSurface::Class { fields } => (
+            vec![
+                find_dart_class_body(source, name)
+                    .unwrap_or_else(|| panic!("Dart class {name} must exist")),
+            ],
+            fields,
+        ),
+        DartValueSurface::Extension => (dart_extension_bodies(source, name), false),
+    };
+    let mut members = BTreeSet::new();
+    for block in blocks {
+        for declaration in dart_top_level_members(block, name) {
+            let Some(member) = dart_value_member(&declaration, name, include_fields) else {
+                continue;
+            };
+            assert!(
+                members.insert(member.clone()),
+                "Dart {name} repeats value member {member}"
+            );
+        }
+    }
     members
 }
 
@@ -2141,6 +2789,97 @@ final class Example {
 }
 
 #[test]
+#[should_panic(expected = "Rust Example value members differ; missing: {}; extra: {\"future\"}")]
+fn value_contract_rejects_unmapped_macro_method() {
+    let rust = r#"
+macro_rules! define_example {
+    () => {
+        impl Example {
+            pub fn known(&self) {}
+            pub fn future(&self) {}
+            fn private(&self) {}
+        }
+    };
+}
+
+define_example!();
+"#;
+    let members = [value_member(
+        "known",
+        binding_member(BindingMemberKind::Method, "known"),
+        binding_member(BindingMemberKind::Getter, "known"),
+    )];
+    let contract = ValueTypeContract {
+        name: "Example",
+        rust_source: rust,
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::Class,
+        dart_surface: DartValueSurface::Class { fields: false },
+        members: &members,
+    };
+
+    assert_value_type_contract(
+        &contract,
+        "class Example(object):\n    def known(self):\n        pass\n",
+        "final class Example { bool get known => true; }",
+    );
+}
+
+#[test]
+#[should_panic(
+    expected = "Python Example value members differ; missing: {\"method:known\"}; extra: {}"
+)]
+fn value_contract_rejects_missing_python_method() {
+    let rust = "struct Example; impl Example { pub fn known(&self) {} }";
+    let members = [value_member(
+        "known",
+        binding_member(BindingMemberKind::Method, "known"),
+        binding_member(BindingMemberKind::Getter, "known"),
+    )];
+    let contract = ValueTypeContract {
+        name: "Example",
+        rust_source: rust,
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::Class,
+        dart_surface: DartValueSurface::Class { fields: false },
+        members: &members,
+    };
+
+    assert_value_type_contract(
+        &contract,
+        "class Example(object):\n    pass\n",
+        "final class Example { bool get known => true; }",
+    );
+}
+
+#[test]
+#[should_panic(
+    expected = "Dart Example value members differ; missing: {\"getter:ready\"}; extra: {\"method:ready\"}"
+)]
+fn value_contract_rejects_dart_member_kind_mismatch() {
+    let rust = "struct Example; impl Example { pub fn ready(&self) -> bool { true } }";
+    let members = [value_member(
+        "ready",
+        binding_member(BindingMemberKind::Method, "ready"),
+        binding_member(BindingMemberKind::Getter, "ready"),
+    )];
+    let contract = ValueTypeContract {
+        name: "Example",
+        rust_source: rust,
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::Class,
+        dart_surface: DartValueSurface::Class { fields: false },
+        members: &members,
+    };
+
+    assert_value_type_contract(
+        &contract,
+        "class Example(object):\n    def ready(self):\n        return True\n",
+        "final class Example { bool ready() => true; }",
+    );
+}
+
+#[test]
 #[should_panic(
     expected = "Dart Example.new factory parameters accessKey and access_key normalize to duplicate access_key"
 )]
@@ -2739,6 +3478,13 @@ fn provider_specific_methods_match_every_language() {
             "Dart {} provider methods differ",
             provider.adapter
         );
+    }
+}
+
+#[test]
+fn public_value_methods_and_event_constructors_match_every_language() {
+    for contract in VALUE_TYPE_CONTRACTS {
+        assert_value_type_contract(contract, PYTHON_MODELS, DART_MODELS);
     }
 }
 

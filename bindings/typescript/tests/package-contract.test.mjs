@@ -25,7 +25,7 @@ const optionalDependencies = {
   "@jabdori/maxt-win32-x64-msvc": "0.1.0",
 };
 
-test("publishes the @jabdori/maxt Node package identity", () => {
+test("publishes the @jabdori/maxt Node and browser package identity", () => {
   assert.equal(packageJson.name, "@jabdori/maxt");
   assert.equal(packageJson.version, "0.1.0");
   assert.equal(
@@ -36,7 +36,7 @@ test("publishes the @jabdori/maxt Node package identity", () => {
   assert.equal(packageJson.license, "MIT");
   assert.equal(packageJson.main, "./dist/node.js");
   assert.equal(packageJson.types, "./dist/node.d.ts");
-  assert.deepEqual(packageJson.sideEffects, ["./dist/node.js"]);
+  assert.deepEqual(packageJson.sideEffects, ["./dist/browser.js", "./dist/node.js"]);
   assert.equal(
     packageJson.repository?.url,
     "git+https://github.com/jabdori/maxt.git",
@@ -44,6 +44,7 @@ test("publishes the @jabdori/maxt Node package identity", () => {
   assert.deepEqual(packageJson.engines, { node: ">=22.0.0" });
   assert.deepEqual(packageJson.files, [
     "dist/",
+    "wasm/",
     "native.cjs",
     "native.d.ts",
     "README.md",
@@ -52,12 +53,17 @@ test("publishes the @jabdori/maxt Node package identity", () => {
   ]);
 });
 
-test("exports only the initial Node entry points", () => {
+test("exports explicit Node and browser entry points", () => {
   assert.deepEqual(packageJson.exports, {
     ".": {
       types: "./dist/node.d.ts",
+      browser: "./dist/browser.js",
       node: "./dist/node.js",
       default: "./dist/node.js",
+    },
+    "./browser": {
+      types: "./dist/browser.d.ts",
+      default: "./dist/browser.js",
     },
     "./node": {
       types: "./dist/node.d.ts",
@@ -70,6 +76,7 @@ test("exports only the initial Node entry points", () => {
 test("pins the TypeScript and napi-rs toolchain", () => {
   assert.deepEqual(packageJson.devDependencies, {
     "@napi-rs/cli": "3.8.2",
+    "@playwright/test": "1.62.1",
     "@types/node": "24.13.3",
     typescript: "7.0.2",
   });
@@ -78,6 +85,10 @@ test("pins the TypeScript and napi-rs toolchain", () => {
     "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
   );
   assert.equal(packageJson.scripts.build, "npm run clean && tsc -p tsconfig.json");
+  assert.equal(
+    packageJson.scripts["build:browser"],
+    "wasm-pack build rust --target web --out-dir ../wasm --out-name maxt_wasm --no-pack && node -e \"require('node:fs').writeFileSync('wasm/.npmignore','')\"",
+  );
   assert.match(packageJson.scripts.typecheck, /^tsc -p tsconfig\.json --noEmit/);
   assert.match(packageJson.scripts.typecheck, /node -e/);
   assert.match(packageJson.scripts.typecheck, /--ignoreConfig/);
@@ -91,6 +102,10 @@ test("pins the TypeScript and napi-rs toolchain", () => {
   assert.equal(
     packageJson.scripts["test:unit"],
     "npm run build && node --test tests/*.test.mjs",
+  );
+  assert.equal(
+    packageJson.scripts["test:web"],
+    "npm run build:browser && npm run build && playwright test -c tests/playwright.config.mjs",
   );
   assert.equal(
     packageJson.scripts["test:node"],

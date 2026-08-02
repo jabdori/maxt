@@ -10,14 +10,22 @@
     "type": "git",
     "url": "git+https://github.com/jabdori/maxt.git"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=22.0.0"
   },
   "exports": {
     ".": {
       "types": "./dist/node.d.ts",
+      "browser": "./dist/browser.js",
       "node": "./dist/node.js",
       "default": "./dist/node.js"
+    },
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "default": "./dist/browser.js"
     },
     "./node": {
       "types": "./dist/node.d.ts",
@@ -27,6 +35,7 @@
   },
   "files": [
     "dist/",
+    "wasm/",
     "native.cjs",
     "native.d.ts",
     "README.md",
@@ -34,14 +43,17 @@
     "LICENSE"
   ],
   "sideEffects": [
+    "./dist/browser.js",
     "./dist/node.js"
   ],
   "scripts": {
     "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc -p tsconfig.json",
+    "build:browser": "wasm-pack build rust --target web --out-dir ../wasm --out-name maxt_wasm --no-pack && node -e \"require('node:fs').writeFileSync('wasm/.npmignore','')\"",
     "typecheck": "tsc -p tsconfig.json --noEmit && node -e \"if(require('node:fs').existsSync('tests/types.ts'))require('node:child_process').execFileSync(process.execPath,['node_modules/typescript/bin/tsc','--ignoreConfig','--noEmit','--strict','--target','ES2022','--module','NodeNext','--moduleResolution','NodeNext','--types','node','tests/types.ts'],{stdio:'inherit'})\"",
     "build:node": "napi build --manifest-path rust/Cargo.toml --platform --output-dir . --js native.cjs --dts native.d.ts --js-package-name @jabdori/maxt -- --locked",
     "test:unit": "npm run build && node --test tests/*.test.mjs",
+    "test:web": "npm run build:browser && npm run build && playwright test -c tests/playwright.config.mjs",
     "test:integration": "node --expose-gc --test tests/node.integration.mjs rust/tests/*.test.cjs",
     "test:node": "npm run build:node && npm run test:unit && npm run test:integration",
     "test": "npm run typecheck && npm run test:node",
@@ -57,6 +69,7 @@
   },
   "devDependencies": {
     "@napi-rs/cli": "3.8.2",
+    "@playwright/test": "1.62.1",
     "@types/node": "24.13.3",
     "typescript": "7.0.2"
   },

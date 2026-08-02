@@ -160,7 +160,7 @@ export interface NativeHyperliquidHandle {
 }
 
 export interface NativeBackend {
-  initialize(options: { readonly wasmUrl: string | null; readonly allowInsecureBrowserCredentials: boolean }): Promise<void>;
+  initialize(options: { readonly wasmUrl: string | null; readonly allowInsecureBrowserCredentials: boolean; readonly relayUrl: string | null }): Promise<void>;
   customClient(exchange: string, features: readonly string[], callbacks: ForeignAdapterCallbacks): NativeClientHandle;
   upbit(options: Wire.UpbitOptionsWire): NativeUpbitHandle;
   bithumb(options: Wire.BithumbOptionsWire): NativeBithumbHandle;

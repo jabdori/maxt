@@ -2,6 +2,7 @@
 /dist/
 /npm/
 /artifacts/
+/test-results/
 /native.cjs
 /native.d.ts
 /*.node

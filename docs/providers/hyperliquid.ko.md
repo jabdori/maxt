@@ -48,6 +48,7 @@
 | `endTime` | `ceil_ms(to) - 1` |
 | `cursor` | 불투명 재개 지점(opaque resume point); `cursor != None` → `from` 무시 |
 | `limit` | 로컬 페이지 크기 목표값; 최대값 아님 |
+| `limit == 0` | `funding_rates(request)` → 네트워크 I/O 전 `Error::InvalidRequest`; `funding_payments(request)` → 인증 확인·네트워크 I/O 전 같은 오류 |
 | 같은 밀리초(millisecond) 그룹이 `limit` 경계를 넘음 | 그룹을 다음 페이지로 미루면 `items.len() < limit`; 첫 그룹만으로 `limit`를 넘으면 `items.len() > limit` |
 | 다음 요청 | `cursor = page.next`; `page.next == None`까지 반복 |
 
@@ -133,6 +134,7 @@
 | `from`, `to` | 거래소 밀리초(millisecond) 범위 `from_ms <= time <= to_ms`; 양쪽 경계 포함 |
 | `cursor` | 불투명 재개 지점; `cursor != None` → `from` 무시 |
 | `limit` | 로컬 페이지 크기 목표값; 최대값 아님 |
+| `limit == Some(0)` | `non_funding_ledger(...)` → 인증 확인·네트워크 I/O 전 `Error::InvalidRequest` |
 | 같은 밀리초 그룹이 `limit` 경계를 넘음 | 그룹을 다음 페이지로 미루면 `items.len() < limit`; 첫 그룹만으로 `limit`를 넘으면 `items.len() > limit` |
 | 다음 요청 | `cursor = page.next`; `page.next == None`까지 반복 |
 

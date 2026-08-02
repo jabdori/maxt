@@ -191,6 +191,7 @@
 | `to` | `item.timestamp < to` |
 | `cursor` | 불투명 재개 지점(opaque resume point); `cursor != None` → `from` 무시; 같은 어댑터에 변경 없이 전달 |
 | `limit` | 페이지 크기 목표값; 최대값 아님 |
+| `limit == 0` | 네트워크 I/O 전 `Error::InvalidRequest` |
 | 같은 `timestamp` 그룹이 `limit` 경계를 넘음 | 그룹을 다음 페이지로 미루면 `items.len() < limit`; 첫 그룹만으로 `limit`를 넘으면 `items.len() > limit` |
 | 다음 요청 | `request.cursor = page.next` |
 | 계속 | `page.next.is_some()`; `items.is_empty()`여도 계속 |

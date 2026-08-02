@@ -10,6 +10,91 @@ void main() {
     expect(Decimal.parse('-0.000e9').isZero, isTrue);
   });
 
+  test('Decimal은 Rust Decimal의 범위와 정확도를 벗어난 값을 거절한다', () {
+    for (final value in [
+      '2.5e-28',
+      '2e-29',
+      '79228162514264337593543950335.4',
+      '1e29',
+      '1e2000000000',
+      '1e-2000000000',
+    ]) {
+      expect(() => Decimal.parse(value), throwsFormatException, reason: value);
+    }
+  });
+
+  test('Decimal은 수치 비교와 정확한 덧셈·뺄셈을 제공한다', () {
+    final smaller = Decimal.parse('-0.1');
+    final equal = Decimal.parse('1.00');
+    final larger = Decimal.parse('1e1');
+
+    expect(smaller.compareTo(equal), lessThan(0));
+    expect(equal.compareTo(Decimal.parse('1')), 0);
+    expect(larger.compareTo(equal), greaterThan(0));
+    expect(smaller < equal, isTrue);
+    expect(smaller <= equal, isTrue);
+    expect(larger > equal, isTrue);
+    expect(larger >= Decimal.parse('10.0'), isTrue);
+    expect(
+      Decimal.parse('7314.6229858868828353570724702') + Decimal.parse('1000'),
+      Decimal.parse('8314.622985886882835357072470'),
+    );
+    expect(Decimal.parse('1') - Decimal.parse('1.5'), Decimal.parse('-0.5'));
+  });
+
+  test('Balance.total은 Rust와 같은 정밀도와 범위를 사용한다', () {
+    final balance = Balance(
+      asset: 'btc',
+      available: Decimal.parse('7314.6229858868828353570724702'),
+      locked: Decimal.parse('1000'),
+    );
+    final overflow = Balance(
+      asset: 'btc',
+      available: Decimal.parse('79228162514264337593543950335'),
+      locked: Decimal.one,
+    );
+
+    expect(balance.total, Decimal.parse('8314.622985886882835357072470'));
+    expect(() => overflow.total, throwsRangeError);
+  });
+
+  test('OrderBook은 양쪽 최우선 호가로 spread와 midPrice를 계산한다', () {
+    final normal = _orderBook(bids: ['99'], asks: ['101']);
+    final oneSided = _orderBook(bids: ['99']);
+    final empty = _orderBook();
+    final crossed = _orderBook(bids: ['102'], asks: ['101']);
+
+    expect(normal.spread, Decimal.parse('2'));
+    expect(normal.midPrice, Decimal.parse('100'));
+    expect(oneSided.spread, isNull);
+    expect(oneSided.midPrice, isNull);
+    expect(empty.spread, isNull);
+    expect(empty.midPrice, isNull);
+    expect(crossed.spread, Decimal.parse('-1'));
+    expect(crossed.midPrice, Decimal.parse('101.5'));
+  });
+
+  test('OrderBook.midPrice는 절반 경계에서 half-even으로 반올림한다', () {
+    expect(_orderBook(bids: ['0'], asks: ['1e-28']).midPrice, Decimal.zero);
+    expect(
+      _orderBook(bids: ['1e-28'], asks: ['2e-28']).midPrice,
+      Decimal.parse('2e-28'),
+    );
+    expect(
+      _orderBook(bids: ['0'], asks: ['79228162514264337593543950335']).midPrice,
+      Decimal.parse('39614081257132168796771975168'),
+    );
+  });
+
+  test('OrderBook.midPrice는 Rust처럼 합이 넘치면 실패한다', () {
+    final book = _orderBook(
+      bids: ['1'],
+      asks: ['79228162514264337593543950335'],
+    );
+
+    expect(() => book.midPrice, throwsRangeError);
+  });
+
   test('Timestamp는 Unix epoch 나노초를 int로 왕복한다', () {
     const nanoseconds = 1700000000123456789;
     final timestamp = Timestamp.fromNanoseconds(nanoseconds);
@@ -130,4 +215,20 @@ void main() {
     expect(stream.bufferSize, 4096);
     expect(stream.overflow, Overflow.backpressure);
   });
+}
+
+OrderBook _orderBook({
+  List<String> bids = const [],
+  List<String> asks = const [],
+}) {
+  final market = Market.spot(Exchange.upbit, 'btc', 'krw');
+  Level level(String price) =>
+      Level(price: Decimal.parse(price), quantity: Decimal.one);
+
+  return OrderBook(
+    market: market,
+    timestamp: Timestamp.zero,
+    bids: bids.map(level),
+    asks: asks.map(level),
+  );
 }

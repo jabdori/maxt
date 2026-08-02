@@ -79,20 +79,21 @@ impl PendingCancellation {
 }
 
 #[pyclass]
-struct ScheduleAwaitable {
-    awaitable: Option<Py<PyAny>>,
+struct ScheduleCall {
+    call: Option<Py<PyAny>>,
     sender: Option<tokio::sync::oneshot::Sender<PyResult<Py<PyAny>>>>,
     cancellation: Arc<PendingCancellation>,
 }
 
 #[pymethods]
-impl ScheduleAwaitable {
+impl ScheduleCall {
     fn __call__(&mut self, py: Python<'_>) -> PyResult<()> {
         let result = (|| {
-            let awaitable = self
-                .awaitable
+            let call = self
+                .call
                 .take()
-                .ok_or_else(|| PyRuntimeError::new_err("Python awaitable was already scheduled"))?;
+                .ok_or_else(|| PyRuntimeError::new_err("Python call was already scheduled"))?;
+            let awaitable = call.bind(py).call0()?;
             let task = py
                 .import("asyncio")?
                 .call_method1("ensure_future", (awaitable,))?
@@ -105,6 +106,42 @@ impl ScheduleAwaitable {
         }
         Ok(())
     }
+}
+
+fn schedule_call(
+    py: Python<'_>,
+    call: Py<PyAny>,
+    locals: pyo3_async_runtimes::TaskLocals,
+    operation: &'static str,
+) -> PyResult<PendingNext> {
+    let event_loop = locals.event_loop(py);
+    let cancellation = Arc::new(PendingCancellation::new(event_loop.clone().unbind()));
+    let (sender, receiver) = tokio::sync::oneshot::channel();
+    let callback = Py::new(
+        py,
+        ScheduleCall {
+            call: Some(call),
+            sender: Some(sender),
+            cancellation: Arc::clone(&cancellation),
+        },
+    )?;
+    let kwargs = PyDict::new(py);
+    kwargs.set_item("context", locals.context(py))?;
+    event_loop.call_method("call_soon_threadsafe", (callback,), Some(&kwargs))?;
+
+    let future = Box::pin(async move {
+        let task = receiver.await.map_err(|_| {
+            PyRuntimeError::new_err(format!("Python event loop did not schedule {operation}"))
+        })??;
+        let future = Python::attach(|py| {
+            pyo3_async_runtimes::into_future_with_locals(&locals, task.into_bound(py))
+        })?;
+        future.await
+    }) as NextFuture;
+    Ok(PendingNext {
+        cancellation,
+        future,
+    })
 }
 
 pub(crate) fn market_stream_from_python(value: &Bound<'_, PyAny>) -> PyResult<MarketStream> {
@@ -151,40 +188,13 @@ impl PythonSource {
 
     fn next_future(&self) -> PyResult<PendingNext> {
         Python::attach(|py| {
-            let awaitable = self.iterator.bind(py).call_method0("__anext__")?;
+            let call = self.iterator.bind(py).getattr("__anext__")?.unbind();
             let locals = pyo3_async_runtimes::tokio::get_current_locals(py)?;
             *self
                 .locals
                 .lock()
                 .expect("Python task locals mutex poisoned") = Some(locals.clone());
-            let event_loop = locals.event_loop(py);
-            let cancellation = Arc::new(PendingCancellation::new(event_loop.clone().unbind()));
-            let (sender, receiver) = tokio::sync::oneshot::channel();
-            let callback = Py::new(
-                py,
-                ScheduleAwaitable {
-                    awaitable: Some(awaitable.unbind()),
-                    sender: Some(sender),
-                    cancellation: Arc::clone(&cancellation),
-                },
-            )?;
-            let kwargs = PyDict::new(py);
-            kwargs.set_item("context", locals.context(py))?;
-            event_loop.call_method("call_soon_threadsafe", (callback,), Some(&kwargs))?;
-
-            let future = Box::pin(async move {
-                let task = receiver.await.map_err(|_| {
-                    PyRuntimeError::new_err("Python event loop did not schedule __anext__")
-                })??;
-                let future = Python::attach(|py| {
-                    pyo3_async_runtimes::into_future_with_locals(&locals, task.into_bound(py))
-                })?;
-                future.await
-            }) as NextFuture;
-            Ok(PendingNext {
-                cancellation,
-                future,
-            })
+            schedule_call(py, call, locals, "__anext__")
         })
     }
 
@@ -254,18 +264,17 @@ impl PythonSource {
                     .and_then(std::result::Result::ok)
             })
             .ok_or_else(|| maxt::Error::adapter("Python stream has no active event loop"))?;
-        let future = Python::try_attach(|py| -> PyResult<Option<NextFuture>> {
+        let pending = Python::try_attach(|py| -> PyResult<Option<PendingNext>> {
             let Some(close) = self.iterator.bind(py).getattr_opt("aclose")? else {
                 return Ok(None);
             };
-            let awaitable = close.call0()?;
-            pyo3_async_runtimes::into_future_with_locals(&locals, awaitable)
-                .map(|future| Some(Box::pin(future) as NextFuture))
+            schedule_call(py, close.unbind(), locals.clone(), "aclose").map(Some)
         })
         .ok_or_else(|| maxt::Error::adapter("Python runtime is not available"))?
         .map_err(crate::adapter::python_error)?;
-        match future {
-            Some(future) => future
+        match pending {
+            Some(pending) => pending
+                .future
                 .await
                 .map(|_| ())
                 .map_err(crate::adapter::python_error),

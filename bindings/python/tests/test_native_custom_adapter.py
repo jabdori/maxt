@@ -523,6 +523,7 @@ asyncio.run(main())
 import asyncio
 import gc
 import sys
+import threading
 sys.path.insert(0, {os.path.dirname(__file__)!r})
 from maxt import Client, Exchange, Feed, Market, Subscription
 from test_native_custom_adapter import DropCloseAdapter
@@ -531,8 +532,29 @@ async def main():
     market = Market.perpetual(Exchange.BINANCE, "BTC", "USDT")
     adapter = DropCloseAdapter(market)
     stream = await Client(adapter).subscribe(Subscription((market,), (Feed.TRADES,)))
-    await asyncio.sleep(0)
-    del stream
+    loop = asyncio.get_running_loop()
+    call_soon_threadsafe = loop.call_soon_threadsafe
+    scheduled = threading.Event()
+    discarded = []
+
+    def discard(callback, *args, **kwargs):
+        discarded.append(callback)
+        scheduled.set()
+
+    loop.call_soon_threadsafe = discard
+    try:
+        del stream
+        gc.collect()
+
+        async def wait_until_scheduled():
+            while not scheduled.is_set():
+                await asyncio.sleep(0)
+
+        await asyncio.wait_for(wait_until_scheduled(), {NATIVE_TIMEOUT!r})
+    finally:
+        loop.call_soon_threadsafe = call_soon_threadsafe
+
+    discarded.clear()
     gc.collect()
     await asyncio.sleep(0)
 

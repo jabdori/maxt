@@ -1,0 +1,25 @@
+[package]
+name = "maxt-typescript"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+publish = false
+
+[lib]
+name = "maxt_typescript"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+maxt = { version = "=0.1.0", path = "../../.." }
+maxt-bindings-common = { version = "=0.1.0", path = "../../common" }
+napi = { version = "=3.12.0", default-features = false, features = ["napi8", "tokio_rt"] }
+napi-derive = "=3.6.2"
+
+[build-dependencies]
+napi-build = "=2.4.0"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = "warn"

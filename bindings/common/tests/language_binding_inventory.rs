@@ -8,8 +8,8 @@ use std::{
 
 use maxt::{Exchange, Feature};
 use syn::{
-    Fields, FnArg, ImplItem, ImplItemFn, Item, Pat, ReturnType, TraitItem, Type, UseTree,
-    Visibility,
+    Fields, FnArg, GenericArgument, ImplItem, ImplItemFn, Item, Pat, PathArguments, ReturnType,
+    TraitItem, Type, UseTree, Visibility,
 };
 
 const CORE_ADAPTER: &str = include_str!("../../../src/adapter.rs");
@@ -29,6 +29,7 @@ const DART_ADAPTERS: &str = include_str!("../../dart/lib/src/adapters.dart");
 const DART_ERRORS: &str = include_str!("../../dart/lib/src/errors.dart");
 const DART_PROVIDERS: &str = include_str!("../../dart/lib/src/providers.dart");
 const DART_GENERATED_CONVERT: &str = include_str!("../../dart/lib/src/rust/convert.dart");
+const DART_NATIVE_CONSTRUCTOR_EXCLUSIONS: &[&str] = &["from_dart_adapter"];
 
 struct ProviderDescriptor {
     exchange: &'static str,
@@ -539,6 +540,53 @@ fn rust_method_parameters(source: &str, name: &str, method: &str) -> BTreeSet<St
     rust_typed_parameter_names(&matches.pop().expect("one Rust method"))
 }
 
+fn rust_type_contains_self(r#type: &Type) -> bool {
+    let Type::Path(path) = r#type else {
+        return false;
+    };
+    path.qself
+        .as_ref()
+        .is_some_and(|qself| rust_type_contains_self(&qself.ty))
+        || path.path.is_ident("Self")
+        || path.path.segments.iter().any(|segment| {
+            let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+                return false;
+            };
+            arguments.args.iter().any(|argument| {
+                matches!(
+                    argument,
+                    GenericArgument::Type(r#type) if rust_type_contains_self(r#type)
+                )
+            })
+        })
+}
+
+fn rust_public_associated_constructors(
+    source: &str,
+    name: &str,
+) -> BTreeMap<String, BTreeSet<String>> {
+    rust_impl_methods(source, name)
+        .into_iter()
+        .filter(|method| {
+            matches!(method.vis, Visibility::Public(_))
+                && !method
+                    .sig
+                    .inputs
+                    .iter()
+                    .any(|input| matches!(input, FnArg::Receiver(_)))
+                && matches!(
+                    &method.sig.output,
+                    ReturnType::Type(_, output) if rust_type_contains_self(output)
+                )
+        })
+        .map(|method| {
+            let name = method.sig.ident.to_string();
+            let parameters = rust_typed_parameter_names(&method);
+            (name, parameters)
+        })
+        .collect()
+}
+
 fn rust_self_returning_methods(source: &str, name: &str) -> BTreeMap<String, BTreeSet<String>> {
     rust_impl_methods(source, name)
         .into_iter()
@@ -741,6 +789,16 @@ fn python_classmethod_names(source: &str, name: &str) -> BTreeSet<String> {
         }
     }
     methods
+}
+
+fn python_classmethod_parameters(source: &str, name: &str) -> BTreeMap<String, BTreeSet<String>> {
+    python_classmethod_names(source, name)
+        .into_iter()
+        .map(|method| {
+            let parameters = python_method_parameters(source, name, &method);
+            (method, parameters)
+        })
+        .collect()
 }
 
 fn python_class_methods(source: &str, name: &str, async_only: bool) -> BTreeSet<String> {
@@ -1442,6 +1500,25 @@ fn assert_provider_constructor_settings() {
         .collect::<BTreeSet<_>>();
     assert_inventory("Provider descriptors", &exchanges, &descriptors);
 
+    let mut dart_native_constructors =
+        rust_public_associated_constructors(DART_RUST_API, "NativeClient");
+    for exclusion in DART_NATIVE_CONSTRUCTOR_EXCLUSIONS {
+        assert!(
+            dart_native_constructors.remove(*exclusion).is_some(),
+            "Dart NativeClient intentional constructor exclusion {exclusion} must exist"
+        );
+    }
+    let expected_dart_native_constructors = PROVIDERS
+        .iter()
+        .flat_map(|provider| provider.dart_native_methods.iter())
+        .map(|method| (*method).to_owned())
+        .collect::<BTreeSet<_>>();
+    assert_inventory(
+        "Dart NativeClient provider constructors",
+        &expected_dart_native_constructors,
+        &dart_native_constructors.keys().cloned().collect(),
+    );
+
     for provider in PROVIDERS {
         let rust_methods = rust_self_returning_methods(provider.rust_source, provider.adapter);
         let rust_settings = rust_constructor_settings(
@@ -1468,11 +1545,13 @@ fn assert_provider_constructor_settings() {
 
         let mut dart_native = BTreeSet::new();
         for method in provider.dart_native_methods {
-            dart_native.extend(rust_method_parameters(
-                DART_RUST_API,
-                "NativeClient",
-                method,
-            ));
+            dart_native.extend(
+                dart_native_constructors
+                    .get(*method)
+                    .unwrap_or_else(|| panic!("Dart NativeClient::{method} must exist"))
+                    .iter()
+                    .cloned(),
+            );
         }
         if provider.dart_native_methods.len() > 1 {
             dart_native.insert(
@@ -1499,7 +1578,7 @@ fn assert_provider_constructor_settings() {
             &python_settings,
         );
 
-        let python_factories = python_classmethod_names(PYTHON_ADAPTERS, provider.adapter);
+        let python_factories = python_classmethod_parameters(PYTHON_ADAPTERS, provider.adapter);
         let expected_python_factories = provider
             .python_factories
             .iter()
@@ -1508,15 +1587,28 @@ fn assert_provider_constructor_settings() {
         assert_inventory(
             &format!("Python {} classmethod factories", provider.adapter),
             &expected_python_factories,
-            &python_factories,
+            &python_factories.keys().cloned().collect(),
         );
-        let mut python_modes = python_factories;
+        let mut python_modes = python_factories.keys().cloned().collect::<BTreeSet<_>>();
         python_modes.insert(provider.python_default_mode.to_owned());
         assert_inventory(
             &format!("Python {} constructor modes", provider.adapter),
             &rust_modes,
             &python_modes,
         );
+        for (factory, parameters) in python_factories {
+            let mut expected = rust_settings.clone();
+            expected.remove(
+                provider
+                    .mode_axis
+                    .expect("Python constructor factories need a mode axis"),
+            );
+            assert_inventory(
+                &format!("Python {}.{factory} factory settings", provider.adapter),
+                &expected,
+                &parameters,
+            );
+        }
 
         let dart_factories = dart_factory_parameters(DART_ADAPTERS, provider.adapter);
         let dart_methods = dart_construction_method_parameters(DART_ADAPTERS, provider.adapter);
@@ -1649,6 +1741,61 @@ impl Example {
 }
 
 #[test]
+#[should_panic(
+    expected = "Dart NativeClient provider constructors differ; missing: {}; extra: {\"binance_coin_m\"}"
+)]
+fn dart_native_constructor_inventory_rejects_unlisted_associated_constructor() {
+    let source = r#"
+struct NativeClient;
+struct Error;
+
+impl NativeClient {
+    pub fn from_dart_adapter(adapter: String) -> Self {
+        drop(adapter);
+        Self
+    }
+
+    pub fn upbit(region: String) -> Result<Self, Error> {
+        drop(region);
+        Ok(Self)
+    }
+
+    pub fn binance_coin_m(api_key: String) -> Result<Self, Error> {
+        drop(api_key);
+        Ok(Self)
+    }
+
+    pub fn instance(&self) -> Self {
+        Self
+    }
+
+    pub fn unrelated() -> Result<String, Error> {
+        Ok(String::new())
+    }
+
+    fn private_constructor() -> Self {
+        Self
+    }
+}
+"#;
+
+    let expected = BTreeSet::from(["upbit".to_owned()]);
+    let mut constructors = rust_public_associated_constructors(source, "NativeClient");
+    for exclusion in DART_NATIVE_CONSTRUCTOR_EXCLUSIONS {
+        assert!(
+            constructors.remove(*exclusion).is_some(),
+            "fixture intentional exclusion {exclusion} must exist"
+        );
+    }
+    let actual = constructors.keys().cloned().collect();
+    assert_inventory(
+        "Dart NativeClient provider constructors",
+        &expected,
+        &actual,
+    );
+}
+
+#[test]
 #[should_panic(expected = "tuple struct; classify it explicitly")]
 fn rust_struct_field_parser_rejects_tuple_structs() {
     rust_struct_fields("pub struct Cursor(String);", "Cursor");
@@ -1720,6 +1867,39 @@ class Example(Base):
     assert_eq!(
         python_classmethod_names(source, "Example"),
         BTreeSet::from(["spot".to_owned(), "usd_m_futures".to_owned()])
+    );
+}
+
+#[test]
+#[should_panic(
+    expected = "Python Example.usd_m_futures factory settings differ; missing: {}; extra: {\"factory_only\"}"
+)]
+fn python_factory_settings_reject_factory_only_parameters() {
+    let source = r#"
+class Example(Base):
+    @classmethod
+    def usd_m_futures(
+        cls,
+        *,
+        api_key: Optional[str] = None,
+        secret_key: Optional[str] = None,
+        factory_only: str = "extra",
+    ) -> Example:
+        return cls()
+"#;
+
+    let factories = python_classmethod_parameters(source, "Example");
+    assert_inventory(
+        "Python Example classmethod factories",
+        &BTreeSet::from(["usd_m_futures".to_owned()]),
+        &factories.keys().cloned().collect(),
+    );
+    assert_inventory(
+        "Python Example.usd_m_futures factory settings",
+        &BTreeSet::from(["api_key".to_owned(), "secret_key".to_owned()]),
+        factories
+            .get("usd_m_futures")
+            .expect("fixture factory must exist"),
     );
 }
 

@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use maxt::{
     Balance, Candle, CandleRequest, Cursor, Decimal, Exchange, ExchangeErrorKind, Feature, Feed,
     FundingPayment, FundingRate, HistoryRequest, Interval, Level, MarginMode, MarginRequest,
@@ -183,7 +181,7 @@ pub(crate) fn text(value: &Bound<'_, PyAny>) -> PyResult<String> {
 
 pub(crate) fn decimal_from_wire(value: &Bound<'_, PyAny>, field: &str) -> PyResult<Decimal> {
     let value = text(value)?;
-    Decimal::from_str(&value).map_err(|_| invalid(field, &value))
+    maxt::parse_decimal_exact(&value).map_err(|_| invalid(field, &value))
 }
 
 pub(crate) fn exchange_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Exchange> {
@@ -780,10 +778,34 @@ pub(crate) fn list_to_wire<T>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pyo3::types::PyString;
+
+    #[test]
+    fn decimal_input은_표현할_수_없는_값을_반올림하지_않는다() {
+        Python::initialize();
+        Python::attach(|py| {
+            let rejected = [
+                "2.5e-28",
+                "0.00000000000000000000000000001",
+                "79228162514264337593543950335.4",
+            ]
+            .map(|text| {
+                let value = PyString::new(py, text).into_any();
+                decimal_from_wire(&value, "price").is_err()
+            });
+
+            assert_eq!(rejected, [true, true, true]);
+            let value = PyString::new(py, "8.428e-05").into_any();
+            assert_eq!(
+                decimal_from_wire(&value, "price").unwrap().to_string(),
+                "0.00008428",
+            );
+        });
+    }
 
     #[test]
     fn decimal_wire_values_preserve_every_digit() {
-        let value = Decimal::from_str("12345678901234567890.12345678").unwrap();
+        let value = Decimal::from_str_exact("12345678901234567890.12345678").unwrap();
 
         assert_eq!(decimal_to_wire(value), "12345678901234567890.12345678");
     }

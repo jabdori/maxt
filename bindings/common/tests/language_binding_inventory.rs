@@ -262,10 +262,11 @@ fn public_struct_definitions(
     definitions
 }
 
-fn public_reexport_edges(
-    modules: &BTreeMap<Vec<String>, String>,
-) -> BTreeMap<Vec<String>, Vec<String>> {
+type UseBindingGraph = (BTreeMap<Vec<String>, Vec<String>>, BTreeSet<Vec<String>>);
+
+fn use_binding_graph(modules: &BTreeMap<Vec<String>, String>) -> UseBindingGraph {
     let mut edges = BTreeMap::new();
+    let mut public_bindings = BTreeSet::new();
     for (module, source) in modules {
         for item in syn::parse_file(source)
             .expect("Rust re-export source must parse")
@@ -274,9 +275,7 @@ fn public_reexport_edges(
             let Item::Use(item) = item else {
                 continue;
             };
-            if !matches!(item.vis, Visibility::Public(_)) {
-                continue;
-            }
+            let is_public = matches!(item.vis, Visibility::Public(_));
             let prefix = if item.leading_colon.is_some() {
                 vec!["$external".to_owned()]
             } else {
@@ -288,6 +287,9 @@ fn public_reexport_edges(
                 let mut binding = module.clone();
                 binding.push(public_name);
                 let target = resolve_use_path(module, &target);
+                if is_public {
+                    public_bindings.insert(binding.clone());
+                }
                 if let Some(previous) = edges.insert(binding.clone(), target.clone()) {
                     assert_eq!(
                         previous,
@@ -299,7 +301,21 @@ fn public_reexport_edges(
             }
         }
     }
-    edges
+    (edges, public_bindings)
+}
+
+fn alias_target(
+    path: &[String],
+    edges: &BTreeMap<Vec<String>, Vec<String>>,
+) -> Option<Vec<String>> {
+    for prefix_length in (1..=path.len()).rev() {
+        if let Some(target) = edges.get(&path[..prefix_length]) {
+            let mut resolved = target.clone();
+            resolved.extend_from_slice(&path[prefix_length..]);
+            return Some(resolved);
+        }
+    }
+    None
 }
 
 fn resolve_struct_source(
@@ -311,13 +327,13 @@ fn resolve_struct_source(
     if let Some(definition) = definitions.get(path) {
         return Some(definition.clone());
     }
-    let target = edges.get(path)?;
+    let target = alias_target(path, edges)?;
     assert!(
         visiting.insert(path.to_vec()),
         "public re-export cycle detected at {}",
         path.join("::")
     );
-    let resolved = resolve_struct_source(target, definitions, edges, visiting);
+    let resolved = resolve_struct_source(&target, definitions, edges, visiting);
     visiting.remove(path);
     resolved
 }
@@ -327,12 +343,12 @@ fn resolve_public_struct_sources(
     entry_modules: &[Vec<String>],
 ) -> BTreeMap<String, (String, String)> {
     let definitions = public_struct_definitions(modules);
-    let edges = public_reexport_edges(modules);
+    let (edges, public_bindings) = use_binding_graph(modules);
     let mut exported = BTreeMap::new();
 
     for entry_module in entry_modules {
-        let starts = edges
-            .keys()
+        let starts = public_bindings
+            .iter()
             .chain(definitions.keys())
             .filter(|path| {
                 path.len() == entry_module.len() + 1 && path.starts_with(entry_module.as_slice())
@@ -698,75 +714,166 @@ fn find_dart_class_body<'a>(source: &'a str, name: &str) -> Option<&'a str> {
     None
 }
 
-fn dart_has_top_level_comma(declaration: &str) -> bool {
-    let mut angle = 0_u32;
-    let mut parentheses = 0_u32;
-    let mut brackets = 0_u32;
-    let mut braces = 0_u32;
-    let mut quote = None;
-    let mut escaped = false;
-    for character in declaration.chars() {
-        if let Some(active_quote) = quote {
-            if escaped {
-                escaped = false;
+#[derive(Default)]
+struct DartNesting {
+    angle: u32,
+    parentheses: u32,
+    brackets: u32,
+    braces: u32,
+    quote: Option<char>,
+    escaped: bool,
+}
+
+impl DartNesting {
+    fn is_top_level(&self) -> bool {
+        self.angle == 0 && self.parentheses == 0 && self.brackets == 0 && self.braces == 0
+    }
+
+    fn consume(&mut self, character: char) -> bool {
+        if let Some(active_quote) = self.quote {
+            if self.escaped {
+                self.escaped = false;
             } else if character == '\\' {
-                escaped = true;
+                self.escaped = true;
             } else if character == active_quote {
-                quote = None;
+                self.quote = None;
             }
-            continue;
+            return false;
         }
         match character {
-            '\'' | '"' => quote = Some(character),
-            '<' => angle += 1,
-            '>' => angle = angle.saturating_sub(1),
-            '(' => parentheses += 1,
-            ')' => parentheses = parentheses.saturating_sub(1),
-            '[' => brackets += 1,
-            ']' => brackets = brackets.saturating_sub(1),
-            '{' => braces += 1,
-            '}' => braces = braces.saturating_sub(1),
-            ',' if angle == 0 && parentheses == 0 && brackets == 0 && braces == 0 => return true,
+            '\'' | '"' => {
+                self.quote = Some(character);
+                return false;
+            }
+            '<' => self.angle += 1,
+            '>' => self.angle = self.angle.saturating_sub(1),
+            '(' => self.parentheses += 1,
+            ')' => self.parentheses = self.parentheses.saturating_sub(1),
+            '[' => self.brackets += 1,
+            ']' => self.brackets = self.brackets.saturating_sub(1),
+            '{' => self.braces += 1,
+            '}' => self.braces = self.braces.saturating_sub(1),
             _ => {}
         }
+        true
     }
-    false
+}
+
+fn dart_has_top_level_comma(declaration: &str) -> bool {
+    let mut nesting = DartNesting::default();
+    declaration.chars().any(|character| {
+        let top_level = nesting.is_top_level();
+        nesting.consume(character) && top_level && character == ','
+    })
+}
+
+fn dart_is_constructor(declaration: &str, name: &str) -> bool {
+    let mut declaration = declaration.trim_start();
+    loop {
+        let Some((modifier, rest)) = declaration.split_once(' ') else {
+            break;
+        };
+        if matches!(modifier, "const" | "external" | "factory") {
+            declaration = rest.trim_start();
+        } else {
+            break;
+        }
+    }
+    declaration.strip_prefix(name).is_some_and(|rest| {
+        let rest = rest.trim_start();
+        rest.starts_with('(') || rest.starts_with('.')
+    })
+}
+
+fn dart_instance_field_name(declaration: &str, class_name: &str) -> Option<String> {
+    let declaration = declaration.trim().trim_end_matches(';').trim();
+    if dart_is_constructor(declaration, class_name) {
+        return None;
+    }
+    let field_declaration = declaration
+        .split_once('=')
+        .map_or(declaration, |(before, _)| before)
+        .trim();
+    let tokens = field_declaration.split_whitespace().collect::<Vec<_>>();
+    if tokens.contains(&"static")
+        || tokens
+            .iter()
+            .any(|token| matches!(*token, "get" | "set" | "operator" | "typedef"))
+    {
+        return None;
+    }
+    tokens
+        .last()
+        .filter(|field| is_identifier(field))
+        .map(|field| snake_case(field))
+}
+
+fn dart_top_level_members(block: &str, class_name: &str) -> Vec<String> {
+    let mut members = Vec::new();
+    let mut member = String::new();
+    let mut nesting = DartNesting::default();
+    let mut assignment_prefix = None;
+    let mut member_block = false;
+
+    for line in block.lines() {
+        let line = line.trim();
+        if line.is_empty() || (nesting.quote.is_none() && line.starts_with("//")) {
+            continue;
+        }
+        if !member.is_empty() {
+            member.push(' ');
+        }
+        for character in line.chars() {
+            let top_level = nesting.is_top_level();
+            let syntax = nesting.consume(character);
+            if syntax && top_level && character == '=' && assignment_prefix.is_none() {
+                assignment_prefix = Some(member.clone());
+            }
+            if syntax && top_level && character == '{' {
+                member_block = assignment_prefix
+                    .as_deref()
+                    .and_then(|prefix| dart_instance_field_name(prefix, class_name))
+                    .is_none();
+            }
+            member.push(character);
+            if !syntax {
+                continue;
+            }
+            if character == '}' && nesting.is_top_level() && member_block {
+                member.clear();
+                assignment_prefix = None;
+                member_block = false;
+            } else if character == ';' && nesting.is_top_level() {
+                let declaration = std::mem::take(&mut member);
+                if !declaration.trim_matches(';').trim().is_empty() {
+                    members.push(declaration);
+                }
+                assignment_prefix = None;
+                member_block = false;
+            }
+        }
+    }
+    assert!(
+        member.trim().is_empty(),
+        "Dart class {class_name} has an unterminated top-level member"
+    );
+    members
 }
 
 fn dart_class_fields(source: &str, name: &str) -> BTreeSet<String> {
     let block = find_dart_class_body(source, name)
         .unwrap_or_else(|| panic!("Dart class {name} must exist"));
-    let mut depth = 0_isize;
-    let mut fields = BTreeSet::new();
-    for line in block.lines() {
-        let trimmed = line.trim();
-        if depth == 0
-            && let Some(declaration) = trimmed.strip_suffix(';')
-        {
-            let field_declaration = declaration
-                .split_once('=')
-                .map_or(declaration, |(before, _)| before)
-                .trim();
-            let tokens = field_declaration.split_whitespace().collect::<Vec<_>>();
-            if tokens.contains(&"static")
-                || tokens
-                    .iter()
-                    .any(|token| matches!(*token, "get" | "set" | "operator" | "typedef"))
-            {
-                continue;
-            }
+    dart_top_level_members(block, name)
+        .into_iter()
+        .filter_map(|declaration| {
+            let field = dart_instance_field_name(&declaration, name)?;
             assert!(
-                !dart_has_top_level_comma(declaration),
+                !dart_has_top_level_comma(&declaration),
                 "Dart class {name} has a comma-separated field declaration; split it into one field per line"
             );
-            if let Some(field) = tokens.last().filter(|field| is_identifier(field)) {
-                fields.insert(snake_case(field));
-            }
-        }
-        depth += line.chars().filter(|character| *character == '{').count() as isize;
-        depth -= line.chars().filter(|character| *character == '}').count() as isize;
-    }
-    fields
+            Some(field)
+        })
+        .collect()
 }
 
 fn dart_public_model_fields(name: &str) -> BTreeSet<String> {
@@ -984,8 +1091,18 @@ final class Example {
   void Function() callback;
   static final String shared = 'shared';
   static String mutableStatic = 'shared';
+  final values = <String>[
+    'first',
+    'second',
+  ];
+  final compute = () {
+    final local = 'inside;{}\'';
+    return local;
+  };
 
   bool get derivedValue => true;
+  String get label =>
+      shared;
   set derivedValue(bool value) => state = value;
   String format() => lowerCamel;
   Example();
@@ -1000,11 +1117,13 @@ final class Example {
         dart_class_fields(source, "Example"),
         BTreeSet::from([
             "callback".to_owned(),
+            "compute".to_owned(),
             "late_field".to_owned(),
             "lower_camel".to_owned(),
             "mutable_field".to_owned(),
             "plain".to_owned(),
             "state".to_owned(),
+            "values".to_owned(),
         ])
     );
 }
@@ -1088,6 +1207,62 @@ fn public_reexports_follow_two_alias_steps() {
     assert_eq!(
         rust_struct_fields(source, rust_name),
         BTreeSet::from(["value".to_owned()])
+    );
+}
+
+#[test]
+fn public_module_alias_prefix_resolves_struct_reexport() {
+    let modules = BTreeMap::from([
+        (
+            Vec::<String>::new(),
+            "pub use crate::leaf as api;\n\
+             pub use api::Record as PublicRecord;"
+                .to_owned(),
+        ),
+        (
+            vec!["leaf".to_owned()],
+            "pub struct Record { pub public_alias: String }".to_owned(),
+        ),
+    ]);
+
+    let exported = resolve_public_struct_sources(&modules, &[Vec::new()]);
+    let (rust_name, source) = exported
+        .get("PublicRecord")
+        .expect("PublicRecord must resolve through a public module alias");
+
+    assert!(!exported.contains_key("api"));
+    assert_eq!(rust_name, "Record");
+    assert_eq!(
+        rust_struct_fields(source, rust_name),
+        BTreeSet::from(["public_alias".to_owned()])
+    );
+}
+
+#[test]
+fn private_module_alias_prefix_resolves_struct_reexport() {
+    let modules = BTreeMap::from([
+        (
+            Vec::<String>::new(),
+            "use crate::leaf as api;\n\
+             pub use api::Record as PublicRecord;"
+                .to_owned(),
+        ),
+        (
+            vec!["leaf".to_owned()],
+            "pub struct Record { pub private_alias: String }".to_owned(),
+        ),
+    ]);
+
+    let exported = resolve_public_struct_sources(&modules, &[Vec::new()]);
+    let (rust_name, source) = exported
+        .get("PublicRecord")
+        .expect("PublicRecord must resolve through a private module alias");
+
+    assert!(!exported.contains_key("api"));
+    assert_eq!(rust_name, "Record");
+    assert_eq!(
+        rust_struct_fields(source, rust_name),
+        BTreeSet::from(["private_alias".to_owned()])
     );
 }
 

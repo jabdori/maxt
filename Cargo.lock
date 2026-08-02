@@ -1302,9 +1302,11 @@ dependencies = [
  "futures-channel",
  "futures-core",
  "futures-util",
+ "libc",
  "maxt",
  "maxt-bindings-common",
  "tokio",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

@@ -17,6 +17,12 @@ futures-util = { version = "0.3", default-features = false, features = ["std"] }
 maxt = "0.1.0"
 maxt-bindings-common = "0.1.0"
 
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_LibraryLoader"] }
+
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt"] }
 

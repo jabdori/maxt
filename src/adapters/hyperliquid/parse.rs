@@ -3,6 +3,8 @@
 //! Numeric strings and WebSocket candle numbers are converted directly to
 //! [`Decimal`] without an `f64` round trip.
 
+use std::cmp::Reverse;
+
 use rust_decimal::Decimal;
 use serde::Deserialize;
 use serde_json::{Number, Value};
@@ -646,8 +648,8 @@ pub(crate) fn order_book(raw: &RawBook, universe: &Universe) -> Result<OrderBook
 
     // Hyperliquid ships each side best-first already, but `OrderBook`'s ordering
     // is a guarantee to the caller and cheap to enforce, so it is enforced.
-    bids.sort_by(|left, right| right.price.cmp(&left.price));
-    asks.sort_by(|left, right| left.price.cmp(&right.price));
+    bids.sort_by_key(|level| Reverse(level.price));
+    asks.sort_by_key(|level| level.price);
 
     Ok(OrderBook {
         market: universe.market_from_native_symbol(&raw.coin)?.clone(),

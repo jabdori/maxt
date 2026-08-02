@@ -3,6 +3,8 @@
 //! Market codes use `QUOTE-BASE`. Decimal values are parsed without `f64`, and
 //! timestamp units are selected by field rather than inferred from magnitude.
 
+use std::cmp::Reverse;
+
 use rust_decimal::Decimal;
 use serde_json::Value;
 
@@ -298,7 +300,7 @@ pub(crate) fn trades(value: &Value) -> Result<Vec<Trade>> {
             })
         })
         .collect::<Result<Vec<_>>>()?;
-    trades.sort_by(|left, right| right.timestamp.cmp(&left.timestamp));
+    trades.sort_by_key(|trade| Reverse(trade.timestamp));
 
     Ok(trades)
 }
@@ -336,8 +338,8 @@ pub(crate) fn order_book(
         }
     }
 
-    bids.sort_by(|left, right| right.price.cmp(&left.price));
-    asks.sort_by(|left, right| left.price.cmp(&right.price));
+    bids.sort_by_key(|level| Reverse(level.price));
+    asks.sort_by_key(|level| level.price);
 
     // Apply depth after sorting so it selects the best levels.
     if let Some(depth) = depth {

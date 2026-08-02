@@ -3,6 +3,7 @@
 //! Numeric payloads are parsed from their original digits without an `f64`
 //! conversion.
 
+use std::cmp::Reverse;
 use std::collections::BTreeMap;
 
 use chrono::{DateTime, NaiveDateTime, Utc};
@@ -516,8 +517,8 @@ fn book(symbol: &str, timestamp: i64, units: &[RawOrderBookUnit]) -> Result<Orde
     }
 
     // Enforce the common order-book sort contract.
-    bids.sort_by(|left, right| right.price.cmp(&left.price));
-    asks.sort_by(|left, right| left.price.cmp(&right.price));
+    bids.sort_by_key(|level| Reverse(level.price));
+    asks.sort_by_key(|level| level.price);
 
     Ok(OrderBook {
         market: market_from_native_symbol(symbol)?,

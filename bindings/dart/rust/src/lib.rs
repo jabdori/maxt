@@ -1,4 +1,5 @@
 pub mod api;
+#[allow(clippy::result_large_err)] // 생성 코드는 공개 오류 정보를 값으로 직렬화합니다.
 mod frb_generated; /* AUTO INJECTED BY flutter_rust_bridge. This line may not be accurate, and you can change it according to your needs. */
 
 mod adapter;

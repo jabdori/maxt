@@ -4,6 +4,8 @@
 //! quantities are parsed directly from strings into [`Decimal`] without an
 //! `f64` conversion.
 
+use std::cmp::Reverse;
+
 use rust_decimal::Decimal;
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
@@ -255,8 +257,8 @@ pub(super) fn order_book(
         .map(RawLevel::level)
         .collect::<Result<Vec<_>>>()?;
 
-    bids.sort_by(|left, right| right.price.cmp(&left.price));
-    asks.sort_by(|left, right| left.price.cmp(&right.price));
+    bids.sort_by_key(|level| Reverse(level.price));
+    asks.sort_by_key(|level| level.price);
 
     Ok(OrderBook {
         market: market.clone(),

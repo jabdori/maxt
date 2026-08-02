@@ -3,6 +3,8 @@
 //! Reads use `POST /info`; signed actions use `POST /exchange`. Request type and
 //! parameters are encoded in the JSON body.
 
+use std::cmp::Reverse;
+
 use rust_decimal::Decimal;
 use serde_json::{Value, json};
 
@@ -242,7 +244,7 @@ fn newest_first(
         .map(|raw| parse::trade(raw, universe))
         .collect::<Result<Vec<_>>>()?;
 
-    trades.sort_by(|left, right| right.timestamp.cmp(&left.timestamp));
+    trades.sort_by_key(|trade| Reverse(trade.timestamp));
     if let Some(limit) = limit {
         trades.truncate(limit as usize);
     }

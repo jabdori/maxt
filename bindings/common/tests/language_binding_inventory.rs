@@ -2225,10 +2225,7 @@ fn dart_has_top_level_comma(declaration: &str) -> bool {
 
 fn dart_is_constructor(declaration: &str, name: &str) -> bool {
     let mut declaration = declaration.trim_start();
-    loop {
-        let Some((modifier, rest)) = declaration.split_once(' ') else {
-            break;
-        };
+    while let Some((modifier, rest)) = declaration.split_once(' ') {
         if matches!(modifier, "const" | "external" | "factory") {
             declaration = rest.trim_start();
         } else {

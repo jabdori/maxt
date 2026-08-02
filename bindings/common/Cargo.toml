@@ -11,6 +11,9 @@ documentation = "https://docs.rs/maxt-bindings-common"
 readme = "README.md"
 exclude = ["/tests/language_binding_inventory.rs"]
 
+[features]
+codegen = []
+
 [dependencies]
 maxt = { version = "0.1.0", path = "../.." }
 

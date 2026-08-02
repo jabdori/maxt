@@ -1,20 +1,6 @@
 import { Exchange, Feature } from "./models.js";
-
-export type ErrorWire =
-  | { readonly kind: "invalid_request"; readonly field: string; readonly detail: string }
-  | { readonly kind: "unsupported"; readonly feature: string; readonly exchange: string; readonly detail: string }
-  | { readonly kind: "adapter"; readonly detail: string }
-  | { readonly kind: "auth"; readonly detail: string }
-  | {
-    readonly kind: "exchange";
-    readonly exchange: string;
-    readonly code: string;
-    readonly message: string;
-    readonly status: number | null;
-    readonly exchange_kind: string;
-  }
-  | { readonly kind: "transport"; readonly detail: string }
-  | { readonly kind: "decode"; readonly detail: string };
+import type { ErrorWire } from "./generated/contract.js";
+export type { ErrorWire } from "./generated/contract.js";
 
 export class ExchangeErrorKind {
   static readonly Rejected = new ExchangeErrorKind("rejected", false);

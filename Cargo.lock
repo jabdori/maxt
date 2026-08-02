@@ -1297,6 +1297,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "maxt-bindings-codegen"
+version = "0.1.0"
+dependencies = [
+ "maxt-bindings-common",
+]
+
+[[package]]
 name = "maxt-bindings-common"
 version = "0.1.0"
 dependencies = [

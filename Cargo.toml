@@ -14,7 +14,7 @@ readme = "README.md"
 exclude = ["/.github", "/bindings", "/docs/superpowers"]
 
 [workspace]
-members = ["bindings/common", "bindings/python", "bindings/dart/rust", "bindings/typescript/rust"]
+members = ["bindings/common", "bindings/codegen", "bindings/python", "bindings/dart/rust", "bindings/typescript/rust"]
 resolver = "3"
 
 [patch.crates-io]

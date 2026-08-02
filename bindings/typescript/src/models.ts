@@ -751,14 +751,19 @@ export class Subscription {
   readonly markets: readonly Market[];
   readonly feeds: readonly Feed[];
   constructor(markets: readonly Market[] = [], feeds: readonly Feed[] = []) {
-    const marketKeys = new Set<string>();
+    const uniqueMarkets: Market[] = [];
     const feedKeys = new Set<string>();
-    this.markets = Object.freeze(markets.filter((market) => {
-      const key = market.toString();
-      if (marketKeys.has(key)) return false;
-      marketKeys.add(key);
-      return true;
-    }));
+    for (const market of markets) {
+      // ponytail: 구독 목록은 작습니다. 규모가 문제가 되면 구조 키 Map으로 교체합니다.
+      const duplicate = uniqueMarkets.some((existing) =>
+        existing.exchange === market.exchange
+        && existing.kind === market.kind
+        && existing.base === market.base
+        && existing.quote === market.quote
+      );
+      if (!duplicate) uniqueMarkets.push(market);
+    }
+    this.markets = Object.freeze(uniqueMarkets);
     this.feeds = Object.freeze(feeds.filter((feed) => {
       const key = `${feed.kind}:${feed.interval?.id ?? ""}`;
       if (feedKeys.has(key)) return false;

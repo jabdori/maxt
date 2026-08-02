@@ -3,10 +3,10 @@ import 'package:test/test.dart';
 
 void main() {
   test('Decimal은 double 없이 정확한 문자열과 수치 동등성을 보존한다', () {
-    final value = Decimal.parse('12345678901234567890.1234567800');
+    final value = Decimal.parse('123456789012345678.1234567800');
 
-    expect(value.toString(), '12345678901234567890.1234567800');
-    expect(value, Decimal.parse('12345678901234567890.12345678'));
+    expect(value.toString(), '123456789012345678.1234567800');
+    expect(value, Decimal.parse('123456789012345678.12345678'));
     expect(Decimal.parse('-0.000e9').isZero, isTrue);
   });
 
@@ -14,10 +14,14 @@ void main() {
     for (final value in [
       '2.5e-28',
       '2e-29',
+      '1.0e-28',
+      '1.00e-27',
+      '12345678901234567890.1234567800',
       '79228162514264337593543950335.4',
       '1e29',
-      '1e2000000000',
-      '1e-2000000000',
+      '1e9223372036854775807',
+      '1e-9223372036854775808',
+      '0e100',
     ]) {
       expect(() => Decimal.parse(value), throwsFormatException, reason: value);
     }

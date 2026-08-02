@@ -94,10 +94,29 @@ final class Decimal implements Comparable<Decimal> {
 
     final integer = match.group(2) ?? '';
     final fraction = match.group(3) ?? match.group(4) ?? '';
+    final exponentText = match.group(5);
+    final exponent = exponentText == null
+        ? BigInt.zero
+        : BigInt.parse(exponentText);
+    if (exponentText != null) {
+      final point = exponent + BigInt.from(integer.length);
+      if (point < -_maxPointShift || point > _maxPointShift) {
+        throw FormatException(
+          'Decimal scientific notation is too large',
+          value,
+        );
+      }
+    }
+
     final digits = '$integer$fraction';
     var coefficient = BigInt.parse(digits);
     if (match.group(1) == '-') coefficient = -coefficient;
-    var scale = fraction.length - int.parse(match.group(5) ?? '0');
+    final expandedScale = BigInt.from(fraction.length) - exponent;
+    if (!_isRepresentable(coefficient, expandedScale)) {
+      throw FormatException('Decimal is outside the Rust Decimal range', value);
+    }
+
+    var scale = expandedScale.toInt();
 
     if (coefficient == BigInt.zero) {
       scale = 0;
@@ -106,9 +125,6 @@ final class Decimal implements Comparable<Decimal> {
         coefficient ~/= BigInt.from(10);
         scale--;
       }
-    }
-    if (!_isRepresentable(coefficient, scale)) {
-      throw FormatException('Decimal is outside the Rust Decimal range', value);
     }
     return Decimal._(value, coefficient, scale);
   }
@@ -123,6 +139,8 @@ final class Decimal implements Comparable<Decimal> {
     '79228162514264337593543950335',
   );
   static final BigInt _ten = BigInt.from(10);
+  static final BigInt _maxPointShift = BigInt.from(64);
+  static final BigInt _maxScaleBigInt = BigInt.from(_maxScale);
   static const int _maxScale = 28;
 
   final String _value;
@@ -177,14 +195,14 @@ final class Decimal implements Comparable<Decimal> {
     return _fromArithmetic(_coefficient * BigInt.from(5), _scale + 1);
   }
 
-  static bool _isRepresentable(BigInt coefficient, int scale) {
+  static bool _isRepresentable(BigInt coefficient, BigInt scale) {
+    if (scale > _maxScaleBigInt) return false;
+    if (scale >= BigInt.zero) return coefficient.abs() <= _maxCoefficient;
     if (coefficient == BigInt.zero) return true;
-    if (scale > _maxScale) return false;
-    if (scale >= 0) return coefficient.abs() <= _maxCoefficient;
 
     final shift = -scale;
-    if (shift > _maxScale) return false;
-    return coefficient.abs() <= _maxCoefficient ~/ _pow10(shift);
+    if (shift > _maxScaleBigInt) return false;
+    return coefficient.abs() <= _maxCoefficient ~/ _pow10(shift.toInt());
   }
 
   static Decimal _fromArithmetic(BigInt coefficient, int scale) {

@@ -500,6 +500,22 @@ fn rust_public_methods(source: &str, name: &str, async_only: bool) -> BTreeSet<S
         .collect()
 }
 
+fn rust_without_outer_attributes(mut declaration: &str) -> &str {
+    while declaration.starts_with("#[") {
+        let mut nesting = DartNesting::default();
+        let end = declaration
+            .char_indices()
+            .find_map(|(offset, character)| {
+                let syntax = nesting.consume(character);
+                (syntax && character == ']' && nesting.brackets == 0)
+                    .then_some(offset + character.len_utf8())
+            })
+            .expect("Rust outer attribute must close");
+        declaration = declaration[end..].trim_start();
+    }
+    declaration
+}
+
 fn rust_public_value_methods(source: &str, name: &str) -> BTreeSet<String> {
     let mut methods = rust_public_methods(source, name, false);
     let marker = format!("impl {name}");
@@ -523,6 +539,7 @@ fn rust_public_value_methods(source: &str, name: &str) -> BTreeSet<String> {
             dart_top_level_members(&without_lifetime_apostrophes, name)
                 .into_iter()
                 .filter_map(|declaration| {
+                    let declaration = rust_without_outer_attributes(&declaration);
                     let tokens = declaration.split_whitespace().collect::<Vec<_>>();
                     if tokens.first() != Some(&"pub") {
                         return None;
@@ -539,6 +556,7 @@ fn rust_public_value_methods(source: &str, name: &str) -> BTreeSet<String> {
 #[derive(Clone, Copy)]
 enum BindingMemberKind {
     Method,
+    Property,
     ClassMethod,
     Getter,
     Factory,
@@ -551,6 +569,7 @@ impl BindingMemberKind {
     const fn label(self) -> &'static str {
         match self {
             Self::Method => "method",
+            Self::Property => "property",
             Self::ClassMethod => "class_method",
             Self::Getter => "getter",
             Self::Factory => "factory",
@@ -596,6 +615,8 @@ enum DartValueSurface {
 struct ValueTypeContract<'a> {
     name: &'static str,
     rust_source: &'a str,
+    python_source: &'a str,
+    dart_source: &'a str,
     rust_surface: RustValueSurface,
     python_surface: PythonValueSurface,
     dart_surface: DartValueSurface,
@@ -717,6 +738,12 @@ const ORDER_STATUS_VALUE_MEMBERS: &[ValueMemberContract] = &[value_member(
     binding_member(BindingMemberKind::Getter, "isLive"),
 )];
 
+const EXCHANGE_ERROR_KIND_VALUE_MEMBERS: &[ValueMemberContract] = &[value_member(
+    "is_retryable",
+    binding_member(BindingMemberKind::Method, "is_retryable"),
+    binding_member(BindingMemberKind::Getter, "isRetryable"),
+)];
+
 const POSITION_VALUE_MEMBERS: &[ValueMemberContract] = &[value_member(
     "is_flat",
     binding_member(BindingMemberKind::Method, "is_flat"),
@@ -823,6 +850,8 @@ const VALUE_TYPE_CONTRACTS: &[ValueTypeContract<'static>] = &[
     ValueTypeContract {
         name: "Exchange",
         rust_source: include_str!("../../../src/types/market.rs"),
+        python_source: PYTHON_MODELS,
+        dart_source: DART_MODELS,
         rust_surface: RustValueSurface::Methods,
         python_surface: PythonValueSurface::Enum,
         dart_surface: DartValueSurface::Extension,
@@ -831,6 +860,8 @@ const VALUE_TYPE_CONTRACTS: &[ValueTypeContract<'static>] = &[
     ValueTypeContract {
         name: "Feature",
         rust_source: include_str!("../../../src/feature.rs"),
+        python_source: PYTHON_MODELS,
+        dart_source: DART_MODELS,
         rust_surface: RustValueSurface::Methods,
         python_surface: PythonValueSurface::Enum,
         dart_surface: DartValueSurface::Extension,
@@ -839,6 +870,8 @@ const VALUE_TYPE_CONTRACTS: &[ValueTypeContract<'static>] = &[
     ValueTypeContract {
         name: "MarketKind",
         rust_source: include_str!("../../../src/types/market.rs"),
+        python_source: PYTHON_MODELS,
+        dart_source: DART_MODELS,
         rust_surface: RustValueSurface::Methods,
         python_surface: PythonValueSurface::Class,
         dart_surface: DartValueSurface::Extension,
@@ -847,6 +880,8 @@ const VALUE_TYPE_CONTRACTS: &[ValueTypeContract<'static>] = &[
     ValueTypeContract {
         name: "Side",
         rust_source: include_str!("../../../src/types/data.rs"),
+        python_source: PYTHON_MODELS,
+        dart_source: DART_MODELS,
         rust_surface: RustValueSurface::Methods,
         python_surface: PythonValueSurface::Class,
         dart_surface: DartValueSurface::Extension,
@@ -855,6 +890,8 @@ const VALUE_TYPE_CONTRACTS: &[ValueTypeContract<'static>] = &[
     ValueTypeContract {
         name: "OrderBook",
         rust_source: include_str!("../../../src/types/data.rs"),
+        python_source: PYTHON_MODELS,
+        dart_source: DART_MODELS,
         rust_surface: RustValueSurface::Methods,
         python_surface: PythonValueSurface::Class,
         dart_surface: DartValueSurface::Class { fields: false },
@@ -863,6 +900,8 @@ const VALUE_TYPE_CONTRACTS: &[ValueTypeContract<'static>] = &[
     ValueTypeContract {
         name: "Interval",
         rust_source: include_str!("../../../src/types/data.rs"),
+        python_source: PYTHON_MODELS,
+        dart_source: DART_MODELS,
         rust_surface: RustValueSurface::Methods,
         python_surface: PythonValueSurface::Class,
         dart_surface: DartValueSurface::Extension,
@@ -871,6 +910,8 @@ const VALUE_TYPE_CONTRACTS: &[ValueTypeContract<'static>] = &[
     ValueTypeContract {
         name: "Balance",
         rust_source: include_str!("../../../src/types/account.rs"),
+        python_source: PYTHON_MODELS,
+        dart_source: DART_MODELS,
         rust_surface: RustValueSurface::Methods,
         python_surface: PythonValueSurface::Class,
         dart_surface: DartValueSurface::Class { fields: false },
@@ -879,6 +920,8 @@ const VALUE_TYPE_CONTRACTS: &[ValueTypeContract<'static>] = &[
     ValueTypeContract {
         name: "OrderStatus",
         rust_source: include_str!("../../../src/types/account.rs"),
+        python_source: PYTHON_MODELS,
+        dart_source: DART_MODELS,
         rust_surface: RustValueSurface::Methods,
         python_surface: PythonValueSurface::Class,
         dart_surface: DartValueSurface::Extension,
@@ -887,6 +930,8 @@ const VALUE_TYPE_CONTRACTS: &[ValueTypeContract<'static>] = &[
     ValueTypeContract {
         name: "Position",
         rust_source: include_str!("../../../src/types/account.rs"),
+        python_source: PYTHON_MODELS,
+        dart_source: DART_MODELS,
         rust_surface: RustValueSurface::Methods,
         python_surface: PythonValueSurface::Class,
         dart_surface: DartValueSurface::Class { fields: false },
@@ -895,6 +940,8 @@ const VALUE_TYPE_CONTRACTS: &[ValueTypeContract<'static>] = &[
     ValueTypeContract {
         name: "Page",
         rust_source: include_str!("../../../src/types/account.rs"),
+        python_source: PYTHON_MODELS,
+        dart_source: DART_MODELS,
         rust_surface: RustValueSurface::Methods,
         python_surface: PythonValueSurface::Class,
         dart_surface: DartValueSurface::Class { fields: false },
@@ -903,6 +950,8 @@ const VALUE_TYPE_CONTRACTS: &[ValueTypeContract<'static>] = &[
     ValueTypeContract {
         name: "Timestamp",
         rust_source: include_str!("../../../src/types/time.rs"),
+        python_source: PYTHON_MODELS,
+        dart_source: DART_MODELS,
         rust_surface: RustValueSurface::Methods,
         python_surface: PythonValueSurface::Int,
         dart_surface: DartValueSurface::Class { fields: true },
@@ -911,6 +960,8 @@ const VALUE_TYPE_CONTRACTS: &[ValueTypeContract<'static>] = &[
     ValueTypeContract {
         name: "MarketEvent",
         rust_source: include_str!("../../../src/types/stream.rs"),
+        python_source: PYTHON_MODELS,
+        dart_source: DART_MODELS,
         rust_surface: RustValueSurface::Variants,
         python_surface: PythonValueSurface::Class,
         dart_surface: DartValueSurface::Class { fields: false },
@@ -919,10 +970,22 @@ const VALUE_TYPE_CONTRACTS: &[ValueTypeContract<'static>] = &[
     ValueTypeContract {
         name: "AccountEvent",
         rust_source: include_str!("../../../src/types/stream.rs"),
+        python_source: PYTHON_MODELS,
+        dart_source: DART_MODELS,
         rust_surface: RustValueSurface::Variants,
         python_surface: PythonValueSurface::Class,
         dart_surface: DartValueSurface::Class { fields: false },
         members: ACCOUNT_EVENT_VALUE_MEMBERS,
+    },
+    ValueTypeContract {
+        name: "ExchangeErrorKind",
+        rust_source: include_str!("../../../src/error.rs"),
+        python_source: PYTHON_API,
+        dart_source: DART_ERRORS,
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::Class,
+        dart_surface: DartValueSurface::Extension,
+        members: EXCHANGE_ERROR_KIND_VALUE_MEMBERS,
     },
 ];
 
@@ -930,11 +993,7 @@ fn binding_member_key(member: BindingMember) -> String {
     format!("{}:{}", member.kind.label(), member.name)
 }
 
-fn assert_value_type_contract(
-    contract: &ValueTypeContract<'_>,
-    python_source: &str,
-    dart_source: &str,
-) {
+fn assert_value_type_contract(contract: &ValueTypeContract<'_>) {
     let mut expected = BTreeSet::new();
     for member in contract.members {
         assert!(
@@ -969,7 +1028,11 @@ fn assert_value_type_contract(
     assert_inventory(
         &format!("Python {} value members", contract.name),
         &expected_python,
-        &python_value_members(python_source, contract.name, contract.python_surface),
+        &python_value_members(
+            contract.python_source,
+            contract.name,
+            contract.python_surface,
+        ),
     );
 
     let expected_dart = contract
@@ -980,7 +1043,7 @@ fn assert_value_type_contract(
     assert_inventory(
         &format!("Dart {} value members", contract.name),
         &expected_dart,
-        &dart_value_members(dart_source, contract.name, contract.dart_surface),
+        &dart_value_members(contract.dart_source, contract.name, contract.dart_surface),
     );
 }
 
@@ -1243,10 +1306,10 @@ fn python_method_parameters(source: &str, name: &str, method: &str) -> BTreeSet<
     parameters.into_keys().collect()
 }
 
-fn python_classmethod_names(source: &str, name: &str) -> BTreeSet<String> {
+fn python_decorated_method_names(source: &str, name: &str, decorator: &str) -> BTreeSet<String> {
     let body = python_class_body(source, name);
     let member_depth = python_member_depth(body);
-    let mut classmethod = false;
+    let mut decorated = false;
     let mut methods = BTreeSet::new();
     for line in body.lines() {
         let depth = line.len() - line.trim_start_matches([' ', '\t']).len();
@@ -1254,8 +1317,8 @@ fn python_classmethod_names(source: &str, name: &str) -> BTreeSet<String> {
             continue;
         }
         let member = line.trim();
-        if member == "@classmethod" {
-            classmethod = true;
+        if member == decorator {
+            decorated = true;
         } else if member.starts_with('@') {
             continue;
         } else if let Some(declaration) = member.strip_prefix("def ") {
@@ -1263,15 +1326,23 @@ fn python_classmethod_names(source: &str, name: &str) -> BTreeSet<String> {
                 .split_once('(')
                 .map(|(method, _)| method)
                 .unwrap_or(declaration);
-            if classmethod && is_identifier(method) && !method.starts_with('_') {
+            if decorated && is_identifier(method) && !method.starts_with('_') {
                 methods.insert(method.to_owned());
             }
-            classmethod = false;
+            decorated = false;
         } else {
-            classmethod = false;
+            decorated = false;
         }
     }
     methods
+}
+
+fn python_classmethod_names(source: &str, name: &str) -> BTreeSet<String> {
+    python_decorated_method_names(source, name, "@classmethod")
+}
+
+fn python_property_names(source: &str, name: &str) -> BTreeSet<String> {
+    python_decorated_method_names(source, name, "@property")
 }
 
 fn python_classmethod_parameters(source: &str, name: &str) -> BTreeMap<String, BTreeSet<String>> {
@@ -1341,11 +1412,18 @@ fn python_value_members(source: &str, name: &str, surface: PythonValueSurface) -
     }
 
     let classmethods = python_classmethod_names(source, name);
+    let properties = python_property_names(source, name);
+    assert!(
+        classmethods.is_disjoint(&properties),
+        "Python {name} methods cannot be both classmethod and property"
+    );
     let mut members = python_class_methods(source, name, false)
         .into_iter()
         .map(|method| {
             let kind = if classmethods.contains(&method) {
                 BindingMemberKind::ClassMethod
+            } else if properties.contains(&method) {
+                BindingMemberKind::Property
             } else {
                 BindingMemberKind::Method
             };
@@ -2812,17 +2890,15 @@ define_example!();
     let contract = ValueTypeContract {
         name: "Example",
         rust_source: rust,
+        python_source: "class Example(object):\n    def known(self):\n        pass\n",
+        dart_source: "final class Example { bool get known => true; }",
         rust_surface: RustValueSurface::Methods,
         python_surface: PythonValueSurface::Class,
         dart_surface: DartValueSurface::Class { fields: false },
         members: &members,
     };
 
-    assert_value_type_contract(
-        &contract,
-        "class Example(object):\n    def known(self):\n        pass\n",
-        "final class Example { bool get known => true; }",
-    );
+    assert_value_type_contract(&contract);
 }
 
 #[test]
@@ -2839,17 +2915,15 @@ fn value_contract_rejects_missing_python_method() {
     let contract = ValueTypeContract {
         name: "Example",
         rust_source: rust,
+        python_source: "class Example(object):\n    pass\n",
+        dart_source: "final class Example { bool get known => true; }",
         rust_surface: RustValueSurface::Methods,
         python_surface: PythonValueSurface::Class,
         dart_surface: DartValueSurface::Class { fields: false },
         members: &members,
     };
 
-    assert_value_type_contract(
-        &contract,
-        "class Example(object):\n    pass\n",
-        "final class Example { bool get known => true; }",
-    );
+    assert_value_type_contract(&contract);
 }
 
 #[test]
@@ -2866,17 +2940,77 @@ fn value_contract_rejects_dart_member_kind_mismatch() {
     let contract = ValueTypeContract {
         name: "Example",
         rust_source: rust,
+        python_source: "class Example(object):\n    def ready(self):\n        return True\n",
+        dart_source: "final class Example { bool ready() => true; }",
         rust_surface: RustValueSurface::Methods,
         python_surface: PythonValueSurface::Class,
         dart_surface: DartValueSurface::Class { fields: false },
         members: &members,
     };
 
-    assert_value_type_contract(
-        &contract,
-        "class Example(object):\n    def ready(self):\n        return True\n",
-        "final class Example { bool ready() => true; }",
-    );
+    assert_value_type_contract(&contract);
+}
+
+#[test]
+#[should_panic(
+    expected = "Python Example value members differ; missing: {\"method:display_name\"}; extra: {\"property:display_name\"}"
+)]
+fn value_contract_rejects_python_property_for_method() {
+    let rust = "struct Example; impl Example { pub fn display_name(&self) -> &'static str { \"Example\" } }";
+    let members = [value_member(
+        "display_name",
+        binding_member(BindingMemberKind::Method, "display_name"),
+        binding_member(BindingMemberKind::Getter, "displayName"),
+    )];
+    let contract = ValueTypeContract {
+        name: "Example",
+        rust_source: rust,
+        python_source: "class Example(object):\n    @property\n    def display_name(self):\n        return 'Example'\n",
+        dart_source: "final class Example { String get displayName => 'Example'; }",
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::Class,
+        dart_surface: DartValueSurface::Class { fields: false },
+        members: &members,
+    };
+
+    assert_value_type_contract(&contract);
+}
+
+#[test]
+#[should_panic(expected = "Rust Example value members differ; missing: {}; extra: {\"future\"}")]
+fn value_contract_rejects_unmapped_attributed_macro_method() {
+    let rust = r#"
+macro_rules! define_example {
+    () => {
+        impl Example {
+            pub fn known(&self) {}
+
+            #[doc = "A future public method."]
+            #[must_use]
+            pub const fn future(&self) -> bool { true }
+        }
+    };
+}
+
+define_example!();
+"#;
+    let members = [value_member(
+        "known",
+        binding_member(BindingMemberKind::Method, "known"),
+        binding_member(BindingMemberKind::Getter, "known"),
+    )];
+    let contract = ValueTypeContract {
+        name: "Example",
+        rust_source: rust,
+        python_source: "class Example(object):\n    def known(self):\n        pass\n",
+        dart_source: "final class Example { bool get known => true; }",
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::Class,
+        dart_surface: DartValueSurface::Class { fields: false },
+        members: &members,
+    };
+
+    assert_value_type_contract(&contract);
 }
 
 #[test]
@@ -3484,7 +3618,7 @@ fn provider_specific_methods_match_every_language() {
 #[test]
 fn public_value_methods_and_event_constructors_match_every_language() {
     for contract in VALUE_TYPE_CONTRACTS {
-        assert_value_type_contract(contract, PYTHON_MODELS, DART_MODELS);
+        assert_value_type_contract(contract);
     }
 }
 

@@ -2,6 +2,11 @@
 
 use std::time::Duration;
 
+#[cfg(target_arch = "wasm32")]
+use serde::Deserialize;
+#[cfg(any(test, target_arch = "wasm32"))]
+use serde::Serialize;
+
 use crate::error::{Error, Result};
 
 /// HTTP methods used by provider adapters.
@@ -93,6 +98,22 @@ pub(crate) struct HttpResponse {
     pub(crate) body: String,
 }
 
+#[cfg(any(test, target_arch = "wasm32"))]
+#[derive(Serialize)]
+struct RelayHttpRequest<'a> {
+    url: &'a str,
+    method: &'static str,
+    headers: &'a [(String, String)],
+    body: Option<&'a str>,
+}
+
+#[cfg(target_arch = "wasm32")]
+#[derive(Deserialize)]
+struct RelayHttpResponse {
+    status: u16,
+    body: String,
+}
+
 impl HttpResponse {
     pub(crate) fn is_success(&self) -> bool {
         (200..300).contains(&self.status)
@@ -109,9 +130,12 @@ pub(crate) struct HttpTransport {
 impl HttpTransport {
     /// A transport pointed at one host, for example `https://api.upbit.com`.
     pub(crate) fn new(base_url: impl Into<String>) -> Result<Self> {
-        let client = reqwest::Client::builder()
+        let builder = reqwest::Client::builder();
+        #[cfg(not(target_arch = "wasm32"))]
+        let builder = builder
             .timeout(Duration::from_secs(30))
-            .user_agent(concat!("maxt/", env!("CARGO_PKG_VERSION")))
+            .user_agent(concat!("maxt/", env!("CARGO_PKG_VERSION")));
+        let client = builder
             .build()
             .map_err(|err| Error::transport(err.to_string()))?;
 
@@ -126,14 +150,40 @@ impl HttpTransport {
     /// Non-2xx statuses remain [`HttpResponse`] values for provider-specific
     /// error decoding by the adapter.
     pub(crate) async fn send(&self, request: &HttpRequest) -> Result<HttpResponse> {
+        #[cfg(target_arch = "wasm32")]
+        // ponytail: 브라우저 Fetch는 스레드 고정입니다. 스레드형 wasm 지원 시 비동기 계약을 분리합니다.
+        return send_wrapper::SendWrapper::new(self.send_inner(request)).await;
+
+        #[cfg(not(target_arch = "wasm32"))]
+        self.send_inner(request).await
+    }
+
+    async fn send_inner(&self, request: &HttpRequest) -> Result<HttpResponse> {
         let url = format!("{}{}", self.base_url, request.target());
+
+        #[cfg(target_arch = "wasm32")]
+        if let Some(relay) = crate::transport::browser_relay() {
+            return self.send_via_relay(relay, request, &url).await;
+        }
+        #[cfg(target_arch = "wasm32")]
+        if requires_relay(request) {
+            return Err(Error::invalid_request(
+                "relay_url",
+                "browser requests with custom authentication headers require configure_browser_relay",
+            ));
+        }
+
+        self.send_direct(request, &url).await
+    }
+
+    async fn send_direct(&self, request: &HttpRequest, url: &str) -> Result<HttpResponse> {
         let mut builder = self.client.request(
             request
                 .method
                 .as_str()
                 .parse()
                 .map_err(|_| Error::transport("unsupported HTTP method"))?,
-            &url,
+            url,
         );
 
         for (name, value) in &request.headers {
@@ -142,6 +192,8 @@ impl HttpTransport {
         if let Some(body) = &request.body {
             builder = builder.body(body.clone());
         }
+        #[cfg(target_arch = "wasm32")]
+        let builder = builder.timeout(Duration::from_secs(30));
 
         let response = builder
             .send()
@@ -155,6 +207,58 @@ impl HttpTransport {
 
         Ok(HttpResponse { status, body })
     }
+
+    #[cfg(target_arch = "wasm32")]
+    async fn send_via_relay(
+        &self,
+        relay: &crate::transport::BrowserRelay,
+        request: &HttpRequest,
+        url: &str,
+    ) -> Result<HttpResponse> {
+        let envelope = serde_json::to_string(&RelayHttpRequest {
+            url,
+            method: request.method.as_str(),
+            headers: &request.headers,
+            body: request.body.as_deref(),
+        })
+        .map_err(|error| Error::transport(format!("could not encode relay request: {error}")))?;
+        let response = self
+            .client
+            .post(&relay.http)
+            .header("content-type", "application/json")
+            .body(envelope)
+            .timeout(Duration::from_secs(30))
+            .send()
+            .await
+            .map_err(|error| Error::transport(format!("browser relay request failed: {error}")))?;
+        let relay_status = response.status();
+        let body = response.text().await.map_err(|error| {
+            Error::transport(format!("could not read browser relay response: {error}"))
+        })?;
+        if !relay_status.is_success() {
+            return Err(Error::transport(format!(
+                "browser relay returned {relay_status}: {body}"
+            )));
+        }
+
+        let response: RelayHttpResponse = serde_json::from_str(&body).map_err(|error| {
+            Error::transport(format!(
+                "browser relay returned an invalid response: {error}"
+            ))
+        })?;
+        Ok(HttpResponse {
+            status: response.status,
+            body: response.body,
+        })
+    }
+}
+
+#[cfg(any(test, target_arch = "wasm32"))]
+fn requires_relay(request: &HttpRequest) -> bool {
+    request
+        .headers
+        .iter()
+        .any(|(name, _)| !name.eq_ignore_ascii_case("content-type"))
 }
 
 #[cfg(test)]
@@ -217,5 +321,36 @@ mod tests {
         let transport = HttpTransport::new("https://api.upbit.com/").unwrap();
 
         assert_eq!(transport.base_url, "https://api.upbit.com");
+    }
+
+    #[test]
+    fn authentication_headers_require_a_browser_relay_but_content_type_does_not() {
+        assert!(!requires_relay(&HttpRequest::post("/info").json_body("{}")));
+        assert!(requires_relay(
+            &HttpRequest::get("/account").header("authorization", "Bearer token")
+        ));
+        assert!(requires_relay(
+            &HttpRequest::get("/account").header("X-MBX-APIKEY", "key")
+        ));
+    }
+
+    #[test]
+    fn relay_http_envelope_preserves_the_exact_upstream_request() {
+        let request = HttpRequest::post("/orders")
+            .header("authorization", "Bearer token")
+            .json_body(r#"{"side":"buy"}"#);
+        let encoded = serde_json::to_value(RelayHttpRequest {
+            url: "https://exchange.example/orders",
+            method: request.method.as_str(),
+            headers: &request.headers,
+            body: request.body.as_deref(),
+        })
+        .unwrap();
+
+        assert_eq!(encoded["url"], "https://exchange.example/orders");
+        assert_eq!(encoded["method"], "POST");
+        assert_eq!(encoded["headers"][0][0], "authorization");
+        assert_eq!(encoded["headers"][0][1], "Bearer token");
+        assert_eq!(encoded["body"], r#"{"side":"buy"}"#);
     }
 }

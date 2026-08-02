@@ -67,6 +67,16 @@ pub use types::{
 /// `rust_decimal` dependency is not required.
 pub use rust_decimal::Decimal;
 
+/// Configures the trusted relay used for credentialed browser HTTP and WebSocket calls.
+///
+/// The value must be an `http` or `https` origin without credentials, a path,
+/// query, or fragment. Configuration is process-wide and may be repeated only
+/// with the same normalized origin.
+#[cfg(target_arch = "wasm32")]
+pub fn configure_browser_relay(relay_url: &str) -> Result<()> {
+    transport::configure_browser_relay(relay_url)
+}
+
 /// Parses decimal text without rounding or truncating it.
 ///
 /// Plain and scientific notation are accepted. Values that [`Decimal`] cannot

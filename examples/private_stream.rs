@@ -23,7 +23,7 @@ const SECRET_KEY: &str = "UPBIT_SECRET_KEY";
 const EVENT_LIMIT: usize = 20;
 const TIME_LIMIT: Duration = Duration::from_secs(60);
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> maxt::Result<()> {
     let (Ok(access_key), Ok(secret_key)) = (std::env::var(ACCESS_KEY), std::env::var(SECRET_KEY))
     else {

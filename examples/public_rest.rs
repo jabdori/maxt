@@ -16,7 +16,7 @@
 use maxt::adapters::{BinanceAdapter, BithumbAdapter, HyperliquidAdapter, UpbitAdapter};
 use maxt::{Adapter, Client, Decimal, Market, MarketKind};
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> maxt::Result<()> {
     let mut args = std::env::args().skip(1);
     let name = args.next().unwrap_or_else(|| "binance".to_string());

@@ -23,7 +23,7 @@ use maxt::{Adapter, Client, Feature, Feed, Market, MarketEvent, Subscription};
 const TRADE_LIMIT: usize = 20;
 const TIME_LIMIT: Duration = Duration::from_secs(30);
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> maxt::Result<()> {
     let mut args = std::env::args().skip(1);
     let name = args.next().unwrap_or_else(|| "upbit".to_string());

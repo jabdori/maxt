@@ -8,9 +8,18 @@ use crate::types::{
 
 /// Which candles to read.
 ///
-/// The market and interval are required; everything else narrows the range.
-/// With no range, the exchange's most recent page is returned. Results are
-/// oldest first.
+/// Results are sorted oldest first.
+///
+/// - `from`: inclusive lower bound. Without `limit`, reads through `to` or now.
+/// - `to`: exclusive upper bound.
+/// - `limit`: selects the oldest matches when `from` is set, otherwise the
+///   newest.
+/// - Paging: at most 100 exchange calls per request.
+///
+/// With all optional fields unset, returns the exchange's most recent page.
+/// Requests estimated to exceed the paging limit return
+/// [`Error::InvalidRequest`](crate::Error::InvalidRequest) before the first
+/// exchange call.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CandleRequest {
     /// The market to read candles for.
@@ -18,26 +27,13 @@ pub struct CandleRequest {
     /// The candle interval.
     pub interval: Interval,
     /// Oldest candle to return, by open time, inclusive.
-    ///
-    /// With no `limit`, `maxt` walks backwards to this bound from [`Self::to`]
-    /// or the present. A window needing more than a hundred pages is refused as
-    /// [`Error::InvalidRequest`](crate::Error::InvalidRequest) before the first
-    /// exchange call. Set `limit` to read wider histories in batches.
     pub from: Option<Timestamp>,
     /// Newest candle to return, by open time, exclusive.
     pub to: Option<Timestamp>,
-    /// How many candles to return.
+    /// Target number of candles. Must be at least one when set.
     ///
-    /// Which end it counts from depends on whether the range is anchored. With
-    /// [`CandleRequest::from`] set it is the *oldest* `limit` candles at or
-    /// after that time. Without it, the newest `limit`.
-    ///
-    /// Exchanges cap how many candles one response may carry. `maxt` pages
-    /// behind the scenes to reach a larger `limit`, so the cap does not bound
-    /// this field. Paging is itself bounded at a hundred calls, so a `limit`
-    /// above a hundred times the exchange's per-response cap is refused, and
-    /// the refusal says what the ceiling is there. Zero is also refused; a set
-    /// limit must be at least one.
+    /// This may span multiple provider responses, subject to the request's
+    /// paging limit.
     pub limit: Option<u32>,
 }
 
@@ -53,14 +49,14 @@ impl CandleRequest {
         }
     }
 
-    /// Returns candles opening at or after this time.
+    /// Sets the inclusive bound `open_time >= from`.
     #[must_use]
     pub fn from(mut self, from: Timestamp) -> Self {
         self.from = Some(from);
         self
     }
 
-    /// Returns candles opening strictly before this time.
+    /// Sets the exclusive bound `open_time < to`.
     #[must_use]
     pub fn to(mut self, to: Timestamp) -> Self {
         self.to = Some(to);
@@ -159,8 +155,10 @@ pub struct HistoryRequest {
     pub to: Option<Timestamp>,
     /// Where to resume from. `None` starts at the beginning of the window.
     pub cursor: Option<Cursor>,
-    /// Roughly how many entries to return per page. A provider may return more
-    /// to avoid splitting entries that share one timestamp.
+    /// Target page size, not a hard maximum.
+    ///
+    /// A provider may return more entries to avoid splitting entries that share
+    /// one timestamp.
     pub limit: Option<u32>,
 }
 
@@ -176,14 +174,14 @@ impl HistoryRequest {
         }
     }
 
-    /// Returns entries at or after this time.
+    /// Sets the inclusive bound `item.timestamp >= from`.
     #[must_use]
     pub fn from(mut self, from: Timestamp) -> Self {
         self.from = Some(from);
         self
     }
 
-    /// Returns entries strictly before this time.
+    /// Sets the exclusive bound `item.timestamp < to`.
     #[must_use]
     pub fn to(mut self, to: Timestamp) -> Self {
         self.to = Some(to);
@@ -197,12 +195,11 @@ impl HistoryRequest {
         self
     }
 
-    /// Sets the page size. A total is what the window and the cursor decide.
+    /// Sets the target page size, not a hard maximum.
     ///
-    /// This is not a hard ceiling. A page may be longer when trimming it would
-    /// split entries sharing one timestamp and make the cursor skip entries.
-    /// Do not size a fixed buffer from this value. Zero is invalid; provider
-    /// maximums differ.
+    /// A page may be longer when trimming it would split entries sharing one
+    /// timestamp and make the cursor skip entries. Do not size a fixed buffer
+    /// from this value. Zero is invalid; provider maximums differ.
     #[must_use]
     pub fn limit(mut self, limit: u32) -> Self {
         self.limit = Some(limit);

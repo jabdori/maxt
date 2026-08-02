@@ -73,16 +73,8 @@ async fn main() -> maxt::Result<()> {
 }
 ```
 
-| State | Contract |
-| --- | --- |
-| `Some(Ok(event))` | Event |
-| `Some(Err(error))` | Non-terminal error |
-| `None` | Stream terminated |
-| `MarketEvent::Reconnected` | Events were lost during the disconnect |
-| Stream `Drop` | Close all underlying connections |
-
-After `AccountEvent::Reconnected`, reload state with `balances()` and
-`open_orders()`.
+See [Stream state and cleanup](common-api.md#state) for item errors,
+reconnection, termination, and explicit cleanup.
 
 ## Next steps
 

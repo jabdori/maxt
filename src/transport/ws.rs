@@ -657,6 +657,7 @@ mod tests {
     }
 
     /// Records the authorization header from each handshake before closing.
+    #[allow(clippy::result_large_err)] // `tungstenite` fixes the callback's error response type.
     async fn header_recording_server() -> (std::net::SocketAddr, mpsc::Receiver<String>) {
         use tokio_tungstenite::tungstenite::handshake::server::{Request, Response};
 

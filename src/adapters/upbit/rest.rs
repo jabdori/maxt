@@ -1,5 +1,7 @@
 //! Upbit's public quotation REST API.
 
+use std::cmp::Reverse;
+
 use crate::adapters::candles as candle_pages;
 use crate::error::{Error, Result};
 use crate::feature::Feature;
@@ -201,7 +203,7 @@ pub(crate) async fn trades(
 /// `sequential_id` identifies a trade but is not an ordering key.
 fn newest_first(raw: &[parse::RawTrade]) -> Result<Vec<Trade>> {
     let mut trades = raw.iter().map(parse::trade).collect::<Result<Vec<_>>>()?;
-    trades.sort_by(|left, right| right.timestamp.cmp(&left.timestamp));
+    trades.sort_by_key(|trade| Reverse(trade.timestamp));
 
     Ok(trades)
 }
@@ -403,19 +405,19 @@ mod tests {
     fn every_limit_above_upbits_cap_is_refused_rather_than_clamped() {
         assert!(matches!(
             trades_request(&btc_krw(), Some(501)),
-            Err(Error::InvalidRequest { field: "limit", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "limit"
         ));
         assert!(matches!(
             trades_request(&btc_krw(), Some(0)),
-            Err(Error::InvalidRequest { field: "limit", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "limit"
         ));
         assert!(matches!(
             order_book_request(&[btc_krw()], Some(31)),
-            Err(Error::InvalidRequest { field: "depth", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "depth"
         ));
         assert!(matches!(
             order_book_request(&[btc_krw()], Some(0)),
-            Err(Error::InvalidRequest { field: "depth", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "depth"
         ));
     }
 
@@ -449,17 +451,11 @@ mod tests {
     fn an_empty_market_list_is_a_caller_mistake_not_an_empty_request() {
         assert!(matches!(
             ticker_request(&[]),
-            Err(Error::InvalidRequest {
-                field: "markets",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "markets"
         ));
         assert!(matches!(
             order_book_request(&[], None),
-            Err(Error::InvalidRequest {
-                field: "markets",
-                ..
-            })
+            Err(Error::InvalidRequest { field, .. }) if field == "markets"
         ));
     }
 

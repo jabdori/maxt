@@ -195,7 +195,7 @@ where
     Ok(collected)
 }
 
-/// Reads the oldest `limit` candles at or after `from`.
+/// Reads the oldest `limit` candles where `open_time >= from`.
 ///
 /// Providers may omit empty windows. Each probe therefore expands its end
 /// until it contains the next page of actual candles instead of assuming one
@@ -865,7 +865,7 @@ mod tests {
 
         assert!(matches!(
             read_from(&fake, &request().from(Timestamp::from_secs(0)), 10).await,
-            Err(Error::InvalidRequest { field: "from", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "from"
         ));
         assert!(
             fake.calls.borrow().is_empty(),
@@ -1047,7 +1047,7 @@ mod tests {
         assert!(
             matches!(
                 read_from(&fake, &request, 10).await,
-                Err(Error::InvalidRequest { field: "from", .. })
+                Err(Error::InvalidRequest { field, .. }) if field == "from"
             ),
             "a window that cannot be expressed should not be answered"
         );
@@ -1073,7 +1073,7 @@ mod tests {
 
         assert!(matches!(
             read_from(&fake, &request().limit(0), 10).await,
-            Err(Error::InvalidRequest { field: "limit", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "limit"
         ));
         assert!(fake.calls.borrow().is_empty());
     }
@@ -1084,7 +1084,7 @@ mod tests {
 
         assert!(matches!(
             read_from(&fake, &request().from(minute(50)).to(minute(50)), 10).await,
-            Err(Error::InvalidRequest { field: "from", .. })
+            Err(Error::InvalidRequest { field, .. }) if field == "from"
         ));
         assert!(fake.calls.borrow().is_empty());
     }

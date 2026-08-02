@@ -1,0 +1,26 @@
+[package]
+name = "maxt-bindings-common"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT"
+description = "Language-neutral adapter bridge for maxt language bindings."
+repository = "https://github.com/jabdori/maxt"
+homepage = "https://github.com/jabdori/maxt"
+documentation = "https://docs.rs/maxt-bindings-common"
+exclude = ["/tests/language_binding_inventory.rs"]
+
+[dependencies]
+maxt = { version = "0.1.0", path = "../.." }
+
+[dev-dependencies]
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
+syn = { version = "2", features = ["full"] }
+tokio = { version = "1", features = ["macros", "rt"] }
+
+[lints.rust]
+missing_docs = "warn"
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = "warn"

@@ -162,7 +162,7 @@ impl Adapter for Fictional {
         Box::pin(async move {
             if !wanted {
                 return Err(Error::InvalidRequest {
-                    field: "feeds",
+                    field: "feeds".to_string(),
                     detail: "this exchange publishes trades and nothing else".to_string(),
                 });
             }
@@ -363,7 +363,7 @@ async fn an_outside_adapter_can_return_a_market_stream_that_yields_events() {
         .unwrap_err();
     assert!(matches!(
         error,
-        Error::InvalidRequest { field: "feeds", .. }
+        Error::InvalidRequest { field, .. } if field == "feeds"
     ));
 }
 
@@ -459,17 +459,14 @@ async fn an_outside_adapter_that_implements_nothing_optional_inherits_the_defaul
     // Empty subscriptions are invalid before feature support is considered.
     assert!(matches!(
         client.subscribe(&Subscription::new()).await.unwrap_err(),
-        Error::InvalidRequest {
-            field: "markets",
-            ..
-        }
+        Error::InvalidRequest { field, .. } if field == "markets"
     ));
     assert!(matches!(
         client
             .subscribe(&Subscription::new().market(Fictional::market()))
             .await
             .unwrap_err(),
-        Error::InvalidRequest { field: "feeds", .. }
+        Error::InvalidRequest { field, .. } if field == "feeds"
     ));
     for (feed, expected) in [
         (Feed::Trades, Feature::TradeStream),

@@ -1,0 +1,478 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version without the v prefix
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      maxt_package_exists: ${{ steps.registry.outputs.maxt_package_exists }}
+      common_package_exists: ${{ steps.registry.outputs.common_package_exists }}
+      maxt_version_exists: ${{ steps.registry.outputs.maxt_version_exists }}
+      common_version_exists: ${{ steps.registry.outputs.common_version_exists }}
+      dart_package_exists: ${{ steps.registry.outputs.dart_package_exists }}
+      dart_version_exists: ${{ steps.registry.outputs.dart_version_exists }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14.2"
+
+      - name: Resolve version and release ref
+        id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="$INPUT_VERSION"
+            if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+              echo "::error::Manual releases must run from main."
+              exit 1
+            fi
+          fi
+
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Release version must use X.Y.Z."
+            exit 1
+          fi
+
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::The release commit must be reachable from main."
+            exit 1
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Check manifest versions
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import pathlib
+          import re
+          import tomllib
+
+          root = pathlib.Path.cwd()
+          expected = os.environ["RELEASE_VERSION"]
+
+          def read_toml(path: str):
+              with (root / path).open("rb") as file:
+                  return tomllib.load(file)
+
+          manifests = {
+              "Cargo.toml": read_toml("Cargo.toml")["package"]["version"],
+              "bindings/common/Cargo.toml": read_toml("bindings/common/Cargo.toml")["package"]["version"],
+              "bindings/python/Cargo.toml": read_toml("bindings/python/Cargo.toml")["package"]["version"],
+              "bindings/python/pyproject.toml": read_toml("bindings/python/pyproject.toml")["project"]["version"],
+              "bindings/dart/rust/Cargo.toml": read_toml("bindings/dart/rust/Cargo.toml")["package"]["version"],
+          }
+
+          pubspec = (root / "bindings/dart/pubspec.yaml").read_text()
+          match = re.search(r"(?m)^version:\s*([^\s#]+)", pubspec)
+          if match is None:
+              raise SystemExit("bindings/dart/pubspec.yaml has no top-level version")
+          manifests["bindings/dart/pubspec.yaml"] = match.group(1)
+
+          mismatches = {
+              path: version
+              for path, version in manifests.items()
+              if version != expected
+          }
+          if mismatches:
+              raise SystemExit(
+                  f"release version {expected} does not match manifests: {mismatches}"
+              )
+
+          common = read_toml("bindings/common/Cargo.toml")
+          python = read_toml("bindings/python/Cargo.toml")
+          dart = read_toml("bindings/dart/rust/Cargo.toml")
+          dependencies = {
+              "bindings/common -> maxt": common["dependencies"]["maxt"]["version"],
+              "bindings/python -> maxt": python["dependencies"]["maxt"]["version"],
+              "bindings/python -> maxt-bindings-common": python["dependencies"]["maxt-bindings-common"]["version"],
+              "bindings/dart -> maxt": dart["dependencies"]["maxt"],
+              "bindings/dart -> maxt-bindings-common": dart["dependencies"]["maxt-bindings-common"],
+          }
+          mismatches = {
+              dependency: version
+              for dependency, version in dependencies.items()
+              if version != expected
+          }
+          if mismatches:
+              raise SystemExit(
+                  f"release version {expected} does not match dependencies: {mismatches}"
+              )
+          PY
+
+      - name: Check registry state
+        id: registry
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          check_url() {
+            local output="$1"
+            local url="$2"
+            local response
+            response="$(curl --silent --show-error --location \
+              --retry 3 --retry-delay 2 \
+              --user-agent 'maxt-release-workflow/1.0' \
+              --output /dev/null --write-out '%{http_code}' "$url")"
+            case "$response" in
+              200) echo "$output=true" >> "$GITHUB_OUTPUT" ;;
+              404) echo "$output=false" >> "$GITHUB_OUTPUT" ;;
+              *)
+                echo "::error::Registry check failed for $url with HTTP $response."
+                exit 1
+                ;;
+            esac
+          }
+
+          check_url maxt_package_exists \
+            "https://crates.io/api/v1/crates/maxt"
+          check_url common_package_exists \
+            "https://crates.io/api/v1/crates/maxt-bindings-common"
+          check_url maxt_version_exists \
+            "https://crates.io/api/v1/crates/maxt/$RELEASE_VERSION"
+          check_url common_version_exists \
+            "https://crates.io/api/v1/crates/maxt-bindings-common/$RELEASE_VERSION"
+
+          pub_response="$(mktemp)"
+          pub_status="$(curl --silent --show-error --location \
+            --retry 3 --retry-delay 2 \
+            --user-agent 'maxt-release-workflow/1.0' \
+            --output "$pub_response" --write-out '%{http_code}' \
+            https://pub.dev/api/packages/maxt)"
+          case "$pub_status" in
+            200)
+              echo "dart_package_exists=true" >> "$GITHUB_OUTPUT"
+              PUB_RESPONSE="$pub_response" python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import os
+
+          with open(os.environ["PUB_RESPONSE"]) as file:
+              package = json.load(file)
+          exists = any(
+              release["version"] == os.environ["RELEASE_VERSION"]
+              for release in package["versions"]
+          )
+          print(f"dart_version_exists={str(exists).lower()}")
+          PY
+              ;;
+            404)
+              echo "dart_package_exists=false" >> "$GITHUB_OUTPUT"
+              echo "dart_version_exists=false" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "::error::Registry check failed for pub.dev with HTTP $pub_status."
+              exit 1
+              ;;
+          esac
+
+  ci:
+    name: Full CI gate
+    needs: validate
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  python-wheel:
+    name: Python wheel (${{ matrix.platform }})
+    needs: validate
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            target: x86_64
+            manylinux: "2014"
+            platform: manylinux-x86_64
+          - runner: ubuntu-latest
+            target: aarch64
+            manylinux: "2014"
+            platform: manylinux-aarch64
+          - runner: windows-latest
+            target: x64
+            manylinux: "off"
+            platform: windows-x86_64
+          - runner: macos-15-intel
+            target: x86_64
+            manylinux: "off"
+            platform: macos-x86_64
+          - runner: macos-latest
+            target: aarch64
+            manylinux: "off"
+            platform: macos-aarch64
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.9"
+
+      - name: Build wheel
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
+        with:
+          working-directory: bindings/python
+          maturin-version: v1.14.1
+          target: ${{ matrix.target }}
+          manylinux: ${{ matrix.manylinux }}
+          args: --release --locked --compatibility pypi --out dist
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: python-wheel-${{ matrix.platform }}
+          path: bindings/python/dist/*.whl
+          if-no-files-found: error
+
+  python-sdist:
+    name: Python source distribution
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build source distribution
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
+        with:
+          command: sdist
+          working-directory: bindings/python
+          maturin-version: v1.14.1
+          args: --out dist
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: python-sdist
+          path: bindings/python/dist/*.tar.gz
+          if-no-files-found: error
+
+  python-distributions:
+    name: Check Python distributions
+    needs: [validate, python-wheel, python-sdist]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: python-*
+          path: dist
+          merge-multiple: true
+
+      - uses: astral-sh/setup-uv@v9.0.0
+        with:
+          version: "0.10.4"
+          enable-cache: true
+          cache-dependency-glob: bindings/python/uv.lock
+
+      - name: Check distribution set and metadata
+        env:
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(find dist -maxdepth 1 -name '*.whl' | wc -l)" -eq 5
+          test "$(find dist -maxdepth 1 -name '*.tar.gz' | wc -l)" -eq 1
+          find dist -maxdepth 1 -type f -print0 | while IFS= read -r -d '' file; do
+            case "$(basename "$file")" in
+              maxt-"$RELEASE_VERSION"-*.whl|maxt-"$RELEASE_VERSION".tar.gz) ;;
+              *)
+                echo "::error::Unexpected Python distribution: $file"
+                exit 1
+                ;;
+            esac
+          done
+          uv run --directory bindings/python --frozen twine check "$GITHUB_WORKSPACE"/dist/*
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: python-distributions
+          path: dist/*
+          if-no-files-found: error
+
+  rust-publish:
+    name: Publish Rust crates
+    needs: [validate, ci]
+    if: >-
+      needs.validate.outputs.maxt_version_exists != 'true' ||
+      needs.validate.outputs.common_version_exists != 'true'
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
+
+      - name: Check crates.io bootstrap token
+        id: credentials
+        if: >-
+          needs.validate.outputs.maxt_package_exists != 'true' ||
+          needs.validate.outputs.common_package_exists != 'true'
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        shell: bash
+        run: |
+          if [[ -n "$CARGO_REGISTRY_TOKEN" ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Require a token for a first crate release
+        if: >-
+          steps.credentials.outputs.configured != 'true' &&
+          (needs.validate.outputs.maxt_package_exists != 'true' ||
+          needs.validate.outputs.common_package_exists != 'true')
+        run: |
+          echo "::error::The first crates.io release requires the CARGO_REGISTRY_TOKEN secret."
+          exit 1
+
+      - name: Authenticate with crates.io
+        id: crates-auth
+        if: >-
+          needs.validate.outputs.maxt_package_exists == 'true' &&
+          needs.validate.outputs.common_package_exists == 'true'
+        uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
+
+      - name: Publish maxt
+        if: needs.validate.outputs.maxt_version_exists != 'true'
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.crates-auth.outputs.token || secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish -p maxt --registry crates-io --locked
+
+      - name: Wait for maxt registry propagation
+        env:
+          CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+        shell: bash
+        run: |
+          for attempt in {1..30}; do
+            if cargo info "maxt@$RELEASE_VERSION" \
+              --registry crates-io >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::Cargo could not resolve maxt $RELEASE_VERSION from crates.io."
+          exit 1
+
+      - name: Publish maxt-bindings-common
+        if: needs.validate.outputs.common_version_exists != 'true'
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.crates-auth.outputs.token || secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish -p maxt-bindings-common --registry crates-io --locked
+
+      - name: Wait for maxt-bindings-common registry propagation
+        env:
+          CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+        shell: bash
+        run: |
+          for attempt in {1..30}; do
+            if cargo info "maxt-bindings-common@$RELEASE_VERSION" \
+              --registry crates-io >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::Cargo could not resolve maxt-bindings-common $RELEASE_VERSION from crates.io."
+          exit 1
+
+  rust-ready:
+    name: Rust release ready
+    needs: [validate, ci, rust-publish]
+    if: >-
+      always() &&
+      needs.validate.result == 'success' &&
+      needs.ci.result == 'success' &&
+      (needs.rust-publish.result == 'success' || needs.rust-publish.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Rust crates are available for dependent packages."
+
+  python-publish:
+    name: Publish Python package
+    needs: [ci, python-distributions, rust-ready]
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: python-distributions
+          path: dist
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
+        with:
+          packages-dir: dist
+          skip-existing: true
+
+  dart-publish:
+    name: Publish Dart and Flutter package
+    needs: [validate, ci, rust-ready]
+    if: >-
+      github.event_name == 'push' &&
+      needs.validate.outputs.dart_package_exists == 'true' &&
+      needs.validate.outputs.dart_version_exists != 'true'
+    permissions:
+      id-token: write
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@65eb853c7ba17dde3be364c3d2858773e7144260 # v1
+    with:
+      working-directory: bindings/dart
+      environment: pub.dev
+
+  dart-notice:
+    name: Dart publication status
+    needs: [validate, ci, rust-ready, dart-publish]
+    if: always() && needs.validate.result == 'success' && needs.dart-publish.result == 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Explain skipped Dart publication
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PACKAGE_EXISTS: ${{ needs.validate.outputs.dart_package_exists }}
+          VERSION_EXISTS: ${{ needs.validate.outputs.dart_version_exists }}
+        shell: bash
+        run: |
+          if [[ "$VERSION_EXISTS" == "true" ]]; then
+            echo "Dart version already exists; publication is idempotently skipped."
+          elif [[ "$PACKAGE_EXISTS" != "true" ]]; then
+            echo "::notice::The first pub.dev version must be published manually."
+          elif [[ "$EVENT_NAME" != "push" ]]; then
+            echo "::notice::pub.dev accepts GitHub OIDC publication only from a tag push."
+          fi

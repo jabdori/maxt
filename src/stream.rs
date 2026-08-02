@@ -13,6 +13,41 @@ use crate::types::{AccountEvent, MarketEvent};
 type CloseFuture = Pin<Box<dyn Future<Output = Result<()>> + Send + 'static>>;
 type CloseHook = Box<dyn FnOnce() -> CloseFuture + Send + 'static>;
 
+fn poll_stream<T>(
+    inner: &mut Option<Pin<Box<dyn Stream<Item = Result<T>> + Send>>>,
+    close: &mut Option<CloseHook>,
+    closing: &mut Option<CloseFuture>,
+    cx: &mut Context<'_>,
+) -> Poll<Option<Result<T>>> {
+    if closing.is_none() {
+        match inner.as_mut() {
+            Some(source) => match source.as_mut().poll_next(cx) {
+                Poll::Ready(None) => {
+                    inner.take();
+                    *closing = close.take().map(|close| close());
+                }
+                polled => return polled,
+            },
+            None => return Poll::Ready(None),
+        }
+    }
+
+    let Some(cleanup) = closing.as_mut() else {
+        return Poll::Ready(None);
+    };
+    match cleanup.as_mut().poll(cx) {
+        Poll::Pending => Poll::Pending,
+        Poll::Ready(result) => {
+            *closing = None;
+            inner.take();
+            match result {
+                Ok(()) => Poll::Ready(None),
+                Err(error) => Poll::Ready(Some(Err(error))),
+            }
+        }
+    }
+}
+
 /// A live market data subscription.
 ///
 /// Yields [`MarketEvent`]s until it ends with `None`. Built-in adapters handle
@@ -54,7 +89,8 @@ impl MarketStream {
         }
     }
 
-    /// Wraps an event source with cleanup that explicit [`Self::close`] awaits.
+    /// Wraps an event source with cleanup that natural exhaustion and explicit
+    /// [`Self::close`] await.
     ///
     /// Dropping the stream still drops `inner` immediately. Use `close` when the
     /// producer must confirm asynchronous cleanup, such as a foreign runtime
@@ -97,10 +133,8 @@ impl Stream for MarketStream {
     type Item = Result<MarketEvent>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        match self.inner.as_mut() {
-            Some(inner) => inner.as_mut().poll_next(cx),
-            None => Poll::Ready(None),
-        }
+        let this = self.as_mut().get_mut();
+        poll_stream(&mut this.inner, &mut this.close, &mut this.closing, cx)
     }
 }
 
@@ -145,7 +179,8 @@ impl AccountStream {
         }
     }
 
-    /// Wraps an event source with cleanup that explicit [`Self::close`] awaits.
+    /// Wraps an event source with cleanup that natural exhaustion and explicit
+    /// [`Self::close`] await.
     ///
     /// Dropping the stream still drops `inner` immediately. Use `close` when the
     /// producer must confirm asynchronous cleanup, such as a foreign runtime
@@ -188,10 +223,8 @@ impl Stream for AccountStream {
     type Item = Result<AccountEvent>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        match self.inner.as_mut() {
-            Some(inner) => inner.as_mut().poll_next(cx),
-            None => Poll::Ready(None),
-        }
+        let this = self.as_mut().get_mut();
+        poll_stream(&mut this.inner, &mut this.close, &mut this.closing, cx)
     }
 }
 
@@ -224,6 +257,41 @@ mod tests {
         fn drop(&mut self) {
             self.0.store(true, Ordering::SeqCst);
         }
+    }
+
+    struct CompletesThenDrops<T>(Arc<AtomicBool>, std::marker::PhantomData<T>);
+
+    impl<T> futures_core::Stream for CompletesThenDrops<T> {
+        type Item = T;
+
+        fn poll_next(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+            Poll::Ready(None)
+        }
+    }
+
+    impl<T> Drop for CompletesThenDrops<T> {
+        fn drop(&mut self) {
+            self.0.store(true, Ordering::SeqCst);
+        }
+    }
+
+    #[tokio::test]
+    async fn natural_completion_drops_market_and_account_sources_immediately() {
+        let market_dropped = Arc::new(AtomicBool::new(false));
+        let account_dropped = Arc::new(AtomicBool::new(false));
+        let mut market = MarketStream::new(CompletesThenDrops(
+            Arc::clone(&market_dropped),
+            std::marker::PhantomData,
+        ));
+        let mut account = AccountStream::new(CompletesThenDrops(
+            Arc::clone(&account_dropped),
+            std::marker::PhantomData,
+        ));
+
+        assert!(market.next().await.is_none());
+        assert!(account.next().await.is_none());
+        assert!(market_dropped.load(Ordering::SeqCst));
+        assert!(account_dropped.load(Ordering::SeqCst));
     }
 
     #[tokio::test]

@@ -1,5 +1,7 @@
 import 'dart:ffi';
+import 'dart:io';
 
+import 'package:ffi/ffi.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 import 'rust/frb_generated.dart';
@@ -9,6 +11,12 @@ import 'rust/frb_generated.dart';
   assetId: 'package:maxt/src/rust/frb_generated.io.dart',
 )
 external void _forceLoadNativeAsset();
+
+@Native<Pointer<Utf8> Function()>(
+  symbol: 'maxt_dart_bridge_library_path',
+  assetId: 'package:maxt/src/rust/frb_generated.io.dart',
+)
+external Pointer<Utf8> _nativeLibraryPath();
 
 /// maxt 네이티브 런타임의 생명 주기를 관리합니다.
 abstract final class Maxt {
@@ -32,9 +40,28 @@ abstract final class Maxt {
   static Future<void> _initialize() async {
     _forceLoadNativeAsset();
     await MaxtRustLib.init(
-      externalLibrary: ExternalLibrary.process(iKnowHowToUseIt: true),
+      externalLibrary: _externalLibrary(),
     );
     _initialized = true;
+  }
+
+  static ExternalLibrary _externalLibrary() {
+    if (Platform.isIOS) {
+      return ExternalLibrary.process(iKnowHowToUseIt: true);
+    }
+
+    final pointer = _nativeLibraryPath();
+    if (pointer == nullptr) {
+      throw StateError('Could not locate the native maxt library.');
+    }
+
+    final path = pointer.toDartString();
+    if (Platform.isMacOS &&
+        !path.endsWith('.dylib') &&
+        !path.contains('.framework/')) {
+      return ExternalLibrary.process(iKnowHowToUseIt: true);
+    }
+    return ExternalLibrary.open(path);
   }
 
   /// 현재 isolate의 네이티브 런타임 자원을 정리합니다.

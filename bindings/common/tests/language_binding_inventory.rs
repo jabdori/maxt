@@ -507,7 +507,7 @@ fn exported_public_type_sources(root: &Path) -> BTreeMap<String, (String, String
     let src = root.join("src");
     let mut modules = BTreeMap::new();
     collect_rust_sources(&src, &src, &mut modules);
-    resolve_public_type_sources(&modules, &[Vec::new()])
+    resolve_public_type_sources(&modules, &[Vec::new(), vec!["adapters".to_owned()]])
 }
 
 fn qualified_variants(source: &str, prefix: &str) -> BTreeSet<String> {
@@ -652,6 +652,7 @@ enum BindingMemberKind {
     StaticMethod,
     Constructor,
     Getter,
+    StaticGetter,
     Factory,
     Field,
     EnumValue,
@@ -668,6 +669,7 @@ impl BindingMemberKind {
             Self::StaticMethod => "static_method",
             Self::Constructor => "constructor",
             Self::Getter => "getter",
+            Self::StaticGetter => "static_getter",
             Self::Factory => "factory",
             Self::Field => "field",
             Self::EnumValue => "enum_value",
@@ -801,32 +803,47 @@ const MARKET_KIND_VALUE_MEMBERS: &[ValueMemberContract] = &[value_member(
     binding_member(BindingMemberKind::Getter, "isDerivative"),
 )];
 
+const BINANCE_LISTEN_KEY_VALUE_MEMBERS: &[ValueMemberContract] = &[value_member(
+    "as_str",
+    binding_member(BindingMemberKind::Property, "value"),
+    binding_member(BindingMemberKind::Getter, "value"),
+)];
+
 const MARKET_VALUE_MEMBERS: &[ValueMemberContract] = &[
     shaped_value_member(
         "spot",
-        "associated:spot(base,exchange,quote)",
-        binding_member(BindingMemberKind::ClassMethod, "spot(base,exchange,quote)"),
-        binding_member(BindingMemberKind::Factory, "spot(base,exchange,quote)"),
+        "associated:spot(pos:exchange,pos:base,pos:quote)",
+        binding_member(
+            BindingMemberKind::ClassMethod,
+            "spot(arg:exchange,arg:base,arg:quote)",
+        ),
+        binding_member(
+            BindingMemberKind::Factory,
+            "spot(pos:exchange,pos:base,pos:quote)",
+        ),
     ),
     shaped_value_member(
         "perpetual",
-        "associated:perpetual(base,exchange,quote)",
+        "associated:perpetual(pos:exchange,pos:base,pos:quote)",
         binding_member(
             BindingMemberKind::ClassMethod,
-            "perpetual(base,exchange,quote)",
+            "perpetual(arg:exchange,arg:base,arg:quote)",
         ),
-        binding_member(BindingMemberKind::Factory, "perpetual(base,exchange,quote)"),
+        binding_member(
+            BindingMemberKind::Factory,
+            "perpetual(pos:exchange,pos:base,pos:quote)",
+        ),
     ),
     shaped_value_member(
         "new",
-        "associated:new(base,exchange,kind,quote)",
+        "associated:new(pos:exchange,pos:kind,pos:base,pos:quote)",
         binding_member(
             BindingMemberKind::Constructor,
-            "Market(base,exchange,kind,quote)",
+            "Market(arg:exchange,arg:kind,arg:base,arg:quote)",
         ),
         binding_member(
             BindingMemberKind::Constructor,
-            "Market(base,exchange,kind,quote)",
+            "Market(pos:exchange,pos:kind,pos:base,pos:quote)",
         ),
     ),
 ];
@@ -868,9 +885,12 @@ const INTERVAL_VALUE_MEMBERS: &[ValueMemberContract] = &[
     ),
     shaped_value_member(
         "advance",
-        "instance:advance(at,count)",
-        binding_member(BindingMemberKind::Method, "advance(count,timestamp_ns)"),
-        binding_member(BindingMemberKind::Method, "advance(at,count)"),
+        "instance:advance(pos:at,pos:count)",
+        binding_member(
+            BindingMemberKind::Method,
+            "advance(arg:timestamp_ns,arg:count)",
+        ),
+        binding_member(BindingMemberKind::Method, "advance(pos:at,pos:count)"),
     ),
 ];
 
@@ -907,9 +927,9 @@ const PAGE_VALUE_MEMBERS: &[ValueMemberContract] = &[value_member(
 const CURSOR_VALUE_MEMBERS: &[ValueMemberContract] = &[
     shaped_value_member(
         "new",
-        "associated:new(cursor)",
-        binding_member(BindingMemberKind::StringRepresentation, "Cursor(value)"),
-        binding_member(BindingMemberKind::Constructor, "Cursor(value)"),
+        "associated:new(pos:cursor)",
+        binding_member(BindingMemberKind::StringRepresentation, "Cursor(pos:value)"),
+        binding_member(BindingMemberKind::Constructor, "Cursor(pos:value)"),
     ),
     value_member(
         "as_str",
@@ -924,27 +944,27 @@ const SUBSCRIPTION_VALUE_MEMBERS: &[ValueMemberContract] = &[
         "associated:new",
         binding_member(
             BindingMemberKind::Constructor,
-            "Subscription(feeds,markets)",
+            "Subscription(arg:markets,arg:feeds)",
         ),
         binding_member(BindingMemberKind::Constructor, "Subscription"),
     ),
     shaped_value_member(
         "market",
-        "instance:market(market)",
+        "instance:market(pos:market)",
         binding_member(BindingMemberKind::Field, "markets"),
-        binding_member(BindingMemberKind::Method, "withMarket(market)"),
+        binding_member(BindingMemberKind::Method, "withMarket(pos:market)"),
     ),
     shaped_value_member(
         "markets_iter",
-        "instance:markets_iter(markets)",
+        "instance:markets_iter(pos:markets)",
         binding_member(BindingMemberKind::Field, "markets"),
-        binding_member(BindingMemberKind::Method, "withMarkets(values)"),
+        binding_member(BindingMemberKind::Method, "withMarkets(pos:values)"),
     ),
     shaped_value_member(
         "feed",
-        "instance:feed(feed)",
+        "instance:feed(pos:feed)",
         binding_member(BindingMemberKind::Field, "feeds"),
-        binding_member(BindingMemberKind::Method, "withFeed(feed)"),
+        binding_member(BindingMemberKind::Method, "withFeed(pos:feed)"),
     ),
     value_member(
         "markets",
@@ -961,27 +981,36 @@ const SUBSCRIPTION_VALUE_MEMBERS: &[ValueMemberContract] = &[
 const TIMESTAMP_VALUE_MEMBERS: &[ValueMemberContract] = &[
     shaped_value_member(
         "from_nanos",
-        "associated:from_nanos(nanos)",
+        "associated:from_nanos(pos:nanos)",
         binding_member(BindingMemberKind::IntRepresentation, "Timestamp"),
-        binding_member(BindingMemberKind::Factory, "fromNanoseconds(nanoseconds)"),
+        binding_member(
+            BindingMemberKind::Factory,
+            "fromNanoseconds(pos:nanoseconds)",
+        ),
     ),
     shaped_value_member(
         "from_micros",
-        "associated:from_micros(micros)",
+        "associated:from_micros(pos:micros)",
         binding_member(BindingMemberKind::IntRepresentation, "Timestamp"),
-        binding_member(BindingMemberKind::Factory, "fromMicroseconds(microseconds)"),
+        binding_member(
+            BindingMemberKind::Factory,
+            "fromMicroseconds(pos:microseconds)",
+        ),
     ),
     shaped_value_member(
         "from_millis",
-        "associated:from_millis(millis)",
+        "associated:from_millis(pos:millis)",
         binding_member(BindingMemberKind::IntRepresentation, "Timestamp"),
-        binding_member(BindingMemberKind::Factory, "fromMilliseconds(milliseconds)"),
+        binding_member(
+            BindingMemberKind::Factory,
+            "fromMilliseconds(pos:milliseconds)",
+        ),
     ),
     shaped_value_member(
         "from_secs",
-        "associated:from_secs(secs)",
+        "associated:from_secs(pos:secs)",
         binding_member(BindingMemberKind::IntRepresentation, "Timestamp"),
-        binding_member(BindingMemberKind::Factory, "fromSeconds(seconds)"),
+        binding_member(BindingMemberKind::Factory, "fromSeconds(pos:seconds)"),
     ),
     value_member(
         "as_nanos",
@@ -1010,23 +1039,23 @@ const TIMESTAMP_VALUE_MEMBERS: &[ValueMemberContract] = &[
 const MARKET_EVENT_VALUE_MEMBERS: &[ValueMemberContract] = &[
     value_member(
         "Trade",
-        binding_member(BindingMemberKind::ClassMethod, "trade(trade)"),
-        binding_member(BindingMemberKind::Factory, "trade(value)"),
+        binding_member(BindingMemberKind::ClassMethod, "trade(arg:trade)"),
+        binding_member(BindingMemberKind::Factory, "trade(pos:value)"),
     ),
     value_member(
         "OrderBook",
-        binding_member(BindingMemberKind::ClassMethod, "order_book(order_book)"),
-        binding_member(BindingMemberKind::Factory, "orderBook(value)"),
+        binding_member(BindingMemberKind::ClassMethod, "order_book(arg:order_book)"),
+        binding_member(BindingMemberKind::Factory, "orderBook(pos:value)"),
     ),
     value_member(
         "Ticker",
-        binding_member(BindingMemberKind::ClassMethod, "ticker(ticker)"),
-        binding_member(BindingMemberKind::Factory, "ticker(value)"),
+        binding_member(BindingMemberKind::ClassMethod, "ticker(arg:ticker)"),
+        binding_member(BindingMemberKind::Factory, "ticker(pos:value)"),
     ),
     value_member(
         "Candle",
-        binding_member(BindingMemberKind::ClassMethod, "candle(candle)"),
-        binding_member(BindingMemberKind::Factory, "candle(value)"),
+        binding_member(BindingMemberKind::ClassMethod, "candle(arg:candle)"),
+        binding_member(BindingMemberKind::Factory, "candle(pos:value)"),
     ),
     value_member(
         "Reconnected",
@@ -1038,13 +1067,13 @@ const MARKET_EVENT_VALUE_MEMBERS: &[ValueMemberContract] = &[
 const ACCOUNT_EVENT_VALUE_MEMBERS: &[ValueMemberContract] = &[
     value_member(
         "Balance",
-        binding_member(BindingMemberKind::ClassMethod, "balance(balance)"),
-        binding_member(BindingMemberKind::Factory, "balance(value)"),
+        binding_member(BindingMemberKind::ClassMethod, "balance(arg:balance)"),
+        binding_member(BindingMemberKind::Factory, "balance(pos:value)"),
     ),
     value_member(
         "Order",
-        binding_member(BindingMemberKind::ClassMethod, "order(order)"),
-        binding_member(BindingMemberKind::Factory, "order(value)"),
+        binding_member(BindingMemberKind::ClassMethod, "order(arg:order)"),
+        binding_member(BindingMemberKind::Factory, "order(pos:value)"),
     ),
     value_member(
         "Reconnected",
@@ -1055,7 +1084,7 @@ const ACCOUNT_EVENT_VALUE_MEMBERS: &[ValueMemberContract] = &[
 
 const MARKET_PYTHON_ONLY_MEMBERS: &[BindingMember] = &[binding_member(
     BindingMemberKind::ClassMethod,
-    "from_wire(value)",
+    "from_wire(arg:value)",
 )];
 const CURSOR_PYTHON_ONLY_MEMBERS: &[BindingMember] =
     &[binding_member(BindingMemberKind::Method, "to_wire")];
@@ -1068,16 +1097,51 @@ fn python_language_only_members(name: &str) -> &'static [BindingMember] {
     }
 }
 
-const VERIFIED_PUBLIC_METHOD_TYPE_EXCLUSIONS: &[&str] = &[
-    "AccountStream",
-    "CandleRequest",
-    "Client",
-    "Error",
-    "HistoryRequest",
-    "MarginRequest",
-    "MarketStream",
-    "OrderRequest",
+struct ExactPublicMethodType {
+    name: &'static str,
+    rust_source: &'static str,
+    methods: &'static [&'static str],
+}
+
+const VERIFIED_PUBLIC_METHOD_TYPE_EXCLUSIONS: &[ExactPublicMethodType] = &[
+    ExactPublicMethodType {
+        name: "AccountStream",
+        rust_source: include_str!("../../../src/stream.rs"),
+        methods: &["new", "new_with_close", "close"],
+    },
+    ExactPublicMethodType {
+        name: "CandleRequest",
+        rust_source: include_str!("../../../src/request.rs"),
+        methods: &["new", "from", "to", "limit"],
+    },
+    ExactPublicMethodType {
+        name: "Error",
+        rust_source: include_str!("../../../src/error.rs"),
+        methods: &["is_retryable", "is_rate_limited", "adapter"],
+    },
+    ExactPublicMethodType {
+        name: "HistoryRequest",
+        rust_source: include_str!("../../../src/request.rs"),
+        methods: &["new", "from", "to", "cursor", "limit"],
+    },
+    ExactPublicMethodType {
+        name: "MarginRequest",
+        rust_source: include_str!("../../../src/request.rs"),
+        methods: &["new", "leverage", "margin_mode"],
+    },
+    ExactPublicMethodType {
+        name: "MarketStream",
+        rust_source: include_str!("../../../src/stream.rs"),
+        methods: &["new", "new_with_close", "close"],
+    },
+    ExactPublicMethodType {
+        name: "OrderRequest",
+        rust_source: include_str!("../../../src/request.rs"),
+        methods: &["market", "limit", "time_in_force", "reduce_only"],
+    },
 ];
+
+const CLIENT_METHOD_PARITY_TYPE: &str = "Client";
 
 const VALUE_TYPE_CONTRACTS: &[ValueTypeContract<'static>] = &[
     ValueTypeContract {
@@ -1109,6 +1173,16 @@ const VALUE_TYPE_CONTRACTS: &[ValueTypeContract<'static>] = &[
         python_surface: PythonValueSurface::Class,
         dart_surface: DartValueSurface::Extension,
         members: MARKET_KIND_VALUE_MEMBERS,
+    },
+    ValueTypeContract {
+        name: "BinanceListenKey",
+        rust_source: include_str!("../../../src/adapters/binance/private.rs"),
+        python_source: PYTHON_ADAPTERS,
+        dart_source: DART_ADAPTERS,
+        rust_surface: RustValueSurface::Methods,
+        python_surface: PythonValueSurface::Class,
+        dart_surface: DartValueSurface::Class { fields: false },
+        members: BINANCE_LISTEN_KEY_VALUE_MEMBERS,
     },
     ValueTypeContract {
         name: "Market",
@@ -1253,12 +1327,17 @@ const VALUE_TYPE_CONTRACTS: &[ValueTypeContract<'static>] = &[
 ];
 
 fn member_shape_key<T: AsRef<str>>(kind: &str, name: &str, required: &[T]) -> String {
-    let mut required = required.iter().map(AsRef::as_ref).collect::<Vec<_>>();
-    required.sort_unstable();
     if required.is_empty() {
         return format!("{kind}:{name}");
     }
-    format!("{kind}:{name}({})", required.join(","))
+    format!(
+        "{kind}:{name}({})",
+        required
+            .iter()
+            .map(AsRef::as_ref)
+            .collect::<Vec<_>>()
+            .join(",")
+    )
 }
 
 fn binding_member_key(member: BindingMember) -> String {
@@ -1341,8 +1420,9 @@ fn assert_value_type_contract(contract: &ValueTypeContract<'_>) {
     );
 }
 
-fn rust_typed_parameter_names(method: &ImplItemFn) -> BTreeSet<String> {
-    let mut parameters = BTreeSet::new();
+fn rust_typed_parameters(method: &ImplItemFn) -> Vec<String> {
+    let mut seen = BTreeSet::new();
+    let mut parameters = Vec::new();
     for input in &method.sig.inputs {
         let FnArg::Typed(input) = input else {
             continue;
@@ -1358,12 +1438,14 @@ fn rust_typed_parameter_names(method: &ImplItemFn) -> BTreeSet<String> {
             "Rust method {} parameter must use an identifier pattern",
             method.sig.ident
         );
+        let parameter = pattern.ident.to_string();
         assert!(
-            parameters.insert(pattern.ident.to_string()),
+            seen.insert(parameter.clone()),
             "Rust method {} has duplicate parameter {}",
             method.sig.ident,
             pattern.ident
         );
+        parameters.push(parameter);
     }
     parameters
 }
@@ -1374,8 +1456,9 @@ fn rust_method_shape(method: &ImplItemFn) -> String {
         .inputs
         .iter()
         .any(|input| matches!(input, FnArg::Receiver(_)));
-    let required = rust_typed_parameter_names(method)
+    let required = rust_typed_parameters(method)
         .into_iter()
+        .map(|parameter| format!("pos:{parameter}"))
         .collect::<Vec<_>>();
     member_shape_key(
         if instance { "instance" } else { "associated" },
@@ -1408,7 +1491,9 @@ fn rust_method_parameters(source: &str, name: &str, method: &str) -> BTreeSet<St
         1,
         "Rust {name}::{method} must exist exactly once"
     );
-    rust_typed_parameter_names(&matches.pop().expect("one Rust method"))
+    rust_typed_parameters(&matches.pop().expect("one Rust method"))
+        .into_iter()
+        .collect()
 }
 
 fn rust_type_contains_self(r#type: &Type) -> bool {
@@ -1452,7 +1537,7 @@ fn rust_public_associated_constructors(
         })
         .map(|method| {
             let name = method.sig.ident.to_string();
-            let parameters = rust_typed_parameter_names(&method);
+            let parameters = rust_typed_parameters(&method).into_iter().collect();
             (name, parameters)
         })
         .collect()
@@ -1475,7 +1560,7 @@ fn rust_self_returning_methods(source: &str, name: &str) -> BTreeMap<String, BTr
         })
         .map(|method| {
             let name = method.sig.ident.to_string();
-            let parameters = rust_typed_parameter_names(&method);
+            let parameters = rust_typed_parameters(&method).into_iter().collect();
             (name, parameters)
         })
         .collect()
@@ -1592,12 +1677,7 @@ fn python_class_fields(source: &str, name: &str) -> BTreeSet<String> {
         .collect()
 }
 
-fn python_parameters(
-    source: &str,
-    name: &str,
-    method: &str,
-    required_only: bool,
-) -> BTreeSet<String> {
+fn python_parameters(source: &str, name: &str, method: &str, required_only: bool) -> Vec<String> {
     let body = python_class_body(source, name);
     let member_depth = python_member_depth(body);
     let marker = format!("def {method}(");
@@ -1615,10 +1695,21 @@ fn python_parameters(
         .unwrap_or_else(|| panic!("Python class {name} method {method} must exist"));
 
     let label = format!("Python {name}.{method}");
-    let mut parameters = BTreeMap::new();
-    for parameter in split_top_level_commas(parenthesized_contents(declaration, &label)) {
+    let declarations = split_top_level_commas(parenthesized_contents(declaration, &label));
+    let positional_only_end = declarations
+        .iter()
+        .position(|parameter| parameter.trim() == "/");
+    let keyword_only_start = declarations
+        .iter()
+        .position(|parameter| parameter.trim_start().starts_with('*'));
+    let mut seen = BTreeMap::new();
+    let mut parameters = Vec::new();
+    for (index, parameter) in declarations.into_iter().enumerate() {
         let parameter = parameter.trim();
         if matches!(parameter, "" | "/" | "*") || (required_only && parameter.contains('=')) {
+            continue;
+        }
+        if required_only && parameter.starts_with('*') {
             continue;
         }
         let parameter = parameter.trim_start_matches('*').trim_start();
@@ -1629,20 +1720,35 @@ fn python_parameters(
             "Python {name}.{method} parameter must use an identifier: {parameter}"
         );
         if identifier != "self" && identifier != "cls" {
-            insert_normalized_parameter(&mut parameters, &label, identifier);
+            let identifier = insert_normalized_parameter(&mut seen, &label, identifier);
+            let group = if positional_only_end.is_some_and(|end| index < end) {
+                "pos"
+            } else if keyword_only_start.is_some_and(|start| index > start) {
+                "kw"
+            } else {
+                "arg"
+            };
+            parameters.push(format!("{group}:{identifier}"));
         }
     }
-    parameters.into_keys().collect()
+    parameters
 }
 
 fn python_method_parameters(source: &str, name: &str, method: &str) -> BTreeSet<String> {
     python_parameters(source, name, method, false)
+        .into_iter()
+        .map(|parameter| {
+            parameter
+                .split_once(':')
+                .expect("Python parameter shape has a group")
+                .1
+                .to_owned()
+        })
+        .collect()
 }
 
 fn python_required_method_parameters(source: &str, name: &str, method: &str) -> Vec<String> {
     python_parameters(source, name, method, true)
-        .into_iter()
-        .collect()
 }
 
 fn python_decorated_method_names(source: &str, name: &str, decorator: &str) -> BTreeSet<String> {
@@ -1699,23 +1805,15 @@ fn python_classmethod_parameters(source: &str, name: &str) -> BTreeMap<String, B
 }
 
 fn python_class_methods(source: &str, name: &str, async_only: bool) -> BTreeSet<String> {
-    let marker = format!("class {name}(");
-    let mut found = false;
+    let body = python_class_body(source, name);
+    let member_depth = python_member_depth(body);
     let mut methods = BTreeSet::new();
-    for line in source.lines() {
-        if !found {
-            found = line.starts_with(&marker);
+    for line in body.lines() {
+        let depth = line.len() - line.trim_start_matches([' ', '\t']).len();
+        if depth != member_depth {
             continue;
         }
-        if !line.is_empty() && !line.starts_with(' ') {
-            break;
-        }
-        let Some(member) = line.strip_prefix("    ") else {
-            continue;
-        };
-        if member.starts_with(' ') {
-            continue;
-        }
+        let member = line.trim();
         let declaration = if let Some(value) = member.strip_prefix("async def ") {
             value
         } else if !async_only {
@@ -1731,7 +1829,6 @@ fn python_class_methods(source: &str, name: &str, async_only: bool) -> BTreeSet<
             methods.insert(method.to_owned());
         }
     }
-    assert!(found, "Python class {name} must exist");
     methods
 }
 
@@ -1827,7 +1924,10 @@ fn python_value_members(source: &str, name: &str, surface: PythonValueSurface) -
             )));
         }
         PythonValueSurface::Dataclass { fields } => {
-            let required = python_class_field_names(source, name, true);
+            let required = python_class_field_names(source, name, true)
+                .into_iter()
+                .map(|parameter| format!("arg:{parameter}"))
+                .collect::<Vec<_>>();
             members.insert(member_shape_key(
                 BindingMemberKind::Constructor.label(),
                 name,
@@ -1861,7 +1961,7 @@ fn python_value_members(source: &str, name: &str, surface: PythonValueSurface) -
             members.insert(member_shape_key(
                 BindingMemberKind::StringRepresentation.label(),
                 name,
-                &["value"],
+                &["pos:value"],
             ));
         }
         PythonValueSurface::Class | PythonValueSurface::Int => {}
@@ -2301,8 +2401,13 @@ fn dart_value_member(
     let tokens = declaration.split_whitespace().collect::<Vec<_>>();
     if let Some(getter) = tokens.iter().position(|token| *token == "get") {
         let name = tokens.get(getter + 1)?.trim_end_matches([';', '{']);
+        let kind = if tokens.contains(&"static") {
+            BindingMemberKind::StaticGetter
+        } else {
+            BindingMemberKind::Getter
+        };
         return (!name.starts_with('_') && is_identifier(name))
-            .then(|| format!("{}:{name}", BindingMemberKind::Getter.label()));
+            .then(|| format!("{}:{name}", kind.label()));
     }
     if tokens.contains(&"operator") {
         return None;
@@ -2391,7 +2496,7 @@ fn dart_class_fields(source: &str, name: &str) -> BTreeSet<String> {
         .collect()
 }
 
-fn dart_parameters(declaration: &str, label: &str, required_only: bool) -> BTreeSet<String> {
+fn dart_parameters(declaration: &str, label: &str, required_only: bool) -> Vec<String> {
     #[derive(Clone, Copy)]
     enum Group {
         Positional,
@@ -2404,7 +2509,8 @@ fn dart_parameters(declaration: &str, label: &str, required_only: bool) -> BTree
         label: &str,
         required_only: bool,
         group: Group,
-        parameters: &mut BTreeMap<String, String>,
+        seen: &mut BTreeMap<String, String>,
+        parameters: &mut Vec<String>,
     ) {
         for parameter in split_top_level_commas(source) {
             let parameter = parameter.trim();
@@ -2415,14 +2521,21 @@ fn dart_parameters(declaration: &str, label: &str, required_only: bool) -> BTree
                 .strip_prefix('{')
                 .and_then(|parameter| parameter.strip_suffix('}'))
             {
-                collect(nested, label, required_only, Group::Named, parameters);
+                collect(nested, label, required_only, Group::Named, seen, parameters);
                 continue;
             }
             if let Some(nested) = parameter
                 .strip_prefix('[')
                 .and_then(|parameter| parameter.strip_suffix(']'))
             {
-                collect(nested, label, required_only, Group::Optional, parameters);
+                collect(
+                    nested,
+                    label,
+                    required_only,
+                    Group::Optional,
+                    seen,
+                    parameters,
+                );
                 continue;
             }
 
@@ -2450,29 +2563,44 @@ fn dart_parameters(declaration: &str, label: &str, required_only: bool) -> BTree
                 is_identifier(identifier),
                 "{label} parameter must use an identifier: {parameter}"
             );
-            insert_normalized_parameter(parameters, label, identifier);
+            let identifier = insert_normalized_parameter(seen, label, identifier);
+            let group = match group {
+                Group::Positional => "pos",
+                Group::Named => "named",
+                Group::Optional => "optional",
+            };
+            parameters.push(format!("{group}:{identifier}"));
         }
     }
 
-    let mut parameters = BTreeMap::new();
+    let mut seen = BTreeMap::new();
+    let mut parameters = Vec::new();
     collect(
         parenthesized_contents(declaration, label),
         label,
         required_only,
         Group::Positional,
+        &mut seen,
         &mut parameters,
     );
-    parameters.into_keys().collect()
+    parameters
 }
 
 fn dart_parameter_names(declaration: &str, label: &str) -> BTreeSet<String> {
     dart_parameters(declaration, label, false)
+        .into_iter()
+        .map(|parameter| {
+            parameter
+                .split_once(':')
+                .expect("Dart parameter shape has a group")
+                .1
+                .to_owned()
+        })
+        .collect()
 }
 
 fn dart_required_parameter_names(declaration: &str, label: &str) -> Vec<String> {
     dart_parameters(declaration, label, true)
-        .into_iter()
-        .collect()
 }
 
 fn dart_factory_parameters(source: &str, class_name: &str) -> BTreeMap<String, BTreeSet<String>> {
@@ -2598,6 +2726,14 @@ fn assert_inventory(label: &str, expected: &BTreeSet<String>, actual: &BTreeSet<
     );
 }
 
+fn assert_exact_public_methods(label: &str, source: &str, name: &str, allowed: &[&str]) {
+    assert_inventory(
+        label,
+        &allowed.iter().map(|method| (*method).to_owned()).collect(),
+        &rust_public_value_methods(source, name),
+    );
+}
+
 fn dart_enum_values(source: &str, name: &str) -> Vec<String> {
     dart_block(source, &format!("enum {name}"))
         .split(',')
@@ -2709,11 +2845,12 @@ fn insert_normalized_parameter(
     parameters: &mut BTreeMap<String, String>,
     label: &str,
     original: &str,
-) {
+) -> String {
     let normalized = snake_case(original);
     if let Some(previous) = parameters.insert(normalized.clone(), original.to_owned()) {
         panic!("{label} parameters {previous} and {original} normalize to duplicate {normalized}");
     }
+    normalized
 }
 
 fn rust_variant_ids(source: &str, name: &str) -> BTreeSet<String> {
@@ -3590,14 +3727,14 @@ fn value_contract_rejects_rust_call_form_mismatch() {
 
 #[test]
 #[should_panic(
-    expected = "Python Example value members differ; missing: {\"class_method:create(value)\"}; extra: {\"class_method:create\"}"
+    expected = "Python Example value members differ; missing: {\"class_method:create(arg:value)\"}; extra: {\"class_method:create\"}"
 )]
 fn value_contract_rejects_required_parameter_drift() {
     let members = [shaped_value_member(
         "create",
-        "associated:create(value)",
-        binding_member(BindingMemberKind::ClassMethod, "create(value)"),
-        binding_member(BindingMemberKind::Factory, "create(value)"),
+        "associated:create(pos:value)",
+        binding_member(BindingMemberKind::ClassMethod, "create(arg:value)"),
+        binding_member(BindingMemberKind::Factory, "create(pos:value)"),
     )];
     assert_example_value_contract(
         "struct Example; impl Example { pub fn create(value: u32) -> Self { Self } }",
@@ -3635,6 +3772,60 @@ define_example!();
         "class Example(object):\n    def known(self):\n        pass\n",
         "final class Example { bool get known => true; }",
         &members,
+    );
+}
+
+#[test]
+fn required_parameter_shapes_preserve_order_and_call_groups() {
+    let method =
+        syn::parse_str::<ImplItemFn>("pub fn create(second: u8, first: u8) -> Self { Self }")
+            .expect("fixture Rust method must parse");
+    assert_eq!(
+        rust_method_shape(&method),
+        "associated:create(pos:second,pos:first)"
+    );
+
+    let python =
+        "class Example(object):\n    def create(self, first, /, second, *, third):\n        pass\n";
+    assert_eq!(
+        python_required_method_parameters(python, "Example", "create")
+            .into_iter()
+            .collect::<Vec<_>>(),
+        ["pos:first", "arg:second", "kw:third"]
+    );
+
+    let dart = "factory Example.create(int first, {required int second}) => Example._()";
+    assert_eq!(
+        dart_required_parameter_names(dart, "Dart Example.create"),
+        ["pos:first", "named:second"]
+    );
+}
+
+#[test]
+fn dart_value_parser_distinguishes_static_getters() {
+    assert_eq!(
+        dart_value_member("static bool get ready => true", "Example", false, false).as_deref(),
+        Some("static_getter:ready")
+    );
+}
+
+#[test]
+#[should_panic(expected = "Excluded Example methods differ; missing: {}; extra: {\"future\"}")]
+fn excluded_public_method_inventory_rejects_drift() {
+    assert_exact_public_methods(
+        "Excluded Example methods",
+        "struct Example; impl Example { pub fn known(&self) {} pub fn future(&self) {} }",
+        "Example",
+        &["known"],
+    );
+}
+
+#[test]
+fn public_type_inventory_reads_adapter_namespace() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    assert!(
+        exported_public_type_sources(&root).contains_key("BinanceListenKey"),
+        "public adapter namespace types must participate in method classification"
     );
 }
 
@@ -3981,12 +4172,19 @@ fn adapter_and_client_methods_match_every_language() {
             .collect()
     );
 
-    let mut client = rust_public_methods(CORE_CLIENT, "Client", false);
+    let mut client = rust_public_methods(CORE_CLIENT, CLIENT_METHOD_PARITY_TYPE, false);
     client.remove("new");
-    assert_eq!(python_class_methods(PYTHON_API, "Client", false), client);
+    assert_eq!(
+        python_class_methods(PYTHON_API, CLIENT_METHOD_PARITY_TYPE, false),
+        client
+    );
     client.remove("into_adapter");
     assert_eq!(
-        dart_class_members(DART_CLIENT, "final class Client", false),
+        dart_class_members(
+            DART_CLIENT,
+            &format!("final class {CLIENT_METHOD_PARITY_TYPE}"),
+            false,
+        ),
         client.iter().map(|value| camel_case(value)).collect()
     );
 }
@@ -4281,12 +4479,31 @@ fn every_public_inherent_method_type_is_classified() {
         .collect::<BTreeSet<_>>();
     for exclusion in VERIFIED_PUBLIC_METHOD_TYPE_EXCLUSIONS {
         assert!(
-            !expected.contains(*exclusion),
-            "Public method type {exclusion} cannot be both contracted and excluded"
+            !expected.contains(exclusion.name),
+            "Public method type {} cannot be both contracted and excluded",
+            exclusion.name
         );
         assert!(
-            expected.insert((*exclusion).to_owned()),
-            "Public method type exclusion {exclusion} repeats"
+            expected.insert(exclusion.name.to_owned()),
+            "Public method type exclusion {} repeats",
+            exclusion.name
+        );
+        assert_exact_public_methods(
+            &format!("Rust {} classified methods", exclusion.name),
+            exclusion.rust_source,
+            exclusion.name,
+            exclusion.methods,
+        );
+    }
+    assert!(
+        expected.insert(CLIENT_METHOD_PARITY_TYPE.to_owned()),
+        "Client method parity classification repeats"
+    );
+    for provider in PROVIDERS {
+        assert!(
+            expected.insert(provider.adapter.to_owned()),
+            "provider method parity classification repeats {}",
+            provider.adapter
         );
     }
 

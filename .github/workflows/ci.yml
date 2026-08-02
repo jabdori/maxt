@@ -166,6 +166,29 @@ jobs:
       - name: Check pub.dev package
         run: dart pub publish --dry-run
 
+  dart-native-loader:
+    name: Dart native loader (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    defaults:
+      run:
+        working-directory: bindings/dart
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@1.92.0
+
+      - uses: dart-lang/setup-dart@v1
+
+      - name: Install Dart dependencies
+        run: dart pub get
+
+      - name: Test native loader
+        run: dart test test/native_adapters_test.dart --chain-stack-traces
+
   scope:
     name: Repository scope
     runs-on: ubuntu-latest

@@ -417,6 +417,7 @@ class Client(Generic[A]):
         subscription: Subscription,
         config: StreamConfig,
     ) -> MarketStream[Union[StreamEvent[MarketEvent], StreamError]]:
+        """Open a configured stream; `StreamError` items are non-terminal."""
         return await self._delegate.subscribe(subscription, config)
 
     async def balances(self) -> list[Balance]:
@@ -438,6 +439,7 @@ class Client(Generic[A]):
         self,
         config: StreamConfig,
     ) -> AccountStream[Union[StreamEvent[AccountEvent], StreamError]]:
+        """Open a configured account stream; `StreamError` items are non-terminal."""
         return await self._delegate.subscribe_account(config)
 
     async def place_order(self, request: OrderRequest) -> Order:

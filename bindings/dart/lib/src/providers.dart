@@ -89,7 +89,7 @@ final class BinanceSpotOrderDetail {
 
 /// Hyperliquid 비펀딩 원장의 이동 종류입니다.
 final class HyperliquidLedgerKind {
-  const HyperliquidLedgerKind._(this.providerName);
+  const HyperliquidLedgerKind._(this.providerName, [this._isOther = false]);
 
   static const deposit = HyperliquidLedgerKind._('deposit');
   static const withdraw = HyperliquidLedgerKind._('withdraw');
@@ -106,39 +106,22 @@ final class HyperliquidLedgerKind {
   static const vaultDistribution = HyperliquidLedgerKind._('vaultDistribution');
   static const liquidation = HyperliquidLedgerKind._('liquidation');
 
-  factory HyperliquidLedgerKind.other(String providerName) {
-    if (providerName.isEmpty) {
-      throw ArgumentError.value(
-        providerName,
-        'providerName',
-        'must not be empty',
-      );
-    }
-    return HyperliquidLedgerKind._(providerName);
-  }
+  factory HyperliquidLedgerKind.other(String providerName) =>
+      HyperliquidLedgerKind._(providerName, true);
 
   final String providerName;
+  final bool _isOther;
 
-  bool get isOther => switch (providerName) {
-    'deposit' ||
-    'withdraw' ||
-    'internalTransfer' ||
-    'subAccountTransfer' ||
-    'spotTransfer' ||
-    'accountClassTransfer' ||
-    'vaultDeposit' ||
-    'vaultWithdraw' ||
-    'vaultDistribution' ||
-    'liquidation' => false,
-    _ => true,
-  };
+  bool get isOther => _isOther;
 
   @override
   bool operator ==(Object other) =>
-      other is HyperliquidLedgerKind && providerName == other.providerName;
+      other is HyperliquidLedgerKind &&
+      _isOther == other._isOther &&
+      providerName == other.providerName;
 
   @override
-  int get hashCode => providerName.hashCode;
+  int get hashCode => Object.hash(_isOther, providerName);
 
   @override
   String toString() => providerName;

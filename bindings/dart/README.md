@@ -29,10 +29,11 @@ import 'package:maxt/maxt.dart';
 Future<void> main() async {
   await Maxt.initialize();
 
-  final client = Client(UpbitAdapter());
-  final markets = await client.markets(MarketKind.spot);
+  final client = Client(BinanceAdapter.spot());
+  final market = Market.spot(Exchange.binance, 'BTC', 'USDT');
+  final ticker = await client.ticker(market);
 
-  print('Loaded ${markets.length} Upbit spot markets');
+  print('$market: ${ticker.lastPrice}');
   await Maxt.dispose();
 }
 ```

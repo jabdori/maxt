@@ -20,14 +20,14 @@ mise exec -- uv sync --project bindings/python --frozen
 ```python
 import asyncio
 
-from maxt import Client, Exchange, Market, UpbitAdapter
+from maxt import BinanceAdapter, Client, Exchange, Market
 
 
 async def main() -> None:
-    client = Client(UpbitAdapter())
-    market = Market.spot(Exchange.UPBIT, "BTC", "KRW")
-    book = await client.order_book(market, 5)
-    print(book)
+    client = Client(BinanceAdapter.spot())
+    market = Market.spot(Exchange.BINANCE, "BTC", "USDT")
+    ticker = await client.ticker(market)
+    print(f"{market}: {ticker.last_price}")
 
 
 asyncio.run(main())

@@ -6,7 +6,7 @@ build-backend = "maturin"
 name = "maxt"
 version = "0.1.0"
 description = "Async Python API for Upbit, Bithumb, Binance, and Hyperliquid market data, accounts, and orders"
-readme = "PYPI.md"
+readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
 license-files = ["LICENSE.txt"]
@@ -29,7 +29,7 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/jabdori/maxt"
 Repository = "https://github.com/jabdori/maxt"
-Documentation = "https://github.com/jabdori/maxt/blob/main/bindings/python/PYPI.md"
+Documentation = "https://github.com/jabdori/maxt/blob/main/bindings/python/README.md"
 Issues = "https://github.com/jabdori/maxt/issues"
 
 [dependency-groups]

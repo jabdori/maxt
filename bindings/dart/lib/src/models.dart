@@ -82,7 +82,7 @@ extension FeatureProperties on Feature {
 }
 
 /// 부동소수점 변환 없이 문자열을 보존하는 정확한 소수입니다.
-final class Decimal {
+final class Decimal implements Comparable<Decimal> {
   Decimal._(this._value, this._coefficient, this._scale);
 
   /// 일반 표기법이나 과학 표기법의 유한 소수를 읽습니다.
@@ -107,6 +107,9 @@ final class Decimal {
         scale--;
       }
     }
+    if (!_isRepresentable(coefficient, scale)) {
+      throw FormatException('Decimal is outside the Rust Decimal range', value);
+    }
     return Decimal._(value, coefficient, scale);
   }
 
@@ -116,12 +119,37 @@ final class Decimal {
 
   static final Decimal zero = Decimal.parse('0');
   static final Decimal one = Decimal.parse('1');
+  static final BigInt _maxCoefficient = BigInt.parse(
+    '79228162514264337593543950335',
+  );
+  static final BigInt _ten = BigInt.from(10);
+  static const int _maxScale = 28;
 
   final String _value;
   final BigInt _coefficient;
   final int _scale;
 
   bool get isZero => _coefficient == BigInt.zero;
+
+  Decimal operator +(Decimal other) => _addOrSubtract(other, subtract: false);
+
+  Decimal operator -(Decimal other) => _addOrSubtract(other, subtract: true);
+
+  bool operator <(Decimal other) => compareTo(other) < 0;
+
+  bool operator <=(Decimal other) => compareTo(other) <= 0;
+
+  bool operator >(Decimal other) => compareTo(other) > 0;
+
+  bool operator >=(Decimal other) => compareTo(other) >= 0;
+
+  @override
+  int compareTo(Decimal other) {
+    final scale = _scale > other._scale ? _scale : other._scale;
+    final left = _coefficient * _pow10(scale - _scale);
+    final right = other._coefficient * _pow10(scale - other._scale);
+    return left.compareTo(right);
+  }
 
   @override
   String toString() => _value;
@@ -134,6 +162,92 @@ final class Decimal {
 
   @override
   int get hashCode => Object.hash(_coefficient, _scale);
+
+  Decimal _addOrSubtract(Decimal other, {required bool subtract}) {
+    final scale = _scale > other._scale ? _scale : other._scale;
+    final left = _coefficient * _pow10(scale - _scale);
+    final right = other._coefficient * _pow10(scale - other._scale);
+    return _fromArithmetic(subtract ? left - right : left + right, scale);
+  }
+
+  Decimal _half() {
+    if (_coefficient.isEven) {
+      return _fromArithmetic(_coefficient ~/ BigInt.two, _scale);
+    }
+    return _fromArithmetic(_coefficient * BigInt.from(5), _scale + 1);
+  }
+
+  static bool _isRepresentable(BigInt coefficient, int scale) {
+    if (coefficient == BigInt.zero) return true;
+    if (scale > _maxScale) return false;
+    if (scale >= 0) return coefficient.abs() <= _maxCoefficient;
+
+    final shift = -scale;
+    if (shift > _maxScale) return false;
+    return coefficient.abs() <= _maxCoefficient ~/ _pow10(shift);
+  }
+
+  static Decimal _fromArithmetic(BigInt coefficient, int scale) {
+    if (coefficient == BigInt.zero) return zero;
+
+    if (scale < 0) {
+      final shift = -scale;
+      if (shift > _maxScale ||
+          coefficient.abs() > _maxCoefficient ~/ _pow10(shift)) {
+        throw RangeError('Decimal arithmetic overflow');
+      }
+      coefficient *= _pow10(shift);
+      scale = 0;
+    }
+
+    final minimumDrop = scale > _maxScale ? scale - _maxScale : 0;
+    for (var drop = minimumDrop; drop <= scale; drop++) {
+      final rounded = _roundHalfEven(coefficient, drop);
+      if (rounded.abs() <= _maxCoefficient) {
+        return _canonical(rounded, scale - drop);
+      }
+    }
+    throw RangeError('Decimal arithmetic overflow');
+  }
+
+  static BigInt _roundHalfEven(BigInt coefficient, int digits) {
+    if (digits == 0) return coefficient;
+
+    final divisor = _pow10(digits);
+    final negative = coefficient.isNegative;
+    final absolute = coefficient.abs();
+    var quotient = absolute ~/ divisor;
+    final remainder = absolute.remainder(divisor);
+    final doubled = remainder * BigInt.two;
+    if (doubled > divisor || doubled == divisor && quotient.isOdd) {
+      quotient += BigInt.one;
+    }
+    return negative ? -quotient : quotient;
+  }
+
+  static Decimal _canonical(BigInt coefficient, int scale) {
+    if (coefficient == BigInt.zero) return zero;
+    while (coefficient.remainder(_ten) == BigInt.zero) {
+      coefficient ~/= _ten;
+      scale--;
+    }
+    return Decimal._(_plain(coefficient, scale), coefficient, scale);
+  }
+
+  static String _plain(BigInt coefficient, int scale) {
+    final sign = coefficient.isNegative ? '-' : '';
+    final digits = coefficient.abs().toString();
+    if (scale <= 0) {
+      return '$sign${digits.padRight(digits.length - scale, '0')}';
+    }
+    if (digits.length <= scale) {
+      return '${sign}0.${digits.padLeft(scale, '0')}';
+    }
+    final point = digits.length - scale;
+    return '$sign${digits.substring(0, point)}.${digits.substring(point)}';
+  }
+
+  static BigInt _pow10(int exponent) => _ten.pow(exponent);
 }
 
 /// Unix epoch 기준 UTC 나노초로 표현한 시각입니다.
@@ -473,6 +587,20 @@ final class OrderBook {
 
   Level? get bestBid => bids.firstOrNull;
   Level? get bestAsk => asks.firstOrNull;
+
+  /// 최우선 매도 가격에서 최우선 매수 가격을 뺀 값입니다.
+  Decimal? get spread {
+    final bid = bestBid;
+    final ask = bestAsk;
+    return bid == null || ask == null ? null : ask.price - bid.price;
+  }
+
+  /// 최우선 매수·매도 가격의 중간값입니다.
+  Decimal? get midPrice {
+    final bid = bestBid;
+    final ask = bestAsk;
+    return bid == null || ask == null ? null : (bid.price + ask.price)._half();
+  }
 }
 
 /// 한 시장의 공급자 시세 요약입니다.
@@ -540,6 +668,9 @@ final class Balance {
   final String asset;
   final Decimal available;
   final Decimal locked;
+
+  /// 사용 가능한 잔고와 잠긴 잔고의 합입니다.
+  Decimal get total => available + locked;
 }
 
 /// 주문 체결 방식입니다.

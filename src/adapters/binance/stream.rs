@@ -3,7 +3,7 @@
 //! Public data uses combined-stream wrappers so every payload has a stream
 //! name. USD-M routes feeds across `/public` and `/market` sockets.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::time::Duration;
 
 use futures_core::Stream;
@@ -714,20 +714,48 @@ fn account_events(
     adapter: BinanceAdapter,
     session: impl futures_core::Stream<Item = Result<WsCommand>> + Send + 'static,
 ) -> impl futures_core::Stream<Item = Result<AccountEvent>> + Send {
-    session.flat_map(move |item| {
-        let events = match item {
-            Ok(WsCommand::Text(frame)) => match decode_account(&adapter, &frame) {
-                Ok(events) => events.into_iter().map(Ok).collect(),
+    let mut session = Box::pin(session);
+    let mut pending = VecDeque::new();
+    let mut terminated = false;
+
+    futures_util::stream::poll_fn(move |cx| {
+        loop {
+            if let Some(event) = pending.pop_front() {
+                return std::task::Poll::Ready(Some(event));
+            }
+            if terminated {
+                return std::task::Poll::Ready(None);
+            }
+
+            let item = match session.as_mut().poll_next(cx) {
+                std::task::Poll::Pending => return std::task::Poll::Pending,
+                std::task::Poll::Ready(None) => return std::task::Poll::Ready(None),
+                std::task::Poll::Ready(Some(item)) => item,
+            };
+            let events = match item {
+                Ok(WsCommand::Text(frame)) => match decode_account(&adapter, &frame) {
+                    Ok(events) => events.into_iter().map(Ok).collect(),
+                    Err(error) => vec![Err(error)],
+                },
+                Ok(WsCommand::Binary(_)) => vec![Err(Error::decode(
+                    "binance sent an unexpected binary frame",
+                ))],
+                Ok(WsCommand::Reconnected) => vec![Ok(AccountEvent::Reconnected)],
                 Err(error) => vec![Err(error)],
-            },
-            Ok(WsCommand::Binary(_)) => vec![Err(Error::decode(
-                "binance sent an unexpected binary frame",
-            ))],
-            Ok(WsCommand::Reconnected) => vec![Ok(AccountEvent::Reconnected)],
-            Err(error) => vec![Err(error)],
-        };
-        futures_util::stream::iter(events)
+            };
+            terminated = events.iter().any(terminates_account_stream);
+            pending.extend(events);
+        }
     })
+}
+
+fn terminates_account_stream(event: &Result<AccountEvent>) -> bool {
+    matches!(
+        event,
+        Err(Error::Exchange { exchange, code, .. })
+            if *exchange == EXCHANGE
+                && matches!(code.as_str(), "listenKeyExpired" | "eventStreamTerminated")
+    )
 }
 
 /// Merges a listen-key refresh failure without keeping a finished socket open.
@@ -836,6 +864,48 @@ mod tests {
             stop_refresh_task(task).await,
             Err(Error::Adapter { detail }) if detail.contains("listen-key refresh task")
         ));
+    }
+
+    #[tokio::test]
+    async fn a_spot_termination_error_is_the_last_account_item() {
+        let session = futures_util::stream::iter([
+            Ok(WsCommand::Text(SPOT_STREAM_TERMINATED.to_string())),
+            Ok(WsCommand::Text(SPOT_STREAM_TERMINATED.to_string())),
+        ]);
+        let mut stream = AccountStream::new(account_events(spot(), session));
+
+        assert!(matches!(
+            stream.next().await,
+            Some(Err(Error::Exchange { code, .. })) if code == "eventStreamTerminated"
+        ));
+        assert!(stream.next().await.is_none());
+    }
+
+    #[tokio::test]
+    async fn a_usd_m_expiry_error_ends_the_source_and_joins_its_refresh_task() {
+        let stopped = Arc::new(AtomicBool::new(false));
+        let stopped_on_drop = RefreshStopped(Arc::clone(&stopped));
+        let refresh = tokio::spawn(async move {
+            let _stopped = stopped_on_drop;
+            std::future::pending::<()>().await;
+        });
+        let session = futures_util::stream::iter([
+            Ok(WsCommand::Text(FUTURES_LISTEN_KEY_EXPIRED.to_string())),
+            Ok(WsCommand::Text(FUTURES_LISTEN_KEY_EXPIRED.to_string())),
+        ]);
+        let events = account_events(perp(), session).boxed();
+        let (_failures, failed) = mpsc::channel(1);
+        let mut stream =
+            AccountStream::new_with_close(with_refresher_failures(events, failed), move || {
+                stop_refresh_task(refresh)
+            });
+
+        assert!(matches!(
+            stream.next().await,
+            Some(Err(Error::Exchange { code, .. })) if code == "listenKeyExpired"
+        ));
+        assert!(stream.next().await.is_none());
+        assert!(stopped.load(Ordering::SeqCst));
     }
 
     // https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams

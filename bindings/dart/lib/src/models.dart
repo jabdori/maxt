@@ -1,3 +1,9 @@
+String _asciiUpper(String value) => String.fromCharCodes(
+  value.codeUnits.map(
+    (code) => code >= 0x61 && code <= 0x7a ? code - 0x20 : code,
+  ),
+);
+
 /// maxt가 지원하는 거래소입니다.
 enum Exchange { upbit, bithumb, binance, hyperliquid }
 
@@ -352,8 +358,8 @@ final class Market {
   Market(Exchange exchange, MarketKind kind, String base, String quote)
     : exchange = exchange,
       kind = kind,
-      base = base.toUpperCase(),
-      quote = quote.toUpperCase();
+      base = _asciiUpper(base),
+      quote = _asciiUpper(quote);
 
   factory Market.spot(Exchange exchange, String base, String quote) =>
       Market(exchange, MarketKind.spot, base, quote);
@@ -686,7 +692,7 @@ final class Balance {
     required String asset,
     required this.available,
     required this.locked,
-  }) : asset = asset.toUpperCase();
+  }) : asset = _asciiUpper(asset);
 
   final String asset;
   final Decimal available;
@@ -800,7 +806,7 @@ final class MarginSummary {
     this.equity,
     this.marginBalance,
     this.availableBalance,
-  }) : asset = asset.toUpperCase();
+  }) : asset = _asciiUpper(asset);
 
   final String asset;
   final Decimal? equity;

@@ -257,9 +257,6 @@ pub(crate) fn render_rust_adapter_dispatch(schema: &Schema) -> String {
                 ));
             }
         } else {
-            output.push_str(&format!(
-                "        {pattern} => Some((\n            AdapterCall::{variant} {{\n"
-            ));
             let inline_fields = mapped_fields
                 .iter()
                 .map(|field| {
@@ -273,12 +270,11 @@ pub(crate) fn render_rust_adapter_dispatch(schema: &Schema) -> String {
                 .collect::<Vec<_>>()
                 .join(", ");
             let inline = format!("            AdapterCall::{variant} {{ {inline_fields} }},\n");
+            output.push_str(&format!("        {pattern} => Some((\n"));
             if inline.trim_end().chars().count() <= 100 {
-                output.truncate(
-                    output.len() - format!("            AdapterCall::{variant} {{\n").len(),
-                );
                 output.push_str(&inline);
             } else {
+                output.push_str(&format!("            AdapterCall::{variant} {{\n"));
                 for field in mapped_fields {
                     let (name, value) = field.split_once(": ").expect("generated field");
                     if name == value {

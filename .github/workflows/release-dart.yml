@@ -33,6 +33,7 @@ jobs:
           perl -pi -e 's/[ \t]+$//' lib/src/rust/*.freezed.dart
           cargo fmt --manifest-path rust/Cargo.toml
           git diff --exit-code -- lib/src/rust rust/src/frb_generated.rs
+          test -z "$(git status --porcelain --untracked-files=all -- lib/src/rust rust/src/frb_generated.rs)"
           dart format --output=none --set-exit-if-changed .
           dart analyze --fatal-warnings
           dart test --chain-stack-traces

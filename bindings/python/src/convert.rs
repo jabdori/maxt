@@ -358,6 +358,7 @@ mod tests {
 
     #[test]
     fn interval_names_cover_every_core_variant() {
+        Python::initialize();
         let values = [
             ("sec1", Interval::Sec1),
             ("min1", Interval::Min1),
@@ -390,6 +391,7 @@ mod tests {
 
     #[test]
     fn feature_names_cover_the_exact_public_set() {
+        Python::initialize();
         let values = [
             (Feature::Markets, "markets"),
             (Feature::Trades, "trades"),
@@ -425,6 +427,7 @@ mod tests {
 
     #[test]
     fn exchange_names_cover_the_exact_public_set() {
+        Python::initialize();
         let values = [
             (Exchange::Upbit, "upbit"),
             (Exchange::Bithumb, "bithumb"),

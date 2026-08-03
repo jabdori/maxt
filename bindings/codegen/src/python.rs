@@ -59,9 +59,13 @@ def _is_i64(value: int) -> bool:
             output.push_str(&format!(
                 r#"
     @classmethod
+    def other(cls, value: str) -> {}:
+        return cls(value)
+
+    @classmethod
     def _missing_(cls, value: object) -> {}:
 "#,
-                identifier.name,
+                identifier.name, identifier.name,
             ));
             output.push_str(
                 r#"        if not isinstance(value, str):
@@ -69,6 +73,7 @@ def _is_i64(value: int) -> bool:
         member = str.__new__(cls, value)
         member._name_ = "OTHER"
         member._value_ = value
+        cls._value2member_map_[value] = member
         return member
 "#,
             );
@@ -103,7 +108,7 @@ from __future__ import annotations
 from typing import Optional, Union
 
 from ._api import AccountStream, MarketStream, StreamError, StreamEvent
-from .models import *
+from .models import *  # noqa: F403
 
 
 class _GeneratedAdapterApi:
@@ -239,8 +244,8 @@ from __future__ import annotations
 
 from typing import Any, Awaitable, Callable, Optional, TypeVar, Union
 
-from ._api import AccountStream, MarketStream, StreamError, StreamEvent
-from .models import *
+from ._api import AccountStream, InvalidRequestError, MarketStream, StreamError, StreamEvent
+from .models import *  # noqa: F403
 from .models import _model_from_wire
 
 T = TypeVar("T")
@@ -367,6 +372,11 @@ fn render_native_delegate_method(operation: &Operation) -> String {
         ),
     };
     let result = python_type(operation.result);
+    let validation = if operation.rust_name == "subscribe" {
+        "        if not subscription.markets:\n            raise InvalidRequestError(\"markets\", \"a subscription needs at least one market\")\n        if not subscription.feeds:\n            raise InvalidRequestError(\"feeds\", \"a subscription needs at least one feed\")\n"
+    } else {
+        ""
+    };
     let return_value = match operation.result {
         ApiType::List(model) => {
             format!("return [_model_from_wire(\"{model}\", item) for item in value]")
@@ -383,11 +393,11 @@ fn render_native_delegate_method(operation: &Operation) -> String {
     if operation.result == ApiType::Unit {
         let call = call.replacen("value = await", "await", 1);
         return format!(
-            "\n    async def {name}(self{arguments}) -> {result}:\n        {call}\n        {return_value}\n"
+            "\n    async def {name}(self{arguments}) -> {result}:\n{validation}        {call}\n        {return_value}\n"
         );
     }
     format!(
-        "\n    async def {name}(self{arguments}) -> {result}:\n        {call}\n        {return_value}\n"
+        "\n    async def {name}(self{arguments}) -> {result}:\n{validation}        {call}\n        {return_value}\n"
     )
 }
 
@@ -1367,7 +1377,9 @@ mod tests {
         assert!(output.contains("class Exchange(str, Enum):\n    UPBIT = \"upbit\""));
         assert!(output.contains("class OrderStatus(str, Enum):"));
         assert!(output.contains("class HyperliquidLedgerKind(str, Enum):"));
+        assert!(output.contains("def other(cls, value: str) -> HyperliquidLedgerKind:"));
         assert!(output.contains("def _missing_(cls, value: object) -> HyperliquidLedgerKind:"));
+        assert!(output.contains("cls._value2member_map_[value] = member"));
         assert!(output.contains("class ExchangeErrorKind(str, Enum):"));
         assert!(output.contains("Exchange.__module__ = \"maxt.models\""));
         assert!(output.contains("ExchangeErrorKind.__module__ = \"maxt._api\""));
@@ -1437,6 +1449,8 @@ mod tests {
                 pascal_case(operation.rust_name)
             )));
         }
+        assert!(delegate.contains("if not subscription.markets:"));
+        assert!(delegate.contains("if not subscription.feeds:"));
     }
 
     #[test]

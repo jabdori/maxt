@@ -64,4 +64,30 @@ void main() {
       }
     }
   });
+
+  test('built-in Adapter는 빈 구독을 native 호출 전에 거절한다', () async {
+    final adapter = UpbitAdapter();
+    final market = Market.spot(Exchange.upbit, 'BTC', 'KRW');
+
+    await expectLater(
+      adapter.subscribe(Subscription(), const StreamConfig()),
+      throwsA(
+        isA<InvalidRequestError>().having(
+          (error) => error.field,
+          'field',
+          'markets',
+        ),
+      ),
+    );
+    await expectLater(
+      adapter.subscribe(Subscription(markets: [market]), const StreamConfig()),
+      throwsA(
+        isA<InvalidRequestError>().having(
+          (error) => error.field,
+          'field',
+          'feeds',
+        ),
+      ),
+    );
+  });
 }

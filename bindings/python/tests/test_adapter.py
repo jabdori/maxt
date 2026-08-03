@@ -172,6 +172,15 @@ class AdapterContractTests(unittest.IsolatedAsyncioTestCase):
                 "exchange_kind": "rate_limited",
             }
         )
+        exchange_without_status = _error_from_wire(
+            {
+                "kind": "exchange",
+                "exchange": "binance",
+                "code": "-1003",
+                "provider_message": "too many requests",
+                "exchange_kind": "rate_limited",
+            }
+        )
         empty_adapter = _error_from_wire(
             {
                 "kind": "adapter",
@@ -195,6 +204,8 @@ class AdapterContractTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(adapter.detail, "original detail")
         self.assertIsInstance(exchange, ExchangeError)
         self.assertEqual(exchange.message, "too many requests")
+        self.assertIsInstance(exchange_without_status, ExchangeError)
+        self.assertIsNone(exchange_without_status.status)
         self.assertEqual(empty_adapter.detail, "")
         self.assertEqual(empty_exchange.message, "")
 

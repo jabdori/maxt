@@ -138,7 +138,12 @@ def _error_from_wire(value: dict[str, Any]) -> MaxtError:
         present = set(value)
         if kind == "exchange" and "provider_message" in present:
             present.add("message")
-        missing = set(expected_fields) - present
+        required = {
+            name
+            for name, field_type in expected_fields.items()
+            if not field_type.startswith("optional:")
+        }
+        missing = required - present
         if missing:
             return AdapterError(
                 f"invalid {kind} error: missing {', '.join(sorted(missing))}"

@@ -538,25 +538,35 @@ def _decode_dataclass(model_type: Any, value: dict[str, Any]) -> Any:
         **{
             item.name: _decode_value(
                 hints[item.name],
-                value[wire_name],
+                value.get(wire_name) if optional else value[wire_name],
             )
-            for item, wire_name in model_fields
+            for item, wire_name, optional in model_fields
         }
     )
 
 
-def _schema_fields(model_type: Any) -> list[tuple[Any, str]]:
+def _schema_fields(model_type: Any) -> list[tuple[Any, str, bool]]:
     model_fields = {
         item.metadata.get("wire_name", item.name): item for item in fields(model_type)
     }
     schema_fields = RECORD_FIELDS.get(model_type.__name__)
     if schema_fields is None:
-        return [(item, wire_name) for wire_name, item in model_fields.items()]
+        return [(item, wire_name, False) for wire_name, item in model_fields.items()]
     if set(model_fields) != set(schema_fields):
+        missing = sorted(set(schema_fields) - set(model_fields))
+        unexpected = sorted(set(model_fields) - set(schema_fields))
         raise TypeError(
-            f"{model_type.__name__} fields do not match the generated binding schema"
+            f"{model_type.__name__} fields do not match the generated binding schema; "
+            f"missing={missing} unexpected={unexpected}"
         )
-    return [(model_fields[wire_name], wire_name) for wire_name in schema_fields]
+    return [
+        (
+            model_fields[wire_name],
+            wire_name,
+            schema_fields[wire_name].startswith("optional:"),
+        )
+        for wire_name in schema_fields
+    ]
 
 
 def _decode_value(expected: Any, value: Any) -> Any:
@@ -595,7 +605,7 @@ def _model_to_wire(value: Any) -> Any:
     if is_dataclass(value):
         return {
             wire_name: _model_to_wire(getattr(value, item.name))
-            for item, wire_name in _schema_fields(type(value))
+            for item, wire_name, _ in _schema_fields(type(value))
         }
     if isinstance(value, (list, tuple)):
         return [_model_to_wire(item) for item in value]

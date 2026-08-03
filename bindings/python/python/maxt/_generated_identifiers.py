@@ -236,12 +236,17 @@ class HyperliquidLedgerKind(str, Enum):
     LIQUIDATION = "liquidation"
 
     @classmethod
+    def other(cls, value: str) -> HyperliquidLedgerKind:
+        return cls(value)
+
+    @classmethod
     def _missing_(cls, value: object) -> HyperliquidLedgerKind:
         if not isinstance(value, str):
             raise ValueError(value)
         member = str.__new__(cls, value)
         member._name_ = "OTHER"
         member._value_ = value
+        cls._value2member_map_[value] = member
         return member
 
 

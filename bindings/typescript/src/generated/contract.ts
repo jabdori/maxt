@@ -2,7 +2,6 @@
 
 export type DecimalWire = string;
 export type TimestampWire = string;
-export type MarketKindWire = "spot" | "perpetual";
 
 export interface MarketWire {
   readonly exchange: string;
@@ -292,7 +291,7 @@ export type ErrorWire =
   | { readonly kind: "decode"; readonly detail: string; };
 
 export type AdapterCallWire =
-  | { readonly kind: "markets"; readonly market_kind: MarketKindWire; }
+  | { readonly kind: "markets"; readonly market_kind: string; }
   | { readonly kind: "trades"; readonly market: MarketWire; readonly limit: number | null; }
   | { readonly kind: "order_book"; readonly market: MarketWire; readonly depth: number | null; }
   | { readonly kind: "ticker"; readonly market: MarketWire; }

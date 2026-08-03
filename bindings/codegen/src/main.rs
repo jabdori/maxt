@@ -34,8 +34,12 @@ fn main() {
         || (target == "python" && cfg!(feature = "python"))
         || (target == "dart" && cfg!(feature = "dart"))
         || (target == "typescript" && cfg!(feature = "typescript"));
+    let any_target_enabled = cfg!(feature = "rust")
+        || cfg!(feature = "python")
+        || cfg!(feature = "dart")
+        || cfg!(feature = "typescript");
     assert!(
-        target == "all" || target_enabled,
+        (target == "all" && any_target_enabled) || target_enabled,
         "the requested target feature is disabled"
     );
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))

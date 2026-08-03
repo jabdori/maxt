@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Optional, Union
 
 from ._api import AccountStream, MarketStream, StreamError, StreamEvent
-from .models import *
+from .models import *  # noqa: F403
 
 
 class _GeneratedAdapterApi:

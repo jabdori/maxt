@@ -285,7 +285,7 @@ export class HyperliquidLedgerKind extends StringValue {
     HyperliquidLedgerKind.Liquidation,
   ]);
   private constructor(id: string) { super(id); Object.freeze(this); }
-  static other(value: string): HyperliquidLedgerKind { return new HyperliquidLedgerKind(value); }
+  static other(value: string): HyperliquidLedgerKind { return this.values.find((item) => item.id === value) ?? new HyperliquidLedgerKind(value); }
 }
 
 export class ExchangeErrorKind extends StringValue {

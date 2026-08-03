@@ -1441,7 +1441,7 @@ pub fn binding_schema() -> Schema {
             variants: vec![
                 variant(
                     "markets",
-                    vec![field("market_kind", Type::named("MarketKindWire"))],
+                    vec![field("market_kind", Type::Identifier("MarketKind"))],
                 ),
                 variant(
                     "trades",

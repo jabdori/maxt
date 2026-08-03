@@ -313,7 +313,7 @@ UNION_FIELDS = {
     },
     "AdapterCall": {
         "markets": {
-            "market_kind": "named:MarketKind",
+            "market_kind": "identifier:MarketKind",
         },
         "trades": {
             "market": "named:Market",

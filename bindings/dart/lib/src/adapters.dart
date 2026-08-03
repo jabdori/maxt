@@ -156,6 +156,18 @@ abstract base class _NativeAdapterBase
     Subscription subscription,
     StreamConfig config,
   ) async {
+    if (subscription.markets.isEmpty) {
+      throw const InvalidRequestError(
+        field: 'markets',
+        detail: 'a subscription needs at least one market',
+      );
+    }
+    if (subscription.feeds.isEmpty) {
+      throw const InvalidRequestError(
+        field: 'feeds',
+        detail: 'a subscription needs at least one feed',
+      );
+    }
     final handle = await _nativeFuture(
       () => _handle.subscribe(
         subscription: _subscriptionToWire(subscription),

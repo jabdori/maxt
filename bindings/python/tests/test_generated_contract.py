@@ -37,6 +37,9 @@ def test_generated_exchange_and_feature_inventories_match_public_models() -> Non
     assert EXCHANGES == tuple(value.value for value in Exchange)
     assert FEATURES == tuple(value.value for value in Feature)
 
+    ledger_kind = _generated_identifiers.HyperliquidLedgerKind
+    assert ledger_kind.other("future_kind") is ledger_kind("future_kind")
+
 
 def test_generated_api_inventories_match_public_classes() -> None:
     adapter_operations = tuple(
@@ -101,6 +104,7 @@ def test_generated_runtime_annotations_resolve() -> None:
 
 
 def test_generated_wire_fields_match_public_models_and_errors() -> None:
+    compared = 0
     for name, schema_fields in RECORD_FIELDS.items():
         model_type = getattr(models, name, None)
         if not isinstance(model_type, type) or not is_dataclass(model_type):
@@ -109,6 +113,8 @@ def test_generated_wire_fields_match_public_models_and_errors() -> None:
             item.metadata.get("wire_name", item.name) for item in fields(model_type)
         }
         assert actual == set(schema_fields), name
+        compared += 1
+    assert compared > 0
 
     errors = (
         InvalidRequestError,

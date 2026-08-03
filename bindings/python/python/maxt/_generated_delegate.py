@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any, Awaitable, Callable, Optional, TypeVar, Union
 
-from ._api import AccountStream, MarketStream, StreamError, StreamEvent
-from .models import *
+from ._api import AccountStream, InvalidRequestError, MarketStream, StreamError, StreamEvent
+from .models import *  # noqa: F403
 from .models import _model_from_wire
 
 T = TypeVar("T")
@@ -45,6 +45,10 @@ class _GeneratedNativeClientDelegateApi:
         return [_model_from_wire("Candle", item) for item in value]
 
     async def subscribe(self, subscription: Subscription, config: StreamConfig) -> MarketStream[Union[StreamEvent[MarketEvent], StreamError]]:
+        if not subscription.markets:
+            raise InvalidRequestError("markets", "a subscription needs at least one market")
+        if not subscription.feeds:
+            raise InvalidRequestError("feeds", "a subscription needs at least one feed")
         value = await self._call(self._client.subscribe, subscription, config)
         return self._market_stream(value)
 

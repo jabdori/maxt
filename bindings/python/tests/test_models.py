@@ -272,7 +272,6 @@ class WireModelTests(unittest.TestCase):
                 "market": market_wire,
                 "native_symbol": "BTCUSDT",
                 "status": "active",
-                "korean_name": None,
                 "english_name": "Bitcoin",
             },
         )
@@ -318,6 +317,7 @@ class WireModelTests(unittest.TestCase):
 
         self.assertIsInstance(info, MarketInfo)
         self.assertEqual(info.status, MarketStatus.ACTIVE)
+        self.assertIsNone(info.korean_name)
         self.assertIsInstance(book, OrderBook)
         self.assertEqual(book.spread(), Decimal("0.2"))
         self.assertIsInstance(ticker, Ticker)

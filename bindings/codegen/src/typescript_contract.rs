@@ -14,7 +14,7 @@ pub(crate) fn lower_camel(value: &str) -> String {
 pub(crate) fn render(schema: &Schema) -> String {
     let mut output = String::from(HEADER);
     output.push_str("\nexport type DecimalWire = string;\nexport type TimestampWire = string;\n");
-    output.push_str("export type MarketKindWire = \"spot\" | \"perpetual\";\n\n");
+    output.push('\n');
     for record in &schema.records {
         output.push_str(&format!(
             "export interface {}{} {{\n",
@@ -247,7 +247,7 @@ fn identifier_body(name: &str, open: bool) -> &'static str {
             "  private constructor(id: string) { super(id); this.retryable = id === \"rate_limited\" || id === \"unavailable\"; Object.freeze(this); }\n  private readonly retryable: boolean;\n  isRetryable(): boolean { return this.retryable; }\n"
         }
         "HyperliquidLedgerKind" if open => {
-            "  private constructor(id: string) { super(id); Object.freeze(this); }\n  static other(value: string): HyperliquidLedgerKind { return new HyperliquidLedgerKind(value); }\n"
+            "  private constructor(id: string) { super(id); Object.freeze(this); }\n  static other(value: string): HyperliquidLedgerKind { return this.values.find((item) => item.id === value) ?? new HyperliquidLedgerKind(value); }\n"
         }
         _ => "  private constructor(id: string) { super(id); Object.freeze(this); }\n",
     }

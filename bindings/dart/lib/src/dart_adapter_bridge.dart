@@ -11,7 +11,9 @@ final class NativeClientDelegate extends AdapterBase {
     required this.exchange,
     required this.features,
     required Future<Adapter> delegate,
-  }) : _delegate = delegate;
+    required bool directCustomAdapter,
+  }) : _delegate = delegate,
+       _directCustomAdapter = directCustomAdapter;
 
   factory NativeClientDelegate.fromAdapter(Adapter adapter) {
     if (!Maxt.isInitialized) {
@@ -32,10 +34,13 @@ final class NativeClientDelegate extends AdapterBase {
       exchange: adapter.exchange,
       features: Set.unmodifiable(adapter.features),
       delegate: delegate,
+      directCustomAdapter:
+          !bridgeCustomAdapters && adapter is! NativeHandleProvider,
     );
   }
 
   final Future<Adapter> _delegate;
+  final bool _directCustomAdapter;
 
   @override
   final Exchange exchange;
@@ -68,7 +73,12 @@ final class NativeClientDelegate extends AdapterBase {
   Future<MarketStream> subscribe(
     Subscription subscription,
     StreamConfig config,
-  ) async => (await _native).subscribe(subscription, config);
+  ) async {
+    final stream = await (await _native).subscribe(subscription, config);
+    return _directCustomAdapter
+        ? _marketStreamWithCleanupError(stream)
+        : stream;
+  }
 
   @override
   Future<List<Balance>> balances() async => (await _native).balances();
@@ -78,8 +88,12 @@ final class NativeClientDelegate extends AdapterBase {
       (await _native).openOrders(market);
 
   @override
-  Future<AccountStream> subscribeAccount(StreamConfig config) async =>
-      (await _native).subscribeAccount(config);
+  Future<AccountStream> subscribeAccount(StreamConfig config) async {
+    final stream = await (await _native).subscribeAccount(config);
+    return _directCustomAdapter
+        ? _accountStreamWithCleanupError(stream)
+        : stream;
+  }
 
   @override
   Future<Order> placeOrder(OrderRequest request) async =>
@@ -109,6 +123,41 @@ final class NativeClientDelegate extends AdapterBase {
   Future<void> setMargin(MarginRequest request) async =>
       (await _native).setMargin(request);
 }
+
+MarketStream _marketStreamWithCleanupError(MarketStream stream) {
+  final wrapped = _streamWithCleanupError(stream);
+  return MarketStream(wrapped.source, onClose: wrapped.close);
+}
+
+AccountStream _accountStreamWithCleanupError(AccountStream stream) {
+  final wrapped = _streamWithCleanupError(stream);
+  return AccountStream(wrapped.source, onClose: wrapped.close);
+}
+
+({Stream<StreamItem<T>> source, Future<void> Function() close})
+_streamWithCleanupError<T>(CloseableStream<T> stream) {
+  var cleanupReported = false;
+  final source = () async* {
+    await for (final item in stream) {
+      yield item;
+    }
+    try {
+      await stream.close();
+    } catch (error) {
+      cleanupReported = true;
+      yield StreamItem<T>.error(_adapterCleanupError(error));
+      return;
+    }
+    cleanupReported = true;
+  }();
+  return (
+    source: source,
+    close: () => cleanupReported ? Future<void>.value() : stream.close(),
+  );
+}
+
+Object _adapterCleanupError(Object error) =>
+    error is MaxtError ? error : AdapterError(error.toString());
 
 final class _NativeDelegateAdapter extends _NativeAdapterBase {
   _NativeDelegateAdapter(super.handle);

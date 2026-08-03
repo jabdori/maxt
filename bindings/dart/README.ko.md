@@ -85,7 +85,8 @@ flutter build web
 
 브라우저가 생성된 WebAssembly 모듈의 공유 메모리 기능을 활성화할 수 있도록 Web
 빌드 응답에 `Cross-Origin-Opener-Policy: same-origin`과
-`Cross-Origin-Embedder-Policy: require-corp` 헤더를 설정합니다.
+`Cross-Origin-Embedder-Policy: require-corp` 헤더를 설정합니다. 운영 환경에서는
+HTTPS를 사용하며, 로컬 개발에는 `http://localhost`를 사용할 수 있습니다.
 
 ## 초기화와 Binance 사용
 

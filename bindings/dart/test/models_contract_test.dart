@@ -218,7 +218,9 @@ void main() {
     );
     expect(
       Interval.week1.advance(at, -1),
-      Timestamp.fromNanoseconds(1700000000123456789 - 604800000000000),
+      Timestamp.fromNanoseconds(
+        at.nanosecondsSinceEpoch - BigInt.from(604800000000000),
+      ),
     );
   });
 
@@ -249,7 +251,7 @@ void main() {
     final late = Timestamp.fromNanoseconds(BigInt.parse("9220000000000000000"));
 
     expect(Interval.month1.advance(late, 12), isNull);
-    expect(Interval.week1.advance(late, 9223372036854775807), isNull);
+    expect(Interval.week1.advance(late, 6), isNull);
     expect(Interval.month1.advance(Timestamp.zero, 4294967296), isNull);
   });
 

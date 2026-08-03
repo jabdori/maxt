@@ -20,10 +20,12 @@ from maxt import (
     HyperliquidAssetContext,
     HyperliquidLedgerEntry,
     HyperliquidLedgerKind,
+    InvalidRequestError,
     Market,
     MarketEvent,
     StreamError,
     StreamEvent,
+    StreamConfig,
     Subscription,
     Feed,
     Trade,
@@ -241,6 +243,23 @@ class FakeNativeHyperliquidAdapter:
 
 
 class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
+    async def test_native_client_rejects_empty_subscriptions_before_dispatch(self) -> None:
+        native = SimpleNamespace(NativeUpbitAdapter=FakeNativeUpbitAdapter)
+        with patch("maxt._api._load_native", return_value=native):
+            client = Client(UpbitAdapter())
+            market = Market.spot(Exchange.UPBIT, "BTC", "KRW")
+
+            with self.assertRaises(InvalidRequestError) as empty_markets:
+                await client.adapter.subscribe(Subscription((), ()), StreamConfig())
+            with self.assertRaises(InvalidRequestError) as empty_feeds:
+                await client.adapter.subscribe(
+                    Subscription((market,), ()),
+                    StreamConfig(),
+                )
+
+        self.assertEqual(empty_markets.exception.field, "markets")
+        self.assertEqual(empty_feeds.exception.field, "feeds")
+
     async def test_binance_listen_keys_only_come_from_the_provider_api(self) -> None:
         with self.assertRaisesRegex(
             TypeError,

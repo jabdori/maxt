@@ -2,25 +2,35 @@
 
 [English](README.md)
 
-`maxt-bindings-common`은 Python, Dart, TypeScript 바인딩이 공유하는 요청,
-응답, 오류, 스트림 계약을 정의합니다. 외부 언어에서 작성한 Adapter를 Rust
-`Adapter`로 연결하는 `ForeignAdapter`도 제공합니다.
+`maxt-bindings-common`은 언어 바인딩이 공유하는 요청, 응답, 오류, 스트림과
+`ForeignAdapter` 브리지를 정의합니다. 애플리케이션에서는 Rust, Python,
+Dart/Flutter, TypeScript 중 사용하는 언어의 패키지를 설치하세요.
 
-애플리케이션에서 직접 설치하는 패키지가 아닙니다. Rust, Python, Dart/Flutter,
-TypeScript 패키지 중 사용하는 언어의 패키지를 설치하세요.
+## 단일 원본
 
-## Rust 계약 검사
+`src/schema.rs`는 언어별 공개 API 생성의 단일 원본(source of truth)입니다.
 
-요청 dispatch, 응답 또는 스트림 종료 계약을 변경했다면 공통 계약 테스트를
-실행하세요.
+| 변경 | 스키마 등록 위치 |
+| --- | --- |
+| 공통 메서드 | `ADAPTER_OPERATIONS` |
+| 거래소 전용 메서드 또는 constructor | `PROVIDERS` |
+| enum 또는 열린 식별자 | `IDENTIFIERS` |
+| 요청·응답 모델 | `binding_schema()`의 `records` |
+| 태그가 있는 오류 | `binding_schema()`의 `unions` |
+
+실제 동작은 Rust 어댑터가 구현합니다. 스키마는 외부 언어 경계를 설명하며 Rust
+구현과 일치해야 합니다.
+
+## 스키마 변경 검사
 
 ```sh
-cargo test -p maxt-bindings-common --locked
+cargo test -p maxt-bindings-common --features codegen --test schema_inventory --locked
+cargo run -p maxt-bindings-codegen --no-default-features --features python --locked -- python --check
 ```
 
-공개 계약은 [공통 API 명세](../../docs/common-api.ko.md)와
-[기여 안내](../../CONTRIBUTING.ko.md)를 참고하세요.
+`python`은 갱신할 바인딩으로 바꾸세요. 스키마 변경으로 생성 결과가 달라지면
+먼저 `--check` 없이 생성한 다음 검사합니다.
 
-[생성된 바인딩 계약](generated/api.md)에는 언어별 Adapter 및 provider 전용
-메서드 이름이 정리되어 있습니다. 변경할 때는
-[바인딩 코드 생성기](../codegen/README.ko.md)를 실행하세요.
+[코드 생성기 안내](../codegen/README.ko.md),
+[공통 API 명세](../../docs/common-api.ko.md),
+[기여 안내](../../CONTRIBUTING.ko.md)를 함께 참고하세요.

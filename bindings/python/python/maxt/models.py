@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from calendar import monthrange
 from dataclasses import dataclass, field, fields, is_dataclass
-from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
 from typing import (
@@ -18,272 +16,29 @@ from typing import (
     get_type_hints,
 )
 
-
-class Exchange(str, Enum):
-    UPBIT = "upbit"
-    BITHUMB = "bithumb"
-    BINANCE = "binance"
-    HYPERLIQUID = "hyperliquid"
-
-    def display_name(self) -> str:
-        """Return the user-facing exchange name."""
-        return {
-            Exchange.UPBIT: "Upbit",
-            Exchange.BITHUMB: "Bithumb",
-            Exchange.BINANCE: "Binance",
-            Exchange.HYPERLIQUID: "Hyperliquid",
-        }[self]
-
-
-class Feature(str, Enum):
-    MARKETS = "markets"
-    TRADES = "trades"
-    ORDER_BOOK = "order_book"
-    TICKER = "ticker"
-    CANDLES = "candles"
-    TRADE_STREAM = "trade_stream"
-    ORDER_BOOK_STREAM = "order_book_stream"
-    TICKER_STREAM = "ticker_stream"
-    CANDLE_STREAM = "candle_stream"
-    BALANCES = "balances"
-    OPEN_ORDERS = "open_orders"
-    ACCOUNT_STREAM = "account_stream"
-    TRADING = "trading"
-    POSITIONS = "positions"
-    MARGIN = "margin"
-    FUNDING_RATES = "funding_rates"
-    FUNDING_PAYMENTS = "funding_payments"
-    MARGIN_CONFIG = "margin_config"
-    REDUCE_ONLY_ORDERS = "reduce_only_orders"
-
-    def needs_credentials(self) -> bool:
-        """Return whether this feature requires exchange credentials."""
-        return self in {
-            Feature.BALANCES,
-            Feature.OPEN_ORDERS,
-            Feature.ACCOUNT_STREAM,
-            Feature.TRADING,
-            Feature.POSITIONS,
-            Feature.MARGIN,
-            Feature.FUNDING_PAYMENTS,
-            Feature.MARGIN_CONFIG,
-            Feature.REDUCE_ONLY_ORDERS,
-        }
-
-    def is_derivatives_only(self) -> bool:
-        """Return whether this feature applies only to derivatives."""
-        return self in {
-            Feature.POSITIONS,
-            Feature.MARGIN,
-            Feature.FUNDING_RATES,
-            Feature.FUNDING_PAYMENTS,
-            Feature.MARGIN_CONFIG,
-            Feature.REDUCE_ONLY_ORDERS,
-        }
-
-
-class MarketKind(str, Enum):
-    SPOT = "spot"
-    PERPETUAL = "perpetual"
-
-    def is_derivative(self) -> bool:
-        """Return whether this is a derivative market kind."""
-        return self is MarketKind.PERPETUAL
-
-
-class MarketStatus(str, Enum):
-    ACTIVE = "active"
-    PAUSED = "paused"
-    DELISTED = "delisted"
-    UNKNOWN = "unknown"
-
-
-class Side(str, Enum):
-    BUY = "buy"
-    SELL = "sell"
-
-    def flip(self) -> Side:
-        """Return the opposite side."""
-        return Side.SELL if self is Side.BUY else Side.BUY
-
-
-class Interval(str, Enum):
-    SEC1 = "sec1"
-    MIN1 = "min1"
-    MIN3 = "min3"
-    MIN5 = "min5"
-    MIN15 = "min15"
-    MIN30 = "min30"
-    HOUR1 = "hour1"
-    HOUR2 = "hour2"
-    HOUR4 = "hour4"
-    HOUR8 = "hour8"
-    HOUR12 = "hour12"
-    DAY1 = "day1"
-    DAY3 = "day3"
-    WEEK1 = "week1"
-    MONTH1 = "month1"
-
-    def as_secs(self) -> Optional[int]:
-        """Return the fixed length in seconds, or `None` for calendar months."""
-        return {
-            Interval.SEC1: 1,
-            Interval.MIN1: 60,
-            Interval.MIN3: 180,
-            Interval.MIN5: 300,
-            Interval.MIN15: 900,
-            Interval.MIN30: 1_800,
-            Interval.HOUR1: 3_600,
-            Interval.HOUR2: 7_200,
-            Interval.HOUR4: 14_400,
-            Interval.HOUR8: 28_800,
-            Interval.HOUR12: 43_200,
-            Interval.DAY1: 86_400,
-            Interval.DAY3: 259_200,
-            Interval.WEEK1: 604_800,
-            Interval.MONTH1: None,
-        }[self]
-
-    def advance(self, timestamp_ns: Timestamp, count: int) -> Optional[Timestamp]:
-        """Advance a UTC nanosecond timestamp by `count` intervals.
-
-        Months clamp to the last valid UTC day; signed 64-bit overflow returns `None`.
-        """
-        if not _is_i64(timestamp_ns) or not _is_i64(count):
-            return None
-
-        seconds = self.as_secs()
-        if seconds is not None:
-            span = seconds * 1_000_000_000 * count
-            if not _is_i64(span):
-                return None
-            result = timestamp_ns + span
-            return result if _is_i64(result) else None
-
-        if abs(count) > (1 << 32) - 1:
-            return None
-
-        whole_seconds, nanoseconds = divmod(timestamp_ns, 1_000_000_000)
-        current = _UNIX_EPOCH + timedelta(seconds=whole_seconds)
-        month_index = current.year * 12 + current.month - 1 + count
-        year, zero_based_month = divmod(month_index, 12)
-        month = zero_based_month + 1
-        if not 1 <= year <= 9999:
-            return None
-
-        moved = datetime(
-            year,
-            month,
-            min(current.day, monthrange(year, month)[1]),
-            current.hour,
-            current.minute,
-            current.second,
-            tzinfo=timezone.utc,
-        )
-        elapsed = moved - _UNIX_EPOCH
-        result = (
-            (elapsed.days * 86_400 + elapsed.seconds) * 1_000_000_000
-            + nanoseconds
-        )
-        return result if _is_i64(result) else None
-
-
-class Overflow(str, Enum):
-    BACKPRESSURE = "backpressure"
-    DROP_NEWEST = "drop_newest"
-
-
-class MarginMode(str, Enum):
-    CROSS = "cross"
-    ISOLATED = "isolated"
-
-
-class OrderStatus(str, Enum):
-    ACCEPTED = "accepted"
-    OPEN = "open"
-    PARTIALLY_FILLED = "partially_filled"
-    FILLED = "filled"
-    CANCELLED = "cancelled"
-    REJECTED = "rejected"
-    UNKNOWN = "unknown"
-
-    def is_live(self) -> bool:
-        return self in {
-            OrderStatus.ACCEPTED,
-            OrderStatus.OPEN,
-            OrderStatus.PARTIALLY_FILLED,
-        }
-
-
-class OrderType(str, Enum):
-    MARKET = "market"
-    LIMIT = "limit"
-
-
-class TimeInForce(str, Enum):
-    GOOD_TIL_CANCELLED = "good_til_cancelled"
-    IMMEDIATE_OR_CANCEL = "immediate_or_cancel"
-    FILL_OR_KILL = "fill_or_kill"
-    POST_ONLY = "post_only"
-
-
-class SizeKind(str, Enum):
-    BASE = "base"
-    QUOTE = "quote"
-
-
-class UpbitRegion(str, Enum):
-    KOREA = "korea"
-    SINGAPORE = "singapore"
-    INDONESIA = "indonesia"
-    THAILAND = "thailand"
-
-
-class BithumbAlertStep(str, Enum):
-    CAUTION = "caution"
-    WARNING = "warning"
-    DANGER = "danger"
-    UNKNOWN = "unknown"
-
-
-class BinanceMarket(str, Enum):
-    SPOT = "spot"
-    USD_M_FUTURES = "usd_m"
-
-
-class HyperliquidLedgerKind(str, Enum):
-    DEPOSIT = "deposit"
-    WITHDRAW = "withdraw"
-    INTERNAL_TRANSFER = "internal_transfer"
-    SUB_ACCOUNT_TRANSFER = "sub_account_transfer"
-    SPOT_TRANSFER = "spot_transfer"
-    ACCOUNT_CLASS_TRANSFER = "account_class_transfer"
-    VAULT_DEPOSIT = "vault_deposit"
-    VAULT_WITHDRAW = "vault_withdraw"
-    VAULT_DISTRIBUTION = "vault_distribution"
-    LIQUIDATION = "liquidation"
-
-    @classmethod
-    def _missing_(cls, value: object) -> HyperliquidLedgerKind:
-        if not isinstance(value, str):
-            raise ValueError(value)
-        member = str.__new__(cls, value)
-        member._name_ = "OTHER"
-        member._value_ = value
-        return member
+from ._generated_identifiers import (
+    BinanceMarket,
+    BithumbAlertStep,
+    Exchange,
+    Feature,
+    HyperliquidLedgerKind,
+    Interval,
+    MarginMode,
+    MarketKind,
+    MarketStatus,
+    OrderStatus,
+    OrderType,
+    Overflow,
+    Side,
+    SizeKind,
+    TimeInForce,
+    UpbitRegion,
+)
+from ._generated_wire import RECORD_FIELDS
 
 
 Timestamp = int
 T = TypeVar("T")
-
-_I64_MIN = -(1 << 63)
-_I64_MAX = (1 << 63) - 1
-_UNIX_EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
-
-
-def _is_i64(value: int) -> bool:
-    return _I64_MIN <= value <= _I64_MAX
-
 
 def _ascii_upper(value: str) -> str:
     return "".join(
@@ -778,15 +533,40 @@ def _decimal_to_wire(value: Decimal) -> str:
 
 def _decode_dataclass(model_type: Any, value: dict[str, Any]) -> Any:
     hints = get_type_hints(model_type)
+    model_fields = _schema_fields(model_type)
     return model_type(
         **{
             item.name: _decode_value(
                 hints[item.name],
-                value[item.metadata.get("wire_name", item.name)],
+                value.get(wire_name) if optional else value[wire_name],
             )
-            for item in fields(model_type)
+            for item, wire_name, optional in model_fields
         }
     )
+
+
+def _schema_fields(model_type: Any) -> list[tuple[Any, str, bool]]:
+    model_fields = {
+        item.metadata.get("wire_name", item.name): item for item in fields(model_type)
+    }
+    schema_fields = RECORD_FIELDS.get(model_type.__name__)
+    if schema_fields is None:
+        return [(item, wire_name, False) for wire_name, item in model_fields.items()]
+    if set(model_fields) != set(schema_fields):
+        missing = sorted(set(schema_fields) - set(model_fields))
+        unexpected = sorted(set(model_fields) - set(schema_fields))
+        raise TypeError(
+            f"{model_type.__name__} fields do not match the generated binding schema; "
+            f"missing={missing} unexpected={unexpected}"
+        )
+    return [
+        (
+            model_fields[wire_name],
+            wire_name,
+            schema_fields[wire_name].startswith("optional:"),
+        )
+        for wire_name in schema_fields
+    ]
 
 
 def _decode_value(expected: Any, value: Any) -> Any:
@@ -824,10 +604,8 @@ def _model_to_wire(value: Any) -> Any:
         return value.value
     if is_dataclass(value):
         return {
-            item.metadata.get("wire_name", item.name): _model_to_wire(
-                getattr(value, item.name)
-            )
-            for item in fields(value)
+            wire_name: _model_to_wire(getattr(value, item.name))
+            for item, wire_name, _ in _schema_fields(type(value))
         }
     if isinstance(value, (list, tuple)):
         return [_model_to_wire(item) for item in value]
@@ -849,30 +627,11 @@ def _model_from_wire(type_name: str, value: dict[str, Any]) -> Any:
             [item_type.from_wire(item) for item in value["items"]],
             Cursor(value["next"]) if value.get("next") is not None else None,
         )
-    model_types: dict[str, type[WireModel]] = {
-        "Balance": Balance,
-        "Candle": Candle,
-        "CandleRequest": CandleRequest,
-        "FundingPayment": FundingPayment,
-        "FundingRate": FundingRate,
-        "HistoryRequest": HistoryRequest,
-        "MarginRequest": MarginRequest,
-        "MarginSummary": MarginSummary,
-        "MarketInfo": MarketInfo,
-        "Market": Market,
-        "Order": Order,
-        "OrderBook": OrderBook,
-        "OrderRequest": OrderRequest,
-        "Position": Position,
-        "StreamConfig": StreamConfig,
-        "Subscription": Subscription,
-        "Ticker": Ticker,
-        "Trade": Trade,
-    }
-    try:
-        model_type = model_types[type_name]
-    except KeyError as error:
-        raise ValueError(f"unknown maxt model: {type_name}") from error
+    model_type = globals().get(type_name)
+    if type_name not in RECORD_FIELDS or not isinstance(model_type, type):
+        raise ValueError(f"unknown maxt model: {type_name}")
+    if not issubclass(model_type, WireModel):
+        raise ValueError(f"unknown maxt model: {type_name}")
     return model_type.from_wire(value)
 
 

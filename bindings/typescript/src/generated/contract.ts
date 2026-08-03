@@ -2,11 +2,10 @@
 
 export type DecimalWire = string;
 export type TimestampWire = string;
-export type MarketKindWire = "spot" | "perpetual";
 
 export interface MarketWire {
   readonly exchange: string;
-  readonly kind: MarketKindWire;
+  readonly kind: string;
   readonly base: string;
   readonly quote: string;
 }
@@ -292,7 +291,7 @@ export type ErrorWire =
   | { readonly kind: "decode"; readonly detail: string; };
 
 export type AdapterCallWire =
-  | { readonly kind: "markets"; readonly market_kind: MarketKindWire; }
+  | { readonly kind: "markets"; readonly market_kind: string; }
   | { readonly kind: "trades"; readonly market: MarketWire; readonly limit: number | null; }
   | { readonly kind: "order_book"; readonly market: MarketWire; readonly depth: number | null; }
   | { readonly kind: "ticker"; readonly market: MarketWire; }
@@ -345,7 +344,7 @@ export const PROVIDER_CONSTRUCTORS = {
   binance: ["spot", "usdMFutures"],
   hyperliquid: ["constructor", "testnet"],
 } as const;
-export const IDENTIFIERS = ["Exchange", "Feature", "MarketKind", "MarketStatus", "Side", "Interval", "Overflow", "MarginMode", "OrderStatus", "OrderType", "TimeInForce", "SizeKind", "UpbitRegion", "BithumbAlertStep", "BinanceMarket", "HyperliquidLedgerKind"] as const;
+export const IDENTIFIERS = ["Exchange", "Feature", "MarketKind", "MarketStatus", "Side", "Interval", "Overflow", "MarginMode", "OrderStatus", "OrderType", "TimeInForce", "SizeKind", "UpbitRegion", "BithumbAlertStep", "BinanceMarket", "HyperliquidLedgerKind", "ExchangeErrorKind"] as const;
 export const MODELS = ["Market", "MarketInfo", "Trade", "Level", "OrderBook", "Ticker", "Candle", "Balance", "Order", "Position", "MarginSummary", "FundingRate", "FundingPayment", "CandleRequest", "OrderRequest", "StreamConfig", "Subscription", "HistoryRequest", "MarginRequest", "UpbitMarketEvent", "BithumbMarketAlert", "BinanceSymbolFilters", "BinanceSpotOrderDetail", "HyperliquidLedgerEntry", "HyperliquidAssetContext"] as const;
 export const RAW_NATIVE_EXPORTS = ["NATIVE_API_VERSION", "NativeClient", "createCustomClient", "NativeUpbit", "createUpbit", "NativeBithumb", "createBithumb", "NativeBinance", "createBinance", "NativeHyperliquid", "createHyperliquid"] as const;
 export const RAW_NATIVE_CLIENT_MEMBERS = ["exchange", "supports", "markets", "trades", "orderBook", "ticker", "candles", "subscribe", "subscribeWith", "balances", "openOrders", "openOrdersOn", "subscribeAccount", "subscribeAccountWith", "placeOrder", "cancelOrder", "positions", "positionsOn", "marginSummary", "fundingRates", "fundingPayments", "setMargin", "streamNext", "streamClose"] as const;

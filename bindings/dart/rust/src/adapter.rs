@@ -19,6 +19,8 @@ use crate::stream::{
     market_stream_channel,
 };
 
+mod generated_dispatch;
+
 /// Dart Adapter가 받을 market feed입니다.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireFeed {
@@ -354,91 +356,12 @@ impl ForeignDispatcher for DartDispatcher {
             }
             call => call,
         };
-        let (call, expected) = match call {
-            CommonAdapterCall::Markets { kind } => (
-                AdapterCall::Markets { kind: kind.into() },
-                ExpectedReply::Markets,
-            ),
-            CommonAdapterCall::Trades { market, limit } => (
-                AdapterCall::Trades {
-                    market: market.into(),
-                    limit,
-                },
-                ExpectedReply::Trades,
-            ),
-            CommonAdapterCall::OrderBook { market, depth } => (
-                AdapterCall::OrderBook {
-                    market: market.into(),
-                    depth,
-                },
-                ExpectedReply::OrderBook,
-            ),
-            CommonAdapterCall::Ticker { market } => (
-                AdapterCall::Ticker {
-                    market: market.into(),
-                },
-                ExpectedReply::Ticker,
-            ),
-            CommonAdapterCall::Candles { request } => (
-                AdapterCall::Candles {
-                    request: request.into(),
-                },
-                ExpectedReply::Candles,
-            ),
-            CommonAdapterCall::Balances => (AdapterCall::Balances, ExpectedReply::Balances),
-            CommonAdapterCall::OpenOrders { market } => (
-                AdapterCall::OpenOrders {
-                    market: market.map(Into::into),
-                },
-                ExpectedReply::OpenOrders,
-            ),
-            CommonAdapterCall::PlaceOrder { request } => (
-                AdapterCall::PlaceOrder {
-                    request: request.into(),
-                },
-                ExpectedReply::PlaceOrder,
-            ),
-            CommonAdapterCall::CancelOrder { market, order_id } => (
-                AdapterCall::CancelOrder {
-                    market: market.into(),
-                    order_id,
-                },
-                ExpectedReply::CancelOrder,
-            ),
-            CommonAdapterCall::Positions { market } => (
-                AdapterCall::Positions {
-                    market: market.map(Into::into),
-                },
-                ExpectedReply::Positions,
-            ),
-            CommonAdapterCall::MarginSummary => {
-                (AdapterCall::MarginSummary, ExpectedReply::MarginSummary)
-            }
-            CommonAdapterCall::FundingRates { request } => (
-                AdapterCall::FundingRates {
-                    request: request.into(),
-                },
-                ExpectedReply::FundingRates,
-            ),
-            CommonAdapterCall::FundingPayments { request } => (
-                AdapterCall::FundingPayments {
-                    request: request.into(),
-                },
-                ExpectedReply::FundingPayments,
-            ),
-            CommonAdapterCall::SetMargin { request } => (
-                AdapterCall::SetMargin {
-                    request: request.into(),
-                },
-                ExpectedReply::Unit,
-            ),
-            _ => {
-                return Box::pin(async {
-                    Err(Error::adapter(
-                        "Dart dispatcher forwarding is not implemented for this Adapter call",
-                    ))
-                });
-            }
+        let Some((call, expected)) = generated_dispatch::dispatch(call) else {
+            return Box::pin(async {
+                Err(Error::adapter(
+                    "Dart dispatcher forwarding is not implemented for this Adapter call",
+                ))
+            });
         };
         let future = (self.callback)(call);
 

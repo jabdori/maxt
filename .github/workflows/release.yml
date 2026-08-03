@@ -23,7 +23,29 @@ jobs:
           test "$(sed -n 's/^version = "\([^"]*\)"/\1/p' bindings/python/pyproject.toml | head -1)" = "$version"
           echo "version=$version" >> "$GITHUB_OUTPUT"
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14.2"
+      - uses: astral-sh/setup-uv@v9.0.0
+        with:
+          version: "0.10.4"
+          python-version: "3.14.2"
+          enable-cache: true
+          cache-dependency-glob: bindings/python/uv.lock
       - run: cargo run --manifest-path bindings/codegen/Cargo.toml --no-default-features --features python --locked -- python --check
+      - working-directory: bindings/python
+        run: |
+          uv lock --check
+          uv sync --frozen --all-groups
+          cargo clippy --all-targets --locked -- -D warnings
+          cargo test --all-targets --no-default-features --locked
+          uv run --frozen maturin develop --locked
+          uv run --frozen pytest
+          uv run --frozen mypy python/maxt
+        env:
+          MAXT_REQUIRE_NATIVE_TESTS: "1"
 
   wheel:
     needs: validate

@@ -1,8 +1,5 @@
 import 'models.dart';
 
-/// Upbit 지역 배포를 선택합니다.
-enum UpbitRegion { korea, singapore, indonesia, thailand }
-
 /// 한 Upbit 시장의 투자 경고·주의 정보입니다.
 final class UpbitMarketEvent {
   UpbitMarketEvent({
@@ -15,9 +12,6 @@ final class UpbitMarketEvent {
   final bool warning;
   final List<String> cautions;
 }
-
-/// Bithumb 시장 경보 단계입니다.
-enum BithumbAlertStep { caution, warning, danger, unknown }
 
 /// 한 Bithumb 시장의 원본 투자 유의 플래그입니다.
 final class BithumbMarketWarning {
@@ -41,9 +35,6 @@ final class BithumbMarketAlert {
   final BithumbAlertStep step;
   final Timestamp endsAt;
 }
-
-/// Binance 현물 또는 USD-M 무기한 선물 거래소 구분입니다.
-enum BinanceMarket { spot, usdMFutures }
 
 /// 한 Binance 현물 심볼의 가격·수량·명목가 제약입니다.
 final class BinanceSymbolFilters {
@@ -85,46 +76,6 @@ final class BinanceSpotOrderDetail {
   final String timeInForce;
   final Decimal filledQuoteQuantity;
   final Timestamp? updatedAt;
-}
-
-/// Hyperliquid 비펀딩 원장의 이동 종류입니다.
-final class HyperliquidLedgerKind {
-  const HyperliquidLedgerKind._(this.providerName, [this._isOther = false]);
-
-  static const deposit = HyperliquidLedgerKind._('deposit');
-  static const withdraw = HyperliquidLedgerKind._('withdraw');
-  static const internalTransfer = HyperliquidLedgerKind._('internalTransfer');
-  static const subAccountTransfer = HyperliquidLedgerKind._(
-    'subAccountTransfer',
-  );
-  static const spotTransfer = HyperliquidLedgerKind._('spotTransfer');
-  static const accountClassTransfer = HyperliquidLedgerKind._(
-    'accountClassTransfer',
-  );
-  static const vaultDeposit = HyperliquidLedgerKind._('vaultDeposit');
-  static const vaultWithdraw = HyperliquidLedgerKind._('vaultWithdraw');
-  static const vaultDistribution = HyperliquidLedgerKind._('vaultDistribution');
-  static const liquidation = HyperliquidLedgerKind._('liquidation');
-
-  factory HyperliquidLedgerKind.other(String providerName) =>
-      HyperliquidLedgerKind._(providerName, true);
-
-  final String providerName;
-  final bool _isOther;
-
-  bool get isOther => _isOther;
-
-  @override
-  bool operator ==(Object other) =>
-      other is HyperliquidLedgerKind &&
-      _isOther == other._isOther &&
-      providerName == other.providerName;
-
-  @override
-  int get hashCode => Object.hash(_isOther, providerName);
-
-  @override
-  String toString() => providerName;
 }
 
 /// Hyperliquid 계정 전체의 비펀딩 원장 항목입니다.

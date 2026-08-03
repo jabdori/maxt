@@ -4,7 +4,8 @@
 
 use std::collections::BTreeSet;
 
-use maxt_bindings_common::schema::binding_schema;
+use maxt::{Exchange, Feature};
+use maxt_bindings_common::schema::{ProviderOptionValue, Type, binding_schema};
 use syn::{ImplItem, Item, TraitItem};
 
 fn snake_to_camel(value: &str) -> String {
@@ -197,4 +198,242 @@ fn schema_provider_methods_match_every_core_adapter() {
             provider.adapter
         );
     }
+}
+
+#[test]
+fn provider_constructors_cover_their_native_options() {
+    let schema = binding_schema();
+    for provider in schema.providers {
+        let option_record = schema
+            .records
+            .iter()
+            .find(|record| record.name == provider.options_wire)
+            .unwrap_or_else(|| panic!("{} options record is missing", provider.exchange));
+        let expected_options = option_record
+            .fields
+            .iter()
+            .map(|field| field.name)
+            .collect::<BTreeSet<_>>();
+        for constructor in provider.constructors {
+            let arguments = constructor
+                .arguments
+                .iter()
+                .map(|argument| argument.name)
+                .collect::<BTreeSet<_>>();
+            assert_eq!(
+                arguments.len(),
+                constructor.arguments.len(),
+                "{}.{} argument names must be unique",
+                provider.exchange,
+                constructor.name,
+            );
+            let options = constructor
+                .options
+                .iter()
+                .map(|option| option.name)
+                .collect::<BTreeSet<_>>();
+            assert_eq!(
+                options, expected_options,
+                "{}.{} must set every native option",
+                provider.exchange, constructor.name,
+            );
+            for option in constructor.options {
+                match option.value {
+                    ProviderOptionValue::Argument(name) => assert!(
+                        arguments.contains(name),
+                        "{}.{} option {} references missing argument {name}",
+                        provider.exchange,
+                        constructor.name,
+                        option.name,
+                    ),
+                    ProviderOptionValue::Identifier { name, variant } => {
+                        let identifier = schema.identifier(name).unwrap_or_else(|| {
+                            panic!(
+                                "{}.{} option {} references missing identifier {name}",
+                                provider.exchange, constructor.name, option.name,
+                            )
+                        });
+                        assert!(
+                            identifier
+                                .variants
+                                .iter()
+                                .any(|value| value.rust_name == variant),
+                            "{}.{} option {} references missing {name}::{variant}",
+                            provider.exchange,
+                            constructor.name,
+                            option.name,
+                        );
+                    }
+                    ProviderOptionValue::Boolean(_) => {}
+                }
+            }
+        }
+    }
+}
+
+fn enum_variants(source: &str, name: &str) -> Vec<String> {
+    syn::parse_file(source)
+        .unwrap()
+        .items
+        .into_iter()
+        .find_map(|item| match item {
+            Item::Enum(item) if item.ident == name => Some(
+                item.variants
+                    .into_iter()
+                    .filter(|variant| variant.ident != "Other")
+                    .map(|variant| variant.ident.to_string())
+                    .collect(),
+            ),
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("enum {name} is missing"))
+}
+
+#[test]
+fn schema_identifier_variants_match_the_core_enums() {
+    let schema = binding_schema();
+    let exchange = schema.identifier("Exchange").unwrap();
+    assert_eq!(
+        exchange
+            .variants
+            .iter()
+            .map(|variant| variant.wire_name)
+            .collect::<Vec<_>>(),
+        Exchange::ALL.map(Exchange::id),
+    );
+    let feature = schema.identifier("Feature").unwrap();
+    assert_eq!(
+        feature
+            .variants
+            .iter()
+            .map(|variant| variant.wire_name)
+            .collect::<Vec<_>>(),
+        Feature::ALL.map(Feature::id),
+    );
+
+    let sources = [
+        (
+            "MarketKind",
+            "MarketKind",
+            include_str!("../../../src/types/market.rs"),
+        ),
+        (
+            "MarketStatus",
+            "MarketStatus",
+            include_str!("../../../src/types/market.rs"),
+        ),
+        ("Side", "Side", include_str!("../../../src/types/data.rs")),
+        (
+            "Interval",
+            "Interval",
+            include_str!("../../../src/types/data.rs"),
+        ),
+        (
+            "Overflow",
+            "Overflow",
+            include_str!("../../../src/types/stream.rs"),
+        ),
+        (
+            "MarginMode",
+            "MarginMode",
+            include_str!("../../../src/types/account.rs"),
+        ),
+        (
+            "OrderStatus",
+            "OrderStatus",
+            include_str!("../../../src/types/account.rs"),
+        ),
+        (
+            "OrderType",
+            "OrderType",
+            include_str!("../../../src/types/account.rs"),
+        ),
+        (
+            "TimeInForce",
+            "TimeInForce",
+            include_str!("../../../src/types/account.rs"),
+        ),
+        (
+            "SizeKind",
+            "Size",
+            include_str!("../../../src/types/account.rs"),
+        ),
+        (
+            "UpbitRegion",
+            "UpbitRegion",
+            include_str!("../../../src/adapters/upbit/mod.rs"),
+        ),
+        (
+            "BithumbAlertStep",
+            "BithumbAlertStep",
+            include_str!("../../../src/adapters/bithumb/mod.rs"),
+        ),
+        (
+            "BinanceMarket",
+            "BinanceMarket",
+            include_str!("../../../src/adapters/binance/mod.rs"),
+        ),
+        (
+            "HyperliquidLedgerKind",
+            "HyperliquidLedgerKind",
+            include_str!("../../../src/adapters/hyperliquid/native.rs"),
+        ),
+        (
+            "ExchangeErrorKind",
+            "ExchangeErrorKind",
+            include_str!("../../../src/error.rs"),
+        ),
+    ];
+    for (identifier_name, enum_name, source) in sources {
+        let expected = schema
+            .identifier(identifier_name)
+            .unwrap()
+            .variants
+            .iter()
+            .map(|variant| variant.rust_name.to_owned())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            enum_variants(source, enum_name),
+            expected,
+            "{identifier_name} variants differ",
+        );
+    }
+}
+
+fn referenced_identifiers(value: &Type, names: &mut Vec<&'static str>) {
+    match value {
+        Type::Identifier(name) => names.push(name),
+        Type::Optional(value) | Type::List(value) => referenced_identifiers(value, names),
+        Type::Tuple(values) => {
+            for value in values {
+                referenced_identifiers(value, names);
+            }
+        }
+        _ => {}
+    }
+}
+
+#[test]
+fn every_identifier_reference_has_a_variant_contract() {
+    let schema = binding_schema();
+    let mut names = Vec::new();
+    for record in &schema.records {
+        for field in &record.fields {
+            referenced_identifiers(&field.ty, &mut names);
+        }
+    }
+    for union in &schema.unions {
+        for variant in &union.variants {
+            for field in &variant.fields {
+                referenced_identifiers(&field.ty, &mut names);
+            }
+        }
+    }
+    names.sort_unstable();
+    names.dedup();
+    assert!(
+        names
+            .into_iter()
+            .all(|name| schema.identifier(name).is_some())
+    );
 }

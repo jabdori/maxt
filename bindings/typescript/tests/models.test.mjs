@@ -8,11 +8,14 @@ import {
   Decimal,
   Exchange,
   Feed,
+  Feature,
   HyperliquidLedgerKind,
   Interval,
   Level,
   Market,
+  MarketKind,
   OrderBook,
+  OrderStatus,
   Overflow,
   Page,
   Side,
@@ -20,6 +23,8 @@ import {
   Subscription,
   Timestamp,
 } from "../dist/models.js";
+import { InvalidRequestError } from "../dist/errors.js";
+import { streamConfigFromWire } from "../dist/generated/codec.js";
 
 test("Decimal preserves its exact text and rejects unrepresentable inputs", () => {
   const value = Decimal.parse("1.2300");
@@ -87,6 +92,36 @@ test("string variants are stable singleton values in Rust declaration order", ()
   assert.equal(Exchange.Binance.id, "binance");
   assert.deepEqual(BinanceMarket.values, [BinanceMarket.Spot, BinanceMarket.UsdMFutures]);
   assert.equal(HyperliquidLedgerKind.other("futureKind").id, "futureKind");
+  assert.equal(HyperliquidLedgerKind.other("deposit"), HyperliquidLedgerKind.Deposit);
+  assert.equal(Feature.Balances.needsCredentials, true);
+  assert.equal(Feature.FundingRates.needsCredentials, false);
+  assert.equal(Feature.FundingRates.isDerivativesOnly, true);
+  assert.equal(MarketKind.Perpetual.isDerivative, true);
+  assert.equal(Interval.Hour4.seconds, 14_400);
+  assert.equal(Interval.Month1.seconds, null);
+  assert.equal(Side.Buy.flipped, Side.Sell);
+  assert.equal(OrderStatus.PartiallyFilled.isLive, true);
+  assert.equal(OrderStatus.Filled.isLive, false);
+});
+
+test("wire unsigned integers reject malformed and unsafe values", () => {
+  const wire = {
+    max_reconnect_attempts: null,
+    initial_reconnect_delay_ms: "1000",
+    max_reconnect_delay_ms: "30000",
+    idle_timeout_ms: "30000",
+    buffer_size: "4096",
+    overflow: "backpressure",
+  };
+  assert.equal(streamConfigFromWire(wire).bufferSize, 4096);
+  assert.throws(
+    () => streamConfigFromWire({ ...wire, buffer_size: "1.5" }),
+    InvalidRequestError,
+  );
+  assert.throws(
+    () => streamConfigFromWire({ ...wire, buffer_size: "9007199254740992" }),
+    InvalidRequestError,
+  );
 });
 
 test("public records normalize ASCII assets, preserve nulls, and freeze collections", () => {

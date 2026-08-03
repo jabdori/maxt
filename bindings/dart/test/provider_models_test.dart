@@ -2,6 +2,15 @@ import 'package:maxt/maxt.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('Binance 시장 식별자는 기존 공개 이름과 wire 값을 유지한다', () {
+    expect(BinanceMarket.values, [
+      BinanceMarket.spot,
+      BinanceMarket.usdMFutures,
+    ]);
+    expect(BinanceMarket.spot.wireName, 'spot');
+    expect(BinanceMarket.usdMFutures.wireName, 'usd_m');
+  });
+
   test('기타 원장 종류는 알려진 공급자 이름과 variant를 구분한다', () {
     final otherDeposit = HyperliquidLedgerKind.other('deposit');
     final sameOtherDeposit = HyperliquidLedgerKind.other('deposit');

@@ -49,6 +49,7 @@ cargo package -p maxt --locked
 ```sh
 uv lock --check
 uv sync --frozen --all-groups
+cargo run --manifest-path ../codegen/Cargo.toml --no-default-features --features python --locked -- python
 cargo run --manifest-path ../codegen/Cargo.toml --no-default-features --features python --locked -- python --check
 cargo clippy --all-targets --locked -- -D warnings
 cargo test --all-targets --no-default-features --locked
@@ -64,6 +65,7 @@ uv run --frozen twine check dist/*
 `bindings/dart`에서 실행하세요.
 
 ```sh
+cargo run --manifest-path ../codegen/Cargo.toml --no-default-features --features dart --locked -- dart
 cargo run --manifest-path ../codegen/Cargo.toml --no-default-features --features dart --locked -- dart --check
 cargo clippy --manifest-path rust/Cargo.toml --all-targets --locked -- -D warnings
 cargo test --manifest-path rust/Cargo.toml --all-targets --locked
@@ -112,8 +114,10 @@ CI는 Markdown, Rust, TOML에 기여자 컴퓨터의 절대 경로가 포함된 
 4. 공통 정렬, 범위, `Option`, `Decimal`, `Timestamp`, 오류, 스트림 수명 주기 계약을
    유지합니다.
 5. 파싱, 요청 생성, 서명, 기능, 거래소 한도의 픽스처 테스트를 추가합니다.
-6. 각 언어 바인딩은 별도 변경으로 갱신하고 해당 언어 생성 대상을 실행합니다.
-   Rust 변경과 모든 바인딩 변경을 하나의 풀 리퀘스트에 묶지 않습니다.
+6. `bindings/common/src/schema.rs`에 거래소, 작업, 식별자, 레코드, 오류를
+   등록합니다. 갱신할 언어의 생성 대상만 실행하세요. 생성 대상인 공개 API와
+   구조 변환을 직접 포팅하지 마세요. Rust 변경과 모든 바인딩 변경을 하나의
+   풀 리퀘스트에 묶지 않습니다.
 7. 기능 계약 테스트, 거래소 레퍼런스의 영어·한국어 문서, 관련 예제를 갱신합니다.
 8. 변경한 영역의 CI 검사만 실행합니다.
 
@@ -124,10 +128,15 @@ CI는 Markdown, Rust, TOML에 기여자 컴퓨터의 절대 경로가 포함된 
 - `dart-vX.Y.Z`: pub.dev
 - `typescript-vX.Y.Z`: npm, Node.js와 브라우저 WebAssembly 포함
 
-Dart 첫 버전은 수동으로 배포한 뒤 pub.dev 태그 패턴을 `dart-v{{version}}`으로
-설정합니다. npm 첫 배포에는 `NPM_TOKEN`이 필요합니다. 이후
-`release-typescript.yml`에 신뢰할 수 있는 배포(Trusted Publishing)를 설정하고
-토큰을 제거합니다.
+각 레지스트리 배포는 해당 언어 태그로 시작합니다. 태그 버전과 패키지
+manifest 버전이 일치해야 합니다.
+
+## 생성 파일
+
+첫 줄에 생성 파일이라고 표시된 파일은 직접 수정하지 마세요. 전체 목록과 생성
+순서는 [바인딩 코드 생성기 안내](bindings/codegen/README.ko.md)에 있습니다.
+비동기 실행, 객체 수명, callback, 스트림 취소, 네이티브 로딩, 브라우저 보안 같은
+Python·Dart 런타임 정책은 수기로 유지합니다.
 
 공개 어댑터 계약은 모의(mock), 백테스트(backtest), 기록 데이터 어댑터에도 사용할 수 있습니다.
 [외부 어댑터](docs/common-api.ko.md#외부-어댑터)를 참고하세요.

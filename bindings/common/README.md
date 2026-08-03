@@ -2,26 +2,35 @@
 
 [한국어](README.ko.md)
 
-`maxt-bindings-common` contains the language-neutral request, response, error,
-and stream contracts used by maxt language bindings. It also provides the
-`ForeignAdapter` bridge for adapters implemented outside Rust.
+`maxt-bindings-common` defines requests, responses, errors, streams, and the
+`ForeignAdapter` bridge shared by the language bindings. Applications should
+install the Rust, Python, Dart / Flutter, or TypeScript package instead.
 
-This crate is for binding implementations. Applications should install the
-Rust, Python, Dart / Flutter, or TypeScript package instead.
+## Source of truth
 
-## Verify the Rust contract
+`src/schema.rs` is the source of truth for generated binding public APIs.
 
-Run the contract tests after changing request dispatch, replies, or
-stream cancellation:
+| Change | Schema entry |
+| --- | --- |
+| Common method | `ADAPTER_OPERATIONS` |
+| Provider method or constructor | `PROVIDERS` |
+| Enum or open identifier | `IDENTIFIERS` |
+| Request or response model | `records` in `binding_schema()` |
+| Tagged error | `unions` in `binding_schema()` |
+
+The Rust adapter remains the behavioral implementation. The schema describes
+the foreign-language boundary and must match it.
+
+## Verify a schema change
 
 ```sh
-cargo test -p maxt-bindings-common --locked
+cargo test -p maxt-bindings-common --features codegen --test schema_inventory --locked
+cargo run -p maxt-bindings-codegen --no-default-features --features python --locked -- python --check
 ```
 
-See the [common API reference](../../docs/common-api.md) and
-[contribution guide](../../CONTRIBUTING.md) for the public contract and the
-required checks.
+Replace `python` with the binding being updated. Run its generator without
+`--check` first when the schema intentionally changes generated output.
 
-The [generated binding contract](generated/api.md) lists Adapter and
-provider-specific method names for every language. Regenerate it with the
-[binding code generator](../codegen/README.md).
+See the [code generator guide](../codegen/README.md),
+[common API reference](../../docs/common-api.md), and
+[contribution guide](../../CONTRIBUTING.md).

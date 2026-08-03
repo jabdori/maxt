@@ -14,6 +14,17 @@ function identifier<T extends { readonly id: string }>(
   return value;
 }
 
+function unsignedInteger(value: string, field: string): number {
+  if (!/^\d+$/.test(value)) {
+    throw new InvalidRequestError(field, "must be an unsigned decimal integer");
+  }
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed)) {
+    throw new InvalidRequestError(field, "exceeds the JavaScript safe integer range");
+  }
+  return parsed;
+}
+
 export function unwrapOutcome<T>(outcome: NativeOutcome<T>): T {
   if (!outcome.ok) throw errorFromWire(outcome.error);
   return outcome.value;
@@ -26,7 +37,7 @@ export function marketFromWire(value: Wire.MarketWire): Model.Market {
 export function marketToWire(value: Model.Market): Wire.MarketWire {
   return {
     exchange: value.exchange.id,
-    kind: value.kind === Model.MarketKind.Spot ? "spot" : "perpetual",
+    kind: value.kind.id,
     base: value.base,
     quote: value.quote,
   };
@@ -260,10 +271,10 @@ export function orderRequestToWire(value: Model.OrderRequest): Wire.OrderRequest
 export function streamConfigFromWire(value: Wire.StreamConfigWire): Model.StreamConfig {
   return new Model.StreamConfig({
     maxReconnectAttempts: value.max_reconnect_attempts,
-    initialReconnectDelayMs: Number(value.initial_reconnect_delay_ms),
-    maxReconnectDelayMs: Number(value.max_reconnect_delay_ms),
-    idleTimeoutMs: Number(value.idle_timeout_ms),
-    bufferSize: Number(value.buffer_size),
+    initialReconnectDelayMs: unsignedInteger(value.initial_reconnect_delay_ms, "initial_reconnect_delay_ms"),
+    maxReconnectDelayMs: unsignedInteger(value.max_reconnect_delay_ms, "max_reconnect_delay_ms"),
+    idleTimeoutMs: unsignedInteger(value.idle_timeout_ms, "idle_timeout_ms"),
+    bufferSize: unsignedInteger(value.buffer_size, "buffer_size"),
     overflow: identifier(Model.Overflow.values, value.overflow, "overflow"),
   });
 }

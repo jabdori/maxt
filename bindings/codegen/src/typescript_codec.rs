@@ -20,6 +20,17 @@ function identifier<T extends { readonly id: string }>(
   return value;
 }
 
+function unsignedInteger(value: string, field: string): number {
+  if (!/^\d+$/.test(value)) {
+    throw new InvalidRequestError(field, "must be an unsigned decimal integer");
+  }
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed)) {
+    throw new InvalidRequestError(field, "exceeds the JavaScript safe integer range");
+  }
+  return parsed;
+}
+
 export function unwrapOutcome<T>(outcome: NativeOutcome<T>): T {
   if (!outcome.ok) throw errorFromWire(outcome.error);
   return outcome.value;
@@ -88,6 +99,7 @@ fn snake_to_camel(value: &str) -> String {
 fn from_expression(ty: &Type, value: &str, field: &str) -> String {
     match ty {
         Type::String | Type::Boolean | Type::Number => value.to_owned(),
+        Type::UnsignedInteger => format!("unsignedInteger({value}, \"{field}\")"),
         Type::Decimal => format!("Model.Decimal.parse({value})"),
         Type::Timestamp => format!("Model.Timestamp.fromNanoseconds(BigInt({value}))"),
         Type::Identifier(name) => {
@@ -96,9 +108,6 @@ fn from_expression(ty: &Type, value: &str, field: &str) -> String {
             } else {
                 format!("identifier(Model.{name}.values, {value}, \"{field}\")")
             }
-        }
-        Type::Named("MarketKindWire") => {
-            format!("identifier(Model.MarketKind.values, {value}, \"{field}\")")
         }
         Type::Named(name) if name.ends_with("Wire") => {
             format!(
@@ -130,12 +139,10 @@ fn from_expression(ty: &Type, value: &str, field: &str) -> String {
 fn to_expression(ty: &Type, value: &str) -> String {
     match ty {
         Type::String | Type::Boolean | Type::Number => value.to_owned(),
+        Type::UnsignedInteger => format!("{value}.toString()"),
         Type::Decimal => format!("{value}.toString()"),
         Type::Timestamp => format!("{value}.nanosecondsSinceEpoch.toString()"),
         Type::Identifier(_) => format!("{value}.id"),
-        Type::Named("MarketKindWire") => {
-            format!("{value} === Model.MarketKind.Spot ? \"spot\" : \"perpetual\"")
-        }
         Type::Named(name) if name.ends_with("Wire") => {
             format!(
                 "{}ToWire({value})",
@@ -197,10 +204,10 @@ export function orderRequestToWire(value: Model.OrderRequest): Wire.OrderRequest
 const STREAM_CONFIG_CODEC: &str = r#"export function streamConfigFromWire(value: Wire.StreamConfigWire): Model.StreamConfig {
   return new Model.StreamConfig({
     maxReconnectAttempts: value.max_reconnect_attempts,
-    initialReconnectDelayMs: Number(value.initial_reconnect_delay_ms),
-    maxReconnectDelayMs: Number(value.max_reconnect_delay_ms),
-    idleTimeoutMs: Number(value.idle_timeout_ms),
-    bufferSize: Number(value.buffer_size),
+    initialReconnectDelayMs: unsignedInteger(value.initial_reconnect_delay_ms, "initial_reconnect_delay_ms"),
+    maxReconnectDelayMs: unsignedInteger(value.max_reconnect_delay_ms, "max_reconnect_delay_ms"),
+    idleTimeoutMs: unsignedInteger(value.idle_timeout_ms, "idle_timeout_ms"),
+    bufferSize: unsignedInteger(value.buffer_size, "buffer_size"),
     overflow: identifier(Model.Overflow.values, value.overflow, "overflow"),
   });
 }

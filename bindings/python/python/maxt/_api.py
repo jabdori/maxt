@@ -3,11 +3,12 @@ from __future__ import annotations
 import asyncio
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import Enum
 from importlib import import_module
 from inspect import isawaitable
 from typing import Any, AsyncIterator, Generic, Literal, Optional, TypeVar, Union
 
+from ._generated_identifiers import ExchangeErrorKind
+from ._generated_wire import ERROR_FIELDS
 from .models import (
     AccountEvent,
     Balance,
@@ -99,20 +100,6 @@ class AdapterError(MaxtError):
         super().__init__(detail)
 
 
-class ExchangeErrorKind(str, Enum):
-    REJECTED = "rejected"
-    RATE_LIMITED = "rate_limited"
-    UNAVAILABLE = "unavailable"
-    UNKNOWN = "unknown"
-
-    def is_retryable(self) -> bool:
-        """Return whether this kind represents a transient provider failure."""
-        return self in {
-            ExchangeErrorKind.RATE_LIMITED,
-            ExchangeErrorKind.UNAVAILABLE,
-        }
-
-
 class ExchangeError(MaxtError):
     kind = "exchange"
 
@@ -144,7 +131,23 @@ def _load_native() -> Any:
 
 
 def _error_from_wire(value: dict[str, Any]) -> MaxtError:
-    kind = value.get("kind")
+    kind_value = value.get("kind")
+    kind = kind_value if isinstance(kind_value, str) else None
+    expected_fields = ERROR_FIELDS.get(kind) if kind is not None else None
+    if expected_fields is not None:
+        present = set(value)
+        if kind == "exchange" and "provider_message" in present:
+            present.add("message")
+        required = {
+            name
+            for name, field_type in expected_fields.items()
+            if not field_type.startswith("optional:")
+        }
+        missing = required - present
+        if missing:
+            return AdapterError(
+                f"invalid {kind} error: missing {', '.join(sorted(missing))}"
+            )
     if kind == "invalid_request":
         return InvalidRequestError(value["field"], value["detail"])
     if kind == "unsupported":
@@ -258,7 +261,10 @@ class AccountStream(AsyncStream[T]):
     pass
 
 
-class Adapter(ABC):
+from ._generated_api import _GeneratedAdapterApi, _GeneratedClientApi
+
+
+class Adapter(_GeneratedAdapterApi, ABC):
     """Interface implemented by built-in and custom exchange adapters."""
 
     @property
@@ -276,31 +282,6 @@ class Adapter(ABC):
 
     def _unsupported(self, feature: Feature) -> UnsupportedError:
         return UnsupportedError(feature, self.exchange)
-
-    async def markets(self, kind: MarketKind) -> list[MarketInfo]:
-        raise self._unsupported(Feature.MARKETS)
-
-    async def trades(
-        self,
-        market: Market,
-        limit: Optional[int] = None,
-    ) -> list[Trade]:
-        """Return recent trades newest-first."""
-        raise self._unsupported(Feature.TRADES)
-
-    async def order_book(
-        self,
-        market: Market,
-        depth: Optional[int] = None,
-    ) -> OrderBook:
-        """Return a snapshot; `depth` limits each side independently."""
-        raise self._unsupported(Feature.ORDER_BOOK)
-
-    async def ticker(self, market: Market) -> Ticker:
-        raise self._unsupported(Feature.TICKER)
-
-    async def candles(self, request: CandleRequest) -> list[Candle]:
-        raise self._unsupported(Feature.CANDLES)
 
     async def subscribe(
         self,
@@ -325,42 +306,8 @@ class Adapter(ABC):
         }.get(subscription.feeds[0].kind, Feature.TRADE_STREAM)
         raise self._unsupported(feature)
 
-    async def balances(self) -> list[Balance]:
-        raise self._unsupported(Feature.BALANCES)
 
-    async def open_orders(self, market: Optional[Market] = None) -> list[Order]:
-        raise self._unsupported(Feature.OPEN_ORDERS)
-
-    async def subscribe_account(
-        self,
-        config: StreamConfig,
-    ) -> AccountStream[Union[StreamEvent[AccountEvent], StreamError]]:
-        """Open an account stream; `StreamError` items are non-terminal."""
-        raise self._unsupported(Feature.ACCOUNT_STREAM)
-
-    async def place_order(self, request: OrderRequest) -> Order:
-        raise self._unsupported(Feature.TRADING)
-
-    async def cancel_order(self, market: Market, order_id: str) -> Order:
-        raise self._unsupported(Feature.TRADING)
-
-    async def positions(self, market: Optional[Market] = None) -> list[Position]:
-        raise self._unsupported(Feature.POSITIONS)
-
-    async def margin_summary(self) -> MarginSummary:
-        raise self._unsupported(Feature.MARGIN)
-
-    async def funding_rates(self, request: HistoryRequest) -> Page[FundingRate]:
-        raise self._unsupported(Feature.FUNDING_RATES)
-
-    async def funding_payments(self, request: HistoryRequest) -> Page[FundingPayment]:
-        raise self._unsupported(Feature.FUNDING_PAYMENTS)
-
-    async def set_margin(self, request: MarginRequest) -> None:
-        raise self._unsupported(Feature.MARGIN_CONFIG)
-
-
-class Client(Generic[A]):
+class Client(_GeneratedClientApi, Generic[A]):
     """Consistent public API over one adapter."""
 
     def __init__(self, adapter: A) -> None:
@@ -379,97 +326,6 @@ class Client(Generic[A]):
 
     def supports(self, feature: Feature) -> bool:
         return self._delegate.supports(feature)
-
-    async def markets(self, kind: MarketKind) -> list[MarketInfo]:
-        return await self._delegate.markets(kind)
-
-    async def trades(
-        self,
-        market: Market,
-        limit: Optional[int] = None,
-    ) -> list[Trade]:
-        """Return recent trades newest-first."""
-        return await self._delegate.trades(market, limit)
-
-    async def order_book(
-        self,
-        market: Market,
-        depth: Optional[int] = None,
-    ) -> OrderBook:
-        """Return a snapshot; `depth` limits each side independently."""
-        return await self._delegate.order_book(market, depth)
-
-    async def ticker(self, market: Market) -> Ticker:
-        return await self._delegate.ticker(market)
-
-    async def candles(self, request: CandleRequest) -> list[Candle]:
-        return await self._delegate.candles(request)
-
-    async def subscribe(
-        self,
-        subscription: Subscription,
-    ) -> MarketStream[Union[StreamEvent[MarketEvent], StreamError]]:
-        """Open a stream; `StreamError` items do not terminate iteration."""
-        return await self.subscribe_with(subscription, StreamConfig())
-
-    async def subscribe_with(
-        self,
-        subscription: Subscription,
-        config: StreamConfig,
-    ) -> MarketStream[Union[StreamEvent[MarketEvent], StreamError]]:
-        """Open a configured stream; `StreamError` items are non-terminal."""
-        return await self._delegate.subscribe(subscription, config)
-
-    async def balances(self) -> list[Balance]:
-        return await self._delegate.balances()
-
-    async def open_orders(self) -> list[Order]:
-        return await self._delegate.open_orders(None)
-
-    async def open_orders_on(self, market: Market) -> list[Order]:
-        return await self._delegate.open_orders(market)
-
-    async def subscribe_account(
-        self,
-    ) -> AccountStream[Union[StreamEvent[AccountEvent], StreamError]]:
-        """Open an account stream; `StreamError` items are non-terminal."""
-        return await self.subscribe_account_with(StreamConfig())
-
-    async def subscribe_account_with(
-        self,
-        config: StreamConfig,
-    ) -> AccountStream[Union[StreamEvent[AccountEvent], StreamError]]:
-        """Open a configured account stream; `StreamError` items are non-terminal."""
-        return await self._delegate.subscribe_account(config)
-
-    async def place_order(self, request: OrderRequest) -> Order:
-        return await self._delegate.place_order(request)
-
-    async def cancel_order(self, market: Market, order_id: str) -> Order:
-        return await self._delegate.cancel_order(market, order_id)
-
-    async def positions(self) -> list[Position]:
-        return [row for row in await self._delegate.positions(None) if not row.is_flat()]
-
-    async def positions_on(self, market: Market) -> list[Position]:
-        return [
-            row
-            for row in await self._delegate.positions(market)
-            if not row.is_flat()
-        ]
-
-    async def margin_summary(self) -> MarginSummary:
-        return await self._delegate.margin_summary()
-
-    async def funding_rates(self, request: HistoryRequest) -> Page[FundingRate]:
-        return await self._delegate.funding_rates(request)
-
-    async def funding_payments(self, request: HistoryRequest) -> Page[FundingPayment]:
-        return await self._delegate.funding_payments(request)
-
-    async def set_margin(self, request: MarginRequest) -> None:
-        return await self._delegate.set_margin(request)
-
 
 __all__ = [
     "AccountStream",

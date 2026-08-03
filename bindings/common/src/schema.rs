@@ -7,6 +7,7 @@ pub enum Type {
     String,
     Boolean,
     Number,
+    UnsignedInteger,
     Decimal,
     Timestamp,
     Identifier(&'static str),
@@ -54,6 +55,19 @@ pub struct TaggedUnion {
     pub name: &'static str,
     pub type_parameters: &'static [&'static str],
     pub variants: Vec<Variant>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct IdentifierVariant {
+    pub rust_name: &'static str,
+    pub wire_name: &'static str,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Identifier {
+    pub name: &'static str,
+    pub variants: &'static [IdentifierVariant],
+    pub open: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -114,6 +128,29 @@ pub struct ProviderMethod {
     pub result: ApiType,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProviderOptionValue {
+    Argument(&'static str),
+    Identifier {
+        name: &'static str,
+        variant: &'static str,
+    },
+    Boolean(bool),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProviderOption {
+    pub name: &'static str,
+    pub value: ProviderOptionValue,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProviderConstructor {
+    pub name: &'static str,
+    pub arguments: &'static [Argument],
+    pub options: &'static [ProviderOption],
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Provider {
     pub exchange: &'static str,
@@ -121,7 +158,7 @@ pub struct Provider {
     pub native_handle: &'static str,
     pub native_factory: &'static str,
     pub options_wire: &'static str,
-    pub constructors: &'static [&'static str],
+    pub constructors: &'static [ProviderConstructor],
     pub methods: &'static [ProviderMethod],
 }
 
@@ -130,7 +167,7 @@ pub struct Schema {
     pub native_api_version: u32,
     pub exchanges: Vec<&'static str>,
     pub features: Vec<&'static str>,
-    pub identifiers: &'static [&'static str],
+    pub identifiers: &'static [Identifier],
     pub models: &'static [&'static str],
     pub errors: &'static [&'static str],
     pub adapter_operations: &'static [Operation],
@@ -138,6 +175,16 @@ pub struct Schema {
     pub providers: &'static [Provider],
     pub records: Vec<Record>,
     pub unions: Vec<TaggedUnion>,
+}
+
+impl Schema {
+    pub fn identifier(&self, name: &str) -> Option<&Identifier> {
+        self.identifiers.iter().find(|value| value.name == name)
+    }
+
+    pub fn has_identifier(&self, name: &str) -> bool {
+        self.identifier(name).is_some()
+    }
 }
 
 const fn argument(name: &'static str, ty: ApiType, default: Option<&'static str>) -> Argument {
@@ -454,23 +501,171 @@ const ERRORS: &[&str] = &[
     "Decode",
 ];
 
-const IDENTIFIERS: &[&str] = &[
-    "Exchange",
-    "Feature",
-    "MarketKind",
-    "MarketStatus",
-    "Side",
-    "Interval",
-    "Overflow",
-    "MarginMode",
-    "OrderStatus",
-    "OrderType",
-    "TimeInForce",
-    "SizeKind",
-    "UpbitRegion",
-    "BithumbAlertStep",
-    "BinanceMarket",
-    "HyperliquidLedgerKind",
+const fn identifier_variant(rust_name: &'static str, wire_name: &'static str) -> IdentifierVariant {
+    IdentifierVariant {
+        rust_name,
+        wire_name,
+    }
+}
+
+const fn identifier(
+    name: &'static str,
+    variants: &'static [IdentifierVariant],
+    open: bool,
+) -> Identifier {
+    Identifier {
+        name,
+        variants,
+        open,
+    }
+}
+
+const EXCHANGE_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Upbit", "upbit"),
+    identifier_variant("Bithumb", "bithumb"),
+    identifier_variant("Binance", "binance"),
+    identifier_variant("Hyperliquid", "hyperliquid"),
+];
+const FEATURE_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Markets", "markets"),
+    identifier_variant("Trades", "trades"),
+    identifier_variant("OrderBook", "order_book"),
+    identifier_variant("Ticker", "ticker"),
+    identifier_variant("Candles", "candles"),
+    identifier_variant("TradeStream", "trade_stream"),
+    identifier_variant("OrderBookStream", "order_book_stream"),
+    identifier_variant("TickerStream", "ticker_stream"),
+    identifier_variant("CandleStream", "candle_stream"),
+    identifier_variant("Balances", "balances"),
+    identifier_variant("OpenOrders", "open_orders"),
+    identifier_variant("AccountStream", "account_stream"),
+    identifier_variant("Trading", "trading"),
+    identifier_variant("Positions", "positions"),
+    identifier_variant("Margin", "margin"),
+    identifier_variant("FundingRates", "funding_rates"),
+    identifier_variant("FundingPayments", "funding_payments"),
+    identifier_variant("MarginConfig", "margin_config"),
+    identifier_variant("ReduceOnlyOrders", "reduce_only_orders"),
+];
+const MARKET_KIND_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Spot", "spot"),
+    identifier_variant("Perpetual", "perpetual"),
+];
+const MARKET_STATUS_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Active", "active"),
+    identifier_variant("Paused", "paused"),
+    identifier_variant("Delisted", "delisted"),
+    identifier_variant("Unknown", "unknown"),
+];
+const SIDE_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Buy", "buy"),
+    identifier_variant("Sell", "sell"),
+];
+const INTERVAL_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Sec1", "sec1"),
+    identifier_variant("Min1", "min1"),
+    identifier_variant("Min3", "min3"),
+    identifier_variant("Min5", "min5"),
+    identifier_variant("Min15", "min15"),
+    identifier_variant("Min30", "min30"),
+    identifier_variant("Hour1", "hour1"),
+    identifier_variant("Hour2", "hour2"),
+    identifier_variant("Hour4", "hour4"),
+    identifier_variant("Hour8", "hour8"),
+    identifier_variant("Hour12", "hour12"),
+    identifier_variant("Day1", "day1"),
+    identifier_variant("Day3", "day3"),
+    identifier_variant("Week1", "week1"),
+    identifier_variant("Month1", "month1"),
+];
+const OVERFLOW_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Backpressure", "backpressure"),
+    identifier_variant("DropNewest", "drop_newest"),
+];
+const MARGIN_MODE_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Cross", "cross"),
+    identifier_variant("Isolated", "isolated"),
+];
+const ORDER_STATUS_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Accepted", "accepted"),
+    identifier_variant("Open", "open"),
+    identifier_variant("PartiallyFilled", "partially_filled"),
+    identifier_variant("Filled", "filled"),
+    identifier_variant("Cancelled", "cancelled"),
+    identifier_variant("Rejected", "rejected"),
+    identifier_variant("Unknown", "unknown"),
+];
+const ORDER_TYPE_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Market", "market"),
+    identifier_variant("Limit", "limit"),
+];
+const TIME_IN_FORCE_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("GoodTilCancelled", "good_til_cancelled"),
+    identifier_variant("ImmediateOrCancel", "immediate_or_cancel"),
+    identifier_variant("FillOrKill", "fill_or_kill"),
+    identifier_variant("PostOnly", "post_only"),
+];
+const SIZE_KIND_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Base", "base"),
+    identifier_variant("Quote", "quote"),
+];
+const UPBIT_REGION_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Korea", "korea"),
+    identifier_variant("Singapore", "singapore"),
+    identifier_variant("Indonesia", "indonesia"),
+    identifier_variant("Thailand", "thailand"),
+];
+const BITHUMB_ALERT_STEP_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Caution", "caution"),
+    identifier_variant("Warning", "warning"),
+    identifier_variant("Danger", "danger"),
+    identifier_variant("Unknown", "unknown"),
+];
+const BINANCE_MARKET_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Spot", "spot"),
+    identifier_variant("UsdMFutures", "usd_m"),
+];
+const HYPERLIQUID_LEDGER_KIND_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Deposit", "deposit"),
+    identifier_variant("Withdraw", "withdraw"),
+    identifier_variant("InternalTransfer", "internal_transfer"),
+    identifier_variant("SubAccountTransfer", "sub_account_transfer"),
+    identifier_variant("SpotTransfer", "spot_transfer"),
+    identifier_variant("AccountClassTransfer", "account_class_transfer"),
+    identifier_variant("VaultDeposit", "vault_deposit"),
+    identifier_variant("VaultWithdraw", "vault_withdraw"),
+    identifier_variant("VaultDistribution", "vault_distribution"),
+    identifier_variant("Liquidation", "liquidation"),
+];
+const EXCHANGE_ERROR_KIND_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Rejected", "rejected"),
+    identifier_variant("RateLimited", "rate_limited"),
+    identifier_variant("Unavailable", "unavailable"),
+    identifier_variant("Unknown", "unknown"),
+];
+
+const IDENTIFIERS: &[Identifier] = &[
+    identifier("Exchange", EXCHANGE_VARIANTS, false),
+    identifier("Feature", FEATURE_VARIANTS, false),
+    identifier("MarketKind", MARKET_KIND_VARIANTS, false),
+    identifier("MarketStatus", MARKET_STATUS_VARIANTS, false),
+    identifier("Side", SIDE_VARIANTS, false),
+    identifier("Interval", INTERVAL_VARIANTS, false),
+    identifier("Overflow", OVERFLOW_VARIANTS, false),
+    identifier("MarginMode", MARGIN_MODE_VARIANTS, false),
+    identifier("OrderStatus", ORDER_STATUS_VARIANTS, false),
+    identifier("OrderType", ORDER_TYPE_VARIANTS, false),
+    identifier("TimeInForce", TIME_IN_FORCE_VARIANTS, false),
+    identifier("SizeKind", SIZE_KIND_VARIANTS, false),
+    identifier("UpbitRegion", UPBIT_REGION_VARIANTS, false),
+    identifier("BithumbAlertStep", BITHUMB_ALERT_STEP_VARIANTS, false),
+    identifier("BinanceMarket", BINANCE_MARKET_VARIANTS, false),
+    identifier(
+        "HyperliquidLedgerKind",
+        HYPERLIQUID_LEDGER_KIND_VARIANTS,
+        true,
+    ),
+    identifier("ExchangeErrorKind", EXCHANGE_ERROR_KIND_VARIANTS, false),
 ];
 
 const MODELS: &[&str] = &[
@@ -516,6 +711,122 @@ const LEDGER_RANGE: &[Argument] = &[
     argument("to", ApiType::OptionalNamed("Timestamp"), Some("null")),
     argument("cursor", ApiType::OptionalNamed("Cursor"), Some("null")),
     argument("limit", ApiType::OptionalNumber, Some("null")),
+];
+const ACCESS_KEY_CREDENTIALS: &[Argument] = &[
+    argument("accessKey", ApiType::OptionalString, Some("null")),
+    argument("secretKey", ApiType::OptionalString, Some("null")),
+];
+const UPBIT_REGION_CREDENTIALS: &[Argument] = &[
+    argument("region", ApiType::Named("UpbitRegion"), None),
+    argument("accessKey", ApiType::OptionalString, Some("null")),
+    argument("secretKey", ApiType::OptionalString, Some("null")),
+];
+const API_KEY_CREDENTIALS: &[Argument] = &[
+    argument("apiKey", ApiType::OptionalString, Some("null")),
+    argument("secretKey", ApiType::OptionalString, Some("null")),
+];
+const WALLET_CREDENTIALS: &[Argument] = &[
+    argument("address", ApiType::OptionalString, Some("null")),
+    argument("privateKey", ApiType::OptionalString, Some("null")),
+];
+
+const fn provider_option(name: &'static str, value: ProviderOptionValue) -> ProviderOption {
+    ProviderOption { name, value }
+}
+
+const UPBIT_OPTIONS: &[ProviderOption] = &[
+    provider_option(
+        "region",
+        ProviderOptionValue::Identifier {
+            name: "UpbitRegion",
+            variant: "Korea",
+        },
+    ),
+    provider_option("access_key", ProviderOptionValue::Argument("accessKey")),
+    provider_option("secret_key", ProviderOptionValue::Argument("secretKey")),
+];
+const UPBIT_REGION_OPTIONS: &[ProviderOption] = &[
+    provider_option("region", ProviderOptionValue::Argument("region")),
+    provider_option("access_key", ProviderOptionValue::Argument("accessKey")),
+    provider_option("secret_key", ProviderOptionValue::Argument("secretKey")),
+];
+const BITHUMB_OPTIONS: &[ProviderOption] = &[
+    provider_option("access_key", ProviderOptionValue::Argument("accessKey")),
+    provider_option("secret_key", ProviderOptionValue::Argument("secretKey")),
+];
+const BINANCE_SPOT_OPTIONS: &[ProviderOption] = &[
+    provider_option(
+        "venue",
+        ProviderOptionValue::Identifier {
+            name: "BinanceMarket",
+            variant: "Spot",
+        },
+    ),
+    provider_option("api_key", ProviderOptionValue::Argument("apiKey")),
+    provider_option("secret_key", ProviderOptionValue::Argument("secretKey")),
+];
+const BINANCE_USD_M_OPTIONS: &[ProviderOption] = &[
+    provider_option(
+        "venue",
+        ProviderOptionValue::Identifier {
+            name: "BinanceMarket",
+            variant: "UsdMFutures",
+        },
+    ),
+    provider_option("api_key", ProviderOptionValue::Argument("apiKey")),
+    provider_option("secret_key", ProviderOptionValue::Argument("secretKey")),
+];
+const HYPERLIQUID_OPTIONS: &[ProviderOption] = &[
+    provider_option("testnet", ProviderOptionValue::Boolean(false)),
+    provider_option("address", ProviderOptionValue::Argument("address")),
+    provider_option("private_key", ProviderOptionValue::Argument("privateKey")),
+];
+const HYPERLIQUID_TESTNET_OPTIONS: &[ProviderOption] = &[
+    provider_option("testnet", ProviderOptionValue::Boolean(true)),
+    provider_option("address", ProviderOptionValue::Argument("address")),
+    provider_option("private_key", ProviderOptionValue::Argument("privateKey")),
+];
+
+const UPBIT_CONSTRUCTORS: &[ProviderConstructor] = &[
+    ProviderConstructor {
+        name: "constructor",
+        arguments: ACCESS_KEY_CREDENTIALS,
+        options: UPBIT_OPTIONS,
+    },
+    ProviderConstructor {
+        name: "withRegion",
+        arguments: UPBIT_REGION_CREDENTIALS,
+        options: UPBIT_REGION_OPTIONS,
+    },
+];
+const BITHUMB_CONSTRUCTORS: &[ProviderConstructor] = &[ProviderConstructor {
+    name: "constructor",
+    arguments: ACCESS_KEY_CREDENTIALS,
+    options: BITHUMB_OPTIONS,
+}];
+const BINANCE_CONSTRUCTORS: &[ProviderConstructor] = &[
+    ProviderConstructor {
+        name: "spot",
+        arguments: API_KEY_CREDENTIALS,
+        options: BINANCE_SPOT_OPTIONS,
+    },
+    ProviderConstructor {
+        name: "usdMFutures",
+        arguments: API_KEY_CREDENTIALS,
+        options: BINANCE_USD_M_OPTIONS,
+    },
+];
+const HYPERLIQUID_CONSTRUCTORS: &[ProviderConstructor] = &[
+    ProviderConstructor {
+        name: "constructor",
+        arguments: WALLET_CREDENTIALS,
+        options: HYPERLIQUID_OPTIONS,
+    },
+    ProviderConstructor {
+        name: "testnet",
+        arguments: WALLET_CREDENTIALS,
+        options: HYPERLIQUID_TESTNET_OPTIONS,
+    },
 ];
 const UPBIT_METHODS: &[ProviderMethod] = &[
     ProviderMethod {
@@ -638,7 +949,7 @@ const PROVIDERS: &[Provider] = &[
         native_handle: "NativeUpbitHandle",
         native_factory: "createUpbit",
         options_wire: "UpbitOptionsWire",
-        constructors: &["constructor", "withRegion"],
+        constructors: UPBIT_CONSTRUCTORS,
         methods: UPBIT_METHODS,
     },
     Provider {
@@ -647,7 +958,7 @@ const PROVIDERS: &[Provider] = &[
         native_handle: "NativeBithumbHandle",
         native_factory: "createBithumb",
         options_wire: "BithumbOptionsWire",
-        constructors: &["constructor"],
+        constructors: BITHUMB_CONSTRUCTORS,
         methods: BITHUMB_METHODS,
     },
     Provider {
@@ -656,7 +967,7 @@ const PROVIDERS: &[Provider] = &[
         native_handle: "NativeBinanceHandle",
         native_factory: "createBinance",
         options_wire: "BinanceOptionsWire",
-        constructors: &["spot", "usdMFutures"],
+        constructors: BINANCE_CONSTRUCTORS,
         methods: BINANCE_METHODS,
     },
     Provider {
@@ -665,7 +976,7 @@ const PROVIDERS: &[Provider] = &[
         native_handle: "NativeHyperliquidHandle",
         native_factory: "createHyperliquid",
         options_wire: "HyperliquidOptionsWire",
-        constructors: &["constructor", "testnet"],
+        constructors: HYPERLIQUID_CONSTRUCTORS,
         methods: HYPERLIQUID_METHODS,
     },
 ];
@@ -709,7 +1020,7 @@ pub fn binding_schema() -> Schema {
             "MarketWire",
             vec![
                 field("exchange", Type::Identifier("Exchange")),
-                field("kind", Type::named("MarketKindWire")),
+                field("kind", Type::Identifier("MarketKind")),
                 field("base", Type::String),
                 field("quote", Type::String),
             ],
@@ -876,10 +1187,10 @@ pub fn binding_schema() -> Schema {
             "StreamConfigWire",
             vec![
                 field("max_reconnect_attempts", Type::optional(Number)),
-                field("initial_reconnect_delay_ms", Type::String),
-                field("max_reconnect_delay_ms", Type::String),
-                field("idle_timeout_ms", Type::String),
-                field("buffer_size", Type::String),
+                field("initial_reconnect_delay_ms", Type::UnsignedInteger),
+                field("max_reconnect_delay_ms", Type::UnsignedInteger),
+                field("idle_timeout_ms", Type::UnsignedInteger),
+                field("buffer_size", Type::UnsignedInteger),
                 field("overflow", Type::Identifier("Overflow")),
             ],
         ),
@@ -1027,8 +1338,8 @@ pub fn binding_schema() -> Schema {
             name: "SizeWire",
             type_parameters: &[],
             variants: vec![
-                variant("base", vec![field("value", Type::named("DecimalWire"))]),
-                variant("quote", vec![field("value", Type::named("DecimalWire"))]),
+                variant("base", vec![field("value", Type::Decimal)]),
+                variant("quote", vec![field("value", Type::Decimal)]),
             ],
         },
         TaggedUnion {
@@ -1038,7 +1349,10 @@ pub fn binding_schema() -> Schema {
                 variant("trades", vec![]),
                 variant("order_book", vec![]),
                 variant("ticker", vec![]),
-                variant("candles", vec![field("interval", Type::String)]),
+                variant(
+                    "candles",
+                    vec![field("interval", Type::Identifier("Interval"))],
+                ),
             ],
         },
         TaggedUnion {
@@ -1127,7 +1441,7 @@ pub fn binding_schema() -> Schema {
             variants: vec![
                 variant(
                     "markets",
-                    vec![field("market_kind", Type::named("MarketKindWire"))],
+                    vec![field("market_kind", Type::Identifier("MarketKind"))],
                 ),
                 variant(
                     "trades",

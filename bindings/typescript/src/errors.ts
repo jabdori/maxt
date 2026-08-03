@@ -1,31 +1,8 @@
 import { Exchange, Feature } from "./models.js";
+import { ExchangeErrorKind } from "./generated/identifiers.js";
 import type { ErrorWire } from "./generated/contract.js";
 export type { ErrorWire } from "./generated/contract.js";
-
-export class ExchangeErrorKind {
-  static readonly Rejected = new ExchangeErrorKind("rejected", false);
-  static readonly RateLimited = new ExchangeErrorKind("rate_limited", true);
-  static readonly Unavailable = new ExchangeErrorKind("unavailable", true);
-  static readonly Unknown = new ExchangeErrorKind("unknown", false);
-  static readonly values: readonly ExchangeErrorKind[] = Object.freeze([
-    ExchangeErrorKind.Rejected,
-    ExchangeErrorKind.RateLimited,
-    ExchangeErrorKind.Unavailable,
-    ExchangeErrorKind.Unknown,
-  ]);
-
-  private constructor(readonly id: string, private readonly retryable: boolean) {
-    Object.freeze(this);
-  }
-
-  isRetryable(): boolean {
-    return this.retryable;
-  }
-
-  toString(): string {
-    return this.id;
-  }
-}
+export { ExchangeErrorKind } from "./generated/identifiers.js";
 
 export abstract class MaxtError extends Error {
   abstract readonly kind: ErrorWire["kind"];

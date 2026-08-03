@@ -30,6 +30,12 @@ test("exchange errors preserve every provider field", () => {
   assert.equal(error.isRetryable(), true);
   assert.equal(error.isRateLimited(), true);
   assert.equal(error.exchangeKind.isRetryable(), true);
+  assert.deepEqual(ExchangeErrorKind.values, [
+    ExchangeErrorKind.Rejected,
+    ExchangeErrorKind.RateLimited,
+    ExchangeErrorKind.Unavailable,
+    ExchangeErrorKind.Unknown,
+  ]);
   assert.deepEqual(errorToWire(error), {
     kind: "exchange",
     exchange: "binance",

@@ -570,7 +570,7 @@ jobs:
 
           mkdir package-set
           for directory in npm/*; do
-            npm pack "$directory" --pack-destination package-set --silent
+            npm pack "./$directory" --pack-destination package-set --silent
           done
           npm pack . --pack-destination package-set --silent
 

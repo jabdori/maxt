@@ -412,7 +412,7 @@ jobs:
             target: x86_64
             manylinux: "2014"
             platform: manylinux-x86_64
-          - runner: ubuntu-latest
+          - runner: ubuntu-24.04-arm
             target: aarch64
             manylinux: "2014"
             platform: manylinux-aarch64
@@ -445,7 +445,6 @@ jobs:
           args: --release --locked --compatibility pypi --out dist
 
       - name: Install and import wheel
-        if: matrix.platform != 'manylinux-aarch64'
         shell: bash
         run: |
           python -m pip install --force-reinstall bindings/python/dist/*.whl
@@ -478,28 +477,9 @@ jobs:
           path: bindings/python/dist/*.tar.gz
           if-no-files-found: error
 
-  python-arm64-wheel-smoke:
-    name: Python wheel smoke (manylinux-aarch64)
-    needs: python-wheel
-    runs-on: ubuntu-24.04-arm
-    steps:
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.9"
-
-      - uses: actions/download-artifact@v7
-        with:
-          name: python-wheel-manylinux-aarch64
-          path: dist
-
-      - name: Install and import wheel
-        run: |
-          python -m pip install --force-reinstall dist/*.whl
-          python -c "import maxt._native"
-
   python-distributions:
     name: Check Python distributions
-    needs: [validate, python-wheel, python-arm64-wheel-smoke, python-sdist]
+    needs: [validate, python-wheel, python-sdist]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

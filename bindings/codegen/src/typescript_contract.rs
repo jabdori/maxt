@@ -81,7 +81,7 @@ pub(crate) fn render(schema: &Schema) -> String {
     output.push_str("} as const;\n");
     output.push_str(&format!(
         "export const IDENTIFIERS = [{}] as const;\n",
-        quoted(schema.identifiers)
+        quoted(schema.identifiers.iter().map(|value| value.name))
     ));
     output.push_str(&format!(
         "export const MODELS = [{}] as const;\n",

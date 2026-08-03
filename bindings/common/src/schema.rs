@@ -57,6 +57,19 @@ pub struct TaggedUnion {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct IdentifierVariant {
+    pub rust_name: &'static str,
+    pub wire_name: &'static str,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Identifier {
+    pub name: &'static str,
+    pub variants: &'static [IdentifierVariant],
+    pub open: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Operation {
     pub rust_name: &'static str,
     pub language_name: &'static str,
@@ -130,7 +143,7 @@ pub struct Schema {
     pub native_api_version: u32,
     pub exchanges: Vec<&'static str>,
     pub features: Vec<&'static str>,
-    pub identifiers: &'static [&'static str],
+    pub identifiers: &'static [Identifier],
     pub models: &'static [&'static str],
     pub errors: &'static [&'static str],
     pub adapter_operations: &'static [Operation],
@@ -138,6 +151,16 @@ pub struct Schema {
     pub providers: &'static [Provider],
     pub records: Vec<Record>,
     pub unions: Vec<TaggedUnion>,
+}
+
+impl Schema {
+    pub fn identifier(&self, name: &str) -> Option<&Identifier> {
+        self.identifiers.iter().find(|value| value.name == name)
+    }
+
+    pub fn has_identifier(&self, name: &str) -> bool {
+        self.identifier(name).is_some()
+    }
 }
 
 const fn argument(name: &'static str, ty: ApiType, default: Option<&'static str>) -> Argument {
@@ -454,23 +477,171 @@ const ERRORS: &[&str] = &[
     "Decode",
 ];
 
-const IDENTIFIERS: &[&str] = &[
-    "Exchange",
-    "Feature",
-    "MarketKind",
-    "MarketStatus",
-    "Side",
-    "Interval",
-    "Overflow",
-    "MarginMode",
-    "OrderStatus",
-    "OrderType",
-    "TimeInForce",
-    "SizeKind",
-    "UpbitRegion",
-    "BithumbAlertStep",
-    "BinanceMarket",
-    "HyperliquidLedgerKind",
+const fn identifier_variant(rust_name: &'static str, wire_name: &'static str) -> IdentifierVariant {
+    IdentifierVariant {
+        rust_name,
+        wire_name,
+    }
+}
+
+const fn identifier(
+    name: &'static str,
+    variants: &'static [IdentifierVariant],
+    open: bool,
+) -> Identifier {
+    Identifier {
+        name,
+        variants,
+        open,
+    }
+}
+
+const EXCHANGE_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Upbit", "upbit"),
+    identifier_variant("Bithumb", "bithumb"),
+    identifier_variant("Binance", "binance"),
+    identifier_variant("Hyperliquid", "hyperliquid"),
+];
+const FEATURE_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Markets", "markets"),
+    identifier_variant("Trades", "trades"),
+    identifier_variant("OrderBook", "order_book"),
+    identifier_variant("Ticker", "ticker"),
+    identifier_variant("Candles", "candles"),
+    identifier_variant("TradeStream", "trade_stream"),
+    identifier_variant("OrderBookStream", "order_book_stream"),
+    identifier_variant("TickerStream", "ticker_stream"),
+    identifier_variant("CandleStream", "candle_stream"),
+    identifier_variant("Balances", "balances"),
+    identifier_variant("OpenOrders", "open_orders"),
+    identifier_variant("AccountStream", "account_stream"),
+    identifier_variant("Trading", "trading"),
+    identifier_variant("Positions", "positions"),
+    identifier_variant("Margin", "margin"),
+    identifier_variant("FundingRates", "funding_rates"),
+    identifier_variant("FundingPayments", "funding_payments"),
+    identifier_variant("MarginConfig", "margin_config"),
+    identifier_variant("ReduceOnlyOrders", "reduce_only_orders"),
+];
+const MARKET_KIND_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Spot", "spot"),
+    identifier_variant("Perpetual", "perpetual"),
+];
+const MARKET_STATUS_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Active", "active"),
+    identifier_variant("Paused", "paused"),
+    identifier_variant("Delisted", "delisted"),
+    identifier_variant("Unknown", "unknown"),
+];
+const SIDE_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Buy", "buy"),
+    identifier_variant("Sell", "sell"),
+];
+const INTERVAL_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Sec1", "sec1"),
+    identifier_variant("Min1", "min1"),
+    identifier_variant("Min3", "min3"),
+    identifier_variant("Min5", "min5"),
+    identifier_variant("Min15", "min15"),
+    identifier_variant("Min30", "min30"),
+    identifier_variant("Hour1", "hour1"),
+    identifier_variant("Hour2", "hour2"),
+    identifier_variant("Hour4", "hour4"),
+    identifier_variant("Hour8", "hour8"),
+    identifier_variant("Hour12", "hour12"),
+    identifier_variant("Day1", "day1"),
+    identifier_variant("Day3", "day3"),
+    identifier_variant("Week1", "week1"),
+    identifier_variant("Month1", "month1"),
+];
+const OVERFLOW_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Backpressure", "backpressure"),
+    identifier_variant("DropNewest", "drop_newest"),
+];
+const MARGIN_MODE_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Cross", "cross"),
+    identifier_variant("Isolated", "isolated"),
+];
+const ORDER_STATUS_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Accepted", "accepted"),
+    identifier_variant("Open", "open"),
+    identifier_variant("PartiallyFilled", "partially_filled"),
+    identifier_variant("Filled", "filled"),
+    identifier_variant("Cancelled", "cancelled"),
+    identifier_variant("Rejected", "rejected"),
+    identifier_variant("Unknown", "unknown"),
+];
+const ORDER_TYPE_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Market", "market"),
+    identifier_variant("Limit", "limit"),
+];
+const TIME_IN_FORCE_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("GoodTilCancelled", "good_til_cancelled"),
+    identifier_variant("ImmediateOrCancel", "immediate_or_cancel"),
+    identifier_variant("FillOrKill", "fill_or_kill"),
+    identifier_variant("PostOnly", "post_only"),
+];
+const SIZE_KIND_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Base", "base"),
+    identifier_variant("Quote", "quote"),
+];
+const UPBIT_REGION_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Korea", "korea"),
+    identifier_variant("Singapore", "singapore"),
+    identifier_variant("Indonesia", "indonesia"),
+    identifier_variant("Thailand", "thailand"),
+];
+const BITHUMB_ALERT_STEP_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Caution", "caution"),
+    identifier_variant("Warning", "warning"),
+    identifier_variant("Danger", "danger"),
+    identifier_variant("Unknown", "unknown"),
+];
+const BINANCE_MARKET_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Spot", "spot"),
+    identifier_variant("UsdMFutures", "usd_m"),
+];
+const HYPERLIQUID_LEDGER_KIND_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Deposit", "deposit"),
+    identifier_variant("Withdraw", "withdraw"),
+    identifier_variant("InternalTransfer", "internal_transfer"),
+    identifier_variant("SubAccountTransfer", "sub_account_transfer"),
+    identifier_variant("SpotTransfer", "spot_transfer"),
+    identifier_variant("AccountClassTransfer", "account_class_transfer"),
+    identifier_variant("VaultDeposit", "vault_deposit"),
+    identifier_variant("VaultWithdraw", "vault_withdraw"),
+    identifier_variant("VaultDistribution", "vault_distribution"),
+    identifier_variant("Liquidation", "liquidation"),
+];
+const EXCHANGE_ERROR_KIND_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Rejected", "rejected"),
+    identifier_variant("RateLimited", "rate_limited"),
+    identifier_variant("Unavailable", "unavailable"),
+    identifier_variant("Unknown", "unknown"),
+];
+
+const IDENTIFIERS: &[Identifier] = &[
+    identifier("Exchange", EXCHANGE_VARIANTS, false),
+    identifier("Feature", FEATURE_VARIANTS, false),
+    identifier("MarketKind", MARKET_KIND_VARIANTS, false),
+    identifier("MarketStatus", MARKET_STATUS_VARIANTS, false),
+    identifier("Side", SIDE_VARIANTS, false),
+    identifier("Interval", INTERVAL_VARIANTS, false),
+    identifier("Overflow", OVERFLOW_VARIANTS, false),
+    identifier("MarginMode", MARGIN_MODE_VARIANTS, false),
+    identifier("OrderStatus", ORDER_STATUS_VARIANTS, false),
+    identifier("OrderType", ORDER_TYPE_VARIANTS, false),
+    identifier("TimeInForce", TIME_IN_FORCE_VARIANTS, false),
+    identifier("SizeKind", SIZE_KIND_VARIANTS, false),
+    identifier("UpbitRegion", UPBIT_REGION_VARIANTS, false),
+    identifier("BithumbAlertStep", BITHUMB_ALERT_STEP_VARIANTS, false),
+    identifier("BinanceMarket", BINANCE_MARKET_VARIANTS, false),
+    identifier(
+        "HyperliquidLedgerKind",
+        HYPERLIQUID_LEDGER_KIND_VARIANTS,
+        true,
+    ),
+    identifier("ExchangeErrorKind", EXCHANGE_ERROR_KIND_VARIANTS, false),
 ];
 
 const MODELS: &[&str] = &[

@@ -185,7 +185,7 @@ fn wire_named_type(name: &str, schema: &Schema) -> String {
     if matches!(name, "Cursor") {
         return "string".to_owned();
     }
-    if schema.identifiers.contains(&name) {
+    if schema.has_identifier(name) {
         return "string".to_owned();
     }
     format!("Wire.{name}Wire")
@@ -466,7 +466,7 @@ fn render_client_method(
 fn encode_argument(argument: &Argument, schema: &Schema) -> String {
     let name = argument.name;
     match argument.ty {
-        ApiType::Named(value) if schema.identifiers.contains(&value) => format!("{name}.id"),
+        ApiType::Named(value) if schema.has_identifier(value) => format!("{name}.id"),
         ApiType::Named("Timestamp") => format!("{name}.nanosecondsSinceEpoch.toString()"),
         ApiType::Named("Cursor") => format!("{name}.value"),
         ApiType::Named("BinanceListenKey") => format!("{name}.id"),

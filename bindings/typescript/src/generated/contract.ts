@@ -345,7 +345,7 @@ export const PROVIDER_CONSTRUCTORS = {
   binance: ["spot", "usdMFutures"],
   hyperliquid: ["constructor", "testnet"],
 } as const;
-export const IDENTIFIERS = ["Exchange", "Feature", "MarketKind", "MarketStatus", "Side", "Interval", "Overflow", "MarginMode", "OrderStatus", "OrderType", "TimeInForce", "SizeKind", "UpbitRegion", "BithumbAlertStep", "BinanceMarket", "HyperliquidLedgerKind"] as const;
+export const IDENTIFIERS = ["Exchange", "Feature", "MarketKind", "MarketStatus", "Side", "Interval", "Overflow", "MarginMode", "OrderStatus", "OrderType", "TimeInForce", "SizeKind", "UpbitRegion", "BithumbAlertStep", "BinanceMarket", "HyperliquidLedgerKind", "ExchangeErrorKind"] as const;
 export const MODELS = ["Market", "MarketInfo", "Trade", "Level", "OrderBook", "Ticker", "Candle", "Balance", "Order", "Position", "MarginSummary", "FundingRate", "FundingPayment", "CandleRequest", "OrderRequest", "StreamConfig", "Subscription", "HistoryRequest", "MarginRequest", "UpbitMarketEvent", "BithumbMarketAlert", "BinanceSymbolFilters", "BinanceSpotOrderDetail", "HyperliquidLedgerEntry", "HyperliquidAssetContext"] as const;
 export const RAW_NATIVE_EXPORTS = ["NATIVE_API_VERSION", "NativeClient", "createCustomClient", "NativeUpbit", "createUpbit", "NativeBithumb", "createBithumb", "NativeBinance", "createBinance", "NativeHyperliquid", "createHyperliquid"] as const;
 export const RAW_NATIVE_CLIENT_MEMBERS = ["exchange", "supports", "markets", "trades", "orderBook", "ticker", "candles", "subscribe", "subscribeWith", "balances", "openOrders", "openOrdersOn", "subscribeAccount", "subscribeAccountWith", "placeOrder", "cancelOrder", "positions", "positionsOn", "marginSummary", "fundingRates", "fundingPayments", "setMargin", "streamNext", "streamClose"] as const;

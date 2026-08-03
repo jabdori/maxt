@@ -30,15 +30,12 @@ fn main() {
         matches!(target, "all" | "rust" | "python" | "dart" | "typescript"),
         "target must be one of: all, rust, python, dart, typescript"
     );
+    let target_enabled = (target == "rust" && cfg!(feature = "rust"))
+        || (target == "python" && cfg!(feature = "python"))
+        || (target == "dart" && cfg!(feature = "dart"))
+        || (target == "typescript" && cfg!(feature = "typescript"));
     assert!(
-        target == "all"
-            || match target {
-                "rust" => cfg!(feature = "rust"),
-                "python" => cfg!(feature = "python"),
-                "dart" => cfg!(feature = "dart"),
-                "typescript" => cfg!(feature = "typescript"),
-                _ => false,
-            },
+        target == "all" || target_enabled,
         "the requested target feature is disabled"
     );
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))

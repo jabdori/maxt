@@ -117,8 +117,12 @@ jobs:
           uv run --frozen twine check dist/*
 
   typescript-node:
-    name: TypeScript and Node.js
+    name: TypeScript and Node.js (${{ matrix.node }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
     defaults:
       run:
         working-directory: bindings/typescript
@@ -134,7 +138,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version: ${{ matrix.node }}
           cache: npm
           cache-dependency-path: bindings/typescript/package-lock.json
 
@@ -157,19 +161,25 @@ jobs:
         run: npm test
 
       - name: Install WebAssembly build and browser tools
+        if: matrix.node == 24
         run: |
           rustup toolchain install stable --profile minimal
           cargo +stable install wasm-pack --version 0.15.0 --locked
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium firefox webkit
 
       - name: Test browser package
-        run: npm run test:web -- --project=chromium
+        if: matrix.node == 24
+        run: npm run test:web
 
       - name: Require WebAssembly in npm package
+        if: matrix.node == 24
         shell: bash
         run: |
           tarball="$(npm pack --silent)"
           tar -tzf "$tarball" | grep -Fx package/wasm/maxt_wasm_bg.wasm
+          tar -tzf "$tarball" | grep -Fx package/wasm/maxt_wasm.js
+          tar -tzf "$tarball" | grep -Fx package/wasm/maxt_wasm.d.ts
+          tar -tzf "$tarball" | grep -E '^package/wasm/snippets/.+/inline0\.js$'
 
   relay:
     name: Relay
@@ -274,6 +284,46 @@ jobs:
 
       - name: Test native loader
         run: dart test test/native_adapters_test.dart --chain-stack-traces
+
+  flutter-platform-build:
+    name: Flutter platform build (${{ matrix.platform }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: android
+            runner: ubuntu-latest
+            command: flutter build apk --debug
+          - platform: ios-simulator
+            runner: macos-latest
+            command: flutter build ios --simulator --debug --no-codesign
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Create consumer app
+        shell: bash
+        run: |
+          flutter create --project-name maxt_smoke "$RUNNER_TEMP/maxt-smoke"
+          dart pub add \
+            --directory "$RUNNER_TEMP/maxt-smoke" \
+            "maxt@{path: $GITHUB_WORKSPACE/bindings/dart}"
+          perl -0pi -e \
+            "s|import 'package:flutter/material.dart';|import 'package:flutter/material.dart';\nimport 'package:maxt/maxt.dart';|; \
+             s|void main\(\) \{|Future<void> main() async {\n  await Maxt.initialize();|" \
+            "$RUNNER_TEMP/maxt-smoke/lib/main.dart"
+          dart format "$RUNNER_TEMP/maxt-smoke/lib/main.dart"
+
+      - name: Build consumer app
+        working-directory: ${{ runner.temp }}/maxt-smoke
+        run: ${{ matrix.command }}
 
   scope:
     name: Repository scope

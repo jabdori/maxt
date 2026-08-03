@@ -11,6 +11,11 @@ API입니다. 두 backend가 같은 생성 모델, 오류, 어댑터, 스트림 
 - [x] Node.js 22 이상
 - [x] Browser WebAssembly
 
+Node.js 패키지는 ESM만 지원합니다. 미리 빌드된 네이티브 모듈은 glibc Linux
+(x64, ARM64), macOS(x64, ARM64), Windows(x64)를 지원합니다. Alpine을 포함한
+musl Linux는 0.1.0에서 지원하지 않습니다. 브라우저는 Chromium, Firefox,
+WebKit에서 검사합니다.
+
 ## 설치
 
 ```sh
@@ -85,6 +90,10 @@ const adapter = BinanceAdapter.spot({ apiKey, secretKey });
 origin이어야 합니다. 설정 후 Browser WASM의 HTTP 요청은 릴레이를 사용합니다.
 WebSocket은 거래소가 handshake header를 요구할 때 릴레이를 사용하며, 공개
 WebSocket은 직접 연결합니다.
+
+릴레이는 애플리케이션과 같은 site의 인증·속도 제한이 적용된 TLS ingress 뒤에
+배포하세요. 릴레이 자체는 사용자를 인증하지 않으며 Origin 허용 목록은 인증
+수단이 아닙니다.
 
 경고: `allowInsecureBrowserCredentials`는 브라우저 인증 정보를 안전하게 만들지
 않습니다. 원본 인증 정보는 JavaScript/WASM 메모리에 있으며 XSS, 확장 프로그램,

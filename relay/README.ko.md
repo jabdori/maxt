@@ -62,9 +62,11 @@ HTTP method: `GET`, `POST`, `PUT`, `DELETE`. 전달 header:
 
 ## 배포 경계
 
-릴레이 자체는 평문 HTTP를 제공합니다. TLS ingress 뒤에 두고 HTTPS origin으로
+릴레이 자체는 평문 HTTP를 제공합니다. 애플리케이션과 같은 site의 TLS ingress
+뒤에 두고 HTTPS origin으로
 노출하세요. `/v1/http`, `/v1/ws` 앞에 edge 인증과 속도 제한을 적용하세요.
-릴레이 자체의 브라우저 접근 제어는 `Origin` 허용 목록뿐입니다.
+릴레이 자체의 브라우저 접근 제어는 `Origin` 허용 목록뿐이며 사용자 인증 수단이
+아닙니다.
 
 모든 허용 목록은 최소화하세요. URL 검증은 검증 이후 DNS rebinding, 악성 upstream
 응답, 운영자의 허용 목록 오류를 막지 못합니다.

@@ -1,0 +1,54 @@
+name: Python CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - bindings/python/**
+      - bindings/codegen/src/main.rs
+      - bindings/codegen/src/python.rs
+      - .github/workflows/ci-python.yml
+  pull_request:
+    paths:
+      - bindings/python/**
+      - bindings/codegen/src/main.rs
+      - bindings/codegen/src/python.rs
+      - .github/workflows/ci-python.yml
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bindings/python
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14.2"
+      - uses: astral-sh/setup-uv@v9.0.0
+        with:
+          version: "0.10.4"
+          python-version: "3.14.2"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+          working-directory: bindings/python
+      - run: cargo run --manifest-path ../codegen/Cargo.toml --no-default-features --features python --locked -- python --check
+      - run: uv lock --check
+      - run: uv sync --frozen --all-groups
+      - run: cargo clippy --all-targets --locked -- -D warnings
+      - run: cargo test --all-targets --no-default-features --locked
+      - run: uv run --frozen maturin develop --locked
+      - run: uv run --frozen pytest
+        env:
+          MAXT_REQUIRE_NATIVE_TESTS: "1"
+      - run: uv run --frozen mypy python/maxt
+      - run: uv build --out-dir dist
+      - run: uv run --frozen twine check dist/*

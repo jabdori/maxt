@@ -1,6 +1,6 @@
 use maxt_bindings_common::schema::{Field, Schema, Type};
 
-use crate::{HEADER, lower_camel};
+use crate::typescript_contract::{HEADER, lower_camel};
 
 pub(crate) fn render(schema: &Schema) -> String {
     let mut output = String::from(HEADER);

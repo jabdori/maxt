@@ -9,19 +9,19 @@
 ## 계약 생성
 
 ```sh
-cargo run -p maxt-bindings-codegen --locked
+cargo run -p maxt-bindings-codegen --no-default-features --features python --locked -- python
 ```
 
-TypeScript, Python, Dart가 공유하는 거래소, 기능, 오류, Adapter, Client,
-provider 전용 API, wire DTO 계약을 생성합니다. 생성 파일은 직접 수정하지
-마세요.
+대상은 `rust`, `python`, `dart`, `typescript`입니다. 지정한 포트의 결과만
+갱신합니다. 대상을 생략하면 모든 결과를 갱신합니다. 생성 파일은 직접
+수정하지 마세요.
 
 ## 생성 결과 검사
 
 ```sh
-cargo run -p maxt-bindings-codegen --locked -- --check
+cargo run -p maxt-bindings-codegen --no-default-features --features python --locked -- python --check
 cargo test -p maxt-bindings-common --features codegen --test schema_inventory --locked
 ```
 
-첫 번째 명령은 생성 파일이 오래되면 실패합니다. 두 번째 명령은 스키마와
-Rust Adapter, Client, 오류 계약이 달라지면 실패합니다.
+첫 번째 명령은 선택한 포트의 생성 결과만 검사합니다. 두 번째 명령은 Rust
+소스 스키마를 검사합니다.

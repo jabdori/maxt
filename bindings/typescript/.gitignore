@@ -7,5 +7,4 @@
 /native.d.ts
 /*.node
 /*.tgz
-/rust/Cargo.lock
 /rust/target/

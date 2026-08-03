@@ -1,0 +1,62 @@
+name: TypeScript CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - bindings/typescript/**
+      - bindings/codegen/src/main.rs
+      - bindings/codegen/src/typescript_*.rs
+      - .github/workflows/ci-typescript.yml
+  pull_request:
+    paths:
+      - bindings/typescript/**
+      - bindings/codegen/src/main.rs
+      - bindings/codegen/src/typescript_*.rs
+      - .github/workflows/ci-typescript.yml
+
+permissions:
+  contents: read
+
+jobs:
+  node-and-web:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+    defaults:
+      run:
+        working-directory: bindings/typescript
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@1.88.0
+        with:
+          components: clippy
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: bindings/typescript/package-lock.json
+      - run: npm ci
+      - run: cargo run --manifest-path ../codegen/Cargo.toml --no-default-features --features typescript --locked -- typescript --check
+      - run: cargo clippy --manifest-path rust/Cargo.toml --all-targets --locked -- -D warnings
+      - run: cargo test --manifest-path rust/Cargo.toml --all-targets --locked
+      - run: cargo check --manifest-path rust/Cargo.toml --target wasm32-unknown-unknown --locked
+      - run: cargo clippy --manifest-path rust/Cargo.toml --target wasm32-unknown-unknown --locked -- -D warnings
+      - run: npm test
+      - if: matrix.node == 24
+        run: |
+          rustup toolchain install stable --profile minimal
+          cargo +stable install wasm-pack --version 0.15.0 --locked
+          npx playwright install --with-deps chromium firefox webkit
+      - if: matrix.node == 24
+        run: npm run test:web
+      - if: matrix.node == 24
+        run: |
+          tarball="$(npm pack --silent)"
+          tar -tzf "$tarball" | grep -Fx package/wasm/maxt_wasm_bg.wasm
+          tar -tzf "$tarball" | grep -Fx package/wasm/maxt_wasm.js
+          tar -tzf "$tarball" | grep -Fx package/wasm/maxt_wasm.d.ts

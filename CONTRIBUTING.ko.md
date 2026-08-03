@@ -10,7 +10,7 @@ Rust, Python 3.14.2, uv 0.10.4, Flutter stable입니다.
 ```sh
 git clone https://github.com/jabdori/maxt.git
 cd maxt
-cargo test --workspace --all-targets --no-default-features --locked
+cargo test -p maxt -p maxt-bindings-common --all-targets --locked
 ```
 
 테스트는 픽스처(fixture)와 로컬 모의 서버(mock server)를 사용합니다. 실제 거래소를
@@ -18,23 +18,24 @@ cargo test --workspace --all-targets --no-default-features --locked
 
 ## CI 검사
 
-변경한 영역의 명령을 실행하세요. 아래 명령은 `.github/workflows/ci.yml`과
-동일합니다.
+변경한 영역의 명령만 실행하세요. 각 바인딩은 독립 CI, Cargo 잠금 파일(lockfile),
+배포 태그를 사용합니다.
 
 ### Rust workspace
 
 ```sh
-cargo fmt --all --check
-cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo fmt -p maxt -p maxt-bindings-common -p maxt-bindings-codegen --check
+cargo clippy -p maxt -p maxt-bindings-common --all-targets --locked -- -D warnings
+cargo clippy -p maxt-bindings-codegen --no-default-features --features rust --all-targets --locked -- -D warnings
 cargo clippy -p maxt --lib --locked -- \
   -D warnings \
   -D clippy::unwrap_used \
   -D clippy::expect_used \
   -D clippy::panic
-cargo test --workspace --all-targets --no-default-features --locked
-cargo test --workspace --doc --no-default-features --locked
+cargo test -p maxt -p maxt-bindings-common --all-targets --no-default-features --locked
+cargo test -p maxt-bindings-codegen --no-default-features --features rust --all-targets --locked
+cargo test -p maxt -p maxt-bindings-common --doc --no-default-features --locked
 cargo build -p maxt --examples --locked
-RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
 cargo package -p maxt --locked
 ```
 
@@ -48,8 +49,9 @@ cargo package -p maxt --locked
 ```sh
 uv lock --check
 uv sync --frozen --all-groups
-cargo clippy -p maxt-python --all-targets --locked -- -D warnings
-cargo test -p maxt-python --all-targets --no-default-features --locked
+cargo run --manifest-path ../codegen/Cargo.toml --no-default-features --features python --locked -- python --check
+cargo clippy --all-targets --locked -- -D warnings
+cargo test --all-targets --no-default-features --locked
 uv run --frozen maturin develop --locked
 MAXT_REQUIRE_NATIVE_TESTS=1 uv run --frozen pytest
 uv run --frozen mypy python/maxt
@@ -62,13 +64,14 @@ uv run --frozen twine check dist/*
 `bindings/dart`에서 실행하세요.
 
 ```sh
-cargo clippy -p maxt_dart_bridge --all-targets --locked -- -D warnings
-cargo test -p maxt_dart_bridge --all-targets --locked
+cargo run --manifest-path ../codegen/Cargo.toml --no-default-features --features dart --locked -- dart --check
+cargo clippy --manifest-path rust/Cargo.toml --all-targets --locked -- -D warnings
+cargo test --manifest-path rust/Cargo.toml --all-targets --locked
 dart pub get
 cargo install flutter_rust_bridge_codegen --version 2.12.0 --locked
 flutter_rust_bridge_codegen generate
 perl -pi -e 's/[ \t]+$//' lib/src/rust/*.freezed.dart
-cargo fmt --all
+cargo fmt --manifest-path rust/Cargo.toml
 git diff --exit-code -- lib/src/rust rust/src/frb_generated.rs
 test -z "$(git status --porcelain --untracked-files=all -- lib/src/rust rust/src/frb_generated.rs)"
 dart format --output=none --set-exit-if-changed .
@@ -90,7 +93,7 @@ CI는 Markdown, Rust, TOML에 기여자 컴퓨터의 절대 경로가 포함된 
 | `src/types/` | 시장, 계좌, 주문, 스트림 공통 값 |
 | `src/adapters/<provider>/` | 거래소 REST, 스트림, 비공개 API, 응답 파싱(parsing) |
 | `src/transport/` | 공통 HTTP·WebSocket 전송 계층 |
-| `bindings/common/` | 언어별 공개 항목(inventory)과 매핑 검사 |
+| `bindings/common/` | 언어 중립 바인딩 계약 |
 | `bindings/python/` | Python 패키지(package), PyO3 브리지(bridge) |
 | `bindings/dart/` | Dart 패키지, Rust 브리지, 생성된 브리지 코드 |
 | `tests/` | Rust 계약, 통합, 기본 실행에서 제외된 실제 호출 테스트(live test) |
@@ -109,16 +112,22 @@ CI는 Markdown, Rust, TOML에 기여자 컴퓨터의 절대 경로가 포함된 
 4. 공통 정렬, 범위, `Option`, `Decimal`, `Timestamp`, 오류, 스트림 수명 주기 계약을
    유지합니다.
 5. 파싱, 요청 생성, 서명, 기능, 거래소 한도의 픽스처 테스트를 추가합니다.
-6. 거래소 생성자, 설정, 공개 값, 메서드, 거래소 전용 API를 Python과 Dart에 모두
-   매핑합니다. Dart bridge를 다시 생성합니다.
-7. 정확한 매핑 검사를 실행합니다.
+6. 각 언어 바인딩은 별도 변경으로 갱신하고 해당 언어 생성 대상을 실행합니다.
+   Rust 변경과 모든 바인딩 변경을 하나의 풀 리퀘스트에 묶지 않습니다.
+7. 기능 계약 테스트, 거래소 레퍼런스의 영어·한국어 문서, 관련 예제를 갱신합니다.
+8. 변경한 영역의 CI 검사만 실행합니다.
 
-   ```sh
-   cargo test -p maxt-bindings-common --test language_binding_inventory --locked
-   ```
+## 배포
 
-8. 기능 계약 테스트, 거래소 레퍼런스의 영어·한국어 문서, 관련 예제를 갱신합니다.
-9. 위에서 해당하는 CI 검사를 모두 실행합니다.
+- `rust-vX.Y.Z`: crates.io
+- `python-vX.Y.Z`: PyPI
+- `dart-vX.Y.Z`: pub.dev
+- `typescript-vX.Y.Z`: npm, Node.js와 브라우저 WebAssembly 포함
+
+Dart 첫 버전은 수동으로 배포한 뒤 pub.dev 태그 패턴을 `dart-v{{version}}`으로
+설정합니다. npm 첫 배포에는 `NPM_TOKEN`이 필요합니다. 이후
+`release-typescript.yml`에 신뢰할 수 있는 배포(Trusted Publishing)를 설정하고
+토큰을 제거합니다.
 
 공개 어댑터 계약은 모의(mock), 백테스트(backtest), 기록 데이터 어댑터에도 사용할 수 있습니다.
 [외부 어댑터](docs/common-api.ko.md#외부-어댑터)를 참고하세요.

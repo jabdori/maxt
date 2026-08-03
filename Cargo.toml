@@ -11,15 +11,12 @@ documentation = "https://docs.rs/maxt"
 keywords = ["exchange", "trading", "crypto", "websocket", "async"]
 categories = ["api-bindings", "asynchronous", "finance"]
 readme = "README.md"
-exclude = ["/.github", "/bindings", "/docs/superpowers"]
+exclude = ["/.cargo", "/.github", "/bindings", "/docs/superpowers"]
 
 [workspace]
-members = ["bindings/common", "bindings/codegen", "bindings/python", "bindings/dart/rust", "bindings/typescript/rust"]
+members = ["bindings/common", "bindings/codegen"]
+exclude = ["bindings/python", "bindings/dart/rust", "bindings/typescript/rust"]
 resolver = "3"
-
-[patch.crates-io]
-maxt = { path = "." }
-maxt-bindings-common = { path = "bindings/common" }
 
 [dependencies]
 base64 = "0.22"

@@ -9,7 +9,6 @@ repository = "https://github.com/jabdori/maxt"
 homepage = "https://github.com/jabdori/maxt"
 documentation = "https://docs.rs/maxt-bindings-common"
 readme = "README.md"
-exclude = ["/tests/language_binding_inventory.rs"]
 
 [features]
 codegen = []

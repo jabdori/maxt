@@ -1,0 +1,43 @@
+name: Publish Rust
+
+on:
+  push:
+    tags: ["rust-v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+      - name: Validate tag and packages
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#rust-v}"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          test "$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)" = "$version"
+          test "$(sed -n 's/^version = "\([^"]*\)"/\1/p' bindings/common/Cargo.toml | head -1)" = "$version"
+          cargo test -p maxt -p maxt-bindings-common --all-targets --locked
+          cargo package -p maxt --locked
+          cargo package -p maxt-bindings-common --locked
+      - name: Publish crates
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#rust-v}"
+          if ! cargo info "maxt@$version" --registry crates-io >/dev/null 2>&1; then
+            cargo publish -p maxt --registry crates-io --locked
+            for _ in {1..30}; do
+              cargo info "maxt@$version" --registry crates-io >/dev/null 2>&1 && break
+              sleep 10
+            done
+          fi
+          cargo info "maxt@$version" --registry crates-io >/dev/null
+          if ! cargo info "maxt-bindings-common@$version" --registry crates-io >/dev/null 2>&1; then
+            cargo publish -p maxt-bindings-common --registry crates-io --locked
+          fi

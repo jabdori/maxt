@@ -112,7 +112,7 @@ jobs:
           node-version: "24"
       - run: npm ci
       - run: cargo run --manifest-path ../codegen/Cargo.toml --no-default-features --features typescript --locked -- typescript --check
-      - run: cargo install wasm-pack --version 0.15.0 --locked
+      - run: cargo +stable install wasm-pack --version 0.15.0 --locked
       - run: npm run package:dirs
       - uses: actions/download-artifact@v8
         with:

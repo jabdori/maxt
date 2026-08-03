@@ -9,7 +9,11 @@ native API.
 
 ## Install
 
-Python 3.9 or newer is required.
+GIL-enabled CPython 3.9 or newer is required. PyPy and free-threaded CPython
+are not supported in 0.1.0. Prebuilt wheels cover glibc 2.17 or newer Linux
+(x64 and ARM64),
+macOS (x64 and ARM64), and Windows (x64). Other platforms build from the source
+distribution and require Rust and a native compiler toolchain.
 
 ```sh
 python -m pip install maxt

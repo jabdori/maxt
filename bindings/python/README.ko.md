@@ -8,7 +8,11 @@ Rust 계약과 같은 작업, 모델, 오류, 스트림을 제공하는 비동�
 
 ## 설치
 
-Python 3.9 이상이 필요합니다.
+GIL을 사용하는 CPython 3.9 이상이 필요합니다. PyPy와 free-threaded CPython은
+0.1.0에서 지원하지 않습니다. 미리 빌드된 wheel은 glibc 2.17 이상
+Linux(x64, ARM64),
+macOS(x64, ARM64), Windows(x64)를 지원합니다. 다른 플랫폼은 source
+distribution에서 빌드하므로 Rust와 네이티브 컴파일 도구가 필요합니다.
 
 ```sh
 python -m pip install maxt

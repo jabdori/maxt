@@ -15,7 +15,11 @@ generated contracts are checked against the native API.
 - [x] Windows
 - [ ] Dart Web
 
-Dart 3.10 or a compatible Flutter SDK, Rustup, and target build tools are required.
+Dart 3.10 or a compatible Flutter SDK is required. This package does not
+download prebuilt native libraries. Its build hook compiles the included Rust
+source when your Dart or Flutter application is built, so Rustup and the target
+platform toolchain, such as the Android NDK or Xcode, must also be installed in
+development and CI environments.
 
 ## Install
 

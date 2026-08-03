@@ -12,6 +12,11 @@ compiled backend API.
 - [x] Node.js 22 or newer
 - [x] Browser WebAssembly
 
+The Node.js package is ESM-only. Prebuilt native modules cover glibc Linux
+(x64 and ARM64), macOS (x64 and ARM64), and Windows (x64). Alpine and other
+musl Linux distributions are not supported in 0.1.0. Browser tests cover
+Chromium, Firefox, and WebKit.
+
 ## Install
 
 ```sh
@@ -86,6 +91,10 @@ const adapter = BinanceAdapter.spot({ apiKey, secretKey });
 query, or fragment. Once configured, Browser WASM sends HTTP requests through
 the relay. WebSocket connections use it when the exchange requires handshake
 headers; public WebSocket connections remain direct.
+
+Deploy the relay behind an authenticated, rate-limited TLS ingress on the same
+site as the application. The relay itself authenticates no users; its Origin
+allowlist is not an authentication mechanism.
 
 Warning: `allowInsecureBrowserCredentials` does not make browser credentials
 safe. Raw credentials exist in JavaScript/WASM memory and can be exposed by

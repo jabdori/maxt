@@ -15,7 +15,10 @@ API의 정합성을 검사합니다.
 - [x] Windows
 - [ ] Dart Web
 
-Dart 3.10 또는 호환 Flutter SDK, Rustup, 대상 빌드 도구가 필요합니다.
+Dart 3.10 또는 호환 Flutter SDK가 필요합니다. 이 패키지는 미리 빌드된 네이티브
+라이브러리를 내려받지 않습니다. Dart 또는 Flutter 애플리케이션을 빌드할 때 build
+hook이 포함된 Rust 소스를 컴파일하므로 개발 환경과 CI에 Rustup 및 Android NDK,
+Xcode와 같은 대상 플랫폼 도구도 설치해야 합니다.
 
 ## 설치
 

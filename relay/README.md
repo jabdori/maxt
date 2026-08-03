@@ -62,9 +62,10 @@ HTTP methods: `GET`, `POST`, `PUT`, `DELETE`. Forwarded headers:
 
 ## Deployment boundary
 
-The relay serves plain HTTP. Put it behind a TLS ingress and expose an HTTPS
-origin. Apply edge authentication and rate limits before `/v1/http` and
+The relay serves plain HTTP. Put it behind a same-site TLS ingress and expose
+an HTTPS origin. Apply edge authentication and rate limits before `/v1/http` and
 `/v1/ws`; the relay's only browser access control is the `Origin` allowlist.
+The allowlist is not user authentication.
 
 Keep every allowlist minimal. URL validation does not prevent DNS rebinding
 after validation, malicious upstream responses, or operator allowlist errors.

@@ -318,10 +318,10 @@ jobs:
             target: x86_64-unknown-linux-gnu
             suffix: linux-x64-gnu
             cross: --use-napi-cross
-          - runner: ubuntu-24.04-arm
+          - runner: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             suffix: linux-arm64-gnu
-            cross: ""
+            cross: --use-napi-cross
           - runner: macos-15-intel
             target: x86_64-apple-darwin
             suffix: darwin-x64
@@ -357,18 +357,32 @@ jobs:
 
       - name: Build native package
         shell: bash
-        run: >-
-          npx napi build
-          --manifest-path rust/Cargo.toml
-          --platform
-          --release
-          --target "${{ matrix.target }}"
-          ${{ matrix.cross }}
-          --output-dir .
-          --js native.cjs
-          --dts native.d.ts
-          --js-package-name @jabdori/maxt
-          -- --locked
+        run: |
+          if [[ "${{ matrix.target }}" == aarch64-unknown-linux-gnu ]]; then
+            export TARGET_CC=clang
+            export TARGET_CXX=clang++
+          fi
+          npx napi build \
+            --manifest-path rust/Cargo.toml \
+            --platform \
+            --release \
+            --target "${{ matrix.target }}" \
+            ${{ matrix.cross }} \
+            --output-dir . \
+            --js native.cjs \
+            --dts native.d.ts \
+            --js-package-name @jabdori/maxt \
+            -- --locked
+
+      - name: Check Linux glibc compatibility
+        if: startsWith(matrix.suffix, 'linux-')
+        shell: bash
+        run: |
+          maximum="$(readelf --version-info "maxt.${{ matrix.suffix }}.node" \
+            | grep -oE 'GLIBC_[0-9]+\.[0-9]+' \
+            | sort -Vu \
+            | tail -1)"
+          test "$(printf 'GLIBC_2.17\n%s\n' "$maximum" | sort -V | tail -1)" = GLIBC_2.17
 
       - uses: actions/upload-artifact@v7
         with:
@@ -400,7 +414,7 @@ jobs:
             platform: manylinux-x86_64
           - runner: ubuntu-latest
             target: aarch64
-            manylinux: "2_28"
+            manylinux: "2014"
             platform: manylinux-aarch64
           - runner: windows-latest
             target: x64
@@ -422,13 +436,20 @@ jobs:
           python-version: "3.9"
 
       - name: Build wheel
-        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
+        uses: PyO3/maturin-action@d60b6a6c53f50a2e78cafc7f8ccb44ed78932dbb # Maturin 1.14.1 SHA-256 manifest
         with:
           working-directory: bindings/python
           maturin-version: v1.14.1
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.manylinux }}
           args: --release --locked --compatibility pypi --out dist
+
+      - name: Install and import wheel
+        if: matrix.platform != 'manylinux-aarch64'
+        shell: bash
+        run: |
+          python -m pip install --force-reinstall bindings/python/dist/*.whl
+          python -c "import maxt._native"
 
       - uses: actions/upload-artifact@v7
         with:
@@ -444,7 +465,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Build source distribution
-        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
+        uses: PyO3/maturin-action@d60b6a6c53f50a2e78cafc7f8ccb44ed78932dbb # Maturin 1.14.1 SHA-256 manifest
         with:
           command: sdist
           working-directory: bindings/python
@@ -457,9 +478,28 @@ jobs:
           path: bindings/python/dist/*.tar.gz
           if-no-files-found: error
 
+  python-arm64-wheel-smoke:
+    name: Python wheel smoke (manylinux-aarch64)
+    needs: python-wheel
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.9"
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: python-wheel-manylinux-aarch64
+          path: dist
+
+      - name: Install and import wheel
+        run: |
+          python -m pip install --force-reinstall dist/*.whl
+          python -c "import maxt._native"
+
   python-distributions:
     name: Check Python distributions
-    needs: [validate, python-wheel, python-sdist]
+    needs: [validate, python-wheel, python-arm64-wheel-smoke, python-sdist]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -567,6 +607,8 @@ jobs:
           test -f native.cjs
           test -f native.d.ts
           test -f wasm/maxt_wasm_bg.wasm
+          test -f wasm/maxt_wasm.js
+          test -f wasm/maxt_wasm.d.ts
 
           mkdir package-set
           for directory in npm/*; do
@@ -578,6 +620,9 @@ jobs:
           root_tarball="package-set/jabdori-maxt-$RELEASE_VERSION.tgz"
           test -f "$root_tarball"
           tar -tzf "$root_tarball" | grep -Fx package/wasm/maxt_wasm_bg.wasm
+          tar -tzf "$root_tarball" | grep -Fx package/wasm/maxt_wasm.js
+          tar -tzf "$root_tarball" | grep -Fx package/wasm/maxt_wasm.d.ts
+          tar -tzf "$root_tarball" | grep -E '^package/wasm/snippets/.+/inline0\.js$'
 
       - uses: actions/upload-artifact@v7
         with:
@@ -585,22 +630,75 @@ jobs:
           path: bindings/typescript/package-set/*.tgz
           if-no-files-found: error
 
+  npm-package-smoke:
+    name: npm package smoke (${{ matrix.suffix }})
+    needs: [validate, npm-package]
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            suffix: linux-x64-gnu
+          - runner: ubuntu-24.04-arm
+            suffix: linux-arm64-gnu
+          - runner: macos-15-intel
+            suffix: darwin-x64
+          - runner: macos-latest
+            suffix: darwin-arm64
+          - runner: windows-latest
+            suffix: win32-x64-msvc
+    steps:
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: npm-package-set
+          path: package-set
+
+      - name: Install and import package
+        env:
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+        shell: bash
+        run: |
+          smoke_directory="$RUNNER_TEMP/maxt-smoke"
+          mkdir -p "$smoke_directory"
+          npm install \
+            --prefix "$smoke_directory" \
+            "./package-set/jabdori-maxt-${{ matrix.suffix }}-$RELEASE_VERSION.tgz" \
+            "./package-set/jabdori-maxt-$RELEASE_VERSION.tgz"
+          cd "$smoke_directory"
+          node --input-type=module -e \
+            "import('@jabdori/maxt').then(module => { if (!module.Client) process.exit(1) })"
+
   release-artifacts-ready:
     name: All runtime artifacts ready
     needs:
       - ci
       - python-distributions
       - npm-package
+      - npm-package-smoke
     runs-on: ubuntu-latest
     steps:
       - run: echo "Rust, Python, Dart, Node, and browser artifacts passed their release gates."
+
+  preflight-complete:
+    name: Release preflight complete
+    needs: release-artifacts-ready
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Release artifacts passed without publishing registry packages."
 
   rust-publish:
     name: Publish Rust crates
     needs: [validate, release-artifacts-ready]
     if: >-
-      needs.validate.outputs.maxt_version_exists != 'true' ||
-      needs.validate.outputs.common_version_exists != 'true'
+      github.event_name == 'push' &&
+      (needs.validate.outputs.maxt_version_exists != 'true' ||
+      needs.validate.outputs.common_version_exists != 'true')
     runs-on: ubuntu-latest
     environment: release
     permissions:
@@ -691,6 +789,7 @@ jobs:
     needs: [validate, ci, release-artifacts-ready, rust-publish]
     if: >-
       always() &&
+      github.event_name == 'push' &&
       needs.validate.result == 'success' &&
       needs.ci.result == 'success' &&
       needs.release-artifacts-ready.result == 'success' &&
@@ -702,6 +801,7 @@ jobs:
   dart-bootstrap-ready:
     name: pub.dev bootstrap ready
     needs: [validate, rust-ready]
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Require the first pub.dev package bootstrap
@@ -881,7 +981,11 @@ jobs:
   dart-notice:
     name: Dart publication status
     needs: [validate, ci, rust-ready, dart-publish]
-    if: always() && needs.validate.result == 'success' && needs.dart-publish.result == 'skipped'
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      needs.validate.result == 'success' &&
+      needs.dart-publish.result == 'skipped'
     runs-on: ubuntu-latest
     steps:
       - name: Explain skipped Dart publication
@@ -908,7 +1012,7 @@ jobs:
       - python-publish
       - dart-publish
       - npm-publish
-    if: always()
+    if: always() && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Require successful publication jobs

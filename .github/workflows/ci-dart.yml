@@ -19,6 +19,27 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      flutter-packaging: ${{ steps.filter.outputs.flutter-packaging }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: filter
+        shell: bash
+        run: |
+          base="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [[ -z "$base" || "$base" =~ ^0+$ ]]; then
+            echo "flutter-packaging=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git fetch --no-tags --depth=1 origin "$base"
+          if git diff --name-only "$base" "$GITHUB_SHA" | grep -Eq '^bindings/dart/(hook/|rust/|pubspec\.yaml$|lib/src/(runtime(_io|_web)?|rust/))'; then
+            echo "flutter-packaging=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "flutter-packaging=false" >> "$GITHUB_OUTPUT"
+          fi
+
   dart:
     runs-on: ubuntu-latest
     defaults:
@@ -30,19 +51,25 @@ jobs:
         with:
           components: clippy
       - uses: Swatinem/rust-cache@v2
-      - uses: subosito/flutter-action@v2
         with:
-          channel: stable
-          cache: true
+          workspaces: |
+            bindings/codegen -> target
+            bindings/dart/rust -> target
+          cache-bin: false
+      - uses: dart-lang/setup-dart@v1
+      - uses: actions/cache@v5
+        with:
+          path: bindings/dart/.dart_tool/hooks_runner
+          key: ${{ runner.os }}-dart-hooks-${{ hashFiles('bindings/dart/pubspec.lock', 'bindings/dart/pubspec.yaml', 'bindings/dart/rust/Cargo.lock') }}
+      - uses: actions/cache@v5
+        with:
+          path: ~/.cargo/bin/flutter_rust_bridge_codegen
+          key: ${{ runner.os }}-frb-codegen-2.12.0
       - run: cargo run --manifest-path ../codegen/Cargo.toml --no-default-features --features dart --locked -- dart --check
       - run: cargo clippy --manifest-path rust/Cargo.toml --all-targets --locked -- -D warnings
       - run: cargo test --manifest-path rust/Cargo.toml --all-targets --locked
       - run: dart pub get
-      - run: rustup toolchain install nightly --profile minimal --component rust-src --target wasm32-unknown-unknown
-      - run: cargo +stable install wasm-pack --version 0.15.0 --locked
-      - run: mkdir -p web && dart run maxt:build_web --release
-      - run: dart test -p chrome test/web_runtime_test.dart test/custom_adapter_full_roundtrip_test.dart --chain-stack-traces --timeout=60s
-      - run: cargo install flutter_rust_bridge_codegen --version 2.12.0 --locked
+      - run: command -v flutter_rust_bridge_codegen >/dev/null || cargo install flutter_rust_bridge_codegen --version 2.12.0 --locked
       - run: |
           flutter_rust_bridge_codegen generate
           perl -pi -e 's/[ \t]+$//' lib/src/rust/*.freezed.dart
@@ -51,10 +78,38 @@ jobs:
       - run: dart format --output=none --set-exit-if-changed .
       - run: dart analyze --fatal-warnings
       - run: dart test --chain-stack-traces
-      - run: flutter test
       - run: dart pub publish --dry-run
 
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bindings/dart
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: bindings/dart/rust -> target
+          cache-bin: false
+      - uses: dart-lang/setup-dart@v1
+      - uses: actions/cache@v5
+        with:
+          path: bindings/dart/.dart_tool/hooks_runner
+          key: ${{ runner.os }}-dart-hooks-${{ hashFiles('bindings/dart/pubspec.lock', 'bindings/dart/pubspec.yaml', 'bindings/dart/rust/Cargo.lock') }}
+      - uses: actions/cache@v5
+        with:
+          path: ~/.cargo/bin/wasm-pack
+          key: ${{ runner.os }}-wasm-pack-0.15.0
+      - run: dart pub get
+      - run: rustup toolchain install nightly --profile minimal --component rust-src --target wasm32-unknown-unknown
+      - run: command -v wasm-pack >/dev/null || cargo +stable install wasm-pack --version 0.15.0 --locked
+      - run: mkdir -p web && dart run maxt:build_web --release
+      - run: dart test -p chrome test/web_runtime_test.dart test/custom_adapter_test.dart test/custom_adapter_full_roundtrip_test.dart --chain-stack-traces --timeout=60s --concurrency=1
+
   native-loader:
+    needs: changes
+    if: needs.changes.outputs.flutter-packaging == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -71,6 +126,8 @@ jobs:
       - run: dart test test/native_adapters_test.dart --chain-stack-traces
 
   flutter-build:
+    needs: changes
+    if: needs.changes.outputs.flutter-packaging == 'true'
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false

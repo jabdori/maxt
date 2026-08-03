@@ -34,6 +34,7 @@ from ._generated_identifiers import (
     TimeInForce,
     UpbitRegion,
 )
+from ._generated_wire import RECORD_FIELDS
 
 
 Timestamp = int
@@ -532,15 +533,30 @@ def _decimal_to_wire(value: Decimal) -> str:
 
 def _decode_dataclass(model_type: Any, value: dict[str, Any]) -> Any:
     hints = get_type_hints(model_type)
+    model_fields = _schema_fields(model_type)
     return model_type(
         **{
             item.name: _decode_value(
                 hints[item.name],
-                value[item.metadata.get("wire_name", item.name)],
+                value[wire_name],
             )
-            for item in fields(model_type)
+            for item, wire_name in model_fields
         }
     )
+
+
+def _schema_fields(model_type: Any) -> list[tuple[Any, str]]:
+    model_fields = {
+        item.metadata.get("wire_name", item.name): item for item in fields(model_type)
+    }
+    schema_fields = RECORD_FIELDS.get(model_type.__name__)
+    if schema_fields is None:
+        return [(item, wire_name) for wire_name, item in model_fields.items()]
+    if set(model_fields) != set(schema_fields):
+        raise TypeError(
+            f"{model_type.__name__} fields do not match the generated binding schema"
+        )
+    return [(model_fields[wire_name], wire_name) for wire_name in schema_fields]
 
 
 def _decode_value(expected: Any, value: Any) -> Any:
@@ -578,10 +594,8 @@ def _model_to_wire(value: Any) -> Any:
         return value.value
     if is_dataclass(value):
         return {
-            item.metadata.get("wire_name", item.name): _model_to_wire(
-                getattr(value, item.name)
-            )
-            for item in fields(value)
+            wire_name: _model_to_wire(getattr(value, item.name))
+            for item, wire_name in _schema_fields(type(value))
         }
     if isinstance(value, (list, tuple)):
         return [_model_to_wire(item) for item in value]
@@ -603,30 +617,11 @@ def _model_from_wire(type_name: str, value: dict[str, Any]) -> Any:
             [item_type.from_wire(item) for item in value["items"]],
             Cursor(value["next"]) if value.get("next") is not None else None,
         )
-    model_types: dict[str, type[WireModel]] = {
-        "Balance": Balance,
-        "Candle": Candle,
-        "CandleRequest": CandleRequest,
-        "FundingPayment": FundingPayment,
-        "FundingRate": FundingRate,
-        "HistoryRequest": HistoryRequest,
-        "MarginRequest": MarginRequest,
-        "MarginSummary": MarginSummary,
-        "MarketInfo": MarketInfo,
-        "Market": Market,
-        "Order": Order,
-        "OrderBook": OrderBook,
-        "OrderRequest": OrderRequest,
-        "Position": Position,
-        "StreamConfig": StreamConfig,
-        "Subscription": Subscription,
-        "Ticker": Ticker,
-        "Trade": Trade,
-    }
-    try:
-        model_type = model_types[type_name]
-    except KeyError as error:
-        raise ValueError(f"unknown maxt model: {type_name}") from error
+    model_type = globals().get(type_name)
+    if type_name not in RECORD_FIELDS or not isinstance(model_type, type):
+        raise ValueError(f"unknown maxt model: {type_name}")
+    if not issubclass(model_type, WireModel):
+        raise ValueError(f"unknown maxt model: {type_name}")
     return model_type.from_wire(value)
 
 

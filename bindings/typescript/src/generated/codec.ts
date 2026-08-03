@@ -26,7 +26,7 @@ export function marketFromWire(value: Wire.MarketWire): Model.Market {
 export function marketToWire(value: Model.Market): Wire.MarketWire {
   return {
     exchange: value.exchange.id,
-    kind: value.kind === Model.MarketKind.Spot ? "spot" : "perpetual",
+    kind: value.kind.id,
     base: value.base,
     quote: value.quote,
   };

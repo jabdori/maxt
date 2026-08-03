@@ -80,6 +80,54 @@ fn main() {
         root.join("bindings/python/python/maxt/_generated_identifiers.py"),
         python::render_identifiers(&schema),
     ));
+    #[cfg(feature = "python")]
+    outputs.push((
+        "python",
+        root.join("bindings/python/python/maxt/_generated_api.py"),
+        python::render_api(&schema),
+    ));
+    #[cfg(feature = "python")]
+    outputs.push((
+        "python",
+        root.join("bindings/python/python/maxt/_generated_delegate.py"),
+        python::render_native_delegate(&schema),
+    ));
+    #[cfg(feature = "python")]
+    outputs.push((
+        "python",
+        root.join("bindings/python/python/maxt/_generated_wire.py"),
+        python::render_wire_schema(&schema),
+    ));
+    #[cfg(feature = "python")]
+    outputs.push((
+        "python",
+        root.join("bindings/python/python/maxt/_native.pyi"),
+        python::render_native_stub(&schema),
+    ));
+    #[cfg(feature = "python")]
+    outputs.push((
+        "python",
+        root.join("bindings/python/src/generated/client_methods.rs"),
+        python::render_rust_client(&schema),
+    ));
+    #[cfg(feature = "python")]
+    outputs.push((
+        "python",
+        root.join("bindings/python/src/generated/adapter_dispatch.rs"),
+        python::render_rust_dispatcher(&schema),
+    ));
+    #[cfg(feature = "python")]
+    outputs.push((
+        "python",
+        root.join("bindings/python/src/generated/convert.rs"),
+        python::render_rust_convert(&schema),
+    ));
+    #[cfg(feature = "python")]
+    outputs.push((
+        "python",
+        root.join("bindings/python/src/generated/provider_convert.rs"),
+        python::render_rust_provider_convert(&schema),
+    ));
     #[cfg(feature = "dart")]
     outputs.push((
         "dart",
@@ -91,6 +139,54 @@ fn main() {
         "dart",
         root.join("bindings/dart/lib/src/generated_identifiers.dart"),
         dart::render_identifiers(&schema),
+    ));
+    #[cfg(feature = "dart")]
+    outputs.push((
+        "dart",
+        root.join("bindings/dart/lib/src/generated_adapter.dart"),
+        dart::render_adapter_api(&schema),
+    ));
+    #[cfg(feature = "dart")]
+    outputs.push((
+        "dart",
+        root.join("bindings/dart/lib/src/generated_client.dart"),
+        dart::render_client_api(&schema),
+    ));
+    #[cfg(feature = "dart")]
+    outputs.push((
+        "dart",
+        root.join("bindings/dart/lib/src/generated_provider_guard.dart"),
+        dart::render_provider_guard(&schema),
+    ));
+    #[cfg(feature = "dart")]
+    outputs.push((
+        "dart",
+        root.join("bindings/dart/lib/src/generated_provider_methods.dart"),
+        dart::render_provider_methods(&schema),
+    ));
+    #[cfg(feature = "dart")]
+    outputs.push((
+        "dart",
+        root.join("bindings/dart/lib/src/generated_delegate.dart"),
+        dart::render_delegate_methods(&schema),
+    ));
+    #[cfg(feature = "dart")]
+    outputs.push((
+        "dart",
+        root.join("bindings/dart/rust/src/api/generated_native_client.rs"),
+        dart::render_native_client_api(&schema),
+    ));
+    #[cfg(feature = "dart")]
+    outputs.push((
+        "dart",
+        root.join("bindings/dart/rust/src/adapter/generated_dispatch.rs"),
+        dart::render_rust_adapter_dispatch(&schema),
+    ));
+    #[cfg(feature = "dart")]
+    outputs.push((
+        "dart",
+        root.join("bindings/dart/rust/src/convert/generated_shape_guard.rs"),
+        dart::render_wire_shape_guard(&schema),
     ));
     #[cfg(feature = "rust")]
     outputs.push((

@@ -6,7 +6,7 @@ abstract interface class NativeHandleProvider {
 }
 
 /// 공개 [Client]가 모든 공통 호출을 Rust로 보내는 package 내부 delegate입니다.
-final class NativeClientDelegate extends AdapterBase {
+final class NativeClientDelegate extends GeneratedNativeDelegate {
   NativeClientDelegate._({
     required this.exchange,
     required this.features,
@@ -48,80 +48,33 @@ final class NativeClientDelegate extends AdapterBase {
   @override
   final Set<Feature> features;
 
-  Future<Adapter> get _native => _delegate;
+  @override
+  Future<Adapter> get delegateAdapter => _delegate;
 
   @override
-  Future<List<MarketInfo>> markets(MarketKind kind) async =>
-      (await _native).markets(kind);
-
-  @override
-  Future<List<Trade>> trades(Market market, [int? limit]) async =>
-      (await _native).trades(market, limit);
-
-  @override
-  Future<OrderBook> orderBook(Market market, [int? depth]) async =>
-      (await _native).orderBook(market, depth);
-
-  @override
-  Future<Ticker> ticker(Market market) async => (await _native).ticker(market);
-
-  @override
-  Future<List<Candle>> candles(CandleRequest request) async =>
-      (await _native).candles(request);
+  bool supports(Feature feature) => features.contains(feature);
 
   @override
   Future<MarketStream> subscribe(
     Subscription subscription,
     StreamConfig config,
   ) async {
-    final stream = await (await _native).subscribe(subscription, config);
+    final stream = await (await delegateAdapter).subscribe(
+      subscription,
+      config,
+    );
     return _directCustomAdapter
         ? _marketStreamWithCleanupError(stream)
         : stream;
   }
 
   @override
-  Future<List<Balance>> balances() async => (await _native).balances();
-
-  @override
-  Future<List<Order>> openOrders([Market? market]) async =>
-      (await _native).openOrders(market);
-
-  @override
   Future<AccountStream> subscribeAccount(StreamConfig config) async {
-    final stream = await (await _native).subscribeAccount(config);
+    final stream = await (await delegateAdapter).subscribeAccount(config);
     return _directCustomAdapter
         ? _accountStreamWithCleanupError(stream)
         : stream;
   }
-
-  @override
-  Future<Order> placeOrder(OrderRequest request) async =>
-      (await _native).placeOrder(request);
-
-  @override
-  Future<Order> cancelOrder(Market market, String orderId) async =>
-      (await _native).cancelOrder(market, orderId);
-
-  @override
-  Future<List<Position>> positions([Market? market]) async =>
-      (await _native).positions(market);
-
-  @override
-  Future<MarginSummary> marginSummary() async =>
-      (await _native).marginSummary();
-
-  @override
-  Future<Page<FundingRate>> fundingRates(HistoryRequest request) async =>
-      (await _native).fundingRates(request);
-
-  @override
-  Future<Page<FundingPayment>> fundingPayments(HistoryRequest request) async =>
-      (await _native).fundingPayments(request);
-
-  @override
-  Future<void> setMargin(MarginRequest request) async =>
-      (await _native).setMargin(request);
 }
 
 MarketStream _marketStreamWithCleanupError(MarketStream stream) {

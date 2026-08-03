@@ -266,6 +266,7 @@ fn ts_type(value: &Type) -> String {
         Type::String => "string".to_owned(),
         Type::Boolean => "boolean".to_owned(),
         Type::Number => "number".to_owned(),
+        Type::UnsignedInteger => "string".to_owned(),
         Type::Decimal => "DecimalWire".to_owned(),
         Type::Timestamp => "TimestampWire".to_owned(),
         Type::Identifier(_) => "string".to_owned(),

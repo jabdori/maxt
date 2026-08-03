@@ -16,6 +16,9 @@ import 'rust/stream.dart' as native_stream;
 import 'stream.dart';
 
 part 'dart_adapter_bridge.dart';
+part 'generated_delegate.dart';
+part 'generated_provider_guard.dart';
+part 'generated_provider_methods.dart';
 part 'native_conversion.dart';
 
 /// Dart Adapter stream과 Rust cancellation을 결합하는 package 내부 등록소입니다.
@@ -90,8 +93,8 @@ final class _DartStreamCloser {
   }
 }
 
-abstract base class _NativeAdapterBase extends AdapterBase
-    implements NativeHandleProvider {
+abstract base class _NativeAdapterBase
+    implements Adapter, NativeHandleProvider {
   _NativeAdapterBase(native.NativeClient handle)
     : _handle = handle,
       exchange = _exchangeFromWire(handle.exchange()),
@@ -267,28 +270,6 @@ final class UpbitAdapter extends _NativeAdapterBase {
         accessKey: accessKey,
         secretKey: secretKey,
       );
-
-  Future<List<OrderBook>> orderBooks(List<Market> markets, [int? depth]) =>
-      _nativeFuture(
-        () => _handle.upbitOrderBooks(
-          markets: markets.map(_marketToWire).toList(growable: false),
-          depth: checkedUint32(depth, field: 'depth'),
-        ),
-      ).then(
-        (values) => values.map(_orderBookFromWire).toList(growable: false),
-      );
-
-  Future<List<Ticker>> tickers(List<Market> markets) => _nativeFuture(
-    () => _handle.upbitTickers(
-      markets: markets.map(_marketToWire).toList(growable: false),
-    ),
-  ).then((values) => values.map(_tickerFromWire).toList(growable: false));
-
-  Future<List<UpbitMarketEvent>> marketEvents() =>
-      _nativeFuture(_handle.upbitMarketEvents).then(
-        (values) =>
-            values.map(_upbitMarketEventFromWire).toList(growable: false),
-      );
 }
 
 /// Bithumb 현물 거래소 어댑터입니다.
@@ -309,18 +290,6 @@ final class BithumbAdapter extends _NativeAdapterBase {
 
   BithumbAdapter withCredentials(String accessKey, String secretKey) =>
       BithumbAdapter(accessKey: accessKey, secretKey: secretKey);
-
-  Future<List<BithumbMarketWarning>> marketWarnings() =>
-      _nativeFuture(_handle.bithumbMarketWarnings).then(
-        (values) =>
-            values.map(_bithumbMarketWarningFromWire).toList(growable: false),
-      );
-
-  Future<List<BithumbMarketAlert>> marketAlerts() =>
-      _nativeFuture(_handle.bithumbMarketAlerts).then(
-        (values) =>
-            values.map(_bithumbMarketAlertFromWire).toList(growable: false),
-      );
 }
 
 /// Binance 현물 또는 USD-M 무기한 선물 어댑터입니다.
@@ -366,30 +335,6 @@ final class BinanceAdapter extends _NativeAdapterBase {
           secretKey: secretKey,
         ),
       };
-
-  Future<BinanceSymbolFilters> spotSymbolFilters(Market market) =>
-      _nativeFuture(
-        () => _handle.binanceSpotSymbolFilters(market: _marketToWire(market)),
-      ).then(_binanceSymbolFiltersFromWire);
-
-  Future<BinanceSpotOrderDetail> spotOrder(Market market, String orderId) =>
-      _nativeFuture(
-        () => _handle.binanceSpotOrder(
-          market: _marketToWire(market),
-          orderId: orderId,
-        ),
-      ).then(_binanceSpotOrderFromWire);
-
-  Future<BinanceListenKey> usdMCreateListenKey() => _nativeFuture(
-    _handle.binanceUsdMCreateListenKey,
-  ).then(BinanceListenKey._);
-
-  Future<void> usdMKeepaliveListenKey(BinanceListenKey key) => _nativeFuture(
-    () => _handle.binanceUsdMKeepaliveListenKey(key: key._handle),
-  );
-
-  Future<void> usdMCloseListenKey(BinanceListenKey key) =>
-      _nativeFuture(() => _handle.binanceUsdMCloseListenKey(key: key._handle));
 }
 
 /// 생성자로 만들 수 없는 Binance USD-M listen key입니다.
@@ -438,26 +383,4 @@ final class HyperliquidAdapter extends _NativeAdapterBase {
   HyperliquidAdapter withWallet(String address, String privateKey) => isTestnet
       ? HyperliquidAdapter.testnet(address: address, privateKey: privateKey)
       : HyperliquidAdapter(address: address, privateKey: privateKey);
-
-  Future<Page<HyperliquidLedgerEntry>> nonFundingLedger({
-    Timestamp? from,
-    Timestamp? to,
-    Cursor? cursor,
-    int? limit,
-  }) => _nativeFuture(
-    () => _handle.hyperliquidNonFundingLedger(
-      fromNs: from == null
-          ? null
-          : platformInt64FromBigInt(from.nanosecondsSinceEpoch),
-      toNs: to == null
-          ? null
-          : platformInt64FromBigInt(to.nanosecondsSinceEpoch),
-      cursor: cursor?.value,
-      limit: checkedUint32(limit, field: 'limit'),
-    ),
-  ).then(_hyperliquidLedgerPageFromWire);
-
-  Future<HyperliquidAssetContext> assetContext(Market market) => _nativeFuture(
-    () => _handle.hyperliquidAssetContext(market: _marketToWire(market)),
-  ).then(_hyperliquidAssetContextFromWire);
 }

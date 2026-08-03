@@ -88,6 +88,7 @@ fn snake_to_camel(value: &str) -> String {
 fn from_expression(ty: &Type, value: &str, field: &str) -> String {
     match ty {
         Type::String | Type::Boolean | Type::Number => value.to_owned(),
+        Type::UnsignedInteger => format!("Number({value})"),
         Type::Decimal => format!("Model.Decimal.parse({value})"),
         Type::Timestamp => format!("Model.Timestamp.fromNanoseconds(BigInt({value}))"),
         Type::Identifier(name) => {
@@ -130,6 +131,7 @@ fn from_expression(ty: &Type, value: &str, field: &str) -> String {
 fn to_expression(ty: &Type, value: &str) -> String {
     match ty {
         Type::String | Type::Boolean | Type::Number => value.to_owned(),
+        Type::UnsignedInteger => format!("{value}.toString()"),
         Type::Decimal => format!("{value}.toString()"),
         Type::Timestamp => format!("{value}.nanosecondsSinceEpoch.toString()"),
         Type::Identifier(_) => format!("{value}.id"),

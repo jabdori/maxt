@@ -7,6 +7,7 @@ pub enum Type {
     String,
     Boolean,
     Number,
+    UnsignedInteger,
     Decimal,
     Timestamp,
     Identifier(&'static str),
@@ -1019,7 +1020,7 @@ pub fn binding_schema() -> Schema {
             "MarketWire",
             vec![
                 field("exchange", Type::Identifier("Exchange")),
-                field("kind", Type::named("MarketKindWire")),
+                field("kind", Type::Identifier("MarketKind")),
                 field("base", Type::String),
                 field("quote", Type::String),
             ],
@@ -1186,10 +1187,10 @@ pub fn binding_schema() -> Schema {
             "StreamConfigWire",
             vec![
                 field("max_reconnect_attempts", Type::optional(Number)),
-                field("initial_reconnect_delay_ms", Type::String),
-                field("max_reconnect_delay_ms", Type::String),
-                field("idle_timeout_ms", Type::String),
-                field("buffer_size", Type::String),
+                field("initial_reconnect_delay_ms", Type::UnsignedInteger),
+                field("max_reconnect_delay_ms", Type::UnsignedInteger),
+                field("idle_timeout_ms", Type::UnsignedInteger),
+                field("buffer_size", Type::UnsignedInteger),
                 field("overflow", Type::Identifier("Overflow")),
             ],
         ),
@@ -1337,8 +1338,8 @@ pub fn binding_schema() -> Schema {
             name: "SizeWire",
             type_parameters: &[],
             variants: vec![
-                variant("base", vec![field("value", Type::named("DecimalWire"))]),
-                variant("quote", vec![field("value", Type::named("DecimalWire"))]),
+                variant("base", vec![field("value", Type::Decimal)]),
+                variant("quote", vec![field("value", Type::Decimal)]),
             ],
         },
         TaggedUnion {
@@ -1348,7 +1349,10 @@ pub fn binding_schema() -> Schema {
                 variant("trades", vec![]),
                 variant("order_book", vec![]),
                 variant("ticker", vec![]),
-                variant("candles", vec![field("interval", Type::String)]),
+                variant(
+                    "candles",
+                    vec![field("interval", Type::Identifier("Interval"))],
+                ),
             ],
         },
         TaggedUnion {

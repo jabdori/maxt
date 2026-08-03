@@ -6,7 +6,7 @@ export type MarketKindWire = "spot" | "perpetual";
 
 export interface MarketWire {
   readonly exchange: string;
-  readonly kind: MarketKindWire;
+  readonly kind: string;
   readonly base: string;
   readonly quote: string;
 }

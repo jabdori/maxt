@@ -4,6 +4,7 @@ from importlib import import_module
 from typing import Any, Awaitable, Callable, Optional, TypeVar, Union
 
 from ._api import AccountStream, Adapter, MarketStream, StreamError, StreamEvent
+from ._generated_delegate import _GeneratedNativeClientDelegateApi
 from .models import (
     AccountEvent,
     Balance,
@@ -121,7 +122,7 @@ class _DecodedStream:
                 raise public_error from None
 
 
-class _NativeClientDelegate(Adapter):
+class _NativeClientDelegate(_GeneratedNativeClientDelegateApi, Adapter):
     def __init__(self, client: Any, native: Any) -> None:
         self._native_module = native
         self._client = client
@@ -143,85 +144,19 @@ class _NativeClientDelegate(Adapter):
                 raise
             raise public_error from None
 
-    async def markets(self, kind: MarketKind) -> list[MarketInfo]:
-        values = await self._call(self._client.markets, kind)
-        return [_model_from_wire("MarketInfo", value) for value in values]
-
-    async def trades(self, market: Market, limit: Optional[int] = None) -> list[Trade]:
-        values = await self._call(self._client.trades, market, limit)
-        return [_model_from_wire("Trade", value) for value in values]
-
-    async def order_book(
-        self,
-        market: Market,
-        depth: Optional[int] = None,
-    ) -> OrderBook:
-        value = await self._call(self._client.order_book, market, depth)
-        return _model_from_wire("OrderBook", value)
-
-    async def ticker(self, market: Market) -> Ticker:
-        value = await self._call(self._client.ticker, market)
-        return _model_from_wire("Ticker", value)
-
-    async def candles(self, request: CandleRequest) -> list[Candle]:
-        values = await self._call(self._client.candles, request)
-        return [_model_from_wire("Candle", value) for value in values]
-
-    async def subscribe(
-        self,
-        subscription: Subscription,
-        config: StreamConfig,
+    def _market_stream(
+        self, source: Any
     ) -> MarketStream[Union[StreamEvent[MarketEvent], StreamError]]:
-        source = await self._call(self._client.subscribe, subscription, config)
         return MarketStream(
             _DecodedStream(source, account=False, native=self._native_module)
         )
 
-    async def balances(self) -> list[Balance]:
-        values = await self._call(self._client.balances)
-        return [_model_from_wire("Balance", value) for value in values]
-
-    async def open_orders(self, market: Optional[Market] = None) -> list[Order]:
-        method = self._client.open_orders if market is None else self._client.open_orders_on
-        values = await self._call(method, *(() if market is None else (market,)))
-        return [_model_from_wire("Order", value) for value in values]
-
-    async def subscribe_account(
-        self,
-        config: StreamConfig,
+    def _account_stream(
+        self, source: Any
     ) -> AccountStream[Union[StreamEvent[AccountEvent], StreamError]]:
-        source = await self._call(self._client.subscribe_account, config)
         return AccountStream(
             _DecodedStream(source, account=True, native=self._native_module)
         )
-
-    async def place_order(self, request: OrderRequest) -> Order:
-        value = await self._call(self._client.place_order, request)
-        return _model_from_wire("Order", value)
-
-    async def cancel_order(self, market: Market, order_id: str) -> Order:
-        value = await self._call(self._client.cancel_order, market, order_id)
-        return _model_from_wire("Order", value)
-
-    async def positions(self, market: Optional[Market] = None) -> list[Position]:
-        method = self._client.positions if market is None else self._client.positions_on
-        values = await self._call(method, *(() if market is None else (market,)))
-        return [_model_from_wire("Position", value) for value in values]
-
-    async def margin_summary(self) -> MarginSummary:
-        value = await self._call(self._client.margin_summary)
-        return _model_from_wire("MarginSummary", value)
-
-    async def funding_rates(self, request: HistoryRequest) -> Page[FundingRate]:
-        value = await self._call(self._client.funding_rates, request)
-        return _model_from_wire("FundingRatePage", value)
-
-    async def funding_payments(self, request: HistoryRequest) -> Page[FundingPayment]:
-        value = await self._call(self._client.funding_payments, request)
-        return _model_from_wire("FundingPaymentPage", value)
-
-    async def set_margin(self, request: MarginRequest) -> None:
-        await self._call(self._client.set_margin, request)
 
 
 class _NativeAdapter(_NativeClientDelegate):

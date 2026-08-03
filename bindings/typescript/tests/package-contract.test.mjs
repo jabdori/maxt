@@ -49,6 +49,7 @@ test("publishes the @jabdori/maxt Node and browser package identity", () => {
     "native.d.ts",
     "README.md",
     "README.ko.md",
+    "CHANGELOG.md",
     "LICENSE",
   ]);
 });

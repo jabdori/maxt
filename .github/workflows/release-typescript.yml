@@ -214,3 +214,21 @@ jobs:
           publish_one @jabdori/maxt-darwin-arm64 jabdori-maxt-darwin-arm64
           publish_one @jabdori/maxt-win32-x64-msvc jabdori-maxt-win32-x64-msvc
           publish_one @jabdori/maxt jabdori-maxt
+
+  github-release:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#typescript-v}"
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || \
+            gh release create "$GITHUB_REF_NAME" \
+              --verify-tag \
+              --title "TypeScript $version" \
+              --notes "See the [TypeScript changelog]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/blob/$GITHUB_REF_NAME/bindings/typescript/CHANGELOG.md)."

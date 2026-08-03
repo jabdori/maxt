@@ -86,7 +86,8 @@ process requires built assets in source control.
 
 Serve the Web build with `Cross-Origin-Opener-Policy: same-origin` and
 `Cross-Origin-Embedder-Policy: require-corp` so browsers can enable the shared
-memory features used by the generated WebAssembly module.
+memory features used by the generated WebAssembly module. Use HTTPS in
+production; `http://localhost` is suitable for local development.
 
 ## Initialize and use Binance
 

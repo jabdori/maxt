@@ -21,6 +21,47 @@ source when your Dart or Flutter application is built, so Rustup and the target
 platform toolchain, such as the Android NDK or Xcode, must also be installed in
 development and CI environments.
 
+## Supported exchanges
+
+- Upbit Spot: Korea, Singapore, Indonesia, and Thailand
+- Bithumb Spot
+- Binance Spot and USD-M perpetual futures
+- Hyperliquid Spot and perpetual futures on mainnet and testnet
+
+Binance testnet constructors are not exposed. Hyperliquid HIP-3 perpetual DEXs
+and outcome assets are not exposed.
+
+## Common API
+
+`Client` provides the same method names for every built-in adapter:
+
+- Public REST: `markets()`, `trades()`, `orderBook()`, `ticker()`, and
+  `candles()`.
+- Public streams: `subscribe()` and `subscribeWith()` for trades, order books,
+  tickers, and candles. Bithumb does not support candle streams.
+- Public funding history: `fundingRates()` on Binance USD-M and Hyperliquid
+  perpetual markets.
+- Private Spot: `balances()`, `openOrders()`, `placeOrder()`, `cancelOrder()`,
+  and `subscribeAccount()` on every exchange.
+- Private perpetuals: `positions()`, `marginSummary()`, `setMargin()`, and
+  `fundingPayments()` on Binance USD-M and Hyperliquid.
+
+Public calls need no credentials. Private calls require both credential fields.
+Use `client.supports(feature)` before optional operations when the adapter or
+credential state is dynamic.
+
+## Exchange-specific API
+
+Exchange-specific methods remain available through `client.adapter`.
+
+| Adapter | Construction | Additional methods |
+| --- | --- | --- |
+| `UpbitAdapter` | `UpbitAdapter()` or `UpbitAdapter.withRegion(...)` | `orderBooks()`, `tickers()`, `marketEvents()` |
+| `BithumbAdapter` | `BithumbAdapter()` | `marketWarnings()`, `marketAlerts()` |
+| `BinanceAdapter` | `BinanceAdapter.spot()` | `spotSymbolFilters()`; authenticated: `spotOrder()` |
+| `BinanceAdapter` | `BinanceAdapter.usdMFutures()` | Authenticated: `usdMCreateListenKey()`, `usdMKeepaliveListenKey()`, `usdMCloseListenKey()` |
+| `HyperliquidAdapter` | `HyperliquidAdapter()` or `HyperliquidAdapter.testnet()` | `assetContext()`, `nonFundingLedger()` |
+
 ## Install
 
 ```sh
@@ -93,7 +134,8 @@ For custom streams, return `MarketStream` or `AccountStream` over a Dart
 - Errors: `InvalidRequestError`, `UnsupportedError`, `AdapterError`, `AuthenticationError`, `ExchangeError`, `TransportError`, `DecodeError`.
 - Credentials: omit both fields for public access; provide both for private access.
 
-See the [common API](../../docs/common-api.md) and [provider support](../../docs/providers.md).
+See the [common data and pagination contracts](../../docs/common-api.md) and
+[provider limits and data semantics](../../docs/providers.md).
 
 ## License
 

@@ -23,6 +23,49 @@ Chromium, Firefox, and WebKit.
 npm install @jabdori/maxt
 ```
 
+## Supported exchanges
+
+- Upbit Spot: Korea, Singapore, Indonesia, and Thailand
+- Bithumb Spot
+- Binance Spot and USD-M perpetual futures
+- Hyperliquid Spot and perpetual futures on mainnet and testnet
+
+Binance testnet constructors are not exposed. Hyperliquid HIP-3 perpetual DEXs
+and outcome assets are not exposed.
+
+## Common API
+
+`Client` provides the same method names in Node.js and Browser WASM:
+
+- Public REST: `markets()`, `trades()`, `orderBook()`, `ticker()`, and
+  `candles()`.
+- Public streams: `subscribe()` and `subscribeWith()` for trades, order books,
+  tickers, and candles. Bithumb does not support candle streams.
+- Public funding history: `fundingRates()` on Binance USD-M and Hyperliquid
+  perpetual markets.
+- Private Spot: `balances()`, `openOrders()`, `placeOrder()`, `cancelOrder()`,
+  and `subscribeAccount()` on every exchange.
+- Private perpetuals: `positions()`, `marginSummary()`, `setMargin()`, and
+  `fundingPayments()` on Binance USD-M and Hyperliquid.
+
+Public calls need no credentials. Private calls require both credential fields.
+Browser private calls additionally require a relay and
+`allowInsecureBrowserCredentials: true`. Use `client.supports(feature)` before
+optional operations when the adapter or credential state is dynamic.
+
+## Exchange-specific API
+
+Exchange-specific methods remain available through `client.adapter` on both
+backends.
+
+| Adapter | Construction | Additional methods |
+| --- | --- | --- |
+| `UpbitAdapter` | `new UpbitAdapter()` or `UpbitAdapter.withRegion(...)` | `orderBooks()`, `tickers()`, `marketEvents()` |
+| `BithumbAdapter` | `new BithumbAdapter()` | `marketWarnings()`, `marketAlerts()` |
+| `BinanceAdapter` | `BinanceAdapter.spot()` | `spotSymbolFilters()`; authenticated: `spotOrder()` |
+| `BinanceAdapter` | `BinanceAdapter.usdMFutures()` | Authenticated: `usdMCreateListenKey()`, `usdMKeepaliveListenKey()`, `usdMCloseListenKey()` |
+| `HyperliquidAdapter` | `new HyperliquidAdapter()` or `HyperliquidAdapter.testnet()` | `assetContext()`, `nonFundingLedger()` |
+
 ## Node.js
 
 Use the Node.js entry point. `initialize()` is idempotent with the same options.
@@ -132,8 +175,9 @@ For custom streams, return `MarketStream` or `AccountStream` over an
 cleanup is required. Browser custom adapters use the same generated bridge as
 Node.js and require browser initialization first.
 
-See the [relay](../../relay/README.md), [common API](../../docs/common-api.md),
-and [provider support](../../docs/providers.md).
+See the [relay](../../relay/README.md),
+[common data and pagination contracts](../../docs/common-api.md), and
+[provider limits and data semantics](../../docs/providers.md).
 
 ## License
 

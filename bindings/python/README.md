@@ -22,6 +22,47 @@ python -m pip install maxt
 Python has no separate initialization function. Constructing a built-in
 adapter loads the native module.
 
+## Supported exchanges
+
+- Upbit Spot: Korea, Singapore, Indonesia, and Thailand
+- Bithumb Spot
+- Binance Spot and USD-M perpetual futures
+- Hyperliquid Spot and perpetual futures on mainnet and testnet
+
+Binance testnet constructors are not exposed. Hyperliquid HIP-3 perpetual DEXs
+and outcome assets are not exposed.
+
+## Common API
+
+`Client` provides the same method names for every built-in adapter:
+
+- Public REST: `markets()`, `trades()`, `order_book()`, `ticker()`, and
+  `candles()`.
+- Public streams: `subscribe()` and `subscribe_with()` for trades, order books,
+  tickers, and candles. Bithumb does not support candle streams.
+- Public funding history: `funding_rates()` on Binance USD-M and Hyperliquid
+  perpetual markets.
+- Private Spot: `balances()`, `open_orders()`, `place_order()`,
+  `cancel_order()`, and `subscribe_account()` on every exchange.
+- Private perpetuals: `positions()`, `margin_summary()`, `set_margin()`, and
+  `funding_payments()` on Binance USD-M and Hyperliquid.
+
+Public calls need no credentials. Private calls require both credential fields.
+Use `client.supports(feature)` before optional operations when the adapter or
+credential state is dynamic.
+
+## Exchange-specific API
+
+Exchange-specific methods remain available through `client.adapter`.
+
+| Adapter | Construction | Additional methods |
+| --- | --- | --- |
+| `UpbitAdapter` | `UpbitAdapter()` or `UpbitAdapter(region=...)` | `order_books()`, `tickers()`, `market_events()` |
+| `BithumbAdapter` | `BithumbAdapter()` | `market_warnings()`, `market_alerts()` |
+| `BinanceAdapter` | `BinanceAdapter.spot()` | `spot_symbol_filters()`; authenticated: `spot_order()` |
+| `BinanceAdapter` | `BinanceAdapter.usd_m_futures()` | Authenticated: `usd_m_create_listen_key()`, `usd_m_keepalive_listen_key()`, `usd_m_close_listen_key()` |
+| `HyperliquidAdapter` | `HyperliquidAdapter()` or `HyperliquidAdapter.testnet()` | `asset_context()`, `non_funding_ledger()` |
+
 ## Binance common and exchange-specific APIs
 
 ```python
@@ -81,7 +122,8 @@ iterator. Emit `StreamEvent` and `StreamError`; implement the iterator's
 - Errors: `InvalidRequestError`, `UnsupportedError`, `AdapterError`, `AuthError`, `ExchangeError`, `TransportError`, `DecodeError`.
 - `ExchangeError`: preserves provider code, HTTP status, and retry classification.
 
-See the [common API](../../docs/common-api.md) and [provider support](../../docs/providers.md).
+See the [common data and pagination contracts](../../docs/common-api.md) and
+[provider limits and data semantics](../../docs/providers.md).
 
 ## License
 

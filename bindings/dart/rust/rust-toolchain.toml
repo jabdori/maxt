@@ -1,5 +1,6 @@
 [toolchain]
 channel = "1.92.0"
+components = ["rustfmt"]
 targets = [
   "armv7-linux-androideabi",
   "aarch64-linux-android",

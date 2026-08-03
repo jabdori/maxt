@@ -19,6 +19,28 @@ permissions:
   contents: read
 
 jobs:
+  rust:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bindings/typescript
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@1.88.0
+        with:
+          components: clippy
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            bindings/codegen -> target
+            bindings/typescript/rust -> target
+      - run: cargo run --manifest-path ../codegen/Cargo.toml --no-default-features --features typescript --locked -- typescript --check
+      - run: cargo clippy --manifest-path rust/Cargo.toml --all-targets --locked -- -D warnings
+      - run: cargo test --manifest-path rust/Cargo.toml --all-targets --locked
+      - run: cargo check --manifest-path rust/Cargo.toml --target wasm32-unknown-unknown --locked
+      - run: cargo clippy --manifest-path rust/Cargo.toml --target wasm32-unknown-unknown --locked -- -D warnings
+
   node-and-web:
     runs-on: ubuntu-latest
     strategy:
@@ -32,20 +54,16 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@1.88.0
         with:
-          components: clippy
-          targets: wasm32-unknown-unknown
+          targets: ${{ matrix.node == 24 && 'wasm32-unknown-unknown' || '' }}
       - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: bindings/typescript/rust -> target
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
           cache: npm
           cache-dependency-path: bindings/typescript/package-lock.json
       - run: npm ci
-      - run: cargo run --manifest-path ../codegen/Cargo.toml --no-default-features --features typescript --locked -- typescript --check
-      - run: cargo clippy --manifest-path rust/Cargo.toml --all-targets --locked -- -D warnings
-      - run: cargo test --manifest-path rust/Cargo.toml --all-targets --locked
-      - run: cargo check --manifest-path rust/Cargo.toml --target wasm32-unknown-unknown --locked
-      - run: cargo clippy --manifest-path rust/Cargo.toml --target wasm32-unknown-unknown --locked -- -D warnings
       - run: npm test
       - if: matrix.node == 24
         run: |

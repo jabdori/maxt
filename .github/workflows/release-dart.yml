@@ -13,6 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src
+          targets: wasm32-unknown-unknown
       - shell: bash
         run: |
           version="${GITHUB_REF_NAME#dart-v}"
@@ -23,9 +27,65 @@ jobs:
           unlink "$package/rust/Cargo.lock"
           unlink "$package/.cargo/config.toml"
           (cd "$package/rust" && cargo check)
+          RUSTFLAGS='-C target-feature=+atomics,+bulk-memory,+mutable-globals' \
+            cargo +nightly check --manifest-path "$package/rust/Cargo.toml" \
+            --target wasm32-unknown-unknown -Z build-std=std,panic_abort
+
+  native-loader:
+    needs: validate
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@1.92.0
+      - uses: dart-lang/setup-dart@v1
+      - shell: bash
+        run: |
+          cp -R bindings/dart/. "$RUNNER_TEMP/maxt"
+          unlink "$RUNNER_TEMP/maxt/rust/Cargo.lock"
+          unlink "$RUNNER_TEMP/maxt/.cargo/config.toml"
+      - working-directory: ${{ runner.temp }}/maxt
+        run: dart pub get
+      - working-directory: ${{ runner.temp }}/maxt
+        run: dart test test/native_adapters_test.dart --chain-stack-traces
+
+  flutter-build:
+    needs: validate
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            command: flutter build apk --debug
+          - runner: macos-latest
+            command: flutter build ios --simulator --debug --no-codesign
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - shell: bash
+        run: |
+          cp -R bindings/dart/. "$RUNNER_TEMP/maxt"
+          unlink "$RUNNER_TEMP/maxt/rust/Cargo.lock"
+          unlink "$RUNNER_TEMP/maxt/.cargo/config.toml"
+          flutter create --project-name maxt_smoke "$RUNNER_TEMP/maxt-smoke"
+          dart pub add --directory "$RUNNER_TEMP/maxt-smoke" "maxt@{path: $RUNNER_TEMP/maxt}"
+          perl -0pi -e \
+            "s|import 'package:flutter/material.dart';|import 'package:flutter/material.dart';\nimport 'package:maxt/maxt.dart';|; \
+             s|void main\(\) \{|Future<void> main() async {\n  await Maxt.initialize();|" \
+            "$RUNNER_TEMP/maxt-smoke/lib/main.dart"
+      - working-directory: ${{ runner.temp }}/maxt-smoke
+        run: ${{ matrix.command }}
 
   publish:
-    needs: validate
+    needs: [validate, native-loader, flutter-build]
     uses: dart-lang/setup-dart/.github/workflows/publish.yml@65eb853c7ba17dde3be364c3d2858773e7144260
     with:
       working-directory: bindings/dart

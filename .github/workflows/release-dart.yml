@@ -17,11 +17,35 @@ jobs:
         with:
           components: rust-src
           targets: wasm32-unknown-unknown
+      - uses: dart-lang/setup-dart@v1
       - shell: bash
         run: |
           version="${GITHUB_REF_NAME#dart-v}"
           [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
           test "$(sed -n 's/^version: *//p' bindings/dart/pubspec.yaml | head -1)" = "$version"
+      - run: cargo run --manifest-path bindings/codegen/Cargo.toml --no-default-features --features dart --locked -- dart --check
+      - working-directory: bindings/dart
+        shell: bash
+        run: |
+          dart pub get
+          cargo install flutter_rust_bridge_codegen --version 2.12.0 --locked
+          flutter_rust_bridge_codegen generate
+          perl -pi -e 's/[ \t]+$//' lib/src/rust/*.freezed.dart
+          cargo fmt --manifest-path rust/Cargo.toml
+          git diff --exit-code -- lib/src/rust rust/src/frb_generated.rs
+          dart format --output=none --set-exit-if-changed .
+          dart analyze --fatal-warnings
+          dart test --chain-stack-traces
+      - working-directory: bindings/dart
+        shell: bash
+        run: |
+          rustup toolchain install stable --profile minimal
+          cargo +stable install wasm-pack --version 0.15.0 --locked
+          mkdir -p web
+          dart run maxt:build_web --release
+          dart test -p chrome test/web_runtime_test.dart test/custom_adapter_test.dart test/custom_adapter_full_roundtrip_test.dart --chain-stack-traces --timeout=60s --concurrency=1
+      - shell: bash
+        run: |
           package="$(mktemp -d)"
           cp -R bindings/dart/. "$package/"
           unlink "$package/rust/Cargo.lock"

@@ -201,7 +201,7 @@ jobs:
             if npm view "$package@$version" version --silent >/dev/null 2>&1; then
               echo "$package@$version already exists; skipping."
             else
-              npm publish "package-set/$file-$version.tgz" --access public
+              npm publish "./package-set/$file-$version.tgz" --access public
             fi
           }
           if [[ -z "$NODE_AUTH_TOKEN" ]] && ! npm view '@jabdori/maxt' version --silent >/dev/null 2>&1; then

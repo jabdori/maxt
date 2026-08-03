@@ -121,6 +121,7 @@ pub(crate) fn render_wire_converters(schema: &Schema) -> String {
         }
     }
     output.push_str(&render_dart_errors(schema));
+    output.push_str(&render_dart_provider_converters(schema));
     output.truncate(output.trim_end().len());
     output.push('\n');
     output
@@ -793,7 +794,7 @@ fn render_dart_page_converter(name: &str) -> String {
         &format!("wire.Wire{name}Page"),
         &to_fields,
     );
-    format!("{from}{to}")
+    format!("{from}{to}\n")
 }
 
 fn render_dart_errors(schema: &Schema) -> String {
@@ -846,7 +847,90 @@ fn render_dart_errors(schema: &Schema) -> String {
     to.push_str(
         "    _ => wire.NativeError(\n      kind: wire.NativeErrorKind.adapter,\n      message: message,\n      detail: message,\n      retryable: false,\n      rateLimited: false,\n    ),\n  };\n}\n",
     );
-    format!("{from}{to}")
+    format!("{from}{to}\n")
+}
+
+fn render_dart_provider_converters(schema: &Schema) -> String {
+    for (exchange, method) in [
+        ("upbit", "marketEvents"),
+        ("bithumb", "marketWarnings"),
+        ("bithumb", "marketAlerts"),
+        ("binance", "spotSymbolFilters"),
+        ("binance", "spotOrder"),
+        ("hyperliquid", "nonFundingLedger"),
+        ("hyperliquid", "assetContext"),
+    ] {
+        let provider = schema
+            .providers
+            .iter()
+            .find(|provider| provider.exchange == exchange)
+            .unwrap_or_else(|| panic!("missing provider {exchange}"));
+        assert!(
+            provider.methods.iter().any(|value| value.name == method),
+            "missing provider method {exchange}.{method}"
+        );
+    }
+    let mut output = String::from(
+        "UpbitMarketEvent _upbitMarketEventFromWire(wire.WireUpbitMarketEvent value) =>\n    UpbitMarketEvent(\n      market: _marketFromWire(value.market),\n      warning: value.warning,\n      cautions: value.cautions,\n    );\n\n\
+         BithumbMarketWarning _bithumbMarketWarningFromWire(\n  wire.WireBithumbMarketWarning value,\n) => BithumbMarketWarning(\n  market: _marketFromWire(value.market),\n  warning: value.warning,\n);\n\n\
+         BithumbMarketAlert _bithumbMarketAlertFromWire(\n  wire.WireBithumbMarketAlert value,\n) => BithumbMarketAlert(\n  market: _marketFromWire(value.market),\n  kind: value.kind,\n  step: _enumByName(BithumbAlertStep.values, value.step),\n  endsAt: _timestampFromWire(value.endsAtNs)!,\n);\n\n",
+    );
+    for name in [
+        "BinanceSymbolFilters",
+        "BinanceSpotOrderDetail",
+        "HyperliquidAssetContext",
+    ] {
+        let record = schema
+            .records
+            .iter()
+            .find(|record| record.name == format!("{name}Wire"))
+            .unwrap_or_else(|| panic!("missing record {name}Wire"));
+        output.push_str(&render_dart_record_from_wire(name, &record.fields));
+    }
+    let identifier = schema
+        .identifier("HyperliquidLedgerKind")
+        .expect("HyperliquidLedgerKind identifier must exist");
+    assert!(identifier.open, "HyperliquidLedgerKind must stay open");
+    output.push_str(
+        "HyperliquidLedgerKind _hyperliquidLedgerKindFromWire(\n  wire.WireHyperliquidLedgerEntry value,\n) => value.kind == wire.WireHyperliquidLedgerKind.other\n    ? HyperliquidLedgerKind.other(value.providerKind ?? 'other')\n    : switch (value.kind) {\n",
+    );
+    for variant in identifier.variants {
+        let dart = dart_name(variant.rust_name);
+        let source = format!("wire.WireHyperliquidLedgerKind.{dart}");
+        let target = format!("HyperliquidLedgerKind.{dart}");
+        if source.len() + target.len() + 12 <= 80 {
+            output.push_str(&format!("        {source} => {target},\n"));
+        } else {
+            output.push_str(&format!("        {source} =>\n          {target},\n"));
+        }
+    }
+    output.push_str(
+        "        wire.WireHyperliquidLedgerKind.other => throw StateError('unreachable'),\n      };\n\n\
+         HyperliquidLedgerEntry _hyperliquidLedgerEntryFromWire(\n  wire.WireHyperliquidLedgerEntry value,\n) => HyperliquidLedgerEntry(\n  kind: _hyperliquidLedgerKindFromWire(value),\n  time: _timestampFromWire(value.timeNs)!,\n  hash: value.hash,\n  asset: value.asset,\n  amount: _decimalFromWire(value.amount),\n  fee: _decimalFromWire(value.fee),\n  counterparty: value.counterparty,\n);\n\n\
+         Page<HyperliquidLedgerEntry> _hyperliquidLedgerPageFromWire(\n  wire.WireHyperliquidLedgerPage value,\n) => Page(\n  items: value.items.map(_hyperliquidLedgerEntryFromWire),\n  next: value.next == null ? null : Cursor(value.next!),\n);\n",
+    );
+    output
+}
+
+fn render_dart_record_from_wire(name: &str, fields: &[Field]) -> String {
+    let function = match name {
+        "BinanceSpotOrderDetail" => "binanceSpotOrder".to_owned(),
+        _ => lower_camel(name),
+    };
+    let fields = fields
+        .iter()
+        .map(|field| {
+            let public = snake_to_lower_camel(field.name);
+            let value = dart_from_wire_expression(field.name, &field.ty);
+            format!("  {public}: {value},\n")
+        })
+        .collect::<String>();
+    dart_named_constructor_function(
+        &format!("{name} _{function}FromWire"),
+        &format!("wire.Wire{name}"),
+        name,
+        &fields,
+    ) + "\n"
 }
 
 fn dart_named_constructor_function(

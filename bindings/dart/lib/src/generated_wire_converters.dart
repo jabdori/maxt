@@ -283,6 +283,7 @@ wire.WireFundingRatePage _fundingRatePageToWire(Page<FundingRate> value) =>
       items: value.items.map(_fundingRateToWire).toList(growable: false),
       next: value.next?.value,
     );
+
 Page<FundingPayment> _fundingPaymentPageFromWire(
   wire.WireFundingPaymentPage value,
 ) => Page(
@@ -295,6 +296,7 @@ wire.WireFundingPaymentPage _fundingPaymentPageToWire(
   items: value.items.map(_fundingPaymentToWire).toList(growable: false),
   next: value.next?.value,
 );
+
 Object _nativeError(wire.NativeError value) => switch (value.kind) {
   wire.NativeErrorKind.invalidRequest => InvalidRequestError(
     field: value.field ?? 'request',
@@ -383,3 +385,108 @@ wire.NativeError _errorToWire(
     ),
   };
 }
+
+UpbitMarketEvent _upbitMarketEventFromWire(wire.WireUpbitMarketEvent value) =>
+    UpbitMarketEvent(
+      market: _marketFromWire(value.market),
+      warning: value.warning,
+      cautions: value.cautions,
+    );
+
+BithumbMarketWarning _bithumbMarketWarningFromWire(
+  wire.WireBithumbMarketWarning value,
+) => BithumbMarketWarning(
+  market: _marketFromWire(value.market),
+  warning: value.warning,
+);
+
+BithumbMarketAlert _bithumbMarketAlertFromWire(
+  wire.WireBithumbMarketAlert value,
+) => BithumbMarketAlert(
+  market: _marketFromWire(value.market),
+  kind: value.kind,
+  step: _enumByName(BithumbAlertStep.values, value.step),
+  endsAt: _timestampFromWire(value.endsAtNs)!,
+);
+
+BinanceSymbolFilters _binanceSymbolFiltersFromWire(
+  wire.WireBinanceSymbolFilters value,
+) => BinanceSymbolFilters(
+  symbol: value.symbol,
+  tickSize: _decimalFromWire(value.tickSize),
+  minPrice: _decimalFromWire(value.minPrice),
+  maxPrice: _decimalFromWire(value.maxPrice),
+  stepSize: _decimalFromWire(value.stepSize),
+  minQuantity: _decimalFromWire(value.minQuantity),
+  maxQuantity: _decimalFromWire(value.maxQuantity),
+  minNotional: _decimalFromWire(value.minNotional),
+);
+
+BinanceSpotOrderDetail _binanceSpotOrderFromWire(
+  wire.WireBinanceSpotOrderDetail value,
+) => BinanceSpotOrderDetail(
+  order: _orderFromWire(value.order),
+  clientOrderId: value.clientOrderId,
+  orderType: value.orderType,
+  timeInForce: value.timeInForce,
+  filledQuoteQuantity: Decimal.parse(value.filledQuoteQuantity),
+  updatedAt: _timestampFromWire(value.updatedAtNs),
+);
+
+HyperliquidAssetContext _hyperliquidAssetContextFromWire(
+  wire.WireHyperliquidAssetContext value,
+) => HyperliquidAssetContext(
+  midPrice: _decimalFromWire(value.midPrice),
+  markPrice: _decimalFromWire(value.markPrice),
+  oraclePrice: _decimalFromWire(value.oraclePrice),
+  fundingRate: _decimalFromWire(value.fundingRate),
+  openInterest: _decimalFromWire(value.openInterest),
+  sizeDecimals: value.sizeDecimals,
+  priceDecimals: value.priceDecimals,
+);
+
+HyperliquidLedgerKind _hyperliquidLedgerKindFromWire(
+  wire.WireHyperliquidLedgerEntry value,
+) => value.kind == wire.WireHyperliquidLedgerKind.other
+    ? HyperliquidLedgerKind.other(value.providerKind ?? 'other')
+    : switch (value.kind) {
+        wire.WireHyperliquidLedgerKind.deposit => HyperliquidLedgerKind.deposit,
+        wire.WireHyperliquidLedgerKind.withdraw =>
+          HyperliquidLedgerKind.withdraw,
+        wire.WireHyperliquidLedgerKind.internalTransfer =>
+          HyperliquidLedgerKind.internalTransfer,
+        wire.WireHyperliquidLedgerKind.subAccountTransfer =>
+          HyperliquidLedgerKind.subAccountTransfer,
+        wire.WireHyperliquidLedgerKind.spotTransfer =>
+          HyperliquidLedgerKind.spotTransfer,
+        wire.WireHyperliquidLedgerKind.accountClassTransfer =>
+          HyperliquidLedgerKind.accountClassTransfer,
+        wire.WireHyperliquidLedgerKind.vaultDeposit =>
+          HyperliquidLedgerKind.vaultDeposit,
+        wire.WireHyperliquidLedgerKind.vaultWithdraw =>
+          HyperliquidLedgerKind.vaultWithdraw,
+        wire.WireHyperliquidLedgerKind.vaultDistribution =>
+          HyperliquidLedgerKind.vaultDistribution,
+        wire.WireHyperliquidLedgerKind.liquidation =>
+          HyperliquidLedgerKind.liquidation,
+        wire.WireHyperliquidLedgerKind.other => throw StateError('unreachable'),
+      };
+
+HyperliquidLedgerEntry _hyperliquidLedgerEntryFromWire(
+  wire.WireHyperliquidLedgerEntry value,
+) => HyperliquidLedgerEntry(
+  kind: _hyperliquidLedgerKindFromWire(value),
+  time: _timestampFromWire(value.timeNs)!,
+  hash: value.hash,
+  asset: value.asset,
+  amount: _decimalFromWire(value.amount),
+  fee: _decimalFromWire(value.fee),
+  counterparty: value.counterparty,
+);
+
+Page<HyperliquidLedgerEntry> _hyperliquidLedgerPageFromWire(
+  wire.WireHyperliquidLedgerPage value,
+) => Page(
+  items: value.items.map(_hyperliquidLedgerEntryFromWire),
+  next: value.next == null ? null : Cursor(value.next!),
+);

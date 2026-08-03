@@ -21,6 +21,47 @@ python -m pip install maxt
 Python에는 별도 초기화 함수가 없습니다. 내장 어댑터를 생성할 때 네이티브
 모듈을 불러옵니다.
 
+## 지원 거래소
+
+- Upbit 현물(Spot): 한국, 싱가포르, 인도네시아, 태국
+- Bithumb 현물(Spot)
+- Binance 현물(Spot), USD-M 무기한 선물
+- Hyperliquid 메인넷·테스트넷 현물(Spot), 무기한 선물
+
+Binance 테스트넷(testnet) 생성자는 제공하지 않습니다. Hyperliquid HIP-3
+무기한 선물 DEX와 결과형 자산(outcome asset)은 제공하지 않습니다.
+
+## 공통 API
+
+`Client`는 모든 내장 어댑터에서 같은 메서드 이름을 사용합니다.
+
+- 공개 REST: `markets()`, `trades()`, `order_book()`, `ticker()`,
+  `candles()`
+- 공개 스트림: 체결, 호가, 현재가 요약(ticker), 캔들(candle)용
+  `subscribe()`, `subscribe_with()`; Bithumb 캔들 스트림은 미지원
+- 공개 펀딩 이력(funding history): Binance USD-M, Hyperliquid 무기한 선물의
+  `funding_rates()`
+- 비공개 현물(Spot): 모든 거래소의 `balances()`, `open_orders()`,
+  `place_order()`, `cancel_order()`, `subscribe_account()`
+- 비공개 무기한 선물: Binance USD-M, Hyperliquid의 `positions()`,
+  `margin_summary()`, `set_margin()`, `funding_payments()`
+
+공개 호출에는 인증 정보가 필요하지 않습니다. 비공개 호출에는 인증 필드 두 개를
+모두 전달해야 합니다. 어댑터나 인증 상태가 동적으로 바뀌면 선택 기능을 호출하기
+전에 `client.supports(feature)`를 확인하세요.
+
+## 거래소 전용 API
+
+거래소 전용 메서드는 `client.adapter`에서 호출합니다.
+
+| 어댑터 | 생성 | 추가 메서드 |
+| --- | --- | --- |
+| `UpbitAdapter` | `UpbitAdapter()` 또는 `UpbitAdapter(region=...)` | `order_books()`, `tickers()`, `market_events()` |
+| `BithumbAdapter` | `BithumbAdapter()` | `market_warnings()`, `market_alerts()` |
+| `BinanceAdapter` | `BinanceAdapter.spot()` | `spot_symbol_filters()`; 인증 필요: `spot_order()` |
+| `BinanceAdapter` | `BinanceAdapter.usd_m_futures()` | 인증 필요: `usd_m_create_listen_key()`, `usd_m_keepalive_listen_key()`, `usd_m_close_listen_key()` |
+| `HyperliquidAdapter` | `HyperliquidAdapter()` 또는 `HyperliquidAdapter.testnet()` | `asset_context()`, `non_funding_ledger()` |
+
 ## Binance 공통 API와 거래소 전용 API
 
 ```python
@@ -80,7 +121,8 @@ async with await client.subscribe(subscription) as stream:
 - 오류: `InvalidRequestError`, `UnsupportedError`, `AdapterError`, `AuthError`, `ExchangeError`, `TransportError`, `DecodeError`.
 - `ExchangeError`: 거래소 코드, HTTP status, 재시도 분류를 보존합니다.
 
-[공통 API](../../docs/common-api.ko.md)와 [거래소 지원](../../docs/providers.ko.md)을 참고하세요.
+[공통 데이터·페이지네이션 계약](../../docs/common-api.ko.md)과
+[거래소별 한도·데이터 의미](../../docs/providers.ko.md)를 참고하세요.
 
 ## 라이선스
 

@@ -40,6 +40,7 @@
     "native.d.ts",
     "README.md",
     "README.ko.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "sideEffects": [

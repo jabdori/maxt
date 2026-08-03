@@ -54,7 +54,7 @@ cargo run --example public_rest
 
 - [x] Rust
 - [x] Python
-- [x] Dart / Flutter 네이티브
+- [x] Dart / Flutter 네이티브 및 Web
 - [x] TypeScript / Node.js
 - [x] TypeScript / Browser WebAssembly
 

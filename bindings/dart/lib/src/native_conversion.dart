@@ -76,32 +76,9 @@ Subscription _subscriptionFromWire(native_adapter.WireSubscription value) =>
     );
 
 native_adapter.WireStreamConfig _streamConfigToWire(StreamConfig value) {
-  final maxReconnectAttempts = value.maxReconnectAttempts;
-  if (maxReconnectAttempts != null) {
-    _validateUnsigned(
-      maxReconnectAttempts,
-      field: 'maxReconnectAttempts',
-      max: _uint32Max,
-    );
-  }
-  _validateUnsigned(
-    value.initialReconnectDelayMs,
-    field: 'initialReconnectDelayMs',
-    max: _uint64Max,
-  );
-  _validateUnsigned(
-    value.maxReconnectDelayMs,
-    field: 'maxReconnectDelayMs',
-    max: _uint64Max,
-  );
-  _validateUnsigned(
-    value.idleTimeoutMs,
-    field: 'idleTimeoutMs',
-    max: _uint64Max,
-  );
-  _validateUnsigned(value.bufferSize, field: 'bufferSize', max: _uint32Max);
+  validateStreamConfigIntegers(value);
   return native_adapter.WireStreamConfig(
-    maxReconnectAttempts: maxReconnectAttempts,
+    maxReconnectAttempts: value.maxReconnectAttempts,
     initialReconnectDelayMs: BigInt.from(value.initialReconnectDelayMs),
     maxReconnectDelayMs: BigInt.from(value.maxReconnectDelayMs),
     idleTimeoutMs: BigInt.from(value.idleTimeoutMs),
@@ -110,14 +87,37 @@ native_adapter.WireStreamConfig _streamConfigToWire(StreamConfig value) {
   );
 }
 
+void validateStreamConfigIntegers(StreamConfig value) {
+  final maxReconnectAttempts = value.maxReconnectAttempts;
+  if (maxReconnectAttempts != null) {
+    validateUnsigned(
+      maxReconnectAttempts,
+      field: 'maxReconnectAttempts',
+      max: _uint32Max,
+    );
+  }
+  validateUnsigned(
+    value.initialReconnectDelayMs,
+    field: 'initialReconnectDelayMs',
+    max: _uint64Max,
+  );
+  validateUnsigned(
+    value.maxReconnectDelayMs,
+    field: 'maxReconnectDelayMs',
+    max: _uint64Max,
+  );
+  validateUnsigned(
+    value.idleTimeoutMs,
+    field: 'idleTimeoutMs',
+    max: _uint64Max,
+  );
+  validateUnsigned(value.bufferSize, field: 'bufferSize', max: _uint32Max);
+}
+
 final BigInt _uint32Max = BigInt.parse('4294967295');
 final BigInt _uint64Max = BigInt.parse('18446744073709551615');
 
-void _validateUnsigned(
-  int value, {
-  required String field,
-  required BigInt max,
-}) {
+void validateUnsigned(int value, {required String field, required BigInt max}) {
   if (value < 0) {
     throw InvalidRequestError(field: field, detail: 'must not be negative');
   }
@@ -129,9 +129,9 @@ void _validateUnsigned(
   }
 }
 
-int? _checkedUint32(int? value, {required String field}) {
+int? checkedUint32(int? value, {required String field}) {
   if (value != null) {
-    _validateUnsigned(value, field: field, max: _uint32Max);
+    validateUnsigned(value, field: field, max: _uint32Max);
   }
   return value;
 }
@@ -162,16 +162,21 @@ Market _marketFromWire(wire.WireMarket value) => Market(
 
 Decimal? _decimalFromWire(String? value) =>
     value == null ? null : Decimal.parse(value);
-Timestamp? _timestampFromWire(int? value) =>
-    value == null ? null : Timestamp.fromNanoseconds(value);
+Timestamp? _timestampFromWire(PlatformInt64? value) => value == null
+    ? null
+    : Timestamp.fromNanoseconds(platformInt64ToBigInt(value));
+PlatformInt64 _timestampToWire(Timestamp value) =>
+    platformInt64FromBigInt(value.nanosecondsSinceEpoch);
+PlatformInt64? _optionalTimestampToWire(Timestamp? value) =>
+    value == null ? null : _timestampToWire(value);
 
 wire.WireCandleRequest _candleRequestToWire(CandleRequest value) =>
     wire.WireCandleRequest(
       market: _marketToWire(value.market),
       interval: _intervalToWire(value.interval),
-      fromNs: value.from?.nanosecondsSinceEpoch,
-      toNs: value.to?.nanosecondsSinceEpoch,
-      limit: _checkedUint32(value.limit, field: 'limit'),
+      fromNs: _optionalTimestampToWire(value.from),
+      toNs: _optionalTimestampToWire(value.to),
+      limit: checkedUint32(value.limit, field: 'limit'),
     );
 
 CandleRequest _candleRequestFromWire(wire.WireCandleRequest value) =>
@@ -186,10 +191,10 @@ CandleRequest _candleRequestFromWire(wire.WireCandleRequest value) =>
 wire.WireHistoryRequest _historyRequestToWire(HistoryRequest value) =>
     wire.WireHistoryRequest(
       market: _marketToWire(value.market),
-      fromNs: value.from?.nanosecondsSinceEpoch,
-      toNs: value.to?.nanosecondsSinceEpoch,
+      fromNs: _optionalTimestampToWire(value.from),
+      toNs: _optionalTimestampToWire(value.to),
       cursor: value.cursor?.value,
-      limit: _checkedUint32(value.limit, field: 'limit'),
+      limit: checkedUint32(value.limit, field: 'limit'),
     );
 
 HistoryRequest _historyRequestFromWire(wire.WireHistoryRequest value) =>
@@ -280,7 +285,7 @@ wire.WireMarketInfo _marketInfoToWire(MarketInfo value) => wire.WireMarketInfo(
 
 Trade _tradeFromWire(wire.WireTrade value) => Trade(
   market: _marketFromWire(value.market),
-  timestamp: Timestamp.fromNanoseconds(value.timestampNs),
+  timestamp: _timestampFromWire(value.timestampNs)!,
   price: Decimal.parse(value.price),
   quantity: Decimal.parse(value.quantity),
   takerSide: _sideFromWire(value.takerSide),
@@ -289,7 +294,7 @@ Trade _tradeFromWire(wire.WireTrade value) => Trade(
 
 wire.WireTrade _tradeToWire(Trade value) => wire.WireTrade(
   market: _marketToWire(value.market),
-  timestampNs: value.timestamp.nanosecondsSinceEpoch,
+  timestampNs: _timestampToWire(value.timestamp),
   price: value.price.toString(),
   quantity: value.quantity.toString(),
   takerSide: _sideToWire(value.takerSide),
@@ -308,21 +313,21 @@ wire.WireLevel _levelToWire(Level value) => wire.WireLevel(
 
 OrderBook _orderBookFromWire(wire.WireOrderBook value) => OrderBook(
   market: _marketFromWire(value.market),
-  timestamp: Timestamp.fromNanoseconds(value.timestampNs),
+  timestamp: _timestampFromWire(value.timestampNs)!,
   bids: value.bids.map(_levelFromWire),
   asks: value.asks.map(_levelFromWire),
 );
 
 wire.WireOrderBook _orderBookToWire(OrderBook value) => wire.WireOrderBook(
   market: _marketToWire(value.market),
-  timestampNs: value.timestamp.nanosecondsSinceEpoch,
+  timestampNs: _timestampToWire(value.timestamp),
   bids: value.bids.map(_levelToWire).toList(growable: false),
   asks: value.asks.map(_levelToWire).toList(growable: false),
 );
 
 Ticker _tickerFromWire(wire.WireTicker value) => Ticker(
   market: _marketFromWire(value.market),
-  timestamp: Timestamp.fromNanoseconds(value.timestampNs),
+  timestamp: _timestampFromWire(value.timestampNs)!,
   lastTradeTime: _timestampFromWire(value.lastTradeTimeNs),
   lastPrice: Decimal.parse(value.lastPrice),
   change: _decimalFromWire(value.change),
@@ -335,8 +340,8 @@ Ticker _tickerFromWire(wire.WireTicker value) => Ticker(
 
 wire.WireTicker _tickerToWire(Ticker value) => wire.WireTicker(
   market: _marketToWire(value.market),
-  timestampNs: value.timestamp.nanosecondsSinceEpoch,
-  lastTradeTimeNs: value.lastTradeTime?.nanosecondsSinceEpoch,
+  timestampNs: _timestampToWire(value.timestamp),
+  lastTradeTimeNs: _optionalTimestampToWire(value.lastTradeTime),
   lastPrice: value.lastPrice.toString(),
   change: value.change?.toString(),
   changeRate: value.changeRate?.toString(),
@@ -349,7 +354,7 @@ wire.WireTicker _tickerToWire(Ticker value) => wire.WireTicker(
 Candle _candleFromWire(wire.WireCandle value) => Candle(
   market: _marketFromWire(value.market),
   interval: _intervalFromWire(value.interval),
-  openTime: Timestamp.fromNanoseconds(value.openTimeNs),
+  openTime: _timestampFromWire(value.openTimeNs)!,
   open: Decimal.parse(value.open),
   high: Decimal.parse(value.high),
   low: Decimal.parse(value.low),
@@ -362,7 +367,7 @@ Candle _candleFromWire(wire.WireCandle value) => Candle(
 wire.WireCandle _candleToWire(Candle value) => wire.WireCandle(
   market: _marketToWire(value.market),
   interval: _intervalToWire(value.interval),
-  openTimeNs: value.openTime.nanosecondsSinceEpoch,
+  openTimeNs: _timestampToWire(value.openTime),
   open: value.open.toString(),
   high: value.high.toString(),
   low: value.low.toString(),
@@ -403,7 +408,7 @@ wire.WireOrder _orderToWire(Order value) => wire.WireOrder(
   filledQuantity: value.filledQuantity.toString(),
   remainingQuantity: value.remainingQuantity.toString(),
   price: value.price?.toString(),
-  createdAtNs: value.createdAt?.nanosecondsSinceEpoch,
+  createdAtNs: _optionalTimestampToWire(value.createdAt),
 );
 
 Position _positionFromWire(wire.WirePosition value) => Position(
@@ -452,7 +457,7 @@ wire.WireMarginSummary _marginSummaryToWire(MarginSummary value) =>
 
 FundingRate _fundingRateFromWire(wire.WireFundingRate value) => FundingRate(
   market: _marketFromWire(value.market),
-  timestamp: Timestamp.fromNanoseconds(value.timestampNs),
+  timestamp: _timestampFromWire(value.timestampNs)!,
   rate: Decimal.parse(value.rate),
   markPrice: _decimalFromWire(value.markPrice),
 );
@@ -460,7 +465,7 @@ FundingRate _fundingRateFromWire(wire.WireFundingRate value) => FundingRate(
 wire.WireFundingRate _fundingRateToWire(FundingRate value) =>
     wire.WireFundingRate(
       market: _marketToWire(value.market),
-      timestampNs: value.timestamp.nanosecondsSinceEpoch,
+      timestampNs: _timestampToWire(value.timestamp),
       rate: value.rate.toString(),
       markPrice: value.markPrice?.toString(),
     );
@@ -468,7 +473,7 @@ wire.WireFundingRate _fundingRateToWire(FundingRate value) =>
 FundingPayment _fundingPaymentFromWire(wire.WireFundingPayment value) =>
     FundingPayment(
       market: _marketFromWire(value.market),
-      timestamp: Timestamp.fromNanoseconds(value.timestampNs),
+      timestamp: _timestampFromWire(value.timestampNs)!,
       amount: Decimal.parse(value.amount),
       rate: _decimalFromWire(value.rate),
       id: value.id,
@@ -477,7 +482,7 @@ FundingPayment _fundingPaymentFromWire(wire.WireFundingPayment value) =>
 wire.WireFundingPayment _fundingPaymentToWire(FundingPayment value) =>
     wire.WireFundingPayment(
       market: _marketToWire(value.market),
-      timestampNs: value.timestamp.nanosecondsSinceEpoch,
+      timestampNs: _timestampToWire(value.timestamp),
       amount: value.amount.toString(),
       rate: value.rate?.toString(),
       id: value.id,
@@ -621,7 +626,7 @@ BithumbMarketAlert _bithumbMarketAlertFromWire(
   market: _marketFromWire(value.market),
   kind: value.kind,
   step: _enumByName(BithumbAlertStep.values, value.step),
-  endsAt: Timestamp.fromNanoseconds(value.endsAtNs),
+  endsAt: _timestampFromWire(value.endsAtNs)!,
 );
 
 BinanceSymbolFilters _binanceSymbolFiltersFromWire(
@@ -679,7 +684,7 @@ HyperliquidLedgerEntry _hyperliquidLedgerEntryFromWire(
   wire.WireHyperliquidLedgerEntry value,
 ) => HyperliquidLedgerEntry(
   kind: _hyperliquidLedgerKindFromWire(value),
-  time: Timestamp.fromNanoseconds(value.timeNs),
+  time: _timestampFromWire(value.timeNs)!,
   hash: value.hash,
   asset: value.asset,
   amount: _decimalFromWire(value.amount),

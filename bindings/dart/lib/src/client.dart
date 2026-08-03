@@ -1,6 +1,8 @@
 import 'adapter.dart';
-import 'adapters.dart' show NativeClientDelegate;
+import 'adapters.dart'
+    show NativeClientDelegate, checkedUint32, validateStreamConfigIntegers;
 import 'models.dart';
+import 'runtime.dart';
 import 'stream.dart';
 
 /// 하나의 거래소 어댑터를 공통 API로 노출합니다.
@@ -21,22 +23,24 @@ final class Client<A extends Adapter> {
   Future<List<MarketInfo>> markets(MarketKind kind) => _native.markets(kind);
 
   /// 최근 체결을 최신순으로 반환하며, `limit`은 요청할 최대 개수입니다.
-  Future<List<Trade>> trades(Market market, [int? limit]) =>
-      _native.trades(market, limit);
+  Future<List<Trade>> trades(Market market, [int? limit]) async =>
+      _native.trades(market, checkedUint32(limit, field: 'limit'));
 
   /// 호가창 스냅샷을 반환하며, `depth`는 매수·매도 각 측의 최대 단계 수입니다.
-  Future<OrderBook> orderBook(Market market, [int? depth]) =>
-      _native.orderBook(market, depth);
+  Future<OrderBook> orderBook(Market market, [int? depth]) async =>
+      _native.orderBook(market, checkedUint32(depth, field: 'depth'));
 
   Future<Ticker> ticker(Market market) => _native.ticker(market);
 
   /// [CandleRequest] 조건에 맞는 캔들을 오래된 순서로 반환합니다.
-  Future<List<Candle>> candles(CandleRequest request) =>
-      _native.candles(request);
+  Future<List<Candle>> candles(CandleRequest request) async {
+    checkedUint32(request.limit, field: 'limit');
+    return _native.candles(request);
+  }
 
   /// 기본 연결 설정으로 시장 데이터를 구독합니다.
   Future<MarketStream> subscribe(Subscription subscription) =>
-      subscribeWith(subscription, const StreamConfig());
+      subscribeWith(subscription, defaultStreamConfig());
 
   /// 지정한 연결 설정으로 시장 데이터를 구독합니다.
   ///
@@ -46,7 +50,10 @@ final class Client<A extends Adapter> {
   Future<MarketStream> subscribeWith(
     Subscription subscription,
     StreamConfig config,
-  ) => _native.subscribe(subscription, config);
+  ) async {
+    validateStreamConfigIntegers(config);
+    return _native.subscribe(subscription, config);
+  }
 
   Future<List<Balance>> balances() => _native.balances();
 
@@ -55,10 +62,12 @@ final class Client<A extends Adapter> {
   Future<List<Order>> openOrdersOn(Market market) => _native.openOrders(market);
 
   Future<AccountStream> subscribeAccount() =>
-      subscribeAccountWith(const StreamConfig());
+      subscribeAccountWith(defaultStreamConfig());
 
-  Future<AccountStream> subscribeAccountWith(StreamConfig config) =>
-      _native.subscribeAccount(config);
+  Future<AccountStream> subscribeAccountWith(StreamConfig config) async {
+    validateStreamConfigIntegers(config);
+    return _native.subscribeAccount(config);
+  }
 
   Future<Order> placeOrder(OrderRequest request) => _native.placeOrder(request);
 
@@ -73,11 +82,15 @@ final class Client<A extends Adapter> {
 
   Future<MarginSummary> marginSummary() => _native.marginSummary();
 
-  Future<Page<FundingRate>> fundingRates(HistoryRequest request) =>
-      _native.fundingRates(request);
+  Future<Page<FundingRate>> fundingRates(HistoryRequest request) async {
+    checkedUint32(request.limit, field: 'limit');
+    return _native.fundingRates(request);
+  }
 
-  Future<Page<FundingPayment>> fundingPayments(HistoryRequest request) =>
-      _native.fundingPayments(request);
+  Future<Page<FundingPayment>> fundingPayments(HistoryRequest request) async {
+    checkedUint32(request.limit, field: 'limit');
+    return _native.fundingPayments(request);
+  }
 
   Future<void> setMargin(MarginRequest request) => _native.setMargin(request);
 

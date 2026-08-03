@@ -1,8 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart'
+    show PlatformInt64;
+
 import 'adapter.dart';
 import 'errors.dart';
 import 'models.dart';
+import 'platform_int64.dart';
 import 'providers.dart';
 import 'runtime.dart';
 import 'rust/api.dart' as native;
@@ -121,7 +125,7 @@ abstract base class _NativeAdapterBase extends AdapterBase
   Future<List<Trade>> trades(Market market, [int? limit]) => _nativeFuture(
     () => _handle.trades(
       market: _marketToWire(market),
-      limit: _checkedUint32(limit, field: 'limit'),
+      limit: checkedUint32(limit, field: 'limit'),
     ),
   ).then((values) => values.map(_tradeFromWire).toList(growable: false));
 
@@ -129,7 +133,7 @@ abstract base class _NativeAdapterBase extends AdapterBase
   Future<OrderBook> orderBook(Market market, [int? depth]) => _nativeFuture(
     () => _handle.orderBook(
       market: _marketToWire(market),
-      depth: _checkedUint32(depth, field: 'depth'),
+      depth: checkedUint32(depth, field: 'depth'),
     ),
   ).then(_orderBookFromWire);
 
@@ -239,16 +243,19 @@ final class UpbitAdapter extends _NativeAdapterBase {
     UpbitRegion region, {
     String? accessKey,
     String? secretKey,
-  }) => UpbitAdapter._(
-    _nativeSync(
-      () => native.NativeClient.upbit(
-        region: _upbitRegionToWire(region),
-        accessKey: accessKey,
-        secretKey: secretKey,
+  }) {
+    validateBrowserCredentials(accessKey, secretKey);
+    return UpbitAdapter._(
+      _nativeSync(
+        () => native.NativeClient.upbit(
+          region: _upbitRegionToWire(region),
+          accessKey: accessKey,
+          secretKey: secretKey,
+        ),
       ),
-    ),
-    region,
-  );
+      region,
+    );
+  }
 
   UpbitAdapter._(super.handle, this.region);
 
@@ -265,7 +272,7 @@ final class UpbitAdapter extends _NativeAdapterBase {
       _nativeFuture(
         () => _handle.upbitOrderBooks(
           markets: markets.map(_marketToWire).toList(growable: false),
-          depth: _checkedUint32(depth, field: 'depth'),
+          depth: checkedUint32(depth, field: 'depth'),
         ),
       ).then(
         (values) => values.map(_orderBookFromWire).toList(growable: false),
@@ -286,15 +293,17 @@ final class UpbitAdapter extends _NativeAdapterBase {
 
 /// Bithumb 현물 거래소 어댑터입니다.
 final class BithumbAdapter extends _NativeAdapterBase {
-  factory BithumbAdapter({String? accessKey, String? secretKey}) =>
-      BithumbAdapter._(
-        _nativeSync(
-          () => native.NativeClient.bithumb(
-            accessKey: accessKey,
-            secretKey: secretKey,
-          ),
+  factory BithumbAdapter({String? accessKey, String? secretKey}) {
+    validateBrowserCredentials(accessKey, secretKey);
+    return BithumbAdapter._(
+      _nativeSync(
+        () => native.NativeClient.bithumb(
+          accessKey: accessKey,
+          secretKey: secretKey,
         ),
-      );
+      ),
+    );
+  }
 
   BithumbAdapter._(super.handle);
 
@@ -316,27 +325,31 @@ final class BithumbAdapter extends _NativeAdapterBase {
 
 /// Binance 현물 또는 USD-M 무기한 선물 어댑터입니다.
 final class BinanceAdapter extends _NativeAdapterBase {
-  factory BinanceAdapter.spot({String? apiKey, String? secretKey}) =>
-      BinanceAdapter._(
-        _nativeSync(
-          () => native.NativeClient.binanceSpot(
-            apiKey: apiKey,
-            secretKey: secretKey,
-          ),
+  factory BinanceAdapter.spot({String? apiKey, String? secretKey}) {
+    validateBrowserCredentials(apiKey, secretKey);
+    return BinanceAdapter._(
+      _nativeSync(
+        () => native.NativeClient.binanceSpot(
+          apiKey: apiKey,
+          secretKey: secretKey,
         ),
-        BinanceMarket.spot,
-      );
+      ),
+      BinanceMarket.spot,
+    );
+  }
 
-  factory BinanceAdapter.usdMFutures({String? apiKey, String? secretKey}) =>
-      BinanceAdapter._(
-        _nativeSync(
-          () => native.NativeClient.binanceUsdMFutures(
-            apiKey: apiKey,
-            secretKey: secretKey,
-          ),
+  factory BinanceAdapter.usdMFutures({String? apiKey, String? secretKey}) {
+    validateBrowserCredentials(apiKey, secretKey);
+    return BinanceAdapter._(
+      _nativeSync(
+        () => native.NativeClient.binanceUsdMFutures(
+          apiKey: apiKey,
+          secretKey: secretKey,
         ),
-        BinanceMarket.usdMFutures,
-      );
+      ),
+      BinanceMarket.usdMFutures,
+    );
+  }
 
   BinanceAdapter._(super.handle, this.venue);
 
@@ -390,29 +403,33 @@ final class BinanceListenKey {
 
 /// Hyperliquid mainnet 또는 testnet 어댑터입니다.
 final class HyperliquidAdapter extends _NativeAdapterBase {
-  factory HyperliquidAdapter({String? address, String? privateKey}) =>
-      HyperliquidAdapter._(
-        _nativeSync(
-          () => native.NativeClient.hyperliquid(
-            testnet: false,
-            address: address,
-            privateKey: privateKey,
-          ),
+  factory HyperliquidAdapter({String? address, String? privateKey}) {
+    validateBrowserCredentials(address, privateKey);
+    return HyperliquidAdapter._(
+      _nativeSync(
+        () => native.NativeClient.hyperliquid(
+          testnet: false,
+          address: address,
+          privateKey: privateKey,
         ),
-        false,
-      );
+      ),
+      false,
+    );
+  }
 
-  factory HyperliquidAdapter.testnet({String? address, String? privateKey}) =>
-      HyperliquidAdapter._(
-        _nativeSync(
-          () => native.NativeClient.hyperliquid(
-            testnet: true,
-            address: address,
-            privateKey: privateKey,
-          ),
+  factory HyperliquidAdapter.testnet({String? address, String? privateKey}) {
+    validateBrowserCredentials(address, privateKey);
+    return HyperliquidAdapter._(
+      _nativeSync(
+        () => native.NativeClient.hyperliquid(
+          testnet: true,
+          address: address,
+          privateKey: privateKey,
         ),
-        true,
-      );
+      ),
+      true,
+    );
+  }
 
   HyperliquidAdapter._(super.handle, this.isTestnet);
 
@@ -429,10 +446,14 @@ final class HyperliquidAdapter extends _NativeAdapterBase {
     int? limit,
   }) => _nativeFuture(
     () => _handle.hyperliquidNonFundingLedger(
-      fromNs: from?.nanosecondsSinceEpoch,
-      toNs: to?.nanosecondsSinceEpoch,
+      fromNs: from == null
+          ? null
+          : platformInt64FromBigInt(from.nanosecondsSinceEpoch),
+      toNs: to == null
+          ? null
+          : platformInt64FromBigInt(to.nanosecondsSinceEpoch),
       cursor: cursor?.value,
-      limit: _checkedUint32(limit, field: 'limit'),
+      limit: checkedUint32(limit, field: 'limit'),
     ),
   ).then(_hyperliquidLedgerPageFromWire);
 

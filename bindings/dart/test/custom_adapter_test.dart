@@ -91,7 +91,9 @@ void main() {
     final trades = [
       Trade(
         market: market,
-        timestamp: Timestamp.fromNanoseconds(1700000000123456789),
+        timestamp: Timestamp.fromNanoseconds(
+          BigInt.parse("1700000000123456789"),
+        ),
         price: Decimal.parse('50000000.01'),
         quantity: Decimal.parse('0.001'),
         takerSide: Side.buy,
@@ -99,7 +101,9 @@ void main() {
       ),
       Trade(
         market: market,
-        timestamp: Timestamp.fromNanoseconds(1700000000123456790),
+        timestamp: Timestamp.fromNanoseconds(
+          BigInt.parse("1700000000123456790"),
+        ),
         price: Decimal.parse('50000000.02'),
         quantity: Decimal.parse('0.002'),
         takerSide: Side.sell,

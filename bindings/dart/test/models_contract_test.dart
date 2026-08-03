@@ -132,8 +132,8 @@ void main() {
     expect(() => book.midPrice, throwsRangeError);
   });
 
-  test('Timestamp는 Unix epoch 나노초를 int로 왕복한다', () {
-    const nanoseconds = 1700000000123456789;
+  test('Timestamp는 Unix epoch 나노초를 BigInt로 왕복한다', () {
+    final nanoseconds = BigInt.parse('1700000000123456789');
     final timestamp = Timestamp.fromNanoseconds(nanoseconds);
 
     expect(timestamp.nanosecondsSinceEpoch, nanoseconds);
@@ -142,27 +142,27 @@ void main() {
   test('Timestamp 단위 변환은 i64 범위에서 포화하고 epoch 방향으로 절삭한다', () {
     expect(
       Timestamp.fromSeconds(9223372037).nanosecondsSinceEpoch,
-      9223372036854775807,
+      BigInt.parse('9223372036854775807'),
     );
     expect(
       Timestamp.fromSeconds(-9223372037).nanosecondsSinceEpoch,
-      -9223372036854775808,
+      BigInt.parse('-9223372036854775808'),
     );
     expect(
       Timestamp.fromMilliseconds(9223372036855).nanosecondsSinceEpoch,
-      9223372036854775807,
+      BigInt.parse('9223372036854775807'),
     );
     expect(
       Timestamp.fromMilliseconds(-9223372036855).nanosecondsSinceEpoch,
-      -9223372036854775808,
+      BigInt.parse('-9223372036854775808'),
     );
     expect(
       Timestamp.fromMicroseconds(9223372036854776).nanosecondsSinceEpoch,
-      9223372036854775807,
+      BigInt.parse('9223372036854775807'),
     );
     expect(
       Timestamp.fromMicroseconds(-9223372036854776).nanosecondsSinceEpoch,
-      -9223372036854775808,
+      BigInt.parse('-9223372036854775808'),
     );
 
     final negative = Timestamp.fromNanoseconds(-1999999999);
@@ -177,15 +177,16 @@ void main() {
     final now = Timestamp.now().nanosecondsSinceEpoch;
     final after = DateTime.now().microsecondsSinceEpoch;
 
-    expect(now, inInclusiveRange(0, 9223372036854775807));
-    expect(now.remainder(1000), 0);
-    expect(
-      now,
-      inInclusiveRange(
-        (before - clockAdjustmentToleranceMicroseconds) * 1000,
-        (after + clockAdjustmentToleranceMicroseconds) * 1000,
-      ),
-    );
+    expect(now >= BigInt.zero, isTrue);
+    expect(now <= BigInt.parse('9223372036854775807'), isTrue);
+    expect(now.remainder(BigInt.from(1000)), BigInt.zero);
+    final earliest =
+        BigInt.from(before - clockAdjustmentToleranceMicroseconds) *
+        BigInt.from(1000);
+    final latest =
+        BigInt.from(after + clockAdjustmentToleranceMicroseconds) *
+        BigInt.from(1000);
+    expect(now >= earliest && now <= latest, isTrue);
   });
 
   test('Interval은 고정 길이와 정확한 나노초 이동을 제공한다', () {
@@ -210,10 +211,10 @@ void main() {
       },
     );
 
-    final at = Timestamp.fromNanoseconds(1700000000123456789);
+    final at = Timestamp.fromNanoseconds(BigInt.parse("1700000000123456789"));
     expect(
       Interval.min1.advance(at, 2),
-      Timestamp.fromNanoseconds(1700000120123456789),
+      Timestamp.fromNanoseconds(BigInt.parse("1700000120123456789")),
     );
     expect(
       Interval.week1.advance(at, -1),
@@ -222,21 +223,30 @@ void main() {
   });
 
   test('month1은 UTC 달력 월을 이동하고 나노초를 보존한다', () {
-    final january31 = Timestamp.fromNanoseconds(1706659200000000456);
-    final february29 = Timestamp.fromNanoseconds(1709164800000000456);
-    final march31 = Timestamp.fromNanoseconds(1711843200000000456);
+    final january31 = Timestamp.fromNanoseconds(
+      BigInt.parse("1706659200000000456"),
+    );
+    final february29 = Timestamp.fromNanoseconds(
+      BigInt.parse("1709164800000000456"),
+    );
+    final march31 = Timestamp.fromNanoseconds(
+      BigInt.parse("1711843200000000456"),
+    );
 
     expect(Interval.month1.advance(january31, 1), february29);
     expect(Interval.month1.advance(march31, -1), february29);
     expect(Interval.month1.advance(january31, 0), january31);
     expect(
-      Interval.month1.advance(Timestamp.fromNanoseconds(-2678400000000001), 1),
+      Interval.month1.advance(
+        Timestamp.fromNanoseconds(BigInt.parse("-2678400000000001")),
+        1,
+      ),
       Timestamp.fromNanoseconds(-86400000000001),
     );
   });
 
   test('Interval 이동은 i64 범위를 넘으면 null을 반환한다', () {
-    final late = Timestamp.fromNanoseconds(9220000000000000000);
+    final late = Timestamp.fromNanoseconds(BigInt.parse("9220000000000000000"));
 
     expect(Interval.month1.advance(late, 12), isNull);
     expect(Interval.week1.advance(late, 9223372036854775807), isNull);

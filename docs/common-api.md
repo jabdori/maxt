@@ -215,7 +215,9 @@ alert, and ledger methods. See each provider reference.
 
 External types may implement `Adapter` with `exchange()` and `supports()`.
 Override supported methods; all other methods return `Error::Unsupported`.
-Preserve the common contracts above. A new exchange still requires a new
-`Exchange` variant in `maxt`.
+Preserve the common contracts above. For a new exchange, implement the Rust
+adapter, add its `Exchange` variant and binding schema entries, then generate
+the public API for each language being released. Do not manually copy generated
+methods, models, or structural wire conversions between languages.
 
 [Adapter checklist](../CONTRIBUTING.md#adapter-checklist)

@@ -49,6 +49,7 @@ Run from `bindings/python`:
 ```sh
 uv lock --check
 uv sync --frozen --all-groups
+cargo run --manifest-path ../codegen/Cargo.toml --no-default-features --features python --locked -- python
 cargo run --manifest-path ../codegen/Cargo.toml --no-default-features --features python --locked -- python --check
 cargo clippy --all-targets --locked -- -D warnings
 cargo test --all-targets --no-default-features --locked
@@ -64,6 +65,7 @@ uv run --frozen twine check dist/*
 Run from `bindings/dart`:
 
 ```sh
+cargo run --manifest-path ../codegen/Cargo.toml --no-default-features --features dart --locked -- dart
 cargo run --manifest-path ../codegen/Cargo.toml --no-default-features --features dart --locked -- dart --check
 cargo clippy --manifest-path rust/Cargo.toml --all-targets --locked -- -D warnings
 cargo test --manifest-path rust/Cargo.toml --all-targets --locked
@@ -111,8 +113,10 @@ Match the nearest adapter. Do not add empty files for structural symmetry.
    and stream-lifecycle contracts.
 5. Add fixture tests for parsing, request construction, signing, capabilities,
    and provider limits.
-6. Update each language binding in a separate change and run that binding's
-   generator target. A Rust change does not require every binding in the same pull request.
+6. Register the exchange, operations, identifiers, records, and errors in
+   `bindings/common/src/schema.rs`. Run the generator only for the language
+   being updated. Do not port generated public APIs or structural conversions
+   by hand. A Rust change does not require every binding in the same pull request.
 7. Update capability tests, both language versions of the provider reference,
    and affected examples.
 8. Run the CI checks for the changed area.
@@ -124,9 +128,15 @@ Match the nearest adapter. Do not add empty files for structural symmetry.
 - `dart-vX.Y.Z`: pub.dev
 - `typescript-vX.Y.Z`: npm, including Node.js and browser WebAssembly
 
-The first Dart release is published manually before configuring the pub.dev tag
-pattern `dart-v{{version}}`. The first npm release requires `NPM_TOKEN`; after
-that, configure Trusted Publishing for `release-typescript.yml` and remove the token.
+Each registry release is triggered by its matching tag. The tag version must
+match that package's manifest version.
+
+## Generated files
+
+Do not edit files whose first line says they were generated. The complete list
+and generation order are in the [binding code generator guide](bindings/codegen/README.md).
+Python and Dart runtime code for async execution, object lifetime, callbacks,
+stream cancellation, native loading, and browser security remains handwritten.
 
 The public adapter contracts also support mocks, backtests, and recorded-data
 adapters. See [External adapters](docs/common-api.md#external-adapters).

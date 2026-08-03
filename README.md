@@ -9,7 +9,7 @@ Upbit, Bithumb, Binance, and Hyperliquid.
 
 - Use the same operations, models, errors, and stream contract across exchanges.
 - Keep common operations on `Client` and exchange-specific operations on each adapter.
-- Generate language contracts from one schema and verify generated code against the compiled native API.
+- Generate language public APIs and contracts from one schema, then verify them against the compiled native API.
 
 ## Install
 

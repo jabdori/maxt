@@ -9,19 +9,19 @@ dependency.
 ## Generate contracts
 
 ```sh
-cargo run -p maxt-bindings-codegen --locked
+cargo run -p maxt-bindings-codegen --no-default-features --features python --locked -- python
 ```
 
-Generated files cover the shared exchange, feature, error, Adapter, Client,
-provider, and wire DTO contracts for TypeScript, Python, and Dart. Do not edit
-them directly.
+Targets are `rust`, `python`, `dart`, and `typescript`. Each target updates only
+that port. Omitting the target updates every output. Do not edit generated files
+directly.
 
 ## Check generated files
 
 ```sh
-cargo run -p maxt-bindings-codegen --locked -- --check
+cargo run -p maxt-bindings-codegen --no-default-features --features python --locked -- python --check
 cargo test -p maxt-bindings-common --features codegen --test schema_inventory --locked
 ```
 
-The first command rejects stale generated files. The second command rejects a
-schema that no longer matches the Rust Adapter, Client, or error surface.
+The first command checks only the selected port. The second command checks the
+Rust source schema.

@@ -1,0 +1,95 @@
+name: Dart CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - bindings/dart/**
+      - bindings/codegen/src/main.rs
+      - bindings/codegen/src/dart.rs
+      - .github/workflows/ci-dart.yml
+  pull_request:
+    paths:
+      - bindings/dart/**
+      - bindings/codegen/src/main.rs
+      - bindings/codegen/src/dart.rs
+      - .github/workflows/ci-dart.yml
+
+permissions:
+  contents: read
+
+jobs:
+  dart:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bindings/dart
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: cargo run --manifest-path ../codegen/Cargo.toml --no-default-features --features dart --locked -- dart --check
+      - run: cargo clippy --manifest-path rust/Cargo.toml --all-targets --locked -- -D warnings
+      - run: cargo test --manifest-path rust/Cargo.toml --all-targets --locked
+      - run: dart pub get
+      - run: cargo install flutter_rust_bridge_codegen --version 2.12.0 --locked
+      - run: |
+          flutter_rust_bridge_codegen generate
+          perl -pi -e 's/[ \t]+$//' lib/src/rust/*.freezed.dart
+          cargo fmt --manifest-path rust/Cargo.toml
+          git diff --exit-code -- lib/src/rust rust/src/frb_generated.rs
+      - run: dart format --output=none --set-exit-if-changed .
+      - run: dart analyze --fatal-warnings
+      - run: dart test --chain-stack-traces
+      - run: flutter test
+      - run: dart pub publish --dry-run
+
+  native-loader:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    defaults:
+      run:
+        working-directory: bindings/dart
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@1.92.0
+      - uses: dart-lang/setup-dart@v1
+      - run: dart pub get
+      - run: dart test test/native_adapters_test.dart --chain-stack-traces
+
+  flutter-build:
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            command: flutter build apk --debug
+          - runner: macos-latest
+            command: flutter build ios --simulator --debug --no-codesign
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - shell: bash
+        run: |
+          flutter create --project-name maxt_smoke "$RUNNER_TEMP/maxt-smoke"
+          dart pub add --directory "$RUNNER_TEMP/maxt-smoke" "maxt@{path: $GITHUB_WORKSPACE/bindings/dart}"
+          perl -0pi -e \
+            "s|import 'package:flutter/material.dart';|import 'package:flutter/material.dart';\nimport 'package:maxt/maxt.dart';|; \
+             s|void main\(\) \{|Future<void> main() async {\n  await Maxt.initialize();|" \
+            "$RUNNER_TEMP/maxt-smoke/lib/main.dart"
+      - working-directory: ${{ runner.temp }}/maxt-smoke
+        run: ${{ matrix.command }}

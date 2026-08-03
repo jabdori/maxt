@@ -2,5 +2,4 @@
 build/
 coverage/
 pubspec.lock
-rust/Cargo.lock
 rust/target/

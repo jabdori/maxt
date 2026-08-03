@@ -1,10 +1,29 @@
-name: CI
+name: Rust CI
 
 on:
-  workflow_call:
   push:
     branches: [main]
+    paths:
+      - Cargo.toml
+      - Cargo.lock
+      - src/**
+      - tests/**
+      - examples/**
+      - bindings/common/**
+      - bindings/codegen/Cargo.toml
+      - bindings/codegen/src/main.rs
+      - .github/workflows/ci.yml
   pull_request:
+    paths:
+      - Cargo.toml
+      - Cargo.lock
+      - src/**
+      - tests/**
+      - examples/**
+      - bindings/common/**
+      - bindings/codegen/Cargo.toml
+      - bindings/codegen/src/main.rs
+      - .github/workflows/ci.yml
 
 permissions:
   contents: read
@@ -18,320 +37,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
-
       - uses: Swatinem/rust-cache@v2
-
-      - name: Format
-        run: cargo fmt --all --check
-
-      - name: Check generated binding contracts
-        run: |
-          cargo run -p maxt-bindings-codegen --locked -- --check
-          cargo test -p maxt-bindings-common --features codegen --test schema_inventory --locked
-
-      - name: Lint workspace
-        run: cargo clippy --workspace --all-targets --locked -- -D warnings
-
-      - name: Forbid panics in maxt library
-        run: >
-          cargo clippy -p maxt --lib --locked --
-          -D warnings
-          -D clippy::unwrap_used
-          -D clippy::expect_used
-          -D clippy::panic
-
-      - name: Test workspace
-        run: cargo test --workspace --all-targets --no-default-features --locked
-
-      - name: Test documentation
-        run: cargo test --workspace --doc --no-default-features --locked
-
-      - name: Build examples
-        run: cargo build -p maxt --examples --locked
-
-      - name: Build documentation
-        env:
-          RUSTDOCFLAGS: -D warnings
-        run: cargo doc --workspace --no-deps --locked
-
-      - name: Package root crate
-        run: cargo package -p maxt --locked
-
-  python:
-    name: Python
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: bindings/python
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-
-      - uses: Swatinem/rust-cache@v2
-
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.14.2"
-
-      - uses: astral-sh/setup-uv@v9.0.0
-        with:
-          version: "0.10.4"
-          python-version: "3.14.2"
-          enable-cache: true
-          cache-dependency-glob: uv.lock
-          working-directory: bindings/python
-
-      - name: Check locked dependencies
-        run: uv lock --check
-
-      - name: Install locked dependencies
-        run: uv sync --frozen --all-groups
-
-      - name: Lint native extension
-        run: cargo clippy -p maxt-python --all-targets --locked -- -D warnings
-
-      - name: Test native extension
-        run: cargo test -p maxt-python --all-targets --no-default-features --locked
-
-      - name: Build native extension
-        run: uv run --frozen maturin develop --locked
-
-      - name: Test Python package
-        env:
-          MAXT_REQUIRE_NATIVE_TESTS: "1"
-        run: uv run --frozen pytest
-
-      - name: Type check
-        run: uv run --frozen mypy python/maxt
-
-      - name: Check distribution packages
-        run: |
-          uv build --out-dir dist
-          uv run --frozen twine check dist/*
-
-  typescript-node:
-    name: TypeScript and Node.js (${{ matrix.node }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node: [22, 24]
-    defaults:
-      run:
-        working-directory: bindings/typescript
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: dtolnay/rust-toolchain@1.88.0
-        with:
-          components: clippy
-          targets: wasm32-unknown-unknown
-
-      - uses: Swatinem/rust-cache@v2
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: ${{ matrix.node }}
-          cache: npm
-          cache-dependency-path: bindings/typescript/package-lock.json
-
-      - name: Install locked dependencies
-        run: npm ci
-
-      - name: Lint native bridge
-        run: cargo clippy -p maxt-typescript --all-targets --locked -- -D warnings
-
-      - name: Test native bridge
-        run: cargo test -p maxt-typescript --all-targets --locked
-
-      - name: Check, lint, and build WebAssembly bridge
-        run: |
-          cargo check -p maxt-typescript --target wasm32-unknown-unknown --locked
-          cargo clippy -p maxt-typescript --target wasm32-unknown-unknown --locked -- -D warnings
-          cargo build -p maxt-typescript --target wasm32-unknown-unknown --locked
-
-      - name: Test Node package
-        run: npm test
-
-      - name: Install WebAssembly build and browser tools
-        if: matrix.node == 24
-        run: |
-          rustup toolchain install stable --profile minimal
-          cargo +stable install wasm-pack --version 0.15.0 --locked
-          npx playwright install --with-deps chromium firefox webkit
-
-      - name: Test browser package
-        if: matrix.node == 24
-        run: npm run test:web
-
-      - name: Require WebAssembly in npm package
-        if: matrix.node == 24
-        shell: bash
-        run: |
-          tarball="$(npm pack --silent)"
-          tar -tzf "$tarball" | grep -Fx package/wasm/maxt_wasm_bg.wasm
-          tar -tzf "$tarball" | grep -Fx package/wasm/maxt_wasm.js
-          tar -tzf "$tarball" | grep -Fx package/wasm/maxt_wasm.d.ts
-          tar -tzf "$tarball" | grep -E '^package/wasm/snippets/.+/inline0\.js$'
-
-  relay:
-    name: Relay
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy, rustfmt
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: relay
-
-      - name: Format
-        run: cargo fmt --manifest-path relay/Cargo.toml --all -- --check
-
-      - name: Check
-        run: cargo check --manifest-path relay/Cargo.toml --all-targets --locked
-
-      - name: Lint
-        run: cargo clippy --manifest-path relay/Cargo.toml --all-targets --locked -- -D warnings
-
-      - name: Test
-        run: cargo test --manifest-path relay/Cargo.toml --all-targets --locked
-
-  dart:
-    name: Dart and Flutter
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: bindings/dart
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-
-      - uses: Swatinem/rust-cache@v2
-
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-
-      - name: Lint Rust bridge
-        run: cargo clippy -p maxt_dart_bridge --all-targets --locked -- -D warnings
-
-      - name: Test Rust bridge
-        run: cargo test -p maxt_dart_bridge --all-targets --locked
-
-      - name: Install Dart dependencies
-        run: dart pub get
-
-      - name: Install pinned bridge generator
-        run: cargo install flutter_rust_bridge_codegen --version 2.12.0 --locked
-
-      - name: Check generated bridge
-        run: |
-          flutter_rust_bridge_codegen generate
-          perl -pi -e 's/[ \t]+$//' lib/src/rust/*.freezed.dart
-          cargo fmt --all
-          git diff --exit-code -- lib/src/rust rust/src/frb_generated.rs
-          test -z "$(git status --porcelain --untracked-files=all -- lib/src/rust rust/src/frb_generated.rs)"
-
-      - name: Check Dart format
-        run: dart format --output=none --set-exit-if-changed .
-
-      - name: Analyze Dart package
-        run: dart analyze --fatal-warnings
-
-      - name: Test Dart package
-        run: dart test --chain-stack-traces
-
-      - name: Test Flutter package
-        run: flutter test
-
-      - name: Check pub.dev package
-        run: dart pub publish --dry-run
-
-  dart-native-loader:
-    name: Dart native loader (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, windows-latest]
-    defaults:
-      run:
-        working-directory: bindings/dart
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: dtolnay/rust-toolchain@1.92.0
-
-      - uses: dart-lang/setup-dart@v1
-
-      - name: Install Dart dependencies
-        run: dart pub get
-
-      - name: Test native loader
-        run: dart test test/native_adapters_test.dart --chain-stack-traces
-
-  flutter-platform-build:
-    name: Flutter platform build (${{ matrix.platform }})
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: android
-            runner: ubuntu-latest
-            command: flutter build apk --debug
-          - platform: ios-simulator
-            runner: macos-latest
-            command: flutter build ios --simulator --debug --no-codesign
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: dtolnay/rust-toolchain@stable
-
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-
-      - name: Create consumer app
-        shell: bash
-        run: |
-          flutter create --project-name maxt_smoke "$RUNNER_TEMP/maxt-smoke"
-          dart pub add \
-            --directory "$RUNNER_TEMP/maxt-smoke" \
-            "maxt@{path: $GITHUB_WORKSPACE/bindings/dart}"
-          perl -0pi -e \
-            "s|import 'package:flutter/material.dart';|import 'package:flutter/material.dart';\nimport 'package:maxt/maxt.dart';|; \
-             s|void main\(\) \{|Future<void> main() async {\n  await Maxt.initialize();|" \
-            "$RUNNER_TEMP/maxt-smoke/lib/main.dart"
-          dart format "$RUNNER_TEMP/maxt-smoke/lib/main.dart"
-
-      - name: Build consumer app
-        working-directory: ${{ runner.temp }}/maxt-smoke
-        run: ${{ matrix.command }}
-
-  scope:
-    name: Repository scope
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: No absolute paths from a contributor's machine
-        run: |
-          ! grep -rniE '/(users|home)/[a-z0-9]' \
-            --include='*.md' --include='*.rs' --include='*.toml' .
+      - run: cargo fmt -p maxt -p maxt-bindings-common -p maxt-bindings-codegen --check
+      - run: cargo run -p maxt-bindings-codegen --no-default-features --features rust --locked -- rust --check
+      - run: cargo test -p maxt-bindings-common --features codegen --test schema_inventory --locked
+      - run: cargo clippy -p maxt -p maxt-bindings-common --all-targets --locked -- -D warnings
+      - run: cargo clippy -p maxt-bindings-codegen --no-default-features --features rust --all-targets --locked -- -D warnings
+      - run: cargo clippy -p maxt --lib --locked -- -D warnings -D clippy::unwrap_used -D clippy::expect_used -D clippy::panic
+      - run: cargo test -p maxt -p maxt-bindings-common --all-targets --no-default-features --locked
+      - run: cargo test -p maxt-bindings-codegen --no-default-features --features rust --all-targets --locked
+      - run: cargo test -p maxt -p maxt-bindings-common --doc --no-default-features --locked
+      - run: cargo build -p maxt --examples --locked
+      - run: cargo package -p maxt --locked

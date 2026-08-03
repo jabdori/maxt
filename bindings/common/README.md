@@ -9,16 +9,9 @@ and stream contracts used by maxt language bindings. It also provides the
 This crate is for binding implementations. Applications should install the
 Rust, Python, Dart / Flutter, or TypeScript package instead.
 
-## Verify a binding
+## Verify the Rust contract
 
-The inventory test compares each language's public adapters, methods, models,
-enums, and construction options with the Rust API:
-
-```sh
-cargo test -p maxt-bindings-common --test language_binding_inventory --locked
-```
-
-Run the bridge contract tests after changing request dispatch, replies, or
+Run the contract tests after changing request dispatch, replies, or
 stream cancellation:
 
 ```sh
@@ -27,7 +20,7 @@ cargo test -p maxt-bindings-common --locked
 
 See the [common API reference](../../docs/common-api.md) and
 [contribution guide](../../CONTRIBUTING.md) for the public contract and the
-required cross-language checks.
+required checks.
 
 The [generated binding contract](generated/api.md) lists Adapter and
 provider-specific method names for every language. Regenerate it with the

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1
+
+- Generated public APIs, identifiers, native client methods, adapter dispatch,
+  and structural wire conversions from the shared binding schema.
+- Rejected empty built-in adapter subscriptions before native dispatch.
+- Added drift checks for untracked FRB output during release validation.
+
 ## 0.2.0
 
 - Added Dart and Flutter Web support through WebAssembly.

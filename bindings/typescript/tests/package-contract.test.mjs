@@ -18,16 +18,16 @@ const nativeTargets = [
 ];
 
 const optionalDependencies = {
-  "@jabdori/maxt-darwin-arm64": "0.1.0",
-  "@jabdori/maxt-darwin-x64": "0.1.0",
-  "@jabdori/maxt-linux-arm64-gnu": "0.1.0",
-  "@jabdori/maxt-linux-x64-gnu": "0.1.0",
-  "@jabdori/maxt-win32-x64-msvc": "0.1.0",
+  "@jabdori/maxt-darwin-arm64": packageJson.version,
+  "@jabdori/maxt-darwin-x64": packageJson.version,
+  "@jabdori/maxt-linux-arm64-gnu": packageJson.version,
+  "@jabdori/maxt-linux-x64-gnu": packageJson.version,
+  "@jabdori/maxt-win32-x64-msvc": packageJson.version,
 };
 
 test("publishes the @jabdori/maxt Node and browser package identity", () => {
   assert.equal(packageJson.name, "@jabdori/maxt");
-  assert.equal(packageJson.version, "0.1.0");
+  assert.match(packageJson.version, /^\d+\.\d+\.\d+$/);
   assert.equal(
     packageJson.description,
     "One TypeScript API for Upbit, Bithumb, Binance, and Hyperliquid.",

@@ -173,6 +173,12 @@ fn main() {
     #[cfg(feature = "dart")]
     outputs.push((
         "dart",
+        root.join("bindings/dart/lib/src/generated_wire_converters.dart"),
+        dart::render_wire_converters(&schema),
+    ));
+    #[cfg(feature = "dart")]
+    outputs.push((
+        "dart",
         root.join("bindings/dart/rust/src/api/generated_native_client.rs"),
         dart::render_native_client_api(&schema),
     ));

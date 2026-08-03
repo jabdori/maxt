@@ -19,6 +19,7 @@ part 'dart_adapter_bridge.dart';
 part 'generated_delegate.dart';
 part 'generated_provider_guard.dart';
 part 'generated_provider_methods.dart';
+part 'generated_wire_converters.dart';
 part 'native_conversion.dart';
 
 /// Dart Adapter stream과 Rust cancellation을 결합하는 package 내부 등록소입니다.

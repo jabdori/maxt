@@ -3,11 +3,11 @@ from __future__ import annotations
 import asyncio
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import Enum
 from importlib import import_module
 from inspect import isawaitable
 from typing import Any, AsyncIterator, Generic, Literal, Optional, TypeVar, Union
 
+from ._generated_identifiers import ExchangeErrorKind
 from .models import (
     AccountEvent,
     Balance,
@@ -97,20 +97,6 @@ class AdapterError(MaxtError):
     def __init__(self, detail: str) -> None:
         self.detail = detail
         super().__init__(detail)
-
-
-class ExchangeErrorKind(str, Enum):
-    REJECTED = "rejected"
-    RATE_LIMITED = "rate_limited"
-    UNAVAILABLE = "unavailable"
-    UNKNOWN = "unknown"
-
-    def is_retryable(self) -> bool:
-        """Return whether this kind represents a transient provider failure."""
-        return self in {
-            ExchangeErrorKind.RATE_LIMITED,
-            ExchangeErrorKind.UNAVAILABLE,
-        }
 
 
 class ExchangeError(MaxtError):

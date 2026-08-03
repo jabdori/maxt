@@ -5,7 +5,7 @@
 use std::collections::BTreeSet;
 
 use maxt::{Exchange, Feature};
-use maxt_bindings_common::schema::{Type, binding_schema};
+use maxt_bindings_common::schema::{ProviderOptionValue, Type, binding_schema};
 use syn::{ImplItem, Item, TraitItem};
 
 fn snake_to_camel(value: &str) -> String {
@@ -197,6 +197,77 @@ fn schema_provider_methods_match_every_core_adapter() {
             "{} provider methods differ",
             provider.adapter
         );
+    }
+}
+
+#[test]
+fn provider_constructors_cover_their_native_options() {
+    let schema = binding_schema();
+    for provider in schema.providers {
+        let option_record = schema
+            .records
+            .iter()
+            .find(|record| record.name == provider.options_wire)
+            .unwrap_or_else(|| panic!("{} options record is missing", provider.exchange));
+        let expected_options = option_record
+            .fields
+            .iter()
+            .map(|field| field.name)
+            .collect::<BTreeSet<_>>();
+        for constructor in provider.constructors {
+            let arguments = constructor
+                .arguments
+                .iter()
+                .map(|argument| argument.name)
+                .collect::<BTreeSet<_>>();
+            assert_eq!(
+                arguments.len(),
+                constructor.arguments.len(),
+                "{}.{} argument names must be unique",
+                provider.exchange,
+                constructor.name,
+            );
+            let options = constructor
+                .options
+                .iter()
+                .map(|option| option.name)
+                .collect::<BTreeSet<_>>();
+            assert_eq!(
+                options, expected_options,
+                "{}.{} must set every native option",
+                provider.exchange, constructor.name,
+            );
+            for option in constructor.options {
+                match option.value {
+                    ProviderOptionValue::Argument(name) => assert!(
+                        arguments.contains(name),
+                        "{}.{} option {} references missing argument {name}",
+                        provider.exchange,
+                        constructor.name,
+                        option.name,
+                    ),
+                    ProviderOptionValue::Identifier { name, variant } => {
+                        let identifier = schema.identifier(name).unwrap_or_else(|| {
+                            panic!(
+                                "{}.{} option {} references missing identifier {name}",
+                                provider.exchange, constructor.name, option.name,
+                            )
+                        });
+                        assert!(
+                            identifier
+                                .variants
+                                .iter()
+                                .any(|value| value.rust_name == variant),
+                            "{}.{} option {} references missing {name}::{variant}",
+                            provider.exchange,
+                            constructor.name,
+                            option.name,
+                        );
+                    }
+                    ProviderOptionValue::Boolean(_) => {}
+                }
+            }
+        }
     }
 }
 

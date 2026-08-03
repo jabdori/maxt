@@ -51,9 +51,6 @@ final class AdapterError extends MaxtError {
   String toString() => 'adapter failed: $detail';
 }
 
-/// 거래소 오류의 재시도 분류입니다.
-enum ExchangeErrorKind { rejected, rateLimited, unavailable, unknown }
-
 extension ExchangeErrorKindProperties on ExchangeErrorKind {
   bool get isRetryable =>
       this == ExchangeErrorKind.rateLimited ||

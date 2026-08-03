@@ -1,3 +1,38 @@
+import {
+  BithumbAlertStep,
+  Exchange,
+  HyperliquidLedgerKind,
+  Interval,
+  MarginMode,
+  MarketKind,
+  MarketStatus,
+  OrderStatus,
+  OrderType,
+  Overflow,
+  Side,
+  SizeKind,
+  TimeInForce,
+} from "./generated/identifiers.js";
+
+export {
+  BinanceMarket,
+  BithumbAlertStep,
+  Exchange,
+  Feature,
+  HyperliquidLedgerKind,
+  Interval,
+  MarginMode,
+  MarketKind,
+  MarketStatus,
+  OrderStatus,
+  OrderType,
+  Overflow,
+  Side,
+  SizeKind,
+  TimeInForce,
+  UpbitRegion,
+} from "./generated/identifiers.js";
+
 const MAX_DECIMAL_COEFFICIENT = 79228162514264337593543950335n;
 const MAX_DECIMAL_SCALE = 28;
 const MAX_DECIMAL_POINT_SHIFT = 64;
@@ -320,211 +355,6 @@ export class Timestamp {
     if (nanoseconds > I64_MAX) return new Timestamp(I64_MAX);
     return Timestamp.fromNanoseconds(nanoseconds);
   }
-}
-
-class StringValue {
-  protected constructor(readonly id: string) {}
-  toString(): string { return this.id; }
-}
-
-export class Exchange extends StringValue {
-  static readonly Upbit = new Exchange("upbit", "Upbit");
-  static readonly Bithumb = new Exchange("bithumb", "Bithumb");
-  static readonly Binance = new Exchange("binance", "Binance");
-  static readonly Hyperliquid = new Exchange("hyperliquid", "Hyperliquid");
-  static readonly values: readonly Exchange[] = Object.freeze([
-    Exchange.Upbit, Exchange.Bithumb, Exchange.Binance, Exchange.Hyperliquid,
-  ]);
-  private constructor(id: string, readonly displayName: string) { super(id); Object.freeze(this); }
-}
-
-export class Feature extends StringValue {
-  static readonly Markets = new Feature("markets", false, false);
-  static readonly Trades = new Feature("trades", false, false);
-  static readonly OrderBook = new Feature("order_book", false, false);
-  static readonly Ticker = new Feature("ticker", false, false);
-  static readonly Candles = new Feature("candles", false, false);
-  static readonly TradeStream = new Feature("trade_stream", false, false);
-  static readonly OrderBookStream = new Feature("order_book_stream", false, false);
-  static readonly TickerStream = new Feature("ticker_stream", false, false);
-  static readonly CandleStream = new Feature("candle_stream", false, false);
-  static readonly Balances = new Feature("balances", true, false);
-  static readonly OpenOrders = new Feature("open_orders", true, false);
-  static readonly AccountStream = new Feature("account_stream", true, false);
-  static readonly Trading = new Feature("trading", true, false);
-  static readonly Positions = new Feature("positions", true, true);
-  static readonly Margin = new Feature("margin", true, true);
-  static readonly FundingRates = new Feature("funding_rates", false, true);
-  static readonly FundingPayments = new Feature("funding_payments", true, true);
-  static readonly MarginConfig = new Feature("margin_config", true, true);
-  static readonly ReduceOnlyOrders = new Feature("reduce_only_orders", true, true);
-  static readonly values: readonly Feature[] = Object.freeze([
-    Feature.Markets, Feature.Trades, Feature.OrderBook, Feature.Ticker, Feature.Candles,
-    Feature.TradeStream, Feature.OrderBookStream, Feature.TickerStream, Feature.CandleStream,
-    Feature.Balances, Feature.OpenOrders, Feature.AccountStream, Feature.Trading, Feature.Positions,
-    Feature.Margin, Feature.FundingRates, Feature.FundingPayments, Feature.MarginConfig,
-    Feature.ReduceOnlyOrders,
-  ]);
-  private constructor(id: string, readonly needsCredentials: boolean, readonly isDerivativesOnly: boolean) {
-    super(id); Object.freeze(this);
-  }
-}
-
-export class MarketKind extends StringValue {
-  static readonly Spot = new MarketKind("spot", false);
-  static readonly Perpetual = new MarketKind("perpetual", true);
-  static readonly values: readonly MarketKind[] = Object.freeze([MarketKind.Spot, MarketKind.Perpetual]);
-  private constructor(id: string, readonly isDerivative: boolean) { super(id); Object.freeze(this); }
-}
-
-export class MarketStatus extends StringValue {
-  static readonly Active = new MarketStatus("active");
-  static readonly Paused = new MarketStatus("paused");
-  static readonly Delisted = new MarketStatus("delisted");
-  static readonly Unknown = new MarketStatus("unknown");
-  static readonly values: readonly MarketStatus[] = Object.freeze([
-    MarketStatus.Active, MarketStatus.Paused, MarketStatus.Delisted, MarketStatus.Unknown,
-  ]);
-  private constructor(id: string) { super(id); Object.freeze(this); }
-}
-
-export class Side extends StringValue {
-  static readonly Buy = new Side("buy");
-  static readonly Sell = new Side("sell");
-  static readonly values: readonly Side[] = Object.freeze([Side.Buy, Side.Sell]);
-  private constructor(id: string) { super(id); Object.freeze(this); }
-  get flipped(): Side { return this === Side.Buy ? Side.Sell : Side.Buy; }
-}
-
-export class Interval extends StringValue {
-  static readonly Sec1 = new Interval("sec1", 1);
-  static readonly Min1 = new Interval("min1", 60);
-  static readonly Min3 = new Interval("min3", 180);
-  static readonly Min5 = new Interval("min5", 300);
-  static readonly Min15 = new Interval("min15", 900);
-  static readonly Min30 = new Interval("min30", 1_800);
-  static readonly Hour1 = new Interval("hour1", 3_600);
-  static readonly Hour2 = new Interval("hour2", 7_200);
-  static readonly Hour4 = new Interval("hour4", 14_400);
-  static readonly Hour8 = new Interval("hour8", 28_800);
-  static readonly Hour12 = new Interval("hour12", 43_200);
-  static readonly Day1 = new Interval("day1", 86_400);
-  static readonly Day3 = new Interval("day3", 259_200);
-  static readonly Week1 = new Interval("week1", 604_800);
-  static readonly Month1 = new Interval("month1", null);
-  static readonly values: readonly Interval[] = Object.freeze([
-    Interval.Sec1, Interval.Min1, Interval.Min3, Interval.Min5, Interval.Min15, Interval.Min30,
-    Interval.Hour1, Interval.Hour2, Interval.Hour4, Interval.Hour8, Interval.Hour12, Interval.Day1,
-    Interval.Day3, Interval.Week1, Interval.Month1,
-  ]);
-  private constructor(id: string, readonly seconds: number | null) { super(id); Object.freeze(this); }
-}
-
-export class Overflow extends StringValue {
-  static readonly Backpressure = new Overflow("backpressure");
-  static readonly DropNewest = new Overflow("drop_newest");
-  static readonly values: readonly Overflow[] = Object.freeze([Overflow.Backpressure, Overflow.DropNewest]);
-  private constructor(id: string) { super(id); Object.freeze(this); }
-}
-
-export class MarginMode extends StringValue {
-  static readonly Cross = new MarginMode("cross");
-  static readonly Isolated = new MarginMode("isolated");
-  static readonly values: readonly MarginMode[] = Object.freeze([MarginMode.Cross, MarginMode.Isolated]);
-  private constructor(id: string) { super(id); Object.freeze(this); }
-}
-
-export class OrderStatus extends StringValue {
-  static readonly Accepted = new OrderStatus("accepted", true);
-  static readonly Open = new OrderStatus("open", true);
-  static readonly PartiallyFilled = new OrderStatus("partially_filled", true);
-  static readonly Filled = new OrderStatus("filled", false);
-  static readonly Cancelled = new OrderStatus("cancelled", false);
-  static readonly Rejected = new OrderStatus("rejected", false);
-  static readonly Unknown = new OrderStatus("unknown", false);
-  static readonly values: readonly OrderStatus[] = Object.freeze([
-    OrderStatus.Accepted, OrderStatus.Open, OrderStatus.PartiallyFilled, OrderStatus.Filled,
-    OrderStatus.Cancelled, OrderStatus.Rejected, OrderStatus.Unknown,
-  ]);
-  private constructor(id: string, readonly isLive: boolean) { super(id); Object.freeze(this); }
-}
-
-export class OrderType extends StringValue {
-  static readonly Market = new OrderType("market");
-  static readonly Limit = new OrderType("limit");
-  static readonly values: readonly OrderType[] = Object.freeze([OrderType.Market, OrderType.Limit]);
-  private constructor(id: string) { super(id); Object.freeze(this); }
-}
-
-export class TimeInForce extends StringValue {
-  static readonly GoodTilCancelled = new TimeInForce("good_til_cancelled");
-  static readonly ImmediateOrCancel = new TimeInForce("immediate_or_cancel");
-  static readonly FillOrKill = new TimeInForce("fill_or_kill");
-  static readonly PostOnly = new TimeInForce("post_only");
-  static readonly values: readonly TimeInForce[] = Object.freeze([
-    TimeInForce.GoodTilCancelled, TimeInForce.ImmediateOrCancel,
-    TimeInForce.FillOrKill, TimeInForce.PostOnly,
-  ]);
-  private constructor(id: string) { super(id); Object.freeze(this); }
-}
-
-export class SizeKind extends StringValue {
-  static readonly Base = new SizeKind("base");
-  static readonly Quote = new SizeKind("quote");
-  static readonly values: readonly SizeKind[] = Object.freeze([SizeKind.Base, SizeKind.Quote]);
-  private constructor(id: string) { super(id); Object.freeze(this); }
-}
-
-export class UpbitRegion extends StringValue {
-  static readonly Korea = new UpbitRegion("korea");
-  static readonly Singapore = new UpbitRegion("singapore");
-  static readonly Indonesia = new UpbitRegion("indonesia");
-  static readonly Thailand = new UpbitRegion("thailand");
-  static readonly values: readonly UpbitRegion[] = Object.freeze([
-    UpbitRegion.Korea, UpbitRegion.Singapore, UpbitRegion.Indonesia, UpbitRegion.Thailand,
-  ]);
-  private constructor(id: string) { super(id); Object.freeze(this); }
-}
-
-export class BithumbAlertStep extends StringValue {
-  static readonly Caution = new BithumbAlertStep("caution");
-  static readonly Warning = new BithumbAlertStep("warning");
-  static readonly Danger = new BithumbAlertStep("danger");
-  static readonly Unknown = new BithumbAlertStep("unknown");
-  static readonly values: readonly BithumbAlertStep[] = Object.freeze([
-    BithumbAlertStep.Caution, BithumbAlertStep.Warning, BithumbAlertStep.Danger,
-    BithumbAlertStep.Unknown,
-  ]);
-  private constructor(id: string) { super(id); Object.freeze(this); }
-}
-
-export class BinanceMarket extends StringValue {
-  static readonly Spot = new BinanceMarket("spot");
-  static readonly UsdMFutures = new BinanceMarket("usd_m");
-  static readonly values: readonly BinanceMarket[] = Object.freeze([BinanceMarket.Spot, BinanceMarket.UsdMFutures]);
-  private constructor(id: string) { super(id); Object.freeze(this); }
-}
-
-export class HyperliquidLedgerKind extends StringValue {
-  static readonly Deposit = new HyperliquidLedgerKind("deposit");
-  static readonly Withdraw = new HyperliquidLedgerKind("withdraw");
-  static readonly InternalTransfer = new HyperliquidLedgerKind("internal_transfer");
-  static readonly SubAccountTransfer = new HyperliquidLedgerKind("sub_account_transfer");
-  static readonly SpotTransfer = new HyperliquidLedgerKind("spot_transfer");
-  static readonly AccountClassTransfer = new HyperliquidLedgerKind("account_class_transfer");
-  static readonly VaultDeposit = new HyperliquidLedgerKind("vault_deposit");
-  static readonly VaultWithdraw = new HyperliquidLedgerKind("vault_withdraw");
-  static readonly VaultDistribution = new HyperliquidLedgerKind("vault_distribution");
-  static readonly Liquidation = new HyperliquidLedgerKind("liquidation");
-  static readonly values: readonly HyperliquidLedgerKind[] = Object.freeze([
-    HyperliquidLedgerKind.Deposit, HyperliquidLedgerKind.Withdraw,
-    HyperliquidLedgerKind.InternalTransfer, HyperliquidLedgerKind.SubAccountTransfer,
-    HyperliquidLedgerKind.SpotTransfer, HyperliquidLedgerKind.AccountClassTransfer,
-    HyperliquidLedgerKind.VaultDeposit, HyperliquidLedgerKind.VaultWithdraw,
-    HyperliquidLedgerKind.VaultDistribution, HyperliquidLedgerKind.Liquidation,
-  ]);
-  private constructor(id: string) { super(id); Object.freeze(this); }
-  static other(value: string): HyperliquidLedgerKind { return new HyperliquidLedgerKind(value); }
 }
 
 function asciiUpper(value: string): string {

@@ -1,11 +1,12 @@
+export 'generated_identifiers.dart';
+
+import 'generated_identifiers.dart';
+
 String _asciiUpper(String value) => String.fromCharCodes(
   value.codeUnits.map(
     (code) => code >= 0x61 && code <= 0x7a ? code - 0x20 : code,
   ),
 );
-
-/// maxt가 지원하는 거래소입니다.
-enum Exchange { upbit, bithumb, binance, hyperliquid }
 
 extension ExchangeName on Exchange {
   /// 로그와 오류에 쓰는 안정적인 소문자 식별자입니다.
@@ -20,46 +21,7 @@ extension ExchangeName on Exchange {
   };
 }
 
-/// 어댑터가 제공할 수 있는 기능입니다.
-enum Feature {
-  markets,
-  trades,
-  orderBook,
-  ticker,
-  candles,
-  tradeStream,
-  orderBookStream,
-  tickerStream,
-  candleStream,
-  balances,
-  openOrders,
-  accountStream,
-  trading,
-  positions,
-  margin,
-  fundingRates,
-  fundingPayments,
-  marginConfig,
-  reduceOnlyOrders,
-}
-
 extension FeatureProperties on Feature {
-  /// 기능을 나타내는 안정적인 snake_case 식별자입니다.
-  String get wireName => switch (this) {
-    Feature.orderBook => 'order_book',
-    Feature.tradeStream => 'trade_stream',
-    Feature.orderBookStream => 'order_book_stream',
-    Feature.tickerStream => 'ticker_stream',
-    Feature.candleStream => 'candle_stream',
-    Feature.openOrders => 'open_orders',
-    Feature.accountStream => 'account_stream',
-    Feature.fundingRates => 'funding_rates',
-    Feature.fundingPayments => 'funding_payments',
-    Feature.marginConfig => 'margin_config',
-    Feature.reduceOnlyOrders => 'reduce_only_orders',
-    _ => name,
-  };
-
   /// 이 기능이 인증 정보를 요구하는지 여부입니다.
   bool get needsCredentials => switch (this) {
     Feature.markets ||
@@ -443,9 +405,6 @@ final class Timestamp implements Comparable<Timestamp> {
   int get hashCode => nanosecondsSinceEpoch.hashCode;
 }
 
-/// 거래 가능한 상품의 종류입니다.
-enum MarketKind { spot, perpetual }
-
 extension MarketKindProperties on MarketKind {
   bool get isDerivative => this == MarketKind.perpetual;
 }
@@ -483,25 +442,6 @@ final class Market {
 
   @override
   int get hashCode => Object.hash(exchange, kind, base, quote);
-}
-
-/// 캔들 구간입니다.
-enum Interval {
-  sec1,
-  min1,
-  min3,
-  min5,
-  min15,
-  min30,
-  hour1,
-  hour2,
-  hour4,
-  hour8,
-  hour12,
-  day1,
-  day3,
-  week1,
-  month1,
 }
 
 extension IntervalProperties on Interval {
@@ -606,9 +546,6 @@ final class CandleRequest {
   final int? limit;
 }
 
-/// 느린 스트림 소비자의 버퍼가 가득 찼을 때의 정책입니다.
-enum Overflow { backpressure, dropNewest }
-
 /// 스트림 연결과 버퍼 설정입니다.
 final class StreamConfig {
   const StreamConfig({
@@ -648,9 +585,6 @@ final class StreamConfig {
   );
 }
 
-/// 공통 시장 거래 상태입니다.
-enum MarketStatus { active, paused, delisted, unknown }
-
 /// 시장 목록의 한 항목입니다.
 final class MarketInfo {
   MarketInfo({
@@ -667,9 +601,6 @@ final class MarketInfo {
   final String? koreanName;
   final String? englishName;
 }
-
-/// 체결 또는 주문의 매수·매도 방향입니다.
-enum Side { buy, sell }
 
 extension SideProperties on Side {
   Side get flipped => this == Side.buy ? Side.sell : Side.buy;
@@ -814,12 +745,6 @@ final class Balance {
   Decimal get total => available + locked;
 }
 
-/// 주문 체결 방식입니다.
-enum OrderType { market, limit }
-
-/// 주문 유지 조건입니다.
-enum TimeInForce { goodTilCancelled, immediateOrCancel, fillOrKill, postOnly }
-
 /// 주문 수량의 기준 자산을 구분합니다.
 sealed class Size {
   const Size(this.value);
@@ -836,17 +761,6 @@ final class BaseSize extends Size {
 
 final class QuoteSize extends Size {
   const QuoteSize(super.value);
-}
-
-/// 주문의 현재 상태입니다.
-enum OrderStatus {
-  accepted,
-  open,
-  partiallyFilled,
-  filled,
-  cancelled,
-  rejected,
-  unknown,
 }
 
 extension OrderStatusProperties on OrderStatus {
@@ -880,9 +794,6 @@ final class Order {
   final Decimal? price;
   final Timestamp? createdAt;
 }
-
-/// 포지션의 증거금 방식입니다.
-enum MarginMode { cross, isolated }
 
 /// 하나의 파생상품 포지션입니다.
 final class Position {

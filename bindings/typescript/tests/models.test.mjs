@@ -8,11 +8,14 @@ import {
   Decimal,
   Exchange,
   Feed,
+  Feature,
   HyperliquidLedgerKind,
   Interval,
   Level,
   Market,
+  MarketKind,
   OrderBook,
+  OrderStatus,
   Overflow,
   Page,
   Side,
@@ -87,6 +90,15 @@ test("string variants are stable singleton values in Rust declaration order", ()
   assert.equal(Exchange.Binance.id, "binance");
   assert.deepEqual(BinanceMarket.values, [BinanceMarket.Spot, BinanceMarket.UsdMFutures]);
   assert.equal(HyperliquidLedgerKind.other("futureKind").id, "futureKind");
+  assert.equal(Feature.Balances.needsCredentials, true);
+  assert.equal(Feature.FundingRates.needsCredentials, false);
+  assert.equal(Feature.FundingRates.isDerivativesOnly, true);
+  assert.equal(MarketKind.Perpetual.isDerivative, true);
+  assert.equal(Interval.Hour4.seconds, 14_400);
+  assert.equal(Interval.Month1.seconds, null);
+  assert.equal(Side.Buy.flipped, Side.Sell);
+  assert.equal(OrderStatus.PartiallyFilled.isLive, true);
+  assert.equal(OrderStatus.Filled.isLive, false);
 });
 
 test("public records normalize ASCII assets, preserve nulls, and freeze collections", () => {

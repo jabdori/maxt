@@ -12,6 +12,7 @@ export 'src/adapters.dart'
         validateUnsigned;
 export 'src/client.dart';
 export 'src/errors.dart';
+export 'src/generated_identifiers.dart';
 export 'src/models.dart';
 export 'src/providers.dart';
 export 'src/runtime.dart' show Maxt;

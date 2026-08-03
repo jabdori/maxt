@@ -54,6 +54,11 @@ fn main() {
         ),
         (
             "typescript",
+            root.join("bindings/typescript/src/generated/identifiers.ts"),
+            typescript_contract::render_identifiers(&schema),
+        ),
+        (
+            "typescript",
             root.join("bindings/typescript/src/generated/codec.ts"),
             typescript_codec::render(&schema),
         ),
@@ -69,11 +74,23 @@ fn main() {
         root.join("bindings/python/python/maxt/_generated_contract.py"),
         python::render(&schema),
     ));
+    #[cfg(feature = "python")]
+    outputs.push((
+        "python",
+        root.join("bindings/python/python/maxt/_generated_identifiers.py"),
+        python::render_identifiers(&schema),
+    ));
     #[cfg(feature = "dart")]
     outputs.push((
         "dart",
         root.join("bindings/dart/lib/src/generated_contract.dart"),
         dart::render(&schema),
+    ));
+    #[cfg(feature = "dart")]
+    outputs.push((
+        "dart",
+        root.join("bindings/dart/lib/src/generated_identifiers.dart"),
+        dart::render_identifiers(&schema),
     ));
     #[cfg(feature = "rust")]
     outputs.push((

@@ -127,6 +127,29 @@ pub struct ProviderMethod {
     pub result: ApiType,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProviderOptionValue {
+    Argument(&'static str),
+    Identifier {
+        name: &'static str,
+        variant: &'static str,
+    },
+    Boolean(bool),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProviderOption {
+    pub name: &'static str,
+    pub value: ProviderOptionValue,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProviderConstructor {
+    pub name: &'static str,
+    pub arguments: &'static [Argument],
+    pub options: &'static [ProviderOption],
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Provider {
     pub exchange: &'static str,
@@ -134,7 +157,7 @@ pub struct Provider {
     pub native_handle: &'static str,
     pub native_factory: &'static str,
     pub options_wire: &'static str,
-    pub constructors: &'static [&'static str],
+    pub constructors: &'static [ProviderConstructor],
     pub methods: &'static [ProviderMethod],
 }
 
@@ -688,6 +711,122 @@ const LEDGER_RANGE: &[Argument] = &[
     argument("cursor", ApiType::OptionalNamed("Cursor"), Some("null")),
     argument("limit", ApiType::OptionalNumber, Some("null")),
 ];
+const ACCESS_KEY_CREDENTIALS: &[Argument] = &[
+    argument("accessKey", ApiType::OptionalString, Some("null")),
+    argument("secretKey", ApiType::OptionalString, Some("null")),
+];
+const UPBIT_REGION_CREDENTIALS: &[Argument] = &[
+    argument("region", ApiType::Named("UpbitRegion"), None),
+    argument("accessKey", ApiType::OptionalString, Some("null")),
+    argument("secretKey", ApiType::OptionalString, Some("null")),
+];
+const API_KEY_CREDENTIALS: &[Argument] = &[
+    argument("apiKey", ApiType::OptionalString, Some("null")),
+    argument("secretKey", ApiType::OptionalString, Some("null")),
+];
+const WALLET_CREDENTIALS: &[Argument] = &[
+    argument("address", ApiType::OptionalString, Some("null")),
+    argument("privateKey", ApiType::OptionalString, Some("null")),
+];
+
+const fn provider_option(name: &'static str, value: ProviderOptionValue) -> ProviderOption {
+    ProviderOption { name, value }
+}
+
+const UPBIT_OPTIONS: &[ProviderOption] = &[
+    provider_option(
+        "region",
+        ProviderOptionValue::Identifier {
+            name: "UpbitRegion",
+            variant: "Korea",
+        },
+    ),
+    provider_option("access_key", ProviderOptionValue::Argument("accessKey")),
+    provider_option("secret_key", ProviderOptionValue::Argument("secretKey")),
+];
+const UPBIT_REGION_OPTIONS: &[ProviderOption] = &[
+    provider_option("region", ProviderOptionValue::Argument("region")),
+    provider_option("access_key", ProviderOptionValue::Argument("accessKey")),
+    provider_option("secret_key", ProviderOptionValue::Argument("secretKey")),
+];
+const BITHUMB_OPTIONS: &[ProviderOption] = &[
+    provider_option("access_key", ProviderOptionValue::Argument("accessKey")),
+    provider_option("secret_key", ProviderOptionValue::Argument("secretKey")),
+];
+const BINANCE_SPOT_OPTIONS: &[ProviderOption] = &[
+    provider_option(
+        "venue",
+        ProviderOptionValue::Identifier {
+            name: "BinanceMarket",
+            variant: "Spot",
+        },
+    ),
+    provider_option("api_key", ProviderOptionValue::Argument("apiKey")),
+    provider_option("secret_key", ProviderOptionValue::Argument("secretKey")),
+];
+const BINANCE_USD_M_OPTIONS: &[ProviderOption] = &[
+    provider_option(
+        "venue",
+        ProviderOptionValue::Identifier {
+            name: "BinanceMarket",
+            variant: "UsdMFutures",
+        },
+    ),
+    provider_option("api_key", ProviderOptionValue::Argument("apiKey")),
+    provider_option("secret_key", ProviderOptionValue::Argument("secretKey")),
+];
+const HYPERLIQUID_OPTIONS: &[ProviderOption] = &[
+    provider_option("testnet", ProviderOptionValue::Boolean(false)),
+    provider_option("address", ProviderOptionValue::Argument("address")),
+    provider_option("private_key", ProviderOptionValue::Argument("privateKey")),
+];
+const HYPERLIQUID_TESTNET_OPTIONS: &[ProviderOption] = &[
+    provider_option("testnet", ProviderOptionValue::Boolean(true)),
+    provider_option("address", ProviderOptionValue::Argument("address")),
+    provider_option("private_key", ProviderOptionValue::Argument("privateKey")),
+];
+
+const UPBIT_CONSTRUCTORS: &[ProviderConstructor] = &[
+    ProviderConstructor {
+        name: "constructor",
+        arguments: ACCESS_KEY_CREDENTIALS,
+        options: UPBIT_OPTIONS,
+    },
+    ProviderConstructor {
+        name: "withRegion",
+        arguments: UPBIT_REGION_CREDENTIALS,
+        options: UPBIT_REGION_OPTIONS,
+    },
+];
+const BITHUMB_CONSTRUCTORS: &[ProviderConstructor] = &[ProviderConstructor {
+    name: "constructor",
+    arguments: ACCESS_KEY_CREDENTIALS,
+    options: BITHUMB_OPTIONS,
+}];
+const BINANCE_CONSTRUCTORS: &[ProviderConstructor] = &[
+    ProviderConstructor {
+        name: "spot",
+        arguments: API_KEY_CREDENTIALS,
+        options: BINANCE_SPOT_OPTIONS,
+    },
+    ProviderConstructor {
+        name: "usdMFutures",
+        arguments: API_KEY_CREDENTIALS,
+        options: BINANCE_USD_M_OPTIONS,
+    },
+];
+const HYPERLIQUID_CONSTRUCTORS: &[ProviderConstructor] = &[
+    ProviderConstructor {
+        name: "constructor",
+        arguments: WALLET_CREDENTIALS,
+        options: HYPERLIQUID_OPTIONS,
+    },
+    ProviderConstructor {
+        name: "testnet",
+        arguments: WALLET_CREDENTIALS,
+        options: HYPERLIQUID_TESTNET_OPTIONS,
+    },
+];
 const UPBIT_METHODS: &[ProviderMethod] = &[
     ProviderMethod {
         rust_name: "region",
@@ -809,7 +948,7 @@ const PROVIDERS: &[Provider] = &[
         native_handle: "NativeUpbitHandle",
         native_factory: "createUpbit",
         options_wire: "UpbitOptionsWire",
-        constructors: &["constructor", "withRegion"],
+        constructors: UPBIT_CONSTRUCTORS,
         methods: UPBIT_METHODS,
     },
     Provider {
@@ -818,7 +957,7 @@ const PROVIDERS: &[Provider] = &[
         native_handle: "NativeBithumbHandle",
         native_factory: "createBithumb",
         options_wire: "BithumbOptionsWire",
-        constructors: &["constructor"],
+        constructors: BITHUMB_CONSTRUCTORS,
         methods: BITHUMB_METHODS,
     },
     Provider {
@@ -827,7 +966,7 @@ const PROVIDERS: &[Provider] = &[
         native_handle: "NativeBinanceHandle",
         native_factory: "createBinance",
         options_wire: "BinanceOptionsWire",
-        constructors: &["spot", "usdMFutures"],
+        constructors: BINANCE_CONSTRUCTORS,
         methods: BINANCE_METHODS,
     },
     Provider {
@@ -836,7 +975,7 @@ const PROVIDERS: &[Provider] = &[
         native_handle: "NativeHyperliquidHandle",
         native_factory: "createHyperliquid",
         options_wire: "HyperliquidOptionsWire",
-        constructors: &["constructor", "testnet"],
+        constructors: HYPERLIQUID_CONSTRUCTORS,
         methods: HYPERLIQUID_METHODS,
     },
 ];

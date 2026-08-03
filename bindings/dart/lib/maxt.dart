@@ -6,10 +6,13 @@ export 'src/adapters.dart'
         DartAdapterBridge,
         DartStreamRegistry,
         NativeClientDelegate,
-        NativeHandleProvider;
+        NativeHandleProvider,
+        checkedUint32,
+        validateStreamConfigIntegers,
+        validateUnsigned;
 export 'src/client.dart';
 export 'src/errors.dart';
 export 'src/models.dart';
 export 'src/providers.dart';
-export 'src/runtime.dart';
+export 'src/runtime.dart' show Maxt;
 export 'src/stream.dart';

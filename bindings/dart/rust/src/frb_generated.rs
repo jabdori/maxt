@@ -41,7 +41,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1174971463;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1721144112;
 
 // Section: executor
 
@@ -2295,6 +2295,36 @@ fn wire__crate__api__bridge_version_impl(
             deserializer.end();
             transform_result_sse::<_, ()>((move || {
                 let output_ok = Result::<_, ()>::Ok(crate::api::bridge_version())?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api__configure_browser_relay_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "configure_browser_relay",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_relay_url = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, crate::convert::NativeError>((move || {
+                let output_ok = crate::api::configure_browser_relay(api_relay_url)?;
                 Ok(output_ok)
             })())
         },
@@ -4692,32 +4722,32 @@ fn pde_ffi_dispatcher_primary_impl(
         }
         39 => wire__crate__api__NativeClient_upbit_tickers_impl(port, ptr, rust_vec_len, data_len),
         41 => wire__crate__api__account_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
-        43 => wire__crate__api__market_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
-        44 => wire__crate__api__native_account_subscription_close_impl(
+        44 => wire__crate__api__market_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
+        45 => wire__crate__api__native_account_subscription_close_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        45 => wire__crate__api__native_account_subscription_next_impl(
+        46 => wire__crate__api__native_account_subscription_next_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        46 => wire__crate__api__native_market_subscription_close_impl(
+        47 => wire__crate__api__native_market_subscription_close_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        47 => wire__crate__api__native_market_subscription_next_impl(
+        48 => wire__crate__api__native_market_subscription_next_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        49 => wire__crate__api__register_dart_adapter_impl(port, ptr, rust_vec_len, data_len),
+        50 => wire__crate__api__register_dart_adapter_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -4743,7 +4773,8 @@ fn pde_ffi_dispatcher_sync_impl(
         38 => wire__crate__api__NativeClient_upbit_region_impl(ptr, rust_vec_len, data_len),
         40 => wire__crate__api__WireBinanceListenKey_value_impl(ptr, rust_vec_len, data_len),
         42 => wire__crate__api__bridge_version_impl(ptr, rust_vec_len, data_len),
-        48 => {
+        43 => wire__crate__api__configure_browser_relay_impl(ptr, rust_vec_len, data_len),
+        49 => {
             wire__crate__api__pending_market_subscription_for_test_impl(ptr, rust_vec_len, data_len)
         }
         _ => unreachable!(),

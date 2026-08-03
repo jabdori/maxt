@@ -87,7 +87,7 @@ final class FullContractAdapter extends AdapterBase {
     market: this.market,
     timestamp: timestamp,
     lastTradeTime: Timestamp.fromNanoseconds(
-      timestamp.nanosecondsSinceEpoch - 1,
+      timestamp.nanosecondsSinceEpoch - BigInt.one,
     ),
     lastPrice: Decimal.parse('123.455'),
     change: Decimal.parse('-0.005'),
@@ -236,7 +236,9 @@ void main() {
 
   test('Dart Adapter의 공개·비공개·주문·증거금·이력을 Rust Client로 왕복한다', () async {
     final market = Market.perpetual(Exchange.binance, 'BTC', 'USDT');
-    final timestamp = Timestamp.fromNanoseconds(1700000000123456789);
+    final timestamp = Timestamp.fromNanoseconds(
+      BigInt.parse("1700000000123456789"),
+    );
     final adapter = FullContractAdapter(market, timestamp);
     final client = Client(adapter);
 
@@ -253,14 +255,17 @@ void main() {
     expect(adapter.orderBookDepth, 7);
 
     final ticker = await client.ticker(market);
-    expect(ticker.lastTradeTime?.nanosecondsSinceEpoch, 1700000000123456788);
+    expect(
+      ticker.lastTradeTime?.nanosecondsSinceEpoch,
+      BigInt.parse('1700000000123456788'),
+    );
     expect(ticker.change, Decimal.parse('-0.005'));
     expect(ticker.quoteVolume, Decimal.parse('5200.0001'));
 
     final candleQuery = CandleRequest(
       market,
       Interval.min1,
-      from: Timestamp.fromNanoseconds(1700000000000000000),
+      from: Timestamp.fromNanoseconds(BigInt.parse("1700000000000000000")),
       to: timestamp,
       limit: 3,
     );
@@ -311,7 +316,7 @@ void main() {
 
     final history = HistoryRequest(
       market,
-      from: Timestamp.fromNanoseconds(1700000000000000000),
+      from: Timestamp.fromNanoseconds(BigInt.parse("1700000000000000000")),
       to: timestamp,
       cursor: const Cursor('cursor-in'),
       limit: 2,

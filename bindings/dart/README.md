@@ -2,9 +2,9 @@
 
 [English](README.md) | [한국어](README.ko.md)
 
-One native Dart API for the same operations, models, errors, and streams as
-the Rust contract. Dart build hooks compile the Rust crate for the target, and
-generated contracts are checked against the native API.
+One Dart and Flutter API for the same operations, models, errors, and streams
+on native platforms and the Web. Native builds use Dart build hooks; Web builds
+use WebAssembly.
 
 ## Support
 
@@ -13,13 +13,14 @@ generated contracts are checked against the native API.
 - [x] Linux
 - [x] macOS
 - [x] Windows
-- [ ] Dart Web
+- [x] Dart Web
 
 Dart 3.10 or a compatible Flutter SDK is required. This package does not
 download prebuilt native libraries. Its build hook compiles the included Rust
 source when your Dart or Flutter application is built, so Rustup and the target
 platform toolchain, such as the Android NDK or Xcode, must also be installed in
-development and CI environments.
+development and CI environments. Web builds additionally require the Rust
+nightly toolchain with `rust-src` and `wasm-pack`.
 
 ## Supported exchanges
 
@@ -68,6 +69,25 @@ Exchange-specific methods remain available through `client.adapter`.
 dart pub add maxt
 ```
 
+For a Web application, build the package's WebAssembly files into `web/pkg`
+before running or building the application:
+
+```sh
+rustup toolchain install nightly --component rust-src --target wasm32-unknown-unknown
+cargo install wasm-pack --version 0.15.0 --locked
+dart run maxt:build_web --release
+flutter build web
+```
+
+Run `dart run maxt:build_web --release` from the application root. The command
+uses the installed `maxt` package, so it also works when `maxt` comes from
+pub.dev. Do not commit the generated `web/pkg` files unless your deployment
+process requires built assets in source control.
+
+Serve the Web build with `Cross-Origin-Opener-Policy: same-origin` and
+`Cross-Origin-Embedder-Policy: require-corp` so browsers can enable the shared
+memory features used by the generated WebAssembly module.
+
 ## Initialize and use Binance
 
 Call `Maxt.initialize()` once in each isolate before constructing an adapter.
@@ -95,6 +115,32 @@ Future<void> main() async {
 
 `ticker()` is common. `spotSymbolFilters()` is Binance Spot-specific and is
 available through `client.adapter`.
+
+In a browser, public calls can use direct HTTP and WebSocket connections when
+the exchange permits them. Set `relayUrl` when a relay is required:
+
+```dart
+await Maxt.initialize(relayUrl: 'https://relay.example');
+```
+
+Browser credentials are disabled by default because JavaScript and WebAssembly
+memory are not secret storage. Credentialed browser calls require both a relay
+and explicit opt-in:
+
+```dart
+await Maxt.initialize(
+  relayUrl: 'https://relay.example',
+  allowInsecureBrowserCredentials: true,
+);
+```
+
+Use restricted exchange keys without withdrawal permission. Keep credentials
+on a trusted backend when they must not be exposed to the browser.
+
+Deploy the relay behind an authenticated, rate-limited TLS ingress on the same
+site as the application. The relay does not authenticate users, and its Origin
+allowlist is not authentication. See the [relay deployment and security
+requirements](../../relay/README.md).
 
 ## Streams
 
@@ -130,7 +176,7 @@ For custom streams, return `MarketStream` or `AccountStream` over a Dart
 ## Contracts
 
 - `Decimal`: exact 96-bit coefficient, scale `0..=28`.
-- `Timestamp`: signed 64-bit Unix epoch nanoseconds.
+- `Timestamp`: signed 64-bit Unix epoch nanoseconds stored as `BigInt`.
 - Errors: `InvalidRequestError`, `UnsupportedError`, `AdapterError`, `AuthenticationError`, `ExchangeError`, `TransportError`, `DecodeError`.
 - Credentials: omit both fields for public access; provide both for private access.
 

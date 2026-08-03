@@ -357,16 +357,25 @@ final class Decimal implements Comparable<Decimal> {
 
 /// Unix epoch 기준 UTC 나노초로 표현한 시각입니다.
 final class Timestamp implements Comparable<Timestamp> {
-  const Timestamp._(this.nanosecondsSinceEpoch);
+  Timestamp._(this.nanosecondsSinceEpoch);
 
   /// Unix epoch 기준 나노초에서 시각을 만듭니다.
   ///
   /// 64비트 부호 있는 정수(i64) 범위를 벗어나면 [RangeError]를 던집니다.
-  factory Timestamp.fromNanoseconds(int nanoseconds) {
-    if (nanoseconds < _min || nanoseconds > _max) {
-      throw RangeError.range(nanoseconds, _min, _max, 'nanoseconds');
+  factory Timestamp.fromNanoseconds(Object nanoseconds) {
+    final value = switch (nanoseconds) {
+      int value => BigInt.from(value),
+      BigInt value => value,
+      _ => throw ArgumentError.value(
+        nanoseconds,
+        'nanoseconds',
+        'must be an int or BigInt',
+      ),
+    };
+    if (value < _min || value > _max) {
+      throw RangeError('nanoseconds must fit in i64: $nanoseconds');
     }
-    return Timestamp._(nanoseconds);
+    return Timestamp._(value);
   }
 
   /// Unix epoch 기준 마이크로초에서 시각을 만듭니다.
@@ -393,34 +402,33 @@ final class Timestamp implements Comparable<Timestamp> {
     return microseconds <= 0 ? zero : _fromScaled(microseconds, 1000);
   }
 
-  static const int _min = -9223372036854775808;
-  static const int _max = 9223372036854775807;
-  static final BigInt _minBigInt = BigInt.from(_min);
-  static final BigInt _maxBigInt = BigInt.from(_max);
-  static const Timestamp zero = Timestamp._(0);
+  static final BigInt _min = BigInt.parse('-9223372036854775808');
+  static final BigInt _max = BigInt.parse('9223372036854775807');
+  static final Timestamp zero = Timestamp._(BigInt.zero);
 
-  final int nanosecondsSinceEpoch;
+  final BigInt nanosecondsSinceEpoch;
 
   /// Unix epoch 기준 밀리초를 `0` 방향으로 절삭한 값입니다.
-  int get millisecondsSinceEpoch => nanosecondsSinceEpoch ~/ 1000000;
+  int get millisecondsSinceEpoch =>
+      (nanosecondsSinceEpoch ~/ BigInt.from(1000000)).toInt();
 
   /// Unix epoch 기준 초를 `0` 방향으로 절삭한 값입니다.
-  int get secondsSinceEpoch => nanosecondsSinceEpoch ~/ 1000000000;
+  int get secondsSinceEpoch =>
+      (nanosecondsSinceEpoch ~/ BigInt.from(1000000000)).toInt();
 
   static Timestamp _fromScaled(int value, int scale) {
     final nanoseconds = BigInt.from(value) * BigInt.from(scale);
-    if (nanoseconds < _minBigInt) return const Timestamp._(_min);
-    if (nanoseconds > _maxBigInt) return const Timestamp._(_max);
-    return Timestamp._(nanoseconds.toInt());
+    if (nanoseconds < _min) return Timestamp._(_min);
+    if (nanoseconds > _max) return Timestamp._(_max);
+    return Timestamp._(nanoseconds);
   }
 
   static Timestamp? _checked(BigInt nanoseconds) {
-    if (nanoseconds < _minBigInt || nanoseconds > _maxBigInt) return null;
-    return Timestamp._(nanoseconds.toInt());
+    if (nanoseconds < _min || nanoseconds > _max) return null;
+    return Timestamp._(nanoseconds);
   }
 
-  static bool _contains(BigInt value) =>
-      value >= _minBigInt && value <= _maxBigInt;
+  static bool _contains(BigInt value) => value >= _min && value <= _max;
 
   @override
   int compareTo(Timestamp other) =>
@@ -533,19 +541,21 @@ extension IntervalProperties on Interval {
       final span =
           BigInt.from(fixedSeconds) * BigInt.from(1000000000) * countBigInt;
       if (!Timestamp._contains(span)) return null;
-      return Timestamp._checked(BigInt.from(at.nanosecondsSinceEpoch) + span);
+      return Timestamp._checked(at.nanosecondsSinceEpoch + span);
     }
 
     if (countBigInt.abs() > BigInt.from(4294967295)) return null;
 
-    var microseconds = at.nanosecondsSinceEpoch ~/ 1000;
-    var nanosecondRemainder = at.nanosecondsSinceEpoch.remainder(1000);
-    if (nanosecondRemainder < 0) {
-      microseconds--;
-      nanosecondRemainder += 1000;
+    var microseconds = at.nanosecondsSinceEpoch ~/ BigInt.from(1000);
+    var nanosecondRemainder = at.nanosecondsSinceEpoch.remainder(
+      BigInt.from(1000),
+    );
+    if (nanosecondRemainder < BigInt.zero) {
+      microseconds -= BigInt.one;
+      nanosecondRemainder += BigInt.from(1000);
     }
     final current = DateTime.fromMicrosecondsSinceEpoch(
-      microseconds,
+      microseconds.toInt(),
       isUtc: true,
     );
     final monthIndex =
@@ -570,7 +580,7 @@ extension IntervalProperties on Interval {
     );
     return Timestamp._checked(
       BigInt.from(moved.microsecondsSinceEpoch) * BigInt.from(1000) +
-          BigInt.from(nanosecondRemainder),
+          nanosecondRemainder,
     );
   }
 }

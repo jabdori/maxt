@@ -16,6 +16,10 @@ import 'stream.dart';
 /// 설치된 Dart/Rust 경계의 버전입니다.
 String bridgeVersion() => MaxtRustLib.instance.api.crateApiBridgeVersion();
 
+/// 브라우저 HTTP와 WebSocket 요청에 사용할 relay origin을 설정합니다.
+void configureBrowserRelay({required String relayUrl}) =>
+    MaxtRustLib.instance.api.crateApiConfigureBrowserRelay(relayUrl: relayUrl);
+
 /// Dart 네이티브 스트림 종료 테스트용으로 대기 중인 구독을 만듭니다.
 NativeMarketSubscription pendingMarketSubscriptionForTest() =>
     MaxtRustLib.instance.api.crateApiPendingMarketSubscriptionForTest();

@@ -54,7 +54,7 @@ cargo run --example public_rest
 
 - [x] Rust
 - [x] Python
-- [x] Dart / Flutter native
+- [x] Dart / Flutter native and Web
 - [x] TypeScript / Node.js
 - [x] TypeScript / Browser WebAssembly
 

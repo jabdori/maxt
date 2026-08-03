@@ -10,7 +10,7 @@ final class NativeClientDelegate extends AdapterBase {
   NativeClientDelegate._({
     required this.exchange,
     required this.features,
-    required Future<_NativeAdapterBase> delegate,
+    required Future<Adapter> delegate,
   }) : _delegate = delegate;
 
   factory NativeClientDelegate.fromAdapter(Adapter adapter) {
@@ -19,12 +19,14 @@ final class NativeClientDelegate extends AdapterBase {
         'Call and await Maxt.initialize() before constructing a Client.',
       );
     }
-    final delegate = switch (adapter) {
-      NativeHandleProvider(:final nativeHandle) =>
-        Future<_NativeAdapterBase>.value(_NativeDelegateAdapter(nativeHandle)),
-      _ => DartAdapterBridge(
+    final Future<Adapter> delegate = switch (adapter) {
+      NativeHandleProvider(:final nativeHandle) => Future<Adapter>.value(
+        _NativeDelegateAdapter(nativeHandle),
+      ),
+      _ when bridgeCustomAdapters => DartAdapterBridge(
         adapter,
       ).register().then(_NativeDelegateAdapter.new),
+      _ => Future<Adapter>.value(adapter),
     };
     return NativeClientDelegate._(
       exchange: adapter.exchange,
@@ -33,7 +35,7 @@ final class NativeClientDelegate extends AdapterBase {
     );
   }
 
-  final Future<_NativeAdapterBase> _delegate;
+  final Future<Adapter> _delegate;
 
   @override
   final Exchange exchange;
@@ -41,7 +43,7 @@ final class NativeClientDelegate extends AdapterBase {
   @override
   final Set<Feature> features;
 
-  Future<_NativeAdapterBase> get _native => _delegate;
+  Future<Adapter> get _native => _delegate;
 
   @override
   Future<List<MarketInfo>> markets(MarketKind kind) async =>

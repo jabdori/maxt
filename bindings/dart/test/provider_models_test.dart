@@ -41,17 +41,20 @@ void main() {
       market: Market.spot(Exchange.bithumb, 'BTC', 'KRW'),
       kind: 'PRICE_DIFFERENCE',
       step: BithumbAlertStep.warning,
-      endsAt: Timestamp.fromNanoseconds(1700000000123456789),
+      endsAt: Timestamp.fromNanoseconds(BigInt.parse("1700000000123456789")),
     );
     final ledger = HyperliquidLedgerEntry(
       kind: HyperliquidLedgerKind.other('futureKind'),
-      time: Timestamp.fromNanoseconds(1700000000123456790),
+      time: Timestamp.fromNanoseconds(BigInt.parse("1700000000123456790")),
       hash: '0x01',
       amount: Decimal.parse('0.000000000000000001'),
     );
 
     expect(context.midPrice.toString(), '12345678901234567890.00000001');
-    expect(alert.endsAt.nanosecondsSinceEpoch, 1700000000123456789);
+    expect(
+      alert.endsAt.nanosecondsSinceEpoch,
+      BigInt.parse('1700000000123456789'),
+    );
     expect(ledger.kind.isOther, isTrue);
     expect(ledger.amount.toString(), '0.000000000000000001');
     expect(market.kind, MarketKind.perpetual);

@@ -29,6 +29,20 @@ pub fn bridge_version() -> String {
     env!("CARGO_PKG_VERSION").to_owned()
 }
 
+/// 브라우저 HTTP와 WebSocket 요청에 사용할 relay origin을 설정합니다.
+#[flutter_rust_bridge::frb(sync)]
+pub fn configure_browser_relay(relay_url: String) -> Result<(), NativeError> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        maxt::configure_browser_relay(&relay_url).map_err(NativeError::from)
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let _ = relay_url;
+        Ok(())
+    }
+}
+
 /// Dart 네이티브 스트림 종료 테스트용으로 대기 중인 구독을 만듭니다.
 #[doc(hidden)]
 #[flutter_rust_bridge::frb(sync)]

@@ -69,7 +69,7 @@ class MaxtRustLib
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => -1174971463;
+  int get rustContentHash => -1721144112;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -284,6 +284,8 @@ abstract class MaxtRustLibApi extends BaseApi {
   });
 
   String crateApiBridgeVersion();
+
+  void crateApiConfigureBrowserRelay({required String relayUrl});
 
   Future<bool> crateApiMarketStreamSinkAdd({
     required MarketStreamSink sink,
@@ -1900,6 +1902,32 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       const TaskConstMeta(debugName: "bridge_version", argNames: []);
 
   @override
+  void crateApiConfigureBrowserRelay({required String relayUrl}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(relayUrl, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 43)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_native_error,
+        ),
+        constMeta: kCrateApiConfigureBrowserRelayConstMeta,
+        argValues: [relayUrl],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiConfigureBrowserRelayConstMeta =>
+      const TaskConstMeta(
+        debugName: "configure_browser_relay",
+        argNames: ["relayUrl"],
+      );
+
+  @override
   Future<bool> crateApiMarketStreamSinkAdd({
     required MarketStreamSink sink,
     required MarketStreamItem item,
@@ -1916,7 +1944,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 43,
+            funcId: 44,
             port: port_,
           );
         },
@@ -1952,7 +1980,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 44,
+            funcId: 45,
             port: port_,
           );
         },
@@ -1988,7 +2016,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 45,
+            funcId: 46,
             port: port_,
           );
         },
@@ -2024,7 +2052,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 46,
+            funcId: 47,
             port: port_,
           );
         },
@@ -2060,7 +2088,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 47,
+            funcId: 48,
             port: port_,
           );
         },
@@ -2087,7 +2115,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 48)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 49)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -2126,7 +2154,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 49,
+            funcId: 50,
             port: port_,
           );
         },

@@ -1,6 +1,6 @@
 name: maxt
-description: Native Dart and Flutter client for Upbit, Bithumb, Binance, and Hyperliquid through one maxt API.
-version: 0.1.0
+description: Dart and Flutter client for Upbit, Bithumb, Binance, and Hyperliquid through one native and Web API.
+version: 0.2.0
 repository: https://github.com/jabdori/maxt
 homepage: https://github.com/jabdori/maxt
 documentation: https://github.com/jabdori/maxt/tree/main/bindings/dart
@@ -14,6 +14,7 @@ platforms:
   ios:
   linux:
   macos:
+  web:
   windows:
 
 environment:

@@ -190,9 +190,7 @@ jobs:
         with:
           name: npm-packages
           path: package-set
-      - env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        shell: bash
+      - shell: bash
         run: |
           version="${{ needs.validate.outputs.version }}"
           publish_one() {
@@ -204,10 +202,6 @@ jobs:
               npm publish "./package-set/$file-$version.tgz" --access public
             fi
           }
-          if [[ -z "$NODE_AUTH_TOKEN" ]] && ! npm view '@jabdori/maxt' version --silent >/dev/null 2>&1; then
-            echo '::error::The first npm release requires the NPM_TOKEN secret.'
-            exit 1
-          fi
           publish_one @jabdori/maxt-linux-x64-gnu jabdori-maxt-linux-x64-gnu
           publish_one @jabdori/maxt-linux-arm64-gnu jabdori-maxt-linux-arm64-gnu
           publish_one @jabdori/maxt-darwin-x64 jabdori-maxt-darwin-x64

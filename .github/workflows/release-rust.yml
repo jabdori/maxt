@@ -23,7 +23,6 @@ jobs:
           test "$(sed -n 's/^version = "\([^"]*\)"/\1/p' bindings/common/Cargo.toml | head -1)" = "$version"
           cargo test -p maxt -p maxt-bindings-common --all-targets --locked
           cargo package -p maxt --locked
-          cargo package -p maxt-bindings-common --locked
       - name: Publish crates
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}

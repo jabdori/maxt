@@ -7,9 +7,12 @@ Upbit, Bithumb, Binance, and Hyperliquid.
 
 ## Why maxt
 
-- Use the same operations, models, errors, and stream contract across exchanges.
-- Keep common operations on `Client` and exchange-specific operations on each adapter.
-- Generate language public APIs and contracts from one schema, then verify them against the compiled native API.
+`maxt` is designed for applications that work with multiple exchanges. Switching
+exchanges or languages should not mean learning another SDK.
+
+- Use common operations with the same API shape, models, errors, and stream contract across exchanges and supported languages.
+- Access common operations through `Client` and exchange-specific capabilities through typed adapters.
+- Generate language-native public APIs and contracts from one schema, then verify them against the compiled native API.
 
 ## Install
 

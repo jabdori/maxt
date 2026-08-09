@@ -1154,6 +1154,8 @@ checksum = "0ceec5bc11778974d1bcb055b18002eba7f4b3518b6a0081b3af5f21666da9ad"
 [[package]]
 name = "maxt"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "515286d9d993845bfdb6772c0f94295942116975f1d1f707a28106c6d7e9a5cf"
 dependencies = [
  "base64",
  "chrono",
@@ -1186,6 +1188,8 @@ dependencies = [
 [[package]]
 name = "maxt-bindings-common"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4be1a5700143f7c5826f02bf32f16bce0490b7b89524cbd05b242d0f07d14222"
 dependencies = [
  "maxt",
 ]

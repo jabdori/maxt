@@ -1,7 +1,11 @@
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
+#[cfg(feature = "dart")]
+use std::process::Command;
 
+#[cfg(feature = "rust")]
+use maxt_bindings_common::coverage::{BASELINE_DATE, OPERATIONS, OperationMapping};
 #[cfg(feature = "rust")]
 use maxt_bindings_common::schema::Schema;
 use maxt_bindings_common::schema::binding_schema;
@@ -87,6 +91,12 @@ fn main() {
     #[cfg(feature = "python")]
     outputs.push((
         "python",
+        root.join("bindings/python/python/maxt/_generated_models.py"),
+        python::render_models(&schema),
+    ));
+    #[cfg(feature = "python")]
+    outputs.push((
+        "python",
         root.join("bindings/python/python/maxt/_generated_api.py"),
         python::render_api(&schema),
     ));
@@ -147,6 +157,12 @@ fn main() {
     #[cfg(feature = "dart")]
     outputs.push((
         "dart",
+        root.join("bindings/dart/lib/src/generated_models.dart"),
+        dart::render_models(&schema),
+    ));
+    #[cfg(feature = "dart")]
+    outputs.push((
+        "dart",
         root.join("bindings/dart/lib/src/generated_adapter.dart"),
         dart::render_adapter_api(&schema),
     ));
@@ -198,6 +214,12 @@ fn main() {
         root.join("bindings/dart/rust/src/convert/generated_shape_guard.rs"),
         dart::render_wire_shape_guard(&schema),
     ));
+    #[cfg(feature = "dart")]
+    outputs.push((
+        "dart",
+        root.join("bindings/dart/rust/src/convert/generated_models.rs"),
+        dart::render_rust_models(&schema),
+    ));
     #[cfg(feature = "rust")]
     outputs.push((
         "rust",
@@ -208,6 +230,16 @@ fn main() {
         if target != "all" && target != output_target {
             continue;
         }
+        #[cfg(feature = "dart")]
+        let content = if output_target == "dart"
+            && path
+                .extension()
+                .is_some_and(|extension| extension == "dart")
+        {
+            format_dart_source(&content)
+        } else {
+            content
+        };
         if check {
             let actual = fs::read_to_string(&path)
                 .unwrap_or_else(|error| panic!("{} is missing: {error}", path.display()));
@@ -220,6 +252,35 @@ fn main() {
                 .unwrap_or_else(|error| panic!("failed to write {}: {error}", path.display()));
         }
     }
+}
+
+#[cfg(feature = "dart")]
+fn format_dart_source(source: &str) -> String {
+    let path = env::temp_dir().join(format!("maxt-bindings-codegen-{}.dart", std::process::id()));
+    fs::write(&path, source).expect("temporary Dart source must be writable");
+    let result = Command::new("dart")
+        .args(["format", "--output=show"])
+        .arg(&path)
+        .output()
+        .expect("Dart SDK is required to generate Dart bindings");
+    let _ = fs::remove_file(&path);
+    assert!(
+        result.status.success(),
+        "dart format failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let output = String::from_utf8(result.stdout)
+        .expect("dart format output must be UTF-8")
+        .replace("\r\n", "\n");
+    let (formatted, summary) = output
+        .trim_end_matches('\n')
+        .rsplit_once('\n')
+        .expect("dart format must return source and a summary");
+    assert!(
+        summary.starts_with("Formatted "),
+        "unexpected dart format output: {summary}"
+    );
+    format!("{formatted}\n")
 }
 
 #[cfg(feature = "rust")]
@@ -250,6 +311,56 @@ fn render_markdown(schema: &Schema) -> String {
         output.push_str(&format!(
             "| {} | `{}` | {} | {} |\n",
             provider.exchange, provider.adapter, python_methods, methods
+        ));
+    }
+    output.push_str(&format!(
+        "\n## Official API products\n\nDocumentation baseline: `{BASELINE_DATE}`.\n\n| Exchange | Product | Mapped / official | Interfaces | Encodings | Status |\n| --- | --- | ---: | --- | --- | --- |\n"
+    ));
+    for product in schema.products {
+        let official = product
+            .endpoint_count
+            .map_or_else(|| "—".to_owned(), |count| count.to_string());
+        let interfaces = product
+            .interfaces
+            .iter()
+            .map(|interface| format!("`{}`", interface.id()))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let encodings = product
+            .encodings
+            .iter()
+            .map(|encoding| format!("`{}`", encoding.id()))
+            .collect::<Vec<_>>()
+            .join(", ");
+        output.push_str(&format!(
+            "| {} | {} | {} / {} | {} | {} | {} |\n",
+            product.exchange.id(),
+            product.name,
+            product.mapped_operations(),
+            official,
+            interfaces,
+            encodings,
+            product.stage().label(),
+        ));
+    }
+    output.push_str("\n## Recorded operations\n\n| Exchange | Product | Operation | Interface | Mapping | Validation |\n| --- | --- | --- | --- | --- | --- |\n");
+    for operation in OPERATIONS {
+        let mapping = match operation.mapping {
+            OperationMapping::Common(name) => format!("common `{name}`"),
+            OperationMapping::CommonMany(names) => format!("common `{}`", names.join("`, `")),
+            OperationMapping::Provider(name) => format!("provider `{name}`"),
+            OperationMapping::PlatformLimited { service, platform } => {
+                format!("provider `{service}`; unavailable on {platform}")
+            }
+        };
+        output.push_str(&format!(
+            "| {} | {} | `{}` | `{}` | {} | `{:?}` |\n",
+            operation.exchange.id(),
+            operation.product,
+            operation.id,
+            operation.interface.id(),
+            mapping,
+            operation.validation,
         ));
     }
     output

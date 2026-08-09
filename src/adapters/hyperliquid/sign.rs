@@ -5,6 +5,8 @@
 //! only inside this module; requests contain the action, nonce, and signature.
 
 use k256::ecdsa::SigningKey;
+#[cfg(test)]
+use rust_decimal::Decimal;
 use serde::Serialize;
 use sha3::{Digest, Keccak256};
 
@@ -17,12 +19,25 @@ use super::parse::EXCHANGE;
 /// Network separation is encoded by the `Agent.source` field.
 const AGENT_CHAIN_ID: u64 = 1337;
 
+/// Chain id used by Hyperliquid's reference client for user-signed actions.
+#[cfg(test)]
+const USER_SIGNED_CHAIN_ID: u64 = 0x66eee;
+
 impl HyperliquidNetwork {
     /// EIP-712 `Agent.source` value for network separation.
     const fn agent_source(self) -> &'static str {
         match self {
             Self::Mainnet => "a",
             Self::Testnet => "b",
+        }
+    }
+
+    /// Human-readable replay-protection field in user-signed actions.
+    #[cfg(test)]
+    const fn user_chain(self) -> &'static str {
+        match self {
+            Self::Mainnet => "Mainnet",
+            Self::Testnet => "Testnet",
         }
     }
 }
@@ -121,6 +136,53 @@ pub(crate) struct LeverageAction {
     pub(crate) leverage: u32,
 }
 
+/// A bridge withdrawal signed with Hyperliquid's user-signed EIP-712 domain.
+///
+/// This is deliberately separate from the msgpack `Agent` actions above. It is
+/// not submitted by this module; the type exists to pin the official signing
+/// contract before withdrawal writes are exposed.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[cfg(test)]
+pub(crate) struct WithdrawAction {
+    #[serde(rename = "type")]
+    pub(crate) action_type: &'static str,
+    #[serde(rename = "hyperliquidChain")]
+    pub(crate) hyperliquid_chain: &'static str,
+    #[serde(rename = "signatureChainId")]
+    pub(crate) signature_chain_id: &'static str,
+    pub(crate) destination: String,
+    pub(crate) amount: String,
+    pub(crate) time: u64,
+}
+
+#[cfg(test)]
+impl WithdrawAction {
+    pub(crate) fn new(
+        destination: &str,
+        amount: &str,
+        time: u64,
+        network: HyperliquidNetwork,
+    ) -> Result<Self> {
+        let amount_number = crate::adapters::decimal::exact(amount)
+            .map_err(|err| Error::invalid_request("amount", format!("invalid decimal: {err}")))?;
+        if amount_number <= Decimal::ZERO {
+            return Err(Error::invalid_request(
+                "amount",
+                "must be greater than zero",
+            ));
+        }
+
+        Ok(Self {
+            action_type: "withdraw3",
+            hyperliquid_chain: network.user_chain(),
+            signature_chain_id: "0x66eee",
+            destination: check_address(destination)?,
+            amount: amount.to_string(),
+            time,
+        })
+    }
+}
+
 impl LeverageAction {
     pub(crate) fn new(asset: u32, is_cross: bool, leverage: u32) -> Self {
         Self {
@@ -213,6 +275,45 @@ fn agent_digest(action_hash: [u8; 32], source: &str) -> [u8; 32] {
     keccak(&digest)
 }
 
+/// EIP-712 digest used by `withdraw3` user-signed actions.
+#[cfg(test)]
+fn withdraw_digest(action: &WithdrawAction) -> [u8; 32] {
+    let mut message = Vec::with_capacity(160);
+    message.extend_from_slice(&keccak(
+        b"HyperliquidTransaction:Withdraw(string hyperliquidChain,string destination,string amount,uint64 time)",
+    ));
+    message.extend_from_slice(&keccak(action.hyperliquid_chain.as_bytes()));
+    message.extend_from_slice(&keccak(action.destination.as_bytes()));
+    message.extend_from_slice(&keccak(action.amount.as_bytes()));
+    message.extend_from_slice(&word(action.time));
+    let message_hash = keccak(&message);
+
+    let mut domain = Vec::with_capacity(160);
+    domain.extend_from_slice(&keccak(
+        b"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)",
+    ));
+    domain.extend_from_slice(&keccak(b"HyperliquidSignTransaction"));
+    domain.extend_from_slice(&keccak(b"1"));
+    domain.extend_from_slice(&word(USER_SIGNED_CHAIN_ID));
+    // The verifying contract is the zero address.
+    domain.extend_from_slice(&[0u8; 32]);
+    let domain_separator = keccak(&domain);
+
+    let mut digest = Vec::with_capacity(66);
+    digest.extend_from_slice(b"\x19\x01");
+    digest.extend_from_slice(&domain_separator);
+    digest.extend_from_slice(&message_hash);
+
+    keccak(&digest)
+}
+
+#[cfg(test)]
+fn word(value: u64) -> [u8; 32] {
+    let mut encoded = [0u8; 32];
+    encoded[24..].copy_from_slice(&value.to_be_bytes());
+    encoded
+}
+
 fn keccak(input: &[u8]) -> [u8; 32] {
     Keccak256::digest(input).into()
 }
@@ -237,6 +338,12 @@ pub(crate) fn signed_body<A: Serialize>(
         "signature": signature,
     }))
     .map_err(|err| Error::decode(format!("could not build hyperliquid request body: {err}")))
+}
+
+/// Signs a prepared `withdraw3` action without submitting it.
+#[cfg(test)]
+pub(crate) fn sign_withdraw(private_key: &str, action: &WithdrawAction) -> Result<Signature> {
+    sign(private_key, withdraw_digest(action))
 }
 
 /// Signs a prepared digest.
@@ -267,10 +374,8 @@ fn scalar_hex(bytes: &[u8]) -> String {
     }
 }
 
-/// Validates the account-address shape and signing key, then lowercases the
-/// address. The key is not required to derive the account address because an
-/// approved API wallet may sign for another account.
-pub(crate) fn check_wallet(address: &str, private_key: &str) -> Result<String> {
+/// Validates and normalizes a public account or destination address.
+pub(crate) fn check_address(address: &str) -> Result<String> {
     let lowered = address.trim().to_ascii_lowercase();
     let is_address = lowered.len() == 42
         && lowered.starts_with("0x")
@@ -280,8 +385,6 @@ pub(crate) fn check_wallet(address: &str, private_key: &str) -> Result<String> {
             "`{address}` is not a 20-byte hex Hyperliquid account address"
         )));
     }
-    signing_key(private_key)?;
-
     Ok(lowered)
 }
 
@@ -318,10 +421,17 @@ pub(crate) fn recover(digest: [u8; 32], signature: &Signature) -> Result<String>
     ))
 }
 
-/// Builds the authentication error returned when no wallet is configured.
-pub(crate) fn missing_wallet() -> Error {
+/// Builds the authentication error returned when an account query has no user.
+pub(crate) fn missing_query_address() -> Error {
     Error::auth(format!(
-        "{EXCHANGE} signs private requests with a wallet; build the adapter with `with_wallet`"
+        "{EXCHANGE} account reads need a public query address; use `with_query_address` or `with_wallet`"
+    ))
+}
+
+/// Builds the authentication error returned when a signed action has no key.
+pub(crate) fn missing_signer() -> Error {
+    Error::auth(format!(
+        "{EXCHANGE} signed actions need a local signer; use `with_signer` or `with_wallet`"
     ))
 }
 
@@ -464,6 +574,40 @@ mod tests {
     }
 
     #[test]
+    fn the_official_user_signed_withdraw_vector_matches_exactly() {
+        // Independent vector from the official Python SDK's `signing_test.py`.
+        // This path is EIP-712 `HyperliquidTransaction:Withdraw`, not an L1
+        // msgpack `Agent` signature.
+        let action = WithdrawAction::new(
+            "0x5e9ee1089755c3435139848e47e6635505d5a13a",
+            "1",
+            1_687_816_341_423,
+            HyperliquidNetwork::Testnet,
+        )
+        .expect("the official action");
+        let signature = sign_withdraw(TEST_KEY, &action).expect("the official signature");
+
+        assert_eq!(
+            signature.r,
+            "0x8363524c799e90ce9bc41022f7c39b4e9bdba786e5f9c72b20e43e1462c37cf9"
+        );
+        assert_eq!(
+            signature.s,
+            "0x58b1411a775938b83e29182e8ef74975f9054c8e97ebf5ec2dc8d51bfc893881"
+        );
+        assert_eq!(signature.v, 28);
+        assert_eq!(
+            recover(withdraw_digest(&action), &signature).expect("the signer"),
+            TEST_ADDRESS
+        );
+
+        let wire = serde_json::to_value(&action).expect("wire action");
+        assert_eq!(wire["type"], "withdraw3");
+        assert_eq!(wire["hyperliquidChain"], "Testnet");
+        assert_eq!(wire["signatureChainId"], "0x66eee");
+    }
+
+    #[test]
     fn a_signature_recovers_to_the_wallet_that_made_it() {
         // This isolates signature recovery from the independent vectors above.
         let bytes = rmp_serde::to_vec_named(&order()).expect("an encodable action");
@@ -581,14 +725,31 @@ mod tests {
     }
 
     #[test]
-    fn an_address_that_is_not_an_account_is_refused() {
-        assert!(check_wallet(TEST_ADDRESS, TEST_KEY).is_ok());
+    fn query_addresses_and_signers_are_validated_independently() {
+        assert_eq!(
+            check_address(TEST_ADDRESS).expect("an address"),
+            TEST_ADDRESS
+        );
+        assert!(signing_key(TEST_KEY).is_ok());
+        assert!(matches!(check_address("0xabc"), Err(Error::Auth { .. })));
+        assert!(matches!(signing_key("not-a-key"), Err(Error::Auth { .. })));
+    }
+
+    #[test]
+    fn a_withdraw_signature_rejects_an_invalid_destination_or_amount() {
+        for amount in ["0", "-1", "not-a-number"] {
+            assert!(matches!(
+                WithdrawAction::new(
+                    TEST_ADDRESS,
+                    amount,
+                    1_687_816_341_423,
+                    HyperliquidNetwork::Mainnet
+                ),
+                Err(Error::InvalidRequest { .. })
+            ));
+        }
         assert!(matches!(
-            check_wallet("0xabc", TEST_KEY),
-            Err(Error::Auth { .. })
-        ));
-        assert!(matches!(
-            check_wallet(TEST_ADDRESS, "not-a-key"),
+            WithdrawAction::new("0xabc", "1", 1_687_816_341_423, HyperliquidNetwork::Mainnet),
             Err(Error::Auth { .. })
         ));
     }

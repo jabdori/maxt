@@ -61,6 +61,93 @@ RECORD_FIELDS = {
         "available": "decimal",
         "locked": "decimal",
     },
+    "AssetNetwork": {
+        "exchange": "identifier:Exchange",
+        "asset": "string",
+        "network": "identifier:Network",
+        "provider_id": "string",
+        "deposit_enabled": "boolean",
+        "withdrawal_enabled": "boolean",
+        "withdrawal_fee": "optional:named:WithdrawalFee",
+        "minimum_withdrawal": "optional:decimal",
+        "maximum_withdrawal": "optional:decimal",
+        "memo_required": "boolean",
+    },
+    "DepositAddress": {
+        "exchange": "identifier:Exchange",
+        "asset": "string",
+        "network": "identifier:Network",
+        "address": "optional:string",
+        "memo": "optional:string",
+    },
+    "ExchangeDestination": {
+        "exchange": "identifier:Exchange",
+        "asset": "string",
+        "network": "identifier:Network",
+        "address": "string",
+        "memo": "optional:string",
+    },
+    "ChainDestination": {
+        "asset": "string",
+        "network": "identifier:Network",
+        "address": "string",
+        "memo": "optional:string",
+    },
+    "ExchangeTransferRequest": {
+        "asset": "string",
+        "source_network": "optional:identifier:Network",
+        "destination_network": "optional:identifier:Network",
+        "amount": "decimal",
+    },
+    "ChainTransferRequest": {
+        "asset": "string",
+        "source_network": "optional:identifier:Network",
+        "destination": "named:ChainDestination",
+        "amount": "decimal",
+    },
+    "WithdrawalQuote": {
+        "fee": "optional:decimal",
+        "expected_receive": "optional:decimal",
+        "minimum_amount": "optional:decimal",
+        "maximum_amount": "optional:decimal",
+        "address_allowed": "optional:boolean",
+        "travel_rule": "named:TravelRuleRequirement",
+        "expires_at": "optional:timestamp",
+    },
+    "TransferPlan": {
+        "source": "identifier:Exchange",
+        "destination": "optional:identifier:Exchange",
+        "request": "named:WithdrawRequest",
+        "quote": "named:WithdrawalQuote",
+        "created_at": "timestamp",
+        "expires_at": "timestamp",
+    },
+    "Withdrawal": {
+        "id": "string",
+        "asset": "string",
+        "network": "optional:identifier:Network",
+        "provider_network": "optional:string",
+        "amount": "decimal",
+        "fee": "optional:decimal",
+        "destination": "optional:named:TransferDestination",
+        "status": "identifier:WithdrawalStatus",
+        "provider_status": "string",
+        "tx_id": "optional:string",
+        "created_at": "optional:timestamp",
+    },
+    "Deposit": {
+        "id": "string",
+        "asset": "string",
+        "network": "optional:identifier:Network",
+        "provider_network": "optional:string",
+        "amount": "decimal",
+        "address": "optional:string",
+        "memo": "optional:string",
+        "status": "identifier:DepositStatus",
+        "provider_status": "string",
+        "tx_id": "optional:string",
+        "created_at": "optional:timestamp",
+    },
     "Order": {
         "id": "string",
         "market": "named:Market",
@@ -116,6 +203,24 @@ RECORD_FIELDS = {
         "price": "optional:decimal",
         "time_in_force": "optional:identifier:TimeInForce",
         "reduce_only": "boolean",
+    },
+    "DepositAddressRequest": {
+        "asset": "string",
+        "network": "identifier:Network",
+        "amount": "optional:decimal",
+    },
+    "WithdrawRequest": {
+        "asset": "string",
+        "network": "identifier:Network",
+        "amount": "decimal",
+        "destination": "named:TransferDestination",
+        "client_id": "optional:string",
+    },
+    "TransferHistoryRequest": {
+        "asset": "optional:string",
+        "network": "optional:identifier:Network",
+        "cursor": "optional:string",
+        "limit": "optional:number",
     },
     "StreamConfig": {
         "max_reconnect_attempts": "optional:number",
@@ -228,6 +333,31 @@ UNION_FIELDS = {
             "value": "decimal",
         },
     },
+    "WithdrawalFee": {
+        "fixed": {
+            "value": "decimal",
+        },
+        "rate": {
+            "rate": "decimal",
+            "minimum": "optional:decimal",
+            "maximum": "optional:decimal",
+        },
+    },
+    "TransferDestination": {
+        "exchange": {
+            "value": "named:ExchangeDestination",
+        },
+        "chain": {
+            "value": "named:ChainDestination",
+        },
+    },
+    "TravelRuleRequirement": {
+        "not_required": {
+        },
+        "required": {
+            "consent_url": "optional:string",
+        },
+    },
     "Feed": {
         "trades": {
         },
@@ -286,6 +416,10 @@ UNION_FIELDS = {
             "field": "string",
             "detail": "string",
         },
+        "transfer": {
+            "transfer_kind": "identifier:TransferErrorKind",
+            "detail": "string",
+        },
         "unsupported": {
             "feature": "string",
             "exchange": "string",
@@ -335,6 +469,24 @@ UNION_FIELDS = {
             "config": "named:StreamConfig",
         },
         "balances": {
+        },
+        "asset_networks": {
+            "asset": "string",
+        },
+        "deposit_address": {
+            "request": "named:DepositAddressRequest",
+        },
+        "prepare_withdrawal": {
+            "request": "named:WithdrawRequest",
+        },
+        "withdraw": {
+            "request": "named:WithdrawRequest",
+        },
+        "deposits": {
+            "request": "named:TransferHistoryRequest",
+        },
+        "withdrawals": {
+            "request": "named:TransferHistoryRequest",
         },
         "open_orders": {
             "market": "optional:named:Market",
@@ -387,6 +539,24 @@ UNION_FIELDS = {
         "balances": {
             "value": "list:named:Balance",
         },
+        "asset_networks": {
+            "value": "list:named:AssetNetwork",
+        },
+        "deposit_address": {
+            "value": "named:DepositAddress",
+        },
+        "withdrawal_quote": {
+            "value": "named:WithdrawalQuote",
+        },
+        "withdrawal": {
+            "value": "named:Withdrawal",
+        },
+        "deposits": {
+            "value": "named:PageWire<DepositWire>",
+        },
+        "withdrawals": {
+            "value": "named:PageWire<WithdrawalWire>",
+        },
         "open_orders": {
             "value": "list:named:Order",
         },
@@ -418,7 +588,7 @@ UNION_FIELDS = {
 
 IDENTIFIER_VARIANTS = {
     "Exchange": ("upbit", "bithumb", "binance", "hyperliquid",),
-    "Feature": ("markets", "trades", "order_book", "ticker", "candles", "trade_stream", "order_book_stream", "ticker_stream", "candle_stream", "balances", "open_orders", "account_stream", "trading", "positions", "margin", "funding_rates", "funding_payments", "margin_config", "reduce_only_orders",),
+    "Feature": ("markets", "trades", "order_book", "ticker", "candles", "trade_stream", "order_book_stream", "ticker_stream", "candle_stream", "balances", "asset_networks", "deposit_addresses", "deposit_history", "withdrawal_quotes", "withdrawals", "withdrawal_history", "open_orders", "account_stream", "trading", "positions", "margin", "funding_rates", "funding_payments", "margin_config", "reduce_only_orders",),
     "MarketKind": ("spot", "perpetual",),
     "MarketStatus": ("active", "paused", "delisted", "unknown",),
     "Side": ("buy", "sell",),
@@ -434,6 +604,10 @@ IDENTIFIER_VARIANTS = {
     "BinanceMarket": ("spot", "usd_m",),
     "HyperliquidLedgerKind": ("deposit", "withdraw", "internal_transfer", "sub_account_transfer", "spot_transfer", "account_class_transfer", "vault_deposit", "vault_withdraw", "vault_distribution", "liquidation",),
     "ExchangeErrorKind": ("rejected", "rate_limited", "unavailable", "unknown",),
+    "Network": ("bitcoin", "ethereum", "arbitrum", "bnb_smart_chain", "tron", "solana", "polygon", "base", "optimism", "avalanche_c", "xrp_ledger", "stellar", "cosmos", "aptos", "sui", "ton", "near", "polkadot",),
+    "WithdrawalStatus": ("pending", "processing", "completed", "cancelled", "failed", "unknown",),
+    "DepositStatus": ("pending", "completed", "failed", "unknown",),
+    "TransferErrorKind": ("asset_mismatch", "network_mismatch", "ambiguous_network", "network_unavailable", "memo_required", "destination_unavailable", "address_not_allowed", "travel_rule_required", "amount_out_of_range", "plan_expired",),
 }
 
 ERROR_FIELDS = UNION_FIELDS["Error"]

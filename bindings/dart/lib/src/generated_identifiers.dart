@@ -22,6 +22,12 @@ enum Feature {
   tickerStream,
   candleStream,
   balances,
+  assetNetworks,
+  depositAddresses,
+  depositHistory,
+  withdrawalQuotes,
+  withdrawals,
+  withdrawalHistory,
   openOrders,
   accountStream,
   trading,
@@ -45,6 +51,12 @@ extension FeatureWireName on Feature {
     Feature.tickerStream => 'ticker_stream',
     Feature.candleStream => 'candle_stream',
     Feature.balances => 'balances',
+    Feature.assetNetworks => 'asset_networks',
+    Feature.depositAddresses => 'deposit_addresses',
+    Feature.depositHistory => 'deposit_history',
+    Feature.withdrawalQuotes => 'withdrawal_quotes',
+    Feature.withdrawals => 'withdrawals',
+    Feature.withdrawalHistory => 'withdrawal_history',
     Feature.openOrders => 'open_orders',
     Feature.accountStream => 'account_stream',
     Feature.trading => 'trading',
@@ -229,17 +241,19 @@ final class HyperliquidLedgerKind {
 
   static const deposit = HyperliquidLedgerKind._('deposit');
   static const withdraw = HyperliquidLedgerKind._('withdraw');
-  static const internalTransfer = HyperliquidLedgerKind._('internalTransfer');
+  static const internalTransfer = HyperliquidLedgerKind._('internal_transfer');
   static const subAccountTransfer = HyperliquidLedgerKind._(
-    'subAccountTransfer',
+    'sub_account_transfer',
   );
-  static const spotTransfer = HyperliquidLedgerKind._('spotTransfer');
+  static const spotTransfer = HyperliquidLedgerKind._('spot_transfer');
   static const accountClassTransfer = HyperliquidLedgerKind._(
-    'accountClassTransfer',
+    'account_class_transfer',
   );
-  static const vaultDeposit = HyperliquidLedgerKind._('vaultDeposit');
-  static const vaultWithdraw = HyperliquidLedgerKind._('vaultWithdraw');
-  static const vaultDistribution = HyperliquidLedgerKind._('vaultDistribution');
+  static const vaultDeposit = HyperliquidLedgerKind._('vault_deposit');
+  static const vaultWithdraw = HyperliquidLedgerKind._('vault_withdraw');
+  static const vaultDistribution = HyperliquidLedgerKind._(
+    'vault_distribution',
+  );
   static const liquidation = HyperliquidLedgerKind._('liquidation');
 
   factory HyperliquidLedgerKind.other(String providerName) =>
@@ -271,5 +285,106 @@ extension ExchangeErrorKindWireName on ExchangeErrorKind {
     ExchangeErrorKind.rateLimited => 'rate_limited',
     ExchangeErrorKind.unavailable => 'unavailable',
     ExchangeErrorKind.unknown => 'unknown',
+  };
+}
+
+final class Network {
+  const Network._(this.providerName, [this._isOther = false]);
+
+  static const bitcoin = Network._('bitcoin');
+  static const ethereum = Network._('ethereum');
+  static const arbitrum = Network._('arbitrum');
+  static const bnbSmartChain = Network._('bnb_smart_chain');
+  static const tron = Network._('tron');
+  static const solana = Network._('solana');
+  static const polygon = Network._('polygon');
+  static const base = Network._('base');
+  static const optimism = Network._('optimism');
+  static const avalancheC = Network._('avalanche_c');
+  static const xrpLedger = Network._('xrp_ledger');
+  static const stellar = Network._('stellar');
+  static const cosmos = Network._('cosmos');
+  static const aptos = Network._('aptos');
+  static const sui = Network._('sui');
+  static const ton = Network._('ton');
+  static const near = Network._('near');
+  static const polkadot = Network._('polkadot');
+
+  factory Network.other(String providerName) => Network._(providerName, true);
+
+  final String providerName;
+  final bool _isOther;
+
+  bool get isOther => _isOther;
+
+  @override
+  bool operator ==(Object other) =>
+      other is Network &&
+      _isOther == other._isOther &&
+      providerName == other.providerName;
+
+  @override
+  int get hashCode => Object.hash(_isOther, providerName);
+
+  @override
+  String toString() => providerName;
+}
+
+enum WithdrawalStatus {
+  pending,
+  processing,
+  completed,
+  cancelled,
+  failed,
+  unknown,
+}
+
+extension WithdrawalStatusWireName on WithdrawalStatus {
+  String get wireName => switch (this) {
+    WithdrawalStatus.pending => 'pending',
+    WithdrawalStatus.processing => 'processing',
+    WithdrawalStatus.completed => 'completed',
+    WithdrawalStatus.cancelled => 'cancelled',
+    WithdrawalStatus.failed => 'failed',
+    WithdrawalStatus.unknown => 'unknown',
+  };
+}
+
+enum DepositStatus { pending, completed, failed, unknown }
+
+extension DepositStatusWireName on DepositStatus {
+  String get wireName => switch (this) {
+    DepositStatus.pending => 'pending',
+    DepositStatus.completed => 'completed',
+    DepositStatus.failed => 'failed',
+    DepositStatus.unknown => 'unknown',
+  };
+}
+
+enum TransferErrorKind {
+  assetMismatch,
+  networkMismatch,
+  ambiguousNetwork,
+  networkUnavailable,
+  memoRequired,
+  destinationUnavailable,
+  addressNotAllowed,
+  travelRuleRequired,
+  amountOutOfRange,
+  planExpired,
+}
+
+extension TransferErrorKindWireName on TransferErrorKind {
+  String get wireName => switch (this) {
+    TransferErrorKind.assetMismatch => 'asset_mismatch',
+    TransferErrorKind.networkMismatch => 'network_mismatch',
+    TransferErrorKind.ambiguousNetwork => 'ambiguous_network',
+    TransferErrorKind.networkUnavailable => 'network_unavailable',
+    TransferErrorKind.memoRequired => 'memo_required',
+    TransferErrorKind.destinationUnavailable => 'destination_unavailable',
+    TransferErrorKind.addressNotAllowed => 'address_not_allowed',
+    TransferErrorKind.travelRuleRequired => 'travel_rule_required',
+    TransferErrorKind.amountOutOfRange => 'amount_out_of_range',
+    TransferErrorKind.planExpired => 'plan_expired',
   };
 }

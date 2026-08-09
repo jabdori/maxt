@@ -2,10 +2,11 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use maxt::{
-    AccountStream, Adapter, Balance, BoxFuture, Candle, CandleRequest, Exchange, Feature,
-    FundingPayment, FundingRate, HistoryRequest, MarginRequest, MarginSummary, Market, MarketInfo,
-    MarketKind, MarketStream, Order, OrderBook, OrderRequest, Page, Position, Result, StreamConfig,
-    Subscription, Ticker, Trade,
+    AccountStream, Adapter, AssetNetwork, Balance, BoxFuture, Candle, CandleRequest, Deposit,
+    DepositAddress, DepositAddressRequest, Exchange, Feature, FundingPayment, FundingRate,
+    HistoryRequest, MarginRequest, MarginSummary, Market, MarketInfo, MarketKind, MarketStream,
+    Order, OrderBook, OrderRequest, Page, Position, Result, StreamConfig, Subscription, Ticker,
+    Trade, TransferHistoryRequest, WithdrawRequest, Withdrawal, WithdrawalQuote,
 };
 
 use crate::{AdapterCall, AdapterReply, ForeignDispatcher};
@@ -140,6 +141,81 @@ impl Adapter for ForeignAdapter {
             AdapterCall::Balances,
             AdapterReply::Balances,
             "Balances"
+        )
+    }
+
+    fn asset_networks(&self, asset: &str) -> BoxFuture<'_, Result<Vec<AssetNetwork>>> {
+        dispatch!(
+            self,
+            AdapterCall::AssetNetworks {
+                asset: asset.to_owned(),
+            },
+            AdapterReply::AssetNetworks,
+            "AssetNetworks"
+        )
+    }
+
+    fn deposit_address(
+        &self,
+        request: &DepositAddressRequest,
+    ) -> BoxFuture<'_, Result<DepositAddress>> {
+        dispatch!(
+            self,
+            AdapterCall::DepositAddress {
+                request: request.clone(),
+            },
+            AdapterReply::DepositAddress,
+            "DepositAddress"
+        )
+    }
+
+    fn prepare_withdrawal(
+        &self,
+        request: &WithdrawRequest,
+    ) -> BoxFuture<'_, Result<WithdrawalQuote>> {
+        dispatch!(
+            self,
+            AdapterCall::PrepareWithdrawal {
+                request: request.clone(),
+            },
+            AdapterReply::WithdrawalQuote,
+            "WithdrawalQuote"
+        )
+    }
+
+    fn withdraw(&self, request: &WithdrawRequest) -> BoxFuture<'_, Result<Withdrawal>> {
+        dispatch!(
+            self,
+            AdapterCall::Withdraw {
+                request: request.clone(),
+            },
+            AdapterReply::Withdrawal,
+            "Withdrawal"
+        )
+    }
+
+    fn deposits(&self, request: &TransferHistoryRequest) -> BoxFuture<'_, Result<Page<Deposit>>> {
+        dispatch!(
+            self,
+            AdapterCall::Deposits {
+                request: request.clone(),
+            },
+            AdapterReply::Deposits,
+            "Deposits"
+        )
+    }
+
+    fn withdrawals(
+        &self,
+        request: &TransferHistoryRequest,
+    ) -> BoxFuture<'_, Result<Page<Withdrawal>>> {
+        dispatch!(
+            self,
+            AdapterCall::Withdrawals {
+                request: request.clone(),
+            },
+            AdapterReply::Withdrawals,
+            "Withdrawals"
         )
     }
 

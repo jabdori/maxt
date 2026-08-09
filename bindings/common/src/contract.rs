@@ -1,8 +1,9 @@
 use maxt::{
-    AccountStream, Balance, BoxFuture, Candle, CandleRequest, FundingPayment, FundingRate,
-    HistoryRequest, MarginRequest, MarginSummary, Market, MarketInfo, MarketKind, MarketStream,
-    Order, OrderBook, OrderRequest, Page, Position, Result, StreamConfig, Subscription, Ticker,
-    Trade,
+    AccountStream, AssetNetwork, Balance, BoxFuture, Candle, CandleRequest, Deposit,
+    DepositAddress, DepositAddressRequest, FundingPayment, FundingRate, HistoryRequest,
+    MarginRequest, MarginSummary, Market, MarketInfo, MarketKind, MarketStream, Order, OrderBook,
+    OrderRequest, Page, Position, Result, StreamConfig, Subscription, Ticker, Trade,
+    TransferHistoryRequest, WithdrawRequest, Withdrawal, WithdrawalQuote,
 };
 
 /// An owned call across a language binding boundary.
@@ -47,6 +48,36 @@ pub enum AdapterCall {
     },
     /// Reads account balances.
     Balances,
+    /// Reads live asset-network rules.
+    AssetNetworks {
+        /// Asset symbol.
+        asset: String,
+    },
+    /// Reads one deposit address.
+    DepositAddress {
+        /// Complete address request.
+        request: DepositAddressRequest,
+    },
+    /// Checks one withdrawal without submitting it.
+    PrepareWithdrawal {
+        /// Complete withdrawal request.
+        request: WithdrawRequest,
+    },
+    /// Submits one withdrawal.
+    Withdraw {
+        /// Complete withdrawal request.
+        request: WithdrawRequest,
+    },
+    /// Reads deposit history.
+    Deposits {
+        /// Complete history request.
+        request: TransferHistoryRequest,
+    },
+    /// Reads withdrawal history.
+    Withdrawals {
+        /// Complete history request.
+        request: TransferHistoryRequest,
+    },
     /// Reads open orders, optionally for one market.
     OpenOrders {
         /// The optional market filter.
@@ -111,6 +142,18 @@ pub enum AdapterReply {
     MarketStream(MarketStream),
     /// Result of [`AdapterCall::Balances`].
     Balances(Vec<Balance>),
+    /// Result of [`AdapterCall::AssetNetworks`].
+    AssetNetworks(Vec<AssetNetwork>),
+    /// Result of [`AdapterCall::DepositAddress`].
+    DepositAddress(DepositAddress),
+    /// Result of [`AdapterCall::PrepareWithdrawal`].
+    WithdrawalQuote(WithdrawalQuote),
+    /// Result of [`AdapterCall::Withdraw`].
+    Withdrawal(Withdrawal),
+    /// Result of [`AdapterCall::Deposits`].
+    Deposits(Page<Deposit>),
+    /// Result of [`AdapterCall::Withdrawals`].
+    Withdrawals(Page<Withdrawal>),
     /// Result of [`AdapterCall::OpenOrders`].
     OpenOrders(Vec<Order>),
     /// Result of [`AdapterCall::SubscribeAccount`].
@@ -147,6 +190,12 @@ impl AdapterReply {
             Self::Candles(_) => "Candles",
             Self::MarketStream(_) => "MarketStream",
             Self::Balances(_) => "Balances",
+            Self::AssetNetworks(_) => "AssetNetworks",
+            Self::DepositAddress(_) => "DepositAddress",
+            Self::WithdrawalQuote(_) => "WithdrawalQuote",
+            Self::Withdrawal(_) => "Withdrawal",
+            Self::Deposits(_) => "Deposits",
+            Self::Withdrawals(_) => "Withdrawals",
             Self::OpenOrders(_) => "OpenOrders",
             Self::AccountStream(_) => "AccountStream",
             Self::PlaceOrder(_) => "PlaceOrder",

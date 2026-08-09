@@ -4,25 +4,32 @@ mod parse;
 mod private;
 mod rest;
 mod stream;
+mod wallet;
 
 use std::sync::OnceLock;
 
 use crate::adapter::{Adapter, BoxFuture};
 use crate::error::{Error, Result};
 use crate::feature::Feature;
-use crate::request::{CandleRequest, HistoryRequest, MarginRequest, OrderRequest};
+use crate::request::{
+    CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest, OrderRequest,
+    TransferHistoryRequest, WithdrawRequest,
+};
 use crate::stream::{AccountStream, MarketStream};
 use crate::transport::{HttpRequest, HttpTransport};
 use crate::types::{
-    Balance, Candle, Cursor, Exchange, FundingPayment, FundingRate, Interval, MarginSummary,
-    Market, MarketInfo, MarketKind, MarketStatus, Order, OrderBook, Page, Position, StreamConfig,
-    Subscription, Ticker, Timestamp, Trade,
+    AssetNetwork, Balance, Candle, Cursor, Deposit, DepositAddress, Exchange, FundingPayment,
+    FundingRate, Interval, MarginSummary, Market, MarketInfo, MarketKind, MarketStatus, Order,
+    OrderBook, Page, Position, StreamConfig, Subscription, Ticker, Timestamp, Trade, Withdrawal,
+    WithdrawalQuote,
 };
 
 pub use private::{BinanceListenKey, BinanceSpotOrderDetail};
 pub use rest::BinanceSymbolFilters;
 
 pub(crate) const SPOT_REST_BASE_URL: &str = "https://api.binance.com";
+/// Wallet SAPI is account-wide and always lives on the Spot API host.
+pub(crate) const WALLET_REST_BASE_URL: &str = SPOT_REST_BASE_URL;
 pub(crate) const SPOT_WEBSOCKET_URL: &str = "wss://stream.binance.com:9443/stream";
 /// The Spot WebSocket API used for signed account subscriptions.
 pub(crate) const SPOT_WEBSOCKET_API_URL: &str = "wss://ws-api.binance.com:443/ws-api/v3";
@@ -117,6 +124,8 @@ pub struct BinanceAdapter {
     /// Built on first use so the constructors stay infallible, and shared from
     /// then on so connections are reused across calls.
     http: OnceLock<HttpTransport>,
+    /// Wallet SAPI never follows the selected trading venue to `fapi.binance.com`.
+    wallet_http: OnceLock<HttpTransport>,
 }
 
 #[derive(Debug, Clone)]
@@ -141,6 +150,7 @@ impl BinanceAdapter {
             venue,
             credentials: None,
             http: OnceLock::new(),
+            wallet_http: OnceLock::new(),
         }
     }
 
@@ -185,9 +195,27 @@ impl BinanceAdapter {
         Ok(self.http.get_or_init(|| transport))
     }
 
+    /// The account-wide Wallet SAPI transport.
+    pub(crate) fn wallet_http(&self) -> Result<&HttpTransport> {
+        if let Some(transport) = self.wallet_http.get() {
+            return Ok(transport);
+        }
+        let transport = HttpTransport::new(WALLET_REST_BASE_URL)?;
+        Ok(self.wallet_http.get_or_init(|| transport))
+    }
+
     /// Sends a request and returns the body, or Binance's own verdict.
     pub(crate) async fn send(&self, request: HttpRequest) -> Result<String> {
         let response = self.http()?.send(&request).await?;
+        if response.is_success() {
+            return Ok(response.body);
+        }
+        Err(exchange_error(response.status, &response.body))
+    }
+
+    /// Sends one Wallet SAPI request without automatic retry.
+    pub(crate) async fn send_wallet(&self, request: HttpRequest) -> Result<String> {
+        let response = self.wallet_http()?.send(&request).await?;
         if response.is_success() {
             return Ok(response.body);
         }
@@ -413,6 +441,9 @@ impl Adapter for BinanceAdapter {
     }
 
     fn supports(&self, feature: Feature) -> bool {
+        if wallet::is_wallet_feature(feature) && self.venue != BinanceMarket::Spot {
+            return false;
+        }
         if feature.is_derivatives_only() && self.venue == BinanceMarket::Spot {
             return false;
         }
@@ -463,6 +494,45 @@ impl Adapter for BinanceAdapter {
 
     fn balances(&self) -> BoxFuture<'_, Result<Vec<Balance>>> {
         Box::pin(async move { private::balances(self).await })
+    }
+
+    fn asset_networks(&self, asset: &str) -> BoxFuture<'_, Result<Vec<AssetNetwork>>> {
+        let asset = asset.to_string();
+        Box::pin(async move { wallet::asset_networks(self, &asset).await })
+    }
+
+    fn deposit_address(
+        &self,
+        request: &DepositAddressRequest,
+    ) -> BoxFuture<'_, Result<DepositAddress>> {
+        let request = request.clone();
+        Box::pin(async move { wallet::deposit_address(self, &request).await })
+    }
+
+    fn prepare_withdrawal(
+        &self,
+        request: &WithdrawRequest,
+    ) -> BoxFuture<'_, Result<WithdrawalQuote>> {
+        let request = request.clone();
+        Box::pin(async move { wallet::prepare_withdrawal(self, &request).await })
+    }
+
+    fn withdraw(&self, request: &WithdrawRequest) -> BoxFuture<'_, Result<Withdrawal>> {
+        let request = request.clone();
+        Box::pin(async move { wallet::withdraw(self, &request).await })
+    }
+
+    fn deposits(&self, request: &TransferHistoryRequest) -> BoxFuture<'_, Result<Page<Deposit>>> {
+        let request = request.clone();
+        Box::pin(async move { wallet::deposits(self, &request).await })
+    }
+
+    fn withdrawals(
+        &self,
+        request: &TransferHistoryRequest,
+    ) -> BoxFuture<'_, Result<Page<Withdrawal>>> {
+        let request = request.clone();
+        Box::pin(async move { wallet::withdrawals(self, &request).await })
     }
 
     fn open_orders(&self, market: Option<&Market>) -> BoxFuture<'_, Result<Vec<Order>>> {

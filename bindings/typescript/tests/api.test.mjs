@@ -8,6 +8,8 @@ import {
   ExchangeErrorKind,
   InvalidRequestError,
   MaxtError,
+  TransferError,
+  TransferErrorKind,
   TransportError,
   UnsupportedError,
   errorFromWire,
@@ -46,9 +48,10 @@ test("exchange errors preserve every provider field", () => {
   });
 });
 
-test("all seven structured errors round-trip without losing fields", () => {
+test("all eight structured errors round-trip without losing fields", () => {
   const wires = [
     { kind: "invalid_request", field: "limit", detail: "must be positive" },
+    { kind: "transfer", transfer_kind: "network_mismatch", detail: "chains differ" },
     { kind: "unsupported", feature: "candles", exchange: "upbit", detail: "not mapped" },
     { kind: "adapter", detail: "contract failed" },
     { kind: "auth", detail: "missing secret" },
@@ -68,6 +71,7 @@ test("all seven structured errors round-trip without losing fields", () => {
   assert.deepEqual(errors.map(errorToWire), wires);
   assert.deepEqual(errors.map((error) => error.name), [
     "InvalidRequestError",
+    "TransferError",
     "UnsupportedError",
     "AdapterError",
     "AuthError",
@@ -75,8 +79,9 @@ test("all seven structured errors round-trip without losing fields", () => {
     "TransportError",
     "DecodeError",
   ]);
-  assert.deepEqual(errors.map((error) => error.isRetryable()), [false, false, false, false, true, true, false]);
-  assert.deepEqual(errors.map((error) => error.isRateLimited()), [false, false, false, false, false, false, false]);
+  assert.deepEqual(errors.map((error) => error.isRetryable()), [false, false, false, false, false, true, true, false]);
+  assert.deepEqual(errors.map((error) => error.isRateLimited()), [false, false, false, false, false, false, false, false]);
+  assert.equal(errors[1].transferKind, TransferErrorKind.NetworkMismatch);
 });
 
 test("arbitrary JavaScript adapter exceptions preserve their stack", () => {
@@ -139,6 +144,7 @@ test("hostile adapter failures always become a safe adapter wire error", () => {
 test("public error names stay stable through derived constructor names", () => {
   const errors = [
     new (class A extends InvalidRequestError {})("field", "detail"),
+    new (class T extends TransferError {})(TransferErrorKind.PlanExpired, "detail"),
     new (class B extends UnsupportedError {})(Feature.Candles, Exchange.Upbit, "detail"),
     new (class C extends AdapterError {})("detail"),
     new (class D extends AuthError {})("detail"),
@@ -155,6 +161,7 @@ test("public error names stay stable through derived constructor names", () => {
 
   assert.deepEqual(errors.map((error) => error.name), [
     "InvalidRequestError",
+    "TransferError",
     "UnsupportedError",
     "AdapterError",
     "AuthError",

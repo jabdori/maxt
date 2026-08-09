@@ -22,6 +22,33 @@ const order = {
   price: null,
   created_at: null,
 };
+const depositAddressRequest = {
+  asset: "BTC",
+  network: "bitcoin",
+  amount: null,
+};
+const transferDestination = {
+  kind: "chain",
+  value: {
+    asset: "BTC",
+    network: "bitcoin",
+    address: "bc1qdestination",
+    memo: null,
+  },
+};
+const withdrawRequest = {
+  asset: "BTC",
+  network: "bitcoin",
+  amount: "1.00",
+  destination: transferDestination,
+  client_id: "client-1",
+};
+const transferHistory = {
+  asset: null,
+  network: null,
+  cursor: null,
+  limit: null,
+};
 const ok = (value) => JSON.stringify({ ok: true, value });
 const nativeValue = async (promise) => {
   const result = await promise;
@@ -43,7 +70,9 @@ test("custom client dispatches every Adapter operation and owns stream cleanup",
   const dispatch = async (text) => {
     const call = JSON.parse(text);
     calls.push(call);
-    const empty = ["markets", "trades", "candles", "balances", "open_orders", "positions"];
+    const empty = [
+      "markets", "trades", "candles", "balances", "asset_networks", "open_orders", "positions",
+    ];
     if (empty.includes(call.kind)) return ok({ kind: call.kind, value: [] });
     switch (call.kind) {
       case "order_book":
@@ -71,6 +100,50 @@ test("custom client dispatches every Adapter operation and owns stream cleanup",
         return ok({ kind: "market_stream", stream_id: call.stream_id });
       case "subscribe_account":
         return ok({ kind: "account_stream", stream_id: call.stream_id });
+      case "deposit_address":
+        return ok({
+          kind: "deposit_address",
+          value: {
+            exchange: "binance",
+            asset: call.request.asset,
+            network: call.request.network,
+            address: "bc1qdestination",
+            memo: null,
+          },
+        });
+      case "prepare_withdrawal":
+        return ok({
+          kind: "withdrawal_quote",
+          value: {
+            fee: "0.0001",
+            expected_receive: "0.9999",
+            minimum_amount: null,
+            maximum_amount: null,
+            address_allowed: true,
+            travel_rule: { kind: "not_required" },
+            expires_at: null,
+          },
+        });
+      case "withdraw":
+        return ok({
+          kind: "withdrawal",
+          value: {
+            id: "withdrawal-1",
+            asset: call.request.asset,
+            network: call.request.network,
+            provider_network: "BTC",
+            amount: call.request.amount,
+            fee: "0.0001",
+            destination: call.request.destination,
+            status: "pending",
+            provider_status: "accepted",
+            tx_id: null,
+            created_at: null,
+          },
+        });
+      case "deposits":
+      case "withdrawals":
+        return ok({ kind: call.kind, value: { items: [], next: null } });
       case "place_order":
         return ok({ kind: "place_order", value: order });
       case "cancel_order":
@@ -126,6 +199,12 @@ test("custom client dispatches every Adapter operation and owns stream cleanup",
     limit: null,
   })));
   await nativeValue(client.balances());
+  await nativeValue(client.assetNetworks(JSON.stringify("BTC")));
+  await nativeValue(client.depositAddress(JSON.stringify(depositAddressRequest)));
+  await nativeValue(client.prepareWithdrawal(JSON.stringify(withdrawRequest)));
+  await nativeValue(client.withdraw(JSON.stringify(withdrawRequest)));
+  await nativeValue(client.deposits(JSON.stringify(transferHistory)));
+  await nativeValue(client.withdrawals(JSON.stringify(transferHistory)));
   await nativeValue(client.openOrders());
   await nativeValue(client.openOrdersOn(JSON.stringify(market)));
   await nativeValue(client.placeOrder(JSON.stringify({
@@ -168,9 +247,10 @@ test("custom client dispatches every Adapter operation and owns stream cleanup",
   assert.deepEqual(
     [...new Set(calls.map(({ kind }) => kind))].sort(),
     [
-      "balances", "cancel_order", "candles", "funding_payments", "funding_rates",
-      "margin_summary", "markets", "open_orders", "order_book", "place_order",
-      "positions", "set_margin", "subscribe", "subscribe_account", "ticker", "trades",
+      "asset_networks", "balances", "cancel_order", "candles", "deposit_address", "deposits",
+      "funding_payments", "funding_rates", "margin_summary", "markets", "open_orders",
+      "order_book", "place_order", "positions", "prepare_withdrawal", "set_margin", "subscribe",
+      "subscribe_account", "ticker", "trades", "withdraw", "withdrawals",
     ].sort(),
   );
   assert.deepEqual(streamCalls, ["1", "2"]);

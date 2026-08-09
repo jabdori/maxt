@@ -25,6 +25,10 @@ function unsignedInteger(value: string, field: string): number {
   return parsed;
 }
 
+function assertNever(value: never): never {
+  throw new InvalidRequestError("kind", `unknown tagged union variant: ${String(value)}`);
+}
+
 export function unwrapOutcome<T>(outcome: NativeOutcome<T>): T {
   if (!outcome.ok) throw errorFromWire(outcome.error);
   return outcome.value;
@@ -143,6 +147,211 @@ export function balanceToWire(value: Model.Balance): Wire.BalanceWire {
     asset: value.asset,
     available: value.available.toString(),
     locked: value.locked.toString(),
+  };
+}
+
+export function assetNetworkFromWire(value: Wire.AssetNetworkWire): Model.AssetNetwork {
+  return new Model.AssetNetwork(identifier(Model.Exchange.values, value.exchange, "exchange"), value.asset, Model.Network.other(value.network), value.provider_id, value.deposit_enabled, value.withdrawal_enabled, value.withdrawal_fee === null ? null : withdrawalFeeFromWire(value.withdrawal_fee), value.minimum_withdrawal === null ? null : Model.Decimal.parse(value.minimum_withdrawal), value.maximum_withdrawal === null ? null : Model.Decimal.parse(value.maximum_withdrawal), value.memo_required);
+}
+
+export function assetNetworkToWire(value: Model.AssetNetwork): Wire.AssetNetworkWire {
+  return {
+    exchange: value.exchange.id,
+    asset: value.asset,
+    network: value.network.id,
+    provider_id: value.providerId,
+    deposit_enabled: value.depositEnabled,
+    withdrawal_enabled: value.withdrawalEnabled,
+    withdrawal_fee: value.withdrawalFee === null ? null : withdrawalFeeToWire(value.withdrawalFee),
+    minimum_withdrawal: value.minimumWithdrawal === null ? null : value.minimumWithdrawal.toString(),
+    maximum_withdrawal: value.maximumWithdrawal === null ? null : value.maximumWithdrawal.toString(),
+    memo_required: value.memoRequired,
+  };
+}
+
+export function depositAddressFromWire(value: Wire.DepositAddressWire): Model.DepositAddress {
+  return new Model.DepositAddress(identifier(Model.Exchange.values, value.exchange, "exchange"), value.asset, Model.Network.other(value.network), value.address === null ? null : value.address, value.memo === null ? null : value.memo);
+}
+
+export function depositAddressToWire(value: Model.DepositAddress): Wire.DepositAddressWire {
+  return {
+    exchange: value.exchange.id,
+    asset: value.asset,
+    network: value.network.id,
+    address: value.address === null ? null : value.address,
+    memo: value.memo === null ? null : value.memo,
+  };
+}
+
+export function exchangeDestinationFromWire(value: Wire.ExchangeDestinationWire): Model.ExchangeDestination {
+  return new Model.ExchangeDestination(identifier(Model.Exchange.values, value.exchange, "exchange"), value.asset, Model.Network.other(value.network), value.address, value.memo === null ? null : value.memo);
+}
+
+export function exchangeDestinationToWire(value: Model.ExchangeDestination): Wire.ExchangeDestinationWire {
+  return {
+    exchange: value.exchange.id,
+    asset: value.asset,
+    network: value.network.id,
+    address: value.address,
+    memo: value.memo === null ? null : value.memo,
+  };
+}
+
+export function chainDestinationFromWire(value: Wire.ChainDestinationWire): Model.ChainDestination {
+  return new Model.ChainDestination(value.asset, Model.Network.other(value.network), value.address, value.memo === null ? null : value.memo);
+}
+
+export function chainDestinationToWire(value: Model.ChainDestination): Wire.ChainDestinationWire {
+  return {
+    asset: value.asset,
+    network: value.network.id,
+    address: value.address,
+    memo: value.memo === null ? null : value.memo,
+  };
+}
+
+export function exchangeTransferRequestFromWire(value: Wire.ExchangeTransferRequestWire): Model.ExchangeTransferRequest {
+  return new Model.ExchangeTransferRequest(value.asset, value.source_network === null ? null : Model.Network.other(value.source_network), value.destination_network === null ? null : Model.Network.other(value.destination_network), Model.Decimal.parse(value.amount));
+}
+
+export function exchangeTransferRequestToWire(value: Model.ExchangeTransferRequest): Wire.ExchangeTransferRequestWire {
+  return {
+    asset: value.asset,
+    source_network: value.sourceNetwork === null ? null : value.sourceNetwork.id,
+    destination_network: value.destinationNetwork === null ? null : value.destinationNetwork.id,
+    amount: value.amount.toString(),
+  };
+}
+
+export function chainTransferRequestFromWire(value: Wire.ChainTransferRequestWire): Model.ChainTransferRequest {
+  return new Model.ChainTransferRequest(value.asset, value.source_network === null ? null : Model.Network.other(value.source_network), chainDestinationFromWire(value.destination), Model.Decimal.parse(value.amount));
+}
+
+export function chainTransferRequestToWire(value: Model.ChainTransferRequest): Wire.ChainTransferRequestWire {
+  return {
+    asset: value.asset,
+    source_network: value.sourceNetwork === null ? null : value.sourceNetwork.id,
+    destination: chainDestinationToWire(value.destination),
+    amount: value.amount.toString(),
+  };
+}
+
+export function transferDestinationFromWire(value: Wire.TransferDestinationWire): Model.TransferDestination {
+  switch (value.kind) {
+    case "exchange": return Object.freeze({ kind: "exchange", value: exchangeDestinationFromWire(value.value) });
+    case "chain": return Object.freeze({ kind: "chain", value: chainDestinationFromWire(value.value) });
+  }
+  return assertNever(value);
+}
+
+export function transferDestinationToWire(value: Model.TransferDestination): Wire.TransferDestinationWire {
+  switch (value.kind) {
+    case "exchange": return { kind: "exchange", value: exchangeDestinationToWire(value.value) };
+    case "chain": return { kind: "chain", value: chainDestinationToWire(value.value) };
+  }
+  return assertNever(value);
+}
+
+export function withdrawalFeeFromWire(value: Wire.WithdrawalFeeWire): Model.WithdrawalFee {
+  switch (value.kind) {
+    case "fixed": return Object.freeze({ kind: "fixed", value: Model.Decimal.parse(value.value) });
+    case "rate": return Object.freeze({ kind: "rate", rate: Model.Decimal.parse(value.rate), minimum: value.minimum === null ? null : Model.Decimal.parse(value.minimum), maximum: value.maximum === null ? null : Model.Decimal.parse(value.maximum) });
+  }
+  return assertNever(value);
+}
+
+export function withdrawalFeeToWire(value: Model.WithdrawalFee): Wire.WithdrawalFeeWire {
+  switch (value.kind) {
+    case "fixed": return { kind: "fixed", value: value.value.toString() };
+    case "rate": return { kind: "rate", rate: value.rate.toString(), minimum: value.minimum === null ? null : value.minimum.toString(), maximum: value.maximum === null ? null : value.maximum.toString() };
+  }
+  return assertNever(value);
+}
+
+export function travelRuleRequirementFromWire(value: Wire.TravelRuleRequirementWire): Model.TravelRuleRequirement {
+  switch (value.kind) {
+    case "not_required": return Object.freeze({ kind: "not_required" });
+    case "required": return Object.freeze({ kind: "required", consentUrl: value.consent_url === null ? null : value.consent_url });
+  }
+  return assertNever(value);
+}
+
+export function travelRuleRequirementToWire(value: Model.TravelRuleRequirement): Wire.TravelRuleRequirementWire {
+  switch (value.kind) {
+    case "not_required": return { kind: "not_required" };
+    case "required": return { kind: "required", consent_url: value.consentUrl === null ? null : value.consentUrl };
+  }
+  return assertNever(value);
+}
+
+export function withdrawalQuoteFromWire(value: Wire.WithdrawalQuoteWire): Model.WithdrawalQuote {
+  return new Model.WithdrawalQuote(value.fee === null ? null : Model.Decimal.parse(value.fee), value.expected_receive === null ? null : Model.Decimal.parse(value.expected_receive), value.minimum_amount === null ? null : Model.Decimal.parse(value.minimum_amount), value.maximum_amount === null ? null : Model.Decimal.parse(value.maximum_amount), value.address_allowed === null ? null : value.address_allowed, travelRuleRequirementFromWire(value.travel_rule), value.expires_at === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.expires_at)));
+}
+
+export function withdrawalQuoteToWire(value: Model.WithdrawalQuote): Wire.WithdrawalQuoteWire {
+  return {
+    fee: value.fee === null ? null : value.fee.toString(),
+    expected_receive: value.expectedReceive === null ? null : value.expectedReceive.toString(),
+    minimum_amount: value.minimumAmount === null ? null : value.minimumAmount.toString(),
+    maximum_amount: value.maximumAmount === null ? null : value.maximumAmount.toString(),
+    address_allowed: value.addressAllowed === null ? null : value.addressAllowed,
+    travel_rule: travelRuleRequirementToWire(value.travelRule),
+    expires_at: value.expiresAt === null ? null : value.expiresAt.nanosecondsSinceEpoch.toString(),
+  };
+}
+
+export function transferPlanFromWire(value: Wire.TransferPlanWire): Model.TransferPlan {
+  return new Model.TransferPlan(identifier(Model.Exchange.values, value.source, "source"), value.destination === null ? null : identifier(Model.Exchange.values, value.destination, "destination"), withdrawRequestFromWire(value.request), withdrawalQuoteFromWire(value.quote), Model.Timestamp.fromNanoseconds(BigInt(value.created_at)), Model.Timestamp.fromNanoseconds(BigInt(value.expires_at)));
+}
+
+export function transferPlanToWire(value: Model.TransferPlan): Wire.TransferPlanWire {
+  return {
+    source: value.source.id,
+    destination: value.destination === null ? null : value.destination.id,
+    request: withdrawRequestToWire(value.request),
+    quote: withdrawalQuoteToWire(value.quote),
+    created_at: value.createdAt.nanosecondsSinceEpoch.toString(),
+    expires_at: value.expiresAt.nanosecondsSinceEpoch.toString(),
+  };
+}
+
+export function withdrawalFromWire(value: Wire.WithdrawalWire): Model.Withdrawal {
+  return new Model.Withdrawal(value.id, value.asset, value.network === null ? null : Model.Network.other(value.network), value.provider_network === null ? null : value.provider_network, Model.Decimal.parse(value.amount), value.fee === null ? null : Model.Decimal.parse(value.fee), value.destination === null ? null : transferDestinationFromWire(value.destination), identifier(Model.WithdrawalStatus.values, value.status, "status"), value.provider_status, value.tx_id === null ? null : value.tx_id, value.created_at === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.created_at)));
+}
+
+export function withdrawalToWire(value: Model.Withdrawal): Wire.WithdrawalWire {
+  return {
+    id: value.id,
+    asset: value.asset,
+    network: value.network === null ? null : value.network.id,
+    provider_network: value.providerNetwork === null ? null : value.providerNetwork,
+    amount: value.amount.toString(),
+    fee: value.fee === null ? null : value.fee.toString(),
+    destination: value.destination === null ? null : transferDestinationToWire(value.destination),
+    status: value.status.id,
+    provider_status: value.providerStatus,
+    tx_id: value.txId === null ? null : value.txId,
+    created_at: value.createdAt === null ? null : value.createdAt.nanosecondsSinceEpoch.toString(),
+  };
+}
+
+export function depositFromWire(value: Wire.DepositWire): Model.Deposit {
+  return new Model.Deposit(value.id, value.asset, value.network === null ? null : Model.Network.other(value.network), value.provider_network === null ? null : value.provider_network, Model.Decimal.parse(value.amount), value.address === null ? null : value.address, value.memo === null ? null : value.memo, identifier(Model.DepositStatus.values, value.status, "status"), value.provider_status, value.tx_id === null ? null : value.tx_id, value.created_at === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.created_at)));
+}
+
+export function depositToWire(value: Model.Deposit): Wire.DepositWire {
+  return {
+    id: value.id,
+    asset: value.asset,
+    network: value.network === null ? null : value.network.id,
+    provider_network: value.providerNetwork === null ? null : value.providerNetwork,
+    amount: value.amount.toString(),
+    address: value.address === null ? null : value.address,
+    memo: value.memo === null ? null : value.memo,
+    status: value.status.id,
+    provider_status: value.providerStatus,
+    tx_id: value.txId === null ? null : value.txId,
+    created_at: value.createdAt === null ? null : value.createdAt.nanosecondsSinceEpoch.toString(),
   };
 }
 
@@ -265,6 +474,50 @@ export function orderRequestToWire(value: Model.OrderRequest): Wire.OrderRequest
     },
     price: value.price?.toString() ?? null, time_in_force: value.timeInForce?.id ?? null,
     reduce_only: value.reduceOnly,
+  };
+}
+
+export function depositAddressRequestFromWire(value: Wire.DepositAddressRequestWire): Model.DepositAddressRequest {
+  return new Model.DepositAddressRequest(value.asset, Model.Network.other(value.network), value.amount === null ? null : Model.Decimal.parse(value.amount));
+}
+
+export function depositAddressRequestToWire(value: Model.DepositAddressRequest): Wire.DepositAddressRequestWire {
+  return {
+    asset: value.asset,
+    network: value.network.id,
+    amount: value.amount === null ? null : value.amount.toString(),
+  };
+}
+
+export function withdrawRequestFromWire(value: Wire.WithdrawRequestWire): Model.WithdrawRequest {
+  return new Model.WithdrawRequest(value.asset, Model.Network.other(value.network), Model.Decimal.parse(value.amount), transferDestinationFromWire(value.destination), value.client_id === null ? null : value.client_id);
+}
+
+export function withdrawRequestToWire(value: Model.WithdrawRequest): Wire.WithdrawRequestWire {
+  return {
+    asset: value.asset,
+    network: value.network.id,
+    amount: value.amount.toString(),
+    destination: transferDestinationToWire(value.destination),
+    client_id: value.clientId === null ? null : value.clientId,
+  };
+}
+
+export function transferHistoryRequestFromWire(value: Wire.TransferHistoryRequestWire): Model.TransferHistoryRequest {
+  return new Model.TransferHistoryRequest(
+    value.asset,
+    value.network === null ? null : Model.Network.other(value.network),
+    value.cursor === null ? null : new Model.Cursor(value.cursor),
+    value.limit,
+  );
+}
+
+export function transferHistoryRequestToWire(value: Model.TransferHistoryRequest): Wire.TransferHistoryRequestWire {
+  return {
+    asset: value.asset,
+    network: value.network?.id ?? null,
+    cursor: value.cursor?.value ?? null,
+    limit: value.limit,
   };
 }
 

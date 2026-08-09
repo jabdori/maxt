@@ -30,6 +30,12 @@ export class Feature extends StringValue {
   static readonly TickerStream = new Feature("ticker_stream");
   static readonly CandleStream = new Feature("candle_stream");
   static readonly Balances = new Feature("balances");
+  static readonly AssetNetworks = new Feature("asset_networks");
+  static readonly DepositAddresses = new Feature("deposit_addresses");
+  static readonly DepositHistory = new Feature("deposit_history");
+  static readonly WithdrawalQuotes = new Feature("withdrawal_quotes");
+  static readonly Withdrawals = new Feature("withdrawals");
+  static readonly WithdrawalHistory = new Feature("withdrawal_history");
   static readonly OpenOrders = new Feature("open_orders");
   static readonly AccountStream = new Feature("account_stream");
   static readonly Trading = new Feature("trading");
@@ -50,6 +56,12 @@ export class Feature extends StringValue {
     Feature.TickerStream,
     Feature.CandleStream,
     Feature.Balances,
+    Feature.AssetNetworks,
+    Feature.DepositAddresses,
+    Feature.DepositHistory,
+    Feature.WithdrawalQuotes,
+    Feature.Withdrawals,
+    Feature.WithdrawalHistory,
     Feature.OpenOrders,
     Feature.AccountStream,
     Feature.Trading,
@@ -64,7 +76,9 @@ export class Feature extends StringValue {
     super(id);
     this.needsCredentials = new Set([
       "balances", "open_orders", "account_stream", "trading", "positions", "margin",
-      "funding_payments", "margin_config", "reduce_only_orders",
+      "funding_payments", "margin_config", "reduce_only_orders", "asset_networks",
+      "deposit_addresses", "deposit_history", "withdrawal_quotes", "withdrawals",
+      "withdrawal_history",
     ]).has(id);
     this.isDerivativesOnly = new Set([
       "positions", "margin", "funding_rates", "funding_payments", "margin_config",
@@ -302,4 +316,105 @@ export class ExchangeErrorKind extends StringValue {
   private constructor(id: string) { super(id); this.retryable = id === "rate_limited" || id === "unavailable"; Object.freeze(this); }
   private readonly retryable: boolean;
   isRetryable(): boolean { return this.retryable; }
+}
+
+export class Network extends StringValue {
+  static readonly Bitcoin = new Network("bitcoin");
+  static readonly Ethereum = new Network("ethereum");
+  static readonly Arbitrum = new Network("arbitrum");
+  static readonly BnbSmartChain = new Network("bnb_smart_chain");
+  static readonly Tron = new Network("tron");
+  static readonly Solana = new Network("solana");
+  static readonly Polygon = new Network("polygon");
+  static readonly Base = new Network("base");
+  static readonly Optimism = new Network("optimism");
+  static readonly AvalancheC = new Network("avalanche_c");
+  static readonly XrpLedger = new Network("xrp_ledger");
+  static readonly Stellar = new Network("stellar");
+  static readonly Cosmos = new Network("cosmos");
+  static readonly Aptos = new Network("aptos");
+  static readonly Sui = new Network("sui");
+  static readonly Ton = new Network("ton");
+  static readonly Near = new Network("near");
+  static readonly Polkadot = new Network("polkadot");
+  static readonly values: readonly Network[] = Object.freeze([
+    Network.Bitcoin,
+    Network.Ethereum,
+    Network.Arbitrum,
+    Network.BnbSmartChain,
+    Network.Tron,
+    Network.Solana,
+    Network.Polygon,
+    Network.Base,
+    Network.Optimism,
+    Network.AvalancheC,
+    Network.XrpLedger,
+    Network.Stellar,
+    Network.Cosmos,
+    Network.Aptos,
+    Network.Sui,
+    Network.Ton,
+    Network.Near,
+    Network.Polkadot,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+  static other(value: string): Network { return this.values.find((item) => item.id === value) ?? new Network(value); }
+}
+
+export class WithdrawalStatus extends StringValue {
+  static readonly Pending = new WithdrawalStatus("pending");
+  static readonly Processing = new WithdrawalStatus("processing");
+  static readonly Completed = new WithdrawalStatus("completed");
+  static readonly Cancelled = new WithdrawalStatus("cancelled");
+  static readonly Failed = new WithdrawalStatus("failed");
+  static readonly Unknown = new WithdrawalStatus("unknown");
+  static readonly values: readonly WithdrawalStatus[] = Object.freeze([
+    WithdrawalStatus.Pending,
+    WithdrawalStatus.Processing,
+    WithdrawalStatus.Completed,
+    WithdrawalStatus.Cancelled,
+    WithdrawalStatus.Failed,
+    WithdrawalStatus.Unknown,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class DepositStatus extends StringValue {
+  static readonly Pending = new DepositStatus("pending");
+  static readonly Completed = new DepositStatus("completed");
+  static readonly Failed = new DepositStatus("failed");
+  static readonly Unknown = new DepositStatus("unknown");
+  static readonly values: readonly DepositStatus[] = Object.freeze([
+    DepositStatus.Pending,
+    DepositStatus.Completed,
+    DepositStatus.Failed,
+    DepositStatus.Unknown,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class TransferErrorKind extends StringValue {
+  static readonly AssetMismatch = new TransferErrorKind("asset_mismatch");
+  static readonly NetworkMismatch = new TransferErrorKind("network_mismatch");
+  static readonly AmbiguousNetwork = new TransferErrorKind("ambiguous_network");
+  static readonly NetworkUnavailable = new TransferErrorKind("network_unavailable");
+  static readonly MemoRequired = new TransferErrorKind("memo_required");
+  static readonly DestinationUnavailable = new TransferErrorKind("destination_unavailable");
+  static readonly AddressNotAllowed = new TransferErrorKind("address_not_allowed");
+  static readonly TravelRuleRequired = new TransferErrorKind("travel_rule_required");
+  static readonly AmountOutOfRange = new TransferErrorKind("amount_out_of_range");
+  static readonly PlanExpired = new TransferErrorKind("plan_expired");
+  static readonly values: readonly TransferErrorKind[] = Object.freeze([
+    TransferErrorKind.AssetMismatch,
+    TransferErrorKind.NetworkMismatch,
+    TransferErrorKind.AmbiguousNetwork,
+    TransferErrorKind.NetworkUnavailable,
+    TransferErrorKind.MemoRequired,
+    TransferErrorKind.DestinationUnavailable,
+    TransferErrorKind.AddressNotAllowed,
+    TransferErrorKind.TravelRuleRequired,
+    TransferErrorKind.AmountOutOfRange,
+    TransferErrorKind.PlanExpired,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
 }

@@ -603,13 +603,11 @@ impl NativeHyperliquid {
         } else {
             HyperliquidAdapter::new()
         };
-        if let Some((address, private_key)) = credential_pair(
-            options.address,
-            options.private_key,
-            "address",
-            "private_key",
-        )? {
-            adapter = adapter.with_wallet(address, private_key);
+        if let Some(address) = options.address {
+            adapter = adapter.with_query_address(address);
+        }
+        if let Some(private_key) = options.private_key {
+            adapter = adapter.with_signer(private_key);
         }
         Ok(Self {
             adapter: Arc::new(adapter),
@@ -966,6 +964,20 @@ mod tests {
         ))
         .unwrap();
         assert!(hyperliquid.is_testnet());
+
+        let address_only = NativeHyperliquid::create(Ok(
+            r#"{"testnet":false,"address":"0x14791697260e4c9a71f18484c9f997b308e59325","private_key":null}"#.to_owned(),
+        ))
+        .unwrap();
+        assert!(address_only.adapter.supports(maxt::Feature::Balances));
+        assert!(!address_only.adapter.supports(maxt::Feature::Trading));
+
+        let signer_only = NativeHyperliquid::create(Ok(
+            r#"{"testnet":false,"address":null,"private_key":"0x0123456789012345678901234567890123456789012345678901234567890123"}"#.to_owned(),
+        ))
+        .unwrap();
+        assert!(!signer_only.adapter.supports(maxt::Feature::Balances));
+        assert!(signer_only.adapter.supports(maxt::Feature::Trading));
     }
 
     #[test]

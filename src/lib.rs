@@ -45,20 +45,31 @@ mod request;
 mod stream;
 mod transport;
 mod types;
+mod wallet;
 
 pub mod adapters;
 
 pub use adapter::{Adapter, BoxFuture};
 pub use client::Client;
-pub use error::{Error, ExchangeErrorKind, Result};
+pub use error::{Error, ExchangeErrorKind, Result, TransferErrorKind};
 pub use feature::Feature;
-pub use request::{CandleRequest, HistoryRequest, MarginRequest, OrderRequest};
+pub use request::{
+    CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest, OrderRequest,
+    TransferHistoryRequest, WithdrawRequest,
+};
 pub use stream::{AccountStream, MarketStream};
 pub use types::{
-    AccountEvent, Balance, Candle, Cursor, Exchange, Feed, FundingPayment, FundingRate, Interval,
-    Level, MarginMode, MarginSummary, Market, MarketEvent, MarketInfo, MarketKind, MarketStatus,
-    Order, OrderBook, OrderStatus, OrderType, Overflow, Page, Position, Side, Size, StreamConfig,
-    Subscription, Ticker, TimeInForce, Timestamp, Trade,
+    AccountEvent, AssetNetwork, Balance, Candle, ChainDestination, ChainTransferRequest, Cursor,
+    Deposit, DepositAddress, DepositStatus, Exchange, ExchangeDestination, ExchangeTransferRequest,
+    Feed, FundingPayment, FundingRate, Interval, Level, MarginMode, MarginSummary, Market,
+    MarketEvent, MarketInfo, MarketKind, MarketStatus, Network, Order, OrderBook, OrderStatus,
+    OrderType, Overflow, Page, Position, Side, Size, StreamConfig, Subscription, Ticker,
+    TimeInForce, Timestamp, Trade, TransferDestination, TravelRuleRequirement, Withdrawal,
+    WithdrawalFee, WithdrawalQuote, WithdrawalStatus,
+};
+pub use wallet::{
+    PreparedTransfer, TransferPlan, Wallet, execute_transfer_plan, prepare_chain_transfer,
+    prepare_exchange_transfer,
 };
 
 /// The exact decimal type used for every price, quantity, and amount.

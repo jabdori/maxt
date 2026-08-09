@@ -3,8 +3,126 @@
 use rust_decimal::Decimal;
 
 use crate::types::{
-    Cursor, Interval, MarginMode, Market, OrderType, Side, Size, TimeInForce, Timestamp,
+    Cursor, Interval, MarginMode, Market, Network, OrderType, Side, Size, TimeInForce, Timestamp,
+    TransferDestination,
 };
+
+/// Selects one deposit address for an asset and network.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DepositAddressRequest {
+    /// Asset symbol, uppercase.
+    pub asset: String,
+    /// Canonical network.
+    pub network: Network,
+    /// Amount required by address-per-payment networks such as Lightning.
+    pub amount: Option<Decimal>,
+}
+
+impl DepositAddressRequest {
+    /// Builds a deposit-address request.
+    pub fn new(asset: impl Into<String>, network: Network) -> Self {
+        Self {
+            asset: asset.into().to_ascii_uppercase(),
+            network,
+            amount: None,
+        }
+    }
+
+    /// Sets the amount for networks that issue an address or invoice per payment.
+    #[must_use]
+    pub fn amount(mut self, amount: Decimal) -> Self {
+        self.amount = Some(amount);
+        self
+    }
+}
+
+/// A withdrawal to an exchange-issued or direct on-chain destination.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WithdrawRequest {
+    /// Asset symbol, uppercase.
+    pub asset: String,
+    /// Canonical source and destination network.
+    pub network: Network,
+    /// Amount before provider fees.
+    pub amount: Decimal,
+    /// Destination address and optional memo.
+    pub destination: TransferDestination,
+    /// Caller idempotency identifier, when the provider supports one.
+    pub client_id: Option<String>,
+}
+
+impl WithdrawRequest {
+    /// Builds a withdrawal request.
+    pub fn new(
+        asset: impl Into<String>,
+        network: Network,
+        amount: Decimal,
+        destination: TransferDestination,
+    ) -> Self {
+        Self {
+            asset: asset.into().to_ascii_uppercase(),
+            network,
+            amount,
+            destination,
+            client_id: None,
+        }
+    }
+
+    /// Sets a caller-controlled idempotency identifier.
+    #[must_use]
+    pub fn client_id(mut self, client_id: impl Into<String>) -> Self {
+        self.client_id = Some(client_id.into());
+        self
+    }
+}
+
+/// One page of deposit or withdrawal history.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct TransferHistoryRequest {
+    /// Optional asset filter.
+    pub asset: Option<String>,
+    /// Optional canonical network filter.
+    pub network: Option<Network>,
+    /// Provider cursor returned by a previous page.
+    pub cursor: Option<Cursor>,
+    /// Target page size.
+    pub limit: Option<u32>,
+}
+
+impl TransferHistoryRequest {
+    /// Starts an unfiltered history request.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Filters by asset.
+    #[must_use]
+    pub fn asset(mut self, asset: impl Into<String>) -> Self {
+        self.asset = Some(asset.into().to_ascii_uppercase());
+        self
+    }
+
+    /// Filters by network.
+    #[must_use]
+    pub fn network(mut self, network: Network) -> Self {
+        self.network = Some(network);
+        self
+    }
+
+    /// Resumes from a provider cursor.
+    #[must_use]
+    pub fn cursor(mut self, cursor: Cursor) -> Self {
+        self.cursor = Some(cursor);
+        self
+    }
+
+    /// Sets the target page size.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+}
 
 /// Which candles to read.
 ///

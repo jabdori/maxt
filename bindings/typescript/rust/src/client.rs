@@ -17,11 +17,13 @@ use serde_json::Value;
 use wasm_bindgen::prelude::*;
 
 use crate::convert::{
-    WireBalance, WireCandle, WireCandleRequest, WireFundingPayment, WireFundingRate,
-    WireHistoryRequest, WireMarginRequest, WireMarginSummary, WireMarket, WireMarketInfo,
-    WireOrder, WireOrderBook, WireOrderRequest, WirePage, WirePosition, WireStreamConfig,
-    WireSubscription, WireTicker, WireTrade, feature_from_id, from_wire_text,
-    market_kind_from_wire, outcome,
+    WireAssetNetwork, WireBalance, WireCandle, WireCandleRequest, WireChainTransferRequest,
+    WireDeposit, WireDepositAddress, WireDepositAddressRequest, WireExchangeTransferRequest,
+    WireFundingPayment, WireFundingRate, WireHistoryRequest, WireMarginRequest, WireMarginSummary,
+    WireMarket, WireMarketInfo, WireOrder, WireOrderBook, WireOrderRequest, WirePage, WirePosition,
+    WireStreamConfig, WireSubscription, WireTicker, WireTrade, WireTransferHistoryRequest,
+    WireTransferPlan, WireWithdrawRequest, WireWithdrawal, WireWithdrawalQuote, feature_from_id,
+    from_wire_text, market_kind_from_wire, outcome,
 };
 use crate::stream::NativeStreamRegistry;
 
@@ -107,6 +109,108 @@ impl NativeClient {
 
     async fn balances(&self) -> Value {
         outcome(wire_vec::<_, WireBalance>(self.inner.balances().await))
+    }
+
+    async fn asset_networks(&self, asset: maxt::Result<String>) -> Value {
+        match parse_wire_text::<String>(asset, "asset") {
+            Ok(asset) => outcome(wire_vec::<_, WireAssetNetwork>(
+                self.inner.asset_networks(&asset).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn deposit_address(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<maxt::DepositAddressRequest, WireDepositAddressRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(wire_one::<_, WireDepositAddress>(
+                self.inner.deposit_address(&request).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn prepare_withdrawal(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<maxt::WithdrawRequest, WireWithdrawRequest>(request, "request") {
+            Ok(request) => outcome(wire_one::<_, WireWithdrawalQuote>(
+                self.inner.prepare_withdrawal(&request).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn withdraw(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<maxt::WithdrawRequest, WireWithdrawRequest>(request, "request") {
+            Ok(request) => outcome(wire_one::<_, WireWithdrawal>(
+                self.inner.withdraw(&request).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn deposits(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<maxt::TransferHistoryRequest, WireTransferHistoryRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(wire_one::<_, WirePage<WireDeposit>>(
+                self.inner.deposits(&request).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn withdrawals(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<maxt::TransferHistoryRequest, WireTransferHistoryRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(wire_one::<_, WirePage<WireWithdrawal>>(
+                self.inner.withdrawals(&request).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    #[cfg_attr(test, allow(dead_code))]
+    async fn prepare_transfer_to(
+        &self,
+        destination: &Self,
+        request: maxt::Result<String>,
+    ) -> Value {
+        match parse_wire::<maxt::ExchangeTransferRequest, WireExchangeTransferRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(wire_one::<_, WireTransferPlan>(
+                maxt::prepare_exchange_transfer(
+                    self.inner.adapter().as_ref(),
+                    destination.inner.adapter().as_ref(),
+                    &request,
+                )
+                .await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    #[cfg_attr(test, allow(dead_code))]
+    async fn prepare_transfer_to_chain(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<maxt::ChainTransferRequest, WireChainTransferRequest>(request, "request")
+        {
+            Ok(request) => outcome(wire_one::<_, WireTransferPlan>(
+                maxt::prepare_chain_transfer(self.inner.adapter().as_ref(), &request).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    #[cfg_attr(test, allow(dead_code))]
+    async fn execute_transfer(&self, plan: maxt::Result<String>) -> Value {
+        match parse_wire::<maxt::TransferPlan, WireTransferPlan>(plan, "plan") {
+            Ok(plan) => outcome(wire_one::<_, WireWithdrawal>(
+                maxt::execute_transfer_plan(self.inner.adapter().as_ref(), &plan).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
     }
 
     async fn open_orders(&self) -> Value {
@@ -340,6 +444,114 @@ impl NativeClient {
         self.balances().await
     }
 
+    #[napi(js_name = "assetNetworks", ts_args_type = "asset: string")]
+    pub fn asset_networks_native<'env>(
+        &self,
+        env: &'env Env,
+        asset: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let asset = native_json_text(asset, "asset");
+        spawn_native(env, async move { client.asset_networks(asset).await })
+    }
+
+    #[napi(js_name = "depositAddress", ts_args_type = "request: string")]
+    pub fn deposit_address_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { client.deposit_address(request).await })
+    }
+
+    #[napi(js_name = "prepareWithdrawal", ts_args_type = "request: string")]
+    pub fn prepare_withdrawal_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { client.prepare_withdrawal(request).await })
+    }
+
+    #[napi(js_name = "withdraw", ts_args_type = "request: string")]
+    pub fn withdraw_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { client.withdraw(request).await })
+    }
+
+    #[napi(js_name = "deposits", ts_args_type = "request: string")]
+    pub fn deposits_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { client.deposits(request).await })
+    }
+
+    #[napi(js_name = "withdrawals", ts_args_type = "request: string")]
+    pub fn withdrawals_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { client.withdrawals(request).await })
+    }
+
+    #[napi(
+        js_name = "prepareTransferTo",
+        ts_args_type = "destination: NativeClient, request: string"
+    )]
+    pub fn prepare_transfer_to_native<'env>(
+        &self,
+        env: &'env Env,
+        destination: &NativeClient,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let source = self.clone();
+        let destination = destination.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move {
+            source.prepare_transfer_to(&destination, request).await
+        })
+    }
+
+    #[napi(js_name = "prepareTransferToChain", ts_args_type = "request: string")]
+    pub fn prepare_transfer_to_chain_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move {
+            client.prepare_transfer_to_chain(request).await
+        })
+    }
+
+    #[napi(js_name = "executeTransfer", ts_args_type = "plan: string")]
+    pub fn execute_transfer_native<'env>(
+        &self,
+        env: &'env Env,
+        plan: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let plan = native_json_text(plan, "plan");
+        spawn_native(env, async move { client.execute_transfer(plan).await })
+    }
+
     #[napi(js_name = "openOrders")]
     pub async fn open_orders_native(&self) -> Value {
         self.open_orders().await
@@ -563,6 +775,55 @@ impl NativeClient {
         crate::web::value(self.balances().await)
     }
 
+    #[wasm_bindgen(js_name = "assetNetworks")]
+    pub async fn asset_networks_wasm(&self, asset: String) -> JsValue {
+        crate::web::value(self.asset_networks(Ok(asset)).await)
+    }
+
+    #[wasm_bindgen(js_name = "depositAddress")]
+    pub async fn deposit_address_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.deposit_address(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "prepareWithdrawal")]
+    pub async fn prepare_withdrawal_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.prepare_withdrawal(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "withdraw")]
+    pub async fn withdraw_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.withdraw(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "deposits")]
+    pub async fn deposits_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.deposits(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "withdrawals")]
+    pub async fn withdrawals_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.withdrawals(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "prepareTransferTo")]
+    pub async fn prepare_transfer_to_wasm(
+        &self,
+        destination: &NativeClient,
+        request: String,
+    ) -> JsValue {
+        crate::web::value(self.prepare_transfer_to(destination, Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "prepareTransferToChain")]
+    pub async fn prepare_transfer_to_chain_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.prepare_transfer_to_chain(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "executeTransfer")]
+    pub async fn execute_transfer_wasm(&self, plan: String) -> JsValue {
+        crate::web::value(self.execute_transfer(Ok(plan)).await)
+    }
+
     #[wasm_bindgen(js_name = "openOrders")]
     pub async fn open_orders_wasm(&self) -> JsValue {
         crate::web::value(self.open_orders().await)
@@ -710,11 +971,13 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     use maxt::{
-        AccountEvent, AccountStream, Adapter, Balance, BoxFuture, Candle, CandleRequest, Decimal,
-        Exchange, Feature, FundingPayment, FundingRate, HistoryRequest, MarginRequest,
-        MarginSummary, Market, MarketEvent, MarketInfo, MarketKind, MarketStream, Order, OrderBook,
-        OrderRequest, OrderStatus, Page, Position, Side, StreamConfig, Subscription, Ticker,
-        Timestamp, Trade,
+        AccountEvent, AccountStream, Adapter, AssetNetwork, Balance, BoxFuture, Candle,
+        CandleRequest, Decimal, Deposit, DepositAddress, DepositAddressRequest, Exchange, Feature,
+        FundingPayment, FundingRate, HistoryRequest, MarginRequest, MarginSummary, Market,
+        MarketEvent, MarketInfo, MarketKind, MarketStream, Order, OrderBook, OrderRequest,
+        OrderStatus, Page, Position, Side, StreamConfig, Subscription, Ticker, Timestamp, Trade,
+        TransferHistoryRequest, TravelRuleRequirement, WithdrawRequest, Withdrawal,
+        WithdrawalQuote, WithdrawalStatus,
     };
 
     use super::*;
@@ -805,6 +1068,88 @@ mod tests {
         fn balances(&self) -> BoxFuture<'_, maxt::Result<Vec<Balance>>> {
             self.calls.lock().unwrap().push("balances");
             Box::pin(async { Ok(vec![]) })
+        }
+
+        fn asset_networks(&self, _asset: &str) -> BoxFuture<'_, maxt::Result<Vec<AssetNetwork>>> {
+            self.calls.lock().unwrap().push("asset_networks");
+            Box::pin(async { Ok(vec![]) })
+        }
+
+        fn deposit_address(
+            &self,
+            request: &DepositAddressRequest,
+        ) -> BoxFuture<'_, maxt::Result<DepositAddress>> {
+            self.calls.lock().unwrap().push("deposit_address");
+            let result = DepositAddress {
+                exchange: Exchange::Binance,
+                asset: request.asset.clone(),
+                network: request.network.clone(),
+                address: Some("bc1qdestination".to_owned()),
+                memo: None,
+            };
+            Box::pin(async move { Ok(result) })
+        }
+
+        fn prepare_withdrawal(
+            &self,
+            _request: &WithdrawRequest,
+        ) -> BoxFuture<'_, maxt::Result<WithdrawalQuote>> {
+            self.calls.lock().unwrap().push("prepare_withdrawal");
+            Box::pin(async {
+                Ok(WithdrawalQuote {
+                    fee: Some(Decimal::new(1, 4)),
+                    expected_receive: None,
+                    minimum_amount: None,
+                    maximum_amount: None,
+                    address_allowed: Some(true),
+                    travel_rule: TravelRuleRequirement::NotRequired,
+                    expires_at: None,
+                })
+            })
+        }
+
+        fn withdraw(&self, request: &WithdrawRequest) -> BoxFuture<'_, maxt::Result<Withdrawal>> {
+            self.calls.lock().unwrap().push("withdraw");
+            let result = Withdrawal {
+                id: "withdrawal-1".to_owned(),
+                asset: request.asset.clone(),
+                network: Some(request.network.clone()),
+                provider_network: Some(request.network.id().to_owned()),
+                amount: request.amount,
+                fee: None,
+                destination: Some(request.destination.clone()),
+                status: WithdrawalStatus::Pending,
+                provider_status: "accepted".to_owned(),
+                tx_id: None,
+                created_at: None,
+            };
+            Box::pin(async move { Ok(result) })
+        }
+
+        fn deposits(
+            &self,
+            _request: &TransferHistoryRequest,
+        ) -> BoxFuture<'_, maxt::Result<Page<Deposit>>> {
+            self.calls.lock().unwrap().push("deposits");
+            Box::pin(async {
+                Ok(Page {
+                    items: vec![],
+                    next: None,
+                })
+            })
+        }
+
+        fn withdrawals(
+            &self,
+            _request: &TransferHistoryRequest,
+        ) -> BoxFuture<'_, maxt::Result<Page<Withdrawal>>> {
+            self.calls.lock().unwrap().push("withdrawals");
+            Box::pin(async {
+                Ok(Page {
+                    items: vec![],
+                    next: None,
+                })
+            })
         }
 
         fn open_orders(&self, market: Option<&Market>) -> BoxFuture<'_, maxt::Result<Vec<Order>>> {
@@ -1049,7 +1394,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn native_client_forwards_all_sixteen_non_stream_operations() {
+    async fn native_client_forwards_all_twenty_two_non_stream_operations() {
         let calls = Arc::new(Mutex::new(Vec::new()));
         let client = NativeClient::for_test(Box::new(RecordingAdapter {
             calls: Arc::clone(&calls),
@@ -1083,6 +1428,32 @@ mod tests {
             "leverage": "10.0",
             "margin_mode": null
         });
+        let deposit_address_request = serde_json::json!({
+            "asset": "BTC",
+            "network": "bitcoin",
+            "amount": null
+        });
+        let withdraw_request = serde_json::json!({
+            "asset": "BTC",
+            "network": "bitcoin",
+            "amount": "1.0",
+            "destination": {
+                "kind": "chain",
+                "value": {
+                    "asset": "BTC",
+                    "network": "bitcoin",
+                    "address": "bc1qdestination",
+                    "memo": null
+                }
+            },
+            "client_id": null
+        });
+        let transfer_history_request = serde_json::json!({
+            "asset": null,
+            "network": null,
+            "cursor": null,
+            "limit": null
+        });
 
         assert_eq!(client.exchange(), "binance");
         assert!(client.supports("ticker".to_owned()));
@@ -1099,6 +1470,22 @@ mod tests {
             client.ticker(json_text(market.clone())).await,
             client.candles(json_text(candle_request)).await,
             client.balances().await,
+            client
+                .asset_networks(json_text(serde_json::json!("BTC")))
+                .await,
+            client
+                .deposit_address(json_text(deposit_address_request))
+                .await,
+            client
+                .prepare_withdrawal(json_text(withdraw_request.clone()))
+                .await,
+            client.withdraw(json_text(withdraw_request)).await,
+            client
+                .deposits(json_text(transfer_history_request.clone()))
+                .await,
+            client
+                .withdrawals(json_text(transfer_history_request))
+                .await,
             client.open_orders().await,
             client.open_orders_on(json_text(market.clone())).await,
             client.place_order(json_text(order_request)).await,
@@ -1127,6 +1514,12 @@ mod tests {
                 "ticker",
                 "candles",
                 "balances",
+                "asset_networks",
+                "deposit_address",
+                "prepare_withdrawal",
+                "withdraw",
+                "deposits",
+                "withdrawals",
                 "open_orders:none",
                 "open_orders:some",
                 "place_order",

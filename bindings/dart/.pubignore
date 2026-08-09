@@ -1,4 +1,5 @@
 .dart_tool/
+.cargo/
 build/
 coverage/
 pubspec.lock

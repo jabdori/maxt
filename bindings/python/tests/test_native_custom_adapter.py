@@ -50,6 +50,8 @@ from maxt import (
     Subscription,
     Ticker,
     Trade,
+    TransferError,
+    TransferErrorKind,
 )
 
 
@@ -249,6 +251,11 @@ class UnknownFieldErrorAdapter(NativeReplayAdapter):
         raise InvalidRequestError("custom_field", "bad")
 
 
+class TransferFailureAdapter(NativeReplayAdapter):
+    async def ticker(self, market: Market) -> Ticker:
+        raise TransferError(TransferErrorKind.NETWORK_MISMATCH, "bad chain")
+
+
 class CloseFailureSource:
     def __init__(self) -> None:
         self.started = asyncio.Event()
@@ -331,6 +338,19 @@ class NativeCustomAdapterTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(raised.exception.field, "custom_field")
         self.assertEqual(raised.exception.detail, "bad")
+
+    async def test_custom_transfer_error_kind_survives_rust(self) -> None:
+        market = Market.perpetual(Exchange.BINANCE, "BTC", "USDT")
+        client = Client(TransferFailureAdapter(market))
+
+        with self.assertRaises(TransferError) as raised:
+            await client.ticker(market)
+
+        self.assertEqual(
+            raised.exception.transfer_kind,
+            TransferErrorKind.NETWORK_MISMATCH,
+        )
+        self.assertEqual(raised.exception.detail, "bad chain")
 
     async def test_source_close_errors_cross_rust_without_unraisable_output(self) -> None:
         market = Market.perpetual(Exchange.BINANCE, "BTC", "USDT")

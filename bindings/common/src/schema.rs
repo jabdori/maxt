@@ -2,6 +2,8 @@
 
 use maxt::{Exchange, Feature};
 
+use crate::coverage::{PRODUCTS, ProductCoverage};
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Type {
     String,
@@ -89,6 +91,7 @@ pub struct Argument {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ApiType {
+    Client,
     String,
     Boolean,
     Number,
@@ -111,6 +114,14 @@ pub struct ClientMethod {
     pub name: &'static str,
     pub native_name: &'static str,
     pub arguments: &'static [Argument],
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ClientComposition {
+    pub rust_name: &'static str,
+    pub language_name: &'static str,
+    pub arguments: &'static [Argument],
+    pub result: ApiType,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -171,8 +182,10 @@ pub struct Schema {
     pub models: &'static [&'static str],
     pub errors: &'static [&'static str],
     pub adapter_operations: &'static [Operation],
+    pub client_compositions: &'static [ClientComposition],
     pub client_members: &'static [&'static str],
     pub providers: &'static [Provider],
+    pub products: &'static [ProductCoverage],
     pub records: Vec<Record>,
     pub unions: Vec<TaggedUnion>,
 }
@@ -218,6 +231,29 @@ const SUBSCRIPTION_CONFIG: &[Argument] = &[
 ];
 const CONFIG: &[Argument] = &[argument("config", ApiType::Named("StreamConfig"), None)];
 const ORDER_REQUEST: &[Argument] = &[argument("request", ApiType::Named("OrderRequest"), None)];
+const ASSET: &[Argument] = &[argument("asset", ApiType::String, None)];
+const DEPOSIT_ADDRESS_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("DepositAddressRequest"),
+    None,
+)];
+const WITHDRAW_REQUEST: &[Argument] =
+    &[argument("request", ApiType::Named("WithdrawRequest"), None)];
+const TRANSFER_HISTORY_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("TransferHistoryRequest"),
+    None,
+)];
+const EXCHANGE_TRANSFER_REQUEST: &[Argument] = &[
+    argument("destination", ApiType::Client, None),
+    argument("request", ApiType::Named("ExchangeTransferRequest"), None),
+];
+const CHAIN_TRANSFER_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("ChainTransferRequest"),
+    None,
+)];
+const TRANSFER_PLAN: &[Argument] = &[argument("plan", ApiType::Named("TransferPlan"), None)];
 const CANCEL_ORDER: &[Argument] = &[
     argument("market", ApiType::Named("Market"), None),
     argument("orderId", ApiType::String, None),
@@ -266,6 +302,36 @@ const CLIENT_BALANCES: &[ClientMethod] = &[ClientMethod {
     name: "balances",
     native_name: "balances",
     arguments: &[],
+}];
+const CLIENT_ASSET_NETWORKS: &[ClientMethod] = &[ClientMethod {
+    name: "assetNetworks",
+    native_name: "assetNetworks",
+    arguments: ASSET,
+}];
+const CLIENT_DEPOSIT_ADDRESS: &[ClientMethod] = &[ClientMethod {
+    name: "depositAddress",
+    native_name: "depositAddress",
+    arguments: DEPOSIT_ADDRESS_REQUEST,
+}];
+const CLIENT_PREPARE_WITHDRAWAL: &[ClientMethod] = &[ClientMethod {
+    name: "prepareWithdrawal",
+    native_name: "prepareWithdrawal",
+    arguments: WITHDRAW_REQUEST,
+}];
+const CLIENT_WITHDRAW: &[ClientMethod] = &[ClientMethod {
+    name: "withdraw",
+    native_name: "withdraw",
+    arguments: WITHDRAW_REQUEST,
+}];
+const CLIENT_DEPOSITS: &[ClientMethod] = &[ClientMethod {
+    name: "deposits",
+    native_name: "deposits",
+    arguments: TRANSFER_HISTORY_REQUEST,
+}];
+const CLIENT_WITHDRAWALS: &[ClientMethod] = &[ClientMethod {
+    name: "withdrawals",
+    native_name: "withdrawals",
+    arguments: TRANSFER_HISTORY_REQUEST,
 }];
 const CLIENT_OPEN_ORDERS: &[ClientMethod] = &[
     ClientMethod {
@@ -392,6 +458,54 @@ const ADAPTER_OPERATIONS: &[Operation] = &[
         client_methods: CLIENT_BALANCES,
     },
     Operation {
+        rust_name: "asset_networks",
+        language_name: "assetNetworks",
+        feature: "asset_networks",
+        arguments: ASSET,
+        result: ApiType::List("AssetNetwork"),
+        client_methods: CLIENT_ASSET_NETWORKS,
+    },
+    Operation {
+        rust_name: "deposit_address",
+        language_name: "depositAddress",
+        feature: "deposit_addresses",
+        arguments: DEPOSIT_ADDRESS_REQUEST,
+        result: ApiType::Named("DepositAddress"),
+        client_methods: CLIENT_DEPOSIT_ADDRESS,
+    },
+    Operation {
+        rust_name: "prepare_withdrawal",
+        language_name: "prepareWithdrawal",
+        feature: "withdrawal_quotes",
+        arguments: WITHDRAW_REQUEST,
+        result: ApiType::Named("WithdrawalQuote"),
+        client_methods: CLIENT_PREPARE_WITHDRAWAL,
+    },
+    Operation {
+        rust_name: "withdraw",
+        language_name: "withdraw",
+        feature: "withdrawals",
+        arguments: WITHDRAW_REQUEST,
+        result: ApiType::Named("Withdrawal"),
+        client_methods: CLIENT_WITHDRAW,
+    },
+    Operation {
+        rust_name: "deposits",
+        language_name: "deposits",
+        feature: "deposit_history",
+        arguments: TRANSFER_HISTORY_REQUEST,
+        result: ApiType::Page("Deposit"),
+        client_methods: CLIENT_DEPOSITS,
+    },
+    Operation {
+        rust_name: "withdrawals",
+        language_name: "withdrawals",
+        feature: "withdrawal_history",
+        arguments: TRANSFER_HISTORY_REQUEST,
+        result: ApiType::Page("Withdrawal"),
+        client_methods: CLIENT_WITHDRAWALS,
+    },
+    Operation {
         rust_name: "open_orders",
         language_name: "openOrders",
         feature: "open_orders",
@@ -465,6 +579,27 @@ const ADAPTER_OPERATIONS: &[Operation] = &[
     },
 ];
 
+const CLIENT_COMPOSITIONS: &[ClientComposition] = &[
+    ClientComposition {
+        rust_name: "prepare_exchange_transfer",
+        language_name: "prepareTransferTo",
+        arguments: EXCHANGE_TRANSFER_REQUEST,
+        result: ApiType::Named("TransferPlan"),
+    },
+    ClientComposition {
+        rust_name: "prepare_chain_transfer",
+        language_name: "prepareTransferToChain",
+        arguments: CHAIN_TRANSFER_REQUEST,
+        result: ApiType::Named("TransferPlan"),
+    },
+    ClientComposition {
+        rust_name: "execute_transfer_plan",
+        language_name: "executeTransfer",
+        arguments: TRANSFER_PLAN,
+        result: ApiType::Named("Withdrawal"),
+    },
+];
+
 const CLIENT_MEMBERS: &[&str] = &[
     "exchange",
     "supports",
@@ -477,6 +612,15 @@ const CLIENT_MEMBERS: &[&str] = &[
     "subscribe",
     "subscribeWith",
     "balances",
+    "assetNetworks",
+    "depositAddress",
+    "prepareWithdrawal",
+    "withdraw",
+    "deposits",
+    "withdrawals",
+    "prepareTransferTo",
+    "prepareTransferToChain",
+    "executeTransfer",
     "openOrders",
     "openOrdersOn",
     "subscribeAccount",
@@ -493,6 +637,7 @@ const CLIENT_MEMBERS: &[&str] = &[
 
 const ERRORS: &[&str] = &[
     "InvalidRequest",
+    "Transfer",
     "Unsupported",
     "Adapter",
     "Auth",
@@ -537,6 +682,12 @@ const FEATURE_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("TickerStream", "ticker_stream"),
     identifier_variant("CandleStream", "candle_stream"),
     identifier_variant("Balances", "balances"),
+    identifier_variant("AssetNetworks", "asset_networks"),
+    identifier_variant("DepositAddresses", "deposit_addresses"),
+    identifier_variant("DepositHistory", "deposit_history"),
+    identifier_variant("WithdrawalQuotes", "withdrawal_quotes"),
+    identifier_variant("Withdrawals", "withdrawals"),
+    identifier_variant("WithdrawalHistory", "withdrawal_history"),
     identifier_variant("OpenOrders", "open_orders"),
     identifier_variant("AccountStream", "account_stream"),
     identifier_variant("Trading", "trading"),
@@ -643,6 +794,52 @@ const EXCHANGE_ERROR_KIND_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("Unavailable", "unavailable"),
     identifier_variant("Unknown", "unknown"),
 ];
+const NETWORK_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Bitcoin", "bitcoin"),
+    identifier_variant("Ethereum", "ethereum"),
+    identifier_variant("Arbitrum", "arbitrum"),
+    identifier_variant("BnbSmartChain", "bnb_smart_chain"),
+    identifier_variant("Tron", "tron"),
+    identifier_variant("Solana", "solana"),
+    identifier_variant("Polygon", "polygon"),
+    identifier_variant("Base", "base"),
+    identifier_variant("Optimism", "optimism"),
+    identifier_variant("AvalancheC", "avalanche_c"),
+    identifier_variant("XrpLedger", "xrp_ledger"),
+    identifier_variant("Stellar", "stellar"),
+    identifier_variant("Cosmos", "cosmos"),
+    identifier_variant("Aptos", "aptos"),
+    identifier_variant("Sui", "sui"),
+    identifier_variant("Ton", "ton"),
+    identifier_variant("Near", "near"),
+    identifier_variant("Polkadot", "polkadot"),
+];
+const WITHDRAWAL_STATUS_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Pending", "pending"),
+    identifier_variant("Processing", "processing"),
+    identifier_variant("Completed", "completed"),
+    identifier_variant("Cancelled", "cancelled"),
+    identifier_variant("Failed", "failed"),
+    identifier_variant("Unknown", "unknown"),
+];
+const DEPOSIT_STATUS_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Pending", "pending"),
+    identifier_variant("Completed", "completed"),
+    identifier_variant("Failed", "failed"),
+    identifier_variant("Unknown", "unknown"),
+];
+const TRANSFER_ERROR_KIND_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("AssetMismatch", "asset_mismatch"),
+    identifier_variant("NetworkMismatch", "network_mismatch"),
+    identifier_variant("AmbiguousNetwork", "ambiguous_network"),
+    identifier_variant("NetworkUnavailable", "network_unavailable"),
+    identifier_variant("MemoRequired", "memo_required"),
+    identifier_variant("DestinationUnavailable", "destination_unavailable"),
+    identifier_variant("AddressNotAllowed", "address_not_allowed"),
+    identifier_variant("TravelRuleRequired", "travel_rule_required"),
+    identifier_variant("AmountOutOfRange", "amount_out_of_range"),
+    identifier_variant("PlanExpired", "plan_expired"),
+];
 
 const IDENTIFIERS: &[Identifier] = &[
     identifier("Exchange", EXCHANGE_VARIANTS, false),
@@ -666,6 +863,10 @@ const IDENTIFIERS: &[Identifier] = &[
         true,
     ),
     identifier("ExchangeErrorKind", EXCHANGE_ERROR_KIND_VARIANTS, false),
+    identifier("Network", NETWORK_VARIANTS, true),
+    identifier("WithdrawalStatus", WITHDRAWAL_STATUS_VARIANTS, false),
+    identifier("DepositStatus", DEPOSIT_STATUS_VARIANTS, false),
+    identifier("TransferErrorKind", TRANSFER_ERROR_KIND_VARIANTS, false),
 ];
 
 const MODELS: &[&str] = &[
@@ -677,6 +878,19 @@ const MODELS: &[&str] = &[
     "Ticker",
     "Candle",
     "Balance",
+    "AssetNetwork",
+    "DepositAddress",
+    "ExchangeDestination",
+    "ChainDestination",
+    "ExchangeTransferRequest",
+    "ChainTransferRequest",
+    "TransferDestination",
+    "WithdrawalFee",
+    "TravelRuleRequirement",
+    "WithdrawalQuote",
+    "TransferPlan",
+    "Withdrawal",
+    "Deposit",
     "Order",
     "Position",
     "MarginSummary",
@@ -684,6 +898,9 @@ const MODELS: &[&str] = &[
     "FundingPayment",
     "CandleRequest",
     "OrderRequest",
+    "DepositAddressRequest",
+    "WithdrawRequest",
+    "TransferHistoryRequest",
     "StreamConfig",
     "Subscription",
     "HistoryRequest",
@@ -1101,6 +1318,138 @@ pub fn binding_schema() -> Schema {
             ],
         ),
         record(
+            "AssetNetworkWire",
+            vec![
+                field("exchange", Type::Identifier("Exchange")),
+                field("asset", Type::String),
+                field("network", Type::Identifier("Network")),
+                field("provider_id", Type::String),
+                field("deposit_enabled", Boolean),
+                field("withdrawal_enabled", Boolean),
+                field(
+                    "withdrawal_fee",
+                    Type::optional(Type::named("WithdrawalFeeWire")),
+                ),
+                field("minimum_withdrawal", Type::optional(decimal.clone())),
+                field("maximum_withdrawal", Type::optional(decimal.clone())),
+                field("memo_required", Boolean),
+            ],
+        ),
+        record(
+            "DepositAddressWire",
+            vec![
+                field("exchange", Type::Identifier("Exchange")),
+                field("asset", Type::String),
+                field("network", Type::Identifier("Network")),
+                field("address", Type::optional(Type::String)),
+                field("memo", Type::optional(Type::String)),
+            ],
+        ),
+        record(
+            "ExchangeDestinationWire",
+            vec![
+                field("exchange", Type::Identifier("Exchange")),
+                field("asset", Type::String),
+                field("network", Type::Identifier("Network")),
+                field("address", Type::String),
+                field("memo", Type::optional(Type::String)),
+            ],
+        ),
+        record(
+            "ChainDestinationWire",
+            vec![
+                field("asset", Type::String),
+                field("network", Type::Identifier("Network")),
+                field("address", Type::String),
+                field("memo", Type::optional(Type::String)),
+            ],
+        ),
+        record(
+            "ExchangeTransferRequestWire",
+            vec![
+                field("asset", Type::String),
+                field(
+                    "source_network",
+                    Type::optional(Type::Identifier("Network")),
+                ),
+                field(
+                    "destination_network",
+                    Type::optional(Type::Identifier("Network")),
+                ),
+                field("amount", decimal.clone()),
+            ],
+        ),
+        record(
+            "ChainTransferRequestWire",
+            vec![
+                field("asset", Type::String),
+                field(
+                    "source_network",
+                    Type::optional(Type::Identifier("Network")),
+                ),
+                field("destination", Type::named("ChainDestinationWire")),
+                field("amount", decimal.clone()),
+            ],
+        ),
+        record(
+            "WithdrawalQuoteWire",
+            vec![
+                field("fee", Type::optional(decimal.clone())),
+                field("expected_receive", Type::optional(decimal.clone())),
+                field("minimum_amount", Type::optional(decimal.clone())),
+                field("maximum_amount", Type::optional(decimal.clone())),
+                field("address_allowed", Type::optional(Boolean)),
+                field("travel_rule", Type::named("TravelRuleRequirementWire")),
+                field("expires_at", Type::optional(timestamp.clone())),
+            ],
+        ),
+        record(
+            "TransferPlanWire",
+            vec![
+                field("source", Type::Identifier("Exchange")),
+                field("destination", Type::optional(Type::Identifier("Exchange"))),
+                field("request", Type::named("WithdrawRequestWire")),
+                field("quote", Type::named("WithdrawalQuoteWire")),
+                field("created_at", timestamp.clone()),
+                field("expires_at", timestamp.clone()),
+            ],
+        ),
+        record(
+            "WithdrawalWire",
+            vec![
+                field("id", Type::String),
+                field("asset", Type::String),
+                field("network", Type::optional(Type::Identifier("Network"))),
+                field("provider_network", Type::optional(Type::String)),
+                field("amount", decimal.clone()),
+                field("fee", Type::optional(decimal.clone())),
+                field(
+                    "destination",
+                    Type::optional(Type::named("TransferDestinationWire")),
+                ),
+                field("status", Type::Identifier("WithdrawalStatus")),
+                field("provider_status", Type::String),
+                field("tx_id", Type::optional(Type::String)),
+                field("created_at", Type::optional(timestamp.clone())),
+            ],
+        ),
+        record(
+            "DepositWire",
+            vec![
+                field("id", Type::String),
+                field("asset", Type::String),
+                field("network", Type::optional(Type::Identifier("Network"))),
+                field("provider_network", Type::optional(Type::String)),
+                field("amount", decimal.clone()),
+                field("address", Type::optional(Type::String)),
+                field("memo", Type::optional(Type::String)),
+                field("status", Type::Identifier("DepositStatus")),
+                field("provider_status", Type::String),
+                field("tx_id", Type::optional(Type::String)),
+                field("created_at", Type::optional(timestamp.clone())),
+            ],
+        ),
+        record(
             "OrderWire",
             vec![
                 field("id", Type::String),
@@ -1181,6 +1530,33 @@ pub fn binding_schema() -> Schema {
                     Type::optional(Type::Identifier("TimeInForce")),
                 ),
                 field("reduce_only", Boolean),
+            ],
+        ),
+        record(
+            "DepositAddressRequestWire",
+            vec![
+                field("asset", Type::String),
+                field("network", Type::Identifier("Network")),
+                field("amount", Type::optional(decimal.clone())),
+            ],
+        ),
+        record(
+            "WithdrawRequestWire",
+            vec![
+                field("asset", Type::String),
+                field("network", Type::Identifier("Network")),
+                field("amount", decimal.clone()),
+                field("destination", Type::named("TransferDestinationWire")),
+                field("client_id", Type::optional(Type::String)),
+            ],
+        ),
+        record(
+            "TransferHistoryRequestWire",
+            vec![
+                field("asset", Type::optional(Type::String)),
+                field("network", Type::optional(Type::Identifier("Network"))),
+                field("cursor", Type::optional(Type::String)),
+                field("limit", Type::optional(Number)),
             ],
         ),
         record(
@@ -1343,6 +1719,46 @@ pub fn binding_schema() -> Schema {
             ],
         },
         TaggedUnion {
+            name: "WithdrawalFeeWire",
+            type_parameters: &[],
+            variants: vec![
+                variant("fixed", vec![field("value", Type::Decimal)]),
+                variant(
+                    "rate",
+                    vec![
+                        field("rate", Type::Decimal),
+                        field("minimum", Type::optional(Type::Decimal)),
+                        field("maximum", Type::optional(Type::Decimal)),
+                    ],
+                ),
+            ],
+        },
+        TaggedUnion {
+            name: "TransferDestinationWire",
+            type_parameters: &[],
+            variants: vec![
+                variant(
+                    "exchange",
+                    vec![field("value", Type::named("ExchangeDestinationWire"))],
+                ),
+                variant(
+                    "chain",
+                    vec![field("value", Type::named("ChainDestinationWire"))],
+                ),
+            ],
+        },
+        TaggedUnion {
+            name: "TravelRuleRequirementWire",
+            type_parameters: &[],
+            variants: vec![
+                variant("not_required", vec![]),
+                variant(
+                    "required",
+                    vec![field("consent_url", Type::optional(Type::String))],
+                ),
+            ],
+        },
+        TaggedUnion {
             name: "FeedWire",
             type_parameters: &[],
             variants: vec![
@@ -1412,6 +1828,13 @@ pub fn binding_schema() -> Schema {
                     vec![field("field", Type::String), field("detail", Type::String)],
                 ),
                 variant(
+                    "transfer",
+                    vec![
+                        field("transfer_kind", Type::Identifier("TransferErrorKind")),
+                        field("detail", Type::String),
+                    ],
+                ),
+                variant(
                     "unsupported",
                     vec![
                         field("feature", Type::String),
@@ -1471,6 +1894,27 @@ pub fn binding_schema() -> Schema {
                     ],
                 ),
                 variant("balances", vec![]),
+                variant("asset_networks", vec![field("asset", Type::String)]),
+                variant(
+                    "deposit_address",
+                    vec![field("request", Type::named("DepositAddressRequestWire"))],
+                ),
+                variant(
+                    "prepare_withdrawal",
+                    vec![field("request", Type::named("WithdrawRequestWire"))],
+                ),
+                variant(
+                    "withdraw",
+                    vec![field("request", Type::named("WithdrawRequestWire"))],
+                ),
+                variant(
+                    "deposits",
+                    vec![field("request", Type::named("TransferHistoryRequestWire"))],
+                ),
+                variant(
+                    "withdrawals",
+                    vec![field("request", Type::named("TransferHistoryRequestWire"))],
+                ),
                 variant(
                     "open_orders",
                     vec![field("market", Type::optional(Type::named("MarketWire")))],
@@ -1539,6 +1983,30 @@ pub fn binding_schema() -> Schema {
                     vec![field("value", Type::list(Type::named("BalanceWire")))],
                 ),
                 variant(
+                    "asset_networks",
+                    vec![field("value", Type::list(Type::named("AssetNetworkWire")))],
+                ),
+                variant(
+                    "deposit_address",
+                    vec![field("value", Type::named("DepositAddressWire"))],
+                ),
+                variant(
+                    "withdrawal_quote",
+                    vec![field("value", Type::named("WithdrawalQuoteWire"))],
+                ),
+                variant(
+                    "withdrawal",
+                    vec![field("value", Type::named("WithdrawalWire"))],
+                ),
+                variant(
+                    "deposits",
+                    vec![field("value", Type::named("PageWire<DepositWire>"))],
+                ),
+                variant(
+                    "withdrawals",
+                    vec![field("value", Type::named("PageWire<WithdrawalWire>"))],
+                ),
+                variant(
                     "open_orders",
                     vec![field("value", Type::list(Type::named("OrderWire")))],
                 ),
@@ -1580,8 +2048,10 @@ pub fn binding_schema() -> Schema {
         models: MODELS,
         errors: ERRORS,
         adapter_operations: ADAPTER_OPERATIONS,
+        client_compositions: CLIENT_COMPOSITIONS,
         client_members: CLIENT_MEMBERS,
         providers: PROVIDERS,
+        products: PRODUCTS,
         records,
         unions,
     }
@@ -1615,6 +2085,12 @@ mod tests {
             .flat_map(|operation| operation.client_methods)
             .map(|method| method.name)
             .collect::<Vec<_>>();
+        generated.extend(
+            schema
+                .client_compositions
+                .iter()
+                .map(|method| method.language_name),
+        );
         generated.extend(["exchange", "supports", "adapter"]);
         generated.sort_unstable();
         let mut declared = schema.client_members.to_vec();

@@ -200,6 +200,16 @@ void main() {
             invoke: (value) =>
                 client.fundingRates(HistoryRequest(market, limit: value)),
           ),
+          (
+            field: 'limit',
+            invoke: (value) =>
+                client.deposits(TransferHistoryRequest(limit: value)),
+          ),
+          (
+            field: 'limit',
+            invoke: (value) =>
+                client.withdrawals(TransferHistoryRequest(limit: value)),
+          ),
         ];
 
     for (final testCase in cases) {

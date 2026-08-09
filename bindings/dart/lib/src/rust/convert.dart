@@ -11,6 +11,7 @@ class NativeError implements FrbException {
   final String message;
   final String? detail;
   final String? field;
+  final WireTransferErrorKind? transferKind;
   final WireFeature? feature;
   final String? exchange;
   final String? code;
@@ -24,6 +25,7 @@ class NativeError implements FrbException {
     required this.message,
     this.detail,
     this.field,
+    this.transferKind,
     this.feature,
     this.exchange,
     this.code,
@@ -39,6 +41,7 @@ class NativeError implements FrbException {
       message.hashCode ^
       detail.hashCode ^
       field.hashCode ^
+      transferKind.hashCode ^
       feature.hashCode ^
       exchange.hashCode ^
       code.hashCode ^
@@ -56,6 +59,7 @@ class NativeError implements FrbException {
           message == other.message &&
           detail == other.detail &&
           field == other.field &&
+          transferKind == other.transferKind &&
           feature == other.feature &&
           exchange == other.exchange &&
           code == other.code &&
@@ -67,6 +71,7 @@ class NativeError implements FrbException {
 
 enum NativeErrorKind {
   invalidRequest,
+  transfer,
   unsupported,
   adapter,
   auth,
@@ -338,6 +343,12 @@ enum WireFeature {
   tickerStream,
   candleStream,
   balances,
+  assetNetworks,
+  depositAddresses,
+  depositHistory,
+  withdrawalQuotes,
+  withdrawals,
+  withdrawalHistory,
   openOrders,
   accountStream,
   trading,
@@ -1070,6 +1081,19 @@ class WireTrade {
           quantity == other.quantity &&
           takerSide == other.takerSide &&
           id == other.id;
+}
+
+enum WireTransferErrorKind {
+  assetMismatch,
+  networkMismatch,
+  ambiguousNetwork,
+  networkUnavailable,
+  memoRequired,
+  destinationUnavailable,
+  addressNotAllowed,
+  travelRuleRequired,
+  amountOutOfRange,
+  planExpired,
 }
 
 class WireUpbitMarketEvent {

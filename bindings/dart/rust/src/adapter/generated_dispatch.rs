@@ -26,6 +26,30 @@ pub(super) fn dispatch(call: CommonAdapterCall) -> Option<(AdapterCall, Expected
             ExpectedReply::Candles,
         )),
         CommonAdapterCall::Balances => Some((AdapterCall::Balances, ExpectedReply::Balances)),
+        CommonAdapterCall::AssetNetworks { asset } => Some((
+            AdapterCall::AssetNetworks { asset },
+            ExpectedReply::AssetNetworks,
+        )),
+        CommonAdapterCall::DepositAddress { request } => Some((
+            AdapterCall::DepositAddress { request: request.into() },
+            ExpectedReply::DepositAddress,
+        )),
+        CommonAdapterCall::PrepareWithdrawal { request } => Some((
+            AdapterCall::PrepareWithdrawal { request: request.into() },
+            ExpectedReply::PrepareWithdrawal,
+        )),
+        CommonAdapterCall::Withdraw { request } => Some((
+            AdapterCall::Withdraw { request: request.into() },
+            ExpectedReply::Withdraw,
+        )),
+        CommonAdapterCall::Deposits { request } => Some((
+            AdapterCall::Deposits { request: request.into() },
+            ExpectedReply::Deposits,
+        )),
+        CommonAdapterCall::Withdrawals { request } => Some((
+            AdapterCall::Withdrawals { request: request.into() },
+            ExpectedReply::Withdrawals,
+        )),
         CommonAdapterCall::OpenOrders { market } => Some((
             AdapterCall::OpenOrders { market: market.map(Into::into) },
             ExpectedReply::OpenOrders,

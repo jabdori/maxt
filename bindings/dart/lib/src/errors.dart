@@ -23,6 +23,17 @@ final class InvalidRequestError extends MaxtError {
   String toString() => 'invalid request: `$field`: $detail';
 }
 
+/// 출금 요청을 보내기 전 전송 안전성 검증에 실패했습니다.
+final class TransferError extends MaxtError {
+  const TransferError({required this.kind, required String detail})
+    : super(detail);
+
+  final TransferErrorKind kind;
+
+  @override
+  String toString() => 'transfer ${kind.wireName}: $detail';
+}
+
 /// 어댑터가 기능 또는 요청 형식을 지원하지 않습니다.
 final class UnsupportedError extends MaxtError {
   const UnsupportedError({

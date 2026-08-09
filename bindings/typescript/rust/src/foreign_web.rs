@@ -178,6 +178,18 @@ fn decode_reply(
             )))
         }
         WireAdapterReply::Balances { value } => wire_vec(value).map(AdapterReply::Balances),
+        WireAdapterReply::AssetNetworks { value } => {
+            wire_vec(value).map(AdapterReply::AssetNetworks)
+        }
+        WireAdapterReply::DepositAddress { value } => {
+            value.try_into().map(AdapterReply::DepositAddress)
+        }
+        WireAdapterReply::WithdrawalQuote { value } => {
+            value.try_into().map(AdapterReply::WithdrawalQuote)
+        }
+        WireAdapterReply::Withdrawal { value } => value.try_into().map(AdapterReply::Withdrawal),
+        WireAdapterReply::Deposits { value } => value.try_into().map(AdapterReply::Deposits),
+        WireAdapterReply::Withdrawals { value } => value.try_into().map(AdapterReply::Withdrawals),
         WireAdapterReply::OpenOrders { value } => wire_vec(value).map(AdapterReply::OpenOrders),
         WireAdapterReply::AccountStream {
             stream_id: returned,

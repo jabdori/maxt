@@ -34,6 +34,12 @@ pub(crate) fn feature_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::Feat
         "ticker_stream" => Ok(maxt::Feature::TickerStream),
         "candle_stream" => Ok(maxt::Feature::CandleStream),
         "balances" => Ok(maxt::Feature::Balances),
+        "asset_networks" => Ok(maxt::Feature::AssetNetworks),
+        "deposit_addresses" => Ok(maxt::Feature::DepositAddresses),
+        "deposit_history" => Ok(maxt::Feature::DepositHistory),
+        "withdrawal_quotes" => Ok(maxt::Feature::WithdrawalQuotes),
+        "withdrawals" => Ok(maxt::Feature::Withdrawals),
+        "withdrawal_history" => Ok(maxt::Feature::WithdrawalHistory),
         "open_orders" => Ok(maxt::Feature::OpenOrders),
         "account_stream" => Ok(maxt::Feature::AccountStream),
         "trading" => Ok(maxt::Feature::Trading),
@@ -59,6 +65,12 @@ pub(crate) fn feature_to_wire(value: maxt::Feature) -> PyResult<&'static str> {
         maxt::Feature::TickerStream => Ok("ticker_stream"),
         maxt::Feature::CandleStream => Ok("candle_stream"),
         maxt::Feature::Balances => Ok("balances"),
+        maxt::Feature::AssetNetworks => Ok("asset_networks"),
+        maxt::Feature::DepositAddresses => Ok("deposit_addresses"),
+        maxt::Feature::DepositHistory => Ok("deposit_history"),
+        maxt::Feature::WithdrawalQuotes => Ok("withdrawal_quotes"),
+        maxt::Feature::Withdrawals => Ok("withdrawals"),
+        maxt::Feature::WithdrawalHistory => Ok("withdrawal_history"),
         maxt::Feature::OpenOrders => Ok("open_orders"),
         maxt::Feature::AccountStream => Ok("account_stream"),
         maxt::Feature::Trading => Ok("trading"),
@@ -86,6 +98,44 @@ pub(crate) fn market_kind_to_wire(value: maxt::MarketKind) -> PyResult<&'static 
         maxt::MarketKind::Spot => Ok("spot"),
         maxt::MarketKind::Perpetual => Ok("perpetual"),
         _ => Err(binding_contract("MarketKind")),
+    }
+}
+
+pub(crate) fn market_status_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::MarketStatus> {
+    let value = text(value)?;
+    match value.as_str() {
+        "active" => Ok(maxt::MarketStatus::Active),
+        "paused" => Ok(maxt::MarketStatus::Paused),
+        "delisted" => Ok(maxt::MarketStatus::Delisted),
+        "unknown" => Ok(maxt::MarketStatus::Unknown),
+        _ => Err(invalid("market status", &value)),
+    }
+}
+
+pub(crate) fn market_status_to_wire(value: maxt::MarketStatus) -> PyResult<&'static str> {
+    match value {
+        maxt::MarketStatus::Active => Ok("active"),
+        maxt::MarketStatus::Paused => Ok("paused"),
+        maxt::MarketStatus::Delisted => Ok("delisted"),
+        maxt::MarketStatus::Unknown => Ok("unknown"),
+        _ => Err(binding_contract("MarketStatus")),
+    }
+}
+
+pub(crate) fn side_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::Side> {
+    let value = text(value)?;
+    match value.as_str() {
+        "buy" => Ok(maxt::Side::Buy),
+        "sell" => Ok(maxt::Side::Sell),
+        _ => Err(invalid("side", &value)),
+    }
+}
+
+pub(crate) fn side_to_wire(value: maxt::Side) -> PyResult<&'static str> {
+    match value {
+        maxt::Side::Buy => Ok("buy"),
+        maxt::Side::Sell => Ok("sell"),
+        _ => Err(binding_contract("Side")),
     }
 }
 
@@ -132,20 +182,64 @@ pub(crate) fn interval_to_wire(value: maxt::Interval) -> PyResult<&'static str> 
     }
 }
 
-pub(crate) fn side_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::Side> {
+pub(crate) fn overflow_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::Overflow> {
     let value = text(value)?;
     match value.as_str() {
-        "buy" => Ok(maxt::Side::Buy),
-        "sell" => Ok(maxt::Side::Sell),
-        _ => Err(invalid("side", &value)),
+        "backpressure" => Ok(maxt::Overflow::Backpressure),
+        "drop_newest" => Ok(maxt::Overflow::DropNewest),
+        _ => Err(invalid("overflow", &value)),
     }
 }
 
-pub(crate) fn side_to_wire(value: maxt::Side) -> PyResult<&'static str> {
+pub(crate) fn overflow_to_wire(value: maxt::Overflow) -> PyResult<&'static str> {
     match value {
-        maxt::Side::Buy => Ok("buy"),
-        maxt::Side::Sell => Ok("sell"),
-        _ => Err(binding_contract("Side")),
+        maxt::Overflow::Backpressure => Ok("backpressure"),
+        maxt::Overflow::DropNewest => Ok("drop_newest"),
+        _ => Err(binding_contract("Overflow")),
+    }
+}
+
+pub(crate) fn margin_mode_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::MarginMode> {
+    let value = text(value)?;
+    match value.as_str() {
+        "cross" => Ok(maxt::MarginMode::Cross),
+        "isolated" => Ok(maxt::MarginMode::Isolated),
+        _ => Err(invalid("margin mode", &value)),
+    }
+}
+
+pub(crate) fn margin_mode_to_wire(value: maxt::MarginMode) -> PyResult<&'static str> {
+    match value {
+        maxt::MarginMode::Cross => Ok("cross"),
+        maxt::MarginMode::Isolated => Ok("isolated"),
+        _ => Err(binding_contract("MarginMode")),
+    }
+}
+
+pub(crate) fn order_status_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::OrderStatus> {
+    let value = text(value)?;
+    match value.as_str() {
+        "accepted" => Ok(maxt::OrderStatus::Accepted),
+        "open" => Ok(maxt::OrderStatus::Open),
+        "partially_filled" => Ok(maxt::OrderStatus::PartiallyFilled),
+        "filled" => Ok(maxt::OrderStatus::Filled),
+        "cancelled" => Ok(maxt::OrderStatus::Cancelled),
+        "rejected" => Ok(maxt::OrderStatus::Rejected),
+        "unknown" => Ok(maxt::OrderStatus::Unknown),
+        _ => Err(invalid("order status", &value)),
+    }
+}
+
+pub(crate) fn order_status_to_wire(value: maxt::OrderStatus) -> PyResult<&'static str> {
+    match value {
+        maxt::OrderStatus::Accepted => Ok("accepted"),
+        maxt::OrderStatus::Open => Ok("open"),
+        maxt::OrderStatus::PartiallyFilled => Ok("partially_filled"),
+        maxt::OrderStatus::Filled => Ok("filled"),
+        maxt::OrderStatus::Cancelled => Ok("cancelled"),
+        maxt::OrderStatus::Rejected => Ok("rejected"),
+        maxt::OrderStatus::Unknown => Ok("unknown"),
+        _ => Err(binding_contract("OrderStatus")),
     }
 }
 
@@ -187,88 +281,6 @@ pub(crate) fn time_in_force_to_wire(value: maxt::TimeInForce) -> PyResult<&'stat
     }
 }
 
-pub(crate) fn margin_mode_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::MarginMode> {
-    let value = text(value)?;
-    match value.as_str() {
-        "cross" => Ok(maxt::MarginMode::Cross),
-        "isolated" => Ok(maxt::MarginMode::Isolated),
-        _ => Err(invalid("margin mode", &value)),
-    }
-}
-
-pub(crate) fn margin_mode_to_wire(value: maxt::MarginMode) -> PyResult<&'static str> {
-    match value {
-        maxt::MarginMode::Cross => Ok("cross"),
-        maxt::MarginMode::Isolated => Ok("isolated"),
-        _ => Err(binding_contract("MarginMode")),
-    }
-}
-
-pub(crate) fn market_status_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::MarketStatus> {
-    let value = text(value)?;
-    match value.as_str() {
-        "active" => Ok(maxt::MarketStatus::Active),
-        "paused" => Ok(maxt::MarketStatus::Paused),
-        "delisted" => Ok(maxt::MarketStatus::Delisted),
-        "unknown" => Ok(maxt::MarketStatus::Unknown),
-        _ => Err(invalid("market status", &value)),
-    }
-}
-
-pub(crate) fn market_status_to_wire(value: maxt::MarketStatus) -> PyResult<&'static str> {
-    match value {
-        maxt::MarketStatus::Active => Ok("active"),
-        maxt::MarketStatus::Paused => Ok("paused"),
-        maxt::MarketStatus::Delisted => Ok("delisted"),
-        maxt::MarketStatus::Unknown => Ok("unknown"),
-        _ => Err(binding_contract("MarketStatus")),
-    }
-}
-
-pub(crate) fn order_status_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::OrderStatus> {
-    let value = text(value)?;
-    match value.as_str() {
-        "accepted" => Ok(maxt::OrderStatus::Accepted),
-        "open" => Ok(maxt::OrderStatus::Open),
-        "partially_filled" => Ok(maxt::OrderStatus::PartiallyFilled),
-        "filled" => Ok(maxt::OrderStatus::Filled),
-        "cancelled" => Ok(maxt::OrderStatus::Cancelled),
-        "rejected" => Ok(maxt::OrderStatus::Rejected),
-        "unknown" => Ok(maxt::OrderStatus::Unknown),
-        _ => Err(invalid("order status", &value)),
-    }
-}
-
-pub(crate) fn order_status_to_wire(value: maxt::OrderStatus) -> PyResult<&'static str> {
-    match value {
-        maxt::OrderStatus::Accepted => Ok("accepted"),
-        maxt::OrderStatus::Open => Ok("open"),
-        maxt::OrderStatus::PartiallyFilled => Ok("partially_filled"),
-        maxt::OrderStatus::Filled => Ok("filled"),
-        maxt::OrderStatus::Cancelled => Ok("cancelled"),
-        maxt::OrderStatus::Rejected => Ok("rejected"),
-        maxt::OrderStatus::Unknown => Ok("unknown"),
-        _ => Err(binding_contract("OrderStatus")),
-    }
-}
-
-pub(crate) fn overflow_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::Overflow> {
-    let value = text(value)?;
-    match value.as_str() {
-        "backpressure" => Ok(maxt::Overflow::Backpressure),
-        "drop_newest" => Ok(maxt::Overflow::DropNewest),
-        _ => Err(invalid("overflow", &value)),
-    }
-}
-
-pub(crate) fn overflow_to_wire(value: maxt::Overflow) -> PyResult<&'static str> {
-    match value {
-        maxt::Overflow::Backpressure => Ok("backpressure"),
-        maxt::Overflow::DropNewest => Ok("drop_newest"),
-        _ => Err(binding_contract("Overflow")),
-    }
-}
-
 pub(crate) fn exchange_error_kind_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::ExchangeErrorKind> {
     let value = text(value)?;
     match value.as_str() {
@@ -287,6 +299,135 @@ pub(crate) fn exchange_error_kind_to_wire(value: maxt::ExchangeErrorKind) -> PyR
         maxt::ExchangeErrorKind::Unavailable => Ok("unavailable"),
         maxt::ExchangeErrorKind::Unknown => Ok("unknown"),
         _ => Err(binding_contract("ExchangeErrorKind")),
+    }
+}
+
+pub(crate) fn network_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::Network> {
+    let value = text(value)?;
+    match value.as_str() {
+        "bitcoin" => Ok(maxt::Network::Bitcoin),
+        "ethereum" => Ok(maxt::Network::Ethereum),
+        "arbitrum" => Ok(maxt::Network::Arbitrum),
+        "bnb_smart_chain" => Ok(maxt::Network::BnbSmartChain),
+        "tron" => Ok(maxt::Network::Tron),
+        "solana" => Ok(maxt::Network::Solana),
+        "polygon" => Ok(maxt::Network::Polygon),
+        "base" => Ok(maxt::Network::Base),
+        "optimism" => Ok(maxt::Network::Optimism),
+        "avalanche_c" => Ok(maxt::Network::AvalancheC),
+        "xrp_ledger" => Ok(maxt::Network::XrpLedger),
+        "stellar" => Ok(maxt::Network::Stellar),
+        "cosmos" => Ok(maxt::Network::Cosmos),
+        "aptos" => Ok(maxt::Network::Aptos),
+        "sui" => Ok(maxt::Network::Sui),
+        "ton" => Ok(maxt::Network::Ton),
+        "near" => Ok(maxt::Network::Near),
+        "polkadot" => Ok(maxt::Network::Polkadot),
+        value => Ok(maxt::Network::Other(value.to_owned())),
+    }
+}
+
+pub(crate) fn network_to_wire(value: &maxt::Network) -> PyResult<&str> {
+    match value {
+        maxt::Network::Bitcoin => Ok("bitcoin"),
+        maxt::Network::Ethereum => Ok("ethereum"),
+        maxt::Network::Arbitrum => Ok("arbitrum"),
+        maxt::Network::BnbSmartChain => Ok("bnb_smart_chain"),
+        maxt::Network::Tron => Ok("tron"),
+        maxt::Network::Solana => Ok("solana"),
+        maxt::Network::Polygon => Ok("polygon"),
+        maxt::Network::Base => Ok("base"),
+        maxt::Network::Optimism => Ok("optimism"),
+        maxt::Network::AvalancheC => Ok("avalanche_c"),
+        maxt::Network::XrpLedger => Ok("xrp_ledger"),
+        maxt::Network::Stellar => Ok("stellar"),
+        maxt::Network::Cosmos => Ok("cosmos"),
+        maxt::Network::Aptos => Ok("aptos"),
+        maxt::Network::Sui => Ok("sui"),
+        maxt::Network::Ton => Ok("ton"),
+        maxt::Network::Near => Ok("near"),
+        maxt::Network::Polkadot => Ok("polkadot"),
+        maxt::Network::Other(value) => Ok(value.as_str()),
+        _ => Err(binding_contract("Network")),
+    }
+}
+
+pub(crate) fn withdrawal_status_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::WithdrawalStatus> {
+    let value = text(value)?;
+    match value.as_str() {
+        "pending" => Ok(maxt::WithdrawalStatus::Pending),
+        "processing" => Ok(maxt::WithdrawalStatus::Processing),
+        "completed" => Ok(maxt::WithdrawalStatus::Completed),
+        "cancelled" => Ok(maxt::WithdrawalStatus::Cancelled),
+        "failed" => Ok(maxt::WithdrawalStatus::Failed),
+        "unknown" => Ok(maxt::WithdrawalStatus::Unknown),
+        _ => Err(invalid("withdrawal status", &value)),
+    }
+}
+
+pub(crate) fn withdrawal_status_to_wire(value: maxt::WithdrawalStatus) -> PyResult<&'static str> {
+    match value {
+        maxt::WithdrawalStatus::Pending => Ok("pending"),
+        maxt::WithdrawalStatus::Processing => Ok("processing"),
+        maxt::WithdrawalStatus::Completed => Ok("completed"),
+        maxt::WithdrawalStatus::Cancelled => Ok("cancelled"),
+        maxt::WithdrawalStatus::Failed => Ok("failed"),
+        maxt::WithdrawalStatus::Unknown => Ok("unknown"),
+        _ => Err(binding_contract("WithdrawalStatus")),
+    }
+}
+
+pub(crate) fn deposit_status_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::DepositStatus> {
+    let value = text(value)?;
+    match value.as_str() {
+        "pending" => Ok(maxt::DepositStatus::Pending),
+        "completed" => Ok(maxt::DepositStatus::Completed),
+        "failed" => Ok(maxt::DepositStatus::Failed),
+        "unknown" => Ok(maxt::DepositStatus::Unknown),
+        _ => Err(invalid("deposit status", &value)),
+    }
+}
+
+pub(crate) fn deposit_status_to_wire(value: maxt::DepositStatus) -> PyResult<&'static str> {
+    match value {
+        maxt::DepositStatus::Pending => Ok("pending"),
+        maxt::DepositStatus::Completed => Ok("completed"),
+        maxt::DepositStatus::Failed => Ok("failed"),
+        maxt::DepositStatus::Unknown => Ok("unknown"),
+        _ => Err(binding_contract("DepositStatus")),
+    }
+}
+
+pub(crate) fn transfer_error_kind_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::TransferErrorKind> {
+    let value = text(value)?;
+    match value.as_str() {
+        "asset_mismatch" => Ok(maxt::TransferErrorKind::AssetMismatch),
+        "network_mismatch" => Ok(maxt::TransferErrorKind::NetworkMismatch),
+        "ambiguous_network" => Ok(maxt::TransferErrorKind::AmbiguousNetwork),
+        "network_unavailable" => Ok(maxt::TransferErrorKind::NetworkUnavailable),
+        "memo_required" => Ok(maxt::TransferErrorKind::MemoRequired),
+        "destination_unavailable" => Ok(maxt::TransferErrorKind::DestinationUnavailable),
+        "address_not_allowed" => Ok(maxt::TransferErrorKind::AddressNotAllowed),
+        "travel_rule_required" => Ok(maxt::TransferErrorKind::TravelRuleRequired),
+        "amount_out_of_range" => Ok(maxt::TransferErrorKind::AmountOutOfRange),
+        "plan_expired" => Ok(maxt::TransferErrorKind::PlanExpired),
+        _ => Err(invalid("transfer error kind", &value)),
+    }
+}
+
+pub(crate) fn transfer_error_kind_to_wire(value: maxt::TransferErrorKind) -> PyResult<&'static str> {
+    match value {
+        maxt::TransferErrorKind::AssetMismatch => Ok("asset_mismatch"),
+        maxt::TransferErrorKind::NetworkMismatch => Ok("network_mismatch"),
+        maxt::TransferErrorKind::AmbiguousNetwork => Ok("ambiguous_network"),
+        maxt::TransferErrorKind::NetworkUnavailable => Ok("network_unavailable"),
+        maxt::TransferErrorKind::MemoRequired => Ok("memo_required"),
+        maxt::TransferErrorKind::DestinationUnavailable => Ok("destination_unavailable"),
+        maxt::TransferErrorKind::AddressNotAllowed => Ok("address_not_allowed"),
+        maxt::TransferErrorKind::TravelRuleRequired => Ok("travel_rule_required"),
+        maxt::TransferErrorKind::AmountOutOfRange => Ok("amount_out_of_range"),
+        maxt::TransferErrorKind::PlanExpired => Ok("plan_expired"),
+        _ => Err(binding_contract("TransferErrorKind")),
     }
 }
 
@@ -406,6 +547,372 @@ pub(crate) fn balance_to_wire(
     )
 }
 
+pub(crate) fn asset_network_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::AssetNetwork> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::AssetNetwork {
+        exchange: exchange_from_wire(&required(dict, "exchange")?)?,
+        asset: required(dict, "asset")?.extract::<String>()?,
+        network: network_from_wire(&required(dict, "network")?)?,
+        provider_id: required(dict, "provider_id")?.extract::<String>()?,
+        deposit_enabled: required(dict, "deposit_enabled")?.extract()?,
+        withdrawal_enabled: required(dict, "withdrawal_enabled")?.extract()?,
+        withdrawal_fee: optional(dict, "withdrawal_fee")?.map(|value| -> PyResult<_> { withdrawal_fee_from_wire(&value) }).transpose()?,
+        minimum_withdrawal: optional(dict, "minimum_withdrawal")?.map(|value| -> PyResult<_> { decimal_from_wire(&value, "minimum_withdrawal") }).transpose()?,
+        maximum_withdrawal: optional(dict, "maximum_withdrawal")?.map(|value| -> PyResult<_> { decimal_from_wire(&value, "maximum_withdrawal") }).transpose()?,
+        memo_required: required(dict, "memo_required")?.extract()?,
+    })
+}
+
+pub(crate) fn asset_network_to_wire(
+    py: Python<'_>,
+    value: &maxt::AssetNetwork,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "exchange" => exchange_to_wire(value.exchange)?,
+        "asset" => &value.asset,
+        "network" => network_to_wire(&value.network)?,
+        "provider_id" => &value.provider_id,
+        "deposit_enabled" => value.deposit_enabled,
+        "withdrawal_enabled" => value.withdrawal_enabled,
+        "withdrawal_fee" => value.withdrawal_fee.as_ref().map(|item| withdrawal_fee_to_wire(py, item)).transpose()?,
+        "minimum_withdrawal" => value.minimum_withdrawal.map(decimal_to_wire),
+        "maximum_withdrawal" => value.maximum_withdrawal.map(decimal_to_wire),
+        "memo_required" => value.memo_required,
+    )
+}
+
+pub(crate) fn deposit_address_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::DepositAddress> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::DepositAddress {
+        exchange: exchange_from_wire(&required(dict, "exchange")?)?,
+        asset: required(dict, "asset")?.extract::<String>()?,
+        network: network_from_wire(&required(dict, "network")?)?,
+        address: optional(dict, "address")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        memo: optional(dict, "memo")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+    })
+}
+
+pub(crate) fn deposit_address_to_wire(
+    py: Python<'_>,
+    value: &maxt::DepositAddress,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "exchange" => exchange_to_wire(value.exchange)?,
+        "asset" => &value.asset,
+        "network" => network_to_wire(&value.network)?,
+        "address" => &value.address,
+        "memo" => &value.memo,
+    )
+}
+
+pub(crate) fn exchange_destination_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::ExchangeDestination> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::ExchangeDestination {
+        exchange: exchange_from_wire(&required(dict, "exchange")?)?,
+        asset: required(dict, "asset")?.extract::<String>()?,
+        network: network_from_wire(&required(dict, "network")?)?,
+        address: required(dict, "address")?.extract::<String>()?,
+        memo: optional(dict, "memo")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+    })
+}
+
+pub(crate) fn exchange_destination_to_wire(
+    py: Python<'_>,
+    value: &maxt::ExchangeDestination,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "exchange" => exchange_to_wire(value.exchange)?,
+        "asset" => &value.asset,
+        "network" => network_to_wire(&value.network)?,
+        "address" => &value.address,
+        "memo" => &value.memo,
+    )
+}
+
+pub(crate) fn chain_destination_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::ChainDestination> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::ChainDestination {
+        asset: required(dict, "asset")?.extract::<String>()?,
+        network: network_from_wire(&required(dict, "network")?)?,
+        address: required(dict, "address")?.extract::<String>()?,
+        memo: optional(dict, "memo")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+    })
+}
+
+pub(crate) fn chain_destination_to_wire(
+    py: Python<'_>,
+    value: &maxt::ChainDestination,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "asset" => &value.asset,
+        "network" => network_to_wire(&value.network)?,
+        "address" => &value.address,
+        "memo" => &value.memo,
+    )
+}
+
+pub(crate) fn exchange_transfer_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::ExchangeTransferRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::ExchangeTransferRequest {
+        asset: required(dict, "asset")?.extract::<String>()?,
+        source_network: optional(dict, "source_network")?.map(|value| -> PyResult<_> { network_from_wire(&value) }).transpose()?,
+        destination_network: optional(dict, "destination_network")?.map(|value| -> PyResult<_> { network_from_wire(&value) }).transpose()?,
+        amount: decimal_from_wire(&required(dict, "amount")?, "amount")?,
+    })
+}
+
+pub(crate) fn exchange_transfer_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::ExchangeTransferRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "asset" => &value.asset,
+        "source_network" => value.source_network.as_ref().map(network_to_wire).transpose()?,
+        "destination_network" => value.destination_network.as_ref().map(network_to_wire).transpose()?,
+        "amount" => decimal_to_wire(value.amount),
+    )
+}
+
+pub(crate) fn chain_transfer_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::ChainTransferRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::ChainTransferRequest {
+        asset: required(dict, "asset")?.extract::<String>()?,
+        source_network: optional(dict, "source_network")?.map(|value| -> PyResult<_> { network_from_wire(&value) }).transpose()?,
+        destination: chain_destination_from_wire(&required(dict, "destination")?)?,
+        amount: decimal_from_wire(&required(dict, "amount")?, "amount")?,
+    })
+}
+
+pub(crate) fn chain_transfer_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::ChainTransferRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "asset" => &value.asset,
+        "source_network" => value.source_network.as_ref().map(network_to_wire).transpose()?,
+        "destination" => chain_destination_to_wire(py, &value.destination)?,
+        "amount" => decimal_to_wire(value.amount),
+    )
+}
+
+pub(crate) fn transfer_destination_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::TransferDestination> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    let kind = text(&required(dict, "kind")?)?;
+    match kind.as_str() {
+        "exchange" => Ok(maxt::TransferDestination::Exchange(exchange_destination_from_wire(&required(dict, "value")?)?)),
+        "chain" => Ok(maxt::TransferDestination::Chain(chain_destination_from_wire(&required(dict, "value")?)?)),
+        _ => Err(invalid("transfer_destination", &kind)),
+    }
+}
+
+pub(crate) fn transfer_destination_to_wire(
+    py: Python<'_>,
+    value: &maxt::TransferDestination,
+) -> PyResult<Py<PyAny>> {
+    match value {
+        maxt::TransferDestination::Exchange(value) => wire_dict!(py, "kind" => "exchange", "value" => exchange_destination_to_wire(py, value)?),
+        maxt::TransferDestination::Chain(value) => wire_dict!(py, "kind" => "chain", "value" => chain_destination_to_wire(py, value)?),
+        _ => Err(binding_contract("TransferDestination")),
+    }
+}
+
+pub(crate) fn withdrawal_fee_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::WithdrawalFee> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    let kind = text(&required(dict, "kind")?)?;
+    match kind.as_str() {
+        "fixed" => Ok(maxt::WithdrawalFee::Fixed(decimal_from_wire(&required(dict, "value")?, "value")?)),
+        "rate" => Ok(maxt::WithdrawalFee::Rate {
+                rate: decimal_from_wire(&required(dict, "rate")?, "rate")?,
+                minimum: optional(dict, "minimum")?.map(|value| -> PyResult<_> { decimal_from_wire(&value, "minimum") }).transpose()?,
+                maximum: optional(dict, "maximum")?.map(|value| -> PyResult<_> { decimal_from_wire(&value, "maximum") }).transpose()?,
+            }),
+        _ => Err(invalid("withdrawal_fee", &kind)),
+    }
+}
+
+pub(crate) fn withdrawal_fee_to_wire(
+    py: Python<'_>,
+    value: &maxt::WithdrawalFee,
+) -> PyResult<Py<PyAny>> {
+    match value {
+        maxt::WithdrawalFee::Fixed(value) => wire_dict!(py, "kind" => "fixed", "value" => decimal_to_wire(*value)),
+        maxt::WithdrawalFee::Rate { rate, minimum, maximum } => wire_dict!(py, "kind" => "rate", "rate" => decimal_to_wire(*rate), "minimum" => minimum.map(decimal_to_wire), "maximum" => maximum.map(decimal_to_wire)),
+        _ => Err(binding_contract("WithdrawalFee")),
+    }
+}
+
+pub(crate) fn travel_rule_requirement_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::TravelRuleRequirement> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    let kind = text(&required(dict, "kind")?)?;
+    match kind.as_str() {
+        "not_required" => Ok(maxt::TravelRuleRequirement::NotRequired),
+        "required" => Ok(maxt::TravelRuleRequirement::Required {
+                consent_url: optional(dict, "consent_url")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+            }),
+        _ => Err(invalid("travel_rule_requirement", &kind)),
+    }
+}
+
+pub(crate) fn travel_rule_requirement_to_wire(
+    py: Python<'_>,
+    value: &maxt::TravelRuleRequirement,
+) -> PyResult<Py<PyAny>> {
+    match value {
+        maxt::TravelRuleRequirement::NotRequired => wire_dict!(py, "kind" => "not_required"),
+        maxt::TravelRuleRequirement::Required { consent_url } => wire_dict!(py, "kind" => "required", "consent_url" => consent_url.as_deref()),
+        _ => Err(binding_contract("TravelRuleRequirement")),
+    }
+}
+
+pub(crate) fn withdrawal_quote_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::WithdrawalQuote> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::WithdrawalQuote {
+        fee: optional(dict, "fee")?.map(|value| -> PyResult<_> { decimal_from_wire(&value, "fee") }).transpose()?,
+        expected_receive: optional(dict, "expected_receive")?.map(|value| -> PyResult<_> { decimal_from_wire(&value, "expected_receive") }).transpose()?,
+        minimum_amount: optional(dict, "minimum_amount")?.map(|value| -> PyResult<_> { decimal_from_wire(&value, "minimum_amount") }).transpose()?,
+        maximum_amount: optional(dict, "maximum_amount")?.map(|value| -> PyResult<_> { decimal_from_wire(&value, "maximum_amount") }).transpose()?,
+        address_allowed: optional(dict, "address_allowed")?.map(|value| -> PyResult<_> { value.extract() }).transpose()?,
+        travel_rule: travel_rule_requirement_from_wire(&required(dict, "travel_rule")?)?,
+        expires_at: optional(dict, "expires_at")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
+    })
+}
+
+pub(crate) fn withdrawal_quote_to_wire(
+    py: Python<'_>,
+    value: &maxt::WithdrawalQuote,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "fee" => value.fee.map(decimal_to_wire),
+        "expected_receive" => value.expected_receive.map(decimal_to_wire),
+        "minimum_amount" => value.minimum_amount.map(decimal_to_wire),
+        "maximum_amount" => value.maximum_amount.map(decimal_to_wire),
+        "address_allowed" => value.address_allowed,
+        "travel_rule" => travel_rule_requirement_to_wire(py, &value.travel_rule)?,
+        "expires_at" => value.expires_at.map(timestamp_to_wire),
+    )
+}
+
+pub(crate) fn transfer_plan_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::TransferPlan> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::TransferPlan {
+        source: exchange_from_wire(&required(dict, "source")?)?,
+        destination: optional(dict, "destination")?.map(|value| -> PyResult<_> { exchange_from_wire(&value) }).transpose()?,
+        request: withdraw_request_from_wire(&required(dict, "request")?)?,
+        quote: withdrawal_quote_from_wire(&required(dict, "quote")?)?,
+        created_at: required(dict, "created_at")?.extract().map(Timestamp::from_nanos)?,
+        expires_at: required(dict, "expires_at")?.extract().map(Timestamp::from_nanos)?,
+    })
+}
+
+pub(crate) fn transfer_plan_to_wire(
+    py: Python<'_>,
+    value: &maxt::TransferPlan,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "source" => exchange_to_wire(value.source)?,
+        "destination" => value.destination.map(exchange_to_wire).transpose()?,
+        "request" => withdraw_request_to_wire(py, &value.request)?,
+        "quote" => withdrawal_quote_to_wire(py, &value.quote)?,
+        "created_at" => timestamp_to_wire(value.created_at),
+        "expires_at" => timestamp_to_wire(value.expires_at),
+    )
+}
+
+pub(crate) fn withdrawal_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::Withdrawal> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::Withdrawal {
+        id: required(dict, "id")?.extract::<String>()?,
+        asset: required(dict, "asset")?.extract::<String>()?,
+        network: optional(dict, "network")?.map(|value| -> PyResult<_> { network_from_wire(&value) }).transpose()?,
+        provider_network: optional(dict, "provider_network")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        amount: decimal_from_wire(&required(dict, "amount")?, "amount")?,
+        fee: optional(dict, "fee")?.map(|value| -> PyResult<_> { decimal_from_wire(&value, "fee") }).transpose()?,
+        destination: optional(dict, "destination")?.map(|value| -> PyResult<_> { transfer_destination_from_wire(&value) }).transpose()?,
+        status: withdrawal_status_from_wire(&required(dict, "status")?)?,
+        provider_status: required(dict, "provider_status")?.extract::<String>()?,
+        tx_id: optional(dict, "tx_id")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        created_at: optional(dict, "created_at")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
+    })
+}
+
+pub(crate) fn withdrawal_to_wire(
+    py: Python<'_>,
+    value: &maxt::Withdrawal,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "id" => &value.id,
+        "asset" => &value.asset,
+        "network" => value.network.as_ref().map(network_to_wire).transpose()?,
+        "provider_network" => &value.provider_network,
+        "amount" => decimal_to_wire(value.amount),
+        "fee" => value.fee.map(decimal_to_wire),
+        "destination" => value.destination.as_ref().map(|item| transfer_destination_to_wire(py, item)).transpose()?,
+        "status" => withdrawal_status_to_wire(value.status)?,
+        "provider_status" => &value.provider_status,
+        "tx_id" => &value.tx_id,
+        "created_at" => value.created_at.map(timestamp_to_wire),
+    )
+}
+
+pub(crate) fn deposit_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::Deposit> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::Deposit {
+        id: required(dict, "id")?.extract::<String>()?,
+        asset: required(dict, "asset")?.extract::<String>()?,
+        network: optional(dict, "network")?.map(|value| -> PyResult<_> { network_from_wire(&value) }).transpose()?,
+        provider_network: optional(dict, "provider_network")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        amount: decimal_from_wire(&required(dict, "amount")?, "amount")?,
+        address: optional(dict, "address")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        memo: optional(dict, "memo")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        status: deposit_status_from_wire(&required(dict, "status")?)?,
+        provider_status: required(dict, "provider_status")?.extract::<String>()?,
+        tx_id: optional(dict, "tx_id")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        created_at: optional(dict, "created_at")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
+    })
+}
+
+pub(crate) fn deposit_to_wire(
+    py: Python<'_>,
+    value: &maxt::Deposit,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "id" => &value.id,
+        "asset" => &value.asset,
+        "network" => value.network.as_ref().map(network_to_wire).transpose()?,
+        "provider_network" => &value.provider_network,
+        "amount" => decimal_to_wire(value.amount),
+        "address" => &value.address,
+        "memo" => &value.memo,
+        "status" => deposit_status_to_wire(value.status)?,
+        "provider_status" => &value.provider_status,
+        "tx_id" => &value.tx_id,
+        "created_at" => value.created_at.map(timestamp_to_wire),
+    )
+}
+
 pub(crate) fn order_to_wire(
     py: Python<'_>,
     value: &maxt::Order,
@@ -481,9 +988,103 @@ pub(crate) fn funding_payment_to_wire(
     )
 }
 
+pub(crate) fn deposit_address_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::DepositAddressRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::DepositAddressRequest {
+        asset: required(dict, "asset")?.extract::<String>()?,
+        network: network_from_wire(&required(dict, "network")?)?,
+        amount: optional(dict, "amount")?.map(|value| -> PyResult<_> { decimal_from_wire(&value, "amount") }).transpose()?,
+    })
+}
+
+pub(crate) fn deposit_address_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::DepositAddressRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "asset" => &value.asset,
+        "network" => network_to_wire(&value.network)?,
+        "amount" => value.amount.map(decimal_to_wire),
+    )
+}
+
+pub(crate) fn withdraw_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::WithdrawRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::WithdrawRequest {
+        asset: required(dict, "asset")?.extract::<String>()?,
+        network: network_from_wire(&required(dict, "network")?)?,
+        amount: decimal_from_wire(&required(dict, "amount")?, "amount")?,
+        destination: transfer_destination_from_wire(&required(dict, "destination")?)?,
+        client_id: optional(dict, "client_id")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+    })
+}
+
+pub(crate) fn withdraw_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::WithdrawRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "asset" => &value.asset,
+        "network" => network_to_wire(&value.network)?,
+        "amount" => decimal_to_wire(value.amount),
+        "destination" => transfer_destination_to_wire(py, &value.destination)?,
+        "client_id" => &value.client_id,
+    )
+}
+
+pub(crate) fn transfer_history_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::TransferHistoryRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::TransferHistoryRequest {
+        asset: optional(dict, "asset")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        network: optional(dict, "network")?.map(|value| -> PyResult<_> { network_from_wire(&value) }).transpose()?,
+        cursor: optional(dict, "cursor")?.map(|value| value.extract::<String>().map(Cursor::new)).transpose()?,
+        limit: optional(dict, "limit")?.map(|value| -> PyResult<_> { value.extract() }).transpose()?,
+    })
+}
+
+pub(crate) fn transfer_history_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::TransferHistoryRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "asset" => &value.asset,
+        "network" => value.network.as_ref().map(network_to_wire).transpose()?,
+        "cursor" => value.cursor.as_ref().map(Cursor::as_str),
+        "limit" => value.limit,
+    )
+}
+
+pub(crate) fn deposits_page_to_wire(
+    py: Python<'_>,
+    value: &Page<maxt::Deposit>,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "items" => list_to_wire(py, &value.items, deposit_to_wire)?,
+        "next" => value.next.as_ref().map(Cursor::as_str),
+    )
+}
+
+pub(crate) fn withdrawals_page_to_wire(
+    py: Python<'_>,
+    value: &Page<maxt::Withdrawal>,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "items" => list_to_wire(py, &value.items, withdrawal_to_wire)?,
+        "next" => value.next.as_ref().map(Cursor::as_str),
+    )
+}
+
 pub(crate) fn funding_rates_page_to_wire(
     py: Python<'_>,
-    value: &Page<FundingRate>,
+    value: &Page<maxt::FundingRate>,
 ) -> PyResult<Py<PyAny>> {
     wire_dict!(
         py,
@@ -494,7 +1095,7 @@ pub(crate) fn funding_rates_page_to_wire(
 
 pub(crate) fn funding_payments_page_to_wire(
     py: Python<'_>,
-    value: &Page<FundingPayment>,
+    value: &Page<maxt::FundingPayment>,
 ) -> PyResult<Py<PyAny>> {
     wire_dict!(
         py,
@@ -506,6 +1107,7 @@ pub(crate) fn funding_payments_page_to_wire(
 pub(crate) fn error_kind(error: &maxt::Error) -> &'static str {
     match error {
         maxt::Error::InvalidRequest { .. } => "invalid_request",
+        maxt::Error::Transfer { .. } => "transfer",
         maxt::Error::Unsupported { .. } => "unsupported",
         maxt::Error::Adapter { .. } => "adapter",
         maxt::Error::Auth { .. } => "auth",
@@ -521,6 +1123,7 @@ pub(crate) fn error_to_wire(py: Python<'_>, error: &maxt::Error) -> PyResult<Py<
     let retryable = error.is_retryable();
     match error {
         maxt::Error::InvalidRequest { field, detail } => wire_dict!(py, "kind" => "invalid_request", "message" => &message, "retryable" => retryable, "field" => field, "detail" => detail),
+        maxt::Error::Transfer { kind, detail } => wire_dict!(py, "kind" => "transfer", "message" => &message, "retryable" => retryable, "transfer_kind" => transfer_error_kind_to_wire(*kind)?, "detail" => detail),
         maxt::Error::Unsupported { feature, exchange, detail } => wire_dict!(py, "kind" => "unsupported", "message" => &message, "retryable" => retryable, "feature" => feature_to_wire(*feature)?, "exchange" => exchange, "detail" => detail),
         maxt::Error::Adapter { detail } => wire_dict!(py, "kind" => "adapter", "message" => &message, "retryable" => retryable, "detail" => detail),
         maxt::Error::Auth { detail } => wire_dict!(py, "kind" => "auth", "message" => &message, "retryable" => retryable, "detail" => detail),

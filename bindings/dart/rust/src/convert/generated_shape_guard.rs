@@ -87,6 +87,123 @@ fn _guard_balance_wire(value: WireBalance) {
     } = value;
 }
 
+fn _guard_asset_network_wire(value: WireAssetNetwork) {
+    let WireAssetNetwork {
+        exchange: _,
+        asset: _,
+        network: _,
+        provider_id: _,
+        deposit_enabled: _,
+        withdrawal_enabled: _,
+        withdrawal_fee: _,
+        minimum_withdrawal: _,
+        maximum_withdrawal: _,
+        memo_required: _,
+    } = value;
+}
+
+fn _guard_deposit_address_wire(value: WireDepositAddress) {
+    let WireDepositAddress {
+        exchange: _,
+        asset: _,
+        network: _,
+        address: _,
+        memo: _,
+    } = value;
+}
+
+fn _guard_exchange_destination_wire(value: WireExchangeDestination) {
+    let WireExchangeDestination {
+        exchange: _,
+        asset: _,
+        network: _,
+        address: _,
+        memo: _,
+    } = value;
+}
+
+fn _guard_chain_destination_wire(value: WireChainDestination) {
+    let WireChainDestination {
+        asset: _,
+        network: _,
+        address: _,
+        memo: _,
+    } = value;
+}
+
+fn _guard_exchange_transfer_request_wire(value: WireExchangeTransferRequest) {
+    let WireExchangeTransferRequest {
+        asset: _,
+        source_network: _,
+        destination_network: _,
+        amount: _,
+    } = value;
+}
+
+fn _guard_chain_transfer_request_wire(value: WireChainTransferRequest) {
+    let WireChainTransferRequest {
+        asset: _,
+        source_network: _,
+        destination: _,
+        amount: _,
+    } = value;
+}
+
+fn _guard_withdrawal_quote_wire(value: WireWithdrawalQuote) {
+    let WireWithdrawalQuote {
+        fee: _,
+        expected_receive: _,
+        minimum_amount: _,
+        maximum_amount: _,
+        address_allowed: _,
+        travel_rule: _,
+        expires_at_ns: _,
+    } = value;
+}
+
+fn _guard_transfer_plan_wire(value: WireTransferPlan) {
+    let WireTransferPlan {
+        source: _,
+        destination: _,
+        request: _,
+        quote: _,
+        created_at_ns: _,
+        expires_at_ns: _,
+    } = value;
+}
+
+fn _guard_withdrawal_wire(value: WireWithdrawal) {
+    let WireWithdrawal {
+        id: _,
+        asset: _,
+        network: _,
+        provider_network: _,
+        amount: _,
+        fee: _,
+        destination: _,
+        status: _,
+        provider_status: _,
+        tx_id: _,
+        created_at_ns: _,
+    } = value;
+}
+
+fn _guard_deposit_wire(value: WireDeposit) {
+    let WireDeposit {
+        id: _,
+        asset: _,
+        network: _,
+        provider_network: _,
+        amount: _,
+        address: _,
+        memo: _,
+        status: _,
+        provider_status: _,
+        tx_id: _,
+        created_at_ns: _,
+    } = value;
+}
+
 fn _guard_order_wire(value: WireOrder) {
     let WireOrder {
         id: _,
@@ -164,6 +281,33 @@ fn _guard_order_request_wire(value: WireOrderRequest) {
     } = value;
 }
 
+fn _guard_deposit_address_request_wire(value: WireDepositAddressRequest) {
+    let WireDepositAddressRequest {
+        asset: _,
+        network: _,
+        amount: _,
+    } = value;
+}
+
+fn _guard_withdraw_request_wire(value: WireWithdrawRequest) {
+    let WireWithdrawRequest {
+        asset: _,
+        network: _,
+        amount: _,
+        destination: _,
+        client_id: _,
+    } = value;
+}
+
+fn _guard_transfer_history_request_wire(value: WireTransferHistoryRequest) {
+    let WireTransferHistoryRequest {
+        asset: _,
+        network: _,
+        cursor: _,
+        limit: _,
+    } = value;
+}
+
 fn _guard_history_request_wire(value: WireHistoryRequest) {
     let WireHistoryRequest {
         market: _,
@@ -218,6 +362,27 @@ fn _guard_hyperliquid_asset_context_wire(value: WireHyperliquidAssetContext) {
     } = value;
 }
 
+fn _guard_withdrawal_fee_wire(value: WireWithdrawalFee) {
+    match value {
+        WireWithdrawalFee::Fixed(_) => {}
+        WireWithdrawalFee::Rate { rate: _, minimum: _, maximum: _ } => {}
+    }
+}
+
+fn _guard_transfer_destination_wire(value: WireTransferDestination) {
+    match value {
+        WireTransferDestination::Exchange(_) => {}
+        WireTransferDestination::Chain(_) => {}
+    }
+}
+
+fn _guard_travel_rule_requirement_wire(value: WireTravelRuleRequirement) {
+    match value {
+        WireTravelRuleRequirement::NotRequired => {}
+        WireTravelRuleRequirement::Required { consent_url: _ } => {}
+    }
+}
+
 fn _guard_native_error(value: NativeError) {
     let NativeError {
         code: _,
@@ -231,12 +396,14 @@ fn _guard_native_error(value: NativeError) {
         rate_limited: _,
         retryable: _,
         status: _,
+        transfer_kind: _,
     } = value;
 }
 
 fn _guard_native_error_kind(value: NativeErrorKind) {
     match value {
         NativeErrorKind::InvalidRequest => {}
+        NativeErrorKind::Transfer => {}
         NativeErrorKind::Unsupported => {}
         NativeErrorKind::Adapter => {}
         NativeErrorKind::Auth => {}
@@ -267,6 +434,12 @@ fn _guard_feature(value: WireFeature) {
         WireFeature::TickerStream => {}
         WireFeature::CandleStream => {}
         WireFeature::Balances => {}
+        WireFeature::AssetNetworks => {}
+        WireFeature::DepositAddresses => {}
+        WireFeature::DepositHistory => {}
+        WireFeature::WithdrawalQuotes => {}
+        WireFeature::Withdrawals => {}
+        WireFeature::WithdrawalHistory => {}
         WireFeature::OpenOrders => {}
         WireFeature::AccountStream => {}
         WireFeature::Trading => {}
@@ -379,5 +552,40 @@ fn _guard_exchange_error_kind(value: WireExchangeErrorKind) {
         WireExchangeErrorKind::RateLimited => {}
         WireExchangeErrorKind::Unavailable => {}
         WireExchangeErrorKind::Unknown => {}
+    }
+}
+
+fn _guard_withdrawal_status(value: WireWithdrawalStatus) {
+    match value {
+        WireWithdrawalStatus::Pending => {}
+        WireWithdrawalStatus::Processing => {}
+        WireWithdrawalStatus::Completed => {}
+        WireWithdrawalStatus::Cancelled => {}
+        WireWithdrawalStatus::Failed => {}
+        WireWithdrawalStatus::Unknown => {}
+    }
+}
+
+fn _guard_deposit_status(value: WireDepositStatus) {
+    match value {
+        WireDepositStatus::Pending => {}
+        WireDepositStatus::Completed => {}
+        WireDepositStatus::Failed => {}
+        WireDepositStatus::Unknown => {}
+    }
+}
+
+fn _guard_transfer_error_kind(value: WireTransferErrorKind) {
+    match value {
+        WireTransferErrorKind::AssetMismatch => {}
+        WireTransferErrorKind::NetworkMismatch => {}
+        WireTransferErrorKind::AmbiguousNetwork => {}
+        WireTransferErrorKind::NetworkUnavailable => {}
+        WireTransferErrorKind::MemoRequired => {}
+        WireTransferErrorKind::DestinationUnavailable => {}
+        WireTransferErrorKind::AddressNotAllowed => {}
+        WireTransferErrorKind::TravelRuleRequired => {}
+        WireTransferErrorKind::AmountOutOfRange => {}
+        WireTransferErrorKind::PlanExpired => {}
     }
 }

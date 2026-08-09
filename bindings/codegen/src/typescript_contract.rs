@@ -117,6 +117,12 @@ pub(crate) fn render(schema: &Schema) -> String {
                         .iter()
                         .map(|method| method.native_name)
                 }))
+                .chain(
+                    schema
+                        .client_compositions
+                        .iter()
+                        .map(|method| method.language_name),
+                )
                 .chain(["streamNext", "streamClose"])
         )
     ));
@@ -175,7 +181,7 @@ fn render_identifier(output: &mut String, identifier: &Identifier) {
         output.push_str(&format!("    {}.{},\n", identifier.name, variant.rust_name));
     }
     output.push_str("  ]);\n");
-    output.push_str(identifier_body(identifier.name, identifier.open));
+    output.push_str(&identifier_body(identifier.name, identifier.open));
     output.push_str("}\n\n");
 }
 
@@ -209,17 +215,19 @@ fn interval_seconds(value: &str) -> String {
         .unwrap_or_else(|_| panic!("unsupported Interval wire name: {value}"))
 }
 
-fn identifier_body(name: &str, open: bool) -> &'static str {
+fn identifier_body(name: &str, open: bool) -> String {
     match name {
         "Exchange" => {
-            "  private constructor(id: string, readonly displayName: string) { super(id); Object.freeze(this); }\n"
+            "  private constructor(id: string, readonly displayName: string) { super(id); Object.freeze(this); }\n".to_owned()
         }
         "Feature" => {
             r#"  private constructor(id: string) {
     super(id);
     this.needsCredentials = new Set([
       "balances", "open_orders", "account_stream", "trading", "positions", "margin",
-      "funding_payments", "margin_config", "reduce_only_orders",
+      "funding_payments", "margin_config", "reduce_only_orders", "asset_networks",
+      "deposit_addresses", "deposit_history", "withdrawal_quotes", "withdrawals",
+      "withdrawal_history",
     ]).has(id);
     this.isDerivativesOnly = new Set([
       "positions", "margin", "funding_rates", "funding_payments", "margin_config",
@@ -229,27 +237,27 @@ fn identifier_body(name: &str, open: bool) -> &'static str {
   }
   readonly needsCredentials: boolean;
   readonly isDerivativesOnly: boolean;
-"#
+"#.to_owned()
         }
         "MarketKind" => {
-            "  private constructor(id: string) { super(id); this.isDerivative = id !== \"spot\"; Object.freeze(this); }\n  readonly isDerivative: boolean;\n"
+            "  private constructor(id: string) { super(id); this.isDerivative = id !== \"spot\"; Object.freeze(this); }\n  readonly isDerivative: boolean;\n".to_owned()
         }
         "Side" => {
-            "  private constructor(id: string) { super(id); Object.freeze(this); }\n  get flipped(): Side { return this === Side.Buy ? Side.Sell : Side.Buy; }\n"
+            "  private constructor(id: string) { super(id); Object.freeze(this); }\n  get flipped(): Side { return this === Side.Buy ? Side.Sell : Side.Buy; }\n".to_owned()
         }
         "Interval" => {
-            "  private constructor(id: string, readonly seconds: number | null) { super(id); Object.freeze(this); }\n"
+            "  private constructor(id: string, readonly seconds: number | null) { super(id); Object.freeze(this); }\n".to_owned()
         }
         "OrderStatus" => {
-            "  private constructor(id: string) { super(id); this.isLive = new Set([\"accepted\", \"open\", \"partially_filled\"]).has(id); Object.freeze(this); }\n  readonly isLive: boolean;\n"
+            "  private constructor(id: string) { super(id); this.isLive = new Set([\"accepted\", \"open\", \"partially_filled\"]).has(id); Object.freeze(this); }\n  readonly isLive: boolean;\n".to_owned()
         }
         "ExchangeErrorKind" => {
-            "  private constructor(id: string) { super(id); this.retryable = id === \"rate_limited\" || id === \"unavailable\"; Object.freeze(this); }\n  private readonly retryable: boolean;\n  isRetryable(): boolean { return this.retryable; }\n"
+            "  private constructor(id: string) { super(id); this.retryable = id === \"rate_limited\" || id === \"unavailable\"; Object.freeze(this); }\n  private readonly retryable: boolean;\n  isRetryable(): boolean { return this.retryable; }\n".to_owned()
         }
-        "HyperliquidLedgerKind" if open => {
-            "  private constructor(id: string) { super(id); Object.freeze(this); }\n  static other(value: string): HyperliquidLedgerKind { return this.values.find((item) => item.id === value) ?? new HyperliquidLedgerKind(value); }\n"
-        }
-        _ => "  private constructor(id: string) { super(id); Object.freeze(this); }\n",
+        _ if open => format!(
+            "  private constructor(id: string) {{ super(id); Object.freeze(this); }}\n  static other(value: string): {name} {{ return this.values.find((item) => item.id === value) ?? new {name}(value); }}\n"
+        ),
+        _ => "  private constructor(id: string) { super(id); Object.freeze(this); }\n".to_owned(),
     }
 }
 
@@ -327,5 +335,6 @@ mod tests {
         assert!(output.contains("readonly isLive: boolean"));
         assert!(output.contains("isRetryable(): boolean"));
         assert!(output.contains("static other(value: string): HyperliquidLedgerKind"));
+        assert!(output.contains("static other(value: string): Network"));
     }
 }

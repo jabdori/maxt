@@ -6,6 +6,8 @@ use maxt::adapters::{
     UpbitAdapter, UpbitMarketEvent, UpbitRegion,
 };
 use maxt::{Cursor, Market, Page, Timestamp};
+#[cfg(test)]
+use maxt::Adapter;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -341,18 +343,21 @@ impl NativeHyperliquidAdapter {
     #[new]
     #[pyo3(signature = (*, testnet=false, address=None, private_key=None))]
     fn new(testnet: bool, address: Option<String>, private_key: Option<String>) -> PyResult<Self> {
-        let wallet = credential_pair(address, private_key, ("address", "private_key"))?;
+        let authenticated = private_key.is_some();
         let mut adapter = if testnet {
             HyperliquidAdapter::testnet()
         } else {
             HyperliquidAdapter::new()
         };
-        if let Some((address, private_key)) = wallet.as_ref() {
-            adapter = adapter.with_wallet(address, private_key);
+        if let Some(address) = address {
+            adapter = adapter.with_query_address(address);
+        }
+        if let Some(private_key) = private_key {
+            adapter = adapter.with_signer(private_key);
         }
         Ok(Self {
             inner: Arc::new(adapter),
-            authenticated: wallet.is_some(),
+            authenticated,
         })
     }
 
@@ -460,5 +465,24 @@ mod tests {
         let hyperliquid = NativeHyperliquidAdapter::new(true, None, None).unwrap();
         assert!(hyperliquid.is_testnet());
         assert!(!hyperliquid.authenticated());
+
+        let address_only = NativeHyperliquidAdapter::new(
+            false,
+            Some("0x14791697260e4c9a71f18484c9f997b308e59325".into()),
+            None,
+        )
+        .unwrap();
+        assert!(address_only.inner.supports(maxt::Feature::Balances));
+        assert!(!address_only.inner.supports(maxt::Feature::Trading));
+
+        let signer_only = NativeHyperliquidAdapter::new(
+            false,
+            None,
+            Some("0x0123456789012345678901234567890123456789012345678901234567890123".into()),
+        )
+        .unwrap();
+        assert!(!signer_only.inner.supports(maxt::Feature::Balances));
+        assert!(signer_only.inner.supports(maxt::Feature::Trading));
+        assert!(signer_only.authenticated());
     }
 }

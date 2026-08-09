@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart'
     show PlatformInt64;
@@ -11,7 +12,7 @@ import 'providers.dart';
 import 'runtime.dart';
 import 'rust/api.dart' as native;
 import 'rust/adapter.dart' as native_adapter;
-import 'rust/convert.dart' as wire;
+import 'rust/wire.dart' as wire;
 import 'rust/stream.dart' as native_stream;
 import 'stream.dart';
 
@@ -188,6 +189,45 @@ abstract base class _NativeAdapterBase
   ).then((values) => values.map(_balanceFromWire).toList(growable: false));
 
   @override
+  Future<List<AssetNetwork>> assetNetworks(String asset) => _nativeFuture(
+    () => _handle.assetNetworks(asset: asset),
+  ).then((values) => values.map(_assetNetworkFromWire).toList(growable: false));
+
+  @override
+  Future<DepositAddress> depositAddress(DepositAddressRequest request) =>
+      _nativeFuture(
+        () => _handle.depositAddress(
+          request: _depositAddressRequestToWire(request),
+        ),
+      ).then(_depositAddressFromWire);
+
+  @override
+  Future<WithdrawalQuote> prepareWithdrawal(WithdrawRequest request) =>
+      _nativeFuture(
+        () =>
+            _handle.prepareWithdrawal(request: _withdrawRequestToWire(request)),
+      ).then(_withdrawalQuoteFromWire);
+
+  @override
+  Future<Withdrawal> withdraw(WithdrawRequest request) => _nativeFuture(
+    () => _handle.withdraw(request: _withdrawRequestToWire(request)),
+  ).then(_withdrawalFromWire);
+
+  @override
+  Future<Page<Deposit>> deposits(TransferHistoryRequest request) =>
+      _nativeFuture(
+        () => _handle.deposits(request: _transferHistoryRequestToWire(request)),
+      ).then(_depositPageFromWire);
+
+  @override
+  Future<Page<Withdrawal>> withdrawals(TransferHistoryRequest request) =>
+      _nativeFuture(
+        () => _handle.withdrawals(
+          request: _transferHistoryRequestToWire(request),
+        ),
+      ).then(_withdrawalPageFromWire);
+
+  @override
   Future<AccountStream> subscribeAccount(StreamConfig config) async {
     final handle = await _nativeFuture(
       () => _handle.subscribeAccount(config: _streamConfigToWire(config)),
@@ -362,7 +402,7 @@ final class BinanceListenKey {
 /// Hyperliquid mainnet 또는 testnet 어댑터입니다.
 final class HyperliquidAdapter extends _NativeAdapterBase {
   factory HyperliquidAdapter({String? address, String? privateKey}) {
-    validateBrowserCredentials(address, privateKey);
+    validateBrowserCredentials(null, privateKey);
     return HyperliquidAdapter._(
       _nativeSync(
         () => native.NativeClient.hyperliquid(
@@ -376,7 +416,7 @@ final class HyperliquidAdapter extends _NativeAdapterBase {
   }
 
   factory HyperliquidAdapter.testnet({String? address, String? privateKey}) {
-    validateBrowserCredentials(address, privateKey);
+    validateBrowserCredentials(null, privateKey);
     return HyperliquidAdapter._(
       _nativeSync(
         () => native.NativeClient.hyperliquid(

@@ -84,6 +84,18 @@ define_features! {
     CandleStream => ("candle_stream", "streaming candles"),
     /// Reading account balances.
     Balances => ("balances", "reading balances"),
+    /// Reading live asset and network transfer rules.
+    AssetNetworks => ("asset_networks", "reading asset networks"),
+    /// Reading exchange-issued deposit addresses.
+    DepositAddresses => ("deposit_addresses", "reading deposit addresses"),
+    /// Reading deposit history.
+    DepositHistory => ("deposit_history", "reading deposit history"),
+    /// Checking a withdrawal before submitting it.
+    WithdrawalQuotes => ("withdrawal_quotes", "checking withdrawals"),
+    /// Submitting withdrawals.
+    Withdrawals => ("withdrawals", "submitting withdrawals"),
+    /// Reading withdrawal history.
+    WithdrawalHistory => ("withdrawal_history", "reading withdrawal history"),
     /// Reading open orders.
     OpenOrders => ("open_orders", "reading open orders"),
     /// Streaming account balance and order updates.
@@ -124,6 +136,12 @@ impl Feature {
             | Self::CandleStream
             | Self::FundingRates => false,
             Self::Balances
+            | Self::AssetNetworks
+            | Self::DepositAddresses
+            | Self::DepositHistory
+            | Self::WithdrawalQuotes
+            | Self::Withdrawals
+            | Self::WithdrawalHistory
             | Self::OpenOrders
             | Self::AccountStream
             | Self::Trading

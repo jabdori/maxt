@@ -3,11 +3,15 @@
 use crate::adapter::Adapter;
 use crate::error::Result;
 use crate::feature::Feature;
-use crate::request::{CandleRequest, HistoryRequest, MarginRequest, OrderRequest};
+use crate::request::{
+    CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest, OrderRequest,
+    TransferHistoryRequest, WithdrawRequest,
+};
 use crate::stream::{AccountStream, MarketStream};
 use crate::types::{
-    Balance, Candle, Exchange, FundingPayment, FundingRate, MarginSummary, Market, MarketInfo,
-    MarketKind, Order, OrderBook, Page, Position, StreamConfig, Subscription, Ticker, Trade,
+    AssetNetwork, Balance, Candle, Deposit, DepositAddress, Exchange, FundingPayment, FundingRate,
+    MarginSummary, Market, MarketInfo, MarketKind, Order, OrderBook, Page, Position, StreamConfig,
+    Subscription, Ticker, Trade, Withdrawal, WithdrawalQuote,
 };
 
 /// The common API over one exchange adapter.
@@ -148,6 +152,44 @@ impl<A: Adapter> Client<A> {
         self.adapter.balances().await
     }
 
+    /// Reads live deposit and withdrawal rules for one asset.
+    pub async fn asset_networks(&self, asset: &str) -> Result<Vec<AssetNetwork>> {
+        if asset.trim().is_empty() {
+            return Err(crate::Error::invalid_request(
+                "asset",
+                "asset must not be empty",
+            ));
+        }
+        self.adapter.asset_networks(asset).await
+    }
+
+    /// Reads an exchange-issued deposit address for one asset and network.
+    pub async fn deposit_address(&self, request: &DepositAddressRequest) -> Result<DepositAddress> {
+        self.adapter.deposit_address(request).await
+    }
+
+    /// Checks a withdrawal against current account and network rules.
+    pub async fn prepare_withdrawal(&self, request: &WithdrawRequest) -> Result<WithdrawalQuote> {
+        validate_withdraw_request(request)?;
+        self.adapter.prepare_withdrawal(request).await
+    }
+
+    /// Submits one withdrawal without automatic retry.
+    pub async fn withdraw(&self, request: &WithdrawRequest) -> Result<Withdrawal> {
+        validate_withdraw_request(request)?;
+        self.adapter.withdraw(request).await
+    }
+
+    /// Reads one page of deposit history.
+    pub async fn deposits(&self, request: &TransferHistoryRequest) -> Result<Page<Deposit>> {
+        self.adapter.deposits(request).await
+    }
+
+    /// Reads one page of withdrawal history.
+    pub async fn withdrawals(&self, request: &TransferHistoryRequest) -> Result<Page<Withdrawal>> {
+        self.adapter.withdrawals(request).await
+    }
+
     /// Reads the account's open orders across every market.
     ///
     /// Requires credentials. A returned order may have completed between the
@@ -270,6 +312,51 @@ fn default_stream_config() -> StreamConfig {
     {
         StreamConfig::default()
     }
+}
+
+fn validate_withdraw_request(request: &WithdrawRequest) -> Result<()> {
+    if request.asset.trim().is_empty() {
+        return Err(crate::Error::invalid_request(
+            "asset",
+            "asset must not be empty",
+        ));
+    }
+    if request.amount <= crate::Decimal::ZERO {
+        return Err(crate::Error::invalid_request(
+            "amount",
+            "amount must be greater than zero",
+        ));
+    }
+    if !request.network.same_chain(request.destination.network()) {
+        return Err(crate::Error::transfer(
+            crate::TransferErrorKind::NetworkMismatch,
+            format!(
+                "withdrawal network {} differs from destination network {}",
+                request.network,
+                request.destination.network(),
+            ),
+        ));
+    }
+    if !request
+        .asset
+        .eq_ignore_ascii_case(request.destination.asset())
+    {
+        return Err(crate::Error::transfer(
+            crate::TransferErrorKind::AssetMismatch,
+            format!(
+                "withdrawal asset {} differs from destination asset {}",
+                request.asset,
+                request.destination.asset(),
+            ),
+        ));
+    }
+    if request.destination.address().trim().is_empty() {
+        return Err(crate::Error::invalid_request(
+            "destination.address",
+            "address must not be empty",
+        ));
+    }
+    Ok(())
 }
 
 impl<A: Adapter> From<A> for Client<A> {

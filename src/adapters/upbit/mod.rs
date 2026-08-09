@@ -4,6 +4,7 @@ mod parse;
 mod private;
 mod rest;
 mod stream;
+mod wallet;
 
 use futures_core::Stream;
 use futures_util::StreamExt;
@@ -11,12 +12,15 @@ use futures_util::StreamExt;
 use crate::adapter::{Adapter, BoxFuture};
 use crate::error::{Error, Result};
 use crate::feature::Feature;
-use crate::request::{CandleRequest, OrderRequest};
+use crate::request::{
+    CandleRequest, DepositAddressRequest, OrderRequest, TransferHistoryRequest, WithdrawRequest,
+};
 use crate::stream::{AccountStream, MarketStream};
 use crate::transport::{HttpTransport, WsCommand, WsConnect, WsSession, ws};
 use crate::types::{
-    AccountEvent, Balance, Candle, Exchange, Market, MarketEvent, MarketInfo, MarketKind, Order,
-    OrderBook, StreamConfig, Subscription, Ticker, Trade,
+    AccountEvent, AssetNetwork, Balance, Candle, Deposit, DepositAddress, Exchange, Market,
+    MarketEvent, MarketInfo, MarketKind, Order, OrderBook, Page, StreamConfig, Subscription,
+    Ticker, Trade, TransferDestination, Withdrawal, WithdrawalQuote,
 };
 
 /// Selects an Upbit regional deployment.
@@ -189,6 +193,23 @@ impl UpbitAdapter {
             )
         })
     }
+
+    fn validate_withdrawal_destination(&self, request: &WithdrawRequest) -> Result<()> {
+        if self.region == UpbitRegion::Indonesia
+            && !matches!(
+                &request.destination,
+                TransferDestination::Exchange(destination)
+                    if destination.exchange == Exchange::Upbit
+            )
+        {
+            return Err(Error::unsupported(
+                Feature::Withdrawals,
+                "upbit",
+                "Upbit Indonesia external withdrawals require beneficiary fields that are not yet represented by the common withdrawal request",
+            ));
+        }
+        Ok(())
+    }
 }
 
 impl Default for UpbitAdapter {
@@ -282,6 +303,57 @@ impl Adapter for UpbitAdapter {
 
     fn balances(&self) -> BoxFuture<'_, Result<Vec<Balance>>> {
         Box::pin(async move { private::balances(self.credentials()?, self.http()?).await })
+    }
+
+    fn asset_networks(&self, asset: &str) -> BoxFuture<'_, Result<Vec<AssetNetwork>>> {
+        let asset = asset.to_string();
+        Box::pin(
+            async move { wallet::asset_networks(self.credentials()?, self.http()?, &asset).await },
+        )
+    }
+
+    fn deposit_address(
+        &self,
+        request: &DepositAddressRequest,
+    ) -> BoxFuture<'_, Result<DepositAddress>> {
+        let request = request.clone();
+        Box::pin(async move {
+            wallet::deposit_address(self.credentials()?, self.http()?, &request).await
+        })
+    }
+
+    fn prepare_withdrawal(
+        &self,
+        request: &WithdrawRequest,
+    ) -> BoxFuture<'_, Result<WithdrawalQuote>> {
+        let request = request.clone();
+        Box::pin(async move {
+            self.validate_withdrawal_destination(&request)?;
+            wallet::prepare_withdrawal(self.credentials()?, self.http()?, &request).await
+        })
+    }
+
+    fn withdraw(&self, request: &WithdrawRequest) -> BoxFuture<'_, Result<Withdrawal>> {
+        let request = request.clone();
+        Box::pin(async move {
+            self.validate_withdrawal_destination(&request)?;
+            wallet::withdraw(self.credentials()?, self.http()?, &request).await
+        })
+    }
+
+    fn deposits(&self, request: &TransferHistoryRequest) -> BoxFuture<'_, Result<Page<Deposit>>> {
+        let request = request.clone();
+        Box::pin(async move { wallet::deposits(self.credentials()?, self.http()?, &request).await })
+    }
+
+    fn withdrawals(
+        &self,
+        request: &TransferHistoryRequest,
+    ) -> BoxFuture<'_, Result<Page<Withdrawal>>> {
+        let request = request.clone();
+        Box::pin(
+            async move { wallet::withdrawals(self.credentials()?, self.http()?, &request).await },
+        )
     }
 
     fn open_orders(&self, market: Option<&Market>) -> BoxFuture<'_, Result<Vec<Order>>> {
@@ -400,7 +472,17 @@ mod tests {
         let public = UpbitAdapter::new();
         let private = UpbitAdapter::new().with_credentials("access", "secret");
 
-        for feature in [Feature::Balances, Feature::Trading, Feature::AccountStream] {
+        for feature in [
+            Feature::Balances,
+            Feature::AssetNetworks,
+            Feature::DepositAddresses,
+            Feature::DepositHistory,
+            Feature::WithdrawalQuotes,
+            Feature::Withdrawals,
+            Feature::WithdrawalHistory,
+            Feature::Trading,
+            Feature::AccountStream,
+        ] {
             assert!(!public.supports(feature), "{feature:?}");
             assert!(private.supports(feature), "{feature:?}");
         }
@@ -503,5 +585,37 @@ mod tests {
             UpbitRegion::Singapore.rest_base_url()
         );
         assert!(UpbitRegion::Thailand.websocket_url().starts_with("wss://"));
+    }
+
+    #[tokio::test]
+    async fn indonesia_external_withdrawal_fails_during_preparation_and_submission() {
+        use crate::types::{ChainDestination, Network};
+        use rust_decimal::Decimal;
+
+        let request = WithdrawRequest::new(
+            "BTC",
+            Network::Bitcoin,
+            Decimal::ONE,
+            TransferDestination::Chain(ChainDestination {
+                asset: "BTC".to_string(),
+                network: Network::Bitcoin,
+                address: "bc1destination".to_string(),
+                memo: None,
+            }),
+        );
+
+        let adapter = UpbitAdapter::with_region(UpbitRegion::Indonesia);
+        for result in [
+            adapter.prepare_withdrawal(&request).await.map(|_| ()),
+            adapter.withdraw(&request).await.map(|_| ()),
+        ] {
+            assert!(matches!(
+                result,
+                Err(Error::Unsupported {
+                    feature: Feature::Withdrawals,
+                    ..
+                })
+            ));
+        }
     }
 }

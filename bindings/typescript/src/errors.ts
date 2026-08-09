@@ -1,8 +1,8 @@
 import { Exchange, Feature } from "./models.js";
-import { ExchangeErrorKind } from "./generated/identifiers.js";
+import { ExchangeErrorKind, TransferErrorKind } from "./generated/identifiers.js";
 import type { ErrorWire } from "./generated/contract.js";
 export type { ErrorWire } from "./generated/contract.js";
-export { ExchangeErrorKind } from "./generated/identifiers.js";
+export { ExchangeErrorKind, TransferErrorKind } from "./generated/identifiers.js";
 
 export abstract class MaxtError extends Error {
   abstract readonly kind: ErrorWire["kind"];
@@ -27,6 +27,15 @@ export class InvalidRequestError extends MaxtError {
   constructor(readonly field: string, readonly detail: string) {
     super(`invalid request: \`${field}\`: ${detail}`);
     this.name = "InvalidRequestError";
+  }
+}
+
+export class TransferError extends MaxtError {
+  readonly kind = "transfer";
+
+  constructor(readonly transferKind: TransferErrorKind, readonly detail: string) {
+    super(`transfer rejected (${transferKind.id}): ${detail}`);
+    this.name = "TransferError";
   }
 }
 
@@ -114,6 +123,11 @@ export function errorFromWire(wire: ErrorWire): MaxtError {
   switch (wire.kind) {
     case "invalid_request":
       return new InvalidRequestError(wire.field, wire.detail);
+    case "transfer":
+      return new TransferError(
+        valueById(TransferErrorKind.values, wire.transfer_kind, "transfer error kind"),
+        wire.detail,
+      );
     case "unsupported":
       return new UnsupportedError(
         valueById(Feature.values, wire.feature, "feature"),
@@ -152,6 +166,9 @@ export function errorToWire(error: unknown): ErrorWire {
 function errorToWireUnsafe(error: unknown): ErrorWire {
   if (error instanceof InvalidRequestError) {
     return { kind: "invalid_request", field: error.field, detail: error.detail };
+  }
+  if (error instanceof TransferError) {
+    return { kind: "transfer", transfer_kind: error.transferKind.id, detail: error.detail };
   }
   if (error instanceof UnsupportedError) {
     return {

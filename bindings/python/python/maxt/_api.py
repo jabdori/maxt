@@ -7,7 +7,7 @@ from importlib import import_module
 from inspect import isawaitable
 from typing import Any, AsyncIterator, Generic, Literal, Optional, TypeVar, Union
 
-from ._generated_identifiers import ExchangeErrorKind
+from ._generated_identifiers import ExchangeErrorKind, TransferErrorKind
 from ._generated_wire import ERROR_FIELDS
 from .models import (
     AccountEvent,
@@ -63,6 +63,15 @@ class InvalidRequestError(MaxtError):
         self.field = field
         self.detail = detail
         super().__init__(f"invalid request: `{field}`: {detail}")
+
+
+class TransferError(MaxtError):
+    kind = "transfer"
+
+    def __init__(self, transfer_kind: TransferErrorKind, detail: str) -> None:
+        self.transfer_kind = transfer_kind
+        self.detail = detail
+        super().__init__(f"transfer {transfer_kind.value}: {detail}")
 
 
 class DecodeError(MaxtError):
@@ -150,6 +159,11 @@ def _error_from_wire(value: dict[str, Any]) -> MaxtError:
             )
     if kind == "invalid_request":
         return InvalidRequestError(value["field"], value["detail"])
+    if kind == "transfer":
+        return TransferError(
+            TransferErrorKind(value["transfer_kind"]),
+            value["detail"],
+        )
     if kind == "unsupported":
         return UnsupportedError(
             Feature(value["feature"]),

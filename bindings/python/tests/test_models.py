@@ -5,6 +5,7 @@ import maxt
 import maxt.models as maxt_models
 from maxt import (
     Balance,
+    ChainDestination,
     Candle,
     CandleRequest,
     Decimal as MaxtDecimal,
@@ -23,6 +24,7 @@ from maxt import (
     MarginSummary,
     MarginMode,
     MarginRequest,
+    Network,
     Order,
     OrderBook,
     OrderRequest,
@@ -37,6 +39,11 @@ from maxt import (
     Trade,
     Size,
     StreamConfig,
+    TransferDestination,
+    TransferHistoryRequest,
+    TravelRuleRequirement,
+    WithdrawalFee,
+    WithdrawRequest,
 )
 from maxt.models import _model_from_wire, _model_to_wire
 
@@ -63,6 +70,12 @@ class WireModelTests(unittest.TestCase):
             {feature for feature in Feature if feature.needs_credentials()},
             {
                 Feature.BALANCES,
+                Feature.ASSET_NETWORKS,
+                Feature.DEPOSIT_ADDRESSES,
+                Feature.DEPOSIT_HISTORY,
+                Feature.WITHDRAWAL_QUOTES,
+                Feature.WITHDRAWALS,
+                Feature.WITHDRAWAL_HISTORY,
                 Feature.OPEN_ORDERS,
                 Feature.ACCOUNT_STREAM,
                 Feature.TRADING,
@@ -468,6 +481,42 @@ class WireModelTests(unittest.TestCase):
         self.assertEqual(limit_order.to_wire()["price"], "50000.2500")
         self.assertEqual(limit_order.to_wire()["time_in_force"], "post_only")
         self.assertEqual(margin.to_wire()["leverage"], "3.0")
+
+    def test_generated_wallet_models_round_trip_tagged_values(self) -> None:
+        destination = TransferDestination.chain(
+            ChainDestination("éth", Network.ARBITRUM, "0xabc")
+        )
+        request = WithdrawRequest(
+            "eth",
+            Network.ARBITRUM,
+            Decimal("1.25"),
+            destination,
+        )
+
+        self.assertEqual(request.asset, "ETH")
+        self.assertEqual(
+            request.to_wire()["destination"],
+            {
+                "kind": "chain",
+                "value": {
+                    "asset": "éTH",
+                    "network": "arbitrum",
+                    "address": "0xabc",
+                    "memo": None,
+                },
+            },
+        )
+        history = TransferHistoryRequest(asset="btc", network=Network.other("custom"))
+        self.assertEqual(history.asset, "BTC")
+        self.assertEqual(history.network.value, "custom")
+        fee = WithdrawalFee.from_wire(
+            {"kind": "rate", "rate": "0.01", "minimum": None, "maximum": "1"}
+        )
+        self.assertEqual(fee.to_wire()["maximum"], "1")
+        self.assertEqual(
+            TravelRuleRequirement.required("https://example.test").to_wire()["kind"],
+            "required",
+        )
 
 
 if __name__ == "__main__":

@@ -12,13 +12,15 @@ use tokio::sync::OnceCell;
 use crate::adapter::{Adapter, BoxFuture};
 use crate::error::{Error, Result};
 use crate::feature::Feature;
-use crate::request::{CandleRequest, HistoryRequest, MarginRequest, OrderRequest};
+use crate::request::{
+    CandleRequest, HistoryRequest, MarginRequest, OrderRequest, TransferHistoryRequest,
+};
 use crate::stream::{AccountStream, MarketStream};
 use crate::transport::{HttpTransport, WsCommand, WsConnect, ws};
 use crate::types::{
-    AccountEvent, Balance, Candle, Cursor, Exchange, FundingPayment, FundingRate, MarginSummary,
-    Market, MarketEvent, MarketInfo, MarketKind, Order, OrderBook, Page, Position, StreamConfig,
-    Subscription, Ticker, Timestamp, Trade,
+    AccountEvent, Balance, Candle, Cursor, Deposit, Exchange, FundingPayment, FundingRate,
+    MarginSummary, Market, MarketEvent, MarketInfo, MarketKind, Order, OrderBook, Page, Position,
+    StreamConfig, Subscription, Ticker, Timestamp, Trade, Withdrawal,
 };
 
 use parse::Universe;
@@ -32,9 +34,10 @@ pub(crate) const TESTNET_WEBSOCKET_URL: &str = "wss://api.hyperliquid-testnet.xy
 
 /// Adapter for Hyperliquid spot and default perpetual markets.
 ///
-/// Public market-data calls do not require a wallet. Account data, orders,
-/// margin changes, and private streams require
-/// [`HyperliquidAdapter::with_wallet`].
+/// Public market-data calls do not require configuration. Public account reads
+/// use [`HyperliquidAdapter::with_query_address`]; signed actions use
+/// [`HyperliquidAdapter::with_signer`]. [`HyperliquidAdapter::with_wallet`]
+/// configures both for compatibility and convenience.
 ///
 /// Markets are loaded from `meta` and `spotMeta`. HIP-3 DEXes and outcome
 /// markets are not exposed by this adapter.
@@ -54,7 +57,8 @@ pub(crate) const TESTNET_WEBSOCKET_URL: &str = "wss://api.hyperliquid-testnet.xy
 #[derive(Debug, Clone)]
 pub struct HyperliquidAdapter {
     network: HyperliquidNetwork,
-    wallet: Option<HyperliquidWallet>,
+    query_address: Option<String>,
+    signer: Option<HyperliquidSigner>,
     connection: OnceCell<Connection>,
 }
 
@@ -74,16 +78,14 @@ pub(crate) enum HyperliquidNetwork {
 }
 
 #[derive(Clone)]
-pub(crate) struct HyperliquidWallet {
-    pub(crate) address: String,
+pub(crate) struct HyperliquidSigner {
     pub(crate) private_key: String,
 }
 
 // Keeps the signing key out of logs and panic messages.
-impl std::fmt::Debug for HyperliquidWallet {
+impl std::fmt::Debug for HyperliquidSigner {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("HyperliquidWallet")
-            .field("address", &self.address)
+        f.debug_struct("HyperliquidSigner")
             .field("private_key", &"<redacted>")
             .finish()
     }
@@ -103,31 +105,48 @@ impl HyperliquidAdapter {
     fn on(network: HyperliquidNetwork) -> Self {
         Self {
             network,
-            wallet: None,
+            query_address: None,
+            signer: None,
             connection: OnceCell::new(),
         }
     }
 
-    /// Configures the account and signing key used by private calls.
+    /// Configures an account address for public account-data queries.
+    ///
+    /// Hyperliquid's Info API requires the public master or subaccount address,
+    /// but no signature. The value is validated when an account read is made.
+    #[must_use]
+    pub fn with_query_address(mut self, address: impl Into<String>) -> Self {
+        self.query_address = Some(address.into());
+        self
+    }
+
+    /// Configures the local key used only for signed actions.
+    ///
+    /// This may be an approved API-wallet key and therefore does not identify
+    /// the account queried by the Info API. The key is redacted from [`Debug`]
+    /// output and validated before any network request is made.
+    #[must_use]
+    pub fn with_signer(mut self, private_key: impl Into<String>) -> Self {
+        self.signer = Some(HyperliquidSigner {
+            private_key: private_key.into(),
+        });
+        self
+    }
+
+    /// Configures the public query address and local signer together.
     ///
     /// `address` is the account acted on. `private_key` is either that account's
     /// key or an approved API wallet key. The key is used only for local signing
     /// and is redacted from [`Debug`] output.
     ///
-    /// The values are validated when a private call is made. Invalid values
-    /// return [`Error::Auth`](crate::Error::Auth). Feature discovery treats the
-    /// private features as configured as soon as a wallet is present.
+    /// The address may be the master account while `private_key` belongs to an
+    /// approved API wallet. This is equivalent to calling
+    /// [`HyperliquidAdapter::with_query_address`] and
+    /// [`HyperliquidAdapter::with_signer`].
     #[must_use]
-    pub fn with_wallet(
-        mut self,
-        address: impl Into<String>,
-        private_key: impl Into<String>,
-    ) -> Self {
-        self.wallet = Some(HyperliquidWallet {
-            address: address.into(),
-            private_key: private_key.into(),
-        });
-        self
+    pub fn with_wallet(self, address: impl Into<String>, private_key: impl Into<String>) -> Self {
+        self.with_query_address(address).with_signer(private_key)
     }
 
     /// Whether this adapter talks to testnet.
@@ -135,8 +154,12 @@ impl HyperliquidAdapter {
         self.network == HyperliquidNetwork::Testnet
     }
 
-    pub(crate) fn is_authenticated(&self) -> bool {
-        self.wallet.is_some()
+    pub(crate) fn has_query_address(&self) -> bool {
+        self.query_address.is_some()
+    }
+
+    pub(crate) fn has_signer(&self) -> bool {
+        self.signer.is_some()
     }
 
     pub(crate) fn rest_base_url(&self) -> &'static str {
@@ -163,8 +186,8 @@ impl HyperliquidAdapter {
     ///
     /// # Errors
     ///
-    /// Returns [`Error::Auth`](crate::Error::Auth) when no valid wallet is
-    /// configured. Invalid cursors, transport failures, exchange errors, and
+    /// Returns [`Error::Auth`](crate::Error::Auth) when no valid query address
+    /// is configured. Invalid cursors, transport failures, exchange errors, and
     /// payload changes are also returned.
     pub async fn non_funding_ledger(
         &self,
@@ -174,7 +197,7 @@ impl HyperliquidAdapter {
         limit: Option<u32>,
     ) -> Result<Page<HyperliquidLedgerEntry>> {
         rest::validate_page_limit(limit)?;
-        let (user, _) = self.account()?;
+        let user = self.query_address()?;
         let connection = self.connect().await?;
 
         rest::ledger(&connection.http, &user, from, to, cursor, limit).await
@@ -212,19 +235,25 @@ impl HyperliquidAdapter {
             .await
     }
 
-    /// Returns the normalized account address and validated signing key.
-    fn account(&self) -> Result<(String, &str)> {
-        let wallet = self.wallet.as_ref().ok_or_else(sign::missing_wallet)?;
-        let address = sign::check_wallet(&wallet.address, &wallet.private_key)?;
+    /// Returns the normalized address used by public account reads.
+    fn query_address(&self) -> Result<String> {
+        let address = self
+            .query_address
+            .as_deref()
+            .ok_or_else(sign::missing_query_address)?;
 
-        Ok((address, &wallet.private_key))
+        sign::check_address(address)
     }
 
     fn signing_key(&self) -> Result<&str> {
-        self.wallet
+        let private_key = self
+            .signer
             .as_ref()
-            .map(|wallet| wallet.private_key.as_str())
-            .ok_or_else(sign::missing_wallet)
+            .map(|signer| signer.private_key.as_str())
+            .ok_or_else(sign::missing_signer)?;
+        sign::signing_key(private_key)?;
+
+        Ok(private_key)
     }
 }
 
@@ -240,10 +269,24 @@ impl Adapter for HyperliquidAdapter {
     }
 
     fn supports(&self, feature: Feature) -> bool {
-        if feature.needs_credentials() {
-            return self.is_authenticated();
+        match feature {
+            Feature::AssetNetworks
+            | Feature::DepositAddresses
+            | Feature::WithdrawalQuotes
+            | Feature::Withdrawals => false,
+            Feature::Balances
+            | Feature::DepositHistory
+            | Feature::WithdrawalHistory
+            | Feature::OpenOrders
+            | Feature::AccountStream
+            | Feature::Positions
+            | Feature::Margin
+            | Feature::FundingPayments => self.has_query_address(),
+            Feature::Trading | Feature::MarginConfig | Feature::ReduceOnlyOrders => {
+                self.has_signer()
+            }
+            _ => true,
         }
-        true
     }
 
     fn trades(&self, market: &Market, limit: Option<u32>) -> BoxFuture<'_, Result<Vec<Trade>>> {
@@ -335,17 +378,42 @@ impl Adapter for HyperliquidAdapter {
 
     fn balances(&self) -> BoxFuture<'_, Result<Vec<Balance>>> {
         Box::pin(async move {
-            let (user, _) = self.account()?;
+            let user = self.query_address()?;
             let connection = self.connect().await?;
 
             rest::balances(&connection.http, &user).await
         })
     }
 
+    fn deposits(&self, request: &TransferHistoryRequest) -> BoxFuture<'_, Result<Page<Deposit>>> {
+        let request = request.clone();
+        Box::pin(async move {
+            rest::validate_transfer_history(&request, Feature::DepositHistory)?;
+            let user = self.query_address()?;
+            let connection = self.connect().await?;
+
+            rest::deposits(&connection.http, &user, &request).await
+        })
+    }
+
+    fn withdrawals(
+        &self,
+        request: &TransferHistoryRequest,
+    ) -> BoxFuture<'_, Result<Page<Withdrawal>>> {
+        let request = request.clone();
+        Box::pin(async move {
+            rest::validate_transfer_history(&request, Feature::WithdrawalHistory)?;
+            let user = self.query_address()?;
+            let connection = self.connect().await?;
+
+            rest::withdrawals(&connection.http, &user, &request).await
+        })
+    }
+
     fn open_orders(&self, market: Option<&Market>) -> BoxFuture<'_, Result<Vec<Order>>> {
         let market = market.cloned();
         Box::pin(async move {
-            let (user, _) = self.account()?;
+            let user = self.query_address()?;
             let connection = self.connect().await?;
 
             rest::open_orders(
@@ -363,7 +431,7 @@ impl Adapter for HyperliquidAdapter {
         let url = self.websocket_url();
 
         Box::pin(async move {
-            let (user, _) = self.account()?;
+            let user = self.query_address()?;
             let connection = self.connect().await?;
             let session = ws::connect(
                 WsConnect {
@@ -390,14 +458,13 @@ impl Adapter for HyperliquidAdapter {
     fn place_order(&self, request: &OrderRequest) -> BoxFuture<'_, Result<Order>> {
         let request = request.clone();
         Box::pin(async move {
-            // Validate the wallet before building the request.
-            self.account()?;
+            let private_key = self.signing_key()?;
             let connection = self.connect().await?;
 
             rest::place_order(
                 &connection.http,
                 &connection.universe,
-                self.signing_key()?,
+                private_key,
                 self.network,
                 &request,
                 rest::nonce(Timestamp::now()),
@@ -411,13 +478,13 @@ impl Adapter for HyperliquidAdapter {
         let order_id = order_id.to_string();
 
         Box::pin(async move {
-            self.account()?;
+            let private_key = self.signing_key()?;
             let connection = self.connect().await?;
 
             rest::cancel_order(
                 &connection.http,
                 &connection.universe,
-                self.signing_key()?,
+                private_key,
                 self.network,
                 &market,
                 &order_id,
@@ -430,7 +497,7 @@ impl Adapter for HyperliquidAdapter {
     fn positions(&self, market: Option<&Market>) -> BoxFuture<'_, Result<Vec<Position>>> {
         let market = market.cloned();
         Box::pin(async move {
-            let (user, _) = self.account()?;
+            let user = self.query_address()?;
             let connection = self.connect().await?;
 
             rest::positions(
@@ -445,7 +512,7 @@ impl Adapter for HyperliquidAdapter {
 
     fn margin_summary(&self) -> BoxFuture<'_, Result<MarginSummary>> {
         Box::pin(async move {
-            let (user, _) = self.account()?;
+            let user = self.query_address()?;
             let connection = self.connect().await?;
 
             rest::margin_summary(&connection.http, &user).await
@@ -469,7 +536,7 @@ impl Adapter for HyperliquidAdapter {
         let request = request.clone();
         Box::pin(async move {
             rest::validate_page_limit(request.limit)?;
-            let (user, _) = self.account()?;
+            let user = self.query_address()?;
             let connection = self.connect().await?;
 
             rest::funding_payments(&connection.http, &connection.universe, &user, &request).await
@@ -479,13 +546,13 @@ impl Adapter for HyperliquidAdapter {
     fn set_margin(&self, request: &MarginRequest) -> BoxFuture<'_, Result<()>> {
         let request = request.clone();
         Box::pin(async move {
-            self.account()?;
+            let private_key = self.signing_key()?;
             let connection = self.connect().await?;
 
             rest::set_margin(
                 &connection.http,
                 &connection.universe,
-                self.signing_key()?,
+                private_key,
                 self.network,
                 &request,
                 rest::nonce(Timestamp::now()),
@@ -623,13 +690,40 @@ mod tests {
     }
 
     #[test]
-    fn a_wallet_is_what_unlocks_the_private_half() {
+    fn query_address_and_signer_unlock_only_the_operations_they_feed() {
         let public = HyperliquidAdapter::new();
-        let signed = HyperliquidAdapter::new().with_wallet("0xabc", "0xdef");
+        let address_only = HyperliquidAdapter::new()
+            .with_query_address("0x14791697260e4c9a71f18484c9f997b308e59325");
+        let signer_only = HyperliquidAdapter::new()
+            .with_signer("0x0123456789012345678901234567890123456789012345678901234567890123");
 
-        for feature in [Feature::Balances, Feature::Trading, Feature::Positions] {
+        for feature in [
+            Feature::Balances,
+            Feature::DepositHistory,
+            Feature::WithdrawalHistory,
+            Feature::Positions,
+        ] {
             assert!(!public.supports(feature), "{feature:?}");
-            assert!(signed.supports(feature), "{feature:?}");
+            assert!(address_only.supports(feature), "{feature:?}");
+            assert!(!signer_only.supports(feature), "{feature:?}");
+        }
+        for feature in [
+            Feature::Trading,
+            Feature::MarginConfig,
+            Feature::ReduceOnlyOrders,
+        ] {
+            assert!(!public.supports(feature), "{feature:?}");
+            assert!(!address_only.supports(feature), "{feature:?}");
+            assert!(signer_only.supports(feature), "{feature:?}");
+        }
+        for feature in [
+            Feature::AssetNetworks,
+            Feature::DepositAddresses,
+            Feature::WithdrawalQuotes,
+            Feature::Withdrawals,
+        ] {
+            assert!(!address_only.supports(feature), "{feature:?}");
+            assert!(!signer_only.supports(feature), "{feature:?}");
         }
     }
 
@@ -645,7 +739,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_private_call_without_a_wallet_says_so_before_it_reaches_the_network() {
-        // Authentication fails before a network connection is attempted.
+        // Missing query address or signer fails before a connection is attempted.
         let public = HyperliquidAdapter::new();
         let market = Market::perpetual(Exchange::Hyperliquid, "BTC", "USDC");
 
@@ -712,10 +806,52 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_wallet_that_cannot_sign_is_rejected_before_the_network() {
-        let broken = HyperliquidAdapter::new().with_wallet("0xabc", "not-a-key");
+    async fn an_invalid_signer_is_rejected_before_the_network() {
+        let broken = HyperliquidAdapter::new().with_signer("not-a-key");
+        let market = Market::perpetual(Exchange::Hyperliquid, "BTC", "USDC");
 
-        assert!(matches!(broken.balances().await, Err(Error::Auth { .. })));
+        assert!(matches!(
+            broken.cancel_order(&market, "1").await,
+            Err(Error::Auth { .. })
+        ));
+    }
+
+    #[tokio::test]
+    async fn transfer_history_filters_that_the_ledger_cannot_prove_are_rejected_offline() {
+        let request = TransferHistoryRequest::new().network(crate::types::Network::Arbitrum);
+        let adapter = HyperliquidAdapter::new()
+            .with_query_address("0x14791697260e4c9a71f18484c9f997b308e59325");
+
+        assert!(matches!(
+            adapter.deposits(&request).await,
+            Err(Error::Unsupported {
+                feature: Feature::DepositHistory,
+                ..
+            })
+        ));
+        assert!(matches!(
+            adapter.withdrawals(&request).await,
+            Err(Error::Unsupported {
+                feature: Feature::WithdrawalHistory,
+                ..
+            })
+        ));
+    }
+
+    #[tokio::test]
+    async fn deposit_address_stays_unsupported_instead_of_guessing_a_bridge() {
+        let adapter = HyperliquidAdapter::new()
+            .with_query_address("0x14791697260e4c9a71f18484c9f997b308e59325");
+        let request =
+            crate::request::DepositAddressRequest::new("USDC", crate::types::Network::Arbitrum);
+
+        assert!(matches!(
+            adapter.deposit_address(&request).await,
+            Err(Error::Unsupported {
+                feature: Feature::DepositAddresses,
+                ..
+            })
+        ));
     }
 
     #[test]

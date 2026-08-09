@@ -713,7 +713,7 @@ mod tests {
         assert_eq!(
             request.body.as_deref(),
             Some(
-                r#"{"market":"KRW-BTC","ord_type":"limit","price":"100000000","side":"bid","volume":"0.01"}"#
+                r#"{"market":"KRW-BTC","side":"bid","volume":"0.01","price":"100000000","ord_type":"limit"}"#
             )
         );
         assert_eq!(
@@ -737,11 +737,11 @@ mod tests {
 
         assert_eq!(
             buy.body.as_deref(),
-            Some(r#"{"market":"KRW-BTC","ord_type":"price","price":"10000","side":"bid"}"#)
+            Some(r#"{"market":"KRW-BTC","side":"bid","price":"10000","ord_type":"price"}"#)
         );
         assert_eq!(
             sell.body.as_deref(),
-            Some(r#"{"market":"KRW-BTC","ord_type":"market","side":"ask","volume":"0.01"}"#)
+            Some(r#"{"market":"KRW-BTC","side":"ask","volume":"0.01","ord_type":"market"}"#)
         );
     }
 

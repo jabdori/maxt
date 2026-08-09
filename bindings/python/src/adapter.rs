@@ -18,7 +18,7 @@ use pyo3::types::{PyAnyMethods, PyDict, PyList, PyTracebackMethods, PyTuple};
 use crate::convert::{
     decimal_from_wire, decimal_to_wire, exchange_from_wire, feature_from_wire, interval_from_wire,
     margin_mode_from_wire, market_from_wire, market_to_wire, optional, required, side_from_wire,
-    text, timestamp_to_wire, wire_object,
+    text, timestamp_to_wire, transfer_error_kind_from_wire, wire_object,
 };
 
 macro_rules! wire_dict {
@@ -267,6 +267,9 @@ fn decode_reply(
     reply: ReplyKind,
     value: &Bound<'_, PyAny>,
 ) -> PyResult<AdapterReply> {
+    if let Some(result) = decode_generated_reply(reply, value) {
+        return result;
+    }
     match reply {
         ReplyKind::Markets => {
             list_from_wire(value, market_info_from_wire).map(AdapterReply::Markets)
@@ -303,6 +306,9 @@ fn decode_reply(
         ReplyKind::Unit => Err(pyo3::exceptions::PyTypeError::new_err(
             "Adapter.set_margin must return None",
         )),
+        _ => Err(pyo3::exceptions::PyRuntimeError::new_err(
+            "generated adapter reply decoder returned no result",
+        )),
     }
 }
 
@@ -314,6 +320,20 @@ fn list_from_wire<T>(
         .try_iter()?
         .map(|item| parse(&item?))
         .collect::<PyResult<Vec<_>>>()
+}
+
+fn page_from_wire<T>(
+    value: &Bound<'_, PyAny>,
+    parse: fn(&Bound<'_, PyAny>) -> PyResult<T>,
+) -> PyResult<Page<T>> {
+    let value = wire_object(value)?;
+    let value = value.cast::<PyDict>()?;
+    Ok(Page {
+        items: list_from_wire(&required(value, "items")?, parse)?,
+        next: optional(value, "next")?
+            .map(|value| value.extract::<String>().map(Cursor::new))
+            .transpose()?,
+    })
 }
 
 fn market_info_from_wire(value: &Bound<'_, PyAny>) -> PyResult<MarketInfo> {
@@ -507,20 +527,6 @@ fn funding_payments_page_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Page<Fu
     page_from_wire(value, funding_payment_from_wire)
 }
 
-fn page_from_wire<T>(
-    value: &Bound<'_, PyAny>,
-    parse: fn(&Bound<'_, PyAny>) -> PyResult<T>,
-) -> PyResult<Page<T>> {
-    let value = wire_object(value)?;
-    let value = value.cast::<PyDict>()?;
-    Ok(Page {
-        items: list_from_wire(&required(value, "items")?, parse)?,
-        next: optional(value, "next")?
-            .map(|value| value.extract::<String>().map(Cursor::new))
-            .transpose()?,
-    })
-}
-
 fn timestamp_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Timestamp> {
     value.extract::<i64>().map(Timestamp::from_nanos)
 }
@@ -661,6 +667,10 @@ fn known_error_value(py: Python<'_>, value: &Bound<'_, PyAny>) -> PyResult<Optio
                 detail: required(wire, "detail")?.extract()?,
             }
         }
+        "transfer" => Error::Transfer {
+            kind: transfer_error_kind_from_wire(&required(wire, "transfer_kind")?)?,
+            detail: required(wire, "detail")?.extract()?,
+        },
         "unsupported" => Error::Unsupported {
             feature: feature_from_wire(&required(wire, "feature")?)?,
             exchange: exchange_from_wire(&required(wire, "exchange")?)?.id(),

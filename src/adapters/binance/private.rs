@@ -59,7 +59,7 @@ fn sign(credentials: &BinanceCredentials, payload: &str) -> Result<String> {
 ///
 /// `timestamp` is appended last so the signed text ends where Binance's own
 /// examples end, which keeps the vector in the tests comparable to the docs.
-fn signed(
+pub(super) fn signed(
     adapter: &BinanceAdapter,
     method: HttpMethod,
     path: &str,

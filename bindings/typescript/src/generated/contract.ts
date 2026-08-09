@@ -71,6 +71,103 @@ export interface BalanceWire {
   readonly locked: DecimalWire;
 }
 
+export interface AssetNetworkWire {
+  readonly exchange: string;
+  readonly asset: string;
+  readonly network: string;
+  readonly provider_id: string;
+  readonly deposit_enabled: boolean;
+  readonly withdrawal_enabled: boolean;
+  readonly withdrawal_fee: WithdrawalFeeWire | null;
+  readonly minimum_withdrawal: DecimalWire | null;
+  readonly maximum_withdrawal: DecimalWire | null;
+  readonly memo_required: boolean;
+}
+
+export interface DepositAddressWire {
+  readonly exchange: string;
+  readonly asset: string;
+  readonly network: string;
+  readonly address: string | null;
+  readonly memo: string | null;
+}
+
+export interface ExchangeDestinationWire {
+  readonly exchange: string;
+  readonly asset: string;
+  readonly network: string;
+  readonly address: string;
+  readonly memo: string | null;
+}
+
+export interface ChainDestinationWire {
+  readonly asset: string;
+  readonly network: string;
+  readonly address: string;
+  readonly memo: string | null;
+}
+
+export interface ExchangeTransferRequestWire {
+  readonly asset: string;
+  readonly source_network: string | null;
+  readonly destination_network: string | null;
+  readonly amount: DecimalWire;
+}
+
+export interface ChainTransferRequestWire {
+  readonly asset: string;
+  readonly source_network: string | null;
+  readonly destination: ChainDestinationWire;
+  readonly amount: DecimalWire;
+}
+
+export interface WithdrawalQuoteWire {
+  readonly fee: DecimalWire | null;
+  readonly expected_receive: DecimalWire | null;
+  readonly minimum_amount: DecimalWire | null;
+  readonly maximum_amount: DecimalWire | null;
+  readonly address_allowed: boolean | null;
+  readonly travel_rule: TravelRuleRequirementWire;
+  readonly expires_at: TimestampWire | null;
+}
+
+export interface TransferPlanWire {
+  readonly source: string;
+  readonly destination: string | null;
+  readonly request: WithdrawRequestWire;
+  readonly quote: WithdrawalQuoteWire;
+  readonly created_at: TimestampWire;
+  readonly expires_at: TimestampWire;
+}
+
+export interface WithdrawalWire {
+  readonly id: string;
+  readonly asset: string;
+  readonly network: string | null;
+  readonly provider_network: string | null;
+  readonly amount: DecimalWire;
+  readonly fee: DecimalWire | null;
+  readonly destination: TransferDestinationWire | null;
+  readonly status: string;
+  readonly provider_status: string;
+  readonly tx_id: string | null;
+  readonly created_at: TimestampWire | null;
+}
+
+export interface DepositWire {
+  readonly id: string;
+  readonly asset: string;
+  readonly network: string | null;
+  readonly provider_network: string | null;
+  readonly amount: DecimalWire;
+  readonly address: string | null;
+  readonly memo: string | null;
+  readonly status: string;
+  readonly provider_status: string;
+  readonly tx_id: string | null;
+  readonly created_at: TimestampWire | null;
+}
+
 export interface OrderWire {
   readonly id: string;
   readonly market: MarketWire;
@@ -132,6 +229,27 @@ export interface OrderRequestWire {
   readonly price: DecimalWire | null;
   readonly time_in_force: string | null;
   readonly reduce_only: boolean;
+}
+
+export interface DepositAddressRequestWire {
+  readonly asset: string;
+  readonly network: string;
+  readonly amount: DecimalWire | null;
+}
+
+export interface WithdrawRequestWire {
+  readonly asset: string;
+  readonly network: string;
+  readonly amount: DecimalWire;
+  readonly destination: TransferDestinationWire;
+  readonly client_id: string | null;
+}
+
+export interface TransferHistoryRequestWire {
+  readonly asset: string | null;
+  readonly network: string | null;
+  readonly cursor: string | null;
+  readonly limit: number | null;
 }
 
 export interface StreamConfigWire {
@@ -255,6 +373,18 @@ export type SizeWire =
   | { readonly kind: "base"; readonly value: DecimalWire; }
   | { readonly kind: "quote"; readonly value: DecimalWire; };
 
+export type WithdrawalFeeWire =
+  | { readonly kind: "fixed"; readonly value: DecimalWire; }
+  | { readonly kind: "rate"; readonly rate: DecimalWire; readonly minimum: DecimalWire | null; readonly maximum: DecimalWire | null; };
+
+export type TransferDestinationWire =
+  | { readonly kind: "exchange"; readonly value: ExchangeDestinationWire; }
+  | { readonly kind: "chain"; readonly value: ChainDestinationWire; };
+
+export type TravelRuleRequirementWire =
+  | { readonly kind: "not_required"; }
+  | { readonly kind: "required"; readonly consent_url: string | null; };
+
 export type FeedWire =
   | { readonly kind: "trades"; }
   | { readonly kind: "order_book"; }
@@ -283,6 +413,7 @@ export type AccountStreamItemWire =
 
 export type ErrorWire =
   | { readonly kind: "invalid_request"; readonly field: string; readonly detail: string; }
+  | { readonly kind: "transfer"; readonly transfer_kind: string; readonly detail: string; }
   | { readonly kind: "unsupported"; readonly feature: string; readonly exchange: string; readonly detail: string; }
   | { readonly kind: "adapter"; readonly detail: string; }
   | { readonly kind: "auth"; readonly detail: string; }
@@ -298,6 +429,12 @@ export type AdapterCallWire =
   | { readonly kind: "candles"; readonly request: CandleRequestWire; }
   | { readonly kind: "subscribe"; readonly stream_id: string; readonly subscription: SubscriptionWire; readonly config: StreamConfigWire; }
   | { readonly kind: "balances"; }
+  | { readonly kind: "asset_networks"; readonly asset: string; }
+  | { readonly kind: "deposit_address"; readonly request: DepositAddressRequestWire; }
+  | { readonly kind: "prepare_withdrawal"; readonly request: WithdrawRequestWire; }
+  | { readonly kind: "withdraw"; readonly request: WithdrawRequestWire; }
+  | { readonly kind: "deposits"; readonly request: TransferHistoryRequestWire; }
+  | { readonly kind: "withdrawals"; readonly request: TransferHistoryRequestWire; }
   | { readonly kind: "open_orders"; readonly market: MarketWire | null; }
   | { readonly kind: "subscribe_account"; readonly stream_id: string; readonly config: StreamConfigWire; }
   | { readonly kind: "place_order"; readonly request: OrderRequestWire; }
@@ -316,6 +453,12 @@ export type AdapterReplyWire =
   | { readonly kind: "candles"; readonly value: readonly CandleWire[]; }
   | { readonly kind: "market_stream"; readonly stream_id: string; }
   | { readonly kind: "balances"; readonly value: readonly BalanceWire[]; }
+  | { readonly kind: "asset_networks"; readonly value: readonly AssetNetworkWire[]; }
+  | { readonly kind: "deposit_address"; readonly value: DepositAddressWire; }
+  | { readonly kind: "withdrawal_quote"; readonly value: WithdrawalQuoteWire; }
+  | { readonly kind: "withdrawal"; readonly value: WithdrawalWire; }
+  | { readonly kind: "deposits"; readonly value: PageWire<DepositWire>; }
+  | { readonly kind: "withdrawals"; readonly value: PageWire<WithdrawalWire>; }
   | { readonly kind: "open_orders"; readonly value: readonly OrderWire[]; }
   | { readonly kind: "account_stream"; readonly stream_id: string; }
   | { readonly kind: "place_order"; readonly value: OrderWire; }
@@ -328,10 +471,10 @@ export type AdapterReplyWire =
 
 export const EXCHANGES = ["upbit", "bithumb", "binance", "hyperliquid"] as const;
 export const NATIVE_API_VERSION = 1 as const;
-export const FEATURES = ["markets", "trades", "order_book", "ticker", "candles", "trade_stream", "order_book_stream", "ticker_stream", "candle_stream", "balances", "open_orders", "account_stream", "trading", "positions", "margin", "funding_rates", "funding_payments", "margin_config", "reduce_only_orders"] as const;
-export const ERROR_VARIANTS = ["InvalidRequest", "Unsupported", "Adapter", "Auth", "Exchange", "Transport", "Decode"] as const;
-export const ADAPTER_OPERATIONS = ["markets", "trades", "orderBook", "ticker", "candles", "subscribe", "balances", "openOrders", "subscribeAccount", "placeOrder", "cancelOrder", "positions", "marginSummary", "fundingRates", "fundingPayments", "setMargin"] as const;
-export const CLIENT_MEMBERS = ["exchange", "supports", "adapter", "markets", "trades", "orderBook", "ticker", "candles", "subscribe", "subscribeWith", "balances", "openOrders", "openOrdersOn", "subscribeAccount", "subscribeAccountWith", "placeOrder", "cancelOrder", "positions", "positionsOn", "marginSummary", "fundingRates", "fundingPayments", "setMargin"] as const;
+export const FEATURES = ["markets", "trades", "order_book", "ticker", "candles", "trade_stream", "order_book_stream", "ticker_stream", "candle_stream", "balances", "asset_networks", "deposit_addresses", "deposit_history", "withdrawal_quotes", "withdrawals", "withdrawal_history", "open_orders", "account_stream", "trading", "positions", "margin", "funding_rates", "funding_payments", "margin_config", "reduce_only_orders"] as const;
+export const ERROR_VARIANTS = ["InvalidRequest", "Transfer", "Unsupported", "Adapter", "Auth", "Exchange", "Transport", "Decode"] as const;
+export const ADAPTER_OPERATIONS = ["markets", "trades", "orderBook", "ticker", "candles", "subscribe", "balances", "assetNetworks", "depositAddress", "prepareWithdrawal", "withdraw", "deposits", "withdrawals", "openOrders", "subscribeAccount", "placeOrder", "cancelOrder", "positions", "marginSummary", "fundingRates", "fundingPayments", "setMargin"] as const;
+export const CLIENT_MEMBERS = ["exchange", "supports", "adapter", "markets", "trades", "orderBook", "ticker", "candles", "subscribe", "subscribeWith", "balances", "assetNetworks", "depositAddress", "prepareWithdrawal", "withdraw", "deposits", "withdrawals", "prepareTransferTo", "prepareTransferToChain", "executeTransfer", "openOrders", "openOrdersOn", "subscribeAccount", "subscribeAccountWith", "placeOrder", "cancelOrder", "positions", "positionsOn", "marginSummary", "fundingRates", "fundingPayments", "setMargin"] as const;
 export const PROVIDER_METHODS = {
   upbit: ["region", "orderBooks", "tickers", "marketEvents"],
   bithumb: ["marketWarnings", "marketAlerts"],
@@ -344,10 +487,10 @@ export const PROVIDER_CONSTRUCTORS = {
   binance: ["spot", "usdMFutures"],
   hyperliquid: ["constructor", "testnet"],
 } as const;
-export const IDENTIFIERS = ["Exchange", "Feature", "MarketKind", "MarketStatus", "Side", "Interval", "Overflow", "MarginMode", "OrderStatus", "OrderType", "TimeInForce", "SizeKind", "UpbitRegion", "BithumbAlertStep", "BinanceMarket", "HyperliquidLedgerKind", "ExchangeErrorKind"] as const;
-export const MODELS = ["Market", "MarketInfo", "Trade", "Level", "OrderBook", "Ticker", "Candle", "Balance", "Order", "Position", "MarginSummary", "FundingRate", "FundingPayment", "CandleRequest", "OrderRequest", "StreamConfig", "Subscription", "HistoryRequest", "MarginRequest", "UpbitMarketEvent", "BithumbMarketAlert", "BinanceSymbolFilters", "BinanceSpotOrderDetail", "HyperliquidLedgerEntry", "HyperliquidAssetContext"] as const;
+export const IDENTIFIERS = ["Exchange", "Feature", "MarketKind", "MarketStatus", "Side", "Interval", "Overflow", "MarginMode", "OrderStatus", "OrderType", "TimeInForce", "SizeKind", "UpbitRegion", "BithumbAlertStep", "BinanceMarket", "HyperliquidLedgerKind", "ExchangeErrorKind", "Network", "WithdrawalStatus", "DepositStatus", "TransferErrorKind"] as const;
+export const MODELS = ["Market", "MarketInfo", "Trade", "Level", "OrderBook", "Ticker", "Candle", "Balance", "AssetNetwork", "DepositAddress", "ExchangeDestination", "ChainDestination", "ExchangeTransferRequest", "ChainTransferRequest", "TransferDestination", "WithdrawalFee", "TravelRuleRequirement", "WithdrawalQuote", "TransferPlan", "Withdrawal", "Deposit", "Order", "Position", "MarginSummary", "FundingRate", "FundingPayment", "CandleRequest", "OrderRequest", "DepositAddressRequest", "WithdrawRequest", "TransferHistoryRequest", "StreamConfig", "Subscription", "HistoryRequest", "MarginRequest", "UpbitMarketEvent", "BithumbMarketAlert", "BinanceSymbolFilters", "BinanceSpotOrderDetail", "HyperliquidLedgerEntry", "HyperliquidAssetContext"] as const;
 export const RAW_NATIVE_EXPORTS = ["NATIVE_API_VERSION", "NativeClient", "createCustomClient", "NativeUpbit", "createUpbit", "NativeBithumb", "createBithumb", "NativeBinance", "createBinance", "NativeHyperliquid", "createHyperliquid"] as const;
-export const RAW_NATIVE_CLIENT_MEMBERS = ["exchange", "supports", "markets", "trades", "orderBook", "ticker", "candles", "subscribe", "subscribeWith", "balances", "openOrders", "openOrdersOn", "subscribeAccount", "subscribeAccountWith", "placeOrder", "cancelOrder", "positions", "positionsOn", "marginSummary", "fundingRates", "fundingPayments", "setMargin", "streamNext", "streamClose"] as const;
+export const RAW_NATIVE_CLIENT_MEMBERS = ["exchange", "supports", "markets", "trades", "orderBook", "ticker", "candles", "subscribe", "subscribeWith", "balances", "assetNetworks", "depositAddress", "prepareWithdrawal", "withdraw", "deposits", "withdrawals", "openOrders", "openOrdersOn", "subscribeAccount", "subscribeAccountWith", "placeOrder", "cancelOrder", "positions", "positionsOn", "marginSummary", "fundingRates", "fundingPayments", "setMargin", "prepareTransferTo", "prepareTransferToChain", "executeTransfer", "streamNext", "streamClose"] as const;
 export const RAW_PROVIDER_MEMBERS = {
   upbit: ["client", "region", "orderBooks", "tickers", "marketEvents"],
   bithumb: ["client", "marketWarnings", "marketAlerts"],

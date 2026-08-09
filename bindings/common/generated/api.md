@@ -13,6 +13,12 @@
 | `candles` | `candles` |
 | `subscribe` | `subscribe` |
 | `balances` | `balances` |
+| `asset_networks` | `assetNetworks` |
+| `deposit_address` | `depositAddress` |
+| `prepare_withdrawal` | `prepareWithdrawal` |
+| `withdraw` | `withdraw` |
+| `deposits` | `deposits` |
+| `withdrawals` | `withdrawals` |
 | `open_orders` | `openOrders` |
 | `subscribe_account` | `subscribeAccount` |
 | `place_order` | `placeOrder` |
@@ -31,3 +37,102 @@
 | bithumb | `BithumbAdapter` | `market_warnings`, `market_alerts` | `marketWarnings`, `marketAlerts` |
 | binance | `BinanceAdapter` | `venue`, `spot_symbol_filters`, `spot_order`, `usd_m_create_listen_key`, `usd_m_keepalive_listen_key`, `usd_m_close_listen_key` | `venue`, `spotSymbolFilters`, `spotOrder`, `usdMCreateListenKey`, `usdMKeepaliveListenKey`, `usdMCloseListenKey` |
 | hyperliquid | `HyperliquidAdapter` | `is_testnet`, `non_funding_ledger`, `asset_context` | `isTestnet`, `nonFundingLedger`, `assetContext` |
+
+## Official API products
+
+Documentation baseline: `2026-08-10`.
+
+| Exchange | Product | Mapped / official | Interfaces | Encodings | Status |
+| --- | --- | ---: | --- | --- | --- |
+| upbit | Quotation | 1 / — | `http`, `websocket_stream` | `json` | Partial |
+| upbit | Exchange | 1 / — | `http`, `websocket_stream` | `json` | Partial |
+| upbit | Deposits and withdrawals | 7 / — | `http` | `json` | Partial |
+| upbit | Travel Rule | 0 / — | `http` | `json` | Planned |
+| upbit | Korea pockets | 0 / — | `http` | `json` | Planned |
+| bithumb | Quotation | 1 / — | `http`, `websocket_stream` | `json` | Partial |
+| bithumb | Exchange | 1 / — | `http`, `websocket_stream` | `json` | Partial |
+| bithumb | Deposits and withdrawals | 7 / — | `http` | `json` | Partial |
+| bithumb | TWAP | 0 / — | `http` | `json` | Planned |
+| bithumb | KRW deposits and withdrawals | 0 / — | `http` | `json` | Planned |
+| binance | Spot Trading | 1 / 118 | `http`, `websocket_request`, `websocket_stream`, `fix` | `json`, `sbe`, `fix_tag_value`, `fix_sbe` | Partial |
+| binance | Futures (USDⓈ-M) | 1 / 133 | `http`, `websocket_request`, `websocket_stream` | `json` | Partial |
+| binance | Futures (COIN-M) | 0 / 93 | `http`, `websocket_request`, `websocket_stream` | `json` | Planned |
+| binance | Options | 0 / 54 | `http`, `websocket_stream` | `json` | Planned |
+| binance | Margin | 0 / 65 | `http` | `json` | Planned |
+| binance | Wallet | 8 / 50 | `http` | `json` | Partial |
+| binance | Convert | 0 / 9 | `http` | `json` | Planned |
+| binance | Portfolio Margin | 0 / 109 | `http` | `json` | Planned |
+| binance | Portfolio Margin Pro | 0 / 24 | `http` | `json` | Planned |
+| binance | Algo Trading | 0 / 11 | `http` | `json` | Planned |
+| binance | Copy Trading | 0 / 2 | `http` | `json` | Planned |
+| binance | Institutional Loan | 0 / 16 | `http` | `json` | Planned |
+| binance | Alpha Trading | 0 / 19 | `http`, `websocket_stream` | `json` | Planned |
+| binance | Stocks Trading | 0 / 23 | `http`, `websocket_stream` | `json` | Planned |
+| binance | Sub Account | 0 / 49 | `http` | `json` | Planned |
+| binance | Spot Block Matching | 0 / 7 | `http` | `json` | Planned |
+| binance | VIP Service | 0 / 11 | `http` | `json` | Planned |
+| binance | Crypto-as-a-Service (CAAS) | 0 / 10 | `http` | `json` | Planned |
+| binance | Fund Account | 0 / 4 | `http` | `json` | Planned |
+| binance | Link Plus | 0 / 8 | `http` | `json` | Planned |
+| binance | Exchange Link | 0 / 35 | `http` | `json` | Planned |
+| binance | KYC SaaS | 0 / 12 | `http` | `json` | Planned |
+| binance | Link and Trade | 0 / 23 | `http` | `json` | Planned |
+| binance | Staking | 0 / 37 | `http` | `json` | Planned |
+| binance | Mining | 0 / 13 | `http` | `json` | Planned |
+| binance | Crypto Loan | 0 / 16 | `http` | `json` | Planned |
+| binance | VIP Loan | 0 / 14 | `http` | `json` | Planned |
+| binance | C2C | 0 / 1 | `http` | `json` | Planned |
+| binance | Fiat | 0 / 5 | `http` | `json` | Planned |
+| binance | Gift Card | 0 / 6 | `http` | `json` | Planned |
+| binance | Rebate | 0 / 1 | `http` | `json` | Planned |
+| binance | Simple Earn | 0 / 41 | `http` | `json` | Planned |
+| binance | Discount Buy | 0 / 4 | `http` | `json` | Planned |
+| binance | Dual Investment | 0 / 5 | `http` | `json` | Planned |
+| binance | Pay | 0 / 1 | `http` | `json` | Planned |
+| binance | Prediction Trading | 0 / 26 | `http` | `json` | Planned |
+| hyperliquid | Info | 2 / — | `http`, `websocket_request` | `json` | Partial |
+| hyperliquid | Exchange | 1 / — | `http`, `websocket_request` | `json` | Partial |
+| hyperliquid | WebSocket subscriptions | 1 / — | `websocket_stream` | `json`, `binary` | Partial |
+| hyperliquid | HIP-3 DEX | 0 / — | `http`, `websocket_request`, `websocket_stream`, `contract` | `json` | Planned |
+| hyperliquid | Subaccounts and vaults | 0 / — | `http`, `websocket_stream` | `json` | Planned |
+| hyperliquid | Staking | 0 / — | `http`, `websocket_request` | `json` | Planned |
+| hyperliquid | Outcome markets | 0 / — | `http`, `websocket_request`, `websocket_stream`, `contract` | `json` | Planned |
+| hyperliquid | Deployer actions | 0 / — | `http`, `websocket_request`, `websocket_stream`, `contract` | `json` | Planned |
+| hyperliquid | HyperEVM | 0 / — | `json_rpc`, `contract` | `json` | Planned |
+
+## Recorded operations
+
+| Exchange | Product | Operation | Interface | Mapping | Validation |
+| --- | --- | --- | --- | --- | --- |
+| upbit | quotation | `markets` | `http` | common `markets` | `LiveRead` |
+| upbit | exchange | `balances` | `http` | common `balances` | `Fixture` |
+| upbit | wallet | `wallet_status` | `http` | common `asset_networks` | `Fixture` |
+| upbit | wallet | `deposit_address` | `http` | common `deposit_address` | `Fixture` |
+| upbit | wallet | `withdraw_chance` | `http` | common `prepare_withdrawal` | `Fixture` |
+| upbit | wallet | `withdraw_addresses` | `http` | common `prepare_withdrawal` | `Fixture` |
+| upbit | wallet | `withdraw_coin` | `http` | common `withdraw` | `Fixture` |
+| upbit | wallet | `deposits` | `http` | common `deposits` | `Fixture` |
+| upbit | wallet | `withdrawals` | `http` | common `withdrawals` | `Fixture` |
+| bithumb | quotation | `markets` | `http` | common `markets` | `LiveRead` |
+| bithumb | exchange | `balances` | `http` | common `balances` | `Fixture` |
+| bithumb | wallet | `wallet_status` | `http` | common `asset_networks` | `Fixture` |
+| bithumb | wallet | `deposit_address` | `http` | common `deposit_address` | `Fixture` |
+| bithumb | wallet | `withdraw_chance` | `http` | common `prepare_withdrawal` | `Fixture` |
+| bithumb | wallet | `withdraw_addresses` | `http` | common `prepare_withdrawal` | `Fixture` |
+| bithumb | wallet | `withdraw_coin` | `http` | common `withdraw` | `Fixture` |
+| bithumb | wallet | `deposits` | `http` | common `deposits` | `Fixture` |
+| bithumb | wallet | `withdrawals` | `http` | common `withdrawals` | `Fixture` |
+| binance | spot | `exchange_info` | `http` | common `markets` | `LiveRead` |
+| binance | usd_m | `exchange_info` | `http` | common `markets` | `LiveRead` |
+| binance | wallet | `all_coins_information` | `http` | common `asset_networks` | `Fixture` |
+| binance | wallet | `deposit_address` | `http` | common `deposit_address` | `Fixture` |
+| binance | wallet | `api_key_permissions` | `http` | common `prepare_withdrawal` | `Fixture` |
+| binance | wallet | `withdraw_address_list` | `http` | common `prepare_withdrawal` | `Fixture` |
+| binance | wallet | `questionnaire_requirements` | `http` | common `prepare_withdrawal` | `Fixture` |
+| binance | wallet | `withdraw` | `http` | common `withdraw` | `Fixture` |
+| binance | wallet | `deposit_history` | `http` | common `deposits` | `Fixture` |
+| binance | wallet | `withdraw_history` | `http` | common `withdrawals` | `Fixture` |
+| hyperliquid | info | `meta` | `http` | common `markets` | `LiveRead` |
+| hyperliquid | info | `user_non_funding_ledger_updates` | `http` | common `deposits`, `withdrawals` | `Fixture` |
+| hyperliquid | exchange | `order` | `http` | common `place_order` | `Fixture` |
+| hyperliquid | subscriptions | `trades` | `websocket_stream` | common `subscribe` | `LiveRead` |

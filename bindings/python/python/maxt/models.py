@@ -19,6 +19,7 @@ from typing import (
 from ._generated_identifiers import (
     BinanceMarket,
     BithumbAlertStep,
+    DepositStatus,
     Exchange,
     Feature,
     HyperliquidLedgerKind,
@@ -26,13 +27,16 @@ from ._generated_identifiers import (
     MarginMode,
     MarketKind,
     MarketStatus,
+    Network,
     OrderStatus,
     OrderType,
     Overflow,
     Side,
     SizeKind,
     TimeInForce,
+    TransferErrorKind,
     UpbitRegion,
+    WithdrawalStatus,
 )
 from ._generated_wire import RECORD_FIELDS
 
@@ -588,6 +592,8 @@ def _decode_value(expected: Any, value: Any) -> Any:
         )
     if expected is Decimal:
         return Decimal(value)
+    if expected is Cursor:
+        return Cursor(value)
     if isinstance(expected, type) and issubclass(expected, Enum):
         return expected(value)
     if isinstance(expected, type) and issubclass(expected, WireModel):
@@ -602,6 +608,8 @@ def _model_to_wire(value: Any) -> Any:
         return _decimal_to_wire(value)
     if isinstance(value, Enum):
         return value.value
+    if isinstance(value, WireModel) and getattr(type(value), "_wire_union", False):
+        return value.to_wire()
     if is_dataclass(value):
         return {
             wire_name: _model_to_wire(getattr(value, item.name))
@@ -617,16 +625,13 @@ def _model_to_wire(value: Any) -> Any:
 
 
 def _model_from_wire(type_name: str, value: dict[str, Any]) -> Any:
-    page_types: dict[str, type[WireModel]] = {
-        "FundingRatePage": FundingRate,
-        "FundingPaymentPage": FundingPayment,
-    }
-    if type_name in page_types:
-        item_type = page_types[type_name]
-        return Page(
-            [item_type.from_wire(item) for item in value["items"]],
-            Cursor(value["next"]) if value.get("next") is not None else None,
-        )
+    if type_name.endswith("Page"):
+        item_type = globals().get(type_name.removesuffix("Page"))
+        if isinstance(item_type, type) and issubclass(item_type, WireModel):
+            return Page(
+                [item_type.from_wire(item) for item in value["items"]],
+                Cursor(value["next"]) if value.get("next") is not None else None,
+            )
     model_type = globals().get(type_name)
     if type_name not in RECORD_FIELDS or not isinstance(model_type, type):
         raise ValueError(f"unknown maxt model: {type_name}")
@@ -635,8 +640,29 @@ def _model_from_wire(type_name: str, value: dict[str, Any]) -> Any:
     return model_type.from_wire(value)
 
 
+from ._generated_models import (  # noqa: E402
+    AssetNetwork,
+    ChainDestination,
+    ChainTransferRequest,
+    Deposit,
+    DepositAddress,
+    DepositAddressRequest,
+    ExchangeDestination,
+    ExchangeTransferRequest,
+    TransferDestination,
+    TransferHistoryRequest,
+    TransferPlan,
+    TravelRuleRequirement,
+    Withdrawal,
+    WithdrawalFee,
+    WithdrawalQuote,
+    WithdrawRequest,
+)
+
+
 __all__ = [
     "AccountEvent",
+    "AssetNetwork",
     "BinanceMarket",
     "BinanceSpotOrderDetail",
     "BinanceSymbolFilters",
@@ -644,10 +670,18 @@ __all__ = [
     "BithumbMarketAlert",
     "Candle",
     "CandleRequest",
+    "ChainDestination",
+    "ChainTransferRequest",
     "Balance",
     "Cursor",
     "Decimal",
+    "Deposit",
+    "DepositAddress",
+    "DepositAddressRequest",
+    "DepositStatus",
     "Exchange",
+    "ExchangeDestination",
+    "ExchangeTransferRequest",
     "Feed",
     "Feature",
     "FundingPayment",
@@ -663,6 +697,7 @@ __all__ = [
     "MarketInfo",
     "MarketKind",
     "MarketStatus",
+    "Network",
     "MarginMode",
     "MarginRequest",
     "MarginSummary",
@@ -683,6 +718,16 @@ __all__ = [
     "Ticker",
     "TimeInForce",
     "Trade",
+    "TransferDestination",
+    "TransferErrorKind",
+    "TransferHistoryRequest",
+    "TransferPlan",
+    "TravelRuleRequirement",
     "UpbitMarketEvent",
     "UpbitRegion",
+    "Withdrawal",
+    "WithdrawalFee",
+    "WithdrawalQuote",
+    "WithdrawalStatus",
+    "WithdrawRequest",
 ]

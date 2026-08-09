@@ -5,6 +5,7 @@
 
 import 'adapter.dart';
 import 'convert.dart';
+import 'convert/generated_models.dart';
 import 'frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'stream.dart';
@@ -83,6 +84,8 @@ Future<DartAdapter> registerDartAdapter({
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>>
 abstract class NativeClient implements RustOpaqueInterface {
+  Future<List<WireAssetNetwork>> assetNetworks({required String asset});
+
   Future<List<WireBalance>> balances();
 
   /// Binance Spot의 선택적 자격증명을 구성합니다.
@@ -136,7 +139,17 @@ abstract class NativeClient implements RustOpaqueInterface {
 
   Future<List<WireCandle>> candles({required WireCandleRequest request});
 
+  Future<WireDepositAddress> depositAddress({
+    required WireDepositAddressRequest request,
+  });
+
+  Future<WireDepositPage> deposits({
+    required WireTransferHistoryRequest request,
+  });
+
   WireExchange exchange();
+
+  Future<WireWithdrawal> executeTransfer({required WireTransferPlan plan});
 
   /// Dart에서 구현한 Adapter를 공통 native Client로 감쌉니다.
   static NativeClient fromDartAdapter({required DartAdapter adapter}) =>
@@ -188,6 +201,19 @@ abstract class NativeClient implements RustOpaqueInterface {
 
   Future<List<WirePosition>> positions({WireMarket? market});
 
+  Future<WireTransferPlan> prepareTransferTo({
+    required NativeClient destination,
+    required WireExchangeTransferRequest request,
+  });
+
+  Future<WireTransferPlan> prepareTransferToChain({
+    required WireChainTransferRequest request,
+  });
+
+  Future<WireWithdrawalQuote> prepareWithdrawal({
+    required WireWithdrawRequest request,
+  });
+
   Future<void> setMargin({required WireMarginRequest request});
 
   /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 시장 구독을 반환합니다.
@@ -228,6 +254,12 @@ abstract class NativeClient implements RustOpaqueInterface {
   WireUpbitRegion? upbitRegion();
 
   Future<List<WireTicker>> upbitTickers({required List<WireMarket> markets});
+
+  Future<WireWithdrawal> withdraw({required WireWithdrawRequest request});
+
+  Future<WireWithdrawalPage> withdrawals({
+    required WireTransferHistoryRequest request,
+  });
 }
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WireBinanceListenKey>>

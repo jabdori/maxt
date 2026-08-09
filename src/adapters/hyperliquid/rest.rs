@@ -11,12 +11,14 @@ use serde_json::{Value, json};
 use crate::adapters::candles as candle_pages;
 use crate::error::{Error, Result};
 use crate::feature::Feature;
-use crate::request::{CandleRequest, HistoryRequest, MarginRequest, OrderRequest};
+use crate::request::{
+    CandleRequest, HistoryRequest, MarginRequest, OrderRequest, TransferHistoryRequest,
+};
 use crate::transport::{HttpRequest, HttpTransport};
 use crate::types::{
-    Balance, Candle, Cursor, FundingPayment, FundingRate, Interval, MarginMode, MarginSummary,
-    Market, MarketInfo, MarketKind, Order, OrderBook, OrderStatus, OrderType, Page, Position, Size,
-    TimeInForce, Timestamp, Trade,
+    Balance, Candle, Cursor, Deposit, FundingPayment, FundingRate, Interval, MarginMode,
+    MarginSummary, Market, MarketInfo, MarketKind, Order, OrderBook, OrderStatus, OrderType, Page,
+    Position, Size, TimeInForce, Timestamp, Trade, Withdrawal,
 };
 
 use super::HyperliquidNetwork;
@@ -566,19 +568,103 @@ pub(crate) async fn ledger(
         Some(cursor) => parse::cursor_start_ms(cursor)?,
         None => from.map(Timestamp::as_millis).unwrap_or(0),
     };
-    let body = post(
-        http,
-        &ledger_request(user, start_ms, to.map(Timestamp::as_millis)),
-    )
-    .await?;
-
-    let raw: Vec<parse::RawLedgerUpdate> = parse::json(&body)?;
+    let raw = raw_ledger(http, user, start_ms, to.map(Timestamp::as_millis)).await?;
     let items = native::ledger_entries(&raw)?
         .into_iter()
         .zip(raw.iter().map(|entry| entry.time))
         .collect();
 
     page(items, newest(raw.iter().map(|entry| entry.time)), limit)
+}
+
+/// Reads one common deposit-history page from the account-wide ledger.
+pub(crate) async fn deposits(
+    http: &HttpTransport,
+    user: &str,
+    request: &TransferHistoryRequest,
+) -> Result<Page<Deposit>> {
+    let raw = transfer_ledger(http, user, request).await?;
+    let mut items = native::deposits(&raw)?;
+    filter_asset(&mut items, request.asset.as_deref(), |deposit| {
+        &deposit.asset
+    });
+
+    page(
+        items,
+        newest(raw.iter().map(|entry| entry.time)),
+        request.limit,
+    )
+}
+
+/// Reads one common withdrawal-history page from the account-wide ledger.
+pub(crate) async fn withdrawals(
+    http: &HttpTransport,
+    user: &str,
+    request: &TransferHistoryRequest,
+) -> Result<Page<Withdrawal>> {
+    let raw = transfer_ledger(http, user, request).await?;
+    let mut items = native::withdrawals(&raw)?;
+    filter_asset(&mut items, request.asset.as_deref(), |withdrawal| {
+        &withdrawal.asset
+    });
+
+    page(
+        items,
+        newest(raw.iter().map(|entry| entry.time)),
+        request.limit,
+    )
+}
+
+async fn transfer_ledger(
+    http: &HttpTransport,
+    user: &str,
+    request: &TransferHistoryRequest,
+) -> Result<Vec<parse::RawLedgerUpdate>> {
+    validate_page_limit(request.limit)?;
+    let start_ms = request
+        .cursor
+        .as_ref()
+        .map(parse::cursor_start_ms)
+        .transpose()?
+        .unwrap_or(0);
+
+    raw_ledger(http, user, start_ms, None).await
+}
+
+async fn raw_ledger(
+    http: &HttpTransport,
+    user: &str,
+    start_ms: i64,
+    end_ms: Option<i64>,
+) -> Result<Vec<parse::RawLedgerUpdate>> {
+    let body = post(http, &ledger_request(user, start_ms, end_ms)).await?;
+
+    parse::json(&body)
+}
+
+fn filter_asset<T>(items: &mut Vec<(T, i64)>, requested: Option<&str>, asset: impl Fn(&T) -> &str) {
+    if let Some(requested) = requested {
+        items.retain(|(item, _)| asset(item).eq_ignore_ascii_case(requested));
+    }
+}
+
+/// Validates the transfer-history fields Hyperliquid can honor.
+pub(crate) fn validate_transfer_history(
+    request: &TransferHistoryRequest,
+    feature: Feature,
+) -> Result<()> {
+    validate_page_limit(request.limit)?;
+    if let Some(network) = &request.network {
+        return Err(Error::unsupported(
+            feature,
+            EXCHANGE,
+            format!(
+                "userNonFundingLedgerUpdates does not identify a network, so `{network}` cannot be filtered safely"
+            ),
+        ));
+    }
+
+    Ok(())
 }
 
 /// Returns the greatest entry time and whether the provider page was full.
@@ -1112,10 +1198,19 @@ mod tests {
             (spot_state_request("0xabc"), "spotClearinghouseState"),
             (perp_state_request("0xabc"), "clearinghouseState"),
             (open_orders_request("0xabc"), "frontendOpenOrders"),
+            (
+                ledger_request("0xabc", 1_681_222_254_710, None),
+                "userNonFundingLedgerUpdates",
+            ),
         ] {
             assert_eq!(request.target(), INFO_PATH, "{expected}");
             assert_eq!(body_of(&request)["type"], expected);
         }
+
+        let ledger = body_of(&ledger_request("0xabc", 1_681_222_254_710, None));
+        assert_eq!(ledger["user"], "0xabc");
+        assert_eq!(ledger["startTime"], 1_681_222_254_710_i64);
+        assert!(ledger["endTime"].is_null());
     }
 
     #[test]

@@ -292,6 +292,22 @@ void main() {
     }
   });
 
+  test('지갑 요청은 자산을 정규화하고 알려지지 않은 네트워크 값을 보존한다', () {
+    final deposit = DepositAddressRequest(
+      asset: 'eth',
+      network: Network.arbitrum,
+    );
+    final history = TransferHistoryRequest(
+      asset: 'btc',
+      network: Network.other('provider-chain'),
+    );
+
+    expect(deposit.asset, 'ETH');
+    expect(history.asset, 'BTC');
+    expect(history.network?.providerName, 'provider-chain');
+    expect(history.network?.isOther, isTrue);
+  });
+
   test('비 ASCII 자산 식별자는 시장 동등성과 구독 중복 제거에서 구분한다', () {
     final lowercaseAccent = Market.spot(Exchange.binance, 'éth', 'usdt');
     final uppercaseAccent = Market.spot(Exchange.binance, 'Éth', 'usdt');

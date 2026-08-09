@@ -61,7 +61,7 @@ fn schema_adapter_operations_match_the_core_trait() {
 #[test]
 fn schema_client_members_match_the_public_binding_surface() {
     let source = syn::parse_file(include_str!("../../../src/client.rs")).unwrap();
-    let actual = source
+    let mut actual = source
         .items
         .into_iter()
         .find_map(|item| match item {
@@ -85,7 +85,28 @@ fn schema_client_members_match_the_public_binding_surface() {
             _ => None,
         })
         .unwrap();
-    let expected = binding_schema()
+    let schema = binding_schema();
+    let composition_source = syn::parse_file(include_str!("../../../src/wallet.rs")).unwrap();
+    let composition_functions = composition_source
+        .items
+        .into_iter()
+        .filter_map(|item| match item {
+            Item::Fn(function) if matches!(function.vis, syn::Visibility::Public(_)) => {
+                Some(function.sig.ident.to_string())
+            }
+            _ => None,
+        })
+        .collect::<BTreeSet<_>>();
+    for composition in schema.client_compositions {
+        assert!(
+            composition_functions.contains(composition.rust_name),
+            "binding composition {} has no Rust function {}",
+            composition.language_name,
+            composition.rust_name
+        );
+        actual.insert(composition.language_name.to_owned());
+    }
+    let expected = schema
         .client_members
         .iter()
         .map(|member| (*member).to_owned())
@@ -175,7 +196,13 @@ fn schema_provider_methods_match_every_core_adapter() {
             ),
             "hyperliquid" => (
                 include_str!("../../../src/adapters/hyperliquid/mod.rs"),
-                &["new", "testnet", "with_wallet"][..],
+                &[
+                    "new",
+                    "testnet",
+                    "with_query_address",
+                    "with_signer",
+                    "with_wallet",
+                ][..],
             ),
             exchange => panic!("provider source is not classified for {exchange}"),
         };

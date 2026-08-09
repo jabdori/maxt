@@ -6,6 +6,7 @@
 import 'adapter.dart';
 import 'api.dart';
 import 'convert.dart';
+import 'convert/generated_models.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi' as ffi;
@@ -239,9 +240,42 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireCandleRequest dco_decode_box_autoadd_wire_candle_request(dynamic raw);
 
   @protected
+  WireChainDestination dco_decode_box_autoadd_wire_chain_destination(
+    dynamic raw,
+  );
+
+  @protected
+  WireChainTransferRequest dco_decode_box_autoadd_wire_chain_transfer_request(
+    dynamic raw,
+  );
+
+  @protected
+  WireDepositAddress dco_decode_box_autoadd_wire_deposit_address(dynamic raw);
+
+  @protected
+  WireDepositAddressRequest dco_decode_box_autoadd_wire_deposit_address_request(
+    dynamic raw,
+  );
+
+  @protected
+  WireDepositPage dco_decode_box_autoadd_wire_deposit_page(dynamic raw);
+
+  @protected
+  WireExchange dco_decode_box_autoadd_wire_exchange(dynamic raw);
+
+  @protected
+  WireExchangeDestination dco_decode_box_autoadd_wire_exchange_destination(
+    dynamic raw,
+  );
+
+  @protected
   WireExchangeErrorKind dco_decode_box_autoadd_wire_exchange_error_kind(
     dynamic raw,
   );
+
+  @protected
+  WireExchangeTransferRequest
+  dco_decode_box_autoadd_wire_exchange_transfer_request(dynamic raw);
 
   @protected
   WireFeature dco_decode_box_autoadd_wire_feature(dynamic raw);
@@ -302,7 +336,39 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireTrade dco_decode_box_autoadd_wire_trade(dynamic raw);
 
   @protected
+  WireTransferDestination dco_decode_box_autoadd_wire_transfer_destination(
+    dynamic raw,
+  );
+
+  @protected
+  WireTransferErrorKind dco_decode_box_autoadd_wire_transfer_error_kind(
+    dynamic raw,
+  );
+
+  @protected
+  WireTransferHistoryRequest
+  dco_decode_box_autoadd_wire_transfer_history_request(dynamic raw);
+
+  @protected
+  WireTransferPlan dco_decode_box_autoadd_wire_transfer_plan(dynamic raw);
+
+  @protected
   WireUpbitRegion dco_decode_box_autoadd_wire_upbit_region(dynamic raw);
+
+  @protected
+  WireWithdrawRequest dco_decode_box_autoadd_wire_withdraw_request(dynamic raw);
+
+  @protected
+  WireWithdrawal dco_decode_box_autoadd_wire_withdrawal(dynamic raw);
+
+  @protected
+  WireWithdrawalFee dco_decode_box_autoadd_wire_withdrawal_fee(dynamic raw);
+
+  @protected
+  WireWithdrawalPage dco_decode_box_autoadd_wire_withdrawal_page(dynamic raw);
+
+  @protected
+  WireWithdrawalQuote dco_decode_box_autoadd_wire_withdrawal_quote(dynamic raw);
 
   @protected
   int dco_decode_i_32(dynamic raw);
@@ -320,6 +386,9 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
+  List<WireAssetNetwork> dco_decode_list_wire_asset_network(dynamic raw);
+
+  @protected
   List<WireBalance> dco_decode_list_wire_balance(dynamic raw);
 
   @protected
@@ -334,6 +403,9 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   List<WireCandle> dco_decode_list_wire_candle(dynamic raw);
+
+  @protected
+  List<WireDeposit> dco_decode_list_wire_deposit(dynamic raw);
 
   @protected
   List<WireFeature> dco_decode_list_wire_feature(dynamic raw);
@@ -381,6 +453,9 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  List<WireWithdrawal> dco_decode_list_wire_withdrawal(dynamic raw);
+
+  @protected
   MarketStreamItem dco_decode_market_stream_item(dynamic raw);
 
   @protected
@@ -408,6 +483,9 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireBinanceVenue? dco_decode_opt_box_autoadd_wire_binance_venue(dynamic raw);
 
   @protected
+  WireExchange? dco_decode_opt_box_autoadd_wire_exchange(dynamic raw);
+
+  @protected
   WireExchangeErrorKind? dco_decode_opt_box_autoadd_wire_exchange_error_kind(
     dynamic raw,
   );
@@ -428,7 +506,22 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireTimeInForce? dco_decode_opt_box_autoadd_wire_time_in_force(dynamic raw);
 
   @protected
+  WireTransferDestination? dco_decode_opt_box_autoadd_wire_transfer_destination(
+    dynamic raw,
+  );
+
+  @protected
+  WireTransferErrorKind? dco_decode_opt_box_autoadd_wire_transfer_error_kind(
+    dynamic raw,
+  );
+
+  @protected
   WireUpbitRegion? dco_decode_opt_box_autoadd_wire_upbit_region(dynamic raw);
+
+  @protected
+  WireWithdrawalFee? dco_decode_opt_box_autoadd_wire_withdrawal_fee(
+    dynamic raw,
+  );
 
   @protected
   int dco_decode_u_16(dynamic raw);
@@ -453,6 +546,9 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireAccountStreamItem dco_decode_wire_account_stream_item(dynamic raw);
+
+  @protected
+  WireAssetNetwork dco_decode_wire_asset_network(dynamic raw);
 
   @protected
   WireBalance dco_decode_wire_balance(dynamic raw);
@@ -484,10 +580,41 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireCandleRequest dco_decode_wire_candle_request(dynamic raw);
 
   @protected
+  WireChainDestination dco_decode_wire_chain_destination(dynamic raw);
+
+  @protected
+  WireChainTransferRequest dco_decode_wire_chain_transfer_request(dynamic raw);
+
+  @protected
+  WireDeposit dco_decode_wire_deposit(dynamic raw);
+
+  @protected
+  WireDepositAddress dco_decode_wire_deposit_address(dynamic raw);
+
+  @protected
+  WireDepositAddressRequest dco_decode_wire_deposit_address_request(
+    dynamic raw,
+  );
+
+  @protected
+  WireDepositPage dco_decode_wire_deposit_page(dynamic raw);
+
+  @protected
+  WireDepositStatus dco_decode_wire_deposit_status(dynamic raw);
+
+  @protected
   WireExchange dco_decode_wire_exchange(dynamic raw);
 
   @protected
+  WireExchangeDestination dco_decode_wire_exchange_destination(dynamic raw);
+
+  @protected
   WireExchangeErrorKind dco_decode_wire_exchange_error_kind(dynamic raw);
+
+  @protected
+  WireExchangeTransferRequest dco_decode_wire_exchange_transfer_request(
+    dynamic raw,
+  );
 
   @protected
   WireFeature dco_decode_wire_feature(dynamic raw);
@@ -609,10 +736,47 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireTrade dco_decode_wire_trade(dynamic raw);
 
   @protected
+  WireTransferDestination dco_decode_wire_transfer_destination(dynamic raw);
+
+  @protected
+  WireTransferErrorKind dco_decode_wire_transfer_error_kind(dynamic raw);
+
+  @protected
+  WireTransferHistoryRequest dco_decode_wire_transfer_history_request(
+    dynamic raw,
+  );
+
+  @protected
+  WireTransferPlan dco_decode_wire_transfer_plan(dynamic raw);
+
+  @protected
+  WireTravelRuleRequirement dco_decode_wire_travel_rule_requirement(
+    dynamic raw,
+  );
+
+  @protected
   WireUpbitMarketEvent dco_decode_wire_upbit_market_event(dynamic raw);
 
   @protected
   WireUpbitRegion dco_decode_wire_upbit_region(dynamic raw);
+
+  @protected
+  WireWithdrawRequest dco_decode_wire_withdraw_request(dynamic raw);
+
+  @protected
+  WireWithdrawal dco_decode_wire_withdrawal(dynamic raw);
+
+  @protected
+  WireWithdrawalFee dco_decode_wire_withdrawal_fee(dynamic raw);
+
+  @protected
+  WireWithdrawalPage dco_decode_wire_withdrawal_page(dynamic raw);
+
+  @protected
+  WireWithdrawalQuote dco_decode_wire_withdrawal_quote(dynamic raw);
+
+  @protected
+  WireWithdrawalStatus dco_decode_wire_withdrawal_status(dynamic raw);
 
   @protected
   AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
@@ -812,7 +976,48 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireChainDestination sse_decode_box_autoadd_wire_chain_destination(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireChainTransferRequest sse_decode_box_autoadd_wire_chain_transfer_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireDepositAddress sse_decode_box_autoadd_wire_deposit_address(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireDepositAddressRequest sse_decode_box_autoadd_wire_deposit_address_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireDepositPage sse_decode_box_autoadd_wire_deposit_page(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireExchange sse_decode_box_autoadd_wire_exchange(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireExchangeDestination sse_decode_box_autoadd_wire_exchange_destination(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireExchangeErrorKind sse_decode_box_autoadd_wire_exchange_error_kind(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireExchangeTransferRequest
+  sse_decode_box_autoadd_wire_exchange_transfer_request(
     SseDeserializer deserializer,
   );
 
@@ -895,7 +1100,53 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireTrade sse_decode_box_autoadd_wire_trade(SseDeserializer deserializer);
 
   @protected
+  WireTransferDestination sse_decode_box_autoadd_wire_transfer_destination(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireTransferErrorKind sse_decode_box_autoadd_wire_transfer_error_kind(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireTransferHistoryRequest
+  sse_decode_box_autoadd_wire_transfer_history_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireTransferPlan sse_decode_box_autoadd_wire_transfer_plan(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireUpbitRegion sse_decode_box_autoadd_wire_upbit_region(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireWithdrawRequest sse_decode_box_autoadd_wire_withdraw_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireWithdrawal sse_decode_box_autoadd_wire_withdrawal(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireWithdrawalFee sse_decode_box_autoadd_wire_withdrawal_fee(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireWithdrawalPage sse_decode_box_autoadd_wire_withdrawal_page(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireWithdrawalQuote sse_decode_box_autoadd_wire_withdrawal_quote(
     SseDeserializer deserializer,
   );
 
@@ -915,6 +1166,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
+  List<WireAssetNetwork> sse_decode_list_wire_asset_network(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<WireBalance> sse_decode_list_wire_balance(SseDeserializer deserializer);
 
   @protected
@@ -929,6 +1185,9 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   List<WireCandle> sse_decode_list_wire_candle(SseDeserializer deserializer);
+
+  @protected
+  List<WireDeposit> sse_decode_list_wire_deposit(SseDeserializer deserializer);
 
   @protected
   List<WireFeature> sse_decode_list_wire_feature(SseDeserializer deserializer);
@@ -986,6 +1245,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  List<WireWithdrawal> sse_decode_list_wire_withdrawal(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   MarketStreamItem sse_decode_market_stream_item(SseDeserializer deserializer);
 
   @protected
@@ -1011,6 +1275,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireBinanceVenue? sse_decode_opt_box_autoadd_wire_binance_venue(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireExchange? sse_decode_opt_box_autoadd_wire_exchange(
     SseDeserializer deserializer,
   );
 
@@ -1043,7 +1312,22 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireTransferDestination? sse_decode_opt_box_autoadd_wire_transfer_destination(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireTransferErrorKind? sse_decode_opt_box_autoadd_wire_transfer_error_kind(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireUpbitRegion? sse_decode_opt_box_autoadd_wire_upbit_region(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireWithdrawalFee? sse_decode_opt_box_autoadd_wire_withdrawal_fee(
     SseDeserializer deserializer,
   );
 
@@ -1072,6 +1356,9 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireAccountStreamItem sse_decode_wire_account_stream_item(
     SseDeserializer deserializer,
   );
+
+  @protected
+  WireAssetNetwork sse_decode_wire_asset_network(SseDeserializer deserializer);
 
   @protected
   WireBalance sse_decode_wire_balance(SseDeserializer deserializer);
@@ -1113,10 +1400,51 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireChainDestination sse_decode_wire_chain_destination(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireChainTransferRequest sse_decode_wire_chain_transfer_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireDeposit sse_decode_wire_deposit(SseDeserializer deserializer);
+
+  @protected
+  WireDepositAddress sse_decode_wire_deposit_address(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireDepositAddressRequest sse_decode_wire_deposit_address_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireDepositPage sse_decode_wire_deposit_page(SseDeserializer deserializer);
+
+  @protected
+  WireDepositStatus sse_decode_wire_deposit_status(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireExchange sse_decode_wire_exchange(SseDeserializer deserializer);
 
   @protected
+  WireExchangeDestination sse_decode_wire_exchange_destination(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireExchangeErrorKind sse_decode_wire_exchange_error_kind(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireExchangeTransferRequest sse_decode_wire_exchange_transfer_request(
     SseDeserializer deserializer,
   );
 
@@ -1254,12 +1582,63 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireTrade sse_decode_wire_trade(SseDeserializer deserializer);
 
   @protected
+  WireTransferDestination sse_decode_wire_transfer_destination(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireTransferErrorKind sse_decode_wire_transfer_error_kind(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireTransferHistoryRequest sse_decode_wire_transfer_history_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireTransferPlan sse_decode_wire_transfer_plan(SseDeserializer deserializer);
+
+  @protected
+  WireTravelRuleRequirement sse_decode_wire_travel_rule_requirement(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireUpbitMarketEvent sse_decode_wire_upbit_market_event(
     SseDeserializer deserializer,
   );
 
   @protected
   WireUpbitRegion sse_decode_wire_upbit_region(SseDeserializer deserializer);
+
+  @protected
+  WireWithdrawRequest sse_decode_wire_withdraw_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireWithdrawal sse_decode_wire_withdrawal(SseDeserializer deserializer);
+
+  @protected
+  WireWithdrawalFee sse_decode_wire_withdrawal_fee(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireWithdrawalPage sse_decode_wire_withdrawal_page(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireWithdrawalQuote sse_decode_wire_withdrawal_quote(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireWithdrawalStatus sse_decode_wire_withdrawal_status(
+    SseDeserializer deserializer,
+  );
 
   @protected
   void sse_encode_AnyhowException(
@@ -1508,8 +1887,56 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_wire_chain_destination(
+    WireChainDestination self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_chain_transfer_request(
+    WireChainTransferRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_deposit_address(
+    WireDepositAddress self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_deposit_address_request(
+    WireDepositAddressRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_deposit_page(
+    WireDepositPage self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_exchange(
+    WireExchange self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_exchange_destination(
+    WireExchangeDestination self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_wire_exchange_error_kind(
     WireExchangeErrorKind self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_exchange_transfer_request(
+    WireExchangeTransferRequest self,
     SseSerializer serializer,
   );
 
@@ -1622,8 +2049,62 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_wire_transfer_destination(
+    WireTransferDestination self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_transfer_error_kind(
+    WireTransferErrorKind self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_transfer_history_request(
+    WireTransferHistoryRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_transfer_plan(
+    WireTransferPlan self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_wire_upbit_region(
     WireUpbitRegion self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_withdraw_request(
+    WireWithdrawRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_withdrawal(
+    WireWithdrawal self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_withdrawal_fee(
+    WireWithdrawalFee self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_withdrawal_page(
+    WireWithdrawalPage self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_withdrawal_quote(
+    WireWithdrawalQuote self,
     SseSerializer serializer,
   );
 
@@ -1642,6 +2123,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_list_prim_u_8_strict(
     Uint8List self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_wire_asset_network(
+    List<WireAssetNetwork> self,
     SseSerializer serializer,
   );
 
@@ -1666,6 +2153,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_list_wire_candle(
     List<WireCandle> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_wire_deposit(
+    List<WireDeposit> self,
     SseSerializer serializer,
   );
 
@@ -1751,6 +2244,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_list_wire_withdrawal(
+    List<WireWithdrawal> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_market_stream_item(
     MarketStreamItem self,
     SseSerializer serializer,
@@ -1786,6 +2285,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_opt_box_autoadd_wire_binance_venue(
     WireBinanceVenue? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_wire_exchange(
+    WireExchange? self,
     SseSerializer serializer,
   );
 
@@ -1826,8 +2331,26 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_opt_box_autoadd_wire_transfer_destination(
+    WireTransferDestination? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_wire_transfer_error_kind(
+    WireTransferErrorKind? self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_opt_box_autoadd_wire_upbit_region(
     WireUpbitRegion? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_wire_withdrawal_fee(
+    WireWithdrawalFee? self,
     SseSerializer serializer,
   );
 
@@ -1858,6 +2381,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_account_stream_item(
     WireAccountStreamItem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_asset_network(
+    WireAssetNetwork self,
     SseSerializer serializer,
   );
 
@@ -1910,11 +2439,62 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_wire_chain_destination(
+    WireChainDestination self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_chain_transfer_request(
+    WireChainTransferRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_deposit(WireDeposit self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_wire_deposit_address(
+    WireDepositAddress self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_deposit_address_request(
+    WireDepositAddressRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_deposit_page(
+    WireDepositPage self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_deposit_status(
+    WireDepositStatus self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_exchange(WireExchange self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_wire_exchange_destination(
+    WireExchangeDestination self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_wire_exchange_error_kind(
     WireExchangeErrorKind self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_exchange_transfer_request(
+    WireExchangeTransferRequest self,
     SseSerializer serializer,
   );
 
@@ -2096,6 +2676,36 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   void sse_encode_wire_trade(WireTrade self, SseSerializer serializer);
 
   @protected
+  void sse_encode_wire_transfer_destination(
+    WireTransferDestination self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_transfer_error_kind(
+    WireTransferErrorKind self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_transfer_history_request(
+    WireTransferHistoryRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_transfer_plan(
+    WireTransferPlan self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_travel_rule_requirement(
+    WireTravelRuleRequirement self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_upbit_market_event(
     WireUpbitMarketEvent self,
     SseSerializer serializer,
@@ -2104,6 +2714,42 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_upbit_region(
     WireUpbitRegion self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_withdraw_request(
+    WireWithdrawRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_withdrawal(
+    WireWithdrawal self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_withdrawal_fee(
+    WireWithdrawalFee self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_withdrawal_page(
+    WireWithdrawalPage self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_withdrawal_quote(
+    WireWithdrawalQuote self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_withdrawal_status(
+    WireWithdrawalStatus self,
     SseSerializer serializer,
   );
 }

@@ -37,6 +37,12 @@ class Feature(str, Enum):
     TICKER_STREAM = "ticker_stream"
     CANDLE_STREAM = "candle_stream"
     BALANCES = "balances"
+    ASSET_NETWORKS = "asset_networks"
+    DEPOSIT_ADDRESSES = "deposit_addresses"
+    DEPOSIT_HISTORY = "deposit_history"
+    WITHDRAWAL_QUOTES = "withdrawal_quotes"
+    WITHDRAWALS = "withdrawals"
+    WITHDRAWAL_HISTORY = "withdrawal_history"
     OPEN_ORDERS = "open_orders"
     ACCOUNT_STREAM = "account_stream"
     TRADING = "trading"
@@ -50,6 +56,12 @@ class Feature(str, Enum):
     def needs_credentials(self) -> bool:
         return self.value in {
             "balances",
+            "asset_networks",
+            "deposit_addresses",
+            "deposit_history",
+            "withdrawal_quotes",
+            "withdrawals",
+            "withdrawal_history",
             "open_orders",
             "account_stream",
             "trading",
@@ -259,6 +271,70 @@ class ExchangeErrorKind(str, Enum):
     def is_retryable(self) -> bool:
         return self.value in {"rate_limited", "unavailable"}
 
+
+class Network(str, Enum):
+    BITCOIN = "bitcoin"
+    ETHEREUM = "ethereum"
+    ARBITRUM = "arbitrum"
+    BNB_SMART_CHAIN = "bnb_smart_chain"
+    TRON = "tron"
+    SOLANA = "solana"
+    POLYGON = "polygon"
+    BASE = "base"
+    OPTIMISM = "optimism"
+    AVALANCHE_C = "avalanche_c"
+    XRP_LEDGER = "xrp_ledger"
+    STELLAR = "stellar"
+    COSMOS = "cosmos"
+    APTOS = "aptos"
+    SUI = "sui"
+    TON = "ton"
+    NEAR = "near"
+    POLKADOT = "polkadot"
+
+    @classmethod
+    def other(cls, value: str) -> Network:
+        return cls(value)
+
+    @classmethod
+    def _missing_(cls, value: object) -> Network:
+        if not isinstance(value, str):
+            raise ValueError(value)
+        member = str.__new__(cls, value)
+        member._name_ = "OTHER"
+        member._value_ = value
+        cls._value2member_map_[value] = member
+        return member
+
+
+class WithdrawalStatus(str, Enum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+    FAILED = "failed"
+    UNKNOWN = "unknown"
+
+
+class DepositStatus(str, Enum):
+    PENDING = "pending"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    UNKNOWN = "unknown"
+
+
+class TransferErrorKind(str, Enum):
+    ASSET_MISMATCH = "asset_mismatch"
+    NETWORK_MISMATCH = "network_mismatch"
+    AMBIGUOUS_NETWORK = "ambiguous_network"
+    NETWORK_UNAVAILABLE = "network_unavailable"
+    MEMO_REQUIRED = "memo_required"
+    DESTINATION_UNAVAILABLE = "destination_unavailable"
+    ADDRESS_NOT_ALLOWED = "address_not_allowed"
+    TRAVEL_RULE_REQUIRED = "travel_rule_required"
+    AMOUNT_OUT_OF_RANGE = "amount_out_of_range"
+    PLAN_EXPIRED = "plan_expired"
+
 Exchange.__module__ = "maxt.models"
 Feature.__module__ = "maxt.models"
 MarketKind.__module__ = "maxt.models"
@@ -276,6 +352,10 @@ BithumbAlertStep.__module__ = "maxt.models"
 BinanceMarket.__module__ = "maxt.models"
 HyperliquidLedgerKind.__module__ = "maxt.models"
 ExchangeErrorKind.__module__ = "maxt._api"
+Network.__module__ = "maxt.models"
+WithdrawalStatus.__module__ = "maxt.models"
+DepositStatus.__module__ = "maxt.models"
+TransferErrorKind.__module__ = "maxt.models"
 
 __all__ = [
     "Exchange",
@@ -295,4 +375,8 @@ __all__ = [
     "BinanceMarket",
     "HyperliquidLedgerKind",
     "ExchangeErrorKind",
+    "Network",
+    "WithdrawalStatus",
+    "DepositStatus",
+    "TransferErrorKind",
 ]

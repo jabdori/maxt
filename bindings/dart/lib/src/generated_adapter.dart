@@ -32,6 +32,18 @@ abstract interface class GeneratedAdapterContract {
 
   Future<List<Balance>> balances();
 
+  Future<List<AssetNetwork>> assetNetworks(String asset);
+
+  Future<DepositAddress> depositAddress(DepositAddressRequest request);
+
+  Future<WithdrawalQuote> prepareWithdrawal(WithdrawRequest request);
+
+  Future<Withdrawal> withdraw(WithdrawRequest request);
+
+  Future<Page<Deposit>> deposits(TransferHistoryRequest request);
+
+  Future<Page<Withdrawal>> withdrawals(TransferHistoryRequest request);
+
   Future<List<Order>> openOrders([Market? market]);
 
   Future<AccountStream> subscribeAccount(StreamConfig config);
@@ -85,6 +97,30 @@ abstract base class GeneratedAdapterDefaults
 
   @override
   Future<List<Balance>> balances() => _unsupported(Feature.balances);
+
+  @override
+  Future<List<AssetNetwork>> assetNetworks(String asset) =>
+      _unsupported(Feature.assetNetworks);
+
+  @override
+  Future<DepositAddress> depositAddress(DepositAddressRequest request) =>
+      _unsupported(Feature.depositAddresses);
+
+  @override
+  Future<WithdrawalQuote> prepareWithdrawal(WithdrawRequest request) =>
+      _unsupported(Feature.withdrawalQuotes);
+
+  @override
+  Future<Withdrawal> withdraw(WithdrawRequest request) =>
+      _unsupported(Feature.withdrawals);
+
+  @override
+  Future<Page<Deposit>> deposits(TransferHistoryRequest request) =>
+      _unsupported(Feature.depositHistory);
+
+  @override
+  Future<Page<Withdrawal>> withdrawals(TransferHistoryRequest request) =>
+      _unsupported(Feature.withdrawalHistory);
 
   @override
   Future<List<Order>> openOrders([Market? market]) =>

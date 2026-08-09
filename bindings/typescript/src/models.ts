@@ -1,22 +1,27 @@
 import {
   BithumbAlertStep,
+  DepositStatus,
   Exchange,
   HyperliquidLedgerKind,
   Interval,
   MarginMode,
   MarketKind,
   MarketStatus,
+  Network,
   OrderStatus,
   OrderType,
   Overflow,
   Side,
   SizeKind,
   TimeInForce,
+  TransferErrorKind,
+  WithdrawalStatus,
 } from "./generated/identifiers.js";
 
 export {
   BinanceMarket,
   BithumbAlertStep,
+  DepositStatus,
   Exchange,
   Feature,
   HyperliquidLedgerKind,
@@ -24,13 +29,16 @@ export {
   MarginMode,
   MarketKind,
   MarketStatus,
+  Network,
   OrderStatus,
   OrderType,
   Overflow,
   Side,
   SizeKind,
   TimeInForce,
+  TransferErrorKind,
   UpbitRegion,
+  WithdrawalStatus,
 } from "./generated/identifiers.js";
 
 const MAX_DECIMAL_COEFFICIENT = 79228162514264337593543950335n;
@@ -487,6 +495,201 @@ export class Balance {
   get total(): Decimal { return this.available.add(this.locked); }
 }
 
+export type WithdrawalFee =
+  | { readonly kind: "fixed"; readonly value: Decimal }
+  | {
+    readonly kind: "rate";
+    readonly rate: Decimal;
+    readonly minimum: Decimal | null;
+    readonly maximum: Decimal | null;
+  };
+
+export const WithdrawalFee = Object.freeze({
+  fixed(value: Decimal): WithdrawalFee {
+    return Object.freeze({ kind: "fixed", value });
+  },
+  rate(
+    rate: Decimal,
+    minimum: Decimal | null = null,
+    maximum: Decimal | null = null,
+  ): WithdrawalFee {
+    return Object.freeze({ kind: "rate", rate, minimum, maximum });
+  },
+});
+
+export class AssetNetwork {
+  readonly asset: string;
+  constructor(
+    readonly exchange: Exchange,
+    asset: string,
+    readonly network: Network,
+    readonly providerId: string,
+    readonly depositEnabled: boolean,
+    readonly withdrawalEnabled: boolean,
+    readonly withdrawalFee: WithdrawalFee | null,
+    readonly minimumWithdrawal: Decimal | null,
+    readonly maximumWithdrawal: Decimal | null,
+    readonly memoRequired: boolean,
+  ) {
+    this.asset = asciiUpper(asset);
+    freezeRecord(this);
+  }
+}
+
+export class DepositAddress {
+  readonly asset: string;
+  constructor(
+    readonly exchange: Exchange,
+    asset: string,
+    readonly network: Network,
+    readonly address: string | null,
+    readonly memo: string | null,
+  ) {
+    this.asset = asciiUpper(asset);
+    freezeRecord(this);
+  }
+}
+
+export class ExchangeDestination {
+  readonly asset: string;
+  constructor(
+    readonly exchange: Exchange,
+    asset: string,
+    readonly network: Network,
+    readonly address: string,
+    readonly memo: string | null = null,
+  ) {
+    this.asset = asciiUpper(asset);
+    freezeRecord(this);
+  }
+}
+
+export class ChainDestination {
+  readonly asset: string;
+  constructor(
+    asset: string,
+    readonly network: Network,
+    readonly address: string,
+    readonly memo: string | null = null,
+  ) {
+    this.asset = asciiUpper(asset);
+    freezeRecord(this);
+  }
+}
+
+export class ExchangeTransferRequest {
+  readonly asset: string;
+  constructor(
+    asset: string,
+    readonly sourceNetwork: Network | null,
+    readonly destinationNetwork: Network | null,
+    readonly amount: Decimal,
+  ) {
+    this.asset = asciiUpper(asset);
+    freezeRecord(this);
+  }
+}
+
+export class ChainTransferRequest {
+  readonly asset: string;
+  constructor(
+    asset: string,
+    readonly sourceNetwork: Network | null,
+    readonly destination: ChainDestination,
+    readonly amount: Decimal,
+  ) {
+    this.asset = asciiUpper(asset);
+    freezeRecord(this);
+  }
+}
+
+export type TransferDestination =
+  | { readonly kind: "exchange"; readonly value: ExchangeDestination }
+  | { readonly kind: "chain"; readonly value: ChainDestination };
+
+export const TransferDestination = Object.freeze({
+  exchange(value: ExchangeDestination): TransferDestination {
+    return Object.freeze({ kind: "exchange", value });
+  },
+  chain(value: ChainDestination): TransferDestination {
+    return Object.freeze({ kind: "chain", value });
+  },
+});
+
+export type TravelRuleRequirement =
+  | { readonly kind: "not_required" }
+  | { readonly kind: "required"; readonly consentUrl: string | null };
+
+export const TravelRuleRequirement = Object.freeze({
+  NotRequired: Object.freeze({ kind: "not_required" }) as TravelRuleRequirement,
+  required(consentUrl: string | null = null): TravelRuleRequirement {
+    return Object.freeze({ kind: "required", consentUrl });
+  },
+});
+
+export class WithdrawalQuote {
+  constructor(
+    readonly fee: Decimal | null,
+    readonly expectedReceive: Decimal | null,
+    readonly minimumAmount: Decimal | null,
+    readonly maximumAmount: Decimal | null,
+    readonly addressAllowed: boolean | null,
+    readonly travelRule: TravelRuleRequirement,
+    readonly expiresAt: Timestamp | null,
+  ) { freezeRecord(this); }
+}
+
+export class TransferPlan {
+  constructor(
+    readonly source: Exchange,
+    readonly destination: Exchange | null,
+    readonly request: WithdrawRequest,
+    readonly quote: WithdrawalQuote,
+    readonly createdAt: Timestamp,
+    readonly expiresAt: Timestamp,
+  ) { freezeRecord(this); }
+}
+
+export class Withdrawal {
+  readonly asset: string;
+  constructor(
+    readonly id: string,
+    asset: string,
+    readonly network: Network | null,
+    readonly providerNetwork: string | null,
+    readonly amount: Decimal,
+    readonly fee: Decimal | null,
+    readonly destination: TransferDestination | null,
+    readonly status: WithdrawalStatus,
+    readonly providerStatus: string,
+    readonly txId: string | null,
+    readonly createdAt: Timestamp | null,
+  ) {
+    this.asset = asciiUpper(asset);
+    freezeRecord(this);
+  }
+}
+
+export class Deposit {
+  readonly asset: string;
+  constructor(
+    readonly id: string,
+    asset: string,
+    readonly network: Network | null,
+    readonly providerNetwork: string | null,
+    readonly amount: Decimal,
+    readonly address: string | null,
+    readonly memo: string | null,
+    readonly status: DepositStatus,
+    readonly providerStatus: string,
+    readonly txId: string | null,
+    readonly createdAt: Timestamp | null,
+  ) {
+    this.asset = asciiUpper(asset);
+    freezeRecord(this);
+  }
+}
+
 export class Order {
   constructor(
     readonly id: string, readonly market: Market, readonly side: Side, readonly status: OrderStatus,
@@ -622,6 +825,47 @@ export class OrderRequest {
       market, side, OrderType.Limit, size, price,
       options.timeInForce ?? null, options.reduceOnly ?? false,
     );
+  }
+}
+
+export class DepositAddressRequest {
+  readonly asset: string;
+  constructor(
+    asset: string,
+    readonly network: Network,
+    readonly amount: Decimal | null = null,
+  ) {
+    this.asset = asciiUpper(asset);
+    freezeRecord(this);
+  }
+}
+
+export class WithdrawRequest {
+  readonly asset: string;
+  constructor(
+    asset: string,
+    readonly network: Network,
+    readonly amount: Decimal,
+    readonly destination: TransferDestination,
+    readonly clientId: string | null = null,
+  ) {
+    this.asset = asciiUpper(asset);
+    freezeRecord(this);
+  }
+}
+
+export class TransferHistoryRequest {
+  readonly asset: string | null;
+  readonly limit: number | null;
+  constructor(
+    asset: string | null = null,
+    readonly network: Network | null = null,
+    readonly cursor: Cursor | null = null,
+    limit: number | null = null,
+  ) {
+    this.asset = asset === null ? null : asciiUpper(asset);
+    this.limit = checkedOptionalU32(limit, "limit");
+    freezeRecord(this);
   }
 }
 

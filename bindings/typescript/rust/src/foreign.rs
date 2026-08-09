@@ -39,14 +39,15 @@ use crate::client::NativeClient;
 use crate::convert::outcome;
 #[cfg(not(test))]
 use crate::convert::{
-    WireAccountStreamItem, WireBalance, WireCandle, WireFundingPayment, WireFundingRate,
-    WireMarginSummary, WireMarketInfo, WireMarketStreamItem, WireOrder, WireOrderBook, WirePage,
-    WirePosition, WireTicker, WireTrade,
+    WireAccountStreamItem, WireAssetNetwork, WireBalance, WireCandle, WireDeposit,
+    WireDepositAddress, WireFundingPayment, WireFundingRate, WireMarginSummary, WireMarketInfo,
+    WireMarketStreamItem, WireOrder, WireOrderBook, WirePage, WirePosition, WireTicker, WireTrade,
+    WireWithdrawal, WireWithdrawalQuote,
 };
 use crate::convert::{
-    WireCandleRequest, WireError, WireHistoryRequest, WireMarginRequest, WireMarket,
-    WireOrderRequest, WireStreamConfig, WireSubscription, feature_from_id, from_wire_text,
-    from_wire_value,
+    WireCandleRequest, WireDepositAddressRequest, WireError, WireHistoryRequest, WireMarginRequest,
+    WireMarket, WireOrderRequest, WireStreamConfig, WireSubscription, WireTransferHistoryRequest,
+    WireWithdrawRequest, feature_from_id, from_wire_text, from_wire_value,
 };
 
 #[derive(Debug, Serialize)]
@@ -75,6 +76,24 @@ enum WireAdapterCall {
         config: WireStreamConfig,
     },
     Balances,
+    AssetNetworks {
+        asset: String,
+    },
+    DepositAddress {
+        request: WireDepositAddressRequest,
+    },
+    PrepareWithdrawal {
+        request: WireWithdrawRequest,
+    },
+    Withdraw {
+        request: WireWithdrawRequest,
+    },
+    Deposits {
+        request: WireTransferHistoryRequest,
+    },
+    Withdrawals {
+        request: WireTransferHistoryRequest,
+    },
     OpenOrders {
         market: Option<WireMarket>,
     },
@@ -115,6 +134,12 @@ enum WireAdapterReply {
     Candles { value: Vec<WireCandle> },
     MarketStream { stream_id: String },
     Balances { value: Vec<WireBalance> },
+    AssetNetworks { value: Vec<WireAssetNetwork> },
+    DepositAddress { value: WireDepositAddress },
+    WithdrawalQuote { value: WireWithdrawalQuote },
+    Withdrawal { value: WireWithdrawal },
+    Deposits { value: WirePage<WireDeposit> },
+    Withdrawals { value: WirePage<WireWithdrawal> },
     OpenOrders { value: Vec<WireOrder> },
     AccountStream { stream_id: String },
     PlaceOrder { value: WireOrder },
@@ -154,6 +179,22 @@ fn call_to_wire(call: AdapterCall, stream_id: Option<String>) -> maxt::Result<Wi
             config: config.try_into()?,
         }),
         AdapterCall::Balances => Ok(WireAdapterCall::Balances),
+        AdapterCall::AssetNetworks { asset } => Ok(WireAdapterCall::AssetNetworks { asset }),
+        AdapterCall::DepositAddress { request } => Ok(WireAdapterCall::DepositAddress {
+            request: request.try_into()?,
+        }),
+        AdapterCall::PrepareWithdrawal { request } => Ok(WireAdapterCall::PrepareWithdrawal {
+            request: request.try_into()?,
+        }),
+        AdapterCall::Withdraw { request } => Ok(WireAdapterCall::Withdraw {
+            request: request.try_into()?,
+        }),
+        AdapterCall::Deposits { request } => Ok(WireAdapterCall::Deposits {
+            request: request.try_into()?,
+        }),
+        AdapterCall::Withdrawals { request } => Ok(WireAdapterCall::Withdrawals {
+            request: request.try_into()?,
+        }),
         AdapterCall::OpenOrders { market } => Ok(WireAdapterCall::OpenOrders {
             market: market.map(TryInto::try_into).transpose()?,
         }),
@@ -492,6 +533,24 @@ impl JsForeignDispatcher {
                 .map(TryInto::try_into)
                 .collect::<maxt::Result<_>>()
                 .map(AdapterReply::Balances),
+            WireAdapterReply::AssetNetworks { value } => value
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<maxt::Result<_>>()
+                .map(AdapterReply::AssetNetworks),
+            WireAdapterReply::DepositAddress { value } => {
+                value.try_into().map(AdapterReply::DepositAddress)
+            }
+            WireAdapterReply::WithdrawalQuote { value } => {
+                value.try_into().map(AdapterReply::WithdrawalQuote)
+            }
+            WireAdapterReply::Withdrawal { value } => {
+                value.try_into().map(AdapterReply::Withdrawal)
+            }
+            WireAdapterReply::Deposits { value } => value.try_into().map(AdapterReply::Deposits),
+            WireAdapterReply::Withdrawals { value } => {
+                value.try_into().map(AdapterReply::Withdrawals)
+            }
             WireAdapterReply::OpenOrders { value } => value
                 .into_iter()
                 .map(TryInto::try_into)
@@ -617,8 +676,9 @@ mod tests {
 
     use futures_util::{StreamExt, future, stream};
     use maxt::{
-        CandleRequest, Decimal, HistoryRequest, MarginRequest, Market, MarketEvent, MarketStream,
-        OrderRequest, Side, Size, StreamConfig, Subscription,
+        CandleRequest, ChainDestination, Decimal, DepositAddressRequest, HistoryRequest,
+        MarginRequest, Market, MarketEvent, MarketStream, Network, OrderRequest, Side, Size,
+        StreamConfig, Subscription, TransferDestination, TransferHistoryRequest, WithdrawRequest,
     };
 
     use super::*;
@@ -653,6 +713,14 @@ mod tests {
     #[test]
     fn all_adapter_calls_have_the_expected_wire_kind() {
         let market = market();
+        let destination = TransferDestination::Chain(ChainDestination {
+            asset: "BTC".to_owned(),
+            network: Network::Bitcoin,
+            address: "bc1qdestination".to_owned(),
+            memo: None,
+        });
+        let withdraw_request =
+            WithdrawRequest::new("BTC", Network::Bitcoin, Decimal::ONE, destination);
         let calls = [
             AdapterCall::Markets {
                 kind: MarketKind::Spot,
@@ -678,6 +746,24 @@ mod tests {
                 config: StreamConfig::default(),
             },
             AdapterCall::Balances,
+            AdapterCall::AssetNetworks {
+                asset: "BTC".to_owned(),
+            },
+            AdapterCall::DepositAddress {
+                request: DepositAddressRequest::new("BTC", Network::Bitcoin),
+            },
+            AdapterCall::PrepareWithdrawal {
+                request: withdraw_request.clone(),
+            },
+            AdapterCall::Withdraw {
+                request: withdraw_request,
+            },
+            AdapterCall::Deposits {
+                request: TransferHistoryRequest::new(),
+            },
+            AdapterCall::Withdrawals {
+                request: TransferHistoryRequest::new(),
+            },
             AdapterCall::OpenOrders {
                 market: Some(market.clone()),
             },
@@ -713,6 +799,12 @@ mod tests {
             "candles",
             "subscribe",
             "balances",
+            "asset_networks",
+            "deposit_address",
+            "prepare_withdrawal",
+            "withdraw",
+            "deposits",
+            "withdrawals",
             "open_orders",
             "subscribe_account",
             "place_order",

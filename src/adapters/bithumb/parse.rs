@@ -84,17 +84,21 @@ pub(crate) fn exchange_error(status: u16, body: &str) -> Error {
                 Some(Value::Number(name)) => name.to_string(),
                 _ => "bithumb_error".to_string(),
             };
-            Error::exchange_http(
-                EXCHANGE,
-                status,
-                code,
-                error
-                    .get("message")
-                    .and_then(Value::as_str)
-                    .unwrap_or(body)
-                    .trim()
-                    .to_string(),
-            )
+            let mut message = error
+                .get("message")
+                .and_then(Value::as_str)
+                .unwrap_or(body)
+                .trim()
+                .to_string();
+            if code == "travel_rule_consent_required" {
+                if let Some(exchange) = error.get("exchange_name").and_then(Value::as_str) {
+                    message.push_str(&format!("; exchange_name={exchange}"));
+                }
+                if let Some(url) = error.get("consent_url").and_then(Value::as_str) {
+                    message.push_str(&format!("; consent_url={url}"));
+                }
+            }
+            Error::exchange_http(EXCHANGE, status, code, message)
         }
         None => Error::exchange_http(EXCHANGE, status, "bithumb_error", body.trim().to_string()),
     }
@@ -1609,6 +1613,21 @@ mod tests {
         };
         assert_eq!(code, "404");
         assert_eq!(message, "Code not found");
+    }
+
+    #[test]
+    fn travel_rule_consent_error_preserves_the_provider_url_and_exchange() {
+        let error = exchange_error(
+            422,
+            r#"{"error":{"name":"travel_rule_consent_required","message":"동의 필요","consent_url":"https://example.bithumb.com/consent/abc","exchange_name":"Upbit"}}"#,
+        );
+
+        let Error::Exchange { code, message, .. } = error else {
+            panic!("expected an exchange error");
+        };
+        assert_eq!(code, "travel_rule_consent_required");
+        assert!(message.contains("exchange_name=Upbit"));
+        assert!(message.contains("consent_url=https://example.bithumb.com/consent/abc"));
     }
 
     #[test]

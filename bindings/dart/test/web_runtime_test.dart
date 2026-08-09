@@ -42,11 +42,27 @@ void main() {
     );
     expect(timestamp.nanosecondsSinceEpoch.toString(), '1700000000123456789');
     expect(BinanceAdapter.spot().exchange, Exchange.binance);
+    expect(
+      HyperliquidAdapter(
+        address: '0x14791697260e4c9a71f18484c9f997b308e59325',
+      ).exchange,
+      Exchange.hyperliquid,
+    );
   });
 
   test('명시적으로 허용하지 않은 브라우저 인증 정보를 거부한다', () {
     expect(
       () => BinanceAdapter.spot(apiKey: 'key', secretKey: 'secret'),
+      throwsA(
+        isA<InvalidRequestError>().having(
+          (error) => error.field,
+          'field',
+          'allowInsecureBrowserCredentials',
+        ),
+      ),
+    );
+    expect(
+      () => HyperliquidAdapter(privateKey: 'signer'),
       throwsA(
         isA<InvalidRequestError>().having(
           (error) => error.field,

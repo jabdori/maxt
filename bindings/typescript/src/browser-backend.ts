@@ -81,7 +81,7 @@ export function createBrowserBackend(
       return initializedBackend().binance(options);
     },
     hyperliquid(options) {
-      requireCredentialRelay(options.address !== null || options.private_key !== null);
+      requireCredentialRelay(options.private_key !== null);
       return initializedBackend().hyperliquid(options);
     },
   };

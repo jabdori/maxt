@@ -23,11 +23,12 @@ import {
   DecodeError,
   ExchangeError,
   InvalidRequestError,
+  TransferError,
   TransportError,
   UnsupportedError,
   errorFromWire,
 } from "../dist/errors.js";
-import { Exchange, Feature } from "../dist/models.js";
+import { Exchange, Feature, TransferErrorKind } from "../dist/models.js";
 
 test("generated exchange and feature inventories match the public models", () => {
   assert.deepEqual(EXCHANGES, Exchange.values.map((value) => value.id));
@@ -58,6 +59,7 @@ test("generated public API inventories stay explicit", () => {
 
   const errorClasses = [
     InvalidRequestError,
+    TransferError,
     UnsupportedError,
     AdapterError,
     AuthError,
@@ -72,6 +74,7 @@ test("generated public API inventories stay explicit", () => {
 
   const wires = [
     { kind: "invalid_request", field: "limit", detail: "invalid" },
+    { kind: "transfer", transfer_kind: TransferErrorKind.NetworkMismatch.id, detail: "mismatch" },
     { kind: "unsupported", feature: Feature.Markets.id, exchange: Exchange.Upbit.id, detail: "unsupported" },
     { kind: "adapter", detail: "adapter" },
     { kind: "auth", detail: "auth" },

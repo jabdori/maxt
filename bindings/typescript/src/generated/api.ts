@@ -24,6 +24,12 @@ export interface RawNativeClient {
   subscribe(subscription: string): Promise<unknown>;
   subscribeWith(subscription: string, config: string): Promise<unknown>;
   balances(): Promise<unknown>;
+  assetNetworks(asset: string): Promise<unknown>;
+  depositAddress(request: string): Promise<unknown>;
+  prepareWithdrawal(request: string): Promise<unknown>;
+  withdraw(request: string): Promise<unknown>;
+  deposits(request: string): Promise<unknown>;
+  withdrawals(request: string): Promise<unknown>;
   openOrders(): Promise<unknown>;
   openOrdersOn(market: string): Promise<unknown>;
   subscribeAccount(): Promise<unknown>;
@@ -36,6 +42,9 @@ export interface RawNativeClient {
   fundingRates(request: string): Promise<unknown>;
   fundingPayments(request: string): Promise<unknown>;
   setMargin(request: string): Promise<unknown>;
+  prepareTransferTo(destination: RawNativeClient, request: string): Promise<unknown>;
+  prepareTransferToChain(request: string): Promise<unknown>;
+  executeTransfer(plan: string): Promise<unknown>;
   streamNext(id: string): Promise<unknown>;
   streamClose(id: string): Promise<unknown>;
 }
@@ -98,6 +107,7 @@ export interface NativeStreamHandle<I> {
 }
 
 export interface NativeClientHandle {
+  raw(): RawNativeClient;
   exchange(): string;
   supports(feature: string): boolean;
   markets(kind: string): Promise<NativeOutcome<readonly Wire.MarketInfoWire[]>>;
@@ -108,6 +118,12 @@ export interface NativeClientHandle {
   subscribe(subscription: Wire.SubscriptionWire): Promise<NativeOutcome<NativeStreamHandle<Wire.MarketStreamItemWire>>>;
   subscribeWith(subscription: Wire.SubscriptionWire, config: Wire.StreamConfigWire): Promise<NativeOutcome<NativeStreamHandle<Wire.MarketStreamItemWire>>>;
   balances(): Promise<NativeOutcome<readonly Wire.BalanceWire[]>>;
+  assetNetworks(asset: string): Promise<NativeOutcome<readonly Wire.AssetNetworkWire[]>>;
+  depositAddress(request: Wire.DepositAddressRequestWire): Promise<NativeOutcome<Wire.DepositAddressWire>>;
+  prepareWithdrawal(request: Wire.WithdrawRequestWire): Promise<NativeOutcome<Wire.WithdrawalQuoteWire>>;
+  withdraw(request: Wire.WithdrawRequestWire): Promise<NativeOutcome<Wire.WithdrawalWire>>;
+  deposits(request: Wire.TransferHistoryRequestWire): Promise<NativeOutcome<Wire.PageWire<Wire.DepositWire>>>;
+  withdrawals(request: Wire.TransferHistoryRequestWire): Promise<NativeOutcome<Wire.PageWire<Wire.WithdrawalWire>>>;
   openOrders(): Promise<NativeOutcome<readonly Wire.OrderWire[]>>;
   openOrdersOn(market: Wire.MarketWire): Promise<NativeOutcome<readonly Wire.OrderWire[]>>;
   subscribeAccount(): Promise<NativeOutcome<NativeStreamHandle<Wire.AccountStreamItemWire>>>;
@@ -120,6 +136,9 @@ export interface NativeClientHandle {
   fundingRates(request: Wire.HistoryRequestWire): Promise<NativeOutcome<Wire.PageWire<Wire.FundingRateWire>>>;
   fundingPayments(request: Wire.HistoryRequestWire): Promise<NativeOutcome<Wire.PageWire<Wire.FundingPaymentWire>>>;
   setMargin(request: Wire.MarginRequestWire): Promise<NativeOutcome<null>>;
+  prepareTransferTo(destination: NativeClientHandle, request: Wire.ExchangeTransferRequestWire): Promise<NativeOutcome<Wire.TransferPlanWire>>;
+  prepareTransferToChain(request: Wire.ChainTransferRequestWire): Promise<NativeOutcome<Wire.TransferPlanWire>>;
+  executeTransfer(plan: Wire.TransferPlanWire): Promise<NativeOutcome<Wire.WithdrawalWire>>;
 }
 
 export interface ForeignAdapterCallbacks {
@@ -176,6 +195,7 @@ function isWireError(value: unknown): value is Wire.ErrorWire {
   if (!isObject(value) || typeof value.kind !== "string") return false;
   switch (value.kind) {
     case "invalid_request": return typeof value.field === "string" && typeof value.detail === "string";
+    case "transfer": return typeof value.transfer_kind === "string" && typeof value.detail === "string";
     case "unsupported": return typeof value.feature === "string" && typeof value.exchange === "string" && typeof value.detail === "string";
     case "adapter": case "auth": case "transport": case "decode": return typeof value.detail === "string";
     case "exchange": return typeof value.exchange === "string" && typeof value.code === "string" && typeof value.message === "string" && (value.status === null || typeof value.status === "number") && typeof value.exchange_kind === "string";
@@ -261,6 +281,7 @@ function wrapJsonClient(raw: RawNativeClient): NativeClientHandle {
     close: () => raw.streamClose(Codec.stringifyWire(reference.id)) as Promise<NativeOutcome<null>>,
   });
   return {
+    raw: () => raw,
     exchange: () => raw.exchange(),
     supports: (feature) => raw.supports(feature),
     markets: (kind: string) => raw.markets(Codec.stringifyWire(kind)) as Promise<NativeOutcome<readonly Wire.MarketInfoWire[]>>,
@@ -277,6 +298,12 @@ function wrapJsonClient(raw: RawNativeClient): NativeClientHandle {
       return outcome.ok ? { ok: true, value: stream<Wire.MarketStreamItemWire>(outcome.value) } : outcome;
     },
     balances: () => raw.balances() as Promise<NativeOutcome<readonly Wire.BalanceWire[]>>,
+    assetNetworks: (asset: string) => raw.assetNetworks(Codec.stringifyWire(asset)) as Promise<NativeOutcome<readonly Wire.AssetNetworkWire[]>>,
+    depositAddress: (request: Wire.DepositAddressRequestWire) => raw.depositAddress(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.DepositAddressWire>>,
+    prepareWithdrawal: (request: Wire.WithdrawRequestWire) => raw.prepareWithdrawal(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.WithdrawalQuoteWire>>,
+    withdraw: (request: Wire.WithdrawRequestWire) => raw.withdraw(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.WithdrawalWire>>,
+    deposits: (request: Wire.TransferHistoryRequestWire) => raw.deposits(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.PageWire<Wire.DepositWire>>>,
+    withdrawals: (request: Wire.TransferHistoryRequestWire) => raw.withdrawals(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.PageWire<Wire.WithdrawalWire>>>,
     openOrders: () => raw.openOrders() as Promise<NativeOutcome<readonly Wire.OrderWire[]>>,
     openOrdersOn: (market: Wire.MarketWire) => raw.openOrdersOn(Codec.stringifyWire(market)) as Promise<NativeOutcome<readonly Wire.OrderWire[]>>,
     async subscribeAccount() {
@@ -295,6 +322,9 @@ function wrapJsonClient(raw: RawNativeClient): NativeClientHandle {
     fundingRates: (request: Wire.HistoryRequestWire) => raw.fundingRates(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.PageWire<Wire.FundingRateWire>>>,
     fundingPayments: (request: Wire.HistoryRequestWire) => raw.fundingPayments(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.PageWire<Wire.FundingPaymentWire>>>,
     setMargin: (request: Wire.MarginRequestWire) => raw.setMargin(Codec.stringifyWire(request)) as Promise<NativeOutcome<null>>,
+    prepareTransferTo: (destination: NativeClientHandle, request: Wire.ExchangeTransferRequestWire) => raw.prepareTransferTo(destination.raw(), Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.TransferPlanWire>>,
+    prepareTransferToChain: (request: Wire.ChainTransferRequestWire) => raw.prepareTransferToChain(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.TransferPlanWire>>,
+    executeTransfer: (plan: Wire.TransferPlanWire) => raw.executeTransfer(Codec.stringifyWire(plan)) as Promise<NativeOutcome<Wire.WithdrawalWire>>,
   };
 }
 
@@ -399,6 +429,42 @@ export abstract class Adapter {
     ));
   }
 
+  assetNetworks(asset: string): Promise<readonly Model.AssetNetwork[]> {
+    return Promise.reject(new UnsupportedError(
+      featureById("asset_networks"), this.exchange, "feature is not supported",
+    ));
+  }
+
+  depositAddress(request: Model.DepositAddressRequest): Promise<Model.DepositAddress> {
+    return Promise.reject(new UnsupportedError(
+      featureById("deposit_addresses"), this.exchange, "feature is not supported",
+    ));
+  }
+
+  prepareWithdrawal(request: Model.WithdrawRequest): Promise<Model.WithdrawalQuote> {
+    return Promise.reject(new UnsupportedError(
+      featureById("withdrawal_quotes"), this.exchange, "feature is not supported",
+    ));
+  }
+
+  withdraw(request: Model.WithdrawRequest): Promise<Model.Withdrawal> {
+    return Promise.reject(new UnsupportedError(
+      featureById("withdrawals"), this.exchange, "feature is not supported",
+    ));
+  }
+
+  deposits(request: Model.TransferHistoryRequest): Promise<Model.Page<Model.Deposit>> {
+    return Promise.reject(new UnsupportedError(
+      featureById("deposit_history"), this.exchange, "feature is not supported",
+    ));
+  }
+
+  withdrawals(request: Model.TransferHistoryRequest): Promise<Model.Page<Model.Withdrawal>> {
+    return Promise.reject(new UnsupportedError(
+      featureById("withdrawal_history"), this.exchange, "feature is not supported",
+    ));
+  }
+
   openOrders(market: Model.Market | null = null): Promise<readonly Model.Order[]> {
     return Promise.reject(new UnsupportedError(
       featureById("open_orders"), this.exchange, "feature is not supported",
@@ -468,6 +534,12 @@ class CustomCallbacks implements ForeignAdapterCallbacks {
         case "candles": return ok({ kind: "candles", value: (await this.adapter.candles(Codec.candleRequestFromWire(call.request))).map(Codec.candleToWire) });
         case "subscribe": { this.#streams.begin(call.stream_id); try { const value = await this.adapter.subscribe(Codec.subscriptionFromWire(call.subscription), Codec.streamConfigFromWire(call.config)); await this.#streams.register(call.stream_id, value); return ok({ kind: "market_stream", stream_id: call.stream_id }); } catch (error) { this.#streams.abort(call.stream_id); throw error; } }
         case "balances": return ok({ kind: "balances", value: (await this.adapter.balances()).map(Codec.balanceToWire) });
+        case "asset_networks": return ok({ kind: "asset_networks", value: (await this.adapter.assetNetworks(call.asset)).map(Codec.assetNetworkToWire) });
+        case "deposit_address": return ok({ kind: "deposit_address", value: Codec.depositAddressToWire(await this.adapter.depositAddress(Codec.depositAddressRequestFromWire(call.request))) });
+        case "prepare_withdrawal": return ok({ kind: "withdrawal_quote", value: Codec.withdrawalQuoteToWire(await this.adapter.prepareWithdrawal(Codec.withdrawRequestFromWire(call.request))) });
+        case "withdraw": return ok({ kind: "withdrawal", value: Codec.withdrawalToWire(await this.adapter.withdraw(Codec.withdrawRequestFromWire(call.request))) });
+        case "deposits": { const value = await this.adapter.deposits(Codec.transferHistoryRequestFromWire(call.request)); return ok({ kind: "deposits", value: { items: value.items.map(Codec.depositToWire), next: value.next?.value ?? null } }); }
+        case "withdrawals": { const value = await this.adapter.withdrawals(Codec.transferHistoryRequestFromWire(call.request)); return ok({ kind: "withdrawals", value: { items: value.items.map(Codec.withdrawalToWire), next: value.next?.value ?? null } }); }
         case "open_orders": return ok({ kind: "open_orders", value: (await this.adapter.openOrders(call.market === null ? null : Codec.marketFromWire(call.market))).map(Codec.orderToWire) });
         case "subscribe_account": { this.#streams.begin(call.stream_id); try { const value = await this.adapter.subscribeAccount(Codec.streamConfigFromWire(call.config)); await this.#streams.register(call.stream_id, value); return ok({ kind: "account_stream", stream_id: call.stream_id }); } catch (error) { this.#streams.abort(call.stream_id); throw error; } }
         case "place_order": return ok({ kind: "place_order", value: Codec.orderToWire(await this.adapter.placeOrder(Codec.orderRequestFromWire(call.request))) });
@@ -550,6 +622,36 @@ export class Client<A extends Adapter> {
     return Codec.unwrapOutcome(await this.#native.balances()).map(Codec.balanceFromWire);
   }
 
+  async assetNetworks(asset: string): Promise<readonly Model.AssetNetwork[]> {
+    await ensureInitialized();
+    return Codec.unwrapOutcome(await this.#native.assetNetworks(asset)).map(Codec.assetNetworkFromWire);
+  }
+
+  async depositAddress(request: Model.DepositAddressRequest): Promise<Model.DepositAddress> {
+    await ensureInitialized();
+    return Codec.depositAddressFromWire(Codec.unwrapOutcome(await this.#native.depositAddress(Codec.depositAddressRequestToWire(request))));
+  }
+
+  async prepareWithdrawal(request: Model.WithdrawRequest): Promise<Model.WithdrawalQuote> {
+    await ensureInitialized();
+    return Codec.withdrawalQuoteFromWire(Codec.unwrapOutcome(await this.#native.prepareWithdrawal(Codec.withdrawRequestToWire(request))));
+  }
+
+  async withdraw(request: Model.WithdrawRequest): Promise<Model.Withdrawal> {
+    await ensureInitialized();
+    return Codec.withdrawalFromWire(Codec.unwrapOutcome(await this.#native.withdraw(Codec.withdrawRequestToWire(request))));
+  }
+
+  async deposits(request: Model.TransferHistoryRequest): Promise<Model.Page<Model.Deposit>> {
+    await ensureInitialized();
+    return Codec.pageFromWire(Codec.unwrapOutcome(await this.#native.deposits(Codec.transferHistoryRequestToWire(request))), Codec.depositFromWire);
+  }
+
+  async withdrawals(request: Model.TransferHistoryRequest): Promise<Model.Page<Model.Withdrawal>> {
+    await ensureInitialized();
+    return Codec.pageFromWire(Codec.unwrapOutcome(await this.#native.withdrawals(Codec.transferHistoryRequestToWire(request))), Codec.withdrawalFromWire);
+  }
+
   async openOrders(): Promise<readonly Model.Order[]> {
     await ensureInitialized();
     return Codec.unwrapOutcome(await this.#native.openOrders()).map(Codec.orderFromWire);
@@ -610,6 +712,21 @@ export class Client<A extends Adapter> {
     Codec.unwrapOutcome(await this.#native.setMargin(Codec.marginRequestToWire(request)));
   }
 
+  async prepareTransferTo(destination: Client<Adapter>, request: Model.ExchangeTransferRequest): Promise<Model.TransferPlan> {
+    await ensureInitialized();
+    return Codec.transferPlanFromWire(Codec.unwrapOutcome(await this.#native.prepareTransferTo(destination.#native, Codec.exchangeTransferRequestToWire(request))));
+  }
+
+  async prepareTransferToChain(request: Model.ChainTransferRequest): Promise<Model.TransferPlan> {
+    await ensureInitialized();
+    return Codec.transferPlanFromWire(Codec.unwrapOutcome(await this.#native.prepareTransferToChain(Codec.chainTransferRequestToWire(request))));
+  }
+
+  async executeTransfer(plan: Model.TransferPlan): Promise<Model.Withdrawal> {
+    await ensureInitialized();
+    return Codec.withdrawalFromWire(Codec.unwrapOutcome(await this.#native.executeTransfer(Codec.transferPlanToWire(plan))));
+  }
+
 }
 
 class NativeAdapter extends Adapter {
@@ -630,6 +747,12 @@ class NativeAdapter extends Adapter {
   candles(request: Model.CandleRequest): Promise<readonly Model.Candle[]> { return new Client(this).candles(request); }
   subscribe(subscription: Model.Subscription, config: Model.StreamConfig): Promise<MarketStream> { return new Client(this).subscribeWith(subscription, config); }
   balances(): Promise<readonly Model.Balance[]> { return new Client(this).balances(); }
+  assetNetworks(asset: string): Promise<readonly Model.AssetNetwork[]> { return new Client(this).assetNetworks(asset); }
+  depositAddress(request: Model.DepositAddressRequest): Promise<Model.DepositAddress> { return new Client(this).depositAddress(request); }
+  prepareWithdrawal(request: Model.WithdrawRequest): Promise<Model.WithdrawalQuote> { return new Client(this).prepareWithdrawal(request); }
+  withdraw(request: Model.WithdrawRequest): Promise<Model.Withdrawal> { return new Client(this).withdraw(request); }
+  deposits(request: Model.TransferHistoryRequest): Promise<Model.Page<Model.Deposit>> { return new Client(this).deposits(request); }
+  withdrawals(request: Model.TransferHistoryRequest): Promise<Model.Page<Model.Withdrawal>> { return new Client(this).withdrawals(request); }
   openOrders(market: Model.Market | null = null): Promise<readonly Model.Order[]> { return market === null ? new Client(this).openOrders() : new Client(this).openOrdersOn(market); }
   subscribeAccount(config: Model.StreamConfig): Promise<AccountStream> { return new Client(this).subscribeAccountWith(config); }
   placeOrder(request: Model.OrderRequest): Promise<Model.Order> { return new Client(this).placeOrder(request); }

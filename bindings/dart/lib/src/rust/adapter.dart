@@ -4,6 +4,7 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import 'convert.dart';
+import 'convert/generated_models.dart';
 import 'frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
@@ -41,6 +42,34 @@ sealed class AdapterCall with _$AdapterCall {
 
   /// 계정 잔고를 요청합니다.
   const factory AdapterCall.balances() = AdapterCall_Balances;
+
+  /// 자산별 입출금 네트워크를 요청합니다.
+  const factory AdapterCall.assetNetworks({required String asset}) =
+      AdapterCall_AssetNetworks;
+
+  /// 입금 주소를 요청합니다.
+  const factory AdapterCall.depositAddress({
+    required WireDepositAddressRequest request,
+  }) = AdapterCall_DepositAddress;
+
+  /// 출금 조건 검사를 요청합니다.
+  const factory AdapterCall.prepareWithdrawal({
+    required WireWithdrawRequest request,
+  }) = AdapterCall_PrepareWithdrawal;
+
+  /// 출금 제출을 요청합니다.
+  const factory AdapterCall.withdraw({required WireWithdrawRequest request}) =
+      AdapterCall_Withdraw;
+
+  /// 입금 이력을 요청합니다.
+  const factory AdapterCall.deposits({
+    required WireTransferHistoryRequest request,
+  }) = AdapterCall_Deposits;
+
+  /// 출금 이력을 요청합니다.
+  const factory AdapterCall.withdrawals({
+    required WireTransferHistoryRequest request,
+  }) = AdapterCall_Withdrawals;
 
   /// 미체결 주문을 요청합니다.
   const factory AdapterCall.openOrders({WireMarket? market}) =
@@ -123,6 +152,30 @@ sealed class AdapterReply with _$AdapterReply {
   /// 잔고 응답입니다.
   const factory AdapterReply.balances(List<WireBalance> field0) =
       AdapterReply_Balances;
+
+  /// 자산별 네트워크 응답입니다.
+  const factory AdapterReply.assetNetworks(List<WireAssetNetwork> field0) =
+      AdapterReply_AssetNetworks;
+
+  /// 입금 주소 응답입니다.
+  const factory AdapterReply.depositAddress(WireDepositAddress field0) =
+      AdapterReply_DepositAddress;
+
+  /// 출금 조건 응답입니다.
+  const factory AdapterReply.prepareWithdrawal(WireWithdrawalQuote field0) =
+      AdapterReply_PrepareWithdrawal;
+
+  /// 출금 접수 응답입니다.
+  const factory AdapterReply.withdraw(WireWithdrawal field0) =
+      AdapterReply_Withdraw;
+
+  /// 입금 이력 응답입니다.
+  const factory AdapterReply.deposits(WireDepositPage field0) =
+      AdapterReply_Deposits;
+
+  /// 출금 이력 응답입니다.
+  const factory AdapterReply.withdrawals(WireWithdrawalPage field0) =
+      AdapterReply_Withdrawals;
 
   /// 미체결 주문 응답입니다.
   const factory AdapterReply.openOrders(List<WireOrder> field0) =

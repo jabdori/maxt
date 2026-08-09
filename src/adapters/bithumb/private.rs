@@ -625,8 +625,12 @@ mod tests {
         let request = place_order_request(&credentials(), &placed).expect("signed");
 
         assert_eq!(request.target(), "/v2/orders");
-        let body: Value =
-            serde_json::from_str(request.body.as_deref().expect("a body")).expect("JSON");
+        let raw_body = request.body.as_deref().expect("a body");
+        assert_eq!(
+            raw_body,
+            r#"{"market":"KRW-BTC","side":"bid","order_type":"limit","price":"100000000","volume":"0.01"}"#
+        );
+        let body: Value = serde_json::from_str(raw_body).expect("JSON");
         assert_eq!(body["market"], "KRW-BTC");
         assert_eq!(body["side"], "bid");
         assert_eq!(body["order_type"], "limit");

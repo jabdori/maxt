@@ -9,10 +9,12 @@ use maxt_bindings_common::{
 };
 
 use crate::convert::{
-    NativeError, WireBalance, WireCandle, WireCandleRequest, WireExchange, WireFeature,
-    WireFundingPaymentPage, WireFundingRatePage, WireHistoryRequest, WireMarginRequest,
-    WireMarginSummary, WireMarket, WireMarketInfo, WireMarketKind, WireOrder, WireOrderBook,
-    WireOrderRequest, WirePosition, WireTicker, WireTrade,
+    NativeError, WireAssetNetwork, WireBalance, WireCandle, WireCandleRequest, WireDepositAddress,
+    WireDepositAddressRequest, WireDepositPage, WireExchange, WireFeature, WireFundingPaymentPage,
+    WireFundingRatePage, WireHistoryRequest, WireMarginRequest, WireMarginSummary, WireMarket,
+    WireMarketInfo, WireMarketKind, WireOrder, WireOrderBook, WireOrderRequest, WirePosition,
+    WireTicker, WireTrade, WireTransferHistoryRequest, WireWithdrawRequest, WireWithdrawal,
+    WireWithdrawalPage, WireWithdrawalQuote,
 };
 use crate::stream::{
     AccountStreamSink, CancelCallback, CancelFuture, MarketStreamSink, account_stream_channel,
@@ -115,6 +117,18 @@ pub enum AdapterCall {
     Candles { request: WireCandleRequest },
     /// 계정 잔고를 요청합니다.
     Balances,
+    /// 자산별 입출금 네트워크를 요청합니다.
+    AssetNetworks { asset: String },
+    /// 입금 주소를 요청합니다.
+    DepositAddress { request: WireDepositAddressRequest },
+    /// 출금 조건 검사를 요청합니다.
+    PrepareWithdrawal { request: WireWithdrawRequest },
+    /// 출금 제출을 요청합니다.
+    Withdraw { request: WireWithdrawRequest },
+    /// 입금 이력을 요청합니다.
+    Deposits { request: WireTransferHistoryRequest },
+    /// 출금 이력을 요청합니다.
+    Withdrawals { request: WireTransferHistoryRequest },
     /// 미체결 주문을 요청합니다.
     OpenOrders { market: Option<WireMarket> },
     /// 주문을 제출합니다.
@@ -167,6 +181,18 @@ pub enum AdapterReply {
     Candles(Vec<WireCandle>),
     /// 잔고 응답입니다.
     Balances(Vec<WireBalance>),
+    /// 자산별 네트워크 응답입니다.
+    AssetNetworks(Vec<WireAssetNetwork>),
+    /// 입금 주소 응답입니다.
+    DepositAddress(WireDepositAddress),
+    /// 출금 조건 응답입니다.
+    PrepareWithdrawal(WireWithdrawalQuote),
+    /// 출금 접수 응답입니다.
+    Withdraw(WireWithdrawal),
+    /// 입금 이력 응답입니다.
+    Deposits(WireDepositPage),
+    /// 출금 이력 응답입니다.
+    Withdrawals(WireWithdrawalPage),
     /// 미체결 주문 응답입니다.
     OpenOrders(Vec<WireOrder>),
     /// 주문 제출 응답입니다.
@@ -194,6 +220,12 @@ impl AdapterReply {
             Self::Ticker(_) => "Ticker",
             Self::Candles(_) => "Candles",
             Self::Balances(_) => "Balances",
+            Self::AssetNetworks(_) => "AssetNetworks",
+            Self::DepositAddress(_) => "DepositAddress",
+            Self::PrepareWithdrawal(_) => "PrepareWithdrawal",
+            Self::Withdraw(_) => "Withdraw",
+            Self::Deposits(_) => "Deposits",
+            Self::Withdrawals(_) => "Withdrawals",
             Self::OpenOrders(_) => "OpenOrders",
             Self::PlaceOrder(_) => "PlaceOrder",
             Self::CancelOrder(_) => "CancelOrder",
@@ -313,6 +345,12 @@ enum ExpectedReply {
     Ticker,
     Candles,
     Balances,
+    AssetNetworks,
+    DepositAddress,
+    PrepareWithdrawal,
+    Withdraw,
+    Deposits,
+    Withdrawals,
     OpenOrders,
     PlaceOrder,
     CancelOrder,
@@ -332,6 +370,12 @@ impl ExpectedReply {
             Self::Ticker => "Ticker",
             Self::Candles => "Candles",
             Self::Balances => "Balances",
+            Self::AssetNetworks => "AssetNetworks",
+            Self::DepositAddress => "DepositAddress",
+            Self::PrepareWithdrawal => "PrepareWithdrawal",
+            Self::Withdraw => "Withdraw",
+            Self::Deposits => "Deposits",
+            Self::Withdrawals => "Withdrawals",
             Self::OpenOrders => "OpenOrders",
             Self::PlaceOrder => "PlaceOrder",
             Self::CancelOrder => "CancelOrder",
@@ -400,6 +444,29 @@ impl AdapterReply {
             (ExpectedReply::Balances, Self::Balances(values)) => {
                 convert_vec(values, "Balances").map(CommonAdapterReply::Balances)
             }
+            (ExpectedReply::AssetNetworks, Self::AssetNetworks(values)) => {
+                convert_vec(values, "AssetNetworks").map(CommonAdapterReply::AssetNetworks)
+            }
+            (ExpectedReply::DepositAddress, Self::DepositAddress(value)) => value
+                .try_into()
+                .map(CommonAdapterReply::DepositAddress)
+                .map_err(|error| invalid_reply("DepositAddress", error)),
+            (ExpectedReply::PrepareWithdrawal, Self::PrepareWithdrawal(value)) => value
+                .try_into()
+                .map(CommonAdapterReply::WithdrawalQuote)
+                .map_err(|error| invalid_reply("PrepareWithdrawal", error)),
+            (ExpectedReply::Withdraw, Self::Withdraw(value)) => value
+                .try_into()
+                .map(CommonAdapterReply::Withdrawal)
+                .map_err(|error| invalid_reply("Withdraw", error)),
+            (ExpectedReply::Deposits, Self::Deposits(value)) => value
+                .try_into()
+                .map(CommonAdapterReply::Deposits)
+                .map_err(|error| invalid_reply("Deposits", error)),
+            (ExpectedReply::Withdrawals, Self::Withdrawals(value)) => value
+                .try_into()
+                .map(CommonAdapterReply::Withdrawals)
+                .map_err(|error| invalid_reply("Withdrawals", error)),
             (ExpectedReply::OpenOrders, Self::OpenOrders(values)) => {
                 convert_vec(values, "OpenOrders").map(CommonAdapterReply::OpenOrders)
             }

@@ -5,12 +5,15 @@ use std::pin::Pin;
 
 use crate::error::{Error, Result};
 use crate::feature::Feature;
-use crate::request::{CandleRequest, HistoryRequest, MarginRequest, OrderRequest};
+use crate::request::{
+    CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest, OrderRequest,
+    TransferHistoryRequest, WithdrawRequest,
+};
 use crate::stream::{AccountStream, MarketStream};
 use crate::types::{
-    Balance, Candle, Exchange, Feed, FundingPayment, FundingRate, MarginSummary, Market,
-    MarketInfo, MarketKind, Order, OrderBook, Page, Position, StreamConfig, Subscription, Ticker,
-    Trade,
+    AssetNetwork, Balance, Candle, Deposit, DepositAddress, Exchange, Feed, FundingPayment,
+    FundingRate, MarginSummary, Market, MarketInfo, MarketKind, Order, OrderBook, Page, Position,
+    StreamConfig, Subscription, Ticker, Trade, Withdrawal, WithdrawalQuote,
 };
 
 /// A boxed future used to keep [`Adapter`] dyn-compatible.
@@ -104,6 +107,51 @@ pub trait Adapter: Send + Sync + 'static {
     /// Reads the account's balances.
     fn balances(&self) -> BoxFuture<'_, Result<Vec<Balance>>> {
         unsupported(self.exchange(), Feature::Balances)
+    }
+
+    /// Reads live transfer rules for one asset.
+    fn asset_networks(&self, asset: &str) -> BoxFuture<'_, Result<Vec<AssetNetwork>>> {
+        let _ = asset;
+        unsupported(self.exchange(), Feature::AssetNetworks)
+    }
+
+    /// Reads an exchange-issued deposit address.
+    fn deposit_address(
+        &self,
+        request: &DepositAddressRequest,
+    ) -> BoxFuture<'_, Result<DepositAddress>> {
+        let _ = request;
+        unsupported(self.exchange(), Feature::DepositAddresses)
+    }
+
+    /// Performs live source-account checks without submitting a withdrawal.
+    fn prepare_withdrawal(
+        &self,
+        request: &WithdrawRequest,
+    ) -> BoxFuture<'_, Result<WithdrawalQuote>> {
+        let _ = request;
+        unsupported(self.exchange(), Feature::WithdrawalQuotes)
+    }
+
+    /// Submits one withdrawal without automatic retry.
+    fn withdraw(&self, request: &WithdrawRequest) -> BoxFuture<'_, Result<Withdrawal>> {
+        let _ = request;
+        unsupported(self.exchange(), Feature::Withdrawals)
+    }
+
+    /// Reads one page of deposit history.
+    fn deposits(&self, request: &TransferHistoryRequest) -> BoxFuture<'_, Result<Page<Deposit>>> {
+        let _ = request;
+        unsupported(self.exchange(), Feature::DepositHistory)
+    }
+
+    /// Reads one page of withdrawal history.
+    fn withdrawals(
+        &self,
+        request: &TransferHistoryRequest,
+    ) -> BoxFuture<'_, Result<Page<Withdrawal>>> {
+        let _ = request;
+        unsupported(self.exchange(), Feature::WithdrawalHistory)
     }
 
     /// Reads the account's open orders, optionally narrowed to one market.
@@ -220,6 +268,39 @@ impl Adapter for Box<dyn Adapter> {
 
     fn balances(&self) -> BoxFuture<'_, Result<Vec<Balance>>> {
         (**self).balances()
+    }
+
+    fn asset_networks(&self, asset: &str) -> BoxFuture<'_, Result<Vec<AssetNetwork>>> {
+        (**self).asset_networks(asset)
+    }
+
+    fn deposit_address(
+        &self,
+        request: &DepositAddressRequest,
+    ) -> BoxFuture<'_, Result<DepositAddress>> {
+        (**self).deposit_address(request)
+    }
+
+    fn prepare_withdrawal(
+        &self,
+        request: &WithdrawRequest,
+    ) -> BoxFuture<'_, Result<WithdrawalQuote>> {
+        (**self).prepare_withdrawal(request)
+    }
+
+    fn withdraw(&self, request: &WithdrawRequest) -> BoxFuture<'_, Result<Withdrawal>> {
+        (**self).withdraw(request)
+    }
+
+    fn deposits(&self, request: &TransferHistoryRequest) -> BoxFuture<'_, Result<Page<Deposit>>> {
+        (**self).deposits(request)
+    }
+
+    fn withdrawals(
+        &self,
+        request: &TransferHistoryRequest,
+    ) -> BoxFuture<'_, Result<Page<Withdrawal>>> {
+        (**self).withdrawals(request)
     }
 
     fn open_orders(&self, market: Option<&Market>) -> BoxFuture<'_, Result<Vec<Order>>> {

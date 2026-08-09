@@ -9,6 +9,12 @@ enum ReplyKind {
     Candles,
     MarketStream,
     Balances,
+    AssetNetworks,
+    DepositAddress,
+    PrepareWithdrawal,
+    Withdraw,
+    Deposits,
+    Withdrawals,
     OpenOrders,
     AccountStream,
     PlaceOrder,
@@ -66,6 +72,36 @@ fn prepare_call(
             ReplyKind::MarketStream,
         ),
         AdapterCall::Balances => ("balances", vec![], ReplyKind::Balances),
+        AdapterCall::AssetNetworks { asset } => (
+            "asset_networks",
+            vec![asset.into_py_any(py)?],
+            ReplyKind::AssetNetworks,
+        ),
+        AdapterCall::DepositAddress { request } => (
+            "deposit_address",
+            vec![model_object(py, "DepositAddressRequest", crate::convert::deposit_address_request_to_wire(py, &request)?)?],
+            ReplyKind::DepositAddress,
+        ),
+        AdapterCall::PrepareWithdrawal { request } => (
+            "prepare_withdrawal",
+            vec![model_object(py, "WithdrawRequest", crate::convert::withdraw_request_to_wire(py, &request)?)?],
+            ReplyKind::PrepareWithdrawal,
+        ),
+        AdapterCall::Withdraw { request } => (
+            "withdraw",
+            vec![model_object(py, "WithdrawRequest", crate::convert::withdraw_request_to_wire(py, &request)?)?],
+            ReplyKind::Withdraw,
+        ),
+        AdapterCall::Deposits { request } => (
+            "deposits",
+            vec![model_object(py, "TransferHistoryRequest", crate::convert::transfer_history_request_to_wire(py, &request)?)?],
+            ReplyKind::Deposits,
+        ),
+        AdapterCall::Withdrawals { request } => (
+            "withdrawals",
+            vec![model_object(py, "TransferHistoryRequest", crate::convert::transfer_history_request_to_wire(py, &request)?)?],
+            ReplyKind::Withdrawals,
+        ),
         AdapterCall::OpenOrders { market } => (
             "open_orders",
             vec![optional_market_object(py, market.as_ref())?],
@@ -120,4 +156,19 @@ fn prepare_call(
     let awaitable = object.bind(py).call_method(method, args, None)?;
     let future = pyo3_async_runtimes::tokio::into_future(awaitable)?;
     Ok((reply, Box::pin(future)))
+}
+
+fn decode_generated_reply(
+    reply: ReplyKind,
+    value: &Bound<'_, PyAny>,
+) -> Option<PyResult<AdapterReply>> {
+    match reply {
+        ReplyKind::AssetNetworks => Some(list_from_wire(value, crate::convert::asset_network_from_wire).map(AdapterReply::AssetNetworks)),
+        ReplyKind::DepositAddress => Some(crate::convert::deposit_address_from_wire(value).map(AdapterReply::DepositAddress)),
+        ReplyKind::PrepareWithdrawal => Some(crate::convert::withdrawal_quote_from_wire(value).map(AdapterReply::WithdrawalQuote)),
+        ReplyKind::Withdraw => Some(crate::convert::withdrawal_from_wire(value).map(AdapterReply::Withdrawal)),
+        ReplyKind::Deposits => Some(page_from_wire(value, crate::convert::deposit_from_wire).map(AdapterReply::Deposits)),
+        ReplyKind::Withdrawals => Some(page_from_wire(value, crate::convert::withdrawal_from_wire).map(AdapterReply::Withdrawals)),
+        _ => None,
+    }
 }

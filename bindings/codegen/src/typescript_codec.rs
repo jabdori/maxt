@@ -1,4 +1,4 @@
-use maxt_bindings_common::schema::{Field, Schema, Type};
+use maxt_bindings_common::schema::{Field, Schema, TaggedUnion, Type};
 
 use crate::typescript_contract::{HEADER, lower_camel};
 
@@ -31,6 +31,10 @@ function unsignedInteger(value: string, field: string): number {
   return parsed;
 }
 
+function assertNever(value: never): never {
+  throw new InvalidRequestError("kind", `unknown tagged union variant: ${String(value)}`);
+}
+
 export function unwrapOutcome<T>(outcome: NativeOutcome<T>): T {
   if (!outcome.ok) throw errorFromWire(outcome.error);
   return outcome.value;
@@ -40,28 +44,45 @@ export function unwrapOutcome<T>(outcome: NativeOutcome<T>): T {
     );
 
     for name in schema.models {
-        let record = schema
+        if let Some(record) = schema
             .records
             .iter()
             .find(|record| record.name == format!("{name}Wire"))
-            .unwrap_or_else(|| panic!("model {name} has no wire record"));
-        output.push_str(&render_model(name, &record.fields));
+        {
+            output.push_str(&render_model(schema, name, &record.fields));
+        } else if let Some(union) = schema
+            .unions
+            .iter()
+            .find(|union| union.name == format!("{name}Wire"))
+        {
+            output.push_str(&render_union_model(schema, name, union));
+        } else {
+            panic!("model {name} has no wire record or tagged union");
+        }
     }
     output.push_str(SPECIAL_CODECS);
     output
 }
 
-fn render_model(name: &str, fields: &[Field]) -> String {
+fn render_model(schema: &Schema, name: &str, fields: &[Field]) -> String {
     match name {
         "OrderRequest" => return ORDER_REQUEST_CODEC.to_owned(),
         "HistoryRequest" => return HISTORY_REQUEST_CODEC.to_owned(),
+        "TransferHistoryRequest" => return TRANSFER_HISTORY_REQUEST_CODEC.to_owned(),
         "StreamConfig" => return STREAM_CONFIG_CODEC.to_owned(),
         _ => {}
     }
     let function = lower_camel(name);
     let arguments = fields
         .iter()
-        .map(|field| from_expression(&field.ty, &format!("value.{}", field.name), field.name))
+        .map(|field| {
+            from_expression(
+                schema,
+                &field.ty,
+                &format!("value.{}", field.name),
+                field.name,
+            )
+        })
         .collect::<Vec<_>>()
         .join(", ");
     let values = fields
@@ -77,6 +98,60 @@ fn render_model(name: &str, fields: &[Field]) -> String {
         .collect::<String>();
     format!(
         "export function {function}FromWire(value: Wire.{name}Wire): Model.{name} {{\n  return new Model.{name}({arguments});\n}}\n\nexport function {function}ToWire(value: Model.{name}): Wire.{name}Wire {{\n  return {{\n{values}  }};\n}}\n\n"
+    )
+}
+
+fn render_union_model(schema: &Schema, name: &str, union: &TaggedUnion) -> String {
+    let function = lower_camel(name);
+    let from_arms = union
+        .variants
+        .iter()
+        .map(|variant| {
+            let fields = variant
+                .fields
+                .iter()
+                .map(|field| {
+                    format!(
+                        ", {}: {}",
+                        snake_to_camel(field.name),
+                        from_expression(
+                            schema,
+                            &field.ty,
+                            &format!("value.{}", field.name),
+                            field.name,
+                        )
+                    )
+                })
+                .collect::<String>();
+            format!(
+                "    case \"{}\": return Object.freeze({{ kind: \"{}\"{fields} }});\n",
+                variant.name, variant.name
+            )
+        })
+        .collect::<String>();
+    let to_arms = union
+        .variants
+        .iter()
+        .map(|variant| {
+            let fields = variant
+                .fields
+                .iter()
+                .map(|field| {
+                    format!(
+                        ", {}: {}",
+                        field.name,
+                        to_expression(&field.ty, &format!("value.{}", snake_to_camel(field.name)),)
+                    )
+                })
+                .collect::<String>();
+            format!(
+                "    case \"{}\": return {{ kind: \"{}\"{fields} }};\n",
+                variant.name, variant.name
+            )
+        })
+        .collect::<String>();
+    format!(
+        "export function {function}FromWire(value: Wire.{name}Wire): Model.{name} {{\n  switch (value.kind) {{\n{from_arms}  }}\n  return assertNever(value);\n}}\n\nexport function {function}ToWire(value: Model.{name}): Wire.{name}Wire {{\n  switch (value.kind) {{\n{to_arms}  }}\n  return assertNever(value);\n}}\n\n"
     )
 }
 
@@ -96,19 +171,16 @@ fn snake_to_camel(value: &str) -> String {
     output
 }
 
-fn from_expression(ty: &Type, value: &str, field: &str) -> String {
+fn from_expression(schema: &Schema, ty: &Type, value: &str, field: &str) -> String {
     match ty {
         Type::String | Type::Boolean | Type::Number => value.to_owned(),
         Type::UnsignedInteger => format!("unsignedInteger({value}, \"{field}\")"),
         Type::Decimal => format!("Model.Decimal.parse({value})"),
         Type::Timestamp => format!("Model.Timestamp.fromNanoseconds(BigInt({value}))"),
-        Type::Identifier(name) => {
-            if *name == "HyperliquidLedgerKind" {
-                format!("Model.HyperliquidLedgerKind.other({value})")
-            } else {
-                format!("identifier(Model.{name}.values, {value}, \"{field}\")")
-            }
-        }
+        Type::Identifier(name) => match schema.identifier(name) {
+            Some(identifier) if identifier.open => format!("Model.{name}.other({value})"),
+            _ => format!("identifier(Model.{name}.values, {value}, \"{field}\")"),
+        },
         Type::Named(name) if name.ends_with("Wire") => {
             format!(
                 "{}FromWire({value})",
@@ -118,18 +190,20 @@ fn from_expression(ty: &Type, value: &str, field: &str) -> String {
         Type::Named(_) => value.to_owned(),
         Type::Optional(inner) => format!(
             "{value} === null ? null : {}",
-            from_expression(inner, value, field)
+            from_expression(schema, inner, value, field)
         ),
         Type::List(inner) => format!(
             "{value}.map((item) => {})",
-            from_expression(inner, "item", field)
+            from_expression(schema, inner, "item", field)
         ),
         Type::Tuple(items) => format!(
             "[{}]",
             items
                 .iter()
                 .enumerate()
-                .map(|(index, item)| from_expression(item, &format!("{value}[{index}]"), field))
+                .map(|(index, item)| {
+                    from_expression(schema, item, &format!("{value}[{index}]"), field)
+                })
                 .collect::<Vec<_>>()
                 .join(", ")
         ),
@@ -239,6 +313,26 @@ export function historyRequestToWire(value: Model.HistoryRequest): Wire.HistoryR
     market: marketToWire(value.market),
     from: value.from?.nanosecondsSinceEpoch.toString() ?? null,
     to: value.to?.nanosecondsSinceEpoch.toString() ?? null,
+    cursor: value.cursor?.value ?? null,
+    limit: value.limit,
+  };
+}
+
+"#;
+
+const TRANSFER_HISTORY_REQUEST_CODEC: &str = r#"export function transferHistoryRequestFromWire(value: Wire.TransferHistoryRequestWire): Model.TransferHistoryRequest {
+  return new Model.TransferHistoryRequest(
+    value.asset,
+    value.network === null ? null : Model.Network.other(value.network),
+    value.cursor === null ? null : new Model.Cursor(value.cursor),
+    value.limit,
+  );
+}
+
+export function transferHistoryRequestToWire(value: Model.TransferHistoryRequest): Wire.TransferHistoryRequestWire {
+  return {
+    asset: value.asset,
+    network: value.network?.id ?? null,
     cursor: value.cursor?.value ?? null,
     limit: value.limit,
   };

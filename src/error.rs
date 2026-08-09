@@ -21,6 +21,14 @@ pub enum Error {
         detail: String,
     },
 
+    /// A cross-exchange transfer failed local safety validation.
+    Transfer {
+        /// Stable transfer failure category.
+        kind: TransferErrorKind,
+        /// Human-readable validation detail.
+        detail: String,
+    },
+
     /// The adapter does not map this feature or request shape.
     ///
     /// Retrying the same request or adding credentials cannot change this
@@ -85,6 +93,7 @@ impl Error {
             Self::Exchange { kind, .. } => kind.is_retryable(),
             Self::Transport { .. } => true,
             Self::InvalidRequest { .. }
+            | Self::Transfer { .. }
             | Self::Unsupported { .. }
             | Self::Adapter { .. }
             | Self::Auth { .. }
@@ -109,6 +118,13 @@ impl Error {
     pub(crate) fn invalid_request(field: impl Into<String>, detail: impl Into<String>) -> Self {
         Self::InvalidRequest {
             field: field.into(),
+            detail: detail.into(),
+        }
+    }
+
+    pub(crate) fn transfer(kind: TransferErrorKind, detail: impl Into<String>) -> Self {
+        Self::Transfer {
+            kind,
             detail: detail.into(),
         }
     }
@@ -186,6 +202,7 @@ impl fmt::Display for Error {
             Self::InvalidRequest { field, detail } => {
                 write!(f, "invalid request: `{field}`: {detail}")
             }
+            Self::Transfer { kind, detail } => write!(f, "transfer {kind}: {detail}"),
             Self::Unsupported {
                 feature,
                 exchange,
@@ -210,6 +227,49 @@ impl fmt::Display for Error {
 }
 
 impl std::error::Error for Error {}
+
+/// Why a transfer was rejected before a withdrawal was submitted.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum TransferErrorKind {
+    /// Source and destination assets differ.
+    AssetMismatch,
+    /// Source and destination identify different chains.
+    NetworkMismatch,
+    /// More than one compatible chain is available and none was selected.
+    AmbiguousNetwork,
+    /// The selected chain is not currently available for the asset.
+    NetworkUnavailable,
+    /// The destination requires a memo or tag that is absent.
+    MemoRequired,
+    /// An exchange has not issued a usable destination address yet.
+    DestinationUnavailable,
+    /// The destination address is not allowed by the source account.
+    AddressNotAllowed,
+    /// Provider-specific Travel Rule information is required.
+    TravelRuleRequired,
+    /// The amount violates a current transfer rule.
+    AmountOutOfRange,
+    /// The checked transfer plan has expired.
+    PlanExpired,
+}
+
+impl fmt::Display for TransferErrorKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Self::AssetMismatch => "asset mismatch",
+            Self::NetworkMismatch => "network mismatch",
+            Self::AmbiguousNetwork => "network is ambiguous",
+            Self::NetworkUnavailable => "network is unavailable",
+            Self::MemoRequired => "memo is required",
+            Self::DestinationUnavailable => "destination is unavailable",
+            Self::AddressNotAllowed => "address is not allowed",
+            Self::TravelRuleRequired => "requires Travel Rule data",
+            Self::AmountOutOfRange => "amount is out of range",
+            Self::PlanExpired => "plan expired",
+        })
+    }
+}
 
 /// How an exchange-side error classifies for retry purposes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

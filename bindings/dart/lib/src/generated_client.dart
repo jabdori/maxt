@@ -51,6 +51,28 @@ abstract base class GeneratedClient<A extends Adapter> {
 
   Future<List<Balance>> balances() => _native.balances();
 
+  Future<List<AssetNetwork>> assetNetworks(String asset) =>
+      _native.assetNetworks(asset);
+
+  Future<DepositAddress> depositAddress(DepositAddressRequest request) =>
+      _native.depositAddress(request);
+
+  Future<WithdrawalQuote> prepareWithdrawal(WithdrawRequest request) =>
+      _native.prepareWithdrawal(request);
+
+  Future<Withdrawal> withdraw(WithdrawRequest request) =>
+      _native.withdraw(request);
+
+  Future<Page<Deposit>> deposits(TransferHistoryRequest request) async {
+    checkedUint32(request.limit, field: 'limit');
+    return _native.deposits(request);
+  }
+
+  Future<Page<Withdrawal>> withdrawals(TransferHistoryRequest request) async {
+    checkedUint32(request.limit, field: 'limit');
+    return _native.withdrawals(request);
+  }
+
   Future<List<Order>> openOrders() => _native.openOrders();
 
   Future<List<Order>> openOrdersOn(Market market) => _native.openOrders(market);
@@ -87,6 +109,17 @@ abstract base class GeneratedClient<A extends Adapter> {
   }
 
   Future<void> setMargin(MarginRequest request) => _native.setMargin(request);
+
+  Future<TransferPlan> prepareTransferTo(
+    GeneratedClient<Adapter> destination,
+    ExchangeTransferRequest request,
+  ) => _native.prepareTransferTo(destination._native, request);
+
+  Future<TransferPlan> prepareTransferToChain(ChainTransferRequest request) =>
+      _native.prepareTransferToChain(request);
+
+  Future<Withdrawal> executeTransfer(TransferPlan plan) =>
+      _native.executeTransfer(plan);
 
   static List<Position> _openPositions(List<Position> positions) =>
       positions.where((position) => !position.isFlat).toList(growable: false);

@@ -2,6 +2,8 @@ export 'generated_identifiers.dart';
 
 import 'generated_identifiers.dart';
 
+part 'generated_models.dart';
+
 String _asciiUpper(String value) => String.fromCharCodes(
   value.codeUnits.map(
     (code) => code >= 0x61 && code <= 0x7a ? code - 0x20 : code,

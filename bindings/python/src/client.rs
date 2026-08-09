@@ -5,14 +5,7 @@ use maxt::{Adapter, Client, Exchange, Feature};
 use pyo3::prelude::*;
 use pyo3_async_runtimes::tokio::future_into_py;
 
-use crate::convert::{
-    balance_to_wire, candle_request_from_wire, candle_to_wire, core_error, exchange_to_wire,
-    funding_payments_page_to_wire, funding_rates_page_to_wire, history_request_from_wire,
-    list_to_wire, margin_request_from_wire, margin_summary_to_wire, market_from_wire,
-    market_info_to_wire, market_kind_from_wire, order_book_to_wire, order_request_from_wire,
-    order_to_wire, position_to_wire, stream_config_from_wire, subscription_from_wire,
-    ticker_to_wire, trade_to_wire,
-};
+use crate::convert::{core_error, exchange_to_wire};
 
 #[pyclass(module = "maxt._native")]
 pub(crate) struct NativeClient {
@@ -64,6 +57,59 @@ impl NativeClient {
 
     fn supports(&self, feature: &Bound<'_, PyAny>) -> PyResult<bool> {
         Ok(self.supports_core(crate::convert::feature_from_wire(feature)?))
+    }
+
+    fn prepare_transfer_to<'py>(
+        &self,
+        py: Python<'py>,
+        destination: PyRef<'_, NativeClient>,
+        request: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let source = self.core();
+        let destination = destination.core();
+        let request = crate::convert::exchange_transfer_request_from_wire(request)?;
+        operation(
+            py,
+            async move {
+                maxt::prepare_exchange_transfer(
+                    source.adapter().as_ref(),
+                    destination.adapter().as_ref(),
+                    &request,
+                )
+                .await
+            },
+            |py, value| crate::convert::transfer_plan_to_wire(py, &value),
+        )
+    }
+
+    fn prepare_transfer_to_chain<'py>(
+        &self,
+        py: Python<'py>,
+        request: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let source = self.core();
+        let request = crate::convert::chain_transfer_request_from_wire(request)?;
+        operation(
+            py,
+            async move {
+                maxt::prepare_chain_transfer(source.adapter().as_ref(), &request).await
+            },
+            |py, value| crate::convert::transfer_plan_to_wire(py, &value),
+        )
+    }
+
+    fn execute_transfer<'py>(
+        &self,
+        py: Python<'py>,
+        plan: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let source = self.core();
+        let plan = crate::convert::transfer_plan_from_wire(plan)?;
+        operation(
+            py,
+            async move { maxt::execute_transfer_plan(source.adapter().as_ref(), &plan).await },
+            |py, value| crate::convert::withdrawal_to_wire(py, &value),
+        )
     }
 }
 

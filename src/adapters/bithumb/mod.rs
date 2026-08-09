@@ -4,16 +4,20 @@ mod parse;
 mod private;
 mod rest;
 mod stream;
+mod wallet;
 
 use crate::adapter::{Adapter, BoxFuture};
 use crate::error::{Error, Result};
 use crate::feature::Feature;
-use crate::request::{CandleRequest, OrderRequest};
+use crate::request::{
+    CandleRequest, DepositAddressRequest, OrderRequest, TransferHistoryRequest, WithdrawRequest,
+};
 use crate::stream::{AccountStream, MarketStream};
 use crate::transport::HttpTransport;
 use crate::types::{
-    Balance, Candle, Exchange, Market, MarketInfo, MarketKind, Order, OrderBook, StreamConfig,
-    Subscription, Ticker, Timestamp, Trade,
+    AssetNetwork, Balance, Candle, Deposit, DepositAddress, Exchange, Market, MarketInfo,
+    MarketKind, Order, OrderBook, Page, StreamConfig, Subscription, Ticker, Timestamp, Trade,
+    Withdrawal, WithdrawalQuote,
 };
 
 pub(crate) const REST_BASE_URL: &str = "https://api.bithumb.com";
@@ -192,6 +196,53 @@ impl Adapter for BithumbAdapter {
         Box::pin(async move { private::balances(self.http()?, self.credentials()?).await })
     }
 
+    fn asset_networks(&self, asset: &str) -> BoxFuture<'_, Result<Vec<AssetNetwork>>> {
+        let asset = asset.to_string();
+        Box::pin(
+            async move { wallet::asset_networks(self.http()?, self.credentials()?, &asset).await },
+        )
+    }
+
+    fn deposit_address(
+        &self,
+        request: &DepositAddressRequest,
+    ) -> BoxFuture<'_, Result<DepositAddress>> {
+        let request = request.clone();
+        Box::pin(async move {
+            wallet::deposit_address(self.http()?, self.credentials()?, &request).await
+        })
+    }
+
+    fn prepare_withdrawal(
+        &self,
+        request: &WithdrawRequest,
+    ) -> BoxFuture<'_, Result<WithdrawalQuote>> {
+        let request = request.clone();
+        Box::pin(async move {
+            wallet::prepare_withdrawal(self.http()?, self.credentials()?, &request).await
+        })
+    }
+
+    fn withdraw(&self, request: &WithdrawRequest) -> BoxFuture<'_, Result<Withdrawal>> {
+        let request = request.clone();
+        Box::pin(async move { wallet::withdraw(self.http()?, self.credentials()?, &request).await })
+    }
+
+    fn deposits(&self, request: &TransferHistoryRequest) -> BoxFuture<'_, Result<Page<Deposit>>> {
+        let request = request.clone();
+        Box::pin(async move { wallet::deposits(self.http()?, self.credentials()?, &request).await })
+    }
+
+    fn withdrawals(
+        &self,
+        request: &TransferHistoryRequest,
+    ) -> BoxFuture<'_, Result<Page<Withdrawal>>> {
+        let request = request.clone();
+        Box::pin(
+            async move { wallet::withdrawals(self.http()?, self.credentials()?, &request).await },
+        )
+    }
+
     fn open_orders(&self, market: Option<&Market>) -> BoxFuture<'_, Result<Vec<Order>>> {
         let market = market.cloned();
         Box::pin(async move {
@@ -291,7 +342,17 @@ mod tests {
         let public = BithumbAdapter::new();
         let private = BithumbAdapter::new().with_credentials("access", "secret");
 
-        for feature in [Feature::Balances, Feature::Trading, Feature::AccountStream] {
+        for feature in [
+            Feature::Balances,
+            Feature::AssetNetworks,
+            Feature::DepositAddresses,
+            Feature::DepositHistory,
+            Feature::WithdrawalQuotes,
+            Feature::Withdrawals,
+            Feature::WithdrawalHistory,
+            Feature::Trading,
+            Feature::AccountStream,
+        ] {
             assert!(!public.supports(feature), "{feature:?}");
             assert!(private.supports(feature), "{feature:?}");
         }

@@ -66,6 +66,16 @@ test("browser credentials require both explicit opt-in and a relay URL", async (
 
   const denied = createBrowserBackend(async () => raw);
   await denied.initialize(options({ relayUrl: "https://relay.example.test" }));
+  assert.doesNotThrow(() => denied.hyperliquid({
+    testnet: false,
+    address: "0x14791697260e4c9a71f18484c9f997b308e59325",
+    private_key: null,
+  }));
+  assert.throws(
+    () => denied.hyperliquid({ testnet: false, address: null, private_key: "signer" }),
+    (error) => error.name === "InvalidRequestError"
+      && error.field === "allowInsecureBrowserCredentials",
+  );
   assert.throws(
     () => denied.binance(credentials),
     (error) => error.name === "InvalidRequestError"

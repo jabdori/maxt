@@ -3,8 +3,8 @@
 use rust_decimal::Decimal;
 use serde_json::Value;
 
-use crate::error::Result;
-use crate::types::Timestamp;
+use crate::error::{Error, Result};
+use crate::types::{Deposit, DepositStatus, Timestamp, Withdrawal, WithdrawalStatus};
 
 use super::parse::{self, RawAssetCtx, RawLedgerUpdate};
 
@@ -125,37 +125,109 @@ pub(crate) fn ledger_entries(raw: &[RawLedgerUpdate]) -> Result<Vec<HyperliquidL
 }
 
 fn ledger_entry(raw: &RawLedgerUpdate) -> Result<HyperliquidLedgerEntry> {
-    let name = raw
-        .delta
-        .get("type")
-        .and_then(Value::as_str)
-        .unwrap_or("unknown");
+    let name = kind_name(raw);
 
     // Spot transfers use `token`/`amount`; other amount-bearing entries use
     // `USDC`/`usdc`. Liquidations carry neither amount field.
-    let (asset, amount) = match text(&raw.delta, "token") {
-        Some(token) => (token.to_ascii_uppercase(), text(&raw.delta, "amount")),
-        None => (parse::SETTLE_ASSET.to_string(), text(&raw.delta, "usdc")),
+    let (asset, amount_field) = match text(&raw.delta, "token") {
+        Some(token) => (token.to_ascii_uppercase(), "amount"),
+        None => (parse::SETTLE_ASSET.to_string(), "usdc"),
     };
+    let amount = decimal_field(&raw.delta, amount_field)?.map(|value| value.abs());
 
     Ok(HyperliquidLedgerEntry {
         kind: HyperliquidLedgerKind::from_name(name),
         time: parse::millis(raw.time, "time")?,
         hash: raw.hash.clone(),
         asset: amount.map(|_| asset),
-        amount: amount
-            .map(|amount| parse::decimal(amount, "amount"))
-            .transpose()?
-            .map(|amount| amount.abs()),
-        fee: text(&raw.delta, "fee")
-            .map(|fee| parse::decimal(fee, "fee"))
-            .transpose()?,
+        amount,
+        fee: decimal_field(&raw.delta, "fee")?,
         counterparty: text(&raw.delta, "destination").map(str::to_string),
     })
 }
 
+/// Maps credited bridge deposits into the common transfer history model.
+pub(crate) fn deposits(raw: &[RawLedgerUpdate]) -> Result<Vec<(Deposit, i64)>> {
+    raw.iter()
+        .filter(|entry| kind_name(entry) == "deposit")
+        .map(|entry| {
+            let hash = entry.hash.clone();
+            Ok((
+                Deposit {
+                    id: hash.clone(),
+                    asset: parse::SETTLE_ASSET.to_string(),
+                    // The ledger event does not identify the source bridge.
+                    network: None,
+                    provider_network: None,
+                    amount: required_decimal(&entry.delta, "usdc")?.abs(),
+                    // Hyperliquid publishes neither a generated address nor memo.
+                    address: None,
+                    memo: None,
+                    // `deposit` is an event kind, not an explicit lifecycle status.
+                    status: DepositStatus::Unknown,
+                    provider_status: "deposit".to_string(),
+                    tx_id: Some(hash),
+                    created_at: Some(parse::millis(entry.time, "time")?),
+                },
+                entry.time,
+            ))
+        })
+        .collect()
+}
+
+/// Maps bridge withdrawals into the common transfer history model.
+pub(crate) fn withdrawals(raw: &[RawLedgerUpdate]) -> Result<Vec<(Withdrawal, i64)>> {
+    raw.iter()
+        .filter(|entry| kind_name(entry) == "withdraw")
+        .map(|entry| {
+            let hash = entry.hash.clone();
+            Ok((
+                Withdrawal {
+                    id: hash.clone(),
+                    asset: parse::SETTLE_ASSET.to_string(),
+                    // The ledger event omits both bridge network and destination.
+                    network: None,
+                    provider_network: None,
+                    amount: required_decimal(&entry.delta, "usdc")?.abs(),
+                    fee: decimal_field(&entry.delta, "fee")?,
+                    destination: None,
+                    // `withdraw` does not prove that the bridge finalized.
+                    status: WithdrawalStatus::Unknown,
+                    provider_status: "withdraw".to_string(),
+                    tx_id: Some(hash),
+                    created_at: Some(parse::millis(entry.time, "time")?),
+                },
+                entry.time,
+            ))
+        })
+        .collect()
+}
+
+fn kind_name(raw: &RawLedgerUpdate) -> &str {
+    raw.delta
+        .get("type")
+        .and_then(Value::as_str)
+        .unwrap_or("unknown")
+}
+
 fn text<'a>(delta: &'a Value, field: &str) -> Option<&'a str> {
     delta.get(field).and_then(Value::as_str)
+}
+
+fn required_decimal(delta: &Value, field: &'static str) -> Result<Decimal> {
+    decimal_field(delta, field)?
+        .ok_or_else(|| Error::decode(format!("Hyperliquid ledger delta has no `{field}`")))
+}
+
+fn decimal_field(delta: &Value, field: &'static str) -> Result<Option<Decimal>> {
+    match delta.get(field) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(value)) => parse::decimal(value, field).map(Some),
+        Some(Value::Number(value)) => parse::decimal(&value.to_string(), field).map(Some),
+        Some(other) => Err(Error::decode(format!(
+            "Hyperliquid ledger `{field}` is not a number: {other}"
+        ))),
+    }
 }
 
 /// Reads the current context of one market.
@@ -251,6 +323,51 @@ mod tests {
         assert_eq!(entries[1].kind, HyperliquidLedgerKind::Withdraw);
         assert_eq!(entries[1].amount, Some(Decimal::from(250)));
         assert_eq!(entries[1].fee, Some(Decimal::ONE));
+    }
+
+    #[test]
+    fn bridge_events_map_without_inventing_network_destination_or_status() {
+        let raw: Vec<RawLedgerUpdate> = parse::json(LEDGER).expect("official ledger payload");
+        let deposits = deposits(&raw).expect("deposit history");
+        let withdrawals = withdrawals(&raw).expect("withdrawal history");
+
+        let deposit = &deposits[0].0;
+        assert_eq!(deposit.asset, "USDC");
+        assert_eq!(deposit.amount, Decimal::from(1_000));
+        assert_eq!(deposit.network, None);
+        assert_eq!(deposit.provider_network, None);
+        assert_eq!(deposit.address, None);
+        assert_eq!(deposit.status, DepositStatus::Unknown);
+        assert_eq!(deposit.provider_status, "deposit");
+        assert_eq!(deposit.tx_id.as_deref(), Some(deposit.id.as_str()));
+
+        let withdrawal = &withdrawals[0].0;
+        assert_eq!(withdrawal.asset, "USDC");
+        assert_eq!(withdrawal.amount, Decimal::from(250));
+        assert_eq!(withdrawal.fee, Some(Decimal::ONE));
+        assert_eq!(withdrawal.network, None);
+        assert_eq!(withdrawal.provider_network, None);
+        assert_eq!(withdrawal.destination, None);
+        assert_eq!(withdrawal.status, WithdrawalStatus::Unknown);
+        assert_eq!(withdrawal.provider_status, "withdraw");
+        assert_eq!(withdrawal.tx_id.as_deref(), Some(withdrawal.id.as_str()));
+    }
+
+    #[test]
+    fn numeric_ledger_amounts_are_read_without_float_round_trips() {
+        let raw: Vec<RawLedgerUpdate> = parse::json(
+            r#"[{
+              "delta": {"type": "deposit", "usdc": 0.125},
+              "hash": "0x01",
+              "time": 1681222254710
+            }]"#,
+        )
+        .expect("numeric ledger payload");
+
+        assert_eq!(
+            deposits(&raw).expect("deposit")[0].0.amount,
+            Decimal::new(125, 3)
+        );
     }
 
     #[test]

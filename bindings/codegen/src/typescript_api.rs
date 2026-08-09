@@ -1,5 +1,6 @@
 use maxt_bindings_common::schema::{
-    ApiType, Argument, Operation, Provider, ProviderMethod, ProviderMethodKind, Schema,
+    ApiType, Argument, ClientComposition, Operation, Provider, ProviderMethod, ProviderMethodKind,
+    Schema,
 };
 
 use crate::typescript_contract::{HEADER, lower_camel};
@@ -35,6 +36,13 @@ export interface RawNativeClient {{
                 raw_parameters(method.arguments)
             ));
         }
+    }
+    for method in schema.client_compositions {
+        output.push_str(&format!(
+            "  {}({}): Promise<unknown>;\n",
+            method.language_name,
+            raw_parameters(method.arguments)
+        ));
     }
     output.push_str(
         "  streamNext(id: string): Promise<unknown>;\n  streamClose(id: string): Promise<unknown>;\n}\n\n",
@@ -76,6 +84,7 @@ export interface RawNativeModule {
 }
 
 export interface NativeClientHandle {
+  raw(): RawNativeClient;
   exchange(): string;
   supports(feature: string): boolean;
 "#,
@@ -89,6 +98,14 @@ export interface NativeClientHandle {
                 native_result_type(operation.result, schema)
             ));
         }
+    }
+    for method in schema.client_compositions {
+        output.push_str(&format!(
+            "  {}({}): Promise<NativeOutcome<{}>>;\n",
+            method.language_name,
+            wire_parameters(method.arguments, schema),
+            native_result_type(method.result, schema)
+        ));
     }
     output.push_str("}\n\n");
     output.push_str(
@@ -140,13 +157,21 @@ fn raw_handle_name(provider: &Provider) -> String {
 fn raw_parameters(arguments: &[Argument]) -> String {
     arguments
         .iter()
-        .map(|argument| format!("{}: string", argument.name))
+        .map(|argument| {
+            let ty = if matches!(argument.ty, ApiType::Client) {
+                "RawNativeClient"
+            } else {
+                "string"
+            };
+            format!("{}: {ty}", argument.name)
+        })
         .collect::<Vec<_>>()
         .join(", ")
 }
 
 fn public_type(ty: ApiType) -> String {
     match ty {
+        ApiType::Client => "Client<Adapter>".to_owned(),
         ApiType::String => "string".to_owned(),
         ApiType::Boolean => "boolean".to_owned(),
         ApiType::Number => "number".to_owned(),
@@ -193,6 +218,7 @@ fn wire_named_type(name: &str, schema: &Schema) -> String {
 
 fn wire_type(ty: ApiType, schema: &Schema) -> String {
     match ty {
+        ApiType::Client => "NativeClientHandle".to_owned(),
         ApiType::String => "string".to_owned(),
         ApiType::Boolean => "boolean".to_owned(),
         ApiType::Number => "number".to_owned(),
@@ -319,7 +345,7 @@ fn render_json_backend(output: &mut String, schema: &Schema) {
         output.push_str("      };\n    },\n");
     }
     output.push_str("  };\n}\n\n");
-    output.push_str("function wrapJsonClient(raw: RawNativeClient): NativeClientHandle {\n  const stream = <I>(reference: Wire.NativeStreamReferenceWire): NativeStreamHandle<I> => ({\n    next: () => raw.streamNext(Codec.stringifyWire(reference.id)) as Promise<NativeOutcome<I | null>>,\n    close: () => raw.streamClose(Codec.stringifyWire(reference.id)) as Promise<NativeOutcome<null>>,\n  });\n  return {\n    exchange: () => raw.exchange(),\n    supports: (feature) => raw.supports(feature),\n");
+    output.push_str("function wrapJsonClient(raw: RawNativeClient): NativeClientHandle {\n  const stream = <I>(reference: Wire.NativeStreamReferenceWire): NativeStreamHandle<I> => ({\n    next: () => raw.streamNext(Codec.stringifyWire(reference.id)) as Promise<NativeOutcome<I | null>>,\n    close: () => raw.streamClose(Codec.stringifyWire(reference.id)) as Promise<NativeOutcome<null>>,\n  });\n  return {\n    raw: () => raw,\n    exchange: () => raw.exchange(),\n    supports: (feature) => raw.supports(feature),\n");
     for operation in schema.adapter_operations {
         for method in operation.client_methods {
             let result = native_result_type(operation.result, schema);
@@ -352,13 +378,29 @@ fn render_json_backend(output: &mut String, schema: &Schema) {
             }
         }
     }
+    for method in schema.client_compositions {
+        output.push_str(&format!(
+            "    {}: ({}) => raw.{}({}) as Promise<NativeOutcome<{}>>,\n",
+            method.language_name,
+            wire_parameters(method.arguments, schema),
+            method.language_name,
+            json_arguments(method.arguments),
+            native_result_type(method.result, schema)
+        ));
+    }
     output.push_str("  };\n}\n\n");
 }
 
 fn json_arguments(arguments: &[Argument]) -> String {
     arguments
         .iter()
-        .map(|argument| format!("Codec.stringifyWire({})", argument.name))
+        .map(|argument| {
+            if matches!(argument.ty, ApiType::Client) {
+                format!("{}.raw()", argument.name)
+            } else {
+                format!("Codec.stringifyWire({})", argument.name)
+            }
+        })
         .collect::<Vec<_>>()
         .join(", ")
 }
@@ -392,6 +434,12 @@ fn dispatch_arm(operation: &Operation) -> String {
         "candles" => "        case \"candles\": return ok({ kind: \"candles\", value: (await this.adapter.candles(Codec.candleRequestFromWire(call.request))).map(Codec.candleToWire) });\n".to_owned(),
         "subscribe" => "        case \"subscribe\": { this.#streams.begin(call.stream_id); try { const value = await this.adapter.subscribe(Codec.subscriptionFromWire(call.subscription), Codec.streamConfigFromWire(call.config)); await this.#streams.register(call.stream_id, value); return ok({ kind: \"market_stream\", stream_id: call.stream_id }); } catch (error) { this.#streams.abort(call.stream_id); throw error; } }\n".to_owned(),
         "balances" => "        case \"balances\": return ok({ kind: \"balances\", value: (await this.adapter.balances()).map(Codec.balanceToWire) });\n".to_owned(),
+        "asset_networks" => "        case \"asset_networks\": return ok({ kind: \"asset_networks\", value: (await this.adapter.assetNetworks(call.asset)).map(Codec.assetNetworkToWire) });\n".to_owned(),
+        "deposit_address" => "        case \"deposit_address\": return ok({ kind: \"deposit_address\", value: Codec.depositAddressToWire(await this.adapter.depositAddress(Codec.depositAddressRequestFromWire(call.request))) });\n".to_owned(),
+        "prepare_withdrawal" => "        case \"prepare_withdrawal\": return ok({ kind: \"withdrawal_quote\", value: Codec.withdrawalQuoteToWire(await this.adapter.prepareWithdrawal(Codec.withdrawRequestFromWire(call.request))) });\n".to_owned(),
+        "withdraw" => "        case \"withdraw\": return ok({ kind: \"withdrawal\", value: Codec.withdrawalToWire(await this.adapter.withdraw(Codec.withdrawRequestFromWire(call.request))) });\n".to_owned(),
+        "deposits" => "        case \"deposits\": { const value = await this.adapter.deposits(Codec.transferHistoryRequestFromWire(call.request)); return ok({ kind: \"deposits\", value: { items: value.items.map(Codec.depositToWire), next: value.next?.value ?? null } }); }\n".to_owned(),
+        "withdrawals" => "        case \"withdrawals\": { const value = await this.adapter.withdrawals(Codec.transferHistoryRequestFromWire(call.request)); return ok({ kind: \"withdrawals\", value: { items: value.items.map(Codec.withdrawalToWire), next: value.next?.value ?? null } }); }\n".to_owned(),
         "open_orders" => "        case \"open_orders\": return ok({ kind: \"open_orders\", value: (await this.adapter.openOrders(call.market === null ? null : Codec.marketFromWire(call.market))).map(Codec.orderToWire) });\n".to_owned(),
         "subscribe_account" => "        case \"subscribe_account\": { this.#streams.begin(call.stream_id); try { const value = await this.adapter.subscribeAccount(Codec.streamConfigFromWire(call.config)); await this.#streams.register(call.stream_id, value); return ok({ kind: \"account_stream\", stream_id: call.stream_id }); } catch (error) { this.#streams.abort(call.stream_id); throw error; } }\n".to_owned(),
         "place_order" => "        case \"place_order\": return ok({ kind: \"place_order\", value: Codec.orderToWire(await this.adapter.placeOrder(Codec.orderRequestFromWire(call.request))) });\n".to_owned(),
@@ -418,7 +466,30 @@ fn render_client(output: &mut String, schema: &Schema) {
             ));
         }
     }
+    for method in schema.client_compositions {
+        output.push_str(&render_composed_client_method(method, schema));
+    }
     output.push_str("}\n\n");
+}
+
+fn render_composed_client_method(method: &ClientComposition, schema: &Schema) -> String {
+    let encoded = method
+        .arguments
+        .iter()
+        .map(|argument| encode_argument(argument, schema))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let call = format!("this.#native.{}({encoded})", method.language_name);
+    let ApiType::Named(model) = method.result else {
+        panic!("composed Client methods currently return one model")
+    };
+    format!(
+        "  async {}({}): Promise<{}> {{\n    await ensureInitialized();\n    return Codec.{}FromWire(Codec.unwrapOutcome(await {call}));\n  }}\n\n",
+        method.language_name,
+        public_parameters(method.arguments),
+        public_type(method.result),
+        lower_camel(model),
+    )
 }
 
 fn render_client_method(
@@ -466,6 +537,7 @@ fn render_client_method(
 fn encode_argument(argument: &Argument, schema: &Schema) -> String {
     let name = argument.name;
     match argument.ty {
+        ApiType::Client => format!("{name}.#native"),
         ApiType::Named(value) if schema.has_identifier(value) => format!("{name}.id"),
         ApiType::Named("Timestamp") => format!("{name}.nanosecondsSinceEpoch.toString()"),
         ApiType::Named("Cursor") => format!("{name}.value"),
@@ -653,6 +725,7 @@ function isWireError(value: unknown): value is Wire.ErrorWire {
   if (!isObject(value) || typeof value.kind !== "string") return false;
   switch (value.kind) {
     case "invalid_request": return typeof value.field === "string" && typeof value.detail === "string";
+    case "transfer": return typeof value.transfer_kind === "string" && typeof value.detail === "string";
     case "unsupported": return typeof value.feature === "string" && typeof value.exchange === "string" && typeof value.detail === "string";
     case "adapter": case "auth": case "transport": case "decode": return typeof value.detail === "string";
     case "exchange": return typeof value.exchange === "string" && typeof value.code === "string" && typeof value.message === "string" && (value.status === null || typeof value.status === "number") && typeof value.exchange_kind === "string";

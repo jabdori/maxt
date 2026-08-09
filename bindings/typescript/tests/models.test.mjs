@@ -4,8 +4,11 @@ import test from "node:test";
 import {
   Balance,
   BinanceMarket,
+  ChainDestination,
   CandleRequest,
   Decimal,
+  DepositAddressRequest,
+  DepositStatus,
   Exchange,
   Feed,
   Feature,
@@ -14,6 +17,7 @@ import {
   Level,
   Market,
   MarketKind,
+  Network,
   OrderBook,
   OrderStatus,
   Overflow,
@@ -22,9 +26,27 @@ import {
   StreamConfig,
   Subscription,
   Timestamp,
+  TransferDestination,
+  TransferHistoryRequest,
+  TravelRuleRequirement,
+  WithdrawRequest,
+  WithdrawalFee,
+  WithdrawalStatus,
 } from "../dist/models.js";
 import { InvalidRequestError } from "../dist/errors.js";
-import { streamConfigFromWire } from "../dist/generated/codec.js";
+import {
+  assetNetworkFromWire,
+  assetNetworkToWire,
+  depositFromWire,
+  depositToWire,
+  streamConfigFromWire,
+  transferHistoryRequestFromWire,
+  transferHistoryRequestToWire,
+  withdrawRequestFromWire,
+  withdrawRequestToWire,
+  withdrawalFromWire,
+  withdrawalToWire,
+} from "../dist/generated/codec.js";
 
 test("Decimal preserves its exact text and rejects unrepresentable inputs", () => {
   const value = Decimal.parse("1.2300");
@@ -93,7 +115,10 @@ test("string variants are stable singleton values in Rust declaration order", ()
   assert.deepEqual(BinanceMarket.values, [BinanceMarket.Spot, BinanceMarket.UsdMFutures]);
   assert.equal(HyperliquidLedgerKind.other("futureKind").id, "futureKind");
   assert.equal(HyperliquidLedgerKind.other("deposit"), HyperliquidLedgerKind.Deposit);
+  assert.equal(Network.other("bitcoin"), Network.Bitcoin);
+  assert.equal(Network.other("future_chain").id, "future_chain");
   assert.equal(Feature.Balances.needsCredentials, true);
+  assert.equal(Feature.AssetNetworks.needsCredentials, true);
   assert.equal(Feature.FundingRates.needsCredentials, false);
   assert.equal(Feature.FundingRates.isDerivativesOnly, true);
   assert.equal(MarketKind.Perpetual.isDerivative, true);
@@ -102,6 +127,82 @@ test("string variants are stable singleton values in Rust declaration order", ()
   assert.equal(Side.Buy.flipped, Side.Sell);
   assert.equal(OrderStatus.PartiallyFilled.isLive, true);
   assert.equal(OrderStatus.Filled.isLive, false);
+});
+
+test("wallet unions, statuses, open networks, and pages preserve the wire contract", () => {
+  const assetNetworkWire = {
+    exchange: "binance",
+    asset: "btc",
+    network: "future_chain",
+    provider_id: "FUTURE",
+    deposit_enabled: true,
+    withdrawal_enabled: false,
+    withdrawal_fee: { kind: "rate", rate: "0.001", minimum: "0.0001", maximum: null },
+    minimum_withdrawal: "0.01",
+    maximum_withdrawal: null,
+    memo_required: true,
+  };
+  const network = assetNetworkFromWire(assetNetworkWire);
+  assert.equal(network.asset, "BTC");
+  assert.equal(network.network.id, "future_chain");
+  assert.equal(network.withdrawalFee.kind, "rate");
+  assert.deepEqual(assetNetworkToWire(network), { ...assetNetworkWire, asset: "BTC" });
+
+  const destination = TransferDestination.chain(new ChainDestination(
+    "btc", Network.Bitcoin, "bc1qdestination",
+  ));
+  const request = new WithdrawRequest(
+    "btc", Network.Bitcoin, Decimal.parse("1.00"), destination, "client-1",
+  );
+  assert.deepEqual(withdrawRequestToWire(withdrawRequestFromWire(withdrawRequestToWire(request))), {
+    asset: "BTC",
+    network: "bitcoin",
+    amount: "1.00",
+    destination: {
+      kind: "chain",
+      value: { asset: "BTC", network: "bitcoin", address: "bc1qdestination", memo: null },
+    },
+    client_id: "client-1",
+  });
+
+  const history = new TransferHistoryRequest("btc", Network.Bitcoin, null, 100);
+  assert.deepEqual(
+    transferHistoryRequestToWire(transferHistoryRequestFromWire(transferHistoryRequestToWire(history))),
+    { asset: "BTC", network: "bitcoin", cursor: null, limit: 100 },
+  );
+
+  const withdrawalWire = {
+    id: "withdrawal-1",
+    asset: "BTC",
+    network: "bitcoin",
+    provider_network: "BTC",
+    amount: "1.00",
+    fee: "0.0001",
+    destination: withdrawRequestToWire(request).destination,
+    status: WithdrawalStatus.Processing.id,
+    provider_status: "processing",
+    tx_id: null,
+    created_at: null,
+  };
+  assert.deepEqual(withdrawalToWire(withdrawalFromWire(withdrawalWire)), withdrawalWire);
+
+  const depositWire = {
+    id: "deposit-1",
+    asset: "BTC",
+    network: "bitcoin",
+    provider_network: "BTC",
+    amount: "0.99",
+    address: null,
+    memo: null,
+    status: DepositStatus.Completed.id,
+    provider_status: "credited",
+    tx_id: "tx-1",
+    created_at: null,
+  };
+  assert.deepEqual(depositToWire(depositFromWire(depositWire)), depositWire);
+  assert.equal(WithdrawalFee.fixed(Decimal.one).kind, "fixed");
+  assert.equal(TravelRuleRequirement.NotRequired.kind, "not_required");
+  assert.equal(new DepositAddressRequest("btc", Network.Bitcoin).asset, "BTC");
 });
 
 test("wire unsigned integers reject malformed and unsafe values", () => {

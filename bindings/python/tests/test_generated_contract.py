@@ -15,12 +15,14 @@ from maxt import (
     Feature,
     HyperliquidAdapter,
     InvalidRequestError,
+    TransferError,
     TransportError,
     UnsupportedError,
     UpbitAdapter,
 )
 from maxt._generated_contract import (
     ADAPTER_OPERATIONS,
+    CLIENT_COMPOSITIONS,
     CLIENT_MEMBERS,
     ERROR_VARIANTS,
     EXCHANGES,
@@ -53,7 +55,7 @@ def test_generated_api_inventories_match_public_classes() -> None:
         for name, value in _GeneratedAdapterApi.__dict__.items()
         if iscoroutinefunction(value)
     }
-    assert set(ADAPTER_OPERATIONS) == {
+    assert set(ADAPTER_OPERATIONS) | set(CLIENT_COMPOSITIONS) == {
         name
         for name, value in _GeneratedNativeClientDelegateApi.__dict__.items()
         if iscoroutinefunction(value) and not name.startswith("_")
@@ -82,6 +84,7 @@ def test_generated_api_inventories_match_public_classes() -> None:
 
     errors = (
         InvalidRequestError,
+        TransferError,
         UnsupportedError,
         AdapterError,
         AuthError,
@@ -118,6 +121,7 @@ def test_generated_wire_fields_match_public_models_and_errors() -> None:
 
     errors = (
         InvalidRequestError,
+        TransferError,
         UnsupportedError,
         AdapterError,
         AuthError,

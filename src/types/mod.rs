@@ -8,6 +8,7 @@ mod data;
 mod market;
 mod stream;
 mod time;
+mod wallet;
 
 pub use account::{
     Balance, Cursor, FundingPayment, FundingRate, MarginMode, MarginSummary, Order, OrderStatus,
@@ -17,6 +18,11 @@ pub use data::{Candle, Interval, Level, OrderBook, Side, Ticker, Trade};
 pub use market::{Exchange, Market, MarketInfo, MarketKind, MarketStatus};
 pub use stream::{AccountEvent, Feed, MarketEvent, Overflow, StreamConfig, Subscription};
 pub use time::Timestamp;
+pub use wallet::{
+    AssetNetwork, ChainDestination, ChainTransferRequest, Deposit, DepositAddress, DepositStatus,
+    ExchangeDestination, ExchangeTransferRequest, Network, TransferDestination,
+    TravelRuleRequirement, Withdrawal, WithdrawalFee, WithdrawalQuote, WithdrawalStatus,
+};
 
 #[cfg(test)]
 pub(crate) use time::clock;

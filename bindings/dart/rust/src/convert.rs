@@ -1,6 +1,9 @@
 use std::fmt;
 
+pub mod generated_models;
 mod generated_shape_guard;
+
+pub use generated_models::*;
 
 use maxt::adapters::{
     BinanceSpotOrderDetail, BinanceSymbolFilters, BithumbAlertStep, BithumbMarketAlert,
@@ -11,6 +14,7 @@ use maxt::{
     FundingPayment, FundingRate, HistoryRequest, Interval, Level, MarginMode, MarginRequest,
     MarginSummary, Market, MarketInfo, MarketKind, MarketStatus, Order, OrderBook, OrderRequest,
     OrderStatus, OrderType, Page, Position, Side, Size, Ticker, TimeInForce, Timestamp, Trade,
+    TransferErrorKind,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -72,6 +76,12 @@ pub enum WireFeature {
     TickerStream,
     CandleStream,
     Balances,
+    AssetNetworks,
+    DepositAddresses,
+    DepositHistory,
+    WithdrawalQuotes,
+    Withdrawals,
+    WithdrawalHistory,
     OpenOrders,
     AccountStream,
     Trading,
@@ -398,12 +408,27 @@ pub struct WireHyperliquidAssetContext {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NativeErrorKind {
     InvalidRequest,
+    Transfer,
     Unsupported,
     Adapter,
     Auth,
     Exchange,
     Transport,
     Decode,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireTransferErrorKind {
+    AssetMismatch,
+    NetworkMismatch,
+    AmbiguousNetwork,
+    NetworkUnavailable,
+    MemoRequired,
+    DestinationUnavailable,
+    AddressNotAllowed,
+    TravelRuleRequired,
+    AmountOutOfRange,
+    PlanExpired,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -420,6 +445,7 @@ pub struct NativeError {
     pub message: String,
     pub detail: Option<String>,
     pub field: Option<String>,
+    pub transfer_kind: Option<WireTransferErrorKind>,
     pub feature: Option<WireFeature>,
     pub exchange: Option<String>,
     pub code: Option<String>,
@@ -437,6 +463,7 @@ impl NativeError {
             message: format!("invalid request: `{field}`: {detail}"),
             detail: Some(detail),
             field: Some(field.to_owned()),
+            transfer_kind: None,
             feature: None,
             exchange: None,
             code: None,
@@ -616,6 +643,12 @@ impl From<Feature> for WireFeature {
             Feature::TickerStream => Self::TickerStream,
             Feature::CandleStream => Self::CandleStream,
             Feature::Balances => Self::Balances,
+            Feature::AssetNetworks => Self::AssetNetworks,
+            Feature::DepositAddresses => Self::DepositAddresses,
+            Feature::DepositHistory => Self::DepositHistory,
+            Feature::WithdrawalQuotes => Self::WithdrawalQuotes,
+            Feature::Withdrawals => Self::Withdrawals,
+            Feature::WithdrawalHistory => Self::WithdrawalHistory,
             Feature::OpenOrders => Self::OpenOrders,
             Feature::AccountStream => Self::AccountStream,
             Feature::Trading => Self::Trading,
@@ -643,6 +676,12 @@ impl From<WireFeature> for Feature {
             WireFeature::TickerStream => Self::TickerStream,
             WireFeature::CandleStream => Self::CandleStream,
             WireFeature::Balances => Self::Balances,
+            WireFeature::AssetNetworks => Self::AssetNetworks,
+            WireFeature::DepositAddresses => Self::DepositAddresses,
+            WireFeature::DepositHistory => Self::DepositHistory,
+            WireFeature::WithdrawalQuotes => Self::WithdrawalQuotes,
+            WireFeature::Withdrawals => Self::Withdrawals,
+            WireFeature::WithdrawalHistory => Self::WithdrawalHistory,
             WireFeature::OpenOrders => Self::OpenOrders,
             WireFeature::AccountStream => Self::AccountStream,
             WireFeature::Trading => Self::Trading,
@@ -1476,6 +1515,41 @@ impl From<WireExchangeErrorKind> for ExchangeErrorKind {
     }
 }
 
+impl From<TransferErrorKind> for WireTransferErrorKind {
+    fn from(value: TransferErrorKind) -> Self {
+        match value {
+            TransferErrorKind::AssetMismatch => Self::AssetMismatch,
+            TransferErrorKind::NetworkMismatch => Self::NetworkMismatch,
+            TransferErrorKind::AmbiguousNetwork => Self::AmbiguousNetwork,
+            TransferErrorKind::NetworkUnavailable => Self::NetworkUnavailable,
+            TransferErrorKind::MemoRequired => Self::MemoRequired,
+            TransferErrorKind::DestinationUnavailable => Self::DestinationUnavailable,
+            TransferErrorKind::AddressNotAllowed => Self::AddressNotAllowed,
+            TransferErrorKind::TravelRuleRequired => Self::TravelRuleRequired,
+            TransferErrorKind::AmountOutOfRange => Self::AmountOutOfRange,
+            TransferErrorKind::PlanExpired => Self::PlanExpired,
+            _ => unreachable!("new transfer errors require a Dart wire variant"),
+        }
+    }
+}
+
+impl From<WireTransferErrorKind> for TransferErrorKind {
+    fn from(value: WireTransferErrorKind) -> Self {
+        match value {
+            WireTransferErrorKind::AssetMismatch => Self::AssetMismatch,
+            WireTransferErrorKind::NetworkMismatch => Self::NetworkMismatch,
+            WireTransferErrorKind::AmbiguousNetwork => Self::AmbiguousNetwork,
+            WireTransferErrorKind::NetworkUnavailable => Self::NetworkUnavailable,
+            WireTransferErrorKind::MemoRequired => Self::MemoRequired,
+            WireTransferErrorKind::DestinationUnavailable => Self::DestinationUnavailable,
+            WireTransferErrorKind::AddressNotAllowed => Self::AddressNotAllowed,
+            WireTransferErrorKind::TravelRuleRequired => Self::TravelRuleRequired,
+            WireTransferErrorKind::AmountOutOfRange => Self::AmountOutOfRange,
+            WireTransferErrorKind::PlanExpired => Self::PlanExpired,
+        }
+    }
+}
+
 impl From<Error> for NativeError {
     fn from(value: Error) -> Self {
         let message = value.to_string();
@@ -1486,6 +1560,7 @@ impl From<Error> for NativeError {
             message,
             detail: None,
             field: None,
+            transfer_kind: None,
             feature: None,
             exchange: None,
             code: None,
@@ -1498,6 +1573,11 @@ impl From<Error> for NativeError {
             Error::InvalidRequest { field, detail } => {
                 error.kind = NativeErrorKind::InvalidRequest;
                 error.field = Some(field.to_owned());
+                error.detail = Some(detail);
+            }
+            Error::Transfer { kind, detail } => {
+                error.kind = NativeErrorKind::Transfer;
+                error.transfer_kind = Some(kind.into());
                 error.detail = Some(detail);
             }
             Error::Unsupported {
@@ -1569,6 +1649,7 @@ impl TryFrom<NativeError> for Error {
             message,
             detail,
             field,
+            transfer_kind,
             feature,
             exchange,
             code,
@@ -1583,6 +1664,15 @@ impl TryFrom<NativeError> for Error {
                 let field = field
                     .ok_or_else(|| Error::adapter("foreign invalid-request error has no field"))?;
                 Ok(Error::InvalidRequest { field, detail })
+            }
+            NativeErrorKind::Transfer => {
+                let kind = transfer_kind.ok_or_else(|| {
+                    Error::adapter("foreign transfer error has no transfer category")
+                })?;
+                Ok(Error::Transfer {
+                    kind: kind.into(),
+                    detail,
+                })
             }
             NativeErrorKind::Unsupported => {
                 let feature = feature

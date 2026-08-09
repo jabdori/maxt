@@ -1,7 +1,6 @@
 use maxt::{
-    CandleRequest, Cursor, Decimal, Feed, FundingPayment, FundingRate, HistoryRequest,
-    MarginRequest, Market, OrderRequest, OrderType, Overflow, Page, Size, StreamConfig,
-    Subscription, Timestamp,
+    CandleRequest, Cursor, Decimal, Feed, HistoryRequest, MarginRequest, Market, OrderRequest,
+    OrderType, Overflow, Page, Size, StreamConfig, Subscription, Timestamp,
 };
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;

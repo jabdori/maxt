@@ -415,10 +415,11 @@ impl NativeClient {
         } else {
             HyperliquidAdapter::new()
         };
-        if let Some((address, private_key)) =
-            credential_pair(address, private_key, "address", "private_key")?
-        {
-            adapter = adapter.with_wallet(address, private_key);
+        if let Some(address) = address {
+            adapter = adapter.with_query_address(address);
+        }
+        if let Some(private_key) = private_key {
+            adapter = adapter.with_signer(private_key);
         }
         Ok(Self::from_built_in(BuiltInAdapter::Hyperliquid(adapter)))
     }
@@ -721,6 +722,24 @@ mod tests {
 
         let hyperliquid = NativeClient::hyperliquid(true, None, None).unwrap();
         assert_eq!(hyperliquid.is_testnet(), Some(true));
+
+        let address_only = NativeClient::hyperliquid(
+            false,
+            Some("0x14791697260e4c9a71f18484c9f997b308e59325".to_owned()),
+            None,
+        )
+        .unwrap();
+        assert!(address_only.supports(WireFeature::Balances));
+        assert!(!address_only.supports(WireFeature::Trading));
+
+        let signer_only = NativeClient::hyperliquid(
+            false,
+            None,
+            Some("0x0123456789012345678901234567890123456789012345678901234567890123".to_owned()),
+        )
+        .unwrap();
+        assert!(!signer_only.supports(WireFeature::Balances));
+        assert!(signer_only.supports(WireFeature::Trading));
     }
 
     #[test]

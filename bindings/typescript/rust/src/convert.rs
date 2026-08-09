@@ -3,11 +3,16 @@ use maxt::adapters::{
     HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind, UpbitMarketEvent,
 };
 use maxt::{
-    AccountEvent, Balance, Candle, CandleRequest, Cursor, Decimal, Error, Exchange,
-    ExchangeErrorKind, Feature, Feed, FundingPayment, FundingRate, HistoryRequest, Interval, Level,
-    MarginMode, MarginRequest, MarginSummary, Market, MarketEvent, MarketInfo, MarketKind,
-    MarketStatus, Order, OrderBook, OrderRequest, OrderStatus, OrderType, Overflow, Page, Position,
-    Side, Size, StreamConfig, Subscription, Ticker, TimeInForce, Timestamp, Trade,
+    AccountEvent, AssetNetwork, Balance, Candle, CandleRequest, ChainDestination,
+    ChainTransferRequest, Cursor, Decimal, Deposit, DepositAddress, DepositAddressRequest,
+    DepositStatus, Error, Exchange, ExchangeDestination, ExchangeErrorKind,
+    ExchangeTransferRequest, Feature, Feed, FundingPayment, FundingRate, HistoryRequest, Interval,
+    Level, MarginMode, MarginRequest, MarginSummary, Market, MarketEvent, MarketInfo, MarketKind,
+    MarketStatus, Network, Order, OrderBook, OrderRequest, OrderStatus, OrderType, Overflow, Page,
+    Position, Side, Size, StreamConfig, Subscription, Ticker, TimeInForce, Timestamp, Trade,
+    TransferDestination, TransferErrorKind, TransferHistoryRequest, TransferPlan,
+    TravelRuleRequirement, WithdrawRequest, Withdrawal, WithdrawalFee, WithdrawalQuote,
+    WithdrawalStatus,
 };
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -57,6 +62,39 @@ pub(crate) struct WireOrderRequest {
     #[serde(deserialize_with = "explicit_option")]
     pub(crate) time_in_force: Option<String>,
     pub(crate) reduce_only: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireDepositAddressRequest {
+    pub(crate) asset: String,
+    pub(crate) network: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) amount: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireWithdrawRequest {
+    pub(crate) asset: String,
+    pub(crate) network: String,
+    pub(crate) amount: String,
+    pub(crate) destination: WireTransferDestination,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) client_id: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireTransferHistoryRequest {
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) asset: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) network: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) cursor: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) limit: Option<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -313,6 +351,184 @@ pub(crate) struct WireBalance {
     pub(crate) asset: String,
     pub(crate) available: String,
     pub(crate) locked: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub(crate) enum WireWithdrawalFee {
+    Fixed {
+        value: String,
+    },
+    Rate {
+        rate: String,
+        #[serde(deserialize_with = "explicit_option")]
+        minimum: Option<String>,
+        #[serde(deserialize_with = "explicit_option")]
+        maximum: Option<String>,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireAssetNetwork {
+    pub(crate) exchange: String,
+    pub(crate) asset: String,
+    pub(crate) network: String,
+    pub(crate) provider_id: String,
+    pub(crate) deposit_enabled: bool,
+    pub(crate) withdrawal_enabled: bool,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) withdrawal_fee: Option<WireWithdrawalFee>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) minimum_withdrawal: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) maximum_withdrawal: Option<String>,
+    pub(crate) memo_required: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireDepositAddress {
+    pub(crate) exchange: String,
+    pub(crate) asset: String,
+    pub(crate) network: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) address: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) memo: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireExchangeDestination {
+    pub(crate) exchange: String,
+    pub(crate) asset: String,
+    pub(crate) network: String,
+    pub(crate) address: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) memo: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireChainDestination {
+    pub(crate) asset: String,
+    pub(crate) network: String,
+    pub(crate) address: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) memo: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireExchangeTransferRequest {
+    pub(crate) asset: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) source_network: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) destination_network: Option<String>,
+    pub(crate) amount: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireChainTransferRequest {
+    pub(crate) asset: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) source_network: Option<String>,
+    pub(crate) destination: WireChainDestination,
+    pub(crate) amount: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub(crate) enum WireTransferDestination {
+    Exchange { value: WireExchangeDestination },
+    Chain { value: WireChainDestination },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub(crate) enum WireTravelRuleRequirement {
+    NotRequired,
+    Required {
+        #[serde(deserialize_with = "explicit_option")]
+        consent_url: Option<String>,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireWithdrawalQuote {
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) fee: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) expected_receive: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) minimum_amount: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) maximum_amount: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) address_allowed: Option<bool>,
+    pub(crate) travel_rule: WireTravelRuleRequirement,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) expires_at: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireTransferPlan {
+    pub(crate) source: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) destination: Option<String>,
+    pub(crate) request: WireWithdrawRequest,
+    pub(crate) quote: WireWithdrawalQuote,
+    pub(crate) created_at: String,
+    pub(crate) expires_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireWithdrawal {
+    pub(crate) id: String,
+    pub(crate) asset: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) network: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) provider_network: Option<String>,
+    pub(crate) amount: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) fee: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) destination: Option<WireTransferDestination>,
+    pub(crate) status: String,
+    pub(crate) provider_status: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) tx_id: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) created_at: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireDeposit {
+    pub(crate) id: String,
+    pub(crate) asset: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) network: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) provider_network: Option<String>,
+    pub(crate) amount: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) address: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) memo: Option<String>,
+    pub(crate) status: String,
+    pub(crate) provider_status: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) tx_id: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) created_at: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -597,6 +813,56 @@ impl TryFrom<WireOrderRequest> for OrderRequest {
     }
 }
 
+impl TryFrom<WireDepositAddressRequest> for DepositAddressRequest {
+    type Error = Error;
+
+    fn try_from(value: WireDepositAddressRequest) -> Result<Self, Self::Error> {
+        let mut request = Self::new(value.asset, network_from_wire(&value.network));
+        if let Some(amount) = value.amount {
+            request = request.amount(decimal_from_wire(&amount, "amount")?);
+        }
+        Ok(request)
+    }
+}
+
+impl TryFrom<WireWithdrawRequest> for WithdrawRequest {
+    type Error = Error;
+
+    fn try_from(value: WireWithdrawRequest) -> Result<Self, Self::Error> {
+        let mut request = Self::new(
+            value.asset,
+            network_from_wire(&value.network),
+            decimal_from_wire(&value.amount, "amount")?,
+            value.destination.try_into()?,
+        );
+        if let Some(client_id) = value.client_id {
+            request = request.client_id(client_id);
+        }
+        Ok(request)
+    }
+}
+
+impl TryFrom<WireTransferHistoryRequest> for TransferHistoryRequest {
+    type Error = Error;
+
+    fn try_from(value: WireTransferHistoryRequest) -> Result<Self, Self::Error> {
+        let mut request = Self::new();
+        if let Some(asset) = value.asset {
+            request = request.asset(asset);
+        }
+        if let Some(network) = value.network {
+            request = request.network(network_from_wire(&network));
+        }
+        if let Some(cursor) = value.cursor {
+            request = request.cursor(Cursor::new(cursor));
+        }
+        if let Some(limit) = value.limit {
+            request = request.limit(limit);
+        }
+        Ok(request)
+    }
+}
+
 impl TryFrom<CandleRequest> for WireCandleRequest {
     type Error = Error;
 
@@ -643,6 +909,45 @@ impl TryFrom<OrderRequest> for WireOrderRequest {
                 .transpose()?
                 .map(str::to_owned),
             reduce_only: value.reduce_only,
+        })
+    }
+}
+
+impl TryFrom<DepositAddressRequest> for WireDepositAddressRequest {
+    type Error = Error;
+
+    fn try_from(value: DepositAddressRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            asset: value.asset,
+            network: network_to_wire(value.network)?,
+            amount: decimal_option_to_wire(value.amount),
+        })
+    }
+}
+
+impl TryFrom<WithdrawRequest> for WireWithdrawRequest {
+    type Error = Error;
+
+    fn try_from(value: WithdrawRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            asset: value.asset,
+            network: network_to_wire(value.network)?,
+            amount: decimal_to_wire(value.amount),
+            destination: value.destination.try_into()?,
+            client_id: value.client_id,
+        })
+    }
+}
+
+impl TryFrom<TransferHistoryRequest> for WireTransferHistoryRequest {
+    type Error = Error;
+
+    fn try_from(value: TransferHistoryRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            asset: value.asset,
+            network: value.network.map(network_to_wire).transpose()?,
+            cursor: value.cursor.map(|cursor| cursor.as_str().to_owned()),
+            limit: value.limit,
         })
     }
 }
@@ -1240,6 +1545,421 @@ impl TryFrom<WireBalance> for Balance {
     }
 }
 
+impl TryFrom<WithdrawalFee> for WireWithdrawalFee {
+    type Error = Error;
+
+    fn try_from(value: WithdrawalFee) -> Result<Self, Self::Error> {
+        match value {
+            WithdrawalFee::Fixed(value) => Ok(Self::Fixed {
+                value: decimal_to_wire(value),
+            }),
+            WithdrawalFee::Rate {
+                rate,
+                minimum,
+                maximum,
+            } => Ok(Self::Rate {
+                rate: decimal_to_wire(rate),
+                minimum: decimal_option_to_wire(minimum),
+                maximum: decimal_option_to_wire(maximum),
+            }),
+            _ => Err(binding_contract("WithdrawalFee")),
+        }
+    }
+}
+
+impl TryFrom<WireWithdrawalFee> for WithdrawalFee {
+    type Error = Error;
+
+    fn try_from(value: WireWithdrawalFee) -> Result<Self, Self::Error> {
+        match value {
+            WireWithdrawalFee::Fixed { value } => Ok(Self::Fixed(decimal_from_wire(
+                &value,
+                "withdrawal_fee.value",
+            )?)),
+            WireWithdrawalFee::Rate {
+                rate,
+                minimum,
+                maximum,
+            } => Ok(Self::Rate {
+                rate: decimal_from_wire(&rate, "withdrawal_fee.rate")?,
+                minimum: decimal_option_from_wire(minimum, "withdrawal_fee.minimum")?,
+                maximum: decimal_option_from_wire(maximum, "withdrawal_fee.maximum")?,
+            }),
+        }
+    }
+}
+
+impl TryFrom<AssetNetwork> for WireAssetNetwork {
+    type Error = Error;
+
+    fn try_from(value: AssetNetwork) -> Result<Self, Self::Error> {
+        Ok(Self {
+            exchange: value.exchange.id().to_owned(),
+            asset: value.asset,
+            network: network_to_wire(value.network)?,
+            provider_id: value.provider_id,
+            deposit_enabled: value.deposit_enabled,
+            withdrawal_enabled: value.withdrawal_enabled,
+            withdrawal_fee: value.withdrawal_fee.map(TryInto::try_into).transpose()?,
+            minimum_withdrawal: decimal_option_to_wire(value.minimum_withdrawal),
+            maximum_withdrawal: decimal_option_to_wire(value.maximum_withdrawal),
+            memo_required: value.memo_required,
+        })
+    }
+}
+
+impl TryFrom<WireAssetNetwork> for AssetNetwork {
+    type Error = Error;
+
+    fn try_from(value: WireAssetNetwork) -> Result<Self, Self::Error> {
+        Ok(Self {
+            exchange: exchange_from_wire(&value.exchange, "exchange")?,
+            asset: value.asset,
+            network: network_from_wire(&value.network),
+            provider_id: value.provider_id,
+            deposit_enabled: value.deposit_enabled,
+            withdrawal_enabled: value.withdrawal_enabled,
+            withdrawal_fee: value.withdrawal_fee.map(TryInto::try_into).transpose()?,
+            minimum_withdrawal: decimal_option_from_wire(
+                value.minimum_withdrawal,
+                "minimum_withdrawal",
+            )?,
+            maximum_withdrawal: decimal_option_from_wire(
+                value.maximum_withdrawal,
+                "maximum_withdrawal",
+            )?,
+            memo_required: value.memo_required,
+        })
+    }
+}
+
+impl TryFrom<DepositAddress> for WireDepositAddress {
+    type Error = Error;
+
+    fn try_from(value: DepositAddress) -> Result<Self, Self::Error> {
+        Ok(Self {
+            exchange: value.exchange.id().to_owned(),
+            asset: value.asset,
+            network: network_to_wire(value.network)?,
+            address: value.address,
+            memo: value.memo,
+        })
+    }
+}
+
+impl TryFrom<WireDepositAddress> for DepositAddress {
+    type Error = Error;
+
+    fn try_from(value: WireDepositAddress) -> Result<Self, Self::Error> {
+        Ok(Self {
+            exchange: exchange_from_wire(&value.exchange, "exchange")?,
+            asset: value.asset,
+            network: network_from_wire(&value.network),
+            address: value.address,
+            memo: value.memo,
+        })
+    }
+}
+
+impl TryFrom<ExchangeDestination> for WireExchangeDestination {
+    type Error = Error;
+
+    fn try_from(value: ExchangeDestination) -> Result<Self, Self::Error> {
+        Ok(Self {
+            exchange: value.exchange.id().to_owned(),
+            asset: value.asset,
+            network: network_to_wire(value.network)?,
+            address: value.address,
+            memo: value.memo,
+        })
+    }
+}
+
+impl TryFrom<WireExchangeDestination> for ExchangeDestination {
+    type Error = Error;
+
+    fn try_from(value: WireExchangeDestination) -> Result<Self, Self::Error> {
+        Ok(Self {
+            exchange: exchange_from_wire(&value.exchange, "destination.exchange")?,
+            asset: value.asset,
+            network: network_from_wire(&value.network),
+            address: value.address,
+            memo: value.memo,
+        })
+    }
+}
+
+impl TryFrom<ChainDestination> for WireChainDestination {
+    type Error = Error;
+
+    fn try_from(value: ChainDestination) -> Result<Self, Self::Error> {
+        Ok(Self {
+            asset: value.asset,
+            network: network_to_wire(value.network)?,
+            address: value.address,
+            memo: value.memo,
+        })
+    }
+}
+
+impl From<WireChainDestination> for ChainDestination {
+    fn from(value: WireChainDestination) -> Self {
+        Self {
+            asset: value.asset,
+            network: network_from_wire(&value.network),
+            address: value.address,
+            memo: value.memo,
+        }
+    }
+}
+
+impl TryFrom<ExchangeTransferRequest> for WireExchangeTransferRequest {
+    type Error = Error;
+
+    fn try_from(value: ExchangeTransferRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            asset: value.asset,
+            source_network: value.source_network.map(network_to_wire).transpose()?,
+            destination_network: value.destination_network.map(network_to_wire).transpose()?,
+            amount: decimal_to_wire(value.amount),
+        })
+    }
+}
+
+impl TryFrom<WireExchangeTransferRequest> for ExchangeTransferRequest {
+    type Error = Error;
+
+    fn try_from(value: WireExchangeTransferRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            asset: value.asset,
+            source_network: value.source_network.map(|value| network_from_wire(&value)),
+            destination_network: value
+                .destination_network
+                .map(|value| network_from_wire(&value)),
+            amount: decimal_from_wire(&value.amount, "amount")?,
+        })
+    }
+}
+
+impl TryFrom<ChainTransferRequest> for WireChainTransferRequest {
+    type Error = Error;
+
+    fn try_from(value: ChainTransferRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            asset: value.asset,
+            source_network: value.source_network.map(network_to_wire).transpose()?,
+            destination: value.destination.try_into()?,
+            amount: decimal_to_wire(value.amount),
+        })
+    }
+}
+
+impl TryFrom<WireChainTransferRequest> for ChainTransferRequest {
+    type Error = Error;
+
+    fn try_from(value: WireChainTransferRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            asset: value.asset,
+            source_network: value.source_network.map(|value| network_from_wire(&value)),
+            destination: value.destination.into(),
+            amount: decimal_from_wire(&value.amount, "amount")?,
+        })
+    }
+}
+
+impl TryFrom<TransferDestination> for WireTransferDestination {
+    type Error = Error;
+
+    fn try_from(value: TransferDestination) -> Result<Self, Self::Error> {
+        match value {
+            TransferDestination::Exchange(value) => Ok(Self::Exchange {
+                value: value.try_into()?,
+            }),
+            TransferDestination::Chain(value) => Ok(Self::Chain {
+                value: value.try_into()?,
+            }),
+            _ => Err(binding_contract("TransferDestination")),
+        }
+    }
+}
+
+impl TryFrom<WireTransferDestination> for TransferDestination {
+    type Error = Error;
+
+    fn try_from(value: WireTransferDestination) -> Result<Self, Self::Error> {
+        match value {
+            WireTransferDestination::Exchange { value } => Ok(Self::Exchange(value.try_into()?)),
+            WireTransferDestination::Chain { value } => Ok(Self::Chain(value.into())),
+        }
+    }
+}
+
+impl TryFrom<TravelRuleRequirement> for WireTravelRuleRequirement {
+    type Error = Error;
+
+    fn try_from(value: TravelRuleRequirement) -> Result<Self, Self::Error> {
+        match value {
+            TravelRuleRequirement::NotRequired => Ok(Self::NotRequired),
+            TravelRuleRequirement::Required { consent_url } => Ok(Self::Required { consent_url }),
+            _ => Err(binding_contract("TravelRuleRequirement")),
+        }
+    }
+}
+
+impl From<WireTravelRuleRequirement> for TravelRuleRequirement {
+    fn from(value: WireTravelRuleRequirement) -> Self {
+        match value {
+            WireTravelRuleRequirement::NotRequired => Self::NotRequired,
+            WireTravelRuleRequirement::Required { consent_url } => Self::Required { consent_url },
+        }
+    }
+}
+
+impl TryFrom<WithdrawalQuote> for WireWithdrawalQuote {
+    type Error = Error;
+
+    fn try_from(value: WithdrawalQuote) -> Result<Self, Self::Error> {
+        Ok(Self {
+            fee: decimal_option_to_wire(value.fee),
+            expected_receive: decimal_option_to_wire(value.expected_receive),
+            minimum_amount: decimal_option_to_wire(value.minimum_amount),
+            maximum_amount: decimal_option_to_wire(value.maximum_amount),
+            address_allowed: value.address_allowed,
+            travel_rule: value.travel_rule.try_into()?,
+            expires_at: timestamp_option_to_wire(value.expires_at),
+        })
+    }
+}
+
+impl TryFrom<WireWithdrawalQuote> for WithdrawalQuote {
+    type Error = Error;
+
+    fn try_from(value: WireWithdrawalQuote) -> Result<Self, Self::Error> {
+        Ok(Self {
+            fee: decimal_option_from_wire(value.fee, "fee")?,
+            expected_receive: decimal_option_from_wire(value.expected_receive, "expected_receive")?,
+            minimum_amount: decimal_option_from_wire(value.minimum_amount, "minimum_amount")?,
+            maximum_amount: decimal_option_from_wire(value.maximum_amount, "maximum_amount")?,
+            address_allowed: value.address_allowed,
+            travel_rule: value.travel_rule.into(),
+            expires_at: timestamp_option_from_wire(value.expires_at, "expires_at")?,
+        })
+    }
+}
+
+impl TryFrom<TransferPlan> for WireTransferPlan {
+    type Error = Error;
+
+    fn try_from(value: TransferPlan) -> Result<Self, Self::Error> {
+        Ok(Self {
+            source: value.source.id().to_owned(),
+            destination: value.destination.map(|exchange| exchange.id().to_owned()),
+            request: value.request.try_into()?,
+            quote: value.quote.try_into()?,
+            created_at: timestamp_to_wire(value.created_at),
+            expires_at: timestamp_to_wire(value.expires_at),
+        })
+    }
+}
+
+impl TryFrom<WireTransferPlan> for TransferPlan {
+    type Error = Error;
+
+    fn try_from(value: WireTransferPlan) -> Result<Self, Self::Error> {
+        Ok(Self {
+            source: exchange_from_wire(&value.source, "source")?,
+            destination: value
+                .destination
+                .map(|exchange| exchange_from_wire(&exchange, "destination"))
+                .transpose()?,
+            request: value.request.try_into()?,
+            quote: value.quote.try_into()?,
+            created_at: timestamp_from_wire(&value.created_at, "created_at")?,
+            expires_at: timestamp_from_wire(&value.expires_at, "expires_at")?,
+        })
+    }
+}
+
+impl TryFrom<Withdrawal> for WireWithdrawal {
+    type Error = Error;
+
+    fn try_from(value: Withdrawal) -> Result<Self, Self::Error> {
+        Ok(Self {
+            id: value.id,
+            asset: value.asset,
+            network: value.network.map(network_to_wire).transpose()?,
+            provider_network: value.provider_network,
+            amount: decimal_to_wire(value.amount),
+            fee: decimal_option_to_wire(value.fee),
+            destination: value.destination.map(TryInto::try_into).transpose()?,
+            status: withdrawal_status_to_wire(value.status)?.to_owned(),
+            provider_status: value.provider_status,
+            tx_id: value.tx_id,
+            created_at: timestamp_option_to_wire(value.created_at),
+        })
+    }
+}
+
+impl TryFrom<WireWithdrawal> for Withdrawal {
+    type Error = Error;
+
+    fn try_from(value: WireWithdrawal) -> Result<Self, Self::Error> {
+        Ok(Self {
+            id: value.id,
+            asset: value.asset,
+            network: value.network.as_deref().map(network_from_wire),
+            provider_network: value.provider_network,
+            amount: decimal_from_wire(&value.amount, "amount")?,
+            fee: decimal_option_from_wire(value.fee, "fee")?,
+            destination: value.destination.map(TryInto::try_into).transpose()?,
+            status: withdrawal_status_from_wire(&value.status, "status")?,
+            provider_status: value.provider_status,
+            tx_id: value.tx_id,
+            created_at: timestamp_option_from_wire(value.created_at, "created_at")?,
+        })
+    }
+}
+
+impl TryFrom<Deposit> for WireDeposit {
+    type Error = Error;
+
+    fn try_from(value: Deposit) -> Result<Self, Self::Error> {
+        Ok(Self {
+            id: value.id,
+            asset: value.asset,
+            network: value.network.map(network_to_wire).transpose()?,
+            provider_network: value.provider_network,
+            amount: decimal_to_wire(value.amount),
+            address: value.address,
+            memo: value.memo,
+            status: deposit_status_to_wire(value.status)?.to_owned(),
+            provider_status: value.provider_status,
+            tx_id: value.tx_id,
+            created_at: timestamp_option_to_wire(value.created_at),
+        })
+    }
+}
+
+impl TryFrom<WireDeposit> for Deposit {
+    type Error = Error;
+
+    fn try_from(value: WireDeposit) -> Result<Self, Self::Error> {
+        Ok(Self {
+            id: value.id,
+            asset: value.asset,
+            network: value.network.as_deref().map(network_from_wire),
+            provider_network: value.provider_network,
+            amount: decimal_from_wire(&value.amount, "amount")?,
+            address: value.address,
+            memo: value.memo,
+            status: deposit_status_from_wire(&value.status, "status")?,
+            provider_status: value.provider_status,
+            tx_id: value.tx_id,
+            created_at: timestamp_option_from_wire(value.created_at, "created_at")?,
+        })
+    }
+}
+
 impl TryFrom<Order> for WireOrder {
     type Error = Error;
 
@@ -1472,6 +2192,78 @@ fn timestamp_option_from_wire(
 
 fn exchange_from_wire(value: &str, field: &str) -> maxt::Result<Exchange> {
     exchange_from_id(value).ok_or_else(|| invalid_enum(field, value))
+}
+
+fn network_from_wire(value: &str) -> Network {
+    match value {
+        "bitcoin" => Network::Bitcoin,
+        "ethereum" => Network::Ethereum,
+        "arbitrum" => Network::Arbitrum,
+        "bnb_smart_chain" => Network::BnbSmartChain,
+        "tron" => Network::Tron,
+        "solana" => Network::Solana,
+        "polygon" => Network::Polygon,
+        "base" => Network::Base,
+        "optimism" => Network::Optimism,
+        "avalanche_c" => Network::AvalancheC,
+        "xrp_ledger" => Network::XrpLedger,
+        "stellar" => Network::Stellar,
+        "cosmos" => Network::Cosmos,
+        "aptos" => Network::Aptos,
+        "sui" => Network::Sui,
+        "ton" => Network::Ton,
+        "near" => Network::Near,
+        "polkadot" => Network::Polkadot,
+        value => Network::Other(value.to_owned()),
+    }
+}
+
+fn network_to_wire(value: Network) -> maxt::Result<String> {
+    Ok(value.id().to_owned())
+}
+
+fn withdrawal_status_from_wire(value: &str, field: &str) -> maxt::Result<WithdrawalStatus> {
+    match value {
+        "pending" => Ok(WithdrawalStatus::Pending),
+        "processing" => Ok(WithdrawalStatus::Processing),
+        "completed" => Ok(WithdrawalStatus::Completed),
+        "cancelled" => Ok(WithdrawalStatus::Cancelled),
+        "failed" => Ok(WithdrawalStatus::Failed),
+        "unknown" => Ok(WithdrawalStatus::Unknown),
+        _ => Err(invalid_enum(field, value)),
+    }
+}
+
+fn withdrawal_status_to_wire(value: WithdrawalStatus) -> maxt::Result<&'static str> {
+    match value {
+        WithdrawalStatus::Pending => Ok("pending"),
+        WithdrawalStatus::Processing => Ok("processing"),
+        WithdrawalStatus::Completed => Ok("completed"),
+        WithdrawalStatus::Cancelled => Ok("cancelled"),
+        WithdrawalStatus::Failed => Ok("failed"),
+        WithdrawalStatus::Unknown => Ok("unknown"),
+        _ => Err(binding_contract("WithdrawalStatus")),
+    }
+}
+
+fn deposit_status_from_wire(value: &str, field: &str) -> maxt::Result<DepositStatus> {
+    match value {
+        "pending" => Ok(DepositStatus::Pending),
+        "completed" => Ok(DepositStatus::Completed),
+        "failed" => Ok(DepositStatus::Failed),
+        "unknown" => Ok(DepositStatus::Unknown),
+        _ => Err(invalid_enum(field, value)),
+    }
+}
+
+fn deposit_status_to_wire(value: DepositStatus) -> maxt::Result<&'static str> {
+    match value {
+        DepositStatus::Pending => Ok("pending"),
+        DepositStatus::Completed => Ok("completed"),
+        DepositStatus::Failed => Ok("failed"),
+        DepositStatus::Unknown => Ok("unknown"),
+        _ => Err(binding_contract("DepositStatus")),
+    }
 }
 
 pub(crate) fn market_kind_from_wire(value: &str, field: &str) -> maxt::Result<MarketKind> {
@@ -1710,6 +2502,10 @@ pub(crate) enum WireError {
         field: String,
         detail: String,
     },
+    Transfer {
+        transfer_kind: String,
+        detail: String,
+    },
     Unsupported {
         feature: String,
         exchange: String,
@@ -1741,6 +2537,15 @@ impl From<Error> for WireError {
     fn from(value: Error) -> Self {
         match value {
             Error::InvalidRequest { field, detail } => Self::InvalidRequest { field, detail },
+            Error::Transfer { kind, detail } => match transfer_error_kind_to_wire(kind) {
+                Ok(transfer_kind) => Self::Transfer {
+                    transfer_kind: transfer_kind.to_owned(),
+                    detail,
+                },
+                Err(_) => Self::Adapter {
+                    detail: format!("maxt error has unknown transfer classification: {kind:?}"),
+                },
+            },
             Error::Unsupported {
                 feature,
                 exchange,
@@ -1811,6 +2616,16 @@ impl TryFrom<WireError> for Error {
             WireError::InvalidRequest { field, detail } => {
                 Ok(Self::InvalidRequest { field, detail })
             }
+            WireError::Transfer {
+                transfer_kind,
+                detail,
+            } => transfer_error_kind_from_wire(&transfer_kind)
+                .map(|kind| Self::Transfer { kind, detail })
+                .ok_or_else(|| {
+                    Self::adapter(format!(
+                        "foreign transfer error has unknown classification: {transfer_kind:?}"
+                    ))
+                }),
             WireError::Unsupported {
                 feature,
                 exchange,
@@ -1918,6 +2733,38 @@ fn exchange_error_kind_from_wire(value: &str) -> Option<ExchangeErrorKind> {
     })
 }
 
+fn transfer_error_kind_to_wire(value: TransferErrorKind) -> maxt::Result<&'static str> {
+    match value {
+        TransferErrorKind::AssetMismatch => Ok("asset_mismatch"),
+        TransferErrorKind::NetworkMismatch => Ok("network_mismatch"),
+        TransferErrorKind::AmbiguousNetwork => Ok("ambiguous_network"),
+        TransferErrorKind::NetworkUnavailable => Ok("network_unavailable"),
+        TransferErrorKind::MemoRequired => Ok("memo_required"),
+        TransferErrorKind::DestinationUnavailable => Ok("destination_unavailable"),
+        TransferErrorKind::AddressNotAllowed => Ok("address_not_allowed"),
+        TransferErrorKind::TravelRuleRequired => Ok("travel_rule_required"),
+        TransferErrorKind::AmountOutOfRange => Ok("amount_out_of_range"),
+        TransferErrorKind::PlanExpired => Ok("plan_expired"),
+        _ => Err(binding_contract("TransferErrorKind")),
+    }
+}
+
+fn transfer_error_kind_from_wire(value: &str) -> Option<TransferErrorKind> {
+    Some(match value {
+        "asset_mismatch" => TransferErrorKind::AssetMismatch,
+        "network_mismatch" => TransferErrorKind::NetworkMismatch,
+        "ambiguous_network" => TransferErrorKind::AmbiguousNetwork,
+        "network_unavailable" => TransferErrorKind::NetworkUnavailable,
+        "memo_required" => TransferErrorKind::MemoRequired,
+        "destination_unavailable" => TransferErrorKind::DestinationUnavailable,
+        "address_not_allowed" => TransferErrorKind::AddressNotAllowed,
+        "travel_rule_required" => TransferErrorKind::TravelRuleRequired,
+        "amount_out_of_range" => TransferErrorKind::AmountOutOfRange,
+        "plan_expired" => TransferErrorKind::PlanExpired,
+        _ => return None,
+    })
+}
+
 pub(crate) fn decimal_from_wire(value: &str, field: &str) -> maxt::Result<Decimal> {
     maxt::parse_decimal_exact(value).map_err(|error| Error::InvalidRequest {
         field: field.to_owned(),
@@ -2020,6 +2867,10 @@ mod tests {
                 field: "limit".to_owned(),
                 detail: "must be positive".to_owned(),
             },
+            Error::Transfer {
+                kind: TransferErrorKind::NetworkMismatch,
+                detail: "chains differ".to_owned(),
+            },
             Error::Unsupported {
                 feature: maxt::Feature::Markets,
                 exchange: "upbit",
@@ -2069,9 +2920,27 @@ mod tests {
                 Some(kind)
             );
         }
+        for kind in [
+            TransferErrorKind::AssetMismatch,
+            TransferErrorKind::NetworkMismatch,
+            TransferErrorKind::AmbiguousNetwork,
+            TransferErrorKind::NetworkUnavailable,
+            TransferErrorKind::MemoRequired,
+            TransferErrorKind::DestinationUnavailable,
+            TransferErrorKind::AddressNotAllowed,
+            TransferErrorKind::TravelRuleRequired,
+            TransferErrorKind::AmountOutOfRange,
+            TransferErrorKind::PlanExpired,
+        ] {
+            assert_eq!(
+                transfer_error_kind_from_wire(transfer_error_kind_to_wire(kind).unwrap()),
+                Some(kind)
+            );
+        }
         assert_eq!(exchange_from_id("future_exchange"), None);
         assert_eq!(feature_from_id("future_feature"), None);
         assert_eq!(exchange_error_kind_from_wire("future_kind"), None);
+        assert_eq!(transfer_error_kind_from_wire("future_kind"), None);
     }
 
     #[test]
@@ -2157,6 +3026,14 @@ mod tests {
                 "missing `{expected}` in `{detail}`"
             );
         }
+
+        assert!(matches!(
+            Error::try_from(WireError::Transfer {
+                transfer_kind: "future_kind".to_owned(),
+                detail: "future transfer failure".to_owned(),
+            }),
+            Err(Error::Adapter { detail }) if detail.contains("future_kind")
+        ));
     }
 
     #[test]
@@ -2214,8 +3091,11 @@ mod tests {
     #[test]
     fn every_common_response_dto_round_trips_without_loss() {
         use maxt::{
-            Balance, Candle, Cursor, FundingPayment, FundingRate, Level, MarginMode, MarginSummary,
-            MarketInfo, MarketStatus, Order, OrderBook, OrderStatus, Page, Position, Ticker, Trade,
+            AssetNetwork, Balance, Candle, ChainDestination, Cursor, Deposit, DepositAddress,
+            DepositStatus, FundingPayment, FundingRate, Level, MarginMode, MarginSummary,
+            MarketInfo, MarketStatus, Network, Order, OrderBook, OrderStatus, Page, Position,
+            Ticker, Trade, TransferDestination, TravelRuleRequirement, Withdrawal, WithdrawalFee,
+            WithdrawalQuote, WithdrawalStatus,
         };
 
         let market = Market::perpetual(Exchange::Binance, "btc", "usdt");
@@ -2276,6 +3156,72 @@ mod tests {
             available: decimal("1.00"),
             locked: decimal("2.00"),
         });
+        assert_wire_round_trip::<_, WireAssetNetwork>(AssetNetwork {
+            exchange: Exchange::Binance,
+            asset: "BTC".to_owned(),
+            network: Network::Other("future_chain".to_owned()),
+            provider_id: "FUTURE".to_owned(),
+            deposit_enabled: true,
+            withdrawal_enabled: false,
+            withdrawal_fee: Some(WithdrawalFee::Rate {
+                rate: decimal("0.001"),
+                minimum: Some(decimal("0.0001")),
+                maximum: None,
+            }),
+            minimum_withdrawal: Some(decimal("0.01")),
+            maximum_withdrawal: None,
+            memo_required: true,
+        });
+        assert_wire_round_trip::<_, WireDepositAddress>(DepositAddress {
+            exchange: Exchange::Binance,
+            asset: "BTC".to_owned(),
+            network: Network::Bitcoin,
+            address: Some("bc1qdestination".to_owned()),
+            memo: None,
+        });
+        let destination = TransferDestination::Chain(ChainDestination {
+            asset: "BTC".to_owned(),
+            network: Network::Bitcoin,
+            address: "bc1qdestination".to_owned(),
+            memo: None,
+        });
+        assert_wire_round_trip::<_, WireWithdrawalQuote>(WithdrawalQuote {
+            fee: Some(decimal("0.0001")),
+            expected_receive: Some(decimal("0.9999")),
+            minimum_amount: None,
+            maximum_amount: None,
+            address_allowed: Some(true),
+            travel_rule: TravelRuleRequirement::Required {
+                consent_url: Some("https://example.test/consent".to_owned()),
+            },
+            expires_at: Some(timestamp),
+        });
+        assert_wire_round_trip::<_, WireWithdrawal>(Withdrawal {
+            id: "withdrawal-1".to_owned(),
+            asset: "BTC".to_owned(),
+            network: Some(Network::Bitcoin),
+            provider_network: Some("BTC".to_owned()),
+            amount: decimal("1.00"),
+            fee: Some(decimal("0.0001")),
+            destination: Some(destination),
+            status: WithdrawalStatus::Processing,
+            provider_status: "processing".to_owned(),
+            tx_id: None,
+            created_at: Some(timestamp),
+        });
+        assert_wire_round_trip::<_, WireDeposit>(Deposit {
+            id: "deposit-1".to_owned(),
+            asset: "BTC".to_owned(),
+            network: Some(Network::Bitcoin),
+            provider_network: Some("BTC".to_owned()),
+            amount: decimal("0.9999"),
+            address: Some("bc1qdestination".to_owned()),
+            memo: None,
+            status: DepositStatus::Completed,
+            provider_status: "credited".to_owned(),
+            tx_id: Some("tx-1".to_owned()),
+            created_at: Some(timestamp),
+        });
         let order = Order {
             id: "order-1".to_owned(),
             market: market.clone(),
@@ -2328,7 +3274,9 @@ mod tests {
     #[test]
     fn every_common_request_dto_round_trips_without_loss() {
         use maxt::{
-            Feed, HistoryRequest, MarginMode, MarginRequest, Overflow, StreamConfig, Subscription,
+            ChainDestination, DepositAddressRequest, Feed, HistoryRequest, MarginMode,
+            MarginRequest, Network, Overflow, StreamConfig, Subscription, TransferDestination,
+            TransferHistoryRequest, WithdrawRequest,
         };
 
         let market = Market::perpetual(Exchange::Binance, "BTC", "USDT");
@@ -2352,6 +3300,30 @@ mod tests {
             )
             .time_in_force(TimeInForce::PostOnly)
             .reduce_only(),
+        );
+        assert_wire_round_trip::<_, WireDepositAddressRequest>(
+            DepositAddressRequest::new("BTC", Network::Bitcoin).amount(decimal("1.00")),
+        );
+        assert_wire_round_trip::<_, WireWithdrawRequest>(
+            WithdrawRequest::new(
+                "BTC",
+                Network::Bitcoin,
+                decimal("1.00"),
+                TransferDestination::Chain(ChainDestination {
+                    asset: "BTC".to_owned(),
+                    network: Network::Bitcoin,
+                    address: "bc1qdestination".to_owned(),
+                    memo: None,
+                }),
+            )
+            .client_id("client-1"),
+        );
+        assert_wire_round_trip::<_, WireTransferHistoryRequest>(
+            TransferHistoryRequest::new()
+                .asset("BTC")
+                .network(Network::Bitcoin)
+                .cursor(Cursor::new("page-2"))
+                .limit(100),
         );
         assert_wire_round_trip::<_, WireHistoryRequest>(HistoryRequest {
             market: market.clone(),

@@ -3,6 +3,18 @@
 use std::fmt;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+/// The platform clock.
+///
+/// `std::time::SystemTime::now` and `Instant::now` are unimplemented on
+/// `wasm32-unknown-unknown` and panic on the first call, which kills a browser
+/// build before it reaches the exchange. `web-time` reads `Date.now` and
+/// `performance.now` there, and re-exports `std::time` everywhere else, so the
+/// same code compiles for both. Read every clock through this alias.
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) use std::time as clock;
+#[cfg(target_arch = "wasm32")]
+pub(crate) use web_time as clock;
+
 /// A point in time, as nanoseconds since the Unix epoch, UTC.
 ///
 /// Exchanges publish timestamps in seconds, milliseconds, microseconds, and
@@ -64,8 +76,8 @@ impl Timestamp {
     /// the representable range saturate.
     pub fn now() -> Self {
         Self::since_epoch(
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
+            clock::SystemTime::now()
+                .duration_since(clock::UNIX_EPOCH)
                 .unwrap_or(Duration::ZERO),
         )
     }
@@ -83,6 +95,10 @@ impl Timestamp {
     /// Converts to a [`SystemTime`].
     ///
     /// Returns `None` for timestamps before the Unix epoch.
+    ///
+    /// This stays on [`std::time::SystemTime`] so the public type is the same
+    /// on every target: only `now` is unimplemented on wasm, and epoch
+    /// arithmetic is not.
     pub fn into_system_time(self) -> Option<SystemTime> {
         u64::try_from(self.0)
             .ok()

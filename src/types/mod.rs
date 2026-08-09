@@ -17,3 +17,6 @@ pub use data::{Candle, Interval, Level, OrderBook, Side, Ticker, Trade};
 pub use market::{Exchange, Market, MarketInfo, MarketKind, MarketStatus};
 pub use stream::{AccountEvent, Feed, MarketEvent, Overflow, StreamConfig, Subscription};
 pub use time::Timestamp;
+
+#[cfg(test)]
+pub(crate) use time::clock;

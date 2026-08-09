@@ -821,6 +821,7 @@ mod tests {
 
     use super::*;
     use crate::feature::Feature;
+    use crate::types::clock;
     use crate::types::{Exchange, OrderStatus, Side};
 
     struct RefreshStopped(Arc<AtomicBool>);
@@ -1761,12 +1762,12 @@ mod tests {
         let connect = spot_account_connect(&adapter).expect("credentials are set");
         let first = (connect.subscribe)().expect("a signed subscribe frame");
 
-        let deadline = std::time::Instant::now() + Duration::from_secs(5);
+        let deadline = clock::Instant::now() + Duration::from_secs(5);
         let differed = loop {
             if (connect.subscribe)().expect("another signed frame") != first {
                 break true;
             }
-            if std::time::Instant::now() >= deadline {
+            if clock::Instant::now() >= deadline {
                 break false;
             }
         };

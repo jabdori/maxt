@@ -470,7 +470,7 @@ export type AdapterReplyWire =
   | { readonly kind: "unit"; };
 
 export const EXCHANGES = ["upbit", "bithumb", "binance", "hyperliquid"] as const;
-export const NATIVE_API_VERSION = 1 as const;
+export const NATIVE_API_VERSION = 2 as const;
 export const FEATURES = ["markets", "trades", "order_book", "ticker", "candles", "trade_stream", "order_book_stream", "ticker_stream", "candle_stream", "balances", "asset_networks", "deposit_addresses", "deposit_history", "withdrawal_quotes", "withdrawals", "withdrawal_history", "open_orders", "account_stream", "trading", "positions", "margin", "funding_rates", "funding_payments", "margin_config", "reduce_only_orders"] as const;
 export const ERROR_VARIANTS = ["InvalidRequest", "Transfer", "Unsupported", "Adapter", "Auth", "Exchange", "Transport", "Decode"] as const;
 export const ADAPTER_OPERATIONS = ["markets", "trades", "orderBook", "ticker", "candles", "subscribe", "balances", "assetNetworks", "depositAddress", "prepareWithdrawal", "withdraw", "deposits", "withdrawals", "openOrders", "subscribeAccount", "placeOrder", "cancelOrder", "positions", "marginSummary", "fundingRates", "fundingPayments", "setMargin"] as const;

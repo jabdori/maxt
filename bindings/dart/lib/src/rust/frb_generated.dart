@@ -110,7 +110,6 @@ abstract class MaxtRustLibApi extends BaseApi {
 
   Future<void> crateApiNativeClientBinanceUsdMCloseListenKey({
     required NativeClient that,
-    required WireBinanceListenKey key,
   });
 
   Future<WireBinanceListenKey> crateApiNativeClientBinanceUsdMCreateListenKey({
@@ -124,7 +123,6 @@ abstract class MaxtRustLibApi extends BaseApi {
 
   Future<void> crateApiNativeClientBinanceUsdMKeepaliveListenKey({
     required NativeClient that,
-    required WireBinanceListenKey key,
   });
 
   WireBinanceVenue? crateApiNativeClientBinanceVenue({
@@ -621,7 +619,6 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   @override
   Future<void> crateApiNativeClientBinanceUsdMCloseListenKey({
     required NativeClient that,
-    required WireBinanceListenKey key,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -629,10 +626,6 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
             that,
-            serializer,
-          );
-          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWireBinanceListenKey(
-            key,
             serializer,
           );
           pdeCallFfi(
@@ -647,7 +640,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           decodeErrorData: sse_decode_native_error,
         ),
         constMeta: kCrateApiNativeClientBinanceUsdMCloseListenKeyConstMeta,
-        argValues: [that, key],
+        argValues: [that],
         apiImpl: this,
       ),
     );
@@ -656,7 +649,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   TaskConstMeta get kCrateApiNativeClientBinanceUsdMCloseListenKeyConstMeta =>
       const TaskConstMeta(
         debugName: "NativeClient_binance_usd_m_close_listen_key",
-        argNames: ["that", "key"],
+        argNames: ["that"],
       );
 
   @override
@@ -730,7 +723,6 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   @override
   Future<void> crateApiNativeClientBinanceUsdMKeepaliveListenKey({
     required NativeClient that,
-    required WireBinanceListenKey key,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -738,10 +730,6 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
             that,
-            serializer,
-          );
-          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWireBinanceListenKey(
-            key,
             serializer,
           );
           pdeCallFfi(
@@ -756,7 +744,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           decodeErrorData: sse_decode_native_error,
         ),
         constMeta: kCrateApiNativeClientBinanceUsdMKeepaliveListenKeyConstMeta,
-        argValues: [that, key],
+        argValues: [that],
         apiImpl: this,
       ),
     );
@@ -766,7 +754,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   get kCrateApiNativeClientBinanceUsdMKeepaliveListenKeyConstMeta =>
       const TaskConstMeta(
         debugName: "NativeClient_binance_usd_m_keepalive_listen_key",
-        argNames: ["that", "key"],
+        argNames: ["that"],
       );
 
   @override
@@ -9999,21 +9987,16 @@ class NativeClientImpl extends RustOpaque implements NativeClient {
     market: market,
   );
 
-  Future<void> binanceUsdMCloseListenKey({required WireBinanceListenKey key}) =>
-      MaxtRustLib.instance.api.crateApiNativeClientBinanceUsdMCloseListenKey(
-        that: this,
-        key: key,
-      );
+  Future<void> binanceUsdMCloseListenKey() => MaxtRustLib.instance.api
+      .crateApiNativeClientBinanceUsdMCloseListenKey(that: this);
 
   Future<WireBinanceListenKey> binanceUsdMCreateListenKey() => MaxtRustLib
       .instance
       .api
       .crateApiNativeClientBinanceUsdMCreateListenKey(that: this);
 
-  Future<void> binanceUsdMKeepaliveListenKey({
-    required WireBinanceListenKey key,
-  }) => MaxtRustLib.instance.api
-      .crateApiNativeClientBinanceUsdMKeepaliveListenKey(that: this, key: key);
+  Future<void> binanceUsdMKeepaliveListenKey() => MaxtRustLib.instance.api
+      .crateApiNativeClientBinanceUsdMKeepaliveListenKey(that: this);
 
   WireBinanceVenue? binanceVenue() =>
       MaxtRustLib.instance.api.crateApiNativeClientBinanceVenue(that: this);

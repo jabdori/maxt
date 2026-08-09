@@ -85,11 +85,9 @@ pub(super) struct RawDepth {
     pub(super) asks: Vec<RawLevel>,
 }
 
-/// One executed trade, from the recent-trades list or from a trade stream.
+/// One executed trade, from the recent-trades list or Spot's trade stream.
 ///
-/// The identifier arrives as `id` over REST and as `t` on the `@trade` stream
-/// of either venue. Both name the same fill, so a trade read over one transport
-/// deduplicates against the other on the id alone.
+/// The identifier arrives as `id` over REST and as `t` on `@trade`.
 #[derive(Debug, Clone, Deserialize)]
 pub(super) struct RawTrade {
     #[serde(rename = "id", alias = "t")]
@@ -449,20 +447,6 @@ mod tests {
       }
     ]"#;
 
-    // USD-M adds `X` and `st`; neither reaches the common `Trade`.
-    const USD_M_STREAM_TRADE: &str = r#"{
-      "e": "trade",
-      "E": 1785407770046,
-      "T": 1785407770046,
-      "s": "DOGEUSDT",
-      "t": 3417626319,
-      "p": "0.070180",
-      "q": "700",
-      "X": "MARKET",
-      "m": true,
-      "st": 1
-    }"#;
-
     // https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints
     const SPOT_TICKER: &str = r#"{
       "symbol": "BNBBTC",
@@ -744,21 +728,6 @@ mod tests {
         assert_eq!(trade.id.as_deref(), Some("28457"));
         assert_eq!(trade.price.to_string(), "4.00000100");
         assert_eq!(trade.timestamp, Timestamp::from_millis(1_499_865_549_590));
-    }
-
-    #[test]
-    fn the_futures_trade_frame_reads_through_the_same_shape_as_rest() {
-        let raw: RawTrade = json(USD_M_STREAM_TRADE, "trade").expect("captured trade frame");
-        let trade =
-            trade(&Market::perpetual(Exchange::Binance, "DOGE", "USDT"), &raw).expect("a trade");
-
-        // `t` is the id `/fapi/v1/trades` answers with for the same fill, and
-        // `T` the fill time rather than the later `E` the frame was published
-        // at.
-        assert_eq!(trade.id.as_deref(), Some("3417626319"));
-        assert_eq!(trade.timestamp, Timestamp::from_millis(1_785_407_770_046));
-        assert_eq!(trade.taker_side, Side::Sell);
-        assert_eq!(trade.quantity.to_string(), "700");
     }
 
     #[test]

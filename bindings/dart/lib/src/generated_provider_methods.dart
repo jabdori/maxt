@@ -58,12 +58,11 @@ extension BinanceAdapterGeneratedMethods on BinanceAdapter {
     _handle.binanceUsdMCreateListenKey,
   ).then(BinanceListenKey._);
 
-  Future<void> usdMKeepaliveListenKey(BinanceListenKey key) => _nativeFuture(
-    () => _handle.binanceUsdMKeepaliveListenKey(key: key._handle),
-  );
+  Future<void> usdMKeepaliveListenKey() =>
+      _nativeFuture(_handle.binanceUsdMKeepaliveListenKey);
 
-  Future<void> usdMCloseListenKey(BinanceListenKey key) =>
-      _nativeFuture(() => _handle.binanceUsdMCloseListenKey(key: key._handle));
+  Future<void> usdMCloseListenKey() =>
+      _nativeFuture(_handle.binanceUsdMCloseListenKey);
 }
 
 extension HyperliquidAdapterGeneratedMethods on HyperliquidAdapter {

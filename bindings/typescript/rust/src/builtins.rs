@@ -463,44 +463,17 @@ impl NativeBinance {
         outcome(result)
     }
 
-    async fn usd_m_keepalive_listen_key(&self, id: maxt::Result<String>) -> Value {
-        let result = match parse_text::<String>(id, "id") {
-            Ok(id) => match self.listen_key(&id).await {
-                Ok(key) => self.adapter.usd_m_keepalive_listen_key(&key).await,
-                Err(error) => Err(error),
-            },
-            Err(error) => Err(error),
-        };
+    async fn usd_m_keepalive_listen_key(&self) -> Value {
+        let result = self.adapter.usd_m_keepalive_listen_key().await;
         outcome(result.map(|()| Value::Null))
     }
 
-    async fn usd_m_close_listen_key(&self, id: maxt::Result<String>) -> Value {
-        let result = match parse_text::<String>(id, "id") {
-            Ok(id) => match self.listen_key(&id).await {
-                Ok(key) => match self.adapter.usd_m_close_listen_key(&key).await {
-                    Ok(()) => {
-                        self.listen_keys.lock().await.remove(&id);
-                        Ok(())
-                    }
-                    Err(error) => Err(error),
-                },
-                Err(error) => Err(error),
-            },
-            Err(error) => Err(error),
-        };
+    async fn usd_m_close_listen_key(&self) -> Value {
+        let result = self.adapter.usd_m_close_listen_key().await;
+        if result.is_ok() {
+            self.listen_keys.lock().await.clear();
+        }
         outcome(result.map(|()| Value::Null))
-    }
-
-    async fn listen_key(&self, id: &str) -> maxt::Result<BinanceListenKey> {
-        self.listen_keys
-            .lock()
-            .await
-            .get(id)
-            .cloned()
-            .ok_or_else(|| Error::InvalidRequest {
-                field: "id".to_owned(),
-                detail: format!("unknown Binance listen-key handle `{id}`"),
-            })
     }
 }
 
@@ -549,29 +522,14 @@ impl NativeBinance {
         self.usd_m_create_listen_key().await
     }
 
-    #[napi(js_name = "usdMKeepaliveListenKey", ts_args_type = "id: string")]
-    pub fn usd_m_keepalive_listen_key_native<'env>(
-        &self,
-        env: &'env Env,
-        id: NativeJsonText<'env>,
-    ) -> napi::Result<PromiseRaw<'env, Value>> {
-        let this = self.clone();
-        let id = native_json_text(id, "id");
-        spawn_native(
-            env,
-            async move { this.usd_m_keepalive_listen_key(id).await },
-        )
+    #[napi(js_name = "usdMKeepaliveListenKey")]
+    pub async fn usd_m_keepalive_listen_key_native(&self) -> Value {
+        self.usd_m_keepalive_listen_key().await
     }
 
-    #[napi(js_name = "usdMCloseListenKey", ts_args_type = "id: string")]
-    pub fn usd_m_close_listen_key_native<'env>(
-        &self,
-        env: &'env Env,
-        id: NativeJsonText<'env>,
-    ) -> napi::Result<PromiseRaw<'env, Value>> {
-        let this = self.clone();
-        let id = native_json_text(id, "id");
-        spawn_native(env, async move { this.usd_m_close_listen_key(id).await })
+    #[napi(js_name = "usdMCloseListenKey")]
+    pub async fn usd_m_close_listen_key_native(&self) -> Value {
+        self.usd_m_close_listen_key().await
     }
 }
 
@@ -867,13 +825,13 @@ impl NativeBinance {
     }
 
     #[wasm_bindgen(js_name = "usdMKeepaliveListenKey")]
-    pub async fn usd_m_keepalive_listen_key_wasm(&self, id: String) -> JsValue {
-        crate::web::value(self.usd_m_keepalive_listen_key(Ok(id)).await)
+    pub async fn usd_m_keepalive_listen_key_wasm(&self) -> JsValue {
+        crate::web::value(self.usd_m_keepalive_listen_key().await)
     }
 
     #[wasm_bindgen(js_name = "usdMCloseListenKey")]
-    pub async fn usd_m_close_listen_key_wasm(&self, id: String) -> JsValue {
-        crate::web::value(self.usd_m_close_listen_key(Ok(id)).await)
+    pub async fn usd_m_close_listen_key_wasm(&self) -> JsValue {
+        crate::web::value(self.usd_m_close_listen_key().await)
     }
 }
 
@@ -1006,16 +964,6 @@ mod tests {
         assert_eq!(result["ok"], false);
         assert_eq!(result["error"]["kind"], "invalid_request");
         assert_eq!(result["error"]["field"], "markets");
-
-        let binance = NativeBinance::create(Ok(
-            r#"{"venue":"usd_m","api_key":null,"secret_key":null}"#.to_owned(),
-        ))
-        .unwrap();
-        let result = binance
-            .usd_m_keepalive_listen_key(Ok(r#""missing""#.to_owned()))
-            .await;
-        assert_eq!(result["ok"], false);
-        assert_eq!(result["error"]["field"], "id");
 
         assert_eq!(ok_value(outcome(Ok(Value::Null))), Value::Null);
     }

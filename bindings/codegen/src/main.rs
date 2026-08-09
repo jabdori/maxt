@@ -343,23 +343,29 @@ fn render_markdown(schema: &Schema) -> String {
             product.stage().label(),
         ));
     }
-    output.push_str("\n## Recorded operations\n\n| Exchange | Product | Operation | Interface | Mapping | Validation |\n| --- | --- | --- | --- | --- | --- |\n");
+    output.push_str("\n## Recorded operations\n\n| Exchange | Product | Operation | Interface | Mapping | Implementation | Validation |\n| --- | --- | --- | --- | --- | --- | --- |\n");
     for operation in OPERATIONS {
         let mapping = match operation.mapping {
             OperationMapping::Common(name) => format!("common `{name}`"),
             OperationMapping::CommonMany(names) => format!("common `{}`", names.join("`, `")),
             OperationMapping::Provider(name) => format!("provider `{name}`"),
+            OperationMapping::CommonAndProvider { common, provider } => format!(
+                "common `{}`; provider `{}`",
+                common.join("`, `"),
+                provider.join("`, `")
+            ),
             OperationMapping::PlatformLimited { service, platform } => {
                 format!("provider `{service}`; unavailable on {platform}")
             }
         };
         output.push_str(&format!(
-            "| {} | {} | `{}` | `{}` | {} | `{:?}` |\n",
+            "| {} | {} | `{}` | `{}` | {} | `{:?}` | `{:?}` |\n",
             operation.exchange.id(),
             operation.product,
             operation.id,
             operation.interface.id(),
             mapping,
+            operation.implementation,
             operation.validation,
         ));
     }

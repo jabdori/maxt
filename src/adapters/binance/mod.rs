@@ -34,9 +34,9 @@ pub(crate) const SPOT_WEBSOCKET_URL: &str = "wss://stream.binance.com:9443/strea
 /// The Spot WebSocket API used for signed account subscriptions.
 pub(crate) const SPOT_WEBSOCKET_API_URL: &str = "wss://ws-api.binance.com:443/ws-api/v3";
 pub(crate) const USD_M_REST_BASE_URL: &str = "https://fapi.binance.com";
-/// The USD-M entry point for trades and order books.
+/// The USD-M entry point for order books.
 pub(crate) const USD_M_PUBLIC_WEBSOCKET_URL: &str = "wss://fstream.binance.com/public/stream";
-/// The USD-M entry point for tickers and candles.
+/// The USD-M entry point for regular market feeds.
 pub(crate) const USD_M_MARKET_WEBSOCKET_URL: &str = "wss://fstream.binance.com/market/stream";
 
 /// The header every authenticated Binance request carries its API key in.
@@ -97,11 +97,19 @@ impl BinanceMarket {
             (_, Interval::Min1) => "1m",
             (_, Interval::Min3) => "3m",
             (_, Interval::Min5) => "5m",
+            (_, Interval::Min10) => {
+                return Err(Error::unsupported(
+                    Feature::Candles,
+                    EXCHANGE,
+                    "Binance publishes no ten-minute candles",
+                ));
+            }
             (_, Interval::Min15) => "15m",
             (_, Interval::Min30) => "30m",
             (_, Interval::Hour1) => "1h",
             (_, Interval::Hour2) => "2h",
             (_, Interval::Hour4) => "4h",
+            (_, Interval::Hour6) => "6h",
             (_, Interval::Hour8) => "8h",
             (_, Interval::Hour12) => "12h",
             (_, Interval::Day1) => "1d",
@@ -297,17 +305,17 @@ impl BinanceAdapter {
 
     /// Extends the USD-M listen key owned by the configured API key.
     ///
-    /// Binance's keepalive endpoint does not accept the listen key as a
-    /// parameter; `key` identifies the caller's stream but is not sent.
-    pub async fn usd_m_keepalive_listen_key(&self, key: &BinanceListenKey) -> Result<()> {
+    /// Binance's endpoint extends the active key owned by the configured API
+    /// key and accepts no listen-key parameter.
+    pub async fn usd_m_keepalive_listen_key(&self) -> Result<()> {
         self.check_usd_m("listen keys")?;
-        private::keepalive_listen_key(self, key).await
+        private::keepalive_listen_key(self).await
     }
 
-    /// Closes a USD-M listen key.
-    pub async fn usd_m_close_listen_key(&self, key: &BinanceListenKey) -> Result<()> {
+    /// Closes the active USD-M listen key owned by the configured API key.
+    pub async fn usd_m_close_listen_key(&self) -> Result<()> {
         self.check_usd_m("listen keys")?;
-        private::close_listen_key(self, key).await
+        private::close_listen_key(self).await
     }
 
     fn check_usd_m(&self, what: &str) -> Result<()> {

@@ -32,11 +32,10 @@ listing statuses map to `MarketStatus::Unknown`.
 
 | Venue | Exposed `Interval` variants |
 | --- | --- |
-| Spot | `Sec1`, `Min1`, `Min3`, `Min5`, `Min15`, `Min30`, `Hour1`, `Hour2`, `Hour4`, `Hour8`, `Hour12`, `Day1`, `Day3`, `Week1`, `Month1` |
+| Spot | `Sec1`, `Min1`, `Min3`, `Min5`, `Min15`, `Min30`, `Hour1`, `Hour2`, `Hour4`, `Hour6`, `Hour8`, `Hour12`, `Day1`, `Day3`, `Week1`, `Month1` |
 | USD-M | Spot list without `Sec1` |
 
-REST and `Feed::Candles` expose the same intervals. Binance native `6h` is not
-mapped to `Interval`.
+REST and `Feed::Candles` expose the same intervals.
 
 | Constraint | Spot | USD-M |
 | --- | ---: | ---: |
@@ -48,7 +47,8 @@ mapped to `Interval`.
 
 | Feed | Stream | Contract |
 | --- | --- | --- |
-| `Feed::Trades` | `{symbol}@trade` | One event per execution; drop `quantity == 0` frames |
+| `Feed::Trades` (Spot) | `{symbol}@trade` | One event per execution |
+| `Feed::Trades` (USD-M) | Unsupported | Binance exposes only aggregated trades, not every execution required by this feed |
 | `Feed::OrderBook` | `{symbol}@depth20@100ms` | Full snapshot; 20 levels per side; fixed depth |
 | `Feed::Ticker` | `{symbol}@ticker` | Rolling 24-hour summary |
 | `Feed::Candles(interval)` | `{symbol}@kline_<interval>` | Preserve Binance `closed` |
@@ -56,8 +56,8 @@ mapped to `Interval`.
 Event markets are resolved from the native symbols in `Subscription`; symbols
 are not split using a quote-suffix list.
 
-USD-M routes `Trades` and `OrderBook` through `/public/stream`, and `Ticker`
-and `Candles` through `/market/stream`. When both are required, the returned
+USD-M routes `OrderBook` through `/public/stream`, and `Ticker` and `Candles`
+through `/market/stream`. When both are required, the returned
 `MarketStream` merges two sockets. Reconnect notices are per socket. If either
 socket terminates, the logical stream terminates and drops the other socket.
 
@@ -85,8 +85,8 @@ Access the following provider-specific methods through `Client::adapter()`:
 | `spot_symbol_filters(&market)` | Spot `PRICE_FILTER`, `LOT_SIZE`, and `NOTIONAL`; unsupported on USD-M. |
 | `spot_order(&market, order_id)` | One Spot order by numeric ID, including completed orders. |
 | `usd_m_create_listen_key()` | Create or extend the USD-M account listen key. |
-| `usd_m_keepalive_listen_key(&key)` | Extend a USD-M listen key. |
-| `usd_m_close_listen_key(&key)` | Close a USD-M listen key. |
+| `usd_m_keepalive_listen_key()` | Extend the active USD-M listen key owned by the configured API key. |
+| `usd_m_close_listen_key()` | Close the active USD-M listen key owned by the configured API key. |
 
 `subscribe_account` manages USD-M listen keys. Spot uses the signed
 `userDataStream.subscribe.signature` request and no listen key.

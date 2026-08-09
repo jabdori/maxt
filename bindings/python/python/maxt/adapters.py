@@ -331,11 +331,11 @@ class BinanceAdapter(_NativeAdapter):
         handle = await self._call(self._handle.usd_m_create_listen_key)
         return BinanceListenKey._from_native(handle)
 
-    async def usd_m_keepalive_listen_key(self, key: BinanceListenKey) -> None:
-        await self._call(self._handle.usd_m_keepalive_listen_key, key._handle)
+    async def usd_m_keepalive_listen_key(self) -> None:
+        await self._call(self._handle.usd_m_keepalive_listen_key)
 
-    async def usd_m_close_listen_key(self, key: BinanceListenKey) -> None:
-        await self._call(self._handle.usd_m_close_listen_key, key._handle)
+    async def usd_m_close_listen_key(self) -> None:
+        await self._call(self._handle.usd_m_close_listen_key)
 
 
 class HyperliquidAdapter(_NativeAdapter):

@@ -131,11 +131,13 @@ export class Interval extends StringValue {
   static readonly Min1 = new Interval("min1", 60);
   static readonly Min3 = new Interval("min3", 180);
   static readonly Min5 = new Interval("min5", 300);
+  static readonly Min10 = new Interval("min10", 600);
   static readonly Min15 = new Interval("min15", 900);
   static readonly Min30 = new Interval("min30", 1800);
   static readonly Hour1 = new Interval("hour1", 3600);
   static readonly Hour2 = new Interval("hour2", 7200);
   static readonly Hour4 = new Interval("hour4", 14400);
+  static readonly Hour6 = new Interval("hour6", 21600);
   static readonly Hour8 = new Interval("hour8", 28800);
   static readonly Hour12 = new Interval("hour12", 43200);
   static readonly Day1 = new Interval("day1", 86400);
@@ -147,11 +149,13 @@ export class Interval extends StringValue {
     Interval.Min1,
     Interval.Min3,
     Interval.Min5,
+    Interval.Min10,
     Interval.Min15,
     Interval.Min30,
     Interval.Hour1,
     Interval.Hour2,
     Interval.Hour4,
+    Interval.Hour6,
     Interval.Hour8,
     Interval.Hour12,
     Interval.Day1,

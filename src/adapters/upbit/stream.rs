@@ -81,14 +81,14 @@ fn feed_type(feed: Feed) -> Result<String> {
 
 /// Returns the WebSocket candle type for an interval exposed by `maxt`.
 ///
-/// Upbit also streams 10-minute candles, but [`Interval`] has no matching
-/// variant. Daily and longer candles are REST-only.
+/// Daily and longer candles are REST-only.
 fn candle_type(interval: Interval) -> Option<&'static str> {
     Some(match interval {
         Interval::Sec1 => "candle.1s",
         Interval::Min1 => "candle.1m",
         Interval::Min3 => "candle.3m",
         Interval::Min5 => "candle.5m",
+        Interval::Min10 => "candle.10m",
         Interval::Min15 => "candle.15m",
         Interval::Min30 => "candle.30m",
         Interval::Hour1 => "candle.60m",
@@ -103,6 +103,7 @@ fn candle_interval(frame_type: &str) -> Option<Interval> {
         "candle.1m" => Interval::Min1,
         "candle.3m" => Interval::Min3,
         "candle.5m" => Interval::Min5,
+        "candle.10m" => Interval::Min10,
         "candle.15m" => Interval::Min15,
         "candle.30m" => Interval::Min30,
         "candle.60m" => Interval::Hour1,

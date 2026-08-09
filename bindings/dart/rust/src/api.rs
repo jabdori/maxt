@@ -602,32 +602,23 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    pub async fn binance_usd_m_keepalive_listen_key(
-        &self,
-        key: &WireBinanceListenKey,
-    ) -> Result<(), NativeError> {
+    pub async fn binance_usd_m_keepalive_listen_key(&self) -> Result<(), NativeError> {
         let adapter = match self.built_in("binance_usd_m_keepalive_listen_key")? {
             BuiltInAdapter::Binance(adapter) => adapter,
             _ => return Err(provider_mismatch("Binance")),
         };
         adapter
-            .usd_m_keepalive_listen_key(&key.inner)
+            .usd_m_keepalive_listen_key()
             .await
             .map_err(Into::into)
     }
 
-    pub async fn binance_usd_m_close_listen_key(
-        &self,
-        key: &WireBinanceListenKey,
-    ) -> Result<(), NativeError> {
+    pub async fn binance_usd_m_close_listen_key(&self) -> Result<(), NativeError> {
         let adapter = match self.built_in("binance_usd_m_close_listen_key")? {
             BuiltInAdapter::Binance(adapter) => adapter,
             _ => return Err(provider_mismatch("Binance")),
         };
-        adapter
-            .usd_m_close_listen_key(&key.inner)
-            .await
-            .map_err(Into::into)
+        adapter.usd_m_close_listen_key().await.map_err(Into::into)
     }
 
     pub async fn hyperliquid_non_funding_ledger(

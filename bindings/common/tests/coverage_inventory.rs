@@ -5,7 +5,10 @@
 use std::collections::BTreeSet;
 
 use maxt::Exchange;
-use maxt_bindings_common::coverage::{CoverageStage, OPERATIONS, PRODUCTS};
+use maxt_bindings_common::{
+    coverage::{CoverageStage, Implementation, OPERATIONS, OperationMapping, PRODUCTS},
+    schema::binding_schema,
+};
 
 #[test]
 fn product_ids_and_operation_ids_are_unique_and_connected() {
@@ -68,6 +71,85 @@ fn product_ids_and_operation_ids_are_unique_and_connected() {
             operation.interface.id(),
         );
     }
+}
+
+#[test]
+fn common_coverage_mappings_name_real_schema_operations() {
+    let schema = binding_schema();
+    let operations = schema
+        .adapter_operations
+        .iter()
+        .map(|operation| operation.rust_name)
+        .collect::<BTreeSet<_>>();
+    for operation in OPERATIONS {
+        if operation.implementation == Implementation::Planned {
+            continue;
+        }
+        let check = |name| {
+            assert!(
+                operations.contains(name),
+                "{}.{}.{} maps to unknown common operation {name}",
+                operation.exchange,
+                operation.product,
+                operation.id,
+            );
+        };
+        let check_provider = |name| {
+            assert!(
+                schema.providers.iter().any(|provider| {
+                    provider.exchange == operation.exchange.id()
+                        && provider
+                            .methods
+                            .iter()
+                            .any(|method| method.rust_name == name)
+                }),
+                "{}.{}.{} maps to unknown provider operation {name}",
+                operation.exchange,
+                operation.product,
+                operation.id,
+            );
+        };
+        match operation.mapping {
+            OperationMapping::Common(name) => check(name),
+            OperationMapping::CommonMany(names) => names.iter().for_each(|name| check(name)),
+            OperationMapping::Provider(name) => check_provider(name),
+            OperationMapping::CommonAndProvider { common, provider } => {
+                common.iter().for_each(|name| check(name));
+                provider.iter().for_each(|name| check_provider(name));
+            }
+            OperationMapping::PlatformLimited { .. } => {}
+        }
+    }
+}
+
+#[test]
+fn operation_inventory_matches_the_current_implemented_surface() {
+    let counts = OPERATIONS.iter().fold(
+        std::collections::BTreeMap::<(Exchange, &str), usize>::new(),
+        |mut counts, operation| {
+            *counts
+                .entry((operation.exchange, operation.product))
+                .or_default() += 1;
+            counts
+        },
+    );
+    assert_eq!(
+        counts,
+        std::collections::BTreeMap::from([
+            ((Exchange::Upbit, "quotation"), 13),
+            ((Exchange::Upbit, "exchange"), 6),
+            ((Exchange::Upbit, "wallet"), 7),
+            ((Exchange::Bithumb, "quotation"), 12),
+            ((Exchange::Bithumb, "exchange"), 6),
+            ((Exchange::Bithumb, "wallet"), 7),
+            ((Exchange::Binance, "spot"), 15),
+            ((Exchange::Binance, "usd_m"), 21),
+            ((Exchange::Binance, "wallet"), 8),
+            ((Exchange::Hyperliquid, "info"), 13),
+            ((Exchange::Hyperliquid, "exchange"), 3),
+            ((Exchange::Hyperliquid, "subscriptions"), 7),
+        ])
+    );
 }
 
 #[test]

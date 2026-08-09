@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
+#[cfg(test)]
+use maxt::Adapter;
 use maxt::adapters::{
     BinanceAdapter, BinanceListenKey, BinanceMarket, BithumbAdapter, BithumbAlertStep,
     BithumbMarketAlert, HyperliquidAdapter, HyperliquidLedgerEntry, HyperliquidLedgerKind,
     UpbitAdapter, UpbitMarketEvent, UpbitRegion,
 };
 use maxt::{Cursor, Market, Page, Timestamp};
-#[cfg(test)]
-use maxt::Adapter;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -290,30 +290,20 @@ impl NativeBinanceAdapter {
         )
     }
 
-    fn usd_m_keepalive_listen_key<'py>(
-        &self,
-        py: Python<'py>,
-        key: PyRef<'_, NativeBinanceListenKey>,
-    ) -> PyResult<Bound<'py, PyAny>> {
-        let key = key.inner.clone();
+    fn usd_m_keepalive_listen_key<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let adapter = Arc::clone(&self.inner);
         operation(
             py,
-            async move { adapter.usd_m_keepalive_listen_key(&key).await },
+            async move { adapter.usd_m_keepalive_listen_key().await },
             |py, ()| Ok(py.None()),
         )
     }
 
-    fn usd_m_close_listen_key<'py>(
-        &self,
-        py: Python<'py>,
-        key: PyRef<'_, NativeBinanceListenKey>,
-    ) -> PyResult<Bound<'py, PyAny>> {
-        let key = key.inner.clone();
+    fn usd_m_close_listen_key<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let adapter = Arc::clone(&self.inner);
         operation(
             py,
-            async move { adapter.usd_m_close_listen_key(&key).await },
+            async move { adapter.usd_m_close_listen_key().await },
             |py, ()| Ok(py.None()),
         )
     }

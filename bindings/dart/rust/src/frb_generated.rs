@@ -342,25 +342,16 @@ fn wire__crate__api__NativeClient_binance_usd_m_close_listen_key_impl(
             let api_that = <RustOpaqueMoi<
                 flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
             >>::sse_decode(&mut deserializer);
-            let api_key = <RustOpaqueMoi<
-                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WireBinanceListenKey>,
-            >>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, crate::convert::NativeError>(
                     (move || async move {
                         let mut api_that_guard = None;
-                        let mut api_key_guard = None;
                         let decode_indices_ =
                             flutter_rust_bridge::for_generated::lockable_compute_decode_order(
-                                vec![
-                                    flutter_rust_bridge::for_generated::LockableOrderInfo::new(
-                                        &api_that, 0, false,
-                                    ),
-                                    flutter_rust_bridge::for_generated::LockableOrderInfo::new(
-                                        &api_key, 1, false,
-                                    ),
-                                ],
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
                             );
                         for i in decode_indices_ {
                             match i {
@@ -368,17 +359,12 @@ fn wire__crate__api__NativeClient_binance_usd_m_close_listen_key_impl(
                                     api_that_guard =
                                         Some(api_that.lockable_decode_async_ref().await)
                                 }
-                                1 => {
-                                    api_key_guard = Some(api_key.lockable_decode_async_ref().await)
-                                }
                                 _ => unreachable!(),
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let api_key_guard = api_key_guard.unwrap();
                         let output_ok = crate::api::NativeClient::binance_usd_m_close_listen_key(
                             &*api_that_guard,
-                            &*api_key_guard,
                         )
                         .await?;
                         Ok(output_ok)
@@ -504,25 +490,16 @@ fn wire__crate__api__NativeClient_binance_usd_m_keepalive_listen_key_impl(
             let api_that = <RustOpaqueMoi<
                 flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
             >>::sse_decode(&mut deserializer);
-            let api_key = <RustOpaqueMoi<
-                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WireBinanceListenKey>,
-            >>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, crate::convert::NativeError>(
                     (move || async move {
                         let mut api_that_guard = None;
-                        let mut api_key_guard = None;
                         let decode_indices_ =
                             flutter_rust_bridge::for_generated::lockable_compute_decode_order(
-                                vec![
-                                    flutter_rust_bridge::for_generated::LockableOrderInfo::new(
-                                        &api_that, 0, false,
-                                    ),
-                                    flutter_rust_bridge::for_generated::LockableOrderInfo::new(
-                                        &api_key, 1, false,
-                                    ),
-                                ],
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
                             );
                         for i in decode_indices_ {
                             match i {
@@ -530,18 +507,13 @@ fn wire__crate__api__NativeClient_binance_usd_m_keepalive_listen_key_impl(
                                     api_that_guard =
                                         Some(api_that.lockable_decode_async_ref().await)
                                 }
-                                1 => {
-                                    api_key_guard = Some(api_key.lockable_decode_async_ref().await)
-                                }
                                 _ => unreachable!(),
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let api_key_guard = api_key_guard.unwrap();
                         let output_ok =
                             crate::api::NativeClient::binance_usd_m_keepalive_listen_key(
                                 &*api_that_guard,
-                                &*api_key_guard,
                             )
                             .await?;
                         Ok(output_ok)
@@ -5098,17 +5070,19 @@ impl SseDecode for crate::convert::WireInterval {
             1 => crate::convert::WireInterval::Min1,
             2 => crate::convert::WireInterval::Min3,
             3 => crate::convert::WireInterval::Min5,
-            4 => crate::convert::WireInterval::Min15,
-            5 => crate::convert::WireInterval::Min30,
-            6 => crate::convert::WireInterval::Hour1,
-            7 => crate::convert::WireInterval::Hour2,
-            8 => crate::convert::WireInterval::Hour4,
-            9 => crate::convert::WireInterval::Hour8,
-            10 => crate::convert::WireInterval::Hour12,
-            11 => crate::convert::WireInterval::Day1,
-            12 => crate::convert::WireInterval::Day3,
-            13 => crate::convert::WireInterval::Week1,
-            14 => crate::convert::WireInterval::Month1,
+            4 => crate::convert::WireInterval::Min10,
+            5 => crate::convert::WireInterval::Min15,
+            6 => crate::convert::WireInterval::Min30,
+            7 => crate::convert::WireInterval::Hour1,
+            8 => crate::convert::WireInterval::Hour2,
+            9 => crate::convert::WireInterval::Hour4,
+            10 => crate::convert::WireInterval::Hour6,
+            11 => crate::convert::WireInterval::Hour8,
+            12 => crate::convert::WireInterval::Hour12,
+            13 => crate::convert::WireInterval::Day1,
+            14 => crate::convert::WireInterval::Day3,
+            15 => crate::convert::WireInterval::Week1,
+            16 => crate::convert::WireInterval::Month1,
             _ => unreachable!("Invalid variant for WireInterval: {}", inner),
         };
     }
@@ -7268,17 +7242,19 @@ impl flutter_rust_bridge::IntoDart for crate::convert::WireInterval {
             Self::Min1 => 1.into_dart(),
             Self::Min3 => 2.into_dart(),
             Self::Min5 => 3.into_dart(),
-            Self::Min15 => 4.into_dart(),
-            Self::Min30 => 5.into_dart(),
-            Self::Hour1 => 6.into_dart(),
-            Self::Hour2 => 7.into_dart(),
-            Self::Hour4 => 8.into_dart(),
-            Self::Hour8 => 9.into_dart(),
-            Self::Hour12 => 10.into_dart(),
-            Self::Day1 => 11.into_dart(),
-            Self::Day3 => 12.into_dart(),
-            Self::Week1 => 13.into_dart(),
-            Self::Month1 => 14.into_dart(),
+            Self::Min10 => 4.into_dart(),
+            Self::Min15 => 5.into_dart(),
+            Self::Min30 => 6.into_dart(),
+            Self::Hour1 => 7.into_dart(),
+            Self::Hour2 => 8.into_dart(),
+            Self::Hour4 => 9.into_dart(),
+            Self::Hour6 => 10.into_dart(),
+            Self::Hour8 => 11.into_dart(),
+            Self::Hour12 => 12.into_dart(),
+            Self::Day1 => 13.into_dart(),
+            Self::Day3 => 14.into_dart(),
+            Self::Week1 => 15.into_dart(),
+            Self::Month1 => 16.into_dart(),
             _ => unreachable!(),
         }
     }
@@ -9647,17 +9623,19 @@ impl SseEncode for crate::convert::WireInterval {
                 crate::convert::WireInterval::Min1 => 1,
                 crate::convert::WireInterval::Min3 => 2,
                 crate::convert::WireInterval::Min5 => 3,
-                crate::convert::WireInterval::Min15 => 4,
-                crate::convert::WireInterval::Min30 => 5,
-                crate::convert::WireInterval::Hour1 => 6,
-                crate::convert::WireInterval::Hour2 => 7,
-                crate::convert::WireInterval::Hour4 => 8,
-                crate::convert::WireInterval::Hour8 => 9,
-                crate::convert::WireInterval::Hour12 => 10,
-                crate::convert::WireInterval::Day1 => 11,
-                crate::convert::WireInterval::Day3 => 12,
-                crate::convert::WireInterval::Week1 => 13,
-                crate::convert::WireInterval::Month1 => 14,
+                crate::convert::WireInterval::Min10 => 4,
+                crate::convert::WireInterval::Min15 => 5,
+                crate::convert::WireInterval::Min30 => 6,
+                crate::convert::WireInterval::Hour1 => 7,
+                crate::convert::WireInterval::Hour2 => 8,
+                crate::convert::WireInterval::Hour4 => 9,
+                crate::convert::WireInterval::Hour6 => 10,
+                crate::convert::WireInterval::Hour8 => 11,
+                crate::convert::WireInterval::Hour12 => 12,
+                crate::convert::WireInterval::Day1 => 13,
+                crate::convert::WireInterval::Day3 => 14,
+                crate::convert::WireInterval::Week1 => 15,
+                crate::convert::WireInterval::Month1 => 16,
                 _ => {
                     unimplemented!("");
                 }

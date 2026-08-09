@@ -592,7 +592,7 @@ IDENTIFIER_VARIANTS = {
     "MarketKind": ("spot", "perpetual",),
     "MarketStatus": ("active", "paused", "delisted", "unknown",),
     "Side": ("buy", "sell",),
-    "Interval": ("sec1", "min1", "min3", "min5", "min15", "min30", "hour1", "hour2", "hour4", "hour8", "hour12", "day1", "day3", "week1", "month1",),
+    "Interval": ("sec1", "min1", "min3", "min5", "min10", "min15", "min30", "hour1", "hour2", "hour4", "hour6", "hour8", "hour12", "day1", "day3", "week1", "month1",),
     "Overflow": ("backpressure", "drop_newest",),
     "MarginMode": ("cross", "isolated",),
     "OrderStatus": ("accepted", "open", "partially_filled", "filled", "cancelled", "rejected", "unknown",),

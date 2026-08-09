@@ -29,8 +29,8 @@ void _generatedProviderGuard({
     _generatedProviderValue<String>(),
   );
   binance.usdMCreateListenKey();
-  binance.usdMKeepaliveListenKey(_generatedProviderValue<BinanceListenKey>());
-  binance.usdMCloseListenKey(_generatedProviderValue<BinanceListenKey>());
+  binance.usdMKeepaliveListenKey();
+  binance.usdMCloseListenKey();
   HyperliquidAdapter();
   HyperliquidAdapter.testnet();
   hyperliquid.isTestnet;

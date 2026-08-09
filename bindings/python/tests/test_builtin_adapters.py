@@ -195,11 +195,11 @@ class FakeNativeBinanceAdapter:
     async def usd_m_create_listen_key(self):
         return FakeNativeBinanceListenKey()
 
-    async def usd_m_keepalive_listen_key(self, key):
-        self.kept_alive = key
+    async def usd_m_keepalive_listen_key(self):
+        self.kept_alive = True
 
-    async def usd_m_close_listen_key(self, key):
-        self.closed = key
+    async def usd_m_close_listen_key(self):
+        self.closed = True
 
 
 class FakeNativeHyperliquidAdapter:
@@ -344,8 +344,8 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
             filters = await spot.spot_symbol_filters(market)
             order = await spot.spot_order(market, "42")
             key = await futures.usd_m_create_listen_key()
-            await futures.usd_m_keepalive_listen_key(key)
-            await futures.usd_m_close_listen_key(key)
+            await futures.usd_m_keepalive_listen_key()
+            await futures.usd_m_close_listen_key()
 
         self.assertEqual(spot.venue, BinanceMarket.SPOT)
         self.assertEqual(futures.venue, BinanceMarket.USD_M_FUTURES)
@@ -355,8 +355,8 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(order.filled_quote_quantity, Decimal("12500"))
         self.assertIsInstance(key, BinanceListenKey)
         self.assertEqual(key.value, "listen-key")
-        self.assertIs(futures._handle.kept_alive, key._handle)
-        self.assertIs(futures._handle.closed, key._handle)
+        self.assertTrue(futures._handle.kept_alive)
+        self.assertTrue(futures._handle.closed)
 
     async def test_hyperliquid_exposes_ledger_and_asset_context(self) -> None:
         native = SimpleNamespace(

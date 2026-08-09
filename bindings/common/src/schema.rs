@@ -717,11 +717,13 @@ const INTERVAL_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("Min1", "min1"),
     identifier_variant("Min3", "min3"),
     identifier_variant("Min5", "min5"),
+    identifier_variant("Min10", "min10"),
     identifier_variant("Min15", "min15"),
     identifier_variant("Min30", "min30"),
     identifier_variant("Hour1", "hour1"),
     identifier_variant("Hour2", "hour2"),
     identifier_variant("Hour4", "hour4"),
+    identifier_variant("Hour6", "hour6"),
     identifier_variant("Hour8", "hour8"),
     identifier_variant("Hour12", "hour12"),
     identifier_variant("Day1", "day1"),
@@ -918,11 +920,6 @@ const MARKETS_DEPTH: &[Argument] = &[
     argument("depth", ApiType::OptionalNumber, Some("null")),
 ];
 const MARKETS: &[Argument] = &[argument("markets", ApiType::List("Market"), None)];
-const LISTEN_KEY: &[Argument] = &[argument(
-    "key",
-    ApiType::HandleToken("BinanceListenKey"),
-    None,
-)];
 const LEDGER_RANGE: &[Argument] = &[
     argument("from", ApiType::OptionalNamed("Timestamp"), Some("null")),
     argument("to", ApiType::OptionalNamed("Timestamp"), Some("null")),
@@ -1124,14 +1121,14 @@ const BINANCE_METHODS: &[ProviderMethod] = &[
         rust_name: "usd_m_keepalive_listen_key",
         name: "usdMKeepaliveListenKey",
         kind: ProviderMethodKind::Async,
-        arguments: LISTEN_KEY,
+        arguments: &[],
         result: ApiType::Unit,
     },
     ProviderMethod {
         rust_name: "usd_m_close_listen_key",
         name: "usdMCloseListenKey",
         kind: ProviderMethodKind::Async,
-        arguments: LISTEN_KEY,
+        arguments: &[],
         result: ApiType::Unit,
     },
 ];
@@ -2041,7 +2038,7 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
-        native_api_version: 1,
+        native_api_version: 2,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
         identifiers: IDENTIFIERS,

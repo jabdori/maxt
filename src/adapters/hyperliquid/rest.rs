@@ -1079,11 +1079,6 @@ pub(crate) async fn set_margin(
     Ok(())
 }
 
-/// Builds the millisecond nonce used by a signed action.
-pub(crate) fn nonce(now: Timestamp) -> u64 {
-    u64::try_from(now.as_millis()).unwrap_or(0)
-}
-
 #[cfg(test)]
 mod tests {
     use super::super::parse::tests::{btc_perp, universe};
@@ -1866,13 +1861,5 @@ mod tests {
         )
         .expect("an accepted envelope");
         assert!(cancel_ack(&succeeded).is_ok());
-    }
-
-    #[test]
-    fn a_nonce_is_the_millisecond_clock_hyperliquid_checks_against_its_own() {
-        assert_eq!(
-            nonce(Timestamp::from_millis(1_700_000_000_123)),
-            1_700_000_000_123
-        );
     }
 }

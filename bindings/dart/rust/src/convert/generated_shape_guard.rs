@@ -481,11 +481,13 @@ fn _guard_interval(value: WireInterval) {
         WireInterval::Min1 => {}
         WireInterval::Min3 => {}
         WireInterval::Min5 => {}
+        WireInterval::Min10 => {}
         WireInterval::Min15 => {}
         WireInterval::Min30 => {}
         WireInterval::Hour1 => {}
         WireInterval::Hour2 => {}
         WireInterval::Hour4 => {}
+        WireInterval::Hour6 => {}
         WireInterval::Hour8 => {}
         WireInterval::Hour12 => {}
         WireInterval::Day1 => {}

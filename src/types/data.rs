@@ -166,6 +166,8 @@ pub enum Interval {
     Min3,
     /// Five minutes.
     Min5,
+    /// Ten minutes.
+    Min10,
     /// Fifteen minutes.
     Min15,
     /// Thirty minutes.
@@ -176,6 +178,8 @@ pub enum Interval {
     Hour2,
     /// Four hours.
     Hour4,
+    /// Six hours.
+    Hour6,
     /// Eight hours.
     Hour8,
     /// Twelve hours.
@@ -201,11 +205,13 @@ impl Interval {
             Self::Min1 => 60,
             Self::Min3 => 180,
             Self::Min5 => 300,
+            Self::Min10 => 600,
             Self::Min15 => 900,
             Self::Min30 => 1_800,
             Self::Hour1 => 3_600,
             Self::Hour2 => 7_200,
             Self::Hour4 => 14_400,
+            Self::Hour6 => 21_600,
             Self::Hour8 => 28_800,
             Self::Hour12 => 43_200,
             Self::Day1 => 86_400,
@@ -339,6 +345,8 @@ mod tests {
     #[test]
     fn month_is_the_only_interval_without_a_fixed_length() {
         assert_eq!(Interval::Min1.as_secs(), Some(60));
+        assert_eq!(Interval::Min10.as_secs(), Some(600));
+        assert_eq!(Interval::Hour6.as_secs(), Some(21_600));
         assert_eq!(Interval::Week1.as_secs(), Some(604_800));
         assert_eq!(Interval::Month1.as_secs(), None);
     }

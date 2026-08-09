@@ -52,7 +52,16 @@ const HEARTBEAT: Heartbeat = Heartbeat {
 /// Binance's stream suffix for one public feed.
 fn feed_name(venue: BinanceMarket, feed: Feed) -> Result<String> {
     Ok(match feed {
-        Feed::Trades => "trade".to_string(),
+        Feed::Trades => match venue {
+            BinanceMarket::Spot => "trade".to_string(),
+            BinanceMarket::UsdMFutures => {
+                return Err(Error::unsupported(
+                    crate::feature::Feature::TradeStream,
+                    EXCHANGE,
+                    "USD-M publishes aggregates rather than the individual fills required by Feed::Trades",
+                ));
+            }
+        },
         Feed::OrderBook => DEPTH_STREAM.to_string(),
         Feed::Ticker => "ticker".to_string(),
         Feed::Candles(interval) => format!("kline_{}", venue.interval_code(interval)?),
@@ -66,11 +75,13 @@ fn interval_from_code(code: &str) -> Option<Interval> {
         "1m" => Interval::Min1,
         "3m" => Interval::Min3,
         "5m" => Interval::Min5,
+        "10m" => Interval::Min10,
         "15m" => Interval::Min15,
         "30m" => Interval::Min30,
         "1h" => Interval::Hour1,
         "2h" => Interval::Hour2,
         "4h" => Interval::Hour4,
+        "6h" => Interval::Hour6,
         "8h" => Interval::Hour8,
         "12h" => Interval::Hour12,
         "1d" => Interval::Day1,
@@ -84,13 +95,15 @@ fn interval_from_code(code: &str) -> Option<Interval> {
 
 /// The public endpoint that carries a feed.
 ///
-/// Spot uses one endpoint. USD-M routes trades and order books to `/public`,
-/// and tickers and candles to `/market`.
+/// Spot uses one endpoint. USD-M routes books to `/public`, and its other
+/// supported feeds to `/market`.
 fn entry_point_url(venue: BinanceMarket, feed: Feed) -> &'static str {
     match (venue, feed) {
         (BinanceMarket::Spot, _) => SPOT_WEBSOCKET_URL,
-        (BinanceMarket::UsdMFutures, Feed::Trades | Feed::OrderBook) => USD_M_PUBLIC_WEBSOCKET_URL,
-        (BinanceMarket::UsdMFutures, Feed::Ticker | Feed::Candles(_)) => USD_M_MARKET_WEBSOCKET_URL,
+        (BinanceMarket::UsdMFutures, Feed::OrderBook) => USD_M_PUBLIC_WEBSOCKET_URL,
+        (BinanceMarket::UsdMFutures, Feed::Trades | Feed::Ticker | Feed::Candles(_)) => {
+            USD_M_MARKET_WEBSOCKET_URL
+        }
     }
 }
 
@@ -191,10 +204,8 @@ struct RawKline {
 
 /// Reads one public frame.
 ///
-/// `None` means the frame carried no market data. Binance acknowledges a
-/// subscribe with `{"result": null, "id": 1}`, and USD-M announces a trade id
-/// it published no fill for as a `@trade` frame priced and sized at zero.
-/// Neither is something a caller should see.
+/// `None` means the frame carried no market data, such as Binance's subscribe
+/// acknowledgement `{"result": null, "id": 1}`.
 pub(super) fn decode(
     markets: &HashMap<String, Market>,
     frame: &str,
@@ -235,21 +246,7 @@ pub(super) fn decode(
         .map_err(|err| Error::decode(format!("could not re-read binance frame: {err}")))?;
 
     Ok(Some(match feed {
-        "trade" => {
-            let trade = parse::trade(&market, &parse::json(&body, "trade frame")?)?;
-            // USD-M spends trade ids it never publishes a fill for, and
-            // announces each one on `@trade` as a frame whose price and
-            // quantity are both `"0"` and whose `X` reads `NA`. Those ids are
-            // absent from `/fapi/v1/trades`, so forwarding the frame would
-            // invent a trade at a price of zero that the exchange itself does
-            // not list. Read off the quantity rather than off `X`, because
-            // spot publishes no `X` at all and a trade of nothing is not a
-            // trade on either venue.
-            if trade.quantity.is_zero() {
-                return Ok(None);
-            }
-            MarketEvent::Trade(trade)
-        }
+        "trade" => MarketEvent::Trade(parse::trade(&market, &parse::json(&body, "trade frame")?)?),
         "ticker" => MarketEvent::Ticker(parse::ticker(
             &market,
             &parse::json(&body, "ticker frame")?,
@@ -325,7 +322,7 @@ where
 
 /// Opens one socket per endpoint the subscription reaches and merges them.
 ///
-/// A USD-M subscription that names both a book feed and an aggregated one
+/// A USD-M subscription that names both a book and a regular market feed
 /// spans two entry points, and one socket cannot serve both. Each socket
 /// reconnects on its own, so such a subscription reports
 /// [`MarketEvent::Reconnected`] once per socket that comes back rather than
@@ -695,7 +692,7 @@ async fn subscribe_usd_m_account(
     // The channel forwards a refresh failure and stops the task when the stream
     // is dropped.
     let (failures, failed) = mpsc::channel(1);
-    let refresh = tokio::spawn(refresh_listen_key(adapter.clone(), key, failures));
+    let refresh = tokio::spawn(refresh_listen_key(adapter.clone(), failures));
 
     let events = account_events(adapter.clone(), session).boxed();
 
@@ -783,11 +780,7 @@ async fn due(interval: Duration, failures: &mpsc::Sender<Error>) -> bool {
 
 /// Extends a USD-M listen key until the stream is dropped or a refresh fails.
 /// The first failure is forwarded unchanged to the account stream.
-async fn refresh_listen_key(
-    adapter: BinanceAdapter,
-    key: super::BinanceListenKey,
-    failures: mpsc::Sender<Error>,
-) {
+async fn refresh_listen_key(adapter: BinanceAdapter, failures: mpsc::Sender<Error>) {
     // Half the lifetime, so one failed refresh still leaves time for the next.
     let interval = LISTEN_KEY_LIFETIME / 2;
 
@@ -795,7 +788,7 @@ async fn refresh_listen_key(
         if !due(interval, &failures).await {
             return;
         }
-        if let Err(error) = private::keepalive_listen_key(&adapter, &key).await {
+        if let Err(error) = private::keepalive_listen_key(&adapter).await {
             let _ = failures.send(error).await;
             return;
         }
@@ -961,40 +954,6 @@ mod tests {
         "lastUpdateId": 160,
         "bids": [["0.0024", "10"], ["0.0023", "5"]],
         "asks": [["0.0026", "100"], ["0.0027", "50"]]
-      }
-    }"#;
-
-    // A representative USD-M combined-stream trade frame.
-    const FUTURES_TRADE_FRAME: &str = r#"{
-      "stream": "dogeusdt@trade",
-      "data": {
-        "e": "trade",
-        "E": 1785407770046,
-        "T": 1785407770046,
-        "s": "DOGEUSDT",
-        "t": 3417626319,
-        "p": "0.070180",
-        "q": "700",
-        "X": "MARKET",
-        "m": true,
-        "st": 1
-      }
-    }"#;
-
-    // USD-M can announce a consumed trade id with zero price and quantity.
-    const FUTURES_SPENT_TRADE_ID_FRAME: &str = r#"{
-      "stream": "ethusdt@trade",
-      "data": {
-        "e": "trade",
-        "E": 1785407792240,
-        "T": 1785407792239,
-        "s": "ETHUSDT",
-        "t": 8520420588,
-        "p": "0",
-        "q": "0",
-        "X": "NA",
-        "m": true,
-        "st": 1
       }
     }"#;
 
@@ -1194,14 +1153,6 @@ mod tests {
         )
     }
 
-    fn decode_perp(frame: &str) -> Result<Option<MarketEvent>> {
-        decode_for(
-            &perp(),
-            Market::perpetual(Exchange::Binance, "DOGE", "USDT"),
-            frame,
-        )
-    }
-
     #[tokio::test]
     async fn a_split_subscription_ends_when_either_socket_ends() {
         type TestStream = std::pin::Pin<Box<dyn futures_core::Stream<Item = u8> + Send + 'static>>;
@@ -1253,12 +1204,11 @@ mod tests {
         assert_eq!(value["params"], serde_json::json!(["币安人生usdt@trade"]));
     }
 
-    /// USD-M routes trades and books to `/public`, and tickers and candles to `/market`.
+    /// USD-M routes books to `/public`, and tickers and candles to `/market`.
     #[test]
     fn usd_m_sends_each_feed_to_the_entry_point_that_carries_it() {
         let subscription = Subscription::new()
             .market(Market::perpetual(Exchange::Binance, "BTC", "USDT"))
-            .feed(Feed::Trades)
             .feed(Feed::OrderBook)
             .feed(Feed::Ticker)
             .feed(Feed::Candles(Interval::Min1));
@@ -1270,14 +1220,11 @@ mod tests {
             vec![
                 (
                     USD_M_PUBLIC_WEBSOCKET_URL,
-                    vec![
-                        "btcusdt@trade".to_string(),
-                        "btcusdt@depth20@100ms".to_string(),
-                    ],
+                    vec!["btcusdt@depth20@100ms".to_string()],
                 ),
                 (
                     USD_M_MARKET_WEBSOCKET_URL,
-                    vec!["btcusdt@ticker".to_string(), "btcusdt@kline_1m".to_string(),],
+                    vec!["btcusdt@ticker".to_string(), "btcusdt@kline_1m".to_string()],
                 ),
             ]
         );
@@ -1286,12 +1233,7 @@ mod tests {
     /// Every USD-M feed uses an explicit `/public` or `/market` entry point.
     #[test]
     fn no_usd_m_socket_opens_on_a_path_that_names_no_entry_point() {
-        for feed in [
-            Feed::Trades,
-            Feed::OrderBook,
-            Feed::Ticker,
-            Feed::Candles(Interval::Min1),
-        ] {
+        for feed in [Feed::OrderBook, Feed::Ticker, Feed::Candles(Interval::Min1)] {
             let url = entry_point_url(BinanceMarket::UsdMFutures, feed);
             assert!(
                 url.starts_with("wss://fstream.binance.com/public/")
@@ -1302,16 +1244,18 @@ mod tests {
     }
 
     #[test]
-    fn both_venues_stream_every_fill_off_the_same_stream_name() {
+    fn futures_aggregates_are_not_misreported_as_individual_fills() {
         assert_eq!(
             feed_name(BinanceMarket::Spot, Feed::Trades).expect("a feed"),
             "trade"
         );
-        // `aggTrade` has a different id space and is not the common trade feed.
-        assert_eq!(
-            feed_name(BinanceMarket::UsdMFutures, Feed::Trades).expect("a feed"),
-            "trade"
-        );
+        assert!(matches!(
+            feed_name(BinanceMarket::UsdMFutures, Feed::Trades),
+            Err(Error::Unsupported {
+                feature: Feature::TradeStream,
+                ..
+            })
+        ));
     }
 
     #[test]
@@ -1341,6 +1285,7 @@ mod tests {
             Interval::Hour1,
             Interval::Hour2,
             Interval::Hour4,
+            Interval::Hour6,
             Interval::Hour8,
             Interval::Hour12,
             Interval::Day1,
@@ -1402,24 +1347,6 @@ mod tests {
     }
 
     #[test]
-    fn a_new_quote_asset_stream_uses_the_market_that_was_subscribed() {
-        let frame = FUTURES_TRADE_FRAME.replace("dogeusdt@trade", "btcu@trade");
-        let Some(MarketEvent::Trade(trade)) = decode_for(
-            &perp(),
-            Market::perpetual(Exchange::Binance, "BTC", "U"),
-            &frame,
-        )
-        .expect("a trade frame") else {
-            panic!("expected a trade event");
-        };
-
-        assert_eq!(
-            trade.market,
-            Market::perpetual(Exchange::Binance, "BTC", "U")
-        );
-    }
-
-    #[test]
     fn a_non_ascii_stream_frame_uses_the_market_that_was_subscribed() {
         let market = Market::spot(Exchange::Binance, "币安人生", "USDT");
         let frame = SPOT_TRADE_FRAME.replace("bnbbtc", "币安人生usdt");
@@ -1430,39 +1357,6 @@ mod tests {
         };
 
         assert_eq!(trade.market, market);
-    }
-
-    #[test]
-    fn a_futures_trade_lands_on_a_perpetual_market_under_its_rest_id() {
-        let Some(MarketEvent::Trade(trade)) = decode_perp(FUTURES_TRADE_FRAME).expect("a frame")
-        else {
-            panic!("expected a trade event");
-        };
-
-        assert_eq!(
-            trade.market,
-            Market::perpetual(Exchange::Binance, "DOGE", "USDT")
-        );
-        // `t`, the same id `/fapi/v1/trades` returns for this fill, so a caller
-        // can deduplicate the stream against REST on the id alone.
-        assert_eq!(trade.id.as_deref(), Some("3417626319"));
-        // The individual fill, not a sum over the fills a taker order swept.
-        assert_eq!(trade.quantity.to_string(), "700");
-        // `T`, the match time, not the later `E` the frame was published at.
-        assert_eq!(trade.timestamp, Timestamp::from_millis(1_785_407_770_046));
-    }
-
-    #[test]
-    fn a_spent_futures_trade_id_is_not_reported_as_a_trade_at_zero() {
-        assert_eq!(
-            decode_for(
-                &perp(),
-                Market::perpetual(Exchange::Binance, "ETH", "USDT"),
-                FUTURES_SPENT_TRADE_ID_FRAME,
-            )
-            .expect("a frame"),
-            None
-        );
     }
 
     #[test]

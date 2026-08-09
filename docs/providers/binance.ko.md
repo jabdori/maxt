@@ -33,11 +33,10 @@
 
 | 거래소 | 지원하는 `Interval` |
 | --- | --- |
-| Spot | `Sec1`, `Min1`, `Min3`, `Min5`, `Min15`, `Min30`, `Hour1`, `Hour2`, `Hour4`, `Hour8`, `Hour12`, `Day1`, `Day3`, `Week1`, `Month1` |
+| Spot | `Sec1`, `Min1`, `Min3`, `Min5`, `Min15`, `Min30`, `Hour1`, `Hour2`, `Hour4`, `Hour6`, `Hour8`, `Hour12`, `Day1`, `Day3`, `Week1`, `Month1` |
 | USD-M | Spot 목록에서 `Sec1` 제외 |
 
-REST와 `Feed::Candles`가 지원하는 간격은 같습니다. 거래소 간격 `6h`는
-`Interval`에 매핑하지 않습니다.
+REST와 `Feed::Candles`가 지원하는 간격은 같습니다.
 
 | 제약 | Spot | USD-M |
 | --- | ---: | ---: |
@@ -49,7 +48,8 @@ REST와 `Feed::Candles`가 지원하는 간격은 같습니다. 거래소 간격
 
 | `Feed` | 스트림(stream) | 계약 |
 | --- | --- | --- |
-| `Feed::Trades` | `{symbol}@trade` | 체결당 이벤트 1건; `quantity == 0` 프레임(frame) 폐기 |
+| `Feed::Trades` (Spot) | `{symbol}@trade` | 체결당 이벤트 1건 |
+| `Feed::Trades` (USD-M) | 미지원 | Binance는 집계 체결만 제공하므로 모든 개별 체결을 뜻하는 이 feed로 반환하지 않음 |
 | `Feed::OrderBook` | `{symbol}@depth20@100ms` | 전체 스냅샷(snapshot); 각 측 20개 호가 단계; 고정 depth |
 | `Feed::Ticker` | `{symbol}@ticker` | 최근 24시간 요약 |
 | `Feed::Candles(interval)` | `{symbol}@kline_<interval>` | Binance `closed` 보존 |
@@ -57,7 +57,7 @@ REST와 `Feed::Candles`가 지원하는 간격은 같습니다. 거래소 간격
 이벤트의 `Market`은 `Subscription`에 등록된 거래소 심볼(native symbol) 매핑으로
 결정합니다. quote 접미사 목록으로 symbol을 분리하지 않습니다.
 
-USD-M은 `Trades`, `OrderBook`을 `/public/stream`으로, `Ticker`, `Candles`를
+USD-M은 `OrderBook`을 `/public/stream`으로, `Ticker`, `Candles`를
 `/market/stream`으로 연결합니다. 둘 다 필요하면 반환된 `MarketStream`이 두 소켓을
 병합합니다. 재연결 알림은 소켓별입니다. 한 소켓이 종료되면 논리 스트림을 종료하고
 다른 소켓도 폐기합니다.
@@ -86,8 +86,8 @@ USD-M은 `Trades`, `OrderBook`을 `/public/stream`으로, `Ticker`, `Candles`를
 | `spot_symbol_filters(&market)` | Spot `PRICE_FILTER`, `LOT_SIZE`, `NOTIONAL`; USD-M은 미지원 |
 | `spot_order(&market, order_id)` | 숫자 `order_id`로 Spot 주문 1건 조회; 완료 주문 포함 |
 | `usd_m_create_listen_key()` | USD-M account listen key 생성 또는 연장 |
-| `usd_m_keepalive_listen_key(&key)` | USD-M listen key 연장 |
-| `usd_m_close_listen_key(&key)` | USD-M listen key 종료 |
+| `usd_m_keepalive_listen_key()` | 설정된 API key가 소유한 활성 USD-M listen key 연장 |
+| `usd_m_close_listen_key()` | 설정된 API key가 소유한 활성 USD-M listen key 종료 |
 
 `subscribe_account`는 USD-M listen key 수명 주기를 관리합니다. Spot은 서명된
 `userDataStream.subscribe.signature` 요청을 사용하며 listen key를 사용하지

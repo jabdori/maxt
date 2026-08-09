@@ -6,8 +6,10 @@ mod rest;
 mod sign;
 mod stream;
 
+use std::sync::atomic::{AtomicU64, Ordering};
+
 use futures_util::StreamExt;
-use tokio::sync::OnceCell;
+use tokio::sync::{Mutex, OnceCell};
 
 use crate::adapter::{Adapter, BoxFuture};
 use crate::error::{Error, Result};
@@ -31,6 +33,11 @@ pub(crate) const MAINNET_REST_BASE_URL: &str = "https://api.hyperliquid.xyz";
 pub(crate) const MAINNET_WEBSOCKET_URL: &str = "wss://api.hyperliquid.xyz/ws";
 pub(crate) const TESTNET_REST_BASE_URL: &str = "https://api.hyperliquid-testnet.xyz";
 pub(crate) const TESTNET_WEBSOCKET_URL: &str = "wss://api.hyperliquid-testnet.xyz/ws";
+
+static LAST_NONCE: AtomicU64 = AtomicU64::new(0);
+// ponytail: one process-wide lane prevents nonce reordering; split it into
+// per-signer queues only if signed-action throughput becomes a bottleneck.
+static SIGNED_ACTION_LANE: Mutex<()> = Mutex::const_new(());
 
 /// Adapter for Hyperliquid spot and default perpetual markets.
 ///
@@ -125,7 +132,8 @@ impl HyperliquidAdapter {
     ///
     /// This may be an approved API-wallet key and therefore does not identify
     /// the account queried by the Info API. The key is redacted from [`Debug`]
-    /// output and validated before any network request is made.
+    /// output and validated before any network request is made. Use a separate
+    /// API wallet for each process; Hyperliquid tracks nonces by signer.
     #[must_use]
     pub fn with_signer(mut self, private_key: impl Into<String>) -> Self {
         self.signer = Some(HyperliquidSigner {
@@ -160,6 +168,17 @@ impl HyperliquidAdapter {
 
     pub(crate) fn has_signer(&self) -> bool {
         self.signer.is_some()
+    }
+
+    fn next_nonce(&self, now: Timestamp) -> Result<u64> {
+        let now = u64::try_from(now.as_millis())
+            .map_err(|_| Error::adapter("hyperliquid nonce clock predates the Unix epoch"))?;
+        let previous = LAST_NONCE
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |last| {
+                last.checked_add(1).map(|next| now.max(next))
+            })
+            .map_err(|_| Error::adapter("hyperliquid nonce counter is exhausted"))?;
+        Ok(now.max(previous + 1))
     }
 
     pub(crate) fn rest_base_url(&self) -> &'static str {
@@ -460,6 +479,7 @@ impl Adapter for HyperliquidAdapter {
         Box::pin(async move {
             let private_key = self.signing_key()?;
             let connection = self.connect().await?;
+            let _lane = SIGNED_ACTION_LANE.lock().await;
 
             rest::place_order(
                 &connection.http,
@@ -467,7 +487,7 @@ impl Adapter for HyperliquidAdapter {
                 private_key,
                 self.network,
                 &request,
-                rest::nonce(Timestamp::now()),
+                self.next_nonce(Timestamp::now())?,
             )
             .await
         })
@@ -480,6 +500,7 @@ impl Adapter for HyperliquidAdapter {
         Box::pin(async move {
             let private_key = self.signing_key()?;
             let connection = self.connect().await?;
+            let _lane = SIGNED_ACTION_LANE.lock().await;
 
             rest::cancel_order(
                 &connection.http,
@@ -488,7 +509,7 @@ impl Adapter for HyperliquidAdapter {
                 self.network,
                 &market,
                 &order_id,
-                rest::nonce(Timestamp::now()),
+                self.next_nonce(Timestamp::now())?,
             )
             .await
         })
@@ -548,6 +569,7 @@ impl Adapter for HyperliquidAdapter {
         Box::pin(async move {
             let private_key = self.signing_key()?;
             let connection = self.connect().await?;
+            let _lane = SIGNED_ACTION_LANE.lock().await;
 
             rest::set_margin(
                 &connection.http,
@@ -555,7 +577,7 @@ impl Adapter for HyperliquidAdapter {
                 private_key,
                 self.network,
                 &request,
-                rest::nonce(Timestamp::now()),
+                self.next_nonce(Timestamp::now())?,
             )
             .await
         })
@@ -814,6 +836,18 @@ mod tests {
             broken.cancel_order(&market, "1").await,
             Err(Error::Auth { .. })
         ));
+    }
+
+    #[test]
+    fn independent_adapters_share_a_monotonic_nonce_allocator() {
+        let first = HyperliquidAdapter::new();
+        let second = HyperliquidAdapter::new();
+        let now = Timestamp::from_millis(1_700_000_000_123);
+
+        let first_nonce = first.next_nonce(now).unwrap();
+        let second_nonce = second.next_nonce(now).unwrap();
+
+        assert!(second_nonce > first_nonce);
     }
 
     #[tokio::test]

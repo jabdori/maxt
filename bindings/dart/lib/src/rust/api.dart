@@ -104,7 +104,7 @@ abstract class NativeClient implements RustOpaqueInterface {
     required WireMarket market,
   });
 
-  Future<void> binanceUsdMCloseListenKey({required WireBinanceListenKey key});
+  Future<void> binanceUsdMCloseListenKey();
 
   Future<WireBinanceListenKey> binanceUsdMCreateListenKey();
 
@@ -115,9 +115,7 @@ abstract class NativeClient implements RustOpaqueInterface {
         secretKey: secretKey,
       );
 
-  Future<void> binanceUsdMKeepaliveListenKey({
-    required WireBinanceListenKey key,
-  });
+  Future<void> binanceUsdMKeepaliveListenKey();
 
   WireBinanceVenue? binanceVenue();
 

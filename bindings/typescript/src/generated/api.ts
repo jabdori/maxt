@@ -7,7 +7,7 @@ import { AccountStream, MarketStream, StreamError } from "../stream.js";
 import * as Codec from "./codec.js";
 import type * as Wire from "./contract.js";
 
-export const NATIVE_API_VERSION = 1 as const;
+export const NATIVE_API_VERSION = 2 as const;
 
 export type NativeOutcome<T> =
   | { readonly ok: true; readonly value: T }
@@ -69,8 +69,8 @@ export interface RawNativeBinanceHandle {
   spotSymbolFilters(market: string): Promise<unknown>;
   spotOrder(market: string, orderId: string): Promise<unknown>;
   usdMCreateListenKey(): Promise<unknown>;
-  usdMKeepaliveListenKey(key: string): Promise<unknown>;
-  usdMCloseListenKey(key: string): Promise<unknown>;
+  usdMKeepaliveListenKey(): Promise<unknown>;
+  usdMCloseListenKey(): Promise<unknown>;
 }
 
 export interface RawNativeHyperliquidHandle {
@@ -167,8 +167,8 @@ export interface NativeBinanceHandle {
   spotSymbolFilters(market: Wire.MarketWire): Promise<NativeOutcome<Wire.BinanceSymbolFiltersWire>>;
   spotOrder(market: Wire.MarketWire, orderId: string): Promise<NativeOutcome<Wire.BinanceSpotOrderDetailWire>>;
   usdMCreateListenKey(): Promise<NativeOutcome<Wire.BinanceListenKeyWire>>;
-  usdMKeepaliveListenKey(key: string): Promise<NativeOutcome<null>>;
-  usdMCloseListenKey(key: string): Promise<NativeOutcome<null>>;
+  usdMKeepaliveListenKey(): Promise<NativeOutcome<null>>;
+  usdMCloseListenKey(): Promise<NativeOutcome<null>>;
 }
 
 export interface NativeHyperliquidHandle {
@@ -259,8 +259,8 @@ export function createJsonBackend(raw: RawNativeModule): NativeBackend {
         spotSymbolFilters: (market: Wire.MarketWire) => handle.spotSymbolFilters(Codec.stringifyWire(market)) as Promise<NativeOutcome<Wire.BinanceSymbolFiltersWire>>,
         spotOrder: (market: Wire.MarketWire, orderId: string) => handle.spotOrder(Codec.stringifyWire(market), Codec.stringifyWire(orderId)) as Promise<NativeOutcome<Wire.BinanceSpotOrderDetailWire>>,
         usdMCreateListenKey: () => handle.usdMCreateListenKey() as Promise<NativeOutcome<Wire.BinanceListenKeyWire>>,
-        usdMKeepaliveListenKey: (key: string) => handle.usdMKeepaliveListenKey(Codec.stringifyWire(key)) as Promise<NativeOutcome<null>>,
-        usdMCloseListenKey: (key: string) => handle.usdMCloseListenKey(Codec.stringifyWire(key)) as Promise<NativeOutcome<null>>,
+        usdMKeepaliveListenKey: () => handle.usdMKeepaliveListenKey() as Promise<NativeOutcome<null>>,
+        usdMCloseListenKey: () => handle.usdMCloseListenKey() as Promise<NativeOutcome<null>>,
       };
     },
     hyperliquid(options) {
@@ -809,8 +809,8 @@ export class BinanceAdapter extends NativeAdapter {
   async spotSymbolFilters(market: Model.Market): Promise<Model.BinanceSymbolFilters> { await ensureInitialized(); return Codec.binanceSymbolFiltersFromWire(Codec.unwrapOutcome(await this.#provider.spotSymbolFilters(Codec.marketToWire(market)))); }
   async spotOrder(market: Model.Market, orderId: string): Promise<Model.BinanceSpotOrderDetail> { await ensureInitialized(); return Codec.binanceSpotOrderDetailFromWire(Codec.unwrapOutcome(await this.#provider.spotOrder(Codec.marketToWire(market), orderId))); }
   async usdMCreateListenKey(): Promise<BinanceListenKey> { await ensureInitialized(); const value = Codec.unwrapOutcome(await this.#provider.usdMCreateListenKey()); return new BinanceListenKey(value.id, value.value); }
-  async usdMKeepaliveListenKey(key: BinanceListenKey): Promise<void> { await ensureInitialized(); Codec.unwrapOutcome(await this.#provider.usdMKeepaliveListenKey(key.id)); }
-  async usdMCloseListenKey(key: BinanceListenKey): Promise<void> { await ensureInitialized(); Codec.unwrapOutcome(await this.#provider.usdMCloseListenKey(key.id)); }
+  async usdMKeepaliveListenKey(): Promise<void> { await ensureInitialized(); Codec.unwrapOutcome(await this.#provider.usdMKeepaliveListenKey()); }
+  async usdMCloseListenKey(): Promise<void> { await ensureInitialized(); Codec.unwrapOutcome(await this.#provider.usdMCloseListenKey()); }
 }
 
 export class HyperliquidAdapter extends NativeAdapter {

@@ -867,35 +867,24 @@ pub(super) async fn create_listen_key(adapter: &BinanceAdapter) -> Result<Binanc
 }
 
 /// Extends the USD-M listen key the API key currently owns.
-///
-/// `key` names the stream being kept alive and is not sent: USD-M extends
-/// whichever key the API key owns and rejects a `listenKey` parameter.
-pub(super) fn keepalive_listen_key_request(
-    adapter: &BinanceAdapter,
-    _key: &BinanceListenKey,
-) -> Result<HttpRequest> {
+pub(super) fn keepalive_listen_key_request(adapter: &BinanceAdapter) -> Result<HttpRequest> {
     api_key_only(adapter, HttpMethod::Put, USD_M_LISTEN_KEY_PATH, &[])
 }
 
-pub(super) async fn keepalive_listen_key(
-    adapter: &BinanceAdapter,
-    key: &BinanceListenKey,
-) -> Result<()> {
-    let request = keepalive_listen_key_request(adapter, key)?;
+pub(super) async fn keepalive_listen_key(adapter: &BinanceAdapter) -> Result<()> {
+    let request = keepalive_listen_key_request(adapter)?;
     adapter.send(request).await.map(|_| ())
 }
 
-pub(super) async fn close_listen_key(
-    adapter: &BinanceAdapter,
-    key: &BinanceListenKey,
-) -> Result<()> {
-    let request = api_key_only(
-        adapter,
-        HttpMethod::Delete,
-        USD_M_LISTEN_KEY_PATH,
-        &[("listenKey", key.0.clone())],
-    )?;
+pub(super) async fn close_listen_key(adapter: &BinanceAdapter) -> Result<()> {
+    let request = close_listen_key_request(adapter)?;
     adapter.send(request).await.map(|_| ())
+}
+
+/// Builds the USD-M close request. Binance closes the key owned by the API key
+/// and rejects a `listenKey` query parameter.
+pub(super) fn close_listen_key_request(adapter: &BinanceAdapter) -> Result<HttpRequest> {
+    api_key_only(adapter, HttpMethod::Delete, USD_M_LISTEN_KEY_PATH, &[])
 }
 
 /// USD-M account events requested in the socket URL.
@@ -1571,10 +1560,9 @@ mod tests {
     /// No request builder uses the removed Spot listen-key endpoints.
     #[test]
     fn no_request_reaches_for_the_removed_spot_listen_key_endpoints() {
-        let key = BinanceListenKey("listen-key".to_string());
         let requests = [
-            keepalive_listen_key_request(&spot(), &key).expect("credentials are set"),
-            keepalive_listen_key_request(&perp(), &key).expect("credentials are set"),
+            keepalive_listen_key_request(&spot()).expect("credentials are set"),
+            keepalive_listen_key_request(&perp()).expect("credentials are set"),
             api_key_only(&spot(), HttpMethod::Post, USD_M_LISTEN_KEY_PATH, &[])
                 .expect("credentials are set"),
         ];
@@ -1651,15 +1639,28 @@ mod tests {
 
     #[test]
     fn keepalive_uses_put_and_never_names_the_key_binance_would_reject() {
-        let key = BinanceListenKey("listen-key".to_string());
-
-        let request = keepalive_listen_key_request(&perp(), &key).expect("credentials are set");
+        let request = keepalive_listen_key_request(&perp()).expect("credentials are set");
 
         assert_eq!(request.method, HttpMethod::Put);
         // USD-M extends whichever key the API key owns, and sending `listenKey`
         // there is rejected.
         assert_eq!(request.target(), "/fapi/v1/listenKey");
         // Not a signed endpoint: the API key header alone authorises it.
+        assert!(!request.target().contains("signature"));
+        assert!(
+            request
+                .headers
+                .iter()
+                .any(|(name, _)| name == API_KEY_HEADER)
+        );
+    }
+
+    #[test]
+    fn close_uses_delete_and_never_names_the_key_binance_would_reject() {
+        let request = close_listen_key_request(&perp()).expect("credentials are set");
+
+        assert_eq!(request.method, HttpMethod::Delete);
+        assert_eq!(request.target(), "/fapi/v1/listenKey");
         assert!(!request.target().contains("signature"));
         assert!(
             request

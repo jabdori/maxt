@@ -662,6 +662,7 @@ pub(crate) fn minute_unit(interval: Interval) -> Option<u32> {
         Interval::Min1 => Some(1),
         Interval::Min3 => Some(3),
         Interval::Min5 => Some(5),
+        Interval::Min10 => Some(10),
         Interval::Min15 => Some(15),
         Interval::Min30 => Some(30),
         Interval::Hour1 => Some(60),

@@ -91,9 +91,7 @@ impl NativeClient {
         let request = crate::convert::chain_transfer_request_from_wire(request)?;
         operation(
             py,
-            async move {
-                maxt::prepare_chain_transfer(source.adapter().as_ref(), &request).await
-            },
+            async move { maxt::prepare_chain_transfer(source.adapter().as_ref(), &request).await },
             |py, value| crate::convert::transfer_plan_to_wire(py, &value),
         )
     }

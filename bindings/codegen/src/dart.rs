@@ -1332,10 +1332,10 @@ fn provider_method_source(exchange: &str, method: &str) -> &'static str {
             "  Future<BinanceListenKey> usdMCreateListenKey() => _nativeFuture(\n    _handle.binanceUsdMCreateListenKey,\n  ).then(BinanceListenKey._);\n"
         }
         ("binance", "usd_m_keepalive_listen_key") => {
-            "  Future<void> usdMKeepaliveListenKey(BinanceListenKey key) => _nativeFuture(\n    () => _handle.binanceUsdMKeepaliveListenKey(key: key._handle),\n  );\n"
+            "  Future<void> usdMKeepaliveListenKey() =>\n      _nativeFuture(_handle.binanceUsdMKeepaliveListenKey);\n"
         }
         ("binance", "usd_m_close_listen_key") => {
-            "  Future<void> usdMCloseListenKey(BinanceListenKey key) =>\n      _nativeFuture(() => _handle.binanceUsdMCloseListenKey(key: key._handle));\n"
+            "  Future<void> usdMCloseListenKey() =>\n      _nativeFuture(_handle.binanceUsdMCloseListenKey);\n"
         }
         ("hyperliquid", "non_funding_ledger") => {
             "  Future<Page<HyperliquidLedgerEntry>> nonFundingLedger({\n    Timestamp? from,\n    Timestamp? to,\n    Cursor? cursor,\n    int? limit,\n  }) => _nativeFuture(\n    () => _handle.hyperliquidNonFundingLedger(\n      fromNs: from == null\n          ? null\n          : platformInt64FromBigInt(from.nanosecondsSinceEpoch),\n      toNs: to == null\n          ? null\n          : platformInt64FromBigInt(to.nanosecondsSinceEpoch),\n      cursor: cursor?.value,\n      limit: checkedUint32(limit, field: 'limit'),\n    ),\n  ).then(_hyperliquidLedgerPageFromWire);\n"

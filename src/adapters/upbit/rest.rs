@@ -106,15 +106,16 @@ pub(crate) fn ticker_request(markets: &[Market]) -> Result<HttpRequest> {
 
 /// Returns the candle endpoint for an interval exposed by `maxt`.
 ///
-/// Upbit also provides 10-minute and yearly candles, but [`Interval`] has no
-/// corresponding variants. Other unmapped intervals are not available from
-/// Upbit. One-second history is limited to the most recent three months.
+/// Upbit also provides yearly candles, but [`Interval`] has no corresponding
+/// variant. Other unmapped intervals are not available from Upbit. One-second
+/// history is limited to the most recent three months.
 pub(crate) fn candle_path(interval: Interval) -> Option<&'static str> {
     Some(match interval {
         Interval::Sec1 => "/v1/candles/seconds",
         Interval::Min1 => "/v1/candles/minutes/1",
         Interval::Min3 => "/v1/candles/minutes/3",
         Interval::Min5 => "/v1/candles/minutes/5",
+        Interval::Min10 => "/v1/candles/minutes/10",
         Interval::Min15 => "/v1/candles/minutes/15",
         Interval::Min30 => "/v1/candles/minutes/30",
         Interval::Hour1 => "/v1/candles/minutes/60",
@@ -313,6 +314,7 @@ mod tests {
             (Interval::Min1, "/v1/candles/minutes/1"),
             (Interval::Min3, "/v1/candles/minutes/3"),
             (Interval::Min5, "/v1/candles/minutes/5"),
+            (Interval::Min10, "/v1/candles/minutes/10"),
             (Interval::Min15, "/v1/candles/minutes/15"),
             (Interval::Min30, "/v1/candles/minutes/30"),
             (Interval::Hour1, "/v1/candles/minutes/60"),
@@ -339,6 +341,7 @@ mod tests {
         // Unavailable intervals must not be substituted with nearby intervals.
         for interval in [
             Interval::Hour2,
+            Interval::Hour6,
             Interval::Hour8,
             Interval::Hour12,
             Interval::Day3,
@@ -383,6 +386,7 @@ mod tests {
             Interval::Min1,
             Interval::Min3,
             Interval::Min5,
+            Interval::Min10,
             Interval::Min15,
             Interval::Min30,
             Interval::Hour1,

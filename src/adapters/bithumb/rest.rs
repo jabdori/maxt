@@ -88,13 +88,12 @@ pub(crate) fn ticker_request(market: &Market) -> Result<HttpRequest> {
 }
 
 /// Returns the endpoint for an interval supported by both Bithumb and `Interval`.
-///
-/// Bithumb also serves ten-minute candles, which `Interval` cannot represent.
 pub(crate) fn candle_path(interval: Interval) -> Option<&'static str> {
     Some(match interval {
         Interval::Min1 => "/v1/candles/minutes/1",
         Interval::Min3 => "/v1/candles/minutes/3",
         Interval::Min5 => "/v1/candles/minutes/5",
+        Interval::Min10 => "/v1/candles/minutes/10",
         Interval::Min15 => "/v1/candles/minutes/15",
         Interval::Min30 => "/v1/candles/minutes/30",
         Interval::Hour1 => "/v1/candles/minutes/60",
@@ -291,6 +290,7 @@ mod tests {
             (Interval::Min1, "/v1/candles/minutes/1"),
             (Interval::Min3, "/v1/candles/minutes/3"),
             (Interval::Min5, "/v1/candles/minutes/5"),
+            (Interval::Min10, "/v1/candles/minutes/10"),
             (Interval::Min15, "/v1/candles/minutes/15"),
             (Interval::Min30, "/v1/candles/minutes/30"),
             (Interval::Hour1, "/v1/candles/minutes/60"),
@@ -317,6 +317,7 @@ mod tests {
         for interval in [
             Interval::Sec1,
             Interval::Hour2,
+            Interval::Hour6,
             Interval::Hour8,
             Interval::Hour12,
             Interval::Day3,

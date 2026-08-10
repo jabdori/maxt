@@ -237,11 +237,22 @@ impl<A: Adapter> Client<A> {
 
     /// Cancels an order.
     ///
-    /// Requires credentials. Cancellation races execution. The returned
-    /// [`Order`] is the provider acknowledgement; some providers omit final
-    /// fill state. Reconcile the order when the final outcome matters.
-    pub async fn cancel_order(&self, market: &Market, order_id: &str) -> Result<Order> {
+    /// Requires credentials. `Ok(())` confirms that the provider accepted or
+    /// confirmed the cancellation response; it is not a final fill snapshot.
+    /// Cancellation races execution, so query the order when the final outcome
+    /// matters.
+    pub async fn cancel_order(&self, market: &Market, order_id: &str) -> Result<()> {
         self.adapter.cancel_order(market, order_id).await
+    }
+
+    /// Cancels an order by the caller-assigned identifier used at placement.
+    ///
+    /// Requires credentials. Cancellation has the same race and reconciliation
+    /// requirements as [`Client::cancel_order`].
+    pub async fn cancel_order_by_client_id(&self, market: &Market, client_id: &str) -> Result<()> {
+        self.adapter
+            .cancel_order_by_client_id(market, client_id)
+            .await
     }
 
     /// Reads every open position.

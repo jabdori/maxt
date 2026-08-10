@@ -975,7 +975,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::FinancialWrite,
-        OperationMapping::Common("cancel_order"),
+        OperationMapping::CommonMany(&["cancel_order", "cancel_order_by_client_id"]),
         Validation::Fixture,
     )),
     partial(operation(
@@ -1278,7 +1278,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::FinancialWrite,
-        OperationMapping::Common("cancel_order"),
+        OperationMapping::CommonMany(&["cancel_order", "cancel_order_by_client_id"]),
         Validation::Fixture,
     )),
     partial(operation(
@@ -1497,7 +1497,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Hmac,
         OperationRisk::FinancialWrite,
-        OperationMapping::Common("cancel_order"),
+        OperationMapping::CommonMany(&["cancel_order", "cancel_order_by_client_id"]),
         Validation::Fixture,
     )),
     operation(
@@ -1677,7 +1677,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Hmac,
         OperationRisk::FinancialWrite,
-        OperationMapping::Common("cancel_order"),
+        OperationMapping::CommonMany(&["cancel_order", "cancel_order_by_client_id"]),
         Validation::Fixture,
     )),
     operation(

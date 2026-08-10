@@ -180,12 +180,13 @@ extension OrderStatusWireName on OrderStatus {
   };
 }
 
-enum OrderType { market, limit }
+enum OrderType { market, limit, best }
 
 extension OrderTypeWireName on OrderType {
   String get wireName => switch (this) {
     OrderType.market => 'market',
     OrderType.limit => 'limit',
+    OrderType.best => 'best',
   };
 }
 

@@ -33,8 +33,7 @@ remain string codes.
 
 | Contract | Value |
 | --- | --- |
-| Exposed intervals | `Min1`, `Min3`, `Min5`, `Min15`, `Min30`, `Hour1`, `Hour4`, `Day1`, `Week1`, `Month1` |
-| Native interval not exposed | `10m` |
+| Exposed intervals | `Min1`, `Min3`, `Min5`, `Min10`, `Min15`, `Min30`, `Hour1`, `Hour4`, `Day1`, `Week1`, `Month1` |
 | Provider page cap | 200 |
 | Provider calls per request | `<= 100` |
 | Preflight candle estimate | `<= 20_000` |
@@ -68,12 +67,16 @@ orders.
 | Limit buy or sell | `Size::Base` |
 | Market buy | `Size::Quote` |
 | Market sell | `Size::Base` |
+| Best buy | `Size::Quote` |
+| Best sell | `Size::Base` |
 
 | Input | Result |
 | --- | --- |
-| `OrderRequest::time_in_force.is_some()` | `Error::InvalidRequest` |
+| Limit + `IOC`, `FOK`, or `PostOnly` | KRW markets only |
+| Best + `IOC` or `FOK` | KRW markets only; policy required |
+| `client_id` | 1–36 ASCII letters, digits, `-`, or `_` |
 | `OrderRequest::reduce_only == true` | `Error::Unsupported` |
-| `cancel_order(...)` | Cancellation acknowledgement; `status = Cancelled`; fill fields unavailable |
+| `cancel_order(...)`, `cancel_order_by_client_id(...)` | Return `()` after validating the cancellation acknowledgement |
 
 Access the following provider-specific methods through `Client::adapter()`.
 
@@ -96,8 +99,8 @@ Access the following provider-specific methods through `Client::adapter()`.
 | Order REST | Additional throttling above 10/s |
 | WebSocket connections | 10/s per IP; HTTP 429; repeated excess may block for 10 minutes |
 
-`maxt` does not throttle requests. Derivatives, `MarketKind::Perpetual`, public
-candle streams, and `time_in_force` are not supported.
+`maxt` does not throttle requests. Derivatives, `MarketKind::Perpetual`, and
+public candle streams are not supported.
 
 - [Documentation index](https://apidocs.bithumb.com/llms.txt)
 - [Request limits](https://apidocs.bithumb.com/docs/api-%EC%9A%94%EC%B2%AD-%EC%88%98-%EC%A0%9C%ED%95%9C-%EC%95%88%EB%82%B4.md)

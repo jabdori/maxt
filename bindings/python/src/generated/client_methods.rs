@@ -269,7 +269,22 @@ impl NativeClient {
         operation(
             py,
             async move { core.cancel_order(&market, &order_id).await },
-            |py, value| crate::convert::order_to_wire(py, &value),
+            |py, ()| Ok(py.None()),
+        )
+    }
+
+    fn cancel_order_by_client_id<'py>(
+        &self,
+        py: Python<'py>,
+        market: &Bound<'_, PyAny>,
+        client_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let market = crate::convert::market_from_wire(market)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.cancel_order_by_client_id(&market, &client_id).await },
+            |py, ()| Ok(py.None()),
         )
     }
 

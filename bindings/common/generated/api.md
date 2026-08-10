@@ -23,6 +23,7 @@
 | `subscribe_account` | `subscribeAccount` |
 | `place_order` | `placeOrder` |
 | `cancel_order` | `cancelOrder` |
+| `cancel_order_by_client_id` | `cancelOrderByClientId` |
 | `positions` | `positions` |
 | `margin_summary` | `marginSummary` |
 | `funding_rates` | `fundingRates` |
@@ -120,7 +121,7 @@ Documentation baseline: `2026-08-10`.
 | upbit | exchange | `balances` | `http` | common `balances` | `Implemented` | `Fixture` |
 | upbit | exchange | `open_orders` | `http` | common `open_orders` | `Implemented` | `Fixture` |
 | upbit | exchange | `new_order` | `http` | common `place_order` | `Partial` | `Fixture` |
-| upbit | exchange | `cancel_order` | `http` | common `cancel_order` | `Partial` | `Fixture` |
+| upbit | exchange | `cancel_order` | `http` | common `cancel_order`, `cancel_order_by_client_id` | `Partial` | `Fixture` |
 | upbit | exchange | `my_order_stream` | `websocket_stream` | common `subscribe_account` | `Partial` | `Fixture` |
 | upbit | exchange | `my_asset_stream` | `websocket_stream` | common `subscribe_account` | `Partial` | `Fixture` |
 | upbit | wallet | `wallet_status` | `http` | common `asset_networks` | `Implemented` | `Fixture` |
@@ -145,7 +146,7 @@ Documentation baseline: `2026-08-10`.
 | bithumb | exchange | `balances` | `http` | common `balances` | `Implemented` | `Fixture` |
 | bithumb | exchange | `orders` | `http` | common `open_orders` | `Partial` | `Fixture` |
 | bithumb | exchange | `new_order` | `http` | common `place_order` | `Partial` | `Fixture` |
-| bithumb | exchange | `cancel_order` | `http` | common `cancel_order` | `Partial` | `Fixture` |
+| bithumb | exchange | `cancel_order` | `http` | common `cancel_order`, `cancel_order_by_client_id` | `Partial` | `Fixture` |
 | bithumb | exchange | `my_order_stream` | `websocket_stream` | common `subscribe_account` | `Partial` | `Fixture` |
 | bithumb | exchange | `my_asset_stream` | `websocket_stream` | common `subscribe_account` | `Partial` | `Fixture` |
 | bithumb | wallet | `wallet_status` | `http` | common `asset_networks` | `Implemented` | `Fixture` |
@@ -163,7 +164,7 @@ Documentation baseline: `2026-08-10`.
 | binance | spot | `account_information` | `http` | common `balances` | `Implemented` | `Fixture` |
 | binance | spot | `open_orders` | `http` | common `open_orders` | `Implemented` | `Fixture` |
 | binance | spot | `new_order` | `http` | common `place_order` | `Partial` | `Fixture` |
-| binance | spot | `cancel_order` | `http` | common `cancel_order` | `Partial` | `Fixture` |
+| binance | spot | `cancel_order` | `http` | common `cancel_order`, `cancel_order_by_client_id` | `Partial` | `Fixture` |
 | binance | spot | `query_order` | `http` | provider `spot_order` | `Implemented` | `Fixture` |
 | binance | spot | `trade_stream` | `websocket_stream` | common `subscribe` | `Partial` | `LiveRead` |
 | binance | spot | `partial_book_depth_stream` | `websocket_stream` | common `subscribe` | `Partial` | `LiveRead` |
@@ -178,7 +179,7 @@ Documentation baseline: `2026-08-10`.
 | binance | usd_m | `account_information_v3` | `http` | common `balances`, `margin_summary` | `Implemented` | `Fixture` |
 | binance | usd_m | `open_orders` | `http` | common `open_orders` | `Implemented` | `Fixture` |
 | binance | usd_m | `new_order` | `http` | common `place_order` | `Partial` | `Fixture` |
-| binance | usd_m | `cancel_order` | `http` | common `cancel_order` | `Partial` | `Fixture` |
+| binance | usd_m | `cancel_order` | `http` | common `cancel_order`, `cancel_order_by_client_id` | `Partial` | `Fixture` |
 | binance | usd_m | `position_information_v3` | `http` | common `positions` | `Implemented` | `Fixture` |
 | binance | usd_m | `funding_rate_history` | `http` | common `funding_rates` | `Implemented` | `LiveRead` |
 | binance | usd_m | `income_history` | `http` | common `funding_payments` | `Implemented` | `Fixture` |

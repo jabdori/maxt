@@ -87,8 +87,11 @@ abstract base class GeneratedClient<A extends Adapter> {
 
   Future<Order> placeOrder(OrderRequest request) => _native.placeOrder(request);
 
-  Future<Order> cancelOrder(Market market, String orderId) =>
+  Future<void> cancelOrder(Market market, String orderId) =>
       _native.cancelOrder(market, orderId);
+
+  Future<void> cancelOrderByClientId(Market market, String clientId) =>
+      _native.cancelOrderByClientId(market, clientId);
 
   Future<List<Position>> positions() async =>
       _openPositions(await _native.positions());

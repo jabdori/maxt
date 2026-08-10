@@ -530,7 +530,7 @@ fn offset_time(raw: &str) -> Option<Timestamp> {
         .map(Timestamp::from_nanos)
 }
 
-/// Parses a minimal placement or cancellation acknowledgement.
+/// Parses a minimal placement acknowledgement.
 pub(crate) fn order_ack(
     entry: &Value,
     market: Market,

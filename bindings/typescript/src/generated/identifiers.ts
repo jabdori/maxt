@@ -210,9 +210,11 @@ export class OrderStatus extends StringValue {
 export class OrderType extends StringValue {
   static readonly Market = new OrderType("market");
   static readonly Limit = new OrderType("limit");
+  static readonly Best = new OrderType("best");
   static readonly values: readonly OrderType[] = Object.freeze([
     OrderType.Market,
     OrderType.Limit,
+    OrderType.Best,
   ]);
   private constructor(id: string) { super(id); Object.freeze(this); }
 }

@@ -252,16 +252,36 @@ impl Adapter for ForeignAdapter {
         )
     }
 
-    fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<Order>> {
-        dispatch!(
-            self,
-            AdapterCall::CancelOrder {
+    fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<()>> {
+        let future = self.dispatcher.dispatch(AdapterCall::CancelOrder {
+            market: market.clone(),
+            order_id: order_id.to_owned(),
+        });
+        Box::pin(async move {
+            match future.await? {
+                AdapterReply::Unit => Ok(()),
+                reply => Err(unexpected_reply("Unit", &reply)),
+            }
+        })
+    }
+
+    fn cancel_order_by_client_id(
+        &self,
+        market: &Market,
+        client_id: &str,
+    ) -> BoxFuture<'_, Result<()>> {
+        let future = self
+            .dispatcher
+            .dispatch(AdapterCall::CancelOrderByClientId {
                 market: market.clone(),
-                order_id: order_id.to_owned(),
-            },
-            AdapterReply::CancelOrder,
-            "CancelOrder"
-        )
+                client_id: client_id.to_owned(),
+            });
+        Box::pin(async move {
+            match future.await? {
+                AdapterReply::Unit => Ok(()),
+                reply => Err(unexpected_reply("Unit", &reply)),
+            }
+        })
     }
 
     fn positions(&self, market: Option<&Market>) -> BoxFuture<'_, Result<Vec<Position>>> {

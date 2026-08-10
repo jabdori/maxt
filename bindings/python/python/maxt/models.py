@@ -215,12 +215,17 @@ class OrderRequest(WireModel):
     price: Optional[Decimal] = None
     time_in_force: Optional[TimeInForce] = None
     reduce_only: bool = False
+    client_id: Optional[str] = None
 
     def __post_init__(self) -> None:
         if self.order_type is OrderType.MARKET and self.price is not None:
             raise ValueError("market orders must not include price")
         if self.order_type is OrderType.LIMIT and self.price is None:
             raise ValueError("limit orders require price")
+        if self.order_type is OrderType.BEST and self.price is not None:
+            raise ValueError("best orders must not include price")
+        if self.order_type is OrderType.BEST and self.time_in_force is None:
+            raise ValueError("best orders require time_in_force")
 
     @classmethod
     def market_order(
@@ -231,6 +236,7 @@ class OrderRequest(WireModel):
         *,
         time_in_force: Optional[TimeInForce] = None,
         reduce_only: bool = False,
+        client_id: Optional[str] = None,
     ) -> OrderRequest:
         return cls(
             market,
@@ -239,6 +245,7 @@ class OrderRequest(WireModel):
             size,
             time_in_force=time_in_force,
             reduce_only=reduce_only,
+            client_id=client_id,
         )
 
     @classmethod
@@ -251,6 +258,7 @@ class OrderRequest(WireModel):
         *,
         time_in_force: Optional[TimeInForce] = None,
         reduce_only: bool = False,
+        client_id: Optional[str] = None,
     ) -> OrderRequest:
         return cls(
             market,
@@ -260,6 +268,28 @@ class OrderRequest(WireModel):
             price,
             time_in_force,
             reduce_only,
+            client_id,
+        )
+
+    @classmethod
+    def best_order(
+        cls,
+        market: Market,
+        side: Side,
+        size: Size,
+        time_in_force: TimeInForce,
+        *,
+        reduce_only: bool = False,
+        client_id: Optional[str] = None,
+    ) -> OrderRequest:
+        return cls(
+            market,
+            side,
+            OrderType.BEST,
+            size,
+            time_in_force=time_in_force,
+            reduce_only=reduce_only,
+            client_id=client_id,
         )
 
 

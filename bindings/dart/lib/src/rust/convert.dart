@@ -864,6 +864,7 @@ class WireOrderRequest {
   final String? price;
   final WireTimeInForce? timeInForce;
   final bool reduceOnly;
+  final String? clientId;
 
   const WireOrderRequest({
     required this.market,
@@ -873,6 +874,7 @@ class WireOrderRequest {
     this.price,
     this.timeInForce,
     required this.reduceOnly,
+    this.clientId,
   });
 
   @override
@@ -883,7 +885,8 @@ class WireOrderRequest {
       size.hashCode ^
       price.hashCode ^
       timeInForce.hashCode ^
-      reduceOnly.hashCode;
+      reduceOnly.hashCode ^
+      clientId.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -896,7 +899,8 @@ class WireOrderRequest {
           size == other.size &&
           price == other.price &&
           timeInForce == other.timeInForce &&
-          reduceOnly == other.reduceOnly;
+          reduceOnly == other.reduceOnly &&
+          clientId == other.clientId;
 }
 
 enum WireOrderStatus {
@@ -909,7 +913,7 @@ enum WireOrderStatus {
   unknown,
 }
 
-enum WireOrderType { market, limit }
+enum WireOrderType { market, limit, best }
 
 class WirePosition {
   final WireMarket market;

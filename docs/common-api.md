@@ -176,7 +176,7 @@ retrying.
 | `open_orders*` | Point-in-time snapshot; full provider pagination is not guaranteed |
 | `OrderRequest::size` | `Size::Base` or `Size::Quote` |
 | Order precision | `MarketInfo` has no common tick size, lot size, or minimum notional |
-| `cancel_order` | May race a fill; returned `Order` is a provider acknowledgement and may omit final fill state |
+| `cancel_order`, `cancel_order_by_client_id` | Return `()` after a valid provider acknowledgement; query the order to resolve races with fills |
 | `positions*` | Remove rows where `position.quantity == 0` |
 | `MarginSummary` | Provider omission maps to `None` |
 | `FundingPayment::amount < 0` | Account paid funding |

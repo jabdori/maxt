@@ -553,10 +553,20 @@ impl Adapter for BinanceAdapter {
         Box::pin(async move { private::place_order(self, &request).await })
     }
 
-    fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<Order>> {
+    fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<()>> {
         let market = market.clone();
         let order_id = order_id.to_string();
         Box::pin(async move { private::cancel_order(self, &market, &order_id).await })
+    }
+
+    fn cancel_order_by_client_id(
+        &self,
+        market: &Market,
+        client_id: &str,
+    ) -> BoxFuture<'_, Result<()>> {
+        let market = market.clone();
+        let client_id = client_id.to_string();
+        Box::pin(async move { private::cancel_order_by_client_id(self, &market, &client_id).await })
     }
 
     fn positions(&self, market: Option<&Market>) -> BoxFuture<'_, Result<Vec<Position>>> {

@@ -138,6 +138,11 @@ pub enum AdapterCall {
         market: WireMarket,
         order_id: String,
     },
+    /// client ID로 주문을 취소합니다.
+    CancelOrderByClientId {
+        market: WireMarket,
+        client_id: String,
+    },
     /// 미결제 포지션을 요청합니다.
     Positions { market: Option<WireMarket> },
     /// 계정 증거금 요약을 요청합니다.
@@ -197,8 +202,6 @@ pub enum AdapterReply {
     OpenOrders(Vec<WireOrder>),
     /// 주문 제출 응답입니다.
     PlaceOrder(WireOrder),
-    /// 주문 취소 응답입니다.
-    CancelOrder(WireOrder),
     /// 포지션 응답입니다.
     Positions(Vec<WirePosition>),
     /// 증거금 요약 응답입니다.
@@ -228,7 +231,6 @@ impl AdapterReply {
             Self::Withdrawals(_) => "Withdrawals",
             Self::OpenOrders(_) => "OpenOrders",
             Self::PlaceOrder(_) => "PlaceOrder",
-            Self::CancelOrder(_) => "CancelOrder",
             Self::Positions(_) => "Positions",
             Self::MarginSummary(_) => "MarginSummary",
             Self::FundingRates(_) => "FundingRates",
@@ -353,7 +355,6 @@ enum ExpectedReply {
     Withdrawals,
     OpenOrders,
     PlaceOrder,
-    CancelOrder,
     Positions,
     MarginSummary,
     FundingRates,
@@ -378,7 +379,6 @@ impl ExpectedReply {
             Self::Withdrawals => "Withdrawals",
             Self::OpenOrders => "OpenOrders",
             Self::PlaceOrder => "PlaceOrder",
-            Self::CancelOrder => "CancelOrder",
             Self::Positions => "Positions",
             Self::MarginSummary => "MarginSummary",
             Self::FundingRates => "FundingRates",
@@ -474,10 +474,6 @@ impl AdapterReply {
                 .try_into()
                 .map(CommonAdapterReply::PlaceOrder)
                 .map_err(|error| invalid_reply("PlaceOrder", error)),
-            (ExpectedReply::CancelOrder, Self::CancelOrder(value)) => value
-                .try_into()
-                .map(CommonAdapterReply::CancelOrder)
-                .map_err(|error| invalid_reply("CancelOrder", error)),
             (ExpectedReply::Positions, Self::Positions(values)) => {
                 convert_vec(values, "Positions").map(CommonAdapterReply::Positions)
             }
@@ -763,8 +759,9 @@ mod tests {
                             AdapterReply::PlaceOrder(wire_order("placed", request.market))
                         }
                         AdapterCall::CancelOrder { market, order_id } => {
+                            assert_eq!(market.base, "BTC");
                             assert_eq!(order_id, "order-1");
-                            AdapterReply::CancelOrder(wire_order("cancelled", market))
+                            AdapterReply::Unit
                         }
                         other => panic!("unexpected call: {other:?}"),
                     };
@@ -792,15 +789,11 @@ mod tests {
             adapter.inner.place_order(&request).await.unwrap().id,
             "placed",
         );
-        assert_eq!(
-            adapter
-                .inner
-                .cancel_order(&market, "order-1")
-                .await
-                .unwrap()
-                .id,
-            "cancelled",
-        );
+        adapter
+            .inner
+            .cancel_order(&market, "order-1")
+            .await
+            .unwrap();
     }
 
     fn wire_order(id: &str, market: crate::convert::WireMarket) -> WireOrder {

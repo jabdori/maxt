@@ -461,6 +461,13 @@ class WireModelTests(unittest.TestCase):
             Decimal("50000.2500"),
             time_in_force=TimeInForce.POST_ONLY,
         )
+        best_order = OrderRequest.best_order(
+            Market.spot(Exchange.BITHUMB, "BTC", "KRW"),
+            Side.BUY,
+            Size.quote(Decimal("10000")),
+            TimeInForce.IMMEDIATE_OR_CANCEL,
+            client_id="client-1",
+        )
         margin = MarginRequest(
             market,
             leverage=Decimal("3.0"),
@@ -478,11 +485,22 @@ class WireModelTests(unittest.TestCase):
                 "price": None,
                 "time_in_force": None,
                 "reduce_only": True,
+                "client_id": None,
             },
         )
         self.assertEqual(limit_order.to_wire()["price"], "50000.2500")
         self.assertEqual(limit_order.to_wire()["time_in_force"], "post_only")
+        self.assertEqual(best_order.to_wire()["order_type"], "best")
+        self.assertEqual(best_order.to_wire()["client_id"], "client-1")
         self.assertEqual(margin.to_wire()["leverage"], "3.0")
+
+        with self.assertRaisesRegex(ValueError, "time_in_force"):
+            OrderRequest(
+                Market.spot(Exchange.UPBIT, "BTC", "KRW"),
+                Side.BUY,
+                OrderType.BEST,
+                Size.quote(Decimal("10000")),
+            )
 
     def test_generated_wallet_models_round_trip_tagged_values(self) -> None:
         destination = TransferDestination.chain(

@@ -453,6 +453,7 @@ export function orderRequestFromWire(value: Wire.OrderRequestWire): Model.OrderR
       ? null
       : identifier(Model.TimeInForce.values, value.time_in_force, "time_in_force"),
     reduceOnly: value.reduce_only,
+    clientId: value.client_id,
   };
   const market = marketFromWire(value.market);
   const side = identifier(Model.Side.values, value.side, "side");
@@ -461,6 +462,9 @@ export function orderRequestFromWire(value: Wire.OrderRequestWire): Model.OrderR
   }
   if (value.order_type === Model.OrderType.Limit.id && value.price !== null) {
     return Model.OrderRequest.limit(market, side, size, Model.Decimal.parse(value.price), options);
+  }
+  if (value.order_type === Model.OrderType.Best.id && value.price === null && options.timeInForce !== null) {
+    return Model.OrderRequest.best(market, side, size, options.timeInForce, options);
   }
   throw new InvalidRequestError("order_type", "invalid order request");
 }
@@ -473,7 +477,7 @@ export function orderRequestToWire(value: Model.OrderRequest): Wire.OrderRequest
       value: value.size.value.toString(),
     },
     price: value.price?.toString() ?? null, time_in_force: value.timeInForce?.id ?? null,
-    reduce_only: value.reduceOnly,
+    reduce_only: value.reduceOnly, client_id: value.clientId,
   };
 }
 

@@ -19,13 +19,17 @@ import {
   MarketKind,
   Network,
   OrderBook,
+  OrderRequest,
   OrderStatus,
+  OrderType,
   Overflow,
   Page,
   Side,
+  Size,
   StreamConfig,
   Subscription,
   Timestamp,
+  TimeInForce,
   TransferDestination,
   TransferHistoryRequest,
   TravelRuleRequirement,
@@ -39,6 +43,8 @@ import {
   assetNetworkToWire,
   depositFromWire,
   depositToWire,
+  orderRequestFromWire,
+  orderRequestToWire,
   streamConfigFromWire,
   transferHistoryRequestFromWire,
   transferHistoryRequestToWire,
@@ -127,6 +133,21 @@ test("string variants are stable singleton values in Rust declaration order", ()
   assert.equal(Side.Buy.flipped, Side.Sell);
   assert.equal(OrderStatus.PartiallyFilled.isLive, true);
   assert.equal(OrderStatus.Filled.isLive, false);
+});
+
+test("best orders preserve time in force and client id across the wire", () => {
+  const request = OrderRequest.best(
+    Market.spot(Exchange.Bithumb, "BTC", "KRW"),
+    Side.Buy,
+    Size.quote(Decimal.parse("10000")),
+    TimeInForce.ImmediateOrCancel,
+    { clientId: "client-1" },
+  );
+  const wire = orderRequestToWire(request);
+
+  assert.equal(request.orderType, OrderType.Best);
+  assert.equal(wire.client_id, "client-1");
+  assert.deepEqual(orderRequestToWire(orderRequestFromWire(wire)), wire);
 });
 
 test("wallet unions, statuses, open networks, and pages preserve the wire contract", () => {

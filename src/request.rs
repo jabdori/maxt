@@ -191,20 +191,20 @@ impl CandleRequest {
 
 /// An order to place.
 ///
-/// Build it with [`OrderRequest::market`] or [`OrderRequest::limit`], which
-/// keep price and size in step. A market order has no price, and a limit order
-/// always has one.
+/// Build it with [`OrderRequest::market`], [`OrderRequest::limit`], or
+/// [`OrderRequest::best`], which keep price and size in step. Only a limit
+/// order carries a caller-selected price.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OrderRequest {
     /// The market to trade.
     pub market: Market,
     /// Buy or sell.
     pub side: Side,
-    /// Market or limit.
+    /// Market, limit, or exchange-priced best.
     pub order_type: OrderType,
     /// How much, in base or quote terms.
     pub size: Size,
-    /// The limit price. Always `None` for market orders.
+    /// The limit price. `None` for market and best orders.
     pub price: Option<Decimal>,
     /// How long the order stays live. `None` leaves it to the exchange default.
     pub time_in_force: Option<TimeInForce>,
@@ -212,6 +212,8 @@ pub struct OrderRequest {
     ///
     /// Derivatives only. Set it with [`OrderRequest::reduce_only`].
     pub reduce_only: bool,
+    /// Caller-assigned order identifier, when the exchange supports one.
+    pub client_id: Option<String>,
 }
 
 impl OrderRequest {
@@ -225,6 +227,7 @@ impl OrderRequest {
             price: None,
             time_in_force: None,
             reduce_only: false,
+            client_id: None,
         }
     }
 
@@ -238,6 +241,24 @@ impl OrderRequest {
             price: Some(price),
             time_in_force: None,
             reduce_only: false,
+            client_id: None,
+        }
+    }
+
+    /// An order priced from the best opposing quote at submission time.
+    ///
+    /// Exchanges that support this shape require immediate-or-cancel or
+    /// fill-or-kill. The accepted size unit is exchange-specific.
+    pub fn best(market: Market, side: Side, size: Size, time_in_force: TimeInForce) -> Self {
+        Self {
+            market,
+            side,
+            order_type: OrderType::Best,
+            size,
+            price: None,
+            time_in_force: Some(time_in_force),
+            reduce_only: false,
+            client_id: None,
         }
     }
 
@@ -255,6 +276,13 @@ impl OrderRequest {
     #[must_use]
     pub fn reduce_only(mut self) -> Self {
         self.reduce_only = true;
+        self
+    }
+
+    /// Sets the caller-assigned order identifier.
+    #[must_use]
+    pub fn client_id(mut self, client_id: impl Into<String>) -> Self {
+        self.client_id = Some(client_id.into());
         self
     }
 }
@@ -378,7 +406,7 @@ mod tests {
     }
 
     #[test]
-    fn market_orders_carry_no_price_and_limit_orders_always_do() {
+    fn constructors_keep_price_and_client_id_in_their_explicit_fields() {
         let market_order =
             OrderRequest::market(btc_krw(), Side::Buy, Size::Quote(Decimal::from(10_000)));
         let limit_order = OrderRequest::limit(
@@ -387,11 +415,21 @@ mod tests {
             Size::Base(Decimal::new(1, 2)),
             Decimal::from(100_000_000),
         );
+        let best_order = OrderRequest::best(
+            btc_krw(),
+            Side::Buy,
+            Size::Quote(Decimal::from(10_000)),
+            TimeInForce::ImmediateOrCancel,
+        )
+        .client_id("client-1");
 
         assert_eq!(market_order.order_type, OrderType::Market);
         assert_eq!(market_order.price, None);
         assert_eq!(limit_order.order_type, OrderType::Limit);
         assert_eq!(limit_order.price, Some(Decimal::from(100_000_000)));
+        assert_eq!(best_order.order_type, OrderType::Best);
+        assert_eq!(best_order.price, None);
+        assert_eq!(best_order.client_id.as_deref(), Some("client-1"));
     }
 
     #[test]

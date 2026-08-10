@@ -834,6 +834,13 @@ pub(crate) fn order_wire(asset: &Asset, request: &OrderRequest) -> Result<OrderW
              order priced through the book instead",
         ));
     }
+    if request.client_id.is_some() {
+        return Err(Error::unsupported(
+            Feature::Trading,
+            EXCHANGE,
+            "hyperliquid client order ids require the provider-specific cloid contract",
+        ));
+    }
     let Size::Base(size) = request.size else {
         return Err(Error::invalid_request(
             "size",
@@ -971,7 +978,7 @@ pub(crate) async fn cancel_order(
     market: &Market,
     order_id: &str,
     nonce: u64,
-) -> Result<Order> {
+) -> Result<()> {
     let asset = universe.asset(market)?;
     let oid: u64 = order_id.parse().map_err(|_| {
         Error::invalid_request(
@@ -984,19 +991,7 @@ pub(crate) async fn cancel_order(
     let body = sign::signed_body(&action, private_key, nonce, network)?;
     let response = post(http, &HttpRequest::post(EXCHANGE_PATH).json_body(body)).await?;
     let accepted = parse::action_response(&response)?;
-    cancel_ack(&accepted)?;
-
-    Ok(Order {
-        id: order_id.to_string(),
-        market: market.clone(),
-        // The cancel acknowledgement provides no order fields beyond its verdict.
-        side: crate::types::Side::Buy,
-        status: OrderStatus::Cancelled,
-        filled_quantity: Decimal::ZERO,
-        remaining_quantity: Decimal::ZERO,
-        price: None,
-        created_at: None,
-    })
+    cancel_ack(&accepted)
 }
 
 /// Reads the per-cancel verdict inside a successful action envelope.

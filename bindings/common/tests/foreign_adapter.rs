@@ -166,7 +166,8 @@ async fn every_current_adapter_method_forwards_an_owned_call() {
         AdapterReply::OpenOrders(vec![]),
         AdapterReply::AccountStream(AccountStream::new(stream::empty::<Result<AccountEvent>>())),
         AdapterReply::PlaceOrder(order("placed")),
-        AdapterReply::CancelOrder(order("cancelled")),
+        AdapterReply::Unit,
+        AdapterReply::Unit,
         AdapterReply::Positions(vec![]),
         AdapterReply::MarginSummary(MarginSummary {
             asset: "USDT".to_string(),
@@ -217,6 +218,10 @@ async fn every_current_adapter_method_forwards_an_owned_call() {
     let _account_stream = adapter.subscribe_account(&config).await.unwrap();
     adapter.place_order(&order_request).await.unwrap();
     adapter.cancel_order(&market, "order-1").await.unwrap();
+    adapter
+        .cancel_order_by_client_id(&market, "client-1")
+        .await
+        .unwrap();
     adapter.positions(Some(&market)).await.unwrap();
     adapter.margin_summary().await.unwrap();
     adapter.funding_rates(&history_request).await.unwrap();
@@ -261,6 +266,10 @@ async fn every_current_adapter_method_forwards_an_owned_call() {
                 market: market.clone(),
                 order_id: "order-1".to_string(),
             },
+            AdapterCall::CancelOrderByClientId {
+                market: market.clone(),
+                client_id: "client-1".to_string(),
+            },
             AdapterCall::Positions {
                 market: Some(market.clone()),
             },
@@ -293,9 +302,9 @@ async fn a_reply_variant_mismatch_is_an_adapter_error() {
 }
 
 #[tokio::test]
-async fn place_and_cancel_order_replies_are_not_interchangeable() {
+async fn place_order_and_unit_replies_are_not_interchangeable() {
     let request = OrderRequest::market(market(), Side::Buy, Size::Base(Decimal::ONE));
-    let place_dispatcher = RecordingDispatcher::new([AdapterReply::CancelOrder(order("wrong"))]);
+    let place_dispatcher = RecordingDispatcher::new([AdapterReply::Unit]);
     let place_client = Client::new(adapter(place_dispatcher, [Feature::Trading]));
 
     let place_error = place_client.place_order(&request).await.unwrap_err();

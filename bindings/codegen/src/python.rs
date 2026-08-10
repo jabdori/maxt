@@ -771,11 +771,13 @@ pub(crate) fn render_rust_dispatcher(schema: &Schema) -> String {
          #[derive(Clone, Copy)]\n\
          enum ReplyKind {\n",
     );
+    let mut reply_kinds = Vec::new();
     for operation in schema.adapter_operations {
-        output.push_str(&format!(
-            "    {},\n",
-            rust_reply_kind(operation.rust_name, operation.result)
-        ));
+        let kind = rust_reply_kind(operation.rust_name, operation.result);
+        if !reply_kinds.contains(&kind) {
+            output.push_str(&format!("    {kind},\n"));
+            reply_kinds.push(kind);
+        }
     }
     output.push_str(
         r#"}
@@ -817,6 +819,7 @@ fn prepare_call(
         "subscribe_account",
         "place_order",
         "cancel_order",
+        "cancel_order_by_client_id",
         "positions",
         "margin_summary",
         "funding_rates",

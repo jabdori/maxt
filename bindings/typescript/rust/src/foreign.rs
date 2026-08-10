@@ -108,6 +108,10 @@ enum WireAdapterCall {
         market: WireMarket,
         order_id: String,
     },
+    CancelOrderByClientId {
+        market: WireMarket,
+        client_id: String,
+    },
     Positions {
         market: Option<WireMarket>,
     },
@@ -143,7 +147,6 @@ enum WireAdapterReply {
     OpenOrders { value: Vec<WireOrder> },
     AccountStream { stream_id: String },
     PlaceOrder { value: WireOrder },
-    CancelOrder { value: WireOrder },
     Positions { value: Vec<WirePosition> },
     MarginSummary { value: WireMarginSummary },
     FundingRates { value: WirePage<WireFundingRate> },
@@ -209,6 +212,12 @@ fn call_to_wire(call: AdapterCall, stream_id: Option<String>) -> maxt::Result<Wi
             market: market.try_into()?,
             order_id,
         }),
+        AdapterCall::CancelOrderByClientId { market, client_id } => {
+            Ok(WireAdapterCall::CancelOrderByClientId {
+                market: market.try_into()?,
+                client_id,
+            })
+        }
         AdapterCall::Positions { market } => Ok(WireAdapterCall::Positions {
             market: market.map(TryInto::try_into).transpose()?,
         }),
@@ -566,9 +575,6 @@ impl JsForeignDispatcher {
             WireAdapterReply::PlaceOrder { value } => {
                 value.try_into().map(AdapterReply::PlaceOrder)
             }
-            WireAdapterReply::CancelOrder { value } => {
-                value.try_into().map(AdapterReply::CancelOrder)
-            }
             WireAdapterReply::Positions { value } => value
                 .into_iter()
                 .map(TryInto::try_into)
@@ -777,6 +783,10 @@ mod tests {
                 market: market.clone(),
                 order_id: "order-1".to_owned(),
             },
+            AdapterCall::CancelOrderByClientId {
+                market: market.clone(),
+                client_id: "client-1".to_owned(),
+            },
             AdapterCall::Positions {
                 market: Some(market.clone()),
             },
@@ -809,6 +819,7 @@ mod tests {
             "subscribe_account",
             "place_order",
             "cancel_order",
+            "cancel_order_by_client_id",
             "positions",
             "margin_summary",
             "funding_rates",

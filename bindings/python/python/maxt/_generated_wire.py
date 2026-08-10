@@ -203,6 +203,7 @@ RECORD_FIELDS = {
         "price": "optional:decimal",
         "time_in_force": "optional:identifier:TimeInForce",
         "reduce_only": "boolean",
+        "client_id": "optional:string",
     },
     "DepositAddressRequest": {
         "asset": "string",
@@ -502,6 +503,10 @@ UNION_FIELDS = {
             "market": "named:Market",
             "order_id": "string",
         },
+        "cancel_order_by_client_id": {
+            "market": "named:Market",
+            "client_id": "string",
+        },
         "positions": {
             "market": "optional:named:Market",
         },
@@ -566,9 +571,6 @@ UNION_FIELDS = {
         "place_order": {
             "value": "named:Order",
         },
-        "cancel_order": {
-            "value": "named:Order",
-        },
         "positions": {
             "value": "list:named:Position",
         },
@@ -596,7 +598,7 @@ IDENTIFIER_VARIANTS = {
     "Overflow": ("backpressure", "drop_newest",),
     "MarginMode": ("cross", "isolated",),
     "OrderStatus": ("accepted", "open", "partially_filled", "filled", "cancelled", "rejected", "unknown",),
-    "OrderType": ("market", "limit",),
+    "OrderType": ("market", "limit", "best",),
     "TimeInForce": ("good_til_cancelled", "immediate_or_cancel", "fill_or_kill", "post_only",),
     "SizeKind": ("base", "quote",),
     "UpbitRegion": ("korea", "singapore", "indonesia", "thailand",),

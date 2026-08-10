@@ -900,7 +900,7 @@ final class Page<T> {
   bool get hasMore => next != null;
 }
 
-/// 시장가 또는 지정가 주문 요청입니다.
+/// 시장가, 지정가 또는 최유리 지정가 주문 요청입니다.
 final class OrderRequest {
   const OrderRequest._({
     required this.market,
@@ -910,6 +910,7 @@ final class OrderRequest {
     required this.price,
     required this.timeInForce,
     required this.reduceOnly,
+    required this.clientId,
   });
 
   factory OrderRequest.market(Market market, Side side, Size size) =>
@@ -921,6 +922,7 @@ final class OrderRequest {
         price: null,
         timeInForce: null,
         reduceOnly: false,
+        clientId: null,
       );
 
   factory OrderRequest.limit(
@@ -936,6 +938,23 @@ final class OrderRequest {
     price: price,
     timeInForce: null,
     reduceOnly: false,
+    clientId: null,
+  );
+
+  factory OrderRequest.best(
+    Market market,
+    Side side,
+    Size size,
+    TimeInForce timeInForce,
+  ) => OrderRequest._(
+    market: market,
+    side: side,
+    orderType: OrderType.best,
+    size: size,
+    price: null,
+    timeInForce: timeInForce,
+    reduceOnly: false,
+    clientId: null,
   );
 
   final Market market;
@@ -945,6 +964,7 @@ final class OrderRequest {
   final Decimal? price;
   final TimeInForce? timeInForce;
   final bool reduceOnly;
+  final String? clientId;
 
   OrderRequest withTimeInForce(TimeInForce value) => OrderRequest._(
     market: market,
@@ -954,6 +974,7 @@ final class OrderRequest {
     price: price,
     timeInForce: value,
     reduceOnly: reduceOnly,
+    clientId: clientId,
   );
 
   OrderRequest asReduceOnly() => OrderRequest._(
@@ -964,6 +985,18 @@ final class OrderRequest {
     price: price,
     timeInForce: timeInForce,
     reduceOnly: true,
+    clientId: clientId,
+  );
+
+  OrderRequest withClientId(String value) => OrderRequest._(
+    market: market,
+    side: side,
+    orderType: orderType,
+    size: size,
+    price: price,
+    timeInForce: timeInForce,
+    reduceOnly: reduceOnly,
+    clientId: value,
   );
 }
 

@@ -158,12 +158,16 @@ impl NativeClient {
         &self,
         market: WireMarket,
         order_id: String,
-    ) -> Result<WireOrder, NativeError> {
-        self.adapter
-            .cancel_order(&market.into(), &order_id)
-            .await
-            .map(Into::into)
-            .map_err(Into::into)
+    ) -> Result<(), NativeError> {
+        self.adapter.cancel_order(&market.into(), &order_id).await.map_err(Into::into)
+    }
+
+    pub async fn cancel_order_by_client_id(
+        &self,
+        market: WireMarket,
+        client_id: String,
+    ) -> Result<(), NativeError> {
+        self.adapter.cancel_order_by_client_id(&market.into(), &client_id).await.map_err(Into::into)
     }
 
     pub async fn positions(

@@ -100,6 +100,13 @@ pub enum AdapterCall {
         /// The exchange's order identifier.
         order_id: String,
     },
+    /// Cancels an order by its caller-assigned identifier.
+    CancelOrderByClientId {
+        /// The order's market.
+        market: Market,
+        /// The caller-assigned identifier.
+        client_id: String,
+    },
     /// Reads open positions, optionally for one market.
     Positions {
         /// The optional market filter.
@@ -160,8 +167,6 @@ pub enum AdapterReply {
     AccountStream(AccountStream),
     /// Result of [`AdapterCall::PlaceOrder`].
     PlaceOrder(Order),
-    /// Result of [`AdapterCall::CancelOrder`].
-    CancelOrder(Order),
     /// Result of [`AdapterCall::Positions`].
     Positions(Vec<Position>),
     /// Result of [`AdapterCall::MarginSummary`].
@@ -199,7 +204,6 @@ impl AdapterReply {
             Self::OpenOrders(_) => "OpenOrders",
             Self::AccountStream(_) => "AccountStream",
             Self::PlaceOrder(_) => "PlaceOrder",
-            Self::CancelOrder(_) => "CancelOrder",
             Self::Positions(_) => "Positions",
             Self::MarginSummary(_) => "MarginSummary",
             Self::FundingRates(_) => "FundingRates",

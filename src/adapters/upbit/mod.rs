@@ -370,11 +370,29 @@ impl Adapter for UpbitAdapter {
         )
     }
 
-    fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<Order>> {
+    fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<()>> {
         let market = market.clone();
         let order_id = order_id.to_string();
         Box::pin(async move {
             private::cancel_order(self.credentials()?, self.http()?, &market, &order_id).await
+        })
+    }
+
+    fn cancel_order_by_client_id(
+        &self,
+        market: &Market,
+        client_id: &str,
+    ) -> BoxFuture<'_, Result<()>> {
+        let market = market.clone();
+        let client_id = client_id.to_string();
+        Box::pin(async move {
+            private::cancel_order_by_client_id(
+                self.credentials()?,
+                self.http()?,
+                &market,
+                &client_id,
+            )
+            .await
         })
     }
 

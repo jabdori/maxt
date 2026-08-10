@@ -204,6 +204,7 @@ class OrderStatus(str, Enum):
 class OrderType(str, Enum):
     MARKET = "market"
     LIMIT = "limit"
+    BEST = "best"
 
 
 class TimeInForce(str, Enum):

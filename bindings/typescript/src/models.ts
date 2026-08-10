@@ -807,23 +807,33 @@ export class OrderRequest {
   private constructor(
     readonly market: Market, readonly side: Side, readonly orderType: OrderType, readonly size: Size,
     readonly price: Decimal | null, readonly timeInForce: TimeInForce | null, readonly reduceOnly: boolean,
+    readonly clientId: string | null,
   ) { freezeRecord(this); }
   static market(
     market: Market, side: Side, size: Size,
-    options: { timeInForce?: TimeInForce | null; reduceOnly?: boolean } = {},
+    options: { timeInForce?: TimeInForce | null; reduceOnly?: boolean; clientId?: string | null } = {},
   ): OrderRequest {
     return new OrderRequest(
       market, side, OrderType.Market, size, null,
-      options.timeInForce ?? null, options.reduceOnly ?? false,
+      options.timeInForce ?? null, options.reduceOnly ?? false, options.clientId ?? null,
     );
   }
   static limit(
     market: Market, side: Side, size: Size, price: Decimal,
-    options: { timeInForce?: TimeInForce | null; reduceOnly?: boolean } = {},
+    options: { timeInForce?: TimeInForce | null; reduceOnly?: boolean; clientId?: string | null } = {},
   ): OrderRequest {
     return new OrderRequest(
       market, side, OrderType.Limit, size, price,
-      options.timeInForce ?? null, options.reduceOnly ?? false,
+      options.timeInForce ?? null, options.reduceOnly ?? false, options.clientId ?? null,
+    );
+  }
+  static best(
+    market: Market, side: Side, size: Size, timeInForce: TimeInForce,
+    options: { reduceOnly?: boolean; clientId?: string | null } = {},
+  ): OrderRequest {
+    return new OrderRequest(
+      market, side, OrderType.Best, size, null,
+      timeInForce, options.reduceOnly ?? false, options.clientId ?? null,
     );
   }
 }

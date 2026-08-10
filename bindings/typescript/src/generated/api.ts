@@ -7,7 +7,7 @@ import { AccountStream, MarketStream, StreamError } from "../stream.js";
 import * as Codec from "./codec.js";
 import type * as Wire from "./contract.js";
 
-export const NATIVE_API_VERSION = 2 as const;
+export const NATIVE_API_VERSION = 3 as const;
 
 export type NativeOutcome<T> =
   | { readonly ok: true; readonly value: T }
@@ -36,6 +36,7 @@ export interface RawNativeClient {
   subscribeAccountWith(config: string): Promise<unknown>;
   placeOrder(request: string): Promise<unknown>;
   cancelOrder(market: string, orderId: string): Promise<unknown>;
+  cancelOrderByClientId(market: string, clientId: string): Promise<unknown>;
   positions(): Promise<unknown>;
   positionsOn(market: string): Promise<unknown>;
   marginSummary(): Promise<unknown>;
@@ -129,7 +130,8 @@ export interface NativeClientHandle {
   subscribeAccount(): Promise<NativeOutcome<NativeStreamHandle<Wire.AccountStreamItemWire>>>;
   subscribeAccountWith(config: Wire.StreamConfigWire): Promise<NativeOutcome<NativeStreamHandle<Wire.AccountStreamItemWire>>>;
   placeOrder(request: Wire.OrderRequestWire): Promise<NativeOutcome<Wire.OrderWire>>;
-  cancelOrder(market: Wire.MarketWire, orderId: string): Promise<NativeOutcome<Wire.OrderWire>>;
+  cancelOrder(market: Wire.MarketWire, orderId: string): Promise<NativeOutcome<null>>;
+  cancelOrderByClientId(market: Wire.MarketWire, clientId: string): Promise<NativeOutcome<null>>;
   positions(): Promise<NativeOutcome<readonly Wire.PositionWire[]>>;
   positionsOn(market: Wire.MarketWire): Promise<NativeOutcome<readonly Wire.PositionWire[]>>;
   marginSummary(): Promise<NativeOutcome<Wire.MarginSummaryWire>>;
@@ -315,7 +317,8 @@ function wrapJsonClient(raw: RawNativeClient): NativeClientHandle {
       return outcome.ok ? { ok: true, value: stream<Wire.AccountStreamItemWire>(outcome.value) } : outcome;
     },
     placeOrder: (request: Wire.OrderRequestWire) => raw.placeOrder(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.OrderWire>>,
-    cancelOrder: (market: Wire.MarketWire, orderId: string) => raw.cancelOrder(Codec.stringifyWire(market), Codec.stringifyWire(orderId)) as Promise<NativeOutcome<Wire.OrderWire>>,
+    cancelOrder: (market: Wire.MarketWire, orderId: string) => raw.cancelOrder(Codec.stringifyWire(market), Codec.stringifyWire(orderId)) as Promise<NativeOutcome<null>>,
+    cancelOrderByClientId: (market: Wire.MarketWire, clientId: string) => raw.cancelOrderByClientId(Codec.stringifyWire(market), Codec.stringifyWire(clientId)) as Promise<NativeOutcome<null>>,
     positions: () => raw.positions() as Promise<NativeOutcome<readonly Wire.PositionWire[]>>,
     positionsOn: (market: Wire.MarketWire) => raw.positionsOn(Codec.stringifyWire(market)) as Promise<NativeOutcome<readonly Wire.PositionWire[]>>,
     marginSummary: () => raw.marginSummary() as Promise<NativeOutcome<Wire.MarginSummaryWire>>,
@@ -483,7 +486,13 @@ export abstract class Adapter {
     ));
   }
 
-  cancelOrder(market: Model.Market, orderId: string): Promise<Model.Order> {
+  cancelOrder(market: Model.Market, orderId: string): Promise<void> {
+    return Promise.reject(new UnsupportedError(
+      featureById("trading"), this.exchange, "feature is not supported",
+    ));
+  }
+
+  cancelOrderByClientId(market: Model.Market, clientId: string): Promise<void> {
     return Promise.reject(new UnsupportedError(
       featureById("trading"), this.exchange, "feature is not supported",
     ));
@@ -543,7 +552,8 @@ class CustomCallbacks implements ForeignAdapterCallbacks {
         case "open_orders": return ok({ kind: "open_orders", value: (await this.adapter.openOrders(call.market === null ? null : Codec.marketFromWire(call.market))).map(Codec.orderToWire) });
         case "subscribe_account": { this.#streams.begin(call.stream_id); try { const value = await this.adapter.subscribeAccount(Codec.streamConfigFromWire(call.config)); await this.#streams.register(call.stream_id, value); return ok({ kind: "account_stream", stream_id: call.stream_id }); } catch (error) { this.#streams.abort(call.stream_id); throw error; } }
         case "place_order": return ok({ kind: "place_order", value: Codec.orderToWire(await this.adapter.placeOrder(Codec.orderRequestFromWire(call.request))) });
-        case "cancel_order": return ok({ kind: "cancel_order", value: Codec.orderToWire(await this.adapter.cancelOrder(Codec.marketFromWire(call.market), call.order_id)) });
+        case "cancel_order": await this.adapter.cancelOrder(Codec.marketFromWire(call.market), call.order_id); return ok({ kind: "unit" });
+        case "cancel_order_by_client_id": await this.adapter.cancelOrderByClientId(Codec.marketFromWire(call.market), call.client_id); return ok({ kind: "unit" });
         case "positions": return ok({ kind: "positions", value: (await this.adapter.positions(call.market === null ? null : Codec.marketFromWire(call.market))).map(Codec.positionToWire) });
         case "margin_summary": return ok({ kind: "margin_summary", value: Codec.marginSummaryToWire(await this.adapter.marginSummary()) });
         case "funding_rates": { const value = await this.adapter.fundingRates(Codec.historyRequestFromWire(call.request)); return ok({ kind: "funding_rates", value: { items: value.items.map(Codec.fundingRateToWire), next: value.next?.value ?? null } }); }
@@ -677,9 +687,14 @@ export class Client<A extends Adapter> {
     return Codec.orderFromWire(Codec.unwrapOutcome(await this.#native.placeOrder(Codec.orderRequestToWire(request))));
   }
 
-  async cancelOrder(market: Model.Market, orderId: string): Promise<Model.Order> {
+  async cancelOrder(market: Model.Market, orderId: string): Promise<void> {
     await ensureInitialized();
-    return Codec.orderFromWire(Codec.unwrapOutcome(await this.#native.cancelOrder(Codec.marketToWire(market), orderId)));
+    Codec.unwrapOutcome(await this.#native.cancelOrder(Codec.marketToWire(market), orderId));
+  }
+
+  async cancelOrderByClientId(market: Model.Market, clientId: string): Promise<void> {
+    await ensureInitialized();
+    Codec.unwrapOutcome(await this.#native.cancelOrderByClientId(Codec.marketToWire(market), clientId));
   }
 
   async positions(): Promise<readonly Model.Position[]> {
@@ -756,7 +771,8 @@ class NativeAdapter extends Adapter {
   openOrders(market: Model.Market | null = null): Promise<readonly Model.Order[]> { return market === null ? new Client(this).openOrders() : new Client(this).openOrdersOn(market); }
   subscribeAccount(config: Model.StreamConfig): Promise<AccountStream> { return new Client(this).subscribeAccountWith(config); }
   placeOrder(request: Model.OrderRequest): Promise<Model.Order> { return new Client(this).placeOrder(request); }
-  cancelOrder(market: Model.Market, orderId: string): Promise<Model.Order> { return new Client(this).cancelOrder(market, orderId); }
+  cancelOrder(market: Model.Market, orderId: string): Promise<void> { return new Client(this).cancelOrder(market, orderId); }
+  cancelOrderByClientId(market: Model.Market, clientId: string): Promise<void> { return new Client(this).cancelOrderByClientId(market, clientId); }
   positions(market: Model.Market | null = null): Promise<readonly Model.Position[]> { return market === null ? new Client(this).positions() : new Client(this).positionsOn(market); }
   marginSummary(): Promise<Model.MarginSummary> { return new Client(this).marginSummary(); }
   fundingRates(request: Model.HistoryRequest): Promise<Model.Page<Model.FundingRate>> { return new Client(this).fundingRates(request); }

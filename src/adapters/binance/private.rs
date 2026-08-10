@@ -267,6 +267,14 @@ fn order_shape(
         // that rejects rather than crossing, which is the same guarantee.
         (OrderType::Limit, BinanceMarket::Spot, true) => "LIMIT_MAKER",
         (OrderType::Limit, _, _) => "LIMIT",
+        (OrderType::Best, BinanceMarket::UsdMFutures, _) => {
+            return Err(Error::unsupported(
+                Feature::Trading,
+                EXCHANGE,
+                "Binance USD-M has no best-price order type; use a market or explicitly priced limit order",
+            ));
+        }
+        (OrderType::Best, BinanceMarket::Spot, _) => "LIMIT",
     };
     params.push(("type", order_type.to_string()));
 
@@ -287,9 +295,35 @@ fn order_shape(
                 "binance sizes a limit order in the base asset; use Size::Base",
             ));
         }
+        (Size::Quote(_), OrderType::Best, BinanceMarket::Spot) => {
+            return Err(Error::invalid_request(
+                "size",
+                "a Binance Spot best-price order uses base quantity; use Size::Base",
+            ));
+        }
+        (_, OrderType::Best, BinanceMarket::UsdMFutures) => {
+            unreachable!("USD-M best orders returned above")
+        }
     }
 
-    if let Some(price) = request.price {
+    if matches!(&request.order_type, OrderType::Best) {
+        if request.price.is_some() {
+            return Err(Error::invalid_request(
+                "price",
+                "a Binance Spot best-price order gets its price from the opposing book",
+            ));
+        }
+        if !matches!(
+            request.time_in_force,
+            Some(TimeInForce::ImmediateOrCancel | TimeInForce::FillOrKill)
+        ) {
+            return Err(Error::invalid_request(
+                "time_in_force",
+                "a Binance Spot best-price order requires immediate-or-cancel or fill-or-kill",
+            ));
+        }
+        params.push(("pegPriceType", "MARKET_PEG".to_string()));
+    } else if let Some(price) = request.price {
         params.push(("price", price.to_string()));
     }
 
@@ -339,11 +373,29 @@ pub(super) fn place_order_request(
     if request.reduce_only {
         params.push(("reduceOnly", "true".to_string()));
     }
+    if let Some(client_id) = &request.client_id {
+        validate_client_order_id(client_id)?;
+        params.push(("newClientOrderId", client_id.clone()));
+    }
     // Both venues answer with a bare acknowledgement by default; `RESULT` is
     // what makes the response describe the order that was actually placed.
     params.push(("newOrderRespType", "RESULT".to_string()));
 
     signed(adapter, HttpMethod::Post, order_path(venue), params)
+}
+
+fn validate_client_order_id(value: &str) -> Result<()> {
+    if (1..=36).contains(&value.len())
+        && value.bytes().all(|byte| {
+            byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'/' | b':' | b'_' | b'-')
+        })
+    {
+        return Ok(());
+    }
+    Err(Error::invalid_request(
+        "client_id",
+        "a Binance client order id must contain 1-36 ASCII letters, digits, '.', '/', ':', '_' or '-'",
+    ))
 }
 
 pub(super) fn cancel_order_request(
@@ -355,6 +407,25 @@ pub(super) fn cancel_order_request(
     let params = vec![
         ("symbol", adapter.symbol(market)?),
         ("orderId", order_id.to_string()),
+    ];
+
+    signed(
+        adapter,
+        HttpMethod::Delete,
+        order_path(adapter.venue()),
+        params,
+    )
+}
+
+pub(super) fn cancel_order_by_client_id_request(
+    adapter: &BinanceAdapter,
+    market: &Market,
+    client_id: &str,
+) -> Result<HttpRequest> {
+    validate_client_order_id(client_id)?;
+    let params = vec![
+        ("symbol", adapter.symbol(market)?),
+        ("origClientOrderId", client_id.to_string()),
     ];
 
     signed(
@@ -594,12 +665,26 @@ pub(super) async fn cancel_order(
     adapter: &BinanceAdapter,
     market: &Market,
     order_id: &str,
-) -> Result<Order> {
+) -> Result<()> {
     let body = adapter
         .send(cancel_order_request(adapter, market, order_id)?)
         .await?;
     let raw: parse::RawOrder = parse::json(&body, "order")?;
-    parse::order(market, &raw)
+    parse::order(market, &raw).map(drop)
+}
+
+pub(super) async fn cancel_order_by_client_id(
+    adapter: &BinanceAdapter,
+    market: &Market,
+    client_id: &str,
+) -> Result<()> {
+    let body = adapter
+        .send(cancel_order_by_client_id_request(
+            adapter, market, client_id,
+        )?)
+        .await?;
+    let raw: parse::RawOrder = parse::json(&body, "order")?;
+    parse::order(market, &raw).map(drop)
 }
 
 /// Reads `/fapi/v3/positionRisk`, including Binance's zero-size rows.
@@ -1171,6 +1256,37 @@ mod tests {
                 "{bad}"
             );
         }
+    }
+
+    #[test]
+    fn a_client_order_id_cancels_through_its_own_parameter() {
+        assert_eq!(
+            signed_params(
+                &cancel_order_by_client_id_request(&spot(), &btc_usdt(), "client-1")
+                    .expect("a client order id"),
+            ),
+            "/api/v3/order?symbol=BTCUSDT&origClientOrderId=client-1"
+        );
+    }
+
+    #[test]
+    fn a_spot_best_order_uses_the_opposing_book_peg() {
+        let request = OrderRequest::best(
+            btc_usdt(),
+            Side::Buy,
+            Size::Base(Decimal::new(1, 2)),
+            TimeInForce::ImmediateOrCancel,
+        )
+        .client_id("client/1");
+
+        assert_eq!(
+            signed_params(&place_order_request(&spot(), &request).expect("a pegged order")),
+            "/api/v3/order?symbol=BTCUSDT&side=BUY&type=LIMIT&quantity=0.01&pegPriceType=MARKET_PEG&timeInForce=IOC&newClientOrderId=client%2F1&newOrderRespType=RESULT"
+        );
+        assert!(matches!(
+            cancel_order_by_client_id_request(&spot(), &btc_usdt(), "bad&client"),
+            Err(Error::InvalidRequest { field, .. }) if field == "client_id"
+        ));
     }
 
     #[test]

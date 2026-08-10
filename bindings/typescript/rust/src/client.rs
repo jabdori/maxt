@@ -248,9 +248,30 @@ impl NativeClient {
         let market = parse_wire::<maxt::Market, WireMarket>(market, "market");
         let order_id = parse_wire_text::<String>(order_id, "order_id");
         match (market, order_id) {
-            (Ok(market), Ok(order_id)) => outcome(wire_one::<_, WireOrder>(
-                self.inner.cancel_order(&market, &order_id).await,
-            )),
+            (Ok(market), Ok(order_id)) => outcome(
+                self.inner
+                    .cancel_order(&market, &order_id)
+                    .await
+                    .map(|()| Value::Null),
+            ),
+            (Err(error), _) | (_, Err(error)) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn cancel_order_by_client_id(
+        &self,
+        market: maxt::Result<String>,
+        client_id: maxt::Result<String>,
+    ) -> Value {
+        let market = parse_wire::<maxt::Market, WireMarket>(market, "market");
+        let client_id = parse_wire_text::<String>(client_id, "client_id");
+        match (market, client_id) {
+            (Ok(market), Ok(client_id)) => outcome(
+                self.inner
+                    .cancel_order_by_client_id(&market, &client_id)
+                    .await
+                    .map(|()| Value::Null),
+            ),
             (Err(error), _) | (_, Err(error)) => outcome::<Value>(Err(error)),
         }
     }
@@ -603,6 +624,24 @@ impl NativeClient {
         )
     }
 
+    #[napi(
+        js_name = "cancelOrderByClientId",
+        ts_args_type = "market: string, clientId: string"
+    )]
+    pub fn cancel_order_by_client_id_native<'env>(
+        &self,
+        env: &'env Env,
+        market: NativeJsonText<'env>,
+        client_id: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let market = native_json_text(market, "market");
+        let client_id = native_json_text(client_id, "client_id");
+        spawn_native(env, async move {
+            client.cancel_order_by_client_id(market, client_id).await
+        })
+    }
+
     #[napi(js_name = "positionsOn", ts_args_type = "market: string")]
     pub fn positions_on_native<'env>(
         &self,
@@ -847,6 +886,18 @@ impl NativeClient {
     #[wasm_bindgen(js_name = "cancelOrder")]
     pub async fn cancel_order_wasm(&self, market: String, order_id: String) -> JsValue {
         crate::web::value(self.cancel_order(Ok(market), Ok(order_id)).await)
+    }
+
+    #[wasm_bindgen(js_name = "cancelOrderByClientId")]
+    pub async fn cancel_order_by_client_id_wasm(
+        &self,
+        market: String,
+        client_id: String,
+    ) -> JsValue {
+        crate::web::value(
+            self.cancel_order_by_client_id(Ok(market), Ok(client_id))
+                .await,
+        )
     }
 
     #[wasm_bindgen(js_name = "positionsOn")]
@@ -1194,12 +1245,20 @@ mod tests {
 
         fn cancel_order(
             &self,
-            market: &Market,
+            _market: &Market,
             _order_id: &str,
-        ) -> BoxFuture<'_, maxt::Result<Order>> {
+        ) -> BoxFuture<'_, maxt::Result<()>> {
             self.calls.lock().unwrap().push("cancel_order");
-            let order = Self::order(market.clone(), Side::Sell);
-            Box::pin(async move { Ok(order) })
+            Box::pin(async { Ok(()) })
+        }
+
+        fn cancel_order_by_client_id(
+            &self,
+            _market: &Market,
+            _client_id: &str,
+        ) -> BoxFuture<'_, maxt::Result<()>> {
+            self.calls.lock().unwrap().push("cancel_order_by_client_id");
+            Box::pin(async { Ok(()) })
         }
 
         fn margin_summary(&self) -> BoxFuture<'_, maxt::Result<MarginSummary>> {
@@ -1394,7 +1453,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn native_client_forwards_all_twenty_two_non_stream_operations() {
+    async fn native_client_forwards_every_non_stream_operation() {
         let calls = Arc::new(Mutex::new(Vec::new()));
         let client = NativeClient::for_test(Box::new(RecordingAdapter {
             calls: Arc::clone(&calls),
@@ -1495,6 +1554,12 @@ mod tests {
                     json_text(serde_json::json!("order-1")),
                 )
                 .await,
+            client
+                .cancel_order_by_client_id(
+                    json_text(market.clone()),
+                    json_text(serde_json::json!("client-1")),
+                )
+                .await,
             client.positions().await,
             client.positions_on(json_text(market)).await,
             client.margin_summary().await,
@@ -1524,6 +1589,7 @@ mod tests {
                 "open_orders:some",
                 "place_order",
                 "cancel_order",
+                "cancel_order_by_client_id",
                 "positions:none",
                 "positions:some",
                 "margin_summary",

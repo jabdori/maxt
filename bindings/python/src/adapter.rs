@@ -291,7 +291,6 @@ fn decode_reply(
             crate::stream::account_stream_from_python(value).map(AdapterReply::AccountStream)
         }
         ReplyKind::PlaceOrder => order_from_wire(value).map(AdapterReply::PlaceOrder),
-        ReplyKind::CancelOrder => order_from_wire(value).map(AdapterReply::CancelOrder),
         ReplyKind::Positions => {
             list_from_wire(value, position_from_wire).map(AdapterReply::Positions)
         }
@@ -306,7 +305,7 @@ fn decode_reply(
         }
         ReplyKind::Unit if value.is_none() => Ok(AdapterReply::Unit),
         ReplyKind::Unit => Err(pyo3::exceptions::PyTypeError::new_err(
-            "Adapter.set_margin must return None",
+            "unit adapter methods must return None",
         )),
         _ => Err(pyo3::exceptions::PyRuntimeError::new_err(
             "generated adapter reply decoder returned no result",
@@ -963,7 +962,7 @@ class Fixture:
 
     async def cancel_order(self, market, order_id):
         assert market == MARKET and order_id == "order-1"
-        return Order(order_id, MARKET, Side.BUY, OrderStatus.CANCELLED, Decimal("0"), Decimal("1"), None, None)
+        return None
 
     async def positions(self, market):
         assert market == MARKET
@@ -1006,14 +1005,10 @@ class Fixture:
                     adapter.place_order(&request).await.map_err(to_runtime)?.id,
                     "order-1"
                 );
-                assert_eq!(
-                    adapter
-                        .cancel_order(&market, "order-1")
-                        .await
-                        .map_err(to_runtime)?
-                        .status,
-                    OrderStatus::Cancelled
-                );
+                adapter
+                    .cancel_order(&market, "order-1")
+                    .await
+                    .map_err(to_runtime)?;
 
                 let positions = adapter.positions(Some(&market)).await.map_err(to_runtime)?;
                 assert_eq!(positions[0].leverage, Some(Decimal::from(3)));

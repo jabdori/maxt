@@ -34,6 +34,8 @@ pub enum OrderType {
     Market,
     /// Rest on the book at a stated price.
     Limit,
+    /// Use the best opposing price available when the exchange accepts the order.
+    Best,
 }
 
 /// How long an order stays live.

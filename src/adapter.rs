@@ -176,8 +176,18 @@ pub trait Adapter: Send + Sync + 'static {
     }
 
     /// Cancels an order by the exchange's own identifier.
-    fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<Order>> {
+    fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<()>> {
         let _ = (market, order_id);
+        unsupported(self.exchange(), Feature::Trading)
+    }
+
+    /// Cancels an order by the caller-assigned identifier supplied at placement.
+    fn cancel_order_by_client_id(
+        &self,
+        market: &Market,
+        client_id: &str,
+    ) -> BoxFuture<'_, Result<()>> {
+        let _ = (market, client_id);
         unsupported(self.exchange(), Feature::Trading)
     }
 
@@ -315,8 +325,16 @@ impl Adapter for Box<dyn Adapter> {
         (**self).place_order(request)
     }
 
-    fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<Order>> {
+    fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<()>> {
         (**self).cancel_order(market, order_id)
+    }
+
+    fn cancel_order_by_client_id(
+        &self,
+        market: &Market,
+        client_id: &str,
+    ) -> BoxFuture<'_, Result<()>> {
+        (**self).cancel_order_by_client_id(market, client_id)
     }
 
     fn positions(&self, market: Option<&Market>) -> BoxFuture<'_, Result<Vec<Position>>> {

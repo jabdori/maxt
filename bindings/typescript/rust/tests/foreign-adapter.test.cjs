@@ -147,7 +147,8 @@ test("custom client dispatches every Adapter operation and owns stream cleanup",
       case "place_order":
         return ok({ kind: "place_order", value: order });
       case "cancel_order":
-        return ok({ kind: "cancel_order", value: order });
+      case "cancel_order_by_client_id":
+        return ok({ kind: "unit" });
       case "margin_summary":
         return ok({
           kind: "margin_summary",
@@ -217,6 +218,7 @@ test("custom client dispatches every Adapter operation and owns stream cleanup",
     reduce_only: false,
   })));
   await nativeValue(client.cancelOrder(JSON.stringify(market), JSON.stringify("order-1")));
+  await nativeValue(client.cancelOrderByClientId(JSON.stringify(market), JSON.stringify("client-1")));
   await nativeValue(client.positions());
   await nativeValue(client.positionsOn(JSON.stringify(market)));
   await nativeValue(client.marginSummary());
@@ -247,7 +249,7 @@ test("custom client dispatches every Adapter operation and owns stream cleanup",
   assert.deepEqual(
     [...new Set(calls.map(({ kind }) => kind))].sort(),
     [
-      "asset_networks", "balances", "cancel_order", "candles", "deposit_address", "deposits",
+      "asset_networks", "balances", "cancel_order", "cancel_order_by_client_id", "candles", "deposit_address", "deposits",
       "funding_payments", "funding_rates", "margin_summary", "markets", "open_orders",
       "order_book", "place_order", "positions", "prepare_withdrawal", "set_margin", "subscribe",
       "subscribe_account", "ticker", "trades", "withdraw", "withdrawals",

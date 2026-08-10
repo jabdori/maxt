@@ -169,6 +169,7 @@ wire.WireOrderRequest _orderRequestToWire(OrderRequest value) =>
           ? null
           : _timeInForceToWire(value.timeInForce!),
       reduceOnly: value.reduceOnly,
+      clientId: value.clientId,
     );
 
 OrderRequest _orderRequestFromWire(wire.WireOrderRequest value) {
@@ -189,11 +190,26 @@ OrderRequest _orderRequestFromWire(wire.WireOrderRequest value) {
         value.price ?? (throw StateError('native limit order has no price')),
       ),
     ),
+    OrderType.best => OrderRequest.best(
+      market,
+      side,
+      size,
+      _timeInForceFromWire(
+        value.timeInForce ??
+            (throw StateError('native best order has no time in force')),
+      ),
+    ),
   };
   if (value.timeInForce != null) {
     request = request.withTimeInForce(_timeInForceFromWire(value.timeInForce!));
   }
-  return value.reduceOnly ? request.asReduceOnly() : request;
+  if (value.reduceOnly) {
+    request = request.asReduceOnly();
+  }
+  if (value.clientId != null) {
+    request = request.withClientId(value.clientId!);
+  }
+  return request;
 }
 
 wire.WireMarginRequest _marginRequestToWire(MarginRequest value) =>

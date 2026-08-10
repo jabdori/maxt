@@ -50,7 +50,9 @@ abstract interface class GeneratedAdapterContract {
 
   Future<Order> placeOrder(OrderRequest request);
 
-  Future<Order> cancelOrder(Market market, String orderId);
+  Future<void> cancelOrder(Market market, String orderId);
+
+  Future<void> cancelOrderByClientId(Market market, String clientId);
 
   Future<List<Position>> positions([Market? market]);
 
@@ -135,7 +137,11 @@ abstract base class GeneratedAdapterDefaults
       _unsupported(Feature.trading);
 
   @override
-  Future<Order> cancelOrder(Market market, String orderId) =>
+  Future<void> cancelOrder(Market market, String orderId) =>
+      _unsupported(Feature.trading);
+
+  @override
+  Future<void> cancelOrderByClientId(Market market, String clientId) =>
       _unsupported(Feature.trading);
 
   @override

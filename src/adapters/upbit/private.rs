@@ -200,13 +200,32 @@ pub(crate) fn cancel_order_request(
     market: &Market,
     order_id: &str,
 ) -> Result<HttpRequest> {
+    cancel_order_request_by(credentials, market, "uuid", "order_id", order_id)
+}
+
+pub(crate) fn cancel_order_by_client_id_request(
+    credentials: &UpbitCredentials,
+    market: &Market,
+    client_id: &str,
+) -> Result<HttpRequest> {
+    validate_client_order_id(client_id)?;
+    cancel_order_request_by(credentials, market, "identifier", "client_id", client_id)
+}
+
+fn cancel_order_request_by(
+    credentials: &UpbitCredentials,
+    market: &Market,
+    parameter: &'static str,
+    field: &'static str,
+    value: &str,
+) -> Result<HttpRequest> {
     // Validate the market even though cancellation is keyed by order UUID.
     parse::native_symbol(market)?;
-    if order_id.trim().is_empty() {
-        return Err(Error::invalid_request("order_id", "must not be empty"));
+    if value.trim().is_empty() {
+        return Err(Error::invalid_request(field, "must not be empty"));
     }
 
-    let query = query(&[("uuid", order_id.to_string())])?;
+    let query = query(&[(parameter, value.to_string())])?;
     Ok(HttpRequest::delete(CANCEL_ORDER_PATH)
         .query(query.clone())
         .header(AUTHORIZATION, authorization(credentials, &query)?))
@@ -257,6 +276,26 @@ fn order_params(request: &OrderRequest) -> Result<Vec<(&'static str, String)>> {
             params.push(("volume", amount(volume, "size")?));
             params.push(("ord_type", "market".to_string()));
         }
+        (OrderType::Best, Size::Quote(funds), Side::Buy) => {
+            if request.price.is_some() {
+                return Err(Error::invalid_request(
+                    "price",
+                    "an upbit best buy takes its quote amount from `size`, not `price`",
+                ));
+            }
+            params.push(("price", amount(funds, "size")?));
+            params.push(("ord_type", "best".to_string()));
+        }
+        (OrderType::Best, Size::Base(volume), Side::Sell) => {
+            if request.price.is_some() {
+                return Err(Error::invalid_request(
+                    "price",
+                    "an upbit best sell has no caller-selected price",
+                ));
+            }
+            params.push(("volume", amount(volume, "size")?));
+            params.push(("ord_type", "best".to_string()));
+        }
         (OrderType::Limit, Size::Quote(_), _) => {
             return Err(Error::invalid_request(
                 "size",
@@ -275,15 +314,50 @@ fn order_params(request: &OrderRequest) -> Result<Vec<(&'static str, String)>> {
                 "upbit sizes a market sell by the base quantity it offers; use `Size::Base`",
             ));
         }
+        (OrderType::Best, Size::Base(_), Side::Buy) => {
+            return Err(Error::invalid_request(
+                "size",
+                "upbit sizes a best buy by the quote amount it spends; use `Size::Quote`",
+            ));
+        }
+        (OrderType::Best, Size::Quote(_), Side::Sell) => {
+            return Err(Error::invalid_request(
+                "size",
+                "upbit sizes a best sell by the base quantity it offers; use `Size::Base`",
+            ));
+        }
     }
 
-    if let Some(requested) = request.time_in_force
-        && let Some(value) = time_in_force(&request.order_type, requested)?
-    {
-        params.push(("time_in_force", value.to_string()));
+    match request.time_in_force {
+        Some(requested) => {
+            if let Some(value) = time_in_force(&request.order_type, requested)? {
+                params.push(("time_in_force", value.to_string()));
+            }
+        }
+        None if matches!(&request.order_type, OrderType::Best) => {
+            return Err(Error::invalid_request(
+                "time_in_force",
+                "an upbit best order requires immediate-or-cancel or fill-or-kill",
+            ));
+        }
+        None => {}
+    }
+    if let Some(client_id) = &request.client_id {
+        validate_client_order_id(client_id)?;
+        params.push(("identifier", client_id.clone()));
     }
 
     Ok(params)
+}
+
+fn validate_client_order_id(value: &str) -> Result<()> {
+    if (1..=64).contains(&value.len()) && value.bytes().all(is_url_safe) {
+        return Ok(());
+    }
+    Err(Error::invalid_request(
+        "client_id",
+        "an Upbit client order id must contain 1-64 RFC 3986 unreserved ASCII bytes",
+    ))
 }
 
 /// Maps time in force, omitting values implicit in the order type.
@@ -293,6 +367,16 @@ fn time_in_force(order_type: &OrderType, requested: TimeInForce) -> Result<Optio
         (OrderType::Limit, TimeInForce::ImmediateOrCancel) => Some("ioc"),
         (OrderType::Limit, TimeInForce::FillOrKill) => Some("fok"),
         (OrderType::Limit, TimeInForce::PostOnly) => Some("post_only"),
+        (OrderType::Best, TimeInForce::ImmediateOrCancel) => Some("ioc"),
+        (OrderType::Best, TimeInForce::FillOrKill) => Some("fok"),
+        (OrderType::Best, other) => {
+            return Err(Error::invalid_request(
+                "time_in_force",
+                format!(
+                    "an upbit best order requires immediate-or-cancel or fill-or-kill, not {other:?}"
+                ),
+            ));
+        }
         // Immediate-or-cancel is implicit for Upbit market orders.
         (OrderType::Market, TimeInForce::ImmediateOrCancel) => None,
         (OrderType::Market, other) => {
@@ -381,9 +465,23 @@ pub(crate) async fn cancel_order(
     http: &HttpTransport,
     market: &Market,
     order_id: &str,
-) -> Result<Order> {
+) -> Result<()> {
     let body = rest::send(http, &cancel_order_request(credentials, market, order_id)?).await?;
-    parse::order(&parse::json::<parse::RawOrder>(&body)?)
+    parse::order(&parse::json::<parse::RawOrder>(&body)?).map(drop)
+}
+
+pub(crate) async fn cancel_order_by_client_id(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    market: &Market,
+    client_id: &str,
+) -> Result<()> {
+    let body = rest::send(
+        http,
+        &cancel_order_by_client_id_request(credentials, market, client_id)?,
+    )
+    .await?;
+    parse::order(&parse::json::<parse::RawOrder>(&body)?).map(drop)
 }
 
 // ---------------------------------------------------------------------------
@@ -746,6 +844,64 @@ mod tests {
     }
 
     #[test]
+    fn best_orders_and_client_ids_reach_the_official_fields() {
+        let buy = OrderRequest::best(
+            btc_krw(),
+            Side::Buy,
+            Size::Quote(Decimal::from(10_000)),
+            TimeInForce::ImmediateOrCancel,
+        )
+        .client_id("client-1");
+        let sell = OrderRequest::best(
+            btc_krw(),
+            Side::Sell,
+            Size::Base(Decimal::new(1, 2)),
+            TimeInForce::FillOrKill,
+        );
+
+        assert_eq!(
+            place_order_request(&credentials(), &buy)
+                .expect("a signable best buy")
+                .body
+                .as_deref(),
+            Some(
+                r#"{"market":"KRW-BTC","side":"bid","price":"10000","ord_type":"best","time_in_force":"ioc","identifier":"client-1"}"#
+            )
+        );
+        assert_eq!(
+            place_order_request(&credentials(), &sell)
+                .expect("a signable best sell")
+                .body
+                .as_deref(),
+            Some(
+                r#"{"market":"KRW-BTC","side":"ask","volume":"0.01","ord_type":"best","time_in_force":"fok"}"#
+            )
+        );
+    }
+
+    #[test]
+    fn best_orders_require_a_policy_and_client_ids_fit_upbits_limit() {
+        let mut missing_policy = OrderRequest::best(
+            btc_krw(),
+            Side::Sell,
+            Size::Base(Decimal::ONE),
+            TimeInForce::ImmediateOrCancel,
+        );
+        missing_policy.time_in_force = None;
+        let too_long = OrderRequest::market(btc_krw(), Side::Sell, Size::Base(Decimal::ONE))
+            .client_id("x".repeat(65));
+
+        assert!(matches!(
+            place_order_request(&credentials(), &missing_policy),
+            Err(Error::InvalidRequest { field, .. }) if field == "time_in_force"
+        ));
+        assert!(matches!(
+            place_order_request(&credentials(), &too_long),
+            Err(Error::InvalidRequest { field, .. }) if field == "client_id"
+        ));
+    }
+
+    #[test]
     fn a_size_upbit_cannot_express_is_refused_rather_than_reinterpreted() {
         let cases = [
             OrderRequest::limit(
@@ -851,6 +1007,9 @@ mod tests {
     fn a_cancel_names_the_order_and_nothing_else() {
         let request =
             cancel_order_request(&credentials(), &btc_krw(), ORDER_ID).expect("a signable request");
+        let by_client_id =
+            cancel_order_by_client_id_request(&credentials(), &btc_krw(), "client-1")
+                .expect("a signable request");
 
         assert_eq!(
             request.target(),
@@ -860,6 +1019,7 @@ mod tests {
             claims_of(&authorization_of(&request)).query_hash.as_deref(),
             Some(CANCEL_HASH)
         );
+        assert_eq!(by_client_id.target(), "/v1/order?identifier=client-1");
     }
 
     #[test]

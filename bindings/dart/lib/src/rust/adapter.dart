@@ -85,6 +85,12 @@ sealed class AdapterCall with _$AdapterCall {
     required String orderId,
   }) = AdapterCall_CancelOrder;
 
+  /// client ID로 주문을 취소합니다.
+  const factory AdapterCall.cancelOrderByClientId({
+    required WireMarket market,
+    required String clientId,
+  }) = AdapterCall_CancelOrderByClientId;
+
   /// 미결제 포지션을 요청합니다.
   const factory AdapterCall.positions({WireMarket? market}) =
       AdapterCall_Positions;
@@ -184,10 +190,6 @@ sealed class AdapterReply with _$AdapterReply {
   /// 주문 제출 응답입니다.
   const factory AdapterReply.placeOrder(WireOrder field0) =
       AdapterReply_PlaceOrder;
-
-  /// 주문 취소 응답입니다.
-  const factory AdapterReply.cancelOrder(WireOrder field0) =
-      AdapterReply_CancelOrder;
 
   /// 포지션 응답입니다.
   const factory AdapterReply.positions(List<WirePosition> field0) =

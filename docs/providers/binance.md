@@ -76,7 +76,12 @@ adapter supports HMAC-SHA-256 keys; RSA and Ed25519 keys are unsupported.
 | `Size::Base` | All orders | All orders |
 | `Size::Quote` | Market order only; Limit -> `Error::InvalidRequest` | `Error::InvalidRequest` |
 | `time_in_force` | `GTC`, `IOC`, `FOK`; `PostOnly -> LIMIT_MAKER` | `GTC`, `IOC`, `FOK`; `PostOnly -> GTX` |
+| `OrderType::Best` | `Size::Base` + `IOC` or `FOK`; `LIMIT + MARKET_PEG` | `Error::Unsupported` |
+| `client_id` | 1–36 characters matching `[A-Za-z0-9./:_-]` | Same |
 | `reduce_only == true` | `Error::Unsupported` | Supported |
+
+Cancel methods return `()` after validating Binance's order response. Use an
+order query when the final fill state matters.
 
 Access the following provider-specific methods through `Client::adapter()`:
 

@@ -77,7 +77,12 @@ USD-M은 `OrderBook`을 `/public/stream`으로, `Ticker`, `Candles`를
 | `Size::Base` | 모든 주문 | 모든 주문 |
 | `Size::Quote` | 시장가만 지원; Limit → `Error::InvalidRequest` | `Error::InvalidRequest` |
 | `time_in_force` | `GTC`, `IOC`, `FOK`; `PostOnly → LIMIT_MAKER` | `GTC`, `IOC`, `FOK`; `PostOnly → GTX` |
+| `OrderType::Best` | `Size::Base` + `IOC` 또는 `FOK`; `LIMIT + MARKET_PEG` | `Error::Unsupported` |
+| `client_id` | `[A-Za-z0-9./:_-]`에 해당하는 1–36자 | 동일 |
 | `reduce_only == true` | `Error::Unsupported` | 지원 |
+
+취소 메서드는 Binance 응답을 검증한 뒤 `()`를 반환합니다. 최종 체결 상태가
+필요하면 주문 조회 API로 확인하세요.
 
 다음 메서드는 `Client::adapter()`가 반환한 어댑터에서 호출합니다.
 

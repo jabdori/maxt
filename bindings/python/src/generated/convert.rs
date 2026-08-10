@@ -252,6 +252,7 @@ pub(crate) fn order_type_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::O
     match value.as_str() {
         "market" => Ok(maxt::OrderType::Market),
         "limit" => Ok(maxt::OrderType::Limit),
+        "best" => Ok(maxt::OrderType::Best),
         _ => Err(invalid("order type", &value)),
     }
 }
@@ -260,6 +261,7 @@ pub(crate) fn order_type_to_wire(value: maxt::OrderType) -> PyResult<&'static st
     match value {
         maxt::OrderType::Market => Ok("market"),
         maxt::OrderType::Limit => Ok("limit"),
+        maxt::OrderType::Best => Ok("best"),
         _ => Err(binding_contract("OrderType")),
     }
 }

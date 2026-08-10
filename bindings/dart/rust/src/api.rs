@@ -271,7 +271,7 @@ impl Adapter for BuiltInAdapter {
         self.as_adapter().place_order(request)
     }
 
-    fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, maxt::Result<Order>> {
+    fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, maxt::Result<()>> {
         self.as_adapter().cancel_order(market, order_id)
     }
 

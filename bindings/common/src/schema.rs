@@ -258,6 +258,10 @@ const CANCEL_ORDER: &[Argument] = &[
     argument("market", ApiType::Named("Market"), None),
     argument("orderId", ApiType::String, None),
 ];
+const CANCEL_ORDER_BY_CLIENT_ID: &[Argument] = &[
+    argument("market", ApiType::Named("Market"), None),
+    argument("clientId", ApiType::String, None),
+];
 const HISTORY_REQUEST: &[Argument] = &[argument("request", ApiType::Named("HistoryRequest"), None)];
 const MARGIN_REQUEST: &[Argument] = &[argument("request", ApiType::Named("MarginRequest"), None)];
 
@@ -366,6 +370,11 @@ const CLIENT_CANCEL_ORDER: &[ClientMethod] = &[ClientMethod {
     name: "cancelOrder",
     native_name: "cancelOrder",
     arguments: CANCEL_ORDER,
+}];
+const CLIENT_CANCEL_ORDER_BY_CLIENT_ID: &[ClientMethod] = &[ClientMethod {
+    name: "cancelOrderByClientId",
+    native_name: "cancelOrderByClientId",
+    arguments: CANCEL_ORDER_BY_CLIENT_ID,
 }];
 const CLIENT_POSITIONS: &[ClientMethod] = &[
     ClientMethod {
@@ -534,8 +543,16 @@ const ADAPTER_OPERATIONS: &[Operation] = &[
         language_name: "cancelOrder",
         feature: "trading",
         arguments: CANCEL_ORDER,
-        result: ApiType::Named("Order"),
+        result: ApiType::Unit,
         client_methods: CLIENT_CANCEL_ORDER,
+    },
+    Operation {
+        rust_name: "cancel_order_by_client_id",
+        language_name: "cancelOrderByClientId",
+        feature: "trading",
+        arguments: CANCEL_ORDER_BY_CLIENT_ID,
+        result: ApiType::Unit,
+        client_methods: CLIENT_CANCEL_ORDER_BY_CLIENT_ID,
     },
     Operation {
         rust_name: "positions",
@@ -627,6 +644,7 @@ const CLIENT_MEMBERS: &[&str] = &[
     "subscribeAccountWith",
     "placeOrder",
     "cancelOrder",
+    "cancelOrderByClientId",
     "positions",
     "positionsOn",
     "marginSummary",
@@ -751,6 +769,7 @@ const ORDER_STATUS_VARIANTS: &[IdentifierVariant] = &[
 const ORDER_TYPE_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("Market", "market"),
     identifier_variant("Limit", "limit"),
+    identifier_variant("Best", "best"),
 ];
 const TIME_IN_FORCE_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("GoodTilCancelled", "good_til_cancelled"),
@@ -1527,6 +1546,7 @@ pub fn binding_schema() -> Schema {
                     Type::optional(Type::Identifier("TimeInForce")),
                 ),
                 field("reduce_only", Boolean),
+                field("client_id", Type::optional(Type::String)),
             ],
         ),
         record(
@@ -1935,6 +1955,13 @@ pub fn binding_schema() -> Schema {
                     ],
                 ),
                 variant(
+                    "cancel_order_by_client_id",
+                    vec![
+                        field("market", Type::named("MarketWire")),
+                        field("client_id", Type::String),
+                    ],
+                ),
+                variant(
                     "positions",
                     vec![field("market", Type::optional(Type::named("MarketWire")))],
                 ),
@@ -2013,10 +2040,6 @@ pub fn binding_schema() -> Schema {
                     vec![field("value", Type::named("OrderWire"))],
                 ),
                 variant(
-                    "cancel_order",
-                    vec![field("value", Type::named("OrderWire"))],
-                ),
-                variant(
                     "positions",
                     vec![field("value", Type::list(Type::named("PositionWire")))],
                 ),
@@ -2038,7 +2061,7 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
-        native_api_version: 2,
+        native_api_version: 3,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
         identifiers: IDENTIFIERS,

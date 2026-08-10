@@ -18,12 +18,11 @@ enum ReplyKind {
     OpenOrders,
     AccountStream,
     PlaceOrder,
-    CancelOrder,
+    Unit,
     Positions,
     MarginSummary,
     FundingRates,
     FundingPayments,
-    Unit,
 }
 
 fn prepare_call(
@@ -123,7 +122,15 @@ fn prepare_call(
                 market_object(py, &market)?,
                 order_id.into_py_any(py)?,
             ],
-            ReplyKind::CancelOrder,
+            ReplyKind::Unit,
+        ),
+        AdapterCall::CancelOrderByClientId { market, client_id } => (
+            "cancel_order_by_client_id",
+            vec![
+                market_object(py, &market)?,
+                client_id.into_py_any(py)?,
+            ],
+            ReplyKind::Unit,
         ),
         AdapterCall::Positions { market } => (
             "positions",

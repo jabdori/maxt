@@ -99,6 +99,7 @@ pub enum WireFeature {
 pub enum WireOrderType {
     Market,
     Limit,
+    Best,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -294,6 +295,7 @@ pub struct WireOrderRequest {
     pub price: Option<String>,
     pub time_in_force: Option<WireTimeInForce>,
     pub reduce_only: bool,
+    pub client_id: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -717,6 +719,7 @@ impl From<WireOrderType> for OrderType {
         match value {
             WireOrderType::Market => Self::Market,
             WireOrderType::Limit => Self::Limit,
+            WireOrderType::Best => Self::Best,
         }
     }
 }
@@ -835,6 +838,7 @@ impl From<OrderType> for WireOrderType {
         match value {
             OrderType::Market => Self::Market,
             OrderType::Limit => Self::Limit,
+            OrderType::Best => Self::Best,
             _ => unreachable!("새 maxt order type에는 새 Dart wire variant가 필요합니다"),
         }
     }
@@ -1055,6 +1059,7 @@ impl TryFrom<WireOrderRequest> for OrderRequest {
         let market = value.market.into();
         let side = value.side.into();
         let size = value.size.try_into()?;
+        let time_in_force = value.time_in_force.map(Into::into);
         let mut request = match (value.order_type, value.price) {
             (WireOrderType::Market, None) => Self::market(market, side, size),
             (WireOrderType::Market, Some(_)) => {
@@ -1072,12 +1077,32 @@ impl TryFrom<WireOrderRequest> for OrderRequest {
                     "a limit order requires a price",
                 ));
             }
+            (WireOrderType::Best, None) => Self::best(
+                market,
+                side,
+                size,
+                time_in_force.ok_or_else(|| {
+                    NativeError::invalid_request(
+                        "time_in_force",
+                        "a best order requires a time in force",
+                    )
+                })?,
+            ),
+            (WireOrderType::Best, Some(_)) => {
+                return Err(NativeError::invalid_request(
+                    "price",
+                    "a best order must not have a caller-selected price",
+                ));
+            }
         };
-        if let Some(time_in_force) = value.time_in_force {
-            request = request.time_in_force(time_in_force.into());
+        if let Some(time_in_force) = time_in_force {
+            request = request.time_in_force(time_in_force);
         }
         if value.reduce_only {
             request = request.reduce_only();
+        }
+        if let Some(client_id) = value.client_id {
+            request = request.client_id(client_id);
         }
         Ok(request)
     }
@@ -1093,6 +1118,7 @@ impl From<OrderRequest> for WireOrderRequest {
             price: decimal_option_to_wire(value.price),
             time_in_force: value.time_in_force.map(Into::into),
             reduce_only: value.reduce_only,
+            client_id: value.client_id,
         }
     }
 }
@@ -1786,6 +1812,7 @@ mod tests {
             price: None,
             time_in_force: None,
             reduce_only: false,
+            client_id: None,
         };
 
         let error = OrderRequest::try_from(request).unwrap_err();

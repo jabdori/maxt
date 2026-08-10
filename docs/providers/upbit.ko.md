@@ -36,8 +36,8 @@
 
 | API | 지원하는 `Interval` | 매핑하지 않는 거래소 간격 |
 | --- | --- | --- |
-| REST | `Sec1`, `Min1`, `Min3`, `Min5`, `Min15`, `Min30`, `Hour1`, `Hour4`, `Day1`, `Week1`, `Month1` | `10m`, `1y` |
-| WebSocket | `Sec1`, `Min1`, `Min3`, `Min5`, `Min15`, `Min30`, `Hour1`, `Hour4` | `10m` |
+| REST | `Sec1`, `Min1`, `Min3`, `Min5`, `Min10`, `Min15`, `Min30`, `Hour1`, `Hour4`, `Day1`, `Week1`, `Month1` | `1y` |
+| WebSocket | `Sec1`, `Min1`, `Min3`, `Min5`, `Min10`, `Min15`, `Min30`, `Hour1`, `Hour4` | — |
 
 | 제약 | 값 |
 | --- | ---: |
@@ -68,6 +68,13 @@
 `.with_credentials(access_key, secret_key)`로 인증 정보를 설정합니다. 인증 정보 발급
 지역은 `UpbitAdapter::region()`과 같아야 합니다. 설정 후 잔고, 미체결 주문, 주문
 생성·취소, 계좌 스트림을 사용할 수 있습니다.
+
+| 주문 입력 | 계약 |
+| --- | --- |
+| 최유리 매수 | `Size::Quote`와 `IOC` 또는 `FOK` |
+| 최유리 매도 | `Size::Base`와 `IOC` 또는 `FOK` |
+| `client_id` | RFC 3986 비예약 ASCII 문자로 구성한 1–64바이트; `cancel_order_by_client_id`에 사용 가능 |
+| 취소 메서드 | 거래소 응답을 검증한 뒤 `()` 반환 |
 
 다음 메서드는 `Client::adapter()`가 반환한 어댑터에서 호출합니다.
 

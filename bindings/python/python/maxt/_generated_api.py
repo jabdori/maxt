@@ -60,7 +60,10 @@ class _GeneratedAdapterApi:
     async def place_order(self, request: OrderRequest) -> Order:
         raise self._unsupported(Feature.TRADING)
 
-    async def cancel_order(self, market: Market, order_id: str) -> Order:
+    async def cancel_order(self, market: Market, order_id: str) -> None:
+        raise self._unsupported(Feature.TRADING)
+
+    async def cancel_order_by_client_id(self, market: Market, client_id: str) -> None:
         raise self._unsupported(Feature.TRADING)
 
     async def positions(self, market: Optional[Market] = None) -> list[Position]:
@@ -139,8 +142,11 @@ class _GeneratedClientApi:
     async def place_order(self, request: OrderRequest) -> Order:
         return await self._delegate.place_order(request)
 
-    async def cancel_order(self, market: Market, order_id: str) -> Order:
+    async def cancel_order(self, market: Market, order_id: str) -> None:
         return await self._delegate.cancel_order(market, order_id)
+
+    async def cancel_order_by_client_id(self, market: Market, client_id: str) -> None:
+        return await self._delegate.cancel_order_by_client_id(market, client_id)
 
     async def positions(self) -> list[Position]:
         return [row for row in await self._delegate.positions(None) if not row.is_flat()]

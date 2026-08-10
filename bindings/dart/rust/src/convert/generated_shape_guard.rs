@@ -278,6 +278,7 @@ fn _guard_order_request_wire(value: WireOrderRequest) {
         price: _,
         time_in_force: _,
         reduce_only: _,
+        client_id: _,
     } = value;
 }
 
@@ -520,6 +521,7 @@ fn _guard_order_type(value: WireOrderType) {
     match value {
         WireOrderType::Market => {}
         WireOrderType::Limit => {}
+        WireOrderType::Best => {}
     }
 }
 

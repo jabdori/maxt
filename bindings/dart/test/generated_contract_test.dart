@@ -37,6 +37,7 @@ void main() {
       'subscribeAccount': adapter.subscribeAccount,
       'placeOrder': adapter.placeOrder,
       'cancelOrder': adapter.cancelOrder,
+      'cancelOrderByClientId': adapter.cancelOrderByClientId,
       'positions': adapter.positions,
       'marginSummary': adapter.marginSummary,
       'fundingRates': adapter.fundingRates,
@@ -74,6 +75,8 @@ void main() {
           value.subscribeAccountWith,
       'placeOrder': (Client<Adapter> value) => value.placeOrder,
       'cancelOrder': (Client<Adapter> value) => value.cancelOrder,
+      'cancelOrderByClientId': (Client<Adapter> value) =>
+          value.cancelOrderByClientId,
       'positions': (Client<Adapter> value) => value.positions,
       'positionsOn': (Client<Adapter> value) => value.positionsOn,
       'marginSummary': (Client<Adapter> value) => value.marginSummary,

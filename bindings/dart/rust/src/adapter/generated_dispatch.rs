@@ -60,7 +60,11 @@ pub(super) fn dispatch(call: CommonAdapterCall) -> Option<(AdapterCall, Expected
         )),
         CommonAdapterCall::CancelOrder { market, order_id } => Some((
             AdapterCall::CancelOrder { market: market.into(), order_id },
-            ExpectedReply::CancelOrder,
+            ExpectedReply::Unit,
+        )),
+        CommonAdapterCall::CancelOrderByClientId { market, client_id } => Some((
+            AdapterCall::CancelOrderByClientId { market: market.into(), client_id },
+            ExpectedReply::Unit,
         )),
         CommonAdapterCall::Positions { market } => Some((
             AdapterCall::Positions { market: market.map(Into::into) },

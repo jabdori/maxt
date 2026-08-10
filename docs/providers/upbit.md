@@ -36,8 +36,8 @@ Derivative methods return `Error::Unsupported`.
 
 | Surface | Exposed `Interval` variants | Native intervals not exposed |
 | --- | --- | --- |
-| REST | `Sec1`, `Min1`, `Min3`, `Min5`, `Min15`, `Min30`, `Hour1`, `Hour4`, `Day1`, `Week1`, `Month1` | `10m`, `1y` |
-| WebSocket | `Sec1`, `Min1`, `Min3`, `Min5`, `Min15`, `Min30`, `Hour1`, `Hour4` | `10m` |
+| REST | `Sec1`, `Min1`, `Min3`, `Min5`, `Min10`, `Min15`, `Min30`, `Hour1`, `Hour4`, `Day1`, `Week1`, `Month1` | `1y` |
+| WebSocket | `Sec1`, `Min1`, `Min3`, `Min5`, `Min10`, `Min15`, `Min30`, `Hour1`, `Hour4` | — |
 
 | Constraint | Value |
 | --- | ---: |
@@ -68,6 +68,13 @@ Derivative methods return `Error::Unsupported`.
 Configure private calls with `.with_credentials(access_key, secret_key)`. The
 credentials must belong to `UpbitAdapter::region()`. Private features are
 balances, open orders, place/cancel order, and account streams.
+
+| Order input | Contract |
+| --- | --- |
+| Best buy | `Size::Quote` with `IOC` or `FOK` |
+| Best sell | `Size::Base` with `IOC` or `FOK` |
+| `client_id` | 1–64 RFC 3986 unreserved ASCII bytes; usable with `cancel_order_by_client_id` |
+| Cancel methods | Return `()` after validating the provider response |
 
 Access the following provider-specific methods through `Client::adapter()`.
 

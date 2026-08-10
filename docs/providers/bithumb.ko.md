@@ -33,8 +33,7 @@ code로 보존합니다.
 
 | 계약 | 값 |
 | --- | --- |
-| 지원하는 `Interval` | `Min1`, `Min3`, `Min5`, `Min15`, `Min30`, `Hour1`, `Hour4`, `Day1`, `Week1`, `Month1` |
-| 매핑하지 않는 거래소 간격 | `10m` |
+| 지원하는 `Interval` | `Min1`, `Min3`, `Min5`, `Min10`, `Min15`, `Min30`, `Hour1`, `Hour4`, `Day1`, `Week1`, `Month1` |
 | 거래소 페이지 상한 | 200 |
 | 요청당 거래소 호출 수 | `<= 100` |
 | 사전 계산 캔들 수 | `<= 20_000` |
@@ -67,12 +66,16 @@ code로 보존합니다.
 | 지정가 매수 또는 매도 | `Size::Base` |
 | 시장가 매수 | `Size::Quote` |
 | 시장가 매도 | `Size::Base` |
+| 최유리 매수 | `Size::Quote` |
+| 최유리 매도 | `Size::Base` |
 
 | 입력 | 결과 |
 | --- | --- |
-| `OrderRequest::time_in_force.is_some()` | `Error::InvalidRequest` |
+| 지정가 + `IOC`, `FOK`, `PostOnly` | KRW 마켓만 지원 |
+| 최유리 + `IOC` 또는 `FOK` | KRW 마켓만 지원; 체결 조건 필수 |
+| `client_id` | 영문 대·소문자, 숫자, `-`, `_`로 구성한 1–36자 |
 | `OrderRequest::reduce_only == true` | `Error::Unsupported` |
-| `cancel_order(...)` | 취소 응답; `status = Cancelled`; 체결 필드 없음 |
+| `cancel_order(...)`, `cancel_order_by_client_id(...)` | 취소 응답을 검증한 뒤 `()` 반환 |
 
 다음 메서드는 `Client::adapter()`가 반환한 어댑터에서 호출합니다.
 
@@ -96,7 +99,7 @@ code로 보존합니다.
 | WebSocket 연결 | IP당 10/s; HTTP 429; 반복 초과 시 최대 10분 차단 가능 |
 
 `maxt`는 요청 속도를 제한하지 않습니다. 파생상품, `MarketKind::Perpetual`, 공개
-캔들 스트림, `time_in_force`는 지원하지 않습니다.
+캔들 스트림은 지원하지 않습니다.
 
 - [문서 색인](https://apidocs.bithumb.com/llms.txt)
 - [요청 한도](https://apidocs.bithumb.com/docs/api-%EC%9A%94%EC%B2%AD-%EC%88%98-%EC%A0%9C%ED%95%9C-%EC%95%88%EB%82%B4.md)

@@ -493,7 +493,7 @@ impl Adapter for HyperliquidAdapter {
         })
     }
 
-    fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<Order>> {
+    fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<()>> {
         let market = market.clone();
         let order_id = order_id.to_string();
 

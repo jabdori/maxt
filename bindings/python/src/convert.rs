@@ -208,9 +208,19 @@ pub(crate) fn order_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Orde
     let price = optional(dict, "price")?
         .map(|value| decimal_from_wire(&value, "price"))
         .transpose()?;
+    let time_in_force = optional(dict, "time_in_force")?
+        .map(|value| time_in_force_from_wire(&value))
+        .transpose()?;
     let mut request = match (order_type, price) {
         (OrderType::Market, None) => OrderRequest::market(market, side, size),
         (OrderType::Limit, Some(price)) => OrderRequest::limit(market, side, size, price),
+        (OrderType::Best, None) => OrderRequest::best(
+            market,
+            side,
+            size,
+            time_in_force
+                .ok_or_else(|| PyValueError::new_err("best orders require time_in_force"))?,
+        ),
         (OrderType::Market, Some(_)) => {
             return Err(PyValueError::new_err(
                 "market orders must not include price",
@@ -221,8 +231,8 @@ pub(crate) fn order_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Orde
         }
         _ => return Err(PyValueError::new_err("unsupported order type")),
     };
-    if let Some(time_in_force) = optional(dict, "time_in_force")? {
-        request = request.time_in_force(time_in_force_from_wire(&time_in_force)?);
+    if let Some(time_in_force) = time_in_force {
+        request = request.time_in_force(time_in_force);
     }
     if optional(dict, "reduce_only")?
         .map(|value| value.extract::<bool>())
@@ -230,6 +240,9 @@ pub(crate) fn order_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Orde
         .unwrap_or(false)
     {
         request = request.reduce_only();
+    }
+    if let Some(client_id) = optional(dict, "client_id")? {
+        request = request.client_id(client_id.extract::<String>()?);
     }
     Ok(request)
 }

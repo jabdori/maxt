@@ -174,9 +174,8 @@ class NativeReplayAdapter(Adapter):
         self.received.append(("place_order", request))
         return self.order
 
-    async def cancel_order(self, market: Market, order_id: str) -> Order:
+    async def cancel_order(self, market: Market, order_id: str) -> None:
         self.received.append(("cancel_order", market, order_id))
-        return self.order
 
     async def positions(self, market=None) -> list[Position]:
         self.received.append(("positions", market))
@@ -416,7 +415,7 @@ class NativeCustomAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await client.open_orders())[0].id, "order-1")
         self.assertEqual((await client.open_orders_on(market))[0].id, "order-1")
         self.assertEqual((await client.place_order(order_request)).id, "order-1")
-        self.assertEqual((await client.cancel_order(market, "order-1")).id, "order-1")
+        self.assertIsNone(await client.cancel_order(market, "order-1"))
         self.assertEqual(await client.positions(), [adapter.position])
         self.assertEqual(await client.positions_on(market), [adapter.position])
         self.assertEqual((await client.margin_summary()).equity, Decimal("1000.00"))

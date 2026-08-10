@@ -160,9 +160,8 @@ final class FullContractAdapter extends AdapterBase {
   }
 
   @override
-  Future<Order> cancelOrder(Market market, String orderId) async {
+  Future<void> cancelOrder(Market market, String orderId) async {
     cancelledOrder = (market, orderId);
-    return order;
   }
 
   @override
@@ -301,7 +300,7 @@ void main() {
     expect(adapter.placedRequest?.timeInForce, TimeInForce.postOnly);
     expect(adapter.placedRequest?.reduceOnly, isTrue);
 
-    expect((await client.cancelOrder(market, 'order-1')).id, 'order-1');
+    await client.cancelOrder(market, 'order-1');
     expect(adapter.cancelledOrder, (market, 'order-1'));
 
     final position = (await client.positionsOn(market)).single;

@@ -106,17 +106,14 @@ fn signed_query(params: &[(&str, String)]) -> Result<String> {
 /// Rejects values that could alter the signed query structure.
 fn signed_value(name: &str, value: &str) -> Result<()> {
     if value.is_empty() {
-        return Err(Error::invalid_request(
-            "order_id",
-            format!("`{name}` is empty"),
-        ));
+        return Err(Error::invalid_request(name, format!("`{name}` is empty")));
     }
     if !value
         .bytes()
         .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_'))
     {
         return Err(Error::invalid_request(
-            "order_id",
+            name,
             format!("`{name}` holds a character that would change the signed request: `{value}`"),
         ));
     }
@@ -157,7 +154,23 @@ pub(crate) fn cancel_order_request(
     credentials: &BithumbCredentials,
     order_id: &str,
 ) -> Result<HttpRequest> {
-    let query = signed_query(&[("order_id", order_id.to_string())])?;
+    cancel_order_request_by(credentials, "order_id", order_id)
+}
+
+pub(crate) fn cancel_order_by_client_id_request(
+    credentials: &BithumbCredentials,
+    client_id: &str,
+) -> Result<HttpRequest> {
+    validate_client_order_id(client_id)?;
+    cancel_order_request_by(credentials, "client_order_id", client_id)
+}
+
+fn cancel_order_request_by(
+    credentials: &BithumbCredentials,
+    parameter: &str,
+    value: &str,
+) -> Result<HttpRequest> {
+    let query = signed_query(&[(parameter, value.to_string())])?;
 
     Ok(HttpRequest::delete("/v2/order")
         .query(query.clone())
@@ -180,15 +193,6 @@ pub(crate) fn placed_order(request: &OrderRequest) -> Result<PlacedOrder> {
             "bithumb lists spot markets only, which have no position to reduce",
         ));
     }
-    if let Some(time_in_force) = request.time_in_force {
-        return Err(Error::invalid_request(
-            "time_in_force",
-            format!(
-                "bithumb's order endpoint takes no time-in-force, so {time_in_force:?} cannot be honoured"
-            ),
-        ));
-    }
-
     let mut params = vec![
         ("market", parse::native_symbol(&request.market)?),
         (
@@ -222,6 +226,30 @@ pub(crate) fn placed_order(request: &OrderRequest) -> Result<PlacedOrder> {
             params.push(("volume", amount("volume", *quantity)?));
             *quantity
         }
+        (OrderType::Best, Size::Quote(amount_to_spend), Side::Buy) => {
+            ensure_krw_best_order(&request.market)?;
+            if request.price.is_some() {
+                return Err(Error::invalid_request(
+                    "price",
+                    "a bithumb best buy takes its quote amount from `size`, not `price`",
+                ));
+            }
+            params.push(("order_type", "best".to_string()));
+            params.push(("price", amount("price", *amount_to_spend)?));
+            Decimal::ZERO
+        }
+        (OrderType::Best, Size::Base(quantity), Side::Sell) => {
+            ensure_krw_best_order(&request.market)?;
+            if request.price.is_some() {
+                return Err(Error::invalid_request(
+                    "price",
+                    "a bithumb best sell has no caller-selected price",
+                ));
+            }
+            params.push(("order_type", "best".to_string()));
+            params.push(("volume", amount("volume", *quantity)?));
+            *quantity
+        }
         (OrderType::Market, Size::Base(_), Side::Buy) => {
             return Err(Error::invalid_request(
                 "size",
@@ -240,12 +268,96 @@ pub(crate) fn placed_order(request: &OrderRequest) -> Result<PlacedOrder> {
                 "bithumb sizes a limit order in the base asset; use `Size::Base`",
             ));
         }
+        (OrderType::Best, Size::Base(_), Side::Buy) => {
+            return Err(Error::invalid_request(
+                "size",
+                "bithumb sizes a best buy in the quote asset; use `Size::Quote`",
+            ));
+        }
+        (OrderType::Best, Size::Quote(_), Side::Sell) => {
+            return Err(Error::invalid_request(
+                "size",
+                "bithumb sizes a best sell in the base asset; use `Size::Base`",
+            ));
+        }
     };
+
+    if let Some(time_in_force) = bithumb_time_in_force(&request.order_type, request.time_in_force)?
+    {
+        if request.market.quote != "KRW" {
+            return Err(Error::unsupported(
+                crate::feature::Feature::Trading,
+                EXCHANGE,
+                "bithumb currently supports time-in-force only on KRW markets",
+            ));
+        }
+        params.push(("time_in_force", time_in_force.to_string()));
+    }
+    if let Some(client_id) = &request.client_id {
+        validate_client_order_id(client_id)?;
+        params.push(("client_order_id", client_id.clone()));
+    }
 
     Ok(PlacedOrder {
         params,
         remaining_quantity,
     })
+}
+
+fn ensure_krw_best_order(market: &Market) -> Result<()> {
+    if market.quote == "KRW" {
+        return Ok(());
+    }
+    Err(Error::unsupported(
+        crate::feature::Feature::Trading,
+        EXCHANGE,
+        "bithumb currently supports best orders only on KRW markets",
+    ))
+}
+
+fn bithumb_time_in_force(
+    order_type: &OrderType,
+    value: Option<crate::types::TimeInForce>,
+) -> Result<Option<&'static str>> {
+    use crate::types::TimeInForce;
+
+    Ok(match (order_type, value) {
+        (OrderType::Limit, None | Some(TimeInForce::GoodTilCancelled)) => None,
+        (OrderType::Limit, Some(TimeInForce::ImmediateOrCancel)) => Some("ioc"),
+        (OrderType::Limit, Some(TimeInForce::FillOrKill)) => Some("fok"),
+        (OrderType::Limit, Some(TimeInForce::PostOnly)) => Some("post_only"),
+        (OrderType::Best, Some(TimeInForce::ImmediateOrCancel)) => Some("ioc"),
+        (OrderType::Best, Some(TimeInForce::FillOrKill)) => Some("fok"),
+        (OrderType::Best, other) => {
+            return Err(Error::invalid_request(
+                "time_in_force",
+                format!(
+                    "a bithumb best order requires immediate-or-cancel or fill-or-kill, not {other:?}"
+                ),
+            ));
+        }
+        (OrderType::Market, None) => None,
+        (OrderType::Market, Some(other)) => {
+            return Err(Error::invalid_request(
+                "time_in_force",
+                format!("a bithumb market order has no configurable time-in-force, not {other:?}"),
+            ));
+        }
+    })
+}
+
+fn validate_client_order_id(value: &str) -> Result<()> {
+    if (1..=36).contains(&value.len())
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_'))
+    {
+        return Ok(());
+    }
+    Err(Error::invalid_request(
+        "client_id",
+        "a bithumb client order id must be 1-36 ASCII letters, digits, '-' or '_'",
+    ))
 }
 
 /// Validates a positive amount and preserves its decimal spelling.
@@ -317,26 +429,36 @@ pub(crate) async fn cancel_order(
     credentials: &BithumbCredentials,
     market: &Market,
     order_id: &str,
-) -> Result<Order> {
+) -> Result<()> {
     // Validate the caller's market even though Bithumb cancels by identifier.
     parse::native_symbol(market)?;
     let body = rest::send(http, &cancel_order_request(credentials, order_id)?).await?;
 
-    parse::order_ack(
-        &body,
-        market.clone(),
-        // The acknowledgement may omit the side.
-        side_of(&body),
-        OrderStatus::Cancelled,
-        Decimal::ZERO,
-        None,
-    )
+    cancel_ack(&body)
 }
 
-fn side_of(body: &Value) -> Side {
-    match body.get("side").and_then(Value::as_str) {
-        Some("ask" | "sell" | "ASK") => Side::Sell,
-        _ => Side::Buy,
+pub(crate) async fn cancel_order_by_client_id(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    market: &Market,
+    client_id: &str,
+) -> Result<()> {
+    parse::native_symbol(market)?;
+    let body = rest::send(
+        http,
+        &cancel_order_by_client_id_request(credentials, client_id)?,
+    )
+    .await?;
+
+    cancel_ack(&body)
+}
+
+fn cancel_ack(body: &Value) -> Result<()> {
+    match body.get("order_id").and_then(Value::as_str) {
+        Some(order_id) if !order_id.is_empty() => Ok(()),
+        _ => Err(Error::decode(
+            "bithumb cancel response carries no `order_id`",
+        )),
     }
 }
 
@@ -479,6 +601,12 @@ mod tests {
                 .target(),
             "/v2/order?order_id=C0101000000001818113"
         );
+        assert_eq!(
+            cancel_order_by_client_id_request(&credentials(), "client-1")
+                .expect("signed")
+                .target(),
+            "/v2/order?client_order_id=client-1"
+        );
     }
 
     #[test]
@@ -527,6 +655,16 @@ mod tests {
             Size::Base(Decimal::new(1, 2)),
         ))
         .expect("a market sell");
+        let best_buy = placed_order(
+            &OrderRequest::best(
+                btc_krw(),
+                Side::Buy,
+                Size::Quote(Decimal::from(10_000)),
+                TimeInForce::ImmediateOrCancel,
+            )
+            .client_id("client-1"),
+        )
+        .expect("a best buy");
 
         assert_eq!(
             signed_query(&limit.params).expect("signable"),
@@ -539,6 +677,10 @@ mod tests {
         assert_eq!(
             signed_query(&market_sell.params).expect("signable"),
             "market=KRW-BTC&side=ask&order_type=market&volume=0.01"
+        );
+        assert_eq!(
+            signed_query(&best_buy.params).expect("signable"),
+            "market=KRW-BTC&side=bid&order_type=best&price=10000&time_in_force=ioc&client_order_id=client-1"
         );
         // A quote-sized market buy has no known base remainder.
         assert_eq!(market_buy.remaining_quantity, Decimal::ZERO);
@@ -582,14 +724,48 @@ mod tests {
     }
 
     #[test]
-    fn a_time_in_force_bithumb_cannot_honour_is_refused_rather_than_dropped() {
-        let request =
+    fn time_in_force_is_sent_only_for_supported_order_shapes() {
+        let limit =
             OrderRequest::limit(btc_krw(), Side::Buy, Size::Base(Decimal::ONE), Decimal::ONE)
-                .time_in_force(TimeInForce::FillOrKill);
+                .time_in_force(TimeInForce::PostOnly);
+        let invalid_best = OrderRequest::best(
+            btc_krw(),
+            Side::Buy,
+            Size::Quote(Decimal::ONE),
+            TimeInForce::PostOnly,
+        );
+        let non_krw = OrderRequest::limit(
+            Market::spot(Exchange::Bithumb, "BTC", "USDT"),
+            Side::Buy,
+            Size::Base(Decimal::ONE),
+            Decimal::ONE,
+        )
+        .time_in_force(TimeInForce::ImmediateOrCancel);
 
+        assert!(
+            signed_query(&placed_order(&limit).expect("post-only limit").params)
+                .expect("signable")
+                .ends_with("time_in_force=post_only")
+        );
         assert!(matches!(
-            placed_order(&request),
+            placed_order(&invalid_best),
             Err(Error::InvalidRequest { field, .. }) if field == "time_in_force"
+        ));
+        assert!(matches!(
+            placed_order(&non_krw),
+            Err(Error::Unsupported { .. })
+        ));
+    }
+
+    #[test]
+    fn a_cancel_acknowledgement_never_becomes_a_synthetic_order() {
+        assert_eq!(
+            cancel_ack(&serde_json::json!({"order_id": "order-1"})),
+            Ok(())
+        );
+        assert!(matches!(
+            cancel_ack(&serde_json::json!({"client_order_id": "client-1"})),
+            Err(Error::Decode { .. })
         ));
     }
 

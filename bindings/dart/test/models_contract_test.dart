@@ -2,6 +2,20 @@ import 'package:maxt/maxt.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('best 주문은 체결 조건과 client ID를 보존한다', () {
+    final request = OrderRequest.best(
+      Market.spot(Exchange.bithumb, 'BTC', 'KRW'),
+      Side.buy,
+      Size.quote(Decimal.parse('10000')),
+      TimeInForce.immediateOrCancel,
+    ).withClientId('client-1');
+
+    expect(request.orderType, OrderType.best);
+    expect(request.timeInForce, TimeInForce.immediateOrCancel);
+    expect(request.clientId, 'client-1');
+    expect(request.price, isNull);
+  });
+
   test('Decimal은 double 없이 정확한 문자열과 수치 동등성을 보존한다', () {
     final value = Decimal.parse('123456789012345678.1234567800');
 

@@ -253,9 +253,18 @@ abstract base class _NativeAdapterBase
   ).then(_orderFromWire);
 
   @override
-  Future<Order> cancelOrder(Market market, String orderId) => _nativeFuture(
+  Future<void> cancelOrder(Market market, String orderId) => _nativeFuture(
     () => _handle.cancelOrder(market: _marketToWire(market), orderId: orderId),
-  ).then(_orderFromWire);
+  );
+
+  @override
+  Future<void> cancelOrderByClientId(Market market, String clientId) =>
+      _nativeFuture(
+        () => _handle.cancelOrderByClientId(
+          market: _marketToWire(market),
+          clientId: clientId,
+        ),
+      );
 
   @override
   Future<List<Position>> positions([Market? market]) => _nativeFuture(

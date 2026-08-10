@@ -175,7 +175,7 @@
 | `open_orders*` | 특정 시점의 스냅샷; 거래소의 모든 페이지 순회는 보장하지 않음 |
 | `OrderRequest::size` | `Size::Base` 또는 `Size::Quote` |
 | 주문 정밀도 | `MarketInfo`에 공통 호가 단위(tick size), 수량 단위(lot size), 최소 명목가치(minimum notional) 없음 |
-| `cancel_order` | 체결과 경합 가능; 반환된 `Order`는 거래소 응답이며 최종 체결 상태가 없을 수 있음 |
+| `cancel_order`, `cancel_order_by_client_id` | 유효한 거래소 응답 후 `()` 반환; 체결과의 경합 결과는 주문 조회로 확인 |
 | `positions*` | `position.quantity == 0` 행 제거 |
 | `MarginSummary` | 거래소 미제공 값은 `None` |
 | `FundingPayment::amount < 0` | 계좌가 funding 지급 |

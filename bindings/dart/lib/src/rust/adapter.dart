@@ -87,6 +87,11 @@ sealed class AdapterCall with _$AdapterCall {
     required String clientId,
   }) = AdapterCall_OrderByClientId;
 
+  /// 여러 주문 ID로 주문을 요청합니다.
+  const factory AdapterCall.ordersByIds({
+    required WireOrderLookupRequest request,
+  }) = AdapterCall_OrdersByIds;
+
   /// 종료 주문 이력을 요청합니다.
   const factory AdapterCall.orderHistory({
     required WireOrderHistoryRequest request,
@@ -206,6 +211,10 @@ sealed class AdapterReply with _$AdapterReply {
 
   /// 단건 주문 응답입니다.
   const factory AdapterReply.order(WireOrder field0) = AdapterReply_Order;
+
+  /// 다건 주문 응답입니다.
+  const factory AdapterReply.ordersByIds(List<WireOrder> field0) =
+      AdapterReply_OrdersByIds;
 
   /// 종료 주문 이력 응답입니다.
   const factory AdapterReply.orderHistory(WireOrderPage field0) =

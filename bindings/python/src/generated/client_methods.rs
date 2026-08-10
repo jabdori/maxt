@@ -252,6 +252,20 @@ impl NativeClient {
         )
     }
 
+    fn orders_by_ids<'py>(
+        &self,
+        py: Python<'py>,
+        request: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::order_lookup_request_from_wire(request)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.orders_by_ids(&request).await },
+            |py, values| crate::convert::list_to_wire(py, &values, crate::convert::order_to_wire),
+        )
+    }
+
     fn order_history<'py>(
         &self,
         py: Python<'py>,

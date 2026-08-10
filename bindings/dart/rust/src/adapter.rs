@@ -13,7 +13,7 @@ use crate::convert::{
     WireDepositAddressRequest, WireDepositPage, WireExchange, WireFeature, WireFundingPaymentPage,
     WireFundingRatePage, WireHistoryRequest, WireMarginRequest, WireMarginSummary, WireMarket,
     WireMarketInfo, WireMarketKind, WireOrder, WireOrderBook, WireOrderHistoryRequest,
-    WireOrderPage, WireOrderRequest, WirePosition, WireTicker, WireTrade,
+    WireOrderLookupRequest, WireOrderPage, WireOrderRequest, WirePosition, WireTicker, WireTrade,
     WireTransferHistoryRequest, WireWithdrawRequest, WireWithdrawal, WireWithdrawalPage,
     WireWithdrawalQuote,
 };
@@ -142,6 +142,8 @@ pub enum AdapterCall {
         market: WireMarket,
         client_id: String,
     },
+    /// 여러 주문 ID로 주문을 요청합니다.
+    OrdersByIds { request: WireOrderLookupRequest },
     /// 종료 주문 이력을 요청합니다.
     OrderHistory { request: WireOrderHistoryRequest },
     /// 주문을 제출합니다.
@@ -215,6 +217,8 @@ pub enum AdapterReply {
     OpenOrders(Vec<WireOrder>),
     /// 단건 주문 응답입니다.
     Order(WireOrder),
+    /// 다건 주문 응답입니다.
+    OrdersByIds(Vec<WireOrder>),
     /// 종료 주문 이력 응답입니다.
     OrderHistory(WireOrderPage),
     /// 주문 제출 응답입니다.
@@ -248,6 +252,7 @@ impl AdapterReply {
             Self::Withdrawals(_) => "Withdrawals",
             Self::OpenOrders(_) => "OpenOrders",
             Self::Order(_) => "Order",
+            Self::OrdersByIds(_) => "OrdersByIds",
             Self::OrderHistory(_) => "OrderHistory",
             Self::PlaceOrder(_) => "PlaceOrder",
             Self::Positions(_) => "Positions",
@@ -375,6 +380,7 @@ enum ExpectedReply {
     OpenOrders,
     Order,
     OrderByClientId,
+    OrdersByIds,
     OrderHistory,
     PlaceOrder,
     Positions,
@@ -402,6 +408,7 @@ impl ExpectedReply {
             Self::OpenOrders => "OpenOrders",
             Self::Order => "Order",
             Self::OrderByClientId => "OrderByClientId",
+            Self::OrdersByIds => "OrdersByIds",
             Self::OrderHistory => "OrderHistory",
             Self::PlaceOrder => "PlaceOrder",
             Self::Positions => "Positions",
@@ -499,6 +506,9 @@ impl AdapterReply {
                 .try_into()
                 .map(CommonAdapterReply::Order)
                 .map_err(|error| invalid_reply("Order", error)),
+            (ExpectedReply::OrdersByIds, Self::OrdersByIds(values)) => {
+                convert_vec(values, "OrdersByIds").map(CommonAdapterReply::OrdersByIds)
+            }
             (ExpectedReply::OrderHistory, Self::OrderHistory(value)) => value
                 .try_into()
                 .map(CommonAdapterReply::OrderHistory)

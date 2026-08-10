@@ -261,6 +261,18 @@ final class Deposit {
   final Timestamp? createdAt;
 }
 
+final class OrderLookupRequest {
+  const OrderLookupRequest({
+    required this.kind,
+    required this.ids,
+    this.market,
+  });
+
+  final OrderIdKind kind;
+  final List<String> ids;
+  final Market? market;
+}
+
 final class OrderHistoryRequest {
   const OrderHistoryRequest({
     this.market,

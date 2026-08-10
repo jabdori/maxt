@@ -28,6 +28,8 @@ from maxt import (
     Order,
     OrderBook,
     OrderHistoryRequest,
+    OrderIdKind,
+    OrderLookupRequest,
     OrderRequest,
     OrderStatus,
     OrderType,
@@ -109,6 +111,19 @@ class WireModelTests(unittest.TestCase):
 
         self.assertIsNone(request.market)
         self.assertEqual(request.statuses, [])
+
+    def test_order_lookup_request_preserves_identifier_namespace(self) -> None:
+        market = Market.spot(Exchange.UPBIT, "BTC", "KRW")
+        request = OrderLookupRequest(OrderIdKind.EXCHANGE, ["order-1", "order-2"], market)
+
+        self.assertEqual(
+            request.to_wire(),
+            {
+                "kind": "exchange",
+                "ids": ["order-1", "order-2"],
+                "market": market.to_wire(),
+            },
+        )
 
     def test_intervals_report_fixed_lengths_and_advance_without_overflow(self) -> None:
         self.assertEqual(

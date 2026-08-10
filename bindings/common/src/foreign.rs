@@ -5,9 +5,9 @@ use maxt::{
     AccountStream, Adapter, AssetNetwork, Balance, BoxFuture, Candle, CandleRequest, Deposit,
     DepositAddress, DepositAddressRequest, Exchange, Feature, FundingPayment, FundingRate,
     HistoryRequest, MarginRequest, MarginSummary, Market, MarketInfo, MarketKind, MarketStream,
-    Order, OrderBook, OrderHistoryRequest, OrderRequest, Page, Position, Result, StreamConfig,
-    Subscription, Ticker, Trade, TransferHistoryRequest, WithdrawRequest, Withdrawal,
-    WithdrawalQuote,
+    Order, OrderBook, OrderHistoryRequest, OrderLookupRequest, OrderRequest, Page, Position,
+    Result, StreamConfig, Subscription, Ticker, Trade, TransferHistoryRequest, WithdrawRequest,
+    Withdrawal, WithdrawalQuote,
 };
 
 use crate::{AdapterCall, AdapterReply, ForeignDispatcher};
@@ -252,6 +252,17 @@ impl Adapter for ForeignAdapter {
             },
             AdapterReply::Order,
             "Order"
+        )
+    }
+
+    fn orders_by_ids(&self, request: &OrderLookupRequest) -> BoxFuture<'_, Result<Vec<Order>>> {
+        dispatch!(
+            self,
+            AdapterCall::OrdersByIds {
+                request: request.clone(),
+            },
+            AdapterReply::OrdersByIds,
+            "OrdersByIds"
         )
     }
 

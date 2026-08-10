@@ -74,6 +74,7 @@
 | `open_orders*` | `GET /v1/orders/open` | 한 페이지, 최대 100건 |
 | `order(market, order_id)` | `GET /v1/order?uuid=...` | 응답 시장이 요청 시장과 같은지 검증 |
 | `order_by_client_id(market, client_id)` | `GET /v1/order?identifier=...` | 응답 시장이 요청 시장과 같은지 검증 |
+| `orders_by_ids(request)` | `GET /v1/orders/uuids` | UUID 또는 사용자 지정 ID 중 한 종류를 1~100개 조회; 시장 필터 선택; 최신순 |
 | `order_history(request)` | `GET /v1/orders/closed` | `limit: 1..=1_000`; 최대 7일; 최신순; 커서가 없어 `next == None` |
 
 | 주문 입력 | 계약 |

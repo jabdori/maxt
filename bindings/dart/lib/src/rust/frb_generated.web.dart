@@ -322,6 +322,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireOrderLookupRequest dco_decode_box_autoadd_wire_order_lookup_request(
+    dynamic raw,
+  );
+
+  @protected
   WireOrderPage dco_decode_box_autoadd_wire_order_page(dynamic raw);
 
   @protected
@@ -713,6 +718,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireOrderHistoryRequest dco_decode_wire_order_history_request(dynamic raw);
 
   @protected
+  WireOrderIdKind dco_decode_wire_order_id_kind(dynamic raw);
+
+  @protected
+  WireOrderLookupRequest dco_decode_wire_order_lookup_request(dynamic raw);
+
+  @protected
   WireOrderPage dco_decode_wire_order_page(dynamic raw);
 
   @protected
@@ -1091,6 +1102,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireOrderHistoryRequest sse_decode_box_autoadd_wire_order_history_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireOrderLookupRequest sse_decode_box_autoadd_wire_order_lookup_request(
     SseDeserializer deserializer,
   );
 
@@ -1582,6 +1598,14 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireOrderIdKind sse_decode_wire_order_id_kind(SseDeserializer deserializer);
+
+  @protected
+  WireOrderLookupRequest sse_decode_wire_order_lookup_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireOrderPage sse_decode_wire_order_page(SseDeserializer deserializer);
 
   @protected
@@ -2051,6 +2075,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_box_autoadd_wire_order_history_request(
     WireOrderHistoryRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_order_lookup_request(
+    WireOrderLookupRequest self,
     SseSerializer serializer,
   );
 
@@ -2684,6 +2714,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_order_history_request(
     WireOrderHistoryRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_order_id_kind(
+    WireOrderIdKind self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_order_lookup_request(
+    WireOrderLookupRequest self,
     SseSerializer serializer,
   );
 

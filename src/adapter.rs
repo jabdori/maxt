@@ -7,7 +7,7 @@ use crate::error::{Error, Result};
 use crate::feature::Feature;
 use crate::request::{
     CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest, OrderHistoryRequest,
-    OrderRequest, TransferHistoryRequest, WithdrawRequest,
+    OrderLookupRequest, OrderRequest, TransferHistoryRequest, WithdrawRequest,
 };
 use crate::stream::{AccountStream, MarketStream};
 use crate::types::{
@@ -169,6 +169,12 @@ pub trait Adapter: Send + Sync + 'static {
     /// Reads one order by the caller-assigned identifier supplied at placement.
     fn order_by_client_id(&self, market: &Market, client_id: &str) -> BoxFuture<'_, Result<Order>> {
         let _ = (market, client_id);
+        unsupported(self.exchange(), Feature::OrderHistory)
+    }
+
+    /// Looks up up to 100 orders by exchange or caller-assigned identifiers.
+    fn orders_by_ids(&self, request: &OrderLookupRequest) -> BoxFuture<'_, Result<Vec<Order>>> {
+        let _ = request;
         unsupported(self.exchange(), Feature::OrderHistory)
     }
 
@@ -341,6 +347,10 @@ impl Adapter for Box<dyn Adapter> {
 
     fn order_by_client_id(&self, market: &Market, client_id: &str) -> BoxFuture<'_, Result<Order>> {
         (**self).order_by_client_id(market, client_id)
+    }
+
+    fn orders_by_ids(&self, request: &OrderLookupRequest) -> BoxFuture<'_, Result<Vec<Order>>> {
+        (**self).orders_by_ids(request)
     }
 
     fn order_history(&self, request: &OrderHistoryRequest) -> BoxFuture<'_, Result<Page<Order>>> {

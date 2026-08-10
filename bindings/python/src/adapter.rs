@@ -300,6 +300,9 @@ fn decode_reply(
         ReplyKind::Order | ReplyKind::OrderByClientId => {
             order_from_wire(value).map(AdapterReply::Order)
         }
+        ReplyKind::OrdersByIds => {
+            list_from_wire(value, order_from_wire).map(AdapterReply::OrdersByIds)
+        }
         ReplyKind::OrderHistory => {
             page_from_wire(value, order_from_wire).map(AdapterReply::OrderHistory)
         }

@@ -366,6 +366,30 @@ class WireOrderHistoryRequest {
           limit == other.limit;
 }
 
+class WireOrderLookupRequest {
+  final WireOrderIdKind kind;
+  final List<String> ids;
+  final WireMarket? market;
+
+  const WireOrderLookupRequest({
+    required this.kind,
+    required this.ids,
+    this.market,
+  });
+
+  @override
+  int get hashCode => kind.hashCode ^ ids.hashCode ^ market.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireOrderLookupRequest &&
+          runtimeType == other.runtimeType &&
+          kind == other.kind &&
+          ids == other.ids &&
+          market == other.market;
+}
+
 class WireOrderPage {
   final List<WireOrder> items;
   final String? next;

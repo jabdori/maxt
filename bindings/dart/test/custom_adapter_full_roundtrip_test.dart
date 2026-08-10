@@ -25,6 +25,8 @@ final class FullContractAdapter extends AdapterBase {
   Market? openOrdersMarket;
   (Market, String)? requestedOrder;
   (Market, String)? requestedClientOrder;
+  OrderLookupRequest? orderLookupRequest;
+  int orderLookupCount = 0;
   OrderHistoryRequest? orderHistoryRequest;
   StreamConfig? accountConfig;
   OrderRequest? placedRequest;
@@ -146,6 +148,13 @@ final class FullContractAdapter extends AdapterBase {
   Future<Order> orderByClientId(Market market, String clientId) async {
     requestedClientOrder = (market, clientId);
     return sampleOrder;
+  }
+
+  @override
+  Future<List<Order>> ordersByIds(OrderLookupRequest request) async {
+    orderLookupCount++;
+    orderLookupRequest = request;
+    return [sampleOrder];
   }
 
   @override
@@ -312,6 +321,28 @@ void main() {
     expect(adapter.requestedOrder, (market, 'order-1'));
     expect((await client.orderByClientId(market, 'client-1')).id, 'order-1');
     expect(adapter.requestedClientOrder, (market, 'client-1'));
+    final orderLookupRequest = OrderLookupRequest(
+      kind: OrderIdKind.exchange,
+      ids: const ['order-1', 'order-2'],
+      market: market,
+    );
+    expect((await client.ordersByIds(orderLookupRequest)).single.id, 'order-1');
+    expect(adapter.orderLookupRequest?.kind, OrderIdKind.exchange);
+    expect(adapter.orderLookupRequest?.ids, const ['order-1', 'order-2']);
+    expect(adapter.orderLookupRequest?.market, market);
+    await expectLater(
+      client.ordersByIds(
+        const OrderLookupRequest(kind: OrderIdKind.exchange, ids: []),
+      ),
+      throwsA(
+        isA<InvalidRequestError>().having(
+          (error) => error.field,
+          'field',
+          'ids',
+        ),
+      ),
+    );
+    expect(adapter.orderLookupCount, 1);
     final orderHistoryRequest = OrderHistoryRequest(
       market: market,
       statuses: const [OrderStatus.filled],

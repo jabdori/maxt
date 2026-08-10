@@ -832,6 +832,7 @@ fn prepare_call(
         "open_orders",
         "order",
         "order_by_client_id",
+        "orders_by_ids",
         "order_history",
         "subscribe_account",
         "place_order",
@@ -1199,6 +1200,7 @@ fn rust_from_wire_result(ty: &Type, value: &str, field: &str) -> String {
             snake_case(named.strip_suffix("Wire").unwrap_or(named))
         ),
         Type::List(inner) => match inner.as_ref() {
+            Type::String => format!("{value}.extract::<Vec<String>>()"),
             Type::Identifier(identifier) => format!(
                 "list_from_wire(&{value}, {}_from_wire)",
                 snake_case(identifier)
@@ -1246,6 +1248,7 @@ fn rust_record_field(schema: &Schema, record: &str, name: &str, ty: &Type) -> St
             other => panic!("unsupported optional record field: {other:?}"),
         },
         Type::List(inner) => match inner.as_ref() {
+            Type::String => format!("&{field}"),
             Type::Identifier(identifier) => {
                 let function = snake_case(identifier);
                 let open = schema
@@ -1442,7 +1445,10 @@ fn rust_dispatch_argument(argument: Argument) -> String {
             format!("optional_market_object(py, {name}.as_ref())?")
         }
         ApiType::Named(
-            type_name @ ("DepositAddressRequest" | "WithdrawRequest" | "TransferHistoryRequest"),
+            type_name @ ("DepositAddressRequest"
+            | "OrderLookupRequest"
+            | "WithdrawRequest"
+            | "TransferHistoryRequest"),
         ) => format!(
             "model_object(py, \"{type_name}\", crate::convert::{}_to_wire(py, &{name})?)?",
             snake_case(type_name)

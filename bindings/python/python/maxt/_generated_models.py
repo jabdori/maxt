@@ -278,6 +278,13 @@ class Deposit(WireModel):
 
 
 @dataclass(frozen=True)
+class OrderLookupRequest(WireModel):
+    kind: OrderIdKind
+    ids: list[str]
+    market: Optional[Market] = None
+
+
+@dataclass(frozen=True)
 class OrderHistoryRequest(WireModel):
     market: Optional[Market] = None
     statuses: list[OrderStatus] = field(default_factory=list)
@@ -335,6 +342,7 @@ __all__ = [
     "TransferPlan",
     "Withdrawal",
     "Deposit",
+    "OrderLookupRequest",
     "OrderHistoryRequest",
     "DepositAddressRequest",
     "WithdrawRequest",

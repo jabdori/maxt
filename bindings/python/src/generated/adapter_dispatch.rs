@@ -18,6 +18,7 @@ enum ReplyKind {
     OpenOrders,
     Order,
     OrderByClientId,
+    OrdersByIds,
     OrderHistory,
     AccountStream,
     PlaceOrder,
@@ -124,6 +125,11 @@ fn prepare_call(
                 client_id.into_py_any(py)?,
             ],
             ReplyKind::OrderByClientId,
+        ),
+        AdapterCall::OrdersByIds { request } => (
+            "orders_by_ids",
+            vec![model_object(py, "OrderLookupRequest", crate::convert::order_lookup_request_to_wire(py, &request)?)?],
+            ReplyKind::OrdersByIds,
         ),
         AdapterCall::OrderHistory { request } => (
             "order_history",

@@ -62,6 +62,10 @@ pub(super) fn dispatch(call: CommonAdapterCall) -> Option<(AdapterCall, Expected
             AdapterCall::OrderByClientId { market: market.into(), client_id },
             ExpectedReply::OrderByClientId,
         )),
+        CommonAdapterCall::OrdersByIds { request } => Some((
+            AdapterCall::OrdersByIds { request: request.into() },
+            ExpectedReply::OrdersByIds,
+        )),
         CommonAdapterCall::OrderHistory { request } => Some((
             AdapterCall::OrderHistory { request: request.into() },
             ExpectedReply::OrderHistory,

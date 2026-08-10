@@ -43,6 +43,7 @@ void main() {
       'openOrders': adapter.openOrders,
       'order': adapter.order,
       'orderByClientId': adapter.orderByClientId,
+      'ordersByIds': adapter.ordersByIds,
       'orderHistory': adapter.orderHistory,
       'subscribeAccount': adapter.subscribeAccount,
       'placeOrder': adapter.placeOrder,
@@ -82,6 +83,7 @@ void main() {
       'openOrdersOn': (Client<Adapter> value) => value.openOrdersOn,
       'order': (Client<Adapter> value) => value.order,
       'orderByClientId': (Client<Adapter> value) => value.orderByClientId,
+      'ordersByIds': (Client<Adapter> value) => value.ordersByIds,
       'orderHistory': (Client<Adapter> value) => value.orderHistory,
       'subscribeAccount': (Client<Adapter> value) => value.subscribeAccount,
       'subscribeAccountWith': (Client<Adapter> value) =>

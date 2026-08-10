@@ -646,6 +646,35 @@ impl TryFrom<WireDeposit> for maxt::Deposit {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireOrderLookupRequest {
+    pub kind: WireOrderIdKind,
+    pub ids: Vec<String>,
+    pub market: Option<WireMarket>,
+}
+
+impl From<maxt::OrderLookupRequest> for WireOrderLookupRequest {
+    fn from(value: maxt::OrderLookupRequest) -> Self {
+        Self {
+            kind: value.kind.into(),
+            ids: value.ids,
+            market: value.market.map(Into::into),
+        }
+    }
+}
+
+impl TryFrom<WireOrderLookupRequest> for maxt::OrderLookupRequest {
+    type Error = NativeError;
+
+    fn try_from(value: WireOrderLookupRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            kind: value.kind.into(),
+            ids: value.ids,
+            market: value.market.map(Into::into),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireOrderHistoryRequest {
     pub market: Option<WireMarket>,
     pub statuses: Vec<WireOrderStatus>,

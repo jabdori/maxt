@@ -77,6 +77,7 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
         );
       }
       async orderByClientId(market) { return this.order(market); }
+      async ordersByIds(request) { return [await this.order(request.market)]; }
       async orderHistory(request) {
         return new maxt.Page([await this.order(request.market)], null);
       }
@@ -99,6 +100,9 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
     const market = maxt.Market.spot(maxt.Exchange.Binance, "BTC", "USDT");
     const order = await client.order(market, "order-1");
     const orderByClientId = await client.orderByClientId(market, "client-1");
+    const ordersByIds = await client.ordersByIds(
+      new maxt.OrderLookupRequest(maxt.OrderIdKind.Exchange, ["order-1"], market),
+    );
     const orderHistory = await client.orderHistory(
       new maxt.OrderHistoryRequest(market, [maxt.OrderStatus.Filled]),
     );
@@ -114,6 +118,7 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
       withdrawals: (await client.withdrawals(historyRequest)).items.length,
       order: order.id,
       orderByClientId: orderByClientId.id,
+      ordersByIds: ordersByIds[0].id,
       orderHistory: orderHistory.items[0].id,
     };
   });
@@ -130,6 +135,7 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
     withdrawals: 0,
     order: "order-1",
     orderByClientId: "order-1",
+    ordersByIds: "order-1",
     orderHistory: "order-1",
   });
 });

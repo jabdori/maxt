@@ -213,6 +213,11 @@ RECORD_FIELDS = {
         "cursor": "optional:string",
         "limit": "optional:number",
     },
+    "OrderLookupRequest": {
+        "kind": "identifier:OrderIdKind",
+        "ids": "list:string",
+        "market": "optional:named:Market",
+    },
     "DepositAddressRequest": {
         "asset": "string",
         "network": "identifier:Network",
@@ -508,6 +513,9 @@ UNION_FIELDS = {
             "market": "named:Market",
             "client_id": "string",
         },
+        "orders_by_ids": {
+            "request": "named:OrderLookupRequest",
+        },
         "order_history": {
             "request": "named:OrderHistoryRequest",
         },
@@ -587,6 +595,9 @@ UNION_FIELDS = {
         "order": {
             "value": "named:Order",
         },
+        "orders_by_ids": {
+            "value": "list:named:Order",
+        },
         "order_history": {
             "value": "named:PageWire<OrderWire>",
         },
@@ -623,6 +634,7 @@ IDENTIFIER_VARIANTS = {
     "Overflow": ("backpressure", "drop_newest",),
     "MarginMode": ("cross", "isolated",),
     "OrderStatus": ("accepted", "open", "partially_filled", "filled", "cancelled", "rejected", "unknown",),
+    "OrderIdKind": ("exchange", "client",),
     "OrderType": ("market", "limit", "best",),
     "TimeInForce": ("good_til_cancelled", "immediate_or_cancel", "fill_or_kill", "post_only",),
     "SizeKind": ("base", "quote",),

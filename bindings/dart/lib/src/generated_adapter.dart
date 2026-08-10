@@ -50,6 +50,8 @@ abstract interface class GeneratedAdapterContract {
 
   Future<Order> orderByClientId(Market market, String clientId);
 
+  Future<List<Order>> ordersByIds(OrderLookupRequest request);
+
   Future<Page<Order>> orderHistory(OrderHistoryRequest request);
 
   Future<AccountStream> subscribeAccount(StreamConfig config);
@@ -140,6 +142,10 @@ abstract base class GeneratedAdapterDefaults
 
   @override
   Future<Order> orderByClientId(Market market, String clientId) =>
+      _unsupported(Feature.orderHistory);
+
+  @override
+  Future<List<Order>> ordersByIds(OrderLookupRequest request) =>
       _unsupported(Feature.orderHistory);
 
   @override

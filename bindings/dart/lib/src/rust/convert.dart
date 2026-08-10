@@ -857,6 +857,8 @@ class WireOrderBook {
           asks == other.asks;
 }
 
+enum WireOrderIdKind { exchange, client }
+
 class WireOrderRequest {
   final WireMarket market;
   final WireSide side;

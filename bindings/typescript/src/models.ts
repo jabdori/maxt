@@ -8,6 +8,7 @@ import {
   MarketKind,
   MarketStatus,
   Network,
+  OrderIdKind,
   OrderStatus,
   OrderType,
   Overflow,
@@ -30,6 +31,7 @@ export {
   MarketKind,
   MarketStatus,
   Network,
+  OrderIdKind,
   OrderStatus,
   OrderType,
   Overflow,
@@ -851,6 +853,18 @@ export class OrderHistoryRequest {
   ) {
     this.statuses = Object.freeze([...statuses]);
     this.limit = checkedOptionalU32(limit, "limit");
+    freezeRecord(this);
+  }
+}
+
+export class OrderLookupRequest {
+  readonly ids: readonly string[];
+  constructor(
+    readonly kind: OrderIdKind,
+    ids: readonly string[],
+    readonly market: Market | null = null,
+  ) {
+    this.ids = Object.freeze([...ids]);
     freezeRecord(this);
   }
 }

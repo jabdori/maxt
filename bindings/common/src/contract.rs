@@ -2,8 +2,9 @@ use maxt::{
     AccountStream, AssetNetwork, Balance, BoxFuture, Candle, CandleRequest, Deposit,
     DepositAddress, DepositAddressRequest, FundingPayment, FundingRate, HistoryRequest,
     MarginRequest, MarginSummary, Market, MarketInfo, MarketKind, MarketStream, Order, OrderBook,
-    OrderHistoryRequest, OrderRequest, Page, Position, Result, StreamConfig, Subscription, Ticker,
-    Trade, TransferHistoryRequest, WithdrawRequest, Withdrawal, WithdrawalQuote,
+    OrderHistoryRequest, OrderLookupRequest, OrderRequest, Page, Position, Result, StreamConfig,
+    Subscription, Ticker, Trade, TransferHistoryRequest, WithdrawRequest, Withdrawal,
+    WithdrawalQuote,
 };
 
 /// An owned call across a language binding boundary.
@@ -97,6 +98,11 @@ pub enum AdapterCall {
         /// The caller-assigned identifier.
         client_id: String,
     },
+    /// Looks up multiple orders by one identifier namespace.
+    OrdersByIds {
+        /// Complete lookup request.
+        request: OrderLookupRequest,
+    },
     /// Reads final-order history.
     OrderHistory {
         /// Complete history request.
@@ -184,6 +190,8 @@ pub enum AdapterReply {
     OpenOrders(Vec<Order>),
     /// Result of [`AdapterCall::Order`] or [`AdapterCall::OrderByClientId`].
     Order(Order),
+    /// Result of [`AdapterCall::OrdersByIds`].
+    OrdersByIds(Vec<Order>),
     /// Result of [`AdapterCall::OrderHistory`].
     OrderHistory(Page<Order>),
     /// Result of [`AdapterCall::SubscribeAccount`].
@@ -226,6 +234,7 @@ impl AdapterReply {
             Self::Withdrawals(_) => "Withdrawals",
             Self::OpenOrders(_) => "OpenOrders",
             Self::Order(_) => "Order",
+            Self::OrdersByIds(_) => "OrdersByIds",
             Self::OrderHistory(_) => "OrderHistory",
             Self::AccountStream(_) => "AccountStream",
             Self::PlaceOrder(_) => "PlaceOrder",

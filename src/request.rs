@@ -287,6 +287,53 @@ impl OrderRequest {
     }
 }
 
+/// Which identifier namespace to use for a multi-order lookup.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum OrderIdKind {
+    /// Identifiers assigned by the exchange.
+    Exchange,
+    /// Identifiers supplied by the caller when placing orders.
+    Client,
+}
+
+/// Looks up up to 100 orders by one identifier namespace.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OrderLookupRequest {
+    /// Exchange-assigned or caller-assigned identifiers.
+    pub kind: OrderIdKind,
+    /// One to 100 identifiers. Missing orders may be omitted by the provider.
+    pub ids: Vec<String>,
+    /// Optional market filter.
+    pub market: Option<Market>,
+}
+
+impl OrderLookupRequest {
+    /// Looks up exchange-assigned order identifiers.
+    pub fn exchange(ids: impl IntoIterator<Item = impl Into<String>>) -> Self {
+        Self {
+            kind: OrderIdKind::Exchange,
+            ids: ids.into_iter().map(Into::into).collect(),
+            market: None,
+        }
+    }
+
+    /// Looks up caller-assigned order identifiers.
+    pub fn client(ids: impl IntoIterator<Item = impl Into<String>>) -> Self {
+        Self {
+            kind: OrderIdKind::Client,
+            ids: ids.into_iter().map(Into::into).collect(),
+            market: None,
+        }
+    }
+
+    /// Filters the lookup by market.
+    #[must_use]
+    pub fn market(mut self, market: Market) -> Self {
+        self.market = Some(market);
+        self
+    }
+}
+
 /// One newest-first page of completed or cancelled orders.
 ///
 /// Leave [`OrderHistoryRequest::statuses`] empty to include both completed and

@@ -13,7 +13,7 @@ use crate::adapter::{Adapter, BoxFuture};
 use crate::error::{Error, Result};
 use crate::feature::Feature;
 use crate::request::{
-    CandleRequest, DepositAddressRequest, OrderHistoryRequest, OrderRequest,
+    CandleRequest, DepositAddressRequest, OrderHistoryRequest, OrderLookupRequest, OrderRequest,
     TransferHistoryRequest, WithdrawRequest,
 };
 use crate::stream::{AccountStream, MarketStream};
@@ -378,6 +378,13 @@ impl Adapter for UpbitAdapter {
         Box::pin(async move {
             private::order_by_client_id(self.credentials()?, self.http()?, &market, &client_id)
                 .await
+        })
+    }
+
+    fn orders_by_ids(&self, request: &OrderLookupRequest) -> BoxFuture<'_, Result<Vec<Order>>> {
+        let request = request.clone();
+        Box::pin(async move {
+            private::orders_by_ids(self.credentials()?, self.http()?, &request).await
         })
     }
 

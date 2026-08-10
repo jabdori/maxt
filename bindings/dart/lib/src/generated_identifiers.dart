@@ -182,6 +182,15 @@ extension OrderStatusWireName on OrderStatus {
   };
 }
 
+enum OrderIdKind { exchange, client }
+
+extension OrderIdKindWireName on OrderIdKind {
+  String get wireName => switch (this) {
+    OrderIdKind.exchange => 'exchange',
+    OrderIdKind.client => 'client',
+  };
+}
+
 enum OrderType { market, limit, best }
 
 extension OrderTypeWireName on OrderType {

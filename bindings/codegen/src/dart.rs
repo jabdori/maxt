@@ -729,6 +729,7 @@ pub(crate) fn render_wire_converters(schema: &Schema) -> String {
         "MarketStatus",
         "Side",
         "Interval",
+        "OrderIdKind",
         "OrderStatus",
         "OrderType",
         "TimeInForce",
@@ -874,6 +875,7 @@ pub(crate) fn render_client_api(schema: &Schema) -> String {
          import 'adapter.dart';\n\
          import 'adapters.dart'\n\
          \x20   show NativeClientDelegate, checkedUint32, validateStreamConfigIntegers;\n\
+         import 'errors.dart';\n\
          import 'models.dart';\n\
          import 'runtime.dart';\n\
          import 'stream.dart';\n\n\
@@ -1188,6 +1190,7 @@ pub(crate) fn render_wire_shape_guard(schema: &Schema) -> String {
         ("Side", "WireSide"),
         ("Interval", "WireInterval"),
         ("MarginMode", "WireMarginMode"),
+        ("OrderIdKind", "WireOrderIdKind"),
         ("OrderStatus", "WireOrderStatus"),
         ("OrderType", "WireOrderType"),
         ("TimeInForce", "WireTimeInForce"),
@@ -1407,6 +1410,7 @@ fn render_native_method(operation: &Operation) -> String {
             }
             ApiType::Named(
                 "OrderRequest"
+                | "OrderLookupRequest"
                 | "OrderHistoryRequest"
                 | "MarginRequest"
                 | "DepositAddressRequest"
@@ -1473,6 +1477,7 @@ fn native_call_argument(argument: &Argument) -> String {
         ApiType::Named("MarketKind") => format!("{name}.into()"),
         ApiType::Named(
             "OrderRequest"
+            | "OrderLookupRequest"
             | "OrderHistoryRequest"
             | "MarginRequest"
             | "DepositAddressRequest"
@@ -2124,6 +2129,9 @@ fn render_client_method(
         }
         "openOrders" => " => _native.openOrders();",
         "openOrdersOn" => " => _native.openOrders(market);",
+        "ordersByIds" => {
+            " async {\n    if (request.ids.isEmpty || request.ids.length > 100) {\n      throw InvalidRequestError(\n        field: 'ids',\n        detail:\n            'an order lookup requires 1 to 100 identifiers, not ${request.ids.length}',\n      );\n    }\n    if (request.ids.any((id) => id.trim().isEmpty)) {\n      throw const InvalidRequestError(\n        field: 'ids',\n        detail: 'order identifiers must not be empty',\n      );\n    }\n    return _native.ordersByIds(request);\n  }"
+        }
         "subscribeAccount" => " =>\n      subscribeAccountWith(defaultStreamConfig());",
         "subscribeAccountWith" => {
             " async {\n    validateStreamConfigIntegers(config);\n    return _native.subscribeAccount(config);\n  }"
@@ -2397,6 +2405,8 @@ mod tests {
         assert!(client.contains("return _native.deposits(request);"));
         assert!(client.contains("return _native.withdrawals(request);"));
         assert!(client.contains("validateStreamConfigIntegers(config)"));
+        assert!(client.contains("an order lookup requires 1 to 100 identifiers"));
+        assert!(client.contains("order identifiers must not be empty"));
     }
 
     #[test]

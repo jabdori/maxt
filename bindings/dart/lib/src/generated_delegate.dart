@@ -65,6 +65,10 @@ abstract base class GeneratedNativeDelegate extends AdapterBase {
       (await delegateAdapter).orderByClientId(market, clientId);
 
   @override
+  Future<List<Order>> ordersByIds(OrderLookupRequest request) async =>
+      (await delegateAdapter).ordersByIds(request);
+
+  @override
   Future<Page<Order>> orderHistory(OrderHistoryRequest request) async =>
       (await delegateAdapter).orderHistory(request);
 

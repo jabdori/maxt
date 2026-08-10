@@ -293,6 +293,14 @@ fn _guard_order_history_request_wire(value: WireOrderHistoryRequest) {
     } = value;
 }
 
+fn _guard_order_lookup_request_wire(value: WireOrderLookupRequest) {
+    let WireOrderLookupRequest {
+        kind: _,
+        ids: _,
+        market: _,
+    } = value;
+}
+
 fn _guard_deposit_address_request_wire(value: WireDepositAddressRequest) {
     let WireDepositAddressRequest {
         asset: _,
@@ -518,6 +526,13 @@ fn _guard_margin_mode(value: WireMarginMode) {
     match value {
         WireMarginMode::Cross => {}
         WireMarginMode::Isolated => {}
+    }
+}
+
+fn _guard_order_id_kind(value: WireOrderIdKind) {
+    match value {
+        WireOrderIdKind::Exchange => {}
+        WireOrderIdKind::Client => {}
     }
 }
 

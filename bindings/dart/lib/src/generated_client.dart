@@ -3,6 +3,7 @@
 import 'adapter.dart';
 import 'adapters.dart'
     show NativeClientDelegate, checkedUint32, validateStreamConfigIntegers;
+import 'errors.dart';
 import 'models.dart';
 import 'runtime.dart';
 import 'stream.dart';
@@ -82,6 +83,23 @@ abstract base class GeneratedClient<A extends Adapter> {
 
   Future<Order> orderByClientId(Market market, String clientId) =>
       _native.orderByClientId(market, clientId);
+
+  Future<List<Order>> ordersByIds(OrderLookupRequest request) async {
+    if (request.ids.isEmpty || request.ids.length > 100) {
+      throw InvalidRequestError(
+        field: 'ids',
+        detail:
+            'an order lookup requires 1 to 100 identifiers, not ${request.ids.length}',
+      );
+    }
+    if (request.ids.any((id) => id.trim().isEmpty)) {
+      throw const InvalidRequestError(
+        field: 'ids',
+        detail: 'order identifiers must not be empty',
+      );
+    }
+    return _native.ordersByIds(request);
+  }
 
   Future<Page<Order>> orderHistory(OrderHistoryRequest request) =>
       _native.orderHistory(request);

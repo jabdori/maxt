@@ -93,6 +93,10 @@ class _GeneratedNativeClientDelegateApi:
         value = await self._call(self._client.order_by_client_id, market, client_id)
         return _model_from_wire("Order", value)
 
+    async def orders_by_ids(self, request: OrderLookupRequest) -> list[Order]:
+        value = await self._call(self._client.orders_by_ids, request)
+        return [_model_from_wire("Order", item) for item in value]
+
     async def order_history(self, request: OrderHistoryRequest) -> Page[Order]:
         value = await self._call(self._client.order_history, request)
         return _model_from_wire("OrderPage", value)

@@ -203,6 +203,11 @@ class OrderStatus(str, Enum):
         return self.value in {"accepted", "open", "partially_filled"}
 
 
+class OrderIdKind(str, Enum):
+    EXCHANGE = "exchange"
+    CLIENT = "client"
+
+
 class OrderType(str, Enum):
     MARKET = "market"
     LIMIT = "limit"
@@ -349,6 +354,7 @@ Interval.__module__ = "maxt.models"
 Overflow.__module__ = "maxt.models"
 MarginMode.__module__ = "maxt.models"
 OrderStatus.__module__ = "maxt.models"
+OrderIdKind.__module__ = "maxt.models"
 OrderType.__module__ = "maxt.models"
 TimeInForce.__module__ = "maxt.models"
 SizeKind.__module__ = "maxt.models"
@@ -372,6 +378,7 @@ __all__ = [
     "Overflow",
     "MarginMode",
     "OrderStatus",
+    "OrderIdKind",
     "OrderType",
     "TimeInForce",
     "SizeKind",

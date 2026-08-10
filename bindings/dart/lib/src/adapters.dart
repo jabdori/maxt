@@ -262,6 +262,11 @@ abstract base class _NativeAdapterBase
       ).then(_orderFromWire);
 
   @override
+  Future<List<Order>> ordersByIds(OrderLookupRequest request) => _nativeFuture(
+    () => _handle.ordersByIds(request: _orderLookupRequestToWire(request)),
+  ).then((values) => values.map(_orderFromWire).toList(growable: false));
+
+  @override
   Future<Page<Order>> orderHistory(OrderHistoryRequest request) =>
       _nativeFuture(
         () =>

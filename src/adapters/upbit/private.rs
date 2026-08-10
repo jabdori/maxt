@@ -14,7 +14,7 @@ use sha2::{Digest, Sha256, Sha512};
 
 use crate::error::{Error, Result};
 use crate::feature::Feature;
-use crate::request::{OrderHistoryRequest, OrderRequest};
+use crate::request::{OrderHistoryRequest, OrderIdKind, OrderLookupRequest, OrderRequest};
 use crate::transport::{HttpRequest, HttpTransport};
 use crate::types::{
     AccountEvent, Balance, Market, Order, OrderType, Page, Side, Size, TimeInForce,
@@ -28,6 +28,7 @@ pub(crate) const AUTHORIZATION: &str = "Authorization";
 
 const BALANCES_PATH: &str = "/v1/accounts";
 const OPEN_ORDERS_PATH: &str = "/v1/orders/open";
+const ORDERS_BY_IDS_PATH: &str = "/v1/orders/uuids";
 const ORDER_HISTORY_PATH: &str = "/v1/orders/closed";
 const PLACE_ORDER_PATH: &str = "/v1/orders";
 const ORDER_PATH: &str = "/v1/order";
@@ -199,6 +200,28 @@ pub(crate) fn order_by_client_id_request(
 ) -> Result<HttpRequest> {
     validate_client_order_id(client_id)?;
     order_request_by(credentials, market, "identifier", "client_id", client_id)
+}
+
+pub(crate) fn orders_by_ids_request(
+    credentials: &UpbitCredentials,
+    request: &OrderLookupRequest,
+) -> Result<HttpRequest> {
+    crate::adapters::validate_order_lookup(request)?;
+    let mut params = Vec::new();
+    if let Some(market) = &request.market {
+        params.push(("market", parse::native_symbol(market)?));
+    }
+    let key = match request.kind {
+        OrderIdKind::Exchange => "uuids[]",
+        OrderIdKind::Client => "identifiers[]",
+    };
+    params.extend(request.ids.iter().cloned().map(|id| (key, id)));
+    params.push(("order_by", "desc".to_string()));
+
+    let query = query(&params)?;
+    Ok(HttpRequest::get(ORDERS_BY_IDS_PATH)
+        .query(query.clone())
+        .header(AUTHORIZATION, authorization(credentials, &query)?))
 }
 
 fn order_request_by(
@@ -525,6 +548,18 @@ pub(crate) async fn order_by_client_id(
         parse::order(&parse::json::<parse::RawOrder>(&body)?)?,
         market,
     )
+}
+
+pub(crate) async fn orders_by_ids(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    request: &OrderLookupRequest,
+) -> Result<Vec<Order>> {
+    let body = rest::send(http, &orders_by_ids_request(credentials, request)?).await?;
+    parse::json::<Vec<parse::RawOrder>>(&body)?
+        .iter()
+        .map(parse::order)
+        .collect()
 }
 
 pub(crate) async fn order_history(
@@ -934,6 +969,41 @@ mod tests {
 
         assert_eq!(by_exchange.target(), format!("/v1/order?uuid={ORDER_ID}"));
         assert_eq!(by_client.target(), "/v1/order?identifier=client-1");
+    }
+
+    #[test]
+    fn multiple_orders_use_one_documented_identifier_namespace() {
+        let request = OrderLookupRequest::exchange([ORDER_ID, "second-order"]).market(btc_krw());
+        let request =
+            orders_by_ids_request(&credentials(), &request).expect("a signable lookup request");
+
+        assert_eq!(
+            request.target(),
+            format!(
+                "/v1/orders/uuids?market=KRW-BTC&uuids[]={ORDER_ID}&uuids[]=second-order&order_by=desc"
+            )
+        );
+        assert_eq!(
+            claims_of(&authorization_of(&request)).query_hash.as_deref(),
+            Some(hex::encode(Sha512::digest(request.query.as_bytes())).as_str())
+        );
+
+        let client = OrderLookupRequest::client(["client-1"]);
+        assert_eq!(
+            orders_by_ids_request(&credentials(), &client)
+                .expect("a client-id lookup")
+                .target(),
+            "/v1/orders/uuids?identifiers[]=client-1&order_by=desc"
+        );
+    }
+
+    #[test]
+    fn multiple_order_lookup_rejects_an_empty_or_oversized_id_list() {
+        let empty = OrderLookupRequest::exchange(Vec::<String>::new());
+        let oversized = OrderLookupRequest::exchange((0..101).map(|index| index.to_string()));
+
+        assert!(orders_by_ids_request(&credentials(), &empty).is_err());
+        assert!(orders_by_ids_request(&credentials(), &oversized).is_err());
     }
 
     #[test]

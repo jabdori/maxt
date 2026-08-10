@@ -46,9 +46,9 @@ use crate::convert::{
 };
 use crate::convert::{
     WireCandleRequest, WireDepositAddressRequest, WireError, WireHistoryRequest, WireMarginRequest,
-    WireMarket, WireOrderHistoryRequest, WireOrderRequest, WireStreamConfig, WireSubscription,
-    WireTransferHistoryRequest, WireWithdrawRequest, feature_from_id, from_wire_text,
-    from_wire_value,
+    WireMarket, WireOrderHistoryRequest, WireOrderLookupRequest, WireOrderRequest,
+    WireStreamConfig, WireSubscription, WireTransferHistoryRequest, WireWithdrawRequest,
+    feature_from_id, from_wire_text, from_wire_value,
 };
 
 #[derive(Debug, Serialize)]
@@ -106,6 +106,9 @@ enum WireAdapterCall {
         market: WireMarket,
         client_id: String,
     },
+    OrdersByIds {
+        request: WireOrderLookupRequest,
+    },
     OrderHistory {
         request: WireOrderHistoryRequest,
     },
@@ -158,6 +161,7 @@ enum WireAdapterReply {
     Withdrawals { value: WirePage<WireWithdrawal> },
     OpenOrders { value: Vec<WireOrder> },
     Order { value: WireOrder },
+    OrdersByIds { value: Vec<WireOrder> },
     OrderHistory { value: WirePage<WireOrder> },
     AccountStream { stream_id: String },
     PlaceOrder { value: WireOrder },
@@ -225,6 +229,9 @@ fn call_to_wire(call: AdapterCall, stream_id: Option<String>) -> maxt::Result<Wi
                 client_id,
             })
         }
+        AdapterCall::OrdersByIds { request } => Ok(WireAdapterCall::OrdersByIds {
+            request: request.try_into()?,
+        }),
         AdapterCall::OrderHistory { request } => Ok(WireAdapterCall::OrderHistory {
             request: request.try_into()?,
         }),
@@ -593,6 +600,11 @@ impl JsForeignDispatcher {
                 .collect::<maxt::Result<_>>()
                 .map(AdapterReply::OpenOrders),
             WireAdapterReply::Order { value } => value.try_into().map(AdapterReply::Order),
+            WireAdapterReply::OrdersByIds { value } => value
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<maxt::Result<_>>()
+                .map(AdapterReply::OrdersByIds),
             WireAdapterReply::OrderHistory { value } => {
                 value.try_into().map(AdapterReply::OrderHistory)
             }

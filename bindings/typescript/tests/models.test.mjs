@@ -19,6 +19,8 @@ import {
   MarketKind,
   Network,
   OrderBook,
+  OrderIdKind,
+  OrderLookupRequest,
   OrderRequest,
   OrderStatus,
   OrderType,
@@ -45,6 +47,8 @@ import {
   depositToWire,
   orderRequestFromWire,
   orderRequestToWire,
+  orderLookupRequestFromWire,
+  orderLookupRequestToWire,
   streamConfigFromWire,
   transferHistoryRequestFromWire,
   transferHistoryRequestToWire,
@@ -148,6 +152,19 @@ test("best orders preserve time in force and client id across the wire", () => {
   assert.equal(request.orderType, OrderType.Best);
   assert.equal(wire.client_id, "client-1");
   assert.deepEqual(orderRequestToWire(orderRequestFromWire(wire)), wire);
+});
+
+test("bulk order lookup preserves one identifier namespace", () => {
+  const request = new OrderLookupRequest(
+    OrderIdKind.Client,
+    ["client-1", "client-2"],
+    Market.spot(Exchange.Bithumb, "BTC", "KRW"),
+  );
+  const wire = orderLookupRequestToWire(request);
+
+  assert.equal(wire.kind, "client");
+  assert.deepEqual(wire.ids, ["client-1", "client-2"]);
+  assert.deepEqual(orderLookupRequestToWire(orderLookupRequestFromWire(wire)), wire);
 });
 
 test("wallet unions, statuses, open networks, and pages preserve the wire contract", () => {

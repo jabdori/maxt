@@ -7,7 +7,7 @@ import { AccountStream, MarketStream, StreamError } from "../stream.js";
 import * as Codec from "./codec.js";
 import type * as Wire from "./contract.js";
 
-export const NATIVE_API_VERSION = 4 as const;
+export const NATIVE_API_VERSION = 5 as const;
 
 export type NativeOutcome<T> =
   | { readonly ok: true; readonly value: T }
@@ -34,6 +34,7 @@ export interface RawNativeClient {
   openOrdersOn(market: string): Promise<unknown>;
   order(market: string, orderId: string): Promise<unknown>;
   orderByClientId(market: string, clientId: string): Promise<unknown>;
+  ordersByIds(request: string): Promise<unknown>;
   orderHistory(request: string): Promise<unknown>;
   subscribeAccount(): Promise<unknown>;
   subscribeAccountWith(config: string): Promise<unknown>;
@@ -132,6 +133,7 @@ export interface NativeClientHandle {
   openOrdersOn(market: Wire.MarketWire): Promise<NativeOutcome<readonly Wire.OrderWire[]>>;
   order(market: Wire.MarketWire, orderId: string): Promise<NativeOutcome<Wire.OrderWire>>;
   orderByClientId(market: Wire.MarketWire, clientId: string): Promise<NativeOutcome<Wire.OrderWire>>;
+  ordersByIds(request: Wire.OrderLookupRequestWire): Promise<NativeOutcome<readonly Wire.OrderWire[]>>;
   orderHistory(request: Wire.OrderHistoryRequestWire): Promise<NativeOutcome<Wire.PageWire<Wire.OrderWire>>>;
   subscribeAccount(): Promise<NativeOutcome<NativeStreamHandle<Wire.AccountStreamItemWire>>>;
   subscribeAccountWith(config: Wire.StreamConfigWire): Promise<NativeOutcome<NativeStreamHandle<Wire.AccountStreamItemWire>>>;
@@ -316,6 +318,7 @@ function wrapJsonClient(raw: RawNativeClient): NativeClientHandle {
     openOrdersOn: (market: Wire.MarketWire) => raw.openOrdersOn(Codec.stringifyWire(market)) as Promise<NativeOutcome<readonly Wire.OrderWire[]>>,
     order: (market: Wire.MarketWire, orderId: string) => raw.order(Codec.stringifyWire(market), Codec.stringifyWire(orderId)) as Promise<NativeOutcome<Wire.OrderWire>>,
     orderByClientId: (market: Wire.MarketWire, clientId: string) => raw.orderByClientId(Codec.stringifyWire(market), Codec.stringifyWire(clientId)) as Promise<NativeOutcome<Wire.OrderWire>>,
+    ordersByIds: (request: Wire.OrderLookupRequestWire) => raw.ordersByIds(Codec.stringifyWire(request)) as Promise<NativeOutcome<readonly Wire.OrderWire[]>>,
     orderHistory: (request: Wire.OrderHistoryRequestWire) => raw.orderHistory(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.PageWire<Wire.OrderWire>>>,
     async subscribeAccount() {
       const outcome = await raw.subscribeAccount() as NativeOutcome<Wire.NativeStreamReferenceWire>;
@@ -495,6 +498,12 @@ export abstract class Adapter {
     ));
   }
 
+  ordersByIds(request: Model.OrderLookupRequest): Promise<readonly Model.Order[]> {
+    return Promise.reject(new UnsupportedError(
+      featureById("order_history"), this.exchange, "feature is not supported",
+    ));
+  }
+
   orderHistory(request: Model.OrderHistoryRequest): Promise<Model.Page<Model.Order>> {
     return Promise.reject(new UnsupportedError(
       featureById("order_history"), this.exchange, "feature is not supported",
@@ -579,6 +588,7 @@ class CustomCallbacks implements ForeignAdapterCallbacks {
         case "open_orders": return ok({ kind: "open_orders", value: (await this.adapter.openOrders(call.market === null ? null : Codec.marketFromWire(call.market))).map(Codec.orderToWire) });
         case "order": return ok({ kind: "order", value: Codec.orderToWire(await this.adapter.order(Codec.marketFromWire(call.market), call.order_id)) });
         case "order_by_client_id": return ok({ kind: "order", value: Codec.orderToWire(await this.adapter.orderByClientId(Codec.marketFromWire(call.market), call.client_id)) });
+        case "orders_by_ids": return ok({ kind: "orders_by_ids", value: (await this.adapter.ordersByIds(Codec.orderLookupRequestFromWire(call.request))).map(Codec.orderToWire) });
         case "order_history": { const value = await this.adapter.orderHistory(Codec.orderHistoryRequestFromWire(call.request)); return ok({ kind: "order_history", value: { items: value.items.map(Codec.orderToWire), next: value.next?.value ?? null } }); }
         case "subscribe_account": { this.#streams.begin(call.stream_id); try { const value = await this.adapter.subscribeAccount(Codec.streamConfigFromWire(call.config)); await this.#streams.register(call.stream_id, value); return ok({ kind: "account_stream", stream_id: call.stream_id }); } catch (error) { this.#streams.abort(call.stream_id); throw error; } }
         case "place_order": return ok({ kind: "place_order", value: Codec.orderToWire(await this.adapter.placeOrder(Codec.orderRequestFromWire(call.request))) });
@@ -712,6 +722,11 @@ export class Client<A extends Adapter> {
     return Codec.orderFromWire(Codec.unwrapOutcome(await this.#native.orderByClientId(Codec.marketToWire(market), clientId)));
   }
 
+  async ordersByIds(request: Model.OrderLookupRequest): Promise<readonly Model.Order[]> {
+    await ensureInitialized();
+    return Codec.unwrapOutcome(await this.#native.ordersByIds(Codec.orderLookupRequestToWire(request))).map(Codec.orderFromWire);
+  }
+
   async orderHistory(request: Model.OrderHistoryRequest): Promise<Model.Page<Model.Order>> {
     await ensureInitialized();
     return Codec.pageFromWire(Codec.unwrapOutcome(await this.#native.orderHistory(Codec.orderHistoryRequestToWire(request))), Codec.orderFromWire);
@@ -816,6 +831,7 @@ class NativeAdapter extends Adapter {
   openOrders(market: Model.Market | null = null): Promise<readonly Model.Order[]> { return market === null ? new Client(this).openOrders() : new Client(this).openOrdersOn(market); }
   order(market: Model.Market, orderId: string): Promise<Model.Order> { return new Client(this).order(market, orderId); }
   orderByClientId(market: Model.Market, clientId: string): Promise<Model.Order> { return new Client(this).orderByClientId(market, clientId); }
+  ordersByIds(request: Model.OrderLookupRequest): Promise<readonly Model.Order[]> { return new Client(this).ordersByIds(request); }
   orderHistory(request: Model.OrderHistoryRequest): Promise<Model.Page<Model.Order>> { return new Client(this).orderHistory(request); }
   subscribeAccount(config: Model.StreamConfig): Promise<AccountStream> { return new Client(this).subscribeAccountWith(config); }
   placeOrder(request: Model.OrderRequest): Promise<Model.Order> { return new Client(this).placeOrder(request); }

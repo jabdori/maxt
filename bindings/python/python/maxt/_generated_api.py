@@ -60,6 +60,9 @@ class _GeneratedAdapterApi:
     async def order_by_client_id(self, market: Market, client_id: str) -> Order:
         raise self._unsupported(Feature.ORDER_HISTORY)
 
+    async def orders_by_ids(self, request: OrderLookupRequest) -> list[Order]:
+        raise self._unsupported(Feature.ORDER_HISTORY)
+
     async def order_history(self, request: OrderHistoryRequest) -> Page[Order]:
         raise self._unsupported(Feature.ORDER_HISTORY)
 
@@ -147,6 +150,9 @@ class _GeneratedClientApi:
 
     async def order_by_client_id(self, market: Market, client_id: str) -> Order:
         return await self._delegate.order_by_client_id(market, client_id)
+
+    async def orders_by_ids(self, request: OrderLookupRequest) -> list[Order]:
+        return await self._delegate.orders_by_ids(request)
 
     async def order_history(self, request: OrderHistoryRequest) -> Page[Order]:
         return await self._delegate.order_history(request)

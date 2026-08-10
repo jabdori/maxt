@@ -22,6 +22,7 @@
 | `open_orders` | `openOrders` |
 | `order` | `order` |
 | `order_by_client_id` | `orderByClientId` |
+| `orders_by_ids` | `ordersByIds` |
 | `order_history` | `orderHistory` |
 | `subscribe_account` | `subscribeAccount` |
 | `place_order` | `placeOrder` |
@@ -49,12 +50,12 @@ Documentation baseline: `2026-08-10`.
 | Exchange | Product | Mapped / official | Interfaces | Encodings | Status |
 | --- | --- | ---: | --- | --- | --- |
 | upbit | Quotation | 13 / — | `http`, `websocket_stream` | `json` | Partial |
-| upbit | Exchange | 8 / — | `http`, `websocket_stream` | `json` | Partial |
+| upbit | Exchange | 9 / — | `http`, `websocket_stream` | `json` | Partial |
 | upbit | Deposits and withdrawals | 7 / — | `http` | `json` | Partial |
 | upbit | Travel Rule | 0 / — | `http` | `json` | Planned |
 | upbit | Korea pockets | 0 / — | `http` | `json` | Planned |
 | bithumb | Quotation | 12 / — | `http`, `websocket_stream` | `json` | Partial |
-| bithumb | Exchange | 8 / — | `http`, `websocket_stream` | `json` | Partial |
+| bithumb | Exchange | 9 / — | `http`, `websocket_stream` | `json` | Partial |
 | bithumb | Deposits and withdrawals | 7 / — | `http` | `json` | Partial |
 | bithumb | TWAP | 0 / — | `http` | `json` | Planned |
 | bithumb | KRW deposits and withdrawals | 0 / — | `http` | `json` | Planned |
@@ -124,6 +125,7 @@ Documentation baseline: `2026-08-10`.
 | upbit | exchange | `balances` | `http` | common `balances` | `Implemented` | `Fixture` |
 | upbit | exchange | `open_orders` | `http` | common `open_orders` | `Implemented` | `Fixture` |
 | upbit | exchange | `get_order` | `http` | common `order`, `order_by_client_id` | `Partial` | `Fixture` |
+| upbit | exchange | `orders_by_ids` | `http` | common `orders_by_ids` | `Partial` | `Fixture` |
 | upbit | exchange | `closed_orders` | `http` | common `order_history` | `Partial` | `Fixture` |
 | upbit | exchange | `new_order` | `http` | common `place_order` | `Partial` | `Fixture` |
 | upbit | exchange | `cancel_order` | `http` | common `cancel_order`, `cancel_order_by_client_id` | `Partial` | `Fixture` |
@@ -151,6 +153,7 @@ Documentation baseline: `2026-08-10`.
 | bithumb | exchange | `balances` | `http` | common `balances` | `Implemented` | `Fixture` |
 | bithumb | exchange | `orders` | `http` | common `open_orders` | `Partial` | `Fixture` |
 | bithumb | exchange | `get_order` | `http` | common `order`, `order_by_client_id` | `Partial` | `Fixture` |
+| bithumb | exchange | `orders_by_ids` | `http` | common `orders_by_ids` | `Partial` | `Fixture` |
 | bithumb | exchange | `closed_orders` | `http` | common `order_history` | `Partial` | `Fixture` |
 | bithumb | exchange | `new_order` | `http` | common `place_order` | `Partial` | `Fixture` |
 | bithumb | exchange | `cancel_order` | `http` | common `cancel_order`, `cancel_order_by_client_id` | `Partial` | `Fixture` |

@@ -5,7 +5,7 @@ use crate::error::Result;
 use crate::feature::Feature;
 use crate::request::{
     CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest, OrderHistoryRequest,
-    OrderRequest, TransferHistoryRequest, WithdrawRequest,
+    OrderLookupRequest, OrderRequest, TransferHistoryRequest, WithdrawRequest,
 };
 use crate::stream::{AccountStream, MarketStream};
 use crate::types::{
@@ -219,6 +219,15 @@ impl<A: Adapter> Client<A> {
     /// Requires credentials.
     pub async fn order_by_client_id(&self, market: &Market, client_id: &str) -> Result<Order> {
         self.adapter.order_by_client_id(market, client_id).await
+    }
+
+    /// Looks up up to 100 orders by exchange or caller-assigned identifiers.
+    ///
+    /// Requires credentials. Providers may omit unknown, malformed, or
+    /// account-inaccessible identifiers instead of returning one result per ID.
+    pub async fn orders_by_ids(&self, request: &OrderLookupRequest) -> Result<Vec<Order>> {
+        crate::adapters::validate_order_lookup(request)?;
+        self.adapter.orders_by_ids(request).await
     }
 
     /// Reads one newest-first page of completed or cancelled orders.

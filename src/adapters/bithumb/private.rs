@@ -11,7 +11,7 @@ use serde_json::Value;
 use sha2::{Digest, Sha256, Sha512};
 
 use crate::error::{Error, Result};
-use crate::request::{OrderHistoryRequest, OrderRequest};
+use crate::request::{OrderHistoryRequest, OrderIdKind, OrderLookupRequest, OrderRequest};
 use crate::transport::{HttpRequest, HttpTransport};
 use crate::types::{
     Balance, Cursor, Market, Order, OrderStatus, OrderType, Page, Side, Size, Timestamp,
@@ -196,6 +196,43 @@ pub(crate) fn order_by_client_id_request(
         "client_id",
         client_id,
     )
+}
+
+pub(crate) fn orders_by_ids_request(
+    credentials: &BithumbCredentials,
+    request: &OrderLookupRequest,
+) -> Result<HttpRequest> {
+    crate::adapters::validate_order_lookup(request)?;
+    let mut signed_params = Vec::new();
+    let mut body = serde_json::Map::new();
+    if let Some(market) = &request.market {
+        let market = parse::native_symbol(market)?;
+        signed_params.push(("market", market.clone()));
+        body.insert("market".to_string(), Value::String(market));
+    }
+    let (body_key, signed_key) = match request.kind {
+        OrderIdKind::Exchange => ("order_ids", "order_ids[]"),
+        OrderIdKind::Client => {
+            for id in &request.ids {
+                validate_client_order_id(id)?;
+            }
+            ("client_order_ids", "client_order_ids[]")
+        }
+    };
+    signed_params.extend(request.ids.iter().cloned().map(|id| (signed_key, id)));
+    signed_params.push(("order_by", "desc".to_string()));
+    body.insert(
+        body_key.to_string(),
+        Value::Array(request.ids.iter().cloned().map(Value::String).collect()),
+    );
+    body.insert("order_by".to_string(), Value::String("desc".to_string()));
+
+    let query = signed_query(&signed_params)?;
+    let body = serde_json::to_string(&Value::Object(body))
+        .map_err(|err| Error::decode(format!("could not build the Bithumb lookup body: {err}")))?;
+    Ok(HttpRequest::post("/v2/orders/search")
+        .json_body(body)
+        .header("authorization", authorization(credentials, &query)?))
 }
 
 fn order_request_by(
@@ -534,6 +571,15 @@ pub(crate) async fn order_by_client_id(
     checked_market(parse::order(&body)?, market)
 }
 
+pub(crate) async fn orders_by_ids(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    request: &OrderLookupRequest,
+) -> Result<Vec<Order>> {
+    let body = rest::send(http, &orders_by_ids_request(credentials, request)?).await?;
+    parse::orders(&body)
+}
+
 pub(crate) async fn order_history(
     http: &HttpTransport,
     credentials: &BithumbCredentials,
@@ -789,6 +835,36 @@ mod tests {
                 .expect("signed")
                 .target(),
             "/v1/order?client_order_id=client-1"
+        );
+    }
+
+    #[test]
+    fn multiple_order_lookup_hashes_array_items_with_bracketed_keys() {
+        let lookup = OrderLookupRequest::client(["client-1", "client-2"]).market(btc_krw());
+        let request = orders_by_ids_request(&credentials(), &lookup).expect("a signed lookup");
+        let body: Value = serde_json::from_str(request.body.as_deref().expect("a JSON body"))
+            .expect("valid JSON");
+        let authorization = request
+            .headers
+            .iter()
+            .find(|(name, _)| name == "authorization")
+            .map(|(_, value)| value)
+            .expect("an authorization header");
+
+        assert_eq!(request.target(), "/v2/orders/search");
+        assert_eq!(
+            body,
+            serde_json::json!({
+                "market": "KRW-BTC",
+                "client_order_ids": ["client-1", "client-2"],
+                "order_by": "desc"
+            })
+        );
+        assert_eq!(
+            payload(authorization)["query_hash"],
+            sha512_hex(
+                b"market=KRW-BTC&client_order_ids[]=client-1&client_order_ids[]=client-2&order_by=desc"
+            )
         );
     }
 

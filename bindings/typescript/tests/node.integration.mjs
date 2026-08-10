@@ -16,6 +16,8 @@ import {
   Market,
   Order,
   OrderHistoryRequest,
+  OrderIdKind,
+  OrderLookupRequest,
   OrderStatus,
   Page,
   Side,
@@ -133,6 +135,12 @@ test("custom Adapter calls round-trip through Rust without losing values", async
       assert.equal(clientId, "client-1");
       return expectedOrder;
     }
+    async ordersByIds(request) {
+      assert.equal(request.kind, OrderIdKind.Exchange);
+      assert.deepEqual(request.ids, ["order-1", "order-2"]);
+      assert.equal(request.market?.toString(), market.toString());
+      return [expectedOrder];
+    }
     async orderHistory(request) {
       assert.equal(request.market?.toString(), market.toString());
       assert.deepEqual(request.statuses, [OrderStatus.Filled]);
@@ -147,6 +155,12 @@ test("custom Adapter calls round-trip through Rust without losing values", async
   assert.equal(actual.volume?.toString(), "2.5");
   assert.equal((await client.order(market, "order-1")).id, "order-1");
   assert.equal((await client.orderByClientId(market, "client-1")).id, "order-1");
+  assert.equal(
+    (await client.ordersByIds(
+      new OrderLookupRequest(OrderIdKind.Exchange, ["order-1", "order-2"], market),
+    ))[0].id,
+    "order-1",
+  );
   const history = await client.orderHistory(
     new OrderHistoryRequest(market, [OrderStatus.Filled]),
   );

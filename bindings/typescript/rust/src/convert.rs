@@ -8,11 +8,11 @@ use maxt::{
     DepositStatus, Error, Exchange, ExchangeDestination, ExchangeErrorKind,
     ExchangeTransferRequest, Feature, Feed, FundingPayment, FundingRate, HistoryRequest, Interval,
     Level, MarginMode, MarginRequest, MarginSummary, Market, MarketEvent, MarketInfo, MarketKind,
-    MarketStatus, Network, Order, OrderBook, OrderHistoryRequest, OrderRequest, OrderStatus,
-    OrderType, Overflow, Page, Position, Side, Size, StreamConfig, Subscription, Ticker,
-    TimeInForce, Timestamp, Trade, TransferDestination, TransferErrorKind, TransferHistoryRequest,
-    TransferPlan, TravelRuleRequirement, WithdrawRequest, Withdrawal, WithdrawalFee,
-    WithdrawalQuote, WithdrawalStatus,
+    MarketStatus, Network, Order, OrderBook, OrderHistoryRequest, OrderIdKind, OrderLookupRequest,
+    OrderRequest, OrderStatus, OrderType, Overflow, Page, Position, Side, Size, StreamConfig,
+    Subscription, Ticker, TimeInForce, Timestamp, Trade, TransferDestination, TransferErrorKind,
+    TransferHistoryRequest, TransferPlan, TravelRuleRequirement, WithdrawRequest, Withdrawal,
+    WithdrawalFee, WithdrawalQuote, WithdrawalStatus,
 };
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -64,6 +64,15 @@ pub(crate) struct WireOrderRequest {
     pub(crate) reduce_only: bool,
     #[serde(deserialize_with = "explicit_option")]
     pub(crate) client_id: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireOrderLookupRequest {
+    pub(crate) kind: String,
+    pub(crate) ids: Vec<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) market: Option<WireMarket>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -871,6 +880,27 @@ impl TryFrom<WireOrderHistoryRequest> for OrderHistoryRequest {
     }
 }
 
+impl TryFrom<WireOrderLookupRequest> for OrderLookupRequest {
+    type Error = Error;
+
+    fn try_from(value: WireOrderLookupRequest) -> Result<Self, Self::Error> {
+        let mut request = match value.kind.as_str() {
+            "exchange" => Self::exchange(value.ids),
+            "client" => Self::client(value.ids),
+            value => {
+                return Err(Error::InvalidRequest {
+                    field: "kind".to_owned(),
+                    detail: format!("unknown value `{value}`"),
+                });
+            }
+        };
+        if let Some(market) = value.market {
+            request = request.market(market.try_into()?);
+        }
+        Ok(request)
+    }
+}
+
 impl TryFrom<WireDepositAddressRequest> for DepositAddressRequest {
     type Error = Error;
 
@@ -990,6 +1020,22 @@ impl TryFrom<OrderHistoryRequest> for WireOrderHistoryRequest {
             to: timestamp_option_to_wire(value.to),
             cursor: value.cursor.map(|cursor| cursor.as_str().to_owned()),
             limit: value.limit,
+        })
+    }
+}
+
+impl TryFrom<OrderLookupRequest> for WireOrderLookupRequest {
+    type Error = Error;
+
+    fn try_from(value: OrderLookupRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            kind: match value.kind {
+                OrderIdKind::Exchange => "exchange",
+                OrderIdKind::Client => "client",
+            }
+            .to_owned(),
+            ids: value.ids,
+            market: value.market.map(TryInto::try_into).transpose()?,
         })
     }
 }

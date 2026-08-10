@@ -15,7 +15,7 @@
 | Client | `exchange`, `supports`, `adapter`, `into_adapter` |
 | 공개 REST | `markets`, `trades`, `order_book`, `ticker`, `candles`, `funding_rates` |
 | 공개 스트림 | `subscribe`, `subscribe_with` |
-| 비공개 조회 | `balances`, `open_orders`, `open_orders_on`, `order`, `order_by_client_id`, `order_history`, `positions`, `positions_on`, `margin_summary`, `funding_payments` |
+| 비공개 조회 | `balances`, `open_orders`, `open_orders_on`, `order`, `order_by_client_id`, `orders_by_ids`, `order_history`, `positions`, `positions_on`, `margin_summary`, `funding_payments` |
 | 비공개 스트림 | `subscribe_account`, `subscribe_account_with` |
 | 비공개 변경 | `place_order`, `cancel_order`, `cancel_order_by_client_id`, `set_margin` |
 
@@ -175,6 +175,7 @@
 | `open_orders*` | 특정 시점의 스냅샷; 거래소의 모든 페이지 순회는 보장하지 않음 |
 | `order(market, order_id)` | 거래소 주문 ID로 주문 1건 조회 |
 | `order_by_client_id(market, client_id)` | 주문 생성 시 지정한 ID로 주문 1건 조회 |
+| `orders_by_ids(request)` | 거래소 주문 ID 또는 사용자 지정 ID 중 한 종류를 최대 100개 조회; 찾지 못한 ID는 결과에서 빠질 수 있음 |
 | `order_history(request)` | 체결 완료 또는 취소 주문을 최신순 `Page<Order>`로 조회 |
 | `OrderRequest::size` | `Size::Base` 또는 `Size::Quote` |
 | 주문 정밀도 | `MarketInfo`에 공통 호가 단위(tick size), 수량 단위(lot size), 최소 명목가치(minimum notional) 없음 |

@@ -169,6 +169,18 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
+    pub async fn orders_by_ids(
+        &self,
+        request: WireOrderLookupRequest,
+    ) -> Result<Vec<WireOrder>, NativeError> {
+        let request = request.try_into()?;
+        self.adapter
+            .orders_by_ids(&request)
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
     pub async fn order_history(
         &self,
         request: WireOrderHistoryRequest,

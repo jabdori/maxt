@@ -66,6 +66,7 @@ account streams.
 | `open_orders*` | `GET /v1/orders` | One page, at most 100 orders |
 | `order(market, order_id)` | `GET /v1/order?uuid=...` | Verifies the returned market |
 | `order_by_client_id(market, client_id)` | `GET /v1/order?client_order_id=...` | Verifies the returned market |
+| `orders_by_ids(request)` | `POST /v2/orders/search` | One to 100 order IDs or client IDs; unmatched IDs are omitted and duplicates collapse |
 | `order_history(request)` | `GET /v2/orders/history` | `limit: 1..=1_000`; at most seven days; newest-first; `next_key` becomes the opaque `Page::next` cursor |
 
 | Order | Required `Size` |

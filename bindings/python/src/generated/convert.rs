@@ -249,6 +249,23 @@ pub(crate) fn order_status_to_wire(value: maxt::OrderStatus) -> PyResult<&'stati
     }
 }
 
+pub(crate) fn order_id_kind_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::OrderIdKind> {
+    let value = text(value)?;
+    match value.as_str() {
+        "exchange" => Ok(maxt::OrderIdKind::Exchange),
+        "client" => Ok(maxt::OrderIdKind::Client),
+        _ => Err(invalid("order id kind", &value)),
+    }
+}
+
+pub(crate) fn order_id_kind_to_wire(value: maxt::OrderIdKind) -> PyResult<&'static str> {
+    match value {
+        maxt::OrderIdKind::Exchange => Ok("exchange"),
+        maxt::OrderIdKind::Client => Ok("client"),
+        _ => Err(binding_contract("OrderIdKind")),
+    }
+}
+
 pub(crate) fn order_type_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::OrderType> {
     let value = text(value)?;
     match value.as_str() {
@@ -993,6 +1010,28 @@ pub(crate) fn funding_payment_to_wire(
         "amount" => decimal_to_wire(value.amount),
         "rate" => value.rate.map(decimal_to_wire),
         "id" => &value.id,
+    )
+}
+
+pub(crate) fn order_lookup_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::OrderLookupRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::OrderLookupRequest {
+        kind: order_id_kind_from_wire(&required(dict, "kind")?)?,
+        ids: required(dict, "ids")?.extract::<Vec<String>>()?,
+        market: optional(dict, "market")?.map(|value| -> PyResult<_> { market_from_wire(&value) }).transpose()?,
+    })
+}
+
+pub(crate) fn order_lookup_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::OrderLookupRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "kind" => order_id_kind_to_wire(value.kind)?,
+        "ids" => &value.ids,
+        "market" => value.market.as_ref().map(|item| market_to_wire(py, item)).transpose()?,
     )
 }
 

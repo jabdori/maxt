@@ -481,6 +481,18 @@ export function orderRequestToWire(value: Model.OrderRequest): Wire.OrderRequest
   };
 }
 
+export function orderLookupRequestFromWire(value: Wire.OrderLookupRequestWire): Model.OrderLookupRequest {
+  return new Model.OrderLookupRequest(identifier(Model.OrderIdKind.values, value.kind, "kind"), value.ids.map((item) => item), value.market === null ? null : marketFromWire(value.market));
+}
+
+export function orderLookupRequestToWire(value: Model.OrderLookupRequest): Wire.OrderLookupRequestWire {
+  return {
+    kind: value.kind.id,
+    ids: value.ids.map((item) => item),
+    market: value.market === null ? null : marketToWire(value.market),
+  };
+}
+
 export function orderHistoryRequestFromWire(value: Wire.OrderHistoryRequestWire): Model.OrderHistoryRequest {
   return new Model.OrderHistoryRequest(
     value.market === null ? null : marketFromWire(value.market),

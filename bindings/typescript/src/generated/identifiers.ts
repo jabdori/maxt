@@ -209,6 +209,16 @@ export class OrderStatus extends StringValue {
   readonly isLive: boolean;
 }
 
+export class OrderIdKind extends StringValue {
+  static readonly Exchange = new OrderIdKind("exchange");
+  static readonly Client = new OrderIdKind("client");
+  static readonly values: readonly OrderIdKind[] = Object.freeze([
+    OrderIdKind.Exchange,
+    OrderIdKind.Client,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
 export class OrderType extends StringValue {
   static readonly Market = new OrderType("market");
   static readonly Limit = new OrderType("limit");

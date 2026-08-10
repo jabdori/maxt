@@ -39,6 +39,8 @@ from maxt import (
     Order,
     OrderBook,
     OrderHistoryRequest,
+    OrderIdKind,
+    OrderLookupRequest,
     OrderRequest,
     OrderStatus,
     Page,
@@ -178,6 +180,10 @@ class NativeReplayAdapter(Adapter):
     async def order_by_client_id(self, market: Market, client_id: str) -> Order:
         self.received.append(("order_by_client_id", market, client_id))
         return self.sample_order
+
+    async def orders_by_ids(self, request: OrderLookupRequest) -> list[Order]:
+        self.received.append(("orders_by_ids", request))
+        return [self.sample_order]
 
     async def order_history(self, request: OrderHistoryRequest) -> Page[Order]:
         self.received.append(("order_history", request))
@@ -414,6 +420,11 @@ class NativeCustomAdapterTests(unittest.IsolatedAsyncioTestCase):
             cursor=Cursor("order-in"),
             limit=1,
         )
+        order_lookup_request = OrderLookupRequest(
+            OrderIdKind.EXCHANGE,
+            ["order-1", "order-2"],
+            market,
+        )
         order_request = OrderRequest.limit_order(
             market,
             Side.BUY,
@@ -436,6 +447,10 @@ class NativeCustomAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await client.order(market, "order-1")).id, "order-1")
         self.assertEqual(
             (await client.order_by_client_id(market, "client-1")).id,
+            "order-1",
+        )
+        self.assertEqual(
+            (await client.orders_by_ids(order_lookup_request))[0].id,
             "order-1",
         )
         order_history = await client.order_history(order_history_request)
@@ -463,6 +478,10 @@ class NativeCustomAdapterTests(unittest.IsolatedAsyncioTestCase):
             call[1] for call in adapter.received if call[0] == "order_history"
         )
         self.assertEqual(received_history.to_wire(), order_history_request.to_wire())
+        received_lookup = next(
+            call[1] for call in adapter.received if call[0] == "orders_by_ids"
+        )
+        self.assertEqual(received_lookup.to_wire(), order_lookup_request.to_wire())
 
     async def test_market_and_account_stream_items_cross_rust(self) -> None:
         market = Market.perpetual(Exchange.BINANCE, "BTC", "USDT")

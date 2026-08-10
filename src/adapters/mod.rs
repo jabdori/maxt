@@ -4,7 +4,7 @@
 //! provider-specific methods through [`Client::adapter`](crate::Client::adapter).
 //! See `docs/providers.md` for capabilities and credential types.
 
-use crate::{Error, OrderHistoryRequest, OrderStatus, Result, Timestamp};
+use crate::{Error, OrderHistoryRequest, OrderLookupRequest, OrderStatus, Result, Timestamp};
 
 mod binance;
 mod bithumb;
@@ -88,6 +88,26 @@ pub(crate) fn order_history_window(
         request.from.map(inclusive_millis_at_or_after),
         request.to.map(inclusive_millis_before),
     ))
+}
+
+/// Validates the common multi-order lookup limits before a provider call.
+pub(crate) fn validate_order_lookup(request: &OrderLookupRequest) -> Result<()> {
+    if !(1..=100).contains(&request.ids.len()) {
+        return Err(Error::invalid_request(
+            "ids",
+            format!(
+                "an order lookup requires 1 to 100 identifiers, not {}",
+                request.ids.len()
+            ),
+        ));
+    }
+    if request.ids.iter().any(|id| id.trim().is_empty()) {
+        return Err(Error::invalid_request(
+            "ids",
+            "order identifiers must not be empty",
+        ));
+    }
+    Ok(())
 }
 
 pub use binance::{

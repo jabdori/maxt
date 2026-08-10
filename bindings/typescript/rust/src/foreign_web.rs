@@ -192,6 +192,7 @@ fn decode_reply(
         WireAdapterReply::Withdrawals { value } => value.try_into().map(AdapterReply::Withdrawals),
         WireAdapterReply::OpenOrders { value } => wire_vec(value).map(AdapterReply::OpenOrders),
         WireAdapterReply::Order { value } => value.try_into().map(AdapterReply::Order),
+        WireAdapterReply::OrdersByIds { value } => wire_vec(value).map(AdapterReply::OrdersByIds),
         WireAdapterReply::OrderHistory { value } => {
             value.try_into().map(AdapterReply::OrderHistory)
         }

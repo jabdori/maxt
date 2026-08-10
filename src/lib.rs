@@ -55,7 +55,7 @@ pub use error::{Error, ExchangeErrorKind, Result, TransferErrorKind};
 pub use feature::Feature;
 pub use request::{
     CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest, OrderHistoryRequest,
-    OrderRequest, TransferHistoryRequest, WithdrawRequest,
+    OrderIdKind, OrderLookupRequest, OrderRequest, TransferHistoryRequest, WithdrawRequest,
 };
 pub use stream::{AccountStream, MarketStream};
 pub use types::{

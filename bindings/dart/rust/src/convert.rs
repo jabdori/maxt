@@ -12,9 +12,9 @@ use maxt::adapters::{
 use maxt::{
     Balance, Candle, CandleRequest, Cursor, Decimal, Error, Exchange, ExchangeErrorKind, Feature,
     FundingPayment, FundingRate, HistoryRequest, Interval, Level, MarginMode, MarginRequest,
-    MarginSummary, Market, MarketInfo, MarketKind, MarketStatus, Order, OrderBook, OrderRequest,
-    OrderStatus, OrderType, Page, Position, Side, Size, Ticker, TimeInForce, Timestamp, Trade,
-    TransferErrorKind,
+    MarginSummary, Market, MarketInfo, MarketKind, MarketStatus, Order, OrderBook, OrderIdKind,
+    OrderRequest, OrderStatus, OrderType, Page, Position, Side, Size, Ticker, TimeInForce,
+    Timestamp, Trade, TransferErrorKind,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -120,6 +120,12 @@ pub enum WireOrderStatus {
     Cancelled,
     Rejected,
     Unknown,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireOrderIdKind {
+    Exchange,
+    Client,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -752,6 +758,24 @@ impl From<WireOrderStatus> for OrderStatus {
             WireOrderStatus::Cancelled => Self::Cancelled,
             WireOrderStatus::Rejected => Self::Rejected,
             WireOrderStatus::Unknown => Self::Unknown,
+        }
+    }
+}
+
+impl From<OrderIdKind> for WireOrderIdKind {
+    fn from(value: OrderIdKind) -> Self {
+        match value {
+            OrderIdKind::Exchange => Self::Exchange,
+            OrderIdKind::Client => Self::Client,
+        }
+    }
+}
+
+impl From<WireOrderIdKind> for OrderIdKind {
+    fn from(value: WireOrderIdKind) -> Self {
+        match value {
+            WireOrderIdKind::Exchange => Self::Exchange,
+            WireOrderIdKind::Client => Self::Client,
         }
     }
 }

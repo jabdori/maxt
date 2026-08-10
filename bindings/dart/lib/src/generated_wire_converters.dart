@@ -32,6 +32,11 @@ wire.WireInterval _intervalToWire(Interval value) =>
 Interval _intervalFromWire(wire.WireInterval value) =>
     _enumByName(Interval.values, value);
 
+wire.WireOrderIdKind _orderIdKindToWire(OrderIdKind value) =>
+    _enumByName(wire.WireOrderIdKind.values, value);
+OrderIdKind _orderIdKindFromWire(wire.WireOrderIdKind value) =>
+    _enumByName(OrderIdKind.values, value);
+
 wire.WireOrderStatus _orderStatusToWire(OrderStatus value) =>
     _enumByName(wire.WireOrderStatus.values, value);
 OrderStatus _orderStatusFromWire(wire.WireOrderStatus value) =>
@@ -601,6 +606,21 @@ wire.WireDeposit _depositToWire(Deposit value) => wire.WireDeposit(
   providerStatus: value.providerStatus,
   txId: value.txId,
   createdAtNs: _optionalTimestampToWire(value.createdAt),
+);
+
+OrderLookupRequest _orderLookupRequestFromWire(
+  wire.WireOrderLookupRequest value,
+) => OrderLookupRequest(
+  kind: _orderIdKindFromWire(value.kind),
+  ids: value.ids,
+  market: value.market == null ? null : _marketFromWire(value.market!),
+);
+wire.WireOrderLookupRequest _orderLookupRequestToWire(
+  OrderLookupRequest value,
+) => wire.WireOrderLookupRequest(
+  kind: _orderIdKindToWire(value.kind),
+  ids: value.ids.toList(growable: false),
+  market: value.market == null ? null : _marketToWire(value.market!),
 );
 
 OrderHistoryRequest _orderHistoryRequestFromWire(

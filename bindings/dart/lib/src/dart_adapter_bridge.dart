@@ -644,6 +644,14 @@ final class DartAdapterBridge {
           .then(
             (value) => native_adapter.AdapterReply.order(_orderToWire(value)),
           ),
+    native_adapter.AdapterCall_OrdersByIds(:final request) =>
+      adapter
+          .ordersByIds(_orderLookupRequestFromWire(request))
+          .then(
+            (values) => native_adapter.AdapterReply.ordersByIds(
+              values.map(_orderToWire).toList(growable: false),
+            ),
+          ),
     native_adapter.AdapterCall_OrderHistory(:final request) =>
       adapter
           .orderHistory(_orderHistoryRequestFromWire(request))
@@ -921,6 +929,7 @@ final class DartAdapterBridge {
     native_adapter.AdapterCall_OpenOrders() => Feature.openOrders,
     native_adapter.AdapterCall_Order() ||
     native_adapter.AdapterCall_OrderByClientId() ||
+    native_adapter.AdapterCall_OrdersByIds() ||
     native_adapter.AdapterCall_OrderHistory() => Feature.orderHistory,
     native_adapter.AdapterCall_PlaceOrder() ||
     native_adapter.AdapterCall_CancelOrder() ||

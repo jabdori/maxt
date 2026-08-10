@@ -117,6 +117,10 @@ class _GeneratedNativeClientDelegateApi:
         await self._call(self._client.cancel_order_by_client_id, market, client_id)
         return None
 
+    async def cancel_orders(self, request: CancelOrdersRequest) -> CancelOrdersResult:
+        value = await self._call(self._client.cancel_orders, request)
+        return _model_from_wire("CancelOrdersResult", value)
+
     async def positions(self, market: Optional[Market] = None) -> list[Position]:
         method = self._client.positions if market is None else self._client.positions_on
         value = await self._call(method, *(() if market is None else (market,)))

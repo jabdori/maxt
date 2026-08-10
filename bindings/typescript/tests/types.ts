@@ -2,6 +2,7 @@ import {
   BinanceAdapter,
   ChainDestination,
   Client,
+  CancelOrdersRequest,
   Decimal,
   DepositAddressRequest,
   Exchange,
@@ -47,6 +48,9 @@ const withdrawal: Promise<Withdrawal> = client.withdraw(withdrawRequest);
 const deposits: Promise<Page<Deposit>> = client.deposits(new TransferHistoryRequest());
 const withdrawals: Promise<Page<Withdrawal>> = client.withdrawals(new TransferHistoryRequest());
 const orders = client.ordersByIds(new OrderLookupRequest(OrderIdKind.Exchange, ["order-1"], market));
+const cancellations = client.cancelOrders(
+  new CancelOrdersRequest(OrderIdKind.Exchange, ["order-1"]),
+);
 const transferError = new TransferError(TransferErrorKind.NetworkMismatch, "chains differ");
 void ticker;
 void filters;
@@ -57,5 +61,6 @@ void withdrawal;
 void deposits;
 void withdrawals;
 void orders;
+void cancellations;
 void transferError;
 void (null as unknown as _BrowserContainsExactlyNodeExports);

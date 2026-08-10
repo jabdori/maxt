@@ -3,12 +3,12 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use maxt::{
-    AccountEvent, Adapter, Balance, BoxFuture, Candle, CandleRequest, Cursor, Decimal, Error,
-    Exchange, ExchangeErrorKind, Feature, Feed, FundingPayment, FundingRate, HistoryRequest,
-    Interval, Level, MarginMode, MarginRequest, MarginSummary, Market, MarketEvent, MarketInfo,
-    MarketKind, MarketStatus, Order, OrderBook, OrderHistoryRequest, OrderRequest, OrderStatus,
-    OrderType, Overflow, Page, Position, Result, Side, Size, StreamConfig, Subscription, Ticker,
-    TimeInForce, Timestamp, Trade,
+    AccountEvent, Adapter, Balance, BoxFuture, CancelOrdersRequest, Candle, CandleRequest, Cursor,
+    Decimal, Error, Exchange, ExchangeErrorKind, Feature, Feed, FundingPayment, FundingRate,
+    HistoryRequest, Interval, Level, MarginMode, MarginRequest, MarginSummary, Market, MarketEvent,
+    MarketInfo, MarketKind, MarketStatus, Order, OrderBook, OrderHistoryRequest, OrderRequest,
+    OrderStatus, OrderType, Overflow, Page, Position, Result, Side, Size, StreamConfig,
+    Subscription, Ticker, TimeInForce, Timestamp, Trade,
 };
 use maxt_bindings_common::{AdapterCall, AdapterReply, ForeignAdapter, ForeignDispatcher};
 use pyo3::IntoPyObjectExt;
@@ -187,6 +187,14 @@ fn order_history_request_object(
 ) -> PyResult<Py<PyAny>> {
     let wire = crate::convert::order_history_request_to_wire(py, value)?;
     model_object(py, "OrderHistoryRequest", wire)
+}
+
+fn cancel_orders_request_object(
+    py: Python<'_>,
+    value: &CancelOrdersRequest,
+) -> PyResult<Py<PyAny>> {
+    let wire = crate::convert::cancel_orders_request_to_wire(py, value)?;
+    model_object(py, "CancelOrdersRequest", wire)
 }
 
 fn history_request_object(py: Python<'_>, value: &HistoryRequest) -> PyResult<Py<PyAny>> {

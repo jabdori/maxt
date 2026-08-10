@@ -11,8 +11,9 @@ mod time;
 mod wallet;
 
 pub use account::{
-    Balance, Cursor, FundingPayment, FundingRate, MarginMode, MarginSummary, Order, OrderStatus,
-    OrderType, Page, Position, Size, TimeInForce,
+    Balance, CancelOrdersResult, CancelledOrder, Cursor, FundingPayment, FundingRate, MarginMode,
+    MarginSummary, Order, OrderCancelFailure, OrderStatus, OrderType, Page, Position, Size,
+    TimeInForce,
 };
 pub use data::{Candle, Interval, Level, OrderBook, Side, Ticker, Trade};
 pub use market::{Exchange, Market, MarketInfo, MarketKind, MarketStatus};

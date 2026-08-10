@@ -17,6 +17,7 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
         maxt.Feature.DepositHistory,
         maxt.Feature.WithdrawalHistory,
         maxt.Feature.OrderHistory,
+        maxt.Feature.Trading,
       ]);
       async markets() { return []; }
       async assetNetworks(asset) {
@@ -81,6 +82,16 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
       async orderHistory(request) {
         return new maxt.Page([await this.order(request.market)], null);
       }
+      async cancelOrders(request) {
+        return new maxt.CancelOrdersResult(
+          [new maxt.CancelledOrder(
+            request.ids[0], null, null, maxt.Timestamp.fromNanoseconds(125n),
+          )],
+          [new maxt.OrderCancelFailure(
+            null, request.ids[1], null, "order_not_found", "not found",
+          )],
+        );
+      }
     }
 
     const client = new maxt.Client(new FixtureAdapter());
@@ -106,6 +117,12 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
     const orderHistory = await client.orderHistory(
       new maxt.OrderHistoryRequest(market, [maxt.OrderStatus.Filled]),
     );
+    const cancelResult = await client.cancelOrders(
+      new maxt.CancelOrdersRequest(
+        maxt.OrderIdKind.Client,
+        ["client-1", "missing-1"],
+      ),
+    );
     return {
       exchange: client.exchange.id,
       markets: (await client.markets(maxt.MarketKind.Spot)).length,
@@ -120,6 +137,8 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
       orderByClientId: orderByClientId.id,
       ordersByIds: ordersByIds[0].id,
       orderHistory: orderHistory.items[0].id,
+      cancelledAt: cancelResult.cancelled[0].cancelledAt.nanosecondsSinceEpoch.toString(),
+      cancelFailure: cancelResult.failed[0].code,
     };
   });
 
@@ -137,5 +156,7 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
     orderByClientId: "order-1",
     ordersByIds: "order-1",
     orderHistory: "order-1",
+    cancelledAt: "125",
+    cancelFailure: "order_not_found",
   });
 });

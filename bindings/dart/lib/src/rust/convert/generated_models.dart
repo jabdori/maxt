@@ -64,6 +64,73 @@ class WireAssetNetwork {
           memoRequired == other.memoRequired;
 }
 
+class WireCancelOrdersRequest {
+  final WireOrderIdKind kind;
+  final List<String> ids;
+
+  const WireCancelOrdersRequest({required this.kind, required this.ids});
+
+  @override
+  int get hashCode => kind.hashCode ^ ids.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireCancelOrdersRequest &&
+          runtimeType == other.runtimeType &&
+          kind == other.kind &&
+          ids == other.ids;
+}
+
+class WireCancelOrdersResult {
+  final List<WireCancelledOrder> cancelled;
+  final List<WireOrderCancelFailure> failed;
+
+  const WireCancelOrdersResult({required this.cancelled, required this.failed});
+
+  @override
+  int get hashCode => cancelled.hashCode ^ failed.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireCancelOrdersResult &&
+          runtimeType == other.runtimeType &&
+          cancelled == other.cancelled &&
+          failed == other.failed;
+}
+
+class WireCancelledOrder {
+  final String orderId;
+  final String? clientId;
+  final WireMarket? market;
+  final PlatformInt64? cancelledAtNs;
+
+  const WireCancelledOrder({
+    required this.orderId,
+    this.clientId,
+    this.market,
+    this.cancelledAtNs,
+  });
+
+  @override
+  int get hashCode =>
+      orderId.hashCode ^
+      clientId.hashCode ^
+      market.hashCode ^
+      cancelledAtNs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireCancelledOrder &&
+          runtimeType == other.runtimeType &&
+          orderId == other.orderId &&
+          clientId == other.clientId &&
+          market == other.market &&
+          cancelledAtNs == other.cancelledAtNs;
+}
+
 class WireChainDestination {
   final String asset;
   final String network;
@@ -325,6 +392,41 @@ class WireExchangeTransferRequest {
           sourceNetwork == other.sourceNetwork &&
           destinationNetwork == other.destinationNetwork &&
           amount == other.amount;
+}
+
+class WireOrderCancelFailure {
+  final String? orderId;
+  final String? clientId;
+  final WireMarket? market;
+  final String? code;
+  final String? message;
+
+  const WireOrderCancelFailure({
+    this.orderId,
+    this.clientId,
+    this.market,
+    this.code,
+    this.message,
+  });
+
+  @override
+  int get hashCode =>
+      orderId.hashCode ^
+      clientId.hashCode ^
+      market.hashCode ^
+      code.hashCode ^
+      message.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireOrderCancelFailure &&
+          runtimeType == other.runtimeType &&
+          orderId == other.orderId &&
+          clientId == other.clientId &&
+          market == other.market &&
+          code == other.code &&
+          message == other.message;
 }
 
 class WireOrderHistoryRequest {

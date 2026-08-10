@@ -9,11 +9,11 @@ use std::task::{Context, Poll, Waker};
 use futures_util::stream;
 use futures_util::{Stream, StreamExt};
 use maxt::{
-    AccountEvent, AccountStream, Adapter, BoxFuture, CandleRequest, Client, Decimal, Error,
-    Exchange, Feature, Feed, HistoryRequest, Interval, MarginRequest, MarginSummary, Market,
-    MarketEvent, MarketKind, MarketStream, Order, OrderBook, OrderHistoryRequest,
-    OrderLookupRequest, OrderRequest, OrderStatus, Page, Result, Side, Size, StreamConfig,
-    Subscription, Ticker, Timestamp,
+    AccountEvent, AccountStream, Adapter, BoxFuture, CancelOrdersRequest, CancelOrdersResult,
+    CandleRequest, Client, Decimal, Error, Exchange, Feature, Feed, HistoryRequest, Interval,
+    MarginRequest, MarginSummary, Market, MarketEvent, MarketKind, MarketStream, Order, OrderBook,
+    OrderHistoryRequest, OrderLookupRequest, OrderRequest, OrderStatus, Page, Result, Side, Size,
+    StreamConfig, Subscription, Ticker, Timestamp,
 };
 use maxt_bindings_common::{AdapterCall, AdapterReply, ForeignAdapter, ForeignDispatcher};
 
@@ -176,6 +176,10 @@ async fn every_current_adapter_method_forwards_an_owned_call() {
         AdapterReply::PlaceOrder(order("placed")),
         AdapterReply::Unit,
         AdapterReply::Unit,
+        AdapterReply::CancelOrdersResult(CancelOrdersResult {
+            cancelled: vec![],
+            failed: vec![],
+        }),
         AdapterReply::Positions(vec![]),
         AdapterReply::MarginSummary(MarginSummary {
             asset: "USDT".to_string(),
@@ -205,6 +209,7 @@ async fn every_current_adapter_method_forwards_an_owned_call() {
     let config = StreamConfig::default();
     let order_request = OrderRequest::market(market.clone(), Side::Buy, Size::Base(Decimal::ONE));
     let order_lookup_request = OrderLookupRequest::exchange(["order-1"]).market(market.clone());
+    let cancel_orders_request = CancelOrdersRequest::exchange(["order-1"]);
     let history_request = HistoryRequest::new(market.clone()).limit(7);
     let order_history_request = OrderHistoryRequest::new().market(market.clone()).limit(7);
     let margin_request = MarginRequest::new(market.clone()).leverage(Decimal::from(2));
@@ -239,6 +244,7 @@ async fn every_current_adapter_method_forwards_an_owned_call() {
         .cancel_order_by_client_id(&market, "client-1")
         .await
         .unwrap();
+    adapter.cancel_orders(&cancel_orders_request).await.unwrap();
     adapter.positions(Some(&market)).await.unwrap();
     adapter.margin_summary().await.unwrap();
     adapter.funding_rates(&history_request).await.unwrap();
@@ -300,6 +306,9 @@ async fn every_current_adapter_method_forwards_an_owned_call() {
             AdapterCall::CancelOrderByClientId {
                 market: market.clone(),
                 client_id: "client-1".to_string(),
+            },
+            AdapterCall::CancelOrders {
+                request: cancel_orders_request,
             },
             AdapterCall::Positions {
                 market: Some(market.clone()),

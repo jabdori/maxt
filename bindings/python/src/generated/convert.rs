@@ -955,6 +955,76 @@ pub(crate) fn order_to_wire(
     )
 }
 
+pub(crate) fn cancelled_order_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::CancelledOrder> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::CancelledOrder {
+        order_id: required(dict, "order_id")?.extract::<String>()?,
+        client_id: optional(dict, "client_id")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        market: optional(dict, "market")?.map(|value| -> PyResult<_> { market_from_wire(&value) }).transpose()?,
+        cancelled_at: optional(dict, "cancelled_at")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
+    })
+}
+
+pub(crate) fn cancelled_order_to_wire(
+    py: Python<'_>,
+    value: &maxt::CancelledOrder,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "order_id" => &value.order_id,
+        "client_id" => &value.client_id,
+        "market" => value.market.as_ref().map(|item| market_to_wire(py, item)).transpose()?,
+        "cancelled_at" => value.cancelled_at.map(timestamp_to_wire),
+    )
+}
+
+pub(crate) fn order_cancel_failure_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::OrderCancelFailure> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::OrderCancelFailure {
+        order_id: optional(dict, "order_id")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        client_id: optional(dict, "client_id")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        market: optional(dict, "market")?.map(|value| -> PyResult<_> { market_from_wire(&value) }).transpose()?,
+        code: optional(dict, "code")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        message: optional(dict, "message")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+    })
+}
+
+pub(crate) fn order_cancel_failure_to_wire(
+    py: Python<'_>,
+    value: &maxt::OrderCancelFailure,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "order_id" => &value.order_id,
+        "client_id" => &value.client_id,
+        "market" => value.market.as_ref().map(|item| market_to_wire(py, item)).transpose()?,
+        "code" => &value.code,
+        "message" => &value.message,
+    )
+}
+
+pub(crate) fn cancel_orders_result_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::CancelOrdersResult> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::CancelOrdersResult {
+        cancelled: list_from_wire(&required(dict, "cancelled")?, cancelled_order_from_wire)?,
+        failed: list_from_wire(&required(dict, "failed")?, order_cancel_failure_from_wire)?,
+    })
+}
+
+pub(crate) fn cancel_orders_result_to_wire(
+    py: Python<'_>,
+    value: &maxt::CancelOrdersResult,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "cancelled" => list_to_wire(py, &value.cancelled, cancelled_order_to_wire)?,
+        "failed" => list_to_wire(py, &value.failed, order_cancel_failure_to_wire)?,
+    )
+}
+
 pub(crate) fn position_to_wire(
     py: Python<'_>,
     value: &maxt::Position,
@@ -1032,6 +1102,26 @@ pub(crate) fn order_lookup_request_to_wire(
         "kind" => order_id_kind_to_wire(value.kind)?,
         "ids" => &value.ids,
         "market" => value.market.as_ref().map(|item| market_to_wire(py, item)).transpose()?,
+    )
+}
+
+pub(crate) fn cancel_orders_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::CancelOrdersRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::CancelOrdersRequest {
+        kind: order_id_kind_from_wire(&required(dict, "kind")?)?,
+        ids: required(dict, "ids")?.extract::<Vec<String>>()?,
+    })
+}
+
+pub(crate) fn cancel_orders_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::CancelOrdersRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "kind" => order_id_kind_to_wire(value.kind)?,
+        "ids" => &value.ids,
     )
 }
 

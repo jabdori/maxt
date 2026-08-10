@@ -54,18 +54,20 @@ pub use client::Client;
 pub use error::{Error, ExchangeErrorKind, Result, TransferErrorKind};
 pub use feature::Feature;
 pub use request::{
-    CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest, OrderHistoryRequest,
-    OrderIdKind, OrderLookupRequest, OrderRequest, TransferHistoryRequest, WithdrawRequest,
+    CancelOrdersRequest, CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest,
+    OrderHistoryRequest, OrderIdKind, OrderLookupRequest, OrderRequest, TransferHistoryRequest,
+    WithdrawRequest,
 };
 pub use stream::{AccountStream, MarketStream};
 pub use types::{
-    AccountEvent, AssetNetwork, Balance, Candle, ChainDestination, ChainTransferRequest, Cursor,
-    Deposit, DepositAddress, DepositStatus, Exchange, ExchangeDestination, ExchangeTransferRequest,
-    Feed, FundingPayment, FundingRate, Interval, Level, MarginMode, MarginSummary, Market,
-    MarketEvent, MarketInfo, MarketKind, MarketStatus, Network, Order, OrderBook, OrderStatus,
-    OrderType, Overflow, Page, Position, Side, Size, StreamConfig, Subscription, Ticker,
-    TimeInForce, Timestamp, Trade, TransferDestination, TravelRuleRequirement, Withdrawal,
-    WithdrawalFee, WithdrawalQuote, WithdrawalStatus,
+    AccountEvent, AssetNetwork, Balance, CancelOrdersResult, CancelledOrder, Candle,
+    ChainDestination, ChainTransferRequest, Cursor, Deposit, DepositAddress, DepositStatus,
+    Exchange, ExchangeDestination, ExchangeTransferRequest, Feed, FundingPayment, FundingRate,
+    Interval, Level, MarginMode, MarginSummary, Market, MarketEvent, MarketInfo, MarketKind,
+    MarketStatus, Network, Order, OrderBook, OrderCancelFailure, OrderStatus, OrderType, Overflow,
+    Page, Position, Side, Size, StreamConfig, Subscription, Ticker, TimeInForce, Timestamp, Trade,
+    TransferDestination, TravelRuleRequirement, Withdrawal, WithdrawalFee, WithdrawalQuote,
+    WithdrawalStatus,
 };
 pub use wallet::{
     PreparedTransfer, TransferPlan, Wallet, execute_transfer_plan, prepare_chain_transfer,

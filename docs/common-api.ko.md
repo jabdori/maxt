@@ -17,7 +17,7 @@
 | 공개 스트림 | `subscribe`, `subscribe_with` |
 | 비공개 조회 | `balances`, `open_orders`, `open_orders_on`, `order`, `order_by_client_id`, `orders_by_ids`, `order_history`, `positions`, `positions_on`, `margin_summary`, `funding_payments` |
 | 비공개 스트림 | `subscribe_account`, `subscribe_account_with` |
-| 비공개 변경 | `place_order`, `cancel_order`, `cancel_order_by_client_id`, `set_margin` |
+| 비공개 변경 | `place_order`, `cancel_order`, `cancel_order_by_client_id`, `cancel_orders`, `set_margin` |
 
 공개 REST와 시장 스트림에는 인증 정보가 필요하지 않습니다. 거래소별
 `MarketKind`와 기능 지원 범위는 [거래소 지원](providers.ko.md)을 참고하세요.
@@ -177,6 +177,7 @@
 | `order_by_client_id(market, client_id)` | 주문 생성 시 지정한 ID로 주문 1건 조회 |
 | `orders_by_ids(request)` | 거래소 주문 ID 또는 사용자 지정 ID 중 한 종류를 최대 100개 조회; 찾지 못한 ID는 결과에서 빠질 수 있음 |
 | `order_history(request)` | 체결 완료 또는 취소 주문을 최신순 `Page<Order>`로 조회 |
+| `cancel_orders(request)` | 여러 주문을 비원자적으로 취소; 성공 목록과 실패 목록을 함께 반환하며 거래소별 최대 건수가 다름 |
 | `OrderRequest::size` | `Size::Base` 또는 `Size::Quote` |
 | 주문 정밀도 | `MarketInfo`에 공통 호가 단위(tick size), 수량 단위(lot size), 최소 명목가치(minimum notional) 없음 |
 | `cancel_order`, `cancel_order_by_client_id` | 유효한 거래소 응답 후 `()` 반환; 체결과의 경합 결과는 주문 조회로 확인 |

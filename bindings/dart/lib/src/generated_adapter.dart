@@ -62,6 +62,8 @@ abstract interface class GeneratedAdapterContract {
 
   Future<void> cancelOrderByClientId(Market market, String clientId);
 
+  Future<CancelOrdersResult> cancelOrders(CancelOrdersRequest request);
+
   Future<List<Position>> positions([Market? market]);
 
   Future<MarginSummary> marginSummary();
@@ -166,6 +168,10 @@ abstract base class GeneratedAdapterDefaults
 
   @override
   Future<void> cancelOrderByClientId(Market market, String clientId) =>
+      _unsupported(Feature.trading);
+
+  @override
+  Future<CancelOrdersResult> cancelOrders(CancelOrdersRequest request) =>
       _unsupported(Feature.trading);
 
   @override

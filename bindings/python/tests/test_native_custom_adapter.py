@@ -13,6 +13,9 @@ from maxt import (
     Adapter,
     AdapterError,
     Balance,
+    CancelOrdersRequest,
+    CancelOrdersResult,
+    CancelledOrder,
     Candle,
     CandleRequest,
     Client,
@@ -39,6 +42,7 @@ from maxt import (
     Order,
     OrderBook,
     OrderHistoryRequest,
+    OrderCancelFailure,
     OrderIdKind,
     OrderLookupRequest,
     OrderRequest,
@@ -195,6 +199,13 @@ class NativeReplayAdapter(Adapter):
 
     async def cancel_order(self, market: Market, order_id: str) -> None:
         self.received.append(("cancel_order", market, order_id))
+
+    async def cancel_orders(self, request: CancelOrdersRequest) -> CancelOrdersResult:
+        self.received.append(("cancel_orders", request))
+        return CancelOrdersResult(
+            [CancelledOrder("order-1", "client-1", self.market, 1_700_000_000_123_456_795)],
+            [OrderCancelFailure(None, "missing-1", None, "order_not_found", "not found")],
+        )
 
     async def positions(self, market=None) -> list[Position]:
         self.received.append(("positions", market))
@@ -425,6 +436,10 @@ class NativeCustomAdapterTests(unittest.IsolatedAsyncioTestCase):
             ["order-1", "order-2"],
             market,
         )
+        cancel_orders_request = CancelOrdersRequest(
+            OrderIdKind.CLIENT,
+            ["client-1", "missing-1"],
+        )
         order_request = OrderRequest.limit_order(
             market,
             Side.BUY,
@@ -458,6 +473,9 @@ class NativeCustomAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(order_history.next, Cursor("order-next"))
         self.assertEqual((await client.place_order(order_request)).id, "order-1")
         self.assertIsNone(await client.cancel_order(market, "order-1"))
+        cancel_result = await client.cancel_orders(cancel_orders_request)
+        self.assertEqual(cancel_result.cancelled[0].order_id, "order-1")
+        self.assertEqual(cancel_result.failed[0].code, "order_not_found")
         self.assertEqual(await client.positions(), [adapter.position])
         self.assertEqual(await client.positions_on(market), [adapter.position])
         self.assertEqual((await client.margin_summary()).equity, Decimal("1000.00"))
@@ -482,6 +500,10 @@ class NativeCustomAdapterTests(unittest.IsolatedAsyncioTestCase):
             call[1] for call in adapter.received if call[0] == "orders_by_ids"
         )
         self.assertEqual(received_lookup.to_wire(), order_lookup_request.to_wire())
+        received_cancel = next(
+            call[1] for call in adapter.received if call[0] == "cancel_orders"
+        )
+        self.assertEqual(received_cancel.to_wire(), cancel_orders_request.to_wire())
 
     async def test_market_and_account_stream_items_cross_rust(self) -> None:
         market = Market.perpetual(Exchange.BINANCE, "BTC", "USDT")

@@ -4,7 +4,10 @@
 //! provider-specific methods through [`Client::adapter`](crate::Client::adapter).
 //! See `docs/providers.md` for capabilities and credential types.
 
-use crate::{Error, OrderHistoryRequest, OrderLookupRequest, OrderStatus, Result, Timestamp};
+use crate::{
+    CancelOrdersRequest, Error, OrderHistoryRequest, OrderLookupRequest, OrderStatus, Result,
+    Timestamp,
+};
 
 mod binance;
 mod bithumb;
@@ -105,6 +108,41 @@ pub(crate) fn validate_order_lookup(request: &OrderLookupRequest) -> Result<()> 
         return Err(Error::invalid_request(
             "ids",
             "order identifiers must not be empty",
+        ));
+    }
+    Ok(())
+}
+
+/// Validates the common batch-cancellation contract before a provider call.
+pub(crate) fn validate_cancel_orders(request: &CancelOrdersRequest) -> Result<()> {
+    if request.ids.is_empty() {
+        return Err(Error::invalid_request(
+            "ids",
+            "a batch cancellation requires at least one identifier",
+        ));
+    }
+    if request.ids.iter().any(|id| id.trim().is_empty()) {
+        return Err(Error::invalid_request(
+            "ids",
+            "order identifiers must not be empty",
+        ));
+    }
+    Ok(())
+}
+
+/// Applies a provider's documented batch-cancellation limit.
+pub(crate) fn validate_cancel_order_limit(
+    request: &CancelOrdersRequest,
+    maximum: usize,
+) -> Result<()> {
+    validate_cancel_orders(request)?;
+    if request.ids.len() > maximum {
+        return Err(Error::invalid_request(
+            "ids",
+            format!(
+                "this exchange cancels at most {maximum} orders per request, not {}",
+                request.ids.len()
+            ),
         ));
     }
     Ok(())

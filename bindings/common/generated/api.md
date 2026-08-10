@@ -28,6 +28,7 @@
 | `place_order` | `placeOrder` |
 | `cancel_order` | `cancelOrder` |
 | `cancel_order_by_client_id` | `cancelOrderByClientId` |
+| `cancel_orders` | `cancelOrders` |
 | `positions` | `positions` |
 | `margin_summary` | `marginSummary` |
 | `funding_rates` | `fundingRates` |
@@ -50,12 +51,12 @@ Documentation baseline: `2026-08-10`.
 | Exchange | Product | Mapped / official | Interfaces | Encodings | Status |
 | --- | --- | ---: | --- | --- | --- |
 | upbit | Quotation | 13 / — | `http`, `websocket_stream` | `json` | Partial |
-| upbit | Exchange | 9 / — | `http`, `websocket_stream` | `json` | Partial |
+| upbit | Exchange | 10 / — | `http`, `websocket_stream` | `json` | Partial |
 | upbit | Deposits and withdrawals | 7 / — | `http` | `json` | Partial |
 | upbit | Travel Rule | 0 / — | `http` | `json` | Planned |
 | upbit | Korea pockets | 0 / — | `http` | `json` | Planned |
 | bithumb | Quotation | 12 / — | `http`, `websocket_stream` | `json` | Partial |
-| bithumb | Exchange | 9 / — | `http`, `websocket_stream` | `json` | Partial |
+| bithumb | Exchange | 10 / — | `http`, `websocket_stream` | `json` | Partial |
 | bithumb | Deposits and withdrawals | 7 / — | `http` | `json` | Partial |
 | bithumb | TWAP | 0 / — | `http` | `json` | Planned |
 | bithumb | KRW deposits and withdrawals | 0 / — | `http` | `json` | Planned |
@@ -129,6 +130,7 @@ Documentation baseline: `2026-08-10`.
 | upbit | exchange | `closed_orders` | `http` | common `order_history` | `Partial` | `Fixture` |
 | upbit | exchange | `new_order` | `http` | common `place_order` | `Partial` | `Fixture` |
 | upbit | exchange | `cancel_order` | `http` | common `cancel_order`, `cancel_order_by_client_id` | `Partial` | `Fixture` |
+| upbit | exchange | `cancel_orders_by_ids` | `http` | common `cancel_orders` | `Partial` | `Fixture` |
 | upbit | exchange | `my_order_stream` | `websocket_stream` | common `subscribe_account` | `Partial` | `Fixture` |
 | upbit | exchange | `my_asset_stream` | `websocket_stream` | common `subscribe_account` | `Partial` | `Fixture` |
 | upbit | wallet | `wallet_status` | `http` | common `asset_networks` | `Implemented` | `Fixture` |
@@ -157,6 +159,7 @@ Documentation baseline: `2026-08-10`.
 | bithumb | exchange | `closed_orders` | `http` | common `order_history` | `Partial` | `Fixture` |
 | bithumb | exchange | `new_order` | `http` | common `place_order` | `Partial` | `Fixture` |
 | bithumb | exchange | `cancel_order` | `http` | common `cancel_order`, `cancel_order_by_client_id` | `Partial` | `Fixture` |
+| bithumb | exchange | `cancel_orders` | `http` | common `cancel_orders` | `Partial` | `Fixture` |
 | bithumb | exchange | `my_order_stream` | `websocket_stream` | common `subscribe_account` | `Partial` | `Fixture` |
 | bithumb | exchange | `my_asset_stream` | `websocket_stream` | common `subscribe_account` | `Partial` | `Fixture` |
 | bithumb | wallet | `wallet_status` | `http` | common `asset_networks` | `Implemented` | `Fixture` |

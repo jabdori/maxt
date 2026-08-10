@@ -23,6 +23,7 @@ enum ReplyKind {
     AccountStream,
     PlaceOrder,
     Unit,
+    CancelOrders,
     Positions,
     MarginSummary,
     FundingRates,
@@ -162,6 +163,11 @@ fn prepare_call(
             ],
             ReplyKind::Unit,
         ),
+        AdapterCall::CancelOrders { request } => (
+            "cancel_orders",
+            vec![cancel_orders_request_object(py, &request)?],
+            ReplyKind::CancelOrders,
+        ),
         AdapterCall::Positions { market } => (
             "positions",
             vec![optional_market_object(py, market.as_ref())?],
@@ -206,6 +212,7 @@ fn decode_generated_reply(
         ReplyKind::Withdraw => Some(crate::convert::withdrawal_from_wire(value).map(AdapterReply::Withdrawal)),
         ReplyKind::Deposits => Some(page_from_wire(value, crate::convert::deposit_from_wire).map(AdapterReply::Deposits)),
         ReplyKind::Withdrawals => Some(page_from_wire(value, crate::convert::withdrawal_from_wire).map(AdapterReply::Withdrawals)),
+        ReplyKind::CancelOrders => Some(crate::convert::cancel_orders_result_from_wire(value).map(AdapterReply::CancelOrdersResult)),
         _ => None,
     }
 }

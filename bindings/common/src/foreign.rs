@@ -2,12 +2,12 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use maxt::{
-    AccountStream, Adapter, AssetNetwork, Balance, BoxFuture, Candle, CandleRequest, Deposit,
-    DepositAddress, DepositAddressRequest, Exchange, Feature, FundingPayment, FundingRate,
-    HistoryRequest, MarginRequest, MarginSummary, Market, MarketInfo, MarketKind, MarketStream,
-    Order, OrderBook, OrderHistoryRequest, OrderLookupRequest, OrderRequest, Page, Position,
-    Result, StreamConfig, Subscription, Ticker, Trade, TransferHistoryRequest, WithdrawRequest,
-    Withdrawal, WithdrawalQuote,
+    AccountStream, Adapter, AssetNetwork, Balance, BoxFuture, CancelOrdersRequest,
+    CancelOrdersResult, Candle, CandleRequest, Deposit, DepositAddress, DepositAddressRequest,
+    Exchange, Feature, FundingPayment, FundingRate, HistoryRequest, MarginRequest, MarginSummary,
+    Market, MarketInfo, MarketKind, MarketStream, Order, OrderBook, OrderHistoryRequest,
+    OrderLookupRequest, OrderRequest, Page, Position, Result, StreamConfig, Subscription, Ticker,
+    Trade, TransferHistoryRequest, WithdrawRequest, Withdrawal, WithdrawalQuote,
 };
 
 use crate::{AdapterCall, AdapterReply, ForeignDispatcher};
@@ -329,6 +329,20 @@ impl Adapter for ForeignAdapter {
                 reply => Err(unexpected_reply("Unit", &reply)),
             }
         })
+    }
+
+    fn cancel_orders(
+        &self,
+        request: &CancelOrdersRequest,
+    ) -> BoxFuture<'_, Result<CancelOrdersResult>> {
+        dispatch!(
+            self,
+            AdapterCall::CancelOrders {
+                request: request.clone(),
+            },
+            AdapterReply::CancelOrdersResult,
+            "CancelOrdersResult"
+        )
     }
 
     fn positions(&self, market: Option<&Market>) -> BoxFuture<'_, Result<Vec<Position>>> {

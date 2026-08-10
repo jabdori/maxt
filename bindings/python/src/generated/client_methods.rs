@@ -346,6 +346,20 @@ impl NativeClient {
         )
     }
 
+    fn cancel_orders<'py>(
+        &self,
+        py: Python<'py>,
+        request: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::cancel_orders_request_from_wire(request)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.cancel_orders(&request).await },
+            |py, value| crate::convert::cancel_orders_result_to_wire(py, &value),
+        )
+    }
+
     fn positions<'py>(
         &self,
         py: Python<'py>,

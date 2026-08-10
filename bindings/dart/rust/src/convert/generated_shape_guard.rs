@@ -217,6 +217,32 @@ fn _guard_order_wire(value: WireOrder) {
     } = value;
 }
 
+fn _guard_cancelled_order_wire(value: WireCancelledOrder) {
+    let WireCancelledOrder {
+        order_id: _,
+        client_id: _,
+        market: _,
+        cancelled_at_ns: _,
+    } = value;
+}
+
+fn _guard_order_cancel_failure_wire(value: WireOrderCancelFailure) {
+    let WireOrderCancelFailure {
+        order_id: _,
+        client_id: _,
+        market: _,
+        code: _,
+        message: _,
+    } = value;
+}
+
+fn _guard_cancel_orders_result_wire(value: WireCancelOrdersResult) {
+    let WireCancelOrdersResult {
+        cancelled: _,
+        failed: _,
+    } = value;
+}
+
 fn _guard_position_wire(value: WirePosition) {
     let WirePosition {
         market: _,
@@ -299,6 +325,10 @@ fn _guard_order_lookup_request_wire(value: WireOrderLookupRequest) {
         ids: _,
         market: _,
     } = value;
+}
+
+fn _guard_cancel_orders_request_wire(value: WireCancelOrdersRequest) {
+    let WireCancelOrdersRequest { kind: _, ids: _ } = value;
 }
 
 fn _guard_deposit_address_request_wire(value: WireDepositAddressRequest) {

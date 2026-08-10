@@ -49,6 +49,7 @@ void main() {
       'placeOrder': adapter.placeOrder,
       'cancelOrder': adapter.cancelOrder,
       'cancelOrderByClientId': adapter.cancelOrderByClientId,
+      'cancelOrders': adapter.cancelOrders,
       'positions': adapter.positions,
       'marginSummary': adapter.marginSummary,
       'fundingRates': adapter.fundingRates,
@@ -92,6 +93,7 @@ void main() {
       'cancelOrder': (Client<Adapter> value) => value.cancelOrder,
       'cancelOrderByClientId': (Client<Adapter> value) =>
           value.cancelOrderByClientId,
+      'cancelOrders': (Client<Adapter> value) => value.cancelOrders,
       'positions': (Client<Adapter> value) => value.positions,
       'positionsOn': (Client<Adapter> value) => value.positionsOn,
       'marginSummary': (Client<Adapter> value) => value.marginSummary,

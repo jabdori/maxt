@@ -678,6 +678,14 @@ final class DartAdapterBridge {
       adapter
           .cancelOrderByClientId(_marketFromWire(market), clientId)
           .then((_) => const native_adapter.AdapterReply.unit()),
+    native_adapter.AdapterCall_CancelOrders(:final request) =>
+      adapter
+          .cancelOrders(_cancelOrdersRequestFromWire(request))
+          .then(
+            (value) => native_adapter.AdapterReply.cancelOrders(
+              _cancelOrdersResultToWire(value),
+            ),
+          ),
     native_adapter.AdapterCall_Positions(:final market) =>
       adapter
           .positions(market == null ? null : _marketFromWire(market))
@@ -933,7 +941,8 @@ final class DartAdapterBridge {
     native_adapter.AdapterCall_OrderHistory() => Feature.orderHistory,
     native_adapter.AdapterCall_PlaceOrder() ||
     native_adapter.AdapterCall_CancelOrder() ||
-    native_adapter.AdapterCall_CancelOrderByClientId() => Feature.trading,
+    native_adapter.AdapterCall_CancelOrderByClientId() ||
+    native_adapter.AdapterCall_CancelOrders() => Feature.trading,
     native_adapter.AdapterCall_Positions() => Feature.positions,
     native_adapter.AdapterCall_MarginSummary() => Feature.margin,
     native_adapter.AdapterCall_FundingRates() => Feature.fundingRates,

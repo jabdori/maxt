@@ -45,6 +45,7 @@ Binance 테스트넷(testnet) 생성자는 제공하지 않습니다. Hyperliqui
   `place_order()`, `cancel_order()`, `subscribe_account()`
 - 비공개 주문 조회: Upbit, Bithumb의 `order()`, `order_by_client_id()`,
   `orders_by_ids()`, `order_history()`
+- 비공개 다건 취소: Upbit, Bithumb의 `cancel_orders()`
 - 비공개 무기한 선물: Binance USD-M, Hyperliquid의 `positions()`,
   `margin_summary()`, `set_margin()`, `funding_payments()`
 

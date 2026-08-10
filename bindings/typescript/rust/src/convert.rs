@@ -3,16 +3,17 @@ use maxt::adapters::{
     HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind, UpbitMarketEvent,
 };
 use maxt::{
-    AccountEvent, AssetNetwork, Balance, Candle, CandleRequest, ChainDestination,
-    ChainTransferRequest, Cursor, Decimal, Deposit, DepositAddress, DepositAddressRequest,
-    DepositStatus, Error, Exchange, ExchangeDestination, ExchangeErrorKind,
-    ExchangeTransferRequest, Feature, Feed, FundingPayment, FundingRate, HistoryRequest, Interval,
-    Level, MarginMode, MarginRequest, MarginSummary, Market, MarketEvent, MarketInfo, MarketKind,
-    MarketStatus, Network, Order, OrderBook, OrderHistoryRequest, OrderIdKind, OrderLookupRequest,
-    OrderRequest, OrderStatus, OrderType, Overflow, Page, Position, Side, Size, StreamConfig,
-    Subscription, Ticker, TimeInForce, Timestamp, Trade, TransferDestination, TransferErrorKind,
-    TransferHistoryRequest, TransferPlan, TravelRuleRequirement, WithdrawRequest, Withdrawal,
-    WithdrawalFee, WithdrawalQuote, WithdrawalStatus,
+    AccountEvent, AssetNetwork, Balance, CancelOrdersRequest, CancelOrdersResult, CancelledOrder,
+    Candle, CandleRequest, ChainDestination, ChainTransferRequest, Cursor, Decimal, Deposit,
+    DepositAddress, DepositAddressRequest, DepositStatus, Error, Exchange, ExchangeDestination,
+    ExchangeErrorKind, ExchangeTransferRequest, Feature, Feed, FundingPayment, FundingRate,
+    HistoryRequest, Interval, Level, MarginMode, MarginRequest, MarginSummary, Market, MarketEvent,
+    MarketInfo, MarketKind, MarketStatus, Network, Order, OrderBook, OrderCancelFailure,
+    OrderHistoryRequest, OrderIdKind, OrderLookupRequest, OrderRequest, OrderStatus, OrderType,
+    Overflow, Page, Position, Side, Size, StreamConfig, Subscription, Ticker, TimeInForce,
+    Timestamp, Trade, TransferDestination, TransferErrorKind, TransferHistoryRequest, TransferPlan,
+    TravelRuleRequirement, WithdrawRequest, Withdrawal, WithdrawalFee, WithdrawalQuote,
+    WithdrawalStatus,
 };
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -73,6 +74,13 @@ pub(crate) struct WireOrderLookupRequest {
     pub(crate) ids: Vec<String>,
     #[serde(deserialize_with = "explicit_option")]
     pub(crate) market: Option<WireMarket>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireCancelOrdersRequest {
+    pub(crate) kind: String,
+    pub(crate) ids: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -575,6 +583,40 @@ pub(crate) struct WireOrder {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+pub(crate) struct WireCancelledOrder {
+    pub(crate) order_id: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) client_id: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) market: Option<WireMarket>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) cancelled_at: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireOrderCancelFailure {
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) order_id: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) client_id: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) market: Option<WireMarket>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) code: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) message: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireCancelOrdersResult {
+    pub(crate) cancelled: Vec<WireCancelledOrder>,
+    pub(crate) failed: Vec<WireOrderCancelFailure>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct WirePosition {
     pub(crate) market: WireMarket,
     #[serde(deserialize_with = "explicit_option")]
@@ -901,6 +943,21 @@ impl TryFrom<WireOrderLookupRequest> for OrderLookupRequest {
     }
 }
 
+impl TryFrom<WireCancelOrdersRequest> for CancelOrdersRequest {
+    type Error = Error;
+
+    fn try_from(value: WireCancelOrdersRequest) -> Result<Self, Self::Error> {
+        match value.kind.as_str() {
+            "exchange" => Ok(Self::exchange(value.ids)),
+            "client" => Ok(Self::client(value.ids)),
+            value => Err(Error::InvalidRequest {
+                field: "kind".to_owned(),
+                detail: format!("unknown value `{value}`"),
+            }),
+        }
+    }
+}
+
 impl TryFrom<WireDepositAddressRequest> for DepositAddressRequest {
     type Error = Error;
 
@@ -1036,6 +1093,21 @@ impl TryFrom<OrderLookupRequest> for WireOrderLookupRequest {
             .to_owned(),
             ids: value.ids,
             market: value.market.map(TryInto::try_into).transpose()?,
+        })
+    }
+}
+
+impl TryFrom<CancelOrdersRequest> for WireCancelOrdersRequest {
+    type Error = Error;
+
+    fn try_from(value: CancelOrdersRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            kind: match value.kind {
+                OrderIdKind::Exchange => "exchange",
+                OrderIdKind::Client => "client",
+            }
+            .to_owned(),
+            ids: value.ids,
         })
     }
 }
@@ -2117,6 +2189,98 @@ impl TryFrom<WireOrder> for Order {
             remaining_quantity: decimal_from_wire(&value.remaining_quantity, "remaining_quantity")?,
             price: decimal_option_from_wire(value.price, "price")?,
             created_at: timestamp_option_from_wire(value.created_at, "created_at")?,
+        })
+    }
+}
+
+impl TryFrom<CancelledOrder> for WireCancelledOrder {
+    type Error = Error;
+
+    fn try_from(value: CancelledOrder) -> Result<Self, Self::Error> {
+        Ok(Self {
+            order_id: value.order_id,
+            client_id: value.client_id,
+            market: value.market.map(TryInto::try_into).transpose()?,
+            cancelled_at: timestamp_option_to_wire(value.cancelled_at),
+        })
+    }
+}
+
+impl TryFrom<WireCancelledOrder> for CancelledOrder {
+    type Error = Error;
+
+    fn try_from(value: WireCancelledOrder) -> Result<Self, Self::Error> {
+        Ok(Self {
+            order_id: value.order_id,
+            client_id: value.client_id,
+            market: value.market.map(TryInto::try_into).transpose()?,
+            cancelled_at: timestamp_option_from_wire(value.cancelled_at, "cancelled_at")?,
+        })
+    }
+}
+
+impl TryFrom<OrderCancelFailure> for WireOrderCancelFailure {
+    type Error = Error;
+
+    fn try_from(value: OrderCancelFailure) -> Result<Self, Self::Error> {
+        Ok(Self {
+            order_id: value.order_id,
+            client_id: value.client_id,
+            market: value.market.map(TryInto::try_into).transpose()?,
+            code: value.code,
+            message: value.message,
+        })
+    }
+}
+
+impl TryFrom<WireOrderCancelFailure> for OrderCancelFailure {
+    type Error = Error;
+
+    fn try_from(value: WireOrderCancelFailure) -> Result<Self, Self::Error> {
+        Ok(Self {
+            order_id: value.order_id,
+            client_id: value.client_id,
+            market: value.market.map(TryInto::try_into).transpose()?,
+            code: value.code,
+            message: value.message,
+        })
+    }
+}
+
+impl TryFrom<CancelOrdersResult> for WireCancelOrdersResult {
+    type Error = Error;
+
+    fn try_from(value: CancelOrdersResult) -> Result<Self, Self::Error> {
+        Ok(Self {
+            cancelled: value
+                .cancelled
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            failed: value
+                .failed
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+        })
+    }
+}
+
+impl TryFrom<WireCancelOrdersResult> for CancelOrdersResult {
+    type Error = Error;
+
+    fn try_from(value: WireCancelOrdersResult) -> Result<Self, Self::Error> {
+        Ok(Self {
+            cancelled: value
+                .cancelled
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            failed: value
+                .failed
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
         })
     }
 }

@@ -85,6 +85,10 @@ abstract base class GeneratedNativeDelegate extends AdapterBase {
       (await delegateAdapter).cancelOrderByClientId(market, clientId);
 
   @override
+  Future<CancelOrdersResult> cancelOrders(CancelOrdersRequest request) async =>
+      (await delegateAdapter).cancelOrders(request);
+
+  @override
   Future<List<Position>> positions([Market? market]) async =>
       (await delegateAdapter).positions(market);
 

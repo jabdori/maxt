@@ -39,16 +39,17 @@ use crate::client::NativeClient;
 use crate::convert::outcome;
 #[cfg(not(test))]
 use crate::convert::{
-    WireAccountStreamItem, WireAssetNetwork, WireBalance, WireCandle, WireDeposit,
-    WireDepositAddress, WireFundingPayment, WireFundingRate, WireMarginSummary, WireMarketInfo,
-    WireMarketStreamItem, WireOrder, WireOrderBook, WirePage, WirePosition, WireTicker, WireTrade,
-    WireWithdrawal, WireWithdrawalQuote,
+    WireAccountStreamItem, WireAssetNetwork, WireBalance, WireCancelOrdersResult, WireCandle,
+    WireDeposit, WireDepositAddress, WireFundingPayment, WireFundingRate, WireMarginSummary,
+    WireMarketInfo, WireMarketStreamItem, WireOrder, WireOrderBook, WirePage, WirePosition,
+    WireTicker, WireTrade, WireWithdrawal, WireWithdrawalQuote,
 };
 use crate::convert::{
-    WireCandleRequest, WireDepositAddressRequest, WireError, WireHistoryRequest, WireMarginRequest,
-    WireMarket, WireOrderHistoryRequest, WireOrderLookupRequest, WireOrderRequest,
-    WireStreamConfig, WireSubscription, WireTransferHistoryRequest, WireWithdrawRequest,
-    feature_from_id, from_wire_text, from_wire_value,
+    WireCancelOrdersRequest, WireCandleRequest, WireDepositAddressRequest, WireError,
+    WireHistoryRequest, WireMarginRequest, WireMarket, WireOrderHistoryRequest,
+    WireOrderLookupRequest, WireOrderRequest, WireStreamConfig, WireSubscription,
+    WireTransferHistoryRequest, WireWithdrawRequest, feature_from_id, from_wire_text,
+    from_wire_value,
 };
 
 #[derive(Debug, Serialize)]
@@ -127,6 +128,9 @@ enum WireAdapterCall {
         market: WireMarket,
         client_id: String,
     },
+    CancelOrders {
+        request: WireCancelOrdersRequest,
+    },
     Positions {
         market: Option<WireMarket>,
     },
@@ -165,6 +169,7 @@ enum WireAdapterReply {
     OrderHistory { value: WirePage<WireOrder> },
     AccountStream { stream_id: String },
     PlaceOrder { value: WireOrder },
+    CancelOrders { value: WireCancelOrdersResult },
     Positions { value: Vec<WirePosition> },
     MarginSummary { value: WireMarginSummary },
     FundingRates { value: WirePage<WireFundingRate> },
@@ -252,6 +257,9 @@ fn call_to_wire(call: AdapterCall, stream_id: Option<String>) -> maxt::Result<Wi
                 client_id,
             })
         }
+        AdapterCall::CancelOrders { request } => Ok(WireAdapterCall::CancelOrders {
+            request: request.try_into()?,
+        }),
         AdapterCall::Positions { market } => Ok(WireAdapterCall::Positions {
             market: market.map(TryInto::try_into).transpose()?,
         }),
@@ -617,6 +625,9 @@ impl JsForeignDispatcher {
             }
             WireAdapterReply::PlaceOrder { value } => {
                 value.try_into().map(AdapterReply::PlaceOrder)
+            }
+            WireAdapterReply::CancelOrders { value } => {
+                value.try_into().map(AdapterReply::CancelOrdersResult)
             }
             WireAdapterReply::Positions { value } => value
                 .into_iter()

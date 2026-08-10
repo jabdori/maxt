@@ -646,6 +646,107 @@ impl TryFrom<WireDeposit> for maxt::Deposit {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireCancelledOrder {
+    pub order_id: String,
+    pub client_id: Option<String>,
+    pub market: Option<WireMarket>,
+    pub cancelled_at_ns: Option<i64>,
+}
+
+impl From<maxt::CancelledOrder> for WireCancelledOrder {
+    fn from(value: maxt::CancelledOrder) -> Self {
+        Self {
+            order_id: value.order_id,
+            client_id: value.client_id,
+            market: value.market.map(Into::into),
+            cancelled_at_ns: value.cancelled_at.map(timestamp_to_wire),
+        }
+    }
+}
+
+impl TryFrom<WireCancelledOrder> for maxt::CancelledOrder {
+    type Error = NativeError;
+
+    fn try_from(value: WireCancelledOrder) -> Result<Self, Self::Error> {
+        Ok(Self {
+            order_id: value.order_id,
+            client_id: value.client_id,
+            market: value.market.map(Into::into),
+            cancelled_at: value.cancelled_at_ns.map(Timestamp::from_nanos),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireOrderCancelFailure {
+    pub order_id: Option<String>,
+    pub client_id: Option<String>,
+    pub market: Option<WireMarket>,
+    pub code: Option<String>,
+    pub message: Option<String>,
+}
+
+impl From<maxt::OrderCancelFailure> for WireOrderCancelFailure {
+    fn from(value: maxt::OrderCancelFailure) -> Self {
+        Self {
+            order_id: value.order_id,
+            client_id: value.client_id,
+            market: value.market.map(Into::into),
+            code: value.code,
+            message: value.message,
+        }
+    }
+}
+
+impl TryFrom<WireOrderCancelFailure> for maxt::OrderCancelFailure {
+    type Error = NativeError;
+
+    fn try_from(value: WireOrderCancelFailure) -> Result<Self, Self::Error> {
+        Ok(Self {
+            order_id: value.order_id,
+            client_id: value.client_id,
+            market: value.market.map(Into::into),
+            code: value.code,
+            message: value.message,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireCancelOrdersResult {
+    pub cancelled: Vec<WireCancelledOrder>,
+    pub failed: Vec<WireOrderCancelFailure>,
+}
+
+impl From<maxt::CancelOrdersResult> for WireCancelOrdersResult {
+    fn from(value: maxt::CancelOrdersResult) -> Self {
+        Self {
+            cancelled: value.cancelled.into_iter().map(Into::into).collect(),
+            failed: value.failed.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl TryFrom<WireCancelOrdersResult> for maxt::CancelOrdersResult {
+    type Error = NativeError;
+
+    fn try_from(value: WireCancelOrdersResult) -> Result<Self, Self::Error> {
+        Ok(Self {
+            cancelled: value
+                .cancelled
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            failed: value
+                .failed
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireOrderLookupRequest {
     pub kind: WireOrderIdKind,
     pub ids: Vec<String>,
@@ -670,6 +771,32 @@ impl TryFrom<WireOrderLookupRequest> for maxt::OrderLookupRequest {
             kind: value.kind.into(),
             ids: value.ids,
             market: value.market.map(Into::into),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireCancelOrdersRequest {
+    pub kind: WireOrderIdKind,
+    pub ids: Vec<String>,
+}
+
+impl From<maxt::CancelOrdersRequest> for WireCancelOrdersRequest {
+    fn from(value: maxt::CancelOrdersRequest) -> Self {
+        Self {
+            kind: value.kind.into(),
+            ids: value.ids,
+        }
+    }
+}
+
+impl TryFrom<WireCancelOrdersRequest> for maxt::CancelOrdersRequest {
+    type Error = NativeError;
+
+    fn try_from(value: WireCancelOrdersRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            kind: value.kind.into(),
+            ids: value.ids,
         })
     }
 }

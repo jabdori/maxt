@@ -293,6 +293,13 @@ abstract base class _NativeAdapterBase
       );
 
   @override
+  Future<CancelOrdersResult> cancelOrders(CancelOrdersRequest request) =>
+      _nativeFuture(
+        () =>
+            _handle.cancelOrders(request: _cancelOrdersRequestToWire(request)),
+      ).then(_cancelOrdersResultFromWire);
+
+  @override
   Future<List<Position>> positions([Market? market]) => _nativeFuture(
     () => _handle.positions(
       market: market == null ? null : _marketToWire(market),

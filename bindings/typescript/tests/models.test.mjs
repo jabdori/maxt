@@ -4,6 +4,9 @@ import test from "node:test";
 import {
   Balance,
   BinanceMarket,
+  CancelOrdersRequest,
+  CancelOrdersResult,
+  CancelledOrder,
   ChainDestination,
   CandleRequest,
   Decimal,
@@ -19,6 +22,7 @@ import {
   MarketKind,
   Network,
   OrderBook,
+  OrderCancelFailure,
   OrderIdKind,
   OrderLookupRequest,
   OrderRequest,
@@ -43,6 +47,10 @@ import { InvalidRequestError } from "../dist/errors.js";
 import {
   assetNetworkFromWire,
   assetNetworkToWire,
+  cancelOrdersRequestFromWire,
+  cancelOrdersRequestToWire,
+  cancelOrdersResultFromWire,
+  cancelOrdersResultToWire,
   depositFromWire,
   depositToWire,
   orderRequestFromWire,
@@ -165,6 +173,24 @@ test("bulk order lookup preserves one identifier namespace", () => {
   assert.equal(wire.kind, "client");
   assert.deepEqual(wire.ids, ["client-1", "client-2"]);
   assert.deepEqual(orderLookupRequestToWire(orderLookupRequestFromWire(wire)), wire);
+});
+
+test("batch cancellation preserves per-order outcomes and immutable inputs", () => {
+  const ids = ["client-1", "missing-1"];
+  const request = new CancelOrdersRequest(OrderIdKind.Client, ids);
+  const result = new CancelOrdersResult(
+    [new CancelledOrder("order-1", "client-1", null, Timestamp.fromNanoseconds(1n))],
+    [new OrderCancelFailure(null, "missing-1", null, "order_not_found", "not found")],
+  );
+  ids.length = 0;
+
+  const requestWire = cancelOrdersRequestToWire(request);
+  const resultWire = cancelOrdersResultToWire(result);
+  assert.deepEqual(request.ids, ["client-1", "missing-1"]);
+  assert.equal(Object.isFrozen(request.ids), true);
+  assert.equal(Object.isFrozen(result.cancelled), true);
+  assert.deepEqual(cancelOrdersRequestToWire(cancelOrdersRequestFromWire(requestWire)), requestWire);
+  assert.deepEqual(cancelOrdersResultToWire(cancelOrdersResultFromWire(resultWire)), resultWire);
 });
 
 test("wallet unions, statuses, open networks, and pages preserve the wire contract", () => {

@@ -31,6 +31,8 @@ final class FullContractAdapter extends AdapterBase {
   StreamConfig? accountConfig;
   OrderRequest? placedRequest;
   (Market, String)? cancelledOrder;
+  CancelOrdersRequest? cancelOrdersRequest;
+  int cancelOrdersCount = 0;
   Market? positionsMarket;
   HistoryRequest? rateRequest;
   HistoryRequest? paymentRequest;
@@ -193,6 +195,29 @@ final class FullContractAdapter extends AdapterBase {
   @override
   Future<void> cancelOrder(Market market, String orderId) async {
     cancelledOrder = (market, orderId);
+  }
+
+  @override
+  Future<CancelOrdersResult> cancelOrders(CancelOrdersRequest request) async {
+    cancelOrdersCount++;
+    cancelOrdersRequest = request;
+    return CancelOrdersResult(
+      cancelled: [
+        CancelledOrder(
+          orderId: 'order-1',
+          clientId: 'client-1',
+          market: market,
+          cancelledAt: timestamp,
+        ),
+      ],
+      failed: const [
+        OrderCancelFailure(
+          clientId: 'missing-1',
+          code: 'order_not_found',
+          message: 'not found',
+        ),
+      ],
+    );
   }
 
   @override
@@ -371,6 +396,22 @@ void main() {
 
     await client.cancelOrder(market, 'order-1');
     expect(adapter.cancelledOrder, (market, 'order-1'));
+    final cancelRequest = CancelOrdersRequest(
+      kind: OrderIdKind.client,
+      ids: const ['client-1', 'missing-1'],
+    );
+    final cancelResult = await client.cancelOrders(cancelRequest);
+    expect(cancelResult.cancelled.single.orderId, 'order-1');
+    expect(cancelResult.cancelled.single.cancelledAt, timestamp);
+    expect(cancelResult.failed.single.code, 'order_not_found');
+    expect(adapter.cancelOrdersRequest?.ids, const ['client-1', 'missing-1']);
+    await expectLater(
+      client.cancelOrders(
+        const CancelOrdersRequest(kind: OrderIdKind.exchange, ids: []),
+      ),
+      throwsA(isA<InvalidRequestError>()),
+    );
+    expect(adapter.cancelOrdersCount, 1);
 
     final position = (await client.positionsOn(market)).single;
     expect(position.quantity, Decimal.parse('0.500'));

@@ -47,6 +47,7 @@ and outcome assets are not exposed.
   and `subscribeAccount()` on every exchange.
 - Private order lookup: `order()`, `orderByClientId()`, `ordersByIds()`, and
   `orderHistory()` on Upbit and Bithumb.
+- Private batch cancellation: `cancelOrders()` on Upbit and Bithumb.
 - Private perpetuals: `positions()`, `marginSummary()`, `setMargin()`, and
   `fundingPayments()` on Binance USD-M and Hyperliquid.
 

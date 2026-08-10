@@ -1411,6 +1411,7 @@ fn render_native_method(operation: &Operation) -> String {
             ApiType::Named(
                 "OrderRequest"
                 | "OrderLookupRequest"
+                | "CancelOrdersRequest"
                 | "OrderHistoryRequest"
                 | "MarginRequest"
                 | "DepositAddressRequest"
@@ -1478,6 +1479,7 @@ fn native_call_argument(argument: &Argument) -> String {
         ApiType::Named(
             "OrderRequest"
             | "OrderLookupRequest"
+            | "CancelOrdersRequest"
             | "OrderHistoryRequest"
             | "MarginRequest"
             | "DepositAddressRequest"
@@ -2132,6 +2134,9 @@ fn render_client_method(
         "ordersByIds" => {
             " async {\n    if (request.ids.isEmpty || request.ids.length > 100) {\n      throw InvalidRequestError(\n        field: 'ids',\n        detail:\n            'an order lookup requires 1 to 100 identifiers, not ${request.ids.length}',\n      );\n    }\n    if (request.ids.any((id) => id.trim().isEmpty)) {\n      throw const InvalidRequestError(\n        field: 'ids',\n        detail: 'order identifiers must not be empty',\n      );\n    }\n    return _native.ordersByIds(request);\n  }"
         }
+        "cancelOrders" => {
+            " async {\n    if (request.ids.isEmpty) {\n      throw const InvalidRequestError(\n        field: 'ids',\n        detail: 'a batch cancellation requires at least one identifier',\n      );\n    }\n    if (request.ids.any((id) => id.trim().isEmpty)) {\n      throw const InvalidRequestError(\n        field: 'ids',\n        detail: 'order identifiers must not be empty',\n      );\n    }\n    return _native.cancelOrders(request);\n  }"
+        }
         "subscribeAccount" => " =>\n      subscribeAccountWith(defaultStreamConfig());",
         "subscribeAccountWith" => {
             " async {\n    validateStreamConfigIntegers(config);\n    return _native.subscribeAccount(config);\n  }"
@@ -2406,6 +2411,7 @@ mod tests {
         assert!(client.contains("return _native.withdrawals(request);"));
         assert!(client.contains("validateStreamConfigIntegers(config)"));
         assert!(client.contains("an order lookup requires 1 to 100 identifiers"));
+        assert!(client.contains("a batch cancellation requires at least one identifier"));
         assert!(client.contains("order identifiers must not be empty"));
     }
 

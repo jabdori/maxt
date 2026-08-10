@@ -241,6 +241,11 @@ const ORDER_LOOKUP_REQUEST: &[Argument] = &[argument(
     ApiType::Named("OrderLookupRequest"),
     None,
 )];
+const CANCEL_ORDERS_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("CancelOrdersRequest"),
+    None,
+)];
 const ASSET: &[Argument] = &[argument("asset", ApiType::String, None)];
 const DEPOSIT_ADDRESS_REQUEST: &[Argument] = &[argument(
     "request",
@@ -413,6 +418,11 @@ const CLIENT_CANCEL_ORDER_BY_CLIENT_ID: &[ClientMethod] = &[ClientMethod {
     name: "cancelOrderByClientId",
     native_name: "cancelOrderByClientId",
     arguments: CANCEL_ORDER_BY_CLIENT_ID,
+}];
+const CLIENT_CANCEL_ORDERS: &[ClientMethod] = &[ClientMethod {
+    name: "cancelOrders",
+    native_name: "cancelOrders",
+    arguments: CANCEL_ORDERS_REQUEST,
 }];
 const CLIENT_POSITIONS: &[ClientMethod] = &[
     ClientMethod {
@@ -625,6 +635,14 @@ const ADAPTER_OPERATIONS: &[Operation] = &[
         client_methods: CLIENT_CANCEL_ORDER_BY_CLIENT_ID,
     },
     Operation {
+        rust_name: "cancel_orders",
+        language_name: "cancelOrders",
+        feature: "trading",
+        arguments: CANCEL_ORDERS_REQUEST,
+        result: ApiType::Named("CancelOrdersResult"),
+        client_methods: CLIENT_CANCEL_ORDERS,
+    },
+    Operation {
         rust_name: "positions",
         language_name: "positions",
         feature: "positions",
@@ -719,6 +737,7 @@ const CLIENT_MEMBERS: &[&str] = &[
     "placeOrder",
     "cancelOrder",
     "cancelOrderByClientId",
+    "cancelOrders",
     "positions",
     "positionsOn",
     "marginSummary",
@@ -993,6 +1012,9 @@ const MODELS: &[&str] = &[
     "Withdrawal",
     "Deposit",
     "Order",
+    "CancelledOrder",
+    "OrderCancelFailure",
+    "CancelOrdersResult",
     "Position",
     "MarginSummary",
     "FundingRate",
@@ -1000,6 +1022,7 @@ const MODELS: &[&str] = &[
     "CandleRequest",
     "OrderRequest",
     "OrderLookupRequest",
+    "CancelOrdersRequest",
     "OrderHistoryRequest",
     "DepositAddressRequest",
     "WithdrawRequest",
@@ -1561,6 +1584,32 @@ pub fn binding_schema() -> Schema {
             ],
         ),
         record(
+            "CancelledOrderWire",
+            vec![
+                field("order_id", Type::String),
+                field("client_id", Type::optional(Type::String)),
+                field("market", Type::optional(market.clone())),
+                field("cancelled_at", Type::optional(timestamp.clone())),
+            ],
+        ),
+        record(
+            "OrderCancelFailureWire",
+            vec![
+                field("order_id", Type::optional(Type::String)),
+                field("client_id", Type::optional(Type::String)),
+                field("market", Type::optional(market.clone())),
+                field("code", Type::optional(Type::String)),
+                field("message", Type::optional(Type::String)),
+            ],
+        ),
+        record(
+            "CancelOrdersResultWire",
+            vec![
+                field("cancelled", Type::list(Type::named("CancelledOrderWire"))),
+                field("failed", Type::list(Type::named("OrderCancelFailureWire"))),
+            ],
+        ),
+        record(
             "PositionWire",
             vec![
                 field("market", market.clone()),
@@ -1648,6 +1697,13 @@ pub fn binding_schema() -> Schema {
                 field("kind", Type::Identifier("OrderIdKind")),
                 field("ids", Type::list(Type::String)),
                 field("market", Type::optional(market.clone())),
+            ],
+        ),
+        record(
+            "CancelOrdersRequestWire",
+            vec![
+                field("kind", Type::Identifier("OrderIdKind")),
+                field("ids", Type::list(Type::String)),
             ],
         ),
         record(
@@ -2085,6 +2141,10 @@ pub fn binding_schema() -> Schema {
                     ],
                 ),
                 variant(
+                    "cancel_orders",
+                    vec![field("request", Type::named("CancelOrdersRequestWire"))],
+                ),
+                variant(
                     "positions",
                     vec![field("market", Type::optional(Type::named("MarketWire")))],
                 ),
@@ -2172,6 +2232,10 @@ pub fn binding_schema() -> Schema {
                     vec![field("value", Type::named("OrderWire"))],
                 ),
                 variant(
+                    "cancel_orders",
+                    vec![field("value", Type::named("CancelOrdersResultWire"))],
+                ),
+                variant(
                     "positions",
                     vec![field("value", Type::list(Type::named("PositionWire")))],
                 ),
@@ -2193,7 +2257,7 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
-        native_api_version: 5,
+        native_api_version: 6,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
         identifiers: IDENTIFIERS,

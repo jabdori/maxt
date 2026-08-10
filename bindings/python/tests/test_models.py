@@ -5,6 +5,9 @@ import maxt
 import maxt.models as maxt_models
 from maxt import (
     Balance,
+    CancelOrdersRequest,
+    CancelOrdersResult,
+    CancelledOrder,
     ChainDestination,
     Candle,
     CandleRequest,
@@ -28,6 +31,7 @@ from maxt import (
     Order,
     OrderBook,
     OrderHistoryRequest,
+    OrderCancelFailure,
     OrderIdKind,
     OrderLookupRequest,
     OrderRequest,
@@ -124,6 +128,16 @@ class WireModelTests(unittest.TestCase):
                 "market": market.to_wire(),
             },
         )
+
+    def test_batch_cancel_models_preserve_partial_failures(self) -> None:
+        request = CancelOrdersRequest(OrderIdKind.CLIENT, ["client-1"])
+        result = CancelOrdersResult(
+            [CancelledOrder("order-1", "client-1", None, 123)],
+            [OrderCancelFailure(None, "missing-1", None, "not_found", "missing")],
+        )
+
+        self.assertEqual(request.to_wire(), {"kind": "client", "ids": ["client-1"]})
+        self.assertEqual(result.to_wire()["failed"][0]["code"], "not_found")
 
     def test_intervals_report_fixed_lengths_and_advance_without_overflow(self) -> None:
         self.assertEqual(

@@ -278,10 +278,39 @@ class Deposit(WireModel):
 
 
 @dataclass(frozen=True)
+class CancelledOrder(WireModel):
+    order_id: str
+    client_id: Optional[str] = None
+    market: Optional[Market] = None
+    cancelled_at: Optional[Timestamp] = None
+
+
+@dataclass(frozen=True)
+class OrderCancelFailure(WireModel):
+    order_id: Optional[str] = None
+    client_id: Optional[str] = None
+    market: Optional[Market] = None
+    code: Optional[str] = None
+    message: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class CancelOrdersResult(WireModel):
+    cancelled: list[CancelledOrder]
+    failed: list[OrderCancelFailure]
+
+
+@dataclass(frozen=True)
 class OrderLookupRequest(WireModel):
     kind: OrderIdKind
     ids: list[str]
     market: Optional[Market] = None
+
+
+@dataclass(frozen=True)
+class CancelOrdersRequest(WireModel):
+    kind: OrderIdKind
+    ids: list[str]
 
 
 @dataclass(frozen=True)
@@ -342,7 +371,11 @@ __all__ = [
     "TransferPlan",
     "Withdrawal",
     "Deposit",
+    "CancelledOrder",
+    "OrderCancelFailure",
+    "CancelOrdersResult",
     "OrderLookupRequest",
+    "CancelOrdersRequest",
     "OrderHistoryRequest",
     "DepositAddressRequest",
     "WithdrawRequest",

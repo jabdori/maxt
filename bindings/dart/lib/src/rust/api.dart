@@ -140,6 +140,10 @@ abstract class NativeClient implements RustOpaqueInterface {
     required String clientId,
   });
 
+  Future<WireCancelOrdersResult> cancelOrders({
+    required WireCancelOrdersRequest request,
+  });
+
   Future<List<WireCandle>> candles({required WireCandleRequest request});
 
   Future<WireDepositAddress> depositAddress({

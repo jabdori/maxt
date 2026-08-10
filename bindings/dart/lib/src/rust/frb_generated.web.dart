@@ -236,6 +236,16 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireBinanceVenue dco_decode_box_autoadd_wire_binance_venue(dynamic raw);
 
   @protected
+  WireCancelOrdersRequest dco_decode_box_autoadd_wire_cancel_orders_request(
+    dynamic raw,
+  );
+
+  @protected
+  WireCancelOrdersResult dco_decode_box_autoadd_wire_cancel_orders_result(
+    dynamic raw,
+  );
+
+  @protected
   WireCandle dco_decode_box_autoadd_wire_candle(dynamic raw);
 
   @protected
@@ -417,6 +427,9 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  List<WireCancelledOrder> dco_decode_list_wire_cancelled_order(dynamic raw);
+
+  @protected
   List<WireCandle> dco_decode_list_wire_candle(dynamic raw);
 
   @protected
@@ -452,6 +465,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   List<WireOrderBook> dco_decode_list_wire_order_book(dynamic raw);
+
+  @protected
+  List<WireOrderCancelFailure> dco_decode_list_wire_order_cancel_failure(
+    dynamic raw,
+  );
 
   @protected
   List<WireOrderStatus> dco_decode_list_wire_order_status(dynamic raw);
@@ -592,6 +610,15 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireBithumbMarketWarning dco_decode_wire_bithumb_market_warning(dynamic raw);
 
   @protected
+  WireCancelOrdersRequest dco_decode_wire_cancel_orders_request(dynamic raw);
+
+  @protected
+  WireCancelOrdersResult dco_decode_wire_cancel_orders_result(dynamic raw);
+
+  @protected
+  WireCancelledOrder dco_decode_wire_cancelled_order(dynamic raw);
+
+  @protected
   WireCandle dco_decode_wire_candle(dynamic raw);
 
   @protected
@@ -713,6 +740,9 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireOrderBook dco_decode_wire_order_book(dynamic raw);
+
+  @protected
+  WireOrderCancelFailure dco_decode_wire_order_cancel_failure(dynamic raw);
 
   @protected
   WireOrderHistoryRequest dco_decode_wire_order_history_request(dynamic raw);
@@ -998,6 +1028,16 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireCancelOrdersRequest sse_decode_box_autoadd_wire_cancel_orders_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireCancelOrdersResult sse_decode_box_autoadd_wire_cancel_orders_result(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireCandle sse_decode_box_autoadd_wire_candle(SseDeserializer deserializer);
 
   @protected
@@ -1229,6 +1269,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  List<WireCancelledOrder> sse_decode_list_wire_cancelled_order(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<WireCandle> sse_decode_list_wire_candle(SseDeserializer deserializer);
 
   @protected
@@ -1270,6 +1315,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   List<WireOrderBook> sse_decode_list_wire_order_book(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<WireOrderCancelFailure> sse_decode_list_wire_order_cancel_failure(
     SseDeserializer deserializer,
   );
 
@@ -1442,6 +1492,21 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireCancelOrdersRequest sse_decode_wire_cancel_orders_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireCancelOrdersResult sse_decode_wire_cancel_orders_result(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireCancelledOrder sse_decode_wire_cancelled_order(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireCandle sse_decode_wire_candle(SseDeserializer deserializer);
 
   @protected
@@ -1591,6 +1656,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireOrderBook sse_decode_wire_order_book(SseDeserializer deserializer);
+
+  @protected
+  WireOrderCancelFailure sse_decode_wire_order_cancel_failure(
+    SseDeserializer deserializer,
+  );
 
   @protected
   WireOrderHistoryRequest sse_decode_wire_order_history_request(
@@ -1941,6 +2011,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_wire_cancel_orders_request(
+    WireCancelOrdersRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_cancel_orders_result(
+    WireCancelOrdersResult self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_wire_candle(
     WireCandle self,
     SseSerializer serializer,
@@ -2235,6 +2317,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_list_wire_cancelled_order(
+    List<WireCancelledOrder> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_wire_candle(
     List<WireCandle> self,
     SseSerializer serializer,
@@ -2300,6 +2388,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_list_wire_order_book(
     List<WireOrderBook> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_wire_order_cancel_failure(
+    List<WireOrderCancelFailure> self,
     SseSerializer serializer,
   );
 
@@ -2520,6 +2614,24 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_wire_cancel_orders_request(
+    WireCancelOrdersRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_cancel_orders_result(
+    WireCancelOrdersResult self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_cancelled_order(
+    WireCancelledOrder self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_candle(WireCandle self, SseSerializer serializer);
 
   @protected
@@ -2710,6 +2822,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   void sse_encode_wire_order_book(WireOrderBook self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_wire_order_cancel_failure(
+    WireOrderCancelFailure self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_wire_order_history_request(

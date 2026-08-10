@@ -17,14 +17,14 @@ use serde_json::Value;
 use wasm_bindgen::prelude::*;
 
 use crate::convert::{
-    WireAssetNetwork, WireBalance, WireCandle, WireCandleRequest, WireChainTransferRequest,
-    WireDeposit, WireDepositAddress, WireDepositAddressRequest, WireExchangeTransferRequest,
-    WireFundingPayment, WireFundingRate, WireHistoryRequest, WireMarginRequest, WireMarginSummary,
-    WireMarket, WireMarketInfo, WireOrder, WireOrderBook, WireOrderHistoryRequest,
-    WireOrderLookupRequest, WireOrderRequest, WirePage, WirePosition, WireStreamConfig,
-    WireSubscription, WireTicker, WireTrade, WireTransferHistoryRequest, WireTransferPlan,
-    WireWithdrawRequest, WireWithdrawal, WireWithdrawalQuote, feature_from_id, from_wire_text,
-    market_kind_from_wire, outcome,
+    WireAssetNetwork, WireBalance, WireCancelOrdersRequest, WireCancelOrdersResult, WireCandle,
+    WireCandleRequest, WireChainTransferRequest, WireDeposit, WireDepositAddress,
+    WireDepositAddressRequest, WireExchangeTransferRequest, WireFundingPayment, WireFundingRate,
+    WireHistoryRequest, WireMarginRequest, WireMarginSummary, WireMarket, WireMarketInfo,
+    WireOrder, WireOrderBook, WireOrderHistoryRequest, WireOrderLookupRequest, WireOrderRequest,
+    WirePage, WirePosition, WireStreamConfig, WireSubscription, WireTicker, WireTrade,
+    WireTransferHistoryRequest, WireTransferPlan, WireWithdrawRequest, WireWithdrawal,
+    WireWithdrawalQuote, feature_from_id, from_wire_text, market_kind_from_wire, outcome,
 };
 use crate::stream::NativeStreamRegistry;
 
@@ -318,6 +318,15 @@ impl NativeClient {
                     .map(|()| Value::Null),
             ),
             (Err(error), _) | (_, Err(error)) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn cancel_orders(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<maxt::CancelOrdersRequest, WireCancelOrdersRequest>(request, "request") {
+            Ok(request) => outcome(wire_one::<_, WireCancelOrdersResult>(
+                self.inner.cancel_orders(&request).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
         }
     }
 
@@ -740,6 +749,17 @@ impl NativeClient {
         })
     }
 
+    #[napi(js_name = "cancelOrders", ts_args_type = "request: string")]
+    pub fn cancel_orders_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { client.cancel_orders(request).await })
+    }
+
     #[napi(js_name = "positionsOn", ts_args_type = "market: string")]
     pub fn positions_on_native<'env>(
         &self,
@@ -1018,6 +1038,11 @@ impl NativeClient {
         )
     }
 
+    #[wasm_bindgen(js_name = "cancelOrders")]
+    pub async fn cancel_orders_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.cancel_orders(Ok(request)).await)
+    }
+
     #[wasm_bindgen(js_name = "positionsOn")]
     pub async fn positions_on_wasm(&self, market: String) -> JsValue {
         crate::web::value(self.positions_on(Ok(market)).await)
@@ -1140,10 +1165,11 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     use maxt::{
-        AccountEvent, AccountStream, Adapter, AssetNetwork, Balance, BoxFuture, Candle,
-        CandleRequest, Decimal, Deposit, DepositAddress, DepositAddressRequest, Exchange, Feature,
-        FundingPayment, FundingRate, HistoryRequest, MarginRequest, MarginSummary, Market,
-        MarketEvent, MarketInfo, MarketKind, MarketStream, Order, OrderBook, OrderHistoryRequest,
+        AccountEvent, AccountStream, Adapter, AssetNetwork, Balance, BoxFuture,
+        CancelOrdersRequest, CancelOrdersResult, CancelledOrder, Candle, CandleRequest, Decimal,
+        Deposit, DepositAddress, DepositAddressRequest, Exchange, Feature, FundingPayment,
+        FundingRate, HistoryRequest, MarginRequest, MarginSummary, Market, MarketEvent, MarketInfo,
+        MarketKind, MarketStream, Order, OrderBook, OrderCancelFailure, OrderHistoryRequest,
         OrderLookupRequest, OrderRequest, OrderStatus, Page, Position, Side, StreamConfig,
         Subscription, Ticker, Timestamp, Trade, TransferHistoryRequest, TravelRuleRequirement,
         WithdrawRequest, Withdrawal, WithdrawalQuote, WithdrawalStatus,
@@ -1420,6 +1446,31 @@ mod tests {
             Box::pin(async { Ok(()) })
         }
 
+        fn cancel_orders(
+            &self,
+            _request: &CancelOrdersRequest,
+        ) -> BoxFuture<'_, maxt::Result<CancelOrdersResult>> {
+            self.calls.lock().unwrap().push("cancel_orders");
+            let market = Market::spot(Exchange::Binance, "BTC", "USDT");
+            Box::pin(async move {
+                Ok(CancelOrdersResult {
+                    cancelled: vec![CancelledOrder {
+                        order_id: "order-1".to_owned(),
+                        client_id: Some("client-1".to_owned()),
+                        market: Some(market),
+                        cancelled_at: Some(Timestamp::from_nanos(1)),
+                    }],
+                    failed: vec![OrderCancelFailure {
+                        order_id: None,
+                        client_id: Some("missing-1".to_owned()),
+                        market: None,
+                        code: Some("order_not_found".to_owned()),
+                        message: Some("not found".to_owned()),
+                    }],
+                })
+            })
+        }
+
         fn margin_summary(&self) -> BoxFuture<'_, maxt::Result<MarginSummary>> {
             self.calls.lock().unwrap().push("margin_summary");
             Box::pin(async {
@@ -1655,6 +1706,10 @@ mod tests {
             "ids": ["order-1"],
             "market": market
         });
+        let cancel_orders_request = serde_json::json!({
+            "kind": "client",
+            "ids": ["client-1", "missing-1"]
+        });
         let margin_request = serde_json::json!({
             "market": market,
             "leverage": "10.0",
@@ -1747,6 +1802,7 @@ mod tests {
                     json_text(serde_json::json!("client-1")),
                 )
                 .await,
+            client.cancel_orders(json_text(cancel_orders_request)).await,
             client.positions().await,
             client.positions_on(json_text(market)).await,
             client.margin_summary().await,
@@ -1757,6 +1813,7 @@ mod tests {
             client.set_margin(json_text(margin_request)).await,
         ];
         assert!(results.iter().all(|value| value["ok"] == true));
+        assert_eq!(results[21]["value"]["failed"][0]["code"], "order_not_found");
         assert_eq!(
             *calls.lock().unwrap(),
             vec![
@@ -1781,6 +1838,7 @@ mod tests {
                 "place_order",
                 "cancel_order",
                 "cancel_order_by_client_id",
+                "cancel_orders",
                 "positions:none",
                 "positions:some",
                 "margin_summary",

@@ -13,15 +13,15 @@ use crate::adapter::{Adapter, BoxFuture};
 use crate::error::{Error, Result};
 use crate::feature::Feature;
 use crate::request::{
-    CandleRequest, DepositAddressRequest, OrderHistoryRequest, OrderLookupRequest, OrderRequest,
-    TransferHistoryRequest, WithdrawRequest,
+    CancelOrdersRequest, CandleRequest, DepositAddressRequest, OrderHistoryRequest,
+    OrderLookupRequest, OrderRequest, TransferHistoryRequest, WithdrawRequest,
 };
 use crate::stream::{AccountStream, MarketStream};
 use crate::transport::{HttpTransport, WsCommand, WsConnect, WsSession, ws};
 use crate::types::{
-    AccountEvent, AssetNetwork, Balance, Candle, Deposit, DepositAddress, Exchange, Market,
-    MarketEvent, MarketInfo, MarketKind, Order, OrderBook, Page, StreamConfig, Subscription,
-    Ticker, Trade, TransferDestination, Withdrawal, WithdrawalQuote,
+    AccountEvent, AssetNetwork, Balance, CancelOrdersResult, Candle, Deposit, DepositAddress,
+    Exchange, Market, MarketEvent, MarketInfo, MarketKind, Order, OrderBook, Page, StreamConfig,
+    Subscription, Ticker, Trade, TransferDestination, Withdrawal, WithdrawalQuote,
 };
 
 /// Selects an Upbit regional deployment.
@@ -425,6 +425,16 @@ impl Adapter for UpbitAdapter {
                 &client_id,
             )
             .await
+        })
+    }
+
+    fn cancel_orders(
+        &self,
+        request: &CancelOrdersRequest,
+    ) -> BoxFuture<'_, Result<CancelOrdersResult>> {
+        let request = request.clone();
+        Box::pin(async move {
+            private::cancel_orders(self.credentials()?, self.http()?, &request).await
         })
     }
 

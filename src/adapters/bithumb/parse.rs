@@ -529,7 +529,7 @@ fn rest_order_status(state: &str, filled: Decimal) -> OrderStatus {
 }
 
 /// Parses an RFC 3339 timestamp with its explicit offset.
-fn offset_time(raw: &str) -> Option<Timestamp> {
+pub(crate) fn offset_time(raw: &str) -> Option<Timestamp> {
     chrono::DateTime::parse_from_rfc3339(raw)
         .ok()
         .and_then(|parsed| parsed.timestamp_nanos_opt())

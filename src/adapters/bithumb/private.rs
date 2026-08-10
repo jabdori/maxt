@@ -11,10 +11,13 @@ use serde_json::Value;
 use sha2::{Digest, Sha256, Sha512};
 
 use crate::error::{Error, Result};
-use crate::request::{OrderHistoryRequest, OrderIdKind, OrderLookupRequest, OrderRequest};
+use crate::request::{
+    CancelOrdersRequest, OrderHistoryRequest, OrderIdKind, OrderLookupRequest, OrderRequest,
+};
 use crate::transport::{HttpRequest, HttpTransport};
 use crate::types::{
-    Balance, Cursor, Market, Order, OrderStatus, OrderType, Page, Side, Size, Timestamp,
+    Balance, CancelOrdersResult, CancelledOrder, Cursor, Market, Order, OrderCancelFailure,
+    OrderStatus, OrderType, Page, Side, Size, Timestamp,
 };
 
 use super::BithumbCredentials;
@@ -305,6 +308,35 @@ pub(crate) fn cancel_order_by_client_id_request(
 ) -> Result<HttpRequest> {
     validate_client_order_id(client_id)?;
     cancel_order_request_by(credentials, "client_order_id", client_id)
+}
+
+pub(crate) fn cancel_orders_request(
+    credentials: &BithumbCredentials,
+    request: &CancelOrdersRequest,
+) -> Result<HttpRequest> {
+    crate::adapters::validate_cancel_order_limit(request, 30)?;
+    let (body_key, signed_key) = match request.kind {
+        OrderIdKind::Exchange => ("order_ids", "order_ids[]"),
+        OrderIdKind::Client => {
+            for id in &request.ids {
+                validate_client_order_id(id)?;
+            }
+            ("client_order_ids", "client_order_ids[]")
+        }
+    };
+    let signed = request
+        .ids
+        .iter()
+        .cloned()
+        .map(|id| (signed_key, id))
+        .collect::<Vec<_>>();
+    let query = signed_query(&signed)?;
+    let body = serde_json::to_string(&serde_json::json!({ body_key: request.ids }))
+        .map_err(|err| Error::decode(format!("could not build the Bithumb cancel body: {err}")))?;
+
+    Ok(HttpRequest::post("/v2/orders/cancel")
+        .json_body(body)
+        .header("authorization", authorization(credentials, &query)?))
 }
 
 fn cancel_order_request_by(
@@ -670,6 +702,83 @@ pub(crate) async fn cancel_order_by_client_id(
     cancel_ack(&body)
 }
 
+pub(crate) async fn cancel_orders(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    request: &CancelOrdersRequest,
+) -> Result<CancelOrdersResult> {
+    let body = rest::send(http, &cancel_orders_request(credentials, request)?).await?;
+    cancel_orders_result(&body)
+}
+
+fn cancel_orders_result(body: &Value) -> Result<CancelOrdersResult> {
+    let success = batch_array(body, "success")?
+        .iter()
+        .map(|entry| {
+            let order_id = batch_text(entry, "order_id")?.ok_or_else(|| {
+                Error::decode("bithumb batch-cancel success carries no `order_id`")
+            })?;
+            let cancelled_at = batch_text(entry, "created_at")?
+                .map(|raw| {
+                    parse::offset_time(&raw).ok_or_else(|| {
+                        Error::decode(format!(
+                            "bithumb batch-cancel `created_at` is not RFC 3339: `{raw}`"
+                        ))
+                    })
+                })
+                .transpose()?;
+            Ok(CancelledOrder {
+                order_id,
+                client_id: batch_text(entry, "client_order_id")?,
+                market: None,
+                cancelled_at,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    let failed = batch_array(body, "fail")?
+        .iter()
+        .map(|entry| {
+            let error = entry
+                .get("error")
+                .ok_or_else(|| Error::decode("bithumb batch-cancel failure carries no `error`"))?;
+            Ok(OrderCancelFailure {
+                order_id: batch_text(entry, "order_id")?,
+                client_id: batch_text(entry, "client_order_id")?,
+                market: None,
+                code: batch_text(error, "name")?,
+                message: batch_text(error, "message")?,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    Ok(CancelOrdersResult {
+        cancelled: success,
+        failed,
+    })
+}
+
+fn batch_array<'a>(body: &'a Value, field: &str) -> Result<&'a [Value]> {
+    body.get(field)
+        .and_then(Value::as_array)
+        .map(Vec::as_slice)
+        .ok_or_else(|| {
+            Error::decode(format!(
+                "bithumb batch-cancel response has no `{field}` array"
+            ))
+        })
+}
+
+fn batch_text(value: &Value, field: &str) -> Result<Option<String>> {
+    match value.get(field) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(value)) => Ok(Some(value.clone())),
+        Some(_) => Err(Error::decode(format!(
+            "bithumb batch-cancel `{field}` is not text"
+        ))),
+    }
+}
+
 fn cancel_ack(body: &Value) -> Result<()> {
     match body.get("order_id").and_then(Value::as_str) {
         Some(order_id) if !order_id.is_empty() => Ok(()),
@@ -866,6 +975,59 @@ mod tests {
                 b"market=KRW-BTC&client_order_ids[]=client-1&client_order_ids[]=client-2&order_by=desc"
             )
         );
+    }
+
+    #[test]
+    fn batch_cancellation_hashes_the_same_array_sent_in_the_json_body() {
+        let request = CancelOrdersRequest::client(["client-1", "client-2"]);
+        let request =
+            cancel_orders_request(&credentials(), &request).expect("a signed cancellation");
+        let body: Value = serde_json::from_str(request.body.as_deref().expect("a JSON body"))
+            .expect("valid JSON");
+        let authorization = request
+            .headers
+            .iter()
+            .find(|(name, _)| name == "authorization")
+            .map(|(_, value)| value)
+            .expect("an authorization header");
+
+        assert_eq!(request.target(), "/v2/orders/cancel");
+        assert_eq!(
+            body,
+            serde_json::json!({"client_order_ids": ["client-1", "client-2"]})
+        );
+        assert_eq!(
+            payload(authorization)["query_hash"],
+            sha512_hex(b"client_order_ids[]=client-1&client_order_ids[]=client-2")
+        );
+
+        let oversized = CancelOrdersRequest::exchange((0..31).map(|index| index.to_string()));
+        assert!(cancel_orders_request(&credentials(), &oversized).is_err());
+    }
+
+    #[test]
+    fn batch_cancellation_keeps_each_partial_failure() {
+        let result = cancel_orders_result(&serde_json::json!({
+            "success": [{
+                "order_id": "done-1",
+                "client_order_id": "client-1",
+                "created_at": "2026-02-10T13:56:38+09:00"
+            }],
+            "fail": [{
+                "client_order_id": "missing-1",
+                "error": {"name": "order_not_found", "message": "not found"}
+            }]
+        }))
+        .expect("a batch result");
+
+        assert_eq!(result.cancelled[0].order_id, "done-1");
+        assert_eq!(
+            result.cancelled[0].cancelled_at,
+            Some(Timestamp::from_secs(1_770_699_398))
+        );
+        assert_eq!(result.failed[0].order_id, None);
+        assert_eq!(result.failed[0].client_id.as_deref(), Some("missing-1"));
+        assert_eq!(result.failed[0].code.as_deref(), Some("order_not_found"));
     }
 
     #[test]

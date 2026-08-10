@@ -10,15 +10,15 @@ use crate::adapter::{Adapter, BoxFuture};
 use crate::error::{Error, Result};
 use crate::feature::Feature;
 use crate::request::{
-    CandleRequest, DepositAddressRequest, OrderHistoryRequest, OrderLookupRequest, OrderRequest,
-    TransferHistoryRequest, WithdrawRequest,
+    CancelOrdersRequest, CandleRequest, DepositAddressRequest, OrderHistoryRequest,
+    OrderLookupRequest, OrderRequest, TransferHistoryRequest, WithdrawRequest,
 };
 use crate::stream::{AccountStream, MarketStream};
 use crate::transport::HttpTransport;
 use crate::types::{
-    AssetNetwork, Balance, Candle, Deposit, DepositAddress, Exchange, Market, MarketInfo,
-    MarketKind, Order, OrderBook, Page, StreamConfig, Subscription, Ticker, Timestamp, Trade,
-    Withdrawal, WithdrawalQuote,
+    AssetNetwork, Balance, CancelOrdersResult, Candle, Deposit, DepositAddress, Exchange, Market,
+    MarketInfo, MarketKind, Order, OrderBook, Page, StreamConfig, Subscription, Ticker, Timestamp,
+    Trade, Withdrawal, WithdrawalQuote,
 };
 
 pub(crate) const REST_BASE_URL: &str = "https://api.bithumb.com";
@@ -312,6 +312,16 @@ impl Adapter for BithumbAdapter {
                 &client_id,
             )
             .await
+        })
+    }
+
+    fn cancel_orders(
+        &self,
+        request: &CancelOrdersRequest,
+    ) -> BoxFuture<'_, Result<CancelOrdersResult>> {
+        let request = request.clone();
+        Box::pin(async move {
+            private::cancel_orders(self.http()?, self.credentials()?, &request).await
         })
     }
 }

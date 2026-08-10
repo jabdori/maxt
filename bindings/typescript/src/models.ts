@@ -700,6 +700,35 @@ export class Order {
   ) { freezeRecord(this); }
 }
 
+export class CancelledOrder {
+  constructor(
+    readonly orderId: string,
+    readonly clientId: string | null,
+    readonly market: Market | null,
+    readonly cancelledAt: Timestamp | null,
+  ) { freezeRecord(this); }
+}
+
+export class OrderCancelFailure {
+  constructor(
+    readonly orderId: string | null,
+    readonly clientId: string | null,
+    readonly market: Market | null,
+    readonly code: string | null,
+    readonly message: string | null,
+  ) { freezeRecord(this); }
+}
+
+export class CancelOrdersResult {
+  readonly cancelled: readonly CancelledOrder[];
+  readonly failed: readonly OrderCancelFailure[];
+  constructor(cancelled: readonly CancelledOrder[], failed: readonly OrderCancelFailure[]) {
+    this.cancelled = Object.freeze([...cancelled]);
+    this.failed = Object.freeze([...failed]);
+    freezeRecord(this);
+  }
+}
+
 export class Position {
   constructor(
     readonly market: Market, readonly side: Side | null, readonly quantity: Decimal,
@@ -864,6 +893,14 @@ export class OrderLookupRequest {
     ids: readonly string[],
     readonly market: Market | null = null,
   ) {
+    this.ids = Object.freeze([...ids]);
+    freezeRecord(this);
+  }
+}
+
+export class CancelOrdersRequest {
+  readonly ids: readonly string[];
+  constructor(readonly kind: OrderIdKind, ids: readonly string[]) {
     this.ids = Object.freeze([...ids]);
     freezeRecord(this);
   }

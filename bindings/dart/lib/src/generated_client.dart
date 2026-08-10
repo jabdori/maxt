@@ -120,6 +120,22 @@ abstract base class GeneratedClient<A extends Adapter> {
   Future<void> cancelOrderByClientId(Market market, String clientId) =>
       _native.cancelOrderByClientId(market, clientId);
 
+  Future<CancelOrdersResult> cancelOrders(CancelOrdersRequest request) async {
+    if (request.ids.isEmpty) {
+      throw const InvalidRequestError(
+        field: 'ids',
+        detail: 'a batch cancellation requires at least one identifier',
+      );
+    }
+    if (request.ids.any((id) => id.trim().isEmpty)) {
+      throw const InvalidRequestError(
+        field: 'ids',
+        detail: 'order identifiers must not be empty',
+      );
+    }
+    return _native.cancelOrders(request);
+  }
+
   Future<List<Position>> positions() async =>
       _openPositions(await _native.positions());
 

@@ -6,14 +6,14 @@ use std::pin::Pin;
 use crate::error::{Error, Result};
 use crate::feature::Feature;
 use crate::request::{
-    CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest, OrderHistoryRequest,
-    OrderLookupRequest, OrderRequest, TransferHistoryRequest, WithdrawRequest,
+    CancelOrdersRequest, CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest,
+    OrderHistoryRequest, OrderLookupRequest, OrderRequest, TransferHistoryRequest, WithdrawRequest,
 };
 use crate::stream::{AccountStream, MarketStream};
 use crate::types::{
-    AssetNetwork, Balance, Candle, Deposit, DepositAddress, Exchange, Feed, FundingPayment,
-    FundingRate, MarginSummary, Market, MarketInfo, MarketKind, Order, OrderBook, Page, Position,
-    StreamConfig, Subscription, Ticker, Trade, Withdrawal, WithdrawalQuote,
+    AssetNetwork, Balance, CancelOrdersResult, Candle, Deposit, DepositAddress, Exchange, Feed,
+    FundingPayment, FundingRate, MarginSummary, Market, MarketInfo, MarketKind, Order, OrderBook,
+    Page, Position, StreamConfig, Subscription, Ticker, Trade, Withdrawal, WithdrawalQuote,
 };
 
 /// A boxed future used to keep [`Adapter`] dyn-compatible.
@@ -215,6 +215,15 @@ pub trait Adapter: Send + Sync + 'static {
         unsupported(self.exchange(), Feature::Trading)
     }
 
+    /// Cancels multiple orders and returns every per-order outcome.
+    fn cancel_orders(
+        &self,
+        request: &CancelOrdersRequest,
+    ) -> BoxFuture<'_, Result<CancelOrdersResult>> {
+        let _ = request;
+        unsupported(self.exchange(), Feature::Trading)
+    }
+
     /// Reads open positions, optionally narrowed to one market.
     fn positions(&self, market: Option<&Market>) -> BoxFuture<'_, Result<Vec<Position>>> {
         let _ = market;
@@ -375,6 +384,13 @@ impl Adapter for Box<dyn Adapter> {
         client_id: &str,
     ) -> BoxFuture<'_, Result<()>> {
         (**self).cancel_order_by_client_id(market, client_id)
+    }
+
+    fn cancel_orders(
+        &self,
+        request: &CancelOrdersRequest,
+    ) -> BoxFuture<'_, Result<CancelOrdersResult>> {
+        (**self).cancel_orders(request)
     }
 
     fn positions(&self, market: Option<&Market>) -> BoxFuture<'_, Result<Vec<Position>>> {

@@ -372,6 +372,44 @@ export function orderToWire(value: Model.Order): Wire.OrderWire {
   };
 }
 
+export function cancelledOrderFromWire(value: Wire.CancelledOrderWire): Model.CancelledOrder {
+  return new Model.CancelledOrder(value.order_id, value.client_id === null ? null : value.client_id, value.market === null ? null : marketFromWire(value.market), value.cancelled_at === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.cancelled_at)));
+}
+
+export function cancelledOrderToWire(value: Model.CancelledOrder): Wire.CancelledOrderWire {
+  return {
+    order_id: value.orderId,
+    client_id: value.clientId === null ? null : value.clientId,
+    market: value.market === null ? null : marketToWire(value.market),
+    cancelled_at: value.cancelledAt === null ? null : value.cancelledAt.nanosecondsSinceEpoch.toString(),
+  };
+}
+
+export function orderCancelFailureFromWire(value: Wire.OrderCancelFailureWire): Model.OrderCancelFailure {
+  return new Model.OrderCancelFailure(value.order_id === null ? null : value.order_id, value.client_id === null ? null : value.client_id, value.market === null ? null : marketFromWire(value.market), value.code === null ? null : value.code, value.message === null ? null : value.message);
+}
+
+export function orderCancelFailureToWire(value: Model.OrderCancelFailure): Wire.OrderCancelFailureWire {
+  return {
+    order_id: value.orderId === null ? null : value.orderId,
+    client_id: value.clientId === null ? null : value.clientId,
+    market: value.market === null ? null : marketToWire(value.market),
+    code: value.code === null ? null : value.code,
+    message: value.message === null ? null : value.message,
+  };
+}
+
+export function cancelOrdersResultFromWire(value: Wire.CancelOrdersResultWire): Model.CancelOrdersResult {
+  return new Model.CancelOrdersResult(value.cancelled.map((item) => cancelledOrderFromWire(item)), value.failed.map((item) => orderCancelFailureFromWire(item)));
+}
+
+export function cancelOrdersResultToWire(value: Model.CancelOrdersResult): Wire.CancelOrdersResultWire {
+  return {
+    cancelled: value.cancelled.map((item) => cancelledOrderToWire(item)),
+    failed: value.failed.map((item) => orderCancelFailureToWire(item)),
+  };
+}
+
 export function positionFromWire(value: Wire.PositionWire): Model.Position {
   return new Model.Position(marketFromWire(value.market), value.side === null ? null : identifier(Model.Side.values, value.side, "side"), Model.Decimal.parse(value.quantity), value.entry_price === null ? null : Model.Decimal.parse(value.entry_price), value.mark_price === null ? null : Model.Decimal.parse(value.mark_price), value.notional === null ? null : Model.Decimal.parse(value.notional), value.unrealized_pnl === null ? null : Model.Decimal.parse(value.unrealized_pnl), value.leverage === null ? null : Model.Decimal.parse(value.leverage), value.margin_mode === null ? null : identifier(Model.MarginMode.values, value.margin_mode, "margin_mode"));
 }
@@ -490,6 +528,17 @@ export function orderLookupRequestToWire(value: Model.OrderLookupRequest): Wire.
     kind: value.kind.id,
     ids: value.ids.map((item) => item),
     market: value.market === null ? null : marketToWire(value.market),
+  };
+}
+
+export function cancelOrdersRequestFromWire(value: Wire.CancelOrdersRequestWire): Model.CancelOrdersRequest {
+  return new Model.CancelOrdersRequest(identifier(Model.OrderIdKind.values, value.kind, "kind"), value.ids.map((item) => item));
+}
+
+export function cancelOrdersRequestToWire(value: Model.CancelOrdersRequest): Wire.CancelOrdersRequestWire {
+  return {
+    kind: value.kind.id,
+    ids: value.ids.map((item) => item),
   };
 }
 

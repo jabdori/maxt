@@ -4,14 +4,14 @@ use crate::adapter::Adapter;
 use crate::error::Result;
 use crate::feature::Feature;
 use crate::request::{
-    CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest, OrderHistoryRequest,
-    OrderLookupRequest, OrderRequest, TransferHistoryRequest, WithdrawRequest,
+    CancelOrdersRequest, CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest,
+    OrderHistoryRequest, OrderLookupRequest, OrderRequest, TransferHistoryRequest, WithdrawRequest,
 };
 use crate::stream::{AccountStream, MarketStream};
 use crate::types::{
-    AssetNetwork, Balance, Candle, Deposit, DepositAddress, Exchange, FundingPayment, FundingRate,
-    MarginSummary, Market, MarketInfo, MarketKind, Order, OrderBook, Page, Position, StreamConfig,
-    Subscription, Ticker, Trade, Withdrawal, WithdrawalQuote,
+    AssetNetwork, Balance, CancelOrdersResult, Candle, Deposit, DepositAddress, Exchange,
+    FundingPayment, FundingRate, MarginSummary, Market, MarketInfo, MarketKind, Order, OrderBook,
+    Page, Position, StreamConfig, Subscription, Ticker, Trade, Withdrawal, WithdrawalQuote,
 };
 
 /// The common API over one exchange adapter.
@@ -285,6 +285,15 @@ impl<A: Adapter> Client<A> {
         self.adapter
             .cancel_order_by_client_id(market, client_id)
             .await
+    }
+
+    /// Cancels multiple orders without treating a partial failure as an atomic failure.
+    ///
+    /// Requires credentials. Provider limits differ; Upbit accepts at most 20
+    /// identifiers and Bithumb accepts at most 30.
+    pub async fn cancel_orders(&self, request: &CancelOrdersRequest) -> Result<CancelOrdersResult> {
+        crate::adapters::validate_cancel_orders(request)?;
+        self.adapter.cancel_orders(request).await
     }
 
     /// Reads every open position.

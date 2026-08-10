@@ -68,6 +68,7 @@ code로 보존합니다.
 | `order_by_client_id(market, client_id)` | `GET /v1/order?client_order_id=...` | 응답 시장이 요청 시장과 같은지 검증 |
 | `orders_by_ids(request)` | `POST /v2/orders/search` | 주문 ID 또는 사용자 지정 ID 중 한 종류를 1~100개 조회; 찾지 못한 ID는 제외하고 중복 ID는 한 건으로 처리 |
 | `order_history(request)` | `GET /v2/orders/history` | `limit: 1..=1_000`; 최대 7일; 최신순; `next_key`를 불투명 `Page::next` 커서로 반환 |
+| `cancel_orders(request)` | `POST /v2/orders/cancel` | 주문 ID 또는 사용자 지정 ID 중 한 종류를 1~30개 취소; 항목별 실패 코드와 메시지를 보존 |
 
 | 주문 | 필수 `Size` |
 | --- | --- |

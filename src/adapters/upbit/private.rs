@@ -8,16 +8,19 @@ use std::future::Future;
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 use hmac::{Hmac, KeyInit, Mac};
 use rust_decimal::Decimal;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use sha2::{Digest, Sha256, Sha512};
 
 use crate::error::{Error, Result};
 use crate::feature::Feature;
-use crate::request::{OrderHistoryRequest, OrderIdKind, OrderLookupRequest, OrderRequest};
+use crate::request::{
+    CancelOrdersRequest, OrderHistoryRequest, OrderIdKind, OrderLookupRequest, OrderRequest,
+};
 use crate::transport::{HttpRequest, HttpTransport};
 use crate::types::{
-    AccountEvent, Balance, Market, Order, OrderType, Page, Side, Size, TimeInForce,
+    AccountEvent, Balance, CancelOrdersResult, CancelledOrder, Market, Order, OrderCancelFailure,
+    OrderType, Page, Side, Size, TimeInForce,
 };
 
 use super::parse::{self, EXCHANGE};
@@ -32,6 +35,27 @@ const ORDERS_BY_IDS_PATH: &str = "/v1/orders/uuids";
 const ORDER_HISTORY_PATH: &str = "/v1/orders/closed";
 const PLACE_ORDER_PATH: &str = "/v1/orders";
 const ORDER_PATH: &str = "/v1/order";
+
+#[derive(Debug, Deserialize)]
+struct RawCancelOrdersResult {
+    success: RawCancelOrdersGroup,
+    failed: RawCancelOrdersGroup,
+}
+
+#[derive(Debug, Deserialize)]
+struct RawCancelOrdersGroup {
+    #[serde(rename = "count")]
+    _count: usize,
+    orders: Vec<RawCancelledOrder>,
+}
+
+#[derive(Debug, Deserialize)]
+struct RawCancelledOrder {
+    uuid: String,
+    market: String,
+    #[serde(default)]
+    identifier: Option<String>,
+}
 
 /// Query-hash algorithm declared in the JWT claims.
 const QUERY_HASH_ALG: &str = "SHA512";
@@ -299,6 +323,32 @@ pub(crate) fn cancel_order_by_client_id_request(
 ) -> Result<HttpRequest> {
     validate_client_order_id(client_id)?;
     cancel_order_request_by(credentials, market, "identifier", "client_id", client_id)
+}
+
+pub(crate) fn cancel_orders_request(
+    credentials: &UpbitCredentials,
+    request: &CancelOrdersRequest,
+) -> Result<HttpRequest> {
+    crate::adapters::validate_cancel_order_limit(request, 20)?;
+    let key = match request.kind {
+        OrderIdKind::Exchange => "uuids[]",
+        OrderIdKind::Client => {
+            for id in &request.ids {
+                validate_client_order_id(id)?;
+            }
+            "identifiers[]"
+        }
+    };
+    let params = request
+        .ids
+        .iter()
+        .cloned()
+        .map(|id| (key, id))
+        .collect::<Vec<_>>();
+    let query = query(&params)?;
+    Ok(HttpRequest::delete(ORDERS_BY_IDS_PATH)
+        .query(query.clone())
+        .header(AUTHORIZATION, authorization(credentials, &query)?))
 }
 
 fn cancel_order_request_by(
@@ -648,6 +698,48 @@ pub(crate) async fn cancel_order_by_client_id(
     )
     .await?;
     parse::order(&parse::json::<parse::RawOrder>(&body)?).map(drop)
+}
+
+pub(crate) async fn cancel_orders(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    request: &CancelOrdersRequest,
+) -> Result<CancelOrdersResult> {
+    let body = rest::send(http, &cancel_orders_request(credentials, request)?).await?;
+    cancel_orders_result(&body)
+}
+
+fn cancel_orders_result(body: &str) -> Result<CancelOrdersResult> {
+    let response = parse::json::<RawCancelOrdersResult>(body)?;
+    Ok(CancelOrdersResult {
+        cancelled: response
+            .success
+            .orders
+            .into_iter()
+            .map(|order| {
+                Ok(CancelledOrder {
+                    order_id: order.uuid,
+                    client_id: order.identifier,
+                    market: Some(parse::market_from_native_symbol(&order.market)?),
+                    cancelled_at: None,
+                })
+            })
+            .collect::<Result<Vec<_>>>()?,
+        failed: response
+            .failed
+            .orders
+            .into_iter()
+            .map(|order| {
+                Ok(OrderCancelFailure {
+                    order_id: Some(order.uuid),
+                    client_id: order.identifier,
+                    market: Some(parse::market_from_native_symbol(&order.market)?),
+                    code: None,
+                    message: None,
+                })
+            })
+            .collect::<Result<Vec<_>>>()?,
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -1004,6 +1096,46 @@ mod tests {
 
         assert!(orders_by_ids_request(&credentials(), &empty).is_err());
         assert!(orders_by_ids_request(&credentials(), &oversized).is_err());
+    }
+
+    #[test]
+    fn batch_cancellation_uses_one_identifier_namespace_and_the_provider_limit() {
+        let request = CancelOrdersRequest::client(["client-1", "client-2"]);
+        let request =
+            cancel_orders_request(&credentials(), &request).expect("a signed cancellation");
+
+        assert_eq!(
+            request.target(),
+            "/v1/orders/uuids?identifiers[]=client-1&identifiers[]=client-2"
+        );
+        assert_eq!(
+            claims_of(&authorization_of(&request)).query_hash.as_deref(),
+            Some(hex::encode(Sha512::digest(request.query.as_bytes())).as_str())
+        );
+
+        let oversized = CancelOrdersRequest::exchange((0..21).map(|index| index.to_string()));
+        assert!(cancel_orders_request(&credentials(), &oversized).is_err());
+    }
+
+    #[test]
+    fn batch_cancellation_preserves_successes_and_failures() {
+        let result = cancel_orders_result(
+            r#"{
+                "success": {"count": 1, "orders": [{
+                    "uuid": "done-1", "market": "KRW-BTC", "identifier": "client-1"
+                }]},
+                "failed": {"count": 1, "orders": [{
+                    "uuid": "failed-1", "market": "KRW-ETH"
+                }]}
+            }"#,
+        )
+        .expect("a batch result");
+
+        assert_eq!(result.cancelled[0].order_id, "done-1");
+        assert_eq!(result.cancelled[0].client_id.as_deref(), Some("client-1"));
+        assert_eq!(result.cancelled[0].market, Some(btc_krw()));
+        assert_eq!(result.failed[0].order_id.as_deref(), Some("failed-1"));
+        assert_eq!(result.failed[0].code, None);
     }
 
     #[test]

@@ -608,6 +608,55 @@ wire.WireDeposit _depositToWire(Deposit value) => wire.WireDeposit(
   createdAtNs: _optionalTimestampToWire(value.createdAt),
 );
 
+CancelledOrder _cancelledOrderFromWire(wire.WireCancelledOrder value) =>
+    CancelledOrder(
+      orderId: value.orderId,
+      clientId: value.clientId,
+      market: value.market == null ? null : _marketFromWire(value.market!),
+      cancelledAt: _timestampFromWire(value.cancelledAtNs),
+    );
+wire.WireCancelledOrder _cancelledOrderToWire(CancelledOrder value) =>
+    wire.WireCancelledOrder(
+      orderId: value.orderId,
+      clientId: value.clientId,
+      market: value.market == null ? null : _marketToWire(value.market!),
+      cancelledAtNs: _optionalTimestampToWire(value.cancelledAt),
+    );
+
+OrderCancelFailure _orderCancelFailureFromWire(
+  wire.WireOrderCancelFailure value,
+) => OrderCancelFailure(
+  orderId: value.orderId,
+  clientId: value.clientId,
+  market: value.market == null ? null : _marketFromWire(value.market!),
+  code: value.code,
+  message: value.message,
+);
+wire.WireOrderCancelFailure _orderCancelFailureToWire(
+  OrderCancelFailure value,
+) => wire.WireOrderCancelFailure(
+  orderId: value.orderId,
+  clientId: value.clientId,
+  market: value.market == null ? null : _marketToWire(value.market!),
+  code: value.code,
+  message: value.message,
+);
+
+CancelOrdersResult _cancelOrdersResultFromWire(
+  wire.WireCancelOrdersResult value,
+) => CancelOrdersResult(
+  cancelled: value.cancelled
+      .map(_cancelledOrderFromWire)
+      .toList(growable: false),
+  failed: value.failed.map(_orderCancelFailureFromWire).toList(growable: false),
+);
+wire.WireCancelOrdersResult _cancelOrdersResultToWire(
+  CancelOrdersResult value,
+) => wire.WireCancelOrdersResult(
+  cancelled: value.cancelled.map(_cancelledOrderToWire).toList(growable: false),
+  failed: value.failed.map(_orderCancelFailureToWire).toList(growable: false),
+);
+
 OrderLookupRequest _orderLookupRequestFromWire(
   wire.WireOrderLookupRequest value,
 ) => OrderLookupRequest(
@@ -621,6 +670,17 @@ wire.WireOrderLookupRequest _orderLookupRequestToWire(
   kind: _orderIdKindToWire(value.kind),
   ids: value.ids.toList(growable: false),
   market: value.market == null ? null : _marketToWire(value.market!),
+);
+
+CancelOrdersRequest _cancelOrdersRequestFromWire(
+  wire.WireCancelOrdersRequest value,
+) =>
+    CancelOrdersRequest(kind: _orderIdKindFromWire(value.kind), ids: value.ids);
+wire.WireCancelOrdersRequest _cancelOrdersRequestToWire(
+  CancelOrdersRequest value,
+) => wire.WireCancelOrdersRequest(
+  kind: _orderIdKindToWire(value.kind),
+  ids: value.ids.toList(growable: false),
 );
 
 OrderHistoryRequest _orderHistoryRequestFromWire(

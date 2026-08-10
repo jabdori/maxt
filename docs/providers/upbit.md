@@ -76,6 +76,7 @@ balances, order lookup and history, place/cancel order, and account streams.
 | `order_by_client_id(market, client_id)` | `GET /v1/order?identifier=...` | Verifies the returned market |
 | `orders_by_ids(request)` | `GET /v1/orders/uuids` | One to 100 UUIDs or identifiers; optional market; newest-first |
 | `order_history(request)` | `GET /v1/orders/closed` | `limit: 1..=1_000`; at most seven days; newest-first; no cursor, so `next == None` |
+| `cancel_orders(request)` | `DELETE /v1/orders/uuids` | One to 20 UUIDs or identifiers; one identifier namespace; partial failures stay in the result |
 
 | Order input | Contract |
 | --- | --- |

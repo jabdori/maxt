@@ -158,6 +158,23 @@ RECORD_FIELDS = {
         "price": "optional:decimal",
         "created_at": "optional:timestamp",
     },
+    "CancelledOrder": {
+        "order_id": "string",
+        "client_id": "optional:string",
+        "market": "optional:named:Market",
+        "cancelled_at": "optional:timestamp",
+    },
+    "OrderCancelFailure": {
+        "order_id": "optional:string",
+        "client_id": "optional:string",
+        "market": "optional:named:Market",
+        "code": "optional:string",
+        "message": "optional:string",
+    },
+    "CancelOrdersResult": {
+        "cancelled": "list:named:CancelledOrder",
+        "failed": "list:named:OrderCancelFailure",
+    },
     "Position": {
         "market": "named:Market",
         "side": "optional:identifier:Side",
@@ -217,6 +234,10 @@ RECORD_FIELDS = {
         "kind": "identifier:OrderIdKind",
         "ids": "list:string",
         "market": "optional:named:Market",
+    },
+    "CancelOrdersRequest": {
+        "kind": "identifier:OrderIdKind",
+        "ids": "list:string",
     },
     "DepositAddressRequest": {
         "asset": "string",
@@ -534,6 +555,9 @@ UNION_FIELDS = {
             "market": "named:Market",
             "client_id": "string",
         },
+        "cancel_orders": {
+            "request": "named:CancelOrdersRequest",
+        },
         "positions": {
             "market": "optional:named:Market",
         },
@@ -606,6 +630,9 @@ UNION_FIELDS = {
         },
         "place_order": {
             "value": "named:Order",
+        },
+        "cancel_orders": {
+            "value": "named:CancelOrdersResult",
         },
         "positions": {
             "value": "list:named:Position",

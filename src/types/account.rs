@@ -110,6 +110,43 @@ pub struct Order {
     pub created_at: Option<Timestamp>,
 }
 
+/// One order an exchange accepted for cancellation in a batch request.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CancelledOrder {
+    /// Exchange-assigned order identifier.
+    pub order_id: String,
+    /// Caller-assigned identifier, when the exchange returns it.
+    pub client_id: Option<String>,
+    /// Order market, when the exchange returns it.
+    pub market: Option<Market>,
+    /// When the exchange accepted the cancellation, when published.
+    pub cancelled_at: Option<Timestamp>,
+}
+
+/// One order an exchange did not cancel in a batch request.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OrderCancelFailure {
+    /// Exchange-assigned order identifier, when known.
+    pub order_id: Option<String>,
+    /// Caller-assigned identifier, when known.
+    pub client_id: Option<String>,
+    /// Order market, when the exchange returns it.
+    pub market: Option<Market>,
+    /// Provider error code, when the batch response includes one.
+    pub code: Option<String>,
+    /// Provider error message, when the batch response includes one.
+    pub message: Option<String>,
+}
+
+/// Per-order outcome of one non-atomic batch cancellation request.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CancelOrdersResult {
+    /// Orders accepted for cancellation.
+    pub cancelled: Vec<CancelledOrder>,
+    /// Orders the exchange did not cancel.
+    pub failed: Vec<OrderCancelFailure>,
+}
+
 /// An open derivatives position.
 ///
 /// Quantity is unsigned; direction is carried by [`Position::side`]. Fields an

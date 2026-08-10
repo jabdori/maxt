@@ -205,6 +205,9 @@ fn decode_reply(
             )))
         }
         WireAdapterReply::PlaceOrder { value } => value.try_into().map(AdapterReply::PlaceOrder),
+        WireAdapterReply::CancelOrders { value } => {
+            value.try_into().map(AdapterReply::CancelOrdersResult)
+        }
         WireAdapterReply::Positions { value } => wire_vec(value).map(AdapterReply::Positions),
         WireAdapterReply::MarginSummary { value } => {
             value.try_into().map(AdapterReply::MarginSummary)

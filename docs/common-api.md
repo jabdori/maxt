@@ -17,7 +17,7 @@ Configure credentials on the adapter before `Client::new(adapter)`.
 | Public stream | `subscribe`, `subscribe_with` |
 | Private reads | `balances`, `open_orders`, `open_orders_on`, `order`, `order_by_client_id`, `orders_by_ids`, `order_history`, `positions`, `positions_on`, `margin_summary`, `funding_payments` |
 | Private stream | `subscribe_account`, `subscribe_account_with` |
-| Private writes | `place_order`, `cancel_order`, `cancel_order_by_client_id`, `set_margin` |
+| Private writes | `place_order`, `cancel_order`, `cancel_order_by_client_id`, `cancel_orders`, `set_margin` |
 
 Public REST and market streams require no credentials. Provider and
 `MarketKind` support is listed in [provider support](providers.md).
@@ -178,6 +178,7 @@ retrying.
 | `order_by_client_id(market, client_id)` | One order selected by the identifier supplied at placement |
 | `orders_by_ids(request)` | Up to 100 exchange IDs or client IDs; one identifier namespace per request; unresolved IDs may be omitted |
 | `order_history(request)` | Newest-first `Page<Order>` containing completed or cancelled orders |
+| `cancel_orders(request)` | Non-atomic batch cancellation; returns separate `cancelled` and `failed` lists; provider limits differ |
 | `OrderRequest::size` | `Size::Base` or `Size::Quote` |
 | Order precision | `MarketInfo` has no common tick size, lot size, or minimum notional |
 | `cancel_order`, `cancel_order_by_client_id` | Return `()` after a valid provider acknowledgement; query the order to resolve races with fills |

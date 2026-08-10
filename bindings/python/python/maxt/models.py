@@ -673,6 +673,9 @@ def _model_from_wire(type_name: str, value: dict[str, Any]) -> Any:
 
 from ._generated_models import (  # noqa: E402
     AssetNetwork,
+    CancelOrdersRequest,
+    CancelOrdersResult,
+    CancelledOrder,
     ChainDestination,
     ChainTransferRequest,
     Deposit,
@@ -681,6 +684,7 @@ from ._generated_models import (  # noqa: E402
     ExchangeDestination,
     ExchangeTransferRequest,
     OrderHistoryRequest,
+    OrderCancelFailure,
     OrderLookupRequest,
     TransferDestination,
     TransferHistoryRequest,
@@ -696,6 +700,9 @@ from ._generated_models import (  # noqa: E402
 __all__ = [
     "AccountEvent",
     "AssetNetwork",
+    "CancelOrdersRequest",
+    "CancelOrdersResult",
+    "CancelledOrder",
     "BinanceMarket",
     "BinanceSpotOrderDetail",
     "BinanceSymbolFilters",
@@ -738,6 +745,7 @@ __all__ = [
     "Order",
     "OrderBook",
     "OrderHistoryRequest",
+    "OrderCancelFailure",
     "OrderIdKind",
     "OrderLookupRequest",
     "OrderRequest",

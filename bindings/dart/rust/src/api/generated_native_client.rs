@@ -224,6 +224,18 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
+    pub async fn cancel_orders(
+        &self,
+        request: WireCancelOrdersRequest,
+    ) -> Result<WireCancelOrdersResult, NativeError> {
+        let request = request.try_into()?;
+        self.adapter
+            .cancel_orders(&request)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
     pub async fn positions(
         &self,
         market: Option<WireMarket>,

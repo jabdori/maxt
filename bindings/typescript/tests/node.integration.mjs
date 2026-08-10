@@ -8,6 +8,9 @@ import {
   BinanceAdapter,
   BinanceMarket,
   BithumbAdapter,
+  CancelOrdersRequest,
+  CancelOrdersResult,
+  CancelledOrder,
   Client,
   Decimal,
   Exchange,
@@ -15,6 +18,7 @@ import {
   InvalidRequestError,
   Market,
   Order,
+  OrderCancelFailure,
   OrderHistoryRequest,
   OrderIdKind,
   OrderLookupRequest,
@@ -120,7 +124,7 @@ test("custom Adapter calls round-trip through Rust without losing values", async
 
   class FixtureAdapter extends Adapter {
     exchange = Exchange.Binance;
-    features = new Set([Feature.Ticker, Feature.OrderHistory]);
+    features = new Set([Feature.Ticker, Feature.OrderHistory, Feature.Trading]);
     async ticker(requested) {
       assert.equal(requested.toString(), market.toString());
       return expected;
@@ -146,6 +150,14 @@ test("custom Adapter calls round-trip through Rust without losing values", async
       assert.deepEqual(request.statuses, [OrderStatus.Filled]);
       return new Page([expectedOrder], null);
     }
+    async cancelOrders(request) {
+      assert.equal(request.kind, OrderIdKind.Client);
+      assert.deepEqual(request.ids, ["client-1", "missing-1"]);
+      return new CancelOrdersResult(
+        [new CancelledOrder("order-1", "client-1", market, Timestamp.fromNanoseconds(125n))],
+        [new OrderCancelFailure(null, "missing-1", null, "order_not_found", "not found")],
+      );
+    }
   }
 
   const client = new Client(new FixtureAdapter());
@@ -165,4 +177,9 @@ test("custom Adapter calls round-trip through Rust without losing values", async
     new OrderHistoryRequest(market, [OrderStatus.Filled]),
   );
   assert.equal(history.items[0].id, "order-1");
+  const cancelled = await client.cancelOrders(
+    new CancelOrdersRequest(OrderIdKind.Client, ["client-1", "missing-1"]),
+  );
+  assert.equal(cancelled.cancelled[0].cancelledAt.nanosecondsSinceEpoch, 125n);
+  assert.equal(cancelled.failed[0].code, "order_not_found");
 });

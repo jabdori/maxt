@@ -1,10 +1,10 @@
 use maxt::{
-    AccountStream, AssetNetwork, Balance, BoxFuture, Candle, CandleRequest, Deposit,
-    DepositAddress, DepositAddressRequest, FundingPayment, FundingRate, HistoryRequest,
-    MarginRequest, MarginSummary, Market, MarketInfo, MarketKind, MarketStream, Order, OrderBook,
-    OrderHistoryRequest, OrderLookupRequest, OrderRequest, Page, Position, Result, StreamConfig,
-    Subscription, Ticker, Trade, TransferHistoryRequest, WithdrawRequest, Withdrawal,
-    WithdrawalQuote,
+    AccountStream, AssetNetwork, Balance, BoxFuture, CancelOrdersRequest, CancelOrdersResult,
+    Candle, CandleRequest, Deposit, DepositAddress, DepositAddressRequest, FundingPayment,
+    FundingRate, HistoryRequest, MarginRequest, MarginSummary, Market, MarketInfo, MarketKind,
+    MarketStream, Order, OrderBook, OrderHistoryRequest, OrderLookupRequest, OrderRequest, Page,
+    Position, Result, StreamConfig, Subscription, Ticker, Trade, TransferHistoryRequest,
+    WithdrawRequest, Withdrawal, WithdrawalQuote,
 };
 
 /// An owned call across a language binding boundary.
@@ -132,6 +132,11 @@ pub enum AdapterCall {
         /// The caller-assigned identifier.
         client_id: String,
     },
+    /// Cancels multiple orders by one identifier namespace.
+    CancelOrders {
+        /// Complete batch-cancellation request.
+        request: CancelOrdersRequest,
+    },
     /// Reads open positions, optionally for one market.
     Positions {
         /// The optional market filter.
@@ -198,6 +203,8 @@ pub enum AdapterReply {
     AccountStream(AccountStream),
     /// Result of [`AdapterCall::PlaceOrder`].
     PlaceOrder(Order),
+    /// Result of [`AdapterCall::CancelOrders`].
+    CancelOrdersResult(CancelOrdersResult),
     /// Result of [`AdapterCall::Positions`].
     Positions(Vec<Position>),
     /// Result of [`AdapterCall::MarginSummary`].
@@ -238,6 +245,7 @@ impl AdapterReply {
             Self::OrderHistory(_) => "OrderHistory",
             Self::AccountStream(_) => "AccountStream",
             Self::PlaceOrder(_) => "PlaceOrder",
+            Self::CancelOrdersResult(_) => "CancelOrdersResult",
             Self::Positions(_) => "Positions",
             Self::MarginSummary(_) => "MarginSummary",
             Self::FundingRates(_) => "FundingRates",

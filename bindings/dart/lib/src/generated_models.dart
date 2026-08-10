@@ -261,6 +261,43 @@ final class Deposit {
   final Timestamp? createdAt;
 }
 
+final class CancelledOrder {
+  const CancelledOrder({
+    required this.orderId,
+    this.clientId,
+    this.market,
+    this.cancelledAt,
+  });
+
+  final String orderId;
+  final String? clientId;
+  final Market? market;
+  final Timestamp? cancelledAt;
+}
+
+final class OrderCancelFailure {
+  const OrderCancelFailure({
+    this.orderId,
+    this.clientId,
+    this.market,
+    this.code,
+    this.message,
+  });
+
+  final String? orderId;
+  final String? clientId;
+  final Market? market;
+  final String? code;
+  final String? message;
+}
+
+final class CancelOrdersResult {
+  const CancelOrdersResult({required this.cancelled, required this.failed});
+
+  final List<CancelledOrder> cancelled;
+  final List<OrderCancelFailure> failed;
+}
+
 final class OrderLookupRequest {
   const OrderLookupRequest({
     required this.kind,
@@ -271,6 +308,13 @@ final class OrderLookupRequest {
   final OrderIdKind kind;
   final List<String> ids;
   final Market? market;
+}
+
+final class CancelOrdersRequest {
+  const CancelOrdersRequest({required this.kind, required this.ids});
+
+  final OrderIdKind kind;
+  final List<String> ids;
 }
 
 final class OrderHistoryRequest {

@@ -76,6 +76,7 @@
 | `order_by_client_id(market, client_id)` | `GET /v1/order?identifier=...` | 응답 시장이 요청 시장과 같은지 검증 |
 | `orders_by_ids(request)` | `GET /v1/orders/uuids` | UUID 또는 사용자 지정 ID 중 한 종류를 1~100개 조회; 시장 필터 선택; 최신순 |
 | `order_history(request)` | `GET /v1/orders/closed` | `limit: 1..=1_000`; 최대 7일; 최신순; 커서가 없어 `next == None` |
+| `cancel_orders(request)` | `DELETE /v1/orders/uuids` | UUID 또는 사용자 지정 ID 중 한 종류를 1~20개 취소; 일부 실패도 결과에 포함 |
 
 | 주문 입력 | 계약 |
 | --- | --- |

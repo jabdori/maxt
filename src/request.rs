@@ -334,6 +334,33 @@ impl OrderLookupRequest {
     }
 }
 
+/// Orders to cancel by one identifier namespace.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CancelOrdersRequest {
+    /// Exchange-assigned or caller-assigned identifiers.
+    pub kind: OrderIdKind,
+    /// Identifiers to cancel. Provider batch limits differ.
+    pub ids: Vec<String>,
+}
+
+impl CancelOrdersRequest {
+    /// Cancels orders by exchange-assigned identifiers.
+    pub fn exchange(ids: impl IntoIterator<Item = impl Into<String>>) -> Self {
+        Self {
+            kind: OrderIdKind::Exchange,
+            ids: ids.into_iter().map(Into::into).collect(),
+        }
+    }
+
+    /// Cancels orders by caller-assigned identifiers.
+    pub fn client(ids: impl IntoIterator<Item = impl Into<String>>) -> Self {
+        Self {
+            kind: OrderIdKind::Client,
+            ids: ids.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
 /// One newest-first page of completed or cancelled orders.
 ///
 /// Leave [`OrderHistoryRequest::statuses`] empty to include both completed and

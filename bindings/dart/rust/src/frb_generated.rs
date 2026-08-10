@@ -41,7 +41,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1073734287;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -2022986941;
 
 // Section: executor
 
@@ -1657,6 +1657,68 @@ fn wire__crate__api__NativeClient_open_orders_impl(
         },
     )
 }
+fn wire__crate__api__NativeClient_order_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_order",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_market = <crate::convert::WireMarket>::sse_decode(&mut deserializer);
+            let api_order_id = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::NativeClient::order(
+                            &*api_that_guard,
+                            api_market,
+                            api_order_id,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__NativeClient_order_book_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -1711,6 +1773,129 @@ fn wire__crate__api__NativeClient_order_book_impl(
                             api_depth,
                         )
                         .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__NativeClient_order_by_client_id_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_order_by_client_id",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_market = <crate::convert::WireMarket>::sse_decode(&mut deserializer);
+            let api_client_id = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::NativeClient::order_by_client_id(
+                            &*api_that_guard,
+                            api_market,
+                            api_client_id,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__NativeClient_order_history_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_order_history",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_request =
+                <crate::convert::generated_models::WireOrderHistoryRequest>::sse_decode(
+                    &mut deserializer,
+                );
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok =
+                            crate::api::NativeClient::order_history(&*api_that_guard, api_request)
+                                .await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3655,12 +3840,37 @@ impl SseDecode for crate::adapter::AdapterCall {
                 return crate::adapter::AdapterCall::OpenOrders { market: var_market };
             }
             13 => {
+                let mut var_market = <crate::convert::WireMarket>::sse_decode(deserializer);
+                let mut var_orderId = <String>::sse_decode(deserializer);
+                return crate::adapter::AdapterCall::Order {
+                    market: var_market,
+                    order_id: var_orderId,
+                };
+            }
+            14 => {
+                let mut var_market = <crate::convert::WireMarket>::sse_decode(deserializer);
+                let mut var_clientId = <String>::sse_decode(deserializer);
+                return crate::adapter::AdapterCall::OrderByClientId {
+                    market: var_market,
+                    client_id: var_clientId,
+                };
+            }
+            15 => {
+                let mut var_request =
+                    <crate::convert::generated_models::WireOrderHistoryRequest>::sse_decode(
+                        deserializer,
+                    );
+                return crate::adapter::AdapterCall::OrderHistory {
+                    request: var_request,
+                };
+            }
+            16 => {
                 let mut var_request = <crate::convert::WireOrderRequest>::sse_decode(deserializer);
                 return crate::adapter::AdapterCall::PlaceOrder {
                     request: var_request,
                 };
             }
-            14 => {
+            17 => {
                 let mut var_market = <crate::convert::WireMarket>::sse_decode(deserializer);
                 let mut var_orderId = <String>::sse_decode(deserializer);
                 return crate::adapter::AdapterCall::CancelOrder {
@@ -3668,7 +3878,7 @@ impl SseDecode for crate::adapter::AdapterCall {
                     order_id: var_orderId,
                 };
             }
-            15 => {
+            18 => {
                 let mut var_market = <crate::convert::WireMarket>::sse_decode(deserializer);
                 let mut var_clientId = <String>::sse_decode(deserializer);
                 return crate::adapter::AdapterCall::CancelOrderByClientId {
@@ -3676,34 +3886,34 @@ impl SseDecode for crate::adapter::AdapterCall {
                     client_id: var_clientId,
                 };
             }
-            16 => {
+            19 => {
                 let mut var_market = <Option<crate::convert::WireMarket>>::sse_decode(deserializer);
                 return crate::adapter::AdapterCall::Positions { market: var_market };
             }
-            17 => {
+            20 => {
                 return crate::adapter::AdapterCall::MarginSummary;
             }
-            18 => {
+            21 => {
                 let mut var_request =
                     <crate::convert::WireHistoryRequest>::sse_decode(deserializer);
                 return crate::adapter::AdapterCall::FundingRates {
                     request: var_request,
                 };
             }
-            19 => {
+            22 => {
                 let mut var_request =
                     <crate::convert::WireHistoryRequest>::sse_decode(deserializer);
                 return crate::adapter::AdapterCall::FundingPayments {
                     request: var_request,
                 };
             }
-            20 => {
+            23 => {
                 let mut var_request = <crate::convert::WireMarginRequest>::sse_decode(deserializer);
                 return crate::adapter::AdapterCall::SetMargin {
                     request: var_request,
                 };
             }
-            21 => {
+            24 => {
                 let mut var_streamId = <String>::sse_decode(deserializer);
                 let mut var_subscription =
                     <crate::adapter::WireSubscription>::sse_decode(deserializer);
@@ -3716,7 +3926,7 @@ impl SseDecode for crate::adapter::AdapterCall {
                     sink: var_sink,
                 };
             }
-            22 => {
+            25 => {
                 let mut var_streamId = <String>::sse_decode(deserializer);
                 let mut var_config = <crate::adapter::WireStreamConfig>::sse_decode(deserializer);
                 let mut var_sink = <AccountStreamSink>::sse_decode(deserializer);
@@ -3726,7 +3936,7 @@ impl SseDecode for crate::adapter::AdapterCall {
                     sink: var_sink,
                 };
             }
-            23 => {
+            26 => {
                 let mut var_streamId = <String>::sse_decode(deserializer);
                 return crate::adapter::AdapterCall::CancelStream {
                     stream_id: var_streamId,
@@ -3813,27 +4023,36 @@ impl SseDecode for crate::adapter::AdapterReply {
             }
             13 => {
                 let mut var_field0 = <crate::convert::WireOrder>::sse_decode(deserializer);
-                return crate::adapter::AdapterReply::PlaceOrder(var_field0);
+                return crate::adapter::AdapterReply::Order(var_field0);
             }
             14 => {
+                let mut var_field0 =
+                    <crate::convert::generated_models::WireOrderPage>::sse_decode(deserializer);
+                return crate::adapter::AdapterReply::OrderHistory(var_field0);
+            }
+            15 => {
+                let mut var_field0 = <crate::convert::WireOrder>::sse_decode(deserializer);
+                return crate::adapter::AdapterReply::PlaceOrder(var_field0);
+            }
+            16 => {
                 let mut var_field0 = <Vec<crate::convert::WirePosition>>::sse_decode(deserializer);
                 return crate::adapter::AdapterReply::Positions(var_field0);
             }
-            15 => {
+            17 => {
                 let mut var_field0 = <crate::convert::WireMarginSummary>::sse_decode(deserializer);
                 return crate::adapter::AdapterReply::MarginSummary(var_field0);
             }
-            16 => {
+            18 => {
                 let mut var_field0 =
                     <crate::convert::WireFundingRatePage>::sse_decode(deserializer);
                 return crate::adapter::AdapterReply::FundingRates(var_field0);
             }
-            17 => {
+            19 => {
                 let mut var_field0 =
                     <crate::convert::WireFundingPaymentPage>::sse_decode(deserializer);
                 return crate::adapter::AdapterReply::FundingPayments(var_field0);
             }
-            18 => {
+            20 => {
                 return crate::adapter::AdapterReply::Unit;
             }
             _ => {
@@ -4114,6 +4333,18 @@ impl SseDecode for Vec<crate::convert::WireOrderBook> {
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
             ans_.push(<crate::convert::WireOrderBook>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::convert::WireOrderStatus> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<crate::convert::WireOrderStatus>::sse_decode(deserializer));
         }
         return ans_;
     }
@@ -4933,14 +5164,15 @@ impl SseDecode for crate::convert::WireFeature {
             14 => crate::convert::WireFeature::Withdrawals,
             15 => crate::convert::WireFeature::WithdrawalHistory,
             16 => crate::convert::WireFeature::OpenOrders,
-            17 => crate::convert::WireFeature::AccountStream,
-            18 => crate::convert::WireFeature::Trading,
-            19 => crate::convert::WireFeature::Positions,
-            20 => crate::convert::WireFeature::Margin,
-            21 => crate::convert::WireFeature::FundingRates,
-            22 => crate::convert::WireFeature::FundingPayments,
-            23 => crate::convert::WireFeature::MarginConfig,
-            24 => crate::convert::WireFeature::ReduceOnlyOrders,
+            17 => crate::convert::WireFeature::OrderHistory,
+            18 => crate::convert::WireFeature::AccountStream,
+            19 => crate::convert::WireFeature::Trading,
+            20 => crate::convert::WireFeature::Positions,
+            21 => crate::convert::WireFeature::Margin,
+            22 => crate::convert::WireFeature::FundingRates,
+            23 => crate::convert::WireFeature::FundingPayments,
+            24 => crate::convert::WireFeature::MarginConfig,
+            25 => crate::convert::WireFeature::ReduceOnlyOrders,
             _ => unreachable!("Invalid variant for WireFeature: {}", inner),
         };
     }
@@ -5358,6 +5590,38 @@ impl SseDecode for crate::convert::WireOrderBook {
             timestamp_ns: var_timestampNs,
             bids: var_bids,
             asks: var_asks,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireOrderHistoryRequest {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_market = <Option<crate::convert::WireMarket>>::sse_decode(deserializer);
+        let mut var_statuses = <Vec<crate::convert::WireOrderStatus>>::sse_decode(deserializer);
+        let mut var_fromNs = <Option<i64>>::sse_decode(deserializer);
+        let mut var_toNs = <Option<i64>>::sse_decode(deserializer);
+        let mut var_cursor = <Option<String>>::sse_decode(deserializer);
+        let mut var_limit = <Option<u32>>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireOrderHistoryRequest {
+            market: var_market,
+            statuses: var_statuses,
+            from_ns: var_fromNs,
+            to_ns: var_toNs,
+            cursor: var_cursor,
+            limit: var_limit,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireOrderPage {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_items = <Vec<crate::convert::WireOrder>>::sse_decode(deserializer);
+        let mut var_next = <Option<String>>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireOrderPage {
+            items: var_items,
+            next: var_next,
         };
     }
 }
@@ -5940,73 +6204,81 @@ fn pde_ffi_dispatcher_primary_impl(
         28 => wire__crate__api__NativeClient_margin_summary_impl(port, ptr, rust_vec_len, data_len),
         29 => wire__crate__api__NativeClient_markets_impl(port, ptr, rust_vec_len, data_len),
         30 => wire__crate__api__NativeClient_open_orders_impl(port, ptr, rust_vec_len, data_len),
-        31 => wire__crate__api__NativeClient_order_book_impl(port, ptr, rust_vec_len, data_len),
-        32 => wire__crate__api__NativeClient_place_order_impl(port, ptr, rust_vec_len, data_len),
-        33 => wire__crate__api__NativeClient_positions_impl(port, ptr, rust_vec_len, data_len),
-        34 => wire__crate__api__NativeClient_prepare_transfer_to_impl(
+        31 => wire__crate__api__NativeClient_order_impl(port, ptr, rust_vec_len, data_len),
+        32 => wire__crate__api__NativeClient_order_book_impl(port, ptr, rust_vec_len, data_len),
+        33 => wire__crate__api__NativeClient_order_by_client_id_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        35 => wire__crate__api__NativeClient_prepare_transfer_to_chain_impl(
+        34 => wire__crate__api__NativeClient_order_history_impl(port, ptr, rust_vec_len, data_len),
+        35 => wire__crate__api__NativeClient_place_order_impl(port, ptr, rust_vec_len, data_len),
+        36 => wire__crate__api__NativeClient_positions_impl(port, ptr, rust_vec_len, data_len),
+        37 => wire__crate__api__NativeClient_prepare_transfer_to_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        36 => wire__crate__api__NativeClient_prepare_withdrawal_impl(
+        38 => wire__crate__api__NativeClient_prepare_transfer_to_chain_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        37 => wire__crate__api__NativeClient_set_margin_impl(port, ptr, rust_vec_len, data_len),
-        38 => wire__crate__api__NativeClient_subscribe_impl(port, ptr, rust_vec_len, data_len),
-        39 => {
+        39 => wire__crate__api__NativeClient_prepare_withdrawal_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        40 => wire__crate__api__NativeClient_set_margin_impl(port, ptr, rust_vec_len, data_len),
+        41 => wire__crate__api__NativeClient_subscribe_impl(port, ptr, rust_vec_len, data_len),
+        42 => {
             wire__crate__api__NativeClient_subscribe_account_impl(port, ptr, rust_vec_len, data_len)
         }
-        41 => wire__crate__api__NativeClient_ticker_impl(port, ptr, rust_vec_len, data_len),
-        42 => wire__crate__api__NativeClient_trades_impl(port, ptr, rust_vec_len, data_len),
-        44 => wire__crate__api__NativeClient_upbit_market_events_impl(
+        44 => wire__crate__api__NativeClient_ticker_impl(port, ptr, rust_vec_len, data_len),
+        45 => wire__crate__api__NativeClient_trades_impl(port, ptr, rust_vec_len, data_len),
+        47 => wire__crate__api__NativeClient_upbit_market_events_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        45 => {
+        48 => {
             wire__crate__api__NativeClient_upbit_order_books_impl(port, ptr, rust_vec_len, data_len)
         }
-        47 => wire__crate__api__NativeClient_upbit_tickers_impl(port, ptr, rust_vec_len, data_len),
-        48 => wire__crate__api__NativeClient_withdraw_impl(port, ptr, rust_vec_len, data_len),
-        49 => wire__crate__api__NativeClient_withdrawals_impl(port, ptr, rust_vec_len, data_len),
-        51 => wire__crate__api__account_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
-        54 => wire__crate__api__market_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
-        55 => wire__crate__api__native_account_subscription_close_impl(
+        50 => wire__crate__api__NativeClient_upbit_tickers_impl(port, ptr, rust_vec_len, data_len),
+        51 => wire__crate__api__NativeClient_withdraw_impl(port, ptr, rust_vec_len, data_len),
+        52 => wire__crate__api__NativeClient_withdrawals_impl(port, ptr, rust_vec_len, data_len),
+        54 => wire__crate__api__account_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
+        57 => wire__crate__api__market_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
+        58 => wire__crate__api__native_account_subscription_close_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        56 => wire__crate__api__native_account_subscription_next_impl(
+        59 => wire__crate__api__native_account_subscription_next_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        57 => wire__crate__api__native_market_subscription_close_impl(
+        60 => wire__crate__api__native_market_subscription_close_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        58 => wire__crate__api__native_market_subscription_next_impl(
+        61 => wire__crate__api__native_market_subscription_next_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        60 => wire__crate__api__register_dart_adapter_impl(port, ptr, rust_vec_len, data_len),
+        63 => wire__crate__api__register_dart_adapter_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -6027,13 +6299,13 @@ fn pde_ffi_dispatcher_sync_impl(
         21 => wire__crate__api__NativeClient_from_dart_adapter_impl(ptr, rust_vec_len, data_len),
         24 => wire__crate__api__NativeClient_hyperliquid_impl(ptr, rust_vec_len, data_len),
         27 => wire__crate__api__NativeClient_is_testnet_impl(ptr, rust_vec_len, data_len),
-        40 => wire__crate__api__NativeClient_supports_impl(ptr, rust_vec_len, data_len),
-        43 => wire__crate__api__NativeClient_upbit_impl(ptr, rust_vec_len, data_len),
-        46 => wire__crate__api__NativeClient_upbit_region_impl(ptr, rust_vec_len, data_len),
-        50 => wire__crate__api__WireBinanceListenKey_value_impl(ptr, rust_vec_len, data_len),
-        52 => wire__crate__api__bridge_version_impl(ptr, rust_vec_len, data_len),
-        53 => wire__crate__api__configure_browser_relay_impl(ptr, rust_vec_len, data_len),
-        59 => {
+        43 => wire__crate__api__NativeClient_supports_impl(ptr, rust_vec_len, data_len),
+        46 => wire__crate__api__NativeClient_upbit_impl(ptr, rust_vec_len, data_len),
+        49 => wire__crate__api__NativeClient_upbit_region_impl(ptr, rust_vec_len, data_len),
+        53 => wire__crate__api__WireBinanceListenKey_value_impl(ptr, rust_vec_len, data_len),
+        55 => wire__crate__api__bridge_version_impl(ptr, rust_vec_len, data_len),
+        56 => wire__crate__api__configure_browser_relay_impl(ptr, rust_vec_len, data_len),
+        62 => {
             wire__crate__api__pending_market_subscription_for_test_impl(ptr, rust_vec_len, data_len)
         }
         _ => unreachable!(),
@@ -6235,33 +6507,48 @@ impl flutter_rust_bridge::IntoDart for crate::adapter::AdapterCall {
             crate::adapter::AdapterCall::OpenOrders { market } => {
                 [12.into_dart(), market.into_into_dart().into_dart()].into_dart()
             }
+            crate::adapter::AdapterCall::Order { market, order_id } => [
+                13.into_dart(),
+                market.into_into_dart().into_dart(),
+                order_id.into_into_dart().into_dart(),
+            ]
+            .into_dart(),
+            crate::adapter::AdapterCall::OrderByClientId { market, client_id } => [
+                14.into_dart(),
+                market.into_into_dart().into_dart(),
+                client_id.into_into_dart().into_dart(),
+            ]
+            .into_dart(),
+            crate::adapter::AdapterCall::OrderHistory { request } => {
+                [15.into_dart(), request.into_into_dart().into_dart()].into_dart()
+            }
             crate::adapter::AdapterCall::PlaceOrder { request } => {
-                [13.into_dart(), request.into_into_dart().into_dart()].into_dart()
+                [16.into_dart(), request.into_into_dart().into_dart()].into_dart()
             }
             crate::adapter::AdapterCall::CancelOrder { market, order_id } => [
-                14.into_dart(),
+                17.into_dart(),
                 market.into_into_dart().into_dart(),
                 order_id.into_into_dart().into_dart(),
             ]
             .into_dart(),
             crate::adapter::AdapterCall::CancelOrderByClientId { market, client_id } => [
-                15.into_dart(),
+                18.into_dart(),
                 market.into_into_dart().into_dart(),
                 client_id.into_into_dart().into_dart(),
             ]
             .into_dart(),
             crate::adapter::AdapterCall::Positions { market } => {
-                [16.into_dart(), market.into_into_dart().into_dart()].into_dart()
+                [19.into_dart(), market.into_into_dart().into_dart()].into_dart()
             }
-            crate::adapter::AdapterCall::MarginSummary => [17.into_dart()].into_dart(),
+            crate::adapter::AdapterCall::MarginSummary => [20.into_dart()].into_dart(),
             crate::adapter::AdapterCall::FundingRates { request } => {
-                [18.into_dart(), request.into_into_dart().into_dart()].into_dart()
+                [21.into_dart(), request.into_into_dart().into_dart()].into_dart()
             }
             crate::adapter::AdapterCall::FundingPayments { request } => {
-                [19.into_dart(), request.into_into_dart().into_dart()].into_dart()
+                [22.into_dart(), request.into_into_dart().into_dart()].into_dart()
             }
             crate::adapter::AdapterCall::SetMargin { request } => {
-                [20.into_dart(), request.into_into_dart().into_dart()].into_dart()
+                [23.into_dart(), request.into_into_dart().into_dart()].into_dart()
             }
             crate::adapter::AdapterCall::Subscribe {
                 stream_id,
@@ -6269,7 +6556,7 @@ impl flutter_rust_bridge::IntoDart for crate::adapter::AdapterCall {
                 config,
                 sink,
             } => [
-                21.into_dart(),
+                24.into_dart(),
                 stream_id.into_into_dart().into_dart(),
                 subscription.into_into_dart().into_dart(),
                 config.into_into_dart().into_dart(),
@@ -6281,14 +6568,14 @@ impl flutter_rust_bridge::IntoDart for crate::adapter::AdapterCall {
                 config,
                 sink,
             } => [
-                22.into_dart(),
+                25.into_dart(),
                 stream_id.into_into_dart().into_dart(),
                 config.into_into_dart().into_dart(),
                 sink.into_into_dart().into_dart(),
             ]
             .into_dart(),
             crate::adapter::AdapterCall::CancelStream { stream_id } => {
-                [23.into_dart(), stream_id.into_into_dart().into_dart()].into_dart()
+                [26.into_dart(), stream_id.into_into_dart().into_dart()].into_dart()
             }
             _ => {
                 unimplemented!("");
@@ -6347,22 +6634,28 @@ impl flutter_rust_bridge::IntoDart for crate::adapter::AdapterReply {
             crate::adapter::AdapterReply::OpenOrders(field0) => {
                 [12.into_dart(), field0.into_into_dart().into_dart()].into_dart()
             }
-            crate::adapter::AdapterReply::PlaceOrder(field0) => {
+            crate::adapter::AdapterReply::Order(field0) => {
                 [13.into_dart(), field0.into_into_dart().into_dart()].into_dart()
             }
-            crate::adapter::AdapterReply::Positions(field0) => {
+            crate::adapter::AdapterReply::OrderHistory(field0) => {
                 [14.into_dart(), field0.into_into_dart().into_dart()].into_dart()
             }
-            crate::adapter::AdapterReply::MarginSummary(field0) => {
+            crate::adapter::AdapterReply::PlaceOrder(field0) => {
                 [15.into_dart(), field0.into_into_dart().into_dart()].into_dart()
             }
-            crate::adapter::AdapterReply::FundingRates(field0) => {
+            crate::adapter::AdapterReply::Positions(field0) => {
                 [16.into_dart(), field0.into_into_dart().into_dart()].into_dart()
             }
-            crate::adapter::AdapterReply::FundingPayments(field0) => {
+            crate::adapter::AdapterReply::MarginSummary(field0) => {
                 [17.into_dart(), field0.into_into_dart().into_dart()].into_dart()
             }
-            crate::adapter::AdapterReply::Unit => [18.into_dart()].into_dart(),
+            crate::adapter::AdapterReply::FundingRates(field0) => {
+                [18.into_dart(), field0.into_into_dart().into_dart()].into_dart()
+            }
+            crate::adapter::AdapterReply::FundingPayments(field0) => {
+                [19.into_dart(), field0.into_into_dart().into_dart()].into_dart()
+            }
+            crate::adapter::AdapterReply::Unit => [20.into_dart()].into_dart(),
             _ => {
                 unimplemented!("");
             }
@@ -7053,14 +7346,15 @@ impl flutter_rust_bridge::IntoDart for crate::convert::WireFeature {
             Self::Withdrawals => 14.into_dart(),
             Self::WithdrawalHistory => 15.into_dart(),
             Self::OpenOrders => 16.into_dart(),
-            Self::AccountStream => 17.into_dart(),
-            Self::Trading => 18.into_dart(),
-            Self::Positions => 19.into_dart(),
-            Self::Margin => 20.into_dart(),
-            Self::FundingRates => 21.into_dart(),
-            Self::FundingPayments => 22.into_dart(),
-            Self::MarginConfig => 23.into_dart(),
-            Self::ReduceOnlyOrders => 24.into_dart(),
+            Self::OrderHistory => 17.into_dart(),
+            Self::AccountStream => 18.into_dart(),
+            Self::Trading => 19.into_dart(),
+            Self::Positions => 20.into_dart(),
+            Self::Margin => 21.into_dart(),
+            Self::FundingRates => 22.into_dart(),
+            Self::FundingPayments => 23.into_dart(),
+            Self::MarginConfig => 24.into_dart(),
+            Self::ReduceOnlyOrders => 25.into_dart(),
             _ => unreachable!(),
         }
     }
@@ -7614,6 +7908,52 @@ impl flutter_rust_bridge::IntoIntoDart<crate::convert::WireOrderBook>
     for crate::convert::WireOrderBook
 {
     fn into_into_dart(self) -> crate::convert::WireOrderBook {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireOrderHistoryRequest {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.market.into_into_dart().into_dart(),
+            self.statuses.into_into_dart().into_dart(),
+            self.from_ns.into_into_dart().into_dart(),
+            self.to_ns.into_into_dart().into_dart(),
+            self.cursor.into_into_dart().into_dart(),
+            self.limit.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireOrderHistoryRequest
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireOrderHistoryRequest>
+    for crate::convert::generated_models::WireOrderHistoryRequest
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireOrderHistoryRequest {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireOrderPage {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.items.into_into_dart().into_dart(),
+            self.next.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireOrderPage
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireOrderPage>
+    for crate::convert::generated_models::WireOrderPage
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireOrderPage {
         self
     }
 }
@@ -8487,37 +8827,53 @@ impl SseEncode for crate::adapter::AdapterCall {
                 <i32>::sse_encode(12, serializer);
                 <Option<crate::convert::WireMarket>>::sse_encode(market, serializer);
             }
-            crate::adapter::AdapterCall::PlaceOrder { request } => {
+            crate::adapter::AdapterCall::Order { market, order_id } => {
                 <i32>::sse_encode(13, serializer);
+                <crate::convert::WireMarket>::sse_encode(market, serializer);
+                <String>::sse_encode(order_id, serializer);
+            }
+            crate::adapter::AdapterCall::OrderByClientId { market, client_id } => {
+                <i32>::sse_encode(14, serializer);
+                <crate::convert::WireMarket>::sse_encode(market, serializer);
+                <String>::sse_encode(client_id, serializer);
+            }
+            crate::adapter::AdapterCall::OrderHistory { request } => {
+                <i32>::sse_encode(15, serializer);
+                <crate::convert::generated_models::WireOrderHistoryRequest>::sse_encode(
+                    request, serializer,
+                );
+            }
+            crate::adapter::AdapterCall::PlaceOrder { request } => {
+                <i32>::sse_encode(16, serializer);
                 <crate::convert::WireOrderRequest>::sse_encode(request, serializer);
             }
             crate::adapter::AdapterCall::CancelOrder { market, order_id } => {
-                <i32>::sse_encode(14, serializer);
+                <i32>::sse_encode(17, serializer);
                 <crate::convert::WireMarket>::sse_encode(market, serializer);
                 <String>::sse_encode(order_id, serializer);
             }
             crate::adapter::AdapterCall::CancelOrderByClientId { market, client_id } => {
-                <i32>::sse_encode(15, serializer);
+                <i32>::sse_encode(18, serializer);
                 <crate::convert::WireMarket>::sse_encode(market, serializer);
                 <String>::sse_encode(client_id, serializer);
             }
             crate::adapter::AdapterCall::Positions { market } => {
-                <i32>::sse_encode(16, serializer);
+                <i32>::sse_encode(19, serializer);
                 <Option<crate::convert::WireMarket>>::sse_encode(market, serializer);
             }
             crate::adapter::AdapterCall::MarginSummary => {
-                <i32>::sse_encode(17, serializer);
+                <i32>::sse_encode(20, serializer);
             }
             crate::adapter::AdapterCall::FundingRates { request } => {
-                <i32>::sse_encode(18, serializer);
+                <i32>::sse_encode(21, serializer);
                 <crate::convert::WireHistoryRequest>::sse_encode(request, serializer);
             }
             crate::adapter::AdapterCall::FundingPayments { request } => {
-                <i32>::sse_encode(19, serializer);
+                <i32>::sse_encode(22, serializer);
                 <crate::convert::WireHistoryRequest>::sse_encode(request, serializer);
             }
             crate::adapter::AdapterCall::SetMargin { request } => {
-                <i32>::sse_encode(20, serializer);
+                <i32>::sse_encode(23, serializer);
                 <crate::convert::WireMarginRequest>::sse_encode(request, serializer);
             }
             crate::adapter::AdapterCall::Subscribe {
@@ -8526,7 +8882,7 @@ impl SseEncode for crate::adapter::AdapterCall {
                 config,
                 sink,
             } => {
-                <i32>::sse_encode(21, serializer);
+                <i32>::sse_encode(24, serializer);
                 <String>::sse_encode(stream_id, serializer);
                 <crate::adapter::WireSubscription>::sse_encode(subscription, serializer);
                 <crate::adapter::WireStreamConfig>::sse_encode(config, serializer);
@@ -8537,13 +8893,13 @@ impl SseEncode for crate::adapter::AdapterCall {
                 config,
                 sink,
             } => {
-                <i32>::sse_encode(22, serializer);
+                <i32>::sse_encode(25, serializer);
                 <String>::sse_encode(stream_id, serializer);
                 <crate::adapter::WireStreamConfig>::sse_encode(config, serializer);
                 <AccountStreamSink>::sse_encode(sink, serializer);
             }
             crate::adapter::AdapterCall::CancelStream { stream_id } => {
-                <i32>::sse_encode(23, serializer);
+                <i32>::sse_encode(26, serializer);
                 <String>::sse_encode(stream_id, serializer);
             }
             _ => {
@@ -8617,28 +8973,36 @@ impl SseEncode for crate::adapter::AdapterReply {
                 <i32>::sse_encode(12, serializer);
                 <Vec<crate::convert::WireOrder>>::sse_encode(field0, serializer);
             }
-            crate::adapter::AdapterReply::PlaceOrder(field0) => {
+            crate::adapter::AdapterReply::Order(field0) => {
                 <i32>::sse_encode(13, serializer);
                 <crate::convert::WireOrder>::sse_encode(field0, serializer);
             }
-            crate::adapter::AdapterReply::Positions(field0) => {
+            crate::adapter::AdapterReply::OrderHistory(field0) => {
                 <i32>::sse_encode(14, serializer);
+                <crate::convert::generated_models::WireOrderPage>::sse_encode(field0, serializer);
+            }
+            crate::adapter::AdapterReply::PlaceOrder(field0) => {
+                <i32>::sse_encode(15, serializer);
+                <crate::convert::WireOrder>::sse_encode(field0, serializer);
+            }
+            crate::adapter::AdapterReply::Positions(field0) => {
+                <i32>::sse_encode(16, serializer);
                 <Vec<crate::convert::WirePosition>>::sse_encode(field0, serializer);
             }
             crate::adapter::AdapterReply::MarginSummary(field0) => {
-                <i32>::sse_encode(15, serializer);
+                <i32>::sse_encode(17, serializer);
                 <crate::convert::WireMarginSummary>::sse_encode(field0, serializer);
             }
             crate::adapter::AdapterReply::FundingRates(field0) => {
-                <i32>::sse_encode(16, serializer);
+                <i32>::sse_encode(18, serializer);
                 <crate::convert::WireFundingRatePage>::sse_encode(field0, serializer);
             }
             crate::adapter::AdapterReply::FundingPayments(field0) => {
-                <i32>::sse_encode(17, serializer);
+                <i32>::sse_encode(19, serializer);
                 <crate::convert::WireFundingPaymentPage>::sse_encode(field0, serializer);
             }
             crate::adapter::AdapterReply::Unit => {
-                <i32>::sse_encode(18, serializer);
+                <i32>::sse_encode(20, serializer);
             }
             _ => {
                 unimplemented!("");
@@ -8873,6 +9237,16 @@ impl SseEncode for Vec<crate::convert::WireOrderBook> {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
             <crate::convert::WireOrderBook>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::convert::WireOrderStatus> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::WireOrderStatus>::sse_encode(item, serializer);
         }
     }
 }
@@ -9546,14 +9920,15 @@ impl SseEncode for crate::convert::WireFeature {
                 crate::convert::WireFeature::Withdrawals => 14,
                 crate::convert::WireFeature::WithdrawalHistory => 15,
                 crate::convert::WireFeature::OpenOrders => 16,
-                crate::convert::WireFeature::AccountStream => 17,
-                crate::convert::WireFeature::Trading => 18,
-                crate::convert::WireFeature::Positions => 19,
-                crate::convert::WireFeature::Margin => 20,
-                crate::convert::WireFeature::FundingRates => 21,
-                crate::convert::WireFeature::FundingPayments => 22,
-                crate::convert::WireFeature::MarginConfig => 23,
-                crate::convert::WireFeature::ReduceOnlyOrders => 24,
+                crate::convert::WireFeature::OrderHistory => 17,
+                crate::convert::WireFeature::AccountStream => 18,
+                crate::convert::WireFeature::Trading => 19,
+                crate::convert::WireFeature::Positions => 20,
+                crate::convert::WireFeature::Margin => 21,
+                crate::convert::WireFeature::FundingRates => 22,
+                crate::convert::WireFeature::FundingPayments => 23,
+                crate::convert::WireFeature::MarginConfig => 24,
+                crate::convert::WireFeature::ReduceOnlyOrders => 25,
                 _ => {
                     unimplemented!("");
                 }
@@ -9897,6 +10272,26 @@ impl SseEncode for crate::convert::WireOrderBook {
         <i64>::sse_encode(self.timestamp_ns, serializer);
         <Vec<crate::convert::WireLevel>>::sse_encode(self.bids, serializer);
         <Vec<crate::convert::WireLevel>>::sse_encode(self.asks, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireOrderHistoryRequest {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Option<crate::convert::WireMarket>>::sse_encode(self.market, serializer);
+        <Vec<crate::convert::WireOrderStatus>>::sse_encode(self.statuses, serializer);
+        <Option<i64>>::sse_encode(self.from_ns, serializer);
+        <Option<i64>>::sse_encode(self.to_ns, serializer);
+        <Option<String>>::sse_encode(self.cursor, serializer);
+        <Option<u32>>::sse_encode(self.limit, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireOrderPage {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<crate::convert::WireOrder>>::sse_encode(self.items, serializer);
+        <Option<String>>::sse_encode(self.next, serializer);
     }
 }
 

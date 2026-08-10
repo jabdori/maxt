@@ -282,6 +282,17 @@ fn _guard_order_request_wire(value: WireOrderRequest) {
     } = value;
 }
 
+fn _guard_order_history_request_wire(value: WireOrderHistoryRequest) {
+    let WireOrderHistoryRequest {
+        market: _,
+        statuses: _,
+        from_ns: _,
+        to_ns: _,
+        cursor: _,
+        limit: _,
+    } = value;
+}
+
 fn _guard_deposit_address_request_wire(value: WireDepositAddressRequest) {
     let WireDepositAddressRequest {
         asset: _,
@@ -366,7 +377,11 @@ fn _guard_hyperliquid_asset_context_wire(value: WireHyperliquidAssetContext) {
 fn _guard_withdrawal_fee_wire(value: WireWithdrawalFee) {
     match value {
         WireWithdrawalFee::Fixed(_) => {}
-        WireWithdrawalFee::Rate { rate: _, minimum: _, maximum: _ } => {}
+        WireWithdrawalFee::Rate {
+            rate: _,
+            minimum: _,
+            maximum: _,
+        } => {}
     }
 }
 
@@ -442,6 +457,7 @@ fn _guard_feature(value: WireFeature) {
         WireFeature::Withdrawals => {}
         WireFeature::WithdrawalHistory => {}
         WireFeature::OpenOrders => {}
+        WireFeature::OrderHistory => {}
         WireFeature::AccountStream => {}
         WireFeature::Trading => {}
         WireFeature::Positions => {}

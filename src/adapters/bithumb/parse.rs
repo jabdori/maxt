@@ -497,7 +497,13 @@ pub(crate) fn order(entry: &Value) -> Result<Order> {
     let remaining_quantity = dec(entry, "remaining_volume")?;
 
     Ok(Order {
-        id: text(entry, "uuid")?.to_string(),
+        id: entry
+            .get("uuid")
+            .or_else(|| entry.get("order_id"))
+            .and_then(Value::as_str)
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| Error::decode("missing `uuid` or `order_id`"))?
+            .to_string(),
         market: market_field(entry, "market")?,
         side: side(entry, "side")?,
         status: rest_order_status(text(entry, "state")?, filled_quantity),

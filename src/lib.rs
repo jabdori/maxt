@@ -54,8 +54,8 @@ pub use client::Client;
 pub use error::{Error, ExchangeErrorKind, Result, TransferErrorKind};
 pub use feature::Feature;
 pub use request::{
-    CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest, OrderRequest,
-    TransferHistoryRequest, WithdrawRequest,
+    CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest, OrderHistoryRequest,
+    OrderRequest, TransferHistoryRequest, WithdrawRequest,
 };
 pub use stream::{AccountStream, MarketStream};
 pub use types::{

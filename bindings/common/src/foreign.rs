@@ -5,8 +5,9 @@ use maxt::{
     AccountStream, Adapter, AssetNetwork, Balance, BoxFuture, Candle, CandleRequest, Deposit,
     DepositAddress, DepositAddressRequest, Exchange, Feature, FundingPayment, FundingRate,
     HistoryRequest, MarginRequest, MarginSummary, Market, MarketInfo, MarketKind, MarketStream,
-    Order, OrderBook, OrderRequest, Page, Position, Result, StreamConfig, Subscription, Ticker,
-    Trade, TransferHistoryRequest, WithdrawRequest, Withdrawal, WithdrawalQuote,
+    Order, OrderBook, OrderHistoryRequest, OrderRequest, Page, Position, Result, StreamConfig,
+    Subscription, Ticker, Trade, TransferHistoryRequest, WithdrawRequest, Withdrawal,
+    WithdrawalQuote,
 };
 
 use crate::{AdapterCall, AdapterReply, ForeignDispatcher};
@@ -227,6 +228,41 @@ impl Adapter for ForeignAdapter {
             },
             AdapterReply::OpenOrders,
             "OpenOrders"
+        )
+    }
+
+    fn order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<Order>> {
+        dispatch!(
+            self,
+            AdapterCall::Order {
+                market: market.clone(),
+                order_id: order_id.to_owned(),
+            },
+            AdapterReply::Order,
+            "Order"
+        )
+    }
+
+    fn order_by_client_id(&self, market: &Market, client_id: &str) -> BoxFuture<'_, Result<Order>> {
+        dispatch!(
+            self,
+            AdapterCall::OrderByClientId {
+                market: market.clone(),
+                client_id: client_id.to_owned(),
+            },
+            AdapterReply::Order,
+            "Order"
+        )
+    }
+
+    fn order_history(&self, request: &OrderHistoryRequest) -> BoxFuture<'_, Result<Page<Order>>> {
+        dispatch!(
+            self,
+            AdapterCall::OrderHistory {
+                request: request.clone(),
+            },
+            AdapterReply::OrderHistory,
+            "OrderHistory"
         )
     }
 

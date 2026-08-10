@@ -291,6 +291,16 @@ pub(crate) fn list_to_wire<T>(
     Ok(PyList::new(py, values)?.into_any().unbind())
 }
 
+pub(crate) fn list_from_wire<T>(
+    value: &Bound<'_, PyAny>,
+    parse: fn(&Bound<'_, PyAny>) -> PyResult<T>,
+) -> PyResult<Vec<T>> {
+    value
+        .try_iter()?
+        .map(|item| parse(&item?))
+        .collect::<PyResult<Vec<_>>>()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

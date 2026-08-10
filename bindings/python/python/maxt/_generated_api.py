@@ -54,6 +54,15 @@ class _GeneratedAdapterApi:
     async def open_orders(self, market: Optional[Market] = None) -> list[Order]:
         raise self._unsupported(Feature.OPEN_ORDERS)
 
+    async def order(self, market: Market, order_id: str) -> Order:
+        raise self._unsupported(Feature.ORDER_HISTORY)
+
+    async def order_by_client_id(self, market: Market, client_id: str) -> Order:
+        raise self._unsupported(Feature.ORDER_HISTORY)
+
+    async def order_history(self, request: OrderHistoryRequest) -> Page[Order]:
+        raise self._unsupported(Feature.ORDER_HISTORY)
+
     async def subscribe_account(self, config: StreamConfig) -> AccountStream[Union[StreamEvent[AccountEvent], StreamError]]:
         raise self._unsupported(Feature.ACCOUNT_STREAM)
 
@@ -132,6 +141,15 @@ class _GeneratedClientApi:
 
     async def open_orders_on(self, market: Market) -> list[Order]:
         return await self._delegate.open_orders(market)
+
+    async def order(self, market: Market, order_id: str) -> Order:
+        return await self._delegate.order(market, order_id)
+
+    async def order_by_client_id(self, market: Market, client_id: str) -> Order:
+        return await self._delegate.order_by_client_id(market, client_id)
+
+    async def order_history(self, request: OrderHistoryRequest) -> Page[Order]:
+        return await self._delegate.order_history(request)
 
     async def subscribe_account(self) -> AccountStream[Union[StreamEvent[AccountEvent], StreamError]]:
         return await self.subscribe_account_with(StreamConfig())

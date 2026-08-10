@@ -6,9 +6,9 @@ use maxt::{
     AccountEvent, Adapter, Balance, BoxFuture, Candle, CandleRequest, Cursor, Decimal, Error,
     Exchange, ExchangeErrorKind, Feature, Feed, FundingPayment, FundingRate, HistoryRequest,
     Interval, Level, MarginMode, MarginRequest, MarginSummary, Market, MarketEvent, MarketInfo,
-    MarketKind, MarketStatus, Order, OrderBook, OrderRequest, OrderStatus, OrderType, Overflow,
-    Page, Position, Result, Side, Size, StreamConfig, Subscription, Ticker, TimeInForce, Timestamp,
-    Trade,
+    MarketKind, MarketStatus, Order, OrderBook, OrderHistoryRequest, OrderRequest, OrderStatus,
+    OrderType, Overflow, Page, Position, Result, Side, Size, StreamConfig, Subscription, Ticker,
+    TimeInForce, Timestamp, Trade,
 };
 use maxt_bindings_common::{AdapterCall, AdapterReply, ForeignAdapter, ForeignDispatcher};
 use pyo3::IntoPyObjectExt;
@@ -17,8 +17,8 @@ use pyo3::types::{PyAnyMethods, PyDict, PyList, PyTracebackMethods, PyTuple};
 
 use crate::convert::{
     decimal_from_wire, decimal_to_wire, exchange_from_wire, feature_from_wire, interval_from_wire,
-    margin_mode_from_wire, market_from_wire, market_to_wire, optional, required, side_from_wire,
-    text, timestamp_to_wire, transfer_error_kind_from_wire, wire_object,
+    list_from_wire, margin_mode_from_wire, market_from_wire, market_to_wire, optional, required,
+    side_from_wire, text, timestamp_to_wire, transfer_error_kind_from_wire, wire_object,
 };
 
 macro_rules! wire_dict {
@@ -153,6 +153,7 @@ fn order_request_object(py: Python<'_>, value: &OrderRequest) -> PyResult<Py<PyA
     let order_type = match value.order_type {
         OrderType::Market => "market",
         OrderType::Limit => "limit",
+        OrderType::Best => "best",
         _ => return Err(binding_contract("OrderType")),
     };
     let (size_kind, size_value) = match value.size {
@@ -175,8 +176,17 @@ fn order_request_object(py: Python<'_>, value: &OrderRequest) -> PyResult<Py<PyA
         "price" => value.price.map(decimal_to_wire),
         "time_in_force" => time_in_force,
         "reduce_only" => value.reduce_only,
+        "client_id" => &value.client_id,
     )?;
     model_object(py, "OrderRequest", wire)
+}
+
+fn order_history_request_object(
+    py: Python<'_>,
+    value: &OrderHistoryRequest,
+) -> PyResult<Py<PyAny>> {
+    let wire = crate::convert::order_history_request_to_wire(py, value)?;
+    model_object(py, "OrderHistoryRequest", wire)
 }
 
 fn history_request_object(py: Python<'_>, value: &HistoryRequest) -> PyResult<Py<PyAny>> {
@@ -287,6 +297,12 @@ fn decode_reply(
         ReplyKind::OpenOrders => {
             list_from_wire(value, order_from_wire).map(AdapterReply::OpenOrders)
         }
+        ReplyKind::Order | ReplyKind::OrderByClientId => {
+            order_from_wire(value).map(AdapterReply::Order)
+        }
+        ReplyKind::OrderHistory => {
+            page_from_wire(value, order_from_wire).map(AdapterReply::OrderHistory)
+        }
         ReplyKind::AccountStream => {
             crate::stream::account_stream_from_python(value).map(AdapterReply::AccountStream)
         }
@@ -311,16 +327,6 @@ fn decode_reply(
             "generated adapter reply decoder returned no result",
         )),
     }
-}
-
-fn list_from_wire<T>(
-    value: &Bound<'_, PyAny>,
-    parse: fn(&Bound<'_, PyAny>) -> PyResult<T>,
-) -> PyResult<Vec<T>> {
-    value
-        .try_iter()?
-        .map(|item| parse(&item?))
-        .collect::<PyResult<Vec<_>>>()
 }
 
 fn page_from_wire<T>(

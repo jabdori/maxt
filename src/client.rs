@@ -4,8 +4,8 @@ use crate::adapter::Adapter;
 use crate::error::Result;
 use crate::feature::Feature;
 use crate::request::{
-    CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest, OrderRequest,
-    TransferHistoryRequest, WithdrawRequest,
+    CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest, OrderHistoryRequest,
+    OrderRequest, TransferHistoryRequest, WithdrawRequest,
 };
 use crate::stream::{AccountStream, MarketStream};
 use crate::types::{
@@ -204,6 +204,29 @@ impl<A: Adapter> Client<A> {
     /// adapter applies the market filter.
     pub async fn open_orders_on(&self, market: &Market) -> Result<Vec<Order>> {
         self.adapter.open_orders(Some(market)).await
+    }
+
+    /// Reads one order by the exchange's own identifier.
+    ///
+    /// Requires credentials. `market` prevents an identifier from silently
+    /// resolving to an order on a different market.
+    pub async fn order(&self, market: &Market, order_id: &str) -> Result<Order> {
+        self.adapter.order(market, order_id).await
+    }
+
+    /// Reads one order by the caller-assigned identifier used at placement.
+    ///
+    /// Requires credentials.
+    pub async fn order_by_client_id(&self, market: &Market, client_id: &str) -> Result<Order> {
+        self.adapter.order_by_client_id(market, client_id).await
+    }
+
+    /// Reads one newest-first page of completed or cancelled orders.
+    ///
+    /// Requires credentials. Feed [`Page::next`](crate::Page::next) back into
+    /// the request until it is `None`.
+    pub async fn order_history(&self, request: &OrderHistoryRequest) -> Result<Page<Order>> {
+        self.adapter.order_history(request).await
     }
 
     /// Opens a live private account subscription with default settings.

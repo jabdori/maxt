@@ -730,13 +730,15 @@ pub(crate) fn stream_order(raw: &RawStreamOrder) -> Result<Order> {
 /// Reads `created_at`, which REST orders carry as an offset datetime in the
 /// region's local zone.
 fn created_at(raw: &str) -> Result<Timestamp> {
-    DateTime::parse_from_rfc3339(raw)
-        .map(|at| Timestamp::from_secs(at.timestamp()))
-        .map_err(|err| {
-            Error::decode(format!(
-                "`created_at` is not an RFC 3339 datetime: {raw} ({err})"
-            ))
-        })
+    let parsed = DateTime::parse_from_rfc3339(raw).map_err(|err| {
+        Error::decode(format!(
+            "`created_at` is not an RFC 3339 datetime: {raw} ({err})"
+        ))
+    })?;
+    parsed
+        .timestamp_nanos_opt()
+        .map(Timestamp::from_nanos)
+        .ok_or_else(|| Error::decode(format!("`created_at` is outside timestamp range: {raw}")))
 }
 
 #[cfg(test)]
@@ -1398,6 +1400,14 @@ mod tests {
         assert_eq!(order.remaining_quantity, decimal_of("0.0001"));
         // 2024-06-13T10:28:36+09:00 is 01:28:36 UTC.
         assert_eq!(order.created_at, Some(Timestamp::from_secs(1_718_242_116)));
+    }
+
+    #[test]
+    fn rest_order_time_keeps_subsecond_precision() {
+        assert_eq!(
+            created_at("2024-06-13T10:28:36.123456789+09:00").expect("an offset time"),
+            Timestamp::from_nanos(1_718_242_116_123_456_789)
+        );
     }
 
     #[test]

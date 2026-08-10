@@ -11,9 +11,11 @@ use serde_json::Value;
 use sha2::{Digest, Sha256, Sha512};
 
 use crate::error::{Error, Result};
-use crate::request::OrderRequest;
+use crate::request::{OrderHistoryRequest, OrderRequest};
 use crate::transport::{HttpRequest, HttpTransport};
-use crate::types::{Balance, Market, Order, OrderStatus, OrderType, Side, Size, Timestamp};
+use crate::types::{
+    Balance, Cursor, Market, Order, OrderStatus, OrderType, Page, Side, Size, Timestamp,
+};
 
 use super::BithumbCredentials;
 use super::parse::{self, EXCHANGE};
@@ -110,7 +112,7 @@ fn signed_value(name: &str, value: &str) -> Result<()> {
     }
     if !value
         .bytes()
-        .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_'))
+        .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~'))
     {
         return Err(Error::invalid_request(
             name,
@@ -125,11 +127,34 @@ fn signed_get(
     path: &str,
     params: &[(&str, String)],
 ) -> Result<HttpRequest> {
-    let query = signed_query(params)?;
+    let signed = signed_query(params)?;
 
     Ok(HttpRequest::get(path)
-        .query(query.clone())
-        .header("authorization", authorization(credentials, &query)?))
+        .query(encoded_query(params))
+        .header("authorization", authorization(credentials, &signed)?))
+}
+
+fn encoded_query(params: &[(&str, String)]) -> String {
+    params
+        .iter()
+        .map(|(key, value)| format!("{key}={}", encoded_value(value)))
+        .collect::<Vec<_>>()
+        .join("&")
+}
+
+fn encoded_value(value: &str) -> String {
+    const HEX: &[u8; 16] = b"0123456789ABCDEF";
+    let mut encoded = String::with_capacity(value.len());
+    for byte in value.bytes() {
+        if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~') {
+            encoded.push(char::from(byte));
+        } else {
+            encoded.push('%');
+            encoded.push(char::from(HEX[(byte >> 4) as usize]));
+            encoded.push(char::from(HEX[(byte & 0x0f) as usize]));
+        }
+    }
+    encoded
 }
 
 pub(crate) fn balances_request(credentials: &BithumbCredentials) -> Result<HttpRequest> {
@@ -148,6 +173,86 @@ pub(crate) fn open_orders_request(
     params.push(("state", "wait".to_string()));
 
     signed_get(credentials, "/v1/orders", &params)
+}
+
+pub(crate) fn order_request(
+    credentials: &BithumbCredentials,
+    market: &Market,
+    order_id: &str,
+) -> Result<HttpRequest> {
+    order_request_by(credentials, market, "uuid", "order_id", order_id)
+}
+
+pub(crate) fn order_by_client_id_request(
+    credentials: &BithumbCredentials,
+    market: &Market,
+    client_id: &str,
+) -> Result<HttpRequest> {
+    validate_client_order_id(client_id)?;
+    order_request_by(
+        credentials,
+        market,
+        "client_order_id",
+        "client_id",
+        client_id,
+    )
+}
+
+fn order_request_by(
+    credentials: &BithumbCredentials,
+    market: &Market,
+    parameter: &'static str,
+    field: &'static str,
+    value: &str,
+) -> Result<HttpRequest> {
+    parse::native_symbol(market)?;
+    if value.trim().is_empty() {
+        return Err(Error::invalid_request(field, "must not be empty"));
+    }
+    signed_get(credentials, "/v1/order", &[(parameter, value.to_string())])
+}
+
+pub(crate) fn order_history_request(
+    credentials: &BithumbCredentials,
+    request: &OrderHistoryRequest,
+) -> Result<HttpRequest> {
+    let (limit, from, to) = crate::adapters::order_history_window(request)?;
+    let mut params = Vec::new();
+    if let Some(market) = &request.market {
+        params.push(("market", parse::native_symbol(market)?));
+    }
+    if let Some(state) = crate::adapters::final_order_state(&request.statuses)? {
+        params.push(("state", state.to_string()));
+    }
+    if let Some(from) = from {
+        params.push(("start_time", from.to_string()));
+    }
+    if let Some(to) = to {
+        params.push(("end_time", to.to_string()));
+    }
+    params.push(("limit", limit.to_string()));
+    params.push(("order_by", "desc".to_string()));
+    let mut signed = signed_query(&params)?;
+    if let Some(cursor) = &request.cursor {
+        let cursor = cursor.as_str();
+        if cursor.is_empty()
+            || !cursor.bytes().all(|byte| {
+                byte.is_ascii_alphanumeric() || matches!(byte, b'+' | b'/' | b'=' | b'-' | b'_')
+            })
+        {
+            return Err(Error::invalid_request(
+                "cursor",
+                "not a Bithumb order-history cursor",
+            ));
+        }
+        signed.push_str("&next_key=");
+        signed.push_str(cursor);
+        params.push(("next_key", cursor.to_string()));
+    }
+
+    Ok(HttpRequest::get("/v2/orders/history")
+        .query(encoded_query(&params))
+        .header("authorization", authorization(credentials, &signed)?))
 }
 
 pub(crate) fn cancel_order_request(
@@ -405,6 +510,72 @@ pub(crate) async fn open_orders(
     parse::orders(&rest::send(http, &open_orders_request(credentials, market)?).await?)
 }
 
+pub(crate) async fn order(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    market: &Market,
+    order_id: &str,
+) -> Result<Order> {
+    let body = rest::send(http, &order_request(credentials, market, order_id)?).await?;
+    checked_market(parse::order(&body)?, market)
+}
+
+pub(crate) async fn order_by_client_id(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    market: &Market,
+    client_id: &str,
+) -> Result<Order> {
+    let body = rest::send(
+        http,
+        &order_by_client_id_request(credentials, market, client_id)?,
+    )
+    .await?;
+    checked_market(parse::order(&body)?, market)
+}
+
+pub(crate) async fn order_history(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    request: &OrderHistoryRequest,
+) -> Result<Page<Order>> {
+    let body = rest::send(http, &order_history_request(credentials, request)?).await?;
+    order_history_page(&body)
+}
+
+fn order_history_page(body: &Value) -> Result<Page<Order>> {
+    let data = body
+        .get("data")
+        .ok_or_else(|| Error::decode("bithumb order history carries no `data`"))?;
+    let next = match body.get("next_key") {
+        None | Some(Value::Null) => None,
+        Some(Value::String(value)) if !value.is_empty() => Some(Cursor::new(value.clone())),
+        Some(_) => {
+            return Err(Error::decode(
+                "bithumb order history `next_key` is not a non-empty string or null",
+            ));
+        }
+    };
+    Ok(Page {
+        items: parse::orders(data)?,
+        next,
+    })
+}
+
+fn checked_market(order: Order, expected: &Market) -> Result<Order> {
+    if order.market == *expected {
+        Ok(order)
+    } else {
+        Err(Error::invalid_request(
+            "market",
+            format!(
+                "the requested identifier belongs to {}, not {expected}",
+                order.market
+            ),
+        ))
+    }
+}
+
 pub(crate) async fn place_order(
     http: &HttpTransport,
     credentials: &BithumbCredentials,
@@ -607,6 +778,68 @@ mod tests {
                 .target(),
             "/v2/order?client_order_id=client-1"
         );
+        assert_eq!(
+            order_request(&credentials(), &btc_krw(), "C0101000000001818113")
+                .expect("signed")
+                .target(),
+            "/v1/order?uuid=C0101000000001818113"
+        );
+        assert_eq!(
+            order_by_client_id_request(&credentials(), &btc_krw(), "client-1")
+                .expect("signed")
+                .target(),
+            "/v1/order?client_order_id=client-1"
+        );
+    }
+
+    #[test]
+    fn final_order_history_encodes_the_opaque_cursor_but_hashes_its_raw_value() {
+        let history = OrderHistoryRequest::new()
+            .market(btc_krw())
+            .status(OrderStatus::Cancelled)
+            .from(Timestamp::from_millis(1_700_000_000_000))
+            .to(Timestamp::from_millis(1_700_001_000_000))
+            .cursor(Cursor::new("page+/=="))
+            .limit(25);
+        let request = order_history_request(&credentials(), &history).expect("signed history");
+
+        assert_eq!(
+            request.target(),
+            "/v2/orders/history?market=KRW-BTC&state=cancel&start_time=1700000000000&end_time=1700000999999&limit=25&order_by=desc&next_key=page%2B%2F%3D%3D"
+        );
+        let authorization = request
+            .headers
+            .iter()
+            .find(|(name, _)| name == "authorization")
+            .map(|(_, value)| value)
+            .expect("an authorization header");
+        assert_eq!(
+            payload(authorization)["query_hash"],
+            sha512_hex(
+                b"market=KRW-BTC&state=cancel&start_time=1700000000000&end_time=1700000999999&limit=25&order_by=desc&next_key=page+/=="
+            )
+        );
+    }
+
+    #[test]
+    fn bithumb_history_decodes_data_and_next_key() {
+        let page = order_history_page(&serde_json::json!({
+            "data": [{
+                "order_id": "C0101000007410714100",
+                "side": "bid",
+                "state": "done",
+                "market": "KRW-BTC",
+                "price": "50000000",
+                "remaining_volume": "0",
+                "executed_volume": "0.001",
+                "created_at": "2026-04-09T10:00:00.123+09:00"
+            }],
+            "next_key": "page+/=="
+        }))
+        .expect("a v2.1.5 history page");
+
+        assert_eq!(page.items[0].id, "C0101000007410714100");
+        assert_eq!(page.next.expect("another page").as_str(), "page+/==");
     }
 
     #[test]

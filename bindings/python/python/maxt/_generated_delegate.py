@@ -85,6 +85,18 @@ class _GeneratedNativeClientDelegateApi:
         value = await self._call(method, *(() if market is None else (market,)))
         return [_model_from_wire("Order", item) for item in value]
 
+    async def order(self, market: Market, order_id: str) -> Order:
+        value = await self._call(self._client.order, market, order_id)
+        return _model_from_wire("Order", value)
+
+    async def order_by_client_id(self, market: Market, client_id: str) -> Order:
+        value = await self._call(self._client.order_by_client_id, market, client_id)
+        return _model_from_wire("Order", value)
+
+    async def order_history(self, request: OrderHistoryRequest) -> Page[Order]:
+        value = await self._call(self._client.order_history, request)
+        return _model_from_wire("OrderPage", value)
+
     async def subscribe_account(self, config: StreamConfig) -> AccountStream[Union[StreamEvent[AccountEvent], StreamError]]:
         value = await self._call(self._client.subscribe_account, config)
         return self._account_stream(value)

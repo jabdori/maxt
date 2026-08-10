@@ -17,6 +17,13 @@ void main() {
     expect(features, Feature.values.map((value) => value.wireName));
   });
 
+  test('order history defaults to every final order', () {
+    const request = OrderHistoryRequest();
+
+    expect(request.market, isNull);
+    expect(request.statuses, isEmpty);
+  });
+
   test('generated public API inventories stay explicit', () {
     final adapter = InventoryAdapter();
     final actualAdapter = <String, Object>{
@@ -34,6 +41,9 @@ void main() {
       'deposits': adapter.deposits,
       'withdrawals': adapter.withdrawals,
       'openOrders': adapter.openOrders,
+      'order': adapter.order,
+      'orderByClientId': adapter.orderByClientId,
+      'orderHistory': adapter.orderHistory,
       'subscribeAccount': adapter.subscribeAccount,
       'placeOrder': adapter.placeOrder,
       'cancelOrder': adapter.cancelOrder,
@@ -70,6 +80,9 @@ void main() {
       'executeTransfer': (Client<Adapter> value) => value.executeTransfer,
       'openOrders': (Client<Adapter> value) => value.openOrders,
       'openOrdersOn': (Client<Adapter> value) => value.openOrdersOn,
+      'order': (Client<Adapter> value) => value.order,
+      'orderByClientId': (Client<Adapter> value) => value.orderByClientId,
+      'orderHistory': (Client<Adapter> value) => value.orderHistory,
       'subscribeAccount': (Client<Adapter> value) => value.subscribeAccount,
       'subscribeAccountWith': (Client<Adapter> value) =>
           value.subscribeAccountWith,

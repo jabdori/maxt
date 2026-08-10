@@ -137,10 +137,10 @@ fn operation_inventory_matches_the_current_implemented_surface() {
         counts,
         std::collections::BTreeMap::from([
             ((Exchange::Upbit, "quotation"), 13),
-            ((Exchange::Upbit, "exchange"), 6),
+            ((Exchange::Upbit, "exchange"), 8),
             ((Exchange::Upbit, "wallet"), 7),
             ((Exchange::Bithumb, "quotation"), 12),
-            ((Exchange::Bithumb, "exchange"), 6),
+            ((Exchange::Bithumb, "exchange"), 8),
             ((Exchange::Bithumb, "wallet"), 7),
             ((Exchange::Binance, "spot"), 15),
             ((Exchange::Binance, "usd_m"), 21),

@@ -11,8 +11,8 @@ use futures_util::{Stream, StreamExt};
 use maxt::{
     AccountEvent, AccountStream, Adapter, BoxFuture, CandleRequest, Client, Decimal, Error,
     Exchange, Feature, Feed, HistoryRequest, Interval, MarginRequest, MarginSummary, Market,
-    MarketEvent, MarketKind, MarketStream, Order, OrderBook, OrderRequest, OrderStatus, Page,
-    Result, Side, Size, StreamConfig, Subscription, Ticker, Timestamp,
+    MarketEvent, MarketKind, MarketStream, Order, OrderBook, OrderHistoryRequest, OrderRequest,
+    OrderStatus, Page, Result, Side, Size, StreamConfig, Subscription, Ticker, Timestamp,
 };
 use maxt_bindings_common::{AdapterCall, AdapterReply, ForeignAdapter, ForeignDispatcher};
 
@@ -164,6 +164,12 @@ async fn every_current_adapter_method_forwards_an_owned_call() {
         AdapterReply::MarketStream(MarketStream::new(stream::empty::<Result<MarketEvent>>())),
         AdapterReply::Balances(vec![]),
         AdapterReply::OpenOrders(vec![]),
+        AdapterReply::Order(order("by-id")),
+        AdapterReply::Order(order("by-client-id")),
+        AdapterReply::OrderHistory(Page {
+            items: vec![],
+            next: None,
+        }),
         AdapterReply::AccountStream(AccountStream::new(stream::empty::<Result<AccountEvent>>())),
         AdapterReply::PlaceOrder(order("placed")),
         AdapterReply::Unit,
@@ -197,6 +203,7 @@ async fn every_current_adapter_method_forwards_an_owned_call() {
     let config = StreamConfig::default();
     let order_request = OrderRequest::market(market.clone(), Side::Buy, Size::Base(Decimal::ONE));
     let history_request = HistoryRequest::new(market.clone()).limit(7);
+    let order_history_request = OrderHistoryRequest::new().market(market.clone()).limit(7);
     let margin_request = MarginRequest::new(market.clone()).leverage(Decimal::from(2));
 
     assert_eq!(adapter.exchange(), Exchange::Binance);
@@ -215,6 +222,12 @@ async fn every_current_adapter_method_forwards_an_owned_call() {
     let _market_stream = adapter.subscribe(&subscription, &config).await.unwrap();
     adapter.balances().await.unwrap();
     adapter.open_orders(Some(&market)).await.unwrap();
+    adapter.order(&market, "order-1").await.unwrap();
+    adapter
+        .order_by_client_id(&market, "client-1")
+        .await
+        .unwrap();
+    adapter.order_history(&order_history_request).await.unwrap();
     let _account_stream = adapter.subscribe_account(&config).await.unwrap();
     adapter.place_order(&order_request).await.unwrap();
     adapter.cancel_order(&market, "order-1").await.unwrap();
@@ -255,6 +268,17 @@ async fn every_current_adapter_method_forwards_an_owned_call() {
             AdapterCall::Balances,
             AdapterCall::OpenOrders {
                 market: Some(market.clone()),
+            },
+            AdapterCall::Order {
+                market: market.clone(),
+                order_id: "order-1".to_string(),
+            },
+            AdapterCall::OrderByClientId {
+                market: market.clone(),
+                client_id: "client-1".to_string(),
+            },
+            AdapterCall::OrderHistory {
+                request: order_history_request,
             },
             AdapterCall::SubscribeAccount {
                 config: config.clone(),

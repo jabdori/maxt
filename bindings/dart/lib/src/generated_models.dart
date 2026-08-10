@@ -261,6 +261,24 @@ final class Deposit {
   final Timestamp? createdAt;
 }
 
+final class OrderHistoryRequest {
+  const OrderHistoryRequest({
+    this.market,
+    this.statuses = const [],
+    this.from,
+    this.to,
+    this.cursor,
+    this.limit,
+  });
+
+  final Market? market;
+  final List<OrderStatus> statuses;
+  final Timestamp? from;
+  final Timestamp? to;
+  final Cursor? cursor;
+  final int? limit;
+}
+
 final class DepositAddressRequest {
   DepositAddressRequest({
     required String asset,

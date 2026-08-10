@@ -58,8 +58,15 @@ code로 보존합니다.
 
 ## 비공개 API와 거래소 전용 API
 
-인증 정보 설정 후 잔고, 미체결 주문, 주문 생성·취소, 계좌 스트림을 사용할 수
-있습니다. `open_orders()`는 `/v1/orders`를 1회 호출하며 최대 100건을 반환합니다.
+인증 정보 설정 후 잔고, 주문 단건·이력 조회, 주문 생성·취소, 계좌 스트림을 사용할
+수 있습니다.
+
+| 공통 호출 | 엔드포인트(endpoint) | 계약 |
+| --- | --- | --- |
+| `open_orders*` | `GET /v1/orders` | 한 페이지, 최대 100건 |
+| `order(market, order_id)` | `GET /v1/order?uuid=...` | 응답 시장이 요청 시장과 같은지 검증 |
+| `order_by_client_id(market, client_id)` | `GET /v1/order?client_order_id=...` | 응답 시장이 요청 시장과 같은지 검증 |
+| `order_history(request)` | `GET /v2/orders/history` | `limit: 1..=1_000`; 최대 7일; 최신순; `next_key`를 불투명 `Page::next` 커서로 반환 |
 
 | 주문 | 필수 `Size` |
 | --- | --- |
@@ -76,6 +83,9 @@ code로 보존합니다.
 | `client_id` | 영문 대·소문자, 숫자, `-`, `_`로 구성한 1–36자 |
 | `OrderRequest::reduce_only == true` | `Error::Unsupported` |
 | `cancel_order(...)`, `cancel_order_by_client_id(...)` | 취소 응답을 검증한 뒤 `()` 반환 |
+
+공통 `Order`는 정규화한 필드만 제공합니다. Bithumb 전용 취소·자전거래 방지 필드와
+상세 `trades` 배열은 아직 노출하지 않습니다.
 
 다음 메서드는 `Client::adapter()`가 반환한 어댑터에서 호출합니다.
 
@@ -107,5 +117,7 @@ code로 보존합니다.
 - [캔들](https://apidocs.bithumb.com/reference/%EB%B6%84minute-%EC%BA%94%EB%93%A4-%EC%A1%B0%ED%9A%8C.md)
 - [WebSocket](https://apidocs.bithumb.com/reference/%EA%B8%B0%EB%B3%B8-%EC%A0%95%EB%B3%B4.md)
 - [주문](https://apidocs.bithumb.com/reference/%EC%A3%BC%EB%AC%B8-%EC%9A%94%EC%B2%AD.md)
+- [주문 단건 조회](https://apidocs.bithumb.com/reference/%EA%B0%9C%EB%B3%84-%EC%A3%BC%EB%AC%B8-%EC%A1%B0%ED%9A%8C)
+- [종료 주문 목록](https://apidocs.bithumb.com/reference/%EC%A2%85%EB%A3%8C-%EC%A3%BC%EB%AC%B8-%EB%AA%A9%EB%A1%9D-%EC%A1%B0%ED%9A%8C)
 
 [공통 API](../common-api.ko.md) · [거래소 지원](../providers.ko.md)

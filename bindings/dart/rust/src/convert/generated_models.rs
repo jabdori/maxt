@@ -141,8 +141,18 @@ impl TryFrom<WireAssetNetwork> for maxt::AssetNetwork {
             deposit_enabled: value.deposit_enabled,
             withdrawal_enabled: value.withdrawal_enabled,
             withdrawal_fee: value.withdrawal_fee.map(TryInto::try_into).transpose()?,
-            minimum_withdrawal: value.minimum_withdrawal.as_deref().map(|value| decimal_from_wire(value, "minimum_withdrawal")).transpose().map_err(NativeError::from)?,
-            maximum_withdrawal: value.maximum_withdrawal.as_deref().map(|value| decimal_from_wire(value, "maximum_withdrawal")).transpose().map_err(NativeError::from)?,
+            minimum_withdrawal: value
+                .minimum_withdrawal
+                .as_deref()
+                .map(|value| decimal_from_wire(value, "minimum_withdrawal"))
+                .transpose()
+                .map_err(NativeError::from)?,
+            maximum_withdrawal: value
+                .maximum_withdrawal
+                .as_deref()
+                .map(|value| decimal_from_wire(value, "maximum_withdrawal"))
+                .transpose()
+                .map_err(NativeError::from)?,
             memo_required: value.memo_required,
         })
     }
@@ -355,7 +365,11 @@ impl From<maxt::WithdrawalFee> for WireWithdrawalFee {
     fn from(value: maxt::WithdrawalFee) -> Self {
         match value {
             maxt::WithdrawalFee::Fixed(value) => Self::Fixed(decimal_to_wire(value)),
-            maxt::WithdrawalFee::Rate { rate, minimum, maximum } => Self::Rate {
+            maxt::WithdrawalFee::Rate {
+                rate,
+                minimum,
+                maximum,
+            } => Self::Rate {
                 rate: decimal_to_wire(rate),
                 minimum: minimum.map(decimal_to_wire),
                 maximum: maximum.map(decimal_to_wire),
@@ -370,11 +384,25 @@ impl TryFrom<WireWithdrawalFee> for maxt::WithdrawalFee {
 
     fn try_from(value: WireWithdrawalFee) -> Result<Self, Self::Error> {
         Ok(match value {
-            WireWithdrawalFee::Fixed(value) => Self::Fixed(decimal_from_wire(&value, "value").map_err(NativeError::from)?),
-            WireWithdrawalFee::Rate { rate, minimum, maximum } => Self::Rate {
+            WireWithdrawalFee::Fixed(value) => {
+                Self::Fixed(decimal_from_wire(&value, "value").map_err(NativeError::from)?)
+            }
+            WireWithdrawalFee::Rate {
+                rate,
+                minimum,
+                maximum,
+            } => Self::Rate {
                 rate: decimal_from_wire(&rate, "rate").map_err(NativeError::from)?,
-                minimum: minimum.as_deref().map(|value| decimal_from_wire(value, "minimum")).transpose().map_err(NativeError::from)?,
-                maximum: maximum.as_deref().map(|value| decimal_from_wire(value, "maximum")).transpose().map_err(NativeError::from)?,
+                minimum: minimum
+                    .as_deref()
+                    .map(|value| decimal_from_wire(value, "minimum"))
+                    .transpose()
+                    .map_err(NativeError::from)?,
+                maximum: maximum
+                    .as_deref()
+                    .map(|value| decimal_from_wire(value, "maximum"))
+                    .transpose()
+                    .map_err(NativeError::from)?,
             },
         })
     }
@@ -383,18 +411,14 @@ impl TryFrom<WireWithdrawalFee> for maxt::WithdrawalFee {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WireTravelRuleRequirement {
     NotRequired,
-    Required {
-        consent_url: Option<String>,
-    },
+    Required { consent_url: Option<String> },
 }
 
 impl From<maxt::TravelRuleRequirement> for WireTravelRuleRequirement {
     fn from(value: maxt::TravelRuleRequirement) -> Self {
         match value {
             maxt::TravelRuleRequirement::NotRequired => Self::NotRequired,
-            maxt::TravelRuleRequirement::Required { consent_url } => Self::Required {
-                consent_url,
-            },
+            maxt::TravelRuleRequirement::Required { consent_url } => Self::Required { consent_url },
             _ => unreachable!("new TravelRuleRequirement variant requires a Dart wire variant"),
         }
     }
@@ -406,9 +430,7 @@ impl TryFrom<WireTravelRuleRequirement> for maxt::TravelRuleRequirement {
     fn try_from(value: WireTravelRuleRequirement) -> Result<Self, Self::Error> {
         Ok(match value {
             WireTravelRuleRequirement::NotRequired => Self::NotRequired,
-            WireTravelRuleRequirement::Required { consent_url } => Self::Required {
-                consent_url,
-            },
+            WireTravelRuleRequirement::Required { consent_url } => Self::Required { consent_url },
         })
     }
 }
@@ -443,10 +465,30 @@ impl TryFrom<WireWithdrawalQuote> for maxt::WithdrawalQuote {
 
     fn try_from(value: WireWithdrawalQuote) -> Result<Self, Self::Error> {
         Ok(Self {
-            fee: value.fee.as_deref().map(|value| decimal_from_wire(value, "fee")).transpose().map_err(NativeError::from)?,
-            expected_receive: value.expected_receive.as_deref().map(|value| decimal_from_wire(value, "expected_receive")).transpose().map_err(NativeError::from)?,
-            minimum_amount: value.minimum_amount.as_deref().map(|value| decimal_from_wire(value, "minimum_amount")).transpose().map_err(NativeError::from)?,
-            maximum_amount: value.maximum_amount.as_deref().map(|value| decimal_from_wire(value, "maximum_amount")).transpose().map_err(NativeError::from)?,
+            fee: value
+                .fee
+                .as_deref()
+                .map(|value| decimal_from_wire(value, "fee"))
+                .transpose()
+                .map_err(NativeError::from)?,
+            expected_receive: value
+                .expected_receive
+                .as_deref()
+                .map(|value| decimal_from_wire(value, "expected_receive"))
+                .transpose()
+                .map_err(NativeError::from)?,
+            minimum_amount: value
+                .minimum_amount
+                .as_deref()
+                .map(|value| decimal_from_wire(value, "minimum_amount"))
+                .transpose()
+                .map_err(NativeError::from)?,
+            maximum_amount: value
+                .maximum_amount
+                .as_deref()
+                .map(|value| decimal_from_wire(value, "maximum_amount"))
+                .transpose()
+                .map_err(NativeError::from)?,
             address_allowed: value.address_allowed,
             travel_rule: value.travel_rule.try_into()?,
             expires_at: value.expires_at_ns.map(Timestamp::from_nanos),
@@ -535,7 +577,12 @@ impl TryFrom<WireWithdrawal> for maxt::Withdrawal {
             network: value.network.map(network_from_wire),
             provider_network: value.provider_network,
             amount: decimal_from_wire(&value.amount, "amount").map_err(NativeError::from)?,
-            fee: value.fee.as_deref().map(|value| decimal_from_wire(value, "fee")).transpose().map_err(NativeError::from)?,
+            fee: value
+                .fee
+                .as_deref()
+                .map(|value| decimal_from_wire(value, "fee"))
+                .transpose()
+                .map_err(NativeError::from)?,
             destination: value.destination.map(TryInto::try_into).transpose()?,
             status: value.status.into(),
             provider_status: value.provider_status,
@@ -599,6 +646,44 @@ impl TryFrom<WireDeposit> for maxt::Deposit {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireOrderHistoryRequest {
+    pub market: Option<WireMarket>,
+    pub statuses: Vec<WireOrderStatus>,
+    pub from_ns: Option<i64>,
+    pub to_ns: Option<i64>,
+    pub cursor: Option<String>,
+    pub limit: Option<u32>,
+}
+
+impl From<maxt::OrderHistoryRequest> for WireOrderHistoryRequest {
+    fn from(value: maxt::OrderHistoryRequest) -> Self {
+        Self {
+            market: value.market.map(Into::into),
+            statuses: value.statuses.into_iter().map(Into::into).collect(),
+            from_ns: value.from.map(timestamp_to_wire),
+            to_ns: value.to.map(timestamp_to_wire),
+            cursor: value.cursor.map(|cursor| cursor.as_str().to_owned()),
+            limit: value.limit,
+        }
+    }
+}
+
+impl TryFrom<WireOrderHistoryRequest> for maxt::OrderHistoryRequest {
+    type Error = NativeError;
+
+    fn try_from(value: WireOrderHistoryRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.map(Into::into),
+            statuses: value.statuses.into_iter().map(Into::into).collect(),
+            from: value.from_ns.map(Timestamp::from_nanos),
+            to: value.to_ns.map(Timestamp::from_nanos),
+            cursor: value.cursor.map(maxt::Cursor::new),
+            limit: value.limit,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireDepositAddressRequest {
     pub asset: String,
     pub network: String,
@@ -622,7 +707,12 @@ impl TryFrom<WireDepositAddressRequest> for maxt::DepositAddressRequest {
         Ok(Self {
             asset: value.asset,
             network: network_from_wire(value.network),
-            amount: value.amount.as_deref().map(|value| decimal_from_wire(value, "amount")).transpose().map_err(NativeError::from)?,
+            amount: value
+                .amount
+                .as_deref()
+                .map(|value| decimal_from_wire(value, "amount"))
+                .transpose()
+                .map_err(NativeError::from)?,
         })
     }
 }
@@ -714,7 +804,11 @@ impl TryFrom<WireDepositPage> for maxt::Page<maxt::Deposit> {
 
     fn try_from(value: WireDepositPage) -> Result<Self, Self::Error> {
         Ok(Self {
-            items: value.items.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
+            items: value
+                .items
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
             next: value.next.map(maxt::Cursor::new),
         })
     }
@@ -740,7 +834,41 @@ impl TryFrom<WireWithdrawalPage> for maxt::Page<maxt::Withdrawal> {
 
     fn try_from(value: WireWithdrawalPage) -> Result<Self, Self::Error> {
         Ok(Self {
-            items: value.items.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
+            items: value
+                .items
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            next: value.next.map(maxt::Cursor::new),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireOrderPage {
+    pub items: Vec<WireOrder>,
+    pub next: Option<String>,
+}
+
+impl From<maxt::Page<maxt::Order>> for WireOrderPage {
+    fn from(value: maxt::Page<maxt::Order>) -> Self {
+        Self {
+            items: value.items.into_iter().map(Into::into).collect(),
+            next: value.next.map(|cursor| cursor.as_str().to_owned()),
+        }
+    }
+}
+
+impl TryFrom<WireOrderPage> for maxt::Page<maxt::Order> {
+    type Error = NativeError;
+
+    fn try_from(value: WireOrderPage) -> Result<Self, Self::Error> {
+        Ok(Self {
+            items: value
+                .items
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
             next: value.next.map(maxt::Cursor::new),
         })
     }

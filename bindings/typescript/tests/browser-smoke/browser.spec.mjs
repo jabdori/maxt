@@ -16,6 +16,7 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
         maxt.Feature.Withdrawals,
         maxt.Feature.DepositHistory,
         maxt.Feature.WithdrawalHistory,
+        maxt.Feature.OrderHistory,
       ]);
       async markets() { return []; }
       async assetNetworks(asset) {
@@ -69,6 +70,16 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
       }
       async deposits() { return new maxt.Page([], null); }
       async withdrawals() { return new maxt.Page([], null); }
+      async order(market) {
+        return new maxt.Order(
+          "order-1", market, maxt.Side.Buy, maxt.OrderStatus.Filled,
+          maxt.Decimal.one, maxt.Decimal.zero, maxt.Decimal.parse("100"), null,
+        );
+      }
+      async orderByClientId(market) { return this.order(market); }
+      async orderHistory(request) {
+        return new maxt.Page([await this.order(request.market)], null);
+      }
     }
 
     const client = new maxt.Client(new FixtureAdapter());
@@ -85,6 +96,12 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
     );
     const quote = await client.prepareWithdrawal(withdrawalRequest);
     const withdrawal = await client.withdraw(withdrawalRequest);
+    const market = maxt.Market.spot(maxt.Exchange.Binance, "BTC", "USDT");
+    const order = await client.order(market, "order-1");
+    const orderByClientId = await client.orderByClientId(market, "client-1");
+    const orderHistory = await client.orderHistory(
+      new maxt.OrderHistoryRequest(market, [maxt.OrderStatus.Filled]),
+    );
     return {
       exchange: client.exchange.id,
       markets: (await client.markets(maxt.MarketKind.Spot)).length,
@@ -95,6 +112,9 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
       withdrawal: withdrawal.id,
       deposits: (await client.deposits(historyRequest)).items.length,
       withdrawals: (await client.withdrawals(historyRequest)).items.length,
+      order: order.id,
+      orderByClientId: orderByClientId.id,
+      orderHistory: orderHistory.items[0].id,
     };
   });
 
@@ -108,5 +128,8 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
     withdrawal: "withdrawal-1",
     deposits: 0,
     withdrawals: 0,
+    order: "order-1",
+    orderByClientId: "order-1",
+    orderHistory: "order-1",
   });
 });

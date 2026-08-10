@@ -44,6 +44,8 @@ and outcome assets are not exposed.
   perpetual markets.
 - Private Spot: `balances()`, `openOrders()`, `placeOrder()`, `cancelOrder()`,
   and `subscribeAccount()` on every exchange.
+- Private order lookup: `order()`, `orderByClientId()`, and `orderHistory()` on
+  Upbit and Bithumb.
 - Private perpetuals: `positions()`, `marginSummary()`, `setMargin()`, and
   `fundingPayments()` on Binance USD-M and Hyperliquid.
 

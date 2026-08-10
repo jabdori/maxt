@@ -15,9 +15,9 @@
 | Client | `exchange`, `supports`, `adapter`, `into_adapter` |
 | 공개 REST | `markets`, `trades`, `order_book`, `ticker`, `candles`, `funding_rates` |
 | 공개 스트림 | `subscribe`, `subscribe_with` |
-| 비공개 조회 | `balances`, `open_orders`, `open_orders_on`, `positions`, `positions_on`, `margin_summary`, `funding_payments` |
+| 비공개 조회 | `balances`, `open_orders`, `open_orders_on`, `order`, `order_by_client_id`, `order_history`, `positions`, `positions_on`, `margin_summary`, `funding_payments` |
 | 비공개 스트림 | `subscribe_account`, `subscribe_account_with` |
-| 비공개 변경 | `place_order`, `cancel_order`, `set_margin` |
+| 비공개 변경 | `place_order`, `cancel_order`, `cancel_order_by_client_id`, `set_margin` |
 
 공개 REST와 시장 스트림에는 인증 정보가 필요하지 않습니다. 거래소별
 `MarketKind`와 기능 지원 범위는 [거래소 지원](providers.ko.md)을 참고하세요.
@@ -173,6 +173,9 @@
 | 타입·메서드 | 계약 |
 | --- | --- |
 | `open_orders*` | 특정 시점의 스냅샷; 거래소의 모든 페이지 순회는 보장하지 않음 |
+| `order(market, order_id)` | 거래소 주문 ID로 주문 1건 조회 |
+| `order_by_client_id(market, client_id)` | 주문 생성 시 지정한 ID로 주문 1건 조회 |
+| `order_history(request)` | 체결 완료 또는 취소 주문을 최신순 `Page<Order>`로 조회 |
 | `OrderRequest::size` | `Size::Base` 또는 `Size::Quote` |
 | 주문 정밀도 | `MarketInfo`에 공통 호가 단위(tick size), 수량 단위(lot size), 최소 명목가치(minimum notional) 없음 |
 | `cancel_order`, `cancel_order_by_client_id` | 유효한 거래소 응답 후 `()` 반환; 체결과의 경합 결과는 주문 조회로 확인 |
@@ -182,6 +185,22 @@
 
 주문 값은 `Decimal`로 구성합니다. 지원 주문 형식과 검증 규칙은 거래소별
 계약입니다.
+
+### `OrderHistoryRequest`
+
+| 필드·상태 | 계약 |
+| --- | --- |
+| `market` | 선택 시장 필터 |
+| `statuses` | `Filled`, `Cancelled` 또는 둘 다; 빈 목록은 둘 다 조회; 다른 상태는 네트워크 요청 전에 거절 |
+| `from` | 생성 시각 하한, 포함 |
+| `to` | 생성 시각 상한, 미포함; `from`보다 뒤여야 함 |
+| 조회 구간 | 두 경계를 모두 지정하면 최대 7일 |
+| `cursor` | 거래소가 반환한 불투명 커서; 같은 어댑터에 변경 없이 전달 |
+| `limit` | `1..=1_000`; 기본값 `100` |
+| 정렬 | 최신순 |
+
+연속 조회 커서를 제공하지 않는 거래소는 `Page::next == None`을 반환하고 입력
+`cursor`를 거절합니다.
 
 ### `HistoryRequest`
 

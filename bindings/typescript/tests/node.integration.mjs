@@ -14,6 +14,11 @@ import {
   Feature,
   InvalidRequestError,
   Market,
+  Order,
+  OrderHistoryRequest,
+  OrderStatus,
+  Page,
+  Side,
   Ticker,
   Timestamp,
 } from "../dist/node.js";
@@ -100,18 +105,50 @@ test("custom Adapter calls round-trip through Rust without losing values", async
     Decimal.parse("2.5"),
     null,
   );
+  const expectedOrder = new Order(
+    "order-1",
+    market,
+    Side.Buy,
+    OrderStatus.Filled,
+    Decimal.parse("1"),
+    Decimal.zero,
+    Decimal.parse("100.25"),
+    Timestamp.fromNanoseconds(124n),
+  );
 
   class FixtureAdapter extends Adapter {
     exchange = Exchange.Binance;
-    features = new Set([Feature.Ticker]);
+    features = new Set([Feature.Ticker, Feature.OrderHistory]);
     async ticker(requested) {
       assert.equal(requested.toString(), market.toString());
       return expected;
     }
+    async order(requested, orderId) {
+      assert.equal(requested.toString(), market.toString());
+      assert.equal(orderId, "order-1");
+      return expectedOrder;
+    }
+    async orderByClientId(requested, clientId) {
+      assert.equal(requested.toString(), market.toString());
+      assert.equal(clientId, "client-1");
+      return expectedOrder;
+    }
+    async orderHistory(request) {
+      assert.equal(request.market?.toString(), market.toString());
+      assert.deepEqual(request.statuses, [OrderStatus.Filled]);
+      return new Page([expectedOrder], null);
+    }
   }
 
-  const actual = await new Client(new FixtureAdapter()).ticker(market);
+  const client = new Client(new FixtureAdapter());
+  const actual = await client.ticker(market);
   assert.equal(actual.lastPrice.toString(), "100.25");
   assert.equal(actual.timestamp.nanosecondsSinceEpoch, 123n);
   assert.equal(actual.volume?.toString(), "2.5");
+  assert.equal((await client.order(market, "order-1")).id, "order-1");
+  assert.equal((await client.orderByClientId(market, "client-1")).id, "order-1");
+  const history = await client.orderHistory(
+    new OrderHistoryRequest(market, [OrderStatus.Filled]),
+  );
+  assert.equal(history.items[0].id, "order-1");
 });

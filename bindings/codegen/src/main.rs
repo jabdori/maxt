@@ -231,12 +231,12 @@ fn main() {
             continue;
         }
         #[cfg(feature = "dart")]
-        let content = if output_target == "dart"
-            && path
-                .extension()
-                .is_some_and(|extension| extension == "dart")
-        {
-            format_dart_source(&content)
+        let content = if output_target == "dart" {
+            match path.extension().and_then(|extension| extension.to_str()) {
+                Some("dart") => format_dart_source(&content),
+                Some("rs") => format_rust_source(&content),
+                _ => content,
+            }
         } else {
             content
         };
@@ -281,6 +281,25 @@ fn format_dart_source(source: &str) -> String {
         "unexpected dart format output: {summary}"
     );
     format!("{formatted}\n")
+}
+
+#[cfg(feature = "dart")]
+fn format_rust_source(source: &str) -> String {
+    let path = env::temp_dir().join(format!("maxt-bindings-codegen-{}.rs", std::process::id()));
+    fs::write(&path, source).expect("temporary Rust source must be writable");
+    let result = Command::new("rustfmt")
+        .args(["--edition", "2024"])
+        .arg(&path)
+        .output()
+        .expect("rustfmt is required to generate Dart bindings");
+    assert!(
+        result.status.success(),
+        "rustfmt failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let output = fs::read_to_string(&path).expect("formatted Rust source must be readable");
+    let _ = fs::remove_file(&path);
+    output.replace("\r\n", "\n")
 }
 
 #[cfg(feature = "rust")]

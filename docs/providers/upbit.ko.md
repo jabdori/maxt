@@ -66,8 +66,15 @@
 ## 비공개 API와 거래소 전용 API
 
 `.with_credentials(access_key, secret_key)`로 인증 정보를 설정합니다. 인증 정보 발급
-지역은 `UpbitAdapter::region()`과 같아야 합니다. 설정 후 잔고, 미체결 주문, 주문
-생성·취소, 계좌 스트림을 사용할 수 있습니다.
+지역은 `UpbitAdapter::region()`과 같아야 합니다. 설정 후 잔고, 주문 단건·이력
+조회, 주문 생성·취소, 계좌 스트림을 사용할 수 있습니다.
+
+| 공통 호출 | 엔드포인트(endpoint) | 계약 |
+| --- | --- | --- |
+| `open_orders*` | `GET /v1/orders/open` | 한 페이지, 최대 100건 |
+| `order(market, order_id)` | `GET /v1/order?uuid=...` | 응답 시장이 요청 시장과 같은지 검증 |
+| `order_by_client_id(market, client_id)` | `GET /v1/order?identifier=...` | 응답 시장이 요청 시장과 같은지 검증 |
+| `order_history(request)` | `GET /v1/orders/closed` | `limit: 1..=1_000`; 최대 7일; 최신순; 커서가 없어 `next == None` |
 
 | 주문 입력 | 계약 |
 | --- | --- |
@@ -75,6 +82,9 @@
 | 최유리 매도 | `Size::Base`와 `IOC` 또는 `FOK` |
 | `client_id` | RFC 3986 비예약 ASCII 문자로 구성한 1–64바이트; `cancel_order_by_client_id`에 사용 가능 |
 | 취소 메서드 | 거래소 응답을 검증한 뒤 `()` 반환 |
+
+공통 `Order`는 정규화한 필드만 제공합니다. Upbit 전용 자전거래 방지 필드와 상세
+`trades` 배열은 아직 노출하지 않습니다.
 
 다음 메서드는 `Client::adapter()`가 반환한 어댑터에서 호출합니다.
 
@@ -111,5 +121,7 @@
 - [WebSocket](https://global-docs.upbit.com/reference/websocket-guide)
 - [요청 한도](https://global-docs.upbit.com/reference/rate-limits)
 - [인증](https://global-docs.upbit.com/reference/auth)
+- [주문 단건 조회](https://global-docs.upbit.com/reference/get-order)
+- [종료 주문 목록](https://global-docs.upbit.com/reference/list-closed-orders)
 
 [공통 API](../common-api.ko.md) · [거래소 지원](../providers.ko.md)

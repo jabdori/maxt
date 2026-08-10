@@ -198,7 +198,21 @@ abstract class NativeClient implements RustOpaqueInterface {
 
   Future<List<WireOrder>> openOrders({WireMarket? market});
 
+  Future<WireOrder> order({
+    required WireMarket market,
+    required String orderId,
+  });
+
   Future<WireOrderBook> orderBook({required WireMarket market, int? depth});
+
+  Future<WireOrder> orderByClientId({
+    required WireMarket market,
+    required String clientId,
+  });
+
+  Future<WireOrderPage> orderHistory({
+    required WireOrderHistoryRequest request,
+  });
 
   Future<WireOrder> placeOrder({required WireOrderRequest request});
 

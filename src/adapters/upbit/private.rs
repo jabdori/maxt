@@ -14,9 +14,11 @@ use sha2::{Digest, Sha256, Sha512};
 
 use crate::error::{Error, Result};
 use crate::feature::Feature;
-use crate::request::OrderRequest;
+use crate::request::{OrderHistoryRequest, OrderRequest};
 use crate::transport::{HttpRequest, HttpTransport};
-use crate::types::{AccountEvent, Balance, Market, Order, OrderType, Side, Size, TimeInForce};
+use crate::types::{
+    AccountEvent, Balance, Market, Order, OrderType, Page, Side, Size, TimeInForce,
+};
 
 use super::parse::{self, EXCHANGE};
 use super::{UpbitCredentials, rest, stream};
@@ -26,9 +28,9 @@ pub(crate) const AUTHORIZATION: &str = "Authorization";
 
 const BALANCES_PATH: &str = "/v1/accounts";
 const OPEN_ORDERS_PATH: &str = "/v1/orders/open";
+const ORDER_HISTORY_PATH: &str = "/v1/orders/closed";
 const PLACE_ORDER_PATH: &str = "/v1/orders";
-/// The cancellation endpoint uses the singular `order` path.
-const CANCEL_ORDER_PATH: &str = "/v1/order";
+const ORDER_PATH: &str = "/v1/order";
 
 /// Query-hash algorithm declared in the JWT claims.
 const QUERY_HASH_ALG: &str = "SHA512";
@@ -182,6 +184,70 @@ pub(crate) fn open_orders_request(
         .header(AUTHORIZATION, authorization(credentials, &query)?))
 }
 
+pub(crate) fn order_request(
+    credentials: &UpbitCredentials,
+    market: &Market,
+    order_id: &str,
+) -> Result<HttpRequest> {
+    order_request_by(credentials, market, "uuid", "order_id", order_id)
+}
+
+pub(crate) fn order_by_client_id_request(
+    credentials: &UpbitCredentials,
+    market: &Market,
+    client_id: &str,
+) -> Result<HttpRequest> {
+    validate_client_order_id(client_id)?;
+    order_request_by(credentials, market, "identifier", "client_id", client_id)
+}
+
+fn order_request_by(
+    credentials: &UpbitCredentials,
+    market: &Market,
+    parameter: &'static str,
+    field: &'static str,
+    value: &str,
+) -> Result<HttpRequest> {
+    let query = order_identifier_query(market, parameter, field, value)?;
+    Ok(HttpRequest::get(ORDER_PATH)
+        .query(query.clone())
+        .header(AUTHORIZATION, authorization(credentials, &query)?))
+}
+
+pub(crate) fn order_history_request(
+    credentials: &UpbitCredentials,
+    request: &OrderHistoryRequest,
+) -> Result<HttpRequest> {
+    if request.cursor.is_some() {
+        return Err(Error::invalid_request(
+            "cursor",
+            "upbit final-order history does not publish a cursor",
+        ));
+    }
+
+    let (limit, from, to) = crate::adapters::order_history_window(request)?;
+    let mut params = Vec::new();
+    if let Some(market) = &request.market {
+        params.push(("market", parse::native_symbol(market)?));
+    }
+    if let Some(state) = crate::adapters::final_order_state(&request.statuses)? {
+        params.push(("state", state.to_string()));
+    }
+    if let Some(from) = from {
+        params.push(("start_time", from.to_string()));
+    }
+    if let Some(to) = to {
+        params.push(("end_time", to.to_string()));
+    }
+    params.push(("limit", limit.to_string()));
+    params.push(("order_by", "desc".to_string()));
+
+    let query = query(&params)?;
+    Ok(HttpRequest::get(ORDER_HISTORY_PATH)
+        .query(query.clone())
+        .header(AUTHORIZATION, authorization(credentials, &query)?))
+}
+
 pub(crate) fn place_order_request(
     credentials: &UpbitCredentials,
     request: &OrderRequest,
@@ -219,16 +285,24 @@ fn cancel_order_request_by(
     field: &'static str,
     value: &str,
 ) -> Result<HttpRequest> {
-    // Validate the market even though cancellation is keyed by order UUID.
+    let query = order_identifier_query(market, parameter, field, value)?;
+    Ok(HttpRequest::delete(ORDER_PATH)
+        .query(query.clone())
+        .header(AUTHORIZATION, authorization(credentials, &query)?))
+}
+
+fn order_identifier_query(
+    market: &Market,
+    parameter: &'static str,
+    field: &'static str,
+    value: &str,
+) -> Result<String> {
+    // Validate the caller's market even when the provider identifies the order globally.
     parse::native_symbol(market)?;
     if value.trim().is_empty() {
         return Err(Error::invalid_request(field, "must not be empty"));
     }
-
-    let query = query(&[(parameter, value.to_string())])?;
-    Ok(HttpRequest::delete(CANCEL_ORDER_PATH)
-        .query(query.clone())
-        .header(AUTHORIZATION, authorization(credentials, &query)?))
+    query(&[(parameter, value.to_string())])
 }
 
 /// Maps an order request to Upbit parameters.
@@ -421,6 +495,63 @@ pub(crate) async fn open_orders(
             .collect()
     })
     .await
+}
+
+pub(crate) async fn order(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    market: &Market,
+    order_id: &str,
+) -> Result<Order> {
+    let body = rest::send(http, &order_request(credentials, market, order_id)?).await?;
+    checked_market(
+        parse::order(&parse::json::<parse::RawOrder>(&body)?)?,
+        market,
+    )
+}
+
+pub(crate) async fn order_by_client_id(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    market: &Market,
+    client_id: &str,
+) -> Result<Order> {
+    let body = rest::send(
+        http,
+        &order_by_client_id_request(credentials, market, client_id)?,
+    )
+    .await?;
+    checked_market(
+        parse::order(&parse::json::<parse::RawOrder>(&body)?)?,
+        market,
+    )
+}
+
+pub(crate) async fn order_history(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    request: &OrderHistoryRequest,
+) -> Result<Page<Order>> {
+    let body = rest::send(http, &order_history_request(credentials, request)?).await?;
+    let items = parse::json::<Vec<parse::RawOrder>>(&body)?
+        .iter()
+        .map(parse::order)
+        .collect::<Result<_>>()?;
+    Ok(Page { items, next: None })
+}
+
+fn checked_market(order: Order, expected: &Market) -> Result<Order> {
+    if order.market == *expected {
+        Ok(order)
+    } else {
+        Err(Error::invalid_request(
+            "market",
+            format!(
+                "the requested identifier belongs to {}, not {expected}",
+                order.market
+            ),
+        ))
+    }
 }
 
 /// Implements the bounded open-order page walk.
@@ -792,6 +923,52 @@ mod tests {
             claims_of(&authorization_of(&first)).query_hash,
             claims_of(&authorization_of(&second)).query_hash
         );
+    }
+
+    #[test]
+    fn one_order_can_be_read_by_exchange_or_client_identifier() {
+        let by_exchange = order_request(&credentials(), &btc_krw(), ORDER_ID)
+            .expect("a signable exchange-id query");
+        let by_client = order_by_client_id_request(&credentials(), &btc_krw(), "client-1")
+            .expect("a signable client-id query");
+
+        assert_eq!(by_exchange.target(), format!("/v1/order?uuid={ORDER_ID}"));
+        assert_eq!(by_client.target(), "/v1/order?identifier=client-1");
+    }
+
+    #[test]
+    fn final_order_history_uses_the_documented_seven_day_endpoint() {
+        let history = OrderHistoryRequest::new()
+            .market(btc_krw())
+            .status(OrderStatus::Filled)
+            .from(Timestamp::from_millis(1_700_000_000_000))
+            .to(Timestamp::from_millis(1_700_001_000_000))
+            .limit(25);
+        let request = order_history_request(&credentials(), &history).expect("a history request");
+
+        assert_eq!(
+            request.target(),
+            "/v1/orders/closed?market=KRW-BTC&state=done&start_time=1700000000000&end_time=1700000999999&limit=25&order_by=desc"
+        );
+        assert_eq!(
+            claims_of(&authorization_of(&request)).query_hash.as_deref(),
+            Some(hex::encode(Sha512::digest(request.query.as_bytes())).as_str())
+        );
+    }
+
+    #[test]
+    fn upbit_history_refuses_a_cursor_or_non_final_status() {
+        let cursor = OrderHistoryRequest::new().cursor(crate::Cursor::new("not-supported"));
+        let open = OrderHistoryRequest::new().status(OrderStatus::Open);
+
+        assert!(matches!(
+            order_history_request(&credentials(), &cursor),
+            Err(Error::InvalidRequest { field, .. }) if field == "cursor"
+        ));
+        assert!(matches!(
+            order_history_request(&credentials(), &open),
+            Err(Error::InvalidRequest { field, .. }) if field == "statuses"
+        ));
     }
 
     #[test]

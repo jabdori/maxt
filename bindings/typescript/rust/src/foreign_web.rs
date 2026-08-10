@@ -191,6 +191,10 @@ fn decode_reply(
         WireAdapterReply::Deposits { value } => value.try_into().map(AdapterReply::Deposits),
         WireAdapterReply::Withdrawals { value } => value.try_into().map(AdapterReply::Withdrawals),
         WireAdapterReply::OpenOrders { value } => wire_vec(value).map(AdapterReply::OpenOrders),
+        WireAdapterReply::Order { value } => value.try_into().map(AdapterReply::Order),
+        WireAdapterReply::OrderHistory { value } => {
+            value.try_into().map(AdapterReply::OrderHistory)
+        }
         WireAdapterReply::AccountStream {
             stream_id: returned,
         } => {

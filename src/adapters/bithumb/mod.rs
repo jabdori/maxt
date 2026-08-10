@@ -10,7 +10,8 @@ use crate::adapter::{Adapter, BoxFuture};
 use crate::error::{Error, Result};
 use crate::feature::Feature;
 use crate::request::{
-    CandleRequest, DepositAddressRequest, OrderRequest, TransferHistoryRequest, WithdrawRequest,
+    CandleRequest, DepositAddressRequest, OrderHistoryRequest, OrderRequest,
+    TransferHistoryRequest, WithdrawRequest,
 };
 use crate::stream::{AccountStream, MarketStream};
 use crate::transport::HttpTransport;
@@ -247,6 +248,30 @@ impl Adapter for BithumbAdapter {
         let market = market.cloned();
         Box::pin(async move {
             private::open_orders(self.http()?, self.credentials()?, market.as_ref()).await
+        })
+    }
+
+    fn order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<Order>> {
+        let market = market.clone();
+        let order_id = order_id.to_string();
+        Box::pin(async move {
+            private::order(self.http()?, self.credentials()?, &market, &order_id).await
+        })
+    }
+
+    fn order_by_client_id(&self, market: &Market, client_id: &str) -> BoxFuture<'_, Result<Order>> {
+        let market = market.clone();
+        let client_id = client_id.to_string();
+        Box::pin(async move {
+            private::order_by_client_id(self.http()?, self.credentials()?, &market, &client_id)
+                .await
+        })
+    }
+
+    fn order_history(&self, request: &OrderHistoryRequest) -> BoxFuture<'_, Result<Page<Order>>> {
+        let request = request.clone();
+        Box::pin(async move {
+            private::order_history(self.http()?, self.credentials()?, &request).await
         })
     }
 

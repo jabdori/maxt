@@ -44,6 +44,7 @@ class Feature(str, Enum):
     WITHDRAWALS = "withdrawals"
     WITHDRAWAL_HISTORY = "withdrawal_history"
     OPEN_ORDERS = "open_orders"
+    ORDER_HISTORY = "order_history"
     ACCOUNT_STREAM = "account_stream"
     TRADING = "trading"
     POSITIONS = "positions"
@@ -63,6 +64,7 @@ class Feature(str, Enum):
             "withdrawals",
             "withdrawal_history",
             "open_orders",
+            "order_history",
             "account_stream",
             "trading",
             "positions",

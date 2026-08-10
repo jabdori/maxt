@@ -129,6 +129,9 @@ fn render_dart_model_record(name: &str, fields: &[Field]) -> String {
     });
     let argument = |field: &Field| {
         let public = snake_to_lower_camel(field.name);
+        if name == "OrderHistoryRequest" && field.name == "statuses" {
+            return "this.statuses = const []".to_owned();
+        }
         if normalizes_asset && field.name == "asset" {
             let required = dart_required(&field.ty);
             return format!("{required}{} asset", dart_schema_type(field));
@@ -395,12 +398,14 @@ pub(crate) fn render_rust_models(schema: &Schema) -> String {
             output.push_str(&render_rust_wire_union(schema, name, &union.variants));
         }
     }
+    let mut pages = Vec::new();
     for operation in schema.adapter_operations {
         let ApiType::Page(name) = operation.result else {
             continue;
         };
-        if generated.contains(&name) {
+        if !matches!(name, "FundingRate" | "FundingPayment") && !pages.contains(&name) {
             output.push_str(&render_rust_wire_page(name));
+            pages.push(name);
         }
     }
     output
@@ -684,6 +689,7 @@ fn rust_wire_to_core_value(schema: &Schema, ty: &Type, value: &str, field: &str)
             format!("network_from_wire({value})")
         }
         Type::Identifier(_) => format!("{value}.into()"),
+        Type::Named("MarketWire") => format!("{value}.into()"),
         Type::Named(_) => format!("{value}.try_into()?"),
         Type::Optional(inner) => match inner.as_ref() {
             Type::String | Type::Boolean | Type::Number | Type::UnsignedInteger => value.to_owned(),
@@ -695,6 +701,7 @@ fn rust_wire_to_core_value(schema: &Schema, ty: &Type, value: &str, field: &str)
                 format!("{value}.map(network_from_wire)")
             }
             Type::Identifier(_) => format!("{value}.map(Into::into)"),
+            Type::Named("MarketWire") => format!("{value}.map(Into::into)"),
             Type::Named(_) => format!("{value}.map(TryInto::try_into).transpose()?"),
             other => panic!("unsupported generated Dart Rust optional: {other:?}"),
         },
@@ -1400,6 +1407,7 @@ fn render_native_method(operation: &Operation) -> String {
             }
             ApiType::Named(
                 "OrderRequest"
+                | "OrderHistoryRequest"
                 | "MarginRequest"
                 | "DepositAddressRequest"
                 | "WithdrawRequest"
@@ -1423,30 +1431,34 @@ fn render_native_method(operation: &Operation) -> String {
             .collect::<Vec<_>>()
             .join(", ");
         if operation.result == ApiType::Unit {
-            output.push_str(&format!(
-                "        self.adapter.{}({call_arguments}).await",
+            let inline = format!(
+                "        self.adapter.{}({call_arguments}).await.map_err(Into::into)\n",
                 operation.rust_name
-            ));
+            );
+            if inline.trim_end().chars().count() <= 80 {
+                output.push_str(&inline);
+            } else {
+                output.push_str(&format!(
+                    "        self.adapter\n            .{}({call_arguments})\n            .await\n            .map_err(Into::into)\n",
+                    operation.rust_name
+                ));
+            }
         } else {
             output.push_str(&format!(
                 "        self.adapter\n            .{}({call_arguments})\n            .await",
                 operation.rust_name
             ));
-        }
-        match operation.result {
-            ApiType::List(_) | ApiType::PairList(_, _) => {
-                output.push_str(
-                    "\n            .map(|items| items.into_iter().map(Into::into).collect())",
-                );
+            match operation.result {
+                ApiType::List(_) | ApiType::PairList(_, _) => {
+                    output.push_str(
+                        "\n            .map(|items| items.into_iter().map(Into::into).collect())",
+                    );
+                }
+                ApiType::Named(_) | ApiType::Page(_) | ApiType::Handle(_) => {
+                    output.push_str("\n            .map(Into::into)");
+                }
+                _ => {}
             }
-            ApiType::Named(_) | ApiType::Page(_) | ApiType::Handle(_) => {
-                output.push_str("\n            .map(Into::into)");
-            }
-            _ => {}
-        }
-        if operation.result == ApiType::Unit {
-            output.push_str(".map_err(Into::into)\n");
-        } else {
             output.push_str("\n            .map_err(Into::into)\n");
         }
     }
@@ -1461,6 +1473,7 @@ fn native_call_argument(argument: &Argument) -> String {
         ApiType::Named("MarketKind") => format!("{name}.into()"),
         ApiType::Named(
             "OrderRequest"
+            | "OrderHistoryRequest"
             | "MarginRequest"
             | "DepositAddressRequest"
             | "WithdrawRequest"
@@ -1890,8 +1903,15 @@ fn dart_from_wire_value_expression(field: &str, ty: &Type) -> String {
         },
         Type::List(inner) => match inner.as_ref() {
             Type::String | Type::Boolean | Type::Number => field.to_owned(),
+            Type::Identifier("Network") => {
+                format!("{field}.map(_networkFromWire).toList(growable: false)")
+            }
+            Type::Identifier(identifier) => format!(
+                "{field}.map(_{}FromWire).toList(growable: false)",
+                lower_camel(identifier)
+            ),
             Type::Named(named) => format!(
-                "{field}.map(_{}FromWire)",
+                "{field}.map(_{}FromWire).toList(growable: false)",
                 lower_camel(named.trim_end_matches("Wire"))
             ),
             other => panic!("unsupported Dart wire list field: {other:?}"),
@@ -1939,6 +1959,13 @@ fn dart_to_wire_expression(value: &str, ty: &Type) -> String {
             Type::String | Type::Boolean | Type::Number => {
                 format!("{value}.toList(growable: false)")
             }
+            Type::Identifier("Network") => {
+                format!("{value}.map(_networkToWire).toList(growable: false)")
+            }
+            Type::Identifier(identifier) => format!(
+                "{value}.map(_{}ToWire).toList(growable: false)",
+                lower_camel(identifier)
+            ),
             Type::Named(named) => format!(
                 "{value}.map(_{}ToWire).toList(growable: false)",
                 lower_camel(named.trim_end_matches("Wire"))
@@ -2328,7 +2355,7 @@ mod tests {
 
     use super::{
         render_adapter_api, render_client_api, render_delegate_methods, render_identifiers,
-        render_native_client_api, render_provider_guard, render_provider_methods,
+        render_models, render_native_client_api, render_provider_guard, render_provider_methods,
         render_rust_adapter_dispatch, render_wire_shape_guard,
     };
 
@@ -2342,6 +2369,15 @@ mod tests {
         assert!(output.contains("static const vaultDistribution"));
         assert!(output.contains("'vault_distribution'"));
         assert!(output.contains("factory HyperliquidLedgerKind.other(String providerName)"));
+    }
+
+    #[test]
+    fn order_history_model_defaults_to_all_final_orders() {
+        let output = render_models(&binding_schema());
+
+        assert!(output.contains(
+            "const OrderHistoryRequest({\n    this.market,\n    this.statuses = const [],"
+        ));
     }
 
     #[test]

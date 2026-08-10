@@ -67,6 +67,7 @@ export function unwrapOutcome<T>(outcome: NativeOutcome<T>): T {
 fn render_model(schema: &Schema, name: &str, fields: &[Field]) -> String {
     match name {
         "OrderRequest" => return ORDER_REQUEST_CODEC.to_owned(),
+        "OrderHistoryRequest" => return ORDER_HISTORY_REQUEST_CODEC.to_owned(),
         "HistoryRequest" => return HISTORY_REQUEST_CODEC.to_owned(),
         "TransferHistoryRequest" => return TRANSFER_HISTORY_REQUEST_CODEC.to_owned(),
         "StreamConfig" => return STREAM_CONFIG_CODEC.to_owned(),
@@ -315,6 +316,30 @@ const HISTORY_REQUEST_CODEC: &str = r#"export function historyRequestFromWire(va
 export function historyRequestToWire(value: Model.HistoryRequest): Wire.HistoryRequestWire {
   return {
     market: marketToWire(value.market),
+    from: value.from?.nanosecondsSinceEpoch.toString() ?? null,
+    to: value.to?.nanosecondsSinceEpoch.toString() ?? null,
+    cursor: value.cursor?.value ?? null,
+    limit: value.limit,
+  };
+}
+
+"#;
+
+const ORDER_HISTORY_REQUEST_CODEC: &str = r#"export function orderHistoryRequestFromWire(value: Wire.OrderHistoryRequestWire): Model.OrderHistoryRequest {
+  return new Model.OrderHistoryRequest(
+    value.market === null ? null : marketFromWire(value.market),
+    value.statuses.map((status) => identifier(Model.OrderStatus.values, status, "statuses")),
+    value.from === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.from)),
+    value.to === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.to)),
+    value.cursor === null ? null : new Model.Cursor(value.cursor),
+    value.limit,
+  );
+}
+
+export function orderHistoryRequestToWire(value: Model.OrderHistoryRequest): Wire.OrderHistoryRequestWire {
+  return {
+    market: value.market === null ? null : marketToWire(value.market),
+    statuses: value.statuses.map((status) => status.id),
     from: value.from?.nanosecondsSinceEpoch.toString() ?? null,
     to: value.to?.nanosecondsSinceEpoch.toString() ?? null,
     cursor: value.cursor?.value ?? null,

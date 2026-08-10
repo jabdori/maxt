@@ -12,9 +12,10 @@ use crate::convert::{
     NativeError, WireAssetNetwork, WireBalance, WireCandle, WireCandleRequest, WireDepositAddress,
     WireDepositAddressRequest, WireDepositPage, WireExchange, WireFeature, WireFundingPaymentPage,
     WireFundingRatePage, WireHistoryRequest, WireMarginRequest, WireMarginSummary, WireMarket,
-    WireMarketInfo, WireMarketKind, WireOrder, WireOrderBook, WireOrderRequest, WirePosition,
-    WireTicker, WireTrade, WireTransferHistoryRequest, WireWithdrawRequest, WireWithdrawal,
-    WireWithdrawalPage, WireWithdrawalQuote,
+    WireMarketInfo, WireMarketKind, WireOrder, WireOrderBook, WireOrderHistoryRequest,
+    WireOrderPage, WireOrderRequest, WirePosition, WireTicker, WireTrade,
+    WireTransferHistoryRequest, WireWithdrawRequest, WireWithdrawal, WireWithdrawalPage,
+    WireWithdrawalQuote,
 };
 use crate::stream::{
     AccountStreamSink, CancelCallback, CancelFuture, MarketStreamSink, account_stream_channel,
@@ -131,6 +132,18 @@ pub enum AdapterCall {
     Withdrawals { request: WireTransferHistoryRequest },
     /// 미체결 주문을 요청합니다.
     OpenOrders { market: Option<WireMarket> },
+    /// 거래소 주문 ID로 주문을 요청합니다.
+    Order {
+        market: WireMarket,
+        order_id: String,
+    },
+    /// client ID로 주문을 요청합니다.
+    OrderByClientId {
+        market: WireMarket,
+        client_id: String,
+    },
+    /// 종료 주문 이력을 요청합니다.
+    OrderHistory { request: WireOrderHistoryRequest },
     /// 주문을 제출합니다.
     PlaceOrder { request: WireOrderRequest },
     /// 주문을 취소합니다.
@@ -200,6 +213,10 @@ pub enum AdapterReply {
     Withdrawals(WireWithdrawalPage),
     /// 미체결 주문 응답입니다.
     OpenOrders(Vec<WireOrder>),
+    /// 단건 주문 응답입니다.
+    Order(WireOrder),
+    /// 종료 주문 이력 응답입니다.
+    OrderHistory(WireOrderPage),
     /// 주문 제출 응답입니다.
     PlaceOrder(WireOrder),
     /// 포지션 응답입니다.
@@ -230,6 +247,8 @@ impl AdapterReply {
             Self::Deposits(_) => "Deposits",
             Self::Withdrawals(_) => "Withdrawals",
             Self::OpenOrders(_) => "OpenOrders",
+            Self::Order(_) => "Order",
+            Self::OrderHistory(_) => "OrderHistory",
             Self::PlaceOrder(_) => "PlaceOrder",
             Self::Positions(_) => "Positions",
             Self::MarginSummary(_) => "MarginSummary",
@@ -354,6 +373,9 @@ enum ExpectedReply {
     Deposits,
     Withdrawals,
     OpenOrders,
+    Order,
+    OrderByClientId,
+    OrderHistory,
     PlaceOrder,
     Positions,
     MarginSummary,
@@ -378,6 +400,9 @@ impl ExpectedReply {
             Self::Deposits => "Deposits",
             Self::Withdrawals => "Withdrawals",
             Self::OpenOrders => "OpenOrders",
+            Self::Order => "Order",
+            Self::OrderByClientId => "OrderByClientId",
+            Self::OrderHistory => "OrderHistory",
             Self::PlaceOrder => "PlaceOrder",
             Self::Positions => "Positions",
             Self::MarginSummary => "MarginSummary",
@@ -470,6 +495,14 @@ impl AdapterReply {
             (ExpectedReply::OpenOrders, Self::OpenOrders(values)) => {
                 convert_vec(values, "OpenOrders").map(CommonAdapterReply::OpenOrders)
             }
+            (ExpectedReply::Order | ExpectedReply::OrderByClientId, Self::Order(value)) => value
+                .try_into()
+                .map(CommonAdapterReply::Order)
+                .map_err(|error| invalid_reply("Order", error)),
+            (ExpectedReply::OrderHistory, Self::OrderHistory(value)) => value
+                .try_into()
+                .map(CommonAdapterReply::OrderHistory)
+                .map_err(|error| invalid_reply("OrderHistory", error)),
             (ExpectedReply::PlaceOrder, Self::PlaceOrder(value)) => value
                 .try_into()
                 .map(CommonAdapterReply::PlaceOrder)

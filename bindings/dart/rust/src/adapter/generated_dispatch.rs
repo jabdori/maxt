@@ -54,6 +54,18 @@ pub(super) fn dispatch(call: CommonAdapterCall) -> Option<(AdapterCall, Expected
             AdapterCall::OpenOrders { market: market.map(Into::into) },
             ExpectedReply::OpenOrders,
         )),
+        CommonAdapterCall::Order { market, order_id } => Some((
+            AdapterCall::Order { market: market.into(), order_id },
+            ExpectedReply::Order,
+        )),
+        CommonAdapterCall::OrderByClientId { market, client_id } => Some((
+            AdapterCall::OrderByClientId { market: market.into(), client_id },
+            ExpectedReply::OrderByClientId,
+        )),
+        CommonAdapterCall::OrderHistory { request } => Some((
+            AdapterCall::OrderHistory { request: request.into() },
+            ExpectedReply::OrderHistory,
+        )),
         CommonAdapterCall::PlaceOrder { request } => Some((
             AdapterCall::PlaceOrder { request: request.into() },
             ExpectedReply::PlaceOrder,

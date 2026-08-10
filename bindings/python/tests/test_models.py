@@ -27,6 +27,7 @@ from maxt import (
     Network,
     Order,
     OrderBook,
+    OrderHistoryRequest,
     OrderRequest,
     OrderStatus,
     OrderType,
@@ -77,6 +78,7 @@ class WireModelTests(unittest.TestCase):
                 Feature.WITHDRAWALS,
                 Feature.WITHDRAWAL_HISTORY,
                 Feature.OPEN_ORDERS,
+                Feature.ORDER_HISTORY,
                 Feature.ACCOUNT_STREAM,
                 Feature.TRADING,
                 Feature.POSITIONS,
@@ -101,6 +103,12 @@ class WireModelTests(unittest.TestCase):
         self.assertTrue(MarketKind.PERPETUAL.is_derivative())
         self.assertIs(Side.BUY.flip(), Side.SELL)
         self.assertIs(Side.SELL.flip(), Side.BUY)
+
+    def test_order_history_request_defaults_to_all_final_orders(self) -> None:
+        request = OrderHistoryRequest()
+
+        self.assertIsNone(request.market)
+        self.assertEqual(request.statuses, [])
 
     def test_intervals_report_fixed_lengths_and_advance_without_overflow(self) -> None:
         self.assertEqual(

@@ -75,6 +75,23 @@ sealed class AdapterCall with _$AdapterCall {
   const factory AdapterCall.openOrders({WireMarket? market}) =
       AdapterCall_OpenOrders;
 
+  /// 거래소 주문 ID로 주문을 요청합니다.
+  const factory AdapterCall.order({
+    required WireMarket market,
+    required String orderId,
+  }) = AdapterCall_Order;
+
+  /// client ID로 주문을 요청합니다.
+  const factory AdapterCall.orderByClientId({
+    required WireMarket market,
+    required String clientId,
+  }) = AdapterCall_OrderByClientId;
+
+  /// 종료 주문 이력을 요청합니다.
+  const factory AdapterCall.orderHistory({
+    required WireOrderHistoryRequest request,
+  }) = AdapterCall_OrderHistory;
+
   /// 주문을 제출합니다.
   const factory AdapterCall.placeOrder({required WireOrderRequest request}) =
       AdapterCall_PlaceOrder;
@@ -186,6 +203,13 @@ sealed class AdapterReply with _$AdapterReply {
   /// 미체결 주문 응답입니다.
   const factory AdapterReply.openOrders(List<WireOrder> field0) =
       AdapterReply_OpenOrders;
+
+  /// 단건 주문 응답입니다.
+  const factory AdapterReply.order(WireOrder field0) = AdapterReply_Order;
+
+  /// 종료 주문 이력 응답입니다.
+  const factory AdapterReply.orderHistory(WireOrderPage field0) =
+      AdapterReply_OrderHistory;
 
   /// 주문 제출 응답입니다.
   const factory AdapterReply.placeOrder(WireOrder field0) =

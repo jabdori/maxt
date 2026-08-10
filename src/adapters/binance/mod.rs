@@ -449,6 +449,9 @@ impl Adapter for BinanceAdapter {
     }
 
     fn supports(&self, feature: Feature) -> bool {
+        if feature == Feature::OrderHistory {
+            return false;
+        }
         if wallet::is_wallet_feature(feature) && self.venue != BinanceMarket::Spot {
             return false;
         }

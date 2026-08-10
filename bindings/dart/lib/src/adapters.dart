@@ -248,6 +248,27 @@ abstract base class _NativeAdapterBase
   ).then((values) => values.map(_orderFromWire).toList(growable: false));
 
   @override
+  Future<Order> order(Market market, String orderId) => _nativeFuture(
+    () => _handle.order(market: _marketToWire(market), orderId: orderId),
+  ).then(_orderFromWire);
+
+  @override
+  Future<Order> orderByClientId(Market market, String clientId) =>
+      _nativeFuture(
+        () => _handle.orderByClientId(
+          market: _marketToWire(market),
+          clientId: clientId,
+        ),
+      ).then(_orderFromWire);
+
+  @override
+  Future<Page<Order>> orderHistory(OrderHistoryRequest request) =>
+      _nativeFuture(
+        () =>
+            _handle.orderHistory(request: _orderHistoryRequestToWire(request)),
+      ).then(_orderPageFromWire);
+
+  @override
   Future<Order> placeOrder(OrderRequest request) => _nativeFuture(
     () => _handle.placeOrder(request: _orderRequestToWire(request)),
   ).then(_orderFromWire);

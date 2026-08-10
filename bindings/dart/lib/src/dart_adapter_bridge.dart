@@ -629,6 +629,29 @@ final class DartAdapterBridge {
               values.map(_orderToWire).toList(growable: false),
             ),
           ),
+    native_adapter.AdapterCall_Order(:final market, :final orderId) =>
+      adapter
+          .order(_marketFromWire(market), orderId)
+          .then(
+            (value) => native_adapter.AdapterReply.order(_orderToWire(value)),
+          ),
+    native_adapter.AdapterCall_OrderByClientId(
+      :final market,
+      :final clientId,
+    ) =>
+      adapter
+          .orderByClientId(_marketFromWire(market), clientId)
+          .then(
+            (value) => native_adapter.AdapterReply.order(_orderToWire(value)),
+          ),
+    native_adapter.AdapterCall_OrderHistory(:final request) =>
+      adapter
+          .orderHistory(_orderHistoryRequestFromWire(request))
+          .then(
+            (value) => native_adapter.AdapterReply.orderHistory(
+              _orderPageToWire(value),
+            ),
+          ),
     native_adapter.AdapterCall_PlaceOrder(:final request) =>
       adapter
           .placeOrder(_orderRequestFromWire(request))
@@ -896,6 +919,9 @@ final class DartAdapterBridge {
     native_adapter.AdapterCall_Deposits() => Feature.depositHistory,
     native_adapter.AdapterCall_Withdrawals() => Feature.withdrawalHistory,
     native_adapter.AdapterCall_OpenOrders() => Feature.openOrders,
+    native_adapter.AdapterCall_Order() ||
+    native_adapter.AdapterCall_OrderByClientId() ||
+    native_adapter.AdapterCall_OrderHistory() => Feature.orderHistory,
     native_adapter.AdapterCall_PlaceOrder() ||
     native_adapter.AdapterCall_CancelOrder() ||
     native_adapter.AdapterCall_CancelOrderByClientId() => Feature.trading,

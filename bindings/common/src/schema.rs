@@ -231,6 +231,11 @@ const SUBSCRIPTION_CONFIG: &[Argument] = &[
 ];
 const CONFIG: &[Argument] = &[argument("config", ApiType::Named("StreamConfig"), None)];
 const ORDER_REQUEST: &[Argument] = &[argument("request", ApiType::Named("OrderRequest"), None)];
+const ORDER_HISTORY_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("OrderHistoryRequest"),
+    None,
+)];
 const ASSET: &[Argument] = &[argument("asset", ApiType::String, None)];
 const DEPOSIT_ADDRESS_REQUEST: &[Argument] = &[argument(
     "request",
@@ -257,6 +262,14 @@ const TRANSFER_PLAN: &[Argument] = &[argument("plan", ApiType::Named("TransferPl
 const CANCEL_ORDER: &[Argument] = &[
     argument("market", ApiType::Named("Market"), None),
     argument("orderId", ApiType::String, None),
+];
+const ORDER: &[Argument] = &[
+    argument("market", ApiType::Named("Market"), None),
+    argument("orderId", ApiType::String, None),
+];
+const ORDER_BY_CLIENT_ID: &[Argument] = &[
+    argument("market", ApiType::Named("Market"), None),
+    argument("clientId", ApiType::String, None),
 ];
 const CANCEL_ORDER_BY_CLIENT_ID: &[Argument] = &[
     argument("market", ApiType::Named("Market"), None),
@@ -349,6 +362,21 @@ const CLIENT_OPEN_ORDERS: &[ClientMethod] = &[
         arguments: MARKET,
     },
 ];
+const CLIENT_ORDER: &[ClientMethod] = &[ClientMethod {
+    name: "order",
+    native_name: "order",
+    arguments: ORDER,
+}];
+const CLIENT_ORDER_BY_CLIENT_ID: &[ClientMethod] = &[ClientMethod {
+    name: "orderByClientId",
+    native_name: "orderByClientId",
+    arguments: ORDER_BY_CLIENT_ID,
+}];
+const CLIENT_ORDER_HISTORY: &[ClientMethod] = &[ClientMethod {
+    name: "orderHistory",
+    native_name: "orderHistory",
+    arguments: ORDER_HISTORY_REQUEST,
+}];
 const CLIENT_ACCOUNT_STREAM: &[ClientMethod] = &[
     ClientMethod {
         name: "subscribeAccount",
@@ -523,6 +551,30 @@ const ADAPTER_OPERATIONS: &[Operation] = &[
         client_methods: CLIENT_OPEN_ORDERS,
     },
     Operation {
+        rust_name: "order",
+        language_name: "order",
+        feature: "order_history",
+        arguments: ORDER,
+        result: ApiType::Named("Order"),
+        client_methods: CLIENT_ORDER,
+    },
+    Operation {
+        rust_name: "order_by_client_id",
+        language_name: "orderByClientId",
+        feature: "order_history",
+        arguments: ORDER_BY_CLIENT_ID,
+        result: ApiType::Named("Order"),
+        client_methods: CLIENT_ORDER_BY_CLIENT_ID,
+    },
+    Operation {
+        rust_name: "order_history",
+        language_name: "orderHistory",
+        feature: "order_history",
+        arguments: ORDER_HISTORY_REQUEST,
+        result: ApiType::Page("Order"),
+        client_methods: CLIENT_ORDER_HISTORY,
+    },
+    Operation {
         rust_name: "subscribe_account",
         language_name: "subscribeAccount",
         feature: "account_stream",
@@ -640,6 +692,9 @@ const CLIENT_MEMBERS: &[&str] = &[
     "executeTransfer",
     "openOrders",
     "openOrdersOn",
+    "order",
+    "orderByClientId",
+    "orderHistory",
     "subscribeAccount",
     "subscribeAccountWith",
     "placeOrder",
@@ -707,6 +762,7 @@ const FEATURE_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("Withdrawals", "withdrawals"),
     identifier_variant("WithdrawalHistory", "withdrawal_history"),
     identifier_variant("OpenOrders", "open_orders"),
+    identifier_variant("OrderHistory", "order_history"),
     identifier_variant("AccountStream", "account_stream"),
     identifier_variant("Trading", "trading"),
     identifier_variant("Positions", "positions"),
@@ -919,6 +975,7 @@ const MODELS: &[&str] = &[
     "FundingPayment",
     "CandleRequest",
     "OrderRequest",
+    "OrderHistoryRequest",
     "DepositAddressRequest",
     "WithdrawRequest",
     "TransferHistoryRequest",
@@ -1550,6 +1607,17 @@ pub fn binding_schema() -> Schema {
             ],
         ),
         record(
+            "OrderHistoryRequestWire",
+            vec![
+                field("market", Type::optional(market.clone())),
+                field("statuses", Type::list(Type::Identifier("OrderStatus"))),
+                field("from", Type::optional(timestamp.clone())),
+                field("to", Type::optional(timestamp.clone())),
+                field("cursor", Type::optional(Type::String)),
+                field("limit", Type::optional(Number)),
+            ],
+        ),
+        record(
             "DepositAddressRequestWire",
             vec![
                 field("asset", Type::String),
@@ -1937,6 +2005,24 @@ pub fn binding_schema() -> Schema {
                     vec![field("market", Type::optional(Type::named("MarketWire")))],
                 ),
                 variant(
+                    "order",
+                    vec![
+                        field("market", Type::named("MarketWire")),
+                        field("order_id", Type::String),
+                    ],
+                ),
+                variant(
+                    "order_by_client_id",
+                    vec![
+                        field("market", Type::named("MarketWire")),
+                        field("client_id", Type::String),
+                    ],
+                ),
+                variant(
+                    "order_history",
+                    vec![field("request", Type::named("OrderHistoryRequestWire"))],
+                ),
+                variant(
                     "subscribe_account",
                     vec![
                         field("stream_id", Type::String),
@@ -2034,6 +2120,11 @@ pub fn binding_schema() -> Schema {
                     "open_orders",
                     vec![field("value", Type::list(Type::named("OrderWire")))],
                 ),
+                variant("order", vec![field("value", Type::named("OrderWire"))]),
+                variant(
+                    "order_history",
+                    vec![field("value", Type::named("PageWire<OrderWire>"))],
+                ),
                 variant("account_stream", vec![field("stream_id", Type::String)]),
                 variant(
                     "place_order",
@@ -2061,7 +2152,7 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
-        native_api_version: 3,
+        native_api_version: 4,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
         identifiers: IDENTIFIERS,

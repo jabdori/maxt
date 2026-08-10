@@ -8,11 +8,11 @@ use maxt::{
     DepositStatus, Error, Exchange, ExchangeDestination, ExchangeErrorKind,
     ExchangeTransferRequest, Feature, Feed, FundingPayment, FundingRate, HistoryRequest, Interval,
     Level, MarginMode, MarginRequest, MarginSummary, Market, MarketEvent, MarketInfo, MarketKind,
-    MarketStatus, Network, Order, OrderBook, OrderRequest, OrderStatus, OrderType, Overflow, Page,
-    Position, Side, Size, StreamConfig, Subscription, Ticker, TimeInForce, Timestamp, Trade,
-    TransferDestination, TransferErrorKind, TransferHistoryRequest, TransferPlan,
-    TravelRuleRequirement, WithdrawRequest, Withdrawal, WithdrawalFee, WithdrawalQuote,
-    WithdrawalStatus,
+    MarketStatus, Network, Order, OrderBook, OrderHistoryRequest, OrderRequest, OrderStatus,
+    OrderType, Overflow, Page, Position, Side, Size, StreamConfig, Subscription, Ticker,
+    TimeInForce, Timestamp, Trade, TransferDestination, TransferErrorKind, TransferHistoryRequest,
+    TransferPlan, TravelRuleRequirement, WithdrawRequest, Withdrawal, WithdrawalFee,
+    WithdrawalQuote, WithdrawalStatus,
 };
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -62,6 +62,24 @@ pub(crate) struct WireOrderRequest {
     #[serde(deserialize_with = "explicit_option")]
     pub(crate) time_in_force: Option<String>,
     pub(crate) reduce_only: bool,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) client_id: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireOrderHistoryRequest {
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) market: Option<WireMarket>,
+    pub(crate) statuses: Vec<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) from: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) to: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) cursor: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) limit: Option<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -785,31 +803,71 @@ impl TryFrom<WireOrderRequest> for OrderRequest {
             .as_deref()
             .map(|value| decimal_from_wire(value, "price"))
             .transpose()?;
-        let mut request = match (order_type, price) {
-            (OrderType::Market, None) => Self::market(market, side, size),
-            (OrderType::Limit, Some(price)) => Self::limit(market, side, size, price),
-            (OrderType::Market, Some(_)) => {
+        let time_in_force = value
+            .time_in_force
+            .as_deref()
+            .map(|value| time_in_force_from_wire(value, "time_in_force"))
+            .transpose()?;
+        let best = matches!(&order_type, OrderType::Best);
+        let mut request = match (order_type, price, time_in_force) {
+            (OrderType::Market, None, _) => Self::market(market, side, size),
+            (OrderType::Limit, Some(price), _) => Self::limit(market, side, size, price),
+            (OrderType::Best, None, Some(policy)) => Self::best(market, side, size, policy),
+            (OrderType::Market, Some(_), _) => {
                 return Err(Error::InvalidRequest {
                     field: "price".to_owned(),
                     detail: "a market order must not have a price".to_owned(),
                 });
             }
-            (OrderType::Limit, None) => {
+            (OrderType::Limit, None, _) => {
                 return Err(Error::InvalidRequest {
                     field: "price".to_owned(),
                     detail: "a limit order requires a price".to_owned(),
                 });
             }
+            (OrderType::Best, Some(_), _) => {
+                return Err(Error::InvalidRequest {
+                    field: "price".to_owned(),
+                    detail: "a best order must not have a price".to_owned(),
+                });
+            }
+            (OrderType::Best, None, None) => {
+                return Err(Error::InvalidRequest {
+                    field: "time_in_force".to_owned(),
+                    detail: "a best order requires a time-in-force".to_owned(),
+                });
+            }
             _ => return Err(binding_contract("OrderType")),
         };
-        if let Some(time_in_force) = value.time_in_force {
-            request =
-                request.time_in_force(time_in_force_from_wire(&time_in_force, "time_in_force")?);
+        if !best && let Some(time_in_force) = time_in_force {
+            request = request.time_in_force(time_in_force);
         }
         if value.reduce_only {
             request = request.reduce_only();
         }
+        if let Some(client_id) = value.client_id {
+            request = request.client_id(client_id);
+        }
         Ok(request)
+    }
+}
+
+impl TryFrom<WireOrderHistoryRequest> for OrderHistoryRequest {
+    type Error = Error;
+
+    fn try_from(value: WireOrderHistoryRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.map(TryInto::try_into).transpose()?,
+            statuses: value
+                .statuses
+                .iter()
+                .map(|status| order_status_from_wire(status, "statuses"))
+                .collect::<Result<_, _>>()?,
+            from: timestamp_option_from_wire(value.from, "from")?,
+            to: timestamp_option_from_wire(value.to, "to")?,
+            cursor: value.cursor.map(Cursor::new),
+            limit: value.limit,
+        })
     }
 }
 
@@ -909,6 +967,29 @@ impl TryFrom<OrderRequest> for WireOrderRequest {
                 .transpose()?
                 .map(str::to_owned),
             reduce_only: value.reduce_only,
+            client_id: value.client_id,
+        })
+    }
+}
+
+impl TryFrom<OrderHistoryRequest> for WireOrderHistoryRequest {
+    type Error = Error;
+
+    fn try_from(value: OrderHistoryRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.map(TryInto::try_into).transpose()?,
+            statuses: value
+                .statuses
+                .into_iter()
+                .map(order_status_to_wire)
+                .collect::<Result<Vec<_>, _>>()?
+                .into_iter()
+                .map(str::to_owned)
+                .collect(),
+            from: timestamp_option_to_wire(value.from),
+            to: timestamp_option_to_wire(value.to),
+            cursor: value.cursor.map(|cursor| cursor.as_str().to_owned()),
+            limit: value.limit,
         })
     }
 }
@@ -2367,6 +2448,7 @@ fn order_type_from_wire(value: &str, field: &str) -> maxt::Result<OrderType> {
     match value {
         "market" => Ok(OrderType::Market),
         "limit" => Ok(OrderType::Limit),
+        "best" => Ok(OrderType::Best),
         _ => Err(invalid_enum(field, value)),
     }
 }
@@ -2375,6 +2457,7 @@ fn order_type_to_wire(value: OrderType) -> maxt::Result<&'static str> {
     match value {
         OrderType::Market => Ok("market"),
         OrderType::Limit => Ok("limit"),
+        OrderType::Best => Ok("best"),
         _ => Err(binding_contract("OrderType")),
     }
 }
@@ -3054,7 +3137,8 @@ mod tests {
             "size": { "kind": "quote", "value": "10.00" },
             "price": null,
             "time_in_force": null,
-            "reduce_only": false
+            "reduce_only": false,
+            "client_id": null
         });
         let request =
             OrderRequest::try_from(from_wire_value::<WireOrderRequest>(valid, "request").unwrap())
@@ -3066,7 +3150,7 @@ mod tests {
                 "market": { "exchange": "binance", "kind": "spot", "base": "BTC", "quote": "USDT" },
                 "side": "buy", "order_type": "market",
                 "size": { "kind": "contracts", "value": "1" },
-                "price": null, "time_in_force": null, "reduce_only": false
+                "price": null, "time_in_force": null, "reduce_only": false, "client_id": null
             }),
             serde_json::json!({
                 "market": { "exchange": "binance", "kind": "spot", "base": "BTC", "quote": "USDT" },

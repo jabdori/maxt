@@ -481,6 +481,28 @@ export function orderRequestToWire(value: Model.OrderRequest): Wire.OrderRequest
   };
 }
 
+export function orderHistoryRequestFromWire(value: Wire.OrderHistoryRequestWire): Model.OrderHistoryRequest {
+  return new Model.OrderHistoryRequest(
+    value.market === null ? null : marketFromWire(value.market),
+    value.statuses.map((status) => identifier(Model.OrderStatus.values, status, "statuses")),
+    value.from === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.from)),
+    value.to === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.to)),
+    value.cursor === null ? null : new Model.Cursor(value.cursor),
+    value.limit,
+  );
+}
+
+export function orderHistoryRequestToWire(value: Model.OrderHistoryRequest): Wire.OrderHistoryRequestWire {
+  return {
+    market: value.market === null ? null : marketToWire(value.market),
+    statuses: value.statuses.map((status) => status.id),
+    from: value.from?.nanosecondsSinceEpoch.toString() ?? null,
+    to: value.to?.nanosecondsSinceEpoch.toString() ?? null,
+    cursor: value.cursor?.value ?? null,
+    limit: value.limit,
+  };
+}
+
 export function depositAddressRequestFromWire(value: Wire.DepositAddressRequestWire): Model.DepositAddressRequest {
   return new Model.DepositAddressRequest(value.asset, Model.Network.other(value.network), value.amount === null ? null : Model.Decimal.parse(value.amount));
 }

@@ -143,8 +143,8 @@ wire.WireLevel _levelToWire(Level value) => wire.WireLevel(
 OrderBook _orderBookFromWire(wire.WireOrderBook value) => OrderBook(
   market: _marketFromWire(value.market),
   timestamp: _timestampFromWire(value.timestampNs)!,
-  bids: value.bids.map(_levelFromWire),
-  asks: value.asks.map(_levelFromWire),
+  bids: value.bids.map(_levelFromWire).toList(growable: false),
+  asks: value.asks.map(_levelFromWire).toList(growable: false),
 );
 wire.WireOrderBook _orderBookToWire(OrderBook value) => wire.WireOrderBook(
   market: _marketToWire(value.market),
@@ -603,6 +603,27 @@ wire.WireDeposit _depositToWire(Deposit value) => wire.WireDeposit(
   createdAtNs: _optionalTimestampToWire(value.createdAt),
 );
 
+OrderHistoryRequest _orderHistoryRequestFromWire(
+  wire.WireOrderHistoryRequest value,
+) => OrderHistoryRequest(
+  market: value.market == null ? null : _marketFromWire(value.market!),
+  statuses: value.statuses.map(_orderStatusFromWire).toList(growable: false),
+  from: _timestampFromWire(value.fromNs),
+  to: _timestampFromWire(value.toNs),
+  cursor: value.cursor == null ? null : Cursor(value.cursor!),
+  limit: value.limit,
+);
+wire.WireOrderHistoryRequest _orderHistoryRequestToWire(
+  OrderHistoryRequest value,
+) => wire.WireOrderHistoryRequest(
+  market: value.market == null ? null : _marketToWire(value.market!),
+  statuses: value.statuses.map(_orderStatusToWire).toList(growable: false),
+  fromNs: _optionalTimestampToWire(value.from),
+  toNs: _optionalTimestampToWire(value.to),
+  cursor: value.cursor?.value,
+  limit: value.limit,
+);
+
 DepositAddressRequest _depositAddressRequestFromWire(
   wire.WireDepositAddressRequest value,
 ) => DepositAddressRequest(
@@ -671,6 +692,15 @@ wire.WireWithdrawalPage _withdrawalPageToWire(Page<Withdrawal> value) =>
       items: value.items.map(_withdrawalToWire).toList(growable: false),
       next: value.next?.value,
     );
+
+Page<Order> _orderPageFromWire(wire.WireOrderPage value) => Page(
+  items: value.items.map(_orderFromWire),
+  next: value.next == null ? null : Cursor(value.next!),
+);
+wire.WireOrderPage _orderPageToWire(Page<Order> value) => wire.WireOrderPage(
+  items: value.items.map(_orderToWire).toList(growable: false),
+  next: value.next?.value,
+);
 
 Page<FundingRate> _fundingRatePageFromWire(wire.WireFundingRatePage value) =>
     Page(

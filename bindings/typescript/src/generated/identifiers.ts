@@ -37,6 +37,7 @@ export class Feature extends StringValue {
   static readonly Withdrawals = new Feature("withdrawals");
   static readonly WithdrawalHistory = new Feature("withdrawal_history");
   static readonly OpenOrders = new Feature("open_orders");
+  static readonly OrderHistory = new Feature("order_history");
   static readonly AccountStream = new Feature("account_stream");
   static readonly Trading = new Feature("trading");
   static readonly Positions = new Feature("positions");
@@ -63,6 +64,7 @@ export class Feature extends StringValue {
     Feature.Withdrawals,
     Feature.WithdrawalHistory,
     Feature.OpenOrders,
+    Feature.OrderHistory,
     Feature.AccountStream,
     Feature.Trading,
     Feature.Positions,
@@ -75,7 +77,7 @@ export class Feature extends StringValue {
   private constructor(id: string) {
     super(id);
     this.needsCredentials = new Set([
-      "balances", "open_orders", "account_stream", "trading", "positions", "margin",
+      "balances", "open_orders", "order_history", "account_stream", "trading", "positions", "margin",
       "funding_payments", "margin_config", "reduce_only_orders", "asset_networks",
       "deposit_addresses", "deposit_history", "withdrawal_quotes", "withdrawals",
       "withdrawal_history",

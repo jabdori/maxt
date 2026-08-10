@@ -205,6 +205,14 @@ RECORD_FIELDS = {
         "reduce_only": "boolean",
         "client_id": "optional:string",
     },
+    "OrderHistoryRequest": {
+        "market": "optional:named:Market",
+        "statuses": "list:identifier:OrderStatus",
+        "from": "optional:timestamp",
+        "to": "optional:timestamp",
+        "cursor": "optional:string",
+        "limit": "optional:number",
+    },
     "DepositAddressRequest": {
         "asset": "string",
         "network": "identifier:Network",
@@ -492,6 +500,17 @@ UNION_FIELDS = {
         "open_orders": {
             "market": "optional:named:Market",
         },
+        "order": {
+            "market": "named:Market",
+            "order_id": "string",
+        },
+        "order_by_client_id": {
+            "market": "named:Market",
+            "client_id": "string",
+        },
+        "order_history": {
+            "request": "named:OrderHistoryRequest",
+        },
         "subscribe_account": {
             "stream_id": "string",
             "config": "named:StreamConfig",
@@ -565,6 +584,12 @@ UNION_FIELDS = {
         "open_orders": {
             "value": "list:named:Order",
         },
+        "order": {
+            "value": "named:Order",
+        },
+        "order_history": {
+            "value": "named:PageWire<OrderWire>",
+        },
         "account_stream": {
             "stream_id": "string",
         },
@@ -590,7 +615,7 @@ UNION_FIELDS = {
 
 IDENTIFIER_VARIANTS = {
     "Exchange": ("upbit", "bithumb", "binance", "hyperliquid",),
-    "Feature": ("markets", "trades", "order_book", "ticker", "candles", "trade_stream", "order_book_stream", "ticker_stream", "candle_stream", "balances", "asset_networks", "deposit_addresses", "deposit_history", "withdrawal_quotes", "withdrawals", "withdrawal_history", "open_orders", "account_stream", "trading", "positions", "margin", "funding_rates", "funding_payments", "margin_config", "reduce_only_orders",),
+    "Feature": ("markets", "trades", "order_book", "ticker", "candles", "trade_stream", "order_book_stream", "ticker_stream", "candle_stream", "balances", "asset_networks", "deposit_addresses", "deposit_history", "withdrawal_quotes", "withdrawals", "withdrawal_history", "open_orders", "order_history", "account_stream", "trading", "positions", "margin", "funding_rates", "funding_payments", "margin_config", "reduce_only_orders",),
     "MarketKind": ("spot", "perpetual",),
     "MarketStatus": ("active", "paused", "delisted", "unknown",),
     "Side": ("buy", "sell",),

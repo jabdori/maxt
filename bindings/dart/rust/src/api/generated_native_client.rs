@@ -145,6 +145,42 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
+    pub async fn order(
+        &self,
+        market: WireMarket,
+        order_id: String,
+    ) -> Result<WireOrder, NativeError> {
+        self.adapter
+            .order(&market.into(), &order_id)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn order_by_client_id(
+        &self,
+        market: WireMarket,
+        client_id: String,
+    ) -> Result<WireOrder, NativeError> {
+        self.adapter
+            .order_by_client_id(&market.into(), &client_id)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn order_history(
+        &self,
+        request: WireOrderHistoryRequest,
+    ) -> Result<WireOrderPage, NativeError> {
+        let request = request.try_into()?;
+        self.adapter
+            .order_history(&request)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
     pub async fn place_order(&self, request: WireOrderRequest) -> Result<WireOrder, NativeError> {
         let request = request.try_into()?;
         self.adapter
@@ -159,7 +195,10 @@ impl NativeClient {
         market: WireMarket,
         order_id: String,
     ) -> Result<(), NativeError> {
-        self.adapter.cancel_order(&market.into(), &order_id).await.map_err(Into::into)
+        self.adapter
+            .cancel_order(&market.into(), &order_id)
+            .await
+            .map_err(Into::into)
     }
 
     pub async fn cancel_order_by_client_id(
@@ -167,7 +206,10 @@ impl NativeClient {
         market: WireMarket,
         client_id: String,
     ) -> Result<(), NativeError> {
-        self.adapter.cancel_order_by_client_id(&market.into(), &client_id).await.map_err(Into::into)
+        self.adapter
+            .cancel_order_by_client_id(&market.into(), &client_id)
+            .await
+            .map_err(Into::into)
     }
 
     pub async fn positions(

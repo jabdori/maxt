@@ -3,8 +3,8 @@
 use rust_decimal::Decimal;
 
 use crate::types::{
-    Cursor, Interval, MarginMode, Market, Network, OrderType, Side, Size, TimeInForce, Timestamp,
-    TransferDestination,
+    Cursor, Interval, MarginMode, Market, Network, OrderStatus, OrderType, Side, Size, TimeInForce,
+    Timestamp, TransferDestination,
 };
 
 /// Selects one deposit address for an asset and network.
@@ -283,6 +283,82 @@ impl OrderRequest {
     #[must_use]
     pub fn client_id(mut self, client_id: impl Into<String>) -> Self {
         self.client_id = Some(client_id.into());
+        self
+    }
+}
+
+/// One newest-first page of completed or cancelled orders.
+///
+/// Leave [`OrderHistoryRequest::statuses`] empty to include both completed and
+/// cancelled orders. Providers reject any status that is not final.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct OrderHistoryRequest {
+    /// Optional market filter.
+    pub market: Option<Market>,
+    /// Final statuses to include. Empty means all final statuses.
+    pub statuses: Vec<OrderStatus>,
+    /// Oldest creation time to include.
+    pub from: Option<Timestamp>,
+    /// Newest creation-time boundary, exclusive.
+    pub to: Option<Timestamp>,
+    /// Provider cursor returned by a previous page.
+    pub cursor: Option<Cursor>,
+    /// Target page size.
+    pub limit: Option<u32>,
+}
+
+impl OrderHistoryRequest {
+    /// Starts an unfiltered final-order history request.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Filters by market.
+    #[must_use]
+    pub fn market(mut self, market: Market) -> Self {
+        self.market = Some(market);
+        self
+    }
+
+    /// Filters by one final status.
+    #[must_use]
+    pub fn status(mut self, status: OrderStatus) -> Self {
+        self.statuses = vec![status];
+        self
+    }
+
+    /// Filters by final statuses.
+    #[must_use]
+    pub fn statuses(mut self, statuses: impl IntoIterator<Item = OrderStatus>) -> Self {
+        self.statuses = statuses.into_iter().collect();
+        self
+    }
+
+    /// Sets the inclusive creation-time lower bound.
+    #[must_use]
+    pub fn from(mut self, from: Timestamp) -> Self {
+        self.from = Some(from);
+        self
+    }
+
+    /// Sets the exclusive creation-time upper bound.
+    #[must_use]
+    pub fn to(mut self, to: Timestamp) -> Self {
+        self.to = Some(to);
+        self
+    }
+
+    /// Resumes from a cursor returned by a previous page.
+    #[must_use]
+    pub fn cursor(mut self, cursor: Cursor) -> Self {
+        self.cursor = Some(cursor);
+        self
+    }
+
+    /// Sets the target page size.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
         self
     }
 }

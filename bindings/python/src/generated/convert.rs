@@ -41,6 +41,7 @@ pub(crate) fn feature_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::Feat
         "withdrawals" => Ok(maxt::Feature::Withdrawals),
         "withdrawal_history" => Ok(maxt::Feature::WithdrawalHistory),
         "open_orders" => Ok(maxt::Feature::OpenOrders),
+        "order_history" => Ok(maxt::Feature::OrderHistory),
         "account_stream" => Ok(maxt::Feature::AccountStream),
         "trading" => Ok(maxt::Feature::Trading),
         "positions" => Ok(maxt::Feature::Positions),
@@ -72,6 +73,7 @@ pub(crate) fn feature_to_wire(value: maxt::Feature) -> PyResult<&'static str> {
         maxt::Feature::Withdrawals => Ok("withdrawals"),
         maxt::Feature::WithdrawalHistory => Ok("withdrawal_history"),
         maxt::Feature::OpenOrders => Ok("open_orders"),
+        maxt::Feature::OrderHistory => Ok("order_history"),
         maxt::Feature::AccountStream => Ok("account_stream"),
         maxt::Feature::Trading => Ok("trading"),
         maxt::Feature::Positions => Ok("positions"),
@@ -994,6 +996,34 @@ pub(crate) fn funding_payment_to_wire(
     )
 }
 
+pub(crate) fn order_history_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::OrderHistoryRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::OrderHistoryRequest {
+        market: optional(dict, "market")?.map(|value| -> PyResult<_> { market_from_wire(&value) }).transpose()?,
+        statuses: list_from_wire(&required(dict, "statuses")?, order_status_from_wire)?,
+        from: optional(dict, "from")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
+        to: optional(dict, "to")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
+        cursor: optional(dict, "cursor")?.map(|value| value.extract::<String>().map(Cursor::new)).transpose()?,
+        limit: optional(dict, "limit")?.map(|value| -> PyResult<_> { value.extract() }).transpose()?,
+    })
+}
+
+pub(crate) fn order_history_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::OrderHistoryRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "market" => value.market.as_ref().map(|item| market_to_wire(py, item)).transpose()?,
+        "statuses" => value.statuses.iter().copied().map(order_status_to_wire).collect::<PyResult<Vec<_>>>()?,
+        "from" => value.from.map(timestamp_to_wire),
+        "to" => value.to.map(timestamp_to_wire),
+        "cursor" => value.cursor.as_ref().map(Cursor::as_str),
+        "limit" => value.limit,
+    )
+}
+
 pub(crate) fn deposit_address_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::DepositAddressRequest> {
     let value = wire_object(value)?;
     let dict = value.cast::<PyDict>()?;
@@ -1084,6 +1114,17 @@ pub(crate) fn withdrawals_page_to_wire(
     wire_dict!(
         py,
         "items" => list_to_wire(py, &value.items, withdrawal_to_wire)?,
+        "next" => value.next.as_ref().map(Cursor::as_str),
+    )
+}
+
+pub(crate) fn order_history_page_to_wire(
+    py: Python<'_>,
+    value: &Page<maxt::Order>,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "items" => list_to_wire(py, &value.items, order_to_wire)?,
         "next" => value.next.as_ref().map(Cursor::as_str),
     )
 }

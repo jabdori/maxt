@@ -15,9 +15,9 @@ Configure credentials on the adapter before `Client::new(adapter)`.
 | Client | `exchange`, `supports`, `adapter`, `into_adapter` |
 | Public REST | `markets`, `trades`, `order_book`, `ticker`, `candles`, `funding_rates` |
 | Public stream | `subscribe`, `subscribe_with` |
-| Private reads | `balances`, `open_orders`, `open_orders_on`, `positions`, `positions_on`, `margin_summary`, `funding_payments` |
+| Private reads | `balances`, `open_orders`, `open_orders_on`, `order`, `order_by_client_id`, `order_history`, `positions`, `positions_on`, `margin_summary`, `funding_payments` |
 | Private stream | `subscribe_account`, `subscribe_account_with` |
-| Private writes | `place_order`, `cancel_order`, `set_margin` |
+| Private writes | `place_order`, `cancel_order`, `cancel_order_by_client_id`, `set_margin` |
 
 Public REST and market streams require no credentials. Provider and
 `MarketKind` support is listed in [provider support](providers.md).
@@ -174,6 +174,9 @@ retrying.
 | Type or method | Contract |
 | --- | --- |
 | `open_orders*` | Point-in-time snapshot; full provider pagination is not guaranteed |
+| `order(market, order_id)` | One order selected by the exchange identifier |
+| `order_by_client_id(market, client_id)` | One order selected by the identifier supplied at placement |
+| `order_history(request)` | Newest-first `Page<Order>` containing completed or cancelled orders |
 | `OrderRequest::size` | `Size::Base` or `Size::Quote` |
 | Order precision | `MarketInfo` has no common tick size, lot size, or minimum notional |
 | `cancel_order`, `cancel_order_by_client_id` | Return `()` after a valid provider acknowledgement; query the order to resolve races with fills |
@@ -183,6 +186,22 @@ retrying.
 
 Construct order values with `Decimal`. Supported order shapes and validation
 rules are provider-specific.
+
+### `OrderHistoryRequest`
+
+| Field or state | Contract |
+| --- | --- |
+| `market` | Optional market filter |
+| `statuses` | `Filled` and/or `Cancelled`; empty includes both; any other status is rejected before network I/O |
+| `from` | Inclusive creation-time lower bound |
+| `to` | Exclusive creation-time upper bound; must be later than `from` |
+| Time range | At most seven days when both bounds are set |
+| `cursor` | Opaque provider cursor; pass it back unchanged to the same adapter |
+| `limit` | `1..=1_000`; default `100` |
+| Ordering | Newest first |
+
+A provider without a continuation cursor returns `Page::next == None` and
+rejects an input cursor.
 
 ### `HistoryRequest`
 

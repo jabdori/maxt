@@ -38,6 +38,7 @@ from maxt import (
     MarketStream,
     Order,
     OrderBook,
+    OrderHistoryRequest,
     OrderRequest,
     OrderStatus,
     Page,
@@ -85,7 +86,7 @@ class NativeReplayAdapter(Adapter):
             "trade-1",
         )
         self.balance = Balance("usdt", Decimal("100.2500"), Decimal("2.5000"))
-        self.order = Order(
+        self.sample_order = Order(
             "order-1",
             market,
             Side.BUY,
@@ -168,11 +169,23 @@ class NativeReplayAdapter(Adapter):
 
     async def open_orders(self, market=None) -> list[Order]:
         self.received.append(("open_orders", market))
-        return [self.order]
+        return [self.sample_order]
+
+    async def order(self, market: Market, order_id: str) -> Order:
+        self.received.append(("order", market, order_id))
+        return self.sample_order
+
+    async def order_by_client_id(self, market: Market, client_id: str) -> Order:
+        self.received.append(("order_by_client_id", market, client_id))
+        return self.sample_order
+
+    async def order_history(self, request: OrderHistoryRequest) -> Page[Order]:
+        self.received.append(("order_history", request))
+        return Page([self.sample_order], Cursor("order-next"))
 
     async def place_order(self, request: OrderRequest) -> Order:
         self.received.append(("place_order", request))
-        return self.order
+        return self.sample_order
 
     async def cancel_order(self, market: Market, order_id: str) -> None:
         self.received.append(("cancel_order", market, order_id))
@@ -240,7 +253,7 @@ class NativeReplayAdapter(Adapter):
         async def replay():
             yield StreamEvent(AccountEvent.balance(self.balance))
             yield StreamError(DecodeError("recorded corrupt account frame"))
-            yield StreamEvent(AccountEvent.order(self.order))
+            yield StreamEvent(AccountEvent.order(self.sample_order))
 
         return AccountStream(replay())
 
@@ -395,6 +408,12 @@ class NativeCustomAdapterTests(unittest.IsolatedAsyncioTestCase):
         client = Client(adapter)
         candle_request = CandleRequest(market, Interval.MIN1, limit=1)
         history_request = HistoryRequest(market, limit=1)
+        order_history_request = OrderHistoryRequest(
+            market,
+            [OrderStatus.FILLED],
+            cursor=Cursor("order-in"),
+            limit=1,
+        )
         order_request = OrderRequest.limit_order(
             market,
             Side.BUY,
@@ -414,6 +433,14 @@ class NativeCustomAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await client.balances())[0].total(), Decimal("102.7500"))
         self.assertEqual((await client.open_orders())[0].id, "order-1")
         self.assertEqual((await client.open_orders_on(market))[0].id, "order-1")
+        self.assertEqual((await client.order(market, "order-1")).id, "order-1")
+        self.assertEqual(
+            (await client.order_by_client_id(market, "client-1")).id,
+            "order-1",
+        )
+        order_history = await client.order_history(order_history_request)
+        self.assertEqual(order_history.items[0].id, "order-1")
+        self.assertEqual(order_history.next, Cursor("order-next"))
         self.assertEqual((await client.place_order(order_request)).id, "order-1")
         self.assertIsNone(await client.cancel_order(market, "order-1"))
         self.assertEqual(await client.positions(), [adapter.position])
@@ -432,6 +459,10 @@ class NativeCustomAdapterTests(unittest.IsolatedAsyncioTestCase):
         placed = next(call[1] for call in adapter.received if call[0] == "place_order")
         self.assertEqual(placed.to_wire(), order_request.to_wire())
         self.assertIsNot(placed, order_request)
+        received_history = next(
+            call[1] for call in adapter.received if call[0] == "order_history"
+        )
+        self.assertEqual(received_history.to_wire(), order_history_request.to_wire())
 
     async def test_market_and_account_stream_items_cross_rust(self) -> None:
         market = Market.perpetual(Exchange.BINANCE, "BTC", "USDT")

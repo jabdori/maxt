@@ -77,6 +77,15 @@ abstract base class GeneratedClient<A extends Adapter> {
 
   Future<List<Order>> openOrdersOn(Market market) => _native.openOrders(market);
 
+  Future<Order> order(Market market, String orderId) =>
+      _native.order(market, orderId);
+
+  Future<Order> orderByClientId(Market market, String clientId) =>
+      _native.orderByClientId(market, clientId);
+
+  Future<Page<Order>> orderHistory(OrderHistoryRequest request) =>
+      _native.orderHistory(request);
+
   Future<AccountStream> subscribeAccount() =>
       subscribeAccountWith(defaultStreamConfig());
 

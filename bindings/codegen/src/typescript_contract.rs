@@ -224,7 +224,7 @@ fn identifier_body(name: &str, open: bool) -> String {
             r#"  private constructor(id: string) {
     super(id);
     this.needsCredentials = new Set([
-      "balances", "open_orders", "account_stream", "trading", "positions", "margin",
+      "balances", "open_orders", "order_history", "account_stream", "trading", "positions", "margin",
       "funding_payments", "margin_config", "reduce_only_orders", "asset_networks",
       "deposit_addresses", "deposit_history", "withdrawal_quotes", "withdrawals",
       "withdrawal_history",

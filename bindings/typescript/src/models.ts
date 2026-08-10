@@ -838,6 +838,23 @@ export class OrderRequest {
   }
 }
 
+export class OrderHistoryRequest {
+  readonly statuses: readonly OrderStatus[];
+  readonly limit: number | null;
+  constructor(
+    readonly market: Market | null = null,
+    statuses: readonly OrderStatus[] = [],
+    readonly from: Timestamp | null = null,
+    readonly to: Timestamp | null = null,
+    readonly cursor: Cursor | null = null,
+    limit: number | null = null,
+  ) {
+    this.statuses = Object.freeze([...statuses]);
+    this.limit = checkedOptionalU32(limit, "limit");
+    freezeRecord(this);
+  }
+}
+
 export class DepositAddressRequest {
   readonly asset: string;
   constructor(

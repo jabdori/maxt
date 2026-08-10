@@ -222,6 +222,50 @@ impl NativeClient {
         )
     }
 
+    fn order<'py>(
+        &self,
+        py: Python<'py>,
+        market: &Bound<'_, PyAny>,
+        order_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let market = crate::convert::market_from_wire(market)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.order(&market, &order_id).await },
+            |py, value| crate::convert::order_to_wire(py, &value),
+        )
+    }
+
+    fn order_by_client_id<'py>(
+        &self,
+        py: Python<'py>,
+        market: &Bound<'_, PyAny>,
+        client_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let market = crate::convert::market_from_wire(market)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.order_by_client_id(&market, &client_id).await },
+            |py, value| crate::convert::order_to_wire(py, &value),
+        )
+    }
+
+    fn order_history<'py>(
+        &self,
+        py: Python<'py>,
+        request: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::order_history_request_from_wire(request)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.order_history(&request).await },
+            |py, value| crate::convert::order_history_page_to_wire(py, &value),
+        )
+    }
+
     fn subscribe_account<'py>(
         &self,
         py: Python<'py>,

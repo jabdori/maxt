@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 final class FullContractAdapter extends AdapterBase {
   FullContractAdapter(this.market, this.timestamp) {
-    order = Order(
+    sampleOrder = Order(
       id: 'order-1',
       market: market,
       side: Side.buy,
@@ -17,12 +17,15 @@ final class FullContractAdapter extends AdapterBase {
 
   final Market market;
   final Timestamp timestamp;
-  late final Order order;
+  late final Order sampleOrder;
 
   MarketKind? requestedKind;
   int? orderBookDepth;
   CandleRequest? candleRequest;
   Market? openOrdersMarket;
+  (Market, String)? requestedOrder;
+  (Market, String)? requestedClientOrder;
+  OrderHistoryRequest? orderHistoryRequest;
   StreamConfig? accountConfig;
   OrderRequest? placedRequest;
   (Market, String)? cancelledOrder;
@@ -43,6 +46,7 @@ final class FullContractAdapter extends AdapterBase {
     Feature.candles,
     Feature.balances,
     Feature.openOrders,
+    Feature.orderHistory,
     Feature.accountStream,
     Feature.trading,
     Feature.positions,
@@ -129,7 +133,25 @@ final class FullContractAdapter extends AdapterBase {
   @override
   Future<List<Order>> openOrders([Market? market]) async {
     openOrdersMarket = market;
-    return [order];
+    return [sampleOrder];
+  }
+
+  @override
+  Future<Order> order(Market market, String orderId) async {
+    requestedOrder = (market, orderId);
+    return sampleOrder;
+  }
+
+  @override
+  Future<Order> orderByClientId(Market market, String clientId) async {
+    requestedClientOrder = (market, clientId);
+    return sampleOrder;
+  }
+
+  @override
+  Future<Page<Order>> orderHistory(OrderHistoryRequest request) async {
+    orderHistoryRequest = request;
+    return Page(items: [sampleOrder], next: const Cursor('order-next'));
   }
 
   @override
@@ -147,7 +169,7 @@ final class FullContractAdapter extends AdapterBase {
           ),
         ),
         const StreamItem<AccountEvent>.error(DecodeError('손상된 계정 프레임')),
-        StreamItem.event(AccountEvent.order(order)),
+        StreamItem.event(AccountEvent.order(sampleOrder)),
       ]),
       onClose: () async => accountCloseCount++,
     );
@@ -156,7 +178,7 @@ final class FullContractAdapter extends AdapterBase {
   @override
   Future<Order> placeOrder(OrderRequest request) async {
     placedRequest = request;
-    return order;
+    return sampleOrder;
   }
 
   @override
@@ -285,6 +307,22 @@ void main() {
     expect(openOrder.createdAt, timestamp);
     expect(openOrder.price, Decimal.parse('123.4500'));
     expect(adapter.openOrdersMarket, market);
+
+    expect((await client.order(market, 'order-1')).id, 'order-1');
+    expect(adapter.requestedOrder, (market, 'order-1'));
+    expect((await client.orderByClientId(market, 'client-1')).id, 'order-1');
+    expect(adapter.requestedClientOrder, (market, 'client-1'));
+    final orderHistoryRequest = OrderHistoryRequest(
+      market: market,
+      statuses: const [OrderStatus.filled],
+      cursor: const Cursor('order-in'),
+      limit: 4,
+    );
+    final orderHistory = await client.orderHistory(orderHistoryRequest);
+    expect(orderHistory.items.single.id, 'order-1');
+    expect(orderHistory.next, const Cursor('order-next'));
+    expect(adapter.orderHistoryRequest?.statuses, const [OrderStatus.filled]);
+    expect(adapter.orderHistoryRequest?.cursor, const Cursor('order-in'));
 
     final orderRequest = OrderRequest.limit(
       market,

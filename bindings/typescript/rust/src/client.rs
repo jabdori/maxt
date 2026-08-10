@@ -20,10 +20,10 @@ use crate::convert::{
     WireAssetNetwork, WireBalance, WireCandle, WireCandleRequest, WireChainTransferRequest,
     WireDeposit, WireDepositAddress, WireDepositAddressRequest, WireExchangeTransferRequest,
     WireFundingPayment, WireFundingRate, WireHistoryRequest, WireMarginRequest, WireMarginSummary,
-    WireMarket, WireMarketInfo, WireOrder, WireOrderBook, WireOrderRequest, WirePage, WirePosition,
-    WireStreamConfig, WireSubscription, WireTicker, WireTrade, WireTransferHistoryRequest,
-    WireTransferPlan, WireWithdrawRequest, WireWithdrawal, WireWithdrawalQuote, feature_from_id,
-    from_wire_text, market_kind_from_wire, outcome,
+    WireMarket, WireMarketInfo, WireOrder, WireOrderBook, WireOrderHistoryRequest,
+    WireOrderRequest, WirePage, WirePosition, WireStreamConfig, WireSubscription, WireTicker,
+    WireTrade, WireTransferHistoryRequest, WireTransferPlan, WireWithdrawRequest, WireWithdrawal,
+    WireWithdrawalQuote, feature_from_id, from_wire_text, market_kind_from_wire, outcome,
 };
 use crate::stream::NativeStreamRegistry;
 
@@ -222,6 +222,41 @@ impl NativeClient {
         match market {
             Ok(market) => outcome(wire_vec::<_, WireOrder>(
                 self.inner.open_orders_on(&market).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn order(&self, market: maxt::Result<String>, order_id: maxt::Result<String>) -> Value {
+        let market = parse_wire::<maxt::Market, WireMarket>(market, "market");
+        let order_id = parse_wire_text::<String>(order_id, "order_id");
+        match (market, order_id) {
+            (Ok(market), Ok(order_id)) => outcome(wire_one::<_, WireOrder>(
+                self.inner.order(&market, &order_id).await,
+            )),
+            (Err(error), _) | (_, Err(error)) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn order_by_client_id(
+        &self,
+        market: maxt::Result<String>,
+        client_id: maxt::Result<String>,
+    ) -> Value {
+        let market = parse_wire::<maxt::Market, WireMarket>(market, "market");
+        let client_id = parse_wire_text::<String>(client_id, "client_id");
+        match (market, client_id) {
+            (Ok(market), Ok(client_id)) => outcome(wire_one::<_, WireOrder>(
+                self.inner.order_by_client_id(&market, &client_id).await,
+            )),
+            (Err(error), _) | (_, Err(error)) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn order_history(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<maxt::OrderHistoryRequest, WireOrderHistoryRequest>(request, "request") {
+            Ok(request) => outcome(wire_one::<_, WirePage<WireOrder>>(
+                self.inner.order_history(&request).await,
             )),
             Err(error) => outcome::<Value>(Err(error)),
         }
@@ -589,6 +624,48 @@ impl NativeClient {
         spawn_native(env, async move { client.open_orders_on(market).await })
     }
 
+    #[napi(js_name = "order", ts_args_type = "market: string, orderId: string")]
+    pub fn order_native<'env>(
+        &self,
+        env: &'env Env,
+        market: NativeJsonText<'env>,
+        order_id: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let market = native_json_text(market, "market");
+        let order_id = native_json_text(order_id, "order_id");
+        spawn_native(env, async move { client.order(market, order_id).await })
+    }
+
+    #[napi(
+        js_name = "orderByClientId",
+        ts_args_type = "market: string, clientId: string"
+    )]
+    pub fn order_by_client_id_native<'env>(
+        &self,
+        env: &'env Env,
+        market: NativeJsonText<'env>,
+        client_id: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let market = native_json_text(market, "market");
+        let client_id = native_json_text(client_id, "client_id");
+        spawn_native(env, async move {
+            client.order_by_client_id(market, client_id).await
+        })
+    }
+
+    #[napi(js_name = "orderHistory", ts_args_type = "request: string")]
+    pub fn order_history_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { client.order_history(request).await })
+    }
+
     #[napi(js_name = "positions")]
     pub async fn positions_native(&self) -> Value {
         self.positions().await
@@ -873,6 +950,21 @@ impl NativeClient {
         crate::web::value(self.open_orders_on(Ok(market)).await)
     }
 
+    #[wasm_bindgen(js_name = "order")]
+    pub async fn order_wasm(&self, market: String, order_id: String) -> JsValue {
+        crate::web::value(self.order(Ok(market), Ok(order_id)).await)
+    }
+
+    #[wasm_bindgen(js_name = "orderByClientId")]
+    pub async fn order_by_client_id_wasm(&self, market: String, client_id: String) -> JsValue {
+        crate::web::value(self.order_by_client_id(Ok(market), Ok(client_id)).await)
+    }
+
+    #[wasm_bindgen(js_name = "orderHistory")]
+    pub async fn order_history_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.order_history(Ok(request)).await)
+    }
+
     #[wasm_bindgen(js_name = "positions")]
     pub async fn positions_wasm(&self) -> JsValue {
         crate::web::value(self.positions().await)
@@ -1025,10 +1117,10 @@ mod tests {
         AccountEvent, AccountStream, Adapter, AssetNetwork, Balance, BoxFuture, Candle,
         CandleRequest, Decimal, Deposit, DepositAddress, DepositAddressRequest, Exchange, Feature,
         FundingPayment, FundingRate, HistoryRequest, MarginRequest, MarginSummary, Market,
-        MarketEvent, MarketInfo, MarketKind, MarketStream, Order, OrderBook, OrderRequest,
-        OrderStatus, Page, Position, Side, StreamConfig, Subscription, Ticker, Timestamp, Trade,
-        TransferHistoryRequest, TravelRuleRequirement, WithdrawRequest, Withdrawal,
-        WithdrawalQuote, WithdrawalStatus,
+        MarketEvent, MarketInfo, MarketKind, MarketStream, Order, OrderBook, OrderHistoryRequest,
+        OrderRequest, OrderStatus, Page, Position, Side, StreamConfig, Subscription, Ticker,
+        Timestamp, Trade, TransferHistoryRequest, TravelRuleRequirement, WithdrawRequest,
+        Withdrawal, WithdrawalQuote, WithdrawalStatus,
     };
 
     use super::*;
@@ -1210,6 +1302,35 @@ mod tests {
                 "open_orders:none"
             });
             Box::pin(async { Ok(vec![]) })
+        }
+
+        fn order(&self, market: &Market, _order_id: &str) -> BoxFuture<'_, maxt::Result<Order>> {
+            self.calls.lock().unwrap().push("order");
+            let order = Self::order(market.clone(), Side::Buy);
+            Box::pin(async move { Ok(order) })
+        }
+
+        fn order_by_client_id(
+            &self,
+            market: &Market,
+            _client_id: &str,
+        ) -> BoxFuture<'_, maxt::Result<Order>> {
+            self.calls.lock().unwrap().push("order_by_client_id");
+            let order = Self::order(market.clone(), Side::Buy);
+            Box::pin(async move { Ok(order) })
+        }
+
+        fn order_history(
+            &self,
+            _request: &OrderHistoryRequest,
+        ) -> BoxFuture<'_, maxt::Result<Page<Order>>> {
+            self.calls.lock().unwrap().push("order_history");
+            Box::pin(async {
+                Ok(Page {
+                    items: vec![],
+                    next: None,
+                })
+            })
         }
 
         fn positions(&self, market: Option<&Market>) -> BoxFuture<'_, maxt::Result<Vec<Position>>> {
@@ -1480,7 +1601,16 @@ mod tests {
             "size": { "kind": "base", "value": "1.00" },
             "price": null,
             "time_in_force": null,
-            "reduce_only": false
+            "reduce_only": false,
+            "client_id": null
+        });
+        let order_history_request = serde_json::json!({
+            "market": market,
+            "statuses": [],
+            "from": null,
+            "to": null,
+            "cursor": null,
+            "limit": null
         });
         let margin_request = serde_json::json!({
             "market": market,
@@ -1547,6 +1677,19 @@ mod tests {
                 .await,
             client.open_orders().await,
             client.open_orders_on(json_text(market.clone())).await,
+            client
+                .order(
+                    json_text(market.clone()),
+                    json_text(serde_json::json!("order-1")),
+                )
+                .await,
+            client
+                .order_by_client_id(
+                    json_text(market.clone()),
+                    json_text(serde_json::json!("client-1")),
+                )
+                .await,
+            client.order_history(json_text(order_history_request)).await,
             client.place_order(json_text(order_request)).await,
             client
                 .cancel_order(
@@ -1587,6 +1730,9 @@ mod tests {
                 "withdrawals",
                 "open_orders:none",
                 "open_orders:some",
+                "order",
+                "order_by_client_id",
+                "order_history",
                 "place_order",
                 "cancel_order",
                 "cancel_order_by_client_id",

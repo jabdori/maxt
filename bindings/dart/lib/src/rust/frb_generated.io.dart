@@ -315,6 +315,14 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireOrderBook dco_decode_box_autoadd_wire_order_book(dynamic raw);
 
   @protected
+  WireOrderHistoryRequest dco_decode_box_autoadd_wire_order_history_request(
+    dynamic raw,
+  );
+
+  @protected
+  WireOrderPage dco_decode_box_autoadd_wire_order_page(dynamic raw);
+
+  @protected
   WireOrderRequest dco_decode_box_autoadd_wire_order_request(dynamic raw);
 
   @protected
@@ -437,6 +445,9 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   List<WireOrderBook> dco_decode_list_wire_order_book(dynamic raw);
+
+  @protected
+  List<WireOrderStatus> dco_decode_list_wire_order_status(dynamic raw);
 
   @protected
   List<WirePosition> dco_decode_list_wire_position(dynamic raw);
@@ -695,6 +706,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireOrderBook dco_decode_wire_order_book(dynamic raw);
+
+  @protected
+  WireOrderHistoryRequest dco_decode_wire_order_history_request(dynamic raw);
+
+  @protected
+  WireOrderPage dco_decode_wire_order_page(dynamic raw);
 
   @protected
   WireOrderRequest dco_decode_wire_order_request(dynamic raw);
@@ -1071,6 +1088,16 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireOrderHistoryRequest sse_decode_box_autoadd_wire_order_history_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireOrderPage sse_decode_box_autoadd_wire_order_page(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireOrderRequest sse_decode_box_autoadd_wire_order_request(
     SseDeserializer deserializer,
   );
@@ -1225,6 +1252,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   List<WireOrderBook> sse_decode_list_wire_order_book(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<WireOrderStatus> sse_decode_list_wire_order_status(
     SseDeserializer deserializer,
   );
 
@@ -1541,6 +1573,14 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireOrderBook sse_decode_wire_order_book(SseDeserializer deserializer);
+
+  @protected
+  WireOrderHistoryRequest sse_decode_wire_order_history_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireOrderPage sse_decode_wire_order_page(SseDeserializer deserializer);
 
   @protected
   WireOrderRequest sse_decode_wire_order_request(SseDeserializer deserializer);
@@ -2007,6 +2047,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_wire_order_history_request(
+    WireOrderHistoryRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_order_page(
+    WireOrderPage self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_wire_order_request(
     WireOrderRequest self,
     SseSerializer serializer,
@@ -2216,6 +2268,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_list_wire_order_book(
     List<WireOrderBook> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_wire_order_status(
+    List<WireOrderStatus> self,
     SseSerializer serializer,
   );
 
@@ -2620,6 +2678,15 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   void sse_encode_wire_order_book(WireOrderBook self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_wire_order_history_request(
+    WireOrderHistoryRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_order_page(WireOrderPage self, SseSerializer serializer);
 
   @protected
   void sse_encode_wire_order_request(

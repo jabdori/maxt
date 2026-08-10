@@ -98,6 +98,8 @@ define_features! {
     WithdrawalHistory => ("withdrawal_history", "reading withdrawal history"),
     /// Reading open orders.
     OpenOrders => ("open_orders", "reading open orders"),
+    /// Reading one order or final-order history.
+    OrderHistory => ("order_history", "reading order history"),
     /// Streaming account balance and order updates.
     AccountStream => ("account_stream", "streaming account updates"),
     /// Placing and cancelling orders.
@@ -143,6 +145,7 @@ impl Feature {
             | Self::Withdrawals
             | Self::WithdrawalHistory
             | Self::OpenOrders
+            | Self::OrderHistory
             | Self::AccountStream
             | Self::Trading
             | Self::Positions
@@ -198,6 +201,7 @@ mod tests {
         for feature in [
             Feature::Balances,
             Feature::OpenOrders,
+            Feature::OrderHistory,
             Feature::AccountStream,
             Feature::Trading,
             Feature::Positions,

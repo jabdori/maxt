@@ -2,8 +2,8 @@ use maxt::{
     AccountStream, AssetNetwork, Balance, BoxFuture, Candle, CandleRequest, Deposit,
     DepositAddress, DepositAddressRequest, FundingPayment, FundingRate, HistoryRequest,
     MarginRequest, MarginSummary, Market, MarketInfo, MarketKind, MarketStream, Order, OrderBook,
-    OrderRequest, Page, Position, Result, StreamConfig, Subscription, Ticker, Trade,
-    TransferHistoryRequest, WithdrawRequest, Withdrawal, WithdrawalQuote,
+    OrderHistoryRequest, OrderRequest, Page, Position, Result, StreamConfig, Subscription, Ticker,
+    Trade, TransferHistoryRequest, WithdrawRequest, Withdrawal, WithdrawalQuote,
 };
 
 /// An owned call across a language binding boundary.
@@ -82,6 +82,25 @@ pub enum AdapterCall {
     OpenOrders {
         /// The optional market filter.
         market: Option<Market>,
+    },
+    /// Reads one order by exchange identifier.
+    Order {
+        /// The order's market.
+        market: Market,
+        /// The exchange's identifier.
+        order_id: String,
+    },
+    /// Reads one order by caller-assigned identifier.
+    OrderByClientId {
+        /// The order's market.
+        market: Market,
+        /// The caller-assigned identifier.
+        client_id: String,
+    },
+    /// Reads final-order history.
+    OrderHistory {
+        /// Complete history request.
+        request: OrderHistoryRequest,
     },
     /// Opens an account stream.
     SubscribeAccount {
@@ -163,6 +182,10 @@ pub enum AdapterReply {
     Withdrawals(Page<Withdrawal>),
     /// Result of [`AdapterCall::OpenOrders`].
     OpenOrders(Vec<Order>),
+    /// Result of [`AdapterCall::Order`] or [`AdapterCall::OrderByClientId`].
+    Order(Order),
+    /// Result of [`AdapterCall::OrderHistory`].
+    OrderHistory(Page<Order>),
     /// Result of [`AdapterCall::SubscribeAccount`].
     AccountStream(AccountStream),
     /// Result of [`AdapterCall::PlaceOrder`].
@@ -202,6 +225,8 @@ impl AdapterReply {
             Self::Deposits(_) => "Deposits",
             Self::Withdrawals(_) => "Withdrawals",
             Self::OpenOrders(_) => "OpenOrders",
+            Self::Order(_) => "Order",
+            Self::OrderHistory(_) => "OrderHistory",
             Self::AccountStream(_) => "AccountStream",
             Self::PlaceOrder(_) => "PlaceOrder",
             Self::Positions(_) => "Positions",

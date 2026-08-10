@@ -6,8 +6,8 @@ use std::pin::Pin;
 use crate::error::{Error, Result};
 use crate::feature::Feature;
 use crate::request::{
-    CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest, OrderRequest,
-    TransferHistoryRequest, WithdrawRequest,
+    CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest, OrderHistoryRequest,
+    OrderRequest, TransferHistoryRequest, WithdrawRequest,
 };
 use crate::stream::{AccountStream, MarketStream};
 use crate::types::{
@@ -158,6 +158,24 @@ pub trait Adapter: Send + Sync + 'static {
     fn open_orders(&self, market: Option<&Market>) -> BoxFuture<'_, Result<Vec<Order>>> {
         let _ = market;
         unsupported(self.exchange(), Feature::OpenOrders)
+    }
+
+    /// Reads one order by the exchange's own identifier.
+    fn order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<Order>> {
+        let _ = (market, order_id);
+        unsupported(self.exchange(), Feature::OrderHistory)
+    }
+
+    /// Reads one order by the caller-assigned identifier supplied at placement.
+    fn order_by_client_id(&self, market: &Market, client_id: &str) -> BoxFuture<'_, Result<Order>> {
+        let _ = (market, client_id);
+        unsupported(self.exchange(), Feature::OrderHistory)
+    }
+
+    /// Reads one newest-first page of completed or cancelled orders.
+    fn order_history(&self, request: &OrderHistoryRequest) -> BoxFuture<'_, Result<Page<Order>>> {
+        let _ = request;
+        unsupported(self.exchange(), Feature::OrderHistory)
     }
 
     /// Opens a live private account subscription.
@@ -315,6 +333,18 @@ impl Adapter for Box<dyn Adapter> {
 
     fn open_orders(&self, market: Option<&Market>) -> BoxFuture<'_, Result<Vec<Order>>> {
         (**self).open_orders(market)
+    }
+
+    fn order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<Order>> {
+        (**self).order(market, order_id)
+    }
+
+    fn order_by_client_id(&self, market: &Market, client_id: &str) -> BoxFuture<'_, Result<Order>> {
+        (**self).order_by_client_id(market, client_id)
+    }
+
+    fn order_history(&self, request: &OrderHistoryRequest) -> BoxFuture<'_, Result<Page<Order>>> {
+        (**self).order_history(request)
     }
 
     fn subscribe_account(&self, config: &StreamConfig) -> BoxFuture<'_, Result<AccountStream>> {

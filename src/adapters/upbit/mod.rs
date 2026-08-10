@@ -13,7 +13,8 @@ use crate::adapter::{Adapter, BoxFuture};
 use crate::error::{Error, Result};
 use crate::feature::Feature;
 use crate::request::{
-    CandleRequest, DepositAddressRequest, OrderRequest, TransferHistoryRequest, WithdrawRequest,
+    CandleRequest, DepositAddressRequest, OrderHistoryRequest, OrderRequest,
+    TransferHistoryRequest, WithdrawRequest,
 };
 use crate::stream::{AccountStream, MarketStream};
 use crate::transport::{HttpTransport, WsCommand, WsConnect, WsSession, ws};
@@ -360,6 +361,30 @@ impl Adapter for UpbitAdapter {
         let market = market.cloned();
         Box::pin(async move {
             private::open_orders(self.credentials()?, self.http()?, market.as_ref()).await
+        })
+    }
+
+    fn order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<Order>> {
+        let market = market.clone();
+        let order_id = order_id.to_string();
+        Box::pin(async move {
+            private::order(self.credentials()?, self.http()?, &market, &order_id).await
+        })
+    }
+
+    fn order_by_client_id(&self, market: &Market, client_id: &str) -> BoxFuture<'_, Result<Order>> {
+        let market = market.clone();
+        let client_id = client_id.to_string();
+        Box::pin(async move {
+            private::order_by_client_id(self.credentials()?, self.http()?, &market, &client_id)
+                .await
+        })
+    }
+
+    fn order_history(&self, request: &OrderHistoryRequest) -> BoxFuture<'_, Result<Page<Order>>> {
+        let request = request.clone();
+        Box::pin(async move {
+            private::order_history(self.credentials()?, self.http()?, &request).await
         })
     }
 

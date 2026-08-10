@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any, ClassVar, Optional, Union
 
 from ._generated_identifiers import *  # noqa: F403
-from .models import Cursor, Timestamp, WireModel, _ascii_upper, _decode_value, _model_to_wire
+from .models import Cursor, Market, Timestamp, WireModel, _ascii_upper, _decode_value, _model_to_wire
 
 
 @dataclass(frozen=True)
@@ -278,6 +278,16 @@ class Deposit(WireModel):
 
 
 @dataclass(frozen=True)
+class OrderHistoryRequest(WireModel):
+    market: Optional[Market] = None
+    statuses: list[OrderStatus] = field(default_factory=list)
+    from_: Optional[Timestamp] = field(default=None, metadata={"wire_name": "from"})
+    to: Optional[Timestamp] = None
+    cursor: Optional[Cursor] = None
+    limit: Optional[int] = None
+
+
+@dataclass(frozen=True)
 class DepositAddressRequest(WireModel):
     asset: str
     network: Network
@@ -325,6 +335,7 @@ __all__ = [
     "TransferPlan",
     "Withdrawal",
     "Deposit",
+    "OrderHistoryRequest",
     "DepositAddressRequest",
     "WithdrawRequest",
     "TransferHistoryRequest",

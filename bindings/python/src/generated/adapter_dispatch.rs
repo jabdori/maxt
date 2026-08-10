@@ -16,6 +16,9 @@ enum ReplyKind {
     Deposits,
     Withdrawals,
     OpenOrders,
+    Order,
+    OrderByClientId,
+    OrderHistory,
     AccountStream,
     PlaceOrder,
     Unit,
@@ -105,6 +108,27 @@ fn prepare_call(
             "open_orders",
             vec![optional_market_object(py, market.as_ref())?],
             ReplyKind::OpenOrders,
+        ),
+        AdapterCall::Order { market, order_id } => (
+            "order",
+            vec![
+                market_object(py, &market)?,
+                order_id.into_py_any(py)?,
+            ],
+            ReplyKind::Order,
+        ),
+        AdapterCall::OrderByClientId { market, client_id } => (
+            "order_by_client_id",
+            vec![
+                market_object(py, &market)?,
+                client_id.into_py_any(py)?,
+            ],
+            ReplyKind::OrderByClientId,
+        ),
+        AdapterCall::OrderHistory { request } => (
+            "order_history",
+            vec![order_history_request_object(py, &request)?],
+            ReplyKind::OrderHistory,
         ),
         AdapterCall::SubscribeAccount { config } => (
             "subscribe_account",

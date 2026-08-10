@@ -58,9 +58,15 @@ remain string codes.
 
 ## Private and provider-specific APIs
 
-Credentials enable balances, open orders, place/cancel order, and account
-streams. `open_orders()` performs one `/v1/orders` call and returns at most 100
-orders.
+Credentials enable balances, order lookup and history, place/cancel order, and
+account streams.
+
+| Common call | Endpoint | Contract |
+| --- | --- | --- |
+| `open_orders*` | `GET /v1/orders` | One page, at most 100 orders |
+| `order(market, order_id)` | `GET /v1/order?uuid=...` | Verifies the returned market |
+| `order_by_client_id(market, client_id)` | `GET /v1/order?client_order_id=...` | Verifies the returned market |
+| `order_history(request)` | `GET /v2/orders/history` | `limit: 1..=1_000`; at most seven days; newest-first; `next_key` becomes the opaque `Page::next` cursor |
 
 | Order | Required `Size` |
 | --- | --- |
@@ -77,6 +83,10 @@ orders.
 | `client_id` | 1–36 ASCII letters, digits, `-`, or `_` |
 | `OrderRequest::reduce_only == true` | `Error::Unsupported` |
 | `cancel_order(...)`, `cancel_order_by_client_id(...)` | Return `()` after validating the cancellation acknowledgement |
+
+The common `Order` keeps normalized fields only. Bithumb-specific cancellation
+and self-trade prevention fields and the detailed `trades` array are not exposed
+yet.
 
 Access the following provider-specific methods through `Client::adapter()`.
 
@@ -108,5 +118,7 @@ public candle streams are not supported.
 - [Candles](https://apidocs.bithumb.com/reference/%EB%B6%84minute-%EC%BA%94%EB%93%A4-%EC%A1%B0%ED%9A%8C.md)
 - [WebSocket](https://apidocs.bithumb.com/reference/%EA%B8%B0%EB%B3%B8-%EC%A0%95%EB%B3%B4.md)
 - [Orders](https://apidocs.bithumb.com/reference/%EC%A3%BC%EB%AC%B8-%EC%9A%94%EC%B2%AD.md)
+- [Get order](https://apidocs.bithumb.com/reference/%EA%B0%9C%EB%B3%84-%EC%A3%BC%EB%AC%B8-%EC%A1%B0%ED%9A%8C)
+- [Closed orders](https://apidocs.bithumb.com/reference/%EC%A2%85%EB%A3%8C-%EC%A3%BC%EB%AC%B8-%EB%AA%A9%EB%A1%9D-%EC%A1%B0%ED%9A%8C)
 
 [Common API](../common-api.md) · [Provider support](../providers.md)

@@ -350,6 +350,7 @@ enum WireFeature {
   withdrawals,
   withdrawalHistory,
   openOrders,
+  orderHistory,
   accountStream,
   trading,
   positions,

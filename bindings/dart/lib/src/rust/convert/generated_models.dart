@@ -327,6 +327,63 @@ class WireExchangeTransferRequest {
           amount == other.amount;
 }
 
+class WireOrderHistoryRequest {
+  final WireMarket? market;
+  final List<WireOrderStatus> statuses;
+  final PlatformInt64? fromNs;
+  final PlatformInt64? toNs;
+  final String? cursor;
+  final int? limit;
+
+  const WireOrderHistoryRequest({
+    this.market,
+    required this.statuses,
+    this.fromNs,
+    this.toNs,
+    this.cursor,
+    this.limit,
+  });
+
+  @override
+  int get hashCode =>
+      market.hashCode ^
+      statuses.hashCode ^
+      fromNs.hashCode ^
+      toNs.hashCode ^
+      cursor.hashCode ^
+      limit.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireOrderHistoryRequest &&
+          runtimeType == other.runtimeType &&
+          market == other.market &&
+          statuses == other.statuses &&
+          fromNs == other.fromNs &&
+          toNs == other.toNs &&
+          cursor == other.cursor &&
+          limit == other.limit;
+}
+
+class WireOrderPage {
+  final List<WireOrder> items;
+  final String? next;
+
+  const WireOrderPage({required this.items, this.next});
+
+  @override
+  int get hashCode => items.hashCode ^ next.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireOrderPage &&
+          runtimeType == other.runtimeType &&
+          items == other.items &&
+          next == other.next;
+}
+
 @freezed
 sealed class WireTransferDestination with _$WireTransferDestination {
   const WireTransferDestination._();

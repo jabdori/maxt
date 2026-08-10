@@ -144,6 +144,11 @@ test("custom client dispatches every Adapter operation and owns stream cleanup",
       case "deposits":
       case "withdrawals":
         return ok({ kind: call.kind, value: { items: [], next: null } });
+      case "order":
+      case "order_by_client_id":
+        return ok({ kind: "order", value: order });
+      case "order_history":
+        return ok({ kind: "order_history", value: { items: [order], next: null } });
       case "place_order":
         return ok({ kind: "place_order", value: order });
       case "cancel_order":
@@ -208,6 +213,16 @@ test("custom client dispatches every Adapter operation and owns stream cleanup",
   await nativeValue(client.withdrawals(JSON.stringify(transferHistory)));
   await nativeValue(client.openOrders());
   await nativeValue(client.openOrdersOn(JSON.stringify(market)));
+  await nativeValue(client.order(JSON.stringify(market), JSON.stringify("order-1")));
+  await nativeValue(client.orderByClientId(JSON.stringify(market), JSON.stringify("client-1")));
+  await nativeValue(client.orderHistory(JSON.stringify({
+    market,
+    statuses: ["filled"],
+    from: null,
+    to: null,
+    cursor: null,
+    limit: 1,
+  })));
   await nativeValue(client.placeOrder(JSON.stringify({
     market,
     side: "buy",
@@ -216,6 +231,7 @@ test("custom client dispatches every Adapter operation and owns stream cleanup",
     price: null,
     time_in_force: null,
     reduce_only: false,
+    client_id: null,
   })));
   await nativeValue(client.cancelOrder(JSON.stringify(market), JSON.stringify("order-1")));
   await nativeValue(client.cancelOrderByClientId(JSON.stringify(market), JSON.stringify("client-1")));
@@ -251,7 +267,7 @@ test("custom client dispatches every Adapter operation and owns stream cleanup",
     [
       "asset_networks", "balances", "cancel_order", "cancel_order_by_client_id", "candles", "deposit_address", "deposits",
       "funding_payments", "funding_rates", "margin_summary", "markets", "open_orders",
-      "order_book", "place_order", "positions", "prepare_withdrawal", "set_margin", "subscribe",
+      "order", "order_book", "order_by_client_id", "order_history", "place_order", "positions", "prepare_withdrawal", "set_margin", "subscribe",
       "subscribe_account", "ticker", "trades", "withdraw", "withdrawals",
     ].sort(),
   );

@@ -21,6 +21,8 @@ from ._generated_identifiers import (
     BithumbAlertStep,
     BithumbOrderDirection,
     BithumbPendingOrderState,
+    BithumbTwapOrderDirection,
+    BithumbTwapState,
     DepositStatus,
     Exchange,
     Feature,
@@ -38,6 +40,7 @@ from ._generated_identifiers import (
     SizeKind,
     TimeInForce,
     TransferErrorKind,
+    UpbitOrderDirection,
     UpbitRegion,
     WithdrawalStatus,
 )
@@ -55,12 +58,14 @@ def _ascii_upper(value: str) -> str:
 
 
 class WireModel:
+    __wire_strict__: ClassVar[bool] = False
+
     def to_wire(self) -> dict[str, Any]:
         return _model_to_wire(self)
 
     @classmethod
     def from_wire(cls, value: dict[str, Any]) -> Any:
-        return _decode_dataclass(cls, value)
+        return _decode_dataclass(cls, value, strict=cls.__wire_strict__)
 
 
 @dataclass(frozen=True)
@@ -568,9 +573,18 @@ def _decimal_to_wire(value: Decimal) -> str:
     return format(value, "f")
 
 
-def _decode_dataclass(model_type: Any, value: dict[str, Any]) -> Any:
+def _decode_dataclass(
+    model_type: Any,
+    value: dict[str, Any],
+    *,
+    strict: bool = False,
+) -> Any:
     hints = get_type_hints(model_type)
     model_fields = _schema_fields(model_type)
+    allowed = {wire_name for _, wire_name, _ in model_fields}
+    unexpected = set(value).difference(allowed)
+    if strict and unexpected:
+        raise ValueError(f"{model_type.__name__} does not accept {next(iter(unexpected))}")
     return model_type(
         **{
             item.name: _decode_value(
@@ -675,11 +689,16 @@ def _model_from_wire(type_name: str, value: dict[str, Any]) -> Any:
 
 from ._generated_models import (  # noqa: E402
     AssetNetwork,
+    BinanceMarkPrice,
+    BinanceOpenInterest,
     BithumbApiKey,
     BithumbAssetFee,
     BithumbNetworkFee,
     BithumbNotice,
     BithumbPendingOrdersRequest,
+    BithumbTwapOrder,
+    BithumbTwapOrderRequest,
+    BithumbTwapOrdersRequest,
     CancelOrdersRequest,
     CancelOrdersResult,
     CancelledOrder,
@@ -702,7 +721,10 @@ from ._generated_models import (  # noqa: E402
     TransferHistoryRequest,
     TransferPlan,
     TravelRuleRequirement,
+    HyperliquidMidPrice,
     UpbitOrderBookInstrument,
+    UpbitBatchCancelRequest,
+    UpbitBatchCancelScope,
     UpbitDepositInfo,
     UpbitYearCandle,
     Withdrawal,
@@ -719,6 +741,8 @@ __all__ = [
     "CancelOrdersResult",
     "CancelledOrder",
     "BinanceMarket",
+    "BinanceMarkPrice",
+    "BinanceOpenInterest",
     "BinanceSpotOrderDetail",
     "BinanceSymbolFilters",
     "BithumbAlertStep",
@@ -730,6 +754,11 @@ __all__ = [
     "BithumbOrderDirection",
     "BithumbPendingOrderState",
     "BithumbPendingOrdersRequest",
+    "BithumbTwapOrderDirection",
+    "BithumbTwapState",
+    "BithumbTwapOrder",
+    "BithumbTwapOrderRequest",
+    "BithumbTwapOrdersRequest",
     "Candle",
     "CandleRequest",
     "ChainDestination",
@@ -752,6 +781,7 @@ __all__ = [
     "HyperliquidAssetContext",
     "HyperliquidLedgerEntry",
     "HyperliquidLedgerKind",
+    "HyperliquidMidPrice",
     "HistoryRequest",
     "Interval",
     "Level",
@@ -791,11 +821,14 @@ __all__ = [
     "TransferDestination",
     "TransferLookupRequest",
     "TransferErrorKind",
+    "UpbitOrderDirection",
     "TransferHistoryRequest",
     "TransferPlan",
     "TravelRuleRequirement",
     "UpbitMarketEvent",
     "UpbitDepositInfo",
+    "UpbitBatchCancelRequest",
+    "UpbitBatchCancelScope",
     "UpbitOrderBookInstrument",
     "UpbitRegion",
     "UpbitYearCandle",

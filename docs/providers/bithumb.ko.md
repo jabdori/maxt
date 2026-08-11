@@ -101,6 +101,29 @@ code로 보존합니다.
 | `api_keys()` | 인증 필요 `GET /v1/api_keys`; 등록된 각 access key 식별자와 만료 시각 |
 | `pending_orders(request)` | 인증 필요 `GET /v2/orders/pending`; 선택 시장, `wait` 또는 `watch` 상태, `1..=100` 개수, 오름·내림차순, 불투명 `next_key`를 `Page::next` 커서로 반환 |
 
+### TWAP
+
+Bithumb의 TWAP API는 **KRW 마켓만** 지원하며 JWT 인증 정보가 필요합니다.
+`twap_orders(request)`는 읽기 전용 주문 이력 조회이며 `progress`, `done`,
+`cancel` 상태, TWAP ID 목록, 커서, `1..=100` 페이지 크기, 오름차순·내림차순을
+지원합니다.
+
+```rust
+let page = adapter
+    .twap_orders(
+        &BithumbTwapOrdersRequest::new()
+            .market(Market::spot(Exchange::Bithumb, "BTC", "KRW"))
+            .limit(20),
+    )
+    .await?;
+```
+
+`create_twap_order(...)`와 `cancel_twap_order(...)`는 금전성 쓰기입니다.
+생성 요청은 300~43,200초의 주문 시간, 15/20/30/60/120초의 주문 간격이 필요하며,
+매수에는 `price`, 매도에는 `volume`이 필요합니다. 취소는 아직 제출되지 않은
+분할 주문만 중단하며 이미 체결된 주문은 유지됩니다. 읽기 전용 검증에서는 두 쓰기
+메서드를 실행하지 마세요.
+
 | 거래소 상태 | 매핑 |
 | --- | --- |
 | `market_warning == CAUTION` | `MarketStatus::Unknown` |
@@ -125,6 +148,9 @@ code로 보존합니다.
 - [입출금 수수료](https://apidocs.bithumb.com/reference/%EC%9E%85%EC%B6%9C%EA%B8%88-%EC%88%98%EC%88%98%EB%A3%8C-%EC%A1%B0%ED%9A%8C.md)
 - [API 키](https://apidocs.bithumb.com/reference/api-%ED%82%A4-%EB%A6%AC%EC%8A%A4%ED%8A%B8-%EC%A1%B0%ED%9A%8C.md)
 - [대기 주문 목록](https://apidocs.bithumb.com/reference/%EB%8C%80%EA%B8%B0-%EC%A3%BC%EB%AC%B8-%EB%AA%A9%EB%A1%9D-%EC%A1%B0%ED%9A%8C.md)
+- [TWAP 주문 내역](https://apidocs.bithumb.com/reference/twap-%EC%A3%BC%EB%AC%B8%EB%82%B4%EC%97%AD-%EC%A1%B0%ED%9A%8C)
+- [TWAP 주문 요청](https://apidocs.bithumb.com/reference/twap-%EC%A3%BC%EB%AC%B8-%EC%9A%94%EC%B2%AD)
+- [TWAP 주문 취소](https://apidocs.bithumb.com/reference/twap-%EC%A3%BC%EB%AC%B8-%EC%B7%A8%EC%86%8C)
 - [캔들](https://apidocs.bithumb.com/reference/%EB%B6%84minute-%EC%BA%94%EB%93%A4-%EC%A1%B0%ED%9A%8C.md)
 - [WebSocket](https://apidocs.bithumb.com/reference/%EA%B8%B0%EB%B3%B8-%EC%A0%95%EB%B3%B4.md)
 - [주문](https://apidocs.bithumb.com/reference/%EC%A3%BC%EB%AC%B8-%EC%9A%94%EC%B2%AD.md)

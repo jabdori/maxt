@@ -146,9 +146,9 @@ fn operation_inventory_matches_the_pinned_korean_exchange_catalogs() {
             ((Exchange::Bithumb, "twap"), 3),
             ((Exchange::Bithumb, "krw"), 4),
             ((Exchange::Binance, "spot"), 15),
-            ((Exchange::Binance, "usd_m"), 21),
+            ((Exchange::Binance, "usd_m"), 24),
             ((Exchange::Binance, "wallet"), 8),
-            ((Exchange::Hyperliquid, "info"), 13),
+            ((Exchange::Hyperliquid, "info"), 14),
             ((Exchange::Hyperliquid, "exchange"), 3),
             ((Exchange::Hyperliquid, "subscriptions"), 7),
         ])
@@ -228,15 +228,11 @@ fn planned_korean_operations_pin_official_request_contracts() {
         .collect::<BTreeSet<_>>();
     let expected = [
         "upbit|quotation|list_subscriptions|LIST_SUBSCRIPTIONS|LIST_SUBSCRIPTIONS|websocket_request|Public|Read|General",
-        "upbit|exchange|batch_cancel_open_orders|DELETE|/v1/orders/open|http|Jwt|FinancialWrite|General",
         "upbit|exchange|cancel_and_new_order|POST|/v1/orders/cancel_and_new|http|Jwt|FinancialWrite|General",
         "upbit|travel_rule|travel_rule_vasps|GET|/v1/travel_rule/vasps|http|Jwt|Read|Region(\"Singapore\")",
         "upbit|travel_rule|travel_rule_verify_uuid|POST|/v1/travel_rule/deposit/uuid|http|Jwt|FinancialWrite|Region(\"Singapore\")",
         "upbit|travel_rule|travel_rule_verify_txid|POST|/v1/travel_rule/deposit/txid|http|Jwt|FinancialWrite|Region(\"Singapore\")",
         "bithumb|exchange|batch_orders|POST|/v2/orders/batch|http|Jwt|FinancialWrite|General",
-        "bithumb|twap|twap|GET|/v1/twap|http|Jwt|Read|General",
-        "bithumb|twap|create_twap|POST|/v1/twap|http|Jwt|FinancialWrite|General",
-        "bithumb|twap|cancel_twap|DELETE|/v1/twap|http|Jwt|FinancialWrite|General",
         "bithumb|krw|withdrawals|GET|/v1/withdraws/krw|http|Jwt|Read|General",
         "bithumb|krw|withdraw|POST|/v1/withdraws/krw|http|Jwt|FinancialWrite|General",
         "bithumb|krw|deposits|GET|/v1/deposits/krw|http|Jwt|Read|General",

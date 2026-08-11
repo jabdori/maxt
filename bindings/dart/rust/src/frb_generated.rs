@@ -41,7 +41,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -253110077;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1333330311;
 
 // Section: executor
 
@@ -155,6 +155,182 @@ fn wire__crate__api__NativeClient_balances_impl(
                         let api_that_guard = api_that_guard.unwrap();
                         let output_ok =
                             crate::api::NativeClient::balances(&*api_that_guard).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__NativeClient_binance_mark_price_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_binance_mark_price",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_market = <crate::convert::WireMarket>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::NativeClient::binance_mark_price(
+                            &*api_that_guard,
+                            api_market,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__NativeClient_binance_mark_prices_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_binance_mark_prices",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok =
+                            crate::api::NativeClient::binance_mark_prices(&*api_that_guard).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__NativeClient_binance_open_interest_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_binance_open_interest",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_market = <crate::convert::WireMarket>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::NativeClient::binance_open_interest(
+                            &*api_that_guard,
+                            api_market,
+                        )
+                        .await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -658,6 +834,129 @@ fn wire__crate__api__NativeClient_bithumb_api_keys_impl(
         },
     )
 }
+fn wire__crate__api__NativeClient_bithumb_cancel_twap_order_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_bithumb_cancel_twap_order",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_algo_order_id = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::NativeClient::bithumb_cancel_twap_order(
+                            &*api_that_guard,
+                            api_algo_order_id,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__NativeClient_bithumb_create_twap_order_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_bithumb_create_twap_order",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_request =
+                <crate::convert::generated_models::WireBithumbTwapOrderRequest>::sse_decode(
+                    &mut deserializer,
+                );
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::NativeClient::bithumb_create_twap_order(
+                            &*api_that_guard,
+                            api_request,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__NativeClient_bithumb_market_alerts_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -943,6 +1242,69 @@ fn wire__crate__api__NativeClient_bithumb_transfer_fees_impl(
                         let output_ok = crate::api::NativeClient::bithumb_transfer_fees(
                             &*api_that_guard,
                             api_currency,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__NativeClient_bithumb_twap_orders_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_bithumb_twap_orders",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_request =
+                <crate::convert::generated_models::WireBithumbTwapOrdersRequest>::sse_decode(
+                    &mut deserializer,
+                );
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::NativeClient::bithumb_twap_orders(
+                            &*api_that_guard,
+                            api_request,
                         )
                         .await?;
                         Ok(output_ok)
@@ -1848,6 +2210,63 @@ fn wire__crate__api__NativeClient_hyperliquid_impl(
                 )?;
                 Ok(output_ok)
             })())
+        },
+    )
+}
+fn wire__crate__api__NativeClient_hyperliquid_all_mids_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_hyperliquid_all_mids",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok =
+                            crate::api::NativeClient::hyperliquid_all_mids(&*api_that_guard)
+                                .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
         },
     )
 }
@@ -3262,6 +3681,69 @@ fn wire__crate__api__NativeClient_upbit_impl(
                     crate::api::NativeClient::upbit(api_region, api_access_key, api_secret_key)?;
                 Ok(output_ok)
             })())
+        },
+    )
+}
+fn wire__crate__api__NativeClient_upbit_batch_cancel_open_orders_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_upbit_batch_cancel_open_orders",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_request =
+                <crate::convert::generated_models::WireUpbitBatchCancelRequest>::sse_decode(
+                    &mut deserializer,
+                );
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::NativeClient::upbit_batch_cancel_open_orders(
+                            &*api_that_guard,
+                            api_request,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
         },
     )
 }
@@ -5346,6 +5828,20 @@ impl SseDecode for Vec<crate::convert::WireBalance> {
     }
 }
 
+impl SseDecode for Vec<crate::convert::generated_models::WireBinanceMarkPrice> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireBinanceMarkPrice>::sse_decode(deserializer),
+            );
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<crate::convert::generated_models::WireBithumbApiKey> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -5424,6 +5920,20 @@ impl SseDecode for Vec<crate::convert::generated_models::WireBithumbNotice> {
         for idx_ in 0..len_ {
             ans_.push(
                 <crate::convert::generated_models::WireBithumbNotice>::sse_decode(deserializer),
+            );
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::convert::generated_models::WireBithumbTwapOrder> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireBithumbTwapOrder>::sse_decode(deserializer),
             );
         }
         return ans_;
@@ -5545,6 +6055,22 @@ impl SseDecode for Vec<crate::convert::WireHyperliquidLedgerEntry> {
             ans_.push(<crate::convert::WireHyperliquidLedgerEntry>::sse_decode(
                 deserializer,
             ));
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::convert::generated_models::WireHyperliquidMidPrice> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireHyperliquidMidPrice>::sse_decode(
+                    deserializer,
+                ),
+            );
         }
         return ans_;
     }
@@ -5923,6 +6449,32 @@ impl SseDecode for Option<crate::convert::WireBithumbPendingOrderState> {
     }
 }
 
+impl SseDecode for Option<crate::convert::WireBithumbTwapOrderDirection> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<crate::convert::WireBithumbTwapOrderDirection>::sse_decode(
+                deserializer,
+            ));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<crate::convert::WireBithumbTwapState> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<crate::convert::WireBithumbTwapState>::sse_decode(
+                deserializer,
+            ));
+        } else {
+            return None;
+        }
+    }
+}
+
 impl SseDecode for Option<crate::convert::WireExchange> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -6041,6 +6593,19 @@ impl SseDecode for Option<crate::convert::WireTransferErrorKind> {
     }
 }
 
+impl SseDecode for Option<crate::convert::WireUpbitOrderDirection> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<crate::convert::WireUpbitOrderDirection>::sse_decode(
+                deserializer,
+            ));
+        } else {
+            return None;
+        }
+    }
+}
+
 impl SseDecode for Option<crate::api::WireUpbitRegion> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -6059,6 +6624,17 @@ impl SseDecode for Option<crate::convert::generated_models::WireWithdrawalFee> {
             return Some(
                 <crate::convert::generated_models::WireWithdrawalFee>::sse_decode(deserializer),
             );
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<Vec<crate::convert::WireMarket>> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<Vec<crate::convert::WireMarket>>::sse_decode(deserializer));
         } else {
             return None;
         }
@@ -6190,6 +6766,44 @@ impl SseDecode for crate::convert::WireBalance {
             asset: var_asset,
             available: var_available,
             locked: var_locked,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBinanceMarkPrice {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_market = <crate::convert::WireMarket>::sse_decode(deserializer);
+        let mut var_markPrice = <String>::sse_decode(deserializer);
+        let mut var_indexPrice = <String>::sse_decode(deserializer);
+        let mut var_estimatedSettlePrice = <Option<String>>::sse_decode(deserializer);
+        let mut var_lastFundingRate = <String>::sse_decode(deserializer);
+        let mut var_interestRate = <String>::sse_decode(deserializer);
+        let mut var_nextFundingTimeNs = <i64>::sse_decode(deserializer);
+        let mut var_timeNs = <i64>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceMarkPrice {
+            market: var_market,
+            mark_price: var_markPrice,
+            index_price: var_indexPrice,
+            estimated_settle_price: var_estimatedSettlePrice,
+            last_funding_rate: var_lastFundingRate,
+            interest_rate: var_interestRate,
+            next_funding_time_ns: var_nextFundingTimeNs,
+            time_ns: var_timeNs,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBinanceOpenInterest {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_market = <crate::convert::WireMarket>::sse_decode(deserializer);
+        let mut var_openInterest = <String>::sse_decode(deserializer);
+        let mut var_timeNs = <i64>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceOpenInterest {
+            market: var_market,
+            open_interest: var_openInterest,
+            time_ns: var_timeNs,
         };
     }
 }
@@ -6403,6 +7017,131 @@ impl SseDecode for crate::convert::generated_models::WireBithumbPendingOrdersReq
             limit: var_limit,
             order_by: var_orderBy,
             cursor: var_cursor,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBithumbTwapOrder {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_id = <String>::sse_decode(deserializer);
+        let mut var_side = <crate::convert::WireSide>::sse_decode(deserializer);
+        let mut var_price = <String>::sse_decode(deserializer);
+        let mut var_state = <crate::convert::WireBithumbTwapState>::sse_decode(deserializer);
+        let mut var_market = <crate::convert::WireMarket>::sse_decode(deserializer);
+        let mut var_createdAtNs = <i64>::sse_decode(deserializer);
+        let mut var_volume = <String>::sse_decode(deserializer);
+        let mut var_finishedAtNs = <Option<i64>>::sse_decode(deserializer);
+        let mut var_totalOrderCount = <u32>::sse_decode(deserializer);
+        let mut var_totalTradesCount = <u32>::sse_decode(deserializer);
+        let mut var_progressCount = <u32>::sse_decode(deserializer);
+        let mut var_totalExecutedAmount = <String>::sse_decode(deserializer);
+        let mut var_totalExecutedVolume = <String>::sse_decode(deserializer);
+        let mut var_avgTradePrice = <String>::sse_decode(deserializer);
+        let mut var_walletId = <Option<String>>::sse_decode(deserializer);
+        let mut var_canceledAtNs = <Option<i64>>::sse_decode(deserializer);
+        let mut var_cancelType = <Option<String>>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBithumbTwapOrder {
+            id: var_id,
+            side: var_side,
+            price: var_price,
+            state: var_state,
+            market: var_market,
+            created_at_ns: var_createdAtNs,
+            volume: var_volume,
+            finished_at_ns: var_finishedAtNs,
+            total_order_count: var_totalOrderCount,
+            total_trades_count: var_totalTradesCount,
+            progress_count: var_progressCount,
+            total_executed_amount: var_totalExecutedAmount,
+            total_executed_volume: var_totalExecutedVolume,
+            avg_trade_price: var_avgTradePrice,
+            wallet_id: var_walletId,
+            canceled_at_ns: var_canceledAtNs,
+            cancel_type: var_cancelType,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::WireBithumbTwapOrderDirection {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::convert::WireBithumbTwapOrderDirection::Ascending,
+            1 => crate::convert::WireBithumbTwapOrderDirection::Descending,
+            _ => unreachable!(
+                "Invalid variant for WireBithumbTwapOrderDirection: {}",
+                inner
+            ),
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBithumbTwapOrderPage {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_items =
+            <Vec<crate::convert::generated_models::WireBithumbTwapOrder>>::sse_decode(deserializer);
+        let mut var_next = <Option<String>>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBithumbTwapOrderPage {
+            items: var_items,
+            next: var_next,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBithumbTwapOrderRequest {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_market = <crate::convert::WireMarket>::sse_decode(deserializer);
+        let mut var_side = <crate::convert::WireSide>::sse_decode(deserializer);
+        let mut var_volume = <Option<String>>::sse_decode(deserializer);
+        let mut var_price = <Option<String>>::sse_decode(deserializer);
+        let mut var_duration = <u32>::sse_decode(deserializer);
+        let mut var_frequency = <u32>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBithumbTwapOrderRequest {
+            market: var_market,
+            side: var_side,
+            volume: var_volume,
+            price: var_price,
+            duration: var_duration,
+            frequency: var_frequency,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBithumbTwapOrdersRequest {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_market = <Option<crate::convert::WireMarket>>::sse_decode(deserializer);
+        let mut var_uuids = <Vec<String>>::sse_decode(deserializer);
+        let mut var_state =
+            <Option<crate::convert::WireBithumbTwapState>>::sse_decode(deserializer);
+        let mut var_cursor = <Option<String>>::sse_decode(deserializer);
+        let mut var_limit = <Option<u32>>::sse_decode(deserializer);
+        let mut var_orderBy =
+            <Option<crate::convert::WireBithumbTwapOrderDirection>>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBithumbTwapOrdersRequest {
+            market: var_market,
+            uuids: var_uuids,
+            state: var_state,
+            cursor: var_cursor,
+            limit: var_limit,
+            order_by: var_orderBy,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::WireBithumbTwapState {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::convert::WireBithumbTwapState::Progress,
+            1 => crate::convert::WireBithumbTwapState::Done,
+            2 => crate::convert::WireBithumbTwapState::Cancel,
+            _ => unreachable!("Invalid variant for WireBithumbTwapState: {}", inner),
         };
     }
 }
@@ -6918,6 +7657,18 @@ impl SseDecode for crate::convert::WireHyperliquidLedgerPage {
         return crate::convert::WireHyperliquidLedgerPage {
             items: var_items,
             next: var_next,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireHyperliquidMidPrice {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_market = <crate::convert::WireMarket>::sse_decode(deserializer);
+        let mut var_price = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireHyperliquidMidPrice {
+            market: var_market,
+            price: var_price,
         };
     }
 }
@@ -7656,6 +8407,52 @@ impl SseDecode for crate::convert::generated_models::WireTravelRuleRequirement {
     }
 }
 
+impl SseDecode for crate::convert::generated_models::WireUpbitBatchCancelRequest {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_scope =
+            <crate::convert::generated_models::WireUpbitBatchCancelScope>::sse_decode(deserializer);
+        let mut var_excludedPairs =
+            <Option<Vec<crate::convert::WireMarket>>>::sse_decode(deserializer);
+        let mut var_side = <Option<crate::convert::WireSide>>::sse_decode(deserializer);
+        let mut var_count = <Option<u32>>::sse_decode(deserializer);
+        let mut var_orderBy =
+            <Option<crate::convert::WireUpbitOrderDirection>>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireUpbitBatchCancelRequest {
+            scope: var_scope,
+            excluded_pairs: var_excludedPairs,
+            side: var_side,
+            count: var_count,
+            order_by: var_orderBy,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireUpbitBatchCancelScope {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut tag_ = <i32>::sse_decode(deserializer);
+        match tag_ {
+            0 => {
+                return crate::convert::generated_models::WireUpbitBatchCancelScope::All;
+            }
+            1 => {
+                let mut var_values = <Vec<String>>::sse_decode(deserializer);
+                return crate::convert::generated_models::WireUpbitBatchCancelScope::QuoteCurrencies{values: var_values};
+            }
+            2 => {
+                let mut var_values = <Vec<crate::convert::WireMarket>>::sse_decode(deserializer);
+                return crate::convert::generated_models::WireUpbitBatchCancelScope::Pairs {
+                    values: var_values,
+                };
+            }
+            _ => {
+                unimplemented!("");
+            }
+        }
+    }
+}
+
 impl SseDecode for crate::convert::generated_models::WireUpbitDepositInfo {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -7706,6 +8503,18 @@ impl SseDecode for crate::convert::generated_models::WireUpbitOrderBookInstrumen
             quote_currency: var_quoteCurrency,
             tick_size: var_tickSize,
             supported_levels: var_supportedLevels,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::WireUpbitOrderDirection {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::convert::WireUpbitOrderDirection::Ascending,
+            1 => crate::convert::WireUpbitOrderDirection::Descending,
+            _ => unreachable!("Invalid variant for WireUpbitOrderDirection: {}", inner),
         };
     }
 }
@@ -7896,225 +8705,273 @@ fn pde_ffi_dispatcher_primary_impl(
     match func_id {
         1 => wire__crate__api__NativeClient_asset_networks_impl(port, ptr, rust_vec_len, data_len),
         2 => wire__crate__api__NativeClient_balances_impl(port, ptr, rust_vec_len, data_len),
-        4 => wire__crate__api__NativeClient_binance_spot_order_impl(
+        3 => wire__crate__api__NativeClient_binance_mark_price_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        5 => wire__crate__api__NativeClient_binance_spot_symbol_filters_impl(
+        4 => wire__crate__api__NativeClient_binance_mark_prices_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        6 => wire__crate__api__NativeClient_binance_usd_m_close_listen_key_impl(
+        5 => wire__crate__api__NativeClient_binance_open_interest_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        7 => wire__crate__api__NativeClient_binance_usd_m_create_listen_key_impl(
+        7 => wire__crate__api__NativeClient_binance_spot_order_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        9 => wire__crate__api__NativeClient_binance_usd_m_keepalive_listen_key_impl(
+        8 => wire__crate__api__NativeClient_binance_spot_symbol_filters_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        12 => {
-            wire__crate__api__NativeClient_bithumb_api_keys_impl(port, ptr, rust_vec_len, data_len)
-        }
-        13 => wire__crate__api__NativeClient_bithumb_market_alerts_impl(
+        9 => wire__crate__api__NativeClient_binance_usd_m_close_listen_key_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        14 => wire__crate__api__NativeClient_bithumb_market_warnings_impl(
+        10 => wire__crate__api__NativeClient_binance_usd_m_create_listen_key_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        12 => wire__crate__api__NativeClient_binance_usd_m_keepalive_listen_key_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
         15 => {
+            wire__crate__api__NativeClient_bithumb_api_keys_impl(port, ptr, rust_vec_len, data_len)
+        }
+        16 => wire__crate__api__NativeClient_bithumb_cancel_twap_order_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        17 => wire__crate__api__NativeClient_bithumb_create_twap_order_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        18 => wire__crate__api__NativeClient_bithumb_market_alerts_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        19 => wire__crate__api__NativeClient_bithumb_market_warnings_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        20 => {
             wire__crate__api__NativeClient_bithumb_notices_impl(port, ptr, rust_vec_len, data_len)
         }
-        16 => wire__crate__api__NativeClient_bithumb_pending_orders_impl(
+        21 => wire__crate__api__NativeClient_bithumb_pending_orders_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        17 => wire__crate__api__NativeClient_bithumb_transfer_fees_impl(
+        22 => wire__crate__api__NativeClient_bithumb_transfer_fees_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        18 => wire__crate__api__NativeClient_cancel_order_impl(port, ptr, rust_vec_len, data_len),
-        19 => wire__crate__api__NativeClient_cancel_order_by_client_id_impl(
+        23 => wire__crate__api__NativeClient_bithumb_twap_orders_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        20 => wire__crate__api__NativeClient_cancel_orders_impl(port, ptr, rust_vec_len, data_len),
-        21 => {
+        24 => wire__crate__api__NativeClient_cancel_order_impl(port, ptr, rust_vec_len, data_len),
+        25 => wire__crate__api__NativeClient_cancel_order_by_client_id_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        26 => wire__crate__api__NativeClient_cancel_orders_impl(port, ptr, rust_vec_len, data_len),
+        27 => {
             wire__crate__api__NativeClient_cancel_withdrawal_impl(port, ptr, rust_vec_len, data_len)
         }
-        22 => wire__crate__api__NativeClient_candles_impl(port, ptr, rust_vec_len, data_len),
-        23 => wire__crate__api__NativeClient_create_deposit_address_impl(
+        28 => wire__crate__api__NativeClient_candles_impl(port, ptr, rust_vec_len, data_len),
+        29 => wire__crate__api__NativeClient_create_deposit_address_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        24 => wire__crate__api__NativeClient_deposit_impl(port, ptr, rust_vec_len, data_len),
-        25 => {
+        30 => wire__crate__api__NativeClient_deposit_impl(port, ptr, rust_vec_len, data_len),
+        31 => {
             wire__crate__api__NativeClient_deposit_address_impl(port, ptr, rust_vec_len, data_len)
         }
-        26 => {
+        32 => {
             wire__crate__api__NativeClient_deposit_addresses_impl(port, ptr, rust_vec_len, data_len)
         }
-        27 => wire__crate__api__NativeClient_deposits_impl(port, ptr, rust_vec_len, data_len),
-        29 => {
+        33 => wire__crate__api__NativeClient_deposits_impl(port, ptr, rust_vec_len, data_len),
+        35 => {
             wire__crate__api__NativeClient_execute_transfer_impl(port, ptr, rust_vec_len, data_len)
         }
-        31 => {
+        37 => {
             wire__crate__api__NativeClient_funding_payments_impl(port, ptr, rust_vec_len, data_len)
         }
-        32 => wire__crate__api__NativeClient_funding_rates_impl(port, ptr, rust_vec_len, data_len),
-        34 => wire__crate__api__NativeClient_hyperliquid_asset_context_impl(
+        38 => wire__crate__api__NativeClient_funding_rates_impl(port, ptr, rust_vec_len, data_len),
+        40 => wire__crate__api__NativeClient_hyperliquid_all_mids_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        35 => wire__crate__api__NativeClient_hyperliquid_non_funding_ledger_impl(
+        41 => wire__crate__api__NativeClient_hyperliquid_asset_context_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        37 => wire__crate__api__NativeClient_margin_summary_impl(port, ptr, rust_vec_len, data_len),
-        38 => wire__crate__api__NativeClient_markets_impl(port, ptr, rust_vec_len, data_len),
-        39 => wire__crate__api__NativeClient_open_orders_impl(port, ptr, rust_vec_len, data_len),
-        40 => wire__crate__api__NativeClient_order_impl(port, ptr, rust_vec_len, data_len),
-        41 => wire__crate__api__NativeClient_order_book_impl(port, ptr, rust_vec_len, data_len),
-        42 => wire__crate__api__NativeClient_order_by_client_id_impl(
+        42 => wire__crate__api__NativeClient_hyperliquid_non_funding_ledger_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        43 => wire__crate__api__NativeClient_order_history_impl(port, ptr, rust_vec_len, data_len),
-        44 => wire__crate__api__NativeClient_order_rules_impl(port, ptr, rust_vec_len, data_len),
-        45 => wire__crate__api__NativeClient_orders_by_ids_impl(port, ptr, rust_vec_len, data_len),
-        46 => wire__crate__api__NativeClient_place_order_impl(port, ptr, rust_vec_len, data_len),
-        47 => wire__crate__api__NativeClient_positions_impl(port, ptr, rust_vec_len, data_len),
-        48 => wire__crate__api__NativeClient_prepare_transfer_to_impl(
+        44 => wire__crate__api__NativeClient_margin_summary_impl(port, ptr, rust_vec_len, data_len),
+        45 => wire__crate__api__NativeClient_markets_impl(port, ptr, rust_vec_len, data_len),
+        46 => wire__crate__api__NativeClient_open_orders_impl(port, ptr, rust_vec_len, data_len),
+        47 => wire__crate__api__NativeClient_order_impl(port, ptr, rust_vec_len, data_len),
+        48 => wire__crate__api__NativeClient_order_book_impl(port, ptr, rust_vec_len, data_len),
+        49 => wire__crate__api__NativeClient_order_by_client_id_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        49 => wire__crate__api__NativeClient_prepare_transfer_to_chain_impl(
+        50 => wire__crate__api__NativeClient_order_history_impl(port, ptr, rust_vec_len, data_len),
+        51 => wire__crate__api__NativeClient_order_rules_impl(port, ptr, rust_vec_len, data_len),
+        52 => wire__crate__api__NativeClient_orders_by_ids_impl(port, ptr, rust_vec_len, data_len),
+        53 => wire__crate__api__NativeClient_place_order_impl(port, ptr, rust_vec_len, data_len),
+        54 => wire__crate__api__NativeClient_positions_impl(port, ptr, rust_vec_len, data_len),
+        55 => wire__crate__api__NativeClient_prepare_transfer_to_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        50 => wire__crate__api__NativeClient_prepare_withdrawal_impl(
+        56 => wire__crate__api__NativeClient_prepare_transfer_to_chain_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        51 => wire__crate__api__NativeClient_set_margin_impl(port, ptr, rust_vec_len, data_len),
-        52 => wire__crate__api__NativeClient_subscribe_impl(port, ptr, rust_vec_len, data_len),
-        53 => {
+        57 => wire__crate__api__NativeClient_prepare_withdrawal_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        58 => wire__crate__api__NativeClient_set_margin_impl(port, ptr, rust_vec_len, data_len),
+        59 => wire__crate__api__NativeClient_subscribe_impl(port, ptr, rust_vec_len, data_len),
+        60 => {
             wire__crate__api__NativeClient_subscribe_account_impl(port, ptr, rust_vec_len, data_len)
         }
-        55 => wire__crate__api__NativeClient_ticker_impl(port, ptr, rust_vec_len, data_len),
-        56 => wire__crate__api__NativeClient_trades_impl(port, ptr, rust_vec_len, data_len),
-        58 => wire__crate__api__NativeClient_upbit_deposit_info_impl(
+        62 => wire__crate__api__NativeClient_ticker_impl(port, ptr, rust_vec_len, data_len),
+        63 => wire__crate__api__NativeClient_trades_impl(port, ptr, rust_vec_len, data_len),
+        65 => wire__crate__api__NativeClient_upbit_batch_cancel_open_orders_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        59 => wire__crate__api__NativeClient_upbit_market_events_impl(
+        66 => wire__crate__api__NativeClient_upbit_deposit_info_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        60 => {
+        67 => wire__crate__api__NativeClient_upbit_market_events_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        68 => {
             wire__crate__api__NativeClient_upbit_order_books_impl(port, ptr, rust_vec_len, data_len)
         }
-        61 => wire__crate__api__NativeClient_upbit_order_books_at_level_impl(
+        69 => wire__crate__api__NativeClient_upbit_order_books_at_level_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        62 => wire__crate__api__NativeClient_upbit_orderbook_instruments_impl(
+        70 => wire__crate__api__NativeClient_upbit_orderbook_instruments_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        64 => {
+        72 => {
             wire__crate__api__NativeClient_upbit_test_order_impl(port, ptr, rust_vec_len, data_len)
         }
-        65 => wire__crate__api__NativeClient_upbit_tickers_impl(port, ptr, rust_vec_len, data_len),
-        66 => wire__crate__api__NativeClient_upbit_tickers_by_quote_impl(
+        73 => wire__crate__api__NativeClient_upbit_tickers_impl(port, ptr, rust_vec_len, data_len),
+        74 => wire__crate__api__NativeClient_upbit_tickers_by_quote_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        67 => wire__crate__api__NativeClient_upbit_year_candles_impl(
+        75 => wire__crate__api__NativeClient_upbit_year_candles_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        68 => wire__crate__api__NativeClient_withdraw_impl(port, ptr, rust_vec_len, data_len),
-        69 => wire__crate__api__NativeClient_withdrawal_impl(port, ptr, rust_vec_len, data_len),
-        70 => wire__crate__api__NativeClient_withdrawals_impl(port, ptr, rust_vec_len, data_len),
-        72 => wire__crate__api__account_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
-        75 => wire__crate__api__market_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
-        76 => wire__crate__api__native_account_subscription_close_impl(
+        76 => wire__crate__api__NativeClient_withdraw_impl(port, ptr, rust_vec_len, data_len),
+        77 => wire__crate__api__NativeClient_withdrawal_impl(port, ptr, rust_vec_len, data_len),
+        78 => wire__crate__api__NativeClient_withdrawals_impl(port, ptr, rust_vec_len, data_len),
+        80 => wire__crate__api__account_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
+        83 => wire__crate__api__market_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
+        84 => wire__crate__api__native_account_subscription_close_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        77 => wire__crate__api__native_account_subscription_next_impl(
+        85 => wire__crate__api__native_account_subscription_next_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        78 => wire__crate__api__native_market_subscription_close_impl(
+        86 => wire__crate__api__native_market_subscription_close_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        79 => wire__crate__api__native_market_subscription_next_impl(
+        87 => wire__crate__api__native_market_subscription_next_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        81 => wire__crate__api__register_dart_adapter_impl(port, ptr, rust_vec_len, data_len),
+        89 => wire__crate__api__register_dart_adapter_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -8127,21 +8984,23 @@ fn pde_ffi_dispatcher_sync_impl(
 ) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        3 => wire__crate__api__NativeClient_binance_spot_impl(ptr, rust_vec_len, data_len),
-        8 => wire__crate__api__NativeClient_binance_usd_m_futures_impl(ptr, rust_vec_len, data_len),
-        10 => wire__crate__api__NativeClient_binance_venue_impl(ptr, rust_vec_len, data_len),
-        11 => wire__crate__api__NativeClient_bithumb_impl(ptr, rust_vec_len, data_len),
-        28 => wire__crate__api__NativeClient_exchange_impl(ptr, rust_vec_len, data_len),
-        30 => wire__crate__api__NativeClient_from_dart_adapter_impl(ptr, rust_vec_len, data_len),
-        33 => wire__crate__api__NativeClient_hyperliquid_impl(ptr, rust_vec_len, data_len),
-        36 => wire__crate__api__NativeClient_is_testnet_impl(ptr, rust_vec_len, data_len),
-        54 => wire__crate__api__NativeClient_supports_impl(ptr, rust_vec_len, data_len),
-        57 => wire__crate__api__NativeClient_upbit_impl(ptr, rust_vec_len, data_len),
-        63 => wire__crate__api__NativeClient_upbit_region_impl(ptr, rust_vec_len, data_len),
-        71 => wire__crate__api__WireBinanceListenKey_value_impl(ptr, rust_vec_len, data_len),
-        73 => wire__crate__api__bridge_version_impl(ptr, rust_vec_len, data_len),
-        74 => wire__crate__api__configure_browser_relay_impl(ptr, rust_vec_len, data_len),
-        80 => {
+        6 => wire__crate__api__NativeClient_binance_spot_impl(ptr, rust_vec_len, data_len),
+        11 => {
+            wire__crate__api__NativeClient_binance_usd_m_futures_impl(ptr, rust_vec_len, data_len)
+        }
+        13 => wire__crate__api__NativeClient_binance_venue_impl(ptr, rust_vec_len, data_len),
+        14 => wire__crate__api__NativeClient_bithumb_impl(ptr, rust_vec_len, data_len),
+        34 => wire__crate__api__NativeClient_exchange_impl(ptr, rust_vec_len, data_len),
+        36 => wire__crate__api__NativeClient_from_dart_adapter_impl(ptr, rust_vec_len, data_len),
+        39 => wire__crate__api__NativeClient_hyperliquid_impl(ptr, rust_vec_len, data_len),
+        43 => wire__crate__api__NativeClient_is_testnet_impl(ptr, rust_vec_len, data_len),
+        61 => wire__crate__api__NativeClient_supports_impl(ptr, rust_vec_len, data_len),
+        64 => wire__crate__api__NativeClient_upbit_impl(ptr, rust_vec_len, data_len),
+        71 => wire__crate__api__NativeClient_upbit_region_impl(ptr, rust_vec_len, data_len),
+        79 => wire__crate__api__WireBinanceListenKey_value_impl(ptr, rust_vec_len, data_len),
+        81 => wire__crate__api__bridge_version_impl(ptr, rust_vec_len, data_len),
+        82 => wire__crate__api__configure_browser_relay_impl(ptr, rust_vec_len, data_len),
+        88 => {
             wire__crate__api__pending_market_subscription_for_test_impl(ptr, rust_vec_len, data_len)
         }
         _ => unreachable!(),
@@ -8761,6 +9620,55 @@ impl flutter_rust_bridge::IntoIntoDart<crate::convert::WireBalance>
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireBinanceMarkPrice {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.market.into_into_dart().into_dart(),
+            self.mark_price.into_into_dart().into_dart(),
+            self.index_price.into_into_dart().into_dart(),
+            self.estimated_settle_price.into_into_dart().into_dart(),
+            self.last_funding_rate.into_into_dart().into_dart(),
+            self.interest_rate.into_into_dart().into_dart(),
+            self.next_funding_time_ns.into_into_dart().into_dart(),
+            self.time_ns.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceMarkPrice
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireBinanceMarkPrice>
+    for crate::convert::generated_models::WireBinanceMarkPrice
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceMarkPrice {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireBinanceOpenInterest {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.market.into_into_dart().into_dart(),
+            self.open_interest.into_into_dart().into_dart(),
+            self.time_ns.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceOpenInterest
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireBinanceOpenInterest>
+    for crate::convert::generated_models::WireBinanceOpenInterest
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceOpenInterest {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::convert::WireBinanceSpotOrderDetail {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -9056,6 +9964,163 @@ impl
     > for crate::convert::generated_models::WireBithumbPendingOrdersRequest
 {
     fn into_into_dart(self) -> crate::convert::generated_models::WireBithumbPendingOrdersRequest {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireBithumbTwapOrder {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.id.into_into_dart().into_dart(),
+            self.side.into_into_dart().into_dart(),
+            self.price.into_into_dart().into_dart(),
+            self.state.into_into_dart().into_dart(),
+            self.market.into_into_dart().into_dart(),
+            self.created_at_ns.into_into_dart().into_dart(),
+            self.volume.into_into_dart().into_dart(),
+            self.finished_at_ns.into_into_dart().into_dart(),
+            self.total_order_count.into_into_dart().into_dart(),
+            self.total_trades_count.into_into_dart().into_dart(),
+            self.progress_count.into_into_dart().into_dart(),
+            self.total_executed_amount.into_into_dart().into_dart(),
+            self.total_executed_volume.into_into_dart().into_dart(),
+            self.avg_trade_price.into_into_dart().into_dart(),
+            self.wallet_id.into_into_dart().into_dart(),
+            self.canceled_at_ns.into_into_dart().into_dart(),
+            self.cancel_type.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBithumbTwapOrder
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireBithumbTwapOrder>
+    for crate::convert::generated_models::WireBithumbTwapOrder
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBithumbTwapOrder {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::convert::WireBithumbTwapOrderDirection {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::Ascending => 0.into_dart(),
+            Self::Descending => 1.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::WireBithumbTwapOrderDirection
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::WireBithumbTwapOrderDirection>
+    for crate::convert::WireBithumbTwapOrderDirection
+{
+    fn into_into_dart(self) -> crate::convert::WireBithumbTwapOrderDirection {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireBithumbTwapOrderPage {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.items.into_into_dart().into_dart(),
+            self.next.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBithumbTwapOrderPage
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireBithumbTwapOrderPage>
+    for crate::convert::generated_models::WireBithumbTwapOrderPage
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBithumbTwapOrderPage {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireBithumbTwapOrderRequest
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.market.into_into_dart().into_dart(),
+            self.side.into_into_dart().into_dart(),
+            self.volume.into_into_dart().into_dart(),
+            self.price.into_into_dart().into_dart(),
+            self.duration.into_into_dart().into_dart(),
+            self.frequency.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBithumbTwapOrderRequest
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireBithumbTwapOrderRequest>
+    for crate::convert::generated_models::WireBithumbTwapOrderRequest
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBithumbTwapOrderRequest {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireBithumbTwapOrdersRequest
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.market.into_into_dart().into_dart(),
+            self.uuids.into_into_dart().into_dart(),
+            self.state.into_into_dart().into_dart(),
+            self.cursor.into_into_dart().into_dart(),
+            self.limit.into_into_dart().into_dart(),
+            self.order_by.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBithumbTwapOrdersRequest
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::convert::generated_models::WireBithumbTwapOrdersRequest,
+    > for crate::convert::generated_models::WireBithumbTwapOrdersRequest
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBithumbTwapOrdersRequest {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::convert::WireBithumbTwapState {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::Progress => 0.into_dart(),
+            Self::Done => 1.into_dart(),
+            Self::Cancel => 2.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::WireBithumbTwapState
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::WireBithumbTwapState>
+    for crate::convert::WireBithumbTwapState
+{
+    fn into_into_dart(self) -> crate::convert::WireBithumbTwapState {
         self
     }
 }
@@ -9737,6 +10802,27 @@ impl flutter_rust_bridge::IntoIntoDart<crate::convert::WireHyperliquidLedgerPage
     for crate::convert::WireHyperliquidLedgerPage
 {
     fn into_into_dart(self) -> crate::convert::WireHyperliquidLedgerPage {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireHyperliquidMidPrice {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.market.into_into_dart().into_dart(),
+            self.price.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireHyperliquidMidPrice
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireHyperliquidMidPrice>
+    for crate::convert::generated_models::WireHyperliquidMidPrice
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireHyperliquidMidPrice {
         self
     }
 }
@@ -10673,6 +11759,63 @@ impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireTra
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireUpbitBatchCancelRequest
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.scope.into_into_dart().into_dart(),
+            self.excluded_pairs.into_into_dart().into_dart(),
+            self.side.into_into_dart().into_dart(),
+            self.count.into_into_dart().into_dart(),
+            self.order_by.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireUpbitBatchCancelRequest
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireUpbitBatchCancelRequest>
+    for crate::convert::generated_models::WireUpbitBatchCancelRequest
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireUpbitBatchCancelRequest {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireUpbitBatchCancelScope {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            crate::convert::generated_models::WireUpbitBatchCancelScope::All => {
+                [0.into_dart()].into_dart()
+            }
+            crate::convert::generated_models::WireUpbitBatchCancelScope::QuoteCurrencies {
+                values,
+            } => [1.into_dart(), values.into_into_dart().into_dart()].into_dart(),
+            crate::convert::generated_models::WireUpbitBatchCancelScope::Pairs { values } => {
+                [2.into_dart(), values.into_into_dart().into_dart()].into_dart()
+            }
+            _ => {
+                unimplemented!("");
+            }
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireUpbitBatchCancelScope
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireUpbitBatchCancelScope>
+    for crate::convert::generated_models::WireUpbitBatchCancelScope
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireUpbitBatchCancelScope {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireUpbitDepositInfo {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -10747,6 +11890,27 @@ impl
     > for crate::convert::generated_models::WireUpbitOrderBookInstrument
 {
     fn into_into_dart(self) -> crate::convert::generated_models::WireUpbitOrderBookInstrument {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::convert::WireUpbitOrderDirection {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::Ascending => 0.into_dart(),
+            Self::Descending => 1.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::WireUpbitOrderDirection
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::WireUpbitOrderDirection>
+    for crate::convert::WireUpbitOrderDirection
+{
+    fn into_into_dart(self) -> crate::convert::WireUpbitOrderDirection {
         self
     }
 }
@@ -11566,6 +12730,16 @@ impl SseEncode for Vec<crate::convert::WireBalance> {
     }
 }
 
+impl SseEncode for Vec<crate::convert::generated_models::WireBinanceMarkPrice> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireBinanceMarkPrice>::sse_encode(item, serializer);
+        }
+    }
+}
+
 impl SseEncode for Vec<crate::convert::generated_models::WireBithumbApiKey> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -11622,6 +12796,16 @@ impl SseEncode for Vec<crate::convert::generated_models::WireBithumbNotice> {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
             <crate::convert::generated_models::WireBithumbNotice>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::convert::generated_models::WireBithumbTwapOrder> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireBithumbTwapOrder>::sse_encode(item, serializer);
         }
     }
 }
@@ -11714,6 +12898,18 @@ impl SseEncode for Vec<crate::convert::WireHyperliquidLedgerEntry> {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
             <crate::convert::WireHyperliquidLedgerEntry>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::convert::generated_models::WireHyperliquidMidPrice> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireHyperliquidMidPrice>::sse_encode(
+                item, serializer,
+            );
         }
     }
 }
@@ -12024,6 +13220,26 @@ impl SseEncode for Option<crate::convert::WireBithumbPendingOrderState> {
     }
 }
 
+impl SseEncode for Option<crate::convert::WireBithumbTwapOrderDirection> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <crate::convert::WireBithumbTwapOrderDirection>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<crate::convert::WireBithumbTwapState> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <crate::convert::WireBithumbTwapState>::sse_encode(value, serializer);
+        }
+    }
+}
+
 impl SseEncode for Option<crate::convert::WireExchange> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -12126,6 +13342,16 @@ impl SseEncode for Option<crate::convert::WireTransferErrorKind> {
     }
 }
 
+impl SseEncode for Option<crate::convert::WireUpbitOrderDirection> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <crate::convert::WireUpbitOrderDirection>::sse_encode(value, serializer);
+        }
+    }
+}
+
 impl SseEncode for Option<crate::api::WireUpbitRegion> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -12142,6 +13368,16 @@ impl SseEncode for Option<crate::convert::generated_models::WireWithdrawalFee> {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <crate::convert::generated_models::WireWithdrawalFee>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<Vec<crate::convert::WireMarket>> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <Vec<crate::convert::WireMarket>>::sse_encode(value, serializer);
         }
     }
 }
@@ -12258,6 +13494,29 @@ impl SseEncode for crate::convert::WireBalance {
         <String>::sse_encode(self.asset, serializer);
         <String>::sse_encode(self.available, serializer);
         <String>::sse_encode(self.locked, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBinanceMarkPrice {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <crate::convert::WireMarket>::sse_encode(self.market, serializer);
+        <String>::sse_encode(self.mark_price, serializer);
+        <String>::sse_encode(self.index_price, serializer);
+        <Option<String>>::sse_encode(self.estimated_settle_price, serializer);
+        <String>::sse_encode(self.last_funding_rate, serializer);
+        <String>::sse_encode(self.interest_rate, serializer);
+        <i64>::sse_encode(self.next_funding_time_ns, serializer);
+        <i64>::sse_encode(self.time_ns, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBinanceOpenInterest {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <crate::convert::WireMarket>::sse_encode(self.market, serializer);
+        <String>::sse_encode(self.open_interest, serializer);
+        <i64>::sse_encode(self.time_ns, serializer);
     }
 }
 
@@ -12425,6 +13684,99 @@ impl SseEncode for crate::convert::generated_models::WireBithumbPendingOrdersReq
         <Option<u32>>::sse_encode(self.limit, serializer);
         <Option<crate::convert::WireBithumbOrderDirection>>::sse_encode(self.order_by, serializer);
         <Option<String>>::sse_encode(self.cursor, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBithumbTwapOrder {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.id, serializer);
+        <crate::convert::WireSide>::sse_encode(self.side, serializer);
+        <String>::sse_encode(self.price, serializer);
+        <crate::convert::WireBithumbTwapState>::sse_encode(self.state, serializer);
+        <crate::convert::WireMarket>::sse_encode(self.market, serializer);
+        <i64>::sse_encode(self.created_at_ns, serializer);
+        <String>::sse_encode(self.volume, serializer);
+        <Option<i64>>::sse_encode(self.finished_at_ns, serializer);
+        <u32>::sse_encode(self.total_order_count, serializer);
+        <u32>::sse_encode(self.total_trades_count, serializer);
+        <u32>::sse_encode(self.progress_count, serializer);
+        <String>::sse_encode(self.total_executed_amount, serializer);
+        <String>::sse_encode(self.total_executed_volume, serializer);
+        <String>::sse_encode(self.avg_trade_price, serializer);
+        <Option<String>>::sse_encode(self.wallet_id, serializer);
+        <Option<i64>>::sse_encode(self.canceled_at_ns, serializer);
+        <Option<String>>::sse_encode(self.cancel_type, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::WireBithumbTwapOrderDirection {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::convert::WireBithumbTwapOrderDirection::Ascending => 0,
+                crate::convert::WireBithumbTwapOrderDirection::Descending => 1,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBithumbTwapOrderPage {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<crate::convert::generated_models::WireBithumbTwapOrder>>::sse_encode(
+            self.items, serializer,
+        );
+        <Option<String>>::sse_encode(self.next, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBithumbTwapOrderRequest {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <crate::convert::WireMarket>::sse_encode(self.market, serializer);
+        <crate::convert::WireSide>::sse_encode(self.side, serializer);
+        <Option<String>>::sse_encode(self.volume, serializer);
+        <Option<String>>::sse_encode(self.price, serializer);
+        <u32>::sse_encode(self.duration, serializer);
+        <u32>::sse_encode(self.frequency, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBithumbTwapOrdersRequest {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Option<crate::convert::WireMarket>>::sse_encode(self.market, serializer);
+        <Vec<String>>::sse_encode(self.uuids, serializer);
+        <Option<crate::convert::WireBithumbTwapState>>::sse_encode(self.state, serializer);
+        <Option<String>>::sse_encode(self.cursor, serializer);
+        <Option<u32>>::sse_encode(self.limit, serializer);
+        <Option<crate::convert::WireBithumbTwapOrderDirection>>::sse_encode(
+            self.order_by,
+            serializer,
+        );
+    }
+}
+
+impl SseEncode for crate::convert::WireBithumbTwapState {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::convert::WireBithumbTwapState::Progress => 0,
+                crate::convert::WireBithumbTwapState::Done => 1,
+                crate::convert::WireBithumbTwapState::Cancel => 2,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
     }
 }
 
@@ -12814,6 +14166,14 @@ impl SseEncode for crate::convert::WireHyperliquidLedgerPage {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <Vec<crate::convert::WireHyperliquidLedgerEntry>>::sse_encode(self.items, serializer);
         <Option<String>>::sse_encode(self.next, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireHyperliquidMidPrice {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <crate::convert::WireMarket>::sse_encode(self.market, serializer);
+        <String>::sse_encode(self.price, serializer);
     }
 }
 
@@ -13422,6 +14782,43 @@ impl SseEncode for crate::convert::generated_models::WireTravelRuleRequirement {
     }
 }
 
+impl SseEncode for crate::convert::generated_models::WireUpbitBatchCancelRequest {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <crate::convert::generated_models::WireUpbitBatchCancelScope>::sse_encode(
+            self.scope, serializer,
+        );
+        <Option<Vec<crate::convert::WireMarket>>>::sse_encode(self.excluded_pairs, serializer);
+        <Option<crate::convert::WireSide>>::sse_encode(self.side, serializer);
+        <Option<u32>>::sse_encode(self.count, serializer);
+        <Option<crate::convert::WireUpbitOrderDirection>>::sse_encode(self.order_by, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireUpbitBatchCancelScope {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        match self {
+            crate::convert::generated_models::WireUpbitBatchCancelScope::All => {
+                <i32>::sse_encode(0, serializer);
+            }
+            crate::convert::generated_models::WireUpbitBatchCancelScope::QuoteCurrencies {
+                values,
+            } => {
+                <i32>::sse_encode(1, serializer);
+                <Vec<String>>::sse_encode(values, serializer);
+            }
+            crate::convert::generated_models::WireUpbitBatchCancelScope::Pairs { values } => {
+                <i32>::sse_encode(2, serializer);
+                <Vec<crate::convert::WireMarket>>::sse_encode(values, serializer);
+            }
+            _ => {
+                unimplemented!("");
+            }
+        }
+    }
+}
+
 impl SseEncode for crate::convert::generated_models::WireUpbitDepositInfo {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -13452,6 +14849,22 @@ impl SseEncode for crate::convert::generated_models::WireUpbitOrderBookInstrumen
         <String>::sse_encode(self.quote_currency, serializer);
         <String>::sse_encode(self.tick_size, serializer);
         <Vec<String>>::sse_encode(self.supported_levels, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::WireUpbitOrderDirection {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::convert::WireUpbitOrderDirection::Ascending => 0,
+                crate::convert::WireUpbitOrderDirection::Descending => 1,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
     }
 }
 

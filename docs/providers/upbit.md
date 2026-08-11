@@ -106,6 +106,7 @@ Access the following provider-specific methods through `Client::adapter()`.
 | `market_events()` | Investment warning and caution criteria by market | `market` |
 | `test_order(request)` | Validates an order without creating it; requires the order-placement permission; the returned `Order` is dry-run only, so its ID cannot be queried or cancelled and its status is not a live order | `order-test` |
 | `deposit_info(asset, network)` | Requires `View Deposits`; returns availability, reason, minimum amount, confirmation count, and decimal precision. The response network is nullable and is preserved as returned. This metadata may be delayed by several minutes | `default` |
+| `batch_cancel_open_orders(request)` | Requires order-placement permission. `UpbitBatchCancelScope::All` explicitly selects every eligible market, not an unbounded number of orders; Upbit applies the request count (default 20, maximum 300). Quote-currency and pair scopes are alternatives, with up to 20 excluded pairs. The result keeps both completed and failed cancellations. Fixture-verified only; no live cancellation is run by maxt | `order-cancel-all` |
 
 | Market event | Mapping |
 | --- | --- |
@@ -142,6 +143,7 @@ satisfy `Error::is_rate_limited() == true`.
 - [Rate limits](https://global-docs.upbit.com/reference/rate-limits)
 - [Authentication](https://global-docs.upbit.com/reference/auth)
 - [Test order](https://global-docs.upbit.com/reference/order-test)
+- [Batch cancel orders](https://global-docs.upbit.com/reference/batch-cancel-orders)
 - [Deposit availability](https://global-docs.upbit.com/reference/available-deposit-information)
 - [Get order](https://global-docs.upbit.com/reference/get-order)
 - [Closed orders](https://global-docs.upbit.com/reference/list-closed-orders)

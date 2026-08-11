@@ -97,6 +97,11 @@ int? checkedUint32(int? value, {required String field}) {
   return value;
 }
 
+int checkedRequiredUint32(int value, {required String field}) {
+  validateUnsigned(value, field: field, max: _uint32Max);
+  return value;
+}
+
 StreamConfig _streamConfigFromWire(native_adapter.WireStreamConfig value) =>
     StreamConfig(
       maxReconnectAttempts: value.maxReconnectAttempts,

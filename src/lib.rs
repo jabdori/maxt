@@ -51,9 +51,11 @@ pub mod adapters;
 
 pub use adapter::{Adapter, BoxFuture};
 pub use adapters::{
-    BithumbApiKey, BithumbAssetFee, BithumbNetworkFee, BithumbNotice, BithumbOrderDirection,
-    BithumbPendingOrderState, BithumbPendingOrdersRequest, UpbitDepositInfo,
-    UpbitOrderBookInstrument, UpbitYearCandle,
+    BinanceMarkPrice, BinanceOpenInterest, BithumbApiKey, BithumbAssetFee, BithumbNetworkFee,
+    BithumbNotice, BithumbOrderDirection, BithumbPendingOrderState, BithumbPendingOrdersRequest,
+    BithumbTwapOrder, BithumbTwapOrderDirection, BithumbTwapOrderRequest, BithumbTwapOrdersRequest,
+    BithumbTwapState, HyperliquidMidPrice, UpbitBatchCancelRequest, UpbitBatchCancelScope,
+    UpbitDepositInfo, UpbitOrderBookInstrument, UpbitOrderDirection, UpbitYearCandle,
 };
 pub use client::Client;
 pub use error::{Error, ExchangeErrorKind, Result, TransferErrorKind};

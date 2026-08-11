@@ -15,9 +15,16 @@ from maxt import (
     BithumbOrderDirection,
     BithumbPendingOrderState,
     BithumbPendingOrdersRequest,
+    BithumbTwapOrder,
+    BithumbTwapOrderDirection,
+    BithumbTwapOrderRequest,
+    BithumbTwapOrdersRequest,
+    BithumbTwapState,
     BinanceAdapter,
     BinanceListenKey,
     BinanceMarket,
+    BinanceMarkPrice,
+    BinanceOpenInterest,
     BinanceSpotOrderDetail,
     BinanceSymbolFilters,
     Client,
@@ -28,6 +35,7 @@ from maxt import (
     HyperliquidAssetContext,
     HyperliquidLedgerEntry,
     HyperliquidLedgerKind,
+    HyperliquidMidPrice,
     InvalidRequestError,
     Market,
     MarketEvent,
@@ -43,8 +51,11 @@ from maxt import (
     Feed,
     Trade,
     UpbitAdapter,
+    UpbitBatchCancelRequest,
+    UpbitBatchCancelScope,
     UpbitMarketEvent,
     UpbitOrderBookInstrument,
+    UpbitOrderDirection,
     UpbitRegion,
     UpbitYearCandle,
 )
@@ -216,6 +227,28 @@ class FakeNativeUpbitAdapter:
             "decimal_precision": 18_446_744_073_709_551_615,
         }
 
+    async def batch_cancel_open_orders(self, request):
+        self.batch_cancel_open_orders_request = request
+        return {
+            "cancelled": [
+                {
+                    "order_id": "done-1",
+                    "client_id": "client-1",
+                    "market": MARKET_WIRE,
+                    "cancelled_at": None,
+                }
+            ],
+            "failed": [
+                {
+                    "order_id": "failed-1",
+                    "client_id": None,
+                    "market": MARKET_WIRE,
+                    "code": None,
+                    "message": None,
+                }
+            ],
+        }
+
 
 class FakeNativeBithumbAdapter:
     authenticated = False
@@ -284,6 +317,41 @@ class FakeNativeBithumbAdapter:
         self.pending_request = request
         return {"items": [], "next": "page+/=="}
 
+    async def twap_orders(self, request):
+        self.twap_request = request
+        return {
+            "items": [
+                {
+                    "id": "twap-1",
+                    "side": "buy",
+                    "price": "50000000.0000",
+                    "state": "progress",
+                    "market": {**MARKET_WIRE, "exchange": "bithumb"},
+                    "created_at": 1_700_000_000_000_000_011,
+                    "volume": "0.1",
+                    "finished_at": None,
+                    "total_order_count": 10,
+                    "total_trades_count": 2,
+                    "progress_count": 3,
+                    "total_executed_amount": "1000000.00",
+                    "total_executed_volume": "0.02",
+                    "avg_trade_price": "50000000.0000",
+                    "wallet_id": "wallet-1",
+                    "canceled_at": None,
+                    "cancel_type": None,
+                }
+            ],
+            "next": None,
+        }
+
+    async def create_twap_order(self, request):
+        self.create_twap_request = request
+        return "twap-created"
+
+    async def cancel_twap_order(self, algo_order_id):
+        self.cancel_twap_id = algo_order_id
+        return "twap-cancelled"
+
 
 class FakeNativeBinanceListenKey:
     value = "listen-key"
@@ -331,6 +399,32 @@ class FakeNativeBinanceAdapter:
             "time_in_force": "GTC",
             "filled_quote_quantity": "12500",
             "updated_at": 1_700_000_000_000_000_010,
+        }
+
+    async def mark_price(self, market):
+        return {
+            "market": market.to_wire(),
+            "mark_price": "50001.25",
+            "index_price": "50000.75",
+            "estimated_settle_price": None,
+            "last_funding_rate": "0.0001",
+            "interest_rate": "0.0001",
+            "next_funding_time": 1_700_000_000_000_000_011,
+            "time": 1_700_000_000_000_000_012,
+        }
+
+    async def mark_prices(self):
+        return [
+            await self.mark_price(
+                Market.perpetual(Exchange.BINANCE, "BTC", "USDT")
+            )
+        ]
+
+    async def open_interest(self, market):
+        return {
+            "market": market.to_wire(),
+            "open_interest": "1234.5",
+            "time": 1_700_000_000_000_000_013,
         }
 
     async def usd_m_create_listen_key(self):
@@ -381,6 +475,19 @@ class FakeNativeHyperliquidAdapter:
             "size_decimals": 4,
             "price_decimals": 2,
         }
+
+    async def all_mids(self):
+        return [
+            {
+                "market": {
+                    "exchange": "hyperliquid",
+                    "kind": "perpetual",
+                    "base": "BTC",
+                    "quote": "USDC",
+                },
+                "price": "50000.5",
+            }
+        ]
 
 
 class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
@@ -437,6 +544,15 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
                 )
             )
             deposit_info = await adapter.deposit_info("BTC", Network.BITCOIN)
+            batch_result = await adapter.batch_cancel_open_orders(
+                UpbitBatchCancelRequest(
+                    scope=UpbitBatchCancelScope.quote_currencies(["KRW"]),
+                    excluded_pairs=[market],
+                    side=Side.BUY,
+                    count=20,
+                    order_by=UpbitOrderDirection.ASCENDING,
+                )
+            )
 
         self.assertIsInstance(adapter, Adapter)
         self.assertIs(client.adapter, adapter)
@@ -470,6 +586,12 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
             18_446_744_073_709_551_615,
         )
         self.assertEqual(deposit_info.decimal_precision, 18_446_744_073_709_551_615)
+        self.assertEqual(
+            adapter._handle.batch_cancel_open_orders_request["scope"],
+            {"kind": "quote_currencies", "values": ["KRW"]},
+        )
+        self.assertEqual(batch_result.cancelled[0].order_id, "done-1")
+        self.assertEqual(batch_result.failed[0].order_id, "failed-1")
 
     async def test_native_stream_items_are_decoded_and_only_termination_ends(self) -> None:
         native = SimpleNamespace(NativeUpbitAdapter=FakeNativeUpbitAdapter)
@@ -513,6 +635,27 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
                     cursor=Cursor("page+/=="),
                 )
             )
+            twap = await adapter.twap_orders(
+                BithumbTwapOrdersRequest(
+                    market=None,
+                    uuids=["twap-1"],
+                    state=BithumbTwapState.PROGRESS,
+                    cursor=Cursor("page+/=="),
+                    limit=50,
+                    order_by=BithumbTwapOrderDirection.DESCENDING,
+                )
+            )
+            created = await adapter.create_twap_order(
+                BithumbTwapOrderRequest(
+                    market=Market.spot(Exchange.BITHUMB, "BTC", "KRW"),
+                    side=Side.BUY,
+                    volume=Decimal("0.1"),
+                    price=None,
+                    duration=300,
+                    frequency=15,
+                )
+            )
+            cancelled = await adapter.cancel_twap_order("twap-1")
 
         self.assertEqual(adapter.exchange, Exchange.BITHUMB)
         self.assertTrue(adapter.authenticated)
@@ -535,6 +678,14 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(adapter._handle.pending_request["order_by"], "asc")
         self.assertEqual(adapter._handle.pending_request["cursor"], "page+/==")
         self.assertEqual(str(pending.next), "page+/==")
+        self.assertIsInstance(twap.items[0], BithumbTwapOrder)
+        self.assertEqual(twap.items[0].state, BithumbTwapState.PROGRESS)
+        self.assertEqual(adapter._handle.twap_request["order_by"], "desc")
+        self.assertEqual(adapter._handle.twap_request["uuids"], ["twap-1"])
+        self.assertEqual(adapter._handle.create_twap_request["duration"], 300)
+        self.assertEqual(created, "twap-created")
+        self.assertEqual(adapter._handle.cancel_twap_id, "twap-1")
+        self.assertEqual(cancelled, "twap-cancelled")
 
     async def test_bithumb_pending_order_limit_uses_the_public_error_contract(self) -> None:
         adapter = BithumbAdapter(access_key="key", secret_key="secret")
@@ -544,6 +695,33 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
                 await adapter.pending_orders(BithumbPendingOrdersRequest(limit=limit))
 
             self.assertEqual(error.exception.field, "limit")
+
+    async def test_upbit_batch_cancel_scope_does_not_drop_restrictions(self) -> None:
+        with self.assertRaisesRegex(ValueError, "does not accept values"):
+            UpbitBatchCancelScope("all", values=["KRW"]).to_wire()
+        with self.assertRaisesRegex(ValueError, "does not accept pairs"):
+            UpbitBatchCancelScope.from_wire({"kind": "all", "pairs": ["KRW-BTC"]})
+        with self.assertRaisesRegex(ValueError, "does not accept pairs"):
+            UpbitBatchCancelRequest.from_wire(
+                {"scope": {"kind": "all"}, "pairs": ["KRW-BTC"]}
+            )
+
+        request = UpbitBatchCancelRequest(scope={"kind": "all", "values": ["KRW"]})
+        adapter = UpbitAdapter(access_key="key", secret_key="secret")
+
+        with self.assertRaises(InvalidRequestError) as raised:
+            await adapter.batch_cancel_open_orders(request)
+
+        self.assertEqual(raised.exception.field, "upbit_batch_cancel_scope")
+
+        class RawRequest:
+            def to_wire(self):
+                return {"scope": {"kind": "all"}, "pairs": ["KRW-BTC"]}
+
+        with self.assertRaises(InvalidRequestError) as raised:
+            await adapter.batch_cancel_open_orders(RawRequest())
+
+        self.assertEqual(raised.exception.field, "upbit_batch_cancel_request")
 
     async def test_binance_exposes_spot_details_and_usd_m_listen_keys(self) -> None:
         native = SimpleNamespace(NativeBinanceAdapter=FakeNativeBinanceAdapter)
@@ -556,6 +734,10 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
             market = Market.spot(Exchange.BINANCE, "BTC", "USDT")
             filters = await spot.spot_symbol_filters(market)
             order = await spot.spot_order(market, "42")
+            futures_market = Market.perpetual(Exchange.BINANCE, "BTC", "USDT")
+            mark_price = await futures.mark_price(futures_market)
+            mark_prices = await futures.mark_prices()
+            open_interest = await futures.open_interest(futures_market)
             key = await futures.usd_m_create_listen_key()
             await futures.usd_m_keepalive_listen_key()
             await futures.usd_m_close_listen_key()
@@ -566,6 +748,11 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(filters.tick_size, Decimal("0.0100"))
         self.assertIsInstance(order, BinanceSpotOrderDetail)
         self.assertEqual(order.filled_quote_quantity, Decimal("12500"))
+        self.assertIsInstance(mark_price, BinanceMarkPrice)
+        self.assertEqual(mark_price.mark_price, Decimal("50001.25"))
+        self.assertIsInstance(mark_prices[0], BinanceMarkPrice)
+        self.assertIsInstance(open_interest, BinanceOpenInterest)
+        self.assertEqual(open_interest.open_interest, Decimal("1234.5"))
         self.assertIsInstance(key, BinanceListenKey)
         self.assertEqual(key.value, "listen-key")
         self.assertTrue(futures._handle.kept_alive)
@@ -587,6 +774,7 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
                 limit=50,
             )
             context = await adapter.asset_context(market)
+            mids = await adapter.all_mids()
 
         self.assertTrue(adapter.is_testnet)
         self.assertTrue(adapter.authenticated)
@@ -602,6 +790,8 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertIsInstance(context, HyperliquidAssetContext)
         self.assertEqual(context.mid_price, Decimal("3500.25"))
+        self.assertIsInstance(mids[0], HyperliquidMidPrice)
+        self.assertEqual(mids[0].price, Decimal("50000.5"))
 
 
 if __name__ == "__main__":

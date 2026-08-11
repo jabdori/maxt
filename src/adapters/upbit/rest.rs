@@ -138,14 +138,23 @@ pub(crate) fn ticker_request(markets: &[Market]) -> Result<HttpRequest> {
 }
 
 pub(crate) fn tickers_by_quote_request(quote_currencies: &[String]) -> Result<HttpRequest> {
+    let currencies = quote_currencies_parameter(quote_currencies, "quote_currencies")?;
+
+    Ok(HttpRequest::get("/v1/ticker/all").query(query(&[("quote_currencies", currencies)])))
+}
+
+pub(crate) fn quote_currencies_parameter(
+    quote_currencies: &[String],
+    field: &'static str,
+) -> Result<String> {
     if quote_currencies.is_empty() {
         return Err(Error::invalid_request(
-            "quote_currencies",
+            field,
             "name at least one quote currency",
         ));
     }
 
-    let currencies = quote_currencies
+    Ok(quote_currencies
         .iter()
         .map(|currency| {
             let currency = currency.trim().to_ascii_uppercase();
@@ -155,16 +164,14 @@ pub(crate) fn tickers_by_quote_request(quote_currencies: &[String]) -> Result<Ht
                     .all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit())
             {
                 return Err(Error::invalid_request(
-                    "quote_currencies",
+                    field,
                     "quote currencies must contain only uppercase ASCII letters and digits",
                 ));
             }
             Ok(currency)
         })
         .collect::<Result<Vec<_>>>()?
-        .join(",");
-
-    Ok(HttpRequest::get("/v1/ticker/all").query(query(&[("quote_currencies", currencies)])))
+        .join(","))
 }
 
 pub(crate) fn year_candles_request(

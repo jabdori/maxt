@@ -102,6 +102,29 @@ Access the following provider-specific methods through `Client::adapter()`.
 | `api_keys()` | Authenticated `GET /v1/api_keys`; each registered access-key identifier and its expiration time |
 | `pending_orders(request)` | Authenticated `GET /v2/orders/pending`; optional market, `wait` or `watch` state, `1..=100` limit, ascending or descending order, and an opaque `next_key` cursor in `Page::next` |
 
+### TWAP
+
+Bithumb's TWAP API is available for **KRW markets only** and requires JWT
+credentials. `twap_orders(request)` is a read-only history query; it supports
+the `progress`, `done`, and `cancel` states, optional TWAP IDs, a cursor, a
+`1..=100` page size, and ascending or descending order.
+
+```rust
+let page = adapter
+    .twap_orders(
+        &BithumbTwapOrdersRequest::new()
+            .market(Market::spot(Exchange::Bithumb, "BTC", "KRW"))
+            .limit(20),
+    )
+    .await?;
+```
+
+`create_twap_order(...)` and `cancel_twap_order(...)` are financial writes.
+Creation requires a 300–43,200 second duration, a 15/20/30/60/120 second
+frequency, and `price` for a buy or `volume` for a sell. Cancelling stops
+unsubmitted child orders; already executed orders remain executed. Do not run
+either write method from a read-only verification.
+
 | Provider state | Mapping |
 | --- | --- |
 | `market_warning == CAUTION` | `MarketStatus::Unknown` |
@@ -126,6 +149,9 @@ public candle streams are not supported.
 - [Transfer fees](https://apidocs.bithumb.com/reference/%EC%9E%85%EC%B6%9C%EA%B8%88-%EC%88%98%EC%88%98%EB%A3%8C-%EC%A1%B0%ED%9A%8C.md)
 - [API keys](https://apidocs.bithumb.com/reference/api-%ED%82%A4-%EB%A6%AC%EC%8A%A4%ED%8A%B8-%EC%A1%B0%ED%9A%8C.md)
 - [Pending orders](https://apidocs.bithumb.com/reference/%EB%8C%80%EA%B8%B0-%EC%A3%BC%EB%AC%B8-%EB%AA%A9%EB%A1%9D-%EC%A1%B0%ED%9A%8C.md)
+- [TWAP order history](https://apidocs.bithumb.com/reference/twap-%EC%A3%BC%EB%AC%B8%EB%82%B4%EC%97%AD-%EC%A1%B0%ED%9A%8C)
+- [TWAP order request](https://apidocs.bithumb.com/reference/twap-%EC%A3%BC%EB%AC%B8-%EC%9A%94%EC%B2%AD)
+- [TWAP order cancellation](https://apidocs.bithumb.com/reference/twap-%EC%A3%BC%EB%AC%B8-%EC%B7%A8%EC%86%8C)
 - [Candles](https://apidocs.bithumb.com/reference/%EB%B6%84minute-%EC%BA%94%EB%93%A4-%EC%A1%B0%ED%9A%8C.md)
 - [WebSocket](https://apidocs.bithumb.com/reference/%EA%B8%B0%EB%B3%B8-%EC%A0%95%EB%B3%B4.md)
 - [Orders](https://apidocs.bithumb.com/reference/%EC%A3%BC%EB%AC%B8-%EC%9A%94%EC%B2%AD.md)

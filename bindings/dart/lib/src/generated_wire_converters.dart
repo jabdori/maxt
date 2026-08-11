@@ -57,6 +57,13 @@ wire.WireMarginMode _marginModeToWire(MarginMode value) =>
 MarginMode _marginModeFromWire(wire.WireMarginMode value) =>
     _enumByName(MarginMode.values, value);
 
+wire.WireUpbitOrderDirection _upbitOrderDirectionToWire(
+  UpbitOrderDirection value,
+) => _enumByName(wire.WireUpbitOrderDirection.values, value);
+UpbitOrderDirection _upbitOrderDirectionFromWire(
+  wire.WireUpbitOrderDirection value,
+) => _enumByName(UpbitOrderDirection.values, value);
+
 wire.WireBithumbPendingOrderState _bithumbPendingOrderStateToWire(
   BithumbPendingOrderState value,
 ) => _enumByName(wire.WireBithumbPendingOrderState.values, value);
@@ -70,6 +77,18 @@ wire.WireBithumbOrderDirection _bithumbOrderDirectionToWire(
 BithumbOrderDirection _bithumbOrderDirectionFromWire(
   wire.WireBithumbOrderDirection value,
 ) => _enumByName(BithumbOrderDirection.values, value);
+
+wire.WireBithumbTwapState _bithumbTwapStateToWire(BithumbTwapState value) =>
+    _enumByName(wire.WireBithumbTwapState.values, value);
+BithumbTwapState _bithumbTwapStateFromWire(wire.WireBithumbTwapState value) =>
+    _enumByName(BithumbTwapState.values, value);
+
+wire.WireBithumbTwapOrderDirection _bithumbTwapOrderDirectionToWire(
+  BithumbTwapOrderDirection value,
+) => _enumByName(wire.WireBithumbTwapOrderDirection.values, value);
+BithumbTwapOrderDirection _bithumbTwapOrderDirectionFromWire(
+  wire.WireBithumbTwapOrderDirection value,
+) => _enumByName(BithumbTwapOrderDirection.values, value);
 
 wire.WireWithdrawalStatus _withdrawalStatusToWire(WithdrawalStatus value) =>
     _enumByName(wire.WireWithdrawalStatus.values, value);
@@ -951,6 +970,59 @@ wire.WireUpbitDepositInfo _upbitDepositInfoToWire(UpbitDepositInfo value) =>
       decimalPrecision: value.decimalPrecision,
     );
 
+UpbitBatchCancelScope _upbitBatchCancelScopeFromWire(
+  wire.WireUpbitBatchCancelScope value,
+) => switch (value) {
+  wire.WireUpbitBatchCancelScope_All() => const UpbitBatchCancelScope.all(),
+  wire.WireUpbitBatchCancelScope_QuoteCurrencies(:final values) =>
+    UpbitBatchCancelScope.quoteCurrencies(values: values),
+  wire.WireUpbitBatchCancelScope_Pairs(:final values) =>
+    UpbitBatchCancelScope.pairs(
+      values: values.map(_marketFromWire).toList(growable: false),
+    ),
+};
+
+wire.WireUpbitBatchCancelScope _upbitBatchCancelScopeToWire(
+  UpbitBatchCancelScope value,
+) => switch (value) {
+  UpbitBatchCancelScopeAll() => const wire.WireUpbitBatchCancelScope.all(),
+  UpbitBatchCancelScopeQuoteCurrencies(:final values) =>
+    wire.WireUpbitBatchCancelScope.quoteCurrencies(
+      values: values.toList(growable: false),
+    ),
+  UpbitBatchCancelScopePairs(:final values) =>
+    wire.WireUpbitBatchCancelScope.pairs(
+      values: values.map(_marketToWire).toList(growable: false),
+    ),
+};
+
+UpbitBatchCancelRequest _upbitBatchCancelRequestFromWire(
+  wire.WireUpbitBatchCancelRequest value,
+) => UpbitBatchCancelRequest(
+  scope: _upbitBatchCancelScopeFromWire(value.scope),
+  excludedPairs: value.excludedPairs == null
+      ? null
+      : value.excludedPairs!.map(_marketFromWire).toList(growable: false),
+  side: value.side == null ? null : _sideFromWire(value.side!),
+  count: value.count,
+  orderBy: value.orderBy == null
+      ? null
+      : _upbitOrderDirectionFromWire(value.orderBy!),
+);
+wire.WireUpbitBatchCancelRequest _upbitBatchCancelRequestToWire(
+  UpbitBatchCancelRequest value,
+) => wire.WireUpbitBatchCancelRequest(
+  scope: _upbitBatchCancelScopeToWire(value.scope),
+  excludedPairs: value.excludedPairs == null
+      ? null
+      : value.excludedPairs!.map(_marketToWire).toList(growable: false),
+  side: value.side == null ? null : _sideToWire(value.side!),
+  count: checkedUint32(value.count, field: 'count'),
+  orderBy: value.orderBy == null
+      ? null
+      : _upbitOrderDirectionToWire(value.orderBy!),
+);
+
 BithumbNotice _bithumbNoticeFromWire(wire.WireBithumbNotice value) =>
     BithumbNotice(
       categories: value.categories,
@@ -1006,6 +1078,102 @@ wire.WireBithumbPendingOrdersRequest _bithumbPendingOrdersRequestToWire(
   cursor: value.cursor?.value,
 );
 
+BithumbTwapOrdersRequest _bithumbTwapOrdersRequestFromWire(
+  wire.WireBithumbTwapOrdersRequest value,
+) => BithumbTwapOrdersRequest(
+  market: value.market == null ? null : _marketFromWire(value.market!),
+  uuids: value.uuids,
+  state: value.state == null ? null : _bithumbTwapStateFromWire(value.state!),
+  cursor: value.cursor == null ? null : Cursor(value.cursor!),
+  limit: value.limit,
+  orderBy: value.orderBy == null
+      ? null
+      : _bithumbTwapOrderDirectionFromWire(value.orderBy!),
+);
+wire.WireBithumbTwapOrdersRequest _bithumbTwapOrdersRequestToWire(
+  BithumbTwapOrdersRequest value,
+) => wire.WireBithumbTwapOrdersRequest(
+  market: value.market == null ? null : _marketToWire(value.market!),
+  uuids: value.uuids.toList(growable: false),
+  state: value.state == null ? null : _bithumbTwapStateToWire(value.state!),
+  cursor: value.cursor?.value,
+  limit: checkedUint32(value.limit, field: 'limit'),
+  orderBy: value.orderBy == null
+      ? null
+      : _bithumbTwapOrderDirectionToWire(value.orderBy!),
+);
+
+BithumbTwapOrderRequest _bithumbTwapOrderRequestFromWire(
+  wire.WireBithumbTwapOrderRequest value,
+) => BithumbTwapOrderRequest(
+  market: _marketFromWire(value.market),
+  side: _sideFromWire(value.side),
+  volume: _decimalFromWire(value.volume),
+  price: _decimalFromWire(value.price),
+  duration: value.duration,
+  frequency: value.frequency,
+);
+wire.WireBithumbTwapOrderRequest _bithumbTwapOrderRequestToWire(
+  BithumbTwapOrderRequest value,
+) => wire.WireBithumbTwapOrderRequest(
+  market: _marketToWire(value.market),
+  side: _sideToWire(value.side),
+  volume: value.volume?.toString(),
+  price: value.price?.toString(),
+  duration: checkedRequiredUint32(value.duration, field: 'duration'),
+  frequency: checkedRequiredUint32(value.frequency, field: 'frequency'),
+);
+
+BithumbTwapOrder _bithumbTwapOrderFromWire(wire.WireBithumbTwapOrder value) =>
+    BithumbTwapOrder(
+      id: value.id,
+      side: _sideFromWire(value.side),
+      price: Decimal.parse(value.price),
+      state: _bithumbTwapStateFromWire(value.state),
+      market: _marketFromWire(value.market),
+      createdAt: _timestampFromWire(value.createdAtNs)!,
+      volume: Decimal.parse(value.volume),
+      finishedAt: _timestampFromWire(value.finishedAtNs),
+      totalOrderCount: value.totalOrderCount,
+      totalTradesCount: value.totalTradesCount,
+      progressCount: value.progressCount,
+      totalExecutedAmount: Decimal.parse(value.totalExecutedAmount),
+      totalExecutedVolume: Decimal.parse(value.totalExecutedVolume),
+      avgTradePrice: Decimal.parse(value.avgTradePrice),
+      walletId: value.walletId,
+      canceledAt: _timestampFromWire(value.canceledAtNs),
+      cancelType: value.cancelType,
+    );
+wire.WireBithumbTwapOrder _bithumbTwapOrderToWire(BithumbTwapOrder value) =>
+    wire.WireBithumbTwapOrder(
+      id: value.id,
+      side: _sideToWire(value.side),
+      price: value.price.toString(),
+      state: _bithumbTwapStateToWire(value.state),
+      market: _marketToWire(value.market),
+      createdAtNs: _timestampToWire(value.createdAt),
+      volume: value.volume.toString(),
+      finishedAtNs: _optionalTimestampToWire(value.finishedAt),
+      totalOrderCount: checkedRequiredUint32(
+        value.totalOrderCount,
+        field: 'total_order_count',
+      ),
+      totalTradesCount: checkedRequiredUint32(
+        value.totalTradesCount,
+        field: 'total_trades_count',
+      ),
+      progressCount: checkedRequiredUint32(
+        value.progressCount,
+        field: 'progress_count',
+      ),
+      totalExecutedAmount: value.totalExecutedAmount.toString(),
+      totalExecutedVolume: value.totalExecutedVolume.toString(),
+      avgTradePrice: value.avgTradePrice.toString(),
+      walletId: value.walletId,
+      canceledAtNs: _optionalTimestampToWire(value.canceledAt),
+      cancelType: value.cancelType,
+    );
+
 BithumbAssetFee _bithumbAssetFeeFromWire(wire.WireBithumbAssetFee value) =>
     BithumbAssetFee(
       displayName: value.displayName,
@@ -1042,6 +1210,57 @@ wire.WireBithumbNetworkFee _bithumbNetworkFeeToWire(BithumbNetworkFee value) =>
       withdrawalFee: _withdrawalFeeToWire(value.withdrawalFee),
       minimumWithdrawal: value.minimumWithdrawal.toString(),
     );
+
+BinanceMarkPrice _binanceMarkPriceFromWire(wire.WireBinanceMarkPrice value) =>
+    BinanceMarkPrice(
+      market: _marketFromWire(value.market),
+      markPrice: Decimal.parse(value.markPrice),
+      indexPrice: Decimal.parse(value.indexPrice),
+      estimatedSettlePrice: _decimalFromWire(value.estimatedSettlePrice),
+      lastFundingRate: Decimal.parse(value.lastFundingRate),
+      interestRate: Decimal.parse(value.interestRate),
+      nextFundingTime: _timestampFromWire(value.nextFundingTimeNs)!,
+      time: _timestampFromWire(value.timeNs)!,
+    );
+wire.WireBinanceMarkPrice _binanceMarkPriceToWire(BinanceMarkPrice value) =>
+    wire.WireBinanceMarkPrice(
+      market: _marketToWire(value.market),
+      markPrice: value.markPrice.toString(),
+      indexPrice: value.indexPrice.toString(),
+      estimatedSettlePrice: value.estimatedSettlePrice?.toString(),
+      lastFundingRate: value.lastFundingRate.toString(),
+      interestRate: value.interestRate.toString(),
+      nextFundingTimeNs: _timestampToWire(value.nextFundingTime),
+      timeNs: _timestampToWire(value.time),
+    );
+
+BinanceOpenInterest _binanceOpenInterestFromWire(
+  wire.WireBinanceOpenInterest value,
+) => BinanceOpenInterest(
+  market: _marketFromWire(value.market),
+  openInterest: Decimal.parse(value.openInterest),
+  time: _timestampFromWire(value.timeNs)!,
+);
+wire.WireBinanceOpenInterest _binanceOpenInterestToWire(
+  BinanceOpenInterest value,
+) => wire.WireBinanceOpenInterest(
+  market: _marketToWire(value.market),
+  openInterest: value.openInterest.toString(),
+  timeNs: _timestampToWire(value.time),
+);
+
+HyperliquidMidPrice _hyperliquidMidPriceFromWire(
+  wire.WireHyperliquidMidPrice value,
+) => HyperliquidMidPrice(
+  market: _marketFromWire(value.market),
+  price: Decimal.parse(value.price),
+);
+wire.WireHyperliquidMidPrice _hyperliquidMidPriceToWire(
+  HyperliquidMidPrice value,
+) => wire.WireHyperliquidMidPrice(
+  market: _marketToWire(value.market),
+  price: value.price.toString(),
+);
 
 Page<Deposit> _depositPageFromWire(wire.WireDepositPage value) => Page(
   items: value.items.map(_depositFromWire),
@@ -1093,6 +1312,19 @@ wire.WireFundingPaymentPage _fundingPaymentPageToWire(
   Page<FundingPayment> value,
 ) => wire.WireFundingPaymentPage(
   items: value.items.map(_fundingPaymentToWire).toList(growable: false),
+  next: value.next?.value,
+);
+
+Page<BithumbTwapOrder> _bithumbTwapOrderPageFromWire(
+  wire.WireBithumbTwapOrderPage value,
+) => Page(
+  items: value.items.map(_bithumbTwapOrderFromWire),
+  next: value.next == null ? null : Cursor(value.next!),
+);
+wire.WireBithumbTwapOrderPage _bithumbTwapOrderPageToWire(
+  Page<BithumbTwapOrder> value,
+) => wire.WireBithumbTwapOrderPage(
+  items: value.items.map(_bithumbTwapOrderToWire).toList(growable: false),
   next: value.next?.value,
 );
 

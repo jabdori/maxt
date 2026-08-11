@@ -2,7 +2,10 @@
 
 use std::collections::HashSet;
 
-use maxt::{Error, Exchange, Feature};
+use maxt::{
+    BithumbTwapOrder, BithumbTwapOrderDirection, BithumbTwapOrderRequest, BithumbTwapOrdersRequest,
+    BithumbTwapState, Decimal, Error, Exchange, Feature, Market, Side,
+};
 
 #[test]
 fn binding_inventories_are_complete_stable_and_duplicate_free() {
@@ -106,4 +109,23 @@ fn adapter_contract_errors_are_public_non_retryable_and_readable() {
     );
     assert!(!error.is_retryable());
     assert!(!error.is_rate_limited());
+}
+
+#[test]
+fn bithumb_twap_types_are_constructible_from_an_external_crate() {
+    let request = BithumbTwapOrdersRequest::new()
+        .state(BithumbTwapState::Progress)
+        .order_by(BithumbTwapOrderDirection::Descending);
+    let create = BithumbTwapOrderRequest {
+        market: Market::spot(Exchange::Bithumb, "BTC", "KRW"),
+        side: Side::Buy,
+        volume: None,
+        price: Some(Decimal::ONE),
+        duration: 300,
+        frequency: 15,
+    };
+    let _: Option<BithumbTwapOrder> = None;
+
+    assert_eq!(request.state, Some(BithumbTwapState::Progress));
+    assert_eq!(create.market.quote, "KRW");
 }

@@ -472,6 +472,50 @@ fn _guard_upbit_deposit_info_wire(value: WireUpbitDepositInfo) {
     } = value;
 }
 
+fn _guard_bithumb_twap_orders_request_wire(value: WireBithumbTwapOrdersRequest) {
+    let WireBithumbTwapOrdersRequest {
+        market: _,
+        uuids: _,
+        state: _,
+        cursor: _,
+        limit: _,
+        order_by: _,
+    } = value;
+}
+
+fn _guard_bithumb_twap_order_request_wire(value: WireBithumbTwapOrderRequest) {
+    let WireBithumbTwapOrderRequest {
+        market: _,
+        side: _,
+        volume: _,
+        price: _,
+        duration: _,
+        frequency: _,
+    } = value;
+}
+
+fn _guard_bithumb_twap_order_wire(value: WireBithumbTwapOrder) {
+    let WireBithumbTwapOrder {
+        id: _,
+        side: _,
+        price: _,
+        state: _,
+        market: _,
+        created_at_ns: _,
+        volume: _,
+        finished_at_ns: _,
+        total_order_count: _,
+        total_trades_count: _,
+        progress_count: _,
+        total_executed_amount: _,
+        total_executed_volume: _,
+        avg_trade_price: _,
+        wallet_id: _,
+        canceled_at_ns: _,
+        cancel_type: _,
+    } = value;
+}
+
 fn _guard_binance_symbol_filters_wire(value: WireBinanceSymbolFilters) {
     let WireBinanceSymbolFilters {
         symbol: _,
@@ -496,6 +540,34 @@ fn _guard_binance_spot_order_detail_wire(value: WireBinanceSpotOrderDetail) {
     } = value;
 }
 
+fn _guard_binance_mark_price_wire(value: WireBinanceMarkPrice) {
+    let WireBinanceMarkPrice {
+        market: _,
+        mark_price: _,
+        index_price: _,
+        estimated_settle_price: _,
+        last_funding_rate: _,
+        interest_rate: _,
+        next_funding_time_ns: _,
+        time_ns: _,
+    } = value;
+}
+
+fn _guard_binance_open_interest_wire(value: WireBinanceOpenInterest) {
+    let WireBinanceOpenInterest {
+        market: _,
+        open_interest: _,
+        time_ns: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_mid_price_wire(value: WireHyperliquidMidPrice) {
+    let WireHyperliquidMidPrice {
+        market: _,
+        price: _,
+    } = value;
+}
+
 fn _guard_hyperliquid_asset_context_wire(value: WireHyperliquidAssetContext) {
     let WireHyperliquidAssetContext {
         mid_price: _,
@@ -506,6 +578,14 @@ fn _guard_hyperliquid_asset_context_wire(value: WireHyperliquidAssetContext) {
         size_decimals: _,
         price_decimals: _,
     } = value;
+}
+
+fn _guard_upbit_batch_cancel_scope_wire(value: WireUpbitBatchCancelScope) {
+    match value {
+        WireUpbitBatchCancelScope::All => {}
+        WireUpbitBatchCancelScope::QuoteCurrencies { values: _ } => {}
+        WireUpbitBatchCancelScope::Pairs { values: _ } => {}
+    }
 }
 
 fn _guard_withdrawal_fee_wire(value: WireWithdrawalFee) {
@@ -701,6 +781,13 @@ fn _guard_size_kind(value: WireSizeKind) {
     }
 }
 
+fn _guard_upbit_order_direction(value: WireUpbitOrderDirection) {
+    match value {
+        WireUpbitOrderDirection::Ascending => {}
+        WireUpbitOrderDirection::Descending => {}
+    }
+}
+
 fn _guard_bithumb_alert_step(value: WireBithumbAlertStep) {
     match value {
         WireBithumbAlertStep::Caution => {}
@@ -721,6 +808,21 @@ fn _guard_bithumb_order_direction(value: WireBithumbOrderDirection) {
     match value {
         WireBithumbOrderDirection::Ascending => {}
         WireBithumbOrderDirection::Descending => {}
+    }
+}
+
+fn _guard_bithumb_twap_state(value: WireBithumbTwapState) {
+    match value {
+        WireBithumbTwapState::Progress => {}
+        WireBithumbTwapState::Done => {}
+        WireBithumbTwapState::Cancel => {}
+    }
+}
+
+fn _guard_bithumb_twap_order_direction(value: WireBithumbTwapOrderDirection) {
+    match value {
+        WireBithumbTwapOrderDirection::Ascending => {}
+        WireBithumbTwapOrderDirection::Descending => {}
     }
 }
 

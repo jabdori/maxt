@@ -16,7 +16,10 @@ use crate::request::CandleRequest;
 use crate::transport::HttpRequest;
 use crate::types::{Candle, Market, MarketInfo, MarketKind, OrderBook, Ticker, Timestamp, Trade};
 
-use super::{BinanceAdapter, BinanceMarket, EXCHANGE, now_millis, parse};
+use super::{
+    BinanceAdapter, BinanceMarkPrice, BinanceMarket, BinanceOpenInterest, EXCHANGE, now_millis,
+    parse,
+};
 
 /// The most recent trades either venue will return in one call.
 const MAX_TRADE_LIMIT: u32 = 1_000;
@@ -140,6 +143,48 @@ pub(super) fn ticker_request(adapter: &BinanceAdapter, market: &Market) -> Resul
     )
 }
 
+fn check_usd_m_market_data(adapter: &BinanceAdapter, what: &str) -> Result<()> {
+    if adapter.venue() == BinanceMarket::UsdMFutures {
+        return Ok(());
+    }
+    Err(Error::unsupported(
+        Feature::FundingRates,
+        EXCHANGE,
+        format!("{what} is available on the USD-M futures adapter only"),
+    ))
+}
+
+pub(super) fn mark_price_request(adapter: &BinanceAdapter, market: &Market) -> Result<HttpRequest> {
+    check_usd_m_market_data(adapter, "mark price")?;
+    let params = [("symbol", adapter.symbol(market)?)];
+    Ok(HttpRequest::get(format!(
+        "{}/premiumIndex",
+        BinanceMarket::UsdMFutures.public_prefix()
+    ))
+    .query(query(&params)))
+}
+
+pub(super) fn mark_prices_request(adapter: &BinanceAdapter) -> Result<HttpRequest> {
+    check_usd_m_market_data(adapter, "mark prices")?;
+    Ok(HttpRequest::get(format!(
+        "{}/premiumIndex",
+        BinanceMarket::UsdMFutures.public_prefix()
+    )))
+}
+
+pub(super) fn open_interest_request(
+    adapter: &BinanceAdapter,
+    market: &Market,
+) -> Result<HttpRequest> {
+    check_usd_m_market_data(adapter, "open interest")?;
+    let params = [("symbol", adapter.symbol(market)?)];
+    Ok(HttpRequest::get(format!(
+        "{}/openInterest",
+        BinanceMarket::UsdMFutures.public_prefix()
+    ))
+    .query(query(&params)))
+}
+
 /// One page of candles, ending at `cursor` and reaching at most `count` back.
 ///
 /// `startTime` is deliberately not sent. Binance reads a window from its start
@@ -228,6 +273,48 @@ pub(super) async fn ticker(adapter: &BinanceAdapter, market: &Market) -> Result<
     let body = adapter.send(ticker_request(adapter, market)?).await?;
     let raw: parse::RawTicker = parse::json(&body, "ticker")?;
     parse::ticker(market, &raw)
+}
+
+pub(super) async fn mark_price(
+    adapter: &BinanceAdapter,
+    market: &Market,
+) -> Result<BinanceMarkPrice> {
+    let body = adapter.send(mark_price_request(adapter, market)?).await?;
+    let raw: parse::RawMarkPrice = parse::json(&body, "mark price")?;
+    parse::mark_price(market, &raw)
+}
+
+pub(super) async fn mark_prices(adapter: &BinanceAdapter) -> Result<Vec<BinanceMarkPrice>> {
+    let request = mark_prices_request(adapter)?;
+    let markets = markets(adapter, MarketKind::Perpetual).await?;
+    let body = adapter.send(request).await?;
+    let raw: Vec<parse::RawMarkPrice> = parse::json(&body, "mark prices")?;
+    mark_price_list(&markets, &raw)
+}
+
+fn mark_price_list(
+    markets: &[MarketInfo],
+    raw: &[parse::RawMarkPrice],
+) -> Result<Vec<BinanceMarkPrice>> {
+    raw.iter()
+        .filter_map(|entry| {
+            markets
+                .iter()
+                .find(|market| market.native_symbol == entry.symbol)
+                .map(|market| parse::mark_price(&market.market, entry))
+        })
+        .collect()
+}
+
+pub(super) async fn open_interest(
+    adapter: &BinanceAdapter,
+    market: &Market,
+) -> Result<BinanceOpenInterest> {
+    let body = adapter
+        .send(open_interest_request(adapter, market)?)
+        .await?;
+    let raw: parse::RawOpenInterest = parse::json(&body, "open interest")?;
+    parse::open_interest(market, &raw)
 }
 
 /// Reads candles, oldest first, paging when one response cannot hold the
@@ -357,7 +444,7 @@ pub(super) async fn spot_symbol_filters(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{Exchange, Interval};
+    use crate::types::{Exchange, Interval, MarketStatus};
 
     fn spot() -> BinanceAdapter {
         BinanceAdapter::spot()
@@ -408,6 +495,80 @@ mod tests {
                 .expect("a valid depth")
                 .target(),
             "/api/v3/depth?symbol=BTCUSDT&limit=100"
+        );
+        assert_eq!(
+            mark_price_request(&perp(), &btc_usdt_perp())
+                .expect("a USD-M market")
+                .target(),
+            "/fapi/v1/premiumIndex?symbol=BTCUSDT"
+        );
+        assert_eq!(
+            mark_prices_request(&perp())
+                .expect("a USD-M adapter")
+                .target(),
+            "/fapi/v1/premiumIndex"
+        );
+        assert_eq!(
+            open_interest_request(&perp(), &btc_usdt_perp())
+                .expect("a USD-M market")
+                .target(),
+            "/fapi/v1/openInterest?symbol=BTCUSDT"
+        );
+    }
+
+    #[test]
+    fn mark_price_and_open_interest_are_usd_m_only() {
+        assert!(matches!(
+            mark_price_request(&spot(), &btc_usdt()),
+            Err(Error::Unsupported { feature, .. }) if feature == Feature::FundingRates
+        ));
+        assert!(matches!(
+            mark_prices_request(&spot()),
+            Err(Error::Unsupported { feature, .. }) if feature == Feature::FundingRates
+        ));
+        assert!(matches!(
+            open_interest_request(&spot(), &btc_usdt()),
+            Err(Error::Unsupported { feature, .. }) if feature == Feature::FundingRates
+        ));
+    }
+
+    #[test]
+    fn mark_price_list_keeps_only_exchange_info_perpetuals() {
+        let raw: Vec<parse::RawMarkPrice> = parse::json(
+            r#"[
+              {"symbol":"BTCUSDT","markPrice":"1","indexPrice":"1","estimatedSettlePrice":"0","lastFundingRate":"0","interestRate":"0","nextFundingTime":0,"time":0},
+              {"symbol":"BTCU","markPrice":"1","indexPrice":"1","estimatedSettlePrice":"0","lastFundingRate":"0","interestRate":"0","nextFundingTime":0,"time":0},
+              {"symbol":"TRADIFIUSDT","markPrice":"1","indexPrice":"1","estimatedSettlePrice":"0","lastFundingRate":"0","interestRate":"0","nextFundingTime":0,"time":0},
+              {"symbol":"BTCUSDT_260925","markPrice":"1","indexPrice":"1","estimatedSettlePrice":"0","lastFundingRate":"0","interestRate":"0","nextFundingTime":0,"time":0}
+            ]"#,
+            "mark prices",
+        )
+        .expect("Binance mark-price array");
+        let markets = vec![
+            MarketInfo {
+                market: btc_usdt_perp(),
+                native_symbol: "BTCUSDT".to_owned(),
+                status: MarketStatus::Active,
+                korean_name: None,
+                english_name: None,
+            },
+            MarketInfo {
+                market: Market::perpetual(Exchange::Binance, "BTC", "U"),
+                native_symbol: "BTCU".to_owned(),
+                status: MarketStatus::Active,
+                korean_name: None,
+                english_name: None,
+            },
+        ];
+
+        let prices = mark_price_list(&markets, &raw).expect("perpetual prices");
+
+        assert_eq!(
+            prices.iter().map(|price| &price.market).collect::<Vec<_>>(),
+            vec![
+                &btc_usdt_perp(),
+                &Market::perpetual(Exchange::Binance, "BTC", "U")
+            ]
         );
     }
 

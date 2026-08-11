@@ -8,14 +8,17 @@ use maxt::adapters::{
     UpbitAdapter, UpbitMarketEvent, UpbitRegion,
 };
 use maxt::{Cursor, Market, Page, Timestamp};
+use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::client::{NativeClient, operation};
 use crate::convert::{
-    decimal_from_wire, decimal_to_wire, list_to_wire, market_from_wire, market_to_wire,
-    markets_from_wire, order_book_to_wire, order_to_wire, ticker_to_wire, timestamp_to_wire,
+    binance_mark_price_to_wire, binance_open_interest_to_wire, decimal_from_wire,
+    decimal_to_wire, hyperliquid_mid_price_to_wire, list_to_wire, market_from_wire,
+    market_to_wire, markets_from_wire, order_book_to_wire, order_to_wire, ticker_to_wire,
+    timestamp_to_wire,
 };
 
 macro_rules! provider_dict {
@@ -199,9 +202,7 @@ impl NativeUpbitAdapter {
                     .year_candles(&market, to.map(Timestamp::from_nanos), count)
                     .await
             },
-            |py, values| {
-                list_to_wire(py, &values, crate::convert::upbit_year_candle_to_wire)
-            },
+            |py, values| list_to_wire(py, &values, crate::convert::upbit_year_candle_to_wire),
         )
     }
 
@@ -216,7 +217,11 @@ impl NativeUpbitAdapter {
             py,
             async move { adapter.orderbook_instruments(&markets).await },
             |py, values| {
-                list_to_wire(py, &values, crate::convert::upbit_order_book_instrument_to_wire)
+                list_to_wire(
+                    py,
+                    &values,
+                    crate::convert::upbit_order_book_instrument_to_wire,
+                )
             },
         )
     }
@@ -256,6 +261,20 @@ impl NativeUpbitAdapter {
             py,
             async move { adapter.deposit_info(&asset, &network).await },
             |py, value| crate::convert::upbit_deposit_info_to_wire(py, &value),
+        )
+    }
+
+    fn batch_cancel_open_orders<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::upbit_batch_cancel_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.batch_cancel_open_orders(&request).await },
+            |py, value| crate::convert::cancel_orders_result_to_wire(py, &value),
         )
     }
 }
@@ -310,11 +329,7 @@ impl NativeBithumbAdapter {
     }
 
     #[pyo3(signature = (count=None))]
-    fn notices<'py>(
-        &self,
-        py: Python<'py>,
-        count: Option<u32>,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn notices<'py>(&self, py: Python<'py>, count: Option<u32>) -> PyResult<Bound<'py, PyAny>> {
         let adapter = Arc::clone(&self.inner);
         operation(
             py,
@@ -323,11 +338,7 @@ impl NativeBithumbAdapter {
         )
     }
 
-    fn transfer_fees<'py>(
-        &self,
-        py: Python<'py>,
-        currency: String,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn transfer_fees<'py>(&self, py: Python<'py>, currency: String) -> PyResult<Bound<'py, PyAny>> {
         let adapter = Arc::clone(&self.inner);
         operation(
             py,
@@ -338,11 +349,9 @@ impl NativeBithumbAdapter {
 
     fn api_keys<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let adapter = Arc::clone(&self.inner);
-        operation(
-            py,
-            async move { adapter.api_keys().await },
-            |py, values| list_to_wire(py, &values, crate::convert::bithumb_api_key_to_wire),
-        )
+        operation(py, async move { adapter.api_keys().await }, |py, values| {
+            list_to_wire(py, &values, crate::convert::bithumb_api_key_to_wire)
+        })
     }
 
     fn pending_orders<'py>(
@@ -356,6 +365,47 @@ impl NativeBithumbAdapter {
             py,
             async move { adapter.pending_orders(&request).await },
             |py, value| crate::convert::order_history_page_to_wire(py, &value),
+        )
+    }
+
+    fn twap_orders<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::bithumb_twap_orders_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.twap_orders(&request).await },
+            |py, value| crate::convert::bithumb_twap_order_page_to_wire(py, &value),
+        )
+    }
+
+    fn create_twap_order<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::bithumb_twap_order_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.create_twap_order(&request).await },
+            |py, value| value.into_py_any(py),
+        )
+    }
+
+    fn cancel_twap_order<'py>(
+        &self,
+        py: Python<'py>,
+        algo_order_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.cancel_twap_order(&algo_order_id).await },
+            |py, value| value.into_py_any(py),
         )
     }
 }
@@ -427,6 +477,43 @@ impl NativeBinanceAdapter {
             py,
             async move { adapter.spot_order(&market, &order_id).await },
             |py, value| binance_spot_order_to_wire(py, &value),
+        )
+    }
+
+    fn mark_price<'py>(
+        &self,
+        py: Python<'py>,
+        market: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let market = market_from_wire(market)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.mark_price(&market).await },
+            |py, value| binance_mark_price_to_wire(py, &value),
+        )
+    }
+
+    fn mark_prices<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.mark_prices().await },
+            |py, values| list_to_wire(py, &values, binance_mark_price_to_wire),
+        )
+    }
+
+    fn open_interest<'py>(
+        &self,
+        py: Python<'py>,
+        market: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let market = market_from_wire(market)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.open_interest(&market).await },
+            |py, value| binance_open_interest_to_wire(py, &value),
         )
     }
 
@@ -550,6 +637,13 @@ impl NativeHyperliquidAdapter {
             async move { adapter.asset_context(&market).await },
             |py, value| hyperliquid_asset_context_to_wire(py, &value),
         )
+    }
+
+    fn all_mids<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(py, async move { adapter.all_mids().await }, |py, values| {
+            list_to_wire(py, &values, hyperliquid_mid_price_to_wire)
+        })
     }
 }
 

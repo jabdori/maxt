@@ -88,6 +88,14 @@ abstract class NativeClient implements RustOpaqueInterface {
 
   Future<List<WireBalance>> balances();
 
+  Future<WireBinanceMarkPrice> binanceMarkPrice({required WireMarket market});
+
+  Future<List<WireBinanceMarkPrice>> binanceMarkPrices();
+
+  Future<WireBinanceOpenInterest> binanceOpenInterest({
+    required WireMarket market,
+  });
+
   /// Binance Spot의 선택적 자격증명을 구성합니다.
   static NativeClient binanceSpot({String? apiKey, String? secretKey}) =>
       MaxtRustLib.instance.api.crateApiNativeClientBinanceSpot(
@@ -128,6 +136,12 @@ abstract class NativeClient implements RustOpaqueInterface {
 
   Future<List<WireBithumbApiKey>> bithumbApiKeys();
 
+  Future<String> bithumbCancelTwapOrder({required String algoOrderId});
+
+  Future<String> bithumbCreateTwapOrder({
+    required WireBithumbTwapOrderRequest request,
+  });
+
   Future<List<WireBithumbMarketAlert>> bithumbMarketAlerts();
 
   Future<List<WireBithumbMarketWarning>> bithumbMarketWarnings();
@@ -140,6 +154,10 @@ abstract class NativeClient implements RustOpaqueInterface {
 
   Future<List<WireBithumbAssetFee>> bithumbTransferFees({
     required String currency,
+  });
+
+  Future<WireBithumbTwapOrderPage> bithumbTwapOrders({
+    required WireBithumbTwapOrdersRequest request,
   });
 
   Future<void> cancelOrder({
@@ -204,6 +222,8 @@ abstract class NativeClient implements RustOpaqueInterface {
     address: address,
     privateKey: privateKey,
   );
+
+  Future<List<WireHyperliquidMidPrice>> hyperliquidAllMids();
 
   Future<WireHyperliquidAssetContext> hyperliquidAssetContext({
     required WireMarket market,
@@ -292,6 +312,10 @@ abstract class NativeClient implements RustOpaqueInterface {
     accessKey: accessKey,
     secretKey: secretKey,
   );
+
+  Future<WireCancelOrdersResult> upbitBatchCancelOpenOrders({
+    required WireUpbitBatchCancelRequest request,
+  });
 
   Future<WireUpbitDepositInfo> upbitDepositInfo({
     required String asset,

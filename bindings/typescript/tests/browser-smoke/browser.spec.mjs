@@ -192,6 +192,14 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
     } catch (error) {
       depositInfoError = { name: error.constructor.name };
     }
+    let batchCancelError;
+    try {
+      await upbit.batchCancelOpenOrders(
+        new maxt.UpbitBatchCancelRequest(maxt.UpbitBatchCancelScope.all()),
+      );
+    } catch (error) {
+      batchCancelError = { name: error.constructor.name };
+    }
     const bithumb = new maxt.BithumbAdapter();
     const noticeErrors = [];
     for (const count of [0, Number.NaN]) {
@@ -251,6 +259,7 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
       aggregationError,
       testOrderError,
       depositInfoError,
+      batchCancelError,
       noticeErrors,
       feeError,
       apiKeysError,
@@ -284,6 +293,7 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
     aggregationError: { name: "InvalidRequestError", field: "level" },
     testOrderError: { name: "AuthError" },
     depositInfoError: { name: "AuthError" },
+    batchCancelError: { name: "AuthError" },
     noticeErrors: [
       { name: "InvalidRequestError", field: "count" },
       { name: "InvalidRequestError", field: "count" },

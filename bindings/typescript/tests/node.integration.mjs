@@ -141,6 +141,17 @@ test("Upbit deposit information rejects missing credentials before a network req
   );
 });
 
+test("Upbit conditional batch cancellation rejects missing credentials before a network request", async () => {
+  await maxt.initialize();
+
+  await assert.rejects(
+    new maxt.UpbitAdapter().batchCancelOpenOrders(
+      new maxt.UpbitBatchCancelRequest(maxt.UpbitBatchCancelScope.all()),
+    ),
+    (error) => error instanceof AuthError,
+  );
+});
+
 test("Bithumb notices reject invalid counts before the Node boundary", async () => {
   await maxt.initialize();
   const bithumb = new maxt.BithumbAdapter();

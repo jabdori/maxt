@@ -275,6 +275,16 @@ export class UpbitRegion extends StringValue {
   private constructor(id: string) { super(id); Object.freeze(this); }
 }
 
+export class UpbitOrderDirection extends StringValue {
+  static readonly Ascending = new UpbitOrderDirection("asc");
+  static readonly Descending = new UpbitOrderDirection("desc");
+  static readonly values: readonly UpbitOrderDirection[] = Object.freeze([
+    UpbitOrderDirection.Ascending,
+    UpbitOrderDirection.Descending,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
 export class BithumbAlertStep extends StringValue {
   static readonly Caution = new BithumbAlertStep("caution");
   static readonly Warning = new BithumbAlertStep("warning");
@@ -305,6 +315,28 @@ export class BithumbOrderDirection extends StringValue {
   static readonly values: readonly BithumbOrderDirection[] = Object.freeze([
     BithumbOrderDirection.Ascending,
     BithumbOrderDirection.Descending,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class BithumbTwapState extends StringValue {
+  static readonly Progress = new BithumbTwapState("progress");
+  static readonly Done = new BithumbTwapState("done");
+  static readonly Cancel = new BithumbTwapState("cancel");
+  static readonly values: readonly BithumbTwapState[] = Object.freeze([
+    BithumbTwapState.Progress,
+    BithumbTwapState.Done,
+    BithumbTwapState.Cancel,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class BithumbTwapOrderDirection extends StringValue {
+  static readonly Ascending = new BithumbTwapOrderDirection("asc");
+  static readonly Descending = new BithumbTwapOrderDirection("desc");
+  static readonly values: readonly BithumbTwapOrderDirection[] = Object.freeze([
+    BithumbTwapOrderDirection.Ascending,
+    BithumbTwapOrderDirection.Descending,
   ]);
   private constructor(id: string) { super(id); Object.freeze(this); }
 }

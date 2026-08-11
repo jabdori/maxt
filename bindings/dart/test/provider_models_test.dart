@@ -46,6 +46,24 @@ void main() {
       sizeDecimals: 5,
       priceDecimals: 1,
     );
+    final markPrice = BinanceMarkPrice(
+      market: Market.perpetual(Exchange.binance, 'BTC', 'USDT'),
+      markPrice: Decimal.parse('50001.25'),
+      indexPrice: Decimal.parse('50000.75'),
+      lastFundingRate: Decimal.parse('0.0001'),
+      interestRate: Decimal.parse('0.0001'),
+      nextFundingTime: Timestamp.fromSeconds(1700000000),
+      time: Timestamp.fromSeconds(1700000000),
+    );
+    final openInterest = BinanceOpenInterest(
+      market: markPrice.market,
+      openInterest: Decimal.parse('1234.5'),
+      time: markPrice.time,
+    );
+    final mid = HyperliquidMidPrice(
+      market: Market.perpetual(Exchange.hyperliquid, 'BTC', 'USDC'),
+      price: Decimal.parse('50000.5'),
+    );
     final alert = BithumbMarketAlert(
       market: Market.spot(Exchange.bithumb, 'BTC', 'KRW'),
       kind: 'PRICE_DIFFERENCE',
@@ -84,6 +102,11 @@ void main() {
       orderBy: BithumbOrderDirection.ascending,
       cursor: Cursor('page+/=='),
     );
+    const twapOrders = BithumbTwapOrdersRequest(
+      state: BithumbTwapState.progress,
+      limit: 25,
+      orderBy: BithumbTwapOrderDirection.ascending,
+    );
     final ledger = HyperliquidLedgerEntry(
       kind: HyperliquidLedgerKind.other('futureKind'),
       time: Timestamp.fromNanoseconds(BigInt.parse("1700000000123456790")),
@@ -92,6 +115,9 @@ void main() {
     );
 
     expect(context.midPrice.toString(), '12345678901234567890.00000001');
+    expect(markPrice.markPrice, Decimal.parse('50001.25'));
+    expect(openInterest.openInterest, Decimal.parse('1234.5'));
+    expect(mid.price, Decimal.parse('50000.5'));
     expect(
       alert.endsAt.nanosecondsSinceEpoch,
       BigInt.parse('1700000000123456789'),
@@ -107,6 +133,9 @@ void main() {
     expect(pendingOrders.state, BithumbPendingOrderState.watch);
     expect(pendingOrders.orderBy, BithumbOrderDirection.ascending);
     expect(pendingOrders.cursor?.value, 'page+/==');
+    expect(twapOrders.uuids, isEmpty);
+    expect(twapOrders.state, BithumbTwapState.progress);
+    expect(twapOrders.orderBy, BithumbTwapOrderDirection.ascending);
     expect(market.kind, MarketKind.perpetual);
   });
 
@@ -152,5 +181,16 @@ void main() {
     );
     expect(deposit.decimalPrecision, BigInt.parse('18446744073709551615'));
     expect(deposit.depositImpossibleReason, isNull);
+
+    final cancellation = UpbitBatchCancelRequest(
+      scope: UpbitBatchCancelScope.quoteCurrencies(values: ['KRW']),
+      excludedPairs: [market],
+      side: Side.buy,
+      count: 20,
+      orderBy: UpbitOrderDirection.ascending,
+    );
+    expect(cancellation.scope, isA<UpbitBatchCancelScopeQuoteCurrencies>());
+    expect(cancellation.excludedPairs, [market]);
+    expect(cancellation.count, 20);
   });
 }

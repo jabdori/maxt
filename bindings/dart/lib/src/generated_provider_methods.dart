@@ -92,6 +92,19 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
           network: _networkToWire(network),
         ),
       ).then(_upbitDepositInfoFromWire);
+
+  /// Cancels matching Upbit wait orders in one conditional request.
+  ///
+  /// [UpbitBatchCancelScope.all] selects every eligible market; Upbit still
+  /// applies the request count (default 20, maximum 300). The result separates
+  /// completed and failed cancels.
+  Future<CancelOrdersResult> batchCancelOpenOrders(
+    UpbitBatchCancelRequest request,
+  ) => _nativeFuture(
+    () => _handle.upbitBatchCancelOpenOrders(
+      request: _upbitBatchCancelRequestToWire(request),
+    ),
+  ).then(_cancelOrdersResultFromWire);
 }
 
 extension BithumbAdapterGeneratedMethods on BithumbAdapter {
@@ -132,6 +145,26 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
           request: _bithumbPendingOrdersRequestToWire(request),
         ),
       ).then(_orderPageFromWire);
+
+  Future<Page<BithumbTwapOrder>> twapOrders(BithumbTwapOrdersRequest request) =>
+      _nativeFuture(
+        () => _handle.bithumbTwapOrders(
+          request: _bithumbTwapOrdersRequestToWire(request),
+        ),
+      ).then(_bithumbTwapOrderPageFromWire);
+
+  /// Creates a Bithumb TWAP order. This submits a financial request.
+  Future<String> createTwapOrder(BithumbTwapOrderRequest request) =>
+      _nativeFuture(
+        () => _handle.bithumbCreateTwapOrder(
+          request: _bithumbTwapOrderRequestToWire(request),
+        ),
+      );
+
+  /// Cancels a Bithumb TWAP order. This submits a financial request.
+  Future<String> cancelTwapOrder(String algoOrderId) => _nativeFuture(
+    () => _handle.bithumbCancelTwapOrder(algoOrderId: algoOrderId),
+  );
 }
 
 extension BinanceAdapterGeneratedMethods on BinanceAdapter {
@@ -148,6 +181,20 @@ extension BinanceAdapterGeneratedMethods on BinanceAdapter {
         ),
       ).then(_binanceSpotOrderFromWire);
 
+  Future<BinanceMarkPrice> markPrice(Market market) => _nativeFuture(
+    () => _handle.binanceMarkPrice(market: _marketToWire(market)),
+  ).then(_binanceMarkPriceFromWire);
+
+  Future<List<BinanceMarkPrice>> markPrices() =>
+      _nativeFuture(_handle.binanceMarkPrices).then(
+        (values) =>
+            values.map(_binanceMarkPriceFromWire).toList(growable: false),
+      );
+
+  Future<BinanceOpenInterest> openInterest(Market market) => _nativeFuture(
+    () => _handle.binanceOpenInterest(market: _marketToWire(market)),
+  ).then(_binanceOpenInterestFromWire);
+
   Future<BinanceListenKey> usdMCreateListenKey() => _nativeFuture(
     _handle.binanceUsdMCreateListenKey,
   ).then(BinanceListenKey._);
@@ -160,6 +207,12 @@ extension BinanceAdapterGeneratedMethods on BinanceAdapter {
 }
 
 extension HyperliquidAdapterGeneratedMethods on HyperliquidAdapter {
+  Future<List<HyperliquidMidPrice>> allMids() =>
+      _nativeFuture(_handle.hyperliquidAllMids).then(
+        (values) =>
+            values.map(_hyperliquidMidPriceFromWire).toList(growable: false),
+      );
+
   Future<Page<HyperliquidLedgerEntry>> nonFundingLedger({
     Timestamp? from,
     Timestamp? to,

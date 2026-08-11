@@ -242,6 +242,10 @@ enum WireBithumbOrderDirection { ascending, descending }
 
 enum WireBithumbPendingOrderState { wait, watch }
 
+enum WireBithumbTwapOrderDirection { ascending, descending }
+
+enum WireBithumbTwapState { progress, done, cancel }
+
 class WireCandle {
   final WireMarket market;
   final WireInterval interval;
@@ -1135,3 +1139,5 @@ class WireUpbitMarketEvent {
           warning == other.warning &&
           cautions == other.cautions;
 }
+
+enum WireUpbitOrderDirection { ascending, descending }

@@ -24,6 +24,9 @@
 | `order_book(market, depth)` | `/api/v3/depth`; `depth: 1..=5000`; 각 측 `len() <= depth` | `/fapi/v1/depth`; `depth: {5, 10, 20, 50, 100, 500, 1000}`; 각 측 `len() <= depth` |
 | `ticker(market)` | `/api/v3/ticker/24hr`; 최근 24시간 요약 | `/fapi/v1/ticker/24hr`; 최근 24시간 요약 |
 | `funding_rates(request)` | `Error::Unsupported` | `/fapi/v1/fundingRate`; `limit: 1..=1000`; `None → 100` |
+| `mark_price(market)` | `Error::Unsupported` | `/fapi/v1/premiumIndex`; USD-M 무기한 선물 1건의 mark price 스냅샷 |
+| `mark_prices()` | `Error::Unsupported` | `/fapi/v1/premiumIndex`; 지원하는 USD-M 무기한 선물 시장의 현재 스냅샷 |
+| `open_interest(market)` | `Error::Unsupported` | `/fapi/v1/openInterest`; USD-M 무기한 선물 1건의 미결제약정(open interest) 스냅샷 |
 
 체결 결과는 최신순입니다. Spot은 거래소 호가 timestamp가 없어
 `OrderBook::timestamp = local_read_time`입니다. USD-M은 거래소 timestamp를
@@ -94,6 +97,11 @@ USD-M은 `OrderBook`을 `/public/stream`으로, `Ticker`, `Candles`를
 | `usd_m_keepalive_listen_key()` | 설정된 API key가 소유한 활성 USD-M listen key 연장 |
 | `usd_m_close_listen_key()` | 설정된 API key가 소유한 활성 USD-M listen key 종료 |
 
+USD-M의 `mark_price`, `mark_prices`, `open_interest`는 공개 읽기 전용
+메서드입니다. fixture로 검증했으며 실제 읽기 요청(live read)은 아직 검증하지
+않았습니다. `mark_prices()` 결과는 maxt가 지원하는 USD-M 무기한 선물 시장으로
+제한됩니다.
+
 `subscribe_account`는 USD-M listen key 수명 주기를 관리합니다. Spot은 서명된
 `userDataStream.subscribe.signature` 요청을 사용하며 listen key를 사용하지
 않습니다.
@@ -113,6 +121,8 @@ Binance는 IP 기준 `REQUEST_WEIGHT`를 부과합니다. 현재 한도는 `exch
 - [Spot REST 한도](https://developers.binance.com/en/docs/products/spot/rest-api)
 - [Spot WebSocket stream](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/ws-streams/~)
 - [USD-M REST 시장 데이터](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data)
+- [USD-M Mark Price](https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Mark-Price)
+- [USD-M Open Interest](https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Open-Interest)
 - [USD-M 공개 stream](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/public)
 - [USD-M 시장 stream](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market)
 

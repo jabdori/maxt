@@ -23,6 +23,9 @@ One `BinanceAdapter` is fixed to Spot or USD-M perpetual futures.
 | `order_book(market, depth)` | `/api/v3/depth`; `depth: 1..=5000`; at most `depth` levels per side | `/fapi/v1/depth`; `depth: {5, 10, 20, 50, 100, 500, 1000}`; at most `depth` levels per side |
 | `ticker(market)` | `/api/v3/ticker/24hr`; rolling 24-hour summary | `/fapi/v1/ticker/24hr`; rolling 24-hour summary |
 | `funding_rates(request)` | `Error::Unsupported` | `/fapi/v1/fundingRate`; `limit: 1..=1000`; `None -> 100` |
+| `mark_price(market)` | `Error::Unsupported` | `/fapi/v1/premiumIndex`; one USD-M perpetual mark-price snapshot |
+| `mark_prices()` | `Error::Unsupported` | `/fapi/v1/premiumIndex`; current snapshots for supported USD-M perpetual markets |
+| `open_interest(market)` | `Error::Unsupported` | `/fapi/v1/openInterest`; one USD-M perpetual open-interest snapshot |
 
 Trades are newest-first. Spot order books have no provider timestamp and use
 local read time; USD-M order books retain the provider timestamp. Unknown
@@ -93,6 +96,10 @@ Access the following provider-specific methods through `Client::adapter()`:
 | `usd_m_keepalive_listen_key()` | Extend the active USD-M listen key owned by the configured API key. |
 | `usd_m_close_listen_key()` | Close the active USD-M listen key owned by the configured API key. |
 
+The USD-M `mark_price`, `mark_prices`, and `open_interest` calls are public and
+read-only. They are fixture-verified; live reads have not been verified. The
+`mark_prices()` result is limited to maxt's USD-M perpetual market universe.
+
 `subscribe_account` manages USD-M listen keys. Spot uses the signed
 `userDataStream.subscribe.signature` request and no listen key.
 
@@ -112,6 +119,8 @@ consume that header. HTTP 429 and 418 satisfy
 - [Spot REST limits](https://developers.binance.com/en/docs/products/spot/rest-api)
 - [Spot WebSocket streams](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/ws-streams/~)
 - [USD-M REST market data](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data)
+- [USD-M Mark Price](https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Mark-Price)
+- [USD-M Open Interest](https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Open-Interest)
 - [USD-M public streams](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/public)
 - [USD-M market streams](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market)
 

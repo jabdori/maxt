@@ -4,12 +4,18 @@ import test from "node:test";
 import {
   Balance,
   BinanceMarket,
+  BinanceMarkPrice,
+  BinanceOpenInterest,
   BithumbApiKey,
   BithumbAssetFee,
   BithumbNetworkFee,
   BithumbOrderDirection,
   BithumbPendingOrderState,
   BithumbPendingOrdersRequest,
+  BithumbTwapOrderRequest,
+  BithumbTwapOrdersRequest,
+  BithumbTwapOrderDirection,
+  BithumbTwapState,
   CancelOrdersRequest,
   CancelOrdersResult,
   CancelledOrder,
@@ -24,6 +30,7 @@ import {
   Feed,
   Feature,
   HyperliquidLedgerKind,
+  HyperliquidMidPrice,
   Interval,
   Level,
   Market,
@@ -53,7 +60,10 @@ import {
   TransferLookupRequest,
   TravelRuleRequirement,
   UpbitOrderBookInstrument,
+  UpbitBatchCancelRequest,
+  UpbitBatchCancelScope,
   UpbitDepositInfo,
+  UpbitOrderDirection,
   UpbitYearCandle,
   WithdrawRequest,
   WithdrawalFee,
@@ -63,8 +73,16 @@ import { InvalidRequestError } from "../dist/errors.js";
 import {
   assetNetworkFromWire,
   assetNetworkToWire,
+  binanceMarkPriceFromWire,
+  binanceMarkPriceToWire,
+  binanceOpenInterestFromWire,
+  binanceOpenInterestToWire,
   bithumbPendingOrdersRequestFromWire,
   bithumbPendingOrdersRequestToWire,
+  bithumbTwapOrderRequestFromWire,
+  bithumbTwapOrderRequestToWire,
+  bithumbTwapOrdersRequestFromWire,
+  bithumbTwapOrdersRequestToWire,
   cancelOrdersRequestFromWire,
   cancelOrdersRequestToWire,
   cancelOrdersResultFromWire,
@@ -73,6 +91,8 @@ import {
   depositAddressEntryToWire,
   depositFromWire,
   depositToWire,
+  hyperliquidMidPriceFromWire,
+  hyperliquidMidPriceToWire,
   orderRequestFromWire,
   orderRequestToWire,
   orderLookupRequestFromWire,
@@ -86,6 +106,9 @@ import {
   transferLookupRequestToWire,
   upbitDepositInfoFromWire,
   upbitDepositInfoToWire,
+  upbitBatchCancelRequestFromWire,
+  upbitBatchCancelRequestToWire,
+  upbitBatchCancelScopeToWire,
   upbitOrderBookInstrumentFromWire,
   upbitOrderBookInstrumentToWire,
   upbitYearCandleFromWire,
@@ -208,6 +231,49 @@ test("Upbit deposit information preserves nullable network metadata and policy",
   );
 });
 
+test("Upbit conditional batch cancellation keeps its explicit scope and filters", () => {
+  const market = Market.spot(Exchange.Upbit, "BTC", "KRW");
+  const request = new UpbitBatchCancelRequest(
+    UpbitBatchCancelScope.quoteCurrencies(["KRW"]),
+    [market],
+    Side.Buy,
+    20,
+    UpbitOrderDirection.Ascending,
+  );
+
+  assert.equal(request.scope.kind, "quote_currencies");
+  assert.equal(request.count, 20);
+  assert.equal(Object.isFrozen(request.excludedPairs), true);
+  assert.deepEqual(
+    upbitBatchCancelRequestToWire(upbitBatchCancelRequestFromWire(upbitBatchCancelRequestToWire(request))),
+    upbitBatchCancelRequestToWire(request),
+  );
+});
+
+test("Upbit batch cancellation rejects a restriction on the all scope", () => {
+  const unsafeScope = { kind: "all", values: ["KRW"] };
+
+  assert.throws(
+    () => upbitBatchCancelScopeToWire(unsafeScope),
+    (error) => error instanceof InvalidRequestError
+      && error.field === "upbitBatchCancelScope.values",
+  );
+
+  const unsafeRequest = {
+    scope: { kind: "all" },
+    excludedPairs: null,
+    side: null,
+    count: 300,
+    orderBy: null,
+    pairs: ["KRW-BTC"],
+  };
+  assert.throws(
+    () => upbitBatchCancelRequestToWire(unsafeRequest),
+    (error) => error instanceof InvalidRequestError
+      && error.field === "upbitBatchCancelRequest.pairs",
+  );
+});
+
 test("Bithumb transfer fees preserve fixed and rate rules per network", () => {
   const fixed = new BithumbNetworkFee(
     Network.Bitcoin, "Bitcoin", Decimal.zero, Decimal.zero,
@@ -255,6 +321,79 @@ test("Bithumb pending-order requests preserve filters and opaque cursors", () =>
   assert.equal(decoded.state, BithumbPendingOrderState.Watch);
   assert.equal(decoded.orderBy, BithumbOrderDirection.Ascending);
   assert.equal(decoded.cursor.value, "page+/==");
+});
+
+test("Bithumb TWAP requests preserve defaults, filters, and u32 boundaries", () => {
+  const query = new BithumbTwapOrdersRequest(
+    null,
+    [],
+    BithumbTwapState.Progress,
+    new Cursor("page+/=="),
+    25,
+    BithumbTwapOrderDirection.Ascending,
+  );
+  const request = new BithumbTwapOrderRequest(
+    Market.spot(Exchange.Bithumb, "BTC", "KRW"),
+    Side.Buy,
+    null,
+    Decimal.parse("10000"),
+    300,
+    30,
+  );
+
+  assert.deepEqual(new BithumbTwapOrdersRequest().uuids, []);
+  assert.deepEqual(
+    bithumbTwapOrdersRequestToWire(bithumbTwapOrdersRequestFromWire(
+      bithumbTwapOrdersRequestToWire(query),
+    )),
+    bithumbTwapOrdersRequestToWire(query),
+  );
+  assert.deepEqual(
+    bithumbTwapOrderRequestToWire(bithumbTwapOrderRequestFromWire(
+      bithumbTwapOrderRequestToWire(request),
+    )),
+    bithumbTwapOrderRequestToWire(request),
+  );
+  assert.throws(
+    () => new BithumbTwapOrderRequest(request.market, Side.Buy, null, Decimal.one, 2 ** 32, 30),
+    RangeError,
+  );
+});
+
+test("Binance USD-M and Hyperliquid market snapshots preserve provider values", () => {
+  const binanceMarket = Market.perpetual(Exchange.Binance, "BTC", "USDT");
+  const markPrice = new BinanceMarkPrice(
+    binanceMarket,
+    Decimal.parse("100001.25"),
+    Decimal.parse("100000.75"),
+    null,
+    Decimal.parse("0.0001"),
+    Decimal.zero,
+    Timestamp.fromMilliseconds(1760000000000n),
+    Timestamp.fromMilliseconds(1759999999000n),
+  );
+  const openInterest = new BinanceOpenInterest(
+    binanceMarket,
+    Decimal.parse("123.456"),
+    Timestamp.fromMilliseconds(1759999999000n),
+  );
+  const midPrice = new HyperliquidMidPrice(
+    Market.perpetual(Exchange.Hyperliquid, "ETH", "USD"),
+    Decimal.parse("3500.125"),
+  );
+
+  assert.deepEqual(
+    binanceMarkPriceToWire(binanceMarkPriceFromWire(binanceMarkPriceToWire(markPrice))),
+    binanceMarkPriceToWire(markPrice),
+  );
+  assert.deepEqual(
+    binanceOpenInterestToWire(binanceOpenInterestFromWire(binanceOpenInterestToWire(openInterest))),
+    binanceOpenInterestToWire(openInterest),
+  );
+  assert.deepEqual(
+    hyperliquidMidPriceToWire(hyperliquidMidPriceFromWire(hyperliquidMidPriceToWire(midPrice))),
+    hyperliquidMidPriceToWire(midPrice),
+  );
 });
 
 test("string variants are stable singleton values in Rust declaration order", () => {

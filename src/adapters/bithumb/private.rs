@@ -24,7 +24,8 @@ use super::parse::{self, EXCHANGE};
 use super::rest;
 use super::{
     BithumbApiKey, BithumbCredentials, BithumbOrderDirection, BithumbPendingOrderState,
-    BithumbPendingOrdersRequest,
+    BithumbPendingOrdersRequest, BithumbTwapOrder, BithumbTwapOrderDirection,
+    BithumbTwapOrderRequest, BithumbTwapOrdersRequest, BithumbTwapState,
 };
 
 /// JWT claims sent to Bithumb; query fields are omitted for parameterless calls.
@@ -261,6 +262,128 @@ pub(crate) fn pending_orders_request(
         params,
         request.cursor.as_ref(),
     )
+}
+
+pub(crate) fn twap_orders_request(
+    credentials: &BithumbCredentials,
+    request: &BithumbTwapOrdersRequest,
+) -> Result<HttpRequest> {
+    let mut params = Vec::new();
+    if let Some(market) = &request.market {
+        params.push(("market", parse::native_symbol(market)?));
+    }
+    for uuid in &request.uuids {
+        params.push(("uuids[]", uuid.clone()));
+    }
+    if let Some(state) = request.state {
+        params.push((
+            "state",
+            match state {
+                BithumbTwapState::Progress => "progress",
+                BithumbTwapState::Done => "done",
+                BithumbTwapState::Cancel => "cancel",
+            }
+            .to_owned(),
+        ));
+    }
+    if let Some(limit) = request.limit {
+        if !(1..=100).contains(&limit) {
+            return Err(Error::invalid_request(
+                "limit",
+                format!("bithumb serves 1 to 100 TWAP orders per page, not {limit}"),
+            ));
+        }
+        params.push(("limit", limit.to_string()));
+    }
+    if let Some(order_by) = request.order_by {
+        params.push((
+            "order_by",
+            match order_by {
+                BithumbTwapOrderDirection::Ascending => "asc",
+                BithumbTwapOrderDirection::Descending => "desc",
+            }
+            .to_owned(),
+        ));
+    }
+    signed_get_with_cursor(credentials, "/v1/twap", params, request.cursor.as_ref())
+}
+
+pub(crate) fn create_twap_order_request(
+    credentials: &BithumbCredentials,
+    request: &BithumbTwapOrderRequest,
+) -> Result<HttpRequest> {
+    let market = parse::native_symbol(&request.market)?;
+    if request.market.quote != "KRW" {
+        return Err(Error::invalid_request(
+            "market.quote",
+            "Bithumb TWAP supports KRW markets only",
+        ));
+    }
+    let side = match request.side {
+        Side::Buy => "bid",
+        Side::Sell => "ask",
+    };
+    let required_amount = match request.side {
+        Side::Buy => ("price", request.price),
+        Side::Sell => ("volume", request.volume),
+    };
+    if required_amount.1.is_none() {
+        return Err(Error::invalid_request(
+            required_amount.0,
+            format!("a TWAP {side} needs `{}`", required_amount.0),
+        ));
+    }
+    if !(300..=43_200).contains(&request.duration) {
+        return Err(Error::invalid_request(
+            "duration",
+            format!(
+                "bithumb TWAP duration is 300..=43200 seconds, not {}",
+                request.duration
+            ),
+        ));
+    }
+    if !matches!(request.frequency, 15 | 20 | 30 | 60 | 120) {
+        return Err(Error::invalid_request(
+            "frequency",
+            format!(
+                "bithumb TWAP frequency is 15, 20, 30, 60 or 120 seconds, not {}",
+                request.frequency
+            ),
+        ));
+    }
+
+    let mut params = vec![("market", market), ("side", side.to_owned())];
+    if let Some(volume) = request.volume {
+        params.push(("volume", amount("volume", volume)?));
+    }
+    if let Some(price) = request.price {
+        params.push(("price", amount("price", price)?));
+    }
+    params.push(("duration", request.duration.to_string()));
+    params.push(("frequency", request.frequency.to_string()));
+
+    let query = signed_query(&params)?;
+    let body = params
+        .iter()
+        .map(|(key, value)| ((*key).to_owned(), Value::String(value.clone())))
+        .collect::<serde_json::Map<_, _>>();
+    let body = serde_json::to_string(&Value::Object(body))
+        .map_err(|err| Error::decode(format!("could not build the Bithumb TWAP body: {err}")))?;
+
+    Ok(HttpRequest::post("/v1/twap")
+        .json_body(body)
+        .header("authorization", authorization(credentials, &query)?))
+}
+
+pub(crate) fn cancel_twap_order_request(
+    credentials: &BithumbCredentials,
+    algo_order_id: &str,
+) -> Result<HttpRequest> {
+    let params = [("algo_order_id", algo_order_id.to_owned())];
+    let query = signed_query(&params)?;
+    Ok(HttpRequest::delete("/v1/twap")
+        .query(encoded_query(&params))
+        .header("authorization", authorization(credentials, &query)?))
 }
 
 pub(crate) fn order_request(
@@ -666,6 +789,184 @@ pub(crate) async fn pending_orders(
 ) -> Result<Page<Order>> {
     let body = rest::send(http, &pending_orders_request(credentials, request)?).await?;
     order_page(&body)
+}
+
+pub(crate) async fn twap_orders(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    request: &BithumbTwapOrdersRequest,
+) -> Result<Page<BithumbTwapOrder>> {
+    let body = rest::send(http, &twap_orders_request(credentials, request)?).await?;
+    twap_order_page(&body)
+}
+
+pub(crate) async fn create_twap_order(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    request: &BithumbTwapOrderRequest,
+) -> Result<String> {
+    let body = rest::send(http, &create_twap_order_request(credentials, request)?).await?;
+    algo_order_id(&body)
+}
+
+pub(crate) async fn cancel_twap_order(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    algo_order_id: &str,
+) -> Result<String> {
+    let body = rest::send(
+        http,
+        &cancel_twap_order_request(credentials, algo_order_id)?,
+    )
+    .await?;
+    algo_order_id_from_body(&body)
+}
+
+fn twap_order_page(body: &Value) -> Result<Page<BithumbTwapOrder>> {
+    let has_next = body
+        .get("has_next")
+        .and_then(Value::as_bool)
+        .ok_or_else(|| Error::decode("bithumb TWAP page `has_next` is not a boolean"))?;
+    let next = match body.get("next_key") {
+        None | Some(Value::Null) => None,
+        Some(Value::String(value)) if !value.is_empty() => Some(Cursor::new(value.clone())),
+        Some(_) => {
+            return Err(Error::decode(
+                "bithumb TWAP page `next_key` is not a non-empty string or null",
+            ));
+        }
+    };
+    if has_next != next.is_some() {
+        return Err(Error::decode(
+            "bithumb TWAP page disagrees about `has_next` and `next_key`",
+        ));
+    }
+    let orders = body
+        .get("orders")
+        .and_then(Value::as_array)
+        .ok_or_else(|| Error::decode("bithumb TWAP page carries no `orders` array"))?;
+    Ok(Page {
+        items: orders
+            .iter()
+            .map(parse_twap_order)
+            .collect::<Result<Vec<_>>>()?,
+        next,
+    })
+}
+
+fn parse_twap_order(value: &Value) -> Result<BithumbTwapOrder> {
+    let id = twap_text(value, "uuid")?;
+    if id.is_empty() {
+        return Err(Error::decode("bithumb TWAP `uuid` is empty"));
+    }
+    let market = twap_market(twap_text(value, "market")?)?;
+    let created_at = twap_time(value, "created_at")?;
+    Ok(BithumbTwapOrder {
+        id: id.to_owned(),
+        side: twap_side(value, "side")?,
+        price: parse::dec(value, "price")?,
+        state: twap_state(value, "state")?,
+        market,
+        created_at,
+        volume: parse::dec(value, "volume")?,
+        finished_at: twap_optional_time(value, "finished_at")?,
+        total_order_count: twap_count(value, "total_order_count")?,
+        total_trades_count: twap_count(value, "total_trades_count")?,
+        progress_count: twap_count(value, "progress_count")?,
+        total_executed_amount: parse::dec(value, "total_executed_amount")?,
+        total_executed_volume: parse::dec(value, "total_executed_volume")?,
+        avg_trade_price: parse::dec(value, "avg_trade_price")?,
+        wallet_id: twap_optional_text(value, "wallet_id")?,
+        canceled_at: twap_optional_time(value, "canceled_at")?,
+        cancel_type: twap_optional_text(value, "cancel_type")?,
+    })
+}
+
+fn algo_order_id(body: &Value) -> Result<String> {
+    algo_order_id_from_body(body)
+}
+
+fn algo_order_id_from_body(body: &Value) -> Result<String> {
+    let id = twap_text(body, "algo_order_id")?;
+    if id.is_empty() {
+        return Err(Error::decode(
+            "bithumb TWAP response `algo_order_id` is empty",
+        ));
+    }
+    Ok(id.to_owned())
+}
+
+fn twap_text<'a>(value: &'a Value, field: &'static str) -> Result<&'a str> {
+    value
+        .get(field)
+        .filter(|value| !value.is_null())
+        .and_then(Value::as_str)
+        .ok_or_else(|| Error::decode(format!("bithumb TWAP `{field}` is not a string")))
+}
+
+fn twap_optional_text(value: &Value, field: &'static str) -> Result<Option<String>> {
+    match value.get(field) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(value)) => Ok(Some(value.clone())),
+        Some(_) => Err(Error::decode(format!(
+            "bithumb TWAP `{field}` is not a string"
+        ))),
+    }
+}
+
+fn twap_side(value: &Value, field: &'static str) -> Result<Side> {
+    match twap_text(value, field)? {
+        "bid" => Ok(Side::Buy),
+        "ask" => Ok(Side::Sell),
+        other => Err(Error::decode(format!(
+            "bithumb TWAP `{field}` is not bid or ask: `{other}`"
+        ))),
+    }
+}
+
+fn twap_state(value: &Value, field: &'static str) -> Result<BithumbTwapState> {
+    match twap_text(value, field)? {
+        "progress" => Ok(BithumbTwapState::Progress),
+        "done" => Ok(BithumbTwapState::Done),
+        "cancel" => Ok(BithumbTwapState::Cancel),
+        other => Err(Error::decode(format!(
+            "bithumb TWAP `{field}` is unknown: `{other}`"
+        ))),
+    }
+}
+
+fn twap_market(raw: &str) -> Result<Market> {
+    let (quote, base) = raw
+        .split_once('-')
+        .ok_or_else(|| Error::decode(format!("bithumb TWAP market is invalid: `{raw}`")))?;
+    let market = Market::spot(crate::types::Exchange::Bithumb, base, quote);
+    if parse::native_symbol(&market)? != raw {
+        return Err(Error::decode(format!(
+            "bithumb TWAP market is invalid: `{raw}`"
+        )));
+    }
+    Ok(market)
+}
+
+fn twap_time(value: &Value, field: &'static str) -> Result<Timestamp> {
+    let raw = twap_text(value, field)?;
+    parse::offset_time(raw)
+        .ok_or_else(|| Error::decode(format!("bithumb TWAP `{field}` is not RFC 3339: `{raw}`")))
+}
+
+fn twap_optional_time(value: &Value, field: &'static str) -> Result<Option<Timestamp>> {
+    match value.get(field) {
+        None | Some(Value::Null) => Ok(None),
+        Some(_) => twap_time(value, field).map(Some),
+    }
+}
+
+fn twap_count(value: &Value, field: &'static str) -> Result<u32> {
+    value
+        .get(field)
+        .and_then(Value::as_u64)
+        .and_then(|value| u32::try_from(value).ok())
+        .ok_or_else(|| Error::decode(format!("bithumb TWAP `{field}` is not a u32")))
 }
 
 pub(crate) async fn api_keys(
@@ -1505,5 +1806,139 @@ mod tests {
             ))
             .is_err()
         );
+    }
+
+    #[test]
+    fn twap_requests_match_the_documented_paths_and_signatures() {
+        let request = BithumbTwapOrdersRequest::new()
+            .market(btc_krw())
+            .uuids(vec!["TWAP-1".to_string(), "TWAP-2".to_string()])
+            .state(BithumbTwapState::Progress)
+            .limit(50)
+            .order_by(BithumbTwapOrderDirection::Descending)
+            .cursor(Cursor::new("opaque+/=="));
+        let get = twap_orders_request(&credentials(), &request).expect("signed GET");
+        assert_eq!(
+            get.target(),
+            "/v1/twap?market=KRW-BTC&uuids[]=TWAP-1&uuids[]=TWAP-2&state=progress&limit=50&order_by=desc&next_key=opaque%2B%2F%3D%3D"
+        );
+        let authorization = get
+            .headers
+            .iter()
+            .find(|(name, _)| name == "authorization")
+            .map(|(_, value)| value)
+            .expect("authorization");
+        assert_eq!(
+            payload(authorization)["query_hash"],
+            sha512_hex(
+                b"market=KRW-BTC&uuids[]=TWAP-1&uuids[]=TWAP-2&state=progress&limit=50&order_by=desc&next_key=opaque+/=="
+            )
+        );
+
+        let create = BithumbTwapOrderRequest {
+            market: btc_krw(),
+            side: Side::Buy,
+            volume: None,
+            price: Some(Decimal::from(100_000_000)),
+            duration: 3_600,
+            frequency: 60,
+        };
+        let post = create_twap_order_request(&credentials(), &create).expect("signed POST");
+        assert_eq!(post.target(), "/v1/twap");
+        assert_eq!(
+            post.body.as_deref(),
+            Some(
+                r#"{"market":"KRW-BTC","side":"bid","price":"100000000","duration":"3600","frequency":"60"}"#
+            )
+        );
+        let delete = cancel_twap_order_request(&credentials(), "TWAP-1").expect("signed DELETE");
+        assert_eq!(delete.target(), "/v1/twap?algo_order_id=TWAP-1");
+    }
+
+    #[test]
+    fn twap_validation_rejects_invalid_duration_frequency_and_amount() {
+        let base = BithumbTwapOrderRequest {
+            market: btc_krw(),
+            side: Side::Sell,
+            volume: Some(Decimal::ONE),
+            price: None,
+            duration: 300,
+            frequency: 60,
+        };
+        for (field, request) in [
+            (
+                "duration",
+                BithumbTwapOrderRequest {
+                    duration: 299,
+                    ..base.clone()
+                },
+            ),
+            (
+                "frequency",
+                BithumbTwapOrderRequest {
+                    frequency: 10,
+                    ..base.clone()
+                },
+            ),
+            (
+                "volume",
+                BithumbTwapOrderRequest {
+                    volume: Some(Decimal::ZERO),
+                    ..base.clone()
+                },
+            ),
+        ] {
+            assert!(
+                matches!(create_twap_order_request(&credentials(), &request), Err(Error::InvalidRequest { field: found, .. }) if found == field),
+                "{field}"
+            );
+        }
+
+        let non_krw = BithumbTwapOrderRequest {
+            market: Market::spot(Exchange::Bithumb, "BTC", "USDT"),
+            ..base
+        };
+        assert!(matches!(
+            create_twap_order_request(&credentials(), &non_krw),
+            Err(Error::InvalidRequest { field, .. }) if field == "market.quote"
+        ));
+    }
+
+    #[test]
+    fn twap_fixture_preserves_optional_fields_and_page_cursor() {
+        let page = twap_order_page(&serde_json::json!({
+            "has_next": true,
+            "next_key": "opaque+/==",
+            "orders": [{
+                "uuid": "TWAP-1",
+                "side": "ask",
+                "price": "5000",
+                "state": "cancel",
+                "market": "KRW-XRP",
+                "created_at": "2025-12-03T09:00:00+09:00",
+                "volume": "1000",
+                "total_order_count": 120,
+                "total_trades_count": 5,
+                "progress_count": 15,
+                "total_executed_amount": "25000000",
+                "total_executed_volume": "5000",
+                "avg_trade_price": "5000.0",
+                "canceled_at": "2025-12-03T09:15:00+09:00",
+                "cancel_type": "user"
+            }]
+        }))
+        .expect("valid TWAP fixture");
+        assert_eq!(page.items.len(), 1);
+        assert_eq!(page.items[0].state, BithumbTwapState::Cancel);
+        assert_eq!(page.items[0].wallet_id, None);
+        assert_eq!(page.items[0].cancel_type.as_deref(), Some("user"));
+        assert_eq!(page.next.expect("cursor").as_str(), "opaque+/==");
+
+        assert!(matches!(
+            twap_order_page(
+                &serde_json::json!({"has_next": false, "next_key": null, "orders": [{"uuid": "bad"}]})
+            ),
+            Err(Error::Decode { .. })
+        ));
     }
 }

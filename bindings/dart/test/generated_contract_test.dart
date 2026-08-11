@@ -129,6 +129,8 @@ void main() {
         'marketEvents': (UpbitAdapter value) => value.marketEvents,
         'testOrder': (UpbitAdapter value) => value.testOrder,
         'depositInfo': (UpbitAdapter value) => value.depositInfo,
+        'batchCancelOpenOrders': (UpbitAdapter value) =>
+            value.batchCancelOpenOrders,
       },
       'bithumb': {
         'marketWarnings': (BithumbAdapter value) => value.marketWarnings,
@@ -137,11 +139,17 @@ void main() {
         'transferFees': (BithumbAdapter value) => value.transferFees,
         'apiKeys': (BithumbAdapter value) => value.apiKeys,
         'pendingOrders': (BithumbAdapter value) => value.pendingOrders,
+        'twapOrders': (BithumbAdapter value) => value.twapOrders,
+        'createTwapOrder': (BithumbAdapter value) => value.createTwapOrder,
+        'cancelTwapOrder': (BithumbAdapter value) => value.cancelTwapOrder,
       },
       'binance': {
         'venue': (BinanceAdapter value) => value.venue,
         'spotSymbolFilters': (BinanceAdapter value) => value.spotSymbolFilters,
         'spotOrder': (BinanceAdapter value) => value.spotOrder,
+        'markPrice': (BinanceAdapter value) => value.markPrice,
+        'markPrices': (BinanceAdapter value) => value.markPrices,
+        'openInterest': (BinanceAdapter value) => value.openInterest,
         'usdMCreateListenKey': (BinanceAdapter value) =>
             value.usdMCreateListenKey,
         'usdMKeepaliveListenKey': (BinanceAdapter value) =>
@@ -151,6 +159,7 @@ void main() {
       },
       'hyperliquid': {
         'isTestnet': (HyperliquidAdapter value) => value.isTestnet,
+        'allMids': (HyperliquidAdapter value) => value.allMids,
         'nonFundingLedger': (HyperliquidAdapter value) =>
             value.nonFundingLedger,
         'assetContext': (HyperliquidAdapter value) => value.assetContext,

@@ -1,9 +1,11 @@
 use maxt::adapters::{
-    BinanceSpotOrderDetail, BinanceSymbolFilters, BithumbAlertStep, BithumbMarketAlert,
-    BithumbApiKey, BithumbAssetFee, BithumbNetworkFee, BithumbNotice, BithumbOrderDirection,
-    BithumbPendingOrderState, BithumbPendingOrdersRequest,
-    HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind, UpbitMarketEvent,
-    UpbitDepositInfo, UpbitOrderBookInstrument, UpbitYearCandle,
+    BinanceMarkPrice, BinanceOpenInterest, BinanceSpotOrderDetail, BinanceSymbolFilters,
+    BithumbAlertStep, BithumbApiKey, BithumbAssetFee, BithumbMarketAlert, BithumbNetworkFee,
+    BithumbNotice, BithumbOrderDirection, BithumbPendingOrderState, BithumbPendingOrdersRequest,
+    BithumbTwapOrder, BithumbTwapOrderDirection, BithumbTwapOrderRequest, BithumbTwapOrdersRequest,
+    BithumbTwapState, HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind,
+    HyperliquidMidPrice, UpbitBatchCancelRequest, UpbitBatchCancelScope, UpbitDepositInfo,
+    UpbitMarketEvent, UpbitOrderBookInstrument, UpbitOrderDirection, UpbitYearCandle,
 };
 use maxt::{
     AccountEvent, AssetNetwork, Balance, CancelOrdersRequest, CancelOrdersResult, CancelledOrder,
@@ -281,6 +283,28 @@ pub(crate) struct WireUpbitDepositInfo {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub(crate) enum WireUpbitBatchCancelScope {
+    All,
+    QuoteCurrencies { values: Vec<String> },
+    Pairs { values: Vec<WireMarket> },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitBatchCancelRequest {
+    pub(crate) scope: WireUpbitBatchCancelScope,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) excluded_pairs: Option<Vec<WireMarket>>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) side: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) count: Option<u32>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) order_by: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 #[allow(dead_code, reason = "Task 9 제공자 브리지 입력으로 사용될 예정")]
 pub(crate) struct WireBithumbMarketAlert {
@@ -319,6 +343,61 @@ pub(crate) struct WireBithumbPendingOrdersRequest {
     pub(crate) order_by: Option<String>,
     #[serde(deserialize_with = "explicit_option")]
     pub(crate) cursor: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBithumbTwapOrdersRequest {
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) market: Option<WireMarket>,
+    pub(crate) uuids: Vec<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) state: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) cursor: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) limit: Option<u32>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) order_by: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBithumbTwapOrderRequest {
+    pub(crate) market: WireMarket,
+    pub(crate) side: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) volume: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) price: Option<String>,
+    pub(crate) duration: u32,
+    pub(crate) frequency: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBithumbTwapOrder {
+    pub(crate) id: String,
+    pub(crate) side: String,
+    pub(crate) price: String,
+    pub(crate) state: String,
+    pub(crate) market: WireMarket,
+    pub(crate) created_at: String,
+    pub(crate) volume: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) finished_at: Option<String>,
+    pub(crate) total_order_count: u32,
+    pub(crate) total_trades_count: u32,
+    pub(crate) progress_count: u32,
+    pub(crate) total_executed_amount: String,
+    pub(crate) total_executed_volume: String,
+    pub(crate) avg_trade_price: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) wallet_id: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) canceled_at: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) cancel_type: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -376,6 +455,28 @@ pub(crate) struct WireBinanceSpotOrderDetail {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceMarkPrice {
+    pub(crate) market: WireMarket,
+    pub(crate) mark_price: String,
+    pub(crate) index_price: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) estimated_settle_price: Option<String>,
+    pub(crate) last_funding_rate: String,
+    pub(crate) interest_rate: String,
+    pub(crate) next_funding_time: String,
+    pub(crate) time: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceOpenInterest {
+    pub(crate) market: WireMarket,
+    pub(crate) open_interest: String,
+    pub(crate) time: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[allow(dead_code, reason = "Task 9 제공자 브리지 입력으로 사용될 예정")]
 pub(crate) struct WireHyperliquidLedgerEntry {
     pub(crate) kind: String,
@@ -407,6 +508,13 @@ pub(crate) struct WireHyperliquidAssetContext {
     pub(crate) open_interest: Option<String>,
     pub(crate) size_decimals: u32,
     pub(crate) price_decimals: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidMidPrice {
+    pub(crate) market: WireMarket,
+    pub(crate) price: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1118,6 +1226,94 @@ impl TryFrom<WireBithumbPendingOrdersRequest> for BithumbPendingOrdersRequest {
     }
 }
 
+impl TryFrom<WireBithumbTwapOrdersRequest> for BithumbTwapOrdersRequest {
+    type Error = Error;
+
+    fn try_from(value: WireBithumbTwapOrdersRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.map(TryInto::try_into).transpose()?,
+            uuids: value.uuids,
+            state: value
+                .state
+                .as_deref()
+                .map(|value| match value {
+                    "progress" => Ok(BithumbTwapState::Progress),
+                    "done" => Ok(BithumbTwapState::Done),
+                    "cancel" => Ok(BithumbTwapState::Cancel),
+                    _ => Err(invalid_enum("state", value)),
+                })
+                .transpose()?,
+            cursor: value.cursor.map(Cursor::new),
+            limit: value.limit,
+            order_by: value
+                .order_by
+                .as_deref()
+                .map(|value| match value {
+                    "asc" => Ok(BithumbTwapOrderDirection::Ascending),
+                    "desc" => Ok(BithumbTwapOrderDirection::Descending),
+                    _ => Err(invalid_enum("order_by", value)),
+                })
+                .transpose()?,
+        })
+    }
+}
+
+impl TryFrom<WireBithumbTwapOrderRequest> for BithumbTwapOrderRequest {
+    type Error = Error;
+
+    fn try_from(value: WireBithumbTwapOrderRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.try_into()?,
+            side: side_from_wire(&value.side, "side")?,
+            volume: decimal_option_from_wire(value.volume, "volume")?,
+            price: decimal_option_from_wire(value.price, "price")?,
+            duration: value.duration,
+            frequency: value.frequency,
+        })
+    }
+}
+
+impl TryFrom<WireUpbitBatchCancelRequest> for UpbitBatchCancelRequest {
+    type Error = Error;
+
+    fn try_from(value: WireUpbitBatchCancelRequest) -> Result<Self, Self::Error> {
+        let scope = match value.scope {
+            WireUpbitBatchCancelScope::All => UpbitBatchCancelScope::All,
+            WireUpbitBatchCancelScope::QuoteCurrencies { values } => {
+                UpbitBatchCancelScope::QuoteCurrencies { values }
+            }
+            WireUpbitBatchCancelScope::Pairs { values } => UpbitBatchCancelScope::Pairs {
+                values: values
+                    .into_iter()
+                    .map(TryInto::try_into)
+                    .collect::<Result<_, _>>()?,
+            },
+        };
+        Ok(UpbitBatchCancelRequest {
+            scope,
+            excluded_pairs: value
+                .excluded_pairs
+                .map(|values| values.into_iter().map(TryInto::try_into).collect())
+                .transpose()?,
+            side: value
+                .side
+                .as_deref()
+                .map(|value| side_from_wire(value, "side"))
+                .transpose()?,
+            count: value.count,
+            order_by: value
+                .order_by
+                .as_deref()
+                .map(|value| match value {
+                    "asc" => Ok(UpbitOrderDirection::Ascending),
+                    "desc" => Ok(UpbitOrderDirection::Descending),
+                    _ => Err(invalid_enum("order_by", value)),
+                })
+                .transpose()?,
+        })
+    }
+}
+
 impl TryFrom<WireOrderLookupRequest> for OrderLookupRequest {
     type Error = Error;
 
@@ -1775,6 +1971,32 @@ impl TryFrom<BithumbNetworkFee> for WireBithumbNetworkFee {
     }
 }
 
+impl TryFrom<BithumbTwapOrder> for WireBithumbTwapOrder {
+    type Error = Error;
+
+    fn try_from(value: BithumbTwapOrder) -> Result<Self, Self::Error> {
+        Ok(Self {
+            id: value.id,
+            side: side_to_wire(value.side).to_owned(),
+            price: decimal_to_wire(value.price),
+            state: bithumb_twap_state_to_wire(value.state)?.to_owned(),
+            market: value.market.try_into()?,
+            created_at: timestamp_to_wire(value.created_at),
+            volume: decimal_to_wire(value.volume),
+            finished_at: timestamp_option_to_wire(value.finished_at),
+            total_order_count: value.total_order_count,
+            total_trades_count: value.total_trades_count,
+            progress_count: value.progress_count,
+            total_executed_amount: decimal_to_wire(value.total_executed_amount),
+            total_executed_volume: decimal_to_wire(value.total_executed_volume),
+            avg_trade_price: decimal_to_wire(value.avg_trade_price),
+            wallet_id: value.wallet_id,
+            canceled_at: timestamp_option_to_wire(value.canceled_at),
+            cancel_type: value.cancel_type,
+        })
+    }
+}
+
 impl TryFrom<BinanceSymbolFilters> for WireBinanceSymbolFilters {
     type Error = Error;
 
@@ -1807,6 +2029,35 @@ impl TryFrom<BinanceSpotOrderDetail> for WireBinanceSpotOrderDetail {
     }
 }
 
+impl TryFrom<BinanceMarkPrice> for WireBinanceMarkPrice {
+    type Error = Error;
+
+    fn try_from(value: BinanceMarkPrice) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.try_into()?,
+            mark_price: decimal_to_wire(value.mark_price),
+            index_price: decimal_to_wire(value.index_price),
+            estimated_settle_price: decimal_option_to_wire(value.estimated_settle_price),
+            last_funding_rate: decimal_to_wire(value.last_funding_rate),
+            interest_rate: decimal_to_wire(value.interest_rate),
+            next_funding_time: timestamp_to_wire(value.next_funding_time),
+            time: timestamp_to_wire(value.time),
+        })
+    }
+}
+
+impl TryFrom<BinanceOpenInterest> for WireBinanceOpenInterest {
+    type Error = Error;
+
+    fn try_from(value: BinanceOpenInterest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.try_into()?,
+            open_interest: decimal_to_wire(value.open_interest),
+            time: timestamp_to_wire(value.time),
+        })
+    }
+}
+
 impl TryFrom<HyperliquidLedgerEntry> for WireHyperliquidLedgerEntry {
     type Error = Error;
 
@@ -1835,6 +2086,17 @@ impl TryFrom<HyperliquidAssetContext> for WireHyperliquidAssetContext {
             open_interest: decimal_option_to_wire(value.open_interest),
             size_decimals: value.size_decimals,
             price_decimals: value.price_decimals,
+        })
+    }
+}
+
+impl TryFrom<HyperliquidMidPrice> for WireHyperliquidMidPrice {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidMidPrice) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.try_into()?,
+            price: decimal_to_wire(value.price),
         })
     }
 }
@@ -3248,6 +3510,14 @@ fn margin_mode_to_wire(value: MarginMode) -> maxt::Result<&'static str> {
     }
 }
 
+fn bithumb_twap_state_to_wire(value: BithumbTwapState) -> maxt::Result<&'static str> {
+    match value {
+        BithumbTwapState::Progress => Ok("progress"),
+        BithumbTwapState::Done => Ok("done"),
+        BithumbTwapState::Cancel => Ok("cancel"),
+    }
+}
+
 fn overflow_from_wire(value: &str, field: &str) -> maxt::Result<Overflow> {
     match value {
         "backpressure" => Ok(Overflow::Backpressure),
@@ -4413,6 +4683,16 @@ mod tests {
                 open_interest: None,
                 size_decimals: 8,
                 price_decimals: 2,
+            })
+            .unwrap(),
+            serde_json::to_value(WireHyperliquidMidPrice {
+                market: WireMarket {
+                    exchange: "hyperliquid".to_owned(),
+                    kind: "perpetual".to_owned(),
+                    base: "BTC".to_owned(),
+                    quote: "USDC".to_owned(),
+                },
+                price: "113376.5".to_owned(),
             })
             .unwrap(),
         ];

@@ -530,6 +530,49 @@ final class UpbitDepositInfo {
   final BigInt decimalPrecision;
 }
 
+sealed class UpbitBatchCancelScope {
+  const UpbitBatchCancelScope();
+
+  const factory UpbitBatchCancelScope.all() = UpbitBatchCancelScopeAll;
+  const factory UpbitBatchCancelScope.quoteCurrencies({
+    required List<String> values,
+  }) = UpbitBatchCancelScopeQuoteCurrencies;
+  const factory UpbitBatchCancelScope.pairs({required List<Market> values}) =
+      UpbitBatchCancelScopePairs;
+}
+
+final class UpbitBatchCancelScopeAll extends UpbitBatchCancelScope {
+  const UpbitBatchCancelScopeAll();
+}
+
+final class UpbitBatchCancelScopeQuoteCurrencies extends UpbitBatchCancelScope {
+  const UpbitBatchCancelScopeQuoteCurrencies({required this.values});
+
+  final List<String> values;
+}
+
+final class UpbitBatchCancelScopePairs extends UpbitBatchCancelScope {
+  const UpbitBatchCancelScopePairs({required this.values});
+
+  final List<Market> values;
+}
+
+final class UpbitBatchCancelRequest {
+  const UpbitBatchCancelRequest({
+    required this.scope,
+    this.excludedPairs,
+    this.side,
+    this.count,
+    this.orderBy,
+  });
+
+  final UpbitBatchCancelScope scope;
+  final List<Market>? excludedPairs;
+  final Side? side;
+  final int? count;
+  final UpbitOrderDirection? orderBy;
+}
+
 final class BithumbNotice {
   const BithumbNotice({
     required this.categories,
@@ -569,6 +612,82 @@ final class BithumbPendingOrdersRequest {
   final Cursor? cursor;
 }
 
+final class BithumbTwapOrdersRequest {
+  const BithumbTwapOrdersRequest({
+    this.market,
+    this.uuids = const [],
+    this.state,
+    this.cursor,
+    this.limit,
+    this.orderBy,
+  });
+
+  final Market? market;
+  final List<String> uuids;
+  final BithumbTwapState? state;
+  final Cursor? cursor;
+  final int? limit;
+  final BithumbTwapOrderDirection? orderBy;
+}
+
+final class BithumbTwapOrderRequest {
+  const BithumbTwapOrderRequest({
+    required this.market,
+    required this.side,
+    this.volume,
+    this.price,
+    required this.duration,
+    required this.frequency,
+  });
+
+  final Market market;
+  final Side side;
+  final Decimal? volume;
+  final Decimal? price;
+  final int duration;
+  final int frequency;
+}
+
+final class BithumbTwapOrder {
+  const BithumbTwapOrder({
+    required this.id,
+    required this.side,
+    required this.price,
+    required this.state,
+    required this.market,
+    required this.createdAt,
+    required this.volume,
+    this.finishedAt,
+    required this.totalOrderCount,
+    required this.totalTradesCount,
+    required this.progressCount,
+    required this.totalExecutedAmount,
+    required this.totalExecutedVolume,
+    required this.avgTradePrice,
+    this.walletId,
+    this.canceledAt,
+    this.cancelType,
+  });
+
+  final String id;
+  final Side side;
+  final Decimal price;
+  final BithumbTwapState state;
+  final Market market;
+  final Timestamp createdAt;
+  final Decimal volume;
+  final Timestamp? finishedAt;
+  final int totalOrderCount;
+  final int totalTradesCount;
+  final int progressCount;
+  final Decimal totalExecutedAmount;
+  final Decimal totalExecutedVolume;
+  final Decimal avgTradePrice;
+  final String? walletId;
+  final Timestamp? canceledAt;
+  final String? cancelType;
+}
+
 final class BithumbAssetFee {
   BithumbAssetFee({
     required this.displayName,
@@ -597,4 +716,45 @@ final class BithumbNetworkFee {
   final Decimal minimumDeposit;
   final WithdrawalFee withdrawalFee;
   final Decimal minimumWithdrawal;
+}
+
+final class BinanceMarkPrice {
+  const BinanceMarkPrice({
+    required this.market,
+    required this.markPrice,
+    required this.indexPrice,
+    this.estimatedSettlePrice,
+    required this.lastFundingRate,
+    required this.interestRate,
+    required this.nextFundingTime,
+    required this.time,
+  });
+
+  final Market market;
+  final Decimal markPrice;
+  final Decimal indexPrice;
+  final Decimal? estimatedSettlePrice;
+  final Decimal lastFundingRate;
+  final Decimal interestRate;
+  final Timestamp nextFundingTime;
+  final Timestamp time;
+}
+
+final class BinanceOpenInterest {
+  const BinanceOpenInterest({
+    required this.market,
+    required this.openInterest,
+    required this.time,
+  });
+
+  final Market market;
+  final Decimal openInterest;
+  final Timestamp time;
+}
+
+final class HyperliquidMidPrice {
+  const HyperliquidMidPrice({required this.market, required this.price});
+
+  final Market market;
+  final Decimal price;
 }

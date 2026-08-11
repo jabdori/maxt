@@ -9,6 +9,7 @@ mod stream;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use futures_util::StreamExt;
+use rust_decimal::Decimal;
 use tokio::sync::{Mutex, OnceCell};
 
 use crate::adapter::{Adapter, BoxFuture};
@@ -28,6 +29,15 @@ use crate::types::{
 use parse::Universe;
 
 pub use native::{HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind};
+
+/// Hyperliquid's current mid price for one market.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HyperliquidMidPrice {
+    /// The market this mid price describes.
+    pub market: Market,
+    /// The current mid price in the market's quote asset.
+    pub price: Decimal,
+}
 
 pub(crate) const MAINNET_REST_BASE_URL: &str = "https://api.hyperliquid.xyz";
 pub(crate) const MAINNET_WEBSOCKET_URL: &str = "wss://api.hyperliquid.xyz/ws";
@@ -240,6 +250,21 @@ impl HyperliquidAdapter {
         let asset = connection.universe.asset(market)?;
 
         native::asset_context(&raw, asset)
+    }
+
+    /// Reads the current mid price for every market in the default universe.
+    ///
+    /// Hyperliquid's `allMids` Info API uses the first perpetual DEX when no
+    /// `dex` is supplied, and includes spot mids in that response. The
+    /// returned price may fall back to the latest trade when a book is empty;
+    /// the endpoint does not attach a timestamp.
+    ///
+    /// HIP-3 DEX markets are not included because this adapter's market table
+    /// intentionally covers only the default perpetual and spot universes.
+    pub async fn all_mids(&self) -> Result<Vec<HyperliquidMidPrice>> {
+        let connection = self.connect().await?;
+
+        rest::all_mids(&connection.http, &connection.universe).await
     }
 
     /// Initializes the HTTP client and symbol table once.

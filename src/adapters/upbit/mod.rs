@@ -23,8 +23,8 @@ use crate::transport::{HttpTransport, WsCommand, WsConnect, WsSession, ws};
 use crate::types::{
     AccountEvent, AssetNetwork, Balance, CancelOrdersResult, Candle, Deposit, DepositAddress,
     DepositAddressEntry, Exchange, Market, MarketEvent, MarketInfo, MarketKind, Network, Order,
-    OrderBook, OrderRules, Page, StreamConfig, Subscription, Ticker, Trade, TransferDestination,
-    Withdrawal, WithdrawalQuote,
+    OrderBook, OrderRules, Page, Side, StreamConfig, Subscription, Ticker, Trade,
+    TransferDestination, Withdrawal, WithdrawalQuote,
 };
 
 /// Selects an Upbit regional deployment.
@@ -158,6 +158,97 @@ pub struct UpbitDepositInfo {
     pub minimum_deposit_confirmations: u64,
     /// 입금 수량에 적용하는 소수 자릿수입니다.
     pub decimal_precision: u64,
+}
+
+/// Upbit's ordering when choosing open orders to cancel.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UpbitOrderDirection {
+    /// Cancel the oldest matching orders first.
+    Ascending,
+    /// Cancel the newest matching orders first.
+    Descending,
+}
+
+/// The explicit set of Upbit open orders considered for one batch cancellation.
+///
+/// [`Self::All`] is deliberately a named variant: it selects every eligible
+/// market, while Upbit still applies the request count (default 20, maximum
+/// 300) to matching open orders.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum UpbitBatchCancelScope {
+    /// Every eligible Upbit market; the request count still limits cancellations.
+    All,
+    /// Eligible orders in markets with one of these quote currencies.
+    QuoteCurrencies {
+        /// Quote currencies used to select eligible markets.
+        values: Vec<String>,
+    },
+    /// Eligible orders in these explicit Upbit spot markets.
+    Pairs {
+        /// Upbit spot markets used to select eligible orders.
+        values: Vec<Market>,
+    },
+}
+
+/// Filters for Upbit's conditional batch-cancellation endpoint.
+///
+/// The endpoint can cancel at most 300 `wait` orders per request. It never
+/// cancels `watch` orders. A successful response can still contain failures
+/// because matching orders may fill or change state while Upbit processes the
+/// request.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpbitBatchCancelRequest {
+    /// The explicit base set of orders to consider.
+    pub scope: UpbitBatchCancelScope,
+    /// Optional Upbit spot markets to leave untouched.
+    pub excluded_pairs: Option<Vec<Market>>,
+    /// Optional buy/sell filter. `None` leaves Upbit's `all` default.
+    pub side: Option<Side>,
+    /// Optional cancellation count. `None` leaves Upbit's default of 20.
+    pub count: Option<u32>,
+    /// Optional creation-time ordering. `None` leaves Upbit's `desc` default.
+    pub order_by: Option<UpbitOrderDirection>,
+}
+
+impl UpbitBatchCancelRequest {
+    /// Starts a batch cancellation with an explicit scope.
+    pub fn new(scope: UpbitBatchCancelScope) -> Self {
+        Self {
+            scope,
+            excluded_pairs: None,
+            side: None,
+            count: None,
+            order_by: None,
+        }
+    }
+
+    /// Leaves these Upbit spot markets untouched.
+    #[must_use]
+    pub fn excluded_pairs(mut self, pairs: impl Into<Vec<Market>>) -> Self {
+        self.excluded_pairs = Some(pairs.into());
+        self
+    }
+
+    /// Limits cancellation to one order side.
+    #[must_use]
+    pub fn side(mut self, side: Side) -> Self {
+        self.side = Some(side);
+        self
+    }
+
+    /// Limits how many matching orders Upbit cancels.
+    #[must_use]
+    pub fn count(mut self, count: u32) -> Self {
+        self.count = Some(count);
+        self
+    }
+
+    /// Chooses whether Upbit considers oldest or newest orders first.
+    #[must_use]
+    pub fn order_by(mut self, order_by: UpbitOrderDirection) -> Self {
+        self.order_by = Some(order_by);
+        self
+    }
 }
 
 /// Adapter for Upbit spot markets.
@@ -327,6 +418,17 @@ impl UpbitAdapter {
     /// Upbit의 응답은 실시간 서비스 상태를 보장하지 않으며 몇 분 지연될 수 있습니다.
     pub async fn deposit_info(&self, asset: &str, network: &Network) -> Result<UpbitDepositInfo> {
         wallet::deposit_info(self.credentials()?, self.http()?, asset, network).await
+    }
+
+    /// Cancels matching Upbit `wait` orders in one conditional request.
+    ///
+    /// This is a financial write. The returned value separates orders Upbit
+    /// cancelled from orders that changed state before cancellation completed.
+    pub async fn batch_cancel_open_orders(
+        &self,
+        request: &UpbitBatchCancelRequest,
+    ) -> Result<CancelOrdersResult> {
+        private::batch_cancel_open_orders(self.credentials()?, self.http()?, request).await
     }
 
     pub(crate) fn is_authenticated(&self) -> bool {
@@ -800,6 +902,14 @@ mod tests {
         assert!(matches!(
             public
                 .deposit_info("BTC", &crate::types::Network::Bitcoin)
+                .await,
+            Err(Error::Auth { .. })
+        ));
+        assert!(matches!(
+            public
+                .batch_cancel_open_orders(
+                    &UpbitBatchCancelRequest::new(UpbitBatchCancelScope::All,)
+                )
                 .await,
             Err(Error::Auth { .. })
         ));

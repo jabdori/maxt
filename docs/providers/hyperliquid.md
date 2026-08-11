@@ -31,6 +31,7 @@ may use that name or `@{index}`. Use the returned `MarketInfo::native_symbol`.
 | `order_book(market, depth)` | `l2Book` | `depth: 1..=20`; at most `depth` levels per side; local truncation |
 | `ticker(market)` | `metaAndAssetCtxs`, `spotMetaAndAssetCtxs` | Reference-price summary |
 | `funding_rates(request)` | `fundingHistory` | Public; Perpetual only; provider page `<= 500` |
+| `all_mids()` | `POST /info` with `{"type":"allMids"}` | Public; default perpetual DEX and first-DEX Spot mids; empty books use the last trade price as fallback |
 
 | `HistoryRequest` field or state | Contract |
 | --- | --- |
@@ -120,6 +121,11 @@ Access the following provider-specific methods through `Client::adapter()`:
 | `asset_context(&market)` | Mid, mark, oracle, funding, open interest, and order precision |
 | `non_funding_ledger(from, to, cursor, limit)` | Deposits, withdrawals, transfers, and liquidations; funding excluded; wallet required; provider page `<= 500` |
 
+`all_mids()` is a public, read-only snapshot and is fixture-verified; live reads
+have not been verified. The provider's default empty `dex` selects the first
+perpetual DEX, and Spot mids are included only for that DEX. If a book is empty,
+Hyperliquid uses the last trade price.
+
 | `non_funding_ledger` field or state | Contract |
 | --- | --- |
 | `from`, `to` | Provider millisecond range `from_ms <= time <= to_ms` |
@@ -150,6 +156,7 @@ HIP-3, outcome assets, `Sec1`, market orders, `FOK`, `l2Book.nSigFigs`, and
 
 - [API overview](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api)
 - [Info endpoint](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)
+- [All mids (`allMids`)](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)
 - [Perpetual info](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals)
 - [Spot info](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/spot)
 - [WebSocket subscriptions](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/subscriptions)

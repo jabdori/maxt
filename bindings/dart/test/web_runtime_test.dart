@@ -147,6 +147,13 @@ void main() {
     );
   });
 
+  test('WebAssembly도 자격증명 없는 Bithumb TWAP 조회를 거절한다', () async {
+    await expectLater(
+      BithumbAdapter().twapOrders(const BithumbTwapOrdersRequest()),
+      throwsA(isA<AuthenticationError>()),
+    );
+  });
+
   test('WebAssembly도 자격증명 없는 Upbit 테스트 주문을 거절한다', () async {
     final market = Market.spot(Exchange.upbit, 'BTC', 'KRW');
 
@@ -166,6 +173,15 @@ void main() {
   test('WebAssembly도 자격증명 없는 Upbit 입금 가능 정보 조회를 거절한다', () async {
     await expectLater(
       UpbitAdapter().depositInfo('BTC', Network.bitcoin),
+      throwsA(isA<AuthenticationError>()),
+    );
+  });
+
+  test('WebAssembly도 자격증명 없는 Upbit 조건부 일괄 취소를 거절한다', () async {
+    await expectLater(
+      UpbitAdapter().batchCancelOpenOrders(
+        const UpbitBatchCancelRequest(scope: UpbitBatchCancelScope.all()),
+      ),
       throwsA(isA<AuthenticationError>()),
     );
   });

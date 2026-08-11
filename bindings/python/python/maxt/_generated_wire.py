@@ -361,6 +361,13 @@ RECORD_FIELDS = {
         "minimum_deposit_confirmations": "unsigned_integer",
         "decimal_precision": "unsigned_integer",
     },
+    "UpbitBatchCancelRequest": {
+        "scope": "named:UpbitBatchCancelScope",
+        "excluded_pairs": "optional:list:named:Market",
+        "side": "optional:identifier:Side",
+        "count": "optional:number",
+        "order_by": "optional:identifier:UpbitOrderDirection",
+    },
     "BithumbMarketAlert": {
         "kind": "string",
         "step": "identifier:BithumbAlertStep",
@@ -389,6 +396,41 @@ RECORD_FIELDS = {
         "order_by": "optional:identifier:BithumbOrderDirection",
         "cursor": "optional:string",
     },
+    "BithumbTwapOrdersRequest": {
+        "market": "optional:named:Market",
+        "uuids": "list:string",
+        "state": "optional:identifier:BithumbTwapState",
+        "cursor": "optional:string",
+        "limit": "optional:number",
+        "order_by": "optional:identifier:BithumbTwapOrderDirection",
+    },
+    "BithumbTwapOrderRequest": {
+        "market": "named:Market",
+        "side": "identifier:Side",
+        "volume": "optional:decimal",
+        "price": "optional:decimal",
+        "duration": "number",
+        "frequency": "number",
+    },
+    "BithumbTwapOrder": {
+        "id": "string",
+        "side": "identifier:Side",
+        "price": "decimal",
+        "state": "identifier:BithumbTwapState",
+        "market": "named:Market",
+        "created_at": "timestamp",
+        "volume": "decimal",
+        "finished_at": "optional:timestamp",
+        "total_order_count": "number",
+        "total_trades_count": "number",
+        "progress_count": "number",
+        "total_executed_amount": "decimal",
+        "total_executed_volume": "decimal",
+        "avg_trade_price": "decimal",
+        "wallet_id": "optional:string",
+        "canceled_at": "optional:timestamp",
+        "cancel_type": "optional:string",
+    },
     "BithumbNetworkFee": {
         "network": "identifier:Network",
         "provider_name": "string",
@@ -415,6 +457,21 @@ RECORD_FIELDS = {
         "filled_quote_quantity": "decimal",
         "updated_at": "optional:timestamp",
     },
+    "BinanceMarkPrice": {
+        "market": "named:Market",
+        "mark_price": "decimal",
+        "index_price": "decimal",
+        "estimated_settle_price": "optional:decimal",
+        "last_funding_rate": "decimal",
+        "interest_rate": "decimal",
+        "next_funding_time": "timestamp",
+        "time": "timestamp",
+    },
+    "BinanceOpenInterest": {
+        "market": "named:Market",
+        "open_interest": "decimal",
+        "time": "timestamp",
+    },
     "BinanceListenKey": {
         "id": "string",
         "value": "string",
@@ -427,6 +484,10 @@ RECORD_FIELDS = {
         "amount": "optional:decimal",
         "fee": "optional:decimal",
         "counterparty": "optional:string",
+    },
+    "HyperliquidMidPrice": {
+        "market": "named:Market",
+        "price": "decimal",
     },
     "HyperliquidAssetContext": {
         "mid_price": "optional:decimal",
@@ -463,6 +524,16 @@ RECORD_FIELDS = {
 }
 
 UNION_FIELDS = {
+    "UpbitBatchCancelScope": {
+        "all": {
+        },
+        "quote_currencies": {
+            "values": "list:string",
+        },
+        "pairs": {
+            "values": "list:named:Market",
+        },
+    },
     "Size": {
         "base": {
             "value": "decimal",
@@ -801,9 +872,12 @@ IDENTIFIER_VARIANTS = {
     "TimeInForce": ("good_til_cancelled", "immediate_or_cancel", "fill_or_kill", "post_only",),
     "SizeKind": ("base", "quote",),
     "UpbitRegion": ("korea", "singapore", "indonesia", "thailand",),
+    "UpbitOrderDirection": ("asc", "desc",),
     "BithumbAlertStep": ("caution", "warning", "danger", "unknown",),
     "BithumbPendingOrderState": ("wait", "watch",),
     "BithumbOrderDirection": ("asc", "desc",),
+    "BithumbTwapState": ("progress", "done", "cancel",),
+    "BithumbTwapOrderDirection": ("asc", "desc",),
     "BinanceMarket": ("spot", "usd_m",),
     "HyperliquidLedgerKind": ("deposit", "withdraw", "internal_transfer", "sub_account_transfer", "spot_transfer", "account_class_transfer", "vault_deposit", "vault_withdraw", "vault_distribution", "liquidation",),
     "ExchangeErrorKind": ("rejected", "rate_limited", "unavailable", "unknown",),

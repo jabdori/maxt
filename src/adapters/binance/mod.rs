@@ -8,6 +8,8 @@ mod wallet;
 
 use std::sync::OnceLock;
 
+use rust_decimal::Decimal;
+
 use crate::adapter::{Adapter, BoxFuture};
 use crate::error::{Error, Result};
 use crate::feature::Feature;
@@ -26,6 +28,42 @@ use crate::types::{
 
 pub use private::{BinanceListenKey, BinanceSpotOrderDetail};
 pub use rest::BinanceSymbolFilters;
+
+/// Binance USD-M's current mark-price snapshot for one perpetual market.
+///
+/// Binance returns the funding and index context alongside the mark price from
+/// `GET /fapi/v1/premiumIndex`. The values are provider-specific and therefore
+/// remain on [`BinanceAdapter`] until the common API has a matching contract.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BinanceMarkPrice {
+    /// The perpetual market this snapshot describes.
+    pub market: Market,
+    /// Binance's liquidation-reference mark price, in the quote asset.
+    pub mark_price: Decimal,
+    /// The underlying index price, in the quote asset.
+    pub index_price: Decimal,
+    /// Estimated settlement price, when Binance publishes a meaningful value.
+    pub estimated_settle_price: Option<Decimal>,
+    /// The latest funding rate as a signed ratio.
+    pub last_funding_rate: Decimal,
+    /// Binance's fixed interest rate component as a signed ratio.
+    pub interest_rate: Decimal,
+    /// When the next funding payment is scheduled.
+    pub next_funding_time: Timestamp,
+    /// When Binance produced this snapshot.
+    pub time: Timestamp,
+}
+
+/// Binance USD-M's current open interest for one perpetual market.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BinanceOpenInterest {
+    /// The perpetual market this snapshot describes.
+    pub market: Market,
+    /// Open contracts, denominated in the base asset.
+    pub open_interest: Decimal,
+    /// When Binance recorded the open-interest value.
+    pub time: Timestamp,
+}
 
 pub(crate) const SPOT_REST_BASE_URL: &str = "https://api.binance.com";
 /// Wallet SAPI is account-wide and always lives on the Spot API host.
@@ -292,6 +330,24 @@ impl BinanceAdapter {
         order_id: &str,
     ) -> Result<BinanceSpotOrderDetail> {
         private::spot_order(self, market, order_id).await
+    }
+
+    /// Reads the current USD-M mark price and funding context for one market.
+    pub async fn mark_price(&self, market: &Market) -> Result<BinanceMarkPrice> {
+        rest::mark_price(self, market).await
+    }
+
+    /// Reads current USD-M mark prices for every listed perpetual market.
+    ///
+    /// This keeps Binance's symbol-omitted `/fapi/v1/premiumIndex` response
+    /// visible instead of silently discarding the array form.
+    pub async fn mark_prices(&self) -> Result<Vec<BinanceMarkPrice>> {
+        rest::mark_prices(self).await
+    }
+
+    /// Reads the current USD-M open interest for one market.
+    pub async fn open_interest(&self, market: &Market) -> Result<BinanceOpenInterest> {
+        rest::open_interest(self, market).await
     }
 
     /// Creates or extends the account's USD-M user-data listen key.

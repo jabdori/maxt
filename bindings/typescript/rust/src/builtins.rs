@@ -8,8 +8,9 @@ use std::future::Future;
 #[cfg(test)]
 use maxt::Adapter;
 use maxt::adapters::{
-    BinanceAdapter, BinanceListenKey, BinanceMarket, BithumbAdapter, HyperliquidAdapter,
-    BithumbPendingOrdersRequest, UpbitAdapter, UpbitRegion,
+    BinanceAdapter, BinanceListenKey, BinanceMarket, BithumbAdapter, BithumbPendingOrdersRequest,
+    BithumbTwapOrderRequest, BithumbTwapOrdersRequest, HyperliquidAdapter, UpbitAdapter,
+    UpbitRegion,
 };
 use maxt::{Cursor, Error, Market};
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
@@ -26,12 +27,14 @@ use wasm_bindgen::prelude::*;
 
 use crate::client::NativeClient;
 use crate::convert::{
-    WireBinanceSpotOrderDetail, WireBinanceSymbolFilters, WireBithumbMarketAlert,
-    WireBithumbApiKey, WireBithumbAssetFee, WireBithumbNotice, WireBithumbPendingOrdersRequest,
-    WireHyperliquidAssetContext, WireHyperliquidLedgerEntry, WireMarket, WireOrder,
-    WireOrderBook, WireOrderRequest, WirePage, WireTicker, WireUpbitDepositInfo,
-    WireUpbitMarketEvent, WireUpbitOrderBookInstrument, WireUpbitYearCandle, decimal_from_wire,
-    from_wire_text, network_from_wire, outcome, timestamp_from_wire,
+    WireBinanceMarkPrice, WireBinanceOpenInterest, WireBinanceSpotOrderDetail,
+    WireBinanceSymbolFilters, WireBithumbApiKey, WireBithumbAssetFee, WireBithumbMarketAlert,
+    WireBithumbNotice, WireBithumbPendingOrdersRequest, WireBithumbTwapOrder,
+    WireBithumbTwapOrderRequest, WireBithumbTwapOrdersRequest, WireCancelOrdersResult,
+    WireHyperliquidAssetContext, WireHyperliquidLedgerEntry, WireHyperliquidMidPrice, WireMarket,
+    WireOrder, WireOrderBook, WireOrderRequest, WirePage, WireTicker, WireUpbitBatchCancelRequest,
+    WireUpbitDepositInfo, WireUpbitMarketEvent, WireUpbitOrderBookInstrument, WireUpbitYearCandle,
+    decimal_from_wire, from_wire_text, network_from_wire, outcome, timestamp_from_wire,
 };
 
 #[derive(Debug, Deserialize)]
@@ -336,8 +339,8 @@ impl NativeUpbit {
         network: maxt::Result<String>,
     ) -> Value {
         let asset = parse_text::<String>(asset, "asset");
-        let network = parse_text::<String>(network, "network")
-            .map(|network| network_from_wire(&network));
+        let network =
+            parse_text::<String>(network, "network").map(|network| network_from_wire(&network));
         match (asset, network) {
             (Ok(asset), Ok(network)) => outcome(
                 self.adapter
@@ -346,6 +349,20 @@ impl NativeUpbit {
                     .and_then(TryInto::<WireUpbitDepositInfo>::try_into),
             ),
             (Err(error), _) | (_, Err(error)) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn batch_cancel_open_orders(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<maxt::UpbitBatchCancelRequest, WireUpbitBatchCancelRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(
+                self.adapter
+                    .batch_cancel_open_orders(&request)
+                    .await
+                    .and_then(TryInto::<WireCancelOrdersResult>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
         }
     }
 }
@@ -418,9 +435,10 @@ impl NativeUpbit {
     ) -> napi::Result<PromiseRaw<'env, Value>> {
         let this = self.clone();
         let quote_currencies = native_json_text(quote_currencies, "quote_currencies");
-        spawn_native(env, async move {
-            this.tickers_by_quote(quote_currencies).await
-        })
+        spawn_native(
+            env,
+            async move { this.tickers_by_quote(quote_currencies).await },
+        )
     }
 
     #[napi(
@@ -438,7 +456,10 @@ impl NativeUpbit {
         let market = native_json_text(market, "market");
         let to = native_json_text(to, "to");
         let count = native_json_text(count, "count");
-        spawn_native(env, async move { this.year_candles(market, to, count).await })
+        spawn_native(
+            env,
+            async move { this.year_candles(market, to, count).await },
+        )
     }
 
     #[napi(js_name = "orderbookInstruments", ts_args_type = "markets: string")]
@@ -449,7 +470,10 @@ impl NativeUpbit {
     ) -> napi::Result<PromiseRaw<'env, Value>> {
         let this = self.clone();
         let markets = native_json_text(markets, "markets");
-        spawn_native(env, async move { this.orderbook_instruments(markets).await })
+        spawn_native(
+            env,
+            async move { this.orderbook_instruments(markets).await },
+        )
     }
 
     #[napi(js_name = "marketEvents")]
@@ -482,6 +506,20 @@ impl NativeUpbit {
         let asset = native_json_text(asset, "asset");
         let network = native_json_text(network, "network");
         spawn_native(env, async move { this.deposit_info(asset, network).await })
+    }
+
+    #[napi(js_name = "batchCancelOpenOrders", ts_args_type = "request: string")]
+    pub fn batch_cancel_open_orders_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(
+            env,
+            async move { this.batch_cancel_open_orders(request).await },
+        )
     }
 }
 
@@ -545,7 +583,9 @@ impl NativeBithumb {
 
     async fn notices(&self, count: maxt::Result<String>) -> Value {
         match parse_text::<Option<u32>>(count, "count") {
-            Ok(count) => outcome(wire_vec::<_, WireBithumbNotice>(self.adapter.notices(count).await)),
+            Ok(count) => outcome(wire_vec::<_, WireBithumbNotice>(
+                self.adapter.notices(count).await,
+            )),
             Err(error) => outcome::<Value>(Err(error)),
         }
     }
@@ -560,7 +600,9 @@ impl NativeBithumb {
     }
 
     async fn api_keys(&self) -> Value {
-        outcome(wire_vec::<_, WireBithumbApiKey>(self.adapter.api_keys().await))
+        outcome(wire_vec::<_, WireBithumbApiKey>(
+            self.adapter.api_keys().await,
+        ))
     }
 
     async fn pending_orders(&self, request: maxt::Result<String>) -> Value {
@@ -573,6 +615,35 @@ impl NativeBithumb {
                     .await
                     .and_then(TryInto::<WirePage<WireOrder>>::try_into),
             ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn twap_orders(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<BithumbTwapOrdersRequest, WireBithumbTwapOrdersRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(
+                self.adapter
+                    .twap_orders(&request)
+                    .await
+                    .and_then(TryInto::<WirePage<WireBithumbTwapOrder>>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn create_twap_order(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<BithumbTwapOrderRequest, WireBithumbTwapOrderRequest>(request, "request")
+        {
+            Ok(request) => outcome(self.adapter.create_twap_order(&request).await),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn cancel_twap_order(&self, algo_order_id: maxt::Result<String>) -> Value {
+        match parse_text::<String>(algo_order_id, "algo_order_id") {
+            Ok(algo_order_id) => outcome(self.adapter.cancel_twap_order(&algo_order_id).await),
             Err(error) => outcome::<Value>(Err(error)),
         }
     }
@@ -633,6 +704,42 @@ impl NativeBithumb {
         let this = self.clone();
         let request = native_json_text(request, "request");
         spawn_native(env, async move { this.pending_orders(request).await })
+    }
+
+    #[napi(js_name = "twapOrders", ts_args_type = "request: string")]
+    pub fn twap_orders_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.twap_orders(request).await })
+    }
+
+    #[napi(js_name = "createTwapOrder", ts_args_type = "request: string")]
+    pub fn create_twap_order_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.create_twap_order(request).await })
+    }
+
+    #[napi(js_name = "cancelTwapOrder", ts_args_type = "algoOrderId: string")]
+    pub fn cancel_twap_order_native<'env>(
+        &self,
+        env: &'env Env,
+        algo_order_id: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let algo_order_id = native_json_text(algo_order_id, "algoOrderId");
+        spawn_native(
+            env,
+            async move { this.cancel_twap_order(algo_order_id).await },
+        )
     }
 }
 
@@ -718,6 +825,36 @@ impl NativeBinance {
         }
     }
 
+    async fn mark_price(&self, market: maxt::Result<String>) -> Value {
+        match parse_wire::<Market, WireMarket>(market, "market") {
+            Ok(market) => outcome(
+                self.adapter
+                    .mark_price(&market)
+                    .await
+                    .and_then(TryInto::<WireBinanceMarkPrice>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn mark_prices(&self) -> Value {
+        outcome(wire_vec::<_, WireBinanceMarkPrice>(
+            self.adapter.mark_prices().await,
+        ))
+    }
+
+    async fn open_interest(&self, market: maxt::Result<String>) -> Value {
+        match parse_wire::<Market, WireMarket>(market, "market") {
+            Ok(market) => outcome(
+                self.adapter
+                    .open_interest(&market)
+                    .await
+                    .and_then(TryInto::<WireBinanceOpenInterest>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
     async fn usd_m_create_listen_key(&self) -> Value {
         let result = match self.adapter.usd_m_create_listen_key().await {
             Ok(key) => {
@@ -794,6 +931,37 @@ impl NativeBinance {
         let market = native_json_text(market, "market");
         let order_id = native_json_text(order_id, "order_id");
         spawn_native(env, async move { this.spot_order(market, order_id).await })
+    }
+
+    #[napi(js_name = "markPrice", ts_args_type = "market: string")]
+    pub fn mark_price_native<'env>(
+        &self,
+        env: &'env Env,
+        market: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let market = native_json_text(market, "market");
+        spawn_native(env, async move { this.mark_price(market).await })
+    }
+
+    #[napi(js_name = "markPrices")]
+    pub fn mark_prices_native<'env>(
+        &self,
+        env: &'env Env,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.mark_prices().await })
+    }
+
+    #[napi(js_name = "openInterest", ts_args_type = "market: string")]
+    pub fn open_interest_native<'env>(
+        &self,
+        env: &'env Env,
+        market: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let market = native_json_text(market, "market");
+        spawn_native(env, async move { this.open_interest(market).await })
     }
 
     #[napi(js_name = "usdMCreateListenKey")]
@@ -906,6 +1074,12 @@ impl NativeHyperliquid {
             Err(error) => outcome::<Value>(Err(error)),
         }
     }
+
+    async fn all_mids(&self) -> Value {
+        outcome(wire_vec::<_, WireHyperliquidMidPrice>(
+            self.adapter.all_mids().await,
+        ))
+    }
 }
 
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
@@ -952,6 +1126,12 @@ impl NativeHyperliquid {
         let this = self.clone();
         let market = native_json_text(market, "market");
         spawn_native(env, async move { this.asset_context(market).await })
+    }
+
+    #[napi(js_name = "allMids")]
+    pub fn all_mids_native<'env>(&self, env: &'env Env) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.all_mids().await })
     }
 }
 
@@ -1092,6 +1272,11 @@ impl NativeUpbit {
     pub async fn deposit_info_wasm(&self, asset: String, network: String) -> JsValue {
         crate::web::value(self.deposit_info(Ok(asset), Ok(network)).await)
     }
+
+    #[wasm_bindgen(js_name = "batchCancelOpenOrders")]
+    pub async fn batch_cancel_open_orders_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.batch_cancel_open_orders(Ok(request)).await)
+    }
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -1131,6 +1316,21 @@ impl NativeBithumb {
     pub async fn pending_orders_wasm(&self, request: String) -> JsValue {
         crate::web::value(self.pending_orders(Ok(request)).await)
     }
+
+    #[wasm_bindgen(js_name = "twapOrders")]
+    pub async fn twap_orders_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.twap_orders(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "createTwapOrder")]
+    pub async fn create_twap_order_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.create_twap_order(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "cancelTwapOrder")]
+    pub async fn cancel_twap_order_wasm(&self, algo_order_id: String) -> JsValue {
+        crate::web::value(self.cancel_twap_order(Ok(algo_order_id)).await)
+    }
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -1154,6 +1354,21 @@ impl NativeBinance {
     #[wasm_bindgen(js_name = "spotOrder")]
     pub async fn spot_order_wasm(&self, market: String, order_id: String) -> JsValue {
         crate::web::value(self.spot_order(Ok(market), Ok(order_id)).await)
+    }
+
+    #[wasm_bindgen(js_name = "markPrice")]
+    pub async fn mark_price_wasm(&self, market: String) -> JsValue {
+        crate::web::value(self.mark_price(Ok(market)).await)
+    }
+
+    #[wasm_bindgen(js_name = "markPrices")]
+    pub async fn mark_prices_wasm(&self) -> JsValue {
+        crate::web::value(self.mark_prices().await)
+    }
+
+    #[wasm_bindgen(js_name = "openInterest")]
+    pub async fn open_interest_wasm(&self, market: String) -> JsValue {
+        crate::web::value(self.open_interest(Ok(market)).await)
     }
 
     #[wasm_bindgen(js_name = "usdMCreateListenKey")]
@@ -1202,6 +1417,11 @@ impl NativeHyperliquid {
     #[wasm_bindgen(js_name = "assetContext")]
     pub async fn asset_context_wasm(&self, market: String) -> JsValue {
         crate::web::value(self.asset_context(Ok(market)).await)
+    }
+
+    #[wasm_bindgen(js_name = "allMids")]
+    pub async fn all_mids_wasm(&self) -> JsValue {
+        crate::web::value(self.all_mids().await)
     }
 }
 

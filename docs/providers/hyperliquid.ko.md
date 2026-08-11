@@ -33,6 +33,7 @@
 | `order_book(market, depth)` | `l2Book` | `depth: 1..=20`; 각 측 `len() <= depth`; 로컬 절단 |
 | `ticker(market)` | `metaAndAssetCtxs`, `spotMetaAndAssetCtxs` | 기준 가격 요약 |
 | `funding_rates(request)` | `fundingHistory` | 공개; Perpetual 전용; 거래소 페이지 `<= 500` |
+| `all_mids()` | `{"type":"allMids"}`를 담은 `POST /info` | 공개; 기본 무기한 선물 DEX와 첫 번째 DEX의 Spot mid 가격; 호가가 비어 있으면 마지막 체결 가격을 대체값으로 사용 |
 
 `trades`의 `limit` 계약:
 
@@ -129,6 +130,11 @@
 | `asset_context(&market)` | mid, mark, oracle 가격, funding, open interest, 주문 정밀도 |
 | `non_funding_ledger(from, to, cursor, limit)` | 입금, 출금, 이체, 청산; funding 제외; 지갑 필요; 거래소 페이지 `<= 500` |
 
+`all_mids()`는 공개 읽기 전용 스냅샷이며 fixture로 검증했습니다. 실제 읽기
+요청(live read)은 아직 검증하지 않았습니다. provider의 기본 빈 `dex`는 첫 번째
+무기한 선물 DEX를 선택하고, Spot mid 가격은 해당 DEX에서만 포함됩니다. 호가가
+비어 있으면 Hyperliquid가 마지막 체결 가격을 사용합니다.
+
 | `non_funding_ledger` 필드·상태 | 계약 |
 | --- | --- |
 | `from`, `to` | 거래소 밀리초(millisecond) 범위 `from_ms <= time <= to_ms`; 양쪽 경계 포함 |
@@ -158,6 +164,7 @@ HIP-3, outcome asset, `Sec1`, 시장가 주문, `FOK`, `l2Book.nSigFigs`,
 
 - [API 개요](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api)
 - [Info endpoint](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)
+- [All mids (`allMids`)](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)
 - [Perpetual 정보](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals)
 - [Spot 정보](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/spot)
 - [WebSocket 구독](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/subscriptions)

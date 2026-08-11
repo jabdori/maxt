@@ -24,7 +24,10 @@ use crate::types::{
 };
 
 use super::parse::{self, EXCHANGE};
-use super::{UpbitCredentials, rest, stream};
+use super::{
+    UpbitBatchCancelRequest, UpbitBatchCancelScope, UpbitCredentials, UpbitOrderDirection, rest,
+    stream,
+};
 
 /// Authentication header used by REST and private WebSocket handshakes.
 pub(crate) const AUTHORIZATION: &str = "Authorization";
@@ -46,8 +49,7 @@ struct RawCancelOrdersResult {
 
 #[derive(Debug, Deserialize)]
 struct RawCancelOrdersGroup {
-    #[serde(rename = "count")]
-    _count: usize,
+    count: usize,
     orders: Vec<RawCancelledOrder>,
 }
 
@@ -379,6 +381,65 @@ pub(crate) fn cancel_orders_request(
         .header(AUTHORIZATION, authorization(credentials, &query)?))
 }
 
+pub(crate) fn batch_cancel_open_orders_request(
+    credentials: &UpbitCredentials,
+    request: &UpbitBatchCancelRequest,
+) -> Result<HttpRequest> {
+    let mut params = Vec::new();
+    match &request.scope {
+        UpbitBatchCancelScope::All => {}
+        UpbitBatchCancelScope::QuoteCurrencies { values: currencies } => {
+            params.push((
+                "quote_currencies",
+                rest::quote_currencies_parameter(currencies, "quote_currencies")?,
+            ));
+        }
+        UpbitBatchCancelScope::Pairs { values: pairs } => {
+            params.push(("pairs", batch_cancel_pairs(pairs, "pairs")?));
+        }
+    }
+    if let Some(side) = request.side {
+        params.push((
+            "cancel_side",
+            match side {
+                Side::Buy => "bid",
+                Side::Sell => "ask",
+            }
+            .to_owned(),
+        ));
+    }
+    if let Some(count) = request.count {
+        if count > 300 {
+            return Err(Error::invalid_request(
+                "count",
+                format!("upbit cancels at most 300 open orders per request, not {count}"),
+            ));
+        }
+        params.push(("count", count.to_string()));
+    }
+    if let Some(order_by) = request.order_by {
+        params.push((
+            "order_by",
+            match order_by {
+                UpbitOrderDirection::Ascending => "asc",
+                UpbitOrderDirection::Descending => "desc",
+            }
+            .to_owned(),
+        ));
+    }
+    if let Some(pairs) = &request.excluded_pairs {
+        params.push((
+            "excluded_pairs",
+            batch_cancel_pairs(pairs, "excluded_pairs")?,
+        ));
+    }
+
+    let query = batch_cancel_query(&params)?;
+    Ok(HttpRequest::delete(OPEN_ORDERS_PATH)
+        .query(query.clone())
+        .header(AUTHORIZATION, authorization(credentials, &query)?))
+}
+
 fn cancel_order_request_by(
     credentials: &UpbitCredentials,
     market: &Market,
@@ -390,6 +451,46 @@ fn cancel_order_request_by(
     Ok(HttpRequest::delete(ORDER_PATH)
         .query(query.clone())
         .header(AUTHORIZATION, authorization(credentials, &query)?))
+}
+
+fn batch_cancel_pairs(pairs: &[Market], field: &'static str) -> Result<String> {
+    if pairs.is_empty() {
+        return Err(Error::invalid_request(
+            field,
+            "must name at least one market",
+        ));
+    }
+    if pairs.len() > 20 {
+        return Err(Error::invalid_request(
+            field,
+            format!(
+                "upbit accepts at most 20 markets per batch cancellation, not {}",
+                pairs.len()
+            ),
+        ));
+    }
+    pairs
+        .iter()
+        .map(parse::native_symbol)
+        .collect::<Result<Vec<_>>>()
+        .map(|pairs| pairs.join(","))
+}
+
+fn batch_cancel_query(params: &[(&'static str, String)]) -> Result<String> {
+    for (name, value) in params {
+        if !value.bytes().all(|byte| is_url_safe(byte) || byte == b',') {
+            return Err(Error::invalid_request(
+                *name,
+                format!("`{value}` is not safe to send to Upbit unencoded"),
+            ));
+        }
+    }
+
+    Ok(params
+        .iter()
+        .map(|(name, value)| format!("{name}={value}"))
+        .collect::<Vec<_>>()
+        .join("&"))
 }
 
 fn order_identifier_query(
@@ -757,8 +858,35 @@ pub(crate) async fn cancel_orders(
     cancel_orders_result(&body)
 }
 
+pub(crate) async fn batch_cancel_open_orders(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    request: &UpbitBatchCancelRequest,
+) -> Result<CancelOrdersResult> {
+    let body = rest::send(
+        http,
+        &batch_cancel_open_orders_request(credentials, request)?,
+    )
+    .await?;
+    cancel_orders_result(&body)
+}
+
 fn cancel_orders_result(body: &str) -> Result<CancelOrdersResult> {
     let response = parse::json::<RawCancelOrdersResult>(body)?;
+    if response.success.count != response.success.orders.len() {
+        return Err(Error::decode(format!(
+            "upbit reported {} successful cancellations but returned {} orders",
+            response.success.count,
+            response.success.orders.len()
+        )));
+    }
+    if response.failed.count != response.failed.orders.len() {
+        return Err(Error::decode(format!(
+            "upbit reported {} failed cancellations but returned {} orders",
+            response.failed.count,
+            response.failed.orders.len()
+        )));
+    }
     Ok(CancelOrdersResult {
         cancelled: response
             .success
@@ -937,6 +1065,10 @@ mod tests {
 
     fn btc_krw() -> Market {
         Market::spot(Exchange::Upbit, "BTC", "KRW")
+    }
+
+    fn eth_krw() -> Market {
+        Market::spot(Exchange::Upbit, "ETH", "KRW")
     }
 
     /// Decodes a token after verifying its signature.
@@ -1177,6 +1309,59 @@ mod tests {
     }
 
     #[test]
+    fn conditional_batch_cancellation_uses_the_documented_query_and_signature() {
+        let request = UpbitBatchCancelRequest::new(UpbitBatchCancelScope::QuoteCurrencies {
+            values: vec!["krw".to_string(), "BTC".to_string()],
+        })
+        .excluded_pairs(vec![eth_krw()])
+        .side(Side::Buy)
+        .count(300)
+        .order_by(UpbitOrderDirection::Ascending);
+        let request = batch_cancel_open_orders_request(&credentials(), &request)
+            .expect("a signed conditional cancellation");
+
+        assert_eq!(
+            request.target(),
+            "/v1/orders/open?quote_currencies=KRW,BTC&cancel_side=bid&count=300&order_by=asc&excluded_pairs=KRW-ETH"
+        );
+        assert_eq!(
+            claims_of(&authorization_of(&request)).query_hash.as_deref(),
+            Some(hex::encode(Sha512::digest(request.query.as_bytes())).as_str())
+        );
+    }
+
+    #[test]
+    fn conditional_batch_cancellation_rejects_invalid_scopes_before_signing() {
+        let empty_pairs =
+            UpbitBatchCancelRequest::new(UpbitBatchCancelScope::Pairs { values: Vec::new() });
+        let too_many_pairs = UpbitBatchCancelRequest::new(UpbitBatchCancelScope::Pairs {
+            values: (0..21)
+                .map(|index| Market::spot(Exchange::Upbit, format!("A{index}"), "KRW"))
+                .collect(),
+        });
+        let empty_exclusions =
+            UpbitBatchCancelRequest::new(UpbitBatchCancelScope::All).excluded_pairs(Vec::new());
+        let too_many = UpbitBatchCancelRequest::new(UpbitBatchCancelScope::All).count(301);
+
+        assert!(matches!(
+            batch_cancel_open_orders_request(&credentials(), &empty_pairs),
+            Err(Error::InvalidRequest { field, .. }) if field == "pairs"
+        ));
+        assert!(matches!(
+            batch_cancel_open_orders_request(&credentials(), &too_many_pairs),
+            Err(Error::InvalidRequest { field, .. }) if field == "pairs"
+        ));
+        assert!(matches!(
+            batch_cancel_open_orders_request(&credentials(), &empty_exclusions),
+            Err(Error::InvalidRequest { field, .. }) if field == "excluded_pairs"
+        ));
+        assert!(matches!(
+            batch_cancel_open_orders_request(&credentials(), &too_many),
+            Err(Error::InvalidRequest { field, .. }) if field == "count"
+        ));
+    }
+
+    #[test]
     fn batch_cancellation_preserves_successes_and_failures() {
         let result = cancel_orders_result(
             r#"{
@@ -1195,6 +1380,16 @@ mod tests {
         assert_eq!(result.cancelled[0].market, Some(btc_krw()));
         assert_eq!(result.failed[0].order_id.as_deref(), Some("failed-1"));
         assert_eq!(result.failed[0].code, None);
+    }
+
+    #[test]
+    fn batch_cancellation_rejects_a_count_that_disagrees_with_the_orders() {
+        assert!(matches!(
+            cancel_orders_result(
+                r#"{"success":{"count":2,"orders":[{"uuid":"done-1","market":"KRW-BTC"}]},"failed":{"count":0,"orders":[]}}"#
+            ),
+            Err(Error::Decode { .. })
+        ));
     }
 
     #[test]

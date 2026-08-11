@@ -562,6 +562,348 @@ as String?,
 }
 
 /// @nodoc
+mixin _$WireUpbitBatchCancelScope {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitBatchCancelScope);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireUpbitBatchCancelScope()';
+}
+
+
+}
+
+/// @nodoc
+class $WireUpbitBatchCancelScopeCopyWith<$Res>  {
+$WireUpbitBatchCancelScopeCopyWith(WireUpbitBatchCancelScope _, $Res Function(WireUpbitBatchCancelScope) __);
+}
+
+
+/// Adds pattern-matching-related methods to [WireUpbitBatchCancelScope].
+extension WireUpbitBatchCancelScopePatterns on WireUpbitBatchCancelScope {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( WireUpbitBatchCancelScope_All value)?  all,TResult Function( WireUpbitBatchCancelScope_QuoteCurrencies value)?  quoteCurrencies,TResult Function( WireUpbitBatchCancelScope_Pairs value)?  pairs,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case WireUpbitBatchCancelScope_All() when all != null:
+return all(_that);case WireUpbitBatchCancelScope_QuoteCurrencies() when quoteCurrencies != null:
+return quoteCurrencies(_that);case WireUpbitBatchCancelScope_Pairs() when pairs != null:
+return pairs(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( WireUpbitBatchCancelScope_All value)  all,required TResult Function( WireUpbitBatchCancelScope_QuoteCurrencies value)  quoteCurrencies,required TResult Function( WireUpbitBatchCancelScope_Pairs value)  pairs,}){
+final _that = this;
+switch (_that) {
+case WireUpbitBatchCancelScope_All():
+return all(_that);case WireUpbitBatchCancelScope_QuoteCurrencies():
+return quoteCurrencies(_that);case WireUpbitBatchCancelScope_Pairs():
+return pairs(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( WireUpbitBatchCancelScope_All value)?  all,TResult? Function( WireUpbitBatchCancelScope_QuoteCurrencies value)?  quoteCurrencies,TResult? Function( WireUpbitBatchCancelScope_Pairs value)?  pairs,}){
+final _that = this;
+switch (_that) {
+case WireUpbitBatchCancelScope_All() when all != null:
+return all(_that);case WireUpbitBatchCancelScope_QuoteCurrencies() when quoteCurrencies != null:
+return quoteCurrencies(_that);case WireUpbitBatchCancelScope_Pairs() when pairs != null:
+return pairs(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  all,TResult Function( List<String> values)?  quoteCurrencies,TResult Function( List<WireMarket> values)?  pairs,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case WireUpbitBatchCancelScope_All() when all != null:
+return all();case WireUpbitBatchCancelScope_QuoteCurrencies() when quoteCurrencies != null:
+return quoteCurrencies(_that.values);case WireUpbitBatchCancelScope_Pairs() when pairs != null:
+return pairs(_that.values);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  all,required TResult Function( List<String> values)  quoteCurrencies,required TResult Function( List<WireMarket> values)  pairs,}) {final _that = this;
+switch (_that) {
+case WireUpbitBatchCancelScope_All():
+return all();case WireUpbitBatchCancelScope_QuoteCurrencies():
+return quoteCurrencies(_that.values);case WireUpbitBatchCancelScope_Pairs():
+return pairs(_that.values);}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  all,TResult? Function( List<String> values)?  quoteCurrencies,TResult? Function( List<WireMarket> values)?  pairs,}) {final _that = this;
+switch (_that) {
+case WireUpbitBatchCancelScope_All() when all != null:
+return all();case WireUpbitBatchCancelScope_QuoteCurrencies() when quoteCurrencies != null:
+return quoteCurrencies(_that.values);case WireUpbitBatchCancelScope_Pairs() when pairs != null:
+return pairs(_that.values);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class WireUpbitBatchCancelScope_All extends WireUpbitBatchCancelScope {
+  const WireUpbitBatchCancelScope_All(): super._();
+
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitBatchCancelScope_All);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireUpbitBatchCancelScope.all()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class WireUpbitBatchCancelScope_QuoteCurrencies extends WireUpbitBatchCancelScope {
+  const WireUpbitBatchCancelScope_QuoteCurrencies({required final  List<String> values}): _values = values,super._();
+
+
+ final  List<String> _values;
+ List<String> get values {
+  if (_values is EqualUnmodifiableListView) return _values;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_values);
+}
+
+
+/// Create a copy of WireUpbitBatchCancelScope
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireUpbitBatchCancelScope_QuoteCurrenciesCopyWith<WireUpbitBatchCancelScope_QuoteCurrencies> get copyWith => _$WireUpbitBatchCancelScope_QuoteCurrenciesCopyWithImpl<WireUpbitBatchCancelScope_QuoteCurrencies>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitBatchCancelScope_QuoteCurrencies&&const DeepCollectionEquality().equals(other._values, _values));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_values));
+
+@override
+String toString() {
+  return 'WireUpbitBatchCancelScope.quoteCurrencies(values: $values)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireUpbitBatchCancelScope_QuoteCurrenciesCopyWith<$Res> implements $WireUpbitBatchCancelScopeCopyWith<$Res> {
+  factory $WireUpbitBatchCancelScope_QuoteCurrenciesCopyWith(WireUpbitBatchCancelScope_QuoteCurrencies value, $Res Function(WireUpbitBatchCancelScope_QuoteCurrencies) _then) = _$WireUpbitBatchCancelScope_QuoteCurrenciesCopyWithImpl;
+@useResult
+$Res call({
+ List<String> values
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireUpbitBatchCancelScope_QuoteCurrenciesCopyWithImpl<$Res>
+    implements $WireUpbitBatchCancelScope_QuoteCurrenciesCopyWith<$Res> {
+  _$WireUpbitBatchCancelScope_QuoteCurrenciesCopyWithImpl(this._self, this._then);
+
+  final WireUpbitBatchCancelScope_QuoteCurrencies _self;
+  final $Res Function(WireUpbitBatchCancelScope_QuoteCurrencies) _then;
+
+/// Create a copy of WireUpbitBatchCancelScope
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? values = null,}) {
+  return _then(WireUpbitBatchCancelScope_QuoteCurrencies(
+values: null == values ? _self._values : values // ignore: cast_nullable_to_non_nullable
+as List<String>,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireUpbitBatchCancelScope_Pairs extends WireUpbitBatchCancelScope {
+  const WireUpbitBatchCancelScope_Pairs({required final  List<WireMarket> values}): _values = values,super._();
+
+
+ final  List<WireMarket> _values;
+ List<WireMarket> get values {
+  if (_values is EqualUnmodifiableListView) return _values;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_values);
+}
+
+
+/// Create a copy of WireUpbitBatchCancelScope
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireUpbitBatchCancelScope_PairsCopyWith<WireUpbitBatchCancelScope_Pairs> get copyWith => _$WireUpbitBatchCancelScope_PairsCopyWithImpl<WireUpbitBatchCancelScope_Pairs>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitBatchCancelScope_Pairs&&const DeepCollectionEquality().equals(other._values, _values));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_values));
+
+@override
+String toString() {
+  return 'WireUpbitBatchCancelScope.pairs(values: $values)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireUpbitBatchCancelScope_PairsCopyWith<$Res> implements $WireUpbitBatchCancelScopeCopyWith<$Res> {
+  factory $WireUpbitBatchCancelScope_PairsCopyWith(WireUpbitBatchCancelScope_Pairs value, $Res Function(WireUpbitBatchCancelScope_Pairs) _then) = _$WireUpbitBatchCancelScope_PairsCopyWithImpl;
+@useResult
+$Res call({
+ List<WireMarket> values
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireUpbitBatchCancelScope_PairsCopyWithImpl<$Res>
+    implements $WireUpbitBatchCancelScope_PairsCopyWith<$Res> {
+  _$WireUpbitBatchCancelScope_PairsCopyWithImpl(this._self, this._then);
+
+  final WireUpbitBatchCancelScope_Pairs _self;
+  final $Res Function(WireUpbitBatchCancelScope_Pairs) _then;
+
+/// Create a copy of WireUpbitBatchCancelScope
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? values = null,}) {
+  return _then(WireUpbitBatchCancelScope_Pairs(
+values: null == values ? _self._values : values // ignore: cast_nullable_to_non_nullable
+as List<WireMarket>,
+  ));
+}
+
+
+}
+
+/// @nodoc
 mixin _$WireWithdrawalFee {
 
 

@@ -9,7 +9,10 @@ from ._generated_delegate import _GeneratedNativeClientDelegateApi
 from .models import (
     AccountEvent,
     Balance,
+    CancelOrdersResult,
     BinanceMarket,
+    BinanceMarkPrice,
+    BinanceOpenInterest,
     BinanceSpotOrderDetail,
     BinanceSymbolFilters,
     BithumbApiKey,
@@ -17,6 +20,9 @@ from .models import (
     BithumbMarketAlert,
     BithumbNotice,
     BithumbPendingOrdersRequest,
+    BithumbTwapOrder,
+    BithumbTwapOrderRequest,
+    BithumbTwapOrdersRequest,
     Candle,
     CandleRequest,
     Exchange,
@@ -25,6 +31,7 @@ from .models import (
     FundingRate,
     HyperliquidAssetContext,
     HyperliquidLedgerEntry,
+    HyperliquidMidPrice,
     HistoryRequest,
     Cursor,
     MarginRequest,
@@ -43,6 +50,7 @@ from .models import (
     Ticker,
     Network,
     UpbitDepositInfo,
+    UpbitBatchCancelRequest,
     Trade,
     UpbitMarketEvent,
     UpbitOrderBookInstrument,
@@ -279,6 +287,23 @@ class UpbitAdapter(_NativeAdapter):
         value = await self._call(self._handle.deposit_info, asset, network)
         return _model_from_wire("UpbitDepositInfo", value)
 
+    async def batch_cancel_open_orders(
+        self,
+        request: UpbitBatchCancelRequest,
+    ) -> CancelOrdersResult:
+        """Cancel matching Upbit `wait` orders with an explicit market scope.
+
+        `UpbitBatchCancelScope.all()` selects every eligible market, but Upbit
+        still applies the request count (default 20, maximum 300). The result
+        can contain both completed and failed cancellations when orders change
+        state in flight.
+        """
+        value = await self._call(
+            self._handle.batch_cancel_open_orders,
+            request.to_wire(),
+        )
+        return _model_from_wire("CancelOrdersResult", value)
+
 
 class BithumbAdapter(_NativeAdapter):
     def __init__(
@@ -328,6 +353,23 @@ class BithumbAdapter(_NativeAdapter):
             [_model_from_wire("Order", item) for item in value["items"]],
             Cursor(value["next"]) if value.get("next") is not None else None,
         )
+
+    async def twap_orders(
+        self, request: BithumbTwapOrdersRequest
+    ) -> Page[BithumbTwapOrder]:
+        value = await self._call(self._handle.twap_orders, request.to_wire())
+        return Page(
+            [_model_from_wire("BithumbTwapOrder", item) for item in value["items"]],
+            Cursor(value["next"]) if value.get("next") is not None else None,
+        )
+
+    async def create_twap_order(self, request: BithumbTwapOrderRequest) -> str:
+        """Create a TWAP order; this submits a financial write to Bithumb."""
+        return await self._call(self._handle.create_twap_order, request.to_wire())
+
+    async def cancel_twap_order(self, algo_order_id: str) -> str:
+        """Cancel a TWAP order; this submits a financial write to Bithumb."""
+        return await self._call(self._handle.cancel_twap_order, algo_order_id)
 
 
 class BinanceListenKey:
@@ -412,6 +454,18 @@ class BinanceAdapter(_NativeAdapter):
         value = await self._call(self._handle.spot_order, market, order_id)
         return BinanceSpotOrderDetail.from_wire(value)
 
+    async def mark_price(self, market: Market) -> BinanceMarkPrice:
+        value = await self._call(self._handle.mark_price, market)
+        return BinanceMarkPrice.from_wire(value)
+
+    async def mark_prices(self) -> list[BinanceMarkPrice]:
+        values = await self._call(self._handle.mark_prices)
+        return [BinanceMarkPrice.from_wire(value) for value in values]
+
+    async def open_interest(self, market: Market) -> BinanceOpenInterest:
+        value = await self._call(self._handle.open_interest, market)
+        return BinanceOpenInterest.from_wire(value)
+
     async def usd_m_create_listen_key(self) -> BinanceListenKey:
         handle = await self._call(self._handle.usd_m_create_listen_key)
         return BinanceListenKey._from_native(handle)
@@ -474,6 +528,10 @@ class HyperliquidAdapter(_NativeAdapter):
     async def asset_context(self, market: Market) -> HyperliquidAssetContext:
         value = await self._call(self._handle.asset_context, market)
         return HyperliquidAssetContext.from_wire(value)
+
+    async def all_mids(self) -> list[HyperliquidMidPrice]:
+        values = await self._call(self._handle.all_mids)
+        return [HyperliquidMidPrice.from_wire(value) for value in values]
 
 
 __all__ = [

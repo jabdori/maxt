@@ -16,7 +16,7 @@ use crate::types::{
     Timestamp, Trade,
 };
 
-use super::{BinanceMarket, market_status};
+use super::{BinanceMarkPrice, BinanceMarket, BinanceOpenInterest, market_status};
 
 /// Reads a decimal out of the raw text Binance sent.
 ///
@@ -127,6 +127,29 @@ pub(super) struct RawTicker {
     /// field on either transport.
     #[serde(rename = "closeTime", alias = "C")]
     pub(super) close_time: i64,
+}
+
+/// A USD-M `/fapi/v1/premiumIndex` response for one symbol.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct RawMarkPrice {
+    pub(super) symbol: String,
+    pub(super) mark_price: String,
+    pub(super) index_price: String,
+    pub(super) estimated_settle_price: String,
+    pub(super) last_funding_rate: String,
+    pub(super) interest_rate: String,
+    pub(super) next_funding_time: i64,
+    pub(super) time: i64,
+}
+
+/// A USD-M `/fapi/v1/openInterest` response for one symbol.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct RawOpenInterest {
+    pub(super) symbol: String,
+    pub(super) open_interest: String,
+    pub(super) time: i64,
 }
 
 /// One candle, as the fixed-order array Binance sends instead of an object.
@@ -319,6 +342,47 @@ pub(super) fn ticker(market: &Market, raw: &RawTicker) -> Result<Ticker> {
     })
 }
 
+/// Converts a current USD-M mark-price snapshot without rounding its decimal
+/// strings through a binary floating-point value.
+pub(super) fn mark_price(market: &Market, raw: &RawMarkPrice) -> Result<BinanceMarkPrice> {
+    let expected_symbol = format!("{}{}", market.base, market.quote);
+    if raw.symbol != expected_symbol {
+        return Err(Error::decode(format!(
+            "Binance mark-price symbol `{}` does not match requested `{expected_symbol}`",
+            raw.symbol
+        )));
+    }
+    Ok(BinanceMarkPrice {
+        market: market.clone(),
+        mark_price: decimal(&raw.mark_price, "markPrice")?,
+        index_price: decimal(&raw.index_price, "indexPrice")?,
+        estimated_settle_price: decimal_or_none(
+            &raw.estimated_settle_price,
+            "estimatedSettlePrice",
+        )?,
+        last_funding_rate: decimal(&raw.last_funding_rate, "lastFundingRate")?,
+        interest_rate: decimal(&raw.interest_rate, "interestRate")?,
+        next_funding_time: millis(raw.next_funding_time),
+        time: millis(raw.time),
+    })
+}
+
+/// Converts current USD-M open interest for one symbol.
+pub(super) fn open_interest(market: &Market, raw: &RawOpenInterest) -> Result<BinanceOpenInterest> {
+    let expected_symbol = format!("{}{}", market.base, market.quote);
+    if raw.symbol != expected_symbol {
+        return Err(Error::decode(format!(
+            "Binance open-interest symbol `{}` does not match requested `{expected_symbol}`",
+            raw.symbol
+        )));
+    }
+    Ok(BinanceOpenInterest {
+        market: market.clone(),
+        open_interest: decimal(&raw.open_interest, "openInterest")?,
+        time: millis(raw.time),
+    })
+}
+
 /// Converts a candle and marks it closed after its inclusive close millisecond.
 pub(super) fn candle(
     market: &Market,
@@ -405,6 +469,10 @@ mod tests {
         Market::spot(Exchange::Binance, "BNB", "BTC")
     }
 
+    fn perpetual_market() -> Market {
+        Market::perpetual(Exchange::Binance, "BTC", "USDT")
+    }
+
     // https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints
     const SPOT_DEPTH: &str = r#"{
       "lastUpdateId": 1027024,
@@ -470,6 +538,39 @@ mod tests {
       "firstId": 28385,
       "lastId": 28460,
       "count": 76
+    }"#;
+
+    // https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Mark-Price
+    const USD_M_MARK_PRICE: &str = r#"{
+      "symbol": "BTCUSDT",
+      "markPrice": "11793.63104562",
+      "indexPrice": "11781.80495970",
+      "estimatedSettlePrice": "11781.16138815",
+      "lastFundingRate": "0.00038246",
+      "interestRate": "0.00010000",
+      "nextFundingTime": 1597392000000,
+      "time": 1597370495002
+    }"#;
+
+    // The symbol-omitted premium-index endpoint returns an array of these objects.
+    const USD_M_MARK_PRICES: &str = r#"[
+      {
+        "symbol": "BTCUSDT",
+        "markPrice": "11793.63104562",
+        "indexPrice": "11781.80495970",
+        "estimatedSettlePrice": "0",
+        "lastFundingRate": "0.00038246",
+        "interestRate": "0.00010000",
+        "nextFundingTime": 1597392000000,
+        "time": 1597370495002
+      }
+    ]"#;
+
+    // https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Open-Interest
+    const USD_M_OPEN_INTEREST: &str = r#"{
+      "openInterest": "10659.509",
+      "symbol": "BTCUSDT",
+      "time": 1589437530011
     }"#;
 
     // https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams
@@ -741,6 +842,67 @@ mod tests {
         assert_eq!(ticker.timestamp, Timestamp::from_millis(1_499_869_899_040));
         // Binance publishes no time for the trade behind `lastPrice`.
         assert_eq!(ticker.last_trade_time, None);
+    }
+
+    #[test]
+    fn a_mark_price_keeps_funding_context_and_timestamps() {
+        let raw: RawMarkPrice = json(USD_M_MARK_PRICE, "mark price").expect("official payload");
+        let mark = mark_price(&perpetual_market(), &raw).expect("a mark price");
+
+        assert_eq!(mark.mark_price.to_string(), "11793.63104562");
+        assert_eq!(mark.index_price.to_string(), "11781.80495970");
+        assert_eq!(
+            mark.estimated_settle_price
+                .expect("settlement estimate")
+                .to_string(),
+            "11781.16138815"
+        );
+        assert_eq!(mark.last_funding_rate.to_string(), "0.00038246");
+        assert_eq!(mark.interest_rate.to_string(), "0.00010000");
+        assert_eq!(mark.next_funding_time, millis(1_597_392_000_000));
+        assert_eq!(mark.time, millis(1_597_370_495_002));
+    }
+
+    #[test]
+    fn a_symbol_omitted_mark_price_response_is_an_array_and_zero_estimate_is_absent() {
+        let raw: Vec<RawMarkPrice> =
+            json(USD_M_MARK_PRICES, "mark prices").expect("official payload");
+        let mark = mark_price(&perpetual_market(), &raw[0]).expect("a mark price");
+
+        assert_eq!(raw.len(), 1);
+        assert_eq!(mark.estimated_settle_price, None);
+    }
+
+    #[test]
+    fn mark_price_rejects_a_response_for_a_different_market() {
+        let body = USD_M_MARK_PRICE.replace("BTCUSDT", "ETHUSDT");
+        let raw: RawMarkPrice = json(&body, "mark price").expect("official payload shape");
+
+        assert!(matches!(
+            mark_price(&perpetual_market(), &raw),
+            Err(Error::Decode { .. })
+        ));
+    }
+
+    #[test]
+    fn open_interest_keeps_the_provider_timestamp_and_exact_quantity() {
+        let raw: RawOpenInterest =
+            json(USD_M_OPEN_INTEREST, "open interest").expect("official payload");
+        let interest = open_interest(&perpetual_market(), &raw).expect("open interest");
+
+        assert_eq!(interest.open_interest.to_string(), "10659.509");
+        assert_eq!(interest.time, millis(1_589_437_530_011));
+    }
+
+    #[test]
+    fn open_interest_rejects_a_response_for_a_different_market() {
+        let body = USD_M_OPEN_INTEREST.replace("BTCUSDT", "ETHUSDT");
+        let raw: RawOpenInterest = json(&body, "open interest").expect("official payload shape");
+
+        assert!(matches!(
+            open_interest(&perpetual_market(), &raw),
+            Err(Error::Decode { .. })
+        ));
     }
 
     #[test]

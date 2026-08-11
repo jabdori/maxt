@@ -151,10 +151,16 @@ class TransferDestination(WireModel):
     def from_wire(cls, value: dict[str, Any]) -> TransferDestination:
         kind = value.get("kind")
         if kind == "exchange":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"TransferDestination.exchange does not accept {key}")
             return cls.exchange(
                 value=_decode_value(ExchangeDestination, value["value"]),
             )
         if kind == "chain":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"TransferDestination.chain does not accept {key}")
             return cls.chain(
                 value=_decode_value(ChainDestination, value["value"]),
             )
@@ -199,10 +205,16 @@ class WithdrawalFee(WireModel):
     def from_wire(cls, value: dict[str, Any]) -> WithdrawalFee:
         kind = value.get("kind")
         if kind == "fixed":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"WithdrawalFee.fixed does not accept {key}")
             return cls.fixed(
                 value=_decode_value(Decimal, value["value"]),
             )
         if kind == "rate":
+            for key in value:
+                if key not in {"kind", "rate", "minimum", "maximum"}:
+                    raise ValueError(f"WithdrawalFee.rate does not accept {key}")
             return cls.from_rate(
                 rate=_decode_value(Decimal, value["rate"]),
                 minimum=_decode_value(Optional[Decimal], value.get("minimum")),
@@ -212,6 +224,12 @@ class WithdrawalFee(WireModel):
 
     def to_wire(self) -> dict[str, Any]:
         if self.kind == "fixed":
+            if self.rate is not None:
+                raise ValueError("WithdrawalFee.fixed does not accept rate")
+            if self.minimum is not None:
+                raise ValueError("WithdrawalFee.fixed does not accept minimum")
+            if self.maximum is not None:
+                raise ValueError("WithdrawalFee.fixed does not accept maximum")
             if self.value is None:
                 raise ValueError("WithdrawalFee.fixed requires value")
             return {
@@ -219,6 +237,8 @@ class WithdrawalFee(WireModel):
                 "value": _model_to_wire(self.value),
             }
         if self.kind == "rate":
+            if self.value is not None:
+                raise ValueError("WithdrawalFee.rate does not accept value")
             if self.rate is None:
                 raise ValueError("WithdrawalFee.rate requires rate")
             return {
@@ -248,9 +268,15 @@ class TravelRuleRequirement(WireModel):
     def from_wire(cls, value: dict[str, Any]) -> TravelRuleRequirement:
         kind = value.get("kind")
         if kind == "not_required":
+            for key in value:
+                if key not in {"kind"}:
+                    raise ValueError(f"TravelRuleRequirement.not_required does not accept {key}")
             return cls.not_required(
             )
         if kind == "required":
+            for key in value:
+                if key not in {"kind", "consent_url"}:
+                    raise ValueError(f"TravelRuleRequirement.required does not accept {key}")
             return cls.required(
                 consent_url=_decode_value(Optional[str], value.get("consent_url")),
             )
@@ -258,6 +284,8 @@ class TravelRuleRequirement(WireModel):
 
     def to_wire(self) -> dict[str, Any]:
         if self.kind == "not_required":
+            if self.consent_url is not None:
+                raise ValueError("TravelRuleRequirement.not_required does not accept consent_url")
             return {
                 "kind": "not_required",
             }
@@ -351,6 +379,7 @@ class CancelOrdersResult(WireModel):
 
 @dataclass(frozen=True)
 class OrderLookupRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
     kind: OrderIdKind
     ids: list[str]
     market: Optional[Market] = None
@@ -358,12 +387,14 @@ class OrderLookupRequest(WireModel):
 
 @dataclass(frozen=True)
 class CancelOrdersRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
     kind: OrderIdKind
     ids: list[str]
 
 
 @dataclass(frozen=True)
 class OrderHistoryRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
     market: Optional[Market] = None
     statuses: list[OrderStatus] = field(default_factory=list)
     from_: Optional[Timestamp] = field(default=None, metadata={"wire_name": "from"})
@@ -374,6 +405,7 @@ class OrderHistoryRequest(WireModel):
 
 @dataclass(frozen=True)
 class DepositAddressRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
     asset: str
     network: Network
     amount: Optional[Decimal] = None
@@ -384,6 +416,7 @@ class DepositAddressRequest(WireModel):
 
 @dataclass(frozen=True)
 class WithdrawRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
     asset: str
     network: Network
     amount: Decimal
@@ -396,6 +429,7 @@ class WithdrawRequest(WireModel):
 
 @dataclass(frozen=True)
 class TransferLookupRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
     asset: str
     id: Optional[str] = None
     tx_id: Optional[str] = None
@@ -406,6 +440,7 @@ class TransferLookupRequest(WireModel):
 
 @dataclass(frozen=True)
 class TransferHistoryRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
     asset: Optional[str] = None
     network: Optional[Network] = None
     cursor: Optional[Cursor] = None
@@ -455,6 +490,83 @@ class UpbitDepositInfo(WireModel):
 
 
 @dataclass(frozen=True)
+class UpbitBatchCancelScope(WireModel):
+    _wire_union: ClassVar[bool] = True
+    kind: str
+    values: Optional[Union[list[Market], list[str]]] = None
+
+    @classmethod
+    def all(cls) -> UpbitBatchCancelScope:
+        return cls("all")
+
+    @classmethod
+    def quote_currencies(cls, values: list[str]) -> UpbitBatchCancelScope:
+        return cls("quote_currencies", values=values)
+
+    @classmethod
+    def pairs(cls, values: list[Market]) -> UpbitBatchCancelScope:
+        return cls("pairs", values=values)
+
+    @classmethod
+    def from_wire(cls, value: dict[str, Any]) -> UpbitBatchCancelScope:
+        kind = value.get("kind")
+        if kind == "all":
+            for key in value:
+                if key not in {"kind"}:
+                    raise ValueError(f"UpbitBatchCancelScope.all does not accept {key}")
+            return cls.all(
+            )
+        if kind == "quote_currencies":
+            for key in value:
+                if key not in {"kind", "values"}:
+                    raise ValueError(f"UpbitBatchCancelScope.quote_currencies does not accept {key}")
+            return cls.quote_currencies(
+                values=_decode_value(list[str], value["values"]),
+            )
+        if kind == "pairs":
+            for key in value:
+                if key not in {"kind", "values"}:
+                    raise ValueError(f"UpbitBatchCancelScope.pairs does not accept {key}")
+            return cls.pairs(
+                values=_decode_value(list[Market], value["values"]),
+            )
+        raise ValueError(f"unknown UpbitBatchCancelScope kind: {kind}")
+
+    def to_wire(self) -> dict[str, Any]:
+        if self.kind == "all":
+            if self.values is not None:
+                raise ValueError("UpbitBatchCancelScope.all does not accept values")
+            return {
+                "kind": "all",
+            }
+        if self.kind == "quote_currencies":
+            if self.values is None:
+                raise ValueError("UpbitBatchCancelScope.quote_currencies requires values")
+            return {
+                "kind": "quote_currencies",
+                "values": _model_to_wire(self.values),
+            }
+        if self.kind == "pairs":
+            if self.values is None:
+                raise ValueError("UpbitBatchCancelScope.pairs requires values")
+            return {
+                "kind": "pairs",
+                "values": _model_to_wire(self.values),
+            }
+        raise ValueError(f"unknown UpbitBatchCancelScope kind: {self.kind}")
+
+
+@dataclass(frozen=True)
+class UpbitBatchCancelRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    scope: UpbitBatchCancelScope
+    excluded_pairs: Optional[list[Market]] = None
+    side: Optional[Side] = None
+    count: Optional[int] = None
+    order_by: Optional[UpbitOrderDirection] = None
+
+
+@dataclass(frozen=True)
 class BithumbNotice(WireModel):
     categories: list[str]
     title: str
@@ -471,11 +583,55 @@ class BithumbApiKey(WireModel):
 
 @dataclass(frozen=True)
 class BithumbPendingOrdersRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
     market: Optional[Market] = None
     state: Optional[BithumbPendingOrderState] = None
     limit: Optional[int] = None
     order_by: Optional[BithumbOrderDirection] = None
     cursor: Optional[Cursor] = None
+
+
+@dataclass(frozen=True)
+class BithumbTwapOrdersRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    market: Optional[Market] = None
+    uuids: list[str] = field(default_factory=list)
+    state: Optional[BithumbTwapState] = None
+    cursor: Optional[Cursor] = None
+    limit: Optional[int] = None
+    order_by: Optional[BithumbTwapOrderDirection] = None
+
+
+@dataclass(frozen=True)
+class BithumbTwapOrderRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    market: Market
+    side: Side
+    volume: Optional[Decimal]
+    price: Optional[Decimal]
+    duration: int
+    frequency: int
+
+
+@dataclass(frozen=True)
+class BithumbTwapOrder(WireModel):
+    id: str
+    side: Side
+    price: Decimal
+    state: BithumbTwapState
+    market: Market
+    created_at: Timestamp
+    volume: Decimal
+    finished_at: Optional[Timestamp]
+    total_order_count: int
+    total_trades_count: int
+    progress_count: int
+    total_executed_amount: Decimal
+    total_executed_volume: Decimal
+    avg_trade_price: Decimal
+    wallet_id: Optional[str] = None
+    canceled_at: Optional[Timestamp] = None
+    cancel_type: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -496,6 +652,31 @@ class BithumbNetworkFee(WireModel):
     minimum_deposit: Decimal
     withdrawal_fee: WithdrawalFee
     minimum_withdrawal: Decimal
+
+
+@dataclass(frozen=True)
+class BinanceMarkPrice(WireModel):
+    market: Market
+    mark_price: Decimal
+    index_price: Decimal
+    estimated_settle_price: Optional[Decimal]
+    last_funding_rate: Decimal
+    interest_rate: Decimal
+    next_funding_time: Timestamp
+    time: Timestamp
+
+
+@dataclass(frozen=True)
+class BinanceOpenInterest(WireModel):
+    market: Market
+    open_interest: Decimal
+    time: Timestamp
+
+
+@dataclass(frozen=True)
+class HyperliquidMidPrice(WireModel):
+    market: Market
+    price: Decimal
 
 
 __all__ = [
@@ -529,9 +710,17 @@ __all__ = [
     "UpbitYearCandle",
     "UpbitOrderBookInstrument",
     "UpbitDepositInfo",
+    "UpbitBatchCancelScope",
+    "UpbitBatchCancelRequest",
     "BithumbNotice",
     "BithumbApiKey",
     "BithumbPendingOrdersRequest",
+    "BithumbTwapOrdersRequest",
+    "BithumbTwapOrderRequest",
+    "BithumbTwapOrder",
     "BithumbAssetFee",
     "BithumbNetworkFee",
+    "BinanceMarkPrice",
+    "BinanceOpenInterest",
+    "HyperliquidMidPrice",
 ]

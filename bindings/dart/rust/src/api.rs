@@ -722,7 +722,11 @@ impl NativeClient {
             BuiltInAdapter::Upbit(adapter) => adapter,
             _ => return Err(provider_mismatch("Upbit")),
         };
-        adapter.test_order(&request).await.map(Into::into).map_err(Into::into)
+        adapter
+            .test_order(&request)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
     }
 
     pub async fn upbit_deposit_info(
@@ -737,6 +741,22 @@ impl NativeClient {
         };
         adapter
             .deposit_info(&asset, &network)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn upbit_batch_cancel_open_orders(
+        &self,
+        request: WireUpbitBatchCancelRequest,
+    ) -> Result<WireCancelOrdersResult, NativeError> {
+        let request: maxt::UpbitBatchCancelRequest = request.try_into()?;
+        let adapter = match self.built_in("upbit_batch_cancel_open_orders")? {
+            BuiltInAdapter::Upbit(adapter) => adapter,
+            _ => return Err(provider_mismatch("Upbit")),
+        };
+        adapter
+            .batch_cancel_open_orders(&request)
             .await
             .map(Into::into)
             .map_err(Into::into)
@@ -819,7 +839,56 @@ impl NativeClient {
             BuiltInAdapter::Bithumb(adapter) => adapter,
             _ => return Err(provider_mismatch("Bithumb")),
         };
-        adapter.pending_orders(&request).await.map(Into::into).map_err(Into::into)
+        adapter
+            .pending_orders(&request)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn bithumb_twap_orders(
+        &self,
+        request: WireBithumbTwapOrdersRequest,
+    ) -> Result<WireBithumbTwapOrderPage, NativeError> {
+        let request: maxt::BithumbTwapOrdersRequest = request.try_into()?;
+        let adapter = match self.built_in("bithumb_twap_orders")? {
+            BuiltInAdapter::Bithumb(adapter) => adapter,
+            _ => return Err(provider_mismatch("Bithumb")),
+        };
+        adapter
+            .twap_orders(&request)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn bithumb_create_twap_order(
+        &self,
+        request: WireBithumbTwapOrderRequest,
+    ) -> Result<String, NativeError> {
+        let request: maxt::BithumbTwapOrderRequest = request.try_into()?;
+        let adapter = match self.built_in("bithumb_create_twap_order")? {
+            BuiltInAdapter::Bithumb(adapter) => adapter,
+            _ => return Err(provider_mismatch("Bithumb")),
+        };
+        adapter
+            .create_twap_order(&request)
+            .await
+            .map_err(Into::into)
+    }
+
+    pub async fn bithumb_cancel_twap_order(
+        &self,
+        algo_order_id: String,
+    ) -> Result<String, NativeError> {
+        let adapter = match self.built_in("bithumb_cancel_twap_order")? {
+            BuiltInAdapter::Bithumb(adapter) => adapter,
+            _ => return Err(provider_mismatch("Bithumb")),
+        };
+        adapter
+            .cancel_twap_order(&algo_order_id)
+            .await
+            .map_err(Into::into)
     }
 
     pub async fn binance_spot_symbol_filters(
@@ -848,6 +917,48 @@ impl NativeClient {
         };
         adapter
             .spot_order(&market.into(), &order_id)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn binance_mark_price(
+        &self,
+        market: WireMarket,
+    ) -> Result<WireBinanceMarkPrice, NativeError> {
+        let adapter = match self.built_in("binance_mark_price")? {
+            BuiltInAdapter::Binance(adapter) => adapter,
+            _ => return Err(provider_mismatch("Binance")),
+        };
+        adapter
+            .mark_price(&market.into())
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn binance_mark_prices(&self) -> Result<Vec<WireBinanceMarkPrice>, NativeError> {
+        let adapter = match self.built_in("binance_mark_prices")? {
+            BuiltInAdapter::Binance(adapter) => adapter,
+            _ => return Err(provider_mismatch("Binance")),
+        };
+        adapter
+            .mark_prices()
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
+    pub async fn binance_open_interest(
+        &self,
+        market: WireMarket,
+    ) -> Result<WireBinanceOpenInterest, NativeError> {
+        let adapter = match self.built_in("binance_open_interest")? {
+            BuiltInAdapter::Binance(adapter) => adapter,
+            _ => return Err(provider_mismatch("Binance")),
+        };
+        adapter
+            .open_interest(&market.into())
             .await
             .map(Into::into)
             .map_err(Into::into)
@@ -922,6 +1033,18 @@ impl NativeClient {
             .asset_context(&market.into())
             .await
             .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn hyperliquid_all_mids(&self) -> Result<Vec<WireHyperliquidMidPrice>, NativeError> {
+        let adapter = match self.built_in("hyperliquid_all_mids")? {
+            BuiltInAdapter::Hyperliquid(adapter) => adapter,
+            _ => return Err(provider_mismatch("Hyperliquid")),
+        };
+        adapter
+            .all_mids()
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
             .map_err(Into::into)
     }
 }

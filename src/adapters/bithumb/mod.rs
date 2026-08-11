@@ -19,7 +19,7 @@ use crate::transport::HttpTransport;
 use crate::types::{
     AssetNetwork, Balance, CancelOrdersResult, Candle, Cursor, Deposit, DepositAddress,
     DepositAddressEntry, Exchange, Market, MarketInfo, MarketKind, Network, Order, OrderBook,
-    OrderRules, Page, StreamConfig, Subscription, Ticker, Timestamp, Trade, Withdrawal,
+    OrderRules, Page, Side, StreamConfig, Subscription, Ticker, Timestamp, Trade, Withdrawal,
     WithdrawalFee, WithdrawalQuote,
 };
 
@@ -142,6 +142,148 @@ pub struct BithumbPendingOrdersRequest {
     pub order_by: Option<BithumbOrderDirection>,
     /// Cursor returned by the preceding page.
     pub cursor: Option<Cursor>,
+}
+
+/// State filter accepted by Bithumb's TWAP history endpoint.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BithumbTwapState {
+    /// The strategy is still submitting child orders.
+    Progress,
+    /// All child orders have completed.
+    Done,
+    /// The strategy was cancelled before completion.
+    Cancel,
+}
+
+/// Sort direction accepted by Bithumb's TWAP history endpoint.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BithumbTwapOrderDirection {
+    /// Oldest TWAP orders first.
+    Ascending,
+    /// Newest TWAP orders first.
+    Descending,
+}
+
+/// A page request for Bithumb TWAP orders.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct BithumbTwapOrdersRequest {
+    /// Optional market filter.
+    pub market: Option<Market>,
+    /// Optional TWAP identifiers. Bithumb accepts at most the server limit.
+    pub uuids: Vec<String>,
+    /// Optional lifecycle filter; Bithumb defaults to `progress`.
+    pub state: Option<BithumbTwapState>,
+    /// Cursor returned by the preceding page.
+    pub cursor: Option<Cursor>,
+    /// Page size from 1 through 100.
+    pub limit: Option<u32>,
+    /// Optional result order; Bithumb defaults to newest first.
+    pub order_by: Option<BithumbTwapOrderDirection>,
+}
+
+impl BithumbTwapOrdersRequest {
+    /// Starts an unfiltered request using Bithumb's defaults.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Filters by market.
+    #[must_use]
+    pub fn market(mut self, market: Market) -> Self {
+        self.market = Some(market);
+        self
+    }
+
+    /// Filters by one or more TWAP identifiers.
+    #[must_use]
+    pub fn uuids(mut self, uuids: impl Into<Vec<String>>) -> Self {
+        self.uuids = uuids.into();
+        self
+    }
+
+    /// Filters by lifecycle state.
+    #[must_use]
+    pub fn state(mut self, state: BithumbTwapState) -> Self {
+        self.state = Some(state);
+        self
+    }
+
+    /// Resumes from a cursor returned by the preceding page.
+    #[must_use]
+    pub fn cursor(mut self, cursor: Cursor) -> Self {
+        self.cursor = Some(cursor);
+        self
+    }
+
+    /// Sets the page size.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+
+    /// Selects the result order.
+    #[must_use]
+    pub fn order_by(mut self, order_by: BithumbTwapOrderDirection) -> Self {
+        self.order_by = Some(order_by);
+        self
+    }
+}
+
+/// Parameters for creating one Bithumb TWAP order.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BithumbTwapOrderRequest {
+    /// Bithumb spot market.
+    pub market: Market,
+    /// Buy (`bid`) or sell (`ask`).
+    pub side: Side,
+    /// Total base quantity for a sell request.
+    pub volume: Option<rust_decimal::Decimal>,
+    /// Total quote amount for a buy request.
+    pub price: Option<rust_decimal::Decimal>,
+    /// Total execution duration in seconds, from 300 through 43,200.
+    pub duration: u32,
+    /// Child-order interval in seconds: 15, 20, 30, 60, or 120.
+    pub frequency: u32,
+}
+
+/// One TWAP order returned by Bithumb.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BithumbTwapOrder {
+    /// TWAP identifier (`uuid`, also called `algo_order_id`).
+    pub id: String,
+    /// Buy or sell side.
+    pub side: Side,
+    /// Price captured when the strategy was created.
+    pub price: rust_decimal::Decimal,
+    /// Provider lifecycle state.
+    pub state: BithumbTwapState,
+    /// Bithumb spot market.
+    pub market: Market,
+    /// Creation time.
+    pub created_at: Timestamp,
+    /// User-supplied total quantity or amount.
+    pub volume: rust_decimal::Decimal,
+    /// Completion time, when Bithumb reports one.
+    pub finished_at: Option<Timestamp>,
+    /// Number of child orders planned.
+    pub total_order_count: u32,
+    /// Number of child orders that traded.
+    pub total_trades_count: u32,
+    /// Number of child orders submitted so far.
+    pub progress_count: u32,
+    /// Total quote amount filled.
+    pub total_executed_amount: rust_decimal::Decimal,
+    /// Total base quantity filled.
+    pub total_executed_volume: rust_decimal::Decimal,
+    /// Average fill price.
+    pub avg_trade_price: rust_decimal::Decimal,
+    /// Bithumb wallet identifier, when Bithumb reports one.
+    pub wallet_id: Option<String>,
+    /// Cancellation time, when the order was cancelled.
+    pub canceled_at: Option<Timestamp>,
+    /// Cancellation reason, preserved when Bithumb reports one.
+    pub cancel_type: Option<String>,
 }
 
 impl BithumbPendingOrdersRequest {
@@ -300,6 +442,24 @@ impl BithumbAdapter {
         request: &BithumbPendingOrdersRequest,
     ) -> Result<Page<Order>> {
         private::pending_orders(self.http()?, self.credentials()?, request).await
+    }
+
+    /// Returns one page of Bithumb TWAP orders.
+    pub async fn twap_orders(
+        &self,
+        request: &BithumbTwapOrdersRequest,
+    ) -> Result<Page<BithumbTwapOrder>> {
+        private::twap_orders(self.http()?, self.credentials()?, request).await
+    }
+
+    /// Creates a TWAP order. This submits a financial request to Bithumb.
+    pub async fn create_twap_order(&self, request: &BithumbTwapOrderRequest) -> Result<String> {
+        private::create_twap_order(self.http()?, self.credentials()?, request).await
+    }
+
+    /// Cancels a TWAP order and returns the cancelled identifier.
+    pub async fn cancel_twap_order(&self, algo_order_id: &str) -> Result<String> {
+        private::cancel_twap_order(self.http()?, self.credentials()?, algo_order_id).await
     }
 
     pub(crate) fn is_authenticated(&self) -> bool {

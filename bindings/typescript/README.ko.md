@@ -67,11 +67,11 @@ Binance 테스트넷(testnet) 생성자는 제공하지 않습니다. Hyperliqui
 
 | 어댑터 | 생성 | 추가 메서드 |
 | --- | --- | --- |
-| `UpbitAdapter` | `new UpbitAdapter()` 또는 `UpbitAdapter.withRegion(...)` | `orderBooks()`, `orderBooksAtLevel()`, `tickers()`, `tickersByQuote()`, `yearCandles()`, `orderbookInstruments()`, `marketEvents()`; 인증 필요: `testOrder()`, `depositInfo()` |
-| `BithumbAdapter` | `new BithumbAdapter()` | `marketWarnings()`, `marketAlerts()`, `notices()`, `transferFees()`; 인증 필요: `apiKeys()`, `pendingOrders()` |
+| `UpbitAdapter` | `new UpbitAdapter()` 또는 `UpbitAdapter.withRegion(...)` | `orderBooks()`, `orderBooksAtLevel()`, `tickers()`, `tickersByQuote()`, `yearCandles()`, `orderbookInstruments()`, `marketEvents()`; 인증 필요: `testOrder()`, `depositInfo()`, `batchCancelOpenOrders()` |
+| `BithumbAdapter` | `new BithumbAdapter()` | `marketWarnings()`, `marketAlerts()`, `notices()`, `transferFees()`; 인증 필요: `apiKeys()`, `pendingOrders()`, `twapOrders()`, `createTwapOrder()`, `cancelTwapOrder()` |
 | `BinanceAdapter` | `BinanceAdapter.spot()` | `spotSymbolFilters()`; 인증 필요: `spotOrder()` |
-| `BinanceAdapter` | `BinanceAdapter.usdMFutures()` | 인증 필요: `usdMCreateListenKey()`, `usdMKeepaliveListenKey()`, `usdMCloseListenKey()` |
-| `HyperliquidAdapter` | `new HyperliquidAdapter()` 또는 `HyperliquidAdapter.testnet()` | `assetContext()`, `nonFundingLedger()` |
+| `BinanceAdapter` | `BinanceAdapter.usdMFutures()` | 공개: `markPrice()`, `markPrices()`, `openInterest()`; 인증 필요: `usdMCreateListenKey()`, `usdMKeepaliveListenKey()`, `usdMCloseListenKey()` |
+| `HyperliquidAdapter` | `new HyperliquidAdapter()` 또는 `HyperliquidAdapter.testnet()` | 공개: `allMids()`; `assetContext()`, `nonFundingLedger()` |
 
 `UpbitAdapter.testOrder()`는 주문을 생성하지 않고 검증합니다. 반환 `Order`는
 dry-run 결과이므로 `id`를 조회·취소에 사용하면 안 되며 상태도 실제 활성 주문을 뜻하지 않습니다.
@@ -79,6 +79,35 @@ dry-run 결과이므로 `id`를 조회·취소에 사용하면 안 되며 상태
 `UpbitAdapter.depositInfo(asset, network)`는 거래소가 제공하는 입금 가능 여부, 최소
 수량, 확인 수, 소수 자릿수 메타데이터를 반환합니다. Upbit 응답은 몇 분 지연될 수 있어
 실시간 서비스 상태로 사용하면 안 됩니다.
+
+`UpbitAdapter.batchCancelOpenOrders(request)`는 금전성 쓰기 요청입니다.
+`UpbitBatchCancelScope.all()`은 모든 대상 마켓 범위를 명시적으로 선택하며, Upbit는
+요청 수량을 적용해 기본 20개·최대 300개의 일치하는 `wait` 주문만 취소합니다. 일부
+실패도 결과에 보존합니다.
+
+`BithumbAdapter.twapOrders(request)`는 Bithumb KRW 마켓의 인증된 읽기 전용
+주문 이력 조회입니다. `createTwapOrder()`와 `cancelTwapOrder()`는 금전성
+쓰기이므로 읽기 전용 검증에서 호출하지 마세요.
+
+```ts
+const adapter = new BithumbAdapter({ accessKey, secretKey });
+const market = Market.spot(Exchange.Bithumb, "BTC", "KRW");
+const page = await adapter.twapOrders(
+  new BithumbTwapOrdersRequest(market, [], null, null, 20, null),
+);
+```
+
+Bithumb TWAP API는 `progress`, `done`, `cancel` 상태와 1~100개 페이지 크기를
+지원합니다. 생성 시 주문 시간은 300~43,200초, 간격은 15/20/30/60/120초이며,
+매수에는 `price`, 매도에는 `volume`이 필요합니다.
+
+`BinanceAdapter.usdMFutures()`는 USD-M 무기한 선물의 공개 읽기 전용
+시세 데이터 메서드 `markPrice()`, `markPrices()`, `openInterest()`를
+제공합니다. 이 메서드들은 fixture로 검증했으며 실제 읽기 요청(live read)은
+아직 검증하지 않았습니다. `HyperliquidAdapter.allMids()`도 공개 읽기 전용이며,
+기본 무기한 선물 DEX와 첫 번째 DEX의 Spot mid 가격을 반환합니다. 호가가 비어
+있으면 Hyperliquid가 마지막 체결 가격을 대체값으로 사용합니다. 이 메서드도
+fixture로 검증했으며 실제 읽기 요청은 아직 검증하지 않았습니다.
 
 ## Node.js
 

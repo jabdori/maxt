@@ -239,6 +239,11 @@ class UpbitRegion(str, Enum):
     THAILAND = "thailand"
 
 
+class UpbitOrderDirection(str, Enum):
+    ASCENDING = "asc"
+    DESCENDING = "desc"
+
+
 class BithumbAlertStep(str, Enum):
     CAUTION = "caution"
     WARNING = "warning"
@@ -252,6 +257,17 @@ class BithumbPendingOrderState(str, Enum):
 
 
 class BithumbOrderDirection(str, Enum):
+    ASCENDING = "asc"
+    DESCENDING = "desc"
+
+
+class BithumbTwapState(str, Enum):
+    PROGRESS = "progress"
+    DONE = "done"
+    CANCEL = "cancel"
+
+
+class BithumbTwapOrderDirection(str, Enum):
     ASCENDING = "asc"
     DESCENDING = "desc"
 
@@ -375,9 +391,12 @@ OrderType.__module__ = "maxt.models"
 TimeInForce.__module__ = "maxt.models"
 SizeKind.__module__ = "maxt.models"
 UpbitRegion.__module__ = "maxt.models"
+UpbitOrderDirection.__module__ = "maxt.models"
 BithumbAlertStep.__module__ = "maxt.models"
 BithumbPendingOrderState.__module__ = "maxt.models"
 BithumbOrderDirection.__module__ = "maxt.models"
+BithumbTwapState.__module__ = "maxt.models"
+BithumbTwapOrderDirection.__module__ = "maxt.models"
 BinanceMarket.__module__ = "maxt.models"
 HyperliquidLedgerKind.__module__ = "maxt.models"
 ExchangeErrorKind.__module__ = "maxt._api"
@@ -401,9 +420,12 @@ __all__ = [
     "TimeInForce",
     "SizeKind",
     "UpbitRegion",
+    "UpbitOrderDirection",
     "BithumbAlertStep",
     "BithumbPendingOrderState",
     "BithumbOrderDirection",
+    "BithumbTwapState",
+    "BithumbTwapOrderDirection",
     "BinanceMarket",
     "HyperliquidLedgerKind",
     "ExchangeErrorKind",

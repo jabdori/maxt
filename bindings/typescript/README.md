@@ -67,11 +67,11 @@ backends.
 
 | Adapter | Construction | Additional methods |
 | --- | --- | --- |
-| `UpbitAdapter` | `new UpbitAdapter()` or `UpbitAdapter.withRegion(...)` | `orderBooks()`, `orderBooksAtLevel()`, `tickers()`, `tickersByQuote()`, `yearCandles()`, `orderbookInstruments()`, `marketEvents()`; authenticated: `testOrder()`, `depositInfo()` |
-| `BithumbAdapter` | `new BithumbAdapter()` | `marketWarnings()`, `marketAlerts()`, `notices()`, `transferFees()`; authenticated: `apiKeys()`, `pendingOrders()` |
+| `UpbitAdapter` | `new UpbitAdapter()` or `UpbitAdapter.withRegion(...)` | `orderBooks()`, `orderBooksAtLevel()`, `tickers()`, `tickersByQuote()`, `yearCandles()`, `orderbookInstruments()`, `marketEvents()`; authenticated: `testOrder()`, `depositInfo()`, `batchCancelOpenOrders()` |
+| `BithumbAdapter` | `new BithumbAdapter()` | `marketWarnings()`, `marketAlerts()`, `notices()`, `transferFees()`; authenticated: `apiKeys()`, `pendingOrders()`, `twapOrders()`, `createTwapOrder()`, `cancelTwapOrder()` |
 | `BinanceAdapter` | `BinanceAdapter.spot()` | `spotSymbolFilters()`; authenticated: `spotOrder()` |
-| `BinanceAdapter` | `BinanceAdapter.usdMFutures()` | Authenticated: `usdMCreateListenKey()`, `usdMKeepaliveListenKey()`, `usdMCloseListenKey()` |
-| `HyperliquidAdapter` | `new HyperliquidAdapter()` or `HyperliquidAdapter.testnet()` | `assetContext()`, `nonFundingLedger()` |
+| `BinanceAdapter` | `BinanceAdapter.usdMFutures()` | Public: `markPrice()`, `markPrices()`, `openInterest()`; authenticated: `usdMCreateListenKey()`, `usdMKeepaliveListenKey()`, `usdMCloseListenKey()` |
+| `HyperliquidAdapter` | `new HyperliquidAdapter()` or `HyperliquidAdapter.testnet()` | Public: `allMids()`; `assetContext()`, `nonFundingLedger()` |
 
 `UpbitAdapter.testOrder()` validates an order without creating it. The returned
 `Order` is a dry-run result: do not query or cancel its `id`, and do not treat
@@ -80,6 +80,36 @@ its status as a live order.
 `UpbitAdapter.depositInfo(asset, network)` returns the provider's deposit
 availability, minimum amount, confirmation, and precision metadata. Upbit may
 delay this information by several minutes; it is not a real-time service-status signal.
+
+`UpbitAdapter.batchCancelOpenOrders(request)` is a financial write.
+`UpbitBatchCancelScope.all()` explicitly selects every eligible market; Upbit
+still applies the request count (default 20, maximum 300 `wait` orders), and
+the result preserves partial failures.
+
+`BithumbAdapter.twapOrders(request)` is an authenticated, read-only history
+query for Bithumb's KRW markets. `createTwapOrder()` and
+`cancelTwapOrder()` are financial writes; do not call them in a read-only
+verification.
+
+```ts
+const adapter = new BithumbAdapter({ accessKey, secretKey });
+const market = Market.spot(Exchange.Bithumb, "BTC", "KRW");
+const page = await adapter.twapOrders(
+  new BithumbTwapOrdersRequest(market, [], null, null, 20, null),
+);
+```
+
+The Bithumb TWAP API accepts `progress`, `done`, or `cancel` states and uses a
+page size from 1 through 100. Creation uses a 300–43,200 second duration and a
+15/20/30/60/120 second interval; buys require `price`, sells require `volume`.
+
+`BinanceAdapter.usdMFutures()` exposes `markPrice()`, `markPrices()`, and
+`openInterest()` as public, read-only USD-M perpetual market-data calls. These
+methods are fixture-verified; they have not been live-read verified.
+`HyperliquidAdapter.allMids()` is also public and read-only. It returns the
+default perpetual DEX mids and first-DEX spot mids; Hyperliquid falls back to
+the last trade price when a book is empty. This method is fixture-verified and
+has not been live-read verified.
 
 ## Node.js
 

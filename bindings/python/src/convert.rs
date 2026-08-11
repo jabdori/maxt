@@ -91,6 +91,24 @@ pub(crate) fn optional<'py>(
     Ok(dict.get_item(name)?.filter(|value| !value.is_none()))
 }
 
+pub(crate) fn only_fields(dict: &Bound<'_, PyDict>, allowed: &[&str], field: &str) -> PyResult<()> {
+    for (key, _) in dict.iter() {
+        let key = key.extract::<String>().map_err(|_| {
+            core_error(maxt::Error::InvalidRequest {
+                field: field.to_owned(),
+                detail: "wire object keys must be strings".to_owned(),
+            })
+        })?;
+        if !allowed.contains(&key.as_str()) {
+            return Err(core_error(maxt::Error::InvalidRequest {
+                field: field.to_owned(),
+                detail: format!("does not accept `{key}`"),
+            }));
+        }
+    }
+    Ok(())
+}
+
 pub(crate) fn text(value: &Bound<'_, PyAny>) -> PyResult<String> {
     if let Ok(value) = value.extract::<String>() {
         return Ok(value);
@@ -326,6 +344,17 @@ pub(crate) fn list_from_wire<T>(
         .try_iter()?
         .map(|item| parse(&item?))
         .collect::<PyResult<Vec<_>>>()
+}
+
+pub(crate) fn bithumb_twap_order_page_to_wire(
+    py: Python<'_>,
+    value: &Page<maxt::BithumbTwapOrder>,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "items" => list_to_wire(py, &value.items, bithumb_twap_order_to_wire)?,
+        "next" => value.next.as_ref().map(Cursor::as_str),
+    )
 }
 
 #[cfg(test)]

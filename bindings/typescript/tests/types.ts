@@ -1,5 +1,7 @@
 import {
   BinanceAdapter,
+  type BinanceMarkPrice,
+  type BinanceOpenInterest,
   ChainDestination,
   Client,
   CancelOrdersRequest,
@@ -19,11 +21,19 @@ import {
   TransferLookupRequest,
   WithdrawRequest,
   UpbitAdapter,
+  UpbitBatchCancelRequest,
+  UpbitBatchCancelScope,
+  UpbitOrderDirection,
   BithumbAdapter,
   BithumbOrderDirection,
   BithumbPendingOrderState,
   BithumbPendingOrdersRequest,
+  BithumbTwapOrder,
+  BithumbTwapOrderRequest,
+  BithumbTwapOrdersRequest,
   Cursor,
+  HyperliquidAdapter,
+  type HyperliquidMidPrice,
   type AssetNetwork,
   type Deposit,
   type Page,
@@ -55,6 +65,13 @@ const client = new Client(adapter);
 const market = Market.spot(Exchange.Binance, "BTC", "USDT");
 const ticker: Promise<Ticker> = client.ticker(market);
 const filters = client.adapter.spotSymbolFilters(market);
+const usdM = BinanceAdapter.usdMFutures();
+const usdMMarket = Market.perpetual(Exchange.Binance, "BTC", "USDT");
+const markPrice: Promise<BinanceMarkPrice> = usdM.markPrice(usdMMarket);
+const markPrices: Promise<readonly BinanceMarkPrice[]> = usdM.markPrices();
+const openInterest: Promise<BinanceOpenInterest> = usdM.openInterest(usdMMarket);
+const hyperliquid = new HyperliquidAdapter();
+const allMids: Promise<readonly HyperliquidMidPrice[]> = hyperliquid.allMids();
 const upbit = new UpbitAdapter();
 const upbitMarket = Market.spot(Exchange.Upbit, "BTC", "KRW");
 const quoteTickers: Promise<readonly Ticker[]> = upbit.tickersByQuote(["KRW"]);
@@ -74,6 +91,15 @@ const testOrder: Promise<Order> = upbit.testOrder(
   ),
 );
 const depositInfo: Promise<UpbitDepositInfo> = upbit.depositInfo("BTC", Network.Bitcoin);
+const batchCancellation = upbit.batchCancelOpenOrders(
+  new UpbitBatchCancelRequest(
+    UpbitBatchCancelScope.all(),
+    null,
+    null,
+    20,
+    UpbitOrderDirection.Ascending,
+  ),
+);
 const bithumb = new BithumbAdapter();
 const notices: Promise<readonly BithumbNotice[]> = bithumb.notices();
 const transferFees: Promise<readonly BithumbAssetFee[]> = bithumb.transferFees("BTC");
@@ -87,6 +113,20 @@ const pendingOrders: Promise<Page<Order>> = bithumb.pendingOrders(
     new Cursor("page+/=="),
   ),
 );
+const twapOrders: Promise<Page<BithumbTwapOrder>> = bithumb.twapOrders(
+  new BithumbTwapOrdersRequest(),
+);
+const twapOrder: Promise<string> = bithumb.createTwapOrder(
+  new BithumbTwapOrderRequest(
+    Market.spot(Exchange.Bithumb, "BTC", "KRW"),
+    Side.Buy,
+    null,
+    Decimal.one,
+    300,
+    30,
+  ),
+);
+const twapCancellation: Promise<string> = bithumb.cancelTwapOrder("twap-1");
 const destination = TransferDestination.chain(
   new ChainDestination("BTC", Network.Bitcoin, "bc1qdestination"),
 );
@@ -108,16 +148,24 @@ const cancellations = client.cancelOrders(
 const transferError = new TransferError(TransferErrorKind.NetworkMismatch, "chains differ");
 void ticker;
 void filters;
+void markPrice;
+void markPrices;
+void openInterest;
+void allMids;
 void quoteTickers;
 void aggregatedBooks;
 void yearCandles;
 void instruments;
 void testOrder;
 void depositInfo;
+void batchCancellation;
 void notices;
 void transferFees;
 void apiKeys;
 void pendingOrders;
+void twapOrders;
+void twapOrder;
+void twapCancellation;
 void networks;
 void addresses;
 void address;

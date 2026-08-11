@@ -64,11 +64,11 @@ Exchange-specific methods remain available through `client.adapter`.
 
 | Adapter | Construction | Additional methods |
 | --- | --- | --- |
-| `UpbitAdapter` | `UpbitAdapter()` or `UpbitAdapter(region=...)` | `order_books()`, `order_books_at_level()`, `tickers()`, `tickers_by_quote()`, `year_candles()`, `orderbook_instruments()`, `market_events()`; authenticated: `test_order()`, `deposit_info()` |
-| `BithumbAdapter` | `BithumbAdapter()` | `market_warnings()`, `market_alerts()`, `notices()`, `transfer_fees()`; authenticated: `api_keys()`, `pending_orders()` |
+| `UpbitAdapter` | `UpbitAdapter()` or `UpbitAdapter(region=...)` | `order_books()`, `order_books_at_level()`, `tickers()`, `tickers_by_quote()`, `year_candles()`, `orderbook_instruments()`, `market_events()`; authenticated: `test_order()`, `deposit_info()`, `batch_cancel_open_orders()` |
+| `BithumbAdapter` | `BithumbAdapter()` | `market_warnings()`, `market_alerts()`, `notices()`, `transfer_fees()`; authenticated: `api_keys()`, `pending_orders()`, `twap_orders()`, `create_twap_order()`, `cancel_twap_order()` |
 | `BinanceAdapter` | `BinanceAdapter.spot()` | `spot_symbol_filters()`; authenticated: `spot_order()` |
-| `BinanceAdapter` | `BinanceAdapter.usd_m_futures()` | Authenticated: `usd_m_create_listen_key()`, `usd_m_keepalive_listen_key()`, `usd_m_close_listen_key()` |
-| `HyperliquidAdapter` | `HyperliquidAdapter()` or `HyperliquidAdapter.testnet()` | `asset_context()`, `non_funding_ledger()` |
+| `BinanceAdapter` | `BinanceAdapter.usd_m_futures()` | Public: `mark_price()`, `mark_prices()`, `open_interest()`; authenticated: `usd_m_create_listen_key()`, `usd_m_keepalive_listen_key()`, `usd_m_close_listen_key()` |
+| `HyperliquidAdapter` | `HyperliquidAdapter()` or `HyperliquidAdapter.testnet()` | Public: `all_mids()`; `asset_context()`, `non_funding_ledger()` |
 
 `UpbitAdapter.test_order()` validates an order without creating it. The returned
 `Order` is a dry-run result: do not query or cancel its `id`, and do not treat
@@ -77,6 +77,45 @@ its status as a live order.
 `UpbitAdapter.deposit_info(asset, network)` returns the provider's deposit
 availability, minimum amount, confirmation, and precision metadata. Upbit may
 delay this information by several minutes; it is not a real-time service-status signal.
+
+`UpbitAdapter.batch_cancel_open_orders(request)` is a financial write.
+`UpbitBatchCancelScope.all()` explicitly selects every eligible market; Upbit
+still applies the request count (default 20, maximum 300 `wait` orders), and
+the result preserves partial failures.
+
+`BithumbAdapter.twap_orders(request)` is an authenticated, read-only history
+query for Bithumb's KRW markets. `create_twap_order()` and
+`cancel_twap_order()` are financial writes; do not call them in a read-only
+verification.
+
+```python
+from maxt import (
+    BithumbAdapter,
+    BithumbTwapOrdersRequest,
+    Client,
+    Exchange,
+    Market,
+)
+
+async def read_twap_history() -> None:
+    client = Client(BithumbAdapter(access_key=access_key, secret_key=secret_key))
+    market = Market.spot(Exchange.BITHUMB, "BTC", "KRW")
+    page = await client.adapter.twap_orders(
+        BithumbTwapOrdersRequest(market=market, limit=20)
+    )
+```
+
+The Bithumb TWAP API accepts `progress`, `done`, or `cancel` states and uses a
+page size from 1 through 100. Creation uses a 300–43,200 second duration and a
+15/20/30/60/120 second interval; buys require `price`, sells require `volume`.
+
+`BinanceAdapter.usd_m_futures()` exposes `mark_price()`, `mark_prices()`, and
+`open_interest()` as public, read-only USD-M perpetual market-data calls. These
+methods are fixture-verified; they have not been live-read verified.
+`HyperliquidAdapter.all_mids()` is also public and read-only. It returns the
+default perpetual DEX mids and first-DEX spot mids; Hyperliquid falls back to
+the last trade price when a book is empty. This method is fixture-verified and
+has not been live-read verified.
 
 ## Binance common and exchange-specific APIs
 

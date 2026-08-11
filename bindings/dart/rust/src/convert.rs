@@ -7,8 +7,9 @@ pub use generated_models::*;
 
 use maxt::adapters::{
     BinanceSpotOrderDetail, BinanceSymbolFilters, BithumbAlertStep, BithumbMarketAlert,
-    BithumbOrderDirection, BithumbPendingOrderState, HyperliquidAssetContext,
-    HyperliquidLedgerEntry, HyperliquidLedgerKind, UpbitMarketEvent,
+    BithumbOrderDirection, BithumbPendingOrderState, BithumbTwapOrderDirection, BithumbTwapState,
+    HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind, UpbitMarketEvent,
+    UpbitOrderDirection,
 };
 use maxt::{
     Balance, Candle, CandleRequest, Cursor, Decimal, Error, Exchange, ExchangeErrorKind, Feature,
@@ -354,6 +355,25 @@ pub enum WireBithumbPendingOrderState {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireBithumbOrderDirection {
+    Ascending,
+    Descending,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireBithumbTwapState {
+    Progress,
+    Done,
+    Cancel,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireBithumbTwapOrderDirection {
+    Ascending,
+    Descending,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireUpbitOrderDirection {
     Ascending,
     Descending,
 }
@@ -1285,6 +1305,62 @@ impl From<WireBithumbOrderDirection> for BithumbOrderDirection {
         match value {
             WireBithumbOrderDirection::Ascending => Self::Ascending,
             WireBithumbOrderDirection::Descending => Self::Descending,
+        }
+    }
+}
+
+impl From<BithumbTwapState> for WireBithumbTwapState {
+    fn from(value: BithumbTwapState) -> Self {
+        match value {
+            BithumbTwapState::Progress => Self::Progress,
+            BithumbTwapState::Done => Self::Done,
+            BithumbTwapState::Cancel => Self::Cancel,
+        }
+    }
+}
+
+impl From<WireBithumbTwapState> for BithumbTwapState {
+    fn from(value: WireBithumbTwapState) -> Self {
+        match value {
+            WireBithumbTwapState::Progress => Self::Progress,
+            WireBithumbTwapState::Done => Self::Done,
+            WireBithumbTwapState::Cancel => Self::Cancel,
+        }
+    }
+}
+
+impl From<BithumbTwapOrderDirection> for WireBithumbTwapOrderDirection {
+    fn from(value: BithumbTwapOrderDirection) -> Self {
+        match value {
+            BithumbTwapOrderDirection::Ascending => Self::Ascending,
+            BithumbTwapOrderDirection::Descending => Self::Descending,
+        }
+    }
+}
+
+impl From<WireBithumbTwapOrderDirection> for BithumbTwapOrderDirection {
+    fn from(value: WireBithumbTwapOrderDirection) -> Self {
+        match value {
+            WireBithumbTwapOrderDirection::Ascending => Self::Ascending,
+            WireBithumbTwapOrderDirection::Descending => Self::Descending,
+        }
+    }
+}
+
+impl From<UpbitOrderDirection> for WireUpbitOrderDirection {
+    fn from(value: UpbitOrderDirection) -> Self {
+        match value {
+            UpbitOrderDirection::Ascending => Self::Ascending,
+            UpbitOrderDirection::Descending => Self::Descending,
+        }
+    }
+}
+
+impl From<WireUpbitOrderDirection> for UpbitOrderDirection {
+    fn from(value: WireUpbitOrderDirection) -> Self {
+        match value {
+            WireUpbitOrderDirection::Ascending => Self::Ascending,
+            WireUpbitOrderDirection::Descending => Self::Descending,
         }
     }
 }

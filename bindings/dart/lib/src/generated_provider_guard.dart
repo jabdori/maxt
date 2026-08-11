@@ -29,6 +29,9 @@ void _generatedProviderGuard({
     _generatedProviderValue<String>(),
     _generatedProviderValue<Network>(),
   );
+  upbit.batchCancelOpenOrders(
+    _generatedProviderValue<UpbitBatchCancelRequest>(),
+  );
   BithumbAdapter();
   bithumb.marketWarnings();
   bithumb.marketAlerts();
@@ -36,6 +39,9 @@ void _generatedProviderGuard({
   bithumb.transferFees(_generatedProviderValue<String>());
   bithumb.apiKeys();
   bithumb.pendingOrders(_generatedProviderValue<BithumbPendingOrdersRequest>());
+  bithumb.twapOrders(_generatedProviderValue<BithumbTwapOrdersRequest>());
+  bithumb.createTwapOrder(_generatedProviderValue<BithumbTwapOrderRequest>());
+  bithumb.cancelTwapOrder(_generatedProviderValue<String>());
   BinanceAdapter.spot();
   BinanceAdapter.usdMFutures();
   binance.venue;
@@ -44,12 +50,16 @@ void _generatedProviderGuard({
     _generatedProviderValue<Market>(),
     _generatedProviderValue<String>(),
   );
+  binance.markPrice(_generatedProviderValue<Market>());
+  binance.markPrices();
+  binance.openInterest(_generatedProviderValue<Market>());
   binance.usdMCreateListenKey();
   binance.usdMKeepaliveListenKey();
   binance.usdMCloseListenKey();
   HyperliquidAdapter();
   HyperliquidAdapter.testnet();
   hyperliquid.isTestnet;
+  hyperliquid.allMids();
   hyperliquid.nonFundingLedger();
   hyperliquid.assetContext(_generatedProviderValue<Market>());
 }

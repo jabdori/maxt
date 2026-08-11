@@ -709,6 +709,7 @@ fn render_provider_method(provider: &Provider, method: &ProviderMethod, schema: 
             "return Codec.pageFromWire(Codec.unwrapOutcome(await {call}), Codec.{}FromWire);",
             lower_camel(model)
         ),
+        ApiType::String => format!("return Codec.unwrapOutcome(await {call});"),
         ApiType::Unit => format!("Codec.unwrapOutcome(await {call});"),
         ApiType::Handle(model) => format!(
             "const value = Codec.unwrapOutcome(await {call}); return new {model}(value.id, value.value);"

@@ -238,6 +238,15 @@ extension UpbitRegionWireName on UpbitRegion {
   };
 }
 
+enum UpbitOrderDirection { ascending, descending }
+
+extension UpbitOrderDirectionWireName on UpbitOrderDirection {
+  String get wireName => switch (this) {
+    UpbitOrderDirection.ascending => 'asc',
+    UpbitOrderDirection.descending => 'desc',
+  };
+}
+
 enum BithumbAlertStep { caution, warning, danger, unknown }
 
 extension BithumbAlertStepWireName on BithumbAlertStep {
@@ -264,6 +273,25 @@ extension BithumbOrderDirectionWireName on BithumbOrderDirection {
   String get wireName => switch (this) {
     BithumbOrderDirection.ascending => 'asc',
     BithumbOrderDirection.descending => 'desc',
+  };
+}
+
+enum BithumbTwapState { progress, done, cancel }
+
+extension BithumbTwapStateWireName on BithumbTwapState {
+  String get wireName => switch (this) {
+    BithumbTwapState.progress => 'progress',
+    BithumbTwapState.done => 'done',
+    BithumbTwapState.cancel => 'cancel',
+  };
+}
+
+enum BithumbTwapOrderDirection { ascending, descending }
+
+extension BithumbTwapOrderDirectionWireName on BithumbTwapOrderDirection {
+  String get wireName => switch (this) {
+    BithumbTwapOrderDirection.ascending => 'asc',
+    BithumbTwapOrderDirection.descending => 'desc',
   };
 }
 

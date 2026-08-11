@@ -129,8 +129,11 @@ fn render_dart_model_record(name: &str, fields: &[Field]) -> String {
     });
     let argument = |field: &Field| {
         let public = snake_to_lower_camel(field.name);
-        if name == "OrderHistoryRequest" && field.name == "statuses" {
-            return "this.statuses = const []".to_owned();
+        if matches!(
+            (name, field.name),
+            ("OrderHistoryRequest", "statuses") | ("BithumbTwapOrdersRequest", "uuids")
+        ) {
+            return format!("this.{public} = const []");
         }
         if normalizes_asset && field.name == "asset" {
             let required = dart_required(&field.ty);
@@ -409,6 +412,21 @@ pub(crate) fn render_rust_models(schema: &Schema) -> String {
             pages.push(name);
         }
     }
+    for provider in schema.providers {
+        for method in provider.methods {
+            let ApiType::Page(name) = method.result else {
+                continue;
+            };
+            if !matches!(
+                name,
+                "FundingRate" | "FundingPayment" | "HyperliquidLedgerEntry"
+            ) && !pages.contains(&name)
+            {
+                output.push_str(&render_rust_wire_page(name));
+                pages.push(name);
+            }
+        }
+    }
     output
 }
 
@@ -591,8 +609,16 @@ fn render_rust_wire_union(
             }
         })
         .collect::<String>();
+    let fallback = match name {
+        "TransferDestination" | "WithdrawalFee" | "TravelRuleRequirement" => {
+            format!(
+                "            _ => unreachable!(\"new {name} variant requires a Dart wire variant\"),\n"
+            )
+        }
+        _ => String::new(),
+    };
     format!(
-        "\n#[derive(Debug, Clone, PartialEq, Eq)]\npub enum Wire{name} {{\n{declarations}}}\n\nimpl From<maxt::{name}> for Wire{name} {{\n    fn from(value: maxt::{name}) -> Self {{\n        match value {{\n{to_arms}            _ => unreachable!(\"new {name} variant requires a Dart wire variant\"),\n        }}\n    }}\n}}\n\nimpl TryFrom<Wire{name}> for maxt::{name} {{\n    type Error = NativeError;\n\n    fn try_from(value: Wire{name}) -> Result<Self, Self::Error> {{\n        Ok(match value {{\n{from_arms}        }})\n    }}\n}}\n"
+        "\n#[derive(Debug, Clone, PartialEq, Eq)]\npub enum Wire{name} {{\n{declarations}}}\n\nimpl From<maxt::{name}> for Wire{name} {{\n    fn from(value: maxt::{name}) -> Self {{\n        match value {{\n{to_arms}{fallback}        }}\n    }}\n}}\n\nimpl TryFrom<Wire{name}> for maxt::{name} {{\n    type Error = NativeError;\n\n    fn try_from(value: Wire{name}) -> Result<Self, Self::Error> {{\n        Ok(match value {{\n{from_arms}        }})\n    }}\n}}\n"
     )
 }
 
@@ -666,6 +692,10 @@ fn rust_core_to_wire_value(schema: &Schema, ty: &Type, value: &str) -> String {
                 format!("{value}.map(network_to_wire)")
             }
             Type::Identifier(_) | Type::Named(_) => format!("{value}.map(Into::into)"),
+            Type::List(_) => format!(
+                "{value}.map(|values| {})",
+                rust_core_to_wire_value(schema, inner, "values")
+            ),
             other => panic!("unsupported generated Dart Rust optional: {other:?}"),
         },
         Type::List(inner) => match inner.as_ref() {
@@ -712,6 +742,10 @@ fn rust_wire_to_core_value(schema: &Schema, ty: &Type, value: &str, field: &str)
             Type::Identifier(_) => format!("{value}.map(Into::into)"),
             Type::Named("MarketWire") => format!("{value}.map(Into::into)"),
             Type::Named(_) => format!("{value}.map(TryInto::try_into).transpose()?"),
+            Type::List(_) => format!(
+                "{value}.map(|values| Ok::<_, NativeError>({})).transpose()?",
+                rust_wire_to_core_value(schema, inner, "values", field)
+            ),
             other => panic!("unsupported generated Dart Rust optional: {other:?}"),
         },
         Type::List(inner) => match inner.as_ref() {
@@ -720,6 +754,9 @@ fn rust_wire_to_core_value(schema: &Schema, ty: &Type, value: &str, field: &str)
                 "{value}.into_iter().map(|value| decimal_from_wire(&value, \"{field}\").map_err(NativeError::from)).collect::<Result<_, _>>()?"
             ),
             Type::Identifier(_) => format!("{value}.into_iter().map(Into::into).collect()"),
+            Type::Named("MarketWire") => {
+                format!("{value}.into_iter().map(Into::into).collect()")
+            }
             Type::Named(_) => {
                 format!("{value}.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?")
             }
@@ -746,8 +783,11 @@ pub(crate) fn render_wire_converters(schema: &Schema) -> String {
         "OrderType",
         "TimeInForce",
         "MarginMode",
+        "UpbitOrderDirection",
         "BithumbPendingOrderState",
         "BithumbOrderDirection",
+        "BithumbTwapState",
+        "BithumbTwapOrderDirection",
         "WithdrawalStatus",
         "DepositStatus",
     ] {
@@ -843,9 +883,21 @@ pub(crate) fn render_wire_converters(schema: &Schema) -> String {
             output.push_str(&render_dart_union_converter(name, &union.variants));
         }
     }
+    let mut pages = Vec::new();
     for operation in schema.adapter_operations {
         if let ApiType::Page(name) = operation.result {
             output.push_str(&render_dart_page_converter(name));
+            pages.push(name);
+        }
+    }
+    for provider in schema.providers {
+        for method in provider.methods {
+            if let ApiType::Page(name) = method.result {
+                if name != "HyperliquidLedgerEntry" && !pages.contains(&name) {
+                    output.push_str(&render_dart_page_converter(name));
+                    pages.push(name);
+                }
+            }
         }
     }
     output.push_str(&render_dart_errors(schema));
@@ -1176,6 +1228,7 @@ pub(crate) fn render_wire_shape_guard(schema: &Schema) -> String {
         "SubscriptionWire",
         "PageWire",
         "UpbitMarketEventWire",
+        "UpbitBatchCancelRequestWire",
         "BithumbMarketAlertWire",
         "BithumbNoticeWire",
         "BithumbApiKeyWire",
@@ -1214,9 +1267,12 @@ pub(crate) fn render_wire_shape_guard(schema: &Schema) -> String {
         ("OrderType", "WireOrderType"),
         ("TimeInForce", "WireTimeInForce"),
         ("SizeKind", "WireSizeKind"),
+        ("UpbitOrderDirection", "WireUpbitOrderDirection"),
         ("BithumbAlertStep", "WireBithumbAlertStep"),
         ("BithumbPendingOrderState", "WireBithumbPendingOrderState"),
         ("BithumbOrderDirection", "WireBithumbOrderDirection"),
+        ("BithumbTwapState", "WireBithumbTwapState"),
+        ("BithumbTwapOrderDirection", "WireBithumbTwapOrderDirection"),
         ("ExchangeErrorKind", "WireExchangeErrorKind"),
         ("WithdrawalStatus", "WireWithdrawalStatus"),
         ("DepositStatus", "WireDepositStatus"),
@@ -1365,6 +1421,9 @@ fn provider_method_source(exchange: &str, method: &str) -> &'static str {
         ("upbit", "deposit_info") => {
             "  /// Fetches Upbit deposit availability for one asset and network.\n  ///\n  /// Upbit may delay this metadata by several minutes, so it is not a\n  /// real-time service-status signal.\n  Future<UpbitDepositInfo> depositInfo(String asset, Network network) =>\n      _nativeFuture(\n        () => _handle.upbitDepositInfo(\n          asset: asset,\n          network: _networkToWire(network),\n        ),\n      ).then(_upbitDepositInfoFromWire);\n"
         }
+        ("upbit", "batch_cancel_open_orders") => {
+            "  /// Cancels matching Upbit wait orders in one conditional request.\n  ///\n  /// [UpbitBatchCancelScope.all] selects every eligible market; Upbit still\n  /// applies the request count (default 20, maximum 300). The result separates\n  /// completed and failed cancels.\n  Future<CancelOrdersResult> batchCancelOpenOrders(\n    UpbitBatchCancelRequest request,\n  ) => _nativeFuture(\n    () => _handle.upbitBatchCancelOpenOrders(\n      request: _upbitBatchCancelRequestToWire(request),\n    ),\n  ).then(_cancelOrdersResultFromWire);\n"
+        }
         ("bithumb", "market_warnings") => {
             "  Future<List<BithumbMarketWarning>> marketWarnings() =>\n      _nativeFuture(_handle.bithumbMarketWarnings).then(\n        (values) =>\n            values.map(_bithumbMarketWarningFromWire).toList(growable: false),\n      );\n"
         }
@@ -1383,11 +1442,29 @@ fn provider_method_source(exchange: &str, method: &str) -> &'static str {
         ("bithumb", "pending_orders") => {
             "  Future<Page<Order>> pendingOrders(BithumbPendingOrdersRequest request) =>\n      _nativeFuture(\n        () => _handle.bithumbPendingOrders(\n          request: _bithumbPendingOrdersRequestToWire(request),\n        ),\n      ).then(_orderPageFromWire);\n"
         }
+        ("bithumb", "twap_orders") => {
+            "  Future<Page<BithumbTwapOrder>> twapOrders(\n    BithumbTwapOrdersRequest request,\n  ) => _nativeFuture(\n    () => _handle.bithumbTwapOrders(\n      request: _bithumbTwapOrdersRequestToWire(request),\n    ),\n  ).then(_bithumbTwapOrderPageFromWire);\n"
+        }
+        ("bithumb", "create_twap_order") => {
+            "  /// Creates a Bithumb TWAP order. This submits a financial request.\n  Future<String> createTwapOrder(BithumbTwapOrderRequest request) =>\n      _nativeFuture(\n        () => _handle.bithumbCreateTwapOrder(\n          request: _bithumbTwapOrderRequestToWire(request),\n        ),\n      );\n"
+        }
+        ("bithumb", "cancel_twap_order") => {
+            "  /// Cancels a Bithumb TWAP order. This submits a financial request.\n  Future<String> cancelTwapOrder(String algoOrderId) => _nativeFuture(\n    () => _handle.bithumbCancelTwapOrder(algoOrderId: algoOrderId),\n  );\n"
+        }
         ("binance", "spot_symbol_filters") => {
             "  Future<BinanceSymbolFilters> spotSymbolFilters(Market market) =>\n      _nativeFuture(\n        () => _handle.binanceSpotSymbolFilters(market: _marketToWire(market)),\n      ).then(_binanceSymbolFiltersFromWire);\n"
         }
         ("binance", "spot_order") => {
             "  Future<BinanceSpotOrderDetail> spotOrder(Market market, String orderId) =>\n      _nativeFuture(\n        () => _handle.binanceSpotOrder(\n          market: _marketToWire(market),\n          orderId: orderId,\n        ),\n      ).then(_binanceSpotOrderFromWire);\n"
+        }
+        ("binance", "mark_price") => {
+            "  Future<BinanceMarkPrice> markPrice(Market market) => _nativeFuture(\n    () => _handle.binanceMarkPrice(market: _marketToWire(market)),\n  ).then(_binanceMarkPriceFromWire);\n"
+        }
+        ("binance", "mark_prices") => {
+            "  Future<List<BinanceMarkPrice>> markPrices() =>\n      _nativeFuture(_handle.binanceMarkPrices).then(\n        (values) => values\n            .map(_binanceMarkPriceFromWire)\n            .toList(growable: false),\n      );\n"
+        }
+        ("binance", "open_interest") => {
+            "  Future<BinanceOpenInterest> openInterest(Market market) =>\n      _nativeFuture(\n        () => _handle.binanceOpenInterest(market: _marketToWire(market)),\n      ).then(_binanceOpenInterestFromWire);\n"
         }
         ("binance", "usd_m_create_listen_key") => {
             "  Future<BinanceListenKey> usdMCreateListenKey() => _nativeFuture(\n    _handle.binanceUsdMCreateListenKey,\n  ).then(BinanceListenKey._);\n"
@@ -1403,6 +1480,9 @@ fn provider_method_source(exchange: &str, method: &str) -> &'static str {
         }
         ("hyperliquid", "asset_context") => {
             "  Future<HyperliquidAssetContext> assetContext(Market market) => _nativeFuture(\n    () => _handle.hyperliquidAssetContext(market: _marketToWire(market)),\n  ).then(_hyperliquidAssetContextFromWire);\n"
+        }
+        ("hyperliquid", "all_mids") => {
+            "  Future<List<HyperliquidMidPrice>> allMids() =>\n      _nativeFuture(_handle.hyperliquidAllMids).then(\n        (values) => values\n            .map(_hyperliquidMidPriceFromWire)\n            .toList(growable: false),\n      );\n"
         }
         _ => panic!("unsupported Dart provider method: {exchange}.{method}"),
     }
@@ -1959,6 +2039,10 @@ fn dart_from_wire_value_expression(field: &str, ty: &Type) -> String {
                     lower_camel(named.trim_end_matches("Wire"))
                 ),
             ),
+            Type::List(_) => dart_optional_expression(
+                field,
+                &dart_from_wire_value_expression(&format!("{field}!"), inner),
+            ),
             other => panic!("unsupported optional Dart wire field: {other:?}"),
         },
         Type::List(inner) => match inner.as_ref() {
@@ -1984,7 +2068,7 @@ fn dart_from_wire_value_expression(field: &str, ty: &Type) -> String {
 fn dart_to_wire_expression(value: &str, ty: &Type, field: &str) -> String {
     match ty {
         Type::String | Type::Boolean => value.to_owned(),
-        Type::Number => format!("checkedUint32({value}, field: '{field}')"),
+        Type::Number => format!("checkedRequiredUint32({value}, field: '{field}')"),
         Type::UnsignedInteger => value.to_owned(),
         Type::Decimal => format!("{value}.toString()"),
         Type::Timestamp => format!("_timestampToWire({value})"),
@@ -2015,6 +2099,10 @@ fn dart_to_wire_expression(value: &str, ty: &Type, field: &str) -> String {
                     "_{}ToWire({value}!)",
                     lower_camel(named.trim_end_matches("Wire"))
                 ),
+            ),
+            Type::List(_) => dart_optional_expression(
+                value,
+                &dart_to_wire_expression(&format!("{value}!"), inner, field),
             ),
             other => panic!("unsupported optional Dart model field: {other:?}"),
         },
@@ -2456,6 +2544,9 @@ mod tests {
 
         assert!(output.contains(
             "const OrderHistoryRequest({\n    this.market,\n    this.statuses = const [],"
+        ));
+        assert!(output.contains(
+            "const BithumbTwapOrdersRequest({\n    this.market,\n    this.uuids = const [],"
         ));
     }
 

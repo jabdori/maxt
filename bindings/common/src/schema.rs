@@ -246,6 +246,11 @@ const CANCEL_ORDERS_REQUEST: &[Argument] = &[argument(
     ApiType::Named("CancelOrdersRequest"),
     None,
 )];
+const UPBIT_BATCH_CANCEL_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("UpbitBatchCancelRequest"),
+    None,
+)];
 const ASSET: &[Argument] = &[argument("asset", ApiType::String, None)];
 const ASSET_NETWORK: &[Argument] = &[
     argument("asset", ApiType::String, None),
@@ -982,6 +987,10 @@ const UPBIT_REGION_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("Indonesia", "indonesia"),
     identifier_variant("Thailand", "thailand"),
 ];
+const UPBIT_ORDER_DIRECTION_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Ascending", "asc"),
+    identifier_variant("Descending", "desc"),
+];
 const BITHUMB_ALERT_STEP_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("Caution", "caution"),
     identifier_variant("Warning", "warning"),
@@ -993,6 +1002,15 @@ const BITHUMB_PENDING_ORDER_STATE_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("Watch", "watch"),
 ];
 const BITHUMB_ORDER_DIRECTION_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Ascending", "asc"),
+    identifier_variant("Descending", "desc"),
+];
+const BITHUMB_TWAP_STATE_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Progress", "progress"),
+    identifier_variant("Done", "done"),
+    identifier_variant("Cancel", "cancel"),
+];
+const BITHUMB_TWAP_ORDER_DIRECTION_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("Ascending", "asc"),
     identifier_variant("Descending", "desc"),
 ];
@@ -1080,6 +1098,7 @@ const IDENTIFIERS: &[Identifier] = &[
     identifier("TimeInForce", TIME_IN_FORCE_VARIANTS, false),
     identifier("SizeKind", SIZE_KIND_VARIANTS, false),
     identifier("UpbitRegion", UPBIT_REGION_VARIANTS, false),
+    identifier("UpbitOrderDirection", UPBIT_ORDER_DIRECTION_VARIANTS, false),
     identifier("BithumbAlertStep", BITHUMB_ALERT_STEP_VARIANTS, false),
     identifier(
         "BithumbPendingOrderState",
@@ -1089,6 +1108,12 @@ const IDENTIFIERS: &[Identifier] = &[
     identifier(
         "BithumbOrderDirection",
         BITHUMB_ORDER_DIRECTION_VARIANTS,
+        false,
+    ),
+    identifier("BithumbTwapState", BITHUMB_TWAP_STATE_VARIANTS, false),
+    identifier(
+        "BithumbTwapOrderDirection",
+        BITHUMB_TWAP_ORDER_DIRECTION_VARIANTS,
         false,
     ),
     identifier("BinanceMarket", BINANCE_MARKET_VARIANTS, false),
@@ -1155,15 +1180,23 @@ const MODELS: &[&str] = &[
     "UpbitYearCandle",
     "UpbitOrderBookInstrument",
     "UpbitDepositInfo",
+    "UpbitBatchCancelScope",
+    "UpbitBatchCancelRequest",
     "BithumbMarketAlert",
     "BithumbNotice",
     "BithumbApiKey",
     "BithumbPendingOrdersRequest",
+    "BithumbTwapOrdersRequest",
+    "BithumbTwapOrderRequest",
+    "BithumbTwapOrder",
     "BithumbAssetFee",
     "BithumbNetworkFee",
     "BinanceSymbolFilters",
     "BinanceSpotOrderDetail",
+    "BinanceMarkPrice",
+    "BinanceOpenInterest",
     "HyperliquidLedgerEntry",
+    "HyperliquidMidPrice",
     "HyperliquidAssetContext",
 ];
 
@@ -1190,6 +1223,17 @@ const BITHUMB_PENDING_ORDERS_REQUEST: &[Argument] = &[argument(
     ApiType::Named("BithumbPendingOrdersRequest"),
     None,
 )];
+const BITHUMB_TWAP_ORDERS_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("BithumbTwapOrdersRequest"),
+    None,
+)];
+const BITHUMB_TWAP_ORDER_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("BithumbTwapOrderRequest"),
+    None,
+)];
+const BITHUMB_TWAP_ORDER_ID: &[Argument] = &[argument("algoOrderId", ApiType::String, None)];
 const LEDGER_RANGE: &[Argument] = &[
     argument("from", ApiType::OptionalNamed("Timestamp"), Some("null")),
     argument("to", ApiType::OptionalNamed("Timestamp"), Some("null")),
@@ -1383,6 +1427,13 @@ const UPBIT_METHODS: &[ProviderMethod] = &[
         arguments: ASSET_NETWORK,
         result: ApiType::Named("UpbitDepositInfo"),
     },
+    ProviderMethod {
+        rust_name: "batch_cancel_open_orders",
+        name: "batchCancelOpenOrders",
+        kind: ProviderMethodKind::Async,
+        arguments: UPBIT_BATCH_CANCEL_REQUEST,
+        result: ApiType::Named("CancelOrdersResult"),
+    },
 ];
 const BITHUMB_METHODS: &[ProviderMethod] = &[
     ProviderMethod {
@@ -1427,6 +1478,27 @@ const BITHUMB_METHODS: &[ProviderMethod] = &[
         arguments: BITHUMB_PENDING_ORDERS_REQUEST,
         result: ApiType::Page("Order"),
     },
+    ProviderMethod {
+        rust_name: "twap_orders",
+        name: "twapOrders",
+        kind: ProviderMethodKind::Async,
+        arguments: BITHUMB_TWAP_ORDERS_REQUEST,
+        result: ApiType::Page("BithumbTwapOrder"),
+    },
+    ProviderMethod {
+        rust_name: "create_twap_order",
+        name: "createTwapOrder",
+        kind: ProviderMethodKind::Async,
+        arguments: BITHUMB_TWAP_ORDER_REQUEST,
+        result: ApiType::String,
+    },
+    ProviderMethod {
+        rust_name: "cancel_twap_order",
+        name: "cancelTwapOrder",
+        kind: ProviderMethodKind::Async,
+        arguments: BITHUMB_TWAP_ORDER_ID,
+        result: ApiType::String,
+    },
 ];
 const BINANCE_METHODS: &[ProviderMethod] = &[
     ProviderMethod {
@@ -1449,6 +1521,27 @@ const BINANCE_METHODS: &[ProviderMethod] = &[
         kind: ProviderMethodKind::Async,
         arguments: CANCEL_ORDER,
         result: ApiType::Named("BinanceSpotOrderDetail"),
+    },
+    ProviderMethod {
+        rust_name: "mark_price",
+        name: "markPrice",
+        kind: ProviderMethodKind::Async,
+        arguments: MARKET,
+        result: ApiType::Named("BinanceMarkPrice"),
+    },
+    ProviderMethod {
+        rust_name: "mark_prices",
+        name: "markPrices",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::List("BinanceMarkPrice"),
+    },
+    ProviderMethod {
+        rust_name: "open_interest",
+        name: "openInterest",
+        kind: ProviderMethodKind::Async,
+        arguments: MARKET,
+        result: ApiType::Named("BinanceOpenInterest"),
     },
     ProviderMethod {
         rust_name: "usd_m_create_listen_key",
@@ -1479,6 +1572,13 @@ const HYPERLIQUID_METHODS: &[ProviderMethod] = &[
         kind: ProviderMethodKind::Property,
         arguments: &[],
         result: ApiType::Boolean,
+    },
+    ProviderMethod {
+        rust_name: "all_mids",
+        name: "allMids",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::List("HyperliquidMidPrice"),
     },
     ProviderMethod {
         rust_name: "non_funding_ledger",
@@ -2103,6 +2203,19 @@ pub fn binding_schema() -> Schema {
             ],
         ),
         record(
+            "UpbitBatchCancelRequestWire",
+            vec![
+                field("scope", Type::named("UpbitBatchCancelScopeWire")),
+                field("excluded_pairs", Type::optional(Type::list(market.clone()))),
+                field("side", Type::optional(Type::Identifier("Side"))),
+                field("count", Type::optional(Number)),
+                field(
+                    "order_by",
+                    Type::optional(Type::Identifier("UpbitOrderDirection")),
+                ),
+            ],
+        ),
+        record(
             "BithumbMarketAlertWire",
             vec![
                 field("kind", Type::String),
@@ -2152,6 +2265,56 @@ pub fn binding_schema() -> Schema {
             ],
         ),
         record(
+            "BithumbTwapOrdersRequestWire",
+            vec![
+                field("market", Type::optional(market.clone())),
+                field("uuids", Type::list(Type::String)),
+                field(
+                    "state",
+                    Type::optional(Type::Identifier("BithumbTwapState")),
+                ),
+                field("cursor", Type::optional(Type::String)),
+                field("limit", Type::optional(Number)),
+                field(
+                    "order_by",
+                    Type::optional(Type::Identifier("BithumbTwapOrderDirection")),
+                ),
+            ],
+        ),
+        record(
+            "BithumbTwapOrderRequestWire",
+            vec![
+                field("market", market.clone()),
+                field("side", Type::Identifier("Side")),
+                field("volume", Type::optional(decimal.clone())),
+                field("price", Type::optional(decimal.clone())),
+                field("duration", Number),
+                field("frequency", Number),
+            ],
+        ),
+        record(
+            "BithumbTwapOrderWire",
+            vec![
+                field("id", Type::String),
+                field("side", Type::Identifier("Side")),
+                field("price", decimal.clone()),
+                field("state", Type::Identifier("BithumbTwapState")),
+                field("market", market.clone()),
+                field("created_at", timestamp.clone()),
+                field("volume", decimal.clone()),
+                field("finished_at", Type::optional(timestamp.clone())),
+                field("total_order_count", Number),
+                field("total_trades_count", Number),
+                field("progress_count", Number),
+                field("total_executed_amount", decimal.clone()),
+                field("total_executed_volume", decimal.clone()),
+                field("avg_trade_price", decimal.clone()),
+                field("wallet_id", Type::optional(Type::String)),
+                field("canceled_at", Type::optional(timestamp.clone())),
+                field("cancel_type", Type::optional(Type::String)),
+            ],
+        ),
+        record(
             "BithumbNetworkFeeWire",
             vec![
                 field("network", Type::Identifier("Network")),
@@ -2187,6 +2350,27 @@ pub fn binding_schema() -> Schema {
             ],
         ),
         record(
+            "BinanceMarkPriceWire",
+            vec![
+                field("market", market.clone()),
+                field("mark_price", decimal.clone()),
+                field("index_price", decimal.clone()),
+                field("estimated_settle_price", Type::optional(decimal.clone())),
+                field("last_funding_rate", decimal.clone()),
+                field("interest_rate", decimal.clone()),
+                field("next_funding_time", timestamp.clone()),
+                field("time", timestamp.clone()),
+            ],
+        ),
+        record(
+            "BinanceOpenInterestWire",
+            vec![
+                field("market", market.clone()),
+                field("open_interest", decimal.clone()),
+                field("time", timestamp.clone()),
+            ],
+        ),
+        record(
             "BinanceListenKeyWire",
             vec![field("id", Type::String), field("value", Type::String)],
         ),
@@ -2200,6 +2384,13 @@ pub fn binding_schema() -> Schema {
                 field("amount", Type::optional(decimal.clone())),
                 field("fee", Type::optional(decimal.clone())),
                 field("counterparty", Type::optional(Type::String)),
+            ],
+        ),
+        record(
+            "HyperliquidMidPriceWire",
+            vec![
+                field("market", market.clone()),
+                field("price", decimal.clone()),
             ],
         ),
         record(
@@ -2251,6 +2442,18 @@ pub fn binding_schema() -> Schema {
         ),
     ];
     let unions = vec![
+        TaggedUnion {
+            name: "UpbitBatchCancelScopeWire",
+            type_parameters: &[],
+            variants: vec![
+                variant("all", vec![]),
+                variant(
+                    "quote_currencies",
+                    vec![field("values", Type::list(Type::String))],
+                ),
+                variant("pairs", vec![field("values", Type::list(market.clone()))]),
+            ],
+        },
         TaggedUnion {
             name: "SizeWire",
             type_parameters: &[],
@@ -2665,7 +2868,7 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
-        native_api_version: 18,
+        native_api_version: 19,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
         identifiers: IDENTIFIERS,

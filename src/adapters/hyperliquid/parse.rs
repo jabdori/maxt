@@ -17,6 +17,8 @@ use crate::types::{
     Timestamp, Trade,
 };
 
+use super::HyperliquidMidPrice;
+
 pub(crate) const EXCHANGE: &str = Exchange::Hyperliquid.id();
 
 /// Settlement asset for default perpetuals and account-wide USDC values.
@@ -644,6 +646,38 @@ pub(crate) fn market_info(asset: &Asset) -> MarketInfo {
     }
 }
 
+/// Maps an `allMids` object into the default markets known by this adapter.
+/// Unknown keys are ignored so a newly listed HIP-3 asset cannot break the
+/// default-universe read before this adapter learns its metadata.
+pub(crate) fn all_mids(raw: &Value, universe: &Universe) -> Result<Vec<HyperliquidMidPrice>> {
+    let raw = raw
+        .as_object()
+        .ok_or_else(|| Error::decode("hyperliquid allMids response is not an object"))?;
+    let mut mids = Vec::with_capacity(raw.len());
+
+    for (native, value) in raw {
+        let Ok(market) = universe.market_from_native_symbol(native) else {
+            continue;
+        };
+        let text = value
+            .as_str()
+            .map(str::to_owned)
+            .or_else(|| value.as_number().map(ToString::to_string))
+            .ok_or_else(|| {
+                Error::decode(format!(
+                    "hyperliquid allMids value for `{native}` is not a number"
+                ))
+            })?;
+
+        mids.push(HyperliquidMidPrice {
+            market: market.clone(),
+            price: decimal(&text, native)?,
+        });
+    }
+
+    Ok(mids)
+}
+
 pub(crate) fn order_book(raw: &RawBook, universe: &Universe) -> Result<OrderBook> {
     let mut bids = read_levels(&raw.levels[0])?;
     let mut asks = read_levels(&raw.levels[1])?;
@@ -972,6 +1006,13 @@ pub(crate) mod tests {
       ]
     }"#;
 
+    // https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#retrieve-mids-for-all-coins
+    pub(crate) const ALL_MIDS: &str = r#"{
+      "BTC": "113376.5",
+      "ETH": "3000.5",
+      "@107": "53.6865"
+    }"#;
+
     // https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#l2-book-snapshot
     pub(crate) const L2_BOOK: &str = r#"{
       "coin": "BTC",
@@ -1223,6 +1264,44 @@ pub(crate) mod tests {
             "1386929.37231066771348207123"
         );
         assert_eq!(decimal_of("-0.00022196"), Decimal::new(-22_196, 8));
+    }
+
+    #[test]
+    fn all_mids_resolve_perpetual_and_indexed_spot_symbols() {
+        let mids = all_mids(
+            &json(ALL_MIDS).expect("official allMids payload"),
+            &universe(),
+        )
+        .expect("all mids");
+
+        assert_eq!(mids.len(), 3);
+        assert_eq!(mids[0].market, btc_perp());
+        assert_eq!(mids[0].price, decimal_of("113376.5"));
+        assert_eq!(
+            mids[2],
+            HyperliquidMidPrice {
+                market: Market::spot(Exchange::Hyperliquid, "HYPE", "USDC"),
+                price: decimal_of("53.6865"),
+            }
+        );
+    }
+
+    #[test]
+    fn all_mids_ignore_unlisted_dex_keys_but_reject_invalid_known_values() {
+        let mut raw: Value = json(ALL_MIDS).expect("official allMids payload");
+        raw["xyz:XYZ100"] = Value::String("1.0".to_string());
+        assert_eq!(
+            all_mids(&raw, &universe())
+                .expect("unknown DEX is ignored")
+                .len(),
+            3
+        );
+
+        raw["BTC"] = Value::String("not-a-price".to_string());
+        assert!(matches!(
+            all_mids(&raw, &universe()),
+            Err(Error::Decode { .. })
+        ));
     }
 
     #[test]

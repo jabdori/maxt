@@ -54,6 +54,18 @@ void main() {
               BithumbPendingOrdersRequest(limit: value),
             ),
           ),
+          (
+            field: 'duration',
+            invoke: (value) => bithumb.createTwapOrder(
+              BithumbTwapOrderRequest(
+                market: Market.spot(Exchange.bithumb, 'BTC', 'KRW'),
+                side: Side.buy,
+                price: Decimal.one,
+                duration: value,
+                frequency: 30,
+              ),
+            ),
+          ),
           (field: 'count', invoke: (value) => bithumb.notices(value)),
         ];
 
@@ -93,6 +105,20 @@ void main() {
     );
   });
 
+  test('Bithumb TWAP 조회는 자격증명 없이 네트워크 요청 전에 거절한다', () async {
+    await expectLater(
+      BithumbAdapter().twapOrders(const BithumbTwapOrdersRequest()),
+      throwsA(isA<AuthenticationError>()),
+    );
+  });
+
+  test('Binance USD-M 가격 조회는 Spot 어댑터에서 네트워크 전에 거절한다', () async {
+    await expectLater(
+      BinanceAdapter.spot().markPrices(),
+      throwsA(isA<UnsupportedError>()),
+    );
+  });
+
   test('Upbit 호가 묶음 단위는 Decimal로 native 경계까지 전달한다', () async {
     final upbit = UpbitAdapter();
     final market = Market.spot(Exchange.upbit, 'BTC', 'KRW');
@@ -128,6 +154,15 @@ void main() {
   test('Upbit 입금 가능 정보는 자격증명 없이 네트워크 요청 전에 거절한다', () async {
     await expectLater(
       UpbitAdapter().depositInfo('BTC', Network.bitcoin),
+      throwsA(isA<AuthenticationError>()),
+    );
+  });
+
+  test('Upbit 조건부 일괄 취소는 자격증명 없이 네트워크 요청 전에 거절한다', () async {
+    await expectLater(
+      UpbitAdapter().batchCancelOpenOrders(
+        const UpbitBatchCancelRequest(scope: UpbitBatchCancelScope.all()),
+      ),
       throwsA(isA<AuthenticationError>()),
     );
   });

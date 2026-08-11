@@ -21,12 +21,12 @@ use crate::types::{
     Position, Size, TimeInForce, Timestamp, Trade, Withdrawal,
 };
 
-use super::HyperliquidNetwork;
 use super::native;
 use super::parse::{self, Asset, EXCHANGE, Universe};
 use super::sign::{
     self, CancelAction, LeverageAction, LimitKind, OrderAction, OrderKind, OrderWire,
 };
+use super::{HyperliquidMidPrice, HyperliquidNetwork};
 
 pub(crate) const INFO_PATH: &str = "/info";
 pub(crate) const EXCHANGE_PATH: &str = "/exchange";
@@ -61,6 +61,11 @@ pub(crate) fn meta_request() -> HttpRequest {
 
 pub(crate) fn spot_meta_request() -> HttpRequest {
     info(json!({ "type": "spotMeta" }))
+}
+
+/// Builds the default-universe `allMids` request.
+pub(crate) fn all_mids_request() -> HttpRequest {
+    info(json!({ "type": "allMids" }))
 }
 
 /// Builds the metadata-plus-context request used for ticker summaries.
@@ -190,6 +195,16 @@ pub(crate) async fn universe(http: &HttpTransport) -> Result<Universe> {
 
 pub(crate) fn markets(universe: &Universe, kind: MarketKind) -> Vec<MarketInfo> {
     universe.of_kind(kind).map(parse::market_info).collect()
+}
+
+/// Reads current mids for the markets represented by this adapter's universe.
+pub(crate) async fn all_mids(
+    http: &HttpTransport,
+    universe: &Universe,
+) -> Result<Vec<HyperliquidMidPrice>> {
+    let body = post(http, &all_mids_request()).await?;
+
+    parse::all_mids(&parse::json(&body)?, universe)
 }
 
 pub(crate) async fn order_book(
@@ -1172,6 +1187,7 @@ mod tests {
         for (request, expected) in [
             (meta_request(), "meta"),
             (spot_meta_request(), "spotMeta"),
+            (all_mids_request(), "allMids"),
             (
                 asset_contexts_request(MarketKind::Perpetual),
                 "metaAndAssetCtxs",
@@ -1196,6 +1212,8 @@ mod tests {
             assert_eq!(request.target(), INFO_PATH, "{expected}");
             assert_eq!(body_of(&request)["type"], expected);
         }
+
+        assert!(body_of(&all_mids_request()).get("dex").is_none());
 
         let ledger = body_of(&ledger_request("0xabc", 1_681_222_254_710, None));
         assert_eq!(ledger["user"], "0xabc");

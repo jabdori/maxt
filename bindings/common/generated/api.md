@@ -45,10 +45,10 @@
 
 | Exchange | Adapter | Python | Dart / TypeScript |
 | --- | --- | --- | --- |
-| upbit | `UpbitAdapter` | `region`, `order_books`, `order_books_at_level`, `tickers`, `tickers_by_quote`, `year_candles`, `orderbook_instruments`, `market_events`, `test_order`, `deposit_info` | `region`, `orderBooks`, `orderBooksAtLevel`, `tickers`, `tickersByQuote`, `yearCandles`, `orderbookInstruments`, `marketEvents`, `testOrder`, `depositInfo` |
-| bithumb | `BithumbAdapter` | `market_warnings`, `market_alerts`, `notices`, `transfer_fees`, `api_keys`, `pending_orders` | `marketWarnings`, `marketAlerts`, `notices`, `transferFees`, `apiKeys`, `pendingOrders` |
-| binance | `BinanceAdapter` | `venue`, `spot_symbol_filters`, `spot_order`, `usd_m_create_listen_key`, `usd_m_keepalive_listen_key`, `usd_m_close_listen_key` | `venue`, `spotSymbolFilters`, `spotOrder`, `usdMCreateListenKey`, `usdMKeepaliveListenKey`, `usdMCloseListenKey` |
-| hyperliquid | `HyperliquidAdapter` | `is_testnet`, `non_funding_ledger`, `asset_context` | `isTestnet`, `nonFundingLedger`, `assetContext` |
+| upbit | `UpbitAdapter` | `region`, `order_books`, `order_books_at_level`, `tickers`, `tickers_by_quote`, `year_candles`, `orderbook_instruments`, `market_events`, `test_order`, `deposit_info`, `batch_cancel_open_orders` | `region`, `orderBooks`, `orderBooksAtLevel`, `tickers`, `tickersByQuote`, `yearCandles`, `orderbookInstruments`, `marketEvents`, `testOrder`, `depositInfo`, `batchCancelOpenOrders` |
+| bithumb | `BithumbAdapter` | `market_warnings`, `market_alerts`, `notices`, `transfer_fees`, `api_keys`, `pending_orders`, `twap_orders`, `create_twap_order`, `cancel_twap_order` | `marketWarnings`, `marketAlerts`, `notices`, `transferFees`, `apiKeys`, `pendingOrders`, `twapOrders`, `createTwapOrder`, `cancelTwapOrder` |
+| binance | `BinanceAdapter` | `venue`, `spot_symbol_filters`, `spot_order`, `mark_price`, `mark_prices`, `open_interest`, `usd_m_create_listen_key`, `usd_m_keepalive_listen_key`, `usd_m_close_listen_key` | `venue`, `spotSymbolFilters`, `spotOrder`, `markPrice`, `markPrices`, `openInterest`, `usdMCreateListenKey`, `usdMKeepaliveListenKey`, `usdMCloseListenKey` |
+| hyperliquid | `HyperliquidAdapter` | `is_testnet`, `all_mids`, `non_funding_ledger`, `asset_context` | `isTestnet`, `allMids`, `nonFundingLedger`, `assetContext` |
 
 ## Official API products
 
@@ -64,10 +64,10 @@ Documentation baseline: `2026-08-10`.
 | bithumb | Quotation | 14 / 14 | `http`, `websocket_stream` | `json` | Partial |
 | bithumb | Exchange | 13 / 13 | `http`, `websocket_stream` | `json` | Partial |
 | bithumb | Deposits and withdrawals | 13 / 13 | `http` | `json` | Partial |
-| bithumb | TWAP | 3 / 3 | `http` | `json` | Planned |
+| bithumb | TWAP | 3 / 3 | `http` | `json` | Complete |
 | bithumb | KRW deposits and withdrawals | 4 / 4 | `http` | `json` | Planned |
 | binance | Spot Trading | 15 / 118 | `http`, `websocket_request`, `websocket_stream`, `fix` | `json`, `sbe`, `fix_tag_value`, `fix_sbe` | Partial |
-| binance | Futures (USDⓈ-M) | 21 / 133 | `http`, `websocket_request`, `websocket_stream` | `json` | Partial |
+| binance | Futures (USDⓈ-M) | 24 / 133 | `http`, `websocket_request`, `websocket_stream` | `json` | Partial |
 | binance | Futures (COIN-M) | 0 / 93 | `http`, `websocket_request`, `websocket_stream` | `json` | Planned |
 | binance | Options | 0 / 54 | `http`, `websocket_stream` | `json` | Planned |
 | binance | Margin | 0 / 65 | `http` | `json` | Planned |
@@ -102,7 +102,7 @@ Documentation baseline: `2026-08-10`.
 | binance | Dual Investment | 0 / 5 | `http` | `json` | Planned |
 | binance | Pay | 0 / 1 | `http` | `json` | Planned |
 | binance | Prediction Trading | 0 / 26 | `http` | `json` | Planned |
-| hyperliquid | Info | 13 / — | `http`, `websocket_request` | `json` | Partial |
+| hyperliquid | Info | 14 / — | `http`, `websocket_request` | `json` | Partial |
 | hyperliquid | Exchange | 3 / — | `http`, `websocket_request` | `json` | Partial |
 | hyperliquid | WebSocket subscriptions | 7 / — | `websocket_stream` | `json`, `binary` | Partial |
 | hyperliquid | HIP-3 DEX | 0 / — | `http`, `websocket_request`, `websocket_stream`, `contract` | `json` | Planned |
@@ -143,7 +143,7 @@ Documentation baseline: `2026-08-10`.
 | upbit | exchange | `new_order` | `POST` | `/v1/orders` | `http` | JWT | financial write | general | common `place_order` | `Partial` | `Fixture` |
 | upbit | exchange | `cancel_order` | `DELETE` | `/v1/order` | `http` | JWT | financial write | general | common `cancel_order`, `cancel_order_by_client_id` | `Partial` | `Fixture` |
 | upbit | exchange | `cancel_orders_by_ids` | `DELETE` | `/v1/orders/uuids` | `http` | JWT | financial write | general | common `cancel_orders` | `Partial` | `Fixture` |
-| upbit | exchange | `batch_cancel_open_orders` | `DELETE` | `/v1/orders/open` | `http` | JWT | financial write | general | provider `batch_cancel_open_orders` | `Planned` | `Documented` |
+| upbit | exchange | `batch_cancel_open_orders` | `DELETE` | `/v1/orders/open` | `http` | JWT | financial write | general | provider `batch_cancel_open_orders` | `Implemented` | `Fixture` |
 | upbit | exchange | `cancel_and_new_order` | `POST` | `/v1/orders/cancel_and_new` | `http` | JWT | financial write | general | provider `cancel_and_new_order` | `Planned` | `Documented` |
 | upbit | exchange | `my_order_stream` | `SUBSCRIBE` | `myOrder` | `websocket_stream` | JWT | read | general | common `subscribe_account` | `Partial` | `Fixture` |
 | upbit | exchange | `my_asset_stream` | `SUBSCRIBE` | `myAsset` | `websocket_stream` | JWT | read | general | common `subscribe_account` | `Partial` | `Fixture` |
@@ -203,9 +203,9 @@ Documentation baseline: `2026-08-10`.
 | bithumb | wallet | `deposit` | `GET` | `/v1/deposit` | `http` | JWT | read | general | common `deposit` | `Partial` | `Fixture` |
 | bithumb | wallet | `withdrawals` | `GET` | `/v1/withdraws` | `http` | JWT | read | general | common `withdrawals` | `Implemented` | `Fixture` |
 | bithumb | wallet | `api_keys` | `GET` | `/v1/api_keys` | `http` | JWT | read | general | provider `api_keys` | `Implemented` | `Fixture` |
-| bithumb | twap | `twap` | `GET` | `/v1/twap` | `http` | JWT | read | general | provider `twap` | `Planned` | `Documented` |
-| bithumb | twap | `create_twap` | `POST` | `/v1/twap` | `http` | JWT | financial write | general | provider `create_twap` | `Planned` | `Documented` |
-| bithumb | twap | `cancel_twap` | `DELETE` | `/v1/twap` | `http` | JWT | financial write | general | provider `cancel_twap` | `Planned` | `Documented` |
+| bithumb | twap | `twap` | `GET` | `/v1/twap` | `http` | JWT | read | general | provider `twap_orders` | `Implemented` | `Fixture` |
+| bithumb | twap | `create_twap` | `POST` | `/v1/twap` | `http` | JWT | financial write | general | provider `create_twap_order` | `Implemented` | `Fixture` |
+| bithumb | twap | `cancel_twap` | `DELETE` | `/v1/twap` | `http` | JWT | financial write | general | provider `cancel_twap_order` | `Implemented` | `Fixture` |
 | bithumb | krw | `withdrawals` | `GET` | `/v1/withdraws/krw` | `http` | JWT | read | general | provider `krw_withdrawals` | `Planned` | `Documented` |
 | bithumb | krw | `withdraw` | `POST` | `/v1/withdraws/krw` | `http` | JWT | financial write | general | provider `withdraw_krw` | `Planned` | `Documented` |
 | bithumb | krw | `deposits` | `GET` | `/v1/deposits/krw` | `http` | JWT | read | general | provider `krw_deposits` | `Planned` | `Documented` |
@@ -229,6 +229,9 @@ Documentation baseline: `2026-08-10`.
 | binance | usd_m | `recent_trades` | `GET` | `/fapi/v1/trades` | `http` | public | read | general | common `trades` | `Implemented` | `LiveRead` |
 | binance | usd_m | `order_book` | `GET` | `/fapi/v1/depth` | `http` | public | read | general | common `order_book` | `Implemented` | `LiveRead` |
 | binance | usd_m | `ticker_24hr` | `GET` | `/fapi/v1/ticker/24hr` | `http` | public | read | general | common `ticker` | `Implemented` | `LiveRead` |
+| binance | usd_m | `mark_price` | `GET` | `/fapi/v1/premiumIndex?symbol={symbol}` | `http` | public | read | general | provider `mark_price` | `Implemented` | `Fixture` |
+| binance | usd_m | `mark_prices` | `GET` | `/fapi/v1/premiumIndex` | `http` | public | read | general | provider `mark_prices` | `Implemented` | `Fixture` |
+| binance | usd_m | `open_interest` | `GET` | `/fapi/v1/openInterest?symbol={symbol}` | `http` | public | read | general | provider `open_interest` | `Implemented` | `Fixture` |
 | binance | usd_m | `klines` | `GET` | `/fapi/v1/klines` | `http` | public | read | general | common `candles` | `Implemented` | `LiveRead` |
 | binance | usd_m | `account_information_v3` | `GET` | `/fapi/v3/account` | `http` | HMAC | read | general | common `balances`, `margin_summary` | `Implemented` | `Fixture` |
 | binance | usd_m | `open_orders` | `GET` | `/fapi/v1/openOrders` | `http` | HMAC | read | general | common `open_orders` | `Implemented` | `Fixture` |
@@ -256,6 +259,7 @@ Documentation baseline: `2026-08-10`.
 | binance | wallet | `withdraw_history` | `GET` | `/sapi/v1/capital/withdraw/history` | `http` | HMAC | read | general | common `withdrawals` | `Implemented` | `Fixture` |
 | hyperliquid | info | `meta` | `POST` | `/info type=meta` | `http` | public | read | general | common `markets` | `Partial` | `LiveRead` |
 | hyperliquid | info | `spot_meta` | `POST` | `/info type=spotMeta` | `http` | public | read | general | common `markets` | `Implemented` | `LiveRead` |
+| hyperliquid | info | `all_mids` | `POST` | `/info type=allMids` | `http` | public | read | general | provider `all_mids` | `Partial` | `Fixture` |
 | hyperliquid | info | `meta_and_asset_contexts` | `POST` | `/info type=metaAndAssetCtxs` | `http` | public | read | general | common `ticker`; provider `asset_context` | `Partial` | `LiveRead` |
 | hyperliquid | info | `spot_meta_and_asset_contexts` | `POST` | `/info type=spotMetaAndAssetCtxs` | `http` | public | read | general | common `ticker`; provider `asset_context` | `Implemented` | `LiveRead` |
 | hyperliquid | info | `l2_book` | `POST` | `/info type=l2Book` | `http` | public | read | general | common `order_book` | `Implemented` | `LiveRead` |

@@ -93,6 +93,14 @@ fn render_model(schema: &Schema, name: &str, fields: &[Field]) -> String {
         _ => {}
     }
     let function = lower_camel(name);
+    let allowed = fields
+        .iter()
+        .map(|field| format!("\"{}\"", snake_to_camel(field.name)))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let unexpected_checks = format!(
+        "  for (const key of Object.keys(value)) {{\n    if (![{allowed}].includes(key)) {{\n      throw new InvalidRequestError(\"{function}.\" + key, \"{name} does not accept \" + key);\n    }}\n  }}\n"
+    );
     let arguments = fields
         .iter()
         .map(|field| record_from_expression(schema, field, &format!("value.{}", field.name)))
@@ -110,7 +118,7 @@ fn render_model(schema: &Schema, name: &str, fields: &[Field]) -> String {
         })
         .collect::<String>();
     format!(
-        "export function {function}FromWire(value: Wire.{name}Wire): Model.{name} {{\n  return new Model.{name}({arguments});\n}}\n\nexport function {function}ToWire(value: Model.{name}): Wire.{name}Wire {{\n  return {{\n{values}  }};\n}}\n\n"
+        "export function {function}FromWire(value: Wire.{name}Wire): Model.{name} {{\n  return new Model.{name}({arguments});\n}}\n\nexport function {function}ToWire(value: Model.{name}): Wire.{name}Wire {{\n{unexpected_checks}  return {{\n{values}  }};\n}}\n\n"
     )
 }
 
@@ -160,6 +168,19 @@ fn render_union_model(schema: &Schema, name: &str, union: &TaggedUnion) -> Strin
         .variants
         .iter()
         .map(|variant| {
+            let allowed = std::iter::once("\"kind\"".to_owned())
+                .chain(
+                    variant
+                        .fields
+                        .iter()
+                        .map(|field| format!("\"{}\"", snake_to_camel(field.name))),
+                )
+                .collect::<Vec<_>>()
+                .join(", ");
+            let unexpected_checks = format!(
+                "      for (const key of Object.keys(value)) {{\n        if (![{allowed}].includes(key)) {{\n          throw new InvalidRequestError(\"{function}.\" + key, \"{name}.{} does not accept \" + key);\n        }}\n      }}\n",
+                variant.name,
+            );
             let fields = variant
                 .fields
                 .iter()
@@ -172,8 +193,8 @@ fn render_union_model(schema: &Schema, name: &str, union: &TaggedUnion) -> Strin
                 })
                 .collect::<String>();
             format!(
-                "    case \"{}\": return {{ kind: \"{}\"{fields} }};\n",
-                variant.name, variant.name
+                "    case \"{}\": {{\n{unexpected_checks}      return {{ kind: \"{}\"{fields} }};\n    }}\n",
+                variant.name, variant.name,
             )
         })
         .collect::<String>();
@@ -511,5 +532,12 @@ mod tests {
             "minimum_deposit_confirmations: value.minimumDepositConfirmations.toString(),"
         ));
         assert!(!output.contains("Number(value);"));
+        assert!(output.contains("for (const key of Object.keys(value))"));
+        assert!(output.contains(
+            "upbitBatchCancelScope.\" + key, \"UpbitBatchCancelScope.all does not accept \" + key"
+        ));
+        assert!(output.contains(
+            "upbitBatchCancelRequest.\" + key, \"UpbitBatchCancelRequest does not accept \" + key"
+        ));
     }
 }

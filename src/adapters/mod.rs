@@ -12,6 +12,7 @@ use crate::{
 mod binance;
 mod bithumb;
 mod hyperliquid;
+mod order_rules;
 mod upbit;
 
 pub(crate) mod candles;

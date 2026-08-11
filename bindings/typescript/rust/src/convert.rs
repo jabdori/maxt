@@ -8,12 +8,12 @@ use maxt::{
     DepositAddress, DepositAddressRequest, DepositStatus, Error, Exchange, ExchangeDestination,
     ExchangeErrorKind, ExchangeTransferRequest, Feature, Feed, FundingPayment, FundingRate,
     HistoryRequest, Interval, Level, MarginMode, MarginRequest, MarginSummary, Market, MarketEvent,
-    MarketInfo, MarketKind, MarketStatus, Network, Order, OrderBook, OrderCancelFailure,
-    OrderHistoryRequest, OrderIdKind, OrderLookupRequest, OrderRequest, OrderStatus, OrderType,
-    Overflow, Page, Position, Side, Size, StreamConfig, Subscription, Ticker, TimeInForce,
-    Timestamp, Trade, TransferDestination, TransferErrorKind, TransferHistoryRequest, TransferPlan,
-    TravelRuleRequirement, WithdrawRequest, Withdrawal, WithdrawalFee, WithdrawalQuote,
-    WithdrawalStatus,
+    MarketInfo, MarketKind, MarketStatus, Network, Order, OrderAccount, OrderBook,
+    OrderCancelFailure, OrderHistoryRequest, OrderIdKind, OrderLookupRequest, OrderOption,
+    OrderRequest, OrderRules, OrderStatus, OrderType, Overflow, Page, Position, Side, Size,
+    StreamConfig, Subscription, Ticker, TimeInForce, Timestamp, Trade, TransferDestination,
+    TransferErrorKind, TransferHistoryRequest, TransferPlan, TravelRuleRequirement,
+    WithdrawRequest, Withdrawal, WithdrawalFee, WithdrawalQuote, WithdrawalStatus,
 };
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -386,6 +386,50 @@ pub(crate) struct WireBalance {
     pub(crate) asset: String,
     pub(crate) available: String,
     pub(crate) locked: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireOrderAccount {
+    pub(crate) balance: WireBalance,
+    pub(crate) average_buy_price: String,
+    pub(crate) average_buy_price_modified: bool,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) average_buy_price_unit: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireOrderOption {
+    pub(crate) provider_id: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) order_type: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) time_in_force: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireOrderRules {
+    pub(crate) market: WireMarket,
+    pub(crate) market_name: String,
+    pub(crate) status: String,
+    pub(crate) buy_fee_rate: String,
+    pub(crate) sell_fee_rate: String,
+    pub(crate) maker_buy_fee_rate: String,
+    pub(crate) maker_sell_fee_rate: String,
+    pub(crate) sides: Vec<String>,
+    pub(crate) buy_options: Vec<WireOrderOption>,
+    pub(crate) sell_options: Vec<WireOrderOption>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) buy_price_unit: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) sell_price_unit: Option<String>,
+    pub(crate) minimum_buy_total: String,
+    pub(crate) minimum_sell_total: String,
+    pub(crate) maximum_total: String,
+    pub(crate) quote_account: WireOrderAccount,
+    pub(crate) base_account: WireOrderAccount,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1740,6 +1784,160 @@ impl TryFrom<WireBalance> for Balance {
             asset: value.asset,
             available: decimal_from_wire(&value.available, "available")?,
             locked: decimal_from_wire(&value.locked, "locked")?,
+        })
+    }
+}
+
+impl TryFrom<OrderAccount> for WireOrderAccount {
+    type Error = Error;
+
+    fn try_from(value: OrderAccount) -> Result<Self, Self::Error> {
+        Ok(Self {
+            balance: value.balance.try_into()?,
+            average_buy_price: decimal_to_wire(value.average_buy_price),
+            average_buy_price_modified: value.average_buy_price_modified,
+            average_buy_price_unit: value.average_buy_price_unit,
+        })
+    }
+}
+
+impl TryFrom<WireOrderAccount> for OrderAccount {
+    type Error = Error;
+
+    fn try_from(value: WireOrderAccount) -> Result<Self, Self::Error> {
+        Ok(Self {
+            balance: value.balance.try_into()?,
+            average_buy_price: decimal_from_wire(&value.average_buy_price, "average_buy_price")?,
+            average_buy_price_modified: value.average_buy_price_modified,
+            average_buy_price_unit: value.average_buy_price_unit,
+        })
+    }
+}
+
+impl TryFrom<OrderOption> for WireOrderOption {
+    type Error = Error;
+
+    fn try_from(value: OrderOption) -> Result<Self, Self::Error> {
+        Ok(Self {
+            provider_id: value.provider_id,
+            order_type: value
+                .order_type
+                .map(order_type_to_wire)
+                .transpose()?
+                .map(str::to_owned),
+            time_in_force: value
+                .time_in_force
+                .map(time_in_force_to_wire)
+                .transpose()?
+                .map(str::to_owned),
+        })
+    }
+}
+
+impl TryFrom<WireOrderOption> for OrderOption {
+    type Error = Error;
+
+    fn try_from(value: WireOrderOption) -> Result<Self, Self::Error> {
+        Ok(Self {
+            provider_id: value.provider_id,
+            order_type: value
+                .order_type
+                .as_deref()
+                .map(|value| order_type_from_wire(value, "order_type"))
+                .transpose()?,
+            time_in_force: value
+                .time_in_force
+                .as_deref()
+                .map(|value| time_in_force_from_wire(value, "time_in_force"))
+                .transpose()?,
+        })
+    }
+}
+
+impl TryFrom<OrderRules> for WireOrderRules {
+    type Error = Error;
+
+    fn try_from(value: OrderRules) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.try_into()?,
+            market_name: value.market_name,
+            status: market_status_to_wire(value.status)?.to_owned(),
+            buy_fee_rate: decimal_to_wire(value.buy_fee_rate),
+            sell_fee_rate: decimal_to_wire(value.sell_fee_rate),
+            maker_buy_fee_rate: decimal_to_wire(value.maker_buy_fee_rate),
+            maker_sell_fee_rate: decimal_to_wire(value.maker_sell_fee_rate),
+            sides: value
+                .sides
+                .into_iter()
+                .map(side_to_wire)
+                .map(str::to_owned)
+                .collect(),
+            buy_options: value
+                .buy_options
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            sell_options: value
+                .sell_options
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            buy_price_unit: value.buy_price_unit.map(decimal_to_wire),
+            sell_price_unit: value.sell_price_unit.map(decimal_to_wire),
+            minimum_buy_total: decimal_to_wire(value.minimum_buy_total),
+            minimum_sell_total: decimal_to_wire(value.minimum_sell_total),
+            maximum_total: decimal_to_wire(value.maximum_total),
+            quote_account: value.quote_account.try_into()?,
+            base_account: value.base_account.try_into()?,
+        })
+    }
+}
+
+impl TryFrom<WireOrderRules> for OrderRules {
+    type Error = Error;
+
+    fn try_from(value: WireOrderRules) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.try_into()?,
+            market_name: value.market_name,
+            status: market_status_from_wire(&value.status, "status")?,
+            buy_fee_rate: decimal_from_wire(&value.buy_fee_rate, "buy_fee_rate")?,
+            sell_fee_rate: decimal_from_wire(&value.sell_fee_rate, "sell_fee_rate")?,
+            maker_buy_fee_rate: decimal_from_wire(&value.maker_buy_fee_rate, "maker_buy_fee_rate")?,
+            maker_sell_fee_rate: decimal_from_wire(
+                &value.maker_sell_fee_rate,
+                "maker_sell_fee_rate",
+            )?,
+            sides: value
+                .sides
+                .iter()
+                .map(|value| side_from_wire(value, "sides"))
+                .collect::<Result<_, _>>()?,
+            buy_options: value
+                .buy_options
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            sell_options: value
+                .sell_options
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            buy_price_unit: value
+                .buy_price_unit
+                .as_deref()
+                .map(|value| decimal_from_wire(value, "buy_price_unit"))
+                .transpose()?,
+            sell_price_unit: value
+                .sell_price_unit
+                .as_deref()
+                .map(|value| decimal_from_wire(value, "sell_price_unit"))
+                .transpose()?,
+            minimum_buy_total: decimal_from_wire(&value.minimum_buy_total, "minimum_buy_total")?,
+            minimum_sell_total: decimal_from_wire(&value.minimum_sell_total, "minimum_sell_total")?,
+            maximum_total: decimal_from_wire(&value.maximum_total, "maximum_total")?,
+            quote_account: value.quote_account.try_into()?,
+            base_account: value.base_account.try_into()?,
         })
     }
 }

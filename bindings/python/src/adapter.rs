@@ -3,12 +3,12 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use maxt::{
-    AccountEvent, Adapter, Balance, BoxFuture, CancelOrdersRequest, Candle, CandleRequest, Cursor,
-    Decimal, Error, Exchange, ExchangeErrorKind, Feature, Feed, FundingPayment, FundingRate,
-    HistoryRequest, Interval, Level, MarginMode, MarginRequest, MarginSummary, Market, MarketEvent,
-    MarketInfo, MarketKind, MarketStatus, Order, OrderBook, OrderHistoryRequest, OrderRequest,
-    OrderStatus, OrderType, Overflow, Page, Position, Result, Side, Size, StreamConfig,
-    Subscription, Ticker, TimeInForce, Timestamp, Trade,
+    AccountEvent, Adapter, BoxFuture, CancelOrdersRequest, Candle, CandleRequest, Cursor, Decimal,
+    Error, Exchange, ExchangeErrorKind, Feature, Feed, FundingPayment, FundingRate, HistoryRequest,
+    Interval, Level, MarginMode, MarginRequest, MarginSummary, Market, MarketEvent, MarketInfo,
+    MarketKind, MarketStatus, Order, OrderBook, OrderHistoryRequest, OrderRequest, OrderStatus,
+    OrderType, Overflow, Page, Position, Result, Side, Size, StreamConfig, Subscription, Ticker,
+    TimeInForce, Timestamp, Trade,
 };
 use maxt_bindings_common::{AdapterCall, AdapterReply, ForeignAdapter, ForeignDispatcher};
 use pyo3::IntoPyObjectExt;
@@ -16,9 +16,10 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAnyMethods, PyDict, PyList, PyTracebackMethods, PyTuple};
 
 use crate::convert::{
-    decimal_from_wire, decimal_to_wire, exchange_from_wire, feature_from_wire, interval_from_wire,
-    list_from_wire, margin_mode_from_wire, market_from_wire, market_to_wire, optional, required,
-    side_from_wire, text, timestamp_to_wire, transfer_error_kind_from_wire, wire_object,
+    balance_from_wire, decimal_from_wire, decimal_to_wire, exchange_from_wire, feature_from_wire,
+    interval_from_wire, list_from_wire, margin_mode_from_wire, market_from_wire, market_to_wire,
+    optional, required, side_from_wire, text, timestamp_to_wire, transfer_error_kind_from_wire,
+    wire_object,
 };
 
 macro_rules! wire_dict {
@@ -443,18 +444,6 @@ fn candle_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Candle> {
         volume: decimal_from_wire(&required(value, "volume")?, "volume")?,
         quote_volume: optional_decimal(value, "quote_volume")?,
         closed: required(value, "closed")?.extract()?,
-    })
-}
-
-fn balance_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Balance> {
-    let value = wire_object(value)?;
-    let value = value.cast::<PyDict>()?;
-    Ok(Balance {
-        asset: required(value, "asset")?
-            .extract::<String>()?
-            .to_ascii_uppercase(),
-        available: decimal_from_wire(&required(value, "available")?, "available")?,
-        locked: decimal_from_wire(&required(value, "locked")?, "locked")?,
     })
 }
 

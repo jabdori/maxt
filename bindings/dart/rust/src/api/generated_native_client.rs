@@ -62,6 +62,14 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
+    pub async fn order_rules(&self, market: WireMarket) -> Result<WireOrderRules, NativeError> {
+        self.adapter
+            .order_rules(&market.into())
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
     pub async fn asset_networks(
         &self,
         asset: String,

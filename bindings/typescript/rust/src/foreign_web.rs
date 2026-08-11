@@ -178,6 +178,10 @@ fn decode_reply(
             )))
         }
         WireAdapterReply::Balances { value } => wire_vec(value).map(AdapterReply::Balances),
+        WireAdapterReply::OrderRules { value } => (*value)
+            .try_into()
+            .map(Box::new)
+            .map(AdapterReply::OrderRules),
         WireAdapterReply::AssetNetworks { value } => {
             wire_vec(value).map(AdapterReply::AssetNetworks)
         }

@@ -575,6 +575,14 @@ final class DartAdapterBridge {
         values.map(_balanceToWire).toList(growable: false),
       ),
     ),
+    native_adapter.AdapterCall_OrderRules(:final market) =>
+      adapter
+          .orderRules(_marketFromWire(market))
+          .then(
+            (value) => native_adapter.AdapterReply.orderRules(
+              _orderRulesToWire(value),
+            ),
+          ),
     native_adapter.AdapterCall_AssetNetworks(:final asset) =>
       adapter
           .assetNetworks(asset)
@@ -928,6 +936,7 @@ final class DartAdapterBridge {
     native_adapter.AdapterCall_Ticker() => Feature.ticker,
     native_adapter.AdapterCall_Candles() => Feature.candles,
     native_adapter.AdapterCall_Balances() => Feature.balances,
+    native_adapter.AdapterCall_OrderRules() => Feature.trading,
     native_adapter.AdapterCall_AssetNetworks() => Feature.assetNetworks,
     native_adapter.AdapterCall_DepositAddress() => Feature.depositAddresses,
     native_adapter.AdapterCall_PrepareWithdrawal() => Feature.withdrawalQuotes,

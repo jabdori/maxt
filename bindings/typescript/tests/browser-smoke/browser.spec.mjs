@@ -20,6 +20,35 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
         maxt.Feature.Trading,
       ]);
       async markets() { return []; }
+      async orderRules(market) {
+        return new maxt.OrderRules(
+          market,
+          "BTC/USDT",
+          maxt.MarketStatus.Active,
+          maxt.Decimal.parse("0.001"),
+          maxt.Decimal.parse("0.001"),
+          maxt.Decimal.parse("0.0005"),
+          maxt.Decimal.parse("0.0005"),
+          [maxt.Side.Buy, maxt.Side.Sell],
+          [new maxt.OrderOption(
+            "limit_ioc", maxt.OrderType.Limit, maxt.TimeInForce.ImmediateOrCancel,
+          )],
+          [new maxt.OrderOption("future_order", null, null)],
+          maxt.Decimal.parse("0.1"),
+          maxt.Decimal.parse("0.1"),
+          maxt.Decimal.parse("10"),
+          maxt.Decimal.parse("10"),
+          maxt.Decimal.parse("1000000"),
+          new maxt.OrderAccount(
+            new maxt.Balance("USDT", maxt.Decimal.parse("100"), maxt.Decimal.zero),
+            maxt.Decimal.zero, false, "USDT",
+          ),
+          new maxt.OrderAccount(
+            new maxt.Balance("BTC", maxt.Decimal.one, maxt.Decimal.zero),
+            maxt.Decimal.parse("50000"), false, "USDT",
+          ),
+        );
+      }
       async assetNetworks(asset) {
         return [new maxt.AssetNetwork(
           this.exchange,
@@ -110,6 +139,7 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
     const withdrawal = await client.withdraw(withdrawalRequest);
     const market = maxt.Market.spot(maxt.Exchange.Binance, "BTC", "USDT");
     const order = await client.order(market, "order-1");
+    const rules = await client.orderRules(market);
     const orderByClientId = await client.orderByClientId(market, "client-1");
     const ordersByIds = await client.ordersByIds(
       new maxt.OrderLookupRequest(maxt.OrderIdKind.Exchange, ["order-1"], market),
@@ -134,6 +164,7 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
       deposits: (await client.deposits(historyRequest)).items.length,
       withdrawals: (await client.withdrawals(historyRequest)).items.length,
       order: order.id,
+      orderRule: rules.buyOptions[0].timeInForce.id,
       orderByClientId: orderByClientId.id,
       ordersByIds: ordersByIds[0].id,
       orderHistory: orderHistory.items[0].id,
@@ -153,6 +184,7 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
     deposits: 0,
     withdrawals: 0,
     order: "order-1",
+    orderRule: "immediate_or_cancel",
     orderByClientId: "order-1",
     ordersByIds: "order-1",
     orderHistory: "order-1",

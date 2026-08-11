@@ -394,6 +394,37 @@ class WireExchangeTransferRequest {
           amount == other.amount;
 }
 
+class WireOrderAccount {
+  final WireBalance balance;
+  final String averageBuyPrice;
+  final bool averageBuyPriceModified;
+  final String? averageBuyPriceUnit;
+
+  const WireOrderAccount({
+    required this.balance,
+    required this.averageBuyPrice,
+    required this.averageBuyPriceModified,
+    this.averageBuyPriceUnit,
+  });
+
+  @override
+  int get hashCode =>
+      balance.hashCode ^
+      averageBuyPrice.hashCode ^
+      averageBuyPriceModified.hashCode ^
+      averageBuyPriceUnit.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireOrderAccount &&
+          runtimeType == other.runtimeType &&
+          balance == other.balance &&
+          averageBuyPrice == other.averageBuyPrice &&
+          averageBuyPriceModified == other.averageBuyPriceModified &&
+          averageBuyPriceUnit == other.averageBuyPriceUnit;
+}
+
 class WireOrderCancelFailure {
   final String? orderId;
   final String? clientId;
@@ -492,6 +523,31 @@ class WireOrderLookupRequest {
           market == other.market;
 }
 
+class WireOrderOption {
+  final String providerId;
+  final WireOrderType? orderType;
+  final WireTimeInForce? timeInForce;
+
+  const WireOrderOption({
+    required this.providerId,
+    this.orderType,
+    this.timeInForce,
+  });
+
+  @override
+  int get hashCode =>
+      providerId.hashCode ^ orderType.hashCode ^ timeInForce.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireOrderOption &&
+          runtimeType == other.runtimeType &&
+          providerId == other.providerId &&
+          orderType == other.orderType &&
+          timeInForce == other.timeInForce;
+}
+
 class WireOrderPage {
   final List<WireOrder> items;
   final String? next;
@@ -508,6 +564,89 @@ class WireOrderPage {
           runtimeType == other.runtimeType &&
           items == other.items &&
           next == other.next;
+}
+
+class WireOrderRules {
+  final WireMarket market;
+  final String marketName;
+  final WireMarketStatus status;
+  final String buyFeeRate;
+  final String sellFeeRate;
+  final String makerBuyFeeRate;
+  final String makerSellFeeRate;
+  final List<WireSide> sides;
+  final List<WireOrderOption> buyOptions;
+  final List<WireOrderOption> sellOptions;
+  final String? buyPriceUnit;
+  final String? sellPriceUnit;
+  final String minimumBuyTotal;
+  final String minimumSellTotal;
+  final String maximumTotal;
+  final WireOrderAccount quoteAccount;
+  final WireOrderAccount baseAccount;
+
+  const WireOrderRules({
+    required this.market,
+    required this.marketName,
+    required this.status,
+    required this.buyFeeRate,
+    required this.sellFeeRate,
+    required this.makerBuyFeeRate,
+    required this.makerSellFeeRate,
+    required this.sides,
+    required this.buyOptions,
+    required this.sellOptions,
+    this.buyPriceUnit,
+    this.sellPriceUnit,
+    required this.minimumBuyTotal,
+    required this.minimumSellTotal,
+    required this.maximumTotal,
+    required this.quoteAccount,
+    required this.baseAccount,
+  });
+
+  @override
+  int get hashCode =>
+      market.hashCode ^
+      marketName.hashCode ^
+      status.hashCode ^
+      buyFeeRate.hashCode ^
+      sellFeeRate.hashCode ^
+      makerBuyFeeRate.hashCode ^
+      makerSellFeeRate.hashCode ^
+      sides.hashCode ^
+      buyOptions.hashCode ^
+      sellOptions.hashCode ^
+      buyPriceUnit.hashCode ^
+      sellPriceUnit.hashCode ^
+      minimumBuyTotal.hashCode ^
+      minimumSellTotal.hashCode ^
+      maximumTotal.hashCode ^
+      quoteAccount.hashCode ^
+      baseAccount.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireOrderRules &&
+          runtimeType == other.runtimeType &&
+          market == other.market &&
+          marketName == other.marketName &&
+          status == other.status &&
+          buyFeeRate == other.buyFeeRate &&
+          sellFeeRate == other.sellFeeRate &&
+          makerBuyFeeRate == other.makerBuyFeeRate &&
+          makerSellFeeRate == other.makerSellFeeRate &&
+          sides == other.sides &&
+          buyOptions == other.buyOptions &&
+          sellOptions == other.sellOptions &&
+          buyPriceUnit == other.buyPriceUnit &&
+          sellPriceUnit == other.sellPriceUnit &&
+          minimumBuyTotal == other.minimumBuyTotal &&
+          minimumSellTotal == other.minimumSellTotal &&
+          maximumTotal == other.maximumTotal &&
+          quoteAccount == other.quoteAccount &&
+          baseAccount == other.baseAccount;
 }
 
 @freezed

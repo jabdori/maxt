@@ -26,6 +26,10 @@ pub(super) fn dispatch(call: CommonAdapterCall) -> Option<(AdapterCall, Expected
             ExpectedReply::Candles,
         )),
         CommonAdapterCall::Balances => Some((AdapterCall::Balances, ExpectedReply::Balances)),
+        CommonAdapterCall::OrderRules { market } => Some((
+            AdapterCall::OrderRules { market: market.into() },
+            ExpectedReply::OrderRules,
+        )),
         CommonAdapterCall::AssetNetworks { asset } => Some((
             AdapterCall::AssetNetworks { asset },
             ExpectedReply::AssetNetworks,

@@ -150,6 +150,57 @@ export function balanceToWire(value: Model.Balance): Wire.BalanceWire {
   };
 }
 
+export function orderAccountFromWire(value: Wire.OrderAccountWire): Model.OrderAccount {
+  return new Model.OrderAccount(balanceFromWire(value.balance), Model.Decimal.parse(value.average_buy_price), value.average_buy_price_modified, value.average_buy_price_unit === null ? null : value.average_buy_price_unit);
+}
+
+export function orderAccountToWire(value: Model.OrderAccount): Wire.OrderAccountWire {
+  return {
+    balance: balanceToWire(value.balance),
+    average_buy_price: value.averageBuyPrice.toString(),
+    average_buy_price_modified: value.averageBuyPriceModified,
+    average_buy_price_unit: value.averageBuyPriceUnit === null ? null : value.averageBuyPriceUnit,
+  };
+}
+
+export function orderOptionFromWire(value: Wire.OrderOptionWire): Model.OrderOption {
+  return new Model.OrderOption(value.provider_id, value.order_type === null ? null : identifier(Model.OrderType.values, value.order_type, "order_type"), value.time_in_force === null ? null : identifier(Model.TimeInForce.values, value.time_in_force, "time_in_force"));
+}
+
+export function orderOptionToWire(value: Model.OrderOption): Wire.OrderOptionWire {
+  return {
+    provider_id: value.providerId,
+    order_type: value.orderType === null ? null : value.orderType.id,
+    time_in_force: value.timeInForce === null ? null : value.timeInForce.id,
+  };
+}
+
+export function orderRulesFromWire(value: Wire.OrderRulesWire): Model.OrderRules {
+  return new Model.OrderRules(marketFromWire(value.market), value.market_name, identifier(Model.MarketStatus.values, value.status, "status"), Model.Decimal.parse(value.buy_fee_rate), Model.Decimal.parse(value.sell_fee_rate), Model.Decimal.parse(value.maker_buy_fee_rate), Model.Decimal.parse(value.maker_sell_fee_rate), value.sides.map((item) => identifier(Model.Side.values, item, "sides")), value.buy_options.map((item) => orderOptionFromWire(item)), value.sell_options.map((item) => orderOptionFromWire(item)), value.buy_price_unit === null ? null : Model.Decimal.parse(value.buy_price_unit), value.sell_price_unit === null ? null : Model.Decimal.parse(value.sell_price_unit), Model.Decimal.parse(value.minimum_buy_total), Model.Decimal.parse(value.minimum_sell_total), Model.Decimal.parse(value.maximum_total), orderAccountFromWire(value.quote_account), orderAccountFromWire(value.base_account));
+}
+
+export function orderRulesToWire(value: Model.OrderRules): Wire.OrderRulesWire {
+  return {
+    market: marketToWire(value.market),
+    market_name: value.marketName,
+    status: value.status.id,
+    buy_fee_rate: value.buyFeeRate.toString(),
+    sell_fee_rate: value.sellFeeRate.toString(),
+    maker_buy_fee_rate: value.makerBuyFeeRate.toString(),
+    maker_sell_fee_rate: value.makerSellFeeRate.toString(),
+    sides: value.sides.map((item) => item.id),
+    buy_options: value.buyOptions.map((item) => orderOptionToWire(item)),
+    sell_options: value.sellOptions.map((item) => orderOptionToWire(item)),
+    buy_price_unit: value.buyPriceUnit === null ? null : value.buyPriceUnit.toString(),
+    sell_price_unit: value.sellPriceUnit === null ? null : value.sellPriceUnit.toString(),
+    minimum_buy_total: value.minimumBuyTotal.toString(),
+    minimum_sell_total: value.minimumSellTotal.toString(),
+    maximum_total: value.maximumTotal.toString(),
+    quote_account: orderAccountToWire(value.quoteAccount),
+    base_account: orderAccountToWire(value.baseAccount),
+  };
+}
+
 export function assetNetworkFromWire(value: Wire.AssetNetworkWire): Model.AssetNetwork {
   return new Model.AssetNetwork(identifier(Model.Exchange.values, value.exchange, "exchange"), value.asset, Model.Network.other(value.network), value.provider_id, value.deposit_enabled, value.withdrawal_enabled, value.withdrawal_fee === null ? null : withdrawalFeeFromWire(value.withdrawal_fee), value.minimum_withdrawal === null ? null : Model.Decimal.parse(value.minimum_withdrawal), value.maximum_withdrawal === null ? null : Model.Decimal.parse(value.maximum_withdrawal), value.memo_required);
 }

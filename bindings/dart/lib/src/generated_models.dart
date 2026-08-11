@@ -2,6 +2,72 @@
 
 part of 'models.dart';
 
+final class OrderAccount {
+  const OrderAccount({
+    required this.balance,
+    required this.averageBuyPrice,
+    required this.averageBuyPriceModified,
+    this.averageBuyPriceUnit,
+  });
+
+  final Balance balance;
+  final Decimal averageBuyPrice;
+  final bool averageBuyPriceModified;
+  final String? averageBuyPriceUnit;
+}
+
+final class OrderOption {
+  const OrderOption({
+    required this.providerId,
+    this.orderType,
+    this.timeInForce,
+  });
+
+  final String providerId;
+  final OrderType? orderType;
+  final TimeInForce? timeInForce;
+}
+
+final class OrderRules {
+  const OrderRules({
+    required this.market,
+    required this.marketName,
+    required this.status,
+    required this.buyFeeRate,
+    required this.sellFeeRate,
+    required this.makerBuyFeeRate,
+    required this.makerSellFeeRate,
+    required this.sides,
+    required this.buyOptions,
+    required this.sellOptions,
+    this.buyPriceUnit,
+    this.sellPriceUnit,
+    required this.minimumBuyTotal,
+    required this.minimumSellTotal,
+    required this.maximumTotal,
+    required this.quoteAccount,
+    required this.baseAccount,
+  });
+
+  final Market market;
+  final String marketName;
+  final MarketStatus status;
+  final Decimal buyFeeRate;
+  final Decimal sellFeeRate;
+  final Decimal makerBuyFeeRate;
+  final Decimal makerSellFeeRate;
+  final List<Side> sides;
+  final List<OrderOption> buyOptions;
+  final List<OrderOption> sellOptions;
+  final Decimal? buyPriceUnit;
+  final Decimal? sellPriceUnit;
+  final Decimal minimumBuyTotal;
+  final Decimal minimumSellTotal;
+  final Decimal maximumTotal;
+  final OrderAccount quoteAccount;
+  final OrderAccount baseAccount;
+}
+
 final class AssetNetwork {
   AssetNetwork({
     required this.exchange,

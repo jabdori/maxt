@@ -572,6 +572,102 @@ pub(crate) fn balance_to_wire(
     )
 }
 
+pub(crate) fn order_account_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::OrderAccount> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::OrderAccount {
+        balance: balance_from_wire(&required(dict, "balance")?)?,
+        average_buy_price: decimal_from_wire(&required(dict, "average_buy_price")?, "average_buy_price")?,
+        average_buy_price_modified: required(dict, "average_buy_price_modified")?.extract()?,
+        average_buy_price_unit: optional(dict, "average_buy_price_unit")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+    })
+}
+
+pub(crate) fn order_account_to_wire(
+    py: Python<'_>,
+    value: &maxt::OrderAccount,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "balance" => balance_to_wire(py, &value.balance)?,
+        "average_buy_price" => decimal_to_wire(value.average_buy_price),
+        "average_buy_price_modified" => value.average_buy_price_modified,
+        "average_buy_price_unit" => &value.average_buy_price_unit,
+    )
+}
+
+pub(crate) fn order_option_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::OrderOption> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::OrderOption {
+        provider_id: required(dict, "provider_id")?.extract::<String>()?,
+        order_type: optional(dict, "order_type")?.map(|value| -> PyResult<_> { order_type_from_wire(&value) }).transpose()?,
+        time_in_force: optional(dict, "time_in_force")?.map(|value| -> PyResult<_> { time_in_force_from_wire(&value) }).transpose()?,
+    })
+}
+
+pub(crate) fn order_option_to_wire(
+    py: Python<'_>,
+    value: &maxt::OrderOption,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "provider_id" => &value.provider_id,
+        "order_type" => value.order_type.map(order_type_to_wire).transpose()?,
+        "time_in_force" => value.time_in_force.map(time_in_force_to_wire).transpose()?,
+    )
+}
+
+pub(crate) fn order_rules_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::OrderRules> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::OrderRules {
+        market: market_from_wire(&required(dict, "market")?)?,
+        market_name: required(dict, "market_name")?.extract::<String>()?,
+        status: market_status_from_wire(&required(dict, "status")?)?,
+        buy_fee_rate: decimal_from_wire(&required(dict, "buy_fee_rate")?, "buy_fee_rate")?,
+        sell_fee_rate: decimal_from_wire(&required(dict, "sell_fee_rate")?, "sell_fee_rate")?,
+        maker_buy_fee_rate: decimal_from_wire(&required(dict, "maker_buy_fee_rate")?, "maker_buy_fee_rate")?,
+        maker_sell_fee_rate: decimal_from_wire(&required(dict, "maker_sell_fee_rate")?, "maker_sell_fee_rate")?,
+        sides: list_from_wire(&required(dict, "sides")?, side_from_wire)?,
+        buy_options: list_from_wire(&required(dict, "buy_options")?, order_option_from_wire)?,
+        sell_options: list_from_wire(&required(dict, "sell_options")?, order_option_from_wire)?,
+        buy_price_unit: optional(dict, "buy_price_unit")?.map(|value| -> PyResult<_> { decimal_from_wire(&value, "buy_price_unit") }).transpose()?,
+        sell_price_unit: optional(dict, "sell_price_unit")?.map(|value| -> PyResult<_> { decimal_from_wire(&value, "sell_price_unit") }).transpose()?,
+        minimum_buy_total: decimal_from_wire(&required(dict, "minimum_buy_total")?, "minimum_buy_total")?,
+        minimum_sell_total: decimal_from_wire(&required(dict, "minimum_sell_total")?, "minimum_sell_total")?,
+        maximum_total: decimal_from_wire(&required(dict, "maximum_total")?, "maximum_total")?,
+        quote_account: order_account_from_wire(&required(dict, "quote_account")?)?,
+        base_account: order_account_from_wire(&required(dict, "base_account")?)?,
+    })
+}
+
+pub(crate) fn order_rules_to_wire(
+    py: Python<'_>,
+    value: &maxt::OrderRules,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "market" => market_to_wire(py, &value.market)?,
+        "market_name" => &value.market_name,
+        "status" => market_status_to_wire(value.status)?,
+        "buy_fee_rate" => decimal_to_wire(value.buy_fee_rate),
+        "sell_fee_rate" => decimal_to_wire(value.sell_fee_rate),
+        "maker_buy_fee_rate" => decimal_to_wire(value.maker_buy_fee_rate),
+        "maker_sell_fee_rate" => decimal_to_wire(value.maker_sell_fee_rate),
+        "sides" => value.sides.iter().copied().map(side_to_wire).collect::<PyResult<Vec<_>>>()?,
+        "buy_options" => list_to_wire(py, &value.buy_options, order_option_to_wire)?,
+        "sell_options" => list_to_wire(py, &value.sell_options, order_option_to_wire)?,
+        "buy_price_unit" => value.buy_price_unit.map(decimal_to_wire),
+        "sell_price_unit" => value.sell_price_unit.map(decimal_to_wire),
+        "minimum_buy_total" => decimal_to_wire(value.minimum_buy_total),
+        "minimum_sell_total" => decimal_to_wire(value.minimum_sell_total),
+        "maximum_total" => decimal_to_wire(value.maximum_total),
+        "quote_account" => order_account_to_wire(py, &value.quote_account)?,
+        "base_account" => order_account_to_wire(py, &value.base_account)?,
+    )
+}
+
 pub(crate) fn asset_network_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::AssetNetwork> {
     let value = wire_object(value)?;
     let dict = value.cast::<PyDict>()?;

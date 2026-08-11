@@ -2,9 +2,9 @@ use maxt::{
     AccountStream, AssetNetwork, Balance, BoxFuture, CancelOrdersRequest, CancelOrdersResult,
     Candle, CandleRequest, Deposit, DepositAddress, DepositAddressRequest, FundingPayment,
     FundingRate, HistoryRequest, MarginRequest, MarginSummary, Market, MarketInfo, MarketKind,
-    MarketStream, Order, OrderBook, OrderHistoryRequest, OrderLookupRequest, OrderRequest, Page,
-    Position, Result, StreamConfig, Subscription, Ticker, Trade, TransferHistoryRequest,
-    WithdrawRequest, Withdrawal, WithdrawalQuote,
+    MarketStream, Order, OrderBook, OrderHistoryRequest, OrderLookupRequest, OrderRequest,
+    OrderRules, Page, Position, Result, StreamConfig, Subscription, Ticker, Trade,
+    TransferHistoryRequest, WithdrawRequest, Withdrawal, WithdrawalQuote,
 };
 
 /// An owned call across a language binding boundary.
@@ -49,6 +49,11 @@ pub enum AdapterCall {
     },
     /// Reads account balances.
     Balances,
+    /// Reads dynamic order rules for one market.
+    OrderRules {
+        /// The market to inspect.
+        market: Market,
+    },
     /// Reads live asset-network rules.
     AssetNetworks {
         /// Asset symbol.
@@ -179,6 +184,8 @@ pub enum AdapterReply {
     MarketStream(MarketStream),
     /// Result of [`AdapterCall::Balances`].
     Balances(Vec<Balance>),
+    /// Result of [`AdapterCall::OrderRules`].
+    OrderRules(Box<OrderRules>),
     /// Result of [`AdapterCall::AssetNetworks`].
     AssetNetworks(Vec<AssetNetwork>),
     /// Result of [`AdapterCall::DepositAddress`].
@@ -233,6 +240,7 @@ impl AdapterReply {
             Self::Candles(_) => "Candles",
             Self::MarketStream(_) => "MarketStream",
             Self::Balances(_) => "Balances",
+            Self::OrderRules(_) => "OrderRules",
             Self::AssetNetworks(_) => "AssetNetworks",
             Self::DepositAddress(_) => "DepositAddress",
             Self::WithdrawalQuote(_) => "WithdrawalQuote",

@@ -29,12 +29,15 @@ from maxt import (
     MarginRequest,
     Network,
     Order,
+    OrderAccount,
     OrderBook,
     OrderHistoryRequest,
     OrderCancelFailure,
     OrderIdKind,
     OrderLookupRequest,
+    OrderOption,
     OrderRequest,
+    OrderRules,
     OrderStatus,
     OrderType,
     Position,
@@ -138,6 +141,34 @@ class WireModelTests(unittest.TestCase):
 
         self.assertEqual(request.to_wire(), {"kind": "client", "ids": ["client-1"]})
         self.assertEqual(result.to_wire()["failed"][0]["code"], "not_found")
+
+    def test_order_rules_preserve_known_and_future_provider_options(self) -> None:
+        market = Market.spot(Exchange.UPBIT, "BTC", "KRW")
+        rules = OrderRules(
+            market,
+            "BTC/KRW",
+            MarketStatus.ACTIVE,
+            Decimal("0.001"),
+            Decimal("0.001"),
+            Decimal("0.0005"),
+            Decimal("0.0005"),
+            [Side.BUY, Side.SELL],
+            [OrderOption("limit_ioc", OrderType.LIMIT, TimeInForce.IMMEDIATE_OR_CANCEL)],
+            [OrderOption("future_order")],
+            None,
+            None,
+            Decimal("5000"),
+            Decimal("5000"),
+            Decimal("1000000000"),
+            OrderAccount(Balance("krw", Decimal("10000"), Decimal("0")), Decimal("0"), False, "KRW"),
+            OrderAccount(Balance("btc", Decimal("1"), Decimal("0")), Decimal("95000000"), False, "KRW"),
+        )
+
+        wire = rules.to_wire()
+        self.assertEqual(wire["quote_account"]["balance"]["asset"], "KRW")
+        self.assertEqual(wire["buy_options"][0]["time_in_force"], "immediate_or_cancel")
+        self.assertIsNone(wire["sell_options"][0]["order_type"])
+        self.assertIsNone(wire["buy_price_unit"])
 
     def test_intervals_report_fixed_lengths_and_advance_without_overflow(self) -> None:
         self.assertEqual(

@@ -22,8 +22,8 @@ use crate::convert::{
     WireDepositAddressRequest, WireExchangeTransferRequest, WireFundingPayment, WireFundingRate,
     WireHistoryRequest, WireMarginRequest, WireMarginSummary, WireMarket, WireMarketInfo,
     WireOrder, WireOrderBook, WireOrderHistoryRequest, WireOrderLookupRequest, WireOrderRequest,
-    WirePage, WirePosition, WireStreamConfig, WireSubscription, WireTicker, WireTrade,
-    WireTransferHistoryRequest, WireTransferPlan, WireWithdrawRequest, WireWithdrawal,
+    WireOrderRules, WirePage, WirePosition, WireStreamConfig, WireSubscription, WireTicker,
+    WireTrade, WireTransferHistoryRequest, WireTransferPlan, WireWithdrawRequest, WireWithdrawal,
     WireWithdrawalQuote, feature_from_id, from_wire_text, market_kind_from_wire, outcome,
 };
 use crate::stream::NativeStreamRegistry;
@@ -110,6 +110,15 @@ impl NativeClient {
 
     async fn balances(&self) -> Value {
         outcome(wire_vec::<_, WireBalance>(self.inner.balances().await))
+    }
+
+    async fn order_rules(&self, market: maxt::Result<String>) -> Value {
+        match parse_wire::<maxt::Market, WireMarket>(market, "market") {
+            Ok(market) => outcome(wire_one::<_, WireOrderRules>(
+                self.inner.order_rules(&market).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
     }
 
     async fn asset_networks(&self, asset: maxt::Result<String>) -> Value {
@@ -517,6 +526,17 @@ impl NativeClient {
     #[napi(js_name = "balances")]
     pub async fn balances_native(&self) -> Value {
         self.balances().await
+    }
+
+    #[napi(js_name = "orderRules", ts_args_type = "market: string")]
+    pub fn order_rules_native<'env>(
+        &self,
+        env: &'env Env,
+        market: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let market = native_json_text(market, "market");
+        spawn_native(env, async move { client.order_rules(market).await })
     }
 
     #[napi(js_name = "assetNetworks", ts_args_type = "asset: string")]
@@ -932,6 +952,11 @@ impl NativeClient {
         crate::web::value(self.balances().await)
     }
 
+    #[wasm_bindgen(js_name = "orderRules")]
+    pub async fn order_rules_wasm(&self, market: String) -> JsValue {
+        crate::web::value(self.order_rules(Ok(market)).await)
+    }
+
     #[wasm_bindgen(js_name = "assetNetworks")]
     pub async fn asset_networks_wasm(&self, asset: String) -> JsValue {
         crate::web::value(self.asset_networks(Ok(asset)).await)
@@ -1169,9 +1194,10 @@ mod tests {
         CancelOrdersRequest, CancelOrdersResult, CancelledOrder, Candle, CandleRequest, Decimal,
         Deposit, DepositAddress, DepositAddressRequest, Exchange, Feature, FundingPayment,
         FundingRate, HistoryRequest, MarginRequest, MarginSummary, Market, MarketEvent, MarketInfo,
-        MarketKind, MarketStream, Order, OrderBook, OrderCancelFailure, OrderHistoryRequest,
-        OrderLookupRequest, OrderRequest, OrderStatus, Page, Position, Side, StreamConfig,
-        Subscription, Ticker, Timestamp, Trade, TransferHistoryRequest, TravelRuleRequirement,
+        MarketKind, MarketStatus, MarketStream, Order, OrderAccount, OrderBook, OrderCancelFailure,
+        OrderHistoryRequest, OrderLookupRequest, OrderOption, OrderRequest, OrderRules,
+        OrderStatus, OrderType, Page, Position, Side, StreamConfig, Subscription, Ticker,
+        TimeInForce, Timestamp, Trade, TransferHistoryRequest, TravelRuleRequirement,
         WithdrawRequest, Withdrawal, WithdrawalQuote, WithdrawalStatus,
     };
 
@@ -1263,6 +1289,54 @@ mod tests {
         fn balances(&self) -> BoxFuture<'_, maxt::Result<Vec<Balance>>> {
             self.calls.lock().unwrap().push("balances");
             Box::pin(async { Ok(vec![]) })
+        }
+
+        fn order_rules(&self, market: &Market) -> BoxFuture<'_, maxt::Result<OrderRules>> {
+            self.calls.lock().unwrap().push("order_rules");
+            let market = market.clone();
+            Box::pin(async move {
+                Ok(OrderRules {
+                    market,
+                    market_name: "BTC/USDT".to_owned(),
+                    status: MarketStatus::Active,
+                    buy_fee_rate: Decimal::new(1, 3),
+                    sell_fee_rate: Decimal::new(1, 3),
+                    maker_buy_fee_rate: Decimal::new(5, 4),
+                    maker_sell_fee_rate: Decimal::new(5, 4),
+                    sides: vec![Side::Buy, Side::Sell],
+                    buy_options: vec![OrderOption {
+                        provider_id: "limit_ioc".to_owned(),
+                        order_type: Some(OrderType::Limit),
+                        time_in_force: Some(TimeInForce::ImmediateOrCancel),
+                    }],
+                    sell_options: vec![],
+                    buy_price_unit: Some(Decimal::new(1, 1)),
+                    sell_price_unit: Some(Decimal::new(1, 1)),
+                    minimum_buy_total: Decimal::TEN,
+                    minimum_sell_total: Decimal::TEN,
+                    maximum_total: Decimal::from(1_000_000),
+                    quote_account: OrderAccount {
+                        balance: Balance {
+                            asset: "USDT".to_owned(),
+                            available: Decimal::from(100),
+                            locked: Decimal::ZERO,
+                        },
+                        average_buy_price: Decimal::ZERO,
+                        average_buy_price_modified: false,
+                        average_buy_price_unit: Some("USDT".to_owned()),
+                    },
+                    base_account: OrderAccount {
+                        balance: Balance {
+                            asset: "BTC".to_owned(),
+                            available: Decimal::ONE,
+                            locked: Decimal::ZERO,
+                        },
+                        average_buy_price: Decimal::from(50_000),
+                        average_buy_price_modified: false,
+                        average_buy_price_unit: Some("USDT".to_owned()),
+                    },
+                })
+            })
         }
 
         fn asset_networks(&self, _asset: &str) -> BoxFuture<'_, maxt::Result<Vec<AssetNetwork>>> {
@@ -1757,6 +1831,7 @@ mod tests {
             client.ticker(json_text(market.clone())).await,
             client.candles(json_text(candle_request)).await,
             client.balances().await,
+            client.order_rules(json_text(market.clone())).await,
             client
                 .asset_networks(json_text(serde_json::json!("BTC")))
                 .await,
@@ -1813,7 +1888,7 @@ mod tests {
             client.set_margin(json_text(margin_request)).await,
         ];
         assert!(results.iter().all(|value| value["ok"] == true));
-        assert_eq!(results[21]["value"]["failed"][0]["code"], "order_not_found");
+        assert_eq!(results[22]["value"]["failed"][0]["code"], "order_not_found");
         assert_eq!(
             *calls.lock().unwrap(),
             vec![
@@ -1823,6 +1898,7 @@ mod tests {
                 "ticker",
                 "candles",
                 "balances",
+                "order_rules",
                 "asset_networks",
                 "deposit_address",
                 "prepare_withdrawal",

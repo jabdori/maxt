@@ -99,6 +99,167 @@ impl From<WireDepositStatus> for maxt::DepositStatus {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireOrderAccount {
+    pub balance: WireBalance,
+    pub average_buy_price: String,
+    pub average_buy_price_modified: bool,
+    pub average_buy_price_unit: Option<String>,
+}
+
+impl From<maxt::OrderAccount> for WireOrderAccount {
+    fn from(value: maxt::OrderAccount) -> Self {
+        Self {
+            balance: value.balance.into(),
+            average_buy_price: decimal_to_wire(value.average_buy_price),
+            average_buy_price_modified: value.average_buy_price_modified,
+            average_buy_price_unit: value.average_buy_price_unit,
+        }
+    }
+}
+
+impl TryFrom<WireOrderAccount> for maxt::OrderAccount {
+    type Error = NativeError;
+
+    fn try_from(value: WireOrderAccount) -> Result<Self, Self::Error> {
+        Ok(Self {
+            balance: value.balance.try_into()?,
+            average_buy_price: decimal_from_wire(&value.average_buy_price, "average_buy_price")
+                .map_err(NativeError::from)?,
+            average_buy_price_modified: value.average_buy_price_modified,
+            average_buy_price_unit: value.average_buy_price_unit,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireOrderOption {
+    pub provider_id: String,
+    pub order_type: Option<WireOrderType>,
+    pub time_in_force: Option<WireTimeInForce>,
+}
+
+impl From<maxt::OrderOption> for WireOrderOption {
+    fn from(value: maxt::OrderOption) -> Self {
+        Self {
+            provider_id: value.provider_id,
+            order_type: value.order_type.map(Into::into),
+            time_in_force: value.time_in_force.map(Into::into),
+        }
+    }
+}
+
+impl TryFrom<WireOrderOption> for maxt::OrderOption {
+    type Error = NativeError;
+
+    fn try_from(value: WireOrderOption) -> Result<Self, Self::Error> {
+        Ok(Self {
+            provider_id: value.provider_id,
+            order_type: value.order_type.map(Into::into),
+            time_in_force: value.time_in_force.map(Into::into),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireOrderRules {
+    pub market: WireMarket,
+    pub market_name: String,
+    pub status: WireMarketStatus,
+    pub buy_fee_rate: String,
+    pub sell_fee_rate: String,
+    pub maker_buy_fee_rate: String,
+    pub maker_sell_fee_rate: String,
+    pub sides: Vec<WireSide>,
+    pub buy_options: Vec<WireOrderOption>,
+    pub sell_options: Vec<WireOrderOption>,
+    pub buy_price_unit: Option<String>,
+    pub sell_price_unit: Option<String>,
+    pub minimum_buy_total: String,
+    pub minimum_sell_total: String,
+    pub maximum_total: String,
+    pub quote_account: WireOrderAccount,
+    pub base_account: WireOrderAccount,
+}
+
+impl From<maxt::OrderRules> for WireOrderRules {
+    fn from(value: maxt::OrderRules) -> Self {
+        Self {
+            market: value.market.into(),
+            market_name: value.market_name,
+            status: value.status.into(),
+            buy_fee_rate: decimal_to_wire(value.buy_fee_rate),
+            sell_fee_rate: decimal_to_wire(value.sell_fee_rate),
+            maker_buy_fee_rate: decimal_to_wire(value.maker_buy_fee_rate),
+            maker_sell_fee_rate: decimal_to_wire(value.maker_sell_fee_rate),
+            sides: value.sides.into_iter().map(Into::into).collect(),
+            buy_options: value.buy_options.into_iter().map(Into::into).collect(),
+            sell_options: value.sell_options.into_iter().map(Into::into).collect(),
+            buy_price_unit: value.buy_price_unit.map(decimal_to_wire),
+            sell_price_unit: value.sell_price_unit.map(decimal_to_wire),
+            minimum_buy_total: decimal_to_wire(value.minimum_buy_total),
+            minimum_sell_total: decimal_to_wire(value.minimum_sell_total),
+            maximum_total: decimal_to_wire(value.maximum_total),
+            quote_account: value.quote_account.into(),
+            base_account: value.base_account.into(),
+        }
+    }
+}
+
+impl TryFrom<WireOrderRules> for maxt::OrderRules {
+    type Error = NativeError;
+
+    fn try_from(value: WireOrderRules) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.into(),
+            market_name: value.market_name,
+            status: value.status.into(),
+            buy_fee_rate: decimal_from_wire(&value.buy_fee_rate, "buy_fee_rate")
+                .map_err(NativeError::from)?,
+            sell_fee_rate: decimal_from_wire(&value.sell_fee_rate, "sell_fee_rate")
+                .map_err(NativeError::from)?,
+            maker_buy_fee_rate: decimal_from_wire(&value.maker_buy_fee_rate, "maker_buy_fee_rate")
+                .map_err(NativeError::from)?,
+            maker_sell_fee_rate: decimal_from_wire(
+                &value.maker_sell_fee_rate,
+                "maker_sell_fee_rate",
+            )
+            .map_err(NativeError::from)?,
+            sides: value.sides.into_iter().map(Into::into).collect(),
+            buy_options: value
+                .buy_options
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            sell_options: value
+                .sell_options
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            buy_price_unit: value
+                .buy_price_unit
+                .as_deref()
+                .map(|value| decimal_from_wire(value, "buy_price_unit"))
+                .transpose()
+                .map_err(NativeError::from)?,
+            sell_price_unit: value
+                .sell_price_unit
+                .as_deref()
+                .map(|value| decimal_from_wire(value, "sell_price_unit"))
+                .transpose()
+                .map_err(NativeError::from)?,
+            minimum_buy_total: decimal_from_wire(&value.minimum_buy_total, "minimum_buy_total")
+                .map_err(NativeError::from)?,
+            minimum_sell_total: decimal_from_wire(&value.minimum_sell_total, "minimum_sell_total")
+                .map_err(NativeError::from)?,
+            maximum_total: decimal_from_wire(&value.maximum_total, "maximum_total")
+                .map_err(NativeError::from)?,
+            quote_account: value.quote_account.try_into()?,
+            base_account: value.base_account.try_into()?,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireAssetNetwork {
     pub exchange: WireExchange,
     pub asset: String,

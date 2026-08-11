@@ -14,8 +14,9 @@ use crate::convert::{
     WireExchange, WireFeature, WireFundingPaymentPage, WireFundingRatePage, WireHistoryRequest,
     WireMarginRequest, WireMarginSummary, WireMarket, WireMarketInfo, WireMarketKind, WireOrder,
     WireOrderBook, WireOrderHistoryRequest, WireOrderLookupRequest, WireOrderPage,
-    WireOrderRequest, WirePosition, WireTicker, WireTrade, WireTransferHistoryRequest,
-    WireWithdrawRequest, WireWithdrawal, WireWithdrawalPage, WireWithdrawalQuote,
+    WireOrderRequest, WireOrderRules, WirePosition, WireTicker, WireTrade,
+    WireTransferHistoryRequest, WireWithdrawRequest, WireWithdrawal, WireWithdrawalPage,
+    WireWithdrawalQuote,
 };
 use crate::stream::{
     AccountStreamSink, CancelCallback, CancelFuture, MarketStreamSink, account_stream_channel,
@@ -118,6 +119,8 @@ pub enum AdapterCall {
     Candles { request: WireCandleRequest },
     /// 계정 잔고를 요청합니다.
     Balances,
+    /// 시장별 주문 규칙을 요청합니다.
+    OrderRules { market: WireMarket },
     /// 자산별 입출금 네트워크를 요청합니다.
     AssetNetworks { asset: String },
     /// 입금 주소를 요청합니다.
@@ -203,6 +206,8 @@ pub enum AdapterReply {
     Candles(Vec<WireCandle>),
     /// 잔고 응답입니다.
     Balances(Vec<WireBalance>),
+    /// 시장별 주문 규칙 응답입니다.
+    OrderRules(WireOrderRules),
     /// 자산별 네트워크 응답입니다.
     AssetNetworks(Vec<WireAssetNetwork>),
     /// 입금 주소 응답입니다.
@@ -248,6 +253,7 @@ impl AdapterReply {
             Self::Ticker(_) => "Ticker",
             Self::Candles(_) => "Candles",
             Self::Balances(_) => "Balances",
+            Self::OrderRules(_) => "OrderRules",
             Self::AssetNetworks(_) => "AssetNetworks",
             Self::DepositAddress(_) => "DepositAddress",
             Self::PrepareWithdrawal(_) => "PrepareWithdrawal",
@@ -376,6 +382,7 @@ enum ExpectedReply {
     Ticker,
     Candles,
     Balances,
+    OrderRules,
     AssetNetworks,
     DepositAddress,
     PrepareWithdrawal,
@@ -405,6 +412,7 @@ impl ExpectedReply {
             Self::Ticker => "Ticker",
             Self::Candles => "Candles",
             Self::Balances => "Balances",
+            Self::OrderRules => "OrderRules",
             Self::AssetNetworks => "AssetNetworks",
             Self::DepositAddress => "DepositAddress",
             Self::PrepareWithdrawal => "PrepareWithdrawal",
@@ -483,6 +491,11 @@ impl AdapterReply {
             (ExpectedReply::Balances, Self::Balances(values)) => {
                 convert_vec(values, "Balances").map(CommonAdapterReply::Balances)
             }
+            (ExpectedReply::OrderRules, Self::OrderRules(value)) => value
+                .try_into()
+                .map(Box::new)
+                .map(CommonAdapterReply::OrderRules)
+                .map_err(|error| invalid_reply("OrderRules", error)),
             (ExpectedReply::AssetNetworks, Self::AssetNetworks(values)) => {
                 convert_vec(values, "AssetNetworks").map(CommonAdapterReply::AssetNetworks)
             }

@@ -40,13 +40,17 @@ from maxt import (
     MarketStatus,
     MarketStream,
     Order,
+    OrderAccount,
     OrderBook,
     OrderHistoryRequest,
     OrderCancelFailure,
     OrderIdKind,
     OrderLookupRequest,
+    OrderOption,
     OrderRequest,
+    OrderRules,
     OrderStatus,
+    OrderType,
     Page,
     Position,
     Side,
@@ -56,6 +60,7 @@ from maxt import (
     StreamEvent,
     Subscription,
     Ticker,
+    TimeInForce,
     Trade,
     TransferError,
     TransferErrorKind,
@@ -92,6 +97,37 @@ class NativeReplayAdapter(Adapter):
             "trade-1",
         )
         self.balance = Balance("usdt", Decimal("100.2500"), Decimal("2.5000"))
+        self.rules = OrderRules(
+            market=market,
+            market_name="BTC/USDT",
+            status=MarketStatus.ACTIVE,
+            buy_fee_rate=Decimal("0.001"),
+            sell_fee_rate=Decimal("0.001"),
+            maker_buy_fee_rate=Decimal("0.0005"),
+            maker_sell_fee_rate=Decimal("0.0005"),
+            sides=[Side.BUY, Side.SELL],
+            buy_options=[
+                OrderOption("limit_ioc", OrderType.LIMIT, TimeInForce.IMMEDIATE_OR_CANCEL)
+            ],
+            sell_options=[OrderOption("future_order")],
+            buy_price_unit=Decimal("0.1"),
+            sell_price_unit=Decimal("0.1"),
+            minimum_buy_total=Decimal("10"),
+            minimum_sell_total=Decimal("10"),
+            maximum_total=Decimal("1000000"),
+            quote_account=OrderAccount(
+                self.balance,
+                Decimal("0"),
+                False,
+                "USDT",
+            ),
+            base_account=OrderAccount(
+                Balance("btc", Decimal("1"), Decimal("0.1")),
+                Decimal("50000"),
+                False,
+                "USDT",
+            ),
+        )
         self.sample_order = Order(
             "order-1",
             market,
@@ -172,6 +208,10 @@ class NativeReplayAdapter(Adapter):
     async def balances(self) -> list[Balance]:
         self.received.append(("balances",))
         return [self.balance]
+
+    async def order_rules(self, market: Market) -> OrderRules:
+        self.received.append(("order_rules", market))
+        return self.rules
 
     async def open_orders(self, market=None) -> list[Order]:
         self.received.append(("open_orders", market))
@@ -457,6 +497,11 @@ class NativeCustomAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await client.ticker(market)).last_price, Decimal("50000.01"))
         self.assertEqual((await client.candles(candle_request))[0].volume, Decimal("12.5000"))
         self.assertEqual((await client.balances())[0].total(), Decimal("102.7500"))
+        rules = await client.order_rules(market)
+        self.assertEqual(rules.market_name, "BTC/USDT")
+        self.assertEqual(rules.base_account.balance.asset, "BTC")
+        self.assertEqual(rules.buy_options[0].time_in_force, TimeInForce.IMMEDIATE_OR_CANCEL)
+        self.assertIsNone(rules.sell_options[0].order_type)
         self.assertEqual((await client.open_orders())[0].id, "order-1")
         self.assertEqual((await client.open_orders_on(market))[0].id, "order-1")
         self.assertEqual((await client.order(market, "order-1")).id, "order-1")

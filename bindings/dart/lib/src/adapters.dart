@@ -189,6 +189,11 @@ abstract base class _NativeAdapterBase
   ).then((values) => values.map(_balanceFromWire).toList(growable: false));
 
   @override
+  Future<OrderRules> orderRules(Market market) => _nativeFuture(
+    () => _handle.orderRules(market: _marketToWire(market)),
+  ).then(_orderRulesFromWire);
+
+  @override
   Future<List<AssetNetwork>> assetNetworks(String asset) => _nativeFuture(
     () => _handle.assetNetworks(asset: asset),
   ).then((values) => values.map(_assetNetworkFromWire).toList(growable: false));

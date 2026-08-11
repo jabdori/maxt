@@ -20,7 +20,7 @@ use crate::request::{
 use crate::transport::{HttpRequest, HttpTransport};
 use crate::types::{
     AccountEvent, Balance, CancelOrdersResult, CancelledOrder, Market, Order, OrderCancelFailure,
-    OrderType, Page, Side, Size, TimeInForce,
+    OrderRules, OrderType, Page, Side, Size, TimeInForce,
 };
 
 use super::parse::{self, EXCHANGE};
@@ -30,6 +30,7 @@ use super::{UpbitCredentials, rest, stream};
 pub(crate) const AUTHORIZATION: &str = "Authorization";
 
 const BALANCES_PATH: &str = "/v1/accounts";
+const ORDER_RULES_PATH: &str = "/v1/orders/chance";
 const OPEN_ORDERS_PATH: &str = "/v1/orders/open";
 const ORDERS_BY_IDS_PATH: &str = "/v1/orders/uuids";
 const ORDER_HISTORY_PATH: &str = "/v1/orders/closed";
@@ -185,6 +186,17 @@ fn amount(value: &Decimal, field: &'static str) -> Result<String> {
 
 pub(crate) fn balances_request(credentials: &UpbitCredentials) -> Result<HttpRequest> {
     Ok(HttpRequest::get(BALANCES_PATH).header(AUTHORIZATION, authorization(credentials, "")?))
+}
+
+pub(crate) fn order_rules_request(
+    credentials: &UpbitCredentials,
+    market: &Market,
+) -> Result<HttpRequest> {
+    let params = [("market", parse::native_symbol(market)?)];
+    let query = query(&params)?;
+    Ok(HttpRequest::get(ORDER_RULES_PATH)
+        .query(query.clone())
+        .header(AUTHORIZATION, authorization(credentials, &query)?))
 }
 
 /// One page of open orders. Pages are numbered from one.
@@ -548,6 +560,17 @@ pub(crate) async fn balances(
         .iter()
         .map(parse::balance)
         .collect()
+}
+
+pub(crate) async fn order_rules(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    market: &Market,
+) -> Result<OrderRules> {
+    let native_symbol = parse::native_symbol(market)?;
+    let body = rest::send(http, &order_rules_request(credentials, market)?).await?;
+    let body = parse::json::<Value>(&body)?;
+    crate::adapters::order_rules::parse(&body, market, &native_symbol)
 }
 
 /// Reads open orders until a short page is returned.
@@ -1013,6 +1036,17 @@ mod tests {
 
         assert_eq!(request.target(), "/v1/accounts");
         assert_eq!(claims_of(&authorization_of(&request)).query_hash, None);
+    }
+
+    #[test]
+    fn order_rules_hash_the_exact_market_query() {
+        let request = order_rules_request(&credentials(), &btc_krw()).expect("a signable request");
+
+        assert_eq!(request.target(), "/v1/orders/chance?market=KRW-BTC");
+        assert_eq!(
+            claims_of(&authorization_of(&request)).query_hash.as_deref(),
+            Some(hex::encode(Sha512::digest(b"market=KRW-BTC")).as_str())
+        );
     }
 
     #[test]

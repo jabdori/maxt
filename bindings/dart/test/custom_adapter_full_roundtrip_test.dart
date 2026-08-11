@@ -22,6 +22,7 @@ final class FullContractAdapter extends AdapterBase {
   MarketKind? requestedKind;
   int? orderBookDepth;
   CandleRequest? candleRequest;
+  Market? orderRulesMarket;
   Market? openOrdersMarket;
   (Market, String)? requestedOrder;
   (Market, String)? requestedClientOrder;
@@ -133,6 +134,54 @@ final class FullContractAdapter extends AdapterBase {
       locked: Decimal.parse('2.5'),
     ),
   ];
+
+  @override
+  Future<OrderRules> orderRules(Market market) async {
+    orderRulesMarket = market;
+    return OrderRules(
+      market: market,
+      marketName: 'BTC/USDT',
+      status: MarketStatus.active,
+      buyFeeRate: Decimal.parse('0.001'),
+      sellFeeRate: Decimal.parse('0.001'),
+      makerBuyFeeRate: Decimal.parse('0.0005'),
+      makerSellFeeRate: Decimal.parse('0.0005'),
+      sides: const [Side.buy, Side.sell],
+      buyOptions: const [
+        OrderOption(
+          providerId: 'limit_ioc',
+          orderType: OrderType.limit,
+          timeInForce: TimeInForce.immediateOrCancel,
+        ),
+      ],
+      sellOptions: const [OrderOption(providerId: 'future_order')],
+      buyPriceUnit: Decimal.parse('0.1'),
+      sellPriceUnit: Decimal.parse('0.1'),
+      minimumBuyTotal: Decimal.parse('10'),
+      minimumSellTotal: Decimal.parse('10'),
+      maximumTotal: Decimal.parse('1000000'),
+      quoteAccount: OrderAccount(
+        balance: Balance(
+          asset: 'usdt',
+          available: Decimal.parse('1000'),
+          locked: Decimal.parse('2.5'),
+        ),
+        averageBuyPrice: Decimal.zero,
+        averageBuyPriceModified: false,
+        averageBuyPriceUnit: 'USDT',
+      ),
+      baseAccount: OrderAccount(
+        balance: Balance(
+          asset: 'btc',
+          available: Decimal.one,
+          locked: Decimal.parse('0.1'),
+        ),
+        averageBuyPrice: Decimal.parse('50000'),
+        averageBuyPriceModified: false,
+        averageBuyPriceUnit: 'USDT',
+      ),
+    );
+  }
 
   @override
   Future<List<Order>> openOrders([Market? market]) async {
@@ -335,6 +384,13 @@ void main() {
     final balance = (await client.balances()).single;
     expect(balance.asset, 'USDT');
     expect(balance.available, Decimal.parse('1000.00000001'));
+
+    final rules = await client.orderRules(market);
+    expect(rules.marketName, 'BTC/USDT');
+    expect(rules.baseAccount.balance.asset, 'BTC');
+    expect(rules.buyOptions.single.timeInForce, TimeInForce.immediateOrCancel);
+    expect(rules.sellOptions.single.orderType, isNull);
+    expect(adapter.orderRulesMarket, market);
 
     final openOrder = (await client.openOrdersOn(market)).single;
     expect(openOrder.id, 'order-1');

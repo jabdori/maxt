@@ -13,7 +13,8 @@ use crate::stream::{AccountStream, MarketStream};
 use crate::types::{
     AssetNetwork, Balance, CancelOrdersResult, Candle, Deposit, DepositAddress, Exchange, Feed,
     FundingPayment, FundingRate, MarginSummary, Market, MarketInfo, MarketKind, Order, OrderBook,
-    Page, Position, StreamConfig, Subscription, Ticker, Trade, Withdrawal, WithdrawalQuote,
+    OrderRules, Page, Position, StreamConfig, Subscription, Ticker, Trade, Withdrawal,
+    WithdrawalQuote,
 };
 
 /// A boxed future used to keep [`Adapter`] dyn-compatible.
@@ -107,6 +108,12 @@ pub trait Adapter: Send + Sync + 'static {
     /// Reads the account's balances.
     fn balances(&self) -> BoxFuture<'_, Result<Vec<Balance>>> {
         unsupported(self.exchange(), Feature::Balances)
+    }
+
+    /// Reads current order fees, limits, supported combinations, and balances.
+    fn order_rules(&self, market: &Market) -> BoxFuture<'_, Result<OrderRules>> {
+        let _ = market;
+        unsupported(self.exchange(), Feature::Trading)
     }
 
     /// Reads live transfer rules for one asset.
@@ -311,6 +318,10 @@ impl Adapter for Box<dyn Adapter> {
 
     fn balances(&self) -> BoxFuture<'_, Result<Vec<Balance>>> {
         (**self).balances()
+    }
+
+    fn order_rules(&self, market: &Market) -> BoxFuture<'_, Result<OrderRules>> {
+        (**self).order_rules(market)
     }
 
     fn asset_networks(&self, asset: &str) -> BoxFuture<'_, Result<Vec<AssetNetwork>>> {

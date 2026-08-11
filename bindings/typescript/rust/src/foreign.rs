@@ -41,8 +41,8 @@ use crate::convert::outcome;
 use crate::convert::{
     WireAccountStreamItem, WireAssetNetwork, WireBalance, WireCancelOrdersResult, WireCandle,
     WireDeposit, WireDepositAddress, WireFundingPayment, WireFundingRate, WireMarginSummary,
-    WireMarketInfo, WireMarketStreamItem, WireOrder, WireOrderBook, WirePage, WirePosition,
-    WireTicker, WireTrade, WireWithdrawal, WireWithdrawalQuote,
+    WireMarketInfo, WireMarketStreamItem, WireOrder, WireOrderBook, WireOrderRules, WirePage,
+    WirePosition, WireTicker, WireTrade, WireWithdrawal, WireWithdrawalQuote,
 };
 use crate::convert::{
     WireCancelOrdersRequest, WireCandleRequest, WireDepositAddressRequest, WireError,
@@ -78,6 +78,9 @@ enum WireAdapterCall {
         config: WireStreamConfig,
     },
     Balances,
+    OrderRules {
+        market: WireMarket,
+    },
     AssetNetworks {
         asset: String,
     },
@@ -157,6 +160,7 @@ enum WireAdapterReply {
     Candles { value: Vec<WireCandle> },
     MarketStream { stream_id: String },
     Balances { value: Vec<WireBalance> },
+    OrderRules { value: Box<WireOrderRules> },
     AssetNetworks { value: Vec<WireAssetNetwork> },
     DepositAddress { value: WireDepositAddress },
     WithdrawalQuote { value: WireWithdrawalQuote },
@@ -205,6 +209,9 @@ fn call_to_wire(call: AdapterCall, stream_id: Option<String>) -> maxt::Result<Wi
             config: config.try_into()?,
         }),
         AdapterCall::Balances => Ok(WireAdapterCall::Balances),
+        AdapterCall::OrderRules { market } => Ok(WireAdapterCall::OrderRules {
+            market: market.try_into()?,
+        }),
         AdapterCall::AssetNetworks { asset } => Ok(WireAdapterCall::AssetNetworks { asset }),
         AdapterCall::DepositAddress { request } => Ok(WireAdapterCall::DepositAddress {
             request: request.try_into()?,
@@ -584,6 +591,10 @@ impl JsForeignDispatcher {
                 .map(TryInto::try_into)
                 .collect::<maxt::Result<_>>()
                 .map(AdapterReply::Balances),
+            WireAdapterReply::OrderRules { value } => (*value)
+                .try_into()
+                .map(Box::new)
+                .map(AdapterReply::OrderRules),
             WireAdapterReply::AssetNetworks { value } => value
                 .into_iter()
                 .map(TryInto::try_into)
@@ -807,6 +818,9 @@ mod tests {
                 config: StreamConfig::default(),
             },
             AdapterCall::Balances,
+            AdapterCall::OrderRules {
+                market: market.clone(),
+            },
             AdapterCall::AssetNetworks {
                 asset: "BTC".to_owned(),
             },
@@ -875,6 +889,7 @@ mod tests {
             "candles",
             "subscribe",
             "balances",
+            "order_rules",
             "asset_networks",
             "deposit_address",
             "prepare_withdrawal",

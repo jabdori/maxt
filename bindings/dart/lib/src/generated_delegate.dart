@@ -29,6 +29,10 @@ abstract base class GeneratedNativeDelegate extends AdapterBase {
   Future<List<Balance>> balances() async => (await delegateAdapter).balances();
 
   @override
+  Future<OrderRules> orderRules(Market market) async =>
+      (await delegateAdapter).orderRules(market);
+
+  @override
   Future<List<AssetNetwork>> assetNetworks(String asset) async =>
       (await delegateAdapter).assetNetworks(asset);
 

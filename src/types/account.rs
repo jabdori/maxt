@@ -2,7 +2,7 @@
 
 use rust_decimal::Decimal;
 
-use crate::types::{Market, Side, Timestamp};
+use crate::types::{Market, MarketStatus, Side, Timestamp};
 
 /// How much of one asset an account reports as available and locked.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -26,8 +26,71 @@ impl Balance {
     }
 }
 
-/// How an order is priced and matched.
+/// One order type and time-in-force combination accepted by a market.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct OrderOption {
+    /// Exchange value, preserved for diagnostics and future variants.
+    pub provider_id: String,
+    /// Normalized pricing behavior, or `None` for a newly added provider value.
+    pub order_type: Option<OrderType>,
+    /// Explicit lifetime, or `None` for the exchange's default.
+    pub time_in_force: Option<TimeInForce>,
+}
+
+/// Account values returned with dynamic order rules.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OrderAccount {
+    /// Available and locked amounts for the account asset.
+    pub balance: Balance,
+    /// Average buy price reported by the exchange.
+    pub average_buy_price: Decimal,
+    /// Whether the exchange says the average buy price was modified.
+    pub average_buy_price_modified: bool,
+    /// Currency used for the average buy price, when published.
+    pub average_buy_price_unit: Option<String>,
+}
+
+/// Dynamic fees, limits, supported orders, and balances for one market.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OrderRules {
+    /// Market these rules apply to.
+    pub market: Market,
+    /// Exchange-provided market name.
+    pub market_name: String,
+    /// Current market operation status.
+    pub status: MarketStatus,
+    /// Fee rate applied to ordinary buy orders.
+    pub buy_fee_rate: Decimal,
+    /// Fee rate applied to ordinary sell orders.
+    pub sell_fee_rate: Decimal,
+    /// Fee rate applied to maker buy orders.
+    pub maker_buy_fee_rate: Decimal,
+    /// Fee rate applied to maker sell orders.
+    pub maker_sell_fee_rate: Decimal,
+    /// Sides currently accepted by the market.
+    pub sides: Vec<Side>,
+    /// Supported buy order combinations.
+    pub buy_options: Vec<OrderOption>,
+    /// Supported sell order combinations.
+    pub sell_options: Vec<OrderOption>,
+    /// Price unit published for buy orders, when available.
+    pub buy_price_unit: Option<Decimal>,
+    /// Price unit published for sell orders, when available.
+    pub sell_price_unit: Option<Decimal>,
+    /// Minimum buy value in the quote asset.
+    pub minimum_buy_total: Decimal,
+    /// Minimum sell value in the quote asset.
+    pub minimum_sell_total: Decimal,
+    /// Maximum order value in the quote asset.
+    pub maximum_total: Decimal,
+    /// Quote-asset account used to buy.
+    pub quote_account: OrderAccount,
+    /// Base-asset account used to sell.
+    pub base_account: OrderAccount,
+}
+
+/// How an order is priced and matched.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum OrderType {
     /// Take whatever the book offers, immediately.

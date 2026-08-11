@@ -43,6 +43,10 @@ sealed class AdapterCall with _$AdapterCall {
   /// 계정 잔고를 요청합니다.
   const factory AdapterCall.balances() = AdapterCall_Balances;
 
+  /// 시장별 주문 규칙을 요청합니다.
+  const factory AdapterCall.orderRules({required WireMarket market}) =
+      AdapterCall_OrderRules;
+
   /// 자산별 입출금 네트워크를 요청합니다.
   const factory AdapterCall.assetNetworks({required String asset}) =
       AdapterCall_AssetNetworks;
@@ -185,6 +189,10 @@ sealed class AdapterReply with _$AdapterReply {
   /// 잔고 응답입니다.
   const factory AdapterReply.balances(List<WireBalance> field0) =
       AdapterReply_Balances;
+
+  /// 시장별 주문 규칙 응답입니다.
+  const factory AdapterReply.orderRules(WireOrderRules field0) =
+      AdapterReply_OrderRules;
 
   /// 자산별 네트워크 응답입니다.
   const factory AdapterReply.assetNetworks(List<WireAssetNetwork> field0) =

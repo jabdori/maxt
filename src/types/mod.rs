@@ -12,8 +12,8 @@ mod wallet;
 
 pub use account::{
     Balance, CancelOrdersResult, CancelledOrder, Cursor, FundingPayment, FundingRate, MarginMode,
-    MarginSummary, Order, OrderCancelFailure, OrderStatus, OrderType, Page, Position, Size,
-    TimeInForce,
+    MarginSummary, Order, OrderAccount, OrderCancelFailure, OrderOption, OrderRules, OrderStatus,
+    OrderType, Page, Position, Size, TimeInForce,
 };
 pub use data::{Candle, Interval, Level, OrderBook, Side, Ticker, Trade};
 pub use market::{Exchange, Market, MarketInfo, MarketKind, MarketStatus};

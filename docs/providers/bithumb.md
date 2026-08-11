@@ -63,6 +63,7 @@ account streams.
 
 | Common call | Endpoint | Contract |
 | --- | --- | --- |
+| `order_rules(market)` | `GET /v1/orders/chance` | Fees, supported order sides and types, buy/sell price units, quote/base balances and average buy prices, and quote-denominated limits |
 | `open_orders*` | `GET /v1/orders` | One page, at most 100 orders |
 | `order(market, order_id)` | `GET /v1/order?uuid=...` | Verifies the returned market |
 | `order_by_client_id(market, client_id)` | `GET /v1/order?client_order_id=...` | Verifies the returned market |

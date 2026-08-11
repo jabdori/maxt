@@ -64,10 +64,10 @@ pub use types::{
     ChainDestination, ChainTransferRequest, Cursor, Deposit, DepositAddress, DepositStatus,
     Exchange, ExchangeDestination, ExchangeTransferRequest, Feed, FundingPayment, FundingRate,
     Interval, Level, MarginMode, MarginSummary, Market, MarketEvent, MarketInfo, MarketKind,
-    MarketStatus, Network, Order, OrderBook, OrderCancelFailure, OrderStatus, OrderType, Overflow,
-    Page, Position, Side, Size, StreamConfig, Subscription, Ticker, TimeInForce, Timestamp, Trade,
-    TransferDestination, TravelRuleRequirement, Withdrawal, WithdrawalFee, WithdrawalQuote,
-    WithdrawalStatus,
+    MarketStatus, Network, Order, OrderAccount, OrderBook, OrderCancelFailure, OrderOption,
+    OrderRules, OrderStatus, OrderType, Overflow, Page, Position, Side, Size, StreamConfig,
+    Subscription, Ticker, TimeInForce, Timestamp, Trade, TransferDestination,
+    TravelRuleRequirement, Withdrawal, WithdrawalFee, WithdrawalQuote, WithdrawalStatus,
 };
 pub use wallet::{
     PreparedTransfer, TransferPlan, Wallet, execute_transfer_plan, prepare_chain_transfer,

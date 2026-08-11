@@ -87,6 +87,45 @@ fn _guard_balance_wire(value: WireBalance) {
     } = value;
 }
 
+fn _guard_order_account_wire(value: WireOrderAccount) {
+    let WireOrderAccount {
+        balance: _,
+        average_buy_price: _,
+        average_buy_price_modified: _,
+        average_buy_price_unit: _,
+    } = value;
+}
+
+fn _guard_order_option_wire(value: WireOrderOption) {
+    let WireOrderOption {
+        provider_id: _,
+        order_type: _,
+        time_in_force: _,
+    } = value;
+}
+
+fn _guard_order_rules_wire(value: WireOrderRules) {
+    let WireOrderRules {
+        market: _,
+        market_name: _,
+        status: _,
+        buy_fee_rate: _,
+        sell_fee_rate: _,
+        maker_buy_fee_rate: _,
+        maker_sell_fee_rate: _,
+        sides: _,
+        buy_options: _,
+        sell_options: _,
+        buy_price_unit: _,
+        sell_price_unit: _,
+        minimum_buy_total: _,
+        minimum_sell_total: _,
+        maximum_total: _,
+        quote_account: _,
+        base_account: _,
+    } = value;
+}
+
 fn _guard_asset_network_wire(value: WireAssetNetwork) {
     let WireAssetNetwork {
         exchange: _,

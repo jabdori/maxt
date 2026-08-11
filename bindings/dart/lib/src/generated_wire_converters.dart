@@ -313,6 +313,85 @@ wire.WireFundingPayment _fundingPaymentToWire(FundingPayment value) =>
       id: value.id,
     );
 
+OrderAccount _orderAccountFromWire(wire.WireOrderAccount value) => OrderAccount(
+  balance: _balanceFromWire(value.balance),
+  averageBuyPrice: Decimal.parse(value.averageBuyPrice),
+  averageBuyPriceModified: value.averageBuyPriceModified,
+  averageBuyPriceUnit: value.averageBuyPriceUnit,
+);
+wire.WireOrderAccount _orderAccountToWire(OrderAccount value) =>
+    wire.WireOrderAccount(
+      balance: _balanceToWire(value.balance),
+      averageBuyPrice: value.averageBuyPrice.toString(),
+      averageBuyPriceModified: value.averageBuyPriceModified,
+      averageBuyPriceUnit: value.averageBuyPriceUnit,
+    );
+
+OrderOption _orderOptionFromWire(wire.WireOrderOption value) => OrderOption(
+  providerId: value.providerId,
+  orderType: value.orderType == null
+      ? null
+      : _orderTypeFromWire(value.orderType!),
+  timeInForce: value.timeInForce == null
+      ? null
+      : _timeInForceFromWire(value.timeInForce!),
+);
+wire.WireOrderOption _orderOptionToWire(OrderOption value) =>
+    wire.WireOrderOption(
+      providerId: value.providerId,
+      orderType: value.orderType == null
+          ? null
+          : _orderTypeToWire(value.orderType!),
+      timeInForce: value.timeInForce == null
+          ? null
+          : _timeInForceToWire(value.timeInForce!),
+    );
+
+OrderRules _orderRulesFromWire(wire.WireOrderRules value) => OrderRules(
+  market: _marketFromWire(value.market),
+  marketName: value.marketName,
+  status: _marketStatusFromWire(value.status),
+  buyFeeRate: Decimal.parse(value.buyFeeRate),
+  sellFeeRate: Decimal.parse(value.sellFeeRate),
+  makerBuyFeeRate: Decimal.parse(value.makerBuyFeeRate),
+  makerSellFeeRate: Decimal.parse(value.makerSellFeeRate),
+  sides: value.sides.map(_sideFromWire).toList(growable: false),
+  buyOptions: value.buyOptions
+      .map(_orderOptionFromWire)
+      .toList(growable: false),
+  sellOptions: value.sellOptions
+      .map(_orderOptionFromWire)
+      .toList(growable: false),
+  buyPriceUnit: _decimalFromWire(value.buyPriceUnit),
+  sellPriceUnit: _decimalFromWire(value.sellPriceUnit),
+  minimumBuyTotal: Decimal.parse(value.minimumBuyTotal),
+  minimumSellTotal: Decimal.parse(value.minimumSellTotal),
+  maximumTotal: Decimal.parse(value.maximumTotal),
+  quoteAccount: _orderAccountFromWire(value.quoteAccount),
+  baseAccount: _orderAccountFromWire(value.baseAccount),
+);
+wire.WireOrderRules _orderRulesToWire(OrderRules value) => wire.WireOrderRules(
+  market: _marketToWire(value.market),
+  marketName: value.marketName,
+  status: _marketStatusToWire(value.status),
+  buyFeeRate: value.buyFeeRate.toString(),
+  sellFeeRate: value.sellFeeRate.toString(),
+  makerBuyFeeRate: value.makerBuyFeeRate.toString(),
+  makerSellFeeRate: value.makerSellFeeRate.toString(),
+  sides: value.sides.map(_sideToWire).toList(growable: false),
+  buyOptions: value.buyOptions.map(_orderOptionToWire).toList(growable: false),
+  sellOptions: value.sellOptions
+      .map(_orderOptionToWire)
+      .toList(growable: false),
+  buyPriceUnit: value.buyPriceUnit?.toString(),
+  sellPriceUnit: value.sellPriceUnit?.toString(),
+  minimumBuyTotal: value.minimumBuyTotal.toString(),
+  minimumSellTotal: value.minimumSellTotal.toString(),
+  maximumTotal: value.maximumTotal.toString(),
+  quoteAccount: _orderAccountToWire(value.quoteAccount),
+  baseAccount: _orderAccountToWire(value.baseAccount),
+);
+
 AssetNetwork _assetNetworkFromWire(wire.WireAssetNetwork value) => AssetNetwork(
   exchange: _exchangeFromWire(value.exchange),
   asset: value.asset,

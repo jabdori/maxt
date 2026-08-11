@@ -497,6 +497,54 @@ export class Balance {
   get total(): Decimal { return this.available.add(this.locked); }
 }
 
+export class OrderAccount {
+  constructor(
+    readonly balance: Balance,
+    readonly averageBuyPrice: Decimal,
+    readonly averageBuyPriceModified: boolean,
+    readonly averageBuyPriceUnit: string | null,
+  ) { freezeRecord(this); }
+}
+
+export class OrderOption {
+  constructor(
+    readonly providerId: string,
+    readonly orderType: OrderType | null,
+    readonly timeInForce: TimeInForce | null,
+  ) { freezeRecord(this); }
+}
+
+export class OrderRules {
+  readonly sides: readonly Side[];
+  readonly buyOptions: readonly OrderOption[];
+  readonly sellOptions: readonly OrderOption[];
+
+  constructor(
+    readonly market: Market,
+    readonly marketName: string,
+    readonly status: MarketStatus,
+    readonly buyFeeRate: Decimal,
+    readonly sellFeeRate: Decimal,
+    readonly makerBuyFeeRate: Decimal,
+    readonly makerSellFeeRate: Decimal,
+    sides: readonly Side[],
+    buyOptions: readonly OrderOption[],
+    sellOptions: readonly OrderOption[],
+    readonly buyPriceUnit: Decimal | null,
+    readonly sellPriceUnit: Decimal | null,
+    readonly minimumBuyTotal: Decimal,
+    readonly minimumSellTotal: Decimal,
+    readonly maximumTotal: Decimal,
+    readonly quoteAccount: OrderAccount,
+    readonly baseAccount: OrderAccount,
+  ) {
+    this.sides = Object.freeze([...sides]);
+    this.buyOptions = Object.freeze([...buyOptions]);
+    this.sellOptions = Object.freeze([...sellOptions]);
+    freezeRecord(this);
+  }
+}
+
 export type WithdrawalFee =
   | { readonly kind: "fixed"; readonly value: Decimal }
   | {

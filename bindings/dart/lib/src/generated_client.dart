@@ -52,6 +52,8 @@ abstract base class GeneratedClient<A extends Adapter> {
 
   Future<List<Balance>> balances() => _native.balances();
 
+  Future<OrderRules> orderRules(Market market) => _native.orderRules(market);
+
   Future<List<AssetNetwork>> assetNetworks(String asset) =>
       _native.assetNetworks(asset);
 

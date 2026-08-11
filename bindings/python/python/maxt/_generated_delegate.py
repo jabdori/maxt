@@ -56,6 +56,10 @@ class _GeneratedNativeClientDelegateApi:
         value = await self._call(self._client.balances)
         return [_model_from_wire("Balance", item) for item in value]
 
+    async def order_rules(self, market: Market) -> OrderRules:
+        value = await self._call(self._client.order_rules, market)
+        return _model_from_wire("OrderRules", value)
+
     async def asset_networks(self, asset: str) -> list[AssetNetwork]:
         value = await self._call(self._client.asset_networks, asset)
         return [_model_from_wire("AssetNetwork", item) for item in value]

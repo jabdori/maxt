@@ -1,6 +1,6 @@
 use maxt::{
-    CandleRequest, Cursor, Decimal, Feed, HistoryRequest, MarginRequest, Market, OrderRequest,
-    OrderType, Overflow, Page, Size, StreamConfig, Subscription, Timestamp,
+    Balance, CandleRequest, Cursor, Decimal, Feed, HistoryRequest, MarginRequest, Market,
+    OrderRequest, OrderType, Overflow, Page, Size, StreamConfig, Subscription, Timestamp,
 };
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
@@ -86,6 +86,18 @@ pub(crate) fn text(value: &Bound<'_, PyAny>) -> PyResult<String> {
 pub(crate) fn decimal_from_wire(value: &Bound<'_, PyAny>, field: &str) -> PyResult<Decimal> {
     let value = text(value)?;
     maxt::parse_decimal_exact(&value).map_err(|_| invalid(field, &value))
+}
+
+pub(crate) fn balance_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Balance> {
+    let value = wire_object(value)?;
+    let value = value.cast::<PyDict>()?;
+    Ok(Balance {
+        asset: required(value, "asset")?
+            .extract::<String>()?
+            .to_ascii_uppercase(),
+        available: decimal_from_wire(&required(value, "available")?, "available")?,
+        locked: decimal_from_wire(&required(value, "locked")?, "locked")?,
+    })
 }
 
 pub(crate) fn market_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Market> {

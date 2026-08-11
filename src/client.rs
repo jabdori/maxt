@@ -11,7 +11,8 @@ use crate::stream::{AccountStream, MarketStream};
 use crate::types::{
     AssetNetwork, Balance, CancelOrdersResult, Candle, Deposit, DepositAddress, Exchange,
     FundingPayment, FundingRate, MarginSummary, Market, MarketInfo, MarketKind, Order, OrderBook,
-    Page, Position, StreamConfig, Subscription, Ticker, Trade, Withdrawal, WithdrawalQuote,
+    OrderRules, Page, Position, StreamConfig, Subscription, Ticker, Trade, Withdrawal,
+    WithdrawalQuote,
 };
 
 /// The common API over one exchange adapter.
@@ -150,6 +151,13 @@ impl<A: Adapter> Client<A> {
     /// exchange.
     pub async fn balances(&self) -> Result<Vec<Balance>> {
         self.adapter.balances().await
+    }
+
+    /// Reads current order fees, limits, supported combinations, and balances.
+    ///
+    /// Requires credentials.
+    pub async fn order_rules(&self, market: &Market) -> Result<OrderRules> {
+        self.adapter.order_rules(market).await
     }
 
     /// Reads live deposit and withdrawal rules for one asset.

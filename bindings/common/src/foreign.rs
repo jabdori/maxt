@@ -6,8 +6,9 @@ use maxt::{
     CancelOrdersResult, Candle, CandleRequest, Deposit, DepositAddress, DepositAddressRequest,
     Exchange, Feature, FundingPayment, FundingRate, HistoryRequest, MarginRequest, MarginSummary,
     Market, MarketInfo, MarketKind, MarketStream, Order, OrderBook, OrderHistoryRequest,
-    OrderLookupRequest, OrderRequest, Page, Position, Result, StreamConfig, Subscription, Ticker,
-    Trade, TransferHistoryRequest, WithdrawRequest, Withdrawal, WithdrawalQuote,
+    OrderLookupRequest, OrderRequest, OrderRules, Page, Position, Result, StreamConfig,
+    Subscription, Ticker, Trade, TransferHistoryRequest, WithdrawRequest, Withdrawal,
+    WithdrawalQuote,
 };
 
 use crate::{AdapterCall, AdapterReply, ForeignDispatcher};
@@ -143,6 +144,18 @@ impl Adapter for ForeignAdapter {
             AdapterReply::Balances,
             "Balances"
         )
+    }
+
+    fn order_rules(&self, market: &Market) -> BoxFuture<'_, Result<OrderRules>> {
+        let future = self.dispatcher.dispatch(AdapterCall::OrderRules {
+            market: market.clone(),
+        });
+        Box::pin(async move {
+            match future.await? {
+                AdapterReply::OrderRules(value) => Ok(*value),
+                reply => Err(unexpected_reply("OrderRules", &reply)),
+            }
+        })
     }
 
     fn asset_networks(&self, asset: &str) -> BoxFuture<'_, Result<Vec<AssetNetwork>>> {

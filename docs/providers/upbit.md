@@ -71,6 +71,7 @@ balances, order lookup and history, place/cancel order, and account streams.
 
 | Common call | Endpoint | Contract |
 | --- | --- | --- |
+| `order_rules(market)` | `GET /v1/orders/chance` | Fees, supported side/type/TIF combinations, quote/base balances and average buy prices, and quote-denominated limits; deprecated fields are omitted |
 | `open_orders*` | `GET /v1/orders/open` | One page, at most 100 orders |
 | `order(market, order_id)` | `GET /v1/order?uuid=...` | Verifies the returned market |
 | `order_by_client_id(market, client_id)` | `GET /v1/order?identifier=...` | Verifies the returned market |

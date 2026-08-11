@@ -7,7 +7,43 @@ from decimal import Decimal
 from typing import Any, ClassVar, Optional, Union
 
 from ._generated_identifiers import *  # noqa: F403
-from .models import Cursor, Market, Timestamp, WireModel, _ascii_upper, _decode_value, _model_to_wire
+from .models import Balance, Cursor, Market, Timestamp, WireModel, _ascii_upper, _decode_value, _model_to_wire
+
+
+@dataclass(frozen=True)
+class OrderAccount(WireModel):
+    balance: Balance
+    average_buy_price: Decimal
+    average_buy_price_modified: bool
+    average_buy_price_unit: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class OrderOption(WireModel):
+    provider_id: str
+    order_type: Optional[OrderType] = None
+    time_in_force: Optional[TimeInForce] = None
+
+
+@dataclass(frozen=True)
+class OrderRules(WireModel):
+    market: Market
+    market_name: str
+    status: MarketStatus
+    buy_fee_rate: Decimal
+    sell_fee_rate: Decimal
+    maker_buy_fee_rate: Decimal
+    maker_sell_fee_rate: Decimal
+    sides: list[Side]
+    buy_options: list[OrderOption]
+    sell_options: list[OrderOption]
+    buy_price_unit: Optional[Decimal]
+    sell_price_unit: Optional[Decimal]
+    minimum_buy_total: Decimal
+    minimum_sell_total: Decimal
+    maximum_total: Decimal
+    quote_account: OrderAccount
+    base_account: OrderAccount
 
 
 @dataclass(frozen=True)
@@ -358,6 +394,9 @@ class TransferHistoryRequest(WireModel):
 
 
 __all__ = [
+    "OrderAccount",
+    "OrderOption",
+    "OrderRules",
     "AssetNetwork",
     "DepositAddress",
     "ExchangeDestination",

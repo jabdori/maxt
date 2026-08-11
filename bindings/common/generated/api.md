@@ -13,6 +13,7 @@
 | `candles` | `candles` |
 | `subscribe` | `subscribe` |
 | `balances` | `balances` |
+| `order_rules` | `orderRules` |
 | `asset_networks` | `assetNetworks` |
 | `deposit_address` | `depositAddress` |
 | `prepare_withdrawal` | `prepareWithdrawal` |
@@ -51,12 +52,12 @@ Documentation baseline: `2026-08-10`.
 | Exchange | Product | Mapped / official | Interfaces | Encodings | Status |
 | --- | --- | ---: | --- | --- | --- |
 | upbit | Quotation | 13 / — | `http`, `websocket_stream` | `json` | Partial |
-| upbit | Exchange | 10 / — | `http`, `websocket_stream` | `json` | Partial |
+| upbit | Exchange | 11 / — | `http`, `websocket_stream` | `json` | Partial |
 | upbit | Deposits and withdrawals | 7 / — | `http` | `json` | Partial |
 | upbit | Travel Rule | 0 / — | `http` | `json` | Planned |
 | upbit | Korea pockets | 0 / — | `http` | `json` | Planned |
 | bithumb | Quotation | 12 / — | `http`, `websocket_stream` | `json` | Partial |
-| bithumb | Exchange | 10 / — | `http`, `websocket_stream` | `json` | Partial |
+| bithumb | Exchange | 11 / — | `http`, `websocket_stream` | `json` | Partial |
 | bithumb | Deposits and withdrawals | 7 / — | `http` | `json` | Partial |
 | bithumb | TWAP | 0 / — | `http` | `json` | Planned |
 | bithumb | KRW deposits and withdrawals | 0 / — | `http` | `json` | Planned |
@@ -124,6 +125,7 @@ Documentation baseline: `2026-08-10`.
 | upbit | quotation | `orderbook_stream` | `websocket_stream` | common `subscribe` | `Partial` | `LiveRead` |
 | upbit | quotation | `candle_stream` | `websocket_stream` | common `subscribe` | `Partial` | `LiveRead` |
 | upbit | exchange | `balances` | `http` | common `balances` | `Implemented` | `Fixture` |
+| upbit | exchange | `available_order_info` | `http` | common `order_rules` | `Implemented` | `Fixture` |
 | upbit | exchange | `open_orders` | `http` | common `open_orders` | `Implemented` | `Fixture` |
 | upbit | exchange | `get_order` | `http` | common `order`, `order_by_client_id` | `Partial` | `Fixture` |
 | upbit | exchange | `orders_by_ids` | `http` | common `orders_by_ids` | `Partial` | `Fixture` |
@@ -153,6 +155,7 @@ Documentation baseline: `2026-08-10`.
 | bithumb | quotation | `trade_stream` | `websocket_stream` | common `subscribe` | `Partial` | `LiveRead` |
 | bithumb | quotation | `orderbook_stream` | `websocket_stream` | common `subscribe` | `Partial` | `LiveRead` |
 | bithumb | exchange | `balances` | `http` | common `balances` | `Implemented` | `Fixture` |
+| bithumb | exchange | `available_order_info` | `http` | common `order_rules` | `Implemented` | `Fixture` |
 | bithumb | exchange | `orders` | `http` | common `open_orders` | `Partial` | `Fixture` |
 | bithumb | exchange | `get_order` | `http` | common `order`, `order_by_client_id` | `Partial` | `Fixture` |
 | bithumb | exchange | `orders_by_ids` | `http` | common `orders_by_ids` | `Partial` | `Fixture` |

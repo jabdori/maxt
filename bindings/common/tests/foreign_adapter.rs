@@ -9,11 +9,12 @@ use std::task::{Context, Poll, Waker};
 use futures_util::stream;
 use futures_util::{Stream, StreamExt};
 use maxt::{
-    AccountEvent, AccountStream, Adapter, BoxFuture, CancelOrdersRequest, CancelOrdersResult,
-    CandleRequest, Client, Decimal, Error, Exchange, Feature, Feed, HistoryRequest, Interval,
-    MarginRequest, MarginSummary, Market, MarketEvent, MarketKind, MarketStream, Order, OrderBook,
-    OrderHistoryRequest, OrderLookupRequest, OrderRequest, OrderStatus, Page, Result, Side, Size,
-    StreamConfig, Subscription, Ticker, Timestamp,
+    AccountEvent, AccountStream, Adapter, Balance, BoxFuture, CancelOrdersRequest,
+    CancelOrdersResult, CandleRequest, Client, Decimal, Error, Exchange, Feature, Feed,
+    HistoryRequest, Interval, MarginRequest, MarginSummary, Market, MarketEvent, MarketKind,
+    MarketStatus, MarketStream, Order, OrderAccount, OrderBook, OrderHistoryRequest,
+    OrderLookupRequest, OrderOption, OrderRequest, OrderRules, OrderStatus, OrderType, Page,
+    Result, Side, Size, StreamConfig, Subscription, Ticker, TimeInForce, Timestamp,
 };
 use maxt_bindings_common::{AdapterCall, AdapterReply, ForeignAdapter, ForeignDispatcher};
 
@@ -133,6 +134,50 @@ fn order(id: &str) -> Order {
     }
 }
 
+fn order_rules() -> OrderRules {
+    OrderRules {
+        market: market(),
+        market_name: "BTC/USDT".to_string(),
+        status: MarketStatus::Active,
+        buy_fee_rate: Decimal::new(1, 3),
+        sell_fee_rate: Decimal::new(1, 3),
+        maker_buy_fee_rate: Decimal::new(5, 4),
+        maker_sell_fee_rate: Decimal::new(5, 4),
+        sides: vec![Side::Buy, Side::Sell],
+        buy_options: vec![OrderOption {
+            provider_id: "limit_ioc".to_string(),
+            order_type: Some(OrderType::Limit),
+            time_in_force: Some(TimeInForce::ImmediateOrCancel),
+        }],
+        sell_options: vec![],
+        buy_price_unit: Some(Decimal::new(1, 1)),
+        sell_price_unit: Some(Decimal::new(1, 1)),
+        minimum_buy_total: Decimal::TEN,
+        minimum_sell_total: Decimal::TEN,
+        maximum_total: Decimal::from(1_000_000),
+        quote_account: OrderAccount {
+            balance: Balance {
+                asset: "USDT".to_string(),
+                available: Decimal::from(100),
+                locked: Decimal::ZERO,
+            },
+            average_buy_price: Decimal::ZERO,
+            average_buy_price_modified: false,
+            average_buy_price_unit: Some("USDT".to_string()),
+        },
+        base_account: OrderAccount {
+            balance: Balance {
+                asset: "BTC".to_string(),
+                available: Decimal::ONE,
+                locked: Decimal::ZERO,
+            },
+            average_buy_price: Decimal::from(50_000),
+            average_buy_price_modified: false,
+            average_buy_price_unit: Some("USDT".to_string()),
+        },
+    }
+}
+
 fn adapter(
     dispatcher: Arc<RecordingDispatcher>,
     features: impl IntoIterator<Item = Feature>,
@@ -164,6 +209,7 @@ async fn every_current_adapter_method_forwards_an_owned_call() {
         AdapterReply::Candles(vec![]),
         AdapterReply::MarketStream(MarketStream::new(stream::empty::<Result<MarketEvent>>())),
         AdapterReply::Balances(vec![]),
+        AdapterReply::OrderRules(Box::new(order_rules())),
         AdapterReply::OpenOrders(vec![]),
         AdapterReply::Order(order("by-id")),
         AdapterReply::Order(order("by-client-id")),
@@ -229,6 +275,7 @@ async fn every_current_adapter_method_forwards_an_owned_call() {
     adapter.candles(&candle_request).await.unwrap();
     let _market_stream = adapter.subscribe(&subscription, &config).await.unwrap();
     adapter.balances().await.unwrap();
+    adapter.order_rules(&market).await.unwrap();
     adapter.open_orders(Some(&market)).await.unwrap();
     adapter.order(&market, "order-1").await.unwrap();
     adapter
@@ -276,6 +323,9 @@ async fn every_current_adapter_method_forwards_an_owned_call() {
                 config: config.clone(),
             },
             AdapterCall::Balances,
+            AdapterCall::OrderRules {
+                market: market.clone(),
+            },
             AdapterCall::OpenOrders {
                 market: Some(market.clone()),
             },

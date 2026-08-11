@@ -147,7 +147,7 @@ from dataclasses import dataclass, field\n\
 from decimal import Decimal\n\
 from typing import Any, ClassVar, Optional, Union\n\n\
 from ._generated_identifiers import *  # noqa: F403\n\
-from .models import Cursor, Market, Timestamp, WireModel, _ascii_upper, _decode_value, _model_to_wire\n",
+from .models import Balance, Cursor, Market, Timestamp, WireModel, _ascii_upper, _decode_value, _model_to_wire\n",
     );
     for name in &generated {
         if let Some(record) = schema
@@ -866,6 +866,7 @@ fn render_generated_reply_arm(operation: &Operation) -> String {
             snake_case(name),
             pascal_case(operation.rust_name)
         ),
+        ApiType::Named("OrderRules") => "crate::convert::order_rules_from_wire(value).map(Box::new).map(AdapterReply::OrderRules)".to_string(),
         ApiType::Named(name) => format!(
             "crate::convert::{}_from_wire(value).map(AdapterReply::{name})",
             snake_case(name)

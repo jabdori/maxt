@@ -9,6 +9,7 @@ enum ReplyKind {
     Candles,
     MarketStream,
     Balances,
+    OrderRules,
     AssetNetworks,
     DepositAddress,
     PrepareWithdrawal,
@@ -76,6 +77,11 @@ fn prepare_call(
             ReplyKind::MarketStream,
         ),
         AdapterCall::Balances => ("balances", vec![], ReplyKind::Balances),
+        AdapterCall::OrderRules { market } => (
+            "order_rules",
+            vec![market_object(py, &market)?],
+            ReplyKind::OrderRules,
+        ),
         AdapterCall::AssetNetworks { asset } => (
             "asset_networks",
             vec![asset.into_py_any(py)?],
@@ -206,6 +212,7 @@ fn decode_generated_reply(
     value: &Bound<'_, PyAny>,
 ) -> Option<PyResult<AdapterReply>> {
     match reply {
+        ReplyKind::OrderRules => Some(crate::convert::order_rules_from_wire(value).map(Box::new).map(AdapterReply::OrderRules)),
         ReplyKind::AssetNetworks => Some(list_from_wire(value, crate::convert::asset_network_from_wire).map(AdapterReply::AssetNetworks)),
         ReplyKind::DepositAddress => Some(crate::convert::deposit_address_from_wire(value).map(AdapterReply::DepositAddress)),
         ReplyKind::PrepareWithdrawal => Some(crate::convert::withdrawal_quote_from_wire(value).map(AdapterReply::WithdrawalQuote)),

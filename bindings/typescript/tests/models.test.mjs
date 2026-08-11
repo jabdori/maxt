@@ -20,12 +20,16 @@ import {
   Level,
   Market,
   MarketKind,
+  MarketStatus,
   Network,
   OrderBook,
+  OrderAccount,
   OrderCancelFailure,
   OrderIdKind,
   OrderLookupRequest,
+  OrderOption,
   OrderRequest,
+  OrderRules,
   OrderStatus,
   OrderType,
   Overflow,
@@ -57,6 +61,8 @@ import {
   orderRequestToWire,
   orderLookupRequestFromWire,
   orderLookupRequestToWire,
+  orderRulesFromWire,
+  orderRulesToWire,
   streamConfigFromWire,
   transferHistoryRequestFromWire,
   transferHistoryRequestToWire,
@@ -191,6 +197,38 @@ test("batch cancellation preserves per-order outcomes and immutable inputs", () 
   assert.equal(Object.isFrozen(result.cancelled), true);
   assert.deepEqual(cancelOrdersRequestToWire(cancelOrdersRequestFromWire(requestWire)), requestWire);
   assert.deepEqual(cancelOrdersResultToWire(cancelOrdersResultFromWire(resultWire)), resultWire);
+});
+
+test("order rules preserve typed and future provider options", () => {
+  const market = Market.spot(Exchange.Upbit, "BTC", "KRW");
+  const rules = new OrderRules(
+    market,
+    "BTC/KRW",
+    MarketStatus.Active,
+    Decimal.parse("0.001"),
+    Decimal.parse("0.001"),
+    Decimal.parse("0.0005"),
+    Decimal.parse("0.0005"),
+    [Side.Buy, Side.Sell],
+    [new OrderOption("limit_ioc", OrderType.Limit, TimeInForce.ImmediateOrCancel)],
+    [new OrderOption("future_order", null, null)],
+    null,
+    null,
+    Decimal.parse("5000"),
+    Decimal.parse("5000"),
+    Decimal.parse("1000000000"),
+    new OrderAccount(new Balance("KRW", Decimal.parse("10000"), Decimal.zero), Decimal.zero, false, "KRW"),
+    new OrderAccount(new Balance("BTC", Decimal.one, Decimal.zero), Decimal.parse("95000000"), false, "KRW"),
+  );
+  const wire = orderRulesToWire(rules);
+  const restored = orderRulesFromWire(wire);
+
+  assert.equal(Object.isFrozen(rules.sides), true);
+  assert.equal(Object.isFrozen(rules.buyOptions), true);
+  assert.equal(restored.buyOptions[0].timeInForce, TimeInForce.ImmediateOrCancel);
+  assert.equal(restored.sellOptions[0].providerId, "future_order");
+  assert.equal(restored.sellOptions[0].orderType, null);
+  assert.equal(restored.buyPriceUnit, null);
 });
 
 test("wallet unions, statuses, open networks, and pages preserve the wire contract", () => {

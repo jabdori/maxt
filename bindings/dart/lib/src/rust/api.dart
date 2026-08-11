@@ -218,6 +218,8 @@ abstract class NativeClient implements RustOpaqueInterface {
     required WireOrderHistoryRequest request,
   });
 
+  Future<WireOrderRules> orderRules({required WireMarket market});
+
   Future<List<WireOrder>> ordersByIds({
     required WireOrderLookupRequest request,
   });

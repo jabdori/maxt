@@ -330,6 +330,11 @@ const CLIENT_BALANCES: &[ClientMethod] = &[ClientMethod {
     native_name: "balances",
     arguments: &[],
 }];
+const CLIENT_ORDER_RULES: &[ClientMethod] = &[ClientMethod {
+    name: "orderRules",
+    native_name: "orderRules",
+    arguments: MARKET,
+}];
 const CLIENT_ASSET_NETWORKS: &[ClientMethod] = &[ClientMethod {
     name: "assetNetworks",
     native_name: "assetNetworks",
@@ -513,6 +518,14 @@ const ADAPTER_OPERATIONS: &[Operation] = &[
         arguments: &[],
         result: ApiType::List("Balance"),
         client_methods: CLIENT_BALANCES,
+    },
+    Operation {
+        rust_name: "order_rules",
+        language_name: "orderRules",
+        feature: "trading",
+        arguments: MARKET,
+        result: ApiType::Named("OrderRules"),
+        client_methods: CLIENT_ORDER_RULES,
     },
     Operation {
         rust_name: "asset_networks",
@@ -717,6 +730,7 @@ const CLIENT_MEMBERS: &[&str] = &[
     "subscribe",
     "subscribeWith",
     "balances",
+    "orderRules",
     "assetNetworks",
     "depositAddress",
     "prepareWithdrawal",
@@ -998,6 +1012,9 @@ const MODELS: &[&str] = &[
     "Ticker",
     "Candle",
     "Balance",
+    "OrderAccount",
+    "OrderOption",
+    "OrderRules",
     "AssetNetwork",
     "DepositAddress",
     "ExchangeDestination",
@@ -1436,6 +1453,48 @@ pub fn binding_schema() -> Schema {
                 field("asset", Type::String),
                 field("available", decimal.clone()),
                 field("locked", decimal.clone()),
+            ],
+        ),
+        record(
+            "OrderAccountWire",
+            vec![
+                field("balance", Type::named("BalanceWire")),
+                field("average_buy_price", decimal.clone()),
+                field("average_buy_price_modified", Boolean),
+                field("average_buy_price_unit", Type::optional(Type::String)),
+            ],
+        ),
+        record(
+            "OrderOptionWire",
+            vec![
+                field("provider_id", Type::String),
+                field("order_type", Type::optional(Type::Identifier("OrderType"))),
+                field(
+                    "time_in_force",
+                    Type::optional(Type::Identifier("TimeInForce")),
+                ),
+            ],
+        ),
+        record(
+            "OrderRulesWire",
+            vec![
+                field("market", market.clone()),
+                field("market_name", Type::String),
+                field("status", Type::Identifier("MarketStatus")),
+                field("buy_fee_rate", decimal.clone()),
+                field("sell_fee_rate", decimal.clone()),
+                field("maker_buy_fee_rate", decimal.clone()),
+                field("maker_sell_fee_rate", decimal.clone()),
+                field("sides", Type::list(Type::Identifier("Side"))),
+                field("buy_options", Type::list(Type::named("OrderOptionWire"))),
+                field("sell_options", Type::list(Type::named("OrderOptionWire"))),
+                field("buy_price_unit", Type::optional(decimal.clone())),
+                field("sell_price_unit", Type::optional(decimal.clone())),
+                field("minimum_buy_total", decimal.clone()),
+                field("minimum_sell_total", decimal.clone()),
+                field("maximum_total", decimal.clone()),
+                field("quote_account", Type::named("OrderAccountWire")),
+                field("base_account", Type::named("OrderAccountWire")),
             ],
         ),
         record(
@@ -2068,6 +2127,10 @@ pub fn binding_schema() -> Schema {
                     ],
                 ),
                 variant("balances", vec![]),
+                variant(
+                    "order_rules",
+                    vec![field("market", Type::named("MarketWire"))],
+                ),
                 variant("asset_networks", vec![field("asset", Type::String)]),
                 variant(
                     "deposit_address",
@@ -2190,6 +2253,10 @@ pub fn binding_schema() -> Schema {
                     vec![field("value", Type::list(Type::named("BalanceWire")))],
                 ),
                 variant(
+                    "order_rules",
+                    vec![field("value", Type::named("OrderRulesWire"))],
+                ),
+                variant(
                     "asset_networks",
                     vec![field("value", Type::list(Type::named("AssetNetworkWire")))],
                 ),
@@ -2257,7 +2324,7 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
-        native_api_version: 6,
+        native_api_version: 7,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
         identifiers: IDENTIFIERS,

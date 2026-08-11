@@ -15,7 +15,7 @@
 | Client | `exchange`, `supports`, `adapter`, `into_adapter` |
 | 공개 REST | `markets`, `trades`, `order_book`, `ticker`, `candles`, `funding_rates` |
 | 공개 스트림 | `subscribe`, `subscribe_with` |
-| 비공개 조회 | `balances`, `open_orders`, `open_orders_on`, `order`, `order_by_client_id`, `orders_by_ids`, `order_history`, `positions`, `positions_on`, `margin_summary`, `funding_payments` |
+| 비공개 조회 | `balances`, `order_rules`, `open_orders`, `open_orders_on`, `order`, `order_by_client_id`, `orders_by_ids`, `order_history`, `positions`, `positions_on`, `margin_summary`, `funding_payments` |
 | 비공개 스트림 | `subscribe_account`, `subscribe_account_with` |
 | 비공개 변경 | `place_order`, `cancel_order`, `cancel_order_by_client_id`, `cancel_orders`, `set_margin` |
 
@@ -173,13 +173,15 @@
 | 타입·메서드 | 계약 |
 | --- | --- |
 | `open_orders*` | 특정 시점의 스냅샷; 거래소의 모든 페이지 순회는 보장하지 않음 |
+| `order_rules(market)` | Upbit·Bithumb의 현재 수수료, 주문 한도, 지원 주문 조합, 호가 자산(quote)·기초 자산(base)의 잔고와 평균 매수가; Bithumb은 매수·매도 가격 단위도 제공 |
 | `order(market, order_id)` | 거래소 주문 ID로 주문 1건 조회 |
 | `order_by_client_id(market, client_id)` | 주문 생성 시 지정한 ID로 주문 1건 조회 |
 | `orders_by_ids(request)` | 거래소 주문 ID 또는 사용자 지정 ID 중 한 종류를 최대 100개 조회; 찾지 못한 ID는 결과에서 빠질 수 있음 |
 | `order_history(request)` | 체결 완료 또는 취소 주문을 최신순 `Page<Order>`로 조회 |
 | `cancel_orders(request)` | 여러 주문을 비원자적으로 취소; 성공 목록과 실패 목록을 함께 반환하며 거래소별 최대 건수가 다름 |
+| `OrderOption::provider_id` | 거래소 원문 값; 새 값은 maxt가 의미를 추가할 때까지 `order_type == None` |
 | `OrderRequest::size` | `Size::Base` 또는 `Size::Quote` |
-| 주문 정밀도 | `MarketInfo`에 공통 호가 단위(tick size), 수량 단위(lot size), 최소 명목가치(minimum notional) 없음 |
+| 주문 정밀도 | `MarketInfo`에 공통 호가 단위(tick size), 수량 단위(lot size), 최소 명목가치(minimum notional) 없음; Bithumb의 활성 매수·매도 가격 단위는 `OrderRules`에서 제공하며 Upbit의 deprecated `price_unit`은 제외 |
 | `cancel_order`, `cancel_order_by_client_id` | 유효한 거래소 응답 후 `()` 반환; 체결과의 경합 결과는 주문 조회로 확인 |
 | `positions*` | `position.quantity == 0` 행 제거 |
 | `MarginSummary` | 거래소 미제공 값은 `None` |

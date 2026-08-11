@@ -63,6 +63,7 @@ code로 보존합니다.
 
 | 공통 호출 | 엔드포인트(endpoint) | 계약 |
 | --- | --- | --- |
+| `order_rules(market)` | `GET /v1/orders/chance` | 수수료, 지원 주문 방향·유형, 매수·매도 가격 단위, 호가 자산(quote)·기초 자산(base)의 잔고와 평균 매수가, 호가 자산 기준 주문 한도 |
 | `open_orders*` | `GET /v1/orders` | 한 페이지, 최대 100건 |
 | `order(market, order_id)` | `GET /v1/order?uuid=...` | 응답 시장이 요청 시장과 같은지 검증 |
 | `order_by_client_id(market, client_id)` | `GET /v1/order?client_order_id=...` | 응답 시장이 요청 시장과 같은지 검증 |

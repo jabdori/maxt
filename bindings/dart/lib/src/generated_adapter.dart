@@ -32,6 +32,8 @@ abstract interface class GeneratedAdapterContract {
 
   Future<List<Balance>> balances();
 
+  Future<OrderRules> orderRules(Market market);
+
   Future<List<AssetNetwork>> assetNetworks(String asset);
 
   Future<DepositAddress> depositAddress(DepositAddressRequest request);
@@ -109,6 +111,9 @@ abstract base class GeneratedAdapterDefaults
 
   @override
   Future<List<Balance>> balances() => _unsupported(Feature.balances);
+
+  @override
+  Future<OrderRules> orderRules(Market market) => _unsupported(Feature.trading);
 
   @override
   Future<List<AssetNetwork>> assetNetworks(String asset) =>

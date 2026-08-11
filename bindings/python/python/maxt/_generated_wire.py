@@ -61,6 +61,36 @@ RECORD_FIELDS = {
         "available": "decimal",
         "locked": "decimal",
     },
+    "OrderAccount": {
+        "balance": "named:Balance",
+        "average_buy_price": "decimal",
+        "average_buy_price_modified": "boolean",
+        "average_buy_price_unit": "optional:string",
+    },
+    "OrderOption": {
+        "provider_id": "string",
+        "order_type": "optional:identifier:OrderType",
+        "time_in_force": "optional:identifier:TimeInForce",
+    },
+    "OrderRules": {
+        "market": "named:Market",
+        "market_name": "string",
+        "status": "identifier:MarketStatus",
+        "buy_fee_rate": "decimal",
+        "sell_fee_rate": "decimal",
+        "maker_buy_fee_rate": "decimal",
+        "maker_sell_fee_rate": "decimal",
+        "sides": "list:identifier:Side",
+        "buy_options": "list:named:OrderOption",
+        "sell_options": "list:named:OrderOption",
+        "buy_price_unit": "optional:decimal",
+        "sell_price_unit": "optional:decimal",
+        "minimum_buy_total": "decimal",
+        "minimum_sell_total": "decimal",
+        "maximum_total": "decimal",
+        "quote_account": "named:OrderAccount",
+        "base_account": "named:OrderAccount",
+    },
     "AssetNetwork": {
         "exchange": "identifier:Exchange",
         "asset": "string",
@@ -505,6 +535,9 @@ UNION_FIELDS = {
         },
         "balances": {
         },
+        "order_rules": {
+            "market": "named:Market",
+        },
         "asset_networks": {
             "asset": "string",
         },
@@ -594,6 +627,9 @@ UNION_FIELDS = {
         },
         "balances": {
             "value": "list:named:Balance",
+        },
+        "order_rules": {
+            "value": "named:OrderRules",
         },
         "asset_networks": {
             "value": "list:named:AssetNetwork",

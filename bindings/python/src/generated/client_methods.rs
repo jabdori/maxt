@@ -113,6 +113,20 @@ impl NativeClient {
         )
     }
 
+    fn order_rules<'py>(
+        &self,
+        py: Python<'py>,
+        market: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let market = crate::convert::market_from_wire(market)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.order_rules(&market).await },
+            |py, value| crate::convert::order_rules_to_wire(py, &value),
+        )
+    }
+
     fn asset_networks<'py>(
         &self,
         py: Python<'py>,

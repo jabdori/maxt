@@ -17,16 +17,22 @@ import {
   Feature,
   InvalidRequestError,
   Market,
+  MarketStatus,
   Order,
+  OrderAccount,
   OrderCancelFailure,
   OrderHistoryRequest,
   OrderIdKind,
   OrderLookupRequest,
+  OrderOption,
+  OrderRules,
   OrderStatus,
+  OrderType,
   Page,
   Side,
   Ticker,
   Timestamp,
+  TimeInForce,
 } from "../dist/node.js";
 import {
   RAW_NATIVE_CLIENT_MEMBERS,
@@ -121,6 +127,25 @@ test("custom Adapter calls round-trip through Rust without losing values", async
     Decimal.parse("100.25"),
     Timestamp.fromNanoseconds(124n),
   );
+  const expectedRules = new OrderRules(
+    market,
+    "BTC/USDT",
+    MarketStatus.Active,
+    Decimal.parse("0.001"),
+    Decimal.parse("0.001"),
+    Decimal.parse("0.0005"),
+    Decimal.parse("0.0005"),
+    [Side.Buy, Side.Sell],
+    [new OrderOption("limit_ioc", OrderType.Limit, TimeInForce.ImmediateOrCancel)],
+    [new OrderOption("future_order", null, null)],
+    Decimal.parse("0.1"),
+    Decimal.parse("0.1"),
+    Decimal.parse("10"),
+    Decimal.parse("10"),
+    Decimal.parse("1000000"),
+    new OrderAccount(new maxt.Balance("USDT", Decimal.parse("100"), Decimal.zero), Decimal.zero, false, "USDT"),
+    new OrderAccount(new maxt.Balance("BTC", Decimal.one, Decimal.zero), Decimal.parse("50000"), false, "USDT"),
+  );
 
   class FixtureAdapter extends Adapter {
     exchange = Exchange.Binance;
@@ -128,6 +153,10 @@ test("custom Adapter calls round-trip through Rust without losing values", async
     async ticker(requested) {
       assert.equal(requested.toString(), market.toString());
       return expected;
+    }
+    async orderRules(requested) {
+      assert.equal(requested.toString(), market.toString());
+      return expectedRules;
     }
     async order(requested, orderId) {
       assert.equal(requested.toString(), market.toString());
@@ -165,6 +194,10 @@ test("custom Adapter calls round-trip through Rust without losing values", async
   assert.equal(actual.lastPrice.toString(), "100.25");
   assert.equal(actual.timestamp.nanosecondsSinceEpoch, 123n);
   assert.equal(actual.volume?.toString(), "2.5");
+  const rules = await client.orderRules(market);
+  assert.equal(rules.baseAccount.balance.asset, "BTC");
+  assert.equal(rules.buyOptions[0].timeInForce, TimeInForce.ImmediateOrCancel);
+  assert.equal(rules.sellOptions[0].orderType, null);
   assert.equal((await client.order(market, "order-1")).id, "order-1");
   assert.equal((await client.orderByClientId(market, "client-1")).id, "order-1");
   assert.equal(

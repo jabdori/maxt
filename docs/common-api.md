@@ -15,7 +15,7 @@ Configure credentials on the adapter before `Client::new(adapter)`.
 | Client | `exchange`, `supports`, `adapter`, `into_adapter` |
 | Public REST | `markets`, `trades`, `order_book`, `ticker`, `candles`, `funding_rates` |
 | Public stream | `subscribe`, `subscribe_with` |
-| Private reads | `balances`, `open_orders`, `open_orders_on`, `order`, `order_by_client_id`, `orders_by_ids`, `order_history`, `positions`, `positions_on`, `margin_summary`, `funding_payments` |
+| Private reads | `balances`, `order_rules`, `open_orders`, `open_orders_on`, `order`, `order_by_client_id`, `orders_by_ids`, `order_history`, `positions`, `positions_on`, `margin_summary`, `funding_payments` |
 | Private stream | `subscribe_account`, `subscribe_account_with` |
 | Private writes | `place_order`, `cancel_order`, `cancel_order_by_client_id`, `cancel_orders`, `set_margin` |
 
@@ -174,13 +174,15 @@ retrying.
 | Type or method | Contract |
 | --- | --- |
 | `open_orders*` | Point-in-time snapshot; full provider pagination is not guaranteed |
+| `order_rules(market)` | Current fees, order limits, supported order combinations, balances, and average buy prices on Upbit and Bithumb; Bithumb also reports buy/sell price units |
 | `order(market, order_id)` | One order selected by the exchange identifier |
 | `order_by_client_id(market, client_id)` | One order selected by the identifier supplied at placement |
 | `orders_by_ids(request)` | Up to 100 exchange IDs or client IDs; one identifier namespace per request; unresolved IDs may be omitted |
 | `order_history(request)` | Newest-first `Page<Order>` containing completed or cancelled orders |
 | `cancel_orders(request)` | Non-atomic batch cancellation; returns separate `cancelled` and `failed` lists; provider limits differ |
+| `OrderOption::provider_id` | Exact exchange value; a future value has `order_type == None` until maxt adds its normalized meaning |
 | `OrderRequest::size` | `Size::Base` or `Size::Quote` |
-| Order precision | `MarketInfo` has no common tick size, lot size, or minimum notional |
+| Order precision | `MarketInfo` has no common tick size, lot size, or minimum notional; Bithumb's active buy/sell price units are available on `OrderRules`, while Upbit's deprecated `price_unit` is omitted |
 | `cancel_order`, `cancel_order_by_client_id` | Return `()` after a valid provider acknowledgement; query the order to resolve races with fills |
 | `positions*` | Remove rows where `position.quantity == 0` |
 | `MarginSummary` | Provider omission maps to `None` |

@@ -17,7 +17,7 @@ use crate::request::{
 use crate::transport::{HttpRequest, HttpTransport};
 use crate::types::{
     Balance, CancelOrdersResult, CancelledOrder, Cursor, Market, Order, OrderCancelFailure,
-    OrderStatus, OrderType, Page, Side, Size, Timestamp,
+    OrderRules, OrderStatus, OrderType, Page, Side, Size, Timestamp,
 };
 
 use super::BithumbCredentials;
@@ -162,6 +162,17 @@ fn encoded_value(value: &str) -> String {
 
 pub(crate) fn balances_request(credentials: &BithumbCredentials) -> Result<HttpRequest> {
     signed_get(credentials, "/v1/accounts", &[])
+}
+
+pub(crate) fn order_rules_request(
+    credentials: &BithumbCredentials,
+    market: &Market,
+) -> Result<HttpRequest> {
+    signed_get(
+        credentials,
+        "/v1/orders/chance",
+        &[("market", parse::native_symbol(market)?)],
+    )
 }
 
 pub(crate) fn open_orders_request(
@@ -571,6 +582,16 @@ pub(crate) async fn balances(
     parse::balances(&rest::send(http, &balances_request(credentials)?).await?)
 }
 
+pub(crate) async fn order_rules(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    market: &Market,
+) -> Result<OrderRules> {
+    let native_symbol = parse::native_symbol(market)?;
+    let body = rest::send(http, &order_rules_request(credentials, market)?).await?;
+    crate::adapters::order_rules::parse(&body, market, &native_symbol)
+}
+
 pub(crate) async fn open_orders(
     http: &HttpTransport,
     credentials: &BithumbCredentials,
@@ -907,6 +928,12 @@ mod tests {
             balances_request(&credentials()).expect("signed").target(),
             "/v1/accounts"
         );
+        assert_eq!(
+            order_rules_request(&credentials(), &btc_krw())
+                .expect("signed")
+                .target(),
+            "/v1/orders/chance?market=KRW-BTC"
+        );
         // Shape reference: https://apidocs.bithumb.com/reference/대기-주문-목록-조회.md
         assert_eq!(
             open_orders_request(&credentials(), Some(&btc_krw()))
@@ -944,6 +971,22 @@ mod tests {
                 .expect("signed")
                 .target(),
             "/v1/order?client_order_id=client-1"
+        );
+    }
+
+    #[test]
+    fn order_rules_hash_the_exact_market_query() {
+        let request = order_rules_request(&credentials(), &btc_krw()).expect("a signed request");
+        let authorization = request
+            .headers
+            .iter()
+            .find(|(name, _)| name == "authorization")
+            .map(|(_, value)| value)
+            .expect("an authorization header");
+
+        assert_eq!(
+            payload(authorization)["query_hash"],
+            sha512_hex(b"market=KRW-BTC")
         );
     }
 

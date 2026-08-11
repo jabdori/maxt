@@ -33,6 +33,9 @@ class _GeneratedAdapterApi:
     async def balances(self) -> list[Balance]:
         raise self._unsupported(Feature.BALANCES)
 
+    async def order_rules(self, market: Market) -> OrderRules:
+        raise self._unsupported(Feature.TRADING)
+
     async def asset_networks(self, asset: str) -> list[AssetNetwork]:
         raise self._unsupported(Feature.ASSET_NETWORKS)
 
@@ -123,6 +126,9 @@ class _GeneratedClientApi:
 
     async def balances(self) -> list[Balance]:
         return await self._delegate.balances()
+
+    async def order_rules(self, market: Market) -> OrderRules:
+        return await self._delegate.order_rules(market)
 
     async def asset_networks(self, asset: str) -> list[AssetNetwork]:
         return await self._delegate.asset_networks(asset)

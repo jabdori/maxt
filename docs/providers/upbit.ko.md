@@ -71,6 +71,7 @@
 
 | 공통 호출 | 엔드포인트(endpoint) | 계약 |
 | --- | --- | --- |
+| `order_rules(market)` | `GET /v1/orders/chance` | 수수료, 지원 주문 방향·유형·유효 조건(TIF), 호가 자산(quote)·기초 자산(base)의 잔고와 평균 매수가, 호가 자산 기준 주문 한도; deprecated 필드는 제외 |
 | `open_orders*` | `GET /v1/orders/open` | 한 페이지, 최대 100건 |
 | `order(market, order_id)` | `GET /v1/order?uuid=...` | 응답 시장이 요청 시장과 같은지 검증 |
 | `order_by_client_id(market, client_id)` | `GET /v1/order?identifier=...` | 응답 시장이 요청 시장과 같은지 검증 |

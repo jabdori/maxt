@@ -459,6 +459,19 @@ fn _guard_upbit_order_book_instrument_wire(value: WireUpbitOrderBookInstrument) 
     } = value;
 }
 
+fn _guard_upbit_deposit_info_wire(value: WireUpbitDepositInfo) {
+    let WireUpbitDepositInfo {
+        asset: _,
+        network: _,
+        provider_network: _,
+        is_deposit_possible: _,
+        deposit_impossible_reason: _,
+        minimum_deposit_amount: _,
+        minimum_deposit_confirmations: _,
+        decimal_precision: _,
+    } = value;
+}
+
 fn _guard_binance_symbol_filters_wire(value: WireBinanceSymbolFilters) {
     let WireBinanceSymbolFilters {
         symbol: _,

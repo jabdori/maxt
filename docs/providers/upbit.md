@@ -105,6 +105,7 @@ Access the following provider-specific methods through `Client::adapter()`.
 | `year_candles(market, to, count)` | `count: 1..=200` or `None`; optional ISO-8601 boundary; oldest-first; Korean open time is optional by region | `candle` |
 | `market_events()` | Investment warning and caution criteria by market | `market` |
 | `test_order(request)` | Validates an order without creating it; requires the order-placement permission; the returned `Order` is dry-run only, so its ID cannot be queried or cancelled and its status is not a live order | `order-test` |
+| `deposit_info(asset, network)` | Requires `View Deposits`; returns availability, reason, minimum amount, confirmation count, and decimal precision. The response network is nullable and is preserved as returned. This metadata may be delayed by several minutes | `default` |
 
 | Market event | Mapping |
 | --- | --- |
@@ -141,6 +142,7 @@ satisfy `Error::is_rate_limited() == true`.
 - [Rate limits](https://global-docs.upbit.com/reference/rate-limits)
 - [Authentication](https://global-docs.upbit.com/reference/auth)
 - [Test order](https://global-docs.upbit.com/reference/order-test)
+- [Deposit availability](https://global-docs.upbit.com/reference/available-deposit-information)
 - [Get order](https://global-docs.upbit.com/reference/get-order)
 - [Closed orders](https://global-docs.upbit.com/reference/list-closed-orders)
 

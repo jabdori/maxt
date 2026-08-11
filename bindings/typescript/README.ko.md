@@ -67,7 +67,7 @@ Binance 테스트넷(testnet) 생성자는 제공하지 않습니다. Hyperliqui
 
 | 어댑터 | 생성 | 추가 메서드 |
 | --- | --- | --- |
-| `UpbitAdapter` | `new UpbitAdapter()` 또는 `UpbitAdapter.withRegion(...)` | `orderBooks()`, `orderBooksAtLevel()`, `tickers()`, `tickersByQuote()`, `yearCandles()`, `orderbookInstruments()`, `marketEvents()`; 인증 필요: `testOrder()` |
+| `UpbitAdapter` | `new UpbitAdapter()` 또는 `UpbitAdapter.withRegion(...)` | `orderBooks()`, `orderBooksAtLevel()`, `tickers()`, `tickersByQuote()`, `yearCandles()`, `orderbookInstruments()`, `marketEvents()`; 인증 필요: `testOrder()`, `depositInfo()` |
 | `BithumbAdapter` | `new BithumbAdapter()` | `marketWarnings()`, `marketAlerts()`, `notices()`, `transferFees()`; 인증 필요: `apiKeys()`, `pendingOrders()` |
 | `BinanceAdapter` | `BinanceAdapter.spot()` | `spotSymbolFilters()`; 인증 필요: `spotOrder()` |
 | `BinanceAdapter` | `BinanceAdapter.usdMFutures()` | 인증 필요: `usdMCreateListenKey()`, `usdMKeepaliveListenKey()`, `usdMCloseListenKey()` |
@@ -75,6 +75,10 @@ Binance 테스트넷(testnet) 생성자는 제공하지 않습니다. Hyperliqui
 
 `UpbitAdapter.testOrder()`는 주문을 생성하지 않고 검증합니다. 반환 `Order`는
 dry-run 결과이므로 `id`를 조회·취소에 사용하면 안 되며 상태도 실제 활성 주문을 뜻하지 않습니다.
+
+`UpbitAdapter.depositInfo(asset, network)`는 거래소가 제공하는 입금 가능 여부, 최소
+수량, 확인 수, 소수 자릿수 메타데이터를 반환합니다. Upbit 응답은 몇 분 지연될 수 있어
+실시간 서비스 상태로 사용하면 안 됩니다.
 
 ## Node.js
 

@@ -41,6 +41,8 @@ from .models import (
     StreamConfig,
     Subscription,
     Ticker,
+    Network,
+    UpbitDepositInfo,
     Trade,
     UpbitMarketEvent,
     UpbitOrderBookInstrument,
@@ -267,6 +269,15 @@ class UpbitAdapter(_NativeAdapter):
         """
         value = await self._call(self._handle.test_order, request.to_wire())
         return _model_from_wire("Order", value)
+
+    async def deposit_info(
+        self,
+        asset: str,
+        network: Network,
+    ) -> UpbitDepositInfo:
+        """Return Upbit's non-real-time deposit availability metadata."""
+        value = await self._call(self._handle.deposit_info, asset, network)
+        return _model_from_wire("UpbitDepositInfo", value)
 
 
 class BithumbAdapter(_NativeAdapter):

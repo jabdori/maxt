@@ -928,6 +928,29 @@ wire.WireUpbitOrderBookInstrument _upbitOrderBookInstrumentToWire(
       .toList(growable: false),
 );
 
+UpbitDepositInfo _upbitDepositInfoFromWire(wire.WireUpbitDepositInfo value) =>
+    UpbitDepositInfo(
+      asset: value.asset,
+      network: value.network == null ? null : _networkFromWire(value.network!),
+      providerNetwork: value.providerNetwork,
+      isDepositPossible: value.isDepositPossible,
+      depositImpossibleReason: value.depositImpossibleReason,
+      minimumDepositAmount: Decimal.parse(value.minimumDepositAmount),
+      minimumDepositConfirmations: value.minimumDepositConfirmations,
+      decimalPrecision: value.decimalPrecision,
+    );
+wire.WireUpbitDepositInfo _upbitDepositInfoToWire(UpbitDepositInfo value) =>
+    wire.WireUpbitDepositInfo(
+      asset: value.asset,
+      network: value.network == null ? null : _networkToWire(value.network!),
+      providerNetwork: value.providerNetwork,
+      isDepositPossible: value.isDepositPossible,
+      depositImpossibleReason: value.depositImpossibleReason,
+      minimumDepositAmount: value.minimumDepositAmount.toString(),
+      minimumDepositConfirmations: value.minimumDepositConfirmations,
+      decimalPrecision: value.decimalPrecision,
+    );
+
 BithumbNotice _bithumbNoticeFromWire(wire.WireBithumbNotice value) =>
     BithumbNotice(
       categories: value.categories,

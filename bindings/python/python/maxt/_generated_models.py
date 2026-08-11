@@ -440,6 +440,21 @@ class UpbitOrderBookInstrument(WireModel):
 
 
 @dataclass(frozen=True)
+class UpbitDepositInfo(WireModel):
+    asset: str
+    network: Optional[Network]
+    provider_network: Optional[str]
+    is_deposit_possible: bool
+    deposit_impossible_reason: Optional[str]
+    minimum_deposit_amount: Decimal
+    minimum_deposit_confirmations: int
+    decimal_precision: int
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "asset", _ascii_upper(self.asset))
+
+
+@dataclass(frozen=True)
 class BithumbNotice(WireModel):
     categories: list[str]
     title: str
@@ -513,6 +528,7 @@ __all__ = [
     "TransferHistoryRequest",
     "UpbitYearCandle",
     "UpbitOrderBookInstrument",
+    "UpbitDepositInfo",
     "BithumbNotice",
     "BithumbApiKey",
     "BithumbPendingOrdersRequest",

@@ -128,6 +128,7 @@ void main() {
             value.orderbookInstruments,
         'marketEvents': (UpbitAdapter value) => value.marketEvents,
         'testOrder': (UpbitAdapter value) => value.testOrder,
+        'depositInfo': (UpbitAdapter value) => value.depositInfo,
       },
       'bithumb': {
         'marketWarnings': (BithumbAdapter value) => value.marketWarnings,

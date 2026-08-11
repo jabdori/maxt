@@ -508,6 +508,28 @@ final class UpbitOrderBookInstrument {
   final List<Decimal> supportedLevels;
 }
 
+final class UpbitDepositInfo {
+  UpbitDepositInfo({
+    required String asset,
+    this.network,
+    this.providerNetwork,
+    required this.isDepositPossible,
+    this.depositImpossibleReason,
+    required this.minimumDepositAmount,
+    required this.minimumDepositConfirmations,
+    required this.decimalPrecision,
+  }) : asset = _asciiUpper(asset);
+
+  final String asset;
+  final Network? network;
+  final String? providerNetwork;
+  final bool isDepositPossible;
+  final String? depositImpossibleReason;
+  final Decimal minimumDepositAmount;
+  final BigInt minimumDepositConfirmations;
+  final BigInt decimalPrecision;
+}
+
 final class BithumbNotice {
   const BithumbNotice({
     required this.categories,

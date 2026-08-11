@@ -243,6 +243,21 @@ impl NativeUpbitAdapter {
             |py, value| order_to_wire(py, &value),
         )
     }
+
+    fn deposit_info<'py>(
+        &self,
+        py: Python<'py>,
+        asset: String,
+        network: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let network = crate::convert::network_from_wire(&network)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.deposit_info(&asset, &network).await },
+            |py, value| crate::convert::upbit_deposit_info_to_wire(py, &value),
+        )
+    }
 }
 
 #[pyclass(module = "maxt._native", frozen)]

@@ -2,7 +2,7 @@
 
 use super::*;
 
-fn network_from_wire(value: String) -> maxt::Network {
+pub(crate) fn network_from_wire(value: String) -> maxt::Network {
     match value.as_str() {
         "bitcoin" => maxt::Network::Bitcoin,
         "ethereum" => maxt::Network::Ethereum,
@@ -26,7 +26,7 @@ fn network_from_wire(value: String) -> maxt::Network {
     }
 }
 
-fn network_to_wire(value: maxt::Network) -> String {
+pub(crate) fn network_to_wire(value: maxt::Network) -> String {
     value.id().to_owned()
 }
 
@@ -1263,6 +1263,54 @@ impl TryFrom<WireUpbitOrderBookInstrument> for maxt::UpbitOrderBookInstrument {
                     decimal_from_wire(&value, "supported_levels").map_err(NativeError::from)
                 })
                 .collect::<Result<_, _>>()?,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitDepositInfo {
+    pub asset: String,
+    pub network: Option<String>,
+    pub provider_network: Option<String>,
+    pub is_deposit_possible: bool,
+    pub deposit_impossible_reason: Option<String>,
+    pub minimum_deposit_amount: String,
+    pub minimum_deposit_confirmations: u64,
+    pub decimal_precision: u64,
+}
+
+impl From<maxt::UpbitDepositInfo> for WireUpbitDepositInfo {
+    fn from(value: maxt::UpbitDepositInfo) -> Self {
+        Self {
+            asset: value.asset,
+            network: value.network.map(network_to_wire),
+            provider_network: value.provider_network,
+            is_deposit_possible: value.is_deposit_possible,
+            deposit_impossible_reason: value.deposit_impossible_reason,
+            minimum_deposit_amount: decimal_to_wire(value.minimum_deposit_amount),
+            minimum_deposit_confirmations: value.minimum_deposit_confirmations,
+            decimal_precision: value.decimal_precision,
+        }
+    }
+}
+
+impl TryFrom<WireUpbitDepositInfo> for maxt::UpbitDepositInfo {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitDepositInfo) -> Result<Self, Self::Error> {
+        Ok(Self {
+            asset: value.asset,
+            network: value.network.map(network_from_wire),
+            provider_network: value.provider_network,
+            is_deposit_possible: value.is_deposit_possible,
+            deposit_impossible_reason: value.deposit_impossible_reason,
+            minimum_deposit_amount: decimal_from_wire(
+                &value.minimum_deposit_amount,
+                "minimum_deposit_amount",
+            )
+            .map_err(NativeError::from)?,
+            minimum_deposit_confirmations: value.minimum_deposit_confirmations,
+            decimal_precision: value.decimal_precision,
         })
     }
 }

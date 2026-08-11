@@ -41,7 +41,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -2081329458;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -253110077;
 
 // Section: executor
 
@@ -3262,6 +3262,68 @@ fn wire__crate__api__NativeClient_upbit_impl(
                     crate::api::NativeClient::upbit(api_region, api_access_key, api_secret_key)?;
                 Ok(output_ok)
             })())
+        },
+    )
+}
+fn wire__crate__api__NativeClient_upbit_deposit_info_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_upbit_deposit_info",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_asset = <String>::sse_decode(&mut deserializer);
+            let api_network = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::NativeClient::upbit_deposit_info(
+                            &*api_that_guard,
+                            api_asset,
+                            api_network,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
         },
     )
 }
@@ -7594,6 +7656,30 @@ impl SseDecode for crate::convert::generated_models::WireTravelRuleRequirement {
     }
 }
 
+impl SseDecode for crate::convert::generated_models::WireUpbitDepositInfo {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_asset = <String>::sse_decode(deserializer);
+        let mut var_network = <Option<String>>::sse_decode(deserializer);
+        let mut var_providerNetwork = <Option<String>>::sse_decode(deserializer);
+        let mut var_isDepositPossible = <bool>::sse_decode(deserializer);
+        let mut var_depositImpossibleReason = <Option<String>>::sse_decode(deserializer);
+        let mut var_minimumDepositAmount = <String>::sse_decode(deserializer);
+        let mut var_minimumDepositConfirmations = <u64>::sse_decode(deserializer);
+        let mut var_decimalPrecision = <u64>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireUpbitDepositInfo {
+            asset: var_asset,
+            network: var_network,
+            provider_network: var_providerNetwork,
+            is_deposit_possible: var_isDepositPossible,
+            deposit_impossible_reason: var_depositImpossibleReason,
+            minimum_deposit_amount: var_minimumDepositAmount,
+            minimum_deposit_confirmations: var_minimumDepositConfirmations,
+            decimal_precision: var_decimalPrecision,
+        };
+    }
+}
+
 impl SseDecode for crate::convert::WireUpbitMarketEvent {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -7956,73 +8042,79 @@ fn pde_ffi_dispatcher_primary_impl(
         }
         55 => wire__crate__api__NativeClient_ticker_impl(port, ptr, rust_vec_len, data_len),
         56 => wire__crate__api__NativeClient_trades_impl(port, ptr, rust_vec_len, data_len),
-        58 => wire__crate__api__NativeClient_upbit_market_events_impl(
+        58 => wire__crate__api__NativeClient_upbit_deposit_info_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        59 => {
+        59 => wire__crate__api__NativeClient_upbit_market_events_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        60 => {
             wire__crate__api__NativeClient_upbit_order_books_impl(port, ptr, rust_vec_len, data_len)
         }
-        60 => wire__crate__api__NativeClient_upbit_order_books_at_level_impl(
+        61 => wire__crate__api__NativeClient_upbit_order_books_at_level_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        61 => wire__crate__api__NativeClient_upbit_orderbook_instruments_impl(
+        62 => wire__crate__api__NativeClient_upbit_orderbook_instruments_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        63 => {
+        64 => {
             wire__crate__api__NativeClient_upbit_test_order_impl(port, ptr, rust_vec_len, data_len)
         }
-        64 => wire__crate__api__NativeClient_upbit_tickers_impl(port, ptr, rust_vec_len, data_len),
-        65 => wire__crate__api__NativeClient_upbit_tickers_by_quote_impl(
+        65 => wire__crate__api__NativeClient_upbit_tickers_impl(port, ptr, rust_vec_len, data_len),
+        66 => wire__crate__api__NativeClient_upbit_tickers_by_quote_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        66 => wire__crate__api__NativeClient_upbit_year_candles_impl(
+        67 => wire__crate__api__NativeClient_upbit_year_candles_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        67 => wire__crate__api__NativeClient_withdraw_impl(port, ptr, rust_vec_len, data_len),
-        68 => wire__crate__api__NativeClient_withdrawal_impl(port, ptr, rust_vec_len, data_len),
-        69 => wire__crate__api__NativeClient_withdrawals_impl(port, ptr, rust_vec_len, data_len),
-        71 => wire__crate__api__account_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
-        74 => wire__crate__api__market_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
-        75 => wire__crate__api__native_account_subscription_close_impl(
+        68 => wire__crate__api__NativeClient_withdraw_impl(port, ptr, rust_vec_len, data_len),
+        69 => wire__crate__api__NativeClient_withdrawal_impl(port, ptr, rust_vec_len, data_len),
+        70 => wire__crate__api__NativeClient_withdrawals_impl(port, ptr, rust_vec_len, data_len),
+        72 => wire__crate__api__account_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
+        75 => wire__crate__api__market_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
+        76 => wire__crate__api__native_account_subscription_close_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        76 => wire__crate__api__native_account_subscription_next_impl(
+        77 => wire__crate__api__native_account_subscription_next_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        77 => wire__crate__api__native_market_subscription_close_impl(
+        78 => wire__crate__api__native_market_subscription_close_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        78 => wire__crate__api__native_market_subscription_next_impl(
+        79 => wire__crate__api__native_market_subscription_next_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        80 => wire__crate__api__register_dart_adapter_impl(port, ptr, rust_vec_len, data_len),
+        81 => wire__crate__api__register_dart_adapter_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -8045,11 +8137,11 @@ fn pde_ffi_dispatcher_sync_impl(
         36 => wire__crate__api__NativeClient_is_testnet_impl(ptr, rust_vec_len, data_len),
         54 => wire__crate__api__NativeClient_supports_impl(ptr, rust_vec_len, data_len),
         57 => wire__crate__api__NativeClient_upbit_impl(ptr, rust_vec_len, data_len),
-        62 => wire__crate__api__NativeClient_upbit_region_impl(ptr, rust_vec_len, data_len),
-        70 => wire__crate__api__WireBinanceListenKey_value_impl(ptr, rust_vec_len, data_len),
-        72 => wire__crate__api__bridge_version_impl(ptr, rust_vec_len, data_len),
-        73 => wire__crate__api__configure_browser_relay_impl(ptr, rust_vec_len, data_len),
-        79 => {
+        63 => wire__crate__api__NativeClient_upbit_region_impl(ptr, rust_vec_len, data_len),
+        71 => wire__crate__api__WireBinanceListenKey_value_impl(ptr, rust_vec_len, data_len),
+        73 => wire__crate__api__bridge_version_impl(ptr, rust_vec_len, data_len),
+        74 => wire__crate__api__configure_browser_relay_impl(ptr, rust_vec_len, data_len),
+        80 => {
             wire__crate__api__pending_market_subscription_for_test_impl(ptr, rust_vec_len, data_len)
         }
         _ => unreachable!(),
@@ -10577,6 +10669,35 @@ impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireTra
     for crate::convert::generated_models::WireTravelRuleRequirement
 {
     fn into_into_dart(self) -> crate::convert::generated_models::WireTravelRuleRequirement {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireUpbitDepositInfo {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.asset.into_into_dart().into_dart(),
+            self.network.into_into_dart().into_dart(),
+            self.provider_network.into_into_dart().into_dart(),
+            self.is_deposit_possible.into_into_dart().into_dart(),
+            self.deposit_impossible_reason.into_into_dart().into_dart(),
+            self.minimum_deposit_amount.into_into_dart().into_dart(),
+            self.minimum_deposit_confirmations
+                .into_into_dart()
+                .into_dart(),
+            self.decimal_precision.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireUpbitDepositInfo
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireUpbitDepositInfo>
+    for crate::convert::generated_models::WireUpbitDepositInfo
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireUpbitDepositInfo {
         self
     }
 }
@@ -13298,6 +13419,20 @@ impl SseEncode for crate::convert::generated_models::WireTravelRuleRequirement {
                 unimplemented!("");
             }
         }
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireUpbitDepositInfo {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.asset, serializer);
+        <Option<String>>::sse_encode(self.network, serializer);
+        <Option<String>>::sse_encode(self.provider_network, serializer);
+        <bool>::sse_encode(self.is_deposit_possible, serializer);
+        <Option<String>>::sse_encode(self.deposit_impossible_reason, serializer);
+        <String>::sse_encode(self.minimum_deposit_amount, serializer);
+        <u64>::sse_encode(self.minimum_deposit_confirmations, serializer);
+        <u64>::sse_encode(self.decimal_precision, serializer);
     }
 }
 

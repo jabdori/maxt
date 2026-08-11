@@ -80,6 +80,18 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
   Future<Order> testOrder(OrderRequest request) => _nativeFuture(
     () => _handle.upbitTestOrder(request: _orderRequestToWire(request)),
   ).then(_orderFromWire);
+
+  /// Fetches Upbit deposit availability for one asset and network.
+  ///
+  /// Upbit may delay this metadata by several minutes, so it is not a
+  /// real-time service-status signal.
+  Future<UpbitDepositInfo> depositInfo(String asset, Network network) =>
+      _nativeFuture(
+        () => _handle.upbitDepositInfo(
+          asset: asset,
+          network: _networkToWire(network),
+        ),
+      ).then(_upbitDepositInfoFromWire);
 }
 
 extension BithumbAdapterGeneratedMethods on BithumbAdapter {

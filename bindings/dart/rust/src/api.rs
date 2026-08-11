@@ -725,6 +725,23 @@ impl NativeClient {
         adapter.test_order(&request).await.map(Into::into).map_err(Into::into)
     }
 
+    pub async fn upbit_deposit_info(
+        &self,
+        asset: String,
+        network: String,
+    ) -> Result<WireUpbitDepositInfo, NativeError> {
+        let network = crate::convert::network_from_wire(network);
+        let adapter = match self.built_in("upbit_deposit_info")? {
+            BuiltInAdapter::Upbit(adapter) => adapter,
+            _ => return Err(provider_mismatch("Upbit")),
+        };
+        adapter
+            .deposit_info(&asset, &network)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
     pub async fn bithumb_market_warnings(
         &self,
     ) -> Result<Vec<WireBithumbMarketWarning>, NativeError> {

@@ -247,6 +247,10 @@ const CANCEL_ORDERS_REQUEST: &[Argument] = &[argument(
     None,
 )];
 const ASSET: &[Argument] = &[argument("asset", ApiType::String, None)];
+const ASSET_NETWORK: &[Argument] = &[
+    argument("asset", ApiType::String, None),
+    argument("network", ApiType::Named("Network"), None),
+];
 const DEPOSIT_ADDRESS_REQUEST: &[Argument] = &[argument(
     "request",
     ApiType::Named("DepositAddressRequest"),
@@ -1150,6 +1154,7 @@ const MODELS: &[&str] = &[
     "UpbitMarketEvent",
     "UpbitYearCandle",
     "UpbitOrderBookInstrument",
+    "UpbitDepositInfo",
     "BithumbMarketAlert",
     "BithumbNotice",
     "BithumbApiKey",
@@ -1370,6 +1375,13 @@ const UPBIT_METHODS: &[ProviderMethod] = &[
         kind: ProviderMethodKind::Async,
         arguments: ORDER_REQUEST,
         result: ApiType::Named("Order"),
+    },
+    ProviderMethod {
+        rust_name: "deposit_info",
+        name: "depositInfo",
+        kind: ProviderMethodKind::Async,
+        arguments: ASSET_NETWORK,
+        result: ApiType::Named("UpbitDepositInfo"),
     },
 ];
 const BITHUMB_METHODS: &[ProviderMethod] = &[
@@ -2078,6 +2090,19 @@ pub fn binding_schema() -> Schema {
             ],
         ),
         record(
+            "UpbitDepositInfoWire",
+            vec![
+                field("asset", Type::String),
+                field("network", Type::optional(Type::Identifier("Network"))),
+                field("provider_network", Type::optional(Type::String)),
+                field("is_deposit_possible", Boolean),
+                field("deposit_impossible_reason", Type::optional(Type::String)),
+                field("minimum_deposit_amount", decimal.clone()),
+                field("minimum_deposit_confirmations", Type::UnsignedInteger),
+                field("decimal_precision", Type::UnsignedInteger),
+            ],
+        ),
+        record(
             "BithumbMarketAlertWire",
             vec![
                 field("kind", Type::String),
@@ -2640,7 +2665,7 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
-        native_api_version: 17,
+        native_api_version: 18,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
         identifiers: IDENTIFIERS,

@@ -310,7 +310,8 @@ fn dart_schema_value_type(ty: &Type) -> String {
     match ty {
         Type::String => "String".to_owned(),
         Type::Boolean => "bool".to_owned(),
-        Type::Number | Type::UnsignedInteger => "int".to_owned(),
+        Type::Number => "int".to_owned(),
+        Type::UnsignedInteger => "BigInt".to_owned(),
         Type::Decimal => "Decimal".to_owned(),
         Type::Timestamp => "Timestamp".to_owned(),
         Type::Identifier(name) => (*name).to_owned(),
@@ -367,7 +368,7 @@ pub(crate) fn render_rust_models(schema: &Schema) -> String {
     );
     let network = schema.identifier("Network").expect("Network schema");
     output.push_str(
-        "\nfn network_from_wire(value: String) -> maxt::Network {\n    match value.as_str() {\n",
+        "\npub(crate) fn network_from_wire(value: String) -> maxt::Network {\n    match value.as_str() {\n",
     );
     for variant in network.variants {
         output.push_str(&format!(
@@ -376,7 +377,7 @@ pub(crate) fn render_rust_models(schema: &Schema) -> String {
         ));
     }
     output.push_str(
-        "        _ => maxt::Network::Other(value),\n    }\n}\n\nfn network_to_wire(value: maxt::Network) -> String {\n    value.id().to_owned()\n}\n",
+        "        _ => maxt::Network::Other(value),\n    }\n}\n\npub(crate) fn network_to_wire(value: maxt::Network) -> String {\n    value.id().to_owned()\n}\n",
     );
     for name in ["WithdrawalStatus", "DepositStatus"] {
         output.push_str(&render_rust_wire_identifier(
@@ -1361,6 +1362,9 @@ fn provider_method_source(exchange: &str, method: &str) -> &'static str {
         ("upbit", "test_order") => {
             "  /// Validates an Upbit order without creating it.\n  ///\n  /// The returned [Order] is a dry-run result. Do not query or cancel its ID,\n  /// and do not treat its status as a live order.\n  Future<Order> testOrder(OrderRequest request) => _nativeFuture(\n    () => _handle.upbitTestOrder(request: _orderRequestToWire(request)),\n  ).then(_orderFromWire);\n"
         }
+        ("upbit", "deposit_info") => {
+            "  /// Fetches Upbit deposit availability for one asset and network.\n  ///\n  /// Upbit may delay this metadata by several minutes, so it is not a\n  /// real-time service-status signal.\n  Future<UpbitDepositInfo> depositInfo(String asset, Network network) =>\n      _nativeFuture(\n        () => _handle.upbitDepositInfo(\n          asset: asset,\n          network: _networkToWire(network),\n        ),\n      ).then(_upbitDepositInfoFromWire);\n"
+        }
         ("bithumb", "market_warnings") => {
             "  Future<List<BithumbMarketWarning>> marketWarnings() =>\n      _nativeFuture(_handle.bithumbMarketWarnings).then(\n        (values) =>\n            values.map(_bithumbMarketWarningFromWire).toList(growable: false),\n      );\n"
         }
@@ -1925,7 +1929,7 @@ fn dart_from_wire_expression(name: &str, ty: &Type) -> String {
 fn dart_from_wire_value_expression(field: &str, ty: &Type) -> String {
     match ty {
         Type::String | Type::Boolean | Type::Number => field.to_owned(),
-        Type::UnsignedInteger => format!("{field}.toInt()"),
+        Type::UnsignedInteger => field.to_owned(),
         Type::Decimal => format!("Decimal.parse({field})"),
         Type::Timestamp => format!("_timestampFromWire({field})!"),
         Type::Identifier("Network") => format!("_networkFromWire({field})"),
@@ -1938,7 +1942,7 @@ fn dart_from_wire_value_expression(field: &str, ty: &Type) -> String {
         ),
         Type::Optional(inner) => match inner.as_ref() {
             Type::String | Type::Boolean | Type::Number => field.to_owned(),
-            Type::UnsignedInteger => format!("{field}?.toInt()"),
+            Type::UnsignedInteger => field.to_owned(),
             Type::Decimal => format!("_decimalFromWire({field})"),
             Type::Timestamp => format!("_timestampFromWire({field})"),
             Type::Identifier("Network") => {
@@ -1981,7 +1985,7 @@ fn dart_to_wire_expression(value: &str, ty: &Type, field: &str) -> String {
     match ty {
         Type::String | Type::Boolean => value.to_owned(),
         Type::Number => format!("checkedUint32({value}, field: '{field}')"),
-        Type::UnsignedInteger => format!("BigInt.from({value})"),
+        Type::UnsignedInteger => value.to_owned(),
         Type::Decimal => format!("{value}.toString()"),
         Type::Timestamp => format!("_timestampToWire({value})"),
         Type::Identifier("Network") => format!("_networkToWire({value})"),
@@ -1995,7 +1999,7 @@ fn dart_to_wire_expression(value: &str, ty: &Type, field: &str) -> String {
         Type::Optional(inner) => match inner.as_ref() {
             Type::String | Type::Boolean => value.to_owned(),
             Type::Number => format!("checkedUint32({value}, field: '{field}')"),
-            Type::UnsignedInteger => format!("{value} == null ? null : BigInt.from({value}!)"),
+            Type::UnsignedInteger => value.to_owned(),
             Type::Decimal => format!("{value}?.toString()"),
             Type::Timestamp => format!("_optionalTimestampToWire({value})"),
             Type::Identifier("Network") => {
@@ -2453,6 +2457,19 @@ mod tests {
         assert!(output.contains(
             "const OrderHistoryRequest({\n    this.market,\n    this.statuses = const [],"
         ));
+    }
+
+    #[test]
+    fn unsigned_integers_preserve_dart_bigints() {
+        let schema = binding_schema();
+        let models = render_models(&schema);
+        let converters = render_wire_converters(&schema);
+
+        assert!(models.contains("final BigInt minimumDepositConfirmations;"));
+        assert!(
+            converters.contains("minimumDepositConfirmations: value.minimumDepositConfirmations,")
+        );
+        assert!(!converters.contains("minimumDepositConfirmations.toInt()"));
     }
 
     #[test]

@@ -3,7 +3,7 @@ use maxt::adapters::{
     BithumbApiKey, BithumbAssetFee, BithumbNetworkFee, BithumbNotice, BithumbOrderDirection,
     BithumbPendingOrderState, BithumbPendingOrdersRequest,
     HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind, UpbitMarketEvent,
-    UpbitOrderBookInstrument, UpbitYearCandle,
+    UpbitDepositInfo, UpbitOrderBookInstrument, UpbitYearCandle,
 };
 use maxt::{
     AccountEvent, AssetNetwork, Balance, CancelOrdersRequest, CancelOrdersResult, CancelledOrder,
@@ -262,6 +262,22 @@ pub(crate) struct WireUpbitOrderBookInstrument {
     pub(crate) quote_currency: String,
     pub(crate) tick_size: String,
     pub(crate) supported_levels: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitDepositInfo {
+    pub(crate) asset: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) network: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) provider_network: Option<String>,
+    pub(crate) is_deposit_possible: bool,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) deposit_impossible_reason: Option<String>,
+    pub(crate) minimum_deposit_amount: String,
+    pub(crate) minimum_deposit_confirmations: String,
+    pub(crate) decimal_precision: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1674,6 +1690,23 @@ impl TryFrom<UpbitOrderBookInstrument> for WireUpbitOrderBookInstrument {
     }
 }
 
+impl TryFrom<UpbitDepositInfo> for WireUpbitDepositInfo {
+    type Error = Error;
+
+    fn try_from(value: UpbitDepositInfo) -> Result<Self, Self::Error> {
+        Ok(Self {
+            asset: value.asset,
+            network: value.network.map(network_to_wire).transpose()?,
+            provider_network: value.provider_network,
+            is_deposit_possible: value.is_deposit_possible,
+            deposit_impossible_reason: value.deposit_impossible_reason,
+            minimum_deposit_amount: decimal_to_wire(value.minimum_deposit_amount),
+            minimum_deposit_confirmations: value.minimum_deposit_confirmations.to_string(),
+            decimal_precision: value.decimal_precision.to_string(),
+        })
+    }
+}
+
 impl TryFrom<BithumbMarketAlert> for WireBithumbMarketAlert {
     type Error = Error;
 
@@ -2966,7 +2999,7 @@ fn exchange_from_wire(value: &str, field: &str) -> maxt::Result<Exchange> {
     exchange_from_id(value).ok_or_else(|| invalid_enum(field, value))
 }
 
-fn network_from_wire(value: &str) -> Network {
+pub(crate) fn network_from_wire(value: &str) -> Network {
     match value {
         "bitcoin" => Network::Bitcoin,
         "ethereum" => Network::Ethereum,

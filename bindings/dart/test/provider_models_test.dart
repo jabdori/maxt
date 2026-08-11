@@ -131,9 +131,26 @@ void main() {
       tickSize: Decimal.parse('1000'),
       supportedLevels: [Decimal.zero, Decimal.parse('10000')],
     );
+    final deposit = UpbitDepositInfo(
+      asset: 'btc',
+      network: Network.bitcoin,
+      providerNetwork: 'BTC',
+      isDepositPossible: true,
+      minimumDepositAmount: Decimal.parse('0.0005'),
+      minimumDepositConfirmations: BigInt.parse('18446744073709551615'),
+      decimalPrecision: BigInt.parse('18446744073709551615'),
+    );
 
     expect(annual.koreaOpenTime, annual.openTime);
     expect(annual.quoteVolume.toString(), '37189906239683.17623000');
     expect(policy.supportedLevels, [Decimal.zero, Decimal.parse('10000')]);
+    expect(deposit.asset, 'BTC');
+    expect(deposit.minimumDepositAmount, Decimal.parse('0.0005'));
+    expect(
+      deposit.minimumDepositConfirmations,
+      BigInt.parse('18446744073709551615'),
+    );
+    expect(deposit.decimalPrecision, BigInt.parse('18446744073709551615'));
+    expect(deposit.depositImpossibleReason, isNull);
   });
 }

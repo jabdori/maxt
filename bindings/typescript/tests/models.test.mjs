@@ -53,6 +53,7 @@ import {
   TransferLookupRequest,
   TravelRuleRequirement,
   UpbitOrderBookInstrument,
+  UpbitDepositInfo,
   UpbitYearCandle,
   WithdrawRequest,
   WithdrawalFee,
@@ -83,6 +84,8 @@ import {
   transferHistoryRequestToWire,
   transferLookupRequestFromWire,
   transferLookupRequestToWire,
+  upbitDepositInfoFromWire,
+  upbitDepositInfoToWire,
   upbitOrderBookInstrumentFromWire,
   upbitOrderBookInstrumentToWire,
   upbitYearCandleFromWire,
@@ -179,6 +182,30 @@ test("Upbit yearly candles and orderbook policy preserve provider-only fields", 
     upbitOrderBookInstrumentToWire(instrument),
   );
   assert.equal(Object.isFrozen(instrument.supportedLevels), true);
+});
+
+test("Upbit deposit information preserves nullable network metadata and policy", () => {
+  const deposit = new UpbitDepositInfo(
+    "btc",
+    Network.Bitcoin,
+    "BTC",
+    true,
+    null,
+    Decimal.parse("0.0005"),
+    18_446_744_073_709_551_615n,
+    18_446_744_073_709_551_615n,
+  );
+
+  assert.equal(deposit.asset, "BTC");
+  assert.equal(deposit.network, Network.Bitcoin);
+  assert.equal(deposit.minimumDepositAmount.toString(), "0.0005");
+  assert.equal(deposit.minimumDepositConfirmations, 18_446_744_073_709_551_615n);
+  assert.equal(deposit.decimalPrecision, 18_446_744_073_709_551_615n);
+  assert.equal(Object.isFrozen(deposit), true);
+  assert.deepEqual(
+    upbitDepositInfoToWire(upbitDepositInfoFromWire(upbitDepositInfoToWire(deposit))),
+    upbitDepositInfoToWire(deposit),
+  );
 });
 
 test("Bithumb transfer fees preserve fixed and rate rules per network", () => {

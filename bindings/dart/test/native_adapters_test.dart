@@ -125,6 +125,13 @@ void main() {
     );
   });
 
+  test('Upbit 입금 가능 정보는 자격증명 없이 네트워크 요청 전에 거절한다', () async {
+    await expectLater(
+      UpbitAdapter().depositInfo('BTC', Network.bitcoin),
+      throwsA(isA<AuthenticationError>()),
+    );
+  });
+
   test('built-in Adapter는 빈 구독을 native 호출 전에 거절한다', () async {
     final adapter = UpbitAdapter();
     final market = Market.spot(Exchange.upbit, 'BTC', 'KRW');

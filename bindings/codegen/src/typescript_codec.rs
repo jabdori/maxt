@@ -20,15 +20,23 @@ function identifier<T extends { readonly id: string }>(
   return value;
 }
 
-function unsignedInteger(value: string, field: string): number {
+function unsignedInteger(value: string, field: string): bigint {
   if (!/^\d+$/.test(value)) {
     throw new InvalidRequestError(field, "must be an unsigned decimal integer");
   }
-  const parsed = Number(value);
-  if (!Number.isSafeInteger(parsed)) {
-    throw new InvalidRequestError(field, "exceeds the JavaScript safe integer range");
+  const parsed = BigInt(value);
+  if (parsed > 18_446_744_073_709_551_615n) {
+    throw new InvalidRequestError(field, "exceeds the Rust u64 range");
   }
   return parsed;
+}
+
+function safeUnsignedInteger(value: string, field: string): number {
+  const parsed = unsignedInteger(value, field);
+  if (parsed > BigInt(Number.MAX_SAFE_INTEGER)) {
+    throw new InvalidRequestError(field, "exceeds the JavaScript safe integer range");
+  }
+  return Number(parsed);
 }
 
 export function checkedU32(value: number, field: string): number {
@@ -301,10 +309,10 @@ export function orderRequestToWire(value: Model.OrderRequest): Wire.OrderRequest
 const STREAM_CONFIG_CODEC: &str = r#"export function streamConfigFromWire(value: Wire.StreamConfigWire): Model.StreamConfig {
   return new Model.StreamConfig({
     maxReconnectAttempts: value.max_reconnect_attempts,
-    initialReconnectDelayMs: unsignedInteger(value.initial_reconnect_delay_ms, "initial_reconnect_delay_ms"),
-    maxReconnectDelayMs: unsignedInteger(value.max_reconnect_delay_ms, "max_reconnect_delay_ms"),
-    idleTimeoutMs: unsignedInteger(value.idle_timeout_ms, "idle_timeout_ms"),
-    bufferSize: unsignedInteger(value.buffer_size, "buffer_size"),
+    initialReconnectDelayMs: safeUnsignedInteger(value.initial_reconnect_delay_ms, "initial_reconnect_delay_ms"),
+    maxReconnectDelayMs: safeUnsignedInteger(value.max_reconnect_delay_ms, "max_reconnect_delay_ms"),
+    idleTimeoutMs: safeUnsignedInteger(value.idle_timeout_ms, "idle_timeout_ms"),
+    bufferSize: safeUnsignedInteger(value.buffer_size, "buffer_size"),
     overflow: identifier(Model.Overflow.values, value.overflow, "overflow"),
   });
 }
@@ -487,3 +495,21 @@ export function stringifyWire(value: unknown): string {
   return JSON.stringify(value);
 }
 "#;
+
+#[cfg(test)]
+mod tests {
+    use maxt_bindings_common::schema::binding_schema;
+
+    use super::render;
+
+    #[test]
+    fn unsigned_integers_preserve_typescript_bigints() {
+        let output = render(&binding_schema());
+
+        assert!(output.contains("function unsignedInteger(value: string, field: string): bigint"));
+        assert!(output.contains(
+            "minimum_deposit_confirmations: value.minimumDepositConfirmations.toString(),"
+        ));
+        assert!(!output.contains("Number(value);"));
+    }
+}

@@ -70,7 +70,7 @@ class MaxtRustLib
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => -2081329458;
+  int get rustContentHash => -253110077;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -364,6 +364,12 @@ abstract class MaxtRustLibApi extends BaseApi {
     required WireUpbitRegion region,
     String? accessKey,
     String? secretKey,
+  });
+
+  Future<WireUpbitDepositInfo> crateApiNativeClientUpbitDepositInfo({
+    required NativeClient that,
+    required String asset,
+    required String network,
   });
 
   Future<List<WireUpbitMarketEvent>> crateApiNativeClientUpbitMarketEvents({
@@ -2681,6 +2687,46 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   );
 
   @override
+  Future<WireUpbitDepositInfo> crateApiNativeClientUpbitDepositInfo({
+    required NativeClient that,
+    required String asset,
+    required String network,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
+            that,
+            serializer,
+          );
+          sse_encode_String(asset, serializer);
+          sse_encode_String(network, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 58,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_wire_upbit_deposit_info,
+          decodeErrorData: sse_decode_native_error,
+        ),
+        constMeta: kCrateApiNativeClientUpbitDepositInfoConstMeta,
+        argValues: [that, asset, network],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiNativeClientUpbitDepositInfoConstMeta =>
+      const TaskConstMeta(
+        debugName: "NativeClient_upbit_deposit_info",
+        argNames: ["that", "asset", "network"],
+      );
+
+  @override
   Future<List<WireUpbitMarketEvent>> crateApiNativeClientUpbitMarketEvents({
     required NativeClient that,
   }) {
@@ -2695,7 +2741,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 58,
+            funcId: 59,
             port: port_,
           );
         },
@@ -2735,7 +2781,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 59,
+            funcId: 60,
             port: port_,
           );
         },
@@ -2777,7 +2823,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 60,
+            funcId: 61,
             port: port_,
           );
         },
@@ -2816,7 +2862,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 61,
+            funcId: 62,
             port: port_,
           );
         },
@@ -2849,7 +2895,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
             that,
             serializer,
           );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 62)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 63)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_opt_box_autoadd_wire_upbit_region,
@@ -2885,7 +2931,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 63,
+            funcId: 64,
             port: port_,
           );
         },
@@ -2923,7 +2969,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 64,
+            funcId: 65,
             port: port_,
           );
         },
@@ -2961,7 +3007,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 65,
+            funcId: 66,
             port: port_,
           );
         },
@@ -3003,7 +3049,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 66,
+            funcId: 67,
             port: port_,
           );
         },
@@ -3041,7 +3087,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 67,
+            funcId: 68,
             port: port_,
           );
         },
@@ -3082,7 +3128,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 68,
+            funcId: 69,
             port: port_,
           );
         },
@@ -3123,7 +3169,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 69,
+            funcId: 70,
             port: port_,
           );
         },
@@ -3156,7 +3202,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
             that,
             serializer,
           );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 70)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 71)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -3192,7 +3238,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 71,
+            funcId: 72,
             port: port_,
           );
         },
@@ -3219,7 +3265,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 72)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 73)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -3242,7 +3288,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(relayUrl, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 73)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 74)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
@@ -3278,7 +3324,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 74,
+            funcId: 75,
             port: port_,
           );
         },
@@ -3314,7 +3360,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 75,
+            funcId: 76,
             port: port_,
           );
         },
@@ -3350,7 +3396,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 76,
+            funcId: 77,
             port: port_,
           );
         },
@@ -3386,7 +3432,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 77,
+            funcId: 78,
             port: port_,
           );
         },
@@ -3422,7 +3468,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 78,
+            funcId: 79,
             port: port_,
           );
         },
@@ -3449,7 +3495,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 79)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 80)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -3488,7 +3534,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 80,
+            funcId: 81,
             port: port_,
           );
         },
@@ -6148,6 +6194,24 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       default:
         throw Exception("unreachable");
     }
+  }
+
+  @protected
+  WireUpbitDepositInfo dco_decode_wire_upbit_deposit_info(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 8)
+      throw Exception('unexpected arr length: expect 8 but see ${arr.length}');
+    return WireUpbitDepositInfo(
+      asset: dco_decode_String(arr[0]),
+      network: dco_decode_opt_String(arr[1]),
+      providerNetwork: dco_decode_opt_String(arr[2]),
+      isDepositPossible: dco_decode_bool(arr[3]),
+      depositImpossibleReason: dco_decode_opt_String(arr[4]),
+      minimumDepositAmount: dco_decode_String(arr[5]),
+      minimumDepositConfirmations: dco_decode_u_64(arr[6]),
+      decimalPrecision: dco_decode_u_64(arr[7]),
+    );
   }
 
   @protected
@@ -9534,6 +9598,31 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireUpbitDepositInfo sse_decode_wire_upbit_deposit_info(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_asset = sse_decode_String(deserializer);
+    var var_network = sse_decode_opt_String(deserializer);
+    var var_providerNetwork = sse_decode_opt_String(deserializer);
+    var var_isDepositPossible = sse_decode_bool(deserializer);
+    var var_depositImpossibleReason = sse_decode_opt_String(deserializer);
+    var var_minimumDepositAmount = sse_decode_String(deserializer);
+    var var_minimumDepositConfirmations = sse_decode_u_64(deserializer);
+    var var_decimalPrecision = sse_decode_u_64(deserializer);
+    return WireUpbitDepositInfo(
+      asset: var_asset,
+      network: var_network,
+      providerNetwork: var_providerNetwork,
+      isDepositPossible: var_isDepositPossible,
+      depositImpossibleReason: var_depositImpossibleReason,
+      minimumDepositAmount: var_minimumDepositAmount,
+      minimumDepositConfirmations: var_minimumDepositConfirmations,
+      decimalPrecision: var_decimalPrecision,
+    );
+  }
+
+  @protected
   WireUpbitMarketEvent sse_decode_wire_upbit_market_event(
     SseDeserializer deserializer,
   ) {
@@ -12643,6 +12732,22 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  void sse_encode_wire_upbit_deposit_info(
+    WireUpbitDepositInfo self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.asset, serializer);
+    sse_encode_opt_String(self.network, serializer);
+    sse_encode_opt_String(self.providerNetwork, serializer);
+    sse_encode_bool(self.isDepositPossible, serializer);
+    sse_encode_opt_String(self.depositImpossibleReason, serializer);
+    sse_encode_String(self.minimumDepositAmount, serializer);
+    sse_encode_u_64(self.minimumDepositConfirmations, serializer);
+    sse_encode_u_64(self.decimalPrecision, serializer);
+  }
+
+  @protected
   void sse_encode_wire_upbit_market_event(
     WireUpbitMarketEvent self,
     SseSerializer serializer,
@@ -13225,6 +13330,15 @@ class NativeClientImpl extends RustOpaque implements NativeClient {
         market: market,
         limit: limit,
       );
+
+  Future<WireUpbitDepositInfo> upbitDepositInfo({
+    required String asset,
+    required String network,
+  }) => MaxtRustLib.instance.api.crateApiNativeClientUpbitDepositInfo(
+    that: this,
+    asset: asset,
+    network: network,
+  );
 
   Future<List<WireUpbitMarketEvent>> upbitMarketEvents() => MaxtRustLib
       .instance

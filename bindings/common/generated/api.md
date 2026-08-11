@@ -45,7 +45,7 @@
 
 | Exchange | Adapter | Python | Dart / TypeScript |
 | --- | --- | --- | --- |
-| upbit | `UpbitAdapter` | `region`, `order_books`, `order_books_at_level`, `tickers`, `tickers_by_quote`, `year_candles`, `orderbook_instruments`, `market_events`, `test_order` | `region`, `orderBooks`, `orderBooksAtLevel`, `tickers`, `tickersByQuote`, `yearCandles`, `orderbookInstruments`, `marketEvents`, `testOrder` |
+| upbit | `UpbitAdapter` | `region`, `order_books`, `order_books_at_level`, `tickers`, `tickers_by_quote`, `year_candles`, `orderbook_instruments`, `market_events`, `test_order`, `deposit_info` | `region`, `orderBooks`, `orderBooksAtLevel`, `tickers`, `tickersByQuote`, `yearCandles`, `orderbookInstruments`, `marketEvents`, `testOrder`, `depositInfo` |
 | bithumb | `BithumbAdapter` | `market_warnings`, `market_alerts`, `notices`, `transfer_fees`, `api_keys`, `pending_orders` | `marketWarnings`, `marketAlerts`, `notices`, `transferFees`, `apiKeys`, `pendingOrders` |
 | binance | `BinanceAdapter` | `venue`, `spot_symbol_filters`, `spot_order`, `usd_m_create_listen_key`, `usd_m_keepalive_listen_key`, `usd_m_close_listen_key` | `venue`, `spotSymbolFilters`, `spotOrder`, `usdMCreateListenKey`, `usdMKeepaliveListenKey`, `usdMCloseListenKey` |
 | hyperliquid | `HyperliquidAdapter` | `is_testnet`, `non_funding_ledger`, `asset_context` | `isTestnet`, `nonFundingLedger`, `assetContext` |
@@ -148,7 +148,7 @@ Documentation baseline: `2026-08-10`.
 | upbit | exchange | `my_order_stream` | `SUBSCRIBE` | `myOrder` | `websocket_stream` | JWT | read | general | common `subscribe_account` | `Partial` | `Fixture` |
 | upbit | exchange | `my_asset_stream` | `SUBSCRIBE` | `myAsset` | `websocket_stream` | JWT | read | general | common `subscribe_account` | `Partial` | `Fixture` |
 | upbit | wallet | `wallet_status` | `GET` | `/v1/status/wallet` | `http` | JWT | read | general | common `asset_networks` | `Implemented` | `Fixture` |
-| upbit | wallet | `deposit_chance` | `GET` | `/v1/deposits/chance/coin` | `http` | JWT | read | general | provider `deposit_chance` | `Planned` | `Documented` |
+| upbit | wallet | `deposit_chance` | `GET` | `/v1/deposits/chance/coin` | `http` | JWT | read | general | provider `deposit_info` | `Implemented` | `Fixture` |
 | upbit | wallet | `deposit_addresses` | `GET` | `/v1/deposits/coin_addresses` | `http` | JWT | read | general | common `deposit_addresses` | `Implemented` | `Fixture` |
 | upbit | wallet | `deposit_address` | `GET` | `/v1/deposits/coin_address` | `http` | JWT | read | general | common `deposit_address` | `Implemented` | `Fixture` |
 | upbit | wallet | `create_deposit_address` | `POST` | `/v1/deposits/generate_coin_address` | `http` | JWT | account write | general | common `create_deposit_address` | `Implemented` | `Fixture` |

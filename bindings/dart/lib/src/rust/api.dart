@@ -293,6 +293,11 @@ abstract class NativeClient implements RustOpaqueInterface {
     secretKey: secretKey,
   );
 
+  Future<WireUpbitDepositInfo> upbitDepositInfo({
+    required String asset,
+    required String network,
+  });
+
   Future<List<WireUpbitMarketEvent>> upbitMarketEvents();
 
   Future<List<WireOrderBook>> upbitOrderBooks({

@@ -928,6 +928,9 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireUpbitDepositInfo dco_decode_wire_upbit_deposit_info(dynamic raw);
+
+  @protected
   WireUpbitMarketEvent dco_decode_wire_upbit_market_event(dynamic raw);
 
   @protected
@@ -2007,6 +2010,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireTravelRuleRequirement sse_decode_wire_travel_rule_requirement(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireUpbitDepositInfo sse_decode_wire_upbit_deposit_info(
     SseDeserializer deserializer,
   );
 
@@ -3394,6 +3402,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_travel_rule_requirement(
     WireTravelRuleRequirement self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_upbit_deposit_info(
+    WireUpbitDepositInfo self,
     SseSerializer serializer,
   );
 

@@ -104,6 +104,7 @@
 | `year_candles(market, to, count)` | `count: 1..=200` 또는 `None`; ISO-8601 기준 시각 선택; 오래된 순서; 한국 시작 시각은 지역에 따라 없을 수 있음 | `candle` |
 | `market_events()` | 시장별 투자 유의 여부와 기준 | `market` |
 | `test_order(request)` | 주문을 생성하지 않고 검증; 주문 생성 권한 필요; 반환 `Order`는 dry-run 결과이므로 ID를 조회·취소할 수 없고 상태도 실제 활성 주문을 뜻하지 않음 | `order-test` |
+| `deposit_info(asset, network)` | `View Deposits` 권한 필요; 입금 가능 여부·사유·최소 수량·확인 수·소수 자릿수를 반환. 응답 네트워크는 null일 수 있으며 받은 값을 그대로 보존. 이 메타데이터는 몇 분 지연될 수 있음 | `default` |
 
 | 시장 이벤트(market event) | 매핑 |
 | --- | --- |
@@ -139,6 +140,7 @@
 - [요청 한도](https://global-docs.upbit.com/reference/rate-limits)
 - [인증](https://global-docs.upbit.com/reference/auth)
 - [테스트 주문](https://global-docs.upbit.com/reference/order-test)
+- [입금 가능 정보](https://global-docs.upbit.com/reference/available-deposit-information)
 - [주문 단건 조회](https://global-docs.upbit.com/reference/get-order)
 - [종료 주문 목록](https://global-docs.upbit.com/reference/list-closed-orders)
 

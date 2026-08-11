@@ -17,9 +17,10 @@ use crate::types::{
 };
 
 use super::parse::{self, EXCHANGE};
-use super::{UpbitCredentials, private, rest};
+use super::{UpbitCredentials, UpbitDepositInfo, private, rest};
 
 const WALLET_STATUS_PATH: &str = "/v1/status/wallet";
+const DEPOSIT_CHANCE_PATH: &str = "/v1/deposits/chance/coin";
 const DEPOSIT_ADDRESSES_PATH: &str = "/v1/deposits/coin_addresses";
 const DEPOSIT_ADDRESS_PATH: &str = "/v1/deposits/coin_address";
 const CREATE_DEPOSIT_ADDRESS_PATH: &str = "/v1/deposits/generate_coin_address";
@@ -59,6 +60,19 @@ struct RawDepositAddress {
     deposit_address: Option<String>,
     #[serde(default)]
     secondary_address: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct RawDepositChance {
+    currency: String,
+    #[serde(default)]
+    net_type: Option<String>,
+    is_deposit_possible: bool,
+    #[serde(default)]
+    deposit_impossible_reason: Option<String>,
+    minimum_deposit_amount: Value,
+    minimum_deposit_confirmations: u64,
+    decimal_precision: u64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -180,6 +194,19 @@ pub(crate) async fn deposit_addresses(
     let request = signed_get(credentials, DEPOSIT_ADDRESSES_PATH, &[])?;
     let body = rest::send(http, &request).await?;
     parse_deposit_addresses(&body)
+}
+
+pub(crate) async fn deposit_info(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    asset: &str,
+    network: &Network,
+) -> Result<UpbitDepositInfo> {
+    let asset = asset_code(asset)?;
+    let provider_id = resolve_network(credentials, http, &asset, network).await?;
+    let request = deposit_chance_request(credentials, &asset, &provider_id)?;
+    let body = rest::send(http, &request).await?;
+    parse_deposit_info(&body, &asset, &provider_id)
 }
 
 pub(crate) async fn deposit_address(
@@ -481,6 +508,21 @@ fn withdraw_chance_request(
     )
 }
 
+fn deposit_chance_request(
+    credentials: &UpbitCredentials,
+    asset: &str,
+    provider_id: &str,
+) -> Result<HttpRequest> {
+    signed_get(
+        credentials,
+        DEPOSIT_CHANCE_PATH,
+        &[
+            ("currency", asset.to_string()),
+            ("net_type", provider_id.to_string()),
+        ],
+    )
+}
+
 fn lookup_request(
     credentials: &UpbitCredentials,
     path: &str,
@@ -689,6 +731,44 @@ fn parse_deposit_addresses(body: &str) -> Result<Vec<DepositAddressEntry>> {
             })
         })
         .collect()
+}
+
+fn parse_deposit_info(
+    body: &str,
+    expected_asset: &str,
+    expected_provider: &str,
+) -> Result<UpbitDepositInfo> {
+    let raw: RawDepositChance = parse::json(body)?;
+    if !raw.currency.eq_ignore_ascii_case(expected_asset) {
+        return Err(Error::decode(format!(
+            "Upbit returned deposit information for {} instead of {expected_asset}",
+            raw.currency
+        )));
+    }
+    if raw
+        .net_type
+        .as_deref()
+        .is_some_and(|provider| provider != expected_provider)
+    {
+        return Err(Error::decode(format!(
+            "Upbit returned deposit information for a different network than {expected_provider}"
+        )));
+    }
+
+    let provider_network = raw.net_type;
+    Ok(UpbitDepositInfo {
+        asset: expected_asset.to_string(),
+        network: provider_network.as_deref().map(network_from_provider),
+        provider_network,
+        is_deposit_possible: raw.is_deposit_possible,
+        deposit_impossible_reason: raw.deposit_impossible_reason,
+        minimum_deposit_amount: decimal_value(
+            &raw.minimum_deposit_amount,
+            "minimum_deposit_amount",
+        )?,
+        minimum_deposit_confirmations: raw.minimum_deposit_confirmations,
+        decimal_precision: raw.decimal_precision,
+    })
 }
 
 fn parse_created_deposit_address(
@@ -1132,6 +1212,35 @@ mod tests {
     }
 
     #[test]
+    fn deposit_info_preserves_nullable_network_and_provider_policy() {
+        let info = parse_deposit_info(
+            r#"{"currency":"BTC","net_type":"BTC","is_deposit_possible":true,"deposit_impossible_reason":null,"minimum_deposit_amount":"0.0005","minimum_deposit_confirmations":18446744073709551615,"decimal_precision":18446744073709551615}"#,
+            "BTC",
+            "BTC",
+        )
+        .expect("official deposit information response");
+        assert_eq!(info.network, Some(Network::Bitcoin));
+        assert_eq!(info.provider_network.as_deref(), Some("BTC"));
+        assert!(info.is_deposit_possible);
+        assert_eq!(info.minimum_deposit_amount, Decimal::new(5, 4));
+        assert_eq!(info.minimum_deposit_confirmations, u64::MAX);
+        assert_eq!(info.decimal_precision, u64::MAX);
+
+        let unavailable = parse_deposit_info(
+            r#"{"currency":"BTC","net_type":null,"is_deposit_possible":false,"deposit_impossible_reason":"Network upgrade in progress","minimum_deposit_amount":"0","minimum_deposit_confirmations":0,"decimal_precision":8}"#,
+            "BTC",
+            "BTC",
+        )
+        .expect("nullable network response");
+        assert_eq!(unavailable.network, None);
+        assert_eq!(unavailable.provider_network, None);
+        assert_eq!(
+            unavailable.deposit_impossible_reason.as_deref(),
+            Some("Network upgrade in progress")
+        );
+    }
+
+    #[test]
     fn deposit_address_amount_is_rejected_before_signing() {
         let request = DepositAddressRequest::new("BTC", Network::Bitcoin).amount(Decimal::ONE);
         assert!(reject_deposit_address_amount(&request).is_err());
@@ -1194,6 +1303,8 @@ mod tests {
             ],
         )
         .expect("address request");
+        let deposit_chance =
+            deposit_chance_request(&credentials, "BTC", "BTC").expect("deposit chance request");
         let chance = withdraw_chance_request(&credentials, "BTC", "BTC").expect("chance request");
         let allowlist =
             signed_get(&credentials, WITHDRAWAL_ADDRESSES_PATH, &[]).expect("allowlist request");
@@ -1208,6 +1319,14 @@ mod tests {
         assert_eq!(
             address.target(),
             "/v1/deposits/coin_address?currency=BTC&net_type=BTC"
+        );
+        assert_eq!(
+            deposit_chance.target(),
+            "/v1/deposits/chance/coin?currency=BTC&net_type=BTC"
+        );
+        assert_eq!(
+            claims(&deposit_chance)["query_hash"],
+            hex::encode(Sha512::digest(b"currency=BTC&net_type=BTC"))
         );
         assert_eq!(
             chance.target(),

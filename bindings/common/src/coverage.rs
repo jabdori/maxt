@@ -1158,7 +1158,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("asset_networks"),
         Validation::Fixture,
     ),
-    planned(operation(
+    operation(
         Exchange::Upbit,
         "wallet",
         "deposit_chance",
@@ -1167,9 +1167,9 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::Read,
-        OperationMapping::Provider("deposit_chance"),
-        Validation::Documented,
-    )),
+        OperationMapping::Provider("deposit_info"),
+        Validation::Fixture,
+    ),
     operation(
         Exchange::Upbit,
         "wallet",

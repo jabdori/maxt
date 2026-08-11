@@ -161,5 +161,6 @@ pub use hyperliquid::{
     HyperliquidAdapter, HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind,
 };
 pub use upbit::{
-    UpbitAdapter, UpbitMarketEvent, UpbitOrderBookInstrument, UpbitRegion, UpbitYearCandle,
+    UpbitAdapter, UpbitDepositInfo, UpbitMarketEvent, UpbitOrderBookInstrument, UpbitRegion,
+    UpbitYearCandle,
 };

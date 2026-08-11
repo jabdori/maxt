@@ -67,7 +67,7 @@ backends.
 
 | Adapter | Construction | Additional methods |
 | --- | --- | --- |
-| `UpbitAdapter` | `new UpbitAdapter()` or `UpbitAdapter.withRegion(...)` | `orderBooks()`, `orderBooksAtLevel()`, `tickers()`, `tickersByQuote()`, `yearCandles()`, `orderbookInstruments()`, `marketEvents()`; authenticated: `testOrder()` |
+| `UpbitAdapter` | `new UpbitAdapter()` or `UpbitAdapter.withRegion(...)` | `orderBooks()`, `orderBooksAtLevel()`, `tickers()`, `tickersByQuote()`, `yearCandles()`, `orderbookInstruments()`, `marketEvents()`; authenticated: `testOrder()`, `depositInfo()` |
 | `BithumbAdapter` | `new BithumbAdapter()` | `marketWarnings()`, `marketAlerts()`, `notices()`, `transferFees()`; authenticated: `apiKeys()`, `pendingOrders()` |
 | `BinanceAdapter` | `BinanceAdapter.spot()` | `spotSymbolFilters()`; authenticated: `spotOrder()` |
 | `BinanceAdapter` | `BinanceAdapter.usdMFutures()` | Authenticated: `usdMCreateListenKey()`, `usdMKeepaliveListenKey()`, `usdMCloseListenKey()` |
@@ -76,6 +76,10 @@ backends.
 `UpbitAdapter.testOrder()` validates an order without creating it. The returned
 `Order` is a dry-run result: do not query or cancel its `id`, and do not treat
 its status as a live order.
+
+`UpbitAdapter.depositInfo(asset, network)` returns the provider's deposit
+availability, minimum amount, confirmation, and precision metadata. Upbit may
+delay this information by several minutes; it is not a real-time service-status signal.
 
 ## Node.js
 

@@ -947,6 +947,53 @@ sealed class WireTravelRuleRequirement with _$WireTravelRuleRequirement {
       WireTravelRuleRequirement_Required;
 }
 
+class WireUpbitDepositInfo {
+  final String asset;
+  final String? network;
+  final String? providerNetwork;
+  final bool isDepositPossible;
+  final String? depositImpossibleReason;
+  final String minimumDepositAmount;
+  final BigInt minimumDepositConfirmations;
+  final BigInt decimalPrecision;
+
+  const WireUpbitDepositInfo({
+    required this.asset,
+    this.network,
+    this.providerNetwork,
+    required this.isDepositPossible,
+    this.depositImpossibleReason,
+    required this.minimumDepositAmount,
+    required this.minimumDepositConfirmations,
+    required this.decimalPrecision,
+  });
+
+  @override
+  int get hashCode =>
+      asset.hashCode ^
+      network.hashCode ^
+      providerNetwork.hashCode ^
+      isDepositPossible.hashCode ^
+      depositImpossibleReason.hashCode ^
+      minimumDepositAmount.hashCode ^
+      minimumDepositConfirmations.hashCode ^
+      decimalPrecision.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitDepositInfo &&
+          runtimeType == other.runtimeType &&
+          asset == other.asset &&
+          network == other.network &&
+          providerNetwork == other.providerNetwork &&
+          isDepositPossible == other.isDepositPossible &&
+          depositImpossibleReason == other.depositImpossibleReason &&
+          minimumDepositAmount == other.minimumDepositAmount &&
+          minimumDepositConfirmations == other.minimumDepositConfirmations &&
+          decimalPrecision == other.decimalPrecision;
+}
+
 class WireUpbitOrderBookInstrument {
   final WireMarket market;
   final String quoteCurrency;

@@ -1473,6 +1473,38 @@ pub(crate) fn upbit_order_book_instrument_to_wire(
     )
 }
 
+pub(crate) fn upbit_deposit_info_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitDepositInfo> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::UpbitDepositInfo {
+        asset: required(dict, "asset")?.extract::<String>()?,
+        network: optional(dict, "network")?.map(|value| -> PyResult<_> { network_from_wire(&value) }).transpose()?,
+        provider_network: optional(dict, "provider_network")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        is_deposit_possible: required(dict, "is_deposit_possible")?.extract()?,
+        deposit_impossible_reason: optional(dict, "deposit_impossible_reason")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        minimum_deposit_amount: decimal_from_wire(&required(dict, "minimum_deposit_amount")?, "minimum_deposit_amount")?,
+        minimum_deposit_confirmations: required(dict, "minimum_deposit_confirmations")?.extract()?,
+        decimal_precision: required(dict, "decimal_precision")?.extract()?,
+    })
+}
+
+pub(crate) fn upbit_deposit_info_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitDepositInfo,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "asset" => &value.asset,
+        "network" => value.network.as_ref().map(network_to_wire).transpose()?,
+        "provider_network" => &value.provider_network,
+        "is_deposit_possible" => value.is_deposit_possible,
+        "deposit_impossible_reason" => &value.deposit_impossible_reason,
+        "minimum_deposit_amount" => decimal_to_wire(value.minimum_deposit_amount),
+        "minimum_deposit_confirmations" => value.minimum_deposit_confirmations,
+        "decimal_precision" => value.decimal_precision,
+    )
+}
+
 pub(crate) fn bithumb_notice_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::BithumbNotice> {
     let value = wire_object(value)?;
     let dict = value.cast::<PyDict>()?;

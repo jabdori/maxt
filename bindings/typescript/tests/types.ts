@@ -31,6 +31,7 @@ import {
   type Withdrawal,
   type WithdrawalQuote,
   type UpbitOrderBookInstrument,
+  type UpbitDepositInfo,
   type UpbitYearCandle,
   type BithumbApiKey,
   type BithumbAssetFee,
@@ -72,6 +73,7 @@ const testOrder: Promise<Order> = upbit.testOrder(
     Decimal.parse("100000000"),
   ),
 );
+const depositInfo: Promise<UpbitDepositInfo> = upbit.depositInfo("BTC", Network.Bitcoin);
 const bithumb = new BithumbAdapter();
 const notices: Promise<readonly BithumbNotice[]> = bithumb.notices();
 const transferFees: Promise<readonly BithumbAssetFee[]> = bithumb.transferFees("BTC");
@@ -111,6 +113,7 @@ void aggregatedBooks;
 void yearCandles;
 void instruments;
 void testOrder;
+void depositInfo;
 void notices;
 void transferFees;
 void apiKeys;

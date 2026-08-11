@@ -230,7 +230,6 @@ fn planned_korean_operations_pin_official_request_contracts() {
         "upbit|quotation|list_subscriptions|LIST_SUBSCRIPTIONS|LIST_SUBSCRIPTIONS|websocket_request|Public|Read|General",
         "upbit|exchange|batch_cancel_open_orders|DELETE|/v1/orders/open|http|Jwt|FinancialWrite|General",
         "upbit|exchange|cancel_and_new_order|POST|/v1/orders/cancel_and_new|http|Jwt|FinancialWrite|General",
-        "upbit|wallet|deposit_chance|GET|/v1/deposits/chance/coin|http|Jwt|Read|General",
         "upbit|travel_rule|travel_rule_vasps|GET|/v1/travel_rule/vasps|http|Jwt|Read|Region(\"Singapore\")",
         "upbit|travel_rule|travel_rule_verify_uuid|POST|/v1/travel_rule/deposit/uuid|http|Jwt|FinancialWrite|Region(\"Singapore\")",
         "upbit|travel_rule|travel_rule_verify_txid|POST|/v1/travel_rule/deposit/txid|http|Jwt|FinancialWrite|Region(\"Singapore\")",
@@ -312,7 +311,9 @@ fn implemented_wallet_endpoint_sets_match_the_current_adapters() {
         ("GET", "/v1/deposits"),
         ("GET", "/v1/withdraws"),
     ]);
-    assert_eq!(paths(Exchange::Upbit, "wallet"), upbit_and_bithumb);
+    let mut upbit = upbit_and_bithumb.clone();
+    upbit.insert(("GET", "/v1/deposits/chance/coin"));
+    assert_eq!(paths(Exchange::Upbit, "wallet"), upbit);
     let mut bithumb = upbit_and_bithumb.clone();
     bithumb.insert(("GET", "/v1/api_keys"));
     assert_eq!(paths(Exchange::Bithumb, "wallet"), bithumb);

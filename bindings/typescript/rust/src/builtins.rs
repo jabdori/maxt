@@ -29,9 +29,9 @@ use crate::convert::{
     WireBinanceSpotOrderDetail, WireBinanceSymbolFilters, WireBithumbMarketAlert,
     WireBithumbApiKey, WireBithumbAssetFee, WireBithumbNotice, WireBithumbPendingOrdersRequest,
     WireHyperliquidAssetContext, WireHyperliquidLedgerEntry, WireMarket, WireOrder,
-    WireOrderBook, WireOrderRequest, WirePage, WireTicker,
+    WireOrderBook, WireOrderRequest, WirePage, WireTicker, WireUpbitDepositInfo,
     WireUpbitMarketEvent, WireUpbitOrderBookInstrument, WireUpbitYearCandle, decimal_from_wire,
-    from_wire_text, outcome, timestamp_from_wire,
+    from_wire_text, network_from_wire, outcome, timestamp_from_wire,
 };
 
 #[derive(Debug, Deserialize)]
@@ -329,6 +329,25 @@ impl NativeUpbit {
             Err(error) => outcome::<Value>(Err(error)),
         }
     }
+
+    async fn deposit_info(
+        &self,
+        asset: maxt::Result<String>,
+        network: maxt::Result<String>,
+    ) -> Value {
+        let asset = parse_text::<String>(asset, "asset");
+        let network = parse_text::<String>(network, "network")
+            .map(|network| network_from_wire(&network));
+        match (asset, network) {
+            (Ok(asset), Ok(network)) => outcome(
+                self.adapter
+                    .deposit_info(&asset, &network)
+                    .await
+                    .and_then(TryInto::<WireUpbitDepositInfo>::try_into),
+            ),
+            (Err(error), _) | (_, Err(error)) => outcome::<Value>(Err(error)),
+        }
+    }
 }
 
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
@@ -447,6 +466,22 @@ impl NativeUpbit {
         let this = self.clone();
         let request = native_json_text(request, "request");
         spawn_native(env, async move { this.test_order(request).await })
+    }
+
+    #[napi(
+        js_name = "depositInfo",
+        ts_args_type = "asset: string, network: string"
+    )]
+    pub fn deposit_info_native<'env>(
+        &self,
+        env: &'env Env,
+        asset: NativeJsonText<'env>,
+        network: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let asset = native_json_text(asset, "asset");
+        let network = native_json_text(network, "network");
+        spawn_native(env, async move { this.deposit_info(asset, network).await })
     }
 }
 
@@ -1051,6 +1086,11 @@ impl NativeUpbit {
     #[wasm_bindgen(js_name = "testOrder")]
     pub async fn test_order_wasm(&self, request: String) -> JsValue {
         crate::web::value(self.test_order(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "depositInfo")]
+    pub async fn deposit_info_wasm(&self, asset: String, network: String) -> JsValue {
+        crate::web::value(self.deposit_info(Ok(asset), Ok(network)).await)
     }
 }
 

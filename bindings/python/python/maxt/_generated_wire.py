@@ -351,6 +351,16 @@ RECORD_FIELDS = {
         "tick_size": "decimal",
         "supported_levels": "list:decimal",
     },
+    "UpbitDepositInfo": {
+        "asset": "string",
+        "network": "optional:identifier:Network",
+        "provider_network": "optional:string",
+        "is_deposit_possible": "boolean",
+        "deposit_impossible_reason": "optional:string",
+        "minimum_deposit_amount": "decimal",
+        "minimum_deposit_confirmations": "unsigned_integer",
+        "decimal_precision": "unsigned_integer",
+    },
     "BithumbMarketAlert": {
         "kind": "string",
         "step": "identifier:BithumbAlertStep",

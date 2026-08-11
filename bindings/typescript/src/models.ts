@@ -52,6 +52,7 @@ const MAX_DECIMAL_SCALE = 28;
 const MAX_DECIMAL_POINT_SHIFT = 64;
 const I64_MIN = -(1n << 63n);
 const I64_MAX = (1n << 63n) - 1n;
+const U64_MAX = (1n << 64n) - 1n;
 const U32_MAX = 0xffff_ffff;
 
 function pow10(exponent: number): bigint {
@@ -382,6 +383,13 @@ function freezeRecord<T extends object>(value: T): void {
 function checkedUnsigned(value: number, maximum: number, name: string): number {
   if (!Number.isSafeInteger(value) || value < 0 || value > maximum) {
     throw new RangeError(`${name} must be a non-negative safe integer within its Rust range`);
+  }
+  return value;
+}
+
+function checkedU64(value: bigint, name: string): bigint {
+  if (typeof value !== "bigint" || value < 0n || value > U64_MAX) {
+    throw new RangeError(`${name} must be an unsigned 64-bit integer`);
   }
   return value;
 }
@@ -865,6 +873,30 @@ export class UpbitOrderBookInstrument {
     supportedLevels: readonly Decimal[],
   ) {
     this.supportedLevels = Object.freeze([...supportedLevels]); freezeRecord(this);
+  }
+}
+
+export class UpbitDepositInfo {
+  readonly asset: string;
+  readonly minimumDepositConfirmations: bigint;
+  readonly decimalPrecision: bigint;
+  constructor(
+    asset: string,
+    readonly network: Network | null,
+    readonly providerNetwork: string | null,
+    readonly isDepositPossible: boolean,
+    readonly depositImpossibleReason: string | null,
+    readonly minimumDepositAmount: Decimal,
+    minimumDepositConfirmations: bigint,
+    decimalPrecision: bigint,
+  ) {
+    this.asset = asciiUpper(asset);
+    this.minimumDepositConfirmations = checkedU64(
+      minimumDepositConfirmations,
+      "minimumDepositConfirmations",
+    );
+    this.decimalPrecision = checkedU64(decimalPrecision, "decimalPrecision");
+    freezeRecord(this);
   }
 }
 

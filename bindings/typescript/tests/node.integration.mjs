@@ -132,6 +132,15 @@ test("Upbit test orders reject missing credentials before a network request", as
   );
 });
 
+test("Upbit deposit information rejects missing credentials before a network request", async () => {
+  await maxt.initialize();
+
+  await assert.rejects(
+    new maxt.UpbitAdapter().depositInfo("BTC", maxt.Network.Bitcoin),
+    (error) => error instanceof AuthError,
+  );
+});
+
 test("Bithumb notices reject invalid counts before the Node boundary", async () => {
   await maxt.initialize();
   const bithumb = new maxt.BithumbAdapter();

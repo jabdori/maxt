@@ -7,7 +7,7 @@ import { AccountStream, MarketStream, StreamError } from "../stream.js";
 import * as Codec from "./codec.js";
 import type * as Wire from "./contract.js";
 
-export const NATIVE_API_VERSION = 17 as const;
+export const NATIVE_API_VERSION = 18 as const;
 
 export type NativeOutcome<T> =
   | { readonly ok: true; readonly value: T }
@@ -72,6 +72,7 @@ export interface RawNativeUpbitHandle {
   orderbookInstruments(markets: string): Promise<unknown>;
   marketEvents(): Promise<unknown>;
   testOrder(request: string): Promise<unknown>;
+  depositInfo(asset: string, network: string): Promise<unknown>;
 }
 
 export interface RawNativeBithumbHandle {
@@ -191,6 +192,7 @@ export interface NativeUpbitHandle {
   orderbookInstruments(markets: readonly Wire.MarketWire[]): Promise<NativeOutcome<readonly Wire.UpbitOrderBookInstrumentWire[]>>;
   marketEvents(): Promise<NativeOutcome<readonly (readonly [Wire.MarketWire, Wire.UpbitMarketEventWire])[]>>;
   testOrder(request: Wire.OrderRequestWire): Promise<NativeOutcome<Wire.OrderWire>>;
+  depositInfo(asset: string, network: string): Promise<NativeOutcome<Wire.UpbitDepositInfoWire>>;
 }
 
 export interface NativeBithumbHandle {
@@ -288,6 +290,7 @@ export function createJsonBackend(raw: RawNativeModule): NativeBackend {
         orderbookInstruments: (markets: readonly Wire.MarketWire[]) => handle.orderbookInstruments(Codec.stringifyWire(markets)) as Promise<NativeOutcome<readonly Wire.UpbitOrderBookInstrumentWire[]>>,
         marketEvents: () => handle.marketEvents() as Promise<NativeOutcome<readonly (readonly [Wire.MarketWire, Wire.UpbitMarketEventWire])[]>>,
         testOrder: (request: Wire.OrderRequestWire) => handle.testOrder(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.OrderWire>>,
+        depositInfo: (asset: string, network: string) => handle.depositInfo(Codec.stringifyWire(asset), Codec.stringifyWire(network)) as Promise<NativeOutcome<Wire.UpbitDepositInfoWire>>,
       };
     },
     bithumb(options) {
@@ -1006,6 +1009,7 @@ export class UpbitAdapter extends NativeAdapter {
   async marketEvents(): Promise<readonly (readonly [Model.Market, Model.UpbitMarketEvent])[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.marketEvents()).map(Codec.upbitMarketEventPairFromWire); }
   /** Validates an Upbit order without creating it. The returned dry-run ID cannot be queried or cancelled, and its status is not a live order. */
   async testOrder(request: Model.OrderRequest): Promise<Model.Order> { await ensureInitialized(); return Codec.orderFromWire(Codec.unwrapOutcome(await this.#provider.testOrder(Codec.orderRequestToWire(request)))); }
+  async depositInfo(asset: string, network: Model.Network): Promise<Model.UpbitDepositInfo> { await ensureInitialized(); return Codec.upbitDepositInfoFromWire(Codec.unwrapOutcome(await this.#provider.depositInfo(asset, network.id))); }
 }
 
 export class BithumbAdapter extends NativeAdapter {

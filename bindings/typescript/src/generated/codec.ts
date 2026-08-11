@@ -14,15 +14,23 @@ function identifier<T extends { readonly id: string }>(
   return value;
 }
 
-function unsignedInteger(value: string, field: string): number {
+function unsignedInteger(value: string, field: string): bigint {
   if (!/^\d+$/.test(value)) {
     throw new InvalidRequestError(field, "must be an unsigned decimal integer");
   }
-  const parsed = Number(value);
-  if (!Number.isSafeInteger(parsed)) {
-    throw new InvalidRequestError(field, "exceeds the JavaScript safe integer range");
+  const parsed = BigInt(value);
+  if (parsed > 18_446_744_073_709_551_615n) {
+    throw new InvalidRequestError(field, "exceeds the Rust u64 range");
   }
   return parsed;
+}
+
+function safeUnsignedInteger(value: string, field: string): number {
+  const parsed = unsignedInteger(value, field);
+  if (parsed > BigInt(Number.MAX_SAFE_INTEGER)) {
+    throw new InvalidRequestError(field, "exceeds the JavaScript safe integer range");
+  }
+  return Number(parsed);
 }
 
 export function checkedU32(value: number, field: string): number {
@@ -700,10 +708,10 @@ export function transferHistoryRequestToWire(value: Model.TransferHistoryRequest
 export function streamConfigFromWire(value: Wire.StreamConfigWire): Model.StreamConfig {
   return new Model.StreamConfig({
     maxReconnectAttempts: value.max_reconnect_attempts,
-    initialReconnectDelayMs: unsignedInteger(value.initial_reconnect_delay_ms, "initial_reconnect_delay_ms"),
-    maxReconnectDelayMs: unsignedInteger(value.max_reconnect_delay_ms, "max_reconnect_delay_ms"),
-    idleTimeoutMs: unsignedInteger(value.idle_timeout_ms, "idle_timeout_ms"),
-    bufferSize: unsignedInteger(value.buffer_size, "buffer_size"),
+    initialReconnectDelayMs: safeUnsignedInteger(value.initial_reconnect_delay_ms, "initial_reconnect_delay_ms"),
+    maxReconnectDelayMs: safeUnsignedInteger(value.max_reconnect_delay_ms, "max_reconnect_delay_ms"),
+    idleTimeoutMs: safeUnsignedInteger(value.idle_timeout_ms, "idle_timeout_ms"),
+    bufferSize: safeUnsignedInteger(value.buffer_size, "buffer_size"),
     overflow: identifier(Model.Overflow.values, value.overflow, "overflow"),
   });
 }
@@ -802,6 +810,23 @@ export function upbitOrderBookInstrumentToWire(value: Model.UpbitOrderBookInstru
     quote_currency: value.quoteCurrency,
     tick_size: value.tickSize.toString(),
     supported_levels: value.supportedLevels.map((item) => item.toString()),
+  };
+}
+
+export function upbitDepositInfoFromWire(value: Wire.UpbitDepositInfoWire): Model.UpbitDepositInfo {
+  return new Model.UpbitDepositInfo(value.asset, value.network === null ? null : Model.Network.other(value.network), value.provider_network === null ? null : value.provider_network, value.is_deposit_possible, value.deposit_impossible_reason === null ? null : value.deposit_impossible_reason, Model.Decimal.parse(value.minimum_deposit_amount), unsignedInteger(value.minimum_deposit_confirmations, "minimum_deposit_confirmations"), unsignedInteger(value.decimal_precision, "decimal_precision"));
+}
+
+export function upbitDepositInfoToWire(value: Model.UpbitDepositInfo): Wire.UpbitDepositInfoWire {
+  return {
+    asset: value.asset,
+    network: value.network === null ? null : value.network.id,
+    provider_network: value.providerNetwork === null ? null : value.providerNetwork,
+    is_deposit_possible: value.isDepositPossible,
+    deposit_impossible_reason: value.depositImpossibleReason === null ? null : value.depositImpossibleReason,
+    minimum_deposit_amount: value.minimumDepositAmount.toString(),
+    minimum_deposit_confirmations: value.minimumDepositConfirmations.toString(),
+    decimal_precision: value.decimalPrecision.toString(),
   };
 }
 

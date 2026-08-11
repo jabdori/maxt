@@ -25,6 +25,10 @@ void _generatedProviderGuard({
   upbit.orderbookInstruments(_generatedProviderValue<List<Market>>());
   upbit.marketEvents();
   upbit.testOrder(_generatedProviderValue<OrderRequest>());
+  upbit.depositInfo(
+    _generatedProviderValue<String>(),
+    _generatedProviderValue<Network>(),
+  );
   BithumbAdapter();
   bithumb.marketWarnings();
   bithumb.marketAlerts();

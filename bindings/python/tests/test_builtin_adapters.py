@@ -31,6 +31,7 @@ from maxt import (
     InvalidRequestError,
     Market,
     MarketEvent,
+    Network,
     OrderRequest,
     OrderStatus,
     Side,
@@ -200,6 +201,19 @@ class FakeNativeUpbitAdapter:
             "remaining_quantity": "0.01",
             "price": "100000000",
             "created_at": 1_700_000_000_000_000_014,
+        }
+
+    async def deposit_info(self, asset, network):
+        self.deposit_info_args = (asset, network)
+        return {
+            "asset": "BTC",
+            "network": "bitcoin",
+            "provider_network": "BTC",
+            "is_deposit_possible": True,
+            "deposit_impossible_reason": None,
+            "minimum_deposit_amount": "0.0005",
+            "minimum_deposit_confirmations": 18_446_744_073_709_551_615,
+            "decimal_precision": 18_446_744_073_709_551_615,
         }
 
 
@@ -422,6 +436,7 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
                     Decimal("100000000"),
                 )
             )
+            deposit_info = await adapter.deposit_info("BTC", Network.BITCOIN)
 
         self.assertIsInstance(adapter, Adapter)
         self.assertIs(client.adapter, adapter)
@@ -447,6 +462,14 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(adapter._handle.test_order_request["order_type"], "limit")
         self.assertEqual(test_order.id, "dry-run-order")
         self.assertIs(test_order.status, OrderStatus.ACCEPTED)
+        self.assertEqual(adapter._handle.deposit_info_args, ("BTC", Network.BITCOIN))
+        self.assertTrue(deposit_info.is_deposit_possible)
+        self.assertEqual(deposit_info.minimum_deposit_amount, Decimal("0.0005"))
+        self.assertEqual(
+            deposit_info.minimum_deposit_confirmations,
+            18_446_744_073_709_551_615,
+        )
+        self.assertEqual(deposit_info.decimal_precision, 18_446_744_073_709_551_615)
 
     async def test_native_stream_items_are_decoded_and_only_termination_ends(self) -> None:
         native = SimpleNamespace(NativeUpbitAdapter=FakeNativeUpbitAdapter)

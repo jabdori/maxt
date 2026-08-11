@@ -1175,6 +1175,7 @@ pub(crate) fn render_wire_shape_guard(schema: &Schema) -> String {
         "UpbitMarketEventWire",
         "BithumbMarketAlertWire",
         "BithumbNoticeWire",
+        "BithumbApiKeyWire",
         "BithumbAssetFeeWire",
         "BithumbNetworkFeeWire",
         "BinanceListenKeyWire",
@@ -1363,6 +1364,9 @@ fn provider_method_source(exchange: &str, method: &str) -> &'static str {
         }
         ("bithumb", "transfer_fees") => {
             "  Future<List<BithumbAssetFee>> transferFees(String currency) => _nativeFuture(\n    () => _handle.bithumbTransferFees(currency: currency),\n  ).then((values) => values.map(_bithumbAssetFeeFromWire).toList(growable: false));\n"
+        }
+        ("bithumb", "api_keys") => {
+            "  Future<List<BithumbApiKey>> apiKeys() =>\n      _nativeFuture(_handle.bithumbApiKeys).then(\n        (values) => values.map(_bithumbApiKeyFromWire).toList(growable: false),\n      );\n"
         }
         ("binance", "spot_symbol_filters") => {
             "  Future<BinanceSymbolFilters> spotSymbolFilters(Market market) =>\n      _nativeFuture(\n        () => _handle.binanceSpotSymbolFilters(market: _marketToWire(market)),\n      ).then(_binanceSymbolFiltersFromWire);\n"

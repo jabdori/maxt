@@ -5,6 +5,7 @@ import test from "node:test";
 import * as maxt from "../dist/node.js";
 import {
   Adapter,
+  AuthError,
   BinanceAdapter,
   BinanceMarket,
   BithumbAdapter,
@@ -133,6 +134,15 @@ test("Bithumb transfer fees reject an empty currency before the Node boundary", 
   await assert.rejects(
     bithumb.transferFees(" "),
     (error) => error instanceof InvalidRequestError && error.field === "currency",
+  );
+});
+
+test("Bithumb API keys reject missing credentials before a network request", async () => {
+  await maxt.initialize();
+
+  await assert.rejects(
+    new maxt.BithumbAdapter().apiKeys(),
+    (error) => error instanceof AuthError,
   );
 });
 

@@ -99,6 +99,15 @@ pub struct BithumbNotice {
     pub modified_at: Timestamp,
 }
 
+/// One API key registered on a Bithumb account.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BithumbApiKey {
+    /// Bithumb's API access-key identifier.
+    pub access_key: String,
+    /// Key expiration time, converted from Bithumb's offset timestamp.
+    pub expires_at: Timestamp,
+}
+
 /// One Bithumb asset's public transfer-fee catalog entry.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BithumbAssetFee {
@@ -200,6 +209,11 @@ impl BithumbAdapter {
     /// account's current transfer status and limits.
     pub async fn transfer_fees(&self, currency: &str) -> Result<Vec<BithumbAssetFee>> {
         rest::transfer_fees(self.http()?, currency).await
+    }
+
+    /// Returns the API keys registered on this Bithumb account.
+    pub async fn api_keys(&self) -> Result<Vec<BithumbApiKey>> {
+        private::api_keys(self.http()?, self.credentials()?).await
     }
 
     pub(crate) fn is_authenticated(&self) -> bool {

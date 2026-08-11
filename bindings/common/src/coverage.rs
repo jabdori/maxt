@@ -1818,7 +1818,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("withdrawals"),
         Validation::Fixture,
     ),
-    planned(operation(
+    operation(
         Exchange::Bithumb,
         "wallet",
         "api_keys",
@@ -1828,8 +1828,8 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         Authentication::Jwt,
         OperationRisk::Read,
         OperationMapping::Provider("api_keys"),
-        Validation::Documented,
-    )),
+        Validation::Fixture,
+    ),
     planned(operation(
         Exchange::Bithumb,
         "twap",

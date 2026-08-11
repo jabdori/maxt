@@ -12,6 +12,7 @@ from .models import (
     BinanceMarket,
     BinanceSpotOrderDetail,
     BinanceSymbolFilters,
+    BithumbApiKey,
     BithumbAssetFee,
     BithumbMarketAlert,
     BithumbNotice,
@@ -293,6 +294,10 @@ class BithumbAdapter(_NativeAdapter):
     async def transfer_fees(self, currency: str) -> list[BithumbAssetFee]:
         values = await self._call(self._handle.transfer_fees, currency)
         return [_model_from_wire("BithumbAssetFee", value) for value in values]
+
+    async def api_keys(self) -> list[BithumbApiKey]:
+        values = await self._call(self._handle.api_keys)
+        return [_model_from_wire("BithumbApiKey", value) for value in values]
 
 
 class BinanceListenKey:

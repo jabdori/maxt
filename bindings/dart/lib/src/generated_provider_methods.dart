@@ -100,6 +100,11 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
         (values) =>
             values.map(_bithumbAssetFeeFromWire).toList(growable: false),
       );
+
+  Future<List<BithumbApiKey>> apiKeys() =>
+      _nativeFuture(_handle.bithumbApiKeys).then(
+        (values) => values.map(_bithumbApiKeyFromWire).toList(growable: false),
+      );
 }
 
 extension BinanceAdapterGeneratedMethods on BinanceAdapter {

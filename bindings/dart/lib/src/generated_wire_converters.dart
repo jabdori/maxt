@@ -931,6 +931,17 @@ wire.WireBithumbNotice _bithumbNoticeToWire(BithumbNotice value) =>
       modifiedAtNs: _timestampToWire(value.modifiedAt),
     );
 
+BithumbApiKey _bithumbApiKeyFromWire(wire.WireBithumbApiKey value) =>
+    BithumbApiKey(
+      accessKey: value.accessKey,
+      expiresAt: _timestampFromWire(value.expiresAtNs)!,
+    );
+wire.WireBithumbApiKey _bithumbApiKeyToWire(BithumbApiKey value) =>
+    wire.WireBithumbApiKey(
+      accessKey: value.accessKey,
+      expiresAtNs: _timestampToWire(value.expiresAt),
+    );
+
 BithumbAssetFee _bithumbAssetFeeFromWire(wire.WireBithumbAssetFee value) =>
     BithumbAssetFee(
       displayName: value.displayName,

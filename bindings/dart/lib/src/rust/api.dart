@@ -126,6 +126,8 @@ abstract class NativeClient implements RustOpaqueInterface {
         secretKey: secretKey,
       );
 
+  Future<List<WireBithumbApiKey>> bithumbApiKeys();
+
   Future<List<WireBithumbMarketAlert>> bithumbMarketAlerts();
 
   Future<List<WireBithumbMarketWarning>> bithumbMarketWarnings();

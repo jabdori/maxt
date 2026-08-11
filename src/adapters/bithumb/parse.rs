@@ -16,8 +16,8 @@ use crate::types::{
 };
 
 use super::{
-    BithumbAlertStep, BithumbAssetFee, BithumbMarketAlert, BithumbNetworkFee, BithumbNotice,
-    network_from_provider,
+    BithumbAlertStep, BithumbApiKey, BithumbAssetFee, BithumbMarketAlert, BithumbNetworkFee,
+    BithumbNotice, network_from_provider,
 };
 
 /// Exchange identifier used in adapter errors.
@@ -313,6 +313,26 @@ pub(crate) fn notices(value: &Value) -> Result<Vec<BithumbNotice>> {
                 url: text(entry, "pc_url")?.to_owned(),
                 published_at: kst_timestamp(text(entry, "published_at")?, "published_at")?,
                 modified_at: kst_timestamp(text(entry, "modified_at")?, "modified_at")?,
+            })
+        })
+        .collect()
+}
+
+/// Parses `/v1/api_keys` and keeps Bithumb's API-key identifier and expiry.
+pub(crate) fn api_keys(value: &Value) -> Result<Vec<BithumbApiKey>> {
+    entries(value)?
+        .iter()
+        .map(|entry| {
+            let access_key = text(entry, "access_key")?.to_owned();
+            if access_key.trim().is_empty() {
+                return Err(Error::decode("`access_key` must not be empty"));
+            }
+            let expires_at = offset_time(text(entry, "expire_at")?).ok_or_else(|| {
+                Error::decode("`expire_at` is not an RFC 3339 timestamp with an offset")
+            })?;
+            Ok(BithumbApiKey {
+                access_key,
+                expires_at,
             })
         })
         .collect()
@@ -868,6 +888,14 @@ mod tests {
       }
     ]"#;
 
+    // Shape reference: https://apidocs.bithumb.com/reference/api-키-리스트-조회.md
+    const API_KEYS: &str = r#"[
+      {
+        "access_key": "example-access-key-1",
+        "expire_at": "2027-06-11T09:00:00+09:00"
+      }
+    ]"#;
+
     // Shape reference: https://apidocs.bithumb.com/reference/현재가-조회.md
     const TICKER: &str = r#"[
       {
@@ -1373,6 +1401,15 @@ mod tests {
         assert_eq!(notices[0].url, "https://feed.bithumb.com/notice/1654458");
         assert_eq!(notices[0].published_at, Timestamp::from_secs(1_786_438_800));
         assert_eq!(notices[0].modified_at, Timestamp::from_secs(1_786_433_076));
+    }
+
+    #[test]
+    fn api_keys_keep_the_identifier_and_offset_expiry() {
+        let keys = api_keys(&parsed(API_KEYS)).expect("API keys parse");
+
+        assert_eq!(keys.len(), 1);
+        assert_eq!(keys[0].access_key, "example-access-key-1");
+        assert_eq!(keys[0].expires_at, Timestamp::from_secs(1_812_672_000));
     }
 
     #[test]

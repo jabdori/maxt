@@ -80,6 +80,13 @@ void main() {
     );
   });
 
+  test('Bithumb API 키 목록은 자격증명 없이 네트워크 요청 전에 거절한다', () async {
+    await expectLater(
+      BithumbAdapter().apiKeys(),
+      throwsA(isA<AuthenticationError>()),
+    );
+  });
+
   test('Upbit 호가 묶음 단위는 Decimal로 native 경계까지 전달한다', () async {
     final upbit = UpbitAdapter();
     final market = Market.spot(Exchange.upbit, 'BTC', 'KRW');

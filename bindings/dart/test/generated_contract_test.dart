@@ -133,6 +133,7 @@ void main() {
         'marketAlerts': (BithumbAdapter value) => value.marketAlerts,
         'notices': (BithumbAdapter value) => value.notices,
         'transferFees': (BithumbAdapter value) => value.transferFees,
+        'apiKeys': (BithumbAdapter value) => value.apiKeys,
       },
       'binance': {
         'venue': (BinanceAdapter value) => value.venue,

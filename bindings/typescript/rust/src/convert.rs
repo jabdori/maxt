@@ -1,6 +1,6 @@
 use maxt::adapters::{
     BinanceSpotOrderDetail, BinanceSymbolFilters, BithumbAlertStep, BithumbMarketAlert,
-    BithumbAssetFee, BithumbNetworkFee, BithumbNotice,
+    BithumbApiKey, BithumbAssetFee, BithumbNetworkFee, BithumbNotice,
     HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind, UpbitMarketEvent,
     UpbitOrderBookInstrument, UpbitYearCandle,
 };
@@ -280,6 +280,13 @@ pub(crate) struct WireBithumbNotice {
     pub(crate) url: String,
     pub(crate) published_at: String,
     pub(crate) modified_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBithumbApiKey {
+    pub(crate) access_key: String,
+    pub(crate) expires_at: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1643,6 +1650,17 @@ impl TryFrom<BithumbNotice> for WireBithumbNotice {
             url: value.url,
             published_at: timestamp_to_wire(value.published_at),
             modified_at: timestamp_to_wire(value.modified_at),
+        })
+    }
+}
+
+impl TryFrom<BithumbApiKey> for WireBithumbApiKey {
+    type Error = Error;
+
+    fn try_from(value: BithumbApiKey) -> Result<Self, Self::Error> {
+        Ok(Self {
+            access_key: value.access_key,
+            expires_at: timestamp_to_wire(value.expires_at),
         })
     }
 }

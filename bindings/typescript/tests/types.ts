@@ -27,6 +27,7 @@ import {
   type WithdrawalQuote,
   type UpbitOrderBookInstrument,
   type UpbitYearCandle,
+  type BithumbApiKey,
   type BithumbAssetFee,
   type BithumbNotice,
 } from "../src/node.js";
@@ -58,6 +59,7 @@ const instruments: Promise<readonly UpbitOrderBookInstrument[]> =
 const bithumb = new BithumbAdapter();
 const notices: Promise<readonly BithumbNotice[]> = bithumb.notices();
 const transferFees: Promise<readonly BithumbAssetFee[]> = bithumb.transferFees("BTC");
+const apiKeys: Promise<readonly BithumbApiKey[]> = bithumb.apiKeys();
 const destination = TransferDestination.chain(
   new ChainDestination("BTC", Network.Bitcoin, "bc1qdestination"),
 );
@@ -85,6 +87,7 @@ void yearCandles;
 void instruments;
 void notices;
 void transferFees;
+void apiKeys;
 void networks;
 void addresses;
 void address;

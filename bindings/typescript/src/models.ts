@@ -880,6 +880,10 @@ export class BithumbNotice {
   }
 }
 
+export class BithumbApiKey {
+  constructor(readonly accessKey: string, readonly expiresAt: Timestamp) { freezeRecord(this); }
+}
+
 export class BithumbAssetFee {
   readonly asset: string;
   readonly networks: readonly BithumbNetworkFee[];

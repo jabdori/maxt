@@ -524,6 +524,13 @@ final class BithumbNotice {
   final Timestamp modifiedAt;
 }
 
+final class BithumbApiKey {
+  const BithumbApiKey({required this.accessKey, required this.expiresAt});
+
+  final String accessKey;
+  final Timestamp expiresAt;
+}
+
 final class BithumbAssetFee {
   BithumbAssetFee({
     required this.displayName,

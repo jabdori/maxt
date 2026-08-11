@@ -1134,6 +1134,7 @@ const MODELS: &[&str] = &[
     "UpbitOrderBookInstrument",
     "BithumbMarketAlert",
     "BithumbNotice",
+    "BithumbApiKey",
     "BithumbAssetFee",
     "BithumbNetworkFee",
     "BinanceSymbolFilters",
@@ -1368,6 +1369,13 @@ const BITHUMB_METHODS: &[ProviderMethod] = &[
         kind: ProviderMethodKind::Async,
         arguments: FEE_CURRENCY,
         result: ApiType::List("BithumbAssetFee"),
+    },
+    ProviderMethod {
+        rust_name: "api_keys",
+        name: "apiKeys",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::List("BithumbApiKey"),
     },
 ];
 const BINANCE_METHODS: &[ProviderMethod] = &[
@@ -2058,6 +2066,13 @@ pub fn binding_schema() -> Schema {
             ],
         ),
         record(
+            "BithumbApiKeyWire",
+            vec![
+                field("access_key", Type::String),
+                field("expires_at", timestamp.clone()),
+            ],
+        ),
+        record(
             "BithumbNetworkFeeWire",
             vec![
                 field("network", Type::Identifier("Network")),
@@ -2571,7 +2586,7 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
-        native_api_version: 14,
+        native_api_version: 15,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
         identifiers: IDENTIFIERS,

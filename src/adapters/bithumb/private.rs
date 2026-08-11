@@ -20,9 +20,9 @@ use crate::types::{
     OrderRules, OrderStatus, OrderType, Page, Side, Size, Timestamp,
 };
 
-use super::BithumbCredentials;
 use super::parse::{self, EXCHANGE};
 use super::rest;
+use super::{BithumbApiKey, BithumbCredentials};
 
 /// JWT claims sent to Bithumb; query fields are omitted for parameterless calls.
 #[derive(Debug, Serialize)]
@@ -162,6 +162,10 @@ fn encoded_value(value: &str) -> String {
 
 pub(crate) fn balances_request(credentials: &BithumbCredentials) -> Result<HttpRequest> {
     signed_get(credentials, "/v1/accounts", &[])
+}
+
+pub(crate) fn api_keys_request(credentials: &BithumbCredentials) -> Result<HttpRequest> {
+    signed_get(credentials, "/v1/api_keys", &[])
 }
 
 pub(crate) fn order_rules_request(
@@ -600,6 +604,13 @@ pub(crate) async fn open_orders(
     parse::orders(&rest::send(http, &open_orders_request(credentials, market)?).await?)
 }
 
+pub(crate) async fn api_keys(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+) -> Result<Vec<BithumbApiKey>> {
+    parse::api_keys(&rest::send(http, &api_keys_request(credentials)?).await?)
+}
+
 pub(crate) async fn order(
     http: &HttpTransport,
     credentials: &BithumbCredentials,
@@ -927,6 +938,11 @@ mod tests {
         assert_eq!(
             balances_request(&credentials()).expect("signed").target(),
             "/v1/accounts"
+        );
+        // Shape reference: https://apidocs.bithumb.com/reference/api-키-리스트-조회.md
+        assert_eq!(
+            api_keys_request(&credentials()).expect("signed").target(),
+            "/v1/api_keys"
         );
         assert_eq!(
             order_rules_request(&credentials(), &btc_krw())

@@ -306,6 +306,15 @@ impl NativeBithumbAdapter {
             |py, values| list_to_wire(py, &values, crate::convert::bithumb_asset_fee_to_wire),
         )
     }
+
+    fn api_keys<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.api_keys().await },
+            |py, values| list_to_wire(py, &values, crate::convert::bithumb_api_key_to_wire),
+        )
+    }
 }
 
 #[pyclass(module = "maxt._native", frozen)]

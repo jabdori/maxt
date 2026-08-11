@@ -449,6 +449,12 @@ class BithumbNotice(WireModel):
 
 
 @dataclass(frozen=True)
+class BithumbApiKey(WireModel):
+    access_key: str
+    expires_at: Timestamp
+
+
+@dataclass(frozen=True)
 class BithumbAssetFee(WireModel):
     display_name: str
     asset: str
@@ -499,6 +505,7 @@ __all__ = [
     "UpbitYearCandle",
     "UpbitOrderBookInstrument",
     "BithumbNotice",
+    "BithumbApiKey",
     "BithumbAssetFee",
     "BithumbNetworkFee",
 ]

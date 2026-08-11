@@ -831,6 +831,17 @@ export function bithumbNoticeToWire(value: Model.BithumbNotice): Wire.BithumbNot
   };
 }
 
+export function bithumbApiKeyFromWire(value: Wire.BithumbApiKeyWire): Model.BithumbApiKey {
+  return new Model.BithumbApiKey(value.access_key, Model.Timestamp.fromNanoseconds(BigInt(value.expires_at)));
+}
+
+export function bithumbApiKeyToWire(value: Model.BithumbApiKey): Wire.BithumbApiKeyWire {
+  return {
+    access_key: value.accessKey,
+    expires_at: value.expiresAt.nanosecondsSinceEpoch.toString(),
+  };
+}
+
 export function bithumbAssetFeeFromWire(value: Wire.BithumbAssetFeeWire): Model.BithumbAssetFee {
   return new Model.BithumbAssetFee(value.display_name, value.asset, value.networks.map((item) => bithumbNetworkFeeFromWire(item)));
 }

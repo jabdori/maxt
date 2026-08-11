@@ -196,6 +196,12 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
         field: error.field,
       };
     }
+    let apiKeysError;
+    try {
+      await bithumb.apiKeys();
+    } catch (error) {
+      apiKeysError = { name: error.constructor.name };
+    }
     return {
       exchange: client.exchange.id,
       markets: (await client.markets(maxt.MarketKind.Spot)).length,
@@ -222,6 +228,7 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
       aggregationError,
       noticeErrors,
       feeError,
+      apiKeysError,
     };
   });
 
@@ -254,5 +261,6 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
       { name: "InvalidRequestError", field: "count" },
     ],
     feeError: { name: "InvalidRequestError", field: "currency" },
+    apiKeysError: { name: "AuthError" },
   });
 });

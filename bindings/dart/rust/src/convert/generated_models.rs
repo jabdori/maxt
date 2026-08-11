@@ -1303,6 +1303,32 @@ impl TryFrom<WireBithumbNotice> for maxt::BithumbNotice {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbApiKey {
+    pub access_key: String,
+    pub expires_at_ns: i64,
+}
+
+impl From<maxt::BithumbApiKey> for WireBithumbApiKey {
+    fn from(value: maxt::BithumbApiKey) -> Self {
+        Self {
+            access_key: value.access_key,
+            expires_at_ns: timestamp_to_wire(value.expires_at),
+        }
+    }
+}
+
+impl TryFrom<WireBithumbApiKey> for maxt::BithumbApiKey {
+    type Error = NativeError;
+
+    fn try_from(value: WireBithumbApiKey) -> Result<Self, Self::Error> {
+        Ok(Self {
+            access_key: value.access_key,
+            expires_at: Timestamp::from_nanos(value.expires_at_ns),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireBithumbAssetFee {
     pub display_name: String,
     pub asset: String,

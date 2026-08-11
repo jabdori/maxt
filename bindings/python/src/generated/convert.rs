@@ -1465,6 +1465,26 @@ pub(crate) fn bithumb_notice_to_wire(
     )
 }
 
+pub(crate) fn bithumb_api_key_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::BithumbApiKey> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::BithumbApiKey {
+        access_key: required(dict, "access_key")?.extract::<String>()?,
+        expires_at: required(dict, "expires_at")?.extract().map(Timestamp::from_nanos)?,
+    })
+}
+
+pub(crate) fn bithumb_api_key_to_wire(
+    py: Python<'_>,
+    value: &maxt::BithumbApiKey,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "access_key" => &value.access_key,
+        "expires_at" => timestamp_to_wire(value.expires_at),
+    )
+}
+
 pub(crate) fn bithumb_asset_fee_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::BithumbAssetFee> {
     let value = wire_object(value)?;
     let dict = value.cast::<PyDict>()?;

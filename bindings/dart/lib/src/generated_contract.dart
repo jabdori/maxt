@@ -140,6 +140,7 @@ const providerMethods = <String, List<String>>{
     'marketAlerts',
     'notices',
     'transferFees',
+    'apiKeys',
   ],
   'binance': <String>[
     'venue',

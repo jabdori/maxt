@@ -46,7 +46,7 @@
 | Exchange | Adapter | Python | Dart / TypeScript |
 | --- | --- | --- | --- |
 | upbit | `UpbitAdapter` | `region`, `order_books`, `order_books_at_level`, `tickers`, `tickers_by_quote`, `year_candles`, `orderbook_instruments`, `market_events` | `region`, `orderBooks`, `orderBooksAtLevel`, `tickers`, `tickersByQuote`, `yearCandles`, `orderbookInstruments`, `marketEvents` |
-| bithumb | `BithumbAdapter` | `market_warnings`, `market_alerts`, `notices`, `transfer_fees` | `marketWarnings`, `marketAlerts`, `notices`, `transferFees` |
+| bithumb | `BithumbAdapter` | `market_warnings`, `market_alerts`, `notices`, `transfer_fees`, `api_keys` | `marketWarnings`, `marketAlerts`, `notices`, `transferFees`, `apiKeys` |
 | binance | `BinanceAdapter` | `venue`, `spot_symbol_filters`, `spot_order`, `usd_m_create_listen_key`, `usd_m_keepalive_listen_key`, `usd_m_close_listen_key` | `venue`, `spotSymbolFilters`, `spotOrder`, `usdMCreateListenKey`, `usdMKeepaliveListenKey`, `usdMCloseListenKey` |
 | hyperliquid | `HyperliquidAdapter` | `is_testnet`, `non_funding_ledger`, `asset_context` | `isTestnet`, `nonFundingLedger`, `assetContext` |
 
@@ -202,7 +202,7 @@ Documentation baseline: `2026-08-10`.
 | bithumb | wallet | `deposits` | `GET` | `/v1/deposits` | `http` | JWT | read | general | common `deposits` | `Implemented` | `Fixture` |
 | bithumb | wallet | `deposit` | `GET` | `/v1/deposit` | `http` | JWT | read | general | common `deposit` | `Partial` | `Fixture` |
 | bithumb | wallet | `withdrawals` | `GET` | `/v1/withdraws` | `http` | JWT | read | general | common `withdrawals` | `Implemented` | `Fixture` |
-| bithumb | wallet | `api_keys` | `GET` | `/v1/api_keys` | `http` | JWT | read | general | provider `api_keys` | `Planned` | `Documented` |
+| bithumb | wallet | `api_keys` | `GET` | `/v1/api_keys` | `http` | JWT | read | general | provider `api_keys` | `Implemented` | `Fixture` |
 | bithumb | twap | `twap` | `GET` | `/v1/twap` | `http` | JWT | read | general | provider `twap` | `Planned` | `Documented` |
 | bithumb | twap | `create_twap` | `POST` | `/v1/twap` | `http` | JWT | financial write | general | provider `create_twap` | `Planned` | `Documented` |
 | bithumb | twap | `cancel_twap` | `DELETE` | `/v1/twap` | `http` | JWT | financial write | general | provider `cancel_twap` | `Planned` | `Documented` |

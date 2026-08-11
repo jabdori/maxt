@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   Balance,
   BinanceMarket,
+  BithumbApiKey,
   BithumbAssetFee,
   BithumbNetworkFee,
   CancelOrdersRequest,
@@ -190,6 +191,14 @@ test("Bithumb transfer fees preserve fixed and rate rules per network", () => {
   assert.equal(fee.networks[0].withdrawalFee.kind, "fixed");
   assert.equal(fee.networks[1].withdrawalFee.kind, "rate");
   assert.throws(() => fee.networks.push(fixed), TypeError);
+});
+
+test("Bithumb API keys preserve their identifier and expiry", () => {
+  const key = new BithumbApiKey("example-access-key-1", Timestamp.fromSeconds(1812672000n));
+
+  assert.equal(key.accessKey, "example-access-key-1");
+  assert.equal(key.expiresAt.nanosecondsSinceEpoch, 1812672000000000000n);
+  assert.equal(Object.isFrozen(key), true);
 });
 
 test("string variants are stable singleton values in Rust declaration order", () => {

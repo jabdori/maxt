@@ -27,7 +27,7 @@ use wasm_bindgen::prelude::*;
 use crate::client::NativeClient;
 use crate::convert::{
     WireBinanceSpotOrderDetail, WireBinanceSymbolFilters, WireBithumbMarketAlert,
-    WireBithumbAssetFee, WireBithumbNotice, WireHyperliquidAssetContext,
+    WireBithumbApiKey, WireBithumbAssetFee, WireBithumbNotice, WireHyperliquidAssetContext,
     WireHyperliquidLedgerEntry, WireMarket, WireOrderBook, WirePage, WireTicker,
     WireUpbitMarketEvent, WireUpbitOrderBookInstrument, WireUpbitYearCandle, decimal_from_wire,
     from_wire_text, outcome, timestamp_from_wire,
@@ -499,6 +499,10 @@ impl NativeBithumb {
             Err(error) => outcome::<Value>(Err(error)),
         }
     }
+
+    async fn api_keys(&self) -> Value {
+        outcome(wire_vec::<_, WireBithumbApiKey>(self.adapter.api_keys().await))
+    }
 }
 
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
@@ -539,6 +543,12 @@ impl NativeBithumb {
         let this = self.clone();
         let currency = native_json_text(currency, "currency");
         spawn_native(env, async move { this.transfer_fees(currency).await })
+    }
+
+    #[napi(js_name = "apiKeys")]
+    pub fn api_keys_native<'env>(&self, env: &'env Env) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.api_keys().await })
     }
 }
 
@@ -1016,6 +1026,11 @@ impl NativeBithumb {
     #[wasm_bindgen(js_name = "transferFees")]
     pub async fn transfer_fees_wasm(&self, currency: String) -> JsValue {
         crate::web::value(self.transfer_fees(Ok(currency)).await)
+    }
+
+    #[wasm_bindgen(js_name = "apiKeys")]
+    pub async fn api_keys_wasm(&self) -> JsValue {
+        crate::web::value(self.api_keys().await)
     }
 }
 

@@ -368,6 +368,10 @@ RECORD_FIELDS = {
         "asset": "string",
         "networks": "list:named:BithumbNetworkFee",
     },
+    "BithumbApiKey": {
+        "access_key": "string",
+        "expires_at": "timestamp",
+    },
     "BithumbNetworkFee": {
         "network": "identifier:Network",
         "provider_name": "string",

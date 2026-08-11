@@ -29,6 +29,7 @@ void _generatedProviderGuard({
   bithumb.marketAlerts();
   bithumb.notices();
   bithumb.transferFees(_generatedProviderValue<String>());
+  bithumb.apiKeys();
   BinanceAdapter.spot();
   BinanceAdapter.usdMFutures();
   binance.venue;

@@ -51,7 +51,8 @@ pub mod adapters;
 
 pub use adapter::{Adapter, BoxFuture};
 pub use adapters::{
-    BithumbAssetFee, BithumbNetworkFee, BithumbNotice, UpbitOrderBookInstrument, UpbitYearCandle,
+    BithumbApiKey, BithumbAssetFee, BithumbNetworkFee, BithumbNotice, UpbitOrderBookInstrument,
+    UpbitYearCandle,
 };
 pub use client::Client;
 pub use error::{Error, ExchangeErrorKind, Result, TransferErrorKind};

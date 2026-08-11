@@ -7,6 +7,7 @@ from maxt import (
     Adapter,
     BithumbAdapter,
     BithumbAlertStep,
+    BithumbApiKey,
     BithumbAssetFee,
     BithumbMarketAlert,
     BithumbNetworkFee,
@@ -236,6 +237,14 @@ class FakeNativeBithumbAdapter:
             }
         ]
 
+    async def api_keys(self):
+        return [
+            {
+                "access_key": "example-access-key-1",
+                "expires_at": 1_812_672_000_000_000_000,
+            }
+        ]
+
 
 class FakeNativeBinanceListenKey:
     value = "listen-key"
@@ -435,6 +444,7 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
             alerts = await adapter.market_alerts()
             notices = await adapter.notices(1)
             fees = await adapter.transfer_fees("BTC")
+            api_keys = await adapter.api_keys()
 
         self.assertEqual(adapter.exchange, Exchange.BITHUMB)
         self.assertTrue(adapter.authenticated)
@@ -450,6 +460,9 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(fees[0], BithumbAssetFee)
         self.assertIsInstance(fees[0].networks[0], BithumbNetworkFee)
         self.assertEqual(fees[0].networks[0].withdrawal_fee.value, Decimal("0.0002"))
+        self.assertIsInstance(api_keys[0], BithumbApiKey)
+        self.assertEqual(api_keys[0].access_key, "example-access-key-1")
+        self.assertEqual(api_keys[0].expires_at, 1_812_672_000_000_000_000)
 
     async def test_binance_exposes_spot_details_and_usd_m_listen_keys(self) -> None:
         native = SimpleNamespace(NativeBinanceAdapter=FakeNativeBinanceAdapter)

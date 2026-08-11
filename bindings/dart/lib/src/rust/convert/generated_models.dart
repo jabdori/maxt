@@ -64,6 +64,24 @@ class WireAssetNetwork {
           memoRequired == other.memoRequired;
 }
 
+class WireBithumbApiKey {
+  final String accessKey;
+  final PlatformInt64 expiresAtNs;
+
+  const WireBithumbApiKey({required this.accessKey, required this.expiresAtNs});
+
+  @override
+  int get hashCode => accessKey.hashCode ^ expiresAtNs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbApiKey &&
+          runtimeType == other.runtimeType &&
+          accessKey == other.accessKey &&
+          expiresAtNs == other.expiresAtNs;
+}
+
 class WireBithumbAssetFee {
   final String displayName;
   final String asset;

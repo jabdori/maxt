@@ -133,6 +133,13 @@ void main() {
     );
   });
 
+  test('WebAssembly도 자격증명 없는 Bithumb API 키 조회를 거절한다', () async {
+    await expectLater(
+      BithumbAdapter().apiKeys(),
+      throwsA(isA<AuthenticationError>()),
+    );
+  });
+
   test('기본 Web 스트림은 네트워크 backpressure를 사용하지 않는다', () async {
     final adapter = _ConfigAdapter();
     final client = Client(adapter);

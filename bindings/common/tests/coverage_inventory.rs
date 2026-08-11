@@ -237,7 +237,6 @@ fn planned_korean_operations_pin_official_request_contracts() {
         "upbit|travel_rule|travel_rule_verify_txid|POST|/v1/travel_rule/deposit/txid|http|Jwt|FinancialWrite|Region(\"Singapore\")",
         "bithumb|exchange|pending_orders|GET|/v2/orders/pending|http|Jwt|Read|General",
         "bithumb|exchange|batch_orders|POST|/v2/orders/batch|http|Jwt|FinancialWrite|General",
-        "bithumb|wallet|api_keys|GET|/v1/api_keys|http|Jwt|Read|General",
         "bithumb|twap|twap|GET|/v1/twap|http|Jwt|Read|General",
         "bithumb|twap|create_twap|POST|/v1/twap|http|Jwt|FinancialWrite|General",
         "bithumb|twap|cancel_twap|DELETE|/v1/twap|http|Jwt|FinancialWrite|General",
@@ -316,7 +315,9 @@ fn implemented_wallet_endpoint_sets_match_the_current_adapters() {
         ("GET", "/v1/withdraws"),
     ]);
     assert_eq!(paths(Exchange::Upbit, "wallet"), upbit_and_bithumb);
-    assert_eq!(paths(Exchange::Bithumb, "wallet"), upbit_and_bithumb);
+    let mut bithumb = upbit_and_bithumb.clone();
+    bithumb.insert(("GET", "/v1/api_keys"));
+    assert_eq!(paths(Exchange::Bithumb, "wallet"), bithumb);
     assert_eq!(
         paths(Exchange::Binance, "wallet"),
         BTreeSet::from([

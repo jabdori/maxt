@@ -769,6 +769,18 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
+    pub async fn bithumb_api_keys(&self) -> Result<Vec<WireBithumbApiKey>, NativeError> {
+        let adapter = match self.built_in("bithumb_api_keys")? {
+            BuiltInAdapter::Bithumb(adapter) => adapter,
+            _ => return Err(provider_mismatch("Bithumb")),
+        };
+        adapter
+            .api_keys()
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
     pub async fn binance_spot_symbol_filters(
         &self,
         market: WireMarket,

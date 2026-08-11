@@ -53,16 +53,16 @@ Documentation baseline: `2026-08-10`.
 
 | Exchange | Product | Mapped / official | Interfaces | Encodings | Status |
 | --- | --- | ---: | --- | --- | --- |
-| upbit | Quotation | 13 / — | `http`, `websocket_stream` | `json` | Partial |
-| upbit | Exchange | 11 / — | `http`, `websocket_stream` | `json` | Partial |
-| upbit | Deposits and withdrawals | 9 / — | `http` | `json` | Partial |
-| upbit | Travel Rule | 0 / — | `http` | `json` | Planned |
+| upbit | Quotation | 17 / 17 | `http`, `websocket_request`, `websocket_stream` | `json` | Partial |
+| upbit | Exchange | 14 / 14 | `http`, `websocket_stream` | `json` | Partial |
+| upbit | Deposits and withdrawals | 13 / 13 | `http` | `json` | Partial |
+| upbit | Travel Rule | 3 / 3 | `http` | `json` | Planned |
 | upbit | Korea pockets | 0 / — | `http` | `json` | Planned |
-| bithumb | Quotation | 12 / — | `http`, `websocket_stream` | `json` | Partial |
-| bithumb | Exchange | 11 / — | `http`, `websocket_stream` | `json` | Partial |
-| bithumb | Deposits and withdrawals | 9 / — | `http` | `json` | Partial |
-| bithumb | TWAP | 0 / — | `http` | `json` | Planned |
-| bithumb | KRW deposits and withdrawals | 0 / — | `http` | `json` | Planned |
+| bithumb | Quotation | 14 / 14 | `http`, `websocket_stream` | `json` | Partial |
+| bithumb | Exchange | 13 / 13 | `http`, `websocket_stream` | `json` | Partial |
+| bithumb | Deposits and withdrawals | 13 / 13 | `http` | `json` | Partial |
+| bithumb | TWAP | 3 / 3 | `http` | `json` | Planned |
+| bithumb | KRW deposits and withdrawals | 4 / 4 | `http` | `json` | Planned |
 | binance | Spot Trading | 15 / 118 | `http`, `websocket_request`, `websocket_stream`, `fix` | `json`, `sbe`, `fix_tag_value`, `fix_sbe` | Partial |
 | binance | Futures (USDⓈ-M) | 21 / 133 | `http`, `websocket_request`, `websocket_stream` | `json` | Partial |
 | binance | Futures (COIN-M) | 0 / 93 | `http`, `websocket_request`, `websocket_stream` | `json` | Planned |
@@ -111,137 +111,166 @@ Documentation baseline: `2026-08-10`.
 
 ## Recorded operations
 
-| Exchange | Product | Operation | Interface | Mapping | Implementation | Validation |
-| --- | --- | --- | --- | --- | --- | --- |
-| upbit | quotation | `markets` | `http` | common `markets`; provider `market_events` | `Implemented` | `LiveRead` |
-| upbit | quotation | `candles_seconds` | `http` | common `candles` | `Implemented` | `LiveRead` |
-| upbit | quotation | `candles_minutes` | `http` | common `candles` | `Implemented` | `LiveRead` |
-| upbit | quotation | `candles_days` | `http` | common `candles` | `Implemented` | `LiveRead` |
-| upbit | quotation | `candles_weeks` | `http` | common `candles` | `Implemented` | `LiveRead` |
-| upbit | quotation | `candles_months` | `http` | common `candles` | `Implemented` | `LiveRead` |
-| upbit | quotation | `trades_ticks` | `http` | common `trades` | `Implemented` | `LiveRead` |
-| upbit | quotation | `ticker` | `http` | common `ticker`; provider `tickers` | `Implemented` | `LiveRead` |
-| upbit | quotation | `orderbook` | `http` | common `order_book`; provider `order_books` | `Implemented` | `LiveRead` |
-| upbit | quotation | `ticker_stream` | `websocket_stream` | common `subscribe` | `Partial` | `LiveRead` |
-| upbit | quotation | `trade_stream` | `websocket_stream` | common `subscribe` | `Partial` | `LiveRead` |
-| upbit | quotation | `orderbook_stream` | `websocket_stream` | common `subscribe` | `Partial` | `LiveRead` |
-| upbit | quotation | `candle_stream` | `websocket_stream` | common `subscribe` | `Partial` | `LiveRead` |
-| upbit | exchange | `balances` | `http` | common `balances` | `Implemented` | `Fixture` |
-| upbit | exchange | `available_order_info` | `http` | common `order_rules` | `Implemented` | `Fixture` |
-| upbit | exchange | `open_orders` | `http` | common `open_orders` | `Implemented` | `Fixture` |
-| upbit | exchange | `get_order` | `http` | common `order`, `order_by_client_id` | `Partial` | `Fixture` |
-| upbit | exchange | `orders_by_ids` | `http` | common `orders_by_ids` | `Partial` | `Fixture` |
-| upbit | exchange | `closed_orders` | `http` | common `order_history` | `Partial` | `Fixture` |
-| upbit | exchange | `new_order` | `http` | common `place_order` | `Partial` | `Fixture` |
-| upbit | exchange | `cancel_order` | `http` | common `cancel_order`, `cancel_order_by_client_id` | `Partial` | `Fixture` |
-| upbit | exchange | `cancel_orders_by_ids` | `http` | common `cancel_orders` | `Partial` | `Fixture` |
-| upbit | exchange | `my_order_stream` | `websocket_stream` | common `subscribe_account` | `Partial` | `Fixture` |
-| upbit | exchange | `my_asset_stream` | `websocket_stream` | common `subscribe_account` | `Partial` | `Fixture` |
-| upbit | wallet | `wallet_status` | `http` | common `asset_networks` | `Implemented` | `Fixture` |
-| upbit | wallet | `deposit_addresses` | `http` | common `deposit_addresses` | `Implemented` | `Fixture` |
-| upbit | wallet | `deposit_address` | `http` | common `deposit_address` | `Implemented` | `Fixture` |
-| upbit | wallet | `create_deposit_address` | `http` | common `create_deposit_address` | `Implemented` | `Fixture` |
-| upbit | wallet | `withdraw_chance` | `http` | common `prepare_withdrawal` | `Implemented` | `Fixture` |
-| upbit | wallet | `withdraw_addresses` | `http` | common `prepare_withdrawal` | `Implemented` | `Fixture` |
-| upbit | wallet | `withdraw_coin` | `http` | common `withdraw` | `Implemented` | `Fixture` |
-| upbit | wallet | `deposits` | `http` | common `deposits` | `Implemented` | `Fixture` |
-| upbit | wallet | `withdrawals` | `http` | common `withdrawals` | `Implemented` | `Fixture` |
-| bithumb | quotation | `markets` | `http` | common `markets`; provider `market_warnings` | `Implemented` | `LiveRead` |
-| bithumb | quotation | `candles_minutes` | `http` | common `candles` | `Implemented` | `LiveRead` |
-| bithumb | quotation | `candles_days` | `http` | common `candles` | `Implemented` | `LiveRead` |
-| bithumb | quotation | `candles_weeks` | `http` | common `candles` | `Implemented` | `LiveRead` |
-| bithumb | quotation | `candles_months` | `http` | common `candles` | `Implemented` | `LiveRead` |
-| bithumb | quotation | `trades_ticks` | `http` | common `trades` | `Implemented` | `LiveRead` |
-| bithumb | quotation | `ticker` | `http` | common `ticker` | `Partial` | `LiveRead` |
-| bithumb | quotation | `orderbook` | `http` | common `order_book` | `Partial` | `LiveRead` |
-| bithumb | quotation | `virtual_asset_warning` | `http` | provider `market_alerts` | `Implemented` | `LiveRead` |
-| bithumb | quotation | `ticker_stream` | `websocket_stream` | common `subscribe` | `Partial` | `LiveRead` |
-| bithumb | quotation | `trade_stream` | `websocket_stream` | common `subscribe` | `Partial` | `LiveRead` |
-| bithumb | quotation | `orderbook_stream` | `websocket_stream` | common `subscribe` | `Partial` | `LiveRead` |
-| bithumb | exchange | `balances` | `http` | common `balances` | `Implemented` | `Fixture` |
-| bithumb | exchange | `available_order_info` | `http` | common `order_rules` | `Implemented` | `Fixture` |
-| bithumb | exchange | `orders` | `http` | common `open_orders` | `Partial` | `Fixture` |
-| bithumb | exchange | `get_order` | `http` | common `order`, `order_by_client_id` | `Partial` | `Fixture` |
-| bithumb | exchange | `orders_by_ids` | `http` | common `orders_by_ids` | `Partial` | `Fixture` |
-| bithumb | exchange | `closed_orders` | `http` | common `order_history` | `Partial` | `Fixture` |
-| bithumb | exchange | `new_order` | `http` | common `place_order` | `Partial` | `Fixture` |
-| bithumb | exchange | `cancel_order` | `http` | common `cancel_order`, `cancel_order_by_client_id` | `Partial` | `Fixture` |
-| bithumb | exchange | `cancel_orders` | `http` | common `cancel_orders` | `Partial` | `Fixture` |
-| bithumb | exchange | `my_order_stream` | `websocket_stream` | common `subscribe_account` | `Partial` | `Fixture` |
-| bithumb | exchange | `my_asset_stream` | `websocket_stream` | common `subscribe_account` | `Partial` | `Fixture` |
-| bithumb | wallet | `wallet_status` | `http` | common `asset_networks` | `Implemented` | `Fixture` |
-| bithumb | wallet | `deposit_addresses` | `http` | common `deposit_addresses` | `Implemented` | `Fixture` |
-| bithumb | wallet | `deposit_address` | `http` | common `deposit_address` | `Implemented` | `Fixture` |
-| bithumb | wallet | `create_deposit_address` | `http` | common `create_deposit_address` | `Implemented` | `Fixture` |
-| bithumb | wallet | `withdraw_chance` | `http` | common `prepare_withdrawal` | `Implemented` | `Fixture` |
-| bithumb | wallet | `withdraw_addresses` | `http` | common `prepare_withdrawal` | `Implemented` | `Fixture` |
-| bithumb | wallet | `withdraw_coin` | `http` | common `withdraw` | `Implemented` | `Fixture` |
-| bithumb | wallet | `deposits` | `http` | common `deposits` | `Implemented` | `Fixture` |
-| bithumb | wallet | `withdrawals` | `http` | common `withdrawals` | `Implemented` | `Fixture` |
-| binance | spot | `exchange_info` | `http` | common `markets`; provider `spot_symbol_filters` | `Implemented` | `LiveRead` |
-| binance | spot | `recent_trades` | `http` | common `trades` | `Implemented` | `LiveRead` |
-| binance | spot | `order_book` | `http` | common `order_book` | `Implemented` | `LiveRead` |
-| binance | spot | `ticker_24hr` | `http` | common `ticker` | `Implemented` | `LiveRead` |
-| binance | spot | `klines` | `http` | common `candles` | `Implemented` | `LiveRead` |
-| binance | spot | `account_information` | `http` | common `balances` | `Implemented` | `Fixture` |
-| binance | spot | `open_orders` | `http` | common `open_orders` | `Implemented` | `Fixture` |
-| binance | spot | `new_order` | `http` | common `place_order` | `Partial` | `Fixture` |
-| binance | spot | `cancel_order` | `http` | common `cancel_order`, `cancel_order_by_client_id` | `Partial` | `Fixture` |
-| binance | spot | `query_order` | `http` | provider `spot_order` | `Implemented` | `Fixture` |
-| binance | spot | `trade_stream` | `websocket_stream` | common `subscribe` | `Partial` | `LiveRead` |
-| binance | spot | `partial_book_depth_stream` | `websocket_stream` | common `subscribe` | `Partial` | `LiveRead` |
-| binance | spot | `ticker_stream` | `websocket_stream` | common `subscribe` | `Partial` | `LiveRead` |
-| binance | spot | `kline_stream` | `websocket_stream` | common `subscribe` | `Partial` | `LiveRead` |
-| binance | spot | `user_data_stream_signature` | `websocket_request` | common `subscribe_account` | `Partial` | `Fixture` |
-| binance | usd_m | `exchange_info` | `http` | common `markets` | `Implemented` | `LiveRead` |
-| binance | usd_m | `recent_trades` | `http` | common `trades` | `Implemented` | `LiveRead` |
-| binance | usd_m | `order_book` | `http` | common `order_book` | `Implemented` | `LiveRead` |
-| binance | usd_m | `ticker_24hr` | `http` | common `ticker` | `Implemented` | `LiveRead` |
-| binance | usd_m | `klines` | `http` | common `candles` | `Implemented` | `LiveRead` |
-| binance | usd_m | `account_information_v3` | `http` | common `balances`, `margin_summary` | `Implemented` | `Fixture` |
-| binance | usd_m | `open_orders` | `http` | common `open_orders` | `Implemented` | `Fixture` |
-| binance | usd_m | `new_order` | `http` | common `place_order` | `Partial` | `Fixture` |
-| binance | usd_m | `cancel_order` | `http` | common `cancel_order`, `cancel_order_by_client_id` | `Partial` | `Fixture` |
-| binance | usd_m | `position_information_v3` | `http` | common `positions` | `Implemented` | `Fixture` |
-| binance | usd_m | `funding_rate_history` | `http` | common `funding_rates` | `Implemented` | `LiveRead` |
-| binance | usd_m | `income_history` | `http` | common `funding_payments` | `Implemented` | `Fixture` |
-| binance | usd_m | `change_initial_leverage` | `http` | common `set_margin` | `Implemented` | `Fixture` |
-| binance | usd_m | `change_margin_type` | `http` | common `set_margin` | `Implemented` | `Fixture` |
-| binance | usd_m | `start_user_data_stream` | `http` | provider `usd_m_create_listen_key` | `Implemented` | `Fixture` |
-| binance | usd_m | `keepalive_user_data_stream` | `http` | provider `usd_m_keepalive_listen_key` | `Implemented` | `Fixture` |
-| binance | usd_m | `close_user_data_stream` | `http` | provider `usd_m_close_listen_key` | `Implemented` | `Fixture` |
-| binance | usd_m | `aggregate_trade_stream` | `websocket_stream` | provider `aggregate_trades` | `Planned` | `Documented` |
-| binance | usd_m | `partial_book_depth_stream` | `websocket_stream` | common `subscribe` | `Partial` | `LiveRead` |
-| binance | usd_m | `ticker_stream` | `websocket_stream` | common `subscribe` | `Partial` | `LiveRead` |
-| binance | usd_m | `kline_stream` | `websocket_stream` | common `subscribe` | `Partial` | `LiveRead` |
-| binance | wallet | `all_coins_information` | `http` | common `asset_networks` | `Implemented` | `Fixture` |
-| binance | wallet | `deposit_address` | `http` | common `deposit_address` | `Implemented` | `Fixture` |
-| binance | wallet | `api_key_permissions` | `http` | common `prepare_withdrawal` | `Implemented` | `Fixture` |
-| binance | wallet | `withdraw_address_list` | `http` | common `prepare_withdrawal` | `Implemented` | `Fixture` |
-| binance | wallet | `questionnaire_requirements` | `http` | common `prepare_withdrawal` | `Implemented` | `Fixture` |
-| binance | wallet | `withdraw` | `http` | common `withdraw` | `Implemented` | `Fixture` |
-| binance | wallet | `deposit_history` | `http` | common `deposits` | `Implemented` | `Fixture` |
-| binance | wallet | `withdraw_history` | `http` | common `withdrawals` | `Implemented` | `Fixture` |
-| hyperliquid | info | `meta` | `http` | common `markets` | `Partial` | `LiveRead` |
-| hyperliquid | info | `spot_meta` | `http` | common `markets` | `Implemented` | `LiveRead` |
-| hyperliquid | info | `meta_and_asset_contexts` | `http` | common `ticker`; provider `asset_context` | `Partial` | `LiveRead` |
-| hyperliquid | info | `spot_meta_and_asset_contexts` | `http` | common `ticker`; provider `asset_context` | `Implemented` | `LiveRead` |
-| hyperliquid | info | `l2_book` | `http` | common `order_book` | `Implemented` | `LiveRead` |
-| hyperliquid | info | `recent_trades` | `http` | common `trades` | `Implemented` | `LiveRead` |
-| hyperliquid | info | `candle_snapshot` | `http` | common `candles` | `Implemented` | `LiveRead` |
-| hyperliquid | info | `spot_clearinghouse_state` | `http` | common `balances` | `Implemented` | `Fixture` |
-| hyperliquid | info | `clearinghouse_state` | `http` | common `positions`, `margin_summary` | `Partial` | `Fixture` |
-| hyperliquid | info | `frontend_open_orders` | `http` | common `open_orders` | `Partial` | `Fixture` |
-| hyperliquid | info | `funding_history` | `http` | common `funding_rates` | `Implemented` | `LiveRead` |
-| hyperliquid | info | `user_funding` | `http` | common `funding_payments` | `Implemented` | `Fixture` |
-| hyperliquid | info | `user_non_funding_ledger_updates` | `http` | common `deposits`, `withdrawals` | `Implemented` | `Fixture` |
-| hyperliquid | exchange | `order` | `http` | common `place_order` | `Partial` | `Fixture` |
-| hyperliquid | exchange | `cancel` | `http` | common `cancel_order` | `Partial` | `Fixture` |
-| hyperliquid | exchange | `update_leverage` | `http` | common `set_margin` | `Implemented` | `Fixture` |
-| hyperliquid | subscriptions | `trades` | `websocket_stream` | common `subscribe` | `Implemented` | `LiveRead` |
-| hyperliquid | subscriptions | `l2_book` | `websocket_stream` | common `subscribe` | `Implemented` | `LiveRead` |
-| hyperliquid | subscriptions | `active_asset_context` | `websocket_stream` | common `subscribe` | `Implemented` | `LiveRead` |
-| hyperliquid | subscriptions | `candle` | `websocket_stream` | common `subscribe` | `Implemented` | `LiveRead` |
-| hyperliquid | subscriptions | `order_updates` | `websocket_stream` | common `subscribe_account` | `Implemented` | `Fixture` |
-| hyperliquid | subscriptions | `spot_state` | `websocket_stream` | common `subscribe_account` | `Implemented` | `Fixture` |
-| hyperliquid | subscriptions | `ping` | `websocket_stream` | common `subscribe` | `Implemented` | `Fixture` |
+| Exchange | Product | Operation | Method | Path / message | Interface | Authentication | Risk | Availability | Mapping | Implementation | Validation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| upbit | quotation | `markets` | `GET` | `/v1/market/all` | `http` | public | read | general | common `markets`; provider `market_events` | `Implemented` | `LiveRead` |
+| upbit | quotation | `candles_seconds` | `GET` | `/v1/candles/seconds` | `http` | public | read | general | common `candles` | `Implemented` | `LiveRead` |
+| upbit | quotation | `candles_minutes` | `GET` | `/v1/candles/minutes/{unit}` | `http` | public | read | general | common `candles` | `Implemented` | `LiveRead` |
+| upbit | quotation | `candles_days` | `GET` | `/v1/candles/days` | `http` | public | read | general | common `candles` | `Implemented` | `LiveRead` |
+| upbit | quotation | `candles_weeks` | `GET` | `/v1/candles/weeks` | `http` | public | read | general | common `candles` | `Implemented` | `LiveRead` |
+| upbit | quotation | `candles_months` | `GET` | `/v1/candles/months` | `http` | public | read | general | common `candles` | `Implemented` | `LiveRead` |
+| upbit | quotation | `candles_years` | `GET` | `/v1/candles/years` | `http` | public | read | general | provider `year_candles` | `Planned` | `Documented` |
+| upbit | quotation | `trades_ticks` | `GET` | `/v1/trades/ticks` | `http` | public | read | general | common `trades` | `Implemented` | `LiveRead` |
+| upbit | quotation | `ticker` | `GET` | `/v1/ticker` | `http` | public | read | general | common `ticker`; provider `tickers` | `Implemented` | `LiveRead` |
+| upbit | quotation | `tickers_by_quote` | `GET` | `/v1/ticker/all` | `http` | public | read | general | provider `tickers_by_quote` | `Planned` | `Documented` |
+| upbit | quotation | `orderbook` | `GET` | `/v1/orderbook` | `http` | public | read | general | common `order_book`; provider `order_books` | `Implemented` | `LiveRead` |
+| upbit | quotation | `orderbook_instruments` | `GET` | `/v1/orderbook/instruments` | `http` | public | read | general | provider `orderbook_instruments` | `Planned` | `Documented` |
+| upbit | quotation | `ticker_stream` | `SUBSCRIBE` | `ticker` | `websocket_stream` | public | read | general | common `subscribe` | `Partial` | `LiveRead` |
+| upbit | quotation | `trade_stream` | `SUBSCRIBE` | `trade` | `websocket_stream` | public | read | general | common `subscribe` | `Partial` | `LiveRead` |
+| upbit | quotation | `orderbook_stream` | `SUBSCRIBE` | `orderbook` | `websocket_stream` | public | read | general | common `subscribe` | `Partial` | `LiveRead` |
+| upbit | quotation | `candle_stream` | `SUBSCRIBE` | `candle.{unit}` | `websocket_stream` | public | read | general | common `subscribe` | `Partial` | `LiveRead` |
+| upbit | quotation | `list_subscriptions` | `LIST_SUBSCRIPTIONS` | `LIST_SUBSCRIPTIONS` | `websocket_request` | public | read | general | provider `list_subscriptions` | `Planned` | `Documented` |
+| upbit | exchange | `balances` | `GET` | `/v1/accounts` | `http` | JWT | read | general | common `balances` | `Implemented` | `Fixture` |
+| upbit | exchange | `available_order_info` | `GET` | `/v1/orders/chance` | `http` | JWT | read | general | common `order_rules` | `Implemented` | `Fixture` |
+| upbit | exchange | `test_order` | `POST` | `/v1/orders/test` | `http` | JWT | read | general | provider `test_order` | `Planned` | `Documented` |
+| upbit | exchange | `open_orders` | `GET` | `/v1/orders/open` | `http` | JWT | read | general | common `open_orders` | `Implemented` | `Fixture` |
+| upbit | exchange | `get_order` | `GET` | `/v1/order` | `http` | JWT | read | general | common `order`, `order_by_client_id` | `Partial` | `Fixture` |
+| upbit | exchange | `orders_by_ids` | `GET` | `/v1/orders/uuids` | `http` | JWT | read | general | common `orders_by_ids` | `Partial` | `Fixture` |
+| upbit | exchange | `closed_orders` | `GET` | `/v1/orders/closed` | `http` | JWT | read | general | common `order_history` | `Partial` | `Fixture` |
+| upbit | exchange | `new_order` | `POST` | `/v1/orders` | `http` | JWT | financial write | general | common `place_order` | `Partial` | `Fixture` |
+| upbit | exchange | `cancel_order` | `DELETE` | `/v1/order` | `http` | JWT | financial write | general | common `cancel_order`, `cancel_order_by_client_id` | `Partial` | `Fixture` |
+| upbit | exchange | `cancel_orders_by_ids` | `DELETE` | `/v1/orders/uuids` | `http` | JWT | financial write | general | common `cancel_orders` | `Partial` | `Fixture` |
+| upbit | exchange | `batch_cancel_open_orders` | `DELETE` | `/v1/orders/open` | `http` | JWT | financial write | general | provider `batch_cancel_open_orders` | `Planned` | `Documented` |
+| upbit | exchange | `cancel_and_new_order` | `POST` | `/v1/orders/cancel_and_new` | `http` | JWT | financial write | general | provider `cancel_and_new_order` | `Planned` | `Documented` |
+| upbit | exchange | `my_order_stream` | `SUBSCRIBE` | `myOrder` | `websocket_stream` | JWT | read | general | common `subscribe_account` | `Partial` | `Fixture` |
+| upbit | exchange | `my_asset_stream` | `SUBSCRIBE` | `myAsset` | `websocket_stream` | JWT | read | general | common `subscribe_account` | `Partial` | `Fixture` |
+| upbit | wallet | `wallet_status` | `GET` | `/v1/status/wallet` | `http` | JWT | read | general | common `asset_networks` | `Implemented` | `Fixture` |
+| upbit | wallet | `deposit_chance` | `GET` | `/v1/deposits/chance/coin` | `http` | JWT | read | general | provider `deposit_chance` | `Planned` | `Documented` |
+| upbit | wallet | `deposit_addresses` | `GET` | `/v1/deposits/coin_addresses` | `http` | JWT | read | general | common `deposit_addresses` | `Implemented` | `Fixture` |
+| upbit | wallet | `deposit_address` | `GET` | `/v1/deposits/coin_address` | `http` | JWT | read | general | common `deposit_address` | `Implemented` | `Fixture` |
+| upbit | wallet | `create_deposit_address` | `POST` | `/v1/deposits/generate_coin_address` | `http` | JWT | account write | general | common `create_deposit_address` | `Implemented` | `Fixture` |
+| upbit | wallet | `withdraw_chance` | `GET` | `/v1/withdraws/chance` | `http` | JWT | read | general | common `prepare_withdrawal` | `Implemented` | `Fixture` |
+| upbit | wallet | `withdraw_addresses` | `GET` | `/v1/withdraws/coin_addresses` | `http` | JWT | read | general | common `prepare_withdrawal` | `Implemented` | `Fixture` |
+| upbit | wallet | `withdraw_coin` | `POST` | `/v1/withdraws/coin` | `http` | JWT | financial write | general | common `withdraw` | `Implemented` | `Fixture` |
+| upbit | wallet | `withdrawal` | `GET` | `/v1/withdraw` | `http` | JWT | read | general | common `withdrawal` | `Planned` | `Documented` |
+| upbit | wallet | `cancel_withdrawal` | `DELETE` | `/v1/withdraws/coin` | `http` | JWT | financial write | general | common `cancel_withdrawal` | `Planned` | `Documented` |
+| upbit | wallet | `deposits` | `GET` | `/v1/deposits` | `http` | JWT | read | general | common `deposits` | `Implemented` | `Fixture` |
+| upbit | wallet | `deposit` | `GET` | `/v1/deposit` | `http` | JWT | read | general | common `deposit` | `Planned` | `Documented` |
+| upbit | wallet | `withdrawals` | `GET` | `/v1/withdraws` | `http` | JWT | read | general | common `withdrawals` | `Implemented` | `Fixture` |
+| upbit | travel_rule | `travel_rule_vasps` | `GET` | `/v1/travel_rule/vasps` | `http` | JWT | read | Singapore only | provider `travel_rule_vasps` | `Planned` | `Documented` |
+| upbit | travel_rule | `travel_rule_verify_uuid` | `POST` | `/v1/travel_rule/deposit/uuid` | `http` | JWT | account write | Singapore only | provider `verify_travel_rule_by_uuid` | `Planned` | `Documented` |
+| upbit | travel_rule | `travel_rule_verify_txid` | `POST` | `/v1/travel_rule/deposit/txid` | `http` | JWT | account write | Singapore only | provider `verify_travel_rule_by_txid` | `Planned` | `Documented` |
+| bithumb | quotation | `markets` | `GET` | `/v1/market/all` | `http` | public | read | general | common `markets`; provider `market_warnings` | `Implemented` | `LiveRead` |
+| bithumb | quotation | `candles_minutes` | `GET` | `/v1/candles/minutes/{unit}` | `http` | public | read | general | common `candles` | `Implemented` | `LiveRead` |
+| bithumb | quotation | `candles_days` | `GET` | `/v1/candles/days` | `http` | public | read | general | common `candles` | `Implemented` | `LiveRead` |
+| bithumb | quotation | `candles_weeks` | `GET` | `/v1/candles/weeks` | `http` | public | read | general | common `candles` | `Implemented` | `LiveRead` |
+| bithumb | quotation | `candles_months` | `GET` | `/v1/candles/months` | `http` | public | read | general | common `candles` | `Implemented` | `LiveRead` |
+| bithumb | quotation | `trades_ticks` | `GET` | `/v1/trades/ticks` | `http` | public | read | general | common `trades` | `Implemented` | `LiveRead` |
+| bithumb | quotation | `ticker` | `GET` | `/v1/ticker` | `http` | public | read | general | common `ticker` | `Partial` | `LiveRead` |
+| bithumb | quotation | `orderbook` | `GET` | `/v1/orderbook` | `http` | public | read | general | common `order_book` | `Partial` | `LiveRead` |
+| bithumb | quotation | `virtual_asset_warning` | `GET` | `/v1/market/virtual_asset_warning` | `http` | public | read | general | provider `market_alerts` | `Implemented` | `LiveRead` |
+| bithumb | quotation | `notices` | `GET` | `/v1/notices` | `http` | public | read | general | provider `notices` | `Planned` | `Documented` |
+| bithumb | quotation | `inout_fee` | `GET` | `/v2/fee/inout/{currency}` | `http` | public | read | general | provider `inout_fee` | `Planned` | `Documented` |
+| bithumb | quotation | `ticker_stream` | `SUBSCRIBE` | `ticker` | `websocket_stream` | public | read | general | common `subscribe` | `Partial` | `LiveRead` |
+| bithumb | quotation | `trade_stream` | `SUBSCRIBE` | `trade` | `websocket_stream` | public | read | general | common `subscribe` | `Partial` | `LiveRead` |
+| bithumb | quotation | `orderbook_stream` | `SUBSCRIBE` | `orderbook` | `websocket_stream` | public | read | general | common `subscribe` | `Partial` | `LiveRead` |
+| bithumb | exchange | `balances` | `GET` | `/v1/accounts` | `http` | JWT | read | general | common `balances` | `Implemented` | `Fixture` |
+| bithumb | exchange | `available_order_info` | `GET` | `/v1/orders/chance` | `http` | JWT | read | general | common `order_rules` | `Implemented` | `Fixture` |
+| bithumb | exchange | `orders` | `GET` | `/v1/orders` | `http` | JWT | read | general | common `open_orders` | `Partial` | `Fixture` |
+| bithumb | exchange | `get_order` | `GET` | `/v1/order` | `http` | JWT | read | general | common `order`, `order_by_client_id` | `Partial` | `Fixture` |
+| bithumb | exchange | `orders_by_ids` | `POST` | `/v2/orders/search` | `http` | JWT | read | general | common `orders_by_ids` | `Partial` | `Fixture` |
+| bithumb | exchange | `pending_orders` | `GET` | `/v2/orders/pending` | `http` | JWT | read | general | common `open_orders` | `Planned` | `Documented` |
+| bithumb | exchange | `closed_orders` | `GET` | `/v2/orders/history` | `http` | JWT | read | general | common `order_history` | `Partial` | `Fixture` |
+| bithumb | exchange | `new_order` | `POST` | `/v2/orders` | `http` | JWT | financial write | general | common `place_order` | `Partial` | `Fixture` |
+| bithumb | exchange | `batch_orders` | `POST` | `/v2/orders/batch` | `http` | JWT | financial write | general | common `place_orders` | `Planned` | `Documented` |
+| bithumb | exchange | `cancel_order` | `DELETE` | `/v2/order` | `http` | JWT | financial write | general | common `cancel_order`, `cancel_order_by_client_id` | `Partial` | `Fixture` |
+| bithumb | exchange | `cancel_orders` | `POST` | `/v2/orders/cancel` | `http` | JWT | financial write | general | common `cancel_orders` | `Partial` | `Fixture` |
+| bithumb | exchange | `my_order_stream` | `SUBSCRIBE` | `myOrder` | `websocket_stream` | JWT | read | general | common `subscribe_account` | `Partial` | `Fixture` |
+| bithumb | exchange | `my_asset_stream` | `SUBSCRIBE` | `myAsset` | `websocket_stream` | JWT | read | general | common `subscribe_account` | `Partial` | `Fixture` |
+| bithumb | wallet | `wallet_status` | `GET` | `/v1/status/wallet` | `http` | JWT | read | general | common `asset_networks` | `Implemented` | `Fixture` |
+| bithumb | wallet | `deposit_addresses` | `GET` | `/v1/deposits/coin_addresses` | `http` | JWT | read | general | common `deposit_addresses` | `Implemented` | `Fixture` |
+| bithumb | wallet | `deposit_address` | `GET` | `/v1/deposits/coin_address` | `http` | JWT | read | general | common `deposit_address` | `Implemented` | `Fixture` |
+| bithumb | wallet | `create_deposit_address` | `POST` | `/v1/deposits/generate_coin_address` | `http` | JWT | account write | general | common `create_deposit_address` | `Implemented` | `Fixture` |
+| bithumb | wallet | `withdraw_chance` | `GET` | `/v1/withdraws/chance` | `http` | JWT | read | general | common `prepare_withdrawal` | `Implemented` | `Fixture` |
+| bithumb | wallet | `withdraw_addresses` | `GET` | `/v1/withdraws/coin_addresses` | `http` | JWT | read | general | common `prepare_withdrawal` | `Implemented` | `Fixture` |
+| bithumb | wallet | `withdraw_coin` | `POST` | `/v1/withdraws/coin` | `http` | JWT | financial write | general | common `withdraw` | `Implemented` | `Fixture` |
+| bithumb | wallet | `withdrawal` | `GET` | `/v1/withdraw` | `http` | JWT | read | general | common `withdrawal` | `Planned` | `Documented` |
+| bithumb | wallet | `cancel_withdrawal` | `DELETE` | `/v1/withdraws/coin` | `http` | JWT | financial write | general | common `cancel_withdrawal` | `Planned` | `Documented` |
+| bithumb | wallet | `deposits` | `GET` | `/v1/deposits` | `http` | JWT | read | general | common `deposits` | `Implemented` | `Fixture` |
+| bithumb | wallet | `deposit` | `GET` | `/v1/deposit` | `http` | JWT | read | general | common `deposit` | `Planned` | `Documented` |
+| bithumb | wallet | `withdrawals` | `GET` | `/v1/withdraws` | `http` | JWT | read | general | common `withdrawals` | `Implemented` | `Fixture` |
+| bithumb | wallet | `api_keys` | `GET` | `/v1/api_keys` | `http` | JWT | read | general | provider `api_keys` | `Planned` | `Documented` |
+| bithumb | twap | `twap` | `GET` | `/v1/twap` | `http` | JWT | read | general | provider `twap` | `Planned` | `Documented` |
+| bithumb | twap | `create_twap` | `POST` | `/v1/twap` | `http` | JWT | financial write | general | provider `create_twap` | `Planned` | `Documented` |
+| bithumb | twap | `cancel_twap` | `DELETE` | `/v1/twap` | `http` | JWT | financial write | general | provider `cancel_twap` | `Planned` | `Documented` |
+| bithumb | krw | `withdrawals` | `GET` | `/v1/withdraws/krw` | `http` | JWT | read | general | provider `krw_withdrawals` | `Planned` | `Documented` |
+| bithumb | krw | `withdraw` | `POST` | `/v1/withdraws/krw` | `http` | JWT | financial write | general | provider `withdraw_krw` | `Planned` | `Documented` |
+| bithumb | krw | `deposits` | `GET` | `/v1/deposits/krw` | `http` | JWT | read | general | provider `krw_deposits` | `Planned` | `Documented` |
+| bithumb | krw | `deposit` | `POST` | `/v1/deposits/krw` | `http` | JWT | financial write | general | provider `deposit_krw` | `Planned` | `Documented` |
+| binance | spot | `exchange_info` | `GET` | `/api/v3/exchangeInfo` | `http` | public | read | general | common `markets`; provider `spot_symbol_filters` | `Implemented` | `LiveRead` |
+| binance | spot | `recent_trades` | `GET` | `/api/v3/trades` | `http` | public | read | general | common `trades` | `Implemented` | `LiveRead` |
+| binance | spot | `order_book` | `GET` | `/api/v3/depth` | `http` | public | read | general | common `order_book` | `Implemented` | `LiveRead` |
+| binance | spot | `ticker_24hr` | `GET` | `/api/v3/ticker/24hr` | `http` | public | read | general | common `ticker` | `Implemented` | `LiveRead` |
+| binance | spot | `klines` | `GET` | `/api/v3/klines` | `http` | public | read | general | common `candles` | `Implemented` | `LiveRead` |
+| binance | spot | `account_information` | `GET` | `/api/v3/account` | `http` | HMAC | read | general | common `balances` | `Implemented` | `Fixture` |
+| binance | spot | `open_orders` | `GET` | `/api/v3/openOrders` | `http` | HMAC | read | general | common `open_orders` | `Implemented` | `Fixture` |
+| binance | spot | `new_order` | `POST` | `/api/v3/order` | `http` | HMAC | financial write | general | common `place_order` | `Partial` | `Fixture` |
+| binance | spot | `cancel_order` | `DELETE` | `/api/v3/order` | `http` | HMAC | financial write | general | common `cancel_order`, `cancel_order_by_client_id` | `Partial` | `Fixture` |
+| binance | spot | `query_order` | `GET` | `/api/v3/order` | `http` | HMAC | read | general | provider `spot_order` | `Implemented` | `Fixture` |
+| binance | spot | `trade_stream` | `SUBSCRIBE` | `{symbol}@trade` | `websocket_stream` | public | read | general | common `subscribe` | `Partial` | `LiveRead` |
+| binance | spot | `partial_book_depth_stream` | `SUBSCRIBE` | `{symbol}@depth{levels}@{updateSpeed}` | `websocket_stream` | public | read | general | common `subscribe` | `Partial` | `LiveRead` |
+| binance | spot | `ticker_stream` | `SUBSCRIBE` | `{symbol}@ticker` | `websocket_stream` | public | read | general | common `subscribe` | `Partial` | `LiveRead` |
+| binance | spot | `kline_stream` | `SUBSCRIBE` | `{symbol}@kline_{interval}` | `websocket_stream` | public | read | general | common `subscribe` | `Partial` | `LiveRead` |
+| binance | spot | `user_data_stream_signature` | `REQUEST` | `userDataStream.subscribe.signature` | `websocket_request` | HMAC | read | general | common `subscribe_account` | `Partial` | `Fixture` |
+| binance | usd_m | `exchange_info` | `GET` | `/fapi/v1/exchangeInfo` | `http` | public | read | general | common `markets` | `Implemented` | `LiveRead` |
+| binance | usd_m | `recent_trades` | `GET` | `/fapi/v1/trades` | `http` | public | read | general | common `trades` | `Implemented` | `LiveRead` |
+| binance | usd_m | `order_book` | `GET` | `/fapi/v1/depth` | `http` | public | read | general | common `order_book` | `Implemented` | `LiveRead` |
+| binance | usd_m | `ticker_24hr` | `GET` | `/fapi/v1/ticker/24hr` | `http` | public | read | general | common `ticker` | `Implemented` | `LiveRead` |
+| binance | usd_m | `klines` | `GET` | `/fapi/v1/klines` | `http` | public | read | general | common `candles` | `Implemented` | `LiveRead` |
+| binance | usd_m | `account_information_v3` | `GET` | `/fapi/v3/account` | `http` | HMAC | read | general | common `balances`, `margin_summary` | `Implemented` | `Fixture` |
+| binance | usd_m | `open_orders` | `GET` | `/fapi/v1/openOrders` | `http` | HMAC | read | general | common `open_orders` | `Implemented` | `Fixture` |
+| binance | usd_m | `new_order` | `POST` | `/fapi/v1/order` | `http` | HMAC | financial write | general | common `place_order` | `Partial` | `Fixture` |
+| binance | usd_m | `cancel_order` | `DELETE` | `/fapi/v1/order` | `http` | HMAC | financial write | general | common `cancel_order`, `cancel_order_by_client_id` | `Partial` | `Fixture` |
+| binance | usd_m | `position_information_v3` | `GET` | `/fapi/v3/positionRisk` | `http` | HMAC | read | general | common `positions` | `Implemented` | `Fixture` |
+| binance | usd_m | `funding_rate_history` | `GET` | `/fapi/v1/fundingRate` | `http` | public | read | general | common `funding_rates` | `Implemented` | `LiveRead` |
+| binance | usd_m | `income_history` | `GET` | `/fapi/v1/income` | `http` | HMAC | read | general | common `funding_payments` | `Implemented` | `Fixture` |
+| binance | usd_m | `change_initial_leverage` | `POST` | `/fapi/v1/leverage` | `http` | HMAC | account write | general | common `set_margin` | `Implemented` | `Fixture` |
+| binance | usd_m | `change_margin_type` | `POST` | `/fapi/v1/marginType` | `http` | HMAC | account write | general | common `set_margin` | `Implemented` | `Fixture` |
+| binance | usd_m | `start_user_data_stream` | `POST` | `/fapi/v1/listenKey` | `http` | API key | account write | general | provider `usd_m_create_listen_key` | `Implemented` | `Fixture` |
+| binance | usd_m | `keepalive_user_data_stream` | `PUT` | `/fapi/v1/listenKey` | `http` | API key | account write | general | provider `usd_m_keepalive_listen_key` | `Implemented` | `Fixture` |
+| binance | usd_m | `close_user_data_stream` | `DELETE` | `/fapi/v1/listenKey` | `http` | API key | account write | general | provider `usd_m_close_listen_key` | `Implemented` | `Fixture` |
+| binance | usd_m | `aggregate_trade_stream` | `SUBSCRIBE` | `{symbol}@aggTrade` | `websocket_stream` | public | read | general | provider `aggregate_trades` | `Planned` | `Documented` |
+| binance | usd_m | `partial_book_depth_stream` | `SUBSCRIBE` | `{symbol}@depth{levels}@{updateSpeed}` | `websocket_stream` | public | read | general | common `subscribe` | `Partial` | `LiveRead` |
+| binance | usd_m | `ticker_stream` | `SUBSCRIBE` | `{symbol}@ticker` | `websocket_stream` | public | read | general | common `subscribe` | `Partial` | `LiveRead` |
+| binance | usd_m | `kline_stream` | `SUBSCRIBE` | `{symbol}@kline_{interval}` | `websocket_stream` | public | read | general | common `subscribe` | `Partial` | `LiveRead` |
+| binance | wallet | `all_coins_information` | `GET` | `/sapi/v1/capital/config/getall` | `http` | HMAC | read | general | common `asset_networks` | `Implemented` | `Fixture` |
+| binance | wallet | `deposit_address` | `GET` | `/sapi/v1/capital/deposit/address` | `http` | HMAC | read | general | common `deposit_address` | `Implemented` | `Fixture` |
+| binance | wallet | `api_key_permissions` | `GET` | `/sapi/v1/account/apiRestrictions` | `http` | HMAC | read | general | common `prepare_withdrawal` | `Implemented` | `Fixture` |
+| binance | wallet | `withdraw_address_list` | `GET` | `/sapi/v1/capital/withdraw/address/list` | `http` | HMAC | read | general | common `prepare_withdrawal` | `Implemented` | `Fixture` |
+| binance | wallet | `questionnaire_requirements` | `GET` | `/sapi/v1/localentity/questionnaire-requirements` | `http` | HMAC | read | eligibility: local entity and Travel Rule requirements | common `prepare_withdrawal` | `Implemented` | `Fixture` |
+| binance | wallet | `withdraw` | `POST` | `/sapi/v1/capital/withdraw/apply` | `http` | HMAC | financial write | general | common `withdraw` | `Implemented` | `Fixture` |
+| binance | wallet | `deposit_history` | `GET` | `/sapi/v1/capital/deposit/hisrec` | `http` | HMAC | read | general | common `deposits` | `Implemented` | `Fixture` |
+| binance | wallet | `withdraw_history` | `GET` | `/sapi/v1/capital/withdraw/history` | `http` | HMAC | read | general | common `withdrawals` | `Implemented` | `Fixture` |
+| hyperliquid | info | `meta` | `POST` | `/info type=meta` | `http` | public | read | general | common `markets` | `Partial` | `LiveRead` |
+| hyperliquid | info | `spot_meta` | `POST` | `/info type=spotMeta` | `http` | public | read | general | common `markets` | `Implemented` | `LiveRead` |
+| hyperliquid | info | `meta_and_asset_contexts` | `POST` | `/info type=metaAndAssetCtxs` | `http` | public | read | general | common `ticker`; provider `asset_context` | `Partial` | `LiveRead` |
+| hyperliquid | info | `spot_meta_and_asset_contexts` | `POST` | `/info type=spotMetaAndAssetCtxs` | `http` | public | read | general | common `ticker`; provider `asset_context` | `Implemented` | `LiveRead` |
+| hyperliquid | info | `l2_book` | `POST` | `/info type=l2Book` | `http` | public | read | general | common `order_book` | `Implemented` | `LiveRead` |
+| hyperliquid | info | `recent_trades` | `POST` | `/info type=recentTrades` | `http` | public | read | general | common `trades` | `Implemented` | `LiveRead` |
+| hyperliquid | info | `candle_snapshot` | `POST` | `/info type=candleSnapshot` | `http` | public | read | general | common `candles` | `Implemented` | `LiveRead` |
+| hyperliquid | info | `spot_clearinghouse_state` | `POST` | `/info type=spotClearinghouseState` | `http` | public | read | general | common `balances` | `Implemented` | `Fixture` |
+| hyperliquid | info | `clearinghouse_state` | `POST` | `/info type=clearinghouseState` | `http` | public | read | general | common `positions`, `margin_summary` | `Partial` | `Fixture` |
+| hyperliquid | info | `frontend_open_orders` | `POST` | `/info type=frontendOpenOrders` | `http` | public | read | general | common `open_orders` | `Partial` | `Fixture` |
+| hyperliquid | info | `funding_history` | `POST` | `/info type=fundingHistory` | `http` | public | read | general | common `funding_rates` | `Implemented` | `LiveRead` |
+| hyperliquid | info | `user_funding` | `POST` | `/info type=userFunding` | `http` | public | read | general | common `funding_payments` | `Implemented` | `Fixture` |
+| hyperliquid | info | `user_non_funding_ledger_updates` | `POST` | `/info type=userNonFundingLedgerUpdates` | `http` | public | read | general | common `deposits`, `withdrawals` | `Implemented` | `Fixture` |
+| hyperliquid | exchange | `order` | `POST` | `/exchange action=order` | `http` | EIP-712 | financial write | general | common `place_order` | `Partial` | `Fixture` |
+| hyperliquid | exchange | `cancel` | `POST` | `/exchange action=cancel` | `http` | EIP-712 | financial write | general | common `cancel_order` | `Partial` | `Fixture` |
+| hyperliquid | exchange | `update_leverage` | `POST` | `/exchange action=updateLeverage` | `http` | EIP-712 | account write | general | common `set_margin` | `Implemented` | `Fixture` |
+| hyperliquid | subscriptions | `trades` | `SUBSCRIBE` | `trades` | `websocket_stream` | public | read | general | common `subscribe` | `Implemented` | `LiveRead` |
+| hyperliquid | subscriptions | `l2_book` | `SUBSCRIBE` | `l2Book` | `websocket_stream` | public | read | general | common `subscribe` | `Implemented` | `LiveRead` |
+| hyperliquid | subscriptions | `active_asset_context` | `SUBSCRIBE` | `activeAssetCtx` | `websocket_stream` | public | read | general | common `subscribe` | `Implemented` | `LiveRead` |
+| hyperliquid | subscriptions | `candle` | `SUBSCRIBE` | `candle` | `websocket_stream` | public | read | general | common `subscribe` | `Implemented` | `LiveRead` |
+| hyperliquid | subscriptions | `order_updates` | `SUBSCRIBE` | `orderUpdates` | `websocket_stream` | public | read | general | common `subscribe_account` | `Implemented` | `Fixture` |
+| hyperliquid | subscriptions | `spot_state` | `SUBSCRIBE` | `spotState` | `websocket_stream` | public | read | general | common `subscribe_account` | `Implemented` | `Fixture` |
+| hyperliquid | subscriptions | `ping` | `REQUEST` | `ping` | `websocket_stream` | public | read | general | common `subscribe` | `Implemented` | `Fixture` |

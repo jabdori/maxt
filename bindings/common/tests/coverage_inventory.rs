@@ -123,7 +123,7 @@ fn common_coverage_mappings_name_real_schema_operations() {
 }
 
 #[test]
-fn operation_inventory_matches_the_current_implemented_surface() {
+fn operation_inventory_matches_the_pinned_korean_exchange_catalogs() {
     let counts = OPERATIONS.iter().fold(
         std::collections::BTreeMap::<(Exchange, &str), usize>::new(),
         |mut counts, operation| {
@@ -136,12 +136,15 @@ fn operation_inventory_matches_the_current_implemented_surface() {
     assert_eq!(
         counts,
         std::collections::BTreeMap::from([
-            ((Exchange::Upbit, "quotation"), 13),
-            ((Exchange::Upbit, "exchange"), 11),
-            ((Exchange::Upbit, "wallet"), 9),
-            ((Exchange::Bithumb, "quotation"), 12),
-            ((Exchange::Bithumb, "exchange"), 11),
-            ((Exchange::Bithumb, "wallet"), 9),
+            ((Exchange::Upbit, "quotation"), 17),
+            ((Exchange::Upbit, "exchange"), 14),
+            ((Exchange::Upbit, "wallet"), 13),
+            ((Exchange::Upbit, "travel_rule"), 3),
+            ((Exchange::Bithumb, "quotation"), 14),
+            ((Exchange::Bithumb, "exchange"), 13),
+            ((Exchange::Bithumb, "wallet"), 13),
+            ((Exchange::Bithumb, "twap"), 3),
+            ((Exchange::Bithumb, "krw"), 4),
             ((Exchange::Binance, "spot"), 15),
             ((Exchange::Binance, "usd_m"), 21),
             ((Exchange::Binance, "wallet"), 8),
@@ -153,11 +156,63 @@ fn operation_inventory_matches_the_current_implemented_surface() {
 }
 
 #[test]
+fn korean_exchange_product_counts_match_the_pinned_official_catalogs() {
+    let actual = PRODUCTS
+        .iter()
+        .filter(|product| {
+            matches!(product.exchange, Exchange::Upbit | Exchange::Bithumb)
+                && product.endpoint_count.is_some()
+        })
+        .map(|product| {
+            (
+                product.exchange,
+                product.id,
+                product.endpoint_count.unwrap(),
+            )
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        actual,
+        vec![
+            (Exchange::Upbit, "quotation", 17),
+            (Exchange::Upbit, "exchange", 14),
+            (Exchange::Upbit, "wallet", 13),
+            (Exchange::Upbit, "travel_rule", 3),
+            (Exchange::Bithumb, "quotation", 14),
+            (Exchange::Bithumb, "exchange", 13),
+            (Exchange::Bithumb, "wallet", 13),
+            (Exchange::Bithumb, "twap", 3),
+            (Exchange::Bithumb, "krw", 4),
+        ]
+    );
+    assert_eq!(
+        actual
+            .iter()
+            .filter(|(exchange, _, _)| *exchange == Exchange::Upbit)
+            .map(|(_, _, count)| count)
+            .sum::<u16>(),
+        47
+    );
+    assert_eq!(
+        actual
+            .iter()
+            .filter(|(exchange, _, _)| *exchange == Exchange::Bithumb)
+            .map(|(_, _, count)| count)
+            .sum::<u16>(),
+        47
+    );
+}
+
+#[test]
 fn implemented_wallet_endpoint_sets_match_the_current_adapters() {
     let paths = |exchange, product| {
         OPERATIONS
             .iter()
-            .filter(|operation| operation.exchange == exchange && operation.product == product)
+            .filter(|operation| {
+                operation.exchange == exchange
+                    && operation.product == product
+                    && operation.implementation == Implementation::Implemented
+            })
             .map(|operation| (operation.method, operation.path))
             .collect::<BTreeSet<_>>()
     };

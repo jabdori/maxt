@@ -5,7 +5,9 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 #[cfg(feature = "rust")]
-use maxt_bindings_common::coverage::{BASELINE_DATE, OPERATIONS, OperationMapping};
+use maxt_bindings_common::coverage::{
+    Authentication, Availability, BASELINE_DATE, OPERATIONS, OperationMapping, OperationRisk,
+};
 #[cfg(feature = "rust")]
 use maxt_bindings_common::schema::Schema;
 use maxt_bindings_common::schema::binding_schema;
@@ -362,7 +364,7 @@ fn render_markdown(schema: &Schema) -> String {
             product.stage().label(),
         ));
     }
-    output.push_str("\n## Recorded operations\n\n| Exchange | Product | Operation | Interface | Mapping | Implementation | Validation |\n| --- | --- | --- | --- | --- | --- | --- |\n");
+    output.push_str("\n## Recorded operations\n\n| Exchange | Product | Operation | Method | Path / message | Interface | Authentication | Risk | Availability | Mapping | Implementation | Validation |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
     for operation in OPERATIONS {
         let mapping = match operation.mapping {
             OperationMapping::Common(name) => format!("common `{name}`"),
@@ -378,11 +380,16 @@ fn render_markdown(schema: &Schema) -> String {
             }
         };
         output.push_str(&format!(
-            "| {} | {} | `{}` | `{}` | {} | `{:?}` | `{:?}` |\n",
+            "| {} | {} | `{}` | `{}` | `{}` | `{}` | {} | {} | {} | {} | `{:?}` | `{:?}` |\n",
             operation.exchange.id(),
             operation.product,
             operation.id,
+            operation.method,
+            operation.path,
             operation.interface.id(),
+            authentication_label(operation.authentication),
+            risk_label(operation.risk),
+            availability_label(operation.availability),
             mapping,
             operation.implementation,
             operation.validation,
@@ -391,9 +398,61 @@ fn render_markdown(schema: &Schema) -> String {
     output
 }
 
-#[cfg(all(test, any(feature = "python", feature = "typescript")))]
+#[cfg(feature = "rust")]
+const fn authentication_label(authentication: Authentication) -> &'static str {
+    match authentication {
+        Authentication::Public => "public",
+        Authentication::ApiKey => "API key",
+        Authentication::Hmac => "HMAC",
+        Authentication::Jwt => "JWT",
+        Authentication::Rsa => "RSA",
+        Authentication::Ed25519 => "Ed25519",
+        Authentication::Eip712 => "EIP-712",
+        Authentication::OAuth => "OAuth",
+        Authentication::Partner => "partner credentials",
+    }
+}
+
+#[cfg(feature = "rust")]
+const fn risk_label(risk: OperationRisk) -> &'static str {
+    match risk {
+        OperationRisk::Read => "read",
+        OperationRisk::AccountWrite => "account write",
+        OperationRisk::FinancialWrite => "financial write",
+        OperationRisk::AdministrativeWrite => "administrative write",
+    }
+}
+
+#[cfg(feature = "rust")]
+fn availability_label(availability: Availability) -> String {
+    match availability {
+        Availability::General => "general".to_owned(),
+        Availability::Region(region) => format!("{region} only"),
+        Availability::Partner => "partners only".to_owned(),
+        Availability::Eligibility(condition) => format!("eligibility: {condition}"),
+        Availability::Beta => "beta".to_owned(),
+        Availability::Testnet => "testnet only".to_owned(),
+    }
+}
+
+#[cfg(all(
+    test,
+    any(feature = "rust", feature = "python", feature = "typescript")
+))]
 mod tests {
     use super::*;
+
+    #[cfg(feature = "rust")]
+    #[test]
+    fn generated_markdown_includes_endpoint_safety_metadata() {
+        let output = render_markdown(&binding_schema());
+        assert!(output.contains(
+            "| Method | Path / message | Interface | Authentication | Risk | Availability |"
+        ));
+        assert!(output.contains(
+            "| upbit | travel_rule | `travel_rule_vasps` | `GET` | `/v1/travel_rule/vasps` | `http` | JWT | read | Singapore only |"
+        ));
+    }
 
     #[cfg(feature = "typescript")]
     #[test]

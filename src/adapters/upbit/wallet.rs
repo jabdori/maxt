@@ -19,6 +19,7 @@ use super::{UpbitCredentials, private, rest};
 
 const WALLET_STATUS_PATH: &str = "/v1/status/wallet";
 const DEPOSIT_ADDRESS_PATH: &str = "/v1/deposits/coin_address";
+const CREATE_DEPOSIT_ADDRESS_PATH: &str = "/v1/deposits/generate_coin_address";
 const WITHDRAW_CHANCE_PATH: &str = "/v1/withdraws/chance";
 const WITHDRAWAL_ADDRESSES_PATH: &str = "/v1/withdraws/coin_addresses";
 const WITHDRAW_PATH: &str = "/v1/withdraws/coin";
@@ -52,6 +53,13 @@ struct RawDepositAddress {
     deposit_address: Option<String>,
     #[serde(default)]
     secondary_address: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+enum RawDepositAddressCreation {
+    Address(RawDepositAddress),
+    Pending { success: bool, message: String },
 }
 
 #[derive(Debug, Deserialize)]
@@ -164,6 +172,7 @@ pub(crate) async fn deposit_address(
     http: &HttpTransport,
     request: &DepositAddressRequest,
 ) -> Result<DepositAddress> {
+    reject_deposit_address_amount(request)?;
     let asset = asset_code(&request.asset)?;
     let provider_id = resolve_network(credentials, http, &asset, &request.network).await?;
     let response = signed_get(
@@ -176,6 +185,19 @@ pub(crate) async fn deposit_address(
     )?;
     let body = rest::send(http, &response).await?;
     parse_deposit_address(&body, &asset, &provider_id, request.network.clone())
+}
+
+pub(crate) async fn create_deposit_address(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    request: &DepositAddressRequest,
+) -> Result<DepositAddress> {
+    reject_deposit_address_amount(request)?;
+    let asset = asset_code(&request.asset)?;
+    let provider_id = resolve_network(credentials, http, &asset, &request.network).await?;
+    let response = create_deposit_address_request(credentials, &asset, &provider_id)?;
+    let body = rest::send(http, &response).await?;
+    parse_created_deposit_address(&body, &asset, &provider_id, request.network.clone())
 }
 
 pub(crate) async fn prepare_withdrawal(
@@ -397,6 +419,44 @@ fn withdraw_chance_request(
     )
 }
 
+fn create_deposit_address_request(
+    credentials: &UpbitCredentials,
+    asset: &str,
+    provider_id: &str,
+) -> Result<HttpRequest> {
+    let params = [
+        ("currency", asset.to_string()),
+        ("net_type", provider_id.to_string()),
+    ];
+    let query = raw_query(&params);
+    let body = params
+        .iter()
+        .map(|(name, value)| ((*name).to_string(), Value::String(value.clone())))
+        .collect::<Map<_, _>>();
+    let body = serde_json::to_string(&body).map_err(|error| {
+        Error::decode(format!(
+            "could not build Upbit deposit-address JSON: {error}"
+        ))
+    })?;
+
+    Ok(HttpRequest::post(CREATE_DEPOSIT_ADDRESS_PATH)
+        .json_body(body)
+        .header(
+            private::AUTHORIZATION,
+            private::authorization(credentials, &query)?,
+        ))
+}
+
+fn reject_deposit_address_amount(request: &DepositAddressRequest) -> Result<()> {
+    if request.amount.is_some() {
+        return Err(Error::invalid_request(
+            "amount",
+            "Upbit deposit-address requests accept only an asset and network",
+        ));
+    }
+    Ok(())
+}
+
 fn withdraw_request(
     credentials: &UpbitCredentials,
     request: &WithdrawRequest,
@@ -518,6 +578,43 @@ fn parse_deposit_address(
     requested_network: Network,
 ) -> Result<DepositAddress> {
     let raw: RawDepositAddress = parse::json(body)?;
+    normalize_deposit_address(raw, expected_asset, expected_provider, requested_network)
+}
+
+fn parse_created_deposit_address(
+    body: &str,
+    expected_asset: &str,
+    expected_provider: &str,
+    requested_network: Network,
+) -> Result<DepositAddress> {
+    match parse::json::<RawDepositAddressCreation>(body)? {
+        RawDepositAddressCreation::Address(raw) => {
+            normalize_deposit_address(raw, expected_asset, expected_provider, requested_network)
+        }
+        RawDepositAddressCreation::Pending { success: true, .. } => Ok(DepositAddress {
+            exchange: Exchange::Upbit,
+            asset: expected_asset.to_string(),
+            network: requested_network,
+            address: None,
+            memo: None,
+        }),
+        RawDepositAddressCreation::Pending {
+            success: false,
+            message,
+        } => Err(Error::exchange(
+            EXCHANGE,
+            "deposit_address_creation_rejected",
+            message,
+        )),
+    }
+}
+
+fn normalize_deposit_address(
+    raw: RawDepositAddress,
+    expected_asset: &str,
+    expected_provider: &str,
+    requested_network: Network,
+) -> Result<DepositAddress> {
     if !raw.currency.eq_ignore_ascii_case(expected_asset) {
         return Err(Error::decode(format!(
             "Upbit returned deposit asset {} for requested {expected_asset}",
@@ -864,6 +961,58 @@ mod tests {
         assert_eq!(address.address, None);
         assert_eq!(address.memo, None);
         assert_eq!(address.network, Network::Bitcoin);
+    }
+
+    #[test]
+    fn deposit_address_creation_preserves_upbits_pending_or_issued_response() {
+        let request = create_deposit_address_request(&credentials(), "BTC", "BTC")
+            .expect("serializable creation request");
+        assert_eq!(request.path, CREATE_DEPOSIT_ADDRESS_PATH);
+        assert_eq!(
+            request.body.as_deref(),
+            Some(r#"{"currency":"BTC","net_type":"BTC"}"#)
+        );
+        assert_eq!(
+            claims(&request)["query_hash"],
+            hex::encode(Sha512::digest(b"currency=BTC&net_type=BTC"))
+        );
+
+        let pending = parse_created_deposit_address(
+            r#"{"success":true,"message":"Generating a BTC deposit address."}"#,
+            "BTC",
+            "BTC",
+            Network::Bitcoin,
+        )
+        .expect("official pending response");
+        assert_eq!(pending.address, None);
+
+        let issued = parse_created_deposit_address(
+            r#"{"currency":"BTC","net_type":"BTC","deposit_address":"bc1qissued","secondary_address":null}"#,
+            "BTC",
+            "BTC",
+            Network::Bitcoin,
+        )
+        .expect("official issued response");
+        assert_eq!(issued.address.as_deref(), Some("bc1qissued"));
+
+        let error = parse_created_deposit_address(
+            r#"{"success":false,"message":"address creation rejected"}"#,
+            "BTC",
+            "BTC",
+            Network::Bitcoin,
+        )
+        .expect_err("provider rejection");
+        let Error::Exchange { code, message, .. } = error else {
+            panic!("expected exchange error");
+        };
+        assert_eq!(code, "deposit_address_creation_rejected");
+        assert_eq!(message, "address creation rejected");
+    }
+
+    #[test]
+    fn deposit_address_amount_is_rejected_before_signing() {
+        let request = DepositAddressRequest::new("BTC", Network::Bitcoin).amount(Decimal::ONE);
+        assert!(reject_deposit_address_amount(&request).is_err());
     }
 
     #[test]

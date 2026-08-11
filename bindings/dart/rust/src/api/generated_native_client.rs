@@ -93,6 +93,18 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
+    pub async fn create_deposit_address(
+        &self,
+        request: WireDepositAddressRequest,
+    ) -> Result<WireDepositAddress, NativeError> {
+        let request = request.try_into()?;
+        self.adapter
+            .create_deposit_address(&request)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
     pub async fn prepare_withdrawal(
         &self,
         request: WireWithdrawRequest,

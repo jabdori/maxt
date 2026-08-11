@@ -183,6 +183,20 @@ impl Adapter for ForeignAdapter {
         )
     }
 
+    fn create_deposit_address(
+        &self,
+        request: &DepositAddressRequest,
+    ) -> BoxFuture<'_, Result<DepositAddress>> {
+        dispatch!(
+            self,
+            AdapterCall::CreateDepositAddress {
+                request: request.clone(),
+            },
+            AdapterReply::CreateDepositAddress,
+            "CreateDepositAddress"
+        )
+    }
+
     fn prepare_withdrawal(
         &self,
         request: &WithdrawRequest,

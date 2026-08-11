@@ -15,9 +15,9 @@
 | Client | `exchange`, `supports`, `adapter`, `into_adapter` |
 | 공개 REST | `markets`, `trades`, `order_book`, `ticker`, `candles`, `funding_rates` |
 | 공개 스트림 | `subscribe`, `subscribe_with` |
-| 비공개 조회 | `balances`, `order_rules`, `open_orders`, `open_orders_on`, `order`, `order_by_client_id`, `orders_by_ids`, `order_history`, `positions`, `positions_on`, `margin_summary`, `funding_payments` |
+| 비공개 조회 | `balances`, `order_rules`, `asset_networks`, `deposit_address`, `deposits`, `withdrawals`, `open_orders`, `open_orders_on`, `order`, `order_by_client_id`, `orders_by_ids`, `order_history`, `positions`, `positions_on`, `margin_summary`, `funding_payments` |
 | 비공개 스트림 | `subscribe_account`, `subscribe_account_with` |
-| 비공개 변경 | `place_order`, `cancel_order`, `cancel_order_by_client_id`, `cancel_orders`, `set_margin` |
+| 비공개 변경 | `create_deposit_address`, `withdraw`, `place_order`, `cancel_order`, `cancel_order_by_client_id`, `cancel_orders`, `set_margin` |
 
 공개 REST와 시장 스트림에는 인증 정보가 필요하지 않습니다. 거래소별
 `MarketKind`와 기능 지원 범위는 [거래소 지원](providers.ko.md)을 참고하세요.
@@ -189,6 +189,21 @@
 
 주문 값은 `Decimal`로 구성합니다. 지원 주문 형식과 검증 규칙은 거래소별
 계약입니다.
+
+## 자산 입출금
+
+| 메서드 | 계약 |
+| --- | --- |
+| `asset_networks(asset)` | 자산 하나의 현재 입금·출금 가능 상태, 거래소 네트워크 ID, 수수료, 한도 |
+| `deposit_address(request)` | 자산·네트워크 하나의 기존 입금 주소 조회; `address == None`이면 거래소가 아직 주소를 발급하지 않은 상태 |
+| `create_deposit_address(request)` | Upbit·Bithumb에서 입금 주소 발급 요청; Upbit의 비동기 발급 중에는 `address == None`을 반환할 수 있음 |
+| `deposits(request)`, `withdrawals(request)` | 최신순 입출금 이력 페이지; 거래소 ID와 원본 상태를 보존 |
+| `withdraw(request)` | 자동 재시도 없이 출금 한 건 접수; 성공은 거래소가 요청을 접수했다는 뜻이며 목적지 입금 완료를 뜻하지 않음 |
+
+`create_deposit_address()`는 polling 또는 재시도를 수행하지 않습니다. 비동기 발급
+상태는 이후 `deposit_address()`로 확인하세요. Upbit·Bithumb의 이 API는 자산과
+네트워크만 받으므로, 해당 어댑터는 `DepositAddressRequest::amount`를 네트워크 I/O 전에
+거절합니다. endpoint별 지원 및 검증 상태는 생성된 [coverage 레퍼런스](../bindings/common/generated/api.md)를 참고하세요.
 
 ### `OrderHistoryRequest`
 

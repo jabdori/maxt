@@ -867,10 +867,17 @@ fn render_generated_reply_arm(operation: &Operation) -> String {
             pascal_case(operation.rust_name)
         ),
         ApiType::Named("OrderRules") => "crate::convert::order_rules_from_wire(value).map(Box::new).map(AdapterReply::OrderRules)".to_string(),
-        ApiType::Named(name) => format!(
-            "crate::convert::{}_from_wire(value).map(AdapterReply::{name})",
-            snake_case(name)
-        ),
+        ApiType::Named(name) => {
+            let reply = if operation.rust_name == "create_deposit_address" {
+                "CreateDepositAddress"
+            } else {
+                name
+            };
+            format!(
+                "crate::convert::{}_from_wire(value).map(AdapterReply::{reply})",
+                snake_case(name)
+            )
+        }
         ApiType::Page(name) => format!(
             "page_from_wire(value, crate::convert::{}_from_wire).map(AdapterReply::{})",
             snake_case(name),
@@ -2192,6 +2199,9 @@ mod tests {
         }
         assert!(delegate.contains("if not subscription.markets:"));
         assert!(delegate.contains("if not subscription.feeds:"));
+        assert!(dispatcher.contains(
+            "ReplyKind::CreateDepositAddress => Some(crate::convert::deposit_address_from_wire(value).map(AdapterReply::CreateDepositAddress))"
+        ));
     }
 
     #[test]

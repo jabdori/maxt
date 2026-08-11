@@ -41,6 +41,11 @@ abstract base class GeneratedNativeDelegate extends AdapterBase {
       (await delegateAdapter).depositAddress(request);
 
   @override
+  Future<DepositAddress> createDepositAddress(
+    DepositAddressRequest request,
+  ) async => (await delegateAdapter).createDepositAddress(request);
+
+  @override
   Future<WithdrawalQuote> prepareWithdrawal(WithdrawRequest request) async =>
       (await delegateAdapter).prepareWithdrawal(request);
 

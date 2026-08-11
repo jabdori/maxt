@@ -176,6 +176,18 @@ impl<A: Adapter> Client<A> {
         self.adapter.deposit_address(request).await
     }
 
+    /// Requests creation of an exchange-issued deposit address.
+    ///
+    /// Exchanges can issue an address asynchronously. A successful request may
+    /// therefore return an address with [`DepositAddress::address`] set to
+    /// `None`; query [`Self::deposit_address`] until it is available.
+    pub async fn create_deposit_address(
+        &self,
+        request: &DepositAddressRequest,
+    ) -> Result<DepositAddress> {
+        self.adapter.create_deposit_address(request).await
+    }
+
     /// Checks a withdrawal against current account and network rules.
     pub async fn prepare_withdrawal(&self, request: &WithdrawRequest) -> Result<WithdrawalQuote> {
         validate_withdraw_request(request)?;

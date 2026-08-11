@@ -131,6 +131,19 @@ pub trait Adapter: Send + Sync + 'static {
         unsupported(self.exchange(), Feature::DepositAddresses)
     }
 
+    /// Requests creation of an exchange-issued deposit address.
+    ///
+    /// Some exchanges generate addresses asynchronously. In that case the
+    /// returned address is `None`; callers should poll [`Self::deposit_address`]
+    /// until the address is issued.
+    fn create_deposit_address(
+        &self,
+        request: &DepositAddressRequest,
+    ) -> BoxFuture<'_, Result<DepositAddress>> {
+        let _ = request;
+        unsupported(self.exchange(), Feature::DepositAddresses)
+    }
+
     /// Performs live source-account checks without submitting a withdrawal.
     fn prepare_withdrawal(
         &self,
@@ -333,6 +346,13 @@ impl Adapter for Box<dyn Adapter> {
         request: &DepositAddressRequest,
     ) -> BoxFuture<'_, Result<DepositAddress>> {
         (**self).deposit_address(request)
+    }
+
+    fn create_deposit_address(
+        &self,
+        request: &DepositAddressRequest,
+    ) -> BoxFuture<'_, Result<DepositAddress>> {
+        (**self).create_deposit_address(request)
     }
 
     fn prepare_withdrawal(

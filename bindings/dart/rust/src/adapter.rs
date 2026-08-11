@@ -125,6 +125,8 @@ pub enum AdapterCall {
     AssetNetworks { asset: String },
     /// 입금 주소를 요청합니다.
     DepositAddress { request: WireDepositAddressRequest },
+    /// 입금 주소 생성을 요청합니다.
+    CreateDepositAddress { request: WireDepositAddressRequest },
     /// 출금 조건 검사를 요청합니다.
     PrepareWithdrawal { request: WireWithdrawRequest },
     /// 출금 제출을 요청합니다.
@@ -212,6 +214,8 @@ pub enum AdapterReply {
     AssetNetworks(Vec<WireAssetNetwork>),
     /// 입금 주소 응답입니다.
     DepositAddress(WireDepositAddress),
+    /// 입금 주소 생성 응답입니다.
+    CreateDepositAddress(WireDepositAddress),
     /// 출금 조건 응답입니다.
     PrepareWithdrawal(WireWithdrawalQuote),
     /// 출금 접수 응답입니다.
@@ -256,6 +260,7 @@ impl AdapterReply {
             Self::OrderRules(_) => "OrderRules",
             Self::AssetNetworks(_) => "AssetNetworks",
             Self::DepositAddress(_) => "DepositAddress",
+            Self::CreateDepositAddress(_) => "CreateDepositAddress",
             Self::PrepareWithdrawal(_) => "PrepareWithdrawal",
             Self::Withdraw(_) => "Withdraw",
             Self::Deposits(_) => "Deposits",
@@ -385,6 +390,7 @@ enum ExpectedReply {
     OrderRules,
     AssetNetworks,
     DepositAddress,
+    CreateDepositAddress,
     PrepareWithdrawal,
     Withdraw,
     Deposits,
@@ -415,6 +421,7 @@ impl ExpectedReply {
             Self::OrderRules => "OrderRules",
             Self::AssetNetworks => "AssetNetworks",
             Self::DepositAddress => "DepositAddress",
+            Self::CreateDepositAddress => "CreateDepositAddress",
             Self::PrepareWithdrawal => "PrepareWithdrawal",
             Self::Withdraw => "Withdraw",
             Self::Deposits => "Deposits",
@@ -503,6 +510,10 @@ impl AdapterReply {
                 .try_into()
                 .map(CommonAdapterReply::DepositAddress)
                 .map_err(|error| invalid_reply("DepositAddress", error)),
+            (ExpectedReply::CreateDepositAddress, Self::CreateDepositAddress(value)) => value
+                .try_into()
+                .map(CommonAdapterReply::CreateDepositAddress)
+                .map_err(|error| invalid_reply("CreateDepositAddress", error)),
             (ExpectedReply::PrepareWithdrawal, Self::PrepareWithdrawal(value)) => value
                 .try_into()
                 .map(CommonAdapterReply::WithdrawalQuote)

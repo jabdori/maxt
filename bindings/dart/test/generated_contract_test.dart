@@ -37,6 +37,7 @@ void main() {
       'orderRules': adapter.orderRules,
       'assetNetworks': adapter.assetNetworks,
       'depositAddress': adapter.depositAddress,
+      'createDepositAddress': adapter.createDepositAddress,
       'prepareWithdrawal': adapter.prepareWithdrawal,
       'withdraw': adapter.withdraw,
       'deposits': adapter.deposits,
@@ -74,6 +75,8 @@ void main() {
       'orderRules': (Client<Adapter> value) => value.orderRules,
       'assetNetworks': (Client<Adapter> value) => value.assetNetworks,
       'depositAddress': (Client<Adapter> value) => value.depositAddress,
+      'createDepositAddress': (Client<Adapter> value) =>
+          value.createDepositAddress,
       'prepareWithdrawal': (Client<Adapter> value) => value.prepareWithdrawal,
       'withdraw': (Client<Adapter> value) => value.withdraw,
       'deposits': (Client<Adapter> value) => value.deposits,

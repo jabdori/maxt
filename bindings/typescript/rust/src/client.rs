@@ -141,6 +141,17 @@ impl NativeClient {
         }
     }
 
+    async fn create_deposit_address(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<maxt::DepositAddressRequest, WireDepositAddressRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(wire_one::<_, WireDepositAddress>(
+                self.inner.create_deposit_address(&request).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
     async fn prepare_withdrawal(&self, request: maxt::Result<String>) -> Value {
         match parse_wire::<maxt::WithdrawRequest, WireWithdrawRequest>(request, "request") {
             Ok(request) => outcome(wire_one::<_, WireWithdrawalQuote>(
@@ -561,6 +572,20 @@ impl NativeClient {
         spawn_native(env, async move { client.deposit_address(request).await })
     }
 
+    #[napi(js_name = "createDepositAddress", ts_args_type = "request: string")]
+    pub fn create_deposit_address_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(
+            env,
+            async move { client.create_deposit_address(request).await },
+        )
+    }
+
     #[napi(js_name = "prepareWithdrawal", ts_args_type = "request: string")]
     pub fn prepare_withdrawal_native<'env>(
         &self,
@@ -967,6 +992,11 @@ impl NativeClient {
         crate::web::value(self.deposit_address(Ok(request)).await)
     }
 
+    #[wasm_bindgen(js_name = "createDepositAddress")]
+    pub async fn create_deposit_address_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.create_deposit_address(Ok(request)).await)
+    }
+
     #[wasm_bindgen(js_name = "prepareWithdrawal")]
     pub async fn prepare_withdrawal_wasm(&self, request: String) -> JsValue {
         crate::web::value(self.prepare_withdrawal(Ok(request)).await)
@@ -1354,6 +1384,21 @@ mod tests {
                 asset: request.asset.clone(),
                 network: request.network.clone(),
                 address: Some("bc1qdestination".to_owned()),
+                memo: None,
+            };
+            Box::pin(async move { Ok(result) })
+        }
+
+        fn create_deposit_address(
+            &self,
+            request: &DepositAddressRequest,
+        ) -> BoxFuture<'_, maxt::Result<DepositAddress>> {
+            self.calls.lock().unwrap().push("create_deposit_address");
+            let result = DepositAddress {
+                exchange: Exchange::Binance,
+                asset: request.asset.clone(),
+                network: request.network.clone(),
+                address: None,
                 memo: None,
             };
             Box::pin(async move { Ok(result) })
@@ -1836,7 +1881,10 @@ mod tests {
                 .asset_networks(json_text(serde_json::json!("BTC")))
                 .await,
             client
-                .deposit_address(json_text(deposit_address_request))
+                .deposit_address(json_text(deposit_address_request.clone()))
+                .await,
+            client
+                .create_deposit_address(json_text(deposit_address_request))
                 .await,
             client
                 .prepare_withdrawal(json_text(withdraw_request.clone()))
@@ -1888,7 +1936,7 @@ mod tests {
             client.set_margin(json_text(margin_request)).await,
         ];
         assert!(results.iter().all(|value| value["ok"] == true));
-        assert_eq!(results[22]["value"]["failed"][0]["code"], "order_not_found");
+        assert_eq!(results[23]["value"]["failed"][0]["code"], "order_not_found");
         assert_eq!(
             *calls.lock().unwrap(),
             vec![
@@ -1901,6 +1949,7 @@ mod tests {
                 "order_rules",
                 "asset_networks",
                 "deposit_address",
+                "create_deposit_address",
                 "prepare_withdrawal",
                 "withdraw",
                 "deposits",

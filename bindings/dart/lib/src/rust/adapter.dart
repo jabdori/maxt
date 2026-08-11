@@ -56,6 +56,11 @@ sealed class AdapterCall with _$AdapterCall {
     required WireDepositAddressRequest request,
   }) = AdapterCall_DepositAddress;
 
+  /// 입금 주소 생성을 요청합니다.
+  const factory AdapterCall.createDepositAddress({
+    required WireDepositAddressRequest request,
+  }) = AdapterCall_CreateDepositAddress;
+
   /// 출금 조건 검사를 요청합니다.
   const factory AdapterCall.prepareWithdrawal({
     required WireWithdrawRequest request,
@@ -201,6 +206,10 @@ sealed class AdapterReply with _$AdapterReply {
   /// 입금 주소 응답입니다.
   const factory AdapterReply.depositAddress(WireDepositAddress field0) =
       AdapterReply_DepositAddress;
+
+  /// 입금 주소 생성 응답입니다.
+  const factory AdapterReply.createDepositAddress(WireDepositAddress field0) =
+      AdapterReply_CreateDepositAddress;
 
   /// 출금 조건 응답입니다.
   const factory AdapterReply.prepareWithdrawal(WireWithdrawalQuote field0) =

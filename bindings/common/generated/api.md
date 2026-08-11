@@ -16,6 +16,7 @@
 | `order_rules` | `orderRules` |
 | `asset_networks` | `assetNetworks` |
 | `deposit_address` | `depositAddress` |
+| `create_deposit_address` | `createDepositAddress` |
 | `prepare_withdrawal` | `prepareWithdrawal` |
 | `withdraw` | `withdraw` |
 | `deposits` | `deposits` |
@@ -53,12 +54,12 @@ Documentation baseline: `2026-08-10`.
 | --- | --- | ---: | --- | --- | --- |
 | upbit | Quotation | 13 / — | `http`, `websocket_stream` | `json` | Partial |
 | upbit | Exchange | 11 / — | `http`, `websocket_stream` | `json` | Partial |
-| upbit | Deposits and withdrawals | 7 / — | `http` | `json` | Partial |
+| upbit | Deposits and withdrawals | 8 / — | `http` | `json` | Partial |
 | upbit | Travel Rule | 0 / — | `http` | `json` | Planned |
 | upbit | Korea pockets | 0 / — | `http` | `json` | Planned |
 | bithumb | Quotation | 12 / — | `http`, `websocket_stream` | `json` | Partial |
 | bithumb | Exchange | 11 / — | `http`, `websocket_stream` | `json` | Partial |
-| bithumb | Deposits and withdrawals | 7 / — | `http` | `json` | Partial |
+| bithumb | Deposits and withdrawals | 8 / — | `http` | `json` | Partial |
 | bithumb | TWAP | 0 / — | `http` | `json` | Planned |
 | bithumb | KRW deposits and withdrawals | 0 / — | `http` | `json` | Planned |
 | binance | Spot Trading | 15 / 118 | `http`, `websocket_request`, `websocket_stream`, `fix` | `json`, `sbe`, `fix_tag_value`, `fix_sbe` | Partial |
@@ -137,6 +138,7 @@ Documentation baseline: `2026-08-10`.
 | upbit | exchange | `my_asset_stream` | `websocket_stream` | common `subscribe_account` | `Partial` | `Fixture` |
 | upbit | wallet | `wallet_status` | `http` | common `asset_networks` | `Implemented` | `Fixture` |
 | upbit | wallet | `deposit_address` | `http` | common `deposit_address` | `Implemented` | `Fixture` |
+| upbit | wallet | `create_deposit_address` | `http` | common `create_deposit_address` | `Implemented` | `Fixture` |
 | upbit | wallet | `withdraw_chance` | `http` | common `prepare_withdrawal` | `Implemented` | `Fixture` |
 | upbit | wallet | `withdraw_addresses` | `http` | common `prepare_withdrawal` | `Implemented` | `Fixture` |
 | upbit | wallet | `withdraw_coin` | `http` | common `withdraw` | `Implemented` | `Fixture` |
@@ -167,6 +169,7 @@ Documentation baseline: `2026-08-10`.
 | bithumb | exchange | `my_asset_stream` | `websocket_stream` | common `subscribe_account` | `Partial` | `Fixture` |
 | bithumb | wallet | `wallet_status` | `http` | common `asset_networks` | `Implemented` | `Fixture` |
 | bithumb | wallet | `deposit_address` | `http` | common `deposit_address` | `Implemented` | `Fixture` |
+| bithumb | wallet | `create_deposit_address` | `http` | common `create_deposit_address` | `Implemented` | `Fixture` |
 | bithumb | wallet | `withdraw_chance` | `http` | common `prepare_withdrawal` | `Implemented` | `Fixture` |
 | bithumb | wallet | `withdraw_addresses` | `http` | common `prepare_withdrawal` | `Implemented` | `Fixture` |
 | bithumb | wallet | `withdraw_coin` | `http` | common `withdraw` | `Implemented` | `Fixture` |

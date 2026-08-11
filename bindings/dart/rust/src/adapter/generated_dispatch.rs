@@ -38,6 +38,10 @@ pub(super) fn dispatch(call: CommonAdapterCall) -> Option<(AdapterCall, Expected
             AdapterCall::DepositAddress { request: request.into() },
             ExpectedReply::DepositAddress,
         )),
+        CommonAdapterCall::CreateDepositAddress { request } => Some((
+            AdapterCall::CreateDepositAddress { request: request.into() },
+            ExpectedReply::CreateDepositAddress,
+        )),
         CommonAdapterCall::PrepareWithdrawal { request } => Some((
             AdapterCall::PrepareWithdrawal { request: request.into() },
             ExpectedReply::PrepareWithdrawal,

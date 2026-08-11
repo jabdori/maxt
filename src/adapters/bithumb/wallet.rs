@@ -19,6 +19,7 @@ use super::{BithumbCredentials, private, rest};
 
 const WALLET_STATUS_PATH: &str = "/v1/status/wallet";
 const DEPOSIT_ADDRESS_PATH: &str = "/v1/deposits/coin_address";
+const CREATE_DEPOSIT_ADDRESS_PATH: &str = "/v1/deposits/generate_coin_address";
 const WITHDRAW_CHANCE_PATH: &str = "/v1/withdraws/chance";
 const WITHDRAWAL_ADDRESSES_PATH: &str = "/v1/withdraws/coin_addresses";
 const WITHDRAW_PATH: &str = "/v1/withdraws/coin";
@@ -182,6 +183,7 @@ pub(crate) async fn deposit_address(
     credentials: &BithumbCredentials,
     request: &DepositAddressRequest,
 ) -> Result<DepositAddress> {
+    reject_deposit_address_amount(request)?;
     let asset = asset_code(&request.asset)?;
     let provider_id = resolve_network(http, credentials, &asset, &request.network).await?;
     let api_request = signed_get(
@@ -192,6 +194,19 @@ pub(crate) async fn deposit_address(
             ("net_type", provider_id.clone()),
         ],
     )?;
+    let body = rest::send(http, &api_request).await?;
+    parse_deposit_address(&body, &asset, &provider_id, request.network.clone())
+}
+
+pub(crate) async fn create_deposit_address(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    request: &DepositAddressRequest,
+) -> Result<DepositAddress> {
+    reject_deposit_address_amount(request)?;
+    let asset = asset_code(&request.asset)?;
+    let provider_id = resolve_network(http, credentials, &asset, &request.network).await?;
+    let api_request = create_deposit_address_request(credentials, &asset, &provider_id)?;
     let body = rest::send(http, &api_request).await?;
     parse_deposit_address(&body, &asset, &provider_id, request.network.clone())
 }
@@ -422,6 +437,44 @@ fn withdraw_chance_request(
             ("net_type", provider_id.to_string()),
         ],
     )
+}
+
+fn create_deposit_address_request(
+    credentials: &BithumbCredentials,
+    asset: &str,
+    provider_id: &str,
+) -> Result<HttpRequest> {
+    let params = [
+        ("currency", asset.to_string()),
+        ("net_type", provider_id.to_string()),
+    ];
+    let query = raw_query(&params);
+    let body = params
+        .iter()
+        .map(|(name, value)| ((*name).to_string(), Value::String(value.clone())))
+        .collect::<Map<_, _>>();
+    let body = serde_json::to_string(&body).map_err(|error| {
+        Error::decode(format!(
+            "could not build Bithumb deposit-address JSON: {error}"
+        ))
+    })?;
+
+    Ok(HttpRequest::post(CREATE_DEPOSIT_ADDRESS_PATH)
+        .json_body(body)
+        .header(
+            "authorization",
+            private::authorization(credentials, &query)?,
+        ))
+}
+
+fn reject_deposit_address_amount(request: &DepositAddressRequest) -> Result<()> {
+    if request.amount.is_some() {
+        return Err(Error::invalid_request(
+            "amount",
+            "Bithumb deposit-address requests accept only an asset and network",
+        ));
+    }
+    Ok(())
 }
 
 fn withdraw_request(
@@ -1050,6 +1103,38 @@ mod tests {
         assert_eq!(withdrawal.destination, None);
         assert_eq!(withdrawal.provider_status, "processing");
         assert_eq!(withdrawal.status, WithdrawalStatus::Processing);
+    }
+
+    #[test]
+    fn deposit_address_creation_uses_bithumbs_documented_json_and_signature() {
+        let request = create_deposit_address_request(&credentials(), "BTC", "BTC")
+            .expect("serializable creation request");
+        assert_eq!(request.path, CREATE_DEPOSIT_ADDRESS_PATH);
+        assert_eq!(
+            request.body.as_deref(),
+            Some(r#"{"currency":"BTC","net_type":"BTC"}"#)
+        );
+        assert_eq!(
+            claims(&request)["query_hash"],
+            hex::encode(Sha512::digest(b"currency=BTC&net_type=BTC"))
+        );
+
+        let address = parse_deposit_address(
+            &parsed(
+                r#"{"currency":"BTC","net_type":"BTC","deposit_address":"bc1qissued","secondary_address":null}"#,
+            ),
+            "BTC",
+            "BTC",
+            Network::Bitcoin,
+        )
+        .expect("official issued response");
+        assert_eq!(address.address.as_deref(), Some("bc1qissued"));
+    }
+
+    #[test]
+    fn deposit_address_amount_is_rejected_before_signing() {
+        let request = DepositAddressRequest::new("BTC", Network::Bitcoin).amount(Decimal::ONE);
+        assert!(reject_deposit_address_amount(&request).is_err());
     }
 
     #[test]

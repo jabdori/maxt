@@ -70,7 +70,7 @@ class MaxtRustLib
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => -32080593;
+  int get rustContentHash => 1538815517;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -161,6 +161,11 @@ abstract class MaxtRustLibApi extends BaseApi {
   Future<List<WireCandle>> crateApiNativeClientCandles({
     required NativeClient that,
     required WireCandleRequest request,
+  });
+
+  Future<WireDepositAddress> crateApiNativeClientCreateDepositAddress({
+    required NativeClient that,
+    required WireDepositAddressRequest request,
   });
 
   Future<WireDepositAddress> crateApiNativeClientDepositAddress({
@@ -1088,7 +1093,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       );
 
   @override
-  Future<WireDepositAddress> crateApiNativeClientDepositAddress({
+  Future<WireDepositAddress> crateApiNativeClientCreateDepositAddress({
     required NativeClient that,
     required WireDepositAddressRequest request,
   }) {
@@ -1108,6 +1113,47 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
             generalizedFrbRustBinding,
             serializer,
             funcId: 18,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_wire_deposit_address,
+          decodeErrorData: sse_decode_native_error,
+        ),
+        constMeta: kCrateApiNativeClientCreateDepositAddressConstMeta,
+        argValues: [that, request],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiNativeClientCreateDepositAddressConstMeta =>
+      const TaskConstMeta(
+        debugName: "NativeClient_create_deposit_address",
+        argNames: ["that", "request"],
+      );
+
+  @override
+  Future<WireDepositAddress> crateApiNativeClientDepositAddress({
+    required NativeClient that,
+    required WireDepositAddressRequest request,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
+            that,
+            serializer,
+          );
+          sse_encode_box_autoadd_wire_deposit_address_request(
+            request,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 19,
             port: port_,
           );
         },
@@ -1148,7 +1194,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 19,
+            funcId: 20,
             port: port_,
           );
         },
@@ -1179,7 +1225,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
             that,
             serializer,
           );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 20)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 21)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_wire_exchange,
@@ -1215,7 +1261,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 21,
+            funcId: 22,
             port: port_,
           );
         },
@@ -1248,7 +1294,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
             adapter,
             serializer,
           );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 22)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 23)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -1285,7 +1331,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 23,
+            funcId: 24,
             port: port_,
           );
         },
@@ -1323,7 +1369,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 24,
+            funcId: 25,
             port: port_,
           );
         },
@@ -1357,7 +1403,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           sse_encode_bool(testnet, serializer);
           sse_encode_opt_String(address, serializer);
           sse_encode_opt_String(privateKey, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 25)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 26)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -1395,7 +1441,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 26,
+            funcId: 27,
             port: port_,
           );
         },
@@ -1440,7 +1486,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 27,
+            funcId: 28,
             port: port_,
           );
         },
@@ -1471,7 +1517,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
             that,
             serializer,
           );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 28)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 29)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_opt_box_autoadd_bool,
@@ -1505,7 +1551,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 29,
+            funcId: 30,
             port: port_,
           );
         },
@@ -1543,7 +1589,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 30,
+            funcId: 31,
             port: port_,
           );
         },
@@ -1581,7 +1627,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 31,
+            funcId: 32,
             port: port_,
           );
         },
@@ -1621,7 +1667,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 32,
+            funcId: 33,
             port: port_,
           );
         },
@@ -1660,7 +1706,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 33,
+            funcId: 34,
             port: port_,
           );
         },
@@ -1700,7 +1746,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 34,
+            funcId: 35,
             port: port_,
           );
         },
@@ -1741,7 +1787,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 35,
+            funcId: 36,
             port: port_,
           );
         },
@@ -1779,7 +1825,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 36,
+            funcId: 37,
             port: port_,
           );
         },
@@ -1817,7 +1863,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 37,
+            funcId: 38,
             port: port_,
           );
         },
@@ -1855,7 +1901,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 38,
+            funcId: 39,
             port: port_,
           );
         },
@@ -1893,7 +1939,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 39,
+            funcId: 40,
             port: port_,
           );
         },
@@ -1939,7 +1985,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 40,
+            funcId: 41,
             port: port_,
           );
         },
@@ -1980,7 +2026,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 41,
+            funcId: 42,
             port: port_,
           );
         },
@@ -2018,7 +2064,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 42,
+            funcId: 43,
             port: port_,
           );
         },
@@ -2056,7 +2102,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 43,
+            funcId: 44,
             port: port_,
           );
         },
@@ -2096,7 +2142,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 44,
+            funcId: 45,
             port: port_,
           );
         },
@@ -2135,7 +2181,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 45,
+            funcId: 46,
             port: port_,
           );
         },
@@ -2171,7 +2217,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
             serializer,
           );
           sse_encode_wire_feature(feature, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 46)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 47)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_bool,
@@ -2207,7 +2253,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 47,
+            funcId: 48,
             port: port_,
           );
         },
@@ -2246,7 +2292,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 48,
+            funcId: 49,
             port: port_,
           );
         },
@@ -2279,7 +2325,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           sse_encode_wire_upbit_region(region, serializer);
           sse_encode_opt_String(accessKey, serializer);
           sse_encode_opt_String(secretKey, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 49)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 50)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -2313,7 +2359,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 50,
+            funcId: 51,
             port: port_,
           );
         },
@@ -2353,7 +2399,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 51,
+            funcId: 52,
             port: port_,
           );
         },
@@ -2386,7 +2432,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
             that,
             serializer,
           );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 52)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 53)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_opt_box_autoadd_wire_upbit_region,
@@ -2422,7 +2468,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 53,
+            funcId: 54,
             port: port_,
           );
         },
@@ -2460,7 +2506,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 54,
+            funcId: 55,
             port: port_,
           );
         },
@@ -2501,7 +2547,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 55,
+            funcId: 56,
             port: port_,
           );
         },
@@ -2534,7 +2580,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
             that,
             serializer,
           );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 56)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 57)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -2570,7 +2616,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 57,
+            funcId: 58,
             port: port_,
           );
         },
@@ -2597,7 +2643,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 58)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 59)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -2620,7 +2666,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(relayUrl, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 59)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 60)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
@@ -2656,7 +2702,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 60,
+            funcId: 61,
             port: port_,
           );
         },
@@ -2692,7 +2738,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 61,
+            funcId: 62,
             port: port_,
           );
         },
@@ -2728,7 +2774,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 62,
+            funcId: 63,
             port: port_,
           );
         },
@@ -2764,7 +2810,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 63,
+            funcId: 64,
             port: port_,
           );
         },
@@ -2800,7 +2846,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 64,
+            funcId: 65,
             port: port_,
           );
         },
@@ -2827,7 +2873,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 65)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 66)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -2866,7 +2912,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 66,
+            funcId: 67,
             port: port_,
           );
         },
@@ -3254,80 +3300,84 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           request: dco_decode_box_autoadd_wire_deposit_address_request(raw[1]),
         );
       case 9:
+        return AdapterCall_CreateDepositAddress(
+          request: dco_decode_box_autoadd_wire_deposit_address_request(raw[1]),
+        );
+      case 10:
         return AdapterCall_PrepareWithdrawal(
           request: dco_decode_box_autoadd_wire_withdraw_request(raw[1]),
         );
-      case 10:
+      case 11:
         return AdapterCall_Withdraw(
           request: dco_decode_box_autoadd_wire_withdraw_request(raw[1]),
         );
-      case 11:
+      case 12:
         return AdapterCall_Deposits(
           request: dco_decode_box_autoadd_wire_transfer_history_request(raw[1]),
         );
-      case 12:
+      case 13:
         return AdapterCall_Withdrawals(
           request: dco_decode_box_autoadd_wire_transfer_history_request(raw[1]),
         );
-      case 13:
+      case 14:
         return AdapterCall_OpenOrders(
           market: dco_decode_opt_box_autoadd_wire_market(raw[1]),
         );
-      case 14:
+      case 15:
         return AdapterCall_Order(
           market: dco_decode_box_autoadd_wire_market(raw[1]),
           orderId: dco_decode_String(raw[2]),
         );
-      case 15:
+      case 16:
         return AdapterCall_OrderByClientId(
           market: dco_decode_box_autoadd_wire_market(raw[1]),
           clientId: dco_decode_String(raw[2]),
         );
-      case 16:
+      case 17:
         return AdapterCall_OrdersByIds(
           request: dco_decode_box_autoadd_wire_order_lookup_request(raw[1]),
         );
-      case 17:
+      case 18:
         return AdapterCall_OrderHistory(
           request: dco_decode_box_autoadd_wire_order_history_request(raw[1]),
         );
-      case 18:
+      case 19:
         return AdapterCall_PlaceOrder(
           request: dco_decode_box_autoadd_wire_order_request(raw[1]),
         );
-      case 19:
+      case 20:
         return AdapterCall_CancelOrder(
           market: dco_decode_box_autoadd_wire_market(raw[1]),
           orderId: dco_decode_String(raw[2]),
         );
-      case 20:
+      case 21:
         return AdapterCall_CancelOrderByClientId(
           market: dco_decode_box_autoadd_wire_market(raw[1]),
           clientId: dco_decode_String(raw[2]),
         );
-      case 21:
+      case 22:
         return AdapterCall_CancelOrders(
           request: dco_decode_box_autoadd_wire_cancel_orders_request(raw[1]),
         );
-      case 22:
+      case 23:
         return AdapterCall_Positions(
           market: dco_decode_opt_box_autoadd_wire_market(raw[1]),
         );
-      case 23:
-        return AdapterCall_MarginSummary();
       case 24:
+        return AdapterCall_MarginSummary();
+      case 25:
         return AdapterCall_FundingRates(
           request: dco_decode_box_autoadd_wire_history_request(raw[1]),
         );
-      case 25:
+      case 26:
         return AdapterCall_FundingPayments(
           request: dco_decode_box_autoadd_wire_history_request(raw[1]),
         );
-      case 26:
+      case 27:
         return AdapterCall_SetMargin(
           request: dco_decode_box_autoadd_wire_margin_request(raw[1]),
         );
-      case 27:
+      case 28:
         return AdapterCall_Subscribe(
           streamId: dco_decode_String(raw[1]),
           subscription: dco_decode_box_autoadd_wire_subscription(raw[2]),
@@ -3337,7 +3387,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
                 raw[4],
               ),
         );
-      case 28:
+      case 29:
         return AdapterCall_SubscribeAccount(
           streamId: dco_decode_String(raw[1]),
           config: dco_decode_box_autoadd_wire_stream_config(raw[2]),
@@ -3346,7 +3396,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
                 raw[3],
               ),
         );
-      case 29:
+      case 30:
         return AdapterCall_CancelStream(streamId: dco_decode_String(raw[1]));
       default:
         throw Exception("unreachable");
@@ -3384,54 +3434,58 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           dco_decode_box_autoadd_wire_deposit_address(raw[1]),
         );
       case 9:
+        return AdapterReply_CreateDepositAddress(
+          dco_decode_box_autoadd_wire_deposit_address(raw[1]),
+        );
+      case 10:
         return AdapterReply_PrepareWithdrawal(
           dco_decode_box_autoadd_wire_withdrawal_quote(raw[1]),
         );
-      case 10:
+      case 11:
         return AdapterReply_Withdraw(
           dco_decode_box_autoadd_wire_withdrawal(raw[1]),
         );
-      case 11:
+      case 12:
         return AdapterReply_Deposits(
           dco_decode_box_autoadd_wire_deposit_page(raw[1]),
         );
-      case 12:
+      case 13:
         return AdapterReply_Withdrawals(
           dco_decode_box_autoadd_wire_withdrawal_page(raw[1]),
         );
-      case 13:
-        return AdapterReply_OpenOrders(dco_decode_list_wire_order(raw[1]));
       case 14:
-        return AdapterReply_Order(dco_decode_box_autoadd_wire_order(raw[1]));
+        return AdapterReply_OpenOrders(dco_decode_list_wire_order(raw[1]));
       case 15:
-        return AdapterReply_OrdersByIds(dco_decode_list_wire_order(raw[1]));
+        return AdapterReply_Order(dco_decode_box_autoadd_wire_order(raw[1]));
       case 16:
+        return AdapterReply_OrdersByIds(dco_decode_list_wire_order(raw[1]));
+      case 17:
         return AdapterReply_OrderHistory(
           dco_decode_box_autoadd_wire_order_page(raw[1]),
         );
-      case 17:
+      case 18:
         return AdapterReply_PlaceOrder(
           dco_decode_box_autoadd_wire_order(raw[1]),
         );
-      case 18:
+      case 19:
         return AdapterReply_CancelOrders(
           dco_decode_box_autoadd_wire_cancel_orders_result(raw[1]),
         );
-      case 19:
-        return AdapterReply_Positions(dco_decode_list_wire_position(raw[1]));
       case 20:
+        return AdapterReply_Positions(dco_decode_list_wire_position(raw[1]));
+      case 21:
         return AdapterReply_MarginSummary(
           dco_decode_box_autoadd_wire_margin_summary(raw[1]),
         );
-      case 21:
+      case 22:
         return AdapterReply_FundingRates(
           dco_decode_box_autoadd_wire_funding_rate_page(raw[1]),
         );
-      case 22:
+      case 23:
         return AdapterReply_FundingPayments(
           dco_decode_box_autoadd_wire_funding_payment_page(raw[1]),
         );
-      case 23:
+      case 24:
         return AdapterReply_Unit();
       default:
         throw Exception("unreachable");
@@ -5688,94 +5742,99 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
         );
         return AdapterCall_DepositAddress(request: var_request);
       case 9:
-        var var_request = sse_decode_box_autoadd_wire_withdraw_request(
+        var var_request = sse_decode_box_autoadd_wire_deposit_address_request(
           deserializer,
         );
-        return AdapterCall_PrepareWithdrawal(request: var_request);
+        return AdapterCall_CreateDepositAddress(request: var_request);
       case 10:
         var var_request = sse_decode_box_autoadd_wire_withdraw_request(
           deserializer,
         );
-        return AdapterCall_Withdraw(request: var_request);
+        return AdapterCall_PrepareWithdrawal(request: var_request);
       case 11:
-        var var_request = sse_decode_box_autoadd_wire_transfer_history_request(
+        var var_request = sse_decode_box_autoadd_wire_withdraw_request(
           deserializer,
         );
-        return AdapterCall_Deposits(request: var_request);
+        return AdapterCall_Withdraw(request: var_request);
       case 12:
         var var_request = sse_decode_box_autoadd_wire_transfer_history_request(
           deserializer,
         );
-        return AdapterCall_Withdrawals(request: var_request);
+        return AdapterCall_Deposits(request: var_request);
       case 13:
+        var var_request = sse_decode_box_autoadd_wire_transfer_history_request(
+          deserializer,
+        );
+        return AdapterCall_Withdrawals(request: var_request);
+      case 14:
         var var_market = sse_decode_opt_box_autoadd_wire_market(deserializer);
         return AdapterCall_OpenOrders(market: var_market);
-      case 14:
+      case 15:
         var var_market = sse_decode_box_autoadd_wire_market(deserializer);
         var var_orderId = sse_decode_String(deserializer);
         return AdapterCall_Order(market: var_market, orderId: var_orderId);
-      case 15:
+      case 16:
         var var_market = sse_decode_box_autoadd_wire_market(deserializer);
         var var_clientId = sse_decode_String(deserializer);
         return AdapterCall_OrderByClientId(
           market: var_market,
           clientId: var_clientId,
         );
-      case 16:
+      case 17:
         var var_request = sse_decode_box_autoadd_wire_order_lookup_request(
           deserializer,
         );
         return AdapterCall_OrdersByIds(request: var_request);
-      case 17:
+      case 18:
         var var_request = sse_decode_box_autoadd_wire_order_history_request(
           deserializer,
         );
         return AdapterCall_OrderHistory(request: var_request);
-      case 18:
+      case 19:
         var var_request = sse_decode_box_autoadd_wire_order_request(
           deserializer,
         );
         return AdapterCall_PlaceOrder(request: var_request);
-      case 19:
+      case 20:
         var var_market = sse_decode_box_autoadd_wire_market(deserializer);
         var var_orderId = sse_decode_String(deserializer);
         return AdapterCall_CancelOrder(
           market: var_market,
           orderId: var_orderId,
         );
-      case 20:
+      case 21:
         var var_market = sse_decode_box_autoadd_wire_market(deserializer);
         var var_clientId = sse_decode_String(deserializer);
         return AdapterCall_CancelOrderByClientId(
           market: var_market,
           clientId: var_clientId,
         );
-      case 21:
+      case 22:
         var var_request = sse_decode_box_autoadd_wire_cancel_orders_request(
           deserializer,
         );
         return AdapterCall_CancelOrders(request: var_request);
-      case 22:
+      case 23:
         var var_market = sse_decode_opt_box_autoadd_wire_market(deserializer);
         return AdapterCall_Positions(market: var_market);
-      case 23:
-        return AdapterCall_MarginSummary();
       case 24:
-        var var_request = sse_decode_box_autoadd_wire_history_request(
-          deserializer,
-        );
-        return AdapterCall_FundingRates(request: var_request);
+        return AdapterCall_MarginSummary();
       case 25:
         var var_request = sse_decode_box_autoadd_wire_history_request(
           deserializer,
         );
-        return AdapterCall_FundingPayments(request: var_request);
+        return AdapterCall_FundingRates(request: var_request);
       case 26:
+        var var_request = sse_decode_box_autoadd_wire_history_request(
+          deserializer,
+        );
+        return AdapterCall_FundingPayments(request: var_request);
+      case 27:
         var var_request = sse_decode_box_autoadd_wire_margin_request(
           deserializer,
         );
         return AdapterCall_SetMargin(request: var_request);
-      case 27:
+      case 28:
         var var_streamId = sse_decode_String(deserializer);
         var var_subscription = sse_decode_box_autoadd_wire_subscription(
           deserializer,
@@ -5793,7 +5852,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           config: var_config,
           sink: var_sink,
         );
-      case 28:
+      case 29:
         var var_streamId = sse_decode_String(deserializer);
         var var_config = sse_decode_box_autoadd_wire_stream_config(
           deserializer,
@@ -5807,7 +5866,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           config: var_config,
           sink: var_sink,
         );
-      case 29:
+      case 30:
         var var_streamId = sse_decode_String(deserializer);
         return AdapterCall_CancelStream(streamId: var_streamId);
       default:
@@ -5851,60 +5910,65 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
         );
         return AdapterReply_DepositAddress(var_field0);
       case 9:
+        var var_field0 = sse_decode_box_autoadd_wire_deposit_address(
+          deserializer,
+        );
+        return AdapterReply_CreateDepositAddress(var_field0);
+      case 10:
         var var_field0 = sse_decode_box_autoadd_wire_withdrawal_quote(
           deserializer,
         );
         return AdapterReply_PrepareWithdrawal(var_field0);
-      case 10:
+      case 11:
         var var_field0 = sse_decode_box_autoadd_wire_withdrawal(deserializer);
         return AdapterReply_Withdraw(var_field0);
-      case 11:
+      case 12:
         var var_field0 = sse_decode_box_autoadd_wire_deposit_page(deserializer);
         return AdapterReply_Deposits(var_field0);
-      case 12:
+      case 13:
         var var_field0 = sse_decode_box_autoadd_wire_withdrawal_page(
           deserializer,
         );
         return AdapterReply_Withdrawals(var_field0);
-      case 13:
+      case 14:
         var var_field0 = sse_decode_list_wire_order(deserializer);
         return AdapterReply_OpenOrders(var_field0);
-      case 14:
+      case 15:
         var var_field0 = sse_decode_box_autoadd_wire_order(deserializer);
         return AdapterReply_Order(var_field0);
-      case 15:
+      case 16:
         var var_field0 = sse_decode_list_wire_order(deserializer);
         return AdapterReply_OrdersByIds(var_field0);
-      case 16:
+      case 17:
         var var_field0 = sse_decode_box_autoadd_wire_order_page(deserializer);
         return AdapterReply_OrderHistory(var_field0);
-      case 17:
+      case 18:
         var var_field0 = sse_decode_box_autoadd_wire_order(deserializer);
         return AdapterReply_PlaceOrder(var_field0);
-      case 18:
+      case 19:
         var var_field0 = sse_decode_box_autoadd_wire_cancel_orders_result(
           deserializer,
         );
         return AdapterReply_CancelOrders(var_field0);
-      case 19:
+      case 20:
         var var_field0 = sse_decode_list_wire_position(deserializer);
         return AdapterReply_Positions(var_field0);
-      case 20:
+      case 21:
         var var_field0 = sse_decode_box_autoadd_wire_margin_summary(
           deserializer,
         );
         return AdapterReply_MarginSummary(var_field0);
-      case 21:
+      case 22:
         var var_field0 = sse_decode_box_autoadd_wire_funding_rate_page(
           deserializer,
         );
         return AdapterReply_FundingRates(var_field0);
-      case 22:
+      case 23:
         var var_field0 = sse_decode_box_autoadd_wire_funding_payment_page(
           deserializer,
         );
         return AdapterReply_FundingPayments(var_field0);
-      case 23:
+      case 24:
         return AdapterReply_Unit();
       default:
         throw UnimplementedError('');
@@ -8748,77 +8812,83 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           request,
           serializer,
         );
-      case AdapterCall_PrepareWithdrawal(request: final request):
+      case AdapterCall_CreateDepositAddress(request: final request):
         sse_encode_i_32(9, serializer);
-        sse_encode_box_autoadd_wire_withdraw_request(request, serializer);
-      case AdapterCall_Withdraw(request: final request):
-        sse_encode_i_32(10, serializer);
-        sse_encode_box_autoadd_wire_withdraw_request(request, serializer);
-      case AdapterCall_Deposits(request: final request):
-        sse_encode_i_32(11, serializer);
-        sse_encode_box_autoadd_wire_transfer_history_request(
+        sse_encode_box_autoadd_wire_deposit_address_request(
           request,
           serializer,
         );
-      case AdapterCall_Withdrawals(request: final request):
+      case AdapterCall_PrepareWithdrawal(request: final request):
+        sse_encode_i_32(10, serializer);
+        sse_encode_box_autoadd_wire_withdraw_request(request, serializer);
+      case AdapterCall_Withdraw(request: final request):
+        sse_encode_i_32(11, serializer);
+        sse_encode_box_autoadd_wire_withdraw_request(request, serializer);
+      case AdapterCall_Deposits(request: final request):
         sse_encode_i_32(12, serializer);
         sse_encode_box_autoadd_wire_transfer_history_request(
           request,
           serializer,
         );
-      case AdapterCall_OpenOrders(market: final market):
+      case AdapterCall_Withdrawals(request: final request):
         sse_encode_i_32(13, serializer);
+        sse_encode_box_autoadd_wire_transfer_history_request(
+          request,
+          serializer,
+        );
+      case AdapterCall_OpenOrders(market: final market):
+        sse_encode_i_32(14, serializer);
         sse_encode_opt_box_autoadd_wire_market(market, serializer);
       case AdapterCall_Order(market: final market, orderId: final orderId):
-        sse_encode_i_32(14, serializer);
+        sse_encode_i_32(15, serializer);
         sse_encode_box_autoadd_wire_market(market, serializer);
         sse_encode_String(orderId, serializer);
       case AdapterCall_OrderByClientId(
         market: final market,
         clientId: final clientId,
       ):
-        sse_encode_i_32(15, serializer);
+        sse_encode_i_32(16, serializer);
         sse_encode_box_autoadd_wire_market(market, serializer);
         sse_encode_String(clientId, serializer);
       case AdapterCall_OrdersByIds(request: final request):
-        sse_encode_i_32(16, serializer);
+        sse_encode_i_32(17, serializer);
         sse_encode_box_autoadd_wire_order_lookup_request(request, serializer);
       case AdapterCall_OrderHistory(request: final request):
-        sse_encode_i_32(17, serializer);
+        sse_encode_i_32(18, serializer);
         sse_encode_box_autoadd_wire_order_history_request(request, serializer);
       case AdapterCall_PlaceOrder(request: final request):
-        sse_encode_i_32(18, serializer);
+        sse_encode_i_32(19, serializer);
         sse_encode_box_autoadd_wire_order_request(request, serializer);
       case AdapterCall_CancelOrder(
         market: final market,
         orderId: final orderId,
       ):
-        sse_encode_i_32(19, serializer);
+        sse_encode_i_32(20, serializer);
         sse_encode_box_autoadd_wire_market(market, serializer);
         sse_encode_String(orderId, serializer);
       case AdapterCall_CancelOrderByClientId(
         market: final market,
         clientId: final clientId,
       ):
-        sse_encode_i_32(20, serializer);
+        sse_encode_i_32(21, serializer);
         sse_encode_box_autoadd_wire_market(market, serializer);
         sse_encode_String(clientId, serializer);
       case AdapterCall_CancelOrders(request: final request):
-        sse_encode_i_32(21, serializer);
+        sse_encode_i_32(22, serializer);
         sse_encode_box_autoadd_wire_cancel_orders_request(request, serializer);
       case AdapterCall_Positions(market: final market):
-        sse_encode_i_32(22, serializer);
+        sse_encode_i_32(23, serializer);
         sse_encode_opt_box_autoadd_wire_market(market, serializer);
       case AdapterCall_MarginSummary():
-        sse_encode_i_32(23, serializer);
-      case AdapterCall_FundingRates(request: final request):
         sse_encode_i_32(24, serializer);
-        sse_encode_box_autoadd_wire_history_request(request, serializer);
-      case AdapterCall_FundingPayments(request: final request):
+      case AdapterCall_FundingRates(request: final request):
         sse_encode_i_32(25, serializer);
         sse_encode_box_autoadd_wire_history_request(request, serializer);
-      case AdapterCall_SetMargin(request: final request):
+      case AdapterCall_FundingPayments(request: final request):
         sse_encode_i_32(26, serializer);
+        sse_encode_box_autoadd_wire_history_request(request, serializer);
+      case AdapterCall_SetMargin(request: final request):
+        sse_encode_i_32(27, serializer);
         sse_encode_box_autoadd_wire_margin_request(request, serializer);
       case AdapterCall_Subscribe(
         streamId: final streamId,
@@ -8826,7 +8896,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
         config: final config,
         sink: final sink,
       ):
-        sse_encode_i_32(27, serializer);
+        sse_encode_i_32(28, serializer);
         sse_encode_String(streamId, serializer);
         sse_encode_box_autoadd_wire_subscription(subscription, serializer);
         sse_encode_box_autoadd_wire_stream_config(config, serializer);
@@ -8839,7 +8909,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
         config: final config,
         sink: final sink,
       ):
-        sse_encode_i_32(28, serializer);
+        sse_encode_i_32(29, serializer);
         sse_encode_String(streamId, serializer);
         sse_encode_box_autoadd_wire_stream_config(config, serializer);
         sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerAccountStreamSink(
@@ -8847,7 +8917,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           serializer,
         );
       case AdapterCall_CancelStream(streamId: final streamId):
-        sse_encode_i_32(29, serializer);
+        sse_encode_i_32(30, serializer);
         sse_encode_String(streamId, serializer);
     }
   }
@@ -8883,50 +8953,53 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       case AdapterReply_DepositAddress(field0: final field0):
         sse_encode_i_32(8, serializer);
         sse_encode_box_autoadd_wire_deposit_address(field0, serializer);
-      case AdapterReply_PrepareWithdrawal(field0: final field0):
+      case AdapterReply_CreateDepositAddress(field0: final field0):
         sse_encode_i_32(9, serializer);
+        sse_encode_box_autoadd_wire_deposit_address(field0, serializer);
+      case AdapterReply_PrepareWithdrawal(field0: final field0):
+        sse_encode_i_32(10, serializer);
         sse_encode_box_autoadd_wire_withdrawal_quote(field0, serializer);
       case AdapterReply_Withdraw(field0: final field0):
-        sse_encode_i_32(10, serializer);
+        sse_encode_i_32(11, serializer);
         sse_encode_box_autoadd_wire_withdrawal(field0, serializer);
       case AdapterReply_Deposits(field0: final field0):
-        sse_encode_i_32(11, serializer);
+        sse_encode_i_32(12, serializer);
         sse_encode_box_autoadd_wire_deposit_page(field0, serializer);
       case AdapterReply_Withdrawals(field0: final field0):
-        sse_encode_i_32(12, serializer);
+        sse_encode_i_32(13, serializer);
         sse_encode_box_autoadd_wire_withdrawal_page(field0, serializer);
       case AdapterReply_OpenOrders(field0: final field0):
-        sse_encode_i_32(13, serializer);
+        sse_encode_i_32(14, serializer);
         sse_encode_list_wire_order(field0, serializer);
       case AdapterReply_Order(field0: final field0):
-        sse_encode_i_32(14, serializer);
+        sse_encode_i_32(15, serializer);
         sse_encode_box_autoadd_wire_order(field0, serializer);
       case AdapterReply_OrdersByIds(field0: final field0):
-        sse_encode_i_32(15, serializer);
+        sse_encode_i_32(16, serializer);
         sse_encode_list_wire_order(field0, serializer);
       case AdapterReply_OrderHistory(field0: final field0):
-        sse_encode_i_32(16, serializer);
+        sse_encode_i_32(17, serializer);
         sse_encode_box_autoadd_wire_order_page(field0, serializer);
       case AdapterReply_PlaceOrder(field0: final field0):
-        sse_encode_i_32(17, serializer);
+        sse_encode_i_32(18, serializer);
         sse_encode_box_autoadd_wire_order(field0, serializer);
       case AdapterReply_CancelOrders(field0: final field0):
-        sse_encode_i_32(18, serializer);
+        sse_encode_i_32(19, serializer);
         sse_encode_box_autoadd_wire_cancel_orders_result(field0, serializer);
       case AdapterReply_Positions(field0: final field0):
-        sse_encode_i_32(19, serializer);
+        sse_encode_i_32(20, serializer);
         sse_encode_list_wire_position(field0, serializer);
       case AdapterReply_MarginSummary(field0: final field0):
-        sse_encode_i_32(20, serializer);
+        sse_encode_i_32(21, serializer);
         sse_encode_box_autoadd_wire_margin_summary(field0, serializer);
       case AdapterReply_FundingRates(field0: final field0):
-        sse_encode_i_32(21, serializer);
+        sse_encode_i_32(22, serializer);
         sse_encode_box_autoadd_wire_funding_rate_page(field0, serializer);
       case AdapterReply_FundingPayments(field0: final field0):
-        sse_encode_i_32(22, serializer);
+        sse_encode_i_32(23, serializer);
         sse_encode_box_autoadd_wire_funding_payment_page(field0, serializer);
       case AdapterReply_Unit():
-        sse_encode_i_32(23, serializer);
+        sse_encode_i_32(24, serializer);
     }
   }
 
@@ -11329,6 +11402,13 @@ class NativeClientImpl extends RustOpaque implements NativeClient {
         that: this,
         request: request,
       );
+
+  Future<WireDepositAddress> createDepositAddress({
+    required WireDepositAddressRequest request,
+  }) => MaxtRustLib.instance.api.crateApiNativeClientCreateDepositAddress(
+    that: this,
+    request: request,
+  );
 
   Future<WireDepositAddress> depositAddress({
     required WireDepositAddressRequest request,

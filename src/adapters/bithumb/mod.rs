@@ -221,6 +221,16 @@ impl Adapter for BithumbAdapter {
         })
     }
 
+    fn create_deposit_address(
+        &self,
+        request: &DepositAddressRequest,
+    ) -> BoxFuture<'_, Result<DepositAddress>> {
+        let request = request.clone();
+        Box::pin(async move {
+            wallet::create_deposit_address(self.http()?, self.credentials()?, &request).await
+        })
+    }
+
     fn prepare_withdrawal(
         &self,
         request: &WithdrawRequest,

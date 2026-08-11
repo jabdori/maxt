@@ -64,6 +64,11 @@ pub enum AdapterCall {
         /// Complete address request.
         request: DepositAddressRequest,
     },
+    /// Requests creation of one deposit address.
+    CreateDepositAddress {
+        /// Complete address request.
+        request: DepositAddressRequest,
+    },
     /// Checks one withdrawal without submitting it.
     PrepareWithdrawal {
         /// Complete withdrawal request.
@@ -190,6 +195,8 @@ pub enum AdapterReply {
     AssetNetworks(Vec<AssetNetwork>),
     /// Result of [`AdapterCall::DepositAddress`].
     DepositAddress(DepositAddress),
+    /// Result of [`AdapterCall::CreateDepositAddress`].
+    CreateDepositAddress(DepositAddress),
     /// Result of [`AdapterCall::PrepareWithdrawal`].
     WithdrawalQuote(WithdrawalQuote),
     /// Result of [`AdapterCall::Withdraw`].
@@ -243,6 +250,7 @@ impl AdapterReply {
             Self::OrderRules(_) => "OrderRules",
             Self::AssetNetworks(_) => "AssetNetworks",
             Self::DepositAddress(_) => "DepositAddress",
+            Self::CreateDepositAddress(_) => "CreateDepositAddress",
             Self::WithdrawalQuote(_) => "WithdrawalQuote",
             Self::Withdrawal(_) => "Withdrawal",
             Self::Deposits(_) => "Deposits",

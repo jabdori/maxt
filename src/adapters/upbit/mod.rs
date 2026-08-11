@@ -330,6 +330,16 @@ impl Adapter for UpbitAdapter {
         })
     }
 
+    fn create_deposit_address(
+        &self,
+        request: &DepositAddressRequest,
+    ) -> BoxFuture<'_, Result<DepositAddress>> {
+        let request = request.clone();
+        Box::pin(async move {
+            wallet::create_deposit_address(self.credentials()?, self.http()?, &request).await
+        })
+    }
+
     fn prepare_withdrawal(
         &self,
         request: &WithdrawRequest,

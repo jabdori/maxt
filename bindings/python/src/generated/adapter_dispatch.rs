@@ -12,6 +12,7 @@ enum ReplyKind {
     OrderRules,
     AssetNetworks,
     DepositAddress,
+    CreateDepositAddress,
     PrepareWithdrawal,
     Withdraw,
     Deposits,
@@ -91,6 +92,11 @@ fn prepare_call(
             "deposit_address",
             vec![model_object(py, "DepositAddressRequest", crate::convert::deposit_address_request_to_wire(py, &request)?)?],
             ReplyKind::DepositAddress,
+        ),
+        AdapterCall::CreateDepositAddress { request } => (
+            "create_deposit_address",
+            vec![model_object(py, "DepositAddressRequest", crate::convert::deposit_address_request_to_wire(py, &request)?)?],
+            ReplyKind::CreateDepositAddress,
         ),
         AdapterCall::PrepareWithdrawal { request } => (
             "prepare_withdrawal",
@@ -215,6 +221,7 @@ fn decode_generated_reply(
         ReplyKind::OrderRules => Some(crate::convert::order_rules_from_wire(value).map(Box::new).map(AdapterReply::OrderRules)),
         ReplyKind::AssetNetworks => Some(list_from_wire(value, crate::convert::asset_network_from_wire).map(AdapterReply::AssetNetworks)),
         ReplyKind::DepositAddress => Some(crate::convert::deposit_address_from_wire(value).map(AdapterReply::DepositAddress)),
+        ReplyKind::CreateDepositAddress => Some(crate::convert::deposit_address_from_wire(value).map(AdapterReply::CreateDepositAddress)),
         ReplyKind::PrepareWithdrawal => Some(crate::convert::withdrawal_quote_from_wire(value).map(AdapterReply::WithdrawalQuote)),
         ReplyKind::Withdraw => Some(crate::convert::withdrawal_from_wire(value).map(AdapterReply::Withdrawal)),
         ReplyKind::Deposits => Some(page_from_wire(value, crate::convert::deposit_from_wire).map(AdapterReply::Deposits)),

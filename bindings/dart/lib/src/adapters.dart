@@ -207,6 +207,14 @@ abstract base class _NativeAdapterBase
       ).then(_depositAddressFromWire);
 
   @override
+  Future<DepositAddress> createDepositAddress(DepositAddressRequest request) =>
+      _nativeFuture(
+        () => _handle.createDepositAddress(
+          request: _depositAddressRequestToWire(request),
+        ),
+      ).then(_depositAddressFromWire);
+
+  @override
   Future<WithdrawalQuote> prepareWithdrawal(WithdrawRequest request) =>
       _nativeFuture(
         () =>

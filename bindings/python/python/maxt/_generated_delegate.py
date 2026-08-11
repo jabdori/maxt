@@ -68,6 +68,10 @@ class _GeneratedNativeClientDelegateApi:
         value = await self._call(self._client.deposit_address, request)
         return _model_from_wire("DepositAddress", value)
 
+    async def create_deposit_address(self, request: DepositAddressRequest) -> DepositAddress:
+        value = await self._call(self._client.create_deposit_address, request)
+        return _model_from_wire("DepositAddress", value)
+
     async def prepare_withdrawal(self, request: WithdrawRequest) -> WithdrawalQuote:
         value = await self._call(self._client.prepare_withdrawal, request)
         return _model_from_wire("WithdrawalQuote", value)

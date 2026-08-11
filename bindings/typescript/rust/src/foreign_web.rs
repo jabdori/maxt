@@ -188,6 +188,9 @@ fn decode_reply(
         WireAdapterReply::DepositAddress { value } => {
             value.try_into().map(AdapterReply::DepositAddress)
         }
+        WireAdapterReply::CreateDepositAddress { value } => {
+            value.try_into().map(AdapterReply::CreateDepositAddress)
+        }
         WireAdapterReply::WithdrawalQuote { value } => {
             value.try_into().map(AdapterReply::WithdrawalQuote)
         }

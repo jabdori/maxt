@@ -87,6 +87,9 @@ enum WireAdapterCall {
     DepositAddress {
         request: WireDepositAddressRequest,
     },
+    CreateDepositAddress {
+        request: WireDepositAddressRequest,
+    },
     PrepareWithdrawal {
         request: WireWithdrawRequest,
     },
@@ -163,6 +166,7 @@ enum WireAdapterReply {
     OrderRules { value: Box<WireOrderRules> },
     AssetNetworks { value: Vec<WireAssetNetwork> },
     DepositAddress { value: WireDepositAddress },
+    CreateDepositAddress { value: WireDepositAddress },
     WithdrawalQuote { value: WireWithdrawalQuote },
     Withdrawal { value: WireWithdrawal },
     Deposits { value: WirePage<WireDeposit> },
@@ -216,6 +220,11 @@ fn call_to_wire(call: AdapterCall, stream_id: Option<String>) -> maxt::Result<Wi
         AdapterCall::DepositAddress { request } => Ok(WireAdapterCall::DepositAddress {
             request: request.try_into()?,
         }),
+        AdapterCall::CreateDepositAddress { request } => {
+            Ok(WireAdapterCall::CreateDepositAddress {
+                request: request.try_into()?,
+            })
+        }
         AdapterCall::PrepareWithdrawal { request } => Ok(WireAdapterCall::PrepareWithdrawal {
             request: request.try_into()?,
         }),
@@ -603,6 +612,9 @@ impl JsForeignDispatcher {
             WireAdapterReply::DepositAddress { value } => {
                 value.try_into().map(AdapterReply::DepositAddress)
             }
+            WireAdapterReply::CreateDepositAddress { value } => {
+                value.try_into().map(AdapterReply::CreateDepositAddress)
+            }
             WireAdapterReply::WithdrawalQuote { value } => {
                 value.try_into().map(AdapterReply::WithdrawalQuote)
             }
@@ -827,6 +839,9 @@ mod tests {
             AdapterCall::DepositAddress {
                 request: DepositAddressRequest::new("BTC", Network::Bitcoin),
             },
+            AdapterCall::CreateDepositAddress {
+                request: DepositAddressRequest::new("BTC", Network::Bitcoin),
+            },
             AdapterCall::PrepareWithdrawal {
                 request: withdraw_request.clone(),
             },
@@ -892,6 +907,7 @@ mod tests {
             "order_rules",
             "asset_networks",
             "deposit_address",
+            "create_deposit_address",
             "prepare_withdrawal",
             "withdraw",
             "deposits",

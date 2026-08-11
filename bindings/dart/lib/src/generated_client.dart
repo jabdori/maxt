@@ -60,6 +60,9 @@ abstract base class GeneratedClient<A extends Adapter> {
   Future<DepositAddress> depositAddress(DepositAddressRequest request) =>
       _native.depositAddress(request);
 
+  Future<DepositAddress> createDepositAddress(DepositAddressRequest request) =>
+      _native.createDepositAddress(request);
+
   Future<WithdrawalQuote> prepareWithdrawal(WithdrawRequest request) =>
       _native.prepareWithdrawal(request);
 

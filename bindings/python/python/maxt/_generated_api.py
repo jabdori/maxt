@@ -42,6 +42,9 @@ class _GeneratedAdapterApi:
     async def deposit_address(self, request: DepositAddressRequest) -> DepositAddress:
         raise self._unsupported(Feature.DEPOSIT_ADDRESSES)
 
+    async def create_deposit_address(self, request: DepositAddressRequest) -> DepositAddress:
+        raise self._unsupported(Feature.DEPOSIT_ADDRESSES)
+
     async def prepare_withdrawal(self, request: WithdrawRequest) -> WithdrawalQuote:
         raise self._unsupported(Feature.WITHDRAWAL_QUOTES)
 
@@ -135,6 +138,9 @@ class _GeneratedClientApi:
 
     async def deposit_address(self, request: DepositAddressRequest) -> DepositAddress:
         return await self._delegate.deposit_address(request)
+
+    async def create_deposit_address(self, request: DepositAddressRequest) -> DepositAddress:
+        return await self._delegate.create_deposit_address(request)
 
     async def prepare_withdrawal(self, request: WithdrawRequest) -> WithdrawalQuote:
         return await self._delegate.prepare_withdrawal(request)

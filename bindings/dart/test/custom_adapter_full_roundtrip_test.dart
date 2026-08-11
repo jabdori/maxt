@@ -23,6 +23,7 @@ final class FullContractAdapter extends AdapterBase {
   int? orderBookDepth;
   CandleRequest? candleRequest;
   Market? orderRulesMarket;
+  DepositAddressRequest? createdDepositAddressRequest;
   Market? openOrdersMarket;
   (Market, String)? requestedOrder;
   (Market, String)? requestedClientOrder;
@@ -50,6 +51,7 @@ final class FullContractAdapter extends AdapterBase {
     Feature.ticker,
     Feature.candles,
     Feature.balances,
+    Feature.depositAddresses,
     Feature.openOrders,
     Feature.orderHistory,
     Feature.accountStream,
@@ -180,6 +182,20 @@ final class FullContractAdapter extends AdapterBase {
         averageBuyPriceModified: false,
         averageBuyPriceUnit: 'USDT',
       ),
+    );
+  }
+
+  @override
+  Future<DepositAddress> createDepositAddress(
+    DepositAddressRequest request,
+  ) async {
+    createdDepositAddressRequest = request;
+    return DepositAddress(
+      exchange: exchange,
+      asset: request.asset,
+      network: request.network,
+      address: null,
+      memo: null,
     );
   }
 
@@ -391,6 +407,20 @@ void main() {
     expect(rules.buyOptions.single.timeInForce, TimeInForce.immediateOrCancel);
     expect(rules.sellOptions.single.orderType, isNull);
     expect(adapter.orderRulesMarket, market);
+
+    final depositAddressRequest = DepositAddressRequest(
+      asset: 'BTC',
+      network: Network.bitcoin,
+    );
+    final pendingAddress = await client.createDepositAddress(
+      depositAddressRequest,
+    );
+    expect(pendingAddress.address, isNull);
+    expect(adapter.createdDepositAddressRequest?.asset, 'BTC');
+    expect(
+      adapter.createdDepositAddressRequest?.network,
+      Network.bitcoin,
+    );
 
     final openOrder = (await client.openOrdersOn(market)).single;
     expect(openOrder.id, 'order-1');

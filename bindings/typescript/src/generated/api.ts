@@ -7,7 +7,7 @@ import { AccountStream, MarketStream, StreamError } from "../stream.js";
 import * as Codec from "./codec.js";
 import type * as Wire from "./contract.js";
 
-export const NATIVE_API_VERSION = 7 as const;
+export const NATIVE_API_VERSION = 8 as const;
 
 export type NativeOutcome<T> =
   | { readonly ok: true; readonly value: T }
@@ -27,6 +27,7 @@ export interface RawNativeClient {
   orderRules(market: string): Promise<unknown>;
   assetNetworks(asset: string): Promise<unknown>;
   depositAddress(request: string): Promise<unknown>;
+  createDepositAddress(request: string): Promise<unknown>;
   prepareWithdrawal(request: string): Promise<unknown>;
   withdraw(request: string): Promise<unknown>;
   deposits(request: string): Promise<unknown>;
@@ -128,6 +129,7 @@ export interface NativeClientHandle {
   orderRules(market: Wire.MarketWire): Promise<NativeOutcome<Wire.OrderRulesWire>>;
   assetNetworks(asset: string): Promise<NativeOutcome<readonly Wire.AssetNetworkWire[]>>;
   depositAddress(request: Wire.DepositAddressRequestWire): Promise<NativeOutcome<Wire.DepositAddressWire>>;
+  createDepositAddress(request: Wire.DepositAddressRequestWire): Promise<NativeOutcome<Wire.DepositAddressWire>>;
   prepareWithdrawal(request: Wire.WithdrawRequestWire): Promise<NativeOutcome<Wire.WithdrawalQuoteWire>>;
   withdraw(request: Wire.WithdrawRequestWire): Promise<NativeOutcome<Wire.WithdrawalWire>>;
   deposits(request: Wire.TransferHistoryRequestWire): Promise<NativeOutcome<Wire.PageWire<Wire.DepositWire>>>;
@@ -315,6 +317,7 @@ function wrapJsonClient(raw: RawNativeClient): NativeClientHandle {
     orderRules: (market: Wire.MarketWire) => raw.orderRules(Codec.stringifyWire(market)) as Promise<NativeOutcome<Wire.OrderRulesWire>>,
     assetNetworks: (asset: string) => raw.assetNetworks(Codec.stringifyWire(asset)) as Promise<NativeOutcome<readonly Wire.AssetNetworkWire[]>>,
     depositAddress: (request: Wire.DepositAddressRequestWire) => raw.depositAddress(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.DepositAddressWire>>,
+    createDepositAddress: (request: Wire.DepositAddressRequestWire) => raw.createDepositAddress(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.DepositAddressWire>>,
     prepareWithdrawal: (request: Wire.WithdrawRequestWire) => raw.prepareWithdrawal(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.WithdrawalQuoteWire>>,
     withdraw: (request: Wire.WithdrawRequestWire) => raw.withdraw(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.WithdrawalWire>>,
     deposits: (request: Wire.TransferHistoryRequestWire) => raw.deposits(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.PageWire<Wire.DepositWire>>>,
@@ -468,6 +471,12 @@ export abstract class Adapter {
     ));
   }
 
+  createDepositAddress(request: Model.DepositAddressRequest): Promise<Model.DepositAddress> {
+    return Promise.reject(new UnsupportedError(
+      featureById("deposit_addresses"), this.exchange, "feature is not supported",
+    ));
+  }
+
   prepareWithdrawal(request: Model.WithdrawRequest): Promise<Model.WithdrawalQuote> {
     return Promise.reject(new UnsupportedError(
       featureById("withdrawal_quotes"), this.exchange, "feature is not supported",
@@ -600,6 +609,7 @@ class CustomCallbacks implements ForeignAdapterCallbacks {
         case "order_rules": return ok({ kind: "order_rules", value: Codec.orderRulesToWire(await this.adapter.orderRules(Codec.marketFromWire(call.market))) });
         case "asset_networks": return ok({ kind: "asset_networks", value: (await this.adapter.assetNetworks(call.asset)).map(Codec.assetNetworkToWire) });
         case "deposit_address": return ok({ kind: "deposit_address", value: Codec.depositAddressToWire(await this.adapter.depositAddress(Codec.depositAddressRequestFromWire(call.request))) });
+        case "create_deposit_address": return ok({ kind: "create_deposit_address", value: Codec.depositAddressToWire(await this.adapter.createDepositAddress(Codec.depositAddressRequestFromWire(call.request))) });
         case "prepare_withdrawal": return ok({ kind: "withdrawal_quote", value: Codec.withdrawalQuoteToWire(await this.adapter.prepareWithdrawal(Codec.withdrawRequestFromWire(call.request))) });
         case "withdraw": return ok({ kind: "withdrawal", value: Codec.withdrawalToWire(await this.adapter.withdraw(Codec.withdrawRequestFromWire(call.request))) });
         case "deposits": { const value = await this.adapter.deposits(Codec.transferHistoryRequestFromWire(call.request)); return ok({ kind: "deposits", value: { items: value.items.map(Codec.depositToWire), next: value.next?.value ?? null } }); }
@@ -705,6 +715,11 @@ export class Client<A extends Adapter> {
   async depositAddress(request: Model.DepositAddressRequest): Promise<Model.DepositAddress> {
     await ensureInitialized();
     return Codec.depositAddressFromWire(Codec.unwrapOutcome(await this.#native.depositAddress(Codec.depositAddressRequestToWire(request))));
+  }
+
+  async createDepositAddress(request: Model.DepositAddressRequest): Promise<Model.DepositAddress> {
+    await ensureInitialized();
+    return Codec.depositAddressFromWire(Codec.unwrapOutcome(await this.#native.createDepositAddress(Codec.depositAddressRequestToWire(request))));
   }
 
   async prepareWithdrawal(request: Model.WithdrawRequest): Promise<Model.WithdrawalQuote> {
@@ -855,6 +870,7 @@ class NativeAdapter extends Adapter {
   orderRules(market: Model.Market): Promise<Model.OrderRules> { return new Client(this).orderRules(market); }
   assetNetworks(asset: string): Promise<readonly Model.AssetNetwork[]> { return new Client(this).assetNetworks(asset); }
   depositAddress(request: Model.DepositAddressRequest): Promise<Model.DepositAddress> { return new Client(this).depositAddress(request); }
+  createDepositAddress(request: Model.DepositAddressRequest): Promise<Model.DepositAddress> { return new Client(this).createDepositAddress(request); }
   prepareWithdrawal(request: Model.WithdrawRequest): Promise<Model.WithdrawalQuote> { return new Client(this).prepareWithdrawal(request); }
   withdraw(request: Model.WithdrawRequest): Promise<Model.Withdrawal> { return new Client(this).withdraw(request); }
   deposits(request: Model.TransferHistoryRequest): Promise<Model.Page<Model.Deposit>> { return new Client(this).deposits(request); }

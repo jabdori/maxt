@@ -21,6 +21,8 @@ from maxt import (
     Client,
     Cursor,
     DecodeError,
+    DepositAddress,
+    DepositAddressRequest,
     Exchange,
     Feature,
     Feed,
@@ -39,6 +41,7 @@ from maxt import (
     MarketKind,
     MarketStatus,
     MarketStream,
+    Network,
     Order,
     OrderAccount,
     OrderBook,
@@ -97,6 +100,13 @@ class NativeReplayAdapter(Adapter):
             "trade-1",
         )
         self.balance = Balance("usdt", Decimal("100.2500"), Decimal("2.5000"))
+        self.sample_deposit_address = DepositAddress(
+            Exchange.BINANCE,
+            "BTC",
+            Network.BITCOIN,
+            "bc1qcustomadapter",
+            "memo-7",
+        )
         self.rules = OrderRules(
             market=market,
             market_name="BTC/USDT",
@@ -212,6 +222,16 @@ class NativeReplayAdapter(Adapter):
     async def order_rules(self, market: Market) -> OrderRules:
         self.received.append(("order_rules", market))
         return self.rules
+
+    async def deposit_address(self, request: DepositAddressRequest) -> DepositAddress:
+        self.received.append(("deposit_address", request))
+        return self.sample_deposit_address
+
+    async def create_deposit_address(
+        self, request: DepositAddressRequest
+    ) -> DepositAddress:
+        self.received.append(("create_deposit_address", request))
+        return self.sample_deposit_address
 
     async def open_orders(self, market=None) -> list[Order]:
         self.received.append(("open_orders", market))
@@ -486,6 +506,7 @@ class NativeCustomAdapterTests(unittest.IsolatedAsyncioTestCase):
             Size.base(Decimal("1.0000")),
             Decimal("50000.0100"),
         )
+        deposit_address_request = DepositAddressRequest("BTC", Network.BITCOIN)
         margin_request = MarginRequest(market, Decimal("5"), MarginMode.CROSS)
 
         self.assertIs(client.adapter, adapter)
@@ -497,6 +518,14 @@ class NativeCustomAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await client.ticker(market)).last_price, Decimal("50000.01"))
         self.assertEqual((await client.candles(candle_request))[0].volume, Decimal("12.5000"))
         self.assertEqual((await client.balances())[0].total(), Decimal("102.7500"))
+        self.assertEqual(
+            (await client.deposit_address(deposit_address_request)).memo,
+            "memo-7",
+        )
+        self.assertEqual(
+            (await client.create_deposit_address(deposit_address_request)).memo,
+            "memo-7",
+        )
         rules = await client.order_rules(market)
         self.assertEqual(rules.market_name, "BTC/USDT")
         self.assertEqual(rules.base_account.balance.asset, "BTC")
@@ -549,6 +578,14 @@ class NativeCustomAdapterTests(unittest.IsolatedAsyncioTestCase):
             call[1] for call in adapter.received if call[0] == "cancel_orders"
         )
         self.assertEqual(received_cancel.to_wire(), cancel_orders_request.to_wire())
+        received_created_address = next(
+            call[1]
+            for call in adapter.received
+            if call[0] == "create_deposit_address"
+        )
+        self.assertEqual(
+            received_created_address.to_wire(), deposit_address_request.to_wire()
+        )
 
     async def test_market_and_account_stream_items_cross_rust(self) -> None:
         market = Market.perpetual(Exchange.BINANCE, "BTC", "USDT")

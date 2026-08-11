@@ -544,6 +544,9 @@ UNION_FIELDS = {
         "deposit_address": {
             "request": "named:DepositAddressRequest",
         },
+        "create_deposit_address": {
+            "request": "named:DepositAddressRequest",
+        },
         "prepare_withdrawal": {
             "request": "named:WithdrawRequest",
         },
@@ -635,6 +638,9 @@ UNION_FIELDS = {
             "value": "list:named:AssetNetwork",
         },
         "deposit_address": {
+            "value": "named:DepositAddress",
+        },
+        "create_deposit_address": {
             "value": "named:DepositAddress",
         },
         "withdrawal_quote": {

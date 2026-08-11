@@ -154,6 +154,20 @@ impl NativeClient {
         )
     }
 
+    fn create_deposit_address<'py>(
+        &self,
+        py: Python<'py>,
+        request: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::deposit_address_request_from_wire(request)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.create_deposit_address(&request).await },
+            |py, value| crate::convert::deposit_address_to_wire(py, &value),
+        )
+    }
+
     fn prepare_withdrawal<'py>(
         &self,
         py: Python<'py>,

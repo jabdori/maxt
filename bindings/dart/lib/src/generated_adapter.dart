@@ -38,6 +38,8 @@ abstract interface class GeneratedAdapterContract {
 
   Future<DepositAddress> depositAddress(DepositAddressRequest request);
 
+  Future<DepositAddress> createDepositAddress(DepositAddressRequest request);
+
   Future<WithdrawalQuote> prepareWithdrawal(WithdrawRequest request);
 
   Future<Withdrawal> withdraw(WithdrawRequest request);
@@ -121,6 +123,10 @@ abstract base class GeneratedAdapterDefaults
 
   @override
   Future<DepositAddress> depositAddress(DepositAddressRequest request) =>
+      _unsupported(Feature.depositAddresses);
+
+  @override
+  Future<DepositAddress> createDepositAddress(DepositAddressRequest request) =>
       _unsupported(Feature.depositAddresses);
 
   @override

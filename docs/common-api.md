@@ -15,9 +15,9 @@ Configure credentials on the adapter before `Client::new(adapter)`.
 | Client | `exchange`, `supports`, `adapter`, `into_adapter` |
 | Public REST | `markets`, `trades`, `order_book`, `ticker`, `candles`, `funding_rates` |
 | Public stream | `subscribe`, `subscribe_with` |
-| Private reads | `balances`, `order_rules`, `open_orders`, `open_orders_on`, `order`, `order_by_client_id`, `orders_by_ids`, `order_history`, `positions`, `positions_on`, `margin_summary`, `funding_payments` |
+| Private reads | `balances`, `order_rules`, `asset_networks`, `deposit_address`, `deposits`, `withdrawals`, `open_orders`, `open_orders_on`, `order`, `order_by_client_id`, `orders_by_ids`, `order_history`, `positions`, `positions_on`, `margin_summary`, `funding_payments` |
 | Private stream | `subscribe_account`, `subscribe_account_with` |
-| Private writes | `place_order`, `cancel_order`, `cancel_order_by_client_id`, `cancel_orders`, `set_margin` |
+| Private writes | `create_deposit_address`, `withdraw`, `place_order`, `cancel_order`, `cancel_order_by_client_id`, `cancel_orders`, `set_margin` |
 
 Public REST and market streams require no credentials. Provider and
 `MarketKind` support is listed in [provider support](providers.md).
@@ -190,6 +190,22 @@ retrying.
 
 Construct order values with `Decimal`. Supported order shapes and validation
 rules are provider-specific.
+
+## Asset transfers
+
+| Method | Contract |
+| --- | --- |
+| `asset_networks(asset)` | Current deposit and withdrawal availability, provider network ID, fees, and limits for one asset |
+| `deposit_address(request)` | Reads an existing address for one asset and network; `address == None` means the provider has not issued it yet |
+| `create_deposit_address(request)` | Requests address creation on Upbit and Bithumb; it can return `address == None` while Upbit generates the address asynchronously |
+| `deposits(request)`, `withdrawals(request)` | Newest-first transfer-history pages; provider identifiers and raw statuses are retained |
+| `withdraw(request)` | Submits one withdrawal without automatic retry; a success means the provider accepted the request, not that the destination credited it |
+
+`create_deposit_address()` never polls or retries. Call `deposit_address()` later
+to observe an asynchronously issued address. Upbit and Bithumb accept only an
+asset and network for these calls; their adapters reject `DepositAddressRequest::amount`
+before network I/O. See the generated [coverage reference](../bindings/common/generated/api.md)
+for endpoint-level support and validation state.
 
 ### `OrderHistoryRequest`
 

@@ -345,6 +345,11 @@ const CLIENT_DEPOSIT_ADDRESS: &[ClientMethod] = &[ClientMethod {
     native_name: "depositAddress",
     arguments: DEPOSIT_ADDRESS_REQUEST,
 }];
+const CLIENT_CREATE_DEPOSIT_ADDRESS: &[ClientMethod] = &[ClientMethod {
+    name: "createDepositAddress",
+    native_name: "createDepositAddress",
+    arguments: DEPOSIT_ADDRESS_REQUEST,
+}];
 const CLIENT_PREPARE_WITHDRAWAL: &[ClientMethod] = &[ClientMethod {
     name: "prepareWithdrawal",
     native_name: "prepareWithdrawal",
@@ -544,6 +549,14 @@ const ADAPTER_OPERATIONS: &[Operation] = &[
         client_methods: CLIENT_DEPOSIT_ADDRESS,
     },
     Operation {
+        rust_name: "create_deposit_address",
+        language_name: "createDepositAddress",
+        feature: "deposit_addresses",
+        arguments: DEPOSIT_ADDRESS_REQUEST,
+        result: ApiType::Named("DepositAddress"),
+        client_methods: CLIENT_CREATE_DEPOSIT_ADDRESS,
+    },
+    Operation {
         rust_name: "prepare_withdrawal",
         language_name: "prepareWithdrawal",
         feature: "withdrawal_quotes",
@@ -733,6 +746,7 @@ const CLIENT_MEMBERS: &[&str] = &[
     "orderRules",
     "assetNetworks",
     "depositAddress",
+    "createDepositAddress",
     "prepareWithdrawal",
     "withdraw",
     "deposits",
@@ -2137,6 +2151,10 @@ pub fn binding_schema() -> Schema {
                     vec![field("request", Type::named("DepositAddressRequestWire"))],
                 ),
                 variant(
+                    "create_deposit_address",
+                    vec![field("request", Type::named("DepositAddressRequestWire"))],
+                ),
+                variant(
                     "prepare_withdrawal",
                     vec![field("request", Type::named("WithdrawRequestWire"))],
                 ),
@@ -2265,6 +2283,10 @@ pub fn binding_schema() -> Schema {
                     vec![field("value", Type::named("DepositAddressWire"))],
                 ),
                 variant(
+                    "create_deposit_address",
+                    vec![field("value", Type::named("DepositAddressWire"))],
+                ),
+                variant(
                     "withdrawal_quote",
                     vec![field("value", Type::named("WithdrawalQuoteWire"))],
                 ),
@@ -2324,7 +2346,7 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
-        native_api_version: 7,
+        native_api_version: 8,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
         identifiers: IDENTIFIERS,

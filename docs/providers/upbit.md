@@ -27,17 +27,21 @@ accounts, and credentials are not shared across regions.
 | `markets(MarketKind::Spot)` | `/v1/market/all?is_details=true` | Listed Spot markets |
 | `markets(MarketKind::Perpetual)` | — | `Ok(vec![])` |
 | `trades(market, limit)` | `/v1/trades/ticks` | `limit: 1..=500`; newest-first |
-| `order_book(market, depth)` | `/v1/orderbook` | `depth: 1..=30`; at most `depth` levels per side; `None -> 30` |
+| `order_book(market, depth)` | `/v1/orderbook` | `depth: 1..=30`; at most `depth` levels per side; `None -> 30`; the provider's aggregation `level` option is not exposed yet |
 | `ticker(market)` | `/v1/ticker` | One market snapshot |
 
 Derivative methods return `Error::Unsupported`.
 
 ## Candles
 
-| Surface | Exposed `Interval` variants | Native intervals not exposed |
+| Surface | Exposed `Interval` variants | No generic `Interval` |
 | --- | --- | --- |
 | REST | `Sec1`, `Min1`, `Min3`, `Min5`, `Min10`, `Min15`, `Min30`, `Hour1`, `Hour4`, `Day1`, `Week1`, `Month1` | `1y` |
 | WebSocket | `Sec1`, `Min1`, `Min3`, `Min5`, `Min10`, `Min15`, `Min30`, `Hour1`, `Hour4` | — |
+
+Annual candles are available through the provider-specific
+`year_candles(market, to, count)` method and return `UpbitYearCandle`; they do
+not extend the shared `Interval`.
 
 | Constraint | Value |
 | --- | ---: |
@@ -94,7 +98,10 @@ Access the following provider-specific methods through `Client::adapter()`.
 | Method | Contract | Rate-limit group |
 | --- | --- | --- |
 | `tickers(&[Market])` | `markets.len() >= 1`; one ticker per market | `ticker` |
+| `tickers_by_quote(&[String])` | At least one quote currency; normalizes to uppercase; returns all matching ticker snapshots | `ticker` |
 | `order_books(&[Market], depth)` | `markets.len() >= 1`; `depth: 1..=30` or `None` | `orderbook` |
+| `orderbook_instruments(&[Market])` | `markets.len() >= 1`; current price-band tick size and supported aggregation levels; levels are empty when the region does not return them | `orderbook` |
+| `year_candles(market, to, count)` | `count: 1..=200` or `None`; optional ISO-8601 boundary; oldest-first; Korean open time is optional by region | `candle` |
 | `market_events()` | Investment warning and caution criteria by market | `market` |
 
 | Market event | Mapping |
@@ -102,6 +109,10 @@ Access the following provider-specific methods through `Client::adapter()`.
 | `warning == true` | `MarketStatus::Unknown` |
 | `cautions` non-empty | No `MarketStatus` change |
 | `region != UpbitRegion::Korea` | `UpbitMarketEvent::cautions == []` |
+
+`UpbitOrderBookInstrument::tick_size` is current metadata, not a permanent
+market constant. Fetch it again when an intended order price crosses an Upbit
+price band.
 
 ## Limits and official links
 
@@ -121,6 +132,9 @@ satisfy `Error::is_rate_limited() == true`.
 - [Public REST](https://global-docs.upbit.com/reference/list-trading-pairs)
 - [Order books](https://global-docs.upbit.com/reference/list-orderbooks)
 - [Candles](https://global-docs.upbit.com/reference/list-candles-minutes)
+- [Annual candles](https://docs.upbit.com/kr/reference/list-candles-years)
+- [Quote-currency tickers](https://docs.upbit.com/kr/reference/list-quote-tickers)
+- [Orderbook instruments](https://docs.upbit.com/kr/reference/list-orderbook-instruments)
 - [WebSocket](https://global-docs.upbit.com/reference/websocket-guide)
 - [Rate limits](https://global-docs.upbit.com/reference/rate-limits)
 - [Authentication](https://global-docs.upbit.com/reference/auth)

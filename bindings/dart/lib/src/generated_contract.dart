@@ -125,7 +125,15 @@ const clientMembers = <String>[
   'setMargin',
 ];
 const providerMethods = <String, List<String>>{
-  'upbit': <String>['region', 'orderBooks', 'tickers', 'marketEvents'],
+  'upbit': <String>[
+    'region',
+    'orderBooks',
+    'tickers',
+    'tickersByQuote',
+    'yearCandles',
+    'orderbookInstruments',
+    'marketEvents',
+  ],
   'bithumb': <String>['marketWarnings', 'marketAlerts'],
   'binance': <String>[
     'venue',

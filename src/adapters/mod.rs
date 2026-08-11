@@ -156,4 +156,6 @@ pub use bithumb::{BithumbAdapter, BithumbAlertStep, BithumbMarketAlert};
 pub use hyperliquid::{
     HyperliquidAdapter, HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind,
 };
-pub use upbit::{UpbitAdapter, UpbitMarketEvent, UpbitRegion};
+pub use upbit::{
+    UpbitAdapter, UpbitMarketEvent, UpbitOrderBookInstrument, UpbitRegion, UpbitYearCandle,
+};

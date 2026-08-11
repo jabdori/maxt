@@ -16,6 +16,9 @@ void _generatedProviderGuard({
   upbit.region;
   upbit.orderBooks(_generatedProviderValue<List<Market>>());
   upbit.tickers(_generatedProviderValue<List<Market>>());
+  upbit.tickersByQuote(_generatedProviderValue<List<String>>());
+  upbit.yearCandles(_generatedProviderValue<Market>());
+  upbit.orderbookInstruments(_generatedProviderValue<List<Market>>());
   upbit.marketEvents();
   BithumbAdapter();
   bithumb.marketWarnings();

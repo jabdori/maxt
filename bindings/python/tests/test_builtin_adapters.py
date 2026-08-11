@@ -31,7 +31,9 @@ from maxt import (
     Trade,
     UpbitAdapter,
     UpbitMarketEvent,
+    UpbitOrderBookInstrument,
     UpbitRegion,
+    UpbitYearCandle,
 )
 
 
@@ -115,6 +117,52 @@ class FakeNativeUpbitAdapter:
                 "market": MARKET_WIRE,
                 "warning": True,
                 "cautions": ["PRICE_FLUCTUATION"],
+            }
+        ]
+
+    async def tickers_by_quote(self, quote_currencies):
+        self.quote_currencies = quote_currencies
+        return [
+            {
+                "market": MARKET_WIRE,
+                "timestamp": 1_700_000_000_000_000_012,
+                "last_trade_time": 1_700_000_000_000_000_011,
+                "last_price": "50000000.0100",
+                "change": None,
+                "change_rate": None,
+                "high": None,
+                "low": None,
+                "volume": None,
+                "quote_volume": None,
+            }
+        ]
+
+    async def year_candles(self, market, to=None, count=None):
+        self.year_candle_args = (market, to, count)
+        return [
+            {
+                "market": MARKET_WIRE,
+                "open_time": 1_767_225_600_000_000_000,
+                "korea_open_time": 1_767_225_600_000_000_000,
+                "timestamp": 1_786_467_753_786_000_000,
+                "open": "128000000.00000000",
+                "high": "143050000.00000000",
+                "low": "88770000.00000000",
+                "close": "89587000.00000000",
+                "volume": "348666.78732189",
+                "quote_volume": "37189906239683.17623000",
+                "first_day_of_period": "2026-01-01",
+            }
+        ]
+
+    async def orderbook_instruments(self, markets):
+        self.instrument_markets = markets
+        return [
+            {
+                "market": MARKET_WIRE,
+                "quote_currency": "KRW",
+                "tick_size": "1000",
+                "supported_levels": ["0", "10000"],
             }
         ]
 
@@ -281,6 +329,9 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
 
             trades = await client.trades(market)
             events = await adapter.market_events()
+            quote_tickers = await adapter.tickers_by_quote(["KRW"])
+            annual = await adapter.year_candles(market, to=1_767_225_600_000_000_000, count=2)
+            policies = await adapter.orderbook_instruments([market])
 
         self.assertIsInstance(adapter, Adapter)
         self.assertIs(client.adapter, adapter)
@@ -293,6 +344,13 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(events[0][0], market)
         self.assertIsInstance(events[0][1], UpbitMarketEvent)
         self.assertTrue(events[0][1].warning)
+        self.assertEqual(adapter._handle.quote_currencies, ["KRW"])
+        self.assertEqual(quote_tickers[0].last_price, Decimal("50000000.0100"))
+        self.assertIsInstance(annual[0], UpbitYearCandle)
+        self.assertEqual(annual[0].korea_open_time, annual[0].open_time)
+        self.assertEqual(annual[0].quote_volume, Decimal("37189906239683.17623000"))
+        self.assertIsInstance(policies[0], UpbitOrderBookInstrument)
+        self.assertEqual(policies[0].supported_levels, [Decimal("0"), Decimal("10000")])
 
     async def test_native_stream_items_are_decoded_and_only_termination_ends(self) -> None:
         native = SimpleNamespace(NativeUpbitAdapter=FakeNativeUpbitAdapter)

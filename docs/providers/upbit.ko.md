@@ -27,17 +27,20 @@
 | `markets(MarketKind::Spot)` | `/v1/market/all?is_details=true` | 상장된 Spot 시장 |
 | `markets(MarketKind::Perpetual)` | — | `Ok(vec![])` |
 | `trades(market, limit)` | `/v1/trades/ticks` | `limit: 1..=500`; 최신순 |
-| `order_book(market, depth)` | `/v1/orderbook` | `depth: 1..=30`; 각 측 `len() <= depth`; `None → 30` |
+| `order_book(market, depth)` | `/v1/orderbook` | `depth: 1..=30`; 각 측 `len() <= depth`; `None → 30`; 거래소의 호가 묶음 단위(`level`) 옵션은 아직 노출하지 않음 |
 | `ticker(market)` | `/v1/ticker` | 시장 스냅샷(snapshot) 1건 |
 
 파생상품 메서드는 `Error::Unsupported`를 반환합니다.
 
 ## 캔들
 
-| API | 지원하는 `Interval` | 매핑하지 않는 거래소 간격 |
+| API | 지원하는 `Interval` | 공통 `Interval`로 제공하지 않는 간격 |
 | --- | --- | --- |
 | REST | `Sec1`, `Min1`, `Min3`, `Min5`, `Min10`, `Min15`, `Min30`, `Hour1`, `Hour4`, `Day1`, `Week1`, `Month1` | `1y` |
 | WebSocket | `Sec1`, `Min1`, `Min3`, `Min5`, `Min10`, `Min15`, `Min30`, `Hour1`, `Hour4` | — |
+
+연간 캔들은 `year_candles(market, to, count)`로 제공합니다. 공통 `Interval`을
+확장하지 않고 `UpbitYearCandle`을 반환하는 Upbit 전용 API입니다.
 
 | 제약 | 값 |
 | --- | ---: |
@@ -94,7 +97,10 @@
 | 메서드 | 계약 | 요청 한도 그룹 |
 | --- | --- | --- |
 | `tickers(&[Market])` | `markets.len() >= 1`; 시장당 ticker 1건 | `ticker` |
+| `tickers_by_quote(&[String])` | 견적 통화 1개 이상; 대문자로 정규화; 해당 통화의 ticker 스냅샷 전체 반환 | `ticker` |
 | `order_books(&[Market], depth)` | `markets.len() >= 1`; `depth: 1..=30` 또는 `None` | `orderbook` |
+| `orderbook_instruments(&[Market])` | `markets.len() >= 1`; 현재 가격 구간의 호가 단위와 지원하는 묶음 단위 반환; 지역 응답에 없으면 묶음 단위는 빈 배열 | `orderbook` |
+| `year_candles(market, to, count)` | `count: 1..=200` 또는 `None`; ISO-8601 기준 시각 선택; 오래된 순서; 한국 시작 시각은 지역에 따라 없을 수 있음 | `candle` |
 | `market_events()` | 시장별 투자 유의 여부와 기준 | `market` |
 
 | 시장 이벤트(market event) | 매핑 |
@@ -102,6 +108,9 @@
 | `warning == true` | `MarketStatus::Unknown` |
 | `cautions`가 비어 있지 않음 | `MarketStatus` 변경 없음 |
 | `region != UpbitRegion::Korea` | `UpbitMarketEvent::cautions == []` |
+
+`UpbitOrderBookInstrument::tick_size`는 시장 전체에 고정된 값이 아니라 현재 가격
+구간의 메타데이터입니다. 주문 가격이 Upbit 가격 구간을 넘으면 다시 조회해야 합니다.
 
 ## 한도와 공식 링크
 
@@ -121,6 +130,9 @@
 - [공개 REST](https://global-docs.upbit.com/reference/list-trading-pairs)
 - [호가](https://global-docs.upbit.com/reference/list-orderbooks)
 - [캔들](https://global-docs.upbit.com/reference/list-candles-minutes)
+- [연간 캔들](https://docs.upbit.com/kr/reference/list-candles-years)
+- [견적 통화별 ticker](https://docs.upbit.com/kr/reference/list-quote-tickers)
+- [호가 정책](https://docs.upbit.com/kr/reference/list-orderbook-instruments)
 - [WebSocket](https://global-docs.upbit.com/reference/websocket-guide)
 - [요청 한도](https://global-docs.upbit.com/reference/rate-limits)
 - [인증](https://global-docs.upbit.com/reference/auth)

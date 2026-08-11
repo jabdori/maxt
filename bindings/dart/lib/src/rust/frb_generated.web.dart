@@ -514,6 +514,13 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  List<WireUpbitOrderBookInstrument>
+  dco_decode_list_wire_upbit_order_book_instrument(dynamic raw);
+
+  @protected
+  List<WireUpbitYearCandle> dco_decode_list_wire_upbit_year_candle(dynamic raw);
+
+  @protected
   List<WireWithdrawal> dco_decode_list_wire_withdrawal(dynamic raw);
 
   @protected
@@ -863,7 +870,15 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireUpbitMarketEvent dco_decode_wire_upbit_market_event(dynamic raw);
 
   @protected
+  WireUpbitOrderBookInstrument dco_decode_wire_upbit_order_book_instrument(
+    dynamic raw,
+  );
+
+  @protected
   WireUpbitRegion dco_decode_wire_upbit_region(dynamic raw);
+
+  @protected
+  WireUpbitYearCandle dco_decode_wire_upbit_year_candle(dynamic raw);
 
   @protected
   WireWithdrawRequest dco_decode_wire_withdraw_request(dynamic raw);
@@ -1421,6 +1436,17 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  List<WireUpbitOrderBookInstrument>
+  sse_decode_list_wire_upbit_order_book_instrument(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<WireUpbitYearCandle> sse_decode_list_wire_upbit_year_candle(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<WireWithdrawal> sse_decode_list_wire_withdrawal(
     SseDeserializer deserializer,
   );
@@ -1846,7 +1872,17 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireUpbitOrderBookInstrument sse_decode_wire_upbit_order_book_instrument(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireUpbitRegion sse_decode_wire_upbit_region(SseDeserializer deserializer);
+
+  @protected
+  WireUpbitYearCandle sse_decode_wire_upbit_year_candle(
+    SseDeserializer deserializer,
+  );
 
   @protected
   WireWithdrawRequest sse_decode_wire_withdraw_request(
@@ -2567,6 +2603,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_list_wire_upbit_order_book_instrument(
+    List<WireUpbitOrderBookInstrument> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_wire_upbit_year_candle(
+    List<WireUpbitYearCandle> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_wire_withdrawal(
     List<WireWithdrawal> self,
     SseSerializer serializer,
@@ -3116,8 +3164,20 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_wire_upbit_order_book_instrument(
+    WireUpbitOrderBookInstrument self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_upbit_region(
     WireUpbitRegion self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_upbit_year_candle(
+    WireUpbitYearCandle self,
     SseSerializer serializer,
   );
 

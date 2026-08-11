@@ -838,9 +838,29 @@ export class Page<T> {
 }
 
 export class UpbitMarketEvent {
-  readonly cautions: readonly string[];
-  constructor(readonly warning: boolean, cautions: readonly string[]) {
-    this.cautions = Object.freeze([...cautions]); freezeRecord(this);
+    readonly cautions: readonly string[];
+    constructor(readonly warning: boolean, cautions: readonly string[]) {
+        this.cautions = Object.freeze([...cautions]); freezeRecord(this);
+    }
+}
+
+export class UpbitYearCandle {
+  constructor(
+    readonly market: Market, readonly openTime: Timestamp,
+    readonly koreaOpenTime: Timestamp | null, readonly timestamp: Timestamp,
+    readonly open: Decimal, readonly high: Decimal, readonly low: Decimal,
+    readonly close: Decimal, readonly volume: Decimal, readonly quoteVolume: Decimal,
+    readonly firstDayOfPeriod: string,
+  ) { freezeRecord(this); }
+}
+
+export class UpbitOrderBookInstrument {
+  readonly supportedLevels: readonly Decimal[];
+  constructor(
+    readonly market: Market, readonly quoteCurrency: string, readonly tickSize: Decimal,
+    supportedLevels: readonly Decimal[],
+  ) {
+    this.supportedLevels = Object.freeze([...supportedLevels]); freezeRecord(this);
   }
 }
 

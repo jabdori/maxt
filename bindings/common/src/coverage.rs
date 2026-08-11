@@ -840,7 +840,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("candles"),
         Validation::LiveRead,
     ),
-    planned(operation(
+    operation(
         Exchange::Upbit,
         "quotation",
         "candles_years",
@@ -850,8 +850,8 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         Authentication::Public,
         OperationRisk::Read,
         OperationMapping::Provider("year_candles"),
-        Validation::Documented,
-    )),
+        Validation::LiveRead,
+    ),
     operation(
         Exchange::Upbit,
         "quotation",
@@ -879,7 +879,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         },
         Validation::LiveRead,
     ),
-    planned(operation(
+    operation(
         Exchange::Upbit,
         "quotation",
         "tickers_by_quote",
@@ -889,9 +889,9 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         Authentication::Public,
         OperationRisk::Read,
         OperationMapping::Provider("tickers_by_quote"),
-        Validation::Documented,
-    )),
-    operation(
+        Validation::LiveRead,
+    ),
+    partial(operation(
         Exchange::Upbit,
         "quotation",
         "orderbook",
@@ -905,8 +905,8 @@ pub const OPERATIONS: &[OperationCoverage] = &[
             provider: &["order_books"],
         },
         Validation::LiveRead,
-    ),
-    planned(operation(
+    )),
+    operation(
         Exchange::Upbit,
         "quotation",
         "orderbook_instruments",
@@ -916,8 +916,8 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         Authentication::Public,
         OperationRisk::Read,
         OperationMapping::Provider("orderbook_instruments"),
-        Validation::Documented,
-    )),
+        Validation::LiveRead,
+    ),
     partial(operation(
         Exchange::Upbit,
         "quotation",

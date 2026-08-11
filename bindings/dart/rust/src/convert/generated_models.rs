@@ -1171,6 +1171,103 @@ impl TryFrom<WireTransferHistoryRequest> for maxt::TransferHistoryRequest {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitYearCandle {
+    pub market: WireMarket,
+    pub open_time_ns: i64,
+    pub korea_open_time_ns: Option<i64>,
+    pub timestamp_ns: i64,
+    pub open: String,
+    pub high: String,
+    pub low: String,
+    pub close: String,
+    pub volume: String,
+    pub quote_volume: String,
+    pub first_day_of_period: String,
+}
+
+impl From<maxt::UpbitYearCandle> for WireUpbitYearCandle {
+    fn from(value: maxt::UpbitYearCandle) -> Self {
+        Self {
+            market: value.market.into(),
+            open_time_ns: timestamp_to_wire(value.open_time),
+            korea_open_time_ns: value.korea_open_time.map(timestamp_to_wire),
+            timestamp_ns: timestamp_to_wire(value.timestamp),
+            open: decimal_to_wire(value.open),
+            high: decimal_to_wire(value.high),
+            low: decimal_to_wire(value.low),
+            close: decimal_to_wire(value.close),
+            volume: decimal_to_wire(value.volume),
+            quote_volume: decimal_to_wire(value.quote_volume),
+            first_day_of_period: value.first_day_of_period,
+        }
+    }
+}
+
+impl TryFrom<WireUpbitYearCandle> for maxt::UpbitYearCandle {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitYearCandle) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.into(),
+            open_time: Timestamp::from_nanos(value.open_time_ns),
+            korea_open_time: value.korea_open_time_ns.map(Timestamp::from_nanos),
+            timestamp: Timestamp::from_nanos(value.timestamp_ns),
+            open: decimal_from_wire(&value.open, "open").map_err(NativeError::from)?,
+            high: decimal_from_wire(&value.high, "high").map_err(NativeError::from)?,
+            low: decimal_from_wire(&value.low, "low").map_err(NativeError::from)?,
+            close: decimal_from_wire(&value.close, "close").map_err(NativeError::from)?,
+            volume: decimal_from_wire(&value.volume, "volume").map_err(NativeError::from)?,
+            quote_volume: decimal_from_wire(&value.quote_volume, "quote_volume")
+                .map_err(NativeError::from)?,
+            first_day_of_period: value.first_day_of_period,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitOrderBookInstrument {
+    pub market: WireMarket,
+    pub quote_currency: String,
+    pub tick_size: String,
+    pub supported_levels: Vec<String>,
+}
+
+impl From<maxt::UpbitOrderBookInstrument> for WireUpbitOrderBookInstrument {
+    fn from(value: maxt::UpbitOrderBookInstrument) -> Self {
+        Self {
+            market: value.market.into(),
+            quote_currency: value.quote_currency,
+            tick_size: decimal_to_wire(value.tick_size),
+            supported_levels: value
+                .supported_levels
+                .into_iter()
+                .map(decimal_to_wire)
+                .collect(),
+        }
+    }
+}
+
+impl TryFrom<WireUpbitOrderBookInstrument> for maxt::UpbitOrderBookInstrument {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitOrderBookInstrument) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.into(),
+            quote_currency: value.quote_currency,
+            tick_size: decimal_from_wire(&value.tick_size, "tick_size")
+                .map_err(NativeError::from)?,
+            supported_levels: value
+                .supported_levels
+                .into_iter()
+                .map(|value| {
+                    decimal_from_wire(&value, "supported_levels").map_err(NativeError::from)
+                })
+                .collect::<Result<_, _>>()?,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireDepositPage {
     pub items: Vec<WireDeposit>,
     pub next: Option<String>,

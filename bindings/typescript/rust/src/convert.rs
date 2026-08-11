@@ -1,6 +1,7 @@
 use maxt::adapters::{
     BinanceSpotOrderDetail, BinanceSymbolFilters, BithumbAlertStep, BithumbMarketAlert,
     HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind, UpbitMarketEvent,
+    UpbitOrderBookInstrument, UpbitYearCandle,
 };
 use maxt::{
     AccountEvent, AssetNetwork, Balance, CancelOrdersRequest, CancelOrdersResult, CancelledOrder,
@@ -233,6 +234,32 @@ pub(crate) struct WireMarginRequest {
 pub(crate) struct WireUpbitMarketEvent {
     pub(crate) warning: bool,
     pub(crate) cautions: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitYearCandle {
+    pub(crate) market: WireMarket,
+    pub(crate) open_time: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) korea_open_time: Option<String>,
+    pub(crate) timestamp: String,
+    pub(crate) open: String,
+    pub(crate) high: String,
+    pub(crate) low: String,
+    pub(crate) close: String,
+    pub(crate) volume: String,
+    pub(crate) quote_volume: String,
+    pub(crate) first_day_of_period: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitOrderBookInstrument {
+    pub(crate) market: WireMarket,
+    pub(crate) quote_currency: String,
+    pub(crate) tick_size: String,
+    pub(crate) supported_levels: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1523,6 +1550,43 @@ impl TryFrom<UpbitMarketEvent> for WireUpbitMarketEvent {
         Ok(Self {
             warning: value.warning,
             cautions: value.cautions,
+        })
+    }
+}
+
+impl TryFrom<UpbitYearCandle> for WireUpbitYearCandle {
+    type Error = Error;
+
+    fn try_from(value: UpbitYearCandle) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.try_into()?,
+            open_time: timestamp_to_wire(value.open_time),
+            korea_open_time: timestamp_option_to_wire(value.korea_open_time),
+            timestamp: timestamp_to_wire(value.timestamp),
+            open: decimal_to_wire(value.open),
+            high: decimal_to_wire(value.high),
+            low: decimal_to_wire(value.low),
+            close: decimal_to_wire(value.close),
+            volume: decimal_to_wire(value.volume),
+            quote_volume: decimal_to_wire(value.quote_volume),
+            first_day_of_period: value.first_day_of_period,
+        })
+    }
+}
+
+impl TryFrom<UpbitOrderBookInstrument> for WireUpbitOrderBookInstrument {
+    type Error = Error;
+
+    fn try_from(value: UpbitOrderBookInstrument) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.try_into()?,
+            quote_currency: value.quote_currency,
+            tick_size: decimal_to_wire(value.tick_size),
+            supported_levels: value
+                .supported_levels
+                .into_iter()
+                .map(decimal_to_wire)
+                .collect(),
         })
     }
 }

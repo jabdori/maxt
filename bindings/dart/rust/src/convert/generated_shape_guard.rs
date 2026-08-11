@@ -434,6 +434,31 @@ fn _guard_margin_request_wire(value: WireMarginRequest) {
     } = value;
 }
 
+fn _guard_upbit_year_candle_wire(value: WireUpbitYearCandle) {
+    let WireUpbitYearCandle {
+        market: _,
+        open_time_ns: _,
+        korea_open_time_ns: _,
+        timestamp_ns: _,
+        open: _,
+        high: _,
+        low: _,
+        close: _,
+        volume: _,
+        quote_volume: _,
+        first_day_of_period: _,
+    } = value;
+}
+
+fn _guard_upbit_order_book_instrument_wire(value: WireUpbitOrderBookInstrument) {
+    let WireUpbitOrderBookInstrument {
+        market: _,
+        quote_currency: _,
+        tick_size: _,
+        supported_levels: _,
+    } = value;
+}
+
 fn _guard_binance_symbol_filters_wire(value: WireBinanceSymbolFilters) {
     let WireBinanceSymbolFilters {
         symbol: _,

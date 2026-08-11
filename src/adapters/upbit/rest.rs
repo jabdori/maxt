@@ -12,6 +12,7 @@ use crate::types::{
 };
 
 use super::parse::{self, EXCHANGE};
+use super::{UpbitOrderBookInstrument, UpbitYearCandle};
 
 /// Upbit returns at most this many trade ticks per call.
 const MAX_TRADE_COUNT: u32 = 500;
@@ -102,6 +103,77 @@ pub(crate) fn ticker_request(markets: &[Market]) -> Result<HttpRequest> {
         .join(",");
 
     Ok(HttpRequest::get("/v1/ticker").query(query(&[("markets", codes)])))
+}
+
+pub(crate) fn tickers_by_quote_request(quote_currencies: &[String]) -> Result<HttpRequest> {
+    if quote_currencies.is_empty() {
+        return Err(Error::invalid_request(
+            "quote_currencies",
+            "name at least one quote currency",
+        ));
+    }
+
+    let currencies = quote_currencies
+        .iter()
+        .map(|currency| {
+            let currency = currency.trim().to_ascii_uppercase();
+            if currency.is_empty()
+                || !currency
+                    .bytes()
+                    .all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit())
+            {
+                return Err(Error::invalid_request(
+                    "quote_currencies",
+                    "quote currencies must contain only uppercase ASCII letters and digits",
+                ));
+            }
+            Ok(currency)
+        })
+        .collect::<Result<Vec<_>>>()?
+        .join(",");
+
+    Ok(HttpRequest::get("/v1/ticker/all").query(query(&[("quote_currencies", currencies)])))
+}
+
+pub(crate) fn year_candles_request(
+    market: &Market,
+    to: Option<Timestamp>,
+    count: Option<u32>,
+) -> Result<HttpRequest> {
+    let mut params = vec![("market", parse::native_symbol(market)?)];
+    if let Some(to) = to {
+        params.push(("to", parse::to_cursor(to)?));
+    }
+    if let Some(count) = count {
+        if !(1..=MAX_CANDLE_COUNT).contains(&count) {
+            return Err(Error::invalid_request(
+                "count",
+                format!(
+                    "upbit serves 1 to {MAX_CANDLE_COUNT} yearly candles per call, not {count}"
+                ),
+            ));
+        }
+        params.push(("count", count.to_string()));
+    }
+
+    Ok(HttpRequest::get("/v1/candles/years").query(query(&params)))
+}
+
+pub(crate) fn orderbook_instruments_request(markets: &[Market]) -> Result<HttpRequest> {
+    if markets.is_empty() {
+        return Err(Error::invalid_request(
+            "markets",
+            "name at least one market",
+        ));
+    }
+
+    let codes = markets
+        .iter()
+        .map(parse::native_symbol)
+        .collect::<Result<Vec<_>>>()?
+        .join(",");
+
+    Ok(HttpRequest::get("/v1/orderbook/instruments").query(query(&[("markets", codes)])))
 }
 
 /// Returns the candle endpoint for an interval exposed by `maxt`.
@@ -229,6 +301,48 @@ pub(crate) async fn tickers(http: &HttpTransport, markets: &[Market]) -> Result<
         .collect()
 }
 
+pub(crate) async fn tickers_by_quote(
+    http: &HttpTransport,
+    quote_currencies: &[String],
+) -> Result<Vec<Ticker>> {
+    let body = send(http, &tickers_by_quote_request(quote_currencies)?).await?;
+    parse::json::<Vec<parse::RawTicker>>(&body)?
+        .iter()
+        .map(parse::ticker)
+        .collect()
+}
+
+pub(crate) async fn year_candles(
+    http: &HttpTransport,
+    market: &Market,
+    to: Option<Timestamp>,
+    count: Option<u32>,
+) -> Result<Vec<UpbitYearCandle>> {
+    let body = send(http, &year_candles_request(market, to, count)?).await?;
+    oldest_first_year_candles(&parse::json::<Vec<parse::RawYearCandle>>(&body)?)
+}
+
+/// Upbit responds newest first; keep candle history consistent with `Client`.
+fn oldest_first_year_candles(raw: &[parse::RawYearCandle]) -> Result<Vec<UpbitYearCandle>> {
+    let mut candles = raw
+        .iter()
+        .map(parse::year_candle)
+        .collect::<Result<Vec<_>>>()?;
+    candles.sort_by_key(|candle| candle.open_time);
+    Ok(candles)
+}
+
+pub(crate) async fn orderbook_instruments(
+    http: &HttpTransport,
+    markets: &[Market],
+) -> Result<Vec<UpbitOrderBookInstrument>> {
+    let body = send(http, &orderbook_instruments_request(markets)?).await?;
+    parse::json::<Vec<parse::RawOrderBookInstrument>>(&body)?
+        .iter()
+        .map(parse::orderbook_instrument)
+        .collect()
+}
+
 /// Reads candles oldest first, paging backward as needed.
 ///
 /// Upbit returns at most [`MAX_CANDLE_COUNT`] newest-first rows per request and
@@ -294,6 +408,28 @@ mod tests {
         assert_eq!(
             ticker_request(&[btc_krw()]).expect("a market").target(),
             "/v1/ticker?markets=KRW-BTC"
+        );
+        assert_eq!(
+            tickers_by_quote_request(&["KRW".to_owned()])
+                .expect("a quote currency")
+                .target(),
+            "/v1/ticker/all?quote_currencies=KRW"
+        );
+        assert_eq!(
+            year_candles_request(
+                &btc_krw(),
+                Some(Timestamp::from_secs(1_499_040_000)),
+                Some(2),
+            )
+            .expect("a documented candle request")
+            .target(),
+            "/v1/candles/years?market=KRW-BTC&to=2017-07-03T00%3A00%3A00Z&count=2"
+        );
+        assert_eq!(
+            orderbook_instruments_request(&[btc_krw()])
+                .expect("a market")
+                .target(),
+            "/v1/orderbook/instruments?markets=KRW-BTC"
         );
     }
 
@@ -461,6 +597,30 @@ mod tests {
             order_book_request(&[], None),
             Err(Error::InvalidRequest { field, .. }) if field == "markets"
         ));
+        assert!(matches!(
+            tickers_by_quote_request(&[]),
+            Err(Error::InvalidRequest { field, .. }) if field == "quote_currencies"
+        ));
+        assert!(matches!(
+            orderbook_instruments_request(&[]),
+            Err(Error::InvalidRequest { field, .. }) if field == "markets"
+        ));
+    }
+
+    #[test]
+    fn quote_currency_and_year_candle_limits_are_validated_before_transport() {
+        assert!(matches!(
+            tickers_by_quote_request(&["KRW&markets=BTC".to_owned()]),
+            Err(Error::InvalidRequest { field, .. }) if field == "quote_currencies"
+        ));
+        assert!(matches!(
+            year_candles_request(&btc_krw(), None, Some(0)),
+            Err(Error::InvalidRequest { field, .. }) if field == "count"
+        ));
+        assert!(matches!(
+            year_candles_request(&btc_krw(), None, Some(MAX_CANDLE_COUNT + 1)),
+            Err(Error::InvalidRequest { field, .. }) if field == "count"
+        ));
     }
 
     #[test]
@@ -521,6 +681,33 @@ mod tests {
                 .iter()
                 .map(|trade| trade.timestamp.as_millis())
                 .collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn yearly_candles_are_reordered_oldest_first() {
+        let raw: Vec<parse::RawYearCandle> = parse::json(
+            r#"[
+              {"market":"KRW-BTC","candle_date_time_utc":"2026-01-01T00:00:00",
+               "timestamp":1767225600000,"opening_price":2,"high_price":2,"low_price":2,
+               "trade_price":2,"candle_acc_trade_volume":2,"candle_acc_trade_price":2,
+               "first_day_of_period":"2026-01-01"},
+              {"market":"KRW-BTC","candle_date_time_utc":"2025-01-01T00:00:00",
+               "timestamp":1735689600000,"opening_price":1,"high_price":1,"low_price":1,
+               "trade_price":1,"candle_acc_trade_volume":1,"candle_acc_trade_price":1,
+               "first_day_of_period":"2025-01-01"}
+            ]"#,
+        )
+        .expect("a newest-first yearly payload");
+
+        let candles = oldest_first_year_candles(&raw).expect("yearly candles");
+
+        assert_eq!(
+            candles
+                .iter()
+                .map(|candle| candle.first_day_of_period.as_str())
+                .collect::<Vec<_>>(),
+            ["2025-01-01", "2026-01-01"]
         );
     }
 

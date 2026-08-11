@@ -1212,6 +1212,9 @@ fn rust_from_wire_result(ty: &Type, value: &str, field: &str) -> String {
         ),
         Type::List(inner) => match inner.as_ref() {
             Type::String => format!("{value}.extract::<Vec<String>>()"),
+            Type::Decimal => {
+                format!("list_from_wire(&{value}, |item| decimal_from_wire(item, \"{field}\"))")
+            }
             Type::Identifier(identifier) => format!(
                 "list_from_wire(&{value}, {}_from_wire)",
                 snake_case(identifier)
@@ -1260,6 +1263,9 @@ fn rust_record_field(schema: &Schema, record: &str, name: &str, ty: &Type) -> St
         },
         Type::List(inner) => match inner.as_ref() {
             Type::String => format!("&{field}"),
+            Type::Decimal => {
+                format!("{field}.iter().map(|item| decimal_to_wire(*item)).collect::<Vec<_>>()")
+            }
             Type::Identifier(identifier) => {
                 let function = snake_case(identifier);
                 let open = schema

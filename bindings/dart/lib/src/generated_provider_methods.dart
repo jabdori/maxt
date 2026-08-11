@@ -19,6 +19,42 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
     ),
   ).then((values) => values.map(_tickerFromWire).toList(growable: false));
 
+  Future<List<Ticker>> tickersByQuote(List<String> quoteCurrencies) =>
+      _nativeFuture(
+        () => _handle.upbitTickersByQuote(quoteCurrencies: quoteCurrencies),
+      ).then((values) => values.map(_tickerFromWire).toList(growable: false));
+
+  Future<List<UpbitYearCandle>> yearCandles(
+    Market market, [
+    Timestamp? to,
+    int? count,
+  ]) =>
+      _nativeFuture(
+        () => _handle.upbitYearCandles(
+          market: _marketToWire(market),
+          toNs: to == null
+              ? null
+              : platformInt64FromBigInt(to.nanosecondsSinceEpoch),
+          count: checkedUint32(count, field: 'count'),
+        ),
+      ).then(
+        (values) =>
+            values.map(_upbitYearCandleFromWire).toList(growable: false),
+      );
+
+  Future<List<UpbitOrderBookInstrument>> orderbookInstruments(
+    List<Market> markets,
+  ) =>
+      _nativeFuture(
+        () => _handle.upbitOrderbookInstruments(
+          markets: markets.map(_marketToWire).toList(growable: false),
+        ),
+      ).then(
+        (values) => values
+            .map(_upbitOrderBookInstrumentFromWire)
+            .toList(growable: false),
+      );
+
   Future<List<UpbitMarketEvent>> marketEvents() =>
       _nativeFuture(_handle.upbitMarketEvents).then(
         (values) =>

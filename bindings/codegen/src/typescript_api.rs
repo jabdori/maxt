@@ -179,7 +179,7 @@ fn public_type(ty: ApiType) -> String {
         ApiType::OptionalString => "string | null".to_owned(),
         ApiType::OptionalNumber => "number | null".to_owned(),
         ApiType::OptionalNamed(name) => format!("Model.{name} | null"),
-        ApiType::List(name) => format!("readonly Model.{name}[]"),
+        ApiType::List(name) => format!("readonly {}[]", named_public_type(name)),
         ApiType::PairList(left, right) => format!(
             "readonly (readonly [{}, {}])[]",
             named_public_type(left),
@@ -564,6 +564,7 @@ fn encode_argument(argument: &Argument, schema: &Schema) -> String {
             "{name} === null ? null : Codec.{}ToWire({name})",
             lower_camel(value)
         ),
+        ApiType::List("String") => name.to_owned(),
         ApiType::List(value) => format!("{name}.map(Codec.{}ToWire)", lower_camel(value)),
         _ => name.to_owned(),
     }

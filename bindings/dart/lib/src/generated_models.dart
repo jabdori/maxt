@@ -465,3 +465,45 @@ final class TransferHistoryRequest {
   final Cursor? cursor;
   final int? limit;
 }
+
+final class UpbitYearCandle {
+  const UpbitYearCandle({
+    required this.market,
+    required this.openTime,
+    this.koreaOpenTime,
+    required this.timestamp,
+    required this.open,
+    required this.high,
+    required this.low,
+    required this.close,
+    required this.volume,
+    required this.quoteVolume,
+    required this.firstDayOfPeriod,
+  });
+
+  final Market market;
+  final Timestamp openTime;
+  final Timestamp? koreaOpenTime;
+  final Timestamp timestamp;
+  final Decimal open;
+  final Decimal high;
+  final Decimal low;
+  final Decimal close;
+  final Decimal volume;
+  final Decimal quoteVolume;
+  final String firstDayOfPeriod;
+}
+
+final class UpbitOrderBookInstrument {
+  const UpbitOrderBookInstrument({
+    required this.market,
+    required this.quoteCurrency,
+    required this.tickSize,
+    required this.supportedLevels,
+  });
+
+  final Market market;
+  final String quoteCurrency;
+  final Decimal tickSize;
+  final List<Decimal> supportedLevels;
+}

@@ -151,6 +151,58 @@ impl NativeUpbitAdapter {
         )
     }
 
+    fn tickers_by_quote<'py>(
+        &self,
+        py: Python<'py>,
+        quote_currencies: Vec<String>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.tickers_by_quote(&quote_currencies).await },
+            |py, values| list_to_wire(py, &values, ticker_to_wire),
+        )
+    }
+
+    #[pyo3(signature = (market, to=None, count=None))]
+    fn year_candles<'py>(
+        &self,
+        py: Python<'py>,
+        market: &Bound<'_, PyAny>,
+        to: Option<i64>,
+        count: Option<u32>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let market = market_from_wire(market)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move {
+                adapter
+                    .year_candles(&market, to.map(Timestamp::from_nanos), count)
+                    .await
+            },
+            |py, values| {
+                list_to_wire(py, &values, crate::convert::upbit_year_candle_to_wire)
+            },
+        )
+    }
+
+    fn orderbook_instruments<'py>(
+        &self,
+        py: Python<'py>,
+        markets: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let markets = markets_from_wire(markets)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.orderbook_instruments(&markets).await },
+            |py, values| {
+                list_to_wire(py, &values, crate::convert::upbit_order_book_instrument_to_wire)
+            },
+        )
+    }
+
     fn market_events<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let adapter = Arc::clone(&self.inner);
         operation(

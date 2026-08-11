@@ -121,6 +121,10 @@ void main() {
         'region': (UpbitAdapter value) => value.region,
         'orderBooks': (UpbitAdapter value) => value.orderBooks,
         'tickers': (UpbitAdapter value) => value.tickers,
+        'tickersByQuote': (UpbitAdapter value) => value.tickersByQuote,
+        'yearCandles': (UpbitAdapter value) => value.yearCandles,
+        'orderbookInstruments': (UpbitAdapter value) =>
+            value.orderbookInstruments,
         'marketEvents': (UpbitAdapter value) => value.marketEvents,
       },
       'bithumb': {

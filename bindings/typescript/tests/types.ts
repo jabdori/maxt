@@ -17,12 +17,15 @@ import {
   TransferHistoryRequest,
   TransferLookupRequest,
   WithdrawRequest,
+  UpbitAdapter,
   type AssetNetwork,
   type Deposit,
   type Page,
   type Ticker,
   type Withdrawal,
   type WithdrawalQuote,
+  type UpbitOrderBookInstrument,
+  type UpbitYearCandle,
 } from "../src/node.js";
 
 type NodeExports = typeof import("../src/node.js");
@@ -39,6 +42,12 @@ const client = new Client(adapter);
 const market = Market.spot(Exchange.Binance, "BTC", "USDT");
 const ticker: Promise<Ticker> = client.ticker(market);
 const filters = client.adapter.spotSymbolFilters(market);
+const upbit = new UpbitAdapter();
+const upbitMarket = Market.spot(Exchange.Upbit, "BTC", "KRW");
+const quoteTickers: Promise<readonly Ticker[]> = upbit.tickersByQuote(["KRW"]);
+const yearCandles: Promise<readonly UpbitYearCandle[]> = upbit.yearCandles(upbitMarket);
+const instruments: Promise<readonly UpbitOrderBookInstrument[]> =
+  upbit.orderbookInstruments([upbitMarket]);
 const destination = TransferDestination.chain(
   new ChainDestination("BTC", Network.Bitcoin, "bc1qdestination"),
 );
@@ -60,6 +69,9 @@ const cancellations = client.cancelOrders(
 const transferError = new TransferError(TransferErrorKind.NetworkMismatch, "chains differ");
 void ticker;
 void filters;
+void quoteTickers;
+void yearCandles;
+void instruments;
 void networks;
 void addresses;
 void address;

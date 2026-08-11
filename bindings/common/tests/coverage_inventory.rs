@@ -227,9 +227,6 @@ fn planned_korean_operations_pin_official_request_contracts() {
         })
         .collect::<BTreeSet<_>>();
     let expected = [
-        "upbit|quotation|candles_years|GET|/v1/candles/years|http|Public|Read|General",
-        "upbit|quotation|tickers_by_quote|GET|/v1/ticker/all|http|Public|Read|General",
-        "upbit|quotation|orderbook_instruments|GET|/v1/orderbook/instruments|http|Public|Read|General",
         "upbit|quotation|list_subscriptions|LIST_SUBSCRIPTIONS|LIST_SUBSCRIPTIONS|websocket_request|Public|Read|General",
         "upbit|exchange|test_order|POST|/v1/orders/test|http|Jwt|Read|General",
         "upbit|exchange|batch_cancel_open_orders|DELETE|/v1/orders/open|http|Jwt|FinancialWrite|General",

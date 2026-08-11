@@ -379,6 +379,27 @@ export interface UpbitMarketEventWire {
   readonly cautions: readonly string[];
 }
 
+export interface UpbitYearCandleWire {
+  readonly market: MarketWire;
+  readonly open_time: TimestampWire;
+  readonly korea_open_time: TimestampWire | null;
+  readonly timestamp: TimestampWire;
+  readonly open: DecimalWire;
+  readonly high: DecimalWire;
+  readonly low: DecimalWire;
+  readonly close: DecimalWire;
+  readonly volume: DecimalWire;
+  readonly quote_volume: DecimalWire;
+  readonly first_day_of_period: string;
+}
+
+export interface UpbitOrderBookInstrumentWire {
+  readonly market: MarketWire;
+  readonly quote_currency: string;
+  readonly tick_size: DecimalWire;
+  readonly supported_levels: readonly DecimalWire[];
+}
+
 export interface BithumbMarketAlertWire {
   readonly kind: string;
   readonly step: string;
@@ -579,13 +600,13 @@ export type AdapterReplyWire =
   | { readonly kind: "unit"; };
 
 export const EXCHANGES = ["upbit", "bithumb", "binance", "hyperliquid"] as const;
-export const NATIVE_API_VERSION = 10 as const;
+export const NATIVE_API_VERSION = 11 as const;
 export const FEATURES = ["markets", "trades", "order_book", "ticker", "candles", "trade_stream", "order_book_stream", "ticker_stream", "candle_stream", "balances", "asset_networks", "deposit_addresses", "deposit_history", "deposit_lookup", "withdrawal_quotes", "withdrawals", "withdrawal_history", "withdrawal_lookup", "withdrawal_cancellation", "open_orders", "order_history", "account_stream", "trading", "positions", "margin", "funding_rates", "funding_payments", "margin_config", "reduce_only_orders"] as const;
 export const ERROR_VARIANTS = ["InvalidRequest", "Transfer", "Unsupported", "Adapter", "Auth", "Exchange", "Transport", "Decode"] as const;
 export const ADAPTER_OPERATIONS = ["markets", "trades", "orderBook", "ticker", "candles", "subscribe", "balances", "orderRules", "assetNetworks", "depositAddresses", "depositAddress", "createDepositAddress", "prepareWithdrawal", "withdraw", "deposit", "withdrawal", "cancelWithdrawal", "deposits", "withdrawals", "openOrders", "order", "orderByClientId", "ordersByIds", "orderHistory", "subscribeAccount", "placeOrder", "cancelOrder", "cancelOrderByClientId", "cancelOrders", "positions", "marginSummary", "fundingRates", "fundingPayments", "setMargin"] as const;
 export const CLIENT_MEMBERS = ["exchange", "supports", "adapter", "markets", "trades", "orderBook", "ticker", "candles", "subscribe", "subscribeWith", "balances", "orderRules", "assetNetworks", "depositAddresses", "depositAddress", "createDepositAddress", "prepareWithdrawal", "withdraw", "deposit", "withdrawal", "cancelWithdrawal", "deposits", "withdrawals", "prepareTransferTo", "prepareTransferToChain", "executeTransfer", "openOrders", "openOrdersOn", "order", "orderByClientId", "ordersByIds", "orderHistory", "subscribeAccount", "subscribeAccountWith", "placeOrder", "cancelOrder", "cancelOrderByClientId", "cancelOrders", "positions", "positionsOn", "marginSummary", "fundingRates", "fundingPayments", "setMargin"] as const;
 export const PROVIDER_METHODS = {
-  upbit: ["region", "orderBooks", "tickers", "marketEvents"],
+  upbit: ["region", "orderBooks", "tickers", "tickersByQuote", "yearCandles", "orderbookInstruments", "marketEvents"],
   bithumb: ["marketWarnings", "marketAlerts"],
   binance: ["venue", "spotSymbolFilters", "spotOrder", "usdMCreateListenKey", "usdMKeepaliveListenKey", "usdMCloseListenKey"],
   hyperliquid: ["isTestnet", "nonFundingLedger", "assetContext"],
@@ -597,11 +618,11 @@ export const PROVIDER_CONSTRUCTORS = {
   hyperliquid: ["constructor", "testnet"],
 } as const;
 export const IDENTIFIERS = ["Exchange", "Feature", "MarketKind", "MarketStatus", "Side", "Interval", "Overflow", "MarginMode", "OrderStatus", "OrderIdKind", "OrderType", "TimeInForce", "SizeKind", "UpbitRegion", "BithumbAlertStep", "BinanceMarket", "HyperliquidLedgerKind", "ExchangeErrorKind", "Network", "WithdrawalStatus", "DepositStatus", "TransferErrorKind"] as const;
-export const MODELS = ["Market", "MarketInfo", "Trade", "Level", "OrderBook", "Ticker", "Candle", "Balance", "OrderAccount", "OrderOption", "OrderRules", "AssetNetwork", "DepositAddress", "DepositAddressEntry", "ExchangeDestination", "ChainDestination", "ExchangeTransferRequest", "ChainTransferRequest", "TransferDestination", "WithdrawalFee", "TravelRuleRequirement", "WithdrawalQuote", "TransferPlan", "Withdrawal", "Deposit", "Order", "CancelledOrder", "OrderCancelFailure", "CancelOrdersResult", "Position", "MarginSummary", "FundingRate", "FundingPayment", "CandleRequest", "OrderRequest", "OrderLookupRequest", "CancelOrdersRequest", "OrderHistoryRequest", "DepositAddressRequest", "WithdrawRequest", "TransferLookupRequest", "TransferHistoryRequest", "StreamConfig", "Subscription", "HistoryRequest", "MarginRequest", "UpbitMarketEvent", "BithumbMarketAlert", "BinanceSymbolFilters", "BinanceSpotOrderDetail", "HyperliquidLedgerEntry", "HyperliquidAssetContext"] as const;
+export const MODELS = ["Market", "MarketInfo", "Trade", "Level", "OrderBook", "Ticker", "Candle", "Balance", "OrderAccount", "OrderOption", "OrderRules", "AssetNetwork", "DepositAddress", "DepositAddressEntry", "ExchangeDestination", "ChainDestination", "ExchangeTransferRequest", "ChainTransferRequest", "TransferDestination", "WithdrawalFee", "TravelRuleRequirement", "WithdrawalQuote", "TransferPlan", "Withdrawal", "Deposit", "Order", "CancelledOrder", "OrderCancelFailure", "CancelOrdersResult", "Position", "MarginSummary", "FundingRate", "FundingPayment", "CandleRequest", "OrderRequest", "OrderLookupRequest", "CancelOrdersRequest", "OrderHistoryRequest", "DepositAddressRequest", "WithdrawRequest", "TransferLookupRequest", "TransferHistoryRequest", "StreamConfig", "Subscription", "HistoryRequest", "MarginRequest", "UpbitMarketEvent", "UpbitYearCandle", "UpbitOrderBookInstrument", "BithumbMarketAlert", "BinanceSymbolFilters", "BinanceSpotOrderDetail", "HyperliquidLedgerEntry", "HyperliquidAssetContext"] as const;
 export const RAW_NATIVE_EXPORTS = ["NATIVE_API_VERSION", "NativeClient", "createCustomClient", "NativeUpbit", "createUpbit", "NativeBithumb", "createBithumb", "NativeBinance", "createBinance", "NativeHyperliquid", "createHyperliquid"] as const;
 export const RAW_NATIVE_CLIENT_MEMBERS = ["exchange", "supports", "markets", "trades", "orderBook", "ticker", "candles", "subscribe", "subscribeWith", "balances", "orderRules", "assetNetworks", "depositAddresses", "depositAddress", "createDepositAddress", "prepareWithdrawal", "withdraw", "deposit", "withdrawal", "cancelWithdrawal", "deposits", "withdrawals", "openOrders", "openOrdersOn", "order", "orderByClientId", "ordersByIds", "orderHistory", "subscribeAccount", "subscribeAccountWith", "placeOrder", "cancelOrder", "cancelOrderByClientId", "cancelOrders", "positions", "positionsOn", "marginSummary", "fundingRates", "fundingPayments", "setMargin", "prepareTransferTo", "prepareTransferToChain", "executeTransfer", "streamNext", "streamClose"] as const;
 export const RAW_PROVIDER_MEMBERS = {
-  upbit: ["client", "region", "orderBooks", "tickers", "marketEvents"],
+  upbit: ["client", "region", "orderBooks", "tickers", "tickersByQuote", "yearCandles", "orderbookInstruments", "marketEvents"],
   bithumb: ["client", "marketWarnings", "marketAlerts"],
   binance: ["client", "venue", "spotSymbolFilters", "spotOrder", "usdMCreateListenKey", "usdMKeepaliveListenKey", "usdMCloseListenKey"],
   hyperliquid: ["client", "isTestnet", "nonFundingLedger", "assetContext"],

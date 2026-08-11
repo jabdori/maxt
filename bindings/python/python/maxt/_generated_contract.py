@@ -7,7 +7,7 @@ ADAPTER_OPERATIONS = ("markets", "trades", "order_book", "ticker", "candles", "s
 CLIENT_COMPOSITIONS = ("prepare_transfer_to", "prepare_transfer_to_chain", "execute_transfer",)
 CLIENT_MEMBERS = ("exchange", "supports", "adapter", "markets", "trades", "order_book", "ticker", "candles", "subscribe", "subscribe_with", "balances", "order_rules", "asset_networks", "deposit_addresses", "deposit_address", "create_deposit_address", "prepare_withdrawal", "withdraw", "deposit", "withdrawal", "cancel_withdrawal", "deposits", "withdrawals", "prepare_transfer_to", "prepare_transfer_to_chain", "execute_transfer", "open_orders", "open_orders_on", "order", "order_by_client_id", "orders_by_ids", "order_history", "subscribe_account", "subscribe_account_with", "place_order", "cancel_order", "cancel_order_by_client_id", "cancel_orders", "positions", "positions_on", "margin_summary", "funding_rates", "funding_payments", "set_margin",)
 PROVIDER_METHODS = {
-    "upbit": ("region", "order_books", "tickers", "market_events",),
+    "upbit": ("region", "order_books", "tickers", "tickers_by_quote", "year_candles", "orderbook_instruments", "market_events",),
     "bithumb": ("market_warnings", "market_alerts",),
     "binance": ("venue", "spot_symbol_filters", "spot_order", "usd_m_create_listen_key", "usd_m_keepalive_listen_key", "usd_m_close_listen_key",),
     "hyperliquid": ("is_testnet", "non_funding_ledger", "asset_context",),

@@ -45,6 +45,8 @@ import {
   TransferHistoryRequest,
   TransferLookupRequest,
   TravelRuleRequirement,
+  UpbitOrderBookInstrument,
+  UpbitYearCandle,
   WithdrawRequest,
   WithdrawalFee,
   WithdrawalStatus,
@@ -72,6 +74,10 @@ import {
   transferHistoryRequestToWire,
   transferLookupRequestFromWire,
   transferLookupRequestToWire,
+  upbitOrderBookInstrumentFromWire,
+  upbitOrderBookInstrumentToWire,
+  upbitYearCandleFromWire,
+  upbitYearCandleToWire,
   withdrawRequestFromWire,
   withdrawRequestToWire,
   withdrawalFromWire,
@@ -132,6 +138,38 @@ test("Timestamp preserves signed i64 nanoseconds and saturates scaled constructo
   assert.equal(Timestamp.fromNanoseconds(-1999999999n).millisecondsSinceEpoch, -1999n);
   assert.equal(Timestamp.fromNanoseconds(-1999999999n).secondsSinceEpoch, -1n);
   assert.equal(Timestamp.fromNanoseconds(1500000n).toDate().getTime(), 1);
+});
+
+test("Upbit yearly candles and orderbook policy preserve provider-only fields", () => {
+  const market = Market.spot(Exchange.Upbit, "BTC", "KRW");
+  const annual = new UpbitYearCandle(
+    market,
+    Timestamp.fromNanoseconds(1767225600000000000n),
+    Timestamp.fromNanoseconds(1767225600000000000n),
+    Timestamp.fromNanoseconds(1786467753786000000n),
+    Decimal.parse("128000000.00000000"),
+    Decimal.parse("143050000.00000000"),
+    Decimal.parse("88770000.00000000"),
+    Decimal.parse("89587000.00000000"),
+    Decimal.parse("348666.78732189"),
+    Decimal.parse("37189906239683.17623000"),
+    "2026-01-01",
+  );
+  const instrument = new UpbitOrderBookInstrument(
+    market,
+    "KRW",
+    Decimal.parse("1000"),
+    [Decimal.zero, Decimal.parse("10000")],
+  );
+
+  assert.deepEqual(upbitYearCandleToWire(upbitYearCandleFromWire(upbitYearCandleToWire(annual))), upbitYearCandleToWire(annual));
+  assert.deepEqual(
+    upbitOrderBookInstrumentToWire(
+      upbitOrderBookInstrumentFromWire(upbitOrderBookInstrumentToWire(instrument)),
+    ),
+    upbitOrderBookInstrumentToWire(instrument),
+  );
+  assert.equal(Object.isFrozen(instrument.supportedLevels), true);
 });
 
 test("string variants are stable singleton values in Rust declaration order", () => {

@@ -28,7 +28,8 @@ use crate::client::NativeClient;
 use crate::convert::{
     WireBinanceSpotOrderDetail, WireBinanceSymbolFilters, WireBithumbMarketAlert,
     WireHyperliquidAssetContext, WireHyperliquidLedgerEntry, WireMarket, WireOrderBook, WirePage,
-    WireTicker, WireUpbitMarketEvent, from_wire_text, outcome, timestamp_from_wire,
+    WireTicker, WireUpbitMarketEvent, WireUpbitOrderBookInstrument, WireUpbitYearCandle,
+    from_wire_text, outcome, timestamp_from_wire,
 };
 
 #[derive(Debug, Deserialize)]
@@ -234,6 +235,54 @@ impl NativeUpbit {
         }
     }
 
+    async fn tickers_by_quote(&self, quote_currencies: maxt::Result<String>) -> Value {
+        match parse_text::<Vec<String>>(quote_currencies, "quote_currencies") {
+            Ok(quote_currencies) => outcome(wire_vec::<_, WireTicker>(
+                self.adapter.tickers_by_quote(&quote_currencies).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn year_candles(
+        &self,
+        market: maxt::Result<String>,
+        to: maxt::Result<String>,
+        count: maxt::Result<String>,
+    ) -> Value {
+        let market = parse_wire::<Market, WireMarket>(market, "market");
+        let to = parse_text::<Option<String>>(to, "to").and_then(|value| {
+            value
+                .as_deref()
+                .map(|value| timestamp_from_wire(value, "to"))
+                .transpose()
+        });
+        let count = parse_text::<Option<u32>>(count, "count");
+        match (market, to, count) {
+            (Ok(market), Ok(to), Ok(count)) => outcome(wire_vec::<_, WireUpbitYearCandle>(
+                self.adapter.year_candles(&market, to, count).await,
+            )),
+            (Err(error), _, _) | (_, Err(error), _) | (_, _, Err(error)) => {
+                outcome::<Value>(Err(error))
+            }
+        }
+    }
+
+    async fn orderbook_instruments(&self, markets: maxt::Result<String>) -> Value {
+        let markets = parse_text::<Vec<WireMarket>>(markets, "markets").and_then(|markets| {
+            markets
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<maxt::Result<Vec<Market>>>()
+        });
+        match markets {
+            Ok(markets) => outcome(wire_vec::<_, WireUpbitOrderBookInstrument>(
+                self.adapter.orderbook_instruments(&markets).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
     async fn market_events(&self) -> Value {
         outcome(wire_pairs::<_, WireUpbitMarketEvent>(
             self.adapter.market_events().await,
@@ -279,6 +328,48 @@ impl NativeUpbit {
         let this = self.clone();
         let markets = native_json_text(markets, "markets");
         spawn_native(env, async move { this.tickers(markets).await })
+    }
+
+    #[napi(js_name = "tickersByQuote", ts_args_type = "quoteCurrencies: string")]
+    pub fn tickers_by_quote_native<'env>(
+        &self,
+        env: &'env Env,
+        quote_currencies: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let quote_currencies = native_json_text(quote_currencies, "quote_currencies");
+        spawn_native(env, async move {
+            this.tickers_by_quote(quote_currencies).await
+        })
+    }
+
+    #[napi(
+        js_name = "yearCandles",
+        ts_args_type = "market: string, to: string, count: string"
+    )]
+    pub fn year_candles_native<'env>(
+        &self,
+        env: &'env Env,
+        market: NativeJsonText<'env>,
+        to: NativeJsonText<'env>,
+        count: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let market = native_json_text(market, "market");
+        let to = native_json_text(to, "to");
+        let count = native_json_text(count, "count");
+        spawn_native(env, async move { this.year_candles(market, to, count).await })
+    }
+
+    #[napi(js_name = "orderbookInstruments", ts_args_type = "markets: string")]
+    pub fn orderbook_instruments_native<'env>(
+        &self,
+        env: &'env Env,
+        markets: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let markets = native_json_text(markets, "markets");
+        spawn_native(env, async move { this.orderbook_instruments(markets).await })
     }
 
     #[napi(js_name = "marketEvents")]
@@ -771,6 +862,21 @@ impl NativeUpbit {
         crate::web::value(self.tickers(Ok(markets)).await)
     }
 
+    #[wasm_bindgen(js_name = "tickersByQuote")]
+    pub async fn tickers_by_quote_wasm(&self, quote_currencies: String) -> JsValue {
+        crate::web::value(self.tickers_by_quote(Ok(quote_currencies)).await)
+    }
+
+    #[wasm_bindgen(js_name = "yearCandles")]
+    pub async fn year_candles_wasm(&self, market: String, to: String, count: String) -> JsValue {
+        crate::web::value(self.year_candles(Ok(market), Ok(to), Ok(count)).await)
+    }
+
+    #[wasm_bindgen(js_name = "orderbookInstruments")]
+    pub async fn orderbook_instruments_wasm(&self, markets: String) -> JsValue {
+        crate::web::value(self.orderbook_instruments(Ok(markets)).await)
+    }
+
     #[wasm_bindgen(js_name = "marketEvents")]
     pub async fn market_events_wasm(&self) -> JsValue {
         crate::web::value(self.market_events().await)
@@ -964,6 +1070,11 @@ mod tests {
         assert_eq!(result["ok"], false);
         assert_eq!(result["error"]["kind"], "invalid_request");
         assert_eq!(result["error"]["field"], "markets");
+
+        let result = upbit.tickers_by_quote(Ok("[]".to_owned())).await;
+        assert_eq!(result["ok"], false);
+        assert_eq!(result["error"]["kind"], "invalid_request");
+        assert_eq!(result["error"]["field"], "quote_currencies");
 
         assert_eq!(ok_value(outcome(Ok(Value::Null))), Value::Null);
     }

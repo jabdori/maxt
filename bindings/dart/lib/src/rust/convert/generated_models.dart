@@ -796,6 +796,96 @@ sealed class WireTravelRuleRequirement with _$WireTravelRuleRequirement {
       WireTravelRuleRequirement_Required;
 }
 
+class WireUpbitOrderBookInstrument {
+  final WireMarket market;
+  final String quoteCurrency;
+  final String tickSize;
+  final List<String> supportedLevels;
+
+  const WireUpbitOrderBookInstrument({
+    required this.market,
+    required this.quoteCurrency,
+    required this.tickSize,
+    required this.supportedLevels,
+  });
+
+  @override
+  int get hashCode =>
+      market.hashCode ^
+      quoteCurrency.hashCode ^
+      tickSize.hashCode ^
+      supportedLevels.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitOrderBookInstrument &&
+          runtimeType == other.runtimeType &&
+          market == other.market &&
+          quoteCurrency == other.quoteCurrency &&
+          tickSize == other.tickSize &&
+          supportedLevels == other.supportedLevels;
+}
+
+class WireUpbitYearCandle {
+  final WireMarket market;
+  final PlatformInt64 openTimeNs;
+  final PlatformInt64? koreaOpenTimeNs;
+  final PlatformInt64 timestampNs;
+  final String open;
+  final String high;
+  final String low;
+  final String close;
+  final String volume;
+  final String quoteVolume;
+  final String firstDayOfPeriod;
+
+  const WireUpbitYearCandle({
+    required this.market,
+    required this.openTimeNs,
+    this.koreaOpenTimeNs,
+    required this.timestampNs,
+    required this.open,
+    required this.high,
+    required this.low,
+    required this.close,
+    required this.volume,
+    required this.quoteVolume,
+    required this.firstDayOfPeriod,
+  });
+
+  @override
+  int get hashCode =>
+      market.hashCode ^
+      openTimeNs.hashCode ^
+      koreaOpenTimeNs.hashCode ^
+      timestampNs.hashCode ^
+      open.hashCode ^
+      high.hashCode ^
+      low.hashCode ^
+      close.hashCode ^
+      volume.hashCode ^
+      quoteVolume.hashCode ^
+      firstDayOfPeriod.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitYearCandle &&
+          runtimeType == other.runtimeType &&
+          market == other.market &&
+          openTimeNs == other.openTimeNs &&
+          koreaOpenTimeNs == other.koreaOpenTimeNs &&
+          timestampNs == other.timestampNs &&
+          open == other.open &&
+          high == other.high &&
+          low == other.low &&
+          close == other.close &&
+          volume == other.volume &&
+          quoteVolume == other.quoteVolume &&
+          firstDayOfPeriod == other.firstDayOfPeriod;
+}
+
 class WireWithdrawRequest {
   final String asset;
   final String network;

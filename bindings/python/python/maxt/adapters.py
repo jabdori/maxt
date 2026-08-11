@@ -38,7 +38,9 @@ from .models import (
     Ticker,
     Trade,
     UpbitMarketEvent,
+    UpbitOrderBookInstrument,
     UpbitRegion,
+    UpbitYearCandle,
     _model_from_wire,
 )
 
@@ -207,6 +209,28 @@ class UpbitAdapter(_NativeAdapter):
     async def tickers(self, markets: list[Market]) -> list[Ticker]:
         values = await self._call(self._handle.tickers, markets)
         return [_model_from_wire("Ticker", value) for value in values]
+
+    async def tickers_by_quote(self, quote_currencies: list[str]) -> list[Ticker]:
+        values = await self._call(self._handle.tickers_by_quote, quote_currencies)
+        return [_model_from_wire("Ticker", value) for value in values]
+
+    async def year_candles(
+        self,
+        market: Market,
+        to: Optional[int] = None,
+        count: Optional[int] = None,
+    ) -> list[UpbitYearCandle]:
+        values = await self._call(self._handle.year_candles, market, to, count)
+        return [_model_from_wire("UpbitYearCandle", value) for value in values]
+
+    async def orderbook_instruments(
+        self,
+        markets: list[Market],
+    ) -> list[UpbitOrderBookInstrument]:
+        values = await self._call(self._handle.orderbook_instruments, markets)
+        return [
+            _model_from_wire("UpbitOrderBookInstrument", value) for value in values
+        ]
 
     async def market_events(self) -> list[tuple[Market, UpbitMarketEvent]]:
         values = await self._call(self._handle.market_events)

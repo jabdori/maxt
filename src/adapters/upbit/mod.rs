@@ -8,6 +8,7 @@ mod wallet;
 
 use futures_core::Stream;
 use futures_util::StreamExt;
+use rust_decimal::Decimal;
 
 use crate::adapter::{Adapter, BoxFuture};
 use crate::error::{Error, Result};
@@ -82,6 +83,56 @@ pub struct UpbitMarketEvent {
     /// The list is empty outside [`UpbitRegion::Korea`], whose payload is the
     /// only regional payload that includes the criteria.
     pub cautions: Vec<String>,
+}
+
+/// One yearly candle returned by Upbit's quotation API.
+///
+/// This remains provider-specific because the common [`Interval`] type has no
+/// yearly variant. `korea_open_time` is present only when Upbit includes its
+/// Korea Standard Time wall-clock field in the response.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpbitYearCandle {
+    /// Market that produced the candle.
+    pub market: Market,
+    /// UTC opening time of the annual window.
+    pub open_time: crate::types::Timestamp,
+    /// Korea Standard Time opening time when the regional response includes it.
+    pub korea_open_time: Option<crate::types::Timestamp>,
+    /// Upbit's response timestamp.
+    pub timestamp: crate::types::Timestamp,
+    /// First trade price in the annual window.
+    pub open: Decimal,
+    /// Highest trade price in the annual window.
+    pub high: Decimal,
+    /// Lowest trade price in the annual window.
+    pub low: Decimal,
+    /// Last trade price in the annual window.
+    pub close: Decimal,
+    /// Cumulative base-asset volume in the annual window.
+    pub volume: Decimal,
+    /// Cumulative quote-asset value in the annual window.
+    pub quote_volume: Decimal,
+    /// First calendar day of Upbit's annual period, preserved as supplied.
+    pub first_day_of_period: String,
+}
+
+/// Tick-size and supported order-book aggregation policy for one Upbit market.
+///
+/// Upbit omits `supported_levels` in some regional responses; that is exposed
+/// as an empty list rather than inferred from another region.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpbitOrderBookInstrument {
+    /// Market governed by this policy.
+    pub market: Market,
+    /// Quote currency named by Upbit's response.
+    pub quote_currency: String,
+    /// Price increment currently applicable to the market's price band.
+    ///
+    /// Upbit can change this value when the order price moves into another
+    /// band, so it is not a market-wide constant.
+    pub tick_size: Decimal,
+    /// Valid order-book aggregation levels currently published by Upbit.
+    pub supported_levels: Vec<Decimal>,
 }
 
 /// Adapter for Upbit spot markets.
@@ -167,6 +218,42 @@ impl UpbitAdapter {
     /// Transport, exchange, and decoding errors are propagated.
     pub async fn tickers(&self, markets: &[Market]) -> Result<Vec<Ticker>> {
         rest::tickers(self.http()?, markets).await
+    }
+
+    /// Fetches every ticker in one or more quote-currency markets.
+    ///
+    /// The input is normalized to uppercase ASCII currency codes. It must name
+    /// at least one non-empty code. This is distinct from [`Self::tickers`],
+    /// which queries explicit trading pairs.
+    pub async fn tickers_by_quote(&self, quote_currencies: &[String]) -> Result<Vec<Ticker>> {
+        rest::tickers_by_quote(self.http()?, quote_currencies).await
+    }
+
+    /// Fetches Upbit's yearly candles for one market.
+    ///
+    /// `to` is an optional exclusive ISO-8601 boundary and `count`, when set,
+    /// must be from 1 through 200. Results are oldest first. The endpoint does
+    /// not use the common [`crate::types::Candle`] model because its annual
+    /// interval is unique to Upbit's current public surface.
+    pub async fn year_candles(
+        &self,
+        market: &Market,
+        to: Option<crate::types::Timestamp>,
+        count: Option<u32>,
+    ) -> Result<Vec<UpbitYearCandle>> {
+        rest::year_candles(self.http()?, market, to, count).await
+    }
+
+    /// Fetches tick-size and order-book aggregation policy for one or more markets.
+    ///
+    /// The returned tick size and `supported_levels` list are live provider
+    /// metadata. A caller must not assume that either remains valid after the
+    /// intended price moves into another band.
+    pub async fn orderbook_instruments(
+        &self,
+        markets: &[Market],
+    ) -> Result<Vec<UpbitOrderBookInstrument>> {
+        rest::orderbook_instruments(self.http()?, markets).await
     }
 
     /// Fetches warning and caution data for every listed market.

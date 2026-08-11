@@ -761,6 +761,39 @@ export function upbitMarketEventToWire(value: Model.UpbitMarketEvent): Wire.Upbi
   };
 }
 
+export function upbitYearCandleFromWire(value: Wire.UpbitYearCandleWire): Model.UpbitYearCandle {
+  return new Model.UpbitYearCandle(marketFromWire(value.market), Model.Timestamp.fromNanoseconds(BigInt(value.open_time)), value.korea_open_time === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.korea_open_time)), Model.Timestamp.fromNanoseconds(BigInt(value.timestamp)), Model.Decimal.parse(value.open), Model.Decimal.parse(value.high), Model.Decimal.parse(value.low), Model.Decimal.parse(value.close), Model.Decimal.parse(value.volume), Model.Decimal.parse(value.quote_volume), value.first_day_of_period);
+}
+
+export function upbitYearCandleToWire(value: Model.UpbitYearCandle): Wire.UpbitYearCandleWire {
+  return {
+    market: marketToWire(value.market),
+    open_time: value.openTime.nanosecondsSinceEpoch.toString(),
+    korea_open_time: value.koreaOpenTime === null ? null : value.koreaOpenTime.nanosecondsSinceEpoch.toString(),
+    timestamp: value.timestamp.nanosecondsSinceEpoch.toString(),
+    open: value.open.toString(),
+    high: value.high.toString(),
+    low: value.low.toString(),
+    close: value.close.toString(),
+    volume: value.volume.toString(),
+    quote_volume: value.quoteVolume.toString(),
+    first_day_of_period: value.firstDayOfPeriod,
+  };
+}
+
+export function upbitOrderBookInstrumentFromWire(value: Wire.UpbitOrderBookInstrumentWire): Model.UpbitOrderBookInstrument {
+  return new Model.UpbitOrderBookInstrument(marketFromWire(value.market), value.quote_currency, Model.Decimal.parse(value.tick_size), value.supported_levels.map((item) => Model.Decimal.parse(item)));
+}
+
+export function upbitOrderBookInstrumentToWire(value: Model.UpbitOrderBookInstrument): Wire.UpbitOrderBookInstrumentWire {
+  return {
+    market: marketToWire(value.market),
+    quote_currency: value.quoteCurrency,
+    tick_size: value.tickSize.toString(),
+    supported_levels: value.supportedLevels.map((item) => item.toString()),
+  };
+}
+
 export function bithumbMarketAlertFromWire(value: Wire.BithumbMarketAlertWire): Model.BithumbMarketAlert {
   return new Model.BithumbMarketAlert(value.kind, identifier(Model.BithumbAlertStep.values, value.step, "step"), Model.Timestamp.fromNanoseconds(BigInt(value.ends_at)));
 }

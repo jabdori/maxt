@@ -669,6 +669,7 @@ fn rust_core_to_wire_value(schema: &Schema, ty: &Type, value: &str) -> String {
         },
         Type::List(inner) => match inner.as_ref() {
             Type::String | Type::Boolean | Type::Number | Type::UnsignedInteger => value.to_owned(),
+            Type::Decimal => format!("{value}.into_iter().map(decimal_to_wire).collect()"),
             Type::Named(_) | Type::Identifier(_) => {
                 format!("{value}.into_iter().map(Into::into).collect()")
             }
@@ -714,6 +715,9 @@ fn rust_wire_to_core_value(schema: &Schema, ty: &Type, value: &str, field: &str)
         },
         Type::List(inner) => match inner.as_ref() {
             Type::String | Type::Boolean | Type::Number | Type::UnsignedInteger => value.to_owned(),
+            Type::Decimal => format!(
+                "{value}.into_iter().map(|value| decimal_from_wire(&value, \"{field}\").map_err(NativeError::from)).collect::<Result<_, _>>()?"
+            ),
             Type::Identifier(_) => format!("{value}.into_iter().map(Into::into).collect()"),
             Type::Named(_) => {
                 format!("{value}.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?")
@@ -1330,6 +1334,15 @@ fn provider_method_source(exchange: &str, method: &str) -> &'static str {
         ("upbit", "tickers") => {
             "  Future<List<Ticker>> tickers(List<Market> markets) => _nativeFuture(\n    () => _handle.upbitTickers(\n      markets: markets.map(_marketToWire).toList(growable: false),\n    ),\n  ).then((values) => values.map(_tickerFromWire).toList(growable: false));\n"
         }
+        ("upbit", "tickers_by_quote") => {
+            "  Future<List<Ticker>> tickersByQuote(List<String> quoteCurrencies) =>\n      _nativeFuture(\n        () => _handle.upbitTickersByQuote(\n          quoteCurrencies: quoteCurrencies,\n        ),\n      ).then((values) => values.map(_tickerFromWire).toList(growable: false));\n"
+        }
+        ("upbit", "year_candles") => {
+            "  Future<List<UpbitYearCandle>> yearCandles(\n    Market market, [\n    Timestamp? to,\n    int? count,\n  ]) => _nativeFuture(\n    () => _handle.upbitYearCandles(\n      market: _marketToWire(market),\n      toNs: to == null\n          ? null\n          : platformInt64FromBigInt(to.nanosecondsSinceEpoch),\n      count: checkedUint32(count, field: 'count'),\n    ),\n  ).then(\n    (values) => values.map(_upbitYearCandleFromWire).toList(growable: false),\n  );\n"
+        }
+        ("upbit", "orderbook_instruments") => {
+            "  Future<List<UpbitOrderBookInstrument>> orderbookInstruments(\n    List<Market> markets,\n  ) => _nativeFuture(\n    () => _handle.upbitOrderbookInstruments(\n      markets: markets.map(_marketToWire).toList(growable: false),\n    ),\n  ).then(\n    (values) => values\n        .map(_upbitOrderBookInstrumentFromWire)\n        .toList(growable: false),\n  );\n"
+        }
         ("upbit", "market_events") => {
             "  Future<List<UpbitMarketEvent>> marketEvents() =>\n      _nativeFuture(_handle.upbitMarketEvents).then(\n        (values) =>\n            values.map(_upbitMarketEventFromWire).toList(growable: false),\n      );\n"
         }
@@ -1919,6 +1932,7 @@ fn dart_from_wire_value_expression(field: &str, ty: &Type) -> String {
         },
         Type::List(inner) => match inner.as_ref() {
             Type::String | Type::Boolean | Type::Number => field.to_owned(),
+            Type::Decimal => format!("{field}.map(Decimal.parse).toList(growable: false)"),
             Type::Identifier("Network") => {
                 format!("{field}.map(_networkFromWire).toList(growable: false)")
             }
@@ -1974,6 +1988,9 @@ fn dart_to_wire_expression(value: &str, ty: &Type) -> String {
         Type::List(inner) => match inner.as_ref() {
             Type::String | Type::Boolean | Type::Number => {
                 format!("{value}.toList(growable: false)")
+            }
+            Type::Decimal => {
+                format!("{value}.map((item) => item.toString()).toList(growable: false)")
             }
             Type::Identifier("Network") => {
                 format!("{value}.map(_networkToWire).toList(growable: false)")

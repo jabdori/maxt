@@ -68,4 +68,31 @@ void main() {
     expect(ledger.amount.toString(), '0.000000000000000001');
     expect(market.kind, MarketKind.perpetual);
   });
+
+  test('Upbit 연간 캔들과 호가 정책은 지역별 필드를 잃지 않는다', () {
+    final market = Market.spot(Exchange.upbit, 'BTC', 'KRW');
+    final annual = UpbitYearCandle(
+      market: market,
+      openTime: Timestamp.fromSeconds(1767225600),
+      koreaOpenTime: Timestamp.fromSeconds(1767225600),
+      timestamp: Timestamp.fromNanoseconds(BigInt.parse('1786467753786000000')),
+      open: Decimal.parse('128000000.00000000'),
+      high: Decimal.parse('143050000.00000000'),
+      low: Decimal.parse('88770000.00000000'),
+      close: Decimal.parse('89587000.00000000'),
+      volume: Decimal.parse('348666.78732189'),
+      quoteVolume: Decimal.parse('37189906239683.17623000'),
+      firstDayOfPeriod: '2026-01-01',
+    );
+    final policy = UpbitOrderBookInstrument(
+      market: market,
+      quoteCurrency: 'KRW',
+      tickSize: Decimal.parse('1000'),
+      supportedLevels: [Decimal.zero, Decimal.parse('10000')],
+    );
+
+    expect(annual.koreaOpenTime, annual.openTime);
+    expect(annual.quoteVolume.toString(), '37189906239683.17623000');
+    expect(policy.supportedLevels, [Decimal.zero, Decimal.parse('10000')]);
+  });
 }

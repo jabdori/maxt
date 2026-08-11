@@ -864,6 +864,56 @@ wire.WireTransferHistoryRequest _transferHistoryRequestToWire(
   limit: value.limit,
 );
 
+UpbitYearCandle _upbitYearCandleFromWire(wire.WireUpbitYearCandle value) =>
+    UpbitYearCandle(
+      market: _marketFromWire(value.market),
+      openTime: _timestampFromWire(value.openTimeNs)!,
+      koreaOpenTime: _timestampFromWire(value.koreaOpenTimeNs),
+      timestamp: _timestampFromWire(value.timestampNs)!,
+      open: Decimal.parse(value.open),
+      high: Decimal.parse(value.high),
+      low: Decimal.parse(value.low),
+      close: Decimal.parse(value.close),
+      volume: Decimal.parse(value.volume),
+      quoteVolume: Decimal.parse(value.quoteVolume),
+      firstDayOfPeriod: value.firstDayOfPeriod,
+    );
+wire.WireUpbitYearCandle _upbitYearCandleToWire(UpbitYearCandle value) =>
+    wire.WireUpbitYearCandle(
+      market: _marketToWire(value.market),
+      openTimeNs: _timestampToWire(value.openTime),
+      koreaOpenTimeNs: _optionalTimestampToWire(value.koreaOpenTime),
+      timestampNs: _timestampToWire(value.timestamp),
+      open: value.open.toString(),
+      high: value.high.toString(),
+      low: value.low.toString(),
+      close: value.close.toString(),
+      volume: value.volume.toString(),
+      quoteVolume: value.quoteVolume.toString(),
+      firstDayOfPeriod: value.firstDayOfPeriod,
+    );
+
+UpbitOrderBookInstrument _upbitOrderBookInstrumentFromWire(
+  wire.WireUpbitOrderBookInstrument value,
+) => UpbitOrderBookInstrument(
+  market: _marketFromWire(value.market),
+  quoteCurrency: value.quoteCurrency,
+  tickSize: Decimal.parse(value.tickSize),
+  supportedLevels: value.supportedLevels
+      .map(Decimal.parse)
+      .toList(growable: false),
+);
+wire.WireUpbitOrderBookInstrument _upbitOrderBookInstrumentToWire(
+  UpbitOrderBookInstrument value,
+) => wire.WireUpbitOrderBookInstrument(
+  market: _marketToWire(value.market),
+  quoteCurrency: value.quoteCurrency,
+  tickSize: value.tickSize.toString(),
+  supportedLevels: value.supportedLevels
+      .map((item) => item.toString())
+      .toList(growable: false),
+);
+
 Page<Deposit> _depositPageFromWire(wire.WireDepositPage value) => Page(
   items: value.items.map(_depositFromWire),
   next: value.next == null ? null : Cursor(value.next!),

@@ -1130,6 +1130,8 @@ const MODELS: &[&str] = &[
     "HistoryRequest",
     "MarginRequest",
     "UpbitMarketEvent",
+    "UpbitYearCandle",
+    "UpbitOrderBookInstrument",
     "BithumbMarketAlert",
     "BinanceSymbolFilters",
     "BinanceSpotOrderDetail",
@@ -1142,6 +1144,12 @@ const MARKETS_DEPTH: &[Argument] = &[
     argument("depth", ApiType::OptionalNumber, Some("null")),
 ];
 const MARKETS: &[Argument] = &[argument("markets", ApiType::List("Market"), None)];
+const QUOTE_CURRENCIES: &[Argument] = &[argument("quoteCurrencies", ApiType::List("String"), None)];
+const YEAR_CANDLE_QUERY: &[Argument] = &[
+    argument("market", ApiType::Named("Market"), None),
+    argument("to", ApiType::OptionalNamed("Timestamp"), Some("null")),
+    argument("count", ApiType::OptionalNumber, Some("null")),
+];
 const LEDGER_RANGE: &[Argument] = &[
     argument("from", ApiType::OptionalNamed("Timestamp"), Some("null")),
     argument("to", ApiType::OptionalNamed("Timestamp"), Some("null")),
@@ -1285,6 +1293,27 @@ const UPBIT_METHODS: &[ProviderMethod] = &[
         kind: ProviderMethodKind::Async,
         arguments: MARKETS,
         result: ApiType::List("Ticker"),
+    },
+    ProviderMethod {
+        rust_name: "tickers_by_quote",
+        name: "tickersByQuote",
+        kind: ProviderMethodKind::Async,
+        arguments: QUOTE_CURRENCIES,
+        result: ApiType::List("Ticker"),
+    },
+    ProviderMethod {
+        rust_name: "year_candles",
+        name: "yearCandles",
+        kind: ProviderMethodKind::Async,
+        arguments: YEAR_CANDLE_QUERY,
+        result: ApiType::List("UpbitYearCandle"),
+    },
+    ProviderMethod {
+        rust_name: "orderbook_instruments",
+        name: "orderbookInstruments",
+        kind: ProviderMethodKind::Async,
+        arguments: MARKETS,
+        result: ApiType::List("UpbitOrderBookInstrument"),
     },
     ProviderMethod {
         rust_name: "market_events",
@@ -1923,7 +1952,7 @@ pub fn binding_schema() -> Schema {
         record(
             "MarginRequestWire",
             vec![
-                field("market", market),
+                field("market", market.clone()),
                 field("leverage", Type::optional(decimal.clone())),
                 field(
                     "margin_mode",
@@ -1944,6 +1973,31 @@ pub fn binding_schema() -> Schema {
             vec![
                 field("warning", Boolean),
                 field("cautions", Type::list(Type::String)),
+            ],
+        ),
+        record(
+            "UpbitYearCandleWire",
+            vec![
+                field("market", market.clone()),
+                field("open_time", timestamp.clone()),
+                field("korea_open_time", Type::optional(timestamp.clone())),
+                field("timestamp", timestamp.clone()),
+                field("open", decimal.clone()),
+                field("high", decimal.clone()),
+                field("low", decimal.clone()),
+                field("close", decimal.clone()),
+                field("volume", decimal.clone()),
+                field("quote_volume", decimal.clone()),
+                field("first_day_of_period", Type::String),
+            ],
+        ),
+        record(
+            "UpbitOrderBookInstrumentWire",
+            vec![
+                field("market", market.clone()),
+                field("quote_currency", Type::String),
+                field("tick_size", decimal.clone()),
+                field("supported_levels", Type::list(decimal.clone())),
             ],
         ),
         record(
@@ -2457,7 +2511,7 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
-        native_api_version: 10,
+        native_api_version: 11,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
         identifiers: IDENTIFIERS,

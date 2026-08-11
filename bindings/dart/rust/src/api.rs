@@ -630,6 +630,58 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
+    pub async fn upbit_tickers_by_quote(
+        &self,
+        quote_currencies: Vec<String>,
+    ) -> Result<Vec<WireTicker>, NativeError> {
+        let adapter = match self.built_in("upbit_tickers_by_quote")? {
+            BuiltInAdapter::Upbit(adapter) => adapter,
+            _ => return Err(provider_mismatch("Upbit")),
+        };
+        adapter
+            .tickers_by_quote(&quote_currencies)
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
+    pub async fn upbit_year_candles(
+        &self,
+        market: WireMarket,
+        to_ns: Option<i64>,
+        count: Option<u32>,
+    ) -> Result<Vec<WireUpbitYearCandle>, NativeError> {
+        let adapter = match self.built_in("upbit_year_candles")? {
+            BuiltInAdapter::Upbit(adapter) => adapter,
+            _ => return Err(provider_mismatch("Upbit")),
+        };
+        adapter
+            .year_candles(
+                &market.into(),
+                to_ns.map(maxt::Timestamp::from_nanos),
+                count,
+            )
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
+    pub async fn upbit_orderbook_instruments(
+        &self,
+        markets: Vec<WireMarket>,
+    ) -> Result<Vec<WireUpbitOrderBookInstrument>, NativeError> {
+        let adapter = match self.built_in("upbit_orderbook_instruments")? {
+            BuiltInAdapter::Upbit(adapter) => adapter,
+            _ => return Err(provider_mismatch("Upbit")),
+        };
+        let markets: Vec<_> = markets.into_iter().map(Into::into).collect();
+        adapter
+            .orderbook_instruments(&markets)
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
     pub async fn upbit_market_events(&self) -> Result<Vec<WireUpbitMarketEvent>, NativeError> {
         let adapter = match self.built_in("upbit_market_events")? {
             BuiltInAdapter::Upbit(adapter) => adapter,

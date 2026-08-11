@@ -70,7 +70,7 @@ class MaxtRustLib
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => 622416560;
+  int get rustContentHash => -672249530;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -357,6 +357,12 @@ abstract class MaxtRustLibApi extends BaseApi {
     int? depth,
   });
 
+  Future<List<WireUpbitOrderBookInstrument>>
+  crateApiNativeClientUpbitOrderbookInstruments({
+    required NativeClient that,
+    required List<WireMarket> markets,
+  });
+
   WireUpbitRegion? crateApiNativeClientUpbitRegion({
     required NativeClient that,
   });
@@ -364,6 +370,18 @@ abstract class MaxtRustLibApi extends BaseApi {
   Future<List<WireTicker>> crateApiNativeClientUpbitTickers({
     required NativeClient that,
     required List<WireMarket> markets,
+  });
+
+  Future<List<WireTicker>> crateApiNativeClientUpbitTickersByQuote({
+    required NativeClient that,
+    required List<String> quoteCurrencies,
+  });
+
+  Future<List<WireUpbitYearCandle>> crateApiNativeClientUpbitYearCandles({
+    required NativeClient that,
+    required WireMarket market,
+    PlatformInt64? toNs,
+    int? count,
   });
 
   Future<WireWithdrawal> crateApiNativeClientWithdraw({
@@ -2555,6 +2573,45 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       );
 
   @override
+  Future<List<WireUpbitOrderBookInstrument>>
+  crateApiNativeClientUpbitOrderbookInstruments({
+    required NativeClient that,
+    required List<WireMarket> markets,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
+            that,
+            serializer,
+          );
+          sse_encode_list_wire_market(markets, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 56,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_wire_upbit_order_book_instrument,
+          decodeErrorData: sse_decode_native_error,
+        ),
+        constMeta: kCrateApiNativeClientUpbitOrderbookInstrumentsConstMeta,
+        argValues: [that, markets],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiNativeClientUpbitOrderbookInstrumentsConstMeta =>
+      const TaskConstMeta(
+        debugName: "NativeClient_upbit_orderbook_instruments",
+        argNames: ["that", "markets"],
+      );
+
+  @override
   WireUpbitRegion? crateApiNativeClientUpbitRegion({
     required NativeClient that,
   }) {
@@ -2566,7 +2623,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
             that,
             serializer,
           );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 56)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 57)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_opt_box_autoadd_wire_upbit_region,
@@ -2602,7 +2659,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 57,
+            funcId: 58,
             port: port_,
           );
         },
@@ -2624,6 +2681,86 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       );
 
   @override
+  Future<List<WireTicker>> crateApiNativeClientUpbitTickersByQuote({
+    required NativeClient that,
+    required List<String> quoteCurrencies,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
+            that,
+            serializer,
+          );
+          sse_encode_list_String(quoteCurrencies, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 59,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_wire_ticker,
+          decodeErrorData: sse_decode_native_error,
+        ),
+        constMeta: kCrateApiNativeClientUpbitTickersByQuoteConstMeta,
+        argValues: [that, quoteCurrencies],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiNativeClientUpbitTickersByQuoteConstMeta =>
+      const TaskConstMeta(
+        debugName: "NativeClient_upbit_tickers_by_quote",
+        argNames: ["that", "quoteCurrencies"],
+      );
+
+  @override
+  Future<List<WireUpbitYearCandle>> crateApiNativeClientUpbitYearCandles({
+    required NativeClient that,
+    required WireMarket market,
+    PlatformInt64? toNs,
+    int? count,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
+            that,
+            serializer,
+          );
+          sse_encode_box_autoadd_wire_market(market, serializer);
+          sse_encode_opt_box_autoadd_i_64(toNs, serializer);
+          sse_encode_opt_box_autoadd_u_32(count, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 60,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_wire_upbit_year_candle,
+          decodeErrorData: sse_decode_native_error,
+        ),
+        constMeta: kCrateApiNativeClientUpbitYearCandlesConstMeta,
+        argValues: [that, market, toNs, count],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiNativeClientUpbitYearCandlesConstMeta =>
+      const TaskConstMeta(
+        debugName: "NativeClient_upbit_year_candles",
+        argNames: ["that", "market", "toNs", "count"],
+      );
+
+  @override
   Future<WireWithdrawal> crateApiNativeClientWithdraw({
     required NativeClient that,
     required WireWithdrawRequest request,
@@ -2640,7 +2777,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 58,
+            funcId: 61,
             port: port_,
           );
         },
@@ -2681,7 +2818,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 59,
+            funcId: 62,
             port: port_,
           );
         },
@@ -2722,7 +2859,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 60,
+            funcId: 63,
             port: port_,
           );
         },
@@ -2755,7 +2892,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
             that,
             serializer,
           );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 61)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 64)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -2791,7 +2928,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 62,
+            funcId: 65,
             port: port_,
           );
         },
@@ -2818,7 +2955,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 63)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 66)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -2841,7 +2978,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(relayUrl, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 64)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 67)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
@@ -2877,7 +3014,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 65,
+            funcId: 68,
             port: port_,
           );
         },
@@ -2913,7 +3050,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 66,
+            funcId: 69,
             port: port_,
           );
         },
@@ -2949,7 +3086,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 67,
+            funcId: 70,
             port: port_,
           );
         },
@@ -2985,7 +3122,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 68,
+            funcId: 71,
             port: port_,
           );
         },
@@ -3021,7 +3158,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 69,
+            funcId: 72,
             port: port_,
           );
         },
@@ -3048,7 +3185,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 70)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 73)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -3087,7 +3224,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 71,
+            funcId: 74,
             port: port_,
           );
         },
@@ -4308,6 +4445,25 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>)
         .map(dco_decode_wire_upbit_market_event)
+        .toList();
+  }
+
+  @protected
+  List<WireUpbitOrderBookInstrument>
+  dco_decode_list_wire_upbit_order_book_instrument(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>)
+        .map(dco_decode_wire_upbit_order_book_instrument)
+        .toList();
+  }
+
+  @protected
+  List<WireUpbitYearCandle> dco_decode_list_wire_upbit_year_candle(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>)
+        .map(dco_decode_wire_upbit_year_candle)
         .toList();
   }
 
@@ -5582,9 +5738,46 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireUpbitOrderBookInstrument dco_decode_wire_upbit_order_book_instrument(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return WireUpbitOrderBookInstrument(
+      market: dco_decode_wire_market(arr[0]),
+      quoteCurrency: dco_decode_String(arr[1]),
+      tickSize: dco_decode_String(arr[2]),
+      supportedLevels: dco_decode_list_String(arr[3]),
+    );
+  }
+
+  @protected
   WireUpbitRegion dco_decode_wire_upbit_region(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return WireUpbitRegion.values[raw as int];
+  }
+
+  @protected
+  WireUpbitYearCandle dco_decode_wire_upbit_year_candle(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 11)
+      throw Exception('unexpected arr length: expect 11 but see ${arr.length}');
+    return WireUpbitYearCandle(
+      market: dco_decode_wire_market(arr[0]),
+      openTimeNs: dco_decode_i_64(arr[1]),
+      koreaOpenTimeNs: dco_decode_opt_box_autoadd_i_64(arr[2]),
+      timestampNs: dco_decode_i_64(arr[3]),
+      open: dco_decode_String(arr[4]),
+      high: dco_decode_String(arr[5]),
+      low: dco_decode_String(arr[6]),
+      close: dco_decode_String(arr[7]),
+      volume: dco_decode_String(arr[8]),
+      quoteVolume: dco_decode_String(arr[9]),
+      firstDayOfPeriod: dco_decode_String(arr[10]),
+    );
   }
 
   @protected
@@ -7108,6 +7301,35 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
     var ans_ = <WireUpbitMarketEvent>[];
     for (var idx_ = 0; idx_ < len_; ++idx_) {
       ans_.add(sse_decode_wire_upbit_market_event(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<WireUpbitOrderBookInstrument>
+  sse_decode_list_wire_upbit_order_book_instrument(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <WireUpbitOrderBookInstrument>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_wire_upbit_order_book_instrument(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<WireUpbitYearCandle> sse_decode_list_wire_upbit_year_candle(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <WireUpbitYearCandle>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_wire_upbit_year_candle(deserializer));
     }
     return ans_;
   }
@@ -8679,10 +8901,58 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireUpbitOrderBookInstrument sse_decode_wire_upbit_order_book_instrument(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_market = sse_decode_wire_market(deserializer);
+    var var_quoteCurrency = sse_decode_String(deserializer);
+    var var_tickSize = sse_decode_String(deserializer);
+    var var_supportedLevels = sse_decode_list_String(deserializer);
+    return WireUpbitOrderBookInstrument(
+      market: var_market,
+      quoteCurrency: var_quoteCurrency,
+      tickSize: var_tickSize,
+      supportedLevels: var_supportedLevels,
+    );
+  }
+
+  @protected
   WireUpbitRegion sse_decode_wire_upbit_region(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_i_32(deserializer);
     return WireUpbitRegion.values[inner];
+  }
+
+  @protected
+  WireUpbitYearCandle sse_decode_wire_upbit_year_candle(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_market = sse_decode_wire_market(deserializer);
+    var var_openTimeNs = sse_decode_i_64(deserializer);
+    var var_koreaOpenTimeNs = sse_decode_opt_box_autoadd_i_64(deserializer);
+    var var_timestampNs = sse_decode_i_64(deserializer);
+    var var_open = sse_decode_String(deserializer);
+    var var_high = sse_decode_String(deserializer);
+    var var_low = sse_decode_String(deserializer);
+    var var_close = sse_decode_String(deserializer);
+    var var_volume = sse_decode_String(deserializer);
+    var var_quoteVolume = sse_decode_String(deserializer);
+    var var_firstDayOfPeriod = sse_decode_String(deserializer);
+    return WireUpbitYearCandle(
+      market: var_market,
+      openTimeNs: var_openTimeNs,
+      koreaOpenTimeNs: var_koreaOpenTimeNs,
+      timestampNs: var_timestampNs,
+      open: var_open,
+      high: var_high,
+      low: var_low,
+      close: var_close,
+      volume: var_volume,
+      quoteVolume: var_quoteVolume,
+      firstDayOfPeriod: var_firstDayOfPeriod,
+    );
   }
 
   @protected
@@ -10268,6 +10538,30 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  void sse_encode_list_wire_upbit_order_book_instrument(
+    List<WireUpbitOrderBookInstrument> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_wire_upbit_order_book_instrument(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_wire_upbit_year_candle(
+    List<WireUpbitYearCandle> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_wire_upbit_year_candle(item, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_list_wire_withdrawal(
     List<WireWithdrawal> self,
     SseSerializer serializer,
@@ -11526,12 +11820,43 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  void sse_encode_wire_upbit_order_book_instrument(
+    WireUpbitOrderBookInstrument self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_market(self.market, serializer);
+    sse_encode_String(self.quoteCurrency, serializer);
+    sse_encode_String(self.tickSize, serializer);
+    sse_encode_list_String(self.supportedLevels, serializer);
+  }
+
+  @protected
   void sse_encode_wire_upbit_region(
     WireUpbitRegion self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
+  void sse_encode_wire_upbit_year_candle(
+    WireUpbitYearCandle self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_market(self.market, serializer);
+    sse_encode_i_64(self.openTimeNs, serializer);
+    sse_encode_opt_box_autoadd_i_64(self.koreaOpenTimeNs, serializer);
+    sse_encode_i_64(self.timestampNs, serializer);
+    sse_encode_String(self.open, serializer);
+    sse_encode_String(self.high, serializer);
+    sse_encode_String(self.low, serializer);
+    sse_encode_String(self.close, serializer);
+    sse_encode_String(self.volume, serializer);
+    sse_encode_String(self.quoteVolume, serializer);
+    sse_encode_String(self.firstDayOfPeriod, serializer);
   }
 
   @protected
@@ -12059,6 +12384,13 @@ class NativeClientImpl extends RustOpaque implements NativeClient {
     depth: depth,
   );
 
+  Future<List<WireUpbitOrderBookInstrument>> upbitOrderbookInstruments({
+    required List<WireMarket> markets,
+  }) => MaxtRustLib.instance.api.crateApiNativeClientUpbitOrderbookInstruments(
+    that: this,
+    markets: markets,
+  );
+
   WireUpbitRegion? upbitRegion() =>
       MaxtRustLib.instance.api.crateApiNativeClientUpbitRegion(that: this);
 
@@ -12067,6 +12399,24 @@ class NativeClientImpl extends RustOpaque implements NativeClient {
         that: this,
         markets: markets,
       );
+
+  Future<List<WireTicker>> upbitTickersByQuote({
+    required List<String> quoteCurrencies,
+  }) => MaxtRustLib.instance.api.crateApiNativeClientUpbitTickersByQuote(
+    that: this,
+    quoteCurrencies: quoteCurrencies,
+  );
+
+  Future<List<WireUpbitYearCandle>> upbitYearCandles({
+    required WireMarket market,
+    PlatformInt64? toNs,
+    int? count,
+  }) => MaxtRustLib.instance.api.crateApiNativeClientUpbitYearCandles(
+    that: this,
+    market: market,
+    toNs: toNs,
+    count: count,
+  );
 
   Future<WireWithdrawal> withdraw({required WireWithdrawRequest request}) =>
       MaxtRustLib.instance.api.crateApiNativeClientWithdraw(

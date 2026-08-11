@@ -11,7 +11,7 @@ use rust_decimal::Decimal;
 use serde::Deserialize;
 use serde_json::Number;
 
-use super::UpbitMarketEvent;
+use super::{UpbitMarketEvent, UpbitOrderBookInstrument, UpbitYearCandle};
 use crate::error::{Error, Result};
 use crate::types::{
     Balance, Candle, Exchange, Interval, Level, Market, MarketInfo, MarketKind, MarketStatus,
@@ -115,6 +115,35 @@ pub(crate) struct RawCandle {
     pub(crate) unit: Option<u32>,
 }
 
+/// One entry of `GET /v1/candles/years`.
+#[derive(Debug, Deserialize)]
+pub(crate) struct RawYearCandle {
+    pub(crate) market: String,
+    pub(crate) candle_date_time_utc: String,
+    /// Korea sends this field; regional deployments can omit it.
+    #[serde(default)]
+    pub(crate) candle_date_time_kst: Option<String>,
+    pub(crate) opening_price: Number,
+    pub(crate) high_price: Number,
+    pub(crate) low_price: Number,
+    pub(crate) trade_price: Number,
+    pub(crate) timestamp: i64,
+    pub(crate) candle_acc_trade_price: Number,
+    pub(crate) candle_acc_trade_volume: Number,
+    pub(crate) first_day_of_period: String,
+}
+
+/// One entry of `GET /v1/orderbook/instruments`.
+#[derive(Debug, Deserialize)]
+pub(crate) struct RawOrderBookInstrument {
+    pub(crate) market: String,
+    pub(crate) quote_currency: String,
+    pub(crate) tick_size: String,
+    /// Global Upbit regions currently omit this Korea-only aggregation data.
+    #[serde(default)]
+    pub(crate) supported_levels: Vec<String>,
+}
+
 /// One entry of `GET /v1/accounts`. Upbit sends account figures as strings.
 #[derive(Debug, Deserialize)]
 pub(crate) struct RawBalance {
@@ -147,8 +176,26 @@ struct RawErrorEnvelope {
 
 #[derive(Debug, Deserialize)]
 struct RawError {
-    name: String,
+    name: RawErrorName,
     message: String,
+}
+
+/// Upbit deployments send `error.name` as either text or a numeric HTTP-like
+/// code. Keep both forms as the provider's error code.
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+enum RawErrorName {
+    Text(String),
+    Number(Number),
+}
+
+impl RawErrorName {
+    fn into_string(self) -> String {
+        match self {
+            Self::Text(name) => name,
+            Self::Number(name) => name.to_string(),
+        }
+    }
 }
 
 /// A `trade` frame from the public WebSocket.
@@ -272,6 +319,19 @@ pub(crate) fn candle_open_time(raw: &str) -> Result<Timestamp> {
         })
 }
 
+/// Parses Upbit's Korea Standard Time candle opening field.
+fn candle_korea_open_time(raw: &str) -> Result<Timestamp> {
+    const KST_OFFSET_SECS: i64 = 9 * 3_600;
+
+    NaiveDateTime::parse_from_str(raw, "%Y-%m-%dT%H:%M:%S")
+        .map(|naive| Timestamp::from_secs(naive.and_utc().timestamp() - KST_OFFSET_SECS))
+        .map_err(|err| {
+            Error::decode(format!(
+                "`candle_date_time_kst` is not a Korea Standard Time datetime: {raw} ({err})"
+            ))
+        })
+}
+
 /// Formats an exclusive candle `to` cursor at second resolution.
 ///
 /// A sub-second value is rounded up so a candle opening before the caller's
@@ -329,7 +389,7 @@ pub(crate) fn exchange_error(status: u16, body: &str) -> Error {
         Ok(envelope) => Error::exchange_http(
             EXCHANGE,
             status,
-            envelope.error.name,
+            envelope.error.name.into_string(),
             envelope.error.message,
         ),
         Err(_) => Error::exchange_http(EXCHANGE, status, "unknown", body.trim()),
@@ -591,6 +651,51 @@ pub(crate) fn candle(raw: &RawCandle, interval: Interval, now: Timestamp) -> Res
             quote_volume: &raw.candle_acc_trade_price,
         },
     )
+}
+
+/// Maps an Upbit yearly candle without pretending its interval is common.
+pub(crate) fn year_candle(raw: &RawYearCandle) -> Result<UpbitYearCandle> {
+    Ok(UpbitYearCandle {
+        market: market_from_native_symbol(&raw.market)?,
+        open_time: candle_open_time(&raw.candle_date_time_utc)?,
+        korea_open_time: raw
+            .candle_date_time_kst
+            .as_deref()
+            .map(candle_korea_open_time)
+            .transpose()?,
+        timestamp: millis(raw.timestamp, "timestamp")?,
+        open: decimal(&raw.opening_price, "opening_price")?,
+        high: decimal(&raw.high_price, "high_price")?,
+        low: decimal(&raw.low_price, "low_price")?,
+        close: decimal(&raw.trade_price, "trade_price")?,
+        volume: decimal(&raw.candle_acc_trade_volume, "candle_acc_trade_volume")?,
+        quote_volume: decimal(&raw.candle_acc_trade_price, "candle_acc_trade_price")?,
+        first_day_of_period: raw.first_day_of_period.clone(),
+    })
+}
+
+/// Maps a tick-size and aggregation-policy response.
+pub(crate) fn orderbook_instrument(
+    raw: &RawOrderBookInstrument,
+) -> Result<UpbitOrderBookInstrument> {
+    let market = market_from_native_symbol(&raw.market)?;
+    if raw.quote_currency != market.quote {
+        return Err(Error::decode(format!(
+            "`quote_currency` {} does not match market {}",
+            raw.quote_currency, raw.market
+        )));
+    }
+
+    Ok(UpbitOrderBookInstrument {
+        market,
+        quote_currency: raw.quote_currency.clone(),
+        tick_size: decimal_text(&raw.tick_size, "tick_size")?,
+        supported_levels: raw
+            .supported_levels
+            .iter()
+            .map(|level| decimal_text(level, "supported_levels"))
+            .collect::<Result<Vec<_>>>()?,
+    })
 }
 
 /// Returns whether a candle window has ended at `now`.
@@ -874,6 +979,39 @@ mod tests {
       }
     ]"#;
 
+    // Korea includes the KST opening field for yearly candles.
+    const YEAR_CANDLES: &str = r#"[
+      {
+        "market": "KRW-BTC",
+        "candle_date_time_utc": "2026-01-01T00:00:00",
+        "candle_date_time_kst": "2026-01-01T09:00:00",
+        "opening_price": 128000000.00000000,
+        "high_price": 143050000.00000000,
+        "low_price": 88770000.00000000,
+        "trade_price": 89587000.00000000,
+        "timestamp": 1786467753786,
+        "candle_acc_trade_price": 37189906239683.17623000,
+        "candle_acc_trade_volume": 348666.78732189,
+        "first_day_of_period": "2026-01-01"
+      }
+    ]"#;
+
+    // Korea includes supported aggregation levels; global deployments can omit
+    // the field entirely.
+    const ORDERBOOK_INSTRUMENTS: &str = r#"[
+      {
+        "market": "KRW-BTC",
+        "quote_currency": "KRW",
+        "tick_size": "1000",
+        "supported_levels": ["0", "10000", "100000"]
+      },
+      {
+        "market": "SGD-BTC",
+        "quote_currency": "SGD",
+        "tick_size": "1"
+      }
+    ]"#;
+
     // Representative week-candle payload.
     const WEEK_CANDLES: &str = r#"[
       {
@@ -961,6 +1099,7 @@ mod tests {
     // Representative exchange error envelope.
     const ERROR_BODY: &str =
         r#"{"error":{"name":"invalid_access_key","message":"Invalid access key"}}"#;
+    const NUMERIC_ERROR_BODY: &str = r#"{"error":{"name":404,"message":"Code not found"}}"#;
 
     fn decimal_of(text: &str) -> Decimal {
         decimal_text(text, "test").expect("test literal is a decimal")
@@ -1271,6 +1410,47 @@ mod tests {
     }
 
     #[test]
+    fn yearly_candles_keep_the_upbit_specific_interval_and_korea_time() {
+        let raw: Vec<RawYearCandle> = json(YEAR_CANDLES).expect("a live yearly candle payload");
+        let candle = year_candle(&raw[0]).expect("a yearly candle");
+
+        assert_eq!(candle.market, Market::spot(Exchange::Upbit, "BTC", "KRW"));
+        assert_eq!(candle.open_time, Timestamp::from_secs(1_767_225_600));
+        assert_eq!(candle.korea_open_time, Some(candle.open_time));
+        assert_eq!(candle.close, decimal_of("89587000.00000000"));
+        assert_eq!(candle.volume, decimal_of("348666.78732189"));
+        assert_eq!(candle.first_day_of_period, "2026-01-01");
+    }
+
+    #[test]
+    fn orderbook_instruments_keep_region_specific_aggregation_metadata() {
+        let raw: Vec<RawOrderBookInstrument> =
+            json(ORDERBOOK_INSTRUMENTS).expect("official policy payloads");
+        let korea = orderbook_instrument(&raw[0]).expect("a Korea policy");
+        let global = orderbook_instrument(&raw[1]).expect("a global policy");
+
+        assert_eq!(korea.tick_size, decimal_of("1000"));
+        assert_eq!(
+            korea.supported_levels,
+            [decimal_of("0"), decimal_of("10000"), decimal_of("100000")]
+        );
+        assert_eq!(global.market, Market::spot(Exchange::Upbit, "BTC", "SGD"));
+        assert_eq!(global.supported_levels, Vec::<Decimal>::new());
+    }
+
+    #[test]
+    fn an_instrument_whose_quote_disagrees_with_its_market_is_rejected() {
+        let raw: RawOrderBookInstrument =
+            json(r#"{"market":"KRW-BTC","quote_currency":"BTC","tick_size":"1000"}"#)
+                .expect("a response shape");
+
+        assert!(matches!(
+            orderbook_instrument(&raw),
+            Err(Error::Decode { .. })
+        ));
+    }
+
+    #[test]
     fn a_minute_candle_whose_unit_contradicts_the_endpoint_is_rejected() {
         let raw: Vec<RawCandle> = json(MINUTE_CANDLES).expect("official minute candle payload");
         let error =
@@ -1350,6 +1530,17 @@ mod tests {
                 if code == "invalid_access_key" && message == "Invalid access key"
         ));
         assert!(!error.is_retryable());
+    }
+
+    #[test]
+    fn a_numeric_error_name_is_kept_as_the_exchange_code() {
+        let error = exchange_error(404, NUMERIC_ERROR_BODY);
+
+        assert!(matches!(
+            &error,
+            Error::Exchange { exchange: "upbit", code, message, status: Some(404), .. }
+                if code == "404" && message == "Code not found"
+        ));
     }
 
     #[test]

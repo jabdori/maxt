@@ -50,6 +50,7 @@ mod wallet;
 pub mod adapters;
 
 pub use adapter::{Adapter, BoxFuture};
+pub use adapters::{UpbitOrderBookInstrument, UpbitYearCandle};
 pub use client::Client;
 pub use error::{Error, ExchangeErrorKind, Result, TransferErrorKind};
 pub use feature::Feature;

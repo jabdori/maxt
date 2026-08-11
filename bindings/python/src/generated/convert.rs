@@ -1377,6 +1377,68 @@ pub(crate) fn transfer_history_request_to_wire(
     )
 }
 
+pub(crate) fn upbit_year_candle_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitYearCandle> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::UpbitYearCandle {
+        market: market_from_wire(&required(dict, "market")?)?,
+        open_time: required(dict, "open_time")?.extract().map(Timestamp::from_nanos)?,
+        korea_open_time: optional(dict, "korea_open_time")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
+        timestamp: required(dict, "timestamp")?.extract().map(Timestamp::from_nanos)?,
+        open: decimal_from_wire(&required(dict, "open")?, "open")?,
+        high: decimal_from_wire(&required(dict, "high")?, "high")?,
+        low: decimal_from_wire(&required(dict, "low")?, "low")?,
+        close: decimal_from_wire(&required(dict, "close")?, "close")?,
+        volume: decimal_from_wire(&required(dict, "volume")?, "volume")?,
+        quote_volume: decimal_from_wire(&required(dict, "quote_volume")?, "quote_volume")?,
+        first_day_of_period: required(dict, "first_day_of_period")?.extract::<String>()?,
+    })
+}
+
+pub(crate) fn upbit_year_candle_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitYearCandle,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "market" => market_to_wire(py, &value.market)?,
+        "open_time" => timestamp_to_wire(value.open_time),
+        "korea_open_time" => value.korea_open_time.map(timestamp_to_wire),
+        "timestamp" => timestamp_to_wire(value.timestamp),
+        "open" => decimal_to_wire(value.open),
+        "high" => decimal_to_wire(value.high),
+        "low" => decimal_to_wire(value.low),
+        "close" => decimal_to_wire(value.close),
+        "volume" => decimal_to_wire(value.volume),
+        "quote_volume" => decimal_to_wire(value.quote_volume),
+        "first_day_of_period" => &value.first_day_of_period,
+    )
+}
+
+pub(crate) fn upbit_order_book_instrument_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitOrderBookInstrument> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::UpbitOrderBookInstrument {
+        market: market_from_wire(&required(dict, "market")?)?,
+        quote_currency: required(dict, "quote_currency")?.extract::<String>()?,
+        tick_size: decimal_from_wire(&required(dict, "tick_size")?, "tick_size")?,
+        supported_levels: list_from_wire(&required(dict, "supported_levels")?, |item| decimal_from_wire(item, "supported_levels"))?,
+    })
+}
+
+pub(crate) fn upbit_order_book_instrument_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitOrderBookInstrument,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "market" => market_to_wire(py, &value.market)?,
+        "quote_currency" => &value.quote_currency,
+        "tick_size" => decimal_to_wire(value.tick_size),
+        "supported_levels" => value.supported_levels.iter().map(|item| decimal_to_wire(*item)).collect::<Vec<_>>(),
+    )
+}
+
 pub(crate) fn deposits_page_to_wire(
     py: Python<'_>,
     value: &Page<maxt::Deposit>,

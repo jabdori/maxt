@@ -416,6 +416,29 @@ class TransferHistoryRequest(WireModel):
             object.__setattr__(self, "asset", _ascii_upper(self.asset))
 
 
+@dataclass(frozen=True)
+class UpbitYearCandle(WireModel):
+    market: Market
+    open_time: Timestamp
+    korea_open_time: Optional[Timestamp]
+    timestamp: Timestamp
+    open: Decimal
+    high: Decimal
+    low: Decimal
+    close: Decimal
+    volume: Decimal
+    quote_volume: Decimal
+    first_day_of_period: str
+
+
+@dataclass(frozen=True)
+class UpbitOrderBookInstrument(WireModel):
+    market: Market
+    quote_currency: str
+    tick_size: Decimal
+    supported_levels: list[Decimal]
+
+
 __all__ = [
     "OrderAccount",
     "OrderOption",
@@ -444,4 +467,6 @@ __all__ = [
     "WithdrawRequest",
     "TransferLookupRequest",
     "TransferHistoryRequest",
+    "UpbitYearCandle",
+    "UpbitOrderBookInstrument",
 ]

@@ -67,6 +67,19 @@ void main() {
     }
   });
 
+  test('Bithumb 수수료 조회는 빈 자산 코드를 native 호출 전에 거절한다', () async {
+    await expectLater(
+      BithumbAdapter().transferFees(' '),
+      throwsA(
+        isA<InvalidRequestError>().having(
+          (error) => error.field,
+          'field',
+          'currency',
+        ),
+      ),
+    );
+  });
+
   test('Upbit 호가 묶음 단위는 Decimal로 native 경계까지 전달한다', () async {
     final upbit = UpbitAdapter();
     final market = Market.spot(Exchange.upbit, 'BTC', 'KRW');

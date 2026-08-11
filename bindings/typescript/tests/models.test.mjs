@@ -4,6 +4,8 @@ import test from "node:test";
 import {
   Balance,
   BinanceMarket,
+  BithumbAssetFee,
+  BithumbNetworkFee,
   CancelOrdersRequest,
   CancelOrdersResult,
   CancelledOrder,
@@ -170,6 +172,24 @@ test("Upbit yearly candles and orderbook policy preserve provider-only fields", 
     upbitOrderBookInstrumentToWire(instrument),
   );
   assert.equal(Object.isFrozen(instrument.supportedLevels), true);
+});
+
+test("Bithumb transfer fees preserve fixed and rate rules per network", () => {
+  const fixed = new BithumbNetworkFee(
+    Network.Bitcoin, "Bitcoin", Decimal.zero, Decimal.zero,
+    WithdrawalFee.fixed(Decimal.parse("0.0002")), Decimal.parse("0.001"),
+  );
+  const rate = new BithumbNetworkFee(
+    Network.Arbitrum, "Arbitrum One", Decimal.parse("0.01"), Decimal.parse("2"),
+    WithdrawalFee.rate(Decimal.parse("0.01"), Decimal.one, Decimal.parse("100")),
+    Decimal.parse("10"),
+  );
+  const fee = new BithumbAssetFee("비트코인", "btc", [fixed, rate]);
+
+  assert.equal(fee.asset, "BTC");
+  assert.equal(fee.networks[0].withdrawalFee.kind, "fixed");
+  assert.equal(fee.networks[1].withdrawalFee.kind, "rate");
+  assert.throws(() => fee.networks.push(fixed), TypeError);
 });
 
 test("string variants are stable singleton values in Rust declaration order", () => {

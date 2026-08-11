@@ -523,3 +523,33 @@ final class BithumbNotice {
   final Timestamp publishedAt;
   final Timestamp modifiedAt;
 }
+
+final class BithumbAssetFee {
+  BithumbAssetFee({
+    required this.displayName,
+    required String asset,
+    required this.networks,
+  }) : asset = _asciiUpper(asset);
+
+  final String displayName;
+  final String asset;
+  final List<BithumbNetworkFee> networks;
+}
+
+final class BithumbNetworkFee {
+  const BithumbNetworkFee({
+    required this.network,
+    required this.providerName,
+    required this.depositFee,
+    required this.minimumDeposit,
+    required this.withdrawalFee,
+    required this.minimumWithdrawal,
+  });
+
+  final Network network;
+  final String providerName;
+  final Decimal depositFee;
+  final Decimal minimumDeposit;
+  final WithdrawalFee withdrawalFee;
+  final Decimal minimumWithdrawal;
+}

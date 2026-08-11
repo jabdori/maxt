@@ -67,6 +67,22 @@ pub(crate) fn notices_request(count: Option<u32>) -> Result<HttpRequest> {
     Ok(request)
 }
 
+/// Builds Bithumb's public transfer-fee catalog request.
+pub(crate) fn transfer_fees_request(currency: &str) -> Result<HttpRequest> {
+    let currency = currency.trim();
+    if currency.is_empty() {
+        return Err(Error::invalid_request(
+            "currency",
+            "currency must not be empty",
+        ));
+    }
+    let currency = currency.to_ascii_uppercase();
+    Ok(HttpRequest::get(format!(
+        "/v2/fee/inout/{}",
+        encode(&currency)
+    )))
+}
+
 pub(crate) fn trades_request(market: &Market, limit: Option<u32>) -> Result<HttpRequest> {
     let mut params = vec![("market", parse::native_symbol(market)?)];
     if let Some(limit) = limit {
@@ -212,6 +228,13 @@ pub(crate) async fn notices(
     parse::notices(&send(http, &notices_request(count)?).await?)
 }
 
+pub(crate) async fn transfer_fees(
+    http: &HttpTransport,
+    currency: &str,
+) -> Result<Vec<super::BithumbAssetFee>> {
+    parse::transfer_fees(&send(http, &transfer_fees_request(currency)?).await?)
+}
+
 pub(crate) async fn trades(
     http: &HttpTransport,
     market: &Market,
@@ -299,6 +322,18 @@ mod tests {
                 .expect("the documented maximum")
                 .target(),
             "/v1/notices?count=20"
+        );
+        assert_eq!(
+            transfer_fees_request("btc")
+                .expect("one asset fee catalog")
+                .target(),
+            "/v2/fee/inout/BTC"
+        );
+        assert_eq!(
+            transfer_fees_request("ALL")
+                .expect("complete fee catalog")
+                .target(),
+            "/v2/fee/inout/ALL"
         );
         assert_eq!(
             trades_request(&btc_krw(), Some(10))
@@ -444,6 +479,10 @@ mod tests {
             ));
         }
         assert!(notices_request(Some(MAX_NOTICE_COUNT)).is_ok());
+        assert!(matches!(
+            transfer_fees_request("  "),
+            Err(Error::InvalidRequest { field, .. }) if field == "currency"
+        ));
     }
 
     #[test]

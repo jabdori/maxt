@@ -7,7 +7,7 @@ import { AccountStream, MarketStream, StreamError } from "../stream.js";
 import * as Codec from "./codec.js";
 import type * as Wire from "./contract.js";
 
-export const NATIVE_API_VERSION = 13 as const;
+export const NATIVE_API_VERSION = 14 as const;
 
 export type NativeOutcome<T> =
   | { readonly ok: true; readonly value: T }
@@ -78,6 +78,7 @@ export interface RawNativeBithumbHandle {
   marketWarnings(): Promise<unknown>;
   marketAlerts(): Promise<unknown>;
   notices(count: string): Promise<unknown>;
+  transferFees(currency: string): Promise<unknown>;
 }
 
 export interface RawNativeBinanceHandle {
@@ -193,6 +194,7 @@ export interface NativeBithumbHandle {
   marketWarnings(): Promise<NativeOutcome<readonly (readonly [Wire.MarketWire, string])[]>>;
   marketAlerts(): Promise<NativeOutcome<readonly (readonly [Wire.MarketWire, Wire.BithumbMarketAlertWire])[]>>;
   notices(count: number | null): Promise<NativeOutcome<readonly Wire.BithumbNoticeWire[]>>;
+  transferFees(currency: string): Promise<NativeOutcome<readonly Wire.BithumbAssetFeeWire[]>>;
 }
 
 export interface NativeBinanceHandle {
@@ -288,6 +290,7 @@ export function createJsonBackend(raw: RawNativeModule): NativeBackend {
         marketWarnings: () => handle.marketWarnings() as Promise<NativeOutcome<readonly (readonly [Wire.MarketWire, string])[]>>,
         marketAlerts: () => handle.marketAlerts() as Promise<NativeOutcome<readonly (readonly [Wire.MarketWire, Wire.BithumbMarketAlertWire])[]>>,
         notices: (count: number | null) => handle.notices(Codec.stringifyWire(count)) as Promise<NativeOutcome<readonly Wire.BithumbNoticeWire[]>>,
+        transferFees: (currency: string) => handle.transferFees(Codec.stringifyWire(currency)) as Promise<NativeOutcome<readonly Wire.BithumbAssetFeeWire[]>>,
       };
     },
     binance(options) {
@@ -1003,6 +1006,7 @@ export class BithumbAdapter extends NativeAdapter {
   async marketWarnings(): Promise<readonly (readonly [Model.Market, string])[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.marketWarnings()).map(Codec.marketStringPairFromWire); }
   async marketAlerts(): Promise<readonly (readonly [Model.Market, Model.BithumbMarketAlert])[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.marketAlerts()).map(Codec.bithumbMarketAlertPairFromWire); }
   async notices(count: number | null = null): Promise<readonly Model.BithumbNotice[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.notices(Codec.checkedOptionalU32(count, "count"))).map(Codec.bithumbNoticeFromWire); }
+  async transferFees(currency: string): Promise<readonly Model.BithumbAssetFee[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.transferFees(currency)).map(Codec.bithumbAssetFeeFromWire); }
 }
 
 export class BinanceAdapter extends NativeAdapter {

@@ -152,7 +152,10 @@ pub(crate) fn validate_cancel_order_limit(
 pub use binance::{
     BinanceAdapter, BinanceListenKey, BinanceMarket, BinanceSpotOrderDetail, BinanceSymbolFilters,
 };
-pub use bithumb::{BithumbAdapter, BithumbAlertStep, BithumbMarketAlert, BithumbNotice};
+pub use bithumb::{
+    BithumbAdapter, BithumbAlertStep, BithumbAssetFee, BithumbMarketAlert, BithumbNetworkFee,
+    BithumbNotice,
+};
 pub use hyperliquid::{
     HyperliquidAdapter, HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind,
 };

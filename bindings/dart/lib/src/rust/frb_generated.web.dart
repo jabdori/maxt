@@ -431,12 +431,20 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   List<WireBalance> dco_decode_list_wire_balance(dynamic raw);
 
   @protected
+  List<WireBithumbAssetFee> dco_decode_list_wire_bithumb_asset_fee(dynamic raw);
+
+  @protected
   List<WireBithumbMarketAlert> dco_decode_list_wire_bithumb_market_alert(
     dynamic raw,
   );
 
   @protected
   List<WireBithumbMarketWarning> dco_decode_list_wire_bithumb_market_warning(
+    dynamic raw,
+  );
+
+  @protected
+  List<WireBithumbNetworkFee> dco_decode_list_wire_bithumb_network_fee(
     dynamic raw,
   );
 
@@ -642,10 +650,16 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireBithumbAlertStep dco_decode_wire_bithumb_alert_step(dynamic raw);
 
   @protected
+  WireBithumbAssetFee dco_decode_wire_bithumb_asset_fee(dynamic raw);
+
+  @protected
   WireBithumbMarketAlert dco_decode_wire_bithumb_market_alert(dynamic raw);
 
   @protected
   WireBithumbMarketWarning dco_decode_wire_bithumb_market_warning(dynamic raw);
+
+  @protected
+  WireBithumbNetworkFee dco_decode_wire_bithumb_network_fee(dynamic raw);
 
   @protected
   WireBithumbNotice dco_decode_wire_bithumb_notice(dynamic raw);
@@ -1343,12 +1357,22 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   List<WireBalance> sse_decode_list_wire_balance(SseDeserializer deserializer);
 
   @protected
+  List<WireBithumbAssetFee> sse_decode_list_wire_bithumb_asset_fee(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<WireBithumbMarketAlert> sse_decode_list_wire_bithumb_market_alert(
     SseDeserializer deserializer,
   );
 
   @protected
   List<WireBithumbMarketWarning> sse_decode_list_wire_bithumb_market_warning(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<WireBithumbNetworkFee> sse_decode_list_wire_bithumb_network_fee(
     SseDeserializer deserializer,
   );
 
@@ -1600,12 +1624,22 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireBithumbAssetFee sse_decode_wire_bithumb_asset_fee(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireBithumbMarketAlert sse_decode_wire_bithumb_market_alert(
     SseDeserializer deserializer,
   );
 
   @protected
   WireBithumbMarketWarning sse_decode_wire_bithumb_market_warning(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbNetworkFee sse_decode_wire_bithumb_network_fee(
     SseDeserializer deserializer,
   );
 
@@ -2481,6 +2515,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_list_wire_bithumb_asset_fee(
+    List<WireBithumbAssetFee> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_wire_bithumb_market_alert(
     List<WireBithumbMarketAlert> self,
     SseSerializer serializer,
@@ -2489,6 +2529,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_list_wire_bithumb_market_warning(
     List<WireBithumbMarketWarning> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_wire_bithumb_network_fee(
+    List<WireBithumbNetworkFee> self,
     SseSerializer serializer,
   );
 
@@ -2817,6 +2863,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_wire_bithumb_asset_fee(
+    WireBithumbAssetFee self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_bithumb_market_alert(
     WireBithumbMarketAlert self,
     SseSerializer serializer,
@@ -2825,6 +2877,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_bithumb_market_warning(
     WireBithumbMarketWarning self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_bithumb_network_fee(
+    WireBithumbNetworkFee self,
     SseSerializer serializer,
   );
 

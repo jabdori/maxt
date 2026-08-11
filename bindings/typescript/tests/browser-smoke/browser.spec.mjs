@@ -187,6 +187,15 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
         });
       }
     }
+    let feeError;
+    try {
+      await bithumb.transferFees(" ");
+    } catch (error) {
+      feeError = {
+        name: error.constructor.name,
+        field: error.field,
+      };
+    }
     return {
       exchange: client.exchange.id,
       markets: (await client.markets(maxt.MarketKind.Spot)).length,
@@ -212,6 +221,7 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
       cancelFailure: cancelResult.failed[0].code,
       aggregationError,
       noticeErrors,
+      feeError,
     };
   });
 
@@ -243,5 +253,6 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
       { name: "InvalidRequestError", field: "count" },
       { name: "InvalidRequestError", field: "count" },
     ],
+    feeError: { name: "InvalidRequestError", field: "currency" },
   });
 });

@@ -120,6 +120,19 @@ void main() {
     );
   });
 
+  test('WebAssembly도 Bithumb 수수료 조회의 빈 자산 코드를 거절한다', () async {
+    await expectLater(
+      BithumbAdapter().transferFees(' '),
+      throwsA(
+        isA<InvalidRequestError>().having(
+          (error) => error.field,
+          'field',
+          'currency',
+        ),
+      ),
+    );
+  });
+
   test('기본 Web 스트림은 네트워크 backpressure를 사용하지 않는다', () async {
     final adapter = _ConfigAdapter();
     final client = Client(adapter);

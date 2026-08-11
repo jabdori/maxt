@@ -64,6 +64,69 @@ class WireAssetNetwork {
           memoRequired == other.memoRequired;
 }
 
+class WireBithumbAssetFee {
+  final String displayName;
+  final String asset;
+  final List<WireBithumbNetworkFee> networks;
+
+  const WireBithumbAssetFee({
+    required this.displayName,
+    required this.asset,
+    required this.networks,
+  });
+
+  @override
+  int get hashCode => displayName.hashCode ^ asset.hashCode ^ networks.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbAssetFee &&
+          runtimeType == other.runtimeType &&
+          displayName == other.displayName &&
+          asset == other.asset &&
+          networks == other.networks;
+}
+
+class WireBithumbNetworkFee {
+  final String network;
+  final String providerName;
+  final String depositFee;
+  final String minimumDeposit;
+  final WireWithdrawalFee withdrawalFee;
+  final String minimumWithdrawal;
+
+  const WireBithumbNetworkFee({
+    required this.network,
+    required this.providerName,
+    required this.depositFee,
+    required this.minimumDeposit,
+    required this.withdrawalFee,
+    required this.minimumWithdrawal,
+  });
+
+  @override
+  int get hashCode =>
+      network.hashCode ^
+      providerName.hashCode ^
+      depositFee.hashCode ^
+      minimumDeposit.hashCode ^
+      withdrawalFee.hashCode ^
+      minimumWithdrawal.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbNetworkFee &&
+          runtimeType == other.runtimeType &&
+          network == other.network &&
+          providerName == other.providerName &&
+          depositFee == other.depositFee &&
+          minimumDeposit == other.minimumDeposit &&
+          withdrawalFee == other.withdrawalFee &&
+          minimumWithdrawal == other.minimumWithdrawal;
+}
+
 class WireBithumbNotice {
   final List<String> categories;
   final String title;

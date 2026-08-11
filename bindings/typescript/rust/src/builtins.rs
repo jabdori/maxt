@@ -27,9 +27,10 @@ use wasm_bindgen::prelude::*;
 use crate::client::NativeClient;
 use crate::convert::{
     WireBinanceSpotOrderDetail, WireBinanceSymbolFilters, WireBithumbMarketAlert,
-    WireBithumbNotice, WireHyperliquidAssetContext, WireHyperliquidLedgerEntry, WireMarket,
-    WireOrderBook, WirePage, WireTicker, WireUpbitMarketEvent, WireUpbitOrderBookInstrument,
-    WireUpbitYearCandle, decimal_from_wire, from_wire_text, outcome, timestamp_from_wire,
+    WireBithumbAssetFee, WireBithumbNotice, WireHyperliquidAssetContext,
+    WireHyperliquidLedgerEntry, WireMarket, WireOrderBook, WirePage, WireTicker,
+    WireUpbitMarketEvent, WireUpbitOrderBookInstrument, WireUpbitYearCandle, decimal_from_wire,
+    from_wire_text, outcome, timestamp_from_wire,
 };
 
 #[derive(Debug, Deserialize)]
@@ -489,6 +490,15 @@ impl NativeBithumb {
             Err(error) => outcome::<Value>(Err(error)),
         }
     }
+
+    async fn transfer_fees(&self, currency: maxt::Result<String>) -> Value {
+        match parse_text::<String>(currency, "currency") {
+            Ok(currency) => outcome(wire_vec::<_, WireBithumbAssetFee>(
+                self.adapter.transfer_fees(&currency).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
 }
 
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
@@ -518,6 +528,17 @@ impl NativeBithumb {
         let this = self.clone();
         let count = native_json_text(count, "count");
         spawn_native(env, async move { this.notices(count).await })
+    }
+
+    #[napi(js_name = "transferFees", ts_args_type = "currency: string")]
+    pub fn transfer_fees_native<'env>(
+        &self,
+        env: &'env Env,
+        currency: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let currency = native_json_text(currency, "currency");
+        spawn_native(env, async move { this.transfer_fees(currency).await })
     }
 }
 
@@ -990,6 +1011,11 @@ impl NativeBithumb {
     #[wasm_bindgen(js_name = "notices")]
     pub async fn notices_wasm(&self, count: String) -> JsValue {
         crate::web::value(self.notices(Ok(count)).await)
+    }
+
+    #[wasm_bindgen(js_name = "transferFees")]
+    pub async fn transfer_fees_wasm(&self, currency: String) -> JsValue {
+        crate::web::value(self.transfer_fees(Ok(currency)).await)
     }
 }
 

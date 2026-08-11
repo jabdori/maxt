@@ -1465,6 +1465,56 @@ pub(crate) fn bithumb_notice_to_wire(
     )
 }
 
+pub(crate) fn bithumb_asset_fee_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::BithumbAssetFee> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::BithumbAssetFee {
+        display_name: required(dict, "display_name")?.extract::<String>()?,
+        asset: required(dict, "asset")?.extract::<String>()?,
+        networks: list_from_wire(&required(dict, "networks")?, bithumb_network_fee_from_wire)?,
+    })
+}
+
+pub(crate) fn bithumb_asset_fee_to_wire(
+    py: Python<'_>,
+    value: &maxt::BithumbAssetFee,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "display_name" => &value.display_name,
+        "asset" => &value.asset,
+        "networks" => list_to_wire(py, &value.networks, bithumb_network_fee_to_wire)?,
+    )
+}
+
+pub(crate) fn bithumb_network_fee_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::BithumbNetworkFee> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::BithumbNetworkFee {
+        network: network_from_wire(&required(dict, "network")?)?,
+        provider_name: required(dict, "provider_name")?.extract::<String>()?,
+        deposit_fee: decimal_from_wire(&required(dict, "deposit_fee")?, "deposit_fee")?,
+        minimum_deposit: decimal_from_wire(&required(dict, "minimum_deposit")?, "minimum_deposit")?,
+        withdrawal_fee: withdrawal_fee_from_wire(&required(dict, "withdrawal_fee")?)?,
+        minimum_withdrawal: decimal_from_wire(&required(dict, "minimum_withdrawal")?, "minimum_withdrawal")?,
+    })
+}
+
+pub(crate) fn bithumb_network_fee_to_wire(
+    py: Python<'_>,
+    value: &maxt::BithumbNetworkFee,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "network" => network_to_wire(&value.network)?,
+        "provider_name" => &value.provider_name,
+        "deposit_fee" => decimal_to_wire(value.deposit_fee),
+        "minimum_deposit" => decimal_to_wire(value.minimum_deposit),
+        "withdrawal_fee" => withdrawal_fee_to_wire(py, &value.withdrawal_fee)?,
+        "minimum_withdrawal" => decimal_to_wire(value.minimum_withdrawal),
+    )
+}
+
 pub(crate) fn deposits_page_to_wire(
     py: Python<'_>,
     value: &Page<maxt::Deposit>,

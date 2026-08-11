@@ -1134,6 +1134,8 @@ const MODELS: &[&str] = &[
     "UpbitOrderBookInstrument",
     "BithumbMarketAlert",
     "BithumbNotice",
+    "BithumbAssetFee",
+    "BithumbNetworkFee",
     "BinanceSymbolFilters",
     "BinanceSpotOrderDetail",
     "HyperliquidLedgerEntry",
@@ -1157,6 +1159,7 @@ const YEAR_CANDLE_QUERY: &[Argument] = &[
     argument("count", ApiType::OptionalNumber, Some("null")),
 ];
 const NOTICE_COUNT: &[Argument] = &[argument("count", ApiType::OptionalNumber, Some("null"))];
+const FEE_CURRENCY: &[Argument] = &[argument("currency", ApiType::String, None)];
 const LEDGER_RANGE: &[Argument] = &[
     argument("from", ApiType::OptionalNamed("Timestamp"), Some("null")),
     argument("to", ApiType::OptionalNamed("Timestamp"), Some("null")),
@@ -1358,6 +1361,13 @@ const BITHUMB_METHODS: &[ProviderMethod] = &[
         kind: ProviderMethodKind::Async,
         arguments: NOTICE_COUNT,
         result: ApiType::List("BithumbNotice"),
+    },
+    ProviderMethod {
+        rust_name: "transfer_fees",
+        name: "transferFees",
+        kind: ProviderMethodKind::Async,
+        arguments: FEE_CURRENCY,
+        result: ApiType::List("BithumbAssetFee"),
     },
 ];
 const BINANCE_METHODS: &[ProviderMethod] = &[
@@ -2040,6 +2050,25 @@ pub fn binding_schema() -> Schema {
             ],
         ),
         record(
+            "BithumbAssetFeeWire",
+            vec![
+                field("display_name", Type::String),
+                field("asset", Type::String),
+                field("networks", Type::list(Type::named("BithumbNetworkFeeWire"))),
+            ],
+        ),
+        record(
+            "BithumbNetworkFeeWire",
+            vec![
+                field("network", Type::Identifier("Network")),
+                field("provider_name", Type::String),
+                field("deposit_fee", decimal.clone()),
+                field("minimum_deposit", decimal.clone()),
+                field("withdrawal_fee", Type::named("WithdrawalFeeWire")),
+                field("minimum_withdrawal", decimal.clone()),
+            ],
+        ),
+        record(
             "BinanceSymbolFiltersWire",
             vec![
                 field("symbol", Type::String),
@@ -2542,7 +2571,7 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
-        native_api_version: 13,
+        native_api_version: 14,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
         identifiers: IDENTIFIERS,

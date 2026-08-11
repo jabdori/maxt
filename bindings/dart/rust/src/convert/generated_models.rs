@@ -1303,6 +1303,80 @@ impl TryFrom<WireBithumbNotice> for maxt::BithumbNotice {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbAssetFee {
+    pub display_name: String,
+    pub asset: String,
+    pub networks: Vec<WireBithumbNetworkFee>,
+}
+
+impl From<maxt::BithumbAssetFee> for WireBithumbAssetFee {
+    fn from(value: maxt::BithumbAssetFee) -> Self {
+        Self {
+            display_name: value.display_name,
+            asset: value.asset,
+            networks: value.networks.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl TryFrom<WireBithumbAssetFee> for maxt::BithumbAssetFee {
+    type Error = NativeError;
+
+    fn try_from(value: WireBithumbAssetFee) -> Result<Self, Self::Error> {
+        Ok(Self {
+            display_name: value.display_name,
+            asset: value.asset,
+            networks: value
+                .networks
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbNetworkFee {
+    pub network: String,
+    pub provider_name: String,
+    pub deposit_fee: String,
+    pub minimum_deposit: String,
+    pub withdrawal_fee: WireWithdrawalFee,
+    pub minimum_withdrawal: String,
+}
+
+impl From<maxt::BithumbNetworkFee> for WireBithumbNetworkFee {
+    fn from(value: maxt::BithumbNetworkFee) -> Self {
+        Self {
+            network: network_to_wire(value.network),
+            provider_name: value.provider_name,
+            deposit_fee: decimal_to_wire(value.deposit_fee),
+            minimum_deposit: decimal_to_wire(value.minimum_deposit),
+            withdrawal_fee: value.withdrawal_fee.into(),
+            minimum_withdrawal: decimal_to_wire(value.minimum_withdrawal),
+        }
+    }
+}
+
+impl TryFrom<WireBithumbNetworkFee> for maxt::BithumbNetworkFee {
+    type Error = NativeError;
+
+    fn try_from(value: WireBithumbNetworkFee) -> Result<Self, Self::Error> {
+        Ok(Self {
+            network: network_from_wire(value.network),
+            provider_name: value.provider_name,
+            deposit_fee: decimal_from_wire(&value.deposit_fee, "deposit_fee")
+                .map_err(NativeError::from)?,
+            minimum_deposit: decimal_from_wire(&value.minimum_deposit, "minimum_deposit")
+                .map_err(NativeError::from)?,
+            withdrawal_fee: value.withdrawal_fee.try_into()?,
+            minimum_withdrawal: decimal_from_wire(&value.minimum_withdrawal, "minimum_withdrawal")
+                .map_err(NativeError::from)?,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireDepositPage {
     pub items: Vec<WireDeposit>,
     pub next: Option<String>,

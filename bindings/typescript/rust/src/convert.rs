@@ -1,6 +1,6 @@
 use maxt::adapters::{
     BinanceSpotOrderDetail, BinanceSymbolFilters, BithumbAlertStep, BithumbMarketAlert,
-    BithumbNotice,
+    BithumbAssetFee, BithumbNetworkFee, BithumbNotice,
     HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind, UpbitMarketEvent,
     UpbitOrderBookInstrument, UpbitYearCandle,
 };
@@ -280,6 +280,25 @@ pub(crate) struct WireBithumbNotice {
     pub(crate) url: String,
     pub(crate) published_at: String,
     pub(crate) modified_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBithumbAssetFee {
+    pub(crate) display_name: String,
+    pub(crate) asset: String,
+    pub(crate) networks: Vec<WireBithumbNetworkFee>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBithumbNetworkFee {
+    pub(crate) network: String,
+    pub(crate) provider_name: String,
+    pub(crate) deposit_fee: String,
+    pub(crate) minimum_deposit: String,
+    pub(crate) withdrawal_fee: WireWithdrawalFee,
+    pub(crate) minimum_withdrawal: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1624,6 +1643,37 @@ impl TryFrom<BithumbNotice> for WireBithumbNotice {
             url: value.url,
             published_at: timestamp_to_wire(value.published_at),
             modified_at: timestamp_to_wire(value.modified_at),
+        })
+    }
+}
+
+impl TryFrom<BithumbAssetFee> for WireBithumbAssetFee {
+    type Error = Error;
+
+    fn try_from(value: BithumbAssetFee) -> Result<Self, Self::Error> {
+        Ok(Self {
+            display_name: value.display_name,
+            asset: value.asset,
+            networks: value
+                .networks
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+        })
+    }
+}
+
+impl TryFrom<BithumbNetworkFee> for WireBithumbNetworkFee {
+    type Error = Error;
+
+    fn try_from(value: BithumbNetworkFee) -> Result<Self, Self::Error> {
+        Ok(Self {
+            network: network_to_wire(value.network)?,
+            provider_name: value.provider_name,
+            deposit_fee: decimal_to_wire(value.deposit_fee),
+            minimum_deposit: decimal_to_wire(value.minimum_deposit),
+            withdrawal_fee: value.withdrawal_fee.try_into()?,
+            minimum_withdrawal: decimal_to_wire(value.minimum_withdrawal),
         })
     }
 }

@@ -135,7 +135,12 @@ const providerMethods = <String, List<String>>{
     'orderbookInstruments',
     'marketEvents',
   ],
-  'bithumb': <String>['marketWarnings', 'marketAlerts', 'notices'],
+  'bithumb': <String>[
+    'marketWarnings',
+    'marketAlerts',
+    'notices',
+    'transferFees',
+  ],
   'binance': <String>[
     'venue',
     'spotSymbolFilters',

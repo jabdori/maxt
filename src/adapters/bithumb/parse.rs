@@ -12,9 +12,13 @@ use crate::error::{Error, Result};
 use crate::types::{
     AccountEvent, Balance, Candle, Exchange, Interval, Level, Market, MarketEvent, MarketInfo,
     MarketKind, MarketStatus, Order, OrderBook, OrderStatus, Side, Ticker, Timestamp, Trade,
+    WithdrawalFee,
 };
 
-use super::{BithumbAlertStep, BithumbMarketAlert, BithumbNotice};
+use super::{
+    BithumbAlertStep, BithumbAssetFee, BithumbMarketAlert, BithumbNetworkFee, BithumbNotice,
+    network_from_provider,
+};
 
 /// Exchange identifier used in adapter errors.
 pub(crate) const EXCHANGE: &str = Exchange::Bithumb.id();
@@ -312,6 +316,64 @@ pub(crate) fn notices(value: &Value) -> Result<Vec<BithumbNotice>> {
             })
         })
         .collect()
+}
+
+/// Parses `/v2/fee/inout/{currency}` without losing Bithumb's fee formula.
+pub(crate) fn transfer_fees(value: &Value) -> Result<Vec<BithumbAssetFee>> {
+    entries(value)?
+        .iter()
+        .map(|entry| {
+            let asset = text(entry, "currency")?.trim().to_ascii_uppercase();
+            if asset.is_empty()
+                || !asset
+                    .bytes()
+                    .all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit())
+            {
+                return Err(Error::decode("`currency` is not a Bithumb asset code"));
+            }
+            let networks = entries(field(entry, "networks")?)?
+                .iter()
+                .map(|network| {
+                    let provider_name = text(network, "net_name")?.trim().to_owned();
+                    if provider_name.is_empty() {
+                        return Err(Error::decode("`net_name` must not be empty"));
+                    }
+                    Ok(BithumbNetworkFee {
+                        network: network_from_provider(&provider_name),
+                        provider_name,
+                        deposit_fee: dec(network, "deposit_fee_quantity")?,
+                        minimum_deposit: dec(network, "deposit_minimum_quantity")?,
+                        withdrawal_fee: withdrawal_fee(network)?,
+                        minimum_withdrawal: dec(network, "withdraw_minimum_quantity")?,
+                    })
+                })
+                .collect::<Result<Vec<_>>>()?;
+            Ok(BithumbAssetFee {
+                display_name: text(entry, "name")?.to_owned(),
+                asset,
+                networks,
+            })
+        })
+        .collect()
+}
+
+fn withdrawal_fee(value: &Value) -> Result<WithdrawalFee> {
+    let fixed = dec_opt(value, "withdraw_fee_quantity")?;
+    let rate = dec_opt(value, "withdraw_rate")?;
+    match (fixed, rate) {
+        (Some(value), None) => Ok(WithdrawalFee::Fixed(value)),
+        (None, Some(rate)) => Ok(WithdrawalFee::Rate {
+            rate,
+            minimum: dec_opt(value, "withdraw_fee_min")?,
+            maximum: dec_opt(value, "withdraw_fee_max")?,
+        }),
+        (None, None) => Err(Error::decode(
+            "Bithumb transfer fee has neither a fixed amount nor a rate",
+        )),
+        (Some(_), Some(_)) => Err(Error::decode(
+            "Bithumb transfer fee has both a fixed amount and a rate",
+        )),
+    }
 }
 
 /// Parses `/v1/trades/ticks` and returns a stable newest-first order.
@@ -701,6 +763,7 @@ fn frame_error(error: &Value) -> Error {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Network;
 
     // Shape reference: https://apidocs.bithumb.com/reference/거래-대상-목록-조회.md
     const MARKET_LIST: &str = r#"[
@@ -766,6 +829,42 @@ mod tests {
         "pc_url": "https://feed.bithumb.com/notice/1654458",
         "published_at": "2026-08-11 18:00:00",
         "modified_at": "2026-08-11 16:24:36"
+      }
+    ]"#;
+
+    // Shape reference: https://apidocs.bithumb.com/reference/입출금-수수료-조회.md
+    const TRANSFER_FEES: &str = r#"[
+      {
+        "name": "비트코인",
+        "currency": "BTC",
+        "networks": [
+          {
+            "net_name": "Bitcoin",
+            "deposit_fee_quantity": "0",
+            "deposit_minimum_quantity": "0",
+            "withdraw_fee_quantity": "0.0002",
+            "withdraw_rate": null,
+            "withdraw_fee_min": null,
+            "withdraw_fee_max": null,
+            "withdraw_minimum_quantity": "0.001"
+          }
+        ]
+      },
+      {
+        "name": "토큰",
+        "currency": "TOKEN",
+        "networks": [
+          {
+            "net_name": "Arbitrum One",
+            "deposit_fee_quantity": "0.01",
+            "deposit_minimum_quantity": "2",
+            "withdraw_fee_quantity": null,
+            "withdraw_rate": "0.01",
+            "withdraw_fee_min": "1",
+            "withdraw_fee_max": "100",
+            "withdraw_minimum_quantity": "10"
+          }
+        ]
       }
     ]"#;
 
@@ -1274,6 +1373,32 @@ mod tests {
         assert_eq!(notices[0].url, "https://feed.bithumb.com/notice/1654458");
         assert_eq!(notices[0].published_at, Timestamp::from_secs(1_786_438_800));
         assert_eq!(notices[0].modified_at, Timestamp::from_secs(1_786_433_076));
+    }
+
+    #[test]
+    fn transfer_fees_keep_fixed_and_rate_formulae_per_network() {
+        let fees = transfer_fees(&parsed(TRANSFER_FEES)).expect("fee catalog parses");
+
+        assert_eq!(fees.len(), 2);
+        assert_eq!(fees[0].display_name, "비트코인");
+        assert_eq!(fees[0].asset, "BTC");
+        assert_eq!(fees[0].networks[0].network, Network::Bitcoin);
+        assert_eq!(fees[0].networks[0].provider_name, "Bitcoin");
+        assert_eq!(fees[0].networks[0].deposit_fee, Decimal::ZERO);
+        assert_eq!(fees[0].networks[0].minimum_withdrawal, exact("0.001"));
+        assert_eq!(
+            fees[0].networks[0].withdrawal_fee,
+            WithdrawalFee::Fixed(exact("0.0002"))
+        );
+        assert_eq!(fees[1].networks[0].network, Network::Arbitrum);
+        assert_eq!(
+            fees[1].networks[0].withdrawal_fee,
+            WithdrawalFee::Rate {
+                rate: exact("0.01"),
+                minimum: Some(Decimal::ONE),
+                maximum: Some(Decimal::from(100)),
+            }
+        );
     }
 
     #[test]

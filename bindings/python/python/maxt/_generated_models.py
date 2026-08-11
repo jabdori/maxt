@@ -448,6 +448,26 @@ class BithumbNotice(WireModel):
     modified_at: Timestamp
 
 
+@dataclass(frozen=True)
+class BithumbAssetFee(WireModel):
+    display_name: str
+    asset: str
+    networks: list[BithumbNetworkFee]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "asset", _ascii_upper(self.asset))
+
+
+@dataclass(frozen=True)
+class BithumbNetworkFee(WireModel):
+    network: Network
+    provider_name: str
+    deposit_fee: Decimal
+    minimum_deposit: Decimal
+    withdrawal_fee: WithdrawalFee
+    minimum_withdrawal: Decimal
+
+
 __all__ = [
     "OrderAccount",
     "OrderOption",
@@ -479,4 +499,6 @@ __all__ = [
     "UpbitYearCandle",
     "UpbitOrderBookInstrument",
     "BithumbNotice",
+    "BithumbAssetFee",
+    "BithumbNetworkFee",
 ]

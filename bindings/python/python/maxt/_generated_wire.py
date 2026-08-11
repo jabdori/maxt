@@ -363,6 +363,19 @@ RECORD_FIELDS = {
         "published_at": "timestamp",
         "modified_at": "timestamp",
     },
+    "BithumbAssetFee": {
+        "display_name": "string",
+        "asset": "string",
+        "networks": "list:named:BithumbNetworkFee",
+    },
+    "BithumbNetworkFee": {
+        "network": "identifier:Network",
+        "provider_name": "string",
+        "deposit_fee": "decimal",
+        "minimum_deposit": "decimal",
+        "withdrawal_fee": "named:WithdrawalFee",
+        "minimum_withdrawal": "decimal",
+    },
     "BinanceSymbolFilters": {
         "symbol": "string",
         "tick_size": "optional:decimal",

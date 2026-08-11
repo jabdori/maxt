@@ -126,6 +126,16 @@ test("Bithumb notices reject invalid counts before the Node boundary", async () 
   }
 });
 
+test("Bithumb transfer fees reject an empty currency before the Node boundary", async () => {
+  await maxt.initialize();
+  const bithumb = new maxt.BithumbAdapter();
+
+  await assert.rejects(
+    bithumb.transferFees(" "),
+    (error) => error instanceof InvalidRequestError && error.field === "currency",
+  );
+});
+
 test("custom Adapter calls round-trip through Rust without losing values", async () => {
   const market = Market.spot(Exchange.Binance, "BTC", "USDT");
   const expected = new Ticker(

@@ -94,6 +94,12 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
       ).then(
         (values) => values.map(_bithumbNoticeFromWire).toList(growable: false),
       );
+
+  Future<List<BithumbAssetFee>> transferFees(String currency) =>
+      _nativeFuture(() => _handle.bithumbTransferFees(currency: currency)).then(
+        (values) =>
+            values.map(_bithumbAssetFeeFromWire).toList(growable: false),
+      );
 }
 
 extension BinanceAdapterGeneratedMethods on BinanceAdapter {

@@ -98,6 +98,7 @@ Access the following provider-specific methods through `Client::adapter()`.
 | `market_warnings()` | One raw `NONE` or `CAUTION` value per listed market |
 | `market_alerts()` | Active rows only; one row per market and criterion; `ends_at` converted from KST to UTC |
 | `notices(count)` | `GET /v1/notices`; `count: 1..=20`; `None -> provider default 5`; newest-first; `published_at` and `modified_at` converted from KST to UTC |
+| `transfer_fees(currency)` | `GET /v2/fee/inout/{currency}`; an asset symbol or `ALL`; per-network deposit fee/minimum and a fixed or rate-based withdrawal fee rule; not account-specific availability |
 
 | Provider state | Mapping |
 | --- | --- |
@@ -120,6 +121,7 @@ public candle streams are not supported.
 - [Request limits](https://apidocs.bithumb.com/docs/api-%EC%9A%94%EC%B2%AD-%EC%88%98-%EC%A0%9C%ED%95%9C-%EC%95%88%EB%82%B4.md)
 - [Recent trades](https://apidocs.bithumb.com/reference/%EC%B2%B4%EA%B2%B0-%EB%82%B4%EC%97%AD-%EC%A1%B0%ED%9A%8C.md)
 - [Notices](https://apidocs.bithumb.com/reference/%EA%B3%B5%EC%A7%80%EC%82%AC%ED%95%AD-%EC%A1%B0%ED%9A%8C.md)
+- [Transfer fees](https://apidocs.bithumb.com/reference/%EC%9E%85%EC%B6%9C%EA%B8%88-%EC%88%98%EC%88%98%EB%A3%8C-%EC%A1%B0%ED%9A%8C.md)
 - [Candles](https://apidocs.bithumb.com/reference/%EB%B6%84minute-%EC%BA%94%EB%93%A4-%EC%A1%B0%ED%9A%8C.md)
 - [WebSocket](https://apidocs.bithumb.com/reference/%EA%B8%B0%EB%B3%B8-%EC%A0%95%EB%B3%B4.md)
 - [Orders](https://apidocs.bithumb.com/reference/%EC%A3%BC%EB%AC%B8-%EC%9A%94%EC%B2%AD.md)

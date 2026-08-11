@@ -18,14 +18,39 @@ use crate::stream::{AccountStream, MarketStream};
 use crate::transport::HttpTransport;
 use crate::types::{
     AssetNetwork, Balance, CancelOrdersResult, Candle, Deposit, DepositAddress,
-    DepositAddressEntry, Exchange, Market, MarketInfo, MarketKind, Order, OrderBook, OrderRules,
-    Page, StreamConfig, Subscription, Ticker, Timestamp, Trade, Withdrawal, WithdrawalQuote,
+    DepositAddressEntry, Exchange, Market, MarketInfo, MarketKind, Network, Order, OrderBook,
+    OrderRules, Page, StreamConfig, Subscription, Ticker, Timestamp, Trade, Withdrawal,
+    WithdrawalFee, WithdrawalQuote,
 };
 
 pub(crate) const REST_BASE_URL: &str = "https://api.bithumb.com";
 pub(crate) const WEBSOCKET_URL: &str = "wss://ws-api.bithumb.com/websocket/v1";
 /// Private account events use a separate v2 WebSocket endpoint.
 pub(crate) const PRIVATE_WEBSOCKET_URL: &str = "wss://ws-api.bithumb.com/websocket/v2/private";
+
+pub(crate) fn network_from_provider(raw: &str) -> Network {
+    match raw.trim().to_ascii_uppercase().as_str() {
+        "BTC" | "BITCOIN" => Network::Bitcoin,
+        "ETH" | "ETHEREUM" => Network::Ethereum,
+        "ARB" | "ARBITRUM" | "ARBITRUM ONE" => Network::Arbitrum,
+        "BSC" | "BEP20" | "BNB SMART CHAIN" => Network::BnbSmartChain,
+        "TRX" | "TRON" => Network::Tron,
+        "SOL" | "SOLANA" => Network::Solana,
+        "MATIC" | "POLYGON" | "POLYGON POS" => Network::Polygon,
+        "BASE" => Network::Base,
+        "OP" | "OPTIMISM" => Network::Optimism,
+        "AVAXC" | "AVAX-C" | "AVALANCHE C-CHAIN" => Network::AvalancheC,
+        "XRP" | "XRP LEDGER" => Network::XrpLedger,
+        "XLM" | "STELLAR" => Network::Stellar,
+        "ATOM" | "COSMOS" | "COSMOS HUB" => Network::Cosmos,
+        "APT" | "APTOS" => Network::Aptos,
+        "SUI" => Network::Sui,
+        "TON" => Network::Ton,
+        "NEAR" => Network::Near,
+        "DOT" | "POLKADOT" => Network::Polkadot,
+        _ => Network::Other(raw.trim().to_owned()),
+    }
+}
 
 /// Severity of a Bithumb market alert (경보제), ordered from least to most severe.
 ///
@@ -72,6 +97,34 @@ pub struct BithumbNotice {
     pub published_at: Timestamp,
     /// Most recent modification time converted from KST to UTC.
     pub modified_at: Timestamp,
+}
+
+/// One Bithumb asset's public transfer-fee catalog entry.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BithumbAssetFee {
+    /// Bithumb's display name for the asset.
+    pub display_name: String,
+    /// Asset symbol, uppercase.
+    pub asset: String,
+    /// Fee rules for every network Bithumb returned for this asset.
+    pub networks: Vec<BithumbNetworkFee>,
+}
+
+/// One Bithumb network's public transfer-fee rules.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BithumbNetworkFee {
+    /// Canonical network when maxt recognizes Bithumb's network name.
+    pub network: Network,
+    /// Bithumb's exact `net_name` value.
+    pub provider_name: String,
+    /// Deposit fee in the transferred asset.
+    pub deposit_fee: rust_decimal::Decimal,
+    /// Minimum deposit amount.
+    pub minimum_deposit: rust_decimal::Decimal,
+    /// Fixed or rate-based withdrawal fee rule.
+    pub withdrawal_fee: WithdrawalFee,
+    /// Minimum withdrawal amount.
+    pub minimum_withdrawal: rust_decimal::Decimal,
 }
 
 /// Adapter for Bithumb spot markets.
@@ -138,6 +191,15 @@ impl BithumbAdapter {
     /// five-notice default.
     pub async fn notices(&self, count: Option<u32>) -> Result<Vec<BithumbNotice>> {
         rest::notices(self.http()?, count).await
+    }
+
+    /// Returns Bithumb's public transfer-fee catalog for one asset or `ALL`.
+    ///
+    /// The returned values are fee rules, not account-specific withdrawal
+    /// availability. Use [`Adapter::asset_networks`] for an authenticated
+    /// account's current transfer status and limits.
+    pub async fn transfer_fees(&self, currency: &str) -> Result<Vec<BithumbAssetFee>> {
+        rest::transfer_fees(self.http()?, currency).await
     }
 
     pub(crate) fn is_authenticated(&self) -> bool {

@@ -931,6 +931,43 @@ wire.WireBithumbNotice _bithumbNoticeToWire(BithumbNotice value) =>
       modifiedAtNs: _timestampToWire(value.modifiedAt),
     );
 
+BithumbAssetFee _bithumbAssetFeeFromWire(wire.WireBithumbAssetFee value) =>
+    BithumbAssetFee(
+      displayName: value.displayName,
+      asset: value.asset,
+      networks: value.networks
+          .map(_bithumbNetworkFeeFromWire)
+          .toList(growable: false),
+    );
+wire.WireBithumbAssetFee _bithumbAssetFeeToWire(BithumbAssetFee value) =>
+    wire.WireBithumbAssetFee(
+      displayName: value.displayName,
+      asset: value.asset,
+      networks: value.networks
+          .map(_bithumbNetworkFeeToWire)
+          .toList(growable: false),
+    );
+
+BithumbNetworkFee _bithumbNetworkFeeFromWire(
+  wire.WireBithumbNetworkFee value,
+) => BithumbNetworkFee(
+  network: _networkFromWire(value.network),
+  providerName: value.providerName,
+  depositFee: Decimal.parse(value.depositFee),
+  minimumDeposit: Decimal.parse(value.minimumDeposit),
+  withdrawalFee: _withdrawalFeeFromWire(value.withdrawalFee),
+  minimumWithdrawal: Decimal.parse(value.minimumWithdrawal),
+);
+wire.WireBithumbNetworkFee _bithumbNetworkFeeToWire(BithumbNetworkFee value) =>
+    wire.WireBithumbNetworkFee(
+      network: _networkToWire(value.network),
+      providerName: value.providerName,
+      depositFee: value.depositFee.toString(),
+      minimumDeposit: value.minimumDeposit.toString(),
+      withdrawalFee: _withdrawalFeeToWire(value.withdrawalFee),
+      minimumWithdrawal: value.minimumWithdrawal.toString(),
+    );
+
 Page<Deposit> _depositPageFromWire(wire.WireDepositPage value) => Page(
   items: value.items.map(_depositFromWire),
   next: value.next == null ? null : Cursor(value.next!),

@@ -7,7 +7,9 @@ from maxt import (
     Adapter,
     BithumbAdapter,
     BithumbAlertStep,
+    BithumbAssetFee,
     BithumbMarketAlert,
+    BithumbNetworkFee,
     BithumbNotice,
     BinanceAdapter,
     BinanceListenKey,
@@ -215,6 +217,25 @@ class FakeNativeBithumbAdapter:
             }
         ]
 
+    async def transfer_fees(self, currency):
+        self.fee_currency = currency
+        return [
+            {
+                "display_name": "비트코인",
+                "asset": "BTC",
+                "networks": [
+                    {
+                        "network": "bitcoin",
+                        "provider_name": "Bitcoin",
+                        "deposit_fee": "0",
+                        "minimum_deposit": "0",
+                        "withdrawal_fee": {"kind": "fixed", "value": "0.0002"},
+                        "minimum_withdrawal": "0.001",
+                    }
+                ],
+            }
+        ]
+
 
 class FakeNativeBinanceListenKey:
     value = "listen-key"
@@ -413,6 +434,7 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
             warnings = await adapter.market_warnings()
             alerts = await adapter.market_alerts()
             notices = await adapter.notices(1)
+            fees = await adapter.transfer_fees("BTC")
 
         self.assertEqual(adapter.exchange, Exchange.BITHUMB)
         self.assertTrue(adapter.authenticated)
@@ -424,6 +446,10 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(notices[0], BithumbNotice)
         self.assertEqual(notices[0].categories, ["입출금"])
         self.assertEqual(notices[0].url, "https://feed.bithumb.com/notice/1654458")
+        self.assertEqual(adapter._handle.fee_currency, "BTC")
+        self.assertIsInstance(fees[0], BithumbAssetFee)
+        self.assertIsInstance(fees[0].networks[0], BithumbNetworkFee)
+        self.assertEqual(fees[0].networks[0].withdrawal_fee.value, Decimal("0.0002"))
 
     async def test_binance_exposes_spot_details_and_usd_m_listen_keys(self) -> None:
         native = SimpleNamespace(NativeBinanceAdapter=FakeNativeBinanceAdapter)

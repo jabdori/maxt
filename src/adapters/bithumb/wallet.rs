@@ -17,7 +17,7 @@ use crate::types::{
 };
 
 use super::parse::{self, EXCHANGE};
-use super::{BithumbCredentials, private, rest};
+use super::{BithumbCredentials, network_from_provider, private, rest};
 
 const WALLET_STATUS_PATH: &str = "/v1/status/wallet";
 const DEPOSIT_ADDRESSES_PATH: &str = "/v1/deposits/coin_addresses";
@@ -1044,30 +1044,6 @@ fn asset_code(raw: &str) -> Result<String> {
         ));
     }
     Ok(asset)
-}
-
-fn network_from_provider(raw: &str) -> Network {
-    match raw {
-        "BTC" => Network::Bitcoin,
-        "ETH" => Network::Ethereum,
-        "ARB" | "ARBITRUM" => Network::Arbitrum,
-        "BSC" | "BEP20" => Network::BnbSmartChain,
-        "TRX" | "TRON" => Network::Tron,
-        "SOL" => Network::Solana,
-        "MATIC" | "POLYGON" => Network::Polygon,
-        "BASE" => Network::Base,
-        "OP" | "OPTIMISM" => Network::Optimism,
-        "AVAXC" | "AVAX-C" => Network::AvalancheC,
-        "XRP" => Network::XrpLedger,
-        "XLM" => Network::Stellar,
-        "ATOM" => Network::Cosmos,
-        "APT" => Network::Aptos,
-        "SUI" => Network::Sui,
-        "TON" => Network::Ton,
-        "NEAR" => Network::Near,
-        "DOT" => Network::Polkadot,
-        other => Network::Other(other.to_string()),
-    }
 }
 
 fn memo_required(network: &Network) -> bool {

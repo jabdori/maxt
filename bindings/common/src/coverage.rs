@@ -1470,7 +1470,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Provider("notices"),
         Validation::LiveRead,
     ),
-    planned(operation(
+    operation(
         Exchange::Bithumb,
         "quotation",
         "inout_fee",
@@ -1479,9 +1479,9 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Provider("inout_fee"),
-        Validation::Documented,
-    )),
+        OperationMapping::Provider("transfer_fees"),
+        Validation::LiveRead,
+    ),
     partial(operation(
         Exchange::Bithumb,
         "quotation",

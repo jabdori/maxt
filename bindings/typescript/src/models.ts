@@ -880,6 +880,29 @@ export class BithumbNotice {
   }
 }
 
+export class BithumbAssetFee {
+  readonly asset: string;
+  readonly networks: readonly BithumbNetworkFee[];
+  constructor(
+    readonly displayName: string, asset: string, networks: readonly BithumbNetworkFee[],
+  ) {
+    this.asset = asciiUpper(asset);
+    this.networks = Object.freeze([...networks]);
+    freezeRecord(this);
+  }
+}
+
+export class BithumbNetworkFee {
+  constructor(
+    readonly network: Network,
+    readonly providerName: string,
+    readonly depositFee: Decimal,
+    readonly minimumDeposit: Decimal,
+    readonly withdrawalFee: WithdrawalFee,
+    readonly minimumWithdrawal: Decimal,
+  ) { freezeRecord(this); }
+}
+
 export class BinanceSymbolFilters {
   constructor(
     readonly symbol: string, readonly tickSize: Decimal | null, readonly minPrice: Decimal | null,

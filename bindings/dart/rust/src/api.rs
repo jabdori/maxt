@@ -754,6 +754,21 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
+    pub async fn bithumb_transfer_fees(
+        &self,
+        currency: String,
+    ) -> Result<Vec<WireBithumbAssetFee>, NativeError> {
+        let adapter = match self.built_in("bithumb_transfer_fees")? {
+            BuiltInAdapter::Bithumb(adapter) => adapter,
+            _ => return Err(provider_mismatch("Bithumb")),
+        };
+        adapter
+            .transfer_fees(&currency)
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
     pub async fn binance_spot_symbol_filters(
         &self,
         market: WireMarket,

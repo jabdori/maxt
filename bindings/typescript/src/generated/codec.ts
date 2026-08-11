@@ -831,6 +831,33 @@ export function bithumbNoticeToWire(value: Model.BithumbNotice): Wire.BithumbNot
   };
 }
 
+export function bithumbAssetFeeFromWire(value: Wire.BithumbAssetFeeWire): Model.BithumbAssetFee {
+  return new Model.BithumbAssetFee(value.display_name, value.asset, value.networks.map((item) => bithumbNetworkFeeFromWire(item)));
+}
+
+export function bithumbAssetFeeToWire(value: Model.BithumbAssetFee): Wire.BithumbAssetFeeWire {
+  return {
+    display_name: value.displayName,
+    asset: value.asset,
+    networks: value.networks.map((item) => bithumbNetworkFeeToWire(item)),
+  };
+}
+
+export function bithumbNetworkFeeFromWire(value: Wire.BithumbNetworkFeeWire): Model.BithumbNetworkFee {
+  return new Model.BithumbNetworkFee(Model.Network.other(value.network), value.provider_name, Model.Decimal.parse(value.deposit_fee), Model.Decimal.parse(value.minimum_deposit), withdrawalFeeFromWire(value.withdrawal_fee), Model.Decimal.parse(value.minimum_withdrawal));
+}
+
+export function bithumbNetworkFeeToWire(value: Model.BithumbNetworkFee): Wire.BithumbNetworkFeeWire {
+  return {
+    network: value.network.id,
+    provider_name: value.providerName,
+    deposit_fee: value.depositFee.toString(),
+    minimum_deposit: value.minimumDeposit.toString(),
+    withdrawal_fee: withdrawalFeeToWire(value.withdrawalFee),
+    minimum_withdrawal: value.minimumWithdrawal.toString(),
+  };
+}
+
 export function binanceSymbolFiltersFromWire(value: Wire.BinanceSymbolFiltersWire): Model.BinanceSymbolFilters {
   return new Model.BinanceSymbolFilters(value.symbol, value.tick_size === null ? null : Model.Decimal.parse(value.tick_size), value.min_price === null ? null : Model.Decimal.parse(value.min_price), value.max_price === null ? null : Model.Decimal.parse(value.max_price), value.step_size === null ? null : Model.Decimal.parse(value.step_size), value.min_quantity === null ? null : Model.Decimal.parse(value.min_quantity), value.max_quantity === null ? null : Model.Decimal.parse(value.max_quantity), value.min_notional === null ? null : Model.Decimal.parse(value.min_notional));
 }

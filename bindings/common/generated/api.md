@@ -46,7 +46,7 @@
 | Exchange | Adapter | Python | Dart / TypeScript |
 | --- | --- | --- | --- |
 | upbit | `UpbitAdapter` | `region`, `order_books`, `order_books_at_level`, `tickers`, `tickers_by_quote`, `year_candles`, `orderbook_instruments`, `market_events` | `region`, `orderBooks`, `orderBooksAtLevel`, `tickers`, `tickersByQuote`, `yearCandles`, `orderbookInstruments`, `marketEvents` |
-| bithumb | `BithumbAdapter` | `market_warnings`, `market_alerts`, `notices` | `marketWarnings`, `marketAlerts`, `notices` |
+| bithumb | `BithumbAdapter` | `market_warnings`, `market_alerts`, `notices`, `transfer_fees` | `marketWarnings`, `marketAlerts`, `notices`, `transferFees` |
 | binance | `BinanceAdapter` | `venue`, `spot_symbol_filters`, `spot_order`, `usd_m_create_listen_key`, `usd_m_keepalive_listen_key`, `usd_m_close_listen_key` | `venue`, `spotSymbolFilters`, `spotOrder`, `usdMCreateListenKey`, `usdMKeepaliveListenKey`, `usdMCloseListenKey` |
 | hyperliquid | `HyperliquidAdapter` | `is_testnet`, `non_funding_ledger`, `asset_context` | `isTestnet`, `nonFundingLedger`, `assetContext` |
 
@@ -173,7 +173,7 @@ Documentation baseline: `2026-08-10`.
 | bithumb | quotation | `orderbook` | `GET` | `/v1/orderbook` | `http` | public | read | general | common `order_book` | `Partial` | `LiveRead` |
 | bithumb | quotation | `virtual_asset_warning` | `GET` | `/v1/market/virtual_asset_warning` | `http` | public | read | general | provider `market_alerts` | `Implemented` | `LiveRead` |
 | bithumb | quotation | `notices` | `GET` | `/v1/notices` | `http` | public | read | general | provider `notices` | `Implemented` | `LiveRead` |
-| bithumb | quotation | `inout_fee` | `GET` | `/v2/fee/inout/{currency}` | `http` | public | read | general | provider `inout_fee` | `Planned` | `Documented` |
+| bithumb | quotation | `inout_fee` | `GET` | `/v2/fee/inout/{currency}` | `http` | public | read | general | provider `transfer_fees` | `Implemented` | `LiveRead` |
 | bithumb | quotation | `ticker_stream` | `SUBSCRIBE` | `ticker` | `websocket_stream` | public | read | general | common `subscribe` | `Partial` | `LiveRead` |
 | bithumb | quotation | `trade_stream` | `SUBSCRIBE` | `trade` | `websocket_stream` | public | read | general | common `subscribe` | `Partial` | `LiveRead` |
 | bithumb | quotation | `orderbook_stream` | `SUBSCRIBE` | `orderbook` | `websocket_stream` | public | read | general | common `subscribe` | `Partial` | `LiveRead` |

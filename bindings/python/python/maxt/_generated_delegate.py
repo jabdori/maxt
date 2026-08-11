@@ -84,6 +84,18 @@ class _GeneratedNativeClientDelegateApi:
         value = await self._call(self._client.withdraw, request)
         return _model_from_wire("Withdrawal", value)
 
+    async def deposit(self, request: TransferLookupRequest) -> Deposit:
+        value = await self._call(self._client.deposit, request)
+        return _model_from_wire("Deposit", value)
+
+    async def withdrawal(self, request: TransferLookupRequest) -> Withdrawal:
+        value = await self._call(self._client.withdrawal, request)
+        return _model_from_wire("Withdrawal", value)
+
+    async def cancel_withdrawal(self, withdrawal_id: str) -> None:
+        await self._call(self._client.cancel_withdrawal, withdrawal_id)
+        return None
+
     async def deposits(self, request: TransferHistoryRequest) -> Page[Deposit]:
         value = await self._call(self._client.deposits, request)
         return _model_from_wire("DepositPage", value)

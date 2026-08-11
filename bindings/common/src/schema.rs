@@ -259,6 +259,12 @@ const TRANSFER_HISTORY_REQUEST: &[Argument] = &[argument(
     ApiType::Named("TransferHistoryRequest"),
     None,
 )];
+const TRANSFER_LOOKUP_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("TransferLookupRequest"),
+    None,
+)];
+const WITHDRAWAL_ID: &[Argument] = &[argument("withdrawalId", ApiType::String, None)];
 const EXCHANGE_TRANSFER_REQUEST: &[Argument] = &[
     argument("destination", ApiType::Client, None),
     argument("request", ApiType::Named("ExchangeTransferRequest"), None),
@@ -364,6 +370,21 @@ const CLIENT_WITHDRAW: &[ClientMethod] = &[ClientMethod {
     name: "withdraw",
     native_name: "withdraw",
     arguments: WITHDRAW_REQUEST,
+}];
+const CLIENT_DEPOSIT: &[ClientMethod] = &[ClientMethod {
+    name: "deposit",
+    native_name: "deposit",
+    arguments: TRANSFER_LOOKUP_REQUEST,
+}];
+const CLIENT_WITHDRAWAL: &[ClientMethod] = &[ClientMethod {
+    name: "withdrawal",
+    native_name: "withdrawal",
+    arguments: TRANSFER_LOOKUP_REQUEST,
+}];
+const CLIENT_CANCEL_WITHDRAWAL: &[ClientMethod] = &[ClientMethod {
+    name: "cancelWithdrawal",
+    native_name: "cancelWithdrawal",
+    arguments: WITHDRAWAL_ID,
 }];
 const CLIENT_DEPOSITS: &[ClientMethod] = &[ClientMethod {
     name: "deposits",
@@ -586,6 +607,30 @@ const ADAPTER_OPERATIONS: &[Operation] = &[
         client_methods: CLIENT_WITHDRAW,
     },
     Operation {
+        rust_name: "deposit",
+        language_name: "deposit",
+        feature: "deposit_lookup",
+        arguments: TRANSFER_LOOKUP_REQUEST,
+        result: ApiType::Named("Deposit"),
+        client_methods: CLIENT_DEPOSIT,
+    },
+    Operation {
+        rust_name: "withdrawal",
+        language_name: "withdrawal",
+        feature: "withdrawal_lookup",
+        arguments: TRANSFER_LOOKUP_REQUEST,
+        result: ApiType::Named("Withdrawal"),
+        client_methods: CLIENT_WITHDRAWAL,
+    },
+    Operation {
+        rust_name: "cancel_withdrawal",
+        language_name: "cancelWithdrawal",
+        feature: "withdrawal_cancellation",
+        arguments: WITHDRAWAL_ID,
+        result: ApiType::Unit,
+        client_methods: CLIENT_CANCEL_WITHDRAWAL,
+    },
+    Operation {
         rust_name: "deposits",
         language_name: "deposits",
         feature: "deposit_history",
@@ -763,6 +808,9 @@ const CLIENT_MEMBERS: &[&str] = &[
     "createDepositAddress",
     "prepareWithdrawal",
     "withdraw",
+    "deposit",
+    "withdrawal",
+    "cancelWithdrawal",
     "deposits",
     "withdrawals",
     "prepareTransferTo",
@@ -838,9 +886,12 @@ const FEATURE_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("AssetNetworks", "asset_networks"),
     identifier_variant("DepositAddresses", "deposit_addresses"),
     identifier_variant("DepositHistory", "deposit_history"),
+    identifier_variant("DepositLookup", "deposit_lookup"),
     identifier_variant("WithdrawalQuotes", "withdrawal_quotes"),
     identifier_variant("Withdrawals", "withdrawals"),
     identifier_variant("WithdrawalHistory", "withdrawal_history"),
+    identifier_variant("WithdrawalLookup", "withdrawal_lookup"),
+    identifier_variant("WithdrawalCancellation", "withdrawal_cancellation"),
     identifier_variant("OpenOrders", "open_orders"),
     identifier_variant("OrderHistory", "order_history"),
     identifier_variant("AccountStream", "account_stream"),
@@ -1072,6 +1123,7 @@ const MODELS: &[&str] = &[
     "OrderHistoryRequest",
     "DepositAddressRequest",
     "WithdrawRequest",
+    "TransferLookupRequest",
     "TransferHistoryRequest",
     "StreamConfig",
     "Subscription",
@@ -1824,6 +1876,14 @@ pub fn binding_schema() -> Schema {
             ],
         ),
         record(
+            "TransferLookupRequestWire",
+            vec![
+                field("asset", Type::String),
+                field("id", Type::optional(Type::String)),
+                field("tx_id", Type::optional(Type::String)),
+            ],
+        ),
+        record(
             "TransferHistoryRequestWire",
             vec![
                 field("asset", Type::optional(Type::String)),
@@ -2190,6 +2250,18 @@ pub fn binding_schema() -> Schema {
                     vec![field("request", Type::named("WithdrawRequestWire"))],
                 ),
                 variant(
+                    "deposit",
+                    vec![field("request", Type::named("TransferLookupRequestWire"))],
+                ),
+                variant(
+                    "withdrawal",
+                    vec![field("request", Type::named("TransferLookupRequestWire"))],
+                ),
+                variant(
+                    "cancel_withdrawal",
+                    vec![field("withdrawal_id", Type::String)],
+                ),
+                variant(
                     "deposits",
                     vec![field("request", Type::named("TransferHistoryRequestWire"))],
                 ),
@@ -2328,6 +2400,11 @@ pub fn binding_schema() -> Schema {
                     "withdrawal",
                     vec![field("value", Type::named("WithdrawalWire"))],
                 ),
+                variant("deposit", vec![field("value", Type::named("DepositWire"))]),
+                variant(
+                    "withdrawal_lookup",
+                    vec![field("value", Type::named("WithdrawalWire"))],
+                ),
                 variant(
                     "deposits",
                     vec![field("value", Type::named("PageWire<DepositWire>"))],
@@ -2380,7 +2457,7 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
-        native_api_version: 9,
+        native_api_version: 10,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
         identifiers: IDENTIFIERS,

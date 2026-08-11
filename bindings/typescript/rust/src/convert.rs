@@ -6,15 +6,15 @@ use maxt::{
     AccountEvent, AssetNetwork, Balance, CancelOrdersRequest, CancelOrdersResult, CancelledOrder,
     Candle, CandleRequest, ChainDestination, ChainTransferRequest, Cursor, Decimal, Deposit,
     DepositAddress, DepositAddressEntry, DepositAddressRequest, DepositStatus, Error, Exchange,
-    ExchangeDestination,
-    ExchangeErrorKind, ExchangeTransferRequest, Feature, Feed, FundingPayment, FundingRate,
-    HistoryRequest, Interval, Level, MarginMode, MarginRequest, MarginSummary, Market, MarketEvent,
-    MarketInfo, MarketKind, MarketStatus, Network, Order, OrderAccount, OrderBook,
+    ExchangeDestination, ExchangeErrorKind, ExchangeTransferRequest, Feature, Feed, FundingPayment,
+    FundingRate, HistoryRequest, Interval, Level, MarginMode, MarginRequest, MarginSummary, Market,
+    MarketEvent, MarketInfo, MarketKind, MarketStatus, Network, Order, OrderAccount, OrderBook,
     OrderCancelFailure, OrderHistoryRequest, OrderIdKind, OrderLookupRequest, OrderOption,
     OrderRequest, OrderRules, OrderStatus, OrderType, Overflow, Page, Position, Side, Size,
     StreamConfig, Subscription, Ticker, TimeInForce, Timestamp, Trade, TransferDestination,
-    TransferErrorKind, TransferHistoryRequest, TransferPlan, TravelRuleRequirement,
-    WithdrawRequest, Withdrawal, WithdrawalFee, WithdrawalQuote, WithdrawalStatus,
+    TransferErrorKind, TransferHistoryRequest, TransferLookupRequest, TransferPlan,
+    TravelRuleRequirement, WithdrawRequest, Withdrawal, WithdrawalFee, WithdrawalQuote,
+    WithdrawalStatus,
 };
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -118,6 +118,16 @@ pub(crate) struct WireWithdrawRequest {
     pub(crate) destination: WireTransferDestination,
     #[serde(deserialize_with = "explicit_option")]
     pub(crate) client_id: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireTransferLookupRequest {
+    pub(crate) asset: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) id: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) tx_id: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1047,6 +1057,18 @@ impl TryFrom<WireWithdrawRequest> for WithdrawRequest {
     }
 }
 
+impl TryFrom<WireTransferLookupRequest> for TransferLookupRequest {
+    type Error = Error;
+
+    fn try_from(value: WireTransferLookupRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            asset: value.asset.to_ascii_uppercase(),
+            id: value.id,
+            tx_id: value.tx_id,
+        })
+    }
+}
+
 impl TryFrom<WireTransferHistoryRequest> for TransferHistoryRequest {
     type Error = Error;
 
@@ -1194,6 +1216,18 @@ impl TryFrom<WithdrawRequest> for WireWithdrawRequest {
             amount: decimal_to_wire(value.amount),
             destination: value.destination.try_into()?,
             client_id: value.client_id,
+        })
+    }
+}
+
+impl TryFrom<TransferLookupRequest> for WireTransferLookupRequest {
+    type Error = Error;
+
+    fn try_from(value: TransferLookupRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            asset: value.asset,
+            id: value.id,
+            tx_id: value.tx_id,
         })
     }
 }
@@ -3635,10 +3669,9 @@ mod tests {
         use maxt::{
             AssetNetwork, Balance, Candle, ChainDestination, Cursor, Deposit, DepositAddress,
             DepositAddressEntry, DepositStatus, FundingPayment, FundingRate, Level, MarginMode,
-            MarginSummary,
-            MarketInfo, MarketStatus, Network, Order, OrderBook, OrderStatus, Page, Position,
-            Ticker, Trade, TransferDestination, TravelRuleRequirement, Withdrawal, WithdrawalFee,
-            WithdrawalQuote, WithdrawalStatus,
+            MarginSummary, MarketInfo, MarketStatus, Network, Order, OrderBook, OrderStatus, Page,
+            Position, Ticker, Trade, TransferDestination, TravelRuleRequirement, Withdrawal,
+            WithdrawalFee, WithdrawalQuote, WithdrawalStatus,
         };
 
         let market = Market::perpetual(Exchange::Binance, "btc", "usdt");
@@ -3827,7 +3860,7 @@ mod tests {
         use maxt::{
             ChainDestination, DepositAddressRequest, Feed, HistoryRequest, MarginMode,
             MarginRequest, Network, Overflow, StreamConfig, Subscription, TransferDestination,
-            TransferHistoryRequest, WithdrawRequest,
+            TransferHistoryRequest, TransferLookupRequest, WithdrawRequest,
         };
 
         let market = Market::perpetual(Exchange::Binance, "BTC", "USDT");
@@ -3876,6 +3909,9 @@ mod tests {
                 .cursor(Cursor::new("page-2"))
                 .limit(100),
         );
+        assert_wire_round_trip::<_, WireTransferLookupRequest>(TransferLookupRequest::by_tx_id(
+            "BTC", "tx-1",
+        ));
         assert_wire_round_trip::<_, WireHistoryRequest>(HistoryRequest {
             market: market.clone(),
             from: Some(from),

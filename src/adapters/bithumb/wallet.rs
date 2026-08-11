@@ -6,7 +6,9 @@ use serde::Deserialize;
 use serde_json::{Map, Value};
 
 use crate::error::{Error, Result, TransferErrorKind};
-use crate::request::{DepositAddressRequest, TransferHistoryRequest, WithdrawRequest};
+use crate::request::{
+    DepositAddressRequest, TransferHistoryRequest, TransferLookupRequest, WithdrawRequest,
+};
 use crate::transport::{HttpRequest, HttpTransport};
 use crate::types::{
     AssetNetwork, Cursor, Deposit, DepositAddress, DepositAddressEntry, DepositStatus, Exchange,
@@ -24,7 +26,10 @@ const CREATE_DEPOSIT_ADDRESS_PATH: &str = "/v1/deposits/generate_coin_address";
 const WITHDRAW_CHANCE_PATH: &str = "/v1/withdraws/chance";
 const WITHDRAWAL_ADDRESSES_PATH: &str = "/v1/withdraws/coin_addresses";
 const WITHDRAW_PATH: &str = "/v1/withdraws/coin";
+const WITHDRAWAL_PATH: &str = "/v1/withdraw";
+const CANCEL_WITHDRAWAL_PATH: &str = "/v1/withdraws/coin";
 const DEPOSITS_PATH: &str = "/v1/deposits";
+const DEPOSIT_PATH: &str = "/v1/deposit";
 const WITHDRAWALS_PATH: &str = "/v1/withdraws";
 const MAX_HISTORY_COUNT: u32 = 100;
 
@@ -293,6 +298,36 @@ pub(crate) async fn withdraw(
     parse_withdrawal(&decode(&body)?)
 }
 
+pub(crate) async fn deposit(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    request: &TransferLookupRequest,
+) -> Result<Deposit> {
+    let api_request = lookup_request(credentials, DEPOSIT_PATH, request)?;
+    let body = rest::send(http, &api_request).await?;
+    parse_deposit(&decode(&body)?)
+}
+
+pub(crate) async fn withdrawal(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    request: &TransferLookupRequest,
+) -> Result<Withdrawal> {
+    let api_request = lookup_request(credentials, WITHDRAWAL_PATH, request)?;
+    let body = rest::send(http, &api_request).await?;
+    parse_withdrawal(&decode(&body)?)
+}
+
+pub(crate) async fn cancel_withdrawal(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    withdrawal_id: &str,
+) -> Result<()> {
+    let api_request = cancel_withdrawal_request(credentials, withdrawal_id)?;
+    rest::send(http, &api_request).await?;
+    Ok(())
+}
+
 pub(crate) async fn deposits(
     http: &HttpTransport,
     credentials: &BithumbCredentials,
@@ -410,6 +445,23 @@ fn signed_get(
     })
 }
 
+fn signed_delete(
+    credentials: &BithumbCredentials,
+    path: &str,
+    params: &[(&str, String)],
+) -> Result<HttpRequest> {
+    let query = signed_query(params)?;
+    let request = HttpRequest::delete(path).header(
+        "authorization",
+        private::authorization(credentials, &query)?,
+    );
+    Ok(if query.is_empty() {
+        request
+    } else {
+        request.query(query)
+    })
+}
+
 fn signed_query(params: &[(&str, String)]) -> Result<String> {
     for (name, value) in params {
         if value.is_empty() || !value.bytes().all(is_unreserved) {
@@ -446,6 +498,31 @@ fn withdraw_chance_request(
             ("currency", asset.to_string()),
             ("net_type", provider_id.to_string()),
         ],
+    )
+}
+
+fn lookup_request(
+    credentials: &BithumbCredentials,
+    path: &str,
+    request: &TransferLookupRequest,
+) -> Result<HttpRequest> {
+    let asset = asset_code(&request.asset)?;
+    let (reference_name, reference) = request.reference()?;
+    signed_get(
+        credentials,
+        path,
+        &[("currency", asset), (reference_name, reference.to_string())],
+    )
+}
+
+fn cancel_withdrawal_request(
+    credentials: &BithumbCredentials,
+    withdrawal_id: &str,
+) -> Result<HttpRequest> {
+    signed_delete(
+        credentials,
+        CANCEL_WITHDRAWAL_PATH,
+        &[("withdrawal_id", withdrawal_id.to_string())],
     )
 }
 
@@ -1275,6 +1352,44 @@ mod tests {
         assert_eq!(
             withdrawals.target(),
             "/v1/withdraws?currency=BTC&page=3&limit=25&order_by=desc"
+        );
+    }
+
+    #[test]
+    fn transfer_lookup_and_cancellation_use_documented_parameters_and_signatures() {
+        let credentials = credentials();
+        let deposit = lookup_request(
+            &credentials,
+            DEPOSIT_PATH,
+            &TransferLookupRequest::by_id("BTC", "deposit-1"),
+        )
+        .expect("deposit lookup request");
+        let withdrawal = lookup_request(
+            &credentials,
+            WITHDRAWAL_PATH,
+            &TransferLookupRequest::by_tx_id("BTC", "tx-1"),
+        )
+        .expect("withdrawal lookup request");
+        let cancellation = cancel_withdrawal_request(&credentials, "withdrawal-1")
+            .expect("withdrawal cancellation request");
+
+        assert_eq!(deposit.target(), "/v1/deposit?currency=BTC&uuid=deposit-1");
+        assert_eq!(withdrawal.target(), "/v1/withdraw?currency=BTC&txid=tx-1");
+        assert_eq!(
+            cancellation.target(),
+            "/v1/withdraws/coin?withdrawal_id=withdrawal-1"
+        );
+        assert_eq!(
+            claims(&deposit)["query_hash"],
+            hex::encode(Sha512::digest(b"currency=BTC&uuid=deposit-1"))
+        );
+        assert_eq!(
+            claims(&withdrawal)["query_hash"],
+            hex::encode(Sha512::digest(b"currency=BTC&txid=tx-1"))
+        );
+        assert_eq!(
+            claims(&cancellation)["query_hash"],
+            hex::encode(Sha512::digest(b"withdrawal_id=withdrawal-1"))
         );
     }
 

@@ -289,6 +289,11 @@ RECORD_FIELDS = {
         "destination": "named:TransferDestination",
         "client_id": "optional:string",
     },
+    "TransferLookupRequest": {
+        "asset": "string",
+        "id": "optional:string",
+        "tx_id": "optional:string",
+    },
     "TransferHistoryRequest": {
         "asset": "optional:string",
         "network": "optional:identifier:Network",
@@ -563,6 +568,15 @@ UNION_FIELDS = {
         "withdraw": {
             "request": "named:WithdrawRequest",
         },
+        "deposit": {
+            "request": "named:TransferLookupRequest",
+        },
+        "withdrawal": {
+            "request": "named:TransferLookupRequest",
+        },
+        "cancel_withdrawal": {
+            "withdrawal_id": "string",
+        },
         "deposits": {
             "request": "named:TransferHistoryRequest",
         },
@@ -662,6 +676,12 @@ UNION_FIELDS = {
         "withdrawal": {
             "value": "named:Withdrawal",
         },
+        "deposit": {
+            "value": "named:Deposit",
+        },
+        "withdrawal_lookup": {
+            "value": "named:Withdrawal",
+        },
         "deposits": {
             "value": "named:PageWire<DepositWire>",
         },
@@ -708,7 +728,7 @@ UNION_FIELDS = {
 
 IDENTIFIER_VARIANTS = {
     "Exchange": ("upbit", "bithumb", "binance", "hyperliquid",),
-    "Feature": ("markets", "trades", "order_book", "ticker", "candles", "trade_stream", "order_book_stream", "ticker_stream", "candle_stream", "balances", "asset_networks", "deposit_addresses", "deposit_history", "withdrawal_quotes", "withdrawals", "withdrawal_history", "open_orders", "order_history", "account_stream", "trading", "positions", "margin", "funding_rates", "funding_payments", "margin_config", "reduce_only_orders",),
+    "Feature": ("markets", "trades", "order_book", "ticker", "candles", "trade_stream", "order_book_stream", "ticker_stream", "candle_stream", "balances", "asset_networks", "deposit_addresses", "deposit_history", "deposit_lookup", "withdrawal_quotes", "withdrawals", "withdrawal_history", "withdrawal_lookup", "withdrawal_cancellation", "open_orders", "order_history", "account_stream", "trading", "positions", "margin", "funding_rates", "funding_payments", "margin_config", "reduce_only_orders",),
     "MarketKind": ("spot", "perpetual",),
     "MarketStatus": ("active", "paused", "delisted", "unknown",),
     "Side": ("buy", "sell",),

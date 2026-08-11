@@ -137,6 +137,37 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
+    pub async fn deposit(
+        &self,
+        request: WireTransferLookupRequest,
+    ) -> Result<WireDeposit, NativeError> {
+        let request = request.try_into()?;
+        self.adapter
+            .deposit(&request)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn withdrawal(
+        &self,
+        request: WireTransferLookupRequest,
+    ) -> Result<WireWithdrawal, NativeError> {
+        let request = request.try_into()?;
+        self.adapter
+            .withdrawal(&request)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn cancel_withdrawal(&self, withdrawal_id: String) -> Result<(), NativeError> {
+        self.adapter
+            .cancel_withdrawal(&withdrawal_id)
+            .await
+            .map_err(Into::into)
+    }
+
     pub async fn deposits(
         &self,
         request: WireTransferHistoryRequest,

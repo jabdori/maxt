@@ -995,6 +995,18 @@ export class WithdrawRequest {
   }
 }
 
+export class TransferLookupRequest {
+  readonly asset: string;
+  constructor(
+    asset: string,
+    readonly id: string | null = null,
+    readonly txId: string | null = null,
+  ) {
+    this.asset = asciiUpper(asset);
+    freezeRecord(this);
+  }
+}
+
 export class TransferHistoryRequest {
   readonly asset: string | null;
   readonly limit: number | null;

@@ -43,6 +43,7 @@ import {
   TimeInForce,
   TransferDestination,
   TransferHistoryRequest,
+  TransferLookupRequest,
   TravelRuleRequirement,
   WithdrawRequest,
   WithdrawalFee,
@@ -69,6 +70,8 @@ import {
   streamConfigFromWire,
   transferHistoryRequestFromWire,
   transferHistoryRequestToWire,
+  transferLookupRequestFromWire,
+  transferLookupRequestToWire,
   withdrawRequestFromWire,
   withdrawRequestToWire,
   withdrawalFromWire,
@@ -308,6 +311,12 @@ test("wallet unions, statuses, open networks, and pages preserve the wire contra
   assert.equal(WithdrawalFee.fixed(Decimal.one).kind, "fixed");
   assert.equal(TravelRuleRequirement.NotRequired.kind, "not_required");
   assert.equal(new DepositAddressRequest("btc", Network.Bitcoin).asset, "BTC");
+  const transferLookupWire = { asset: "BTC", id: "deposit-1", tx_id: null };
+  assert.deepEqual(
+    transferLookupRequestToWire(transferLookupRequestFromWire(transferLookupWire)),
+    transferLookupWire,
+  );
+  assert.equal(new TransferLookupRequest("btc", null, "tx-1").asset, "BTC");
   const depositAddressEntryWire = {
     exchange: "binance",
     asset: "XRP",

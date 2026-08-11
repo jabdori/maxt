@@ -6,10 +6,13 @@ use maxt::adapters::{
     UpbitAdapter, UpbitRegion,
 };
 use maxt::{
-    AccountStream, Adapter, Balance, BoxFuture, Candle, CandleRequest, Error, Exchange, Feature,
-    Feed, FundingPayment, FundingRate, HistoryRequest, MarginRequest, MarginSummary, Market,
-    MarketInfo, MarketKind, MarketStream, Order, OrderBook, OrderRequest, Overflow, Page, Position,
-    StreamConfig, Subscription, Ticker, Trade,
+    AccountStream, Adapter, AssetNetwork, Balance, BoxFuture, CancelOrdersRequest,
+    CancelOrdersResult, Candle, CandleRequest, Deposit, DepositAddress, DepositAddressEntry,
+    DepositAddressRequest, Error, Exchange, Feature, Feed, FundingPayment, FundingRate,
+    HistoryRequest, MarginRequest, MarginSummary, Market, MarketInfo, MarketKind, MarketStream,
+    Order, OrderBook, OrderHistoryRequest, OrderLookupRequest, OrderRequest, OrderRules, Overflow,
+    Page, Position, StreamConfig, Subscription, Ticker, Trade, TransferHistoryRequest,
+    TransferLookupRequest, WithdrawRequest, Withdrawal, WithdrawalQuote,
 };
 
 mod generated_native_client;
@@ -256,8 +259,100 @@ impl Adapter for BuiltInAdapter {
         self.as_adapter().balances()
     }
 
+    fn order_rules(&self, market: &Market) -> BoxFuture<'_, maxt::Result<OrderRules>> {
+        self.as_adapter().order_rules(market)
+    }
+
+    fn asset_networks(&self, asset: &str) -> BoxFuture<'_, maxt::Result<Vec<AssetNetwork>>> {
+        self.as_adapter().asset_networks(asset)
+    }
+
+    fn deposit_addresses(&self) -> BoxFuture<'_, maxt::Result<Vec<DepositAddressEntry>>> {
+        self.as_adapter().deposit_addresses()
+    }
+
+    fn deposit_address(
+        &self,
+        request: &DepositAddressRequest,
+    ) -> BoxFuture<'_, maxt::Result<DepositAddress>> {
+        self.as_adapter().deposit_address(request)
+    }
+
+    fn create_deposit_address(
+        &self,
+        request: &DepositAddressRequest,
+    ) -> BoxFuture<'_, maxt::Result<DepositAddress>> {
+        self.as_adapter().create_deposit_address(request)
+    }
+
+    fn prepare_withdrawal(
+        &self,
+        request: &WithdrawRequest,
+    ) -> BoxFuture<'_, maxt::Result<WithdrawalQuote>> {
+        self.as_adapter().prepare_withdrawal(request)
+    }
+
+    fn withdraw(&self, request: &WithdrawRequest) -> BoxFuture<'_, maxt::Result<Withdrawal>> {
+        self.as_adapter().withdraw(request)
+    }
+
+    fn deposit(&self, request: &TransferLookupRequest) -> BoxFuture<'_, maxt::Result<Deposit>> {
+        self.as_adapter().deposit(request)
+    }
+
+    fn withdrawal(
+        &self,
+        request: &TransferLookupRequest,
+    ) -> BoxFuture<'_, maxt::Result<Withdrawal>> {
+        self.as_adapter().withdrawal(request)
+    }
+
+    fn cancel_withdrawal(&self, withdrawal_id: &str) -> BoxFuture<'_, maxt::Result<()>> {
+        self.as_adapter().cancel_withdrawal(withdrawal_id)
+    }
+
+    fn deposits(
+        &self,
+        request: &TransferHistoryRequest,
+    ) -> BoxFuture<'_, maxt::Result<Page<Deposit>>> {
+        self.as_adapter().deposits(request)
+    }
+
+    fn withdrawals(
+        &self,
+        request: &TransferHistoryRequest,
+    ) -> BoxFuture<'_, maxt::Result<Page<Withdrawal>>> {
+        self.as_adapter().withdrawals(request)
+    }
+
     fn open_orders(&self, market: Option<&Market>) -> BoxFuture<'_, maxt::Result<Vec<Order>>> {
         self.as_adapter().open_orders(market)
+    }
+
+    fn order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, maxt::Result<Order>> {
+        self.as_adapter().order(market, order_id)
+    }
+
+    fn order_by_client_id(
+        &self,
+        market: &Market,
+        client_id: &str,
+    ) -> BoxFuture<'_, maxt::Result<Order>> {
+        self.as_adapter().order_by_client_id(market, client_id)
+    }
+
+    fn orders_by_ids(
+        &self,
+        request: &OrderLookupRequest,
+    ) -> BoxFuture<'_, maxt::Result<Vec<Order>>> {
+        self.as_adapter().orders_by_ids(request)
+    }
+
+    fn order_history(
+        &self,
+        request: &OrderHistoryRequest,
+    ) -> BoxFuture<'_, maxt::Result<Page<Order>>> {
+        self.as_adapter().order_history(request)
     }
 
     fn subscribe_account(
@@ -273,6 +368,22 @@ impl Adapter for BuiltInAdapter {
 
     fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, maxt::Result<()>> {
         self.as_adapter().cancel_order(market, order_id)
+    }
+
+    fn cancel_order_by_client_id(
+        &self,
+        market: &Market,
+        client_id: &str,
+    ) -> BoxFuture<'_, maxt::Result<()>> {
+        self.as_adapter()
+            .cancel_order_by_client_id(market, client_id)
+    }
+
+    fn cancel_orders(
+        &self,
+        request: &CancelOrdersRequest,
+    ) -> BoxFuture<'_, maxt::Result<CancelOrdersResult>> {
+        self.as_adapter().cancel_orders(request)
     }
 
     fn positions(&self, market: Option<&Market>) -> BoxFuture<'_, maxt::Result<Vec<Position>>> {
@@ -748,6 +859,27 @@ mod tests {
         let error = client.bithumb_market_alerts().await.unwrap_err();
         assert_eq!(error.kind, NativeErrorKind::InvalidRequest);
         assert_eq!(error.field.as_deref(), Some("adapter"));
+    }
+
+    #[tokio::test]
+    async fn built_in_wallet_calls_forward_to_the_provider_before_network_io() {
+        let client = NativeClient::upbit(WireUpbitRegion::Korea, None, None).unwrap();
+        let request = WireTransferLookupRequest {
+            asset: "BTC".to_owned(),
+            id: Some("deposit-1".to_owned()),
+            tx_id: None,
+        };
+
+        for error in [
+            client.deposit(request.clone()).await.unwrap_err(),
+            client.withdrawal(request).await.unwrap_err(),
+            client
+                .cancel_withdrawal("withdrawal-1".to_owned())
+                .await
+                .unwrap_err(),
+        ] {
+            assert_eq!(error.kind, NativeErrorKind::Auth);
+        }
     }
 
     #[tokio::test]

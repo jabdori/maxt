@@ -399,6 +399,14 @@ fn _guard_withdraw_request_wire(value: WireWithdrawRequest) {
     } = value;
 }
 
+fn _guard_transfer_lookup_request_wire(value: WireTransferLookupRequest) {
+    let WireTransferLookupRequest {
+        asset: _,
+        id: _,
+        tx_id: _,
+    } = value;
+}
+
 fn _guard_transfer_history_request_wire(value: WireTransferHistoryRequest) {
     let WireTransferHistoryRequest {
         asset: _,
@@ -541,9 +549,12 @@ fn _guard_feature(value: WireFeature) {
         WireFeature::AssetNetworks => {}
         WireFeature::DepositAddresses => {}
         WireFeature::DepositHistory => {}
+        WireFeature::DepositLookup => {}
         WireFeature::WithdrawalQuotes => {}
         WireFeature::Withdrawals => {}
         WireFeature::WithdrawalHistory => {}
+        WireFeature::WithdrawalLookup => {}
+        WireFeature::WithdrawalCancellation => {}
         WireFeature::OpenOrders => {}
         WireFeature::OrderHistory => {}
         WireFeature::AccountStream => {}

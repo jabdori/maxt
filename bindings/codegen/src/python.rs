@@ -870,6 +870,8 @@ fn render_generated_reply_arm(operation: &Operation) -> String {
         ApiType::Named(name) => {
             let reply = if operation.rust_name == "create_deposit_address" {
                 "CreateDepositAddress"
+            } else if operation.rust_name == "withdrawal" {
+                "LookupWithdrawal"
             } else {
                 name
             };
@@ -883,6 +885,7 @@ fn render_generated_reply_arm(operation: &Operation) -> String {
             snake_case(name),
             pascal_case(operation.rust_name)
         ),
+        ApiType::Unit => "Ok(AdapterReply::Unit)".to_owned(),
         other => panic!(
             "generated Python reply {} has unsupported type {other:?}",
             operation.rust_name
@@ -1455,6 +1458,7 @@ fn rust_dispatch_argument(argument: Argument) -> String {
         ApiType::Named(
             type_name @ ("DepositAddressRequest"
             | "OrderLookupRequest"
+            | "TransferLookupRequest"
             | "WithdrawRequest"
             | "TransferHistoryRequest"),
         ) => format!(
@@ -1947,9 +1951,12 @@ fn identifier_helpers(name: &str) -> &'static str {
             "asset_networks",
             "deposit_addresses",
             "deposit_history",
+            "deposit_lookup",
             "withdrawal_quotes",
             "withdrawals",
             "withdrawal_history",
+            "withdrawal_lookup",
+            "withdrawal_cancellation",
             "open_orders",
             "order_history",
             "account_stream",
@@ -2111,6 +2118,9 @@ mod tests {
 
         assert!(output.contains("class Exchange(str, Enum):\n    UPBIT = \"upbit\""));
         assert!(output.contains("\"order_history\","));
+        assert!(output.contains(
+            "\"deposit_lookup\",\n            \"withdrawal_quotes\",\n            \"withdrawals\",\n            \"withdrawal_history\",\n            \"withdrawal_lookup\",\n            \"withdrawal_cancellation\","
+        ));
         assert!(output.contains("class OrderStatus(str, Enum):"));
         assert!(output.contains("class HyperliquidLedgerKind(str, Enum):"));
         assert!(output.contains("def other(cls, value: str) -> HyperliquidLedgerKind:"));

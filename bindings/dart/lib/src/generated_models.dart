@@ -447,6 +447,15 @@ final class WithdrawRequest {
   final String? clientId;
 }
 
+final class TransferLookupRequest {
+  TransferLookupRequest({required String asset, this.id, this.txId})
+    : asset = _asciiUpper(asset);
+
+  final String asset;
+  final String? id;
+  final String? txId;
+}
+
 final class TransferHistoryRequest {
   TransferHistoryRequest({String? asset, this.network, this.cursor, this.limit})
     : asset = asset == null ? null : _asciiUpper(asset);

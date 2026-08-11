@@ -15,9 +15,9 @@ Configure credentials on the adapter before `Client::new(adapter)`.
 | Client | `exchange`, `supports`, `adapter`, `into_adapter` |
 | Public REST | `markets`, `trades`, `order_book`, `ticker`, `candles`, `funding_rates` |
 | Public stream | `subscribe`, `subscribe_with` |
-| Private reads | `balances`, `order_rules`, `asset_networks`, `deposit_addresses`, `deposit_address`, `deposits`, `withdrawals`, `open_orders`, `open_orders_on`, `order`, `order_by_client_id`, `orders_by_ids`, `order_history`, `positions`, `positions_on`, `margin_summary`, `funding_payments` |
+| Private reads | `balances`, `order_rules`, `asset_networks`, `deposit_addresses`, `deposit_address`, `deposit`, `withdrawal`, `deposits`, `withdrawals`, `open_orders`, `open_orders_on`, `order`, `order_by_client_id`, `orders_by_ids`, `order_history`, `positions`, `positions_on`, `margin_summary`, `funding_payments` |
 | Private stream | `subscribe_account`, `subscribe_account_with` |
-| Private writes | `create_deposit_address`, `withdraw`, `place_order`, `cancel_order`, `cancel_order_by_client_id`, `cancel_orders`, `set_margin` |
+| Private writes | `create_deposit_address`, `withdraw`, `cancel_withdrawal`, `place_order`, `cancel_order`, `cancel_order_by_client_id`, `cancel_orders`, `set_margin` |
 
 Public REST and market streams require no credentials. Provider and
 `MarketKind` support is listed in [provider support](providers.md).
@@ -199,8 +199,10 @@ rules are provider-specific.
 | `deposit_addresses()` | Lists all account deposit-address records returned by the provider. A provider can omit `network` and `provider_network`; `address` can be absent while issuance is pending, so a list entry is not necessarily transfer-ready |
 | `deposit_address(request)` | Reads an existing address for one asset and network; `address == None` means the provider has not issued it yet |
 | `create_deposit_address(request)` | Requests address creation on Upbit and Bithumb; it can return `address == None` while Upbit generates the address asynchronously |
+| `deposit(request)`, `withdrawal(request)` | Read one Upbit or Bithumb transfer by its asset and exactly one exchange ID or transaction ID; an omitted reference never means “latest” |
 | `deposits(request)`, `withdrawals(request)` | Newest-first transfer-history pages; provider identifiers and raw statuses are retained |
 | `withdraw(request)` | Submits one withdrawal without automatic retry; a success means the provider accepted the request, not that the destination credited it |
+| `cancel_withdrawal(withdrawal_id)` | Requests cancellation once on Upbit or Bithumb; `()` only means the provider accepted the cancellation request, so query `withdrawal(request)` to observe the final state |
 
 `create_deposit_address()` never polls or retries. Use `deposit_address()` for a
 specific asset and network before preparing a transfer; it observes an asynchronously
@@ -208,6 +210,10 @@ issued address. Upbit and Bithumb accept only an
 asset and network for these calls; their adapters reject `DepositAddressRequest::amount`
 before network I/O. See the generated [coverage reference](../bindings/common/generated/api.md)
 for endpoint-level support and validation state.
+
+`TransferLookupRequest` requires an asset and exactly one of `id` or `tx_id`.
+The lookup and cancellation methods never retry automatically because a transport
+failure leaves the provider outcome unknown.
 
 ### `OrderHistoryRequest`
 

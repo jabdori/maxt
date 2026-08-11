@@ -20,11 +20,11 @@ use crate::convert::{
     WireAssetNetwork, WireBalance, WireCancelOrdersRequest, WireCancelOrdersResult, WireCandle,
     WireCandleRequest, WireChainTransferRequest, WireDeposit, WireDepositAddress,
     WireDepositAddressEntry, WireDepositAddressRequest, WireExchangeTransferRequest,
-    WireFundingPayment, WireFundingRate,
-    WireHistoryRequest, WireMarginRequest, WireMarginSummary, WireMarket, WireMarketInfo,
-    WireOrder, WireOrderBook, WireOrderHistoryRequest, WireOrderLookupRequest, WireOrderRequest,
-    WireOrderRules, WirePage, WirePosition, WireStreamConfig, WireSubscription, WireTicker,
-    WireTrade, WireTransferHistoryRequest, WireTransferPlan, WireWithdrawRequest, WireWithdrawal,
+    WireFundingPayment, WireFundingRate, WireHistoryRequest, WireMarginRequest, WireMarginSummary,
+    WireMarket, WireMarketInfo, WireOrder, WireOrderBook, WireOrderHistoryRequest,
+    WireOrderLookupRequest, WireOrderRequest, WireOrderRules, WirePage, WirePosition,
+    WireStreamConfig, WireSubscription, WireTicker, WireTrade, WireTransferHistoryRequest,
+    WireTransferLookupRequest, WireTransferPlan, WireWithdrawRequest, WireWithdrawal,
     WireWithdrawalQuote, feature_from_id, from_wire_text, market_kind_from_wire, outcome,
 };
 use crate::stream::NativeStreamRegistry;
@@ -173,6 +173,35 @@ impl NativeClient {
             Ok(request) => outcome(wire_one::<_, WireWithdrawal>(
                 self.inner.withdraw(&request).await,
             )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn deposit(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<maxt::TransferLookupRequest, WireTransferLookupRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(wire_one::<_, WireDeposit>(
+                self.inner.deposit(&request).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn withdrawal(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<maxt::TransferLookupRequest, WireTransferLookupRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(wire_one::<_, WireWithdrawal>(
+                self.inner.withdrawal(&request).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn cancel_withdrawal(&self, withdrawal_id: maxt::Result<String>) -> Value {
+        match parse_wire_text::<String>(withdrawal_id, "withdrawal_id") {
+            Ok(withdrawal_id) => outcome(self.inner.cancel_withdrawal(&withdrawal_id).await),
             Err(error) => outcome::<Value>(Err(error)),
         }
     }
@@ -624,6 +653,42 @@ impl NativeClient {
         spawn_native(env, async move { client.withdraw(request).await })
     }
 
+    #[napi(js_name = "deposit", ts_args_type = "request: string")]
+    pub fn deposit_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { client.deposit(request).await })
+    }
+
+    #[napi(js_name = "withdrawal", ts_args_type = "request: string")]
+    pub fn withdrawal_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { client.withdrawal(request).await })
+    }
+
+    #[napi(js_name = "cancelWithdrawal", ts_args_type = "withdrawalId: string")]
+    pub fn cancel_withdrawal_native<'env>(
+        &self,
+        env: &'env Env,
+        withdrawal_id: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        let withdrawal_id = native_json_text(withdrawal_id, "withdrawal_id");
+        spawn_native(
+            env,
+            async move { client.cancel_withdrawal(withdrawal_id).await },
+        )
+    }
+
     #[napi(js_name = "deposits", ts_args_type = "request: string")]
     pub fn deposits_native<'env>(
         &self,
@@ -1028,6 +1093,21 @@ impl NativeClient {
         crate::web::value(self.withdraw(Ok(request)).await)
     }
 
+    #[wasm_bindgen(js_name = "deposit")]
+    pub async fn deposit_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.deposit(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "withdrawal")]
+    pub async fn withdrawal_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.withdrawal(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "cancelWithdrawal")]
+    pub async fn cancel_withdrawal_wasm(&self, withdrawal_id: String) -> JsValue {
+        crate::web::value(self.cancel_withdrawal(Ok(withdrawal_id)).await)
+    }
+
     #[wasm_bindgen(js_name = "deposits")]
     pub async fn deposits_wasm(&self, request: String) -> JsValue {
         crate::web::value(self.deposits(Ok(request)).await)
@@ -1243,13 +1323,14 @@ mod tests {
     use maxt::{
         AccountEvent, AccountStream, Adapter, AssetNetwork, Balance, BoxFuture,
         CancelOrdersRequest, CancelOrdersResult, CancelledOrder, Candle, CandleRequest, Decimal,
-        Deposit, DepositAddress, DepositAddressRequest, Exchange, Feature, FundingPayment,
-        FundingRate, HistoryRequest, MarginRequest, MarginSummary, Market, MarketEvent, MarketInfo,
-        MarketKind, MarketStatus, MarketStream, Order, OrderAccount, OrderBook, OrderCancelFailure,
-        OrderHistoryRequest, OrderLookupRequest, OrderOption, OrderRequest, OrderRules,
-        OrderStatus, OrderType, Page, Position, Side, StreamConfig, Subscription, Ticker,
-        TimeInForce, Timestamp, Trade, TransferHistoryRequest, TravelRuleRequirement,
-        WithdrawRequest, Withdrawal, WithdrawalQuote, WithdrawalStatus,
+        Deposit, DepositAddress, DepositAddressRequest, DepositStatus, Exchange, Feature,
+        FundingPayment, FundingRate, HistoryRequest, MarginRequest, MarginSummary, Market,
+        MarketEvent, MarketInfo, MarketKind, MarketStatus, MarketStream, Order, OrderAccount,
+        OrderBook, OrderCancelFailure, OrderHistoryRequest, OrderLookupRequest, OrderOption,
+        OrderRequest, OrderRules, OrderStatus, OrderType, Page, Position, Side, StreamConfig,
+        Subscription, Ticker, TimeInForce, Timestamp, Trade, TransferHistoryRequest,
+        TransferLookupRequest, TravelRuleRequirement, WithdrawRequest, Withdrawal, WithdrawalQuote,
+        WithdrawalStatus,
     };
 
     use super::*;
@@ -1473,6 +1554,53 @@ mod tests {
                 created_at: None,
             };
             Box::pin(async move { Ok(result) })
+        }
+
+        fn deposit(&self, request: &TransferLookupRequest) -> BoxFuture<'_, maxt::Result<Deposit>> {
+            self.calls.lock().unwrap().push("deposit");
+            let result = Deposit {
+                id: request.id.clone().unwrap_or_else(|| "deposit-1".to_owned()),
+                asset: request.asset.clone(),
+                network: None,
+                provider_network: None,
+                amount: Decimal::ONE,
+                address: None,
+                memo: None,
+                status: DepositStatus::Pending,
+                provider_status: "pending".to_owned(),
+                tx_id: request.tx_id.clone(),
+                created_at: None,
+            };
+            Box::pin(async move { Ok(result) })
+        }
+
+        fn withdrawal(
+            &self,
+            request: &TransferLookupRequest,
+        ) -> BoxFuture<'_, maxt::Result<Withdrawal>> {
+            self.calls.lock().unwrap().push("withdrawal");
+            let result = Withdrawal {
+                id: request
+                    .id
+                    .clone()
+                    .unwrap_or_else(|| "withdrawal-1".to_owned()),
+                asset: request.asset.clone(),
+                network: None,
+                provider_network: None,
+                amount: Decimal::ONE,
+                fee: None,
+                destination: None,
+                status: WithdrawalStatus::Pending,
+                provider_status: "pending".to_owned(),
+                tx_id: request.tx_id.clone(),
+                created_at: None,
+            };
+            Box::pin(async move { Ok(result) })
+        }
+
+        fn cancel_withdrawal(&self, _withdrawal_id: &str) -> BoxFuture<'_, maxt::Result<()>> {
+            self.calls.lock().unwrap().push("cancel_withdrawal");
+            Box::pin(async { Ok(()) })
         }
 
         fn deposits(
@@ -1895,6 +2023,16 @@ mod tests {
             "cursor": null,
             "limit": null
         });
+        let deposit_lookup_request = serde_json::json!({
+            "asset": "BTC",
+            "id": "deposit-1",
+            "tx_id": null
+        });
+        let withdrawal_lookup_request = serde_json::json!({
+            "asset": "BTC",
+            "id": null,
+            "tx_id": "tx-1"
+        });
 
         assert_eq!(client.exchange(), "binance");
         assert!(client.supports("ticker".to_owned()));
@@ -1926,6 +2064,13 @@ mod tests {
                 .prepare_withdrawal(json_text(withdraw_request.clone()))
                 .await,
             client.withdraw(json_text(withdraw_request)).await,
+            client.deposit(json_text(deposit_lookup_request)).await,
+            client
+                .withdrawal(json_text(withdrawal_lookup_request))
+                .await,
+            client
+                .cancel_withdrawal(json_text(serde_json::json!("withdrawal-1")))
+                .await,
             client
                 .deposits(json_text(transfer_history_request.clone()))
                 .await,
@@ -1972,7 +2117,7 @@ mod tests {
             client.set_margin(json_text(margin_request)).await,
         ];
         assert!(results.iter().all(|value| value["ok"] == true));
-        assert_eq!(results[24]["value"]["failed"][0]["code"], "order_not_found");
+        assert_eq!(results[27]["value"]["failed"][0]["code"], "order_not_found");
         assert_eq!(
             *calls.lock().unwrap(),
             vec![
@@ -1989,6 +2134,9 @@ mod tests {
                 "create_deposit_address",
                 "prepare_withdrawal",
                 "withdraw",
+                "deposit",
+                "withdrawal",
+                "cancel_withdrawal",
                 "deposits",
                 "withdrawals",
                 "open_orders:none",

@@ -48,6 +48,9 @@ and outcome assets are not exposed.
   and `order_history()` on Upbit and Bithumb.
 - Private order rules: `order_rules()` on Upbit and Bithumb.
 - Private batch cancellation: `cancel_orders()` on Upbit and Bithumb.
+- Private wallet lookup and cancellation: `deposit()`, `withdrawal()`, and
+  `cancel_withdrawal()` on Upbit and Bithumb. Lookups require an asset and one
+  exchange ID or transaction ID; cancellation must be followed by a lookup.
 - Private perpetuals: `positions()`, `margin_summary()`, `set_margin()`, and
   `funding_payments()` on Binance USD-M and Hyperliquid.
 

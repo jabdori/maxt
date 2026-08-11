@@ -53,6 +53,18 @@ pub(super) fn dispatch(call: CommonAdapterCall) -> Option<(AdapterCall, Expected
             AdapterCall::Withdraw { request: request.into() },
             ExpectedReply::Withdraw,
         )),
+        CommonAdapterCall::Deposit { request } => Some((
+            AdapterCall::Deposit { request: request.into() },
+            ExpectedReply::Deposit,
+        )),
+        CommonAdapterCall::Withdrawal { request } => Some((
+            AdapterCall::Withdrawal { request: request.into() },
+            ExpectedReply::Withdrawal,
+        )),
+        CommonAdapterCall::CancelWithdrawal { withdrawal_id } => Some((
+            AdapterCall::CancelWithdrawal { withdrawal_id },
+            ExpectedReply::Unit,
+        )),
         CommonAdapterCall::Deposits { request } => Some((
             AdapterCall::Deposits { request: request.into() },
             ExpectedReply::Deposits,

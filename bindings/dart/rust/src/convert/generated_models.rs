@@ -1108,6 +1108,37 @@ impl TryFrom<WireWithdrawRequest> for maxt::WithdrawRequest {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireTransferLookupRequest {
+    pub asset: String,
+    pub id: Option<String>,
+    pub tx_id: Option<String>,
+}
+
+impl From<maxt::TransferLookupRequest> for WireTransferLookupRequest {
+    fn from(value: maxt::TransferLookupRequest) -> Self {
+        Self {
+            asset: value.asset,
+            id: value.id,
+            tx_id: value.tx_id,
+        }
+    }
+}
+
+impl TryFrom<WireTransferLookupRequest> for maxt::TransferLookupRequest {
+    type Error = NativeError;
+
+    fn try_from(value: WireTransferLookupRequest) -> Result<Self, Self::Error> {
+        let request = Self {
+            asset: value.asset,
+            id: value.id,
+            tx_id: value.tx_id,
+        };
+        request.validate().map_err(NativeError::from)?;
+        Ok(request)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireTransferHistoryRequest {
     pub asset: Option<String>,
     pub network: Option<String>,

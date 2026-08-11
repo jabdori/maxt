@@ -56,7 +56,7 @@ pub use feature::Feature;
 pub use request::{
     CancelOrdersRequest, CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest,
     OrderHistoryRequest, OrderIdKind, OrderLookupRequest, OrderRequest, TransferHistoryRequest,
-    WithdrawRequest,
+    TransferLookupRequest, WithdrawRequest,
 };
 pub use stream::{AccountStream, MarketStream};
 pub use types::{

@@ -58,6 +58,18 @@ abstract base class GeneratedNativeDelegate extends AdapterBase {
       (await delegateAdapter).withdraw(request);
 
   @override
+  Future<Deposit> deposit(TransferLookupRequest request) async =>
+      (await delegateAdapter).deposit(request);
+
+  @override
+  Future<Withdrawal> withdrawal(TransferLookupRequest request) async =>
+      (await delegateAdapter).withdrawal(request);
+
+  @override
+  Future<void> cancelWithdrawal(String withdrawalId) async =>
+      (await delegateAdapter).cancelWithdrawal(withdrawalId);
+
+  @override
   Future<Page<Deposit>> deposits(TransferHistoryRequest request) async =>
       (await delegateAdapter).deposits(request);
 

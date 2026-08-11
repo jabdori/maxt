@@ -54,6 +54,15 @@ class _GeneratedAdapterApi:
     async def withdraw(self, request: WithdrawRequest) -> Withdrawal:
         raise self._unsupported(Feature.WITHDRAWALS)
 
+    async def deposit(self, request: TransferLookupRequest) -> Deposit:
+        raise self._unsupported(Feature.DEPOSIT_LOOKUP)
+
+    async def withdrawal(self, request: TransferLookupRequest) -> Withdrawal:
+        raise self._unsupported(Feature.WITHDRAWAL_LOOKUP)
+
+    async def cancel_withdrawal(self, withdrawal_id: str) -> None:
+        raise self._unsupported(Feature.WITHDRAWAL_CANCELLATION)
+
     async def deposits(self, request: TransferHistoryRequest) -> Page[Deposit]:
         raise self._unsupported(Feature.DEPOSIT_HISTORY)
 
@@ -153,6 +162,15 @@ class _GeneratedClientApi:
 
     async def withdraw(self, request: WithdrawRequest) -> Withdrawal:
         return await self._delegate.withdraw(request)
+
+    async def deposit(self, request: TransferLookupRequest) -> Deposit:
+        return await self._delegate.deposit(request)
+
+    async def withdrawal(self, request: TransferLookupRequest) -> Withdrawal:
+        return await self._delegate.withdrawal(request)
+
+    async def cancel_withdrawal(self, withdrawal_id: str) -> None:
+        return await self._delegate.cancel_withdrawal(withdrawal_id)
 
     async def deposits(self, request: TransferHistoryRequest) -> Page[Deposit]:
         return await self._delegate.deposits(request)

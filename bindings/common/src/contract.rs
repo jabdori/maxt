@@ -4,7 +4,7 @@ use maxt::{
     FundingPayment, FundingRate, HistoryRequest, MarginRequest, MarginSummary, Market, MarketInfo,
     MarketKind, MarketStream, Order, OrderBook, OrderHistoryRequest, OrderLookupRequest,
     OrderRequest, OrderRules, Page, Position, Result, StreamConfig, Subscription, Ticker, Trade,
-    TransferHistoryRequest, WithdrawRequest, Withdrawal, WithdrawalQuote,
+    TransferHistoryRequest, TransferLookupRequest, WithdrawRequest, Withdrawal, WithdrawalQuote,
 };
 
 /// An owned call across a language binding boundary.
@@ -80,6 +80,21 @@ pub enum AdapterCall {
     Withdraw {
         /// Complete withdrawal request.
         request: WithdrawRequest,
+    },
+    /// Looks up one deposit.
+    Deposit {
+        /// Complete transfer lookup request.
+        request: TransferLookupRequest,
+    },
+    /// Looks up one withdrawal.
+    Withdrawal {
+        /// Complete transfer lookup request.
+        request: TransferLookupRequest,
+    },
+    /// Cancels one pending withdrawal.
+    CancelWithdrawal {
+        /// Exchange-issued withdrawal identifier.
+        withdrawal_id: String,
     },
     /// Reads deposit history.
     Deposits {
@@ -205,6 +220,10 @@ pub enum AdapterReply {
     WithdrawalQuote(WithdrawalQuote),
     /// Result of [`AdapterCall::Withdraw`].
     Withdrawal(Withdrawal),
+    /// Result of [`AdapterCall::Deposit`].
+    Deposit(Deposit),
+    /// Result of [`AdapterCall::Withdrawal`].
+    LookupWithdrawal(Withdrawal),
     /// Result of [`AdapterCall::Deposits`].
     Deposits(Page<Deposit>),
     /// Result of [`AdapterCall::Withdrawals`].
@@ -258,6 +277,8 @@ impl AdapterReply {
             Self::CreateDepositAddress(_) => "CreateDepositAddress",
             Self::WithdrawalQuote(_) => "WithdrawalQuote",
             Self::Withdrawal(_) => "Withdrawal",
+            Self::Deposit(_) => "Deposit",
+            Self::LookupWithdrawal(_) => "LookupWithdrawal",
             Self::Deposits(_) => "Deposits",
             Self::Withdrawals(_) => "Withdrawals",
             Self::OpenOrders(_) => "OpenOrders",

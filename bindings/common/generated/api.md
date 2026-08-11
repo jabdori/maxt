@@ -20,6 +20,9 @@
 | `create_deposit_address` | `createDepositAddress` |
 | `prepare_withdrawal` | `prepareWithdrawal` |
 | `withdraw` | `withdraw` |
+| `deposit` | `deposit` |
+| `withdrawal` | `withdrawal` |
+| `cancel_withdrawal` | `cancelWithdrawal` |
 | `deposits` | `deposits` |
 | `withdrawals` | `withdrawals` |
 | `open_orders` | `openOrders` |
@@ -152,10 +155,10 @@ Documentation baseline: `2026-08-10`.
 | upbit | wallet | `withdraw_chance` | `GET` | `/v1/withdraws/chance` | `http` | JWT | read | general | common `prepare_withdrawal` | `Implemented` | `Fixture` |
 | upbit | wallet | `withdraw_addresses` | `GET` | `/v1/withdraws/coin_addresses` | `http` | JWT | read | general | common `prepare_withdrawal` | `Implemented` | `Fixture` |
 | upbit | wallet | `withdraw_coin` | `POST` | `/v1/withdraws/coin` | `http` | JWT | financial write | general | common `withdraw` | `Implemented` | `Fixture` |
-| upbit | wallet | `withdrawal` | `GET` | `/v1/withdraw` | `http` | JWT | read | general | common `withdrawal` | `Planned` | `Documented` |
-| upbit | wallet | `cancel_withdrawal` | `DELETE` | `/v1/withdraws/coin` | `http` | JWT | financial write | general | common `cancel_withdrawal` | `Planned` | `Documented` |
+| upbit | wallet | `withdrawal` | `GET` | `/v1/withdraw` | `http` | JWT | read | general | common `withdrawal` | `Partial` | `Fixture` |
+| upbit | wallet | `cancel_withdrawal` | `DELETE` | `/v1/withdraws/coin` | `http` | JWT | financial write | general | common `cancel_withdrawal` | `Partial` | `Fixture` |
 | upbit | wallet | `deposits` | `GET` | `/v1/deposits` | `http` | JWT | read | general | common `deposits` | `Implemented` | `Fixture` |
-| upbit | wallet | `deposit` | `GET` | `/v1/deposit` | `http` | JWT | read | general | common `deposit` | `Planned` | `Documented` |
+| upbit | wallet | `deposit` | `GET` | `/v1/deposit` | `http` | JWT | read | general | common `deposit` | `Partial` | `Fixture` |
 | upbit | wallet | `withdrawals` | `GET` | `/v1/withdraws` | `http` | JWT | read | general | common `withdrawals` | `Implemented` | `Fixture` |
 | upbit | travel_rule | `travel_rule_vasps` | `GET` | `/v1/travel_rule/vasps` | `http` | JWT | read | Singapore only | provider `travel_rule_vasps` | `Planned` | `Documented` |
 | upbit | travel_rule | `travel_rule_verify_uuid` | `POST` | `/v1/travel_rule/deposit/uuid` | `http` | JWT | financial write | Singapore only | provider `verify_travel_rule_by_uuid` | `Planned` | `Documented` |
@@ -194,10 +197,10 @@ Documentation baseline: `2026-08-10`.
 | bithumb | wallet | `withdraw_chance` | `GET` | `/v1/withdraws/chance` | `http` | JWT | read | general | common `prepare_withdrawal` | `Implemented` | `Fixture` |
 | bithumb | wallet | `withdraw_addresses` | `GET` | `/v1/withdraws/coin_addresses` | `http` | JWT | read | general | common `prepare_withdrawal` | `Implemented` | `Fixture` |
 | bithumb | wallet | `withdraw_coin` | `POST` | `/v1/withdraws/coin` | `http` | JWT | financial write | general | common `withdraw` | `Implemented` | `Fixture` |
-| bithumb | wallet | `withdrawal` | `GET` | `/v1/withdraw` | `http` | JWT | read | general | common `withdrawal` | `Planned` | `Documented` |
-| bithumb | wallet | `cancel_withdrawal` | `DELETE` | `/v1/withdraws/coin` | `http` | JWT | financial write | general | common `cancel_withdrawal` | `Planned` | `Documented` |
+| bithumb | wallet | `withdrawal` | `GET` | `/v1/withdraw` | `http` | JWT | read | general | common `withdrawal` | `Partial` | `Fixture` |
+| bithumb | wallet | `cancel_withdrawal` | `DELETE` | `/v1/withdraws/coin` | `http` | JWT | financial write | general | common `cancel_withdrawal` | `Partial` | `Fixture` |
 | bithumb | wallet | `deposits` | `GET` | `/v1/deposits` | `http` | JWT | read | general | common `deposits` | `Implemented` | `Fixture` |
-| bithumb | wallet | `deposit` | `GET` | `/v1/deposit` | `http` | JWT | read | general | common `deposit` | `Planned` | `Documented` |
+| bithumb | wallet | `deposit` | `GET` | `/v1/deposit` | `http` | JWT | read | general | common `deposit` | `Partial` | `Fixture` |
 | bithumb | wallet | `withdrawals` | `GET` | `/v1/withdraws` | `http` | JWT | read | general | common `withdrawals` | `Implemented` | `Fixture` |
 | bithumb | wallet | `api_keys` | `GET` | `/v1/api_keys` | `http` | JWT | read | general | provider `api_keys` | `Planned` | `Documented` |
 | bithumb | twap | `twap` | `GET` | `/v1/twap` | `http` | JWT | read | general | provider `twap` | `Planned` | `Documented` |

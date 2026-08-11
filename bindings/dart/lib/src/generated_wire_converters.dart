@@ -836,6 +836,17 @@ wire.WireWithdrawRequest _withdrawRequestToWire(WithdrawRequest value) =>
       clientId: value.clientId,
     );
 
+TransferLookupRequest _transferLookupRequestFromWire(
+  wire.WireTransferLookupRequest value,
+) => TransferLookupRequest(asset: value.asset, id: value.id, txId: value.txId);
+wire.WireTransferLookupRequest _transferLookupRequestToWire(
+  TransferLookupRequest value,
+) => wire.WireTransferLookupRequest(
+  asset: value.asset,
+  id: value.id,
+  txId: value.txId,
+);
+
 TransferHistoryRequest _transferHistoryRequestFromWire(
   wire.WireTransferHistoryRequest value,
 ) => TransferHistoryRequest(

@@ -55,7 +55,7 @@ extension AdapterCallPatterns on AdapterCall {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( AdapterCall_Markets value)?  markets,TResult Function( AdapterCall_Trades value)?  trades,TResult Function( AdapterCall_OrderBook value)?  orderBook,TResult Function( AdapterCall_Ticker value)?  ticker,TResult Function( AdapterCall_Candles value)?  candles,TResult Function( AdapterCall_Balances value)?  balances,TResult Function( AdapterCall_OrderRules value)?  orderRules,TResult Function( AdapterCall_AssetNetworks value)?  assetNetworks,TResult Function( AdapterCall_DepositAddresses value)?  depositAddresses,TResult Function( AdapterCall_DepositAddress value)?  depositAddress,TResult Function( AdapterCall_CreateDepositAddress value)?  createDepositAddress,TResult Function( AdapterCall_PrepareWithdrawal value)?  prepareWithdrawal,TResult Function( AdapterCall_Withdraw value)?  withdraw,TResult Function( AdapterCall_Deposits value)?  deposits,TResult Function( AdapterCall_Withdrawals value)?  withdrawals,TResult Function( AdapterCall_OpenOrders value)?  openOrders,TResult Function( AdapterCall_Order value)?  order,TResult Function( AdapterCall_OrderByClientId value)?  orderByClientId,TResult Function( AdapterCall_OrdersByIds value)?  ordersByIds,TResult Function( AdapterCall_OrderHistory value)?  orderHistory,TResult Function( AdapterCall_PlaceOrder value)?  placeOrder,TResult Function( AdapterCall_CancelOrder value)?  cancelOrder,TResult Function( AdapterCall_CancelOrderByClientId value)?  cancelOrderByClientId,TResult Function( AdapterCall_CancelOrders value)?  cancelOrders,TResult Function( AdapterCall_Positions value)?  positions,TResult Function( AdapterCall_MarginSummary value)?  marginSummary,TResult Function( AdapterCall_FundingRates value)?  fundingRates,TResult Function( AdapterCall_FundingPayments value)?  fundingPayments,TResult Function( AdapterCall_SetMargin value)?  setMargin,TResult Function( AdapterCall_Subscribe value)?  subscribe,TResult Function( AdapterCall_SubscribeAccount value)?  subscribeAccount,TResult Function( AdapterCall_CancelStream value)?  cancelStream,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( AdapterCall_Markets value)?  markets,TResult Function( AdapterCall_Trades value)?  trades,TResult Function( AdapterCall_OrderBook value)?  orderBook,TResult Function( AdapterCall_Ticker value)?  ticker,TResult Function( AdapterCall_Candles value)?  candles,TResult Function( AdapterCall_Balances value)?  balances,TResult Function( AdapterCall_OrderRules value)?  orderRules,TResult Function( AdapterCall_AssetNetworks value)?  assetNetworks,TResult Function( AdapterCall_DepositAddresses value)?  depositAddresses,TResult Function( AdapterCall_DepositAddress value)?  depositAddress,TResult Function( AdapterCall_CreateDepositAddress value)?  createDepositAddress,TResult Function( AdapterCall_PrepareWithdrawal value)?  prepareWithdrawal,TResult Function( AdapterCall_Withdraw value)?  withdraw,TResult Function( AdapterCall_Deposit value)?  deposit,TResult Function( AdapterCall_Withdrawal value)?  withdrawal,TResult Function( AdapterCall_CancelWithdrawal value)?  cancelWithdrawal,TResult Function( AdapterCall_Deposits value)?  deposits,TResult Function( AdapterCall_Withdrawals value)?  withdrawals,TResult Function( AdapterCall_OpenOrders value)?  openOrders,TResult Function( AdapterCall_Order value)?  order,TResult Function( AdapterCall_OrderByClientId value)?  orderByClientId,TResult Function( AdapterCall_OrdersByIds value)?  ordersByIds,TResult Function( AdapterCall_OrderHistory value)?  orderHistory,TResult Function( AdapterCall_PlaceOrder value)?  placeOrder,TResult Function( AdapterCall_CancelOrder value)?  cancelOrder,TResult Function( AdapterCall_CancelOrderByClientId value)?  cancelOrderByClientId,TResult Function( AdapterCall_CancelOrders value)?  cancelOrders,TResult Function( AdapterCall_Positions value)?  positions,TResult Function( AdapterCall_MarginSummary value)?  marginSummary,TResult Function( AdapterCall_FundingRates value)?  fundingRates,TResult Function( AdapterCall_FundingPayments value)?  fundingPayments,TResult Function( AdapterCall_SetMargin value)?  setMargin,TResult Function( AdapterCall_Subscribe value)?  subscribe,TResult Function( AdapterCall_SubscribeAccount value)?  subscribeAccount,TResult Function( AdapterCall_CancelStream value)?  cancelStream,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case AdapterCall_Markets() when markets != null:
@@ -71,7 +71,10 @@ return depositAddresses(_that);case AdapterCall_DepositAddress() when depositAdd
 return depositAddress(_that);case AdapterCall_CreateDepositAddress() when createDepositAddress != null:
 return createDepositAddress(_that);case AdapterCall_PrepareWithdrawal() when prepareWithdrawal != null:
 return prepareWithdrawal(_that);case AdapterCall_Withdraw() when withdraw != null:
-return withdraw(_that);case AdapterCall_Deposits() when deposits != null:
+return withdraw(_that);case AdapterCall_Deposit() when deposit != null:
+return deposit(_that);case AdapterCall_Withdrawal() when withdrawal != null:
+return withdrawal(_that);case AdapterCall_CancelWithdrawal() when cancelWithdrawal != null:
+return cancelWithdrawal(_that);case AdapterCall_Deposits() when deposits != null:
 return deposits(_that);case AdapterCall_Withdrawals() when withdrawals != null:
 return withdrawals(_that);case AdapterCall_OpenOrders() when openOrders != null:
 return openOrders(_that);case AdapterCall_Order() when order != null:
@@ -108,7 +111,7 @@ return cancelStream(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( AdapterCall_Markets value)  markets,required TResult Function( AdapterCall_Trades value)  trades,required TResult Function( AdapterCall_OrderBook value)  orderBook,required TResult Function( AdapterCall_Ticker value)  ticker,required TResult Function( AdapterCall_Candles value)  candles,required TResult Function( AdapterCall_Balances value)  balances,required TResult Function( AdapterCall_OrderRules value)  orderRules,required TResult Function( AdapterCall_AssetNetworks value)  assetNetworks,required TResult Function( AdapterCall_DepositAddresses value)  depositAddresses,required TResult Function( AdapterCall_DepositAddress value)  depositAddress,required TResult Function( AdapterCall_CreateDepositAddress value)  createDepositAddress,required TResult Function( AdapterCall_PrepareWithdrawal value)  prepareWithdrawal,required TResult Function( AdapterCall_Withdraw value)  withdraw,required TResult Function( AdapterCall_Deposits value)  deposits,required TResult Function( AdapterCall_Withdrawals value)  withdrawals,required TResult Function( AdapterCall_OpenOrders value)  openOrders,required TResult Function( AdapterCall_Order value)  order,required TResult Function( AdapterCall_OrderByClientId value)  orderByClientId,required TResult Function( AdapterCall_OrdersByIds value)  ordersByIds,required TResult Function( AdapterCall_OrderHistory value)  orderHistory,required TResult Function( AdapterCall_PlaceOrder value)  placeOrder,required TResult Function( AdapterCall_CancelOrder value)  cancelOrder,required TResult Function( AdapterCall_CancelOrderByClientId value)  cancelOrderByClientId,required TResult Function( AdapterCall_CancelOrders value)  cancelOrders,required TResult Function( AdapterCall_Positions value)  positions,required TResult Function( AdapterCall_MarginSummary value)  marginSummary,required TResult Function( AdapterCall_FundingRates value)  fundingRates,required TResult Function( AdapterCall_FundingPayments value)  fundingPayments,required TResult Function( AdapterCall_SetMargin value)  setMargin,required TResult Function( AdapterCall_Subscribe value)  subscribe,required TResult Function( AdapterCall_SubscribeAccount value)  subscribeAccount,required TResult Function( AdapterCall_CancelStream value)  cancelStream,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( AdapterCall_Markets value)  markets,required TResult Function( AdapterCall_Trades value)  trades,required TResult Function( AdapterCall_OrderBook value)  orderBook,required TResult Function( AdapterCall_Ticker value)  ticker,required TResult Function( AdapterCall_Candles value)  candles,required TResult Function( AdapterCall_Balances value)  balances,required TResult Function( AdapterCall_OrderRules value)  orderRules,required TResult Function( AdapterCall_AssetNetworks value)  assetNetworks,required TResult Function( AdapterCall_DepositAddresses value)  depositAddresses,required TResult Function( AdapterCall_DepositAddress value)  depositAddress,required TResult Function( AdapterCall_CreateDepositAddress value)  createDepositAddress,required TResult Function( AdapterCall_PrepareWithdrawal value)  prepareWithdrawal,required TResult Function( AdapterCall_Withdraw value)  withdraw,required TResult Function( AdapterCall_Deposit value)  deposit,required TResult Function( AdapterCall_Withdrawal value)  withdrawal,required TResult Function( AdapterCall_CancelWithdrawal value)  cancelWithdrawal,required TResult Function( AdapterCall_Deposits value)  deposits,required TResult Function( AdapterCall_Withdrawals value)  withdrawals,required TResult Function( AdapterCall_OpenOrders value)  openOrders,required TResult Function( AdapterCall_Order value)  order,required TResult Function( AdapterCall_OrderByClientId value)  orderByClientId,required TResult Function( AdapterCall_OrdersByIds value)  ordersByIds,required TResult Function( AdapterCall_OrderHistory value)  orderHistory,required TResult Function( AdapterCall_PlaceOrder value)  placeOrder,required TResult Function( AdapterCall_CancelOrder value)  cancelOrder,required TResult Function( AdapterCall_CancelOrderByClientId value)  cancelOrderByClientId,required TResult Function( AdapterCall_CancelOrders value)  cancelOrders,required TResult Function( AdapterCall_Positions value)  positions,required TResult Function( AdapterCall_MarginSummary value)  marginSummary,required TResult Function( AdapterCall_FundingRates value)  fundingRates,required TResult Function( AdapterCall_FundingPayments value)  fundingPayments,required TResult Function( AdapterCall_SetMargin value)  setMargin,required TResult Function( AdapterCall_Subscribe value)  subscribe,required TResult Function( AdapterCall_SubscribeAccount value)  subscribeAccount,required TResult Function( AdapterCall_CancelStream value)  cancelStream,}){
 final _that = this;
 switch (_that) {
 case AdapterCall_Markets():
@@ -124,7 +127,10 @@ return depositAddresses(_that);case AdapterCall_DepositAddress():
 return depositAddress(_that);case AdapterCall_CreateDepositAddress():
 return createDepositAddress(_that);case AdapterCall_PrepareWithdrawal():
 return prepareWithdrawal(_that);case AdapterCall_Withdraw():
-return withdraw(_that);case AdapterCall_Deposits():
+return withdraw(_that);case AdapterCall_Deposit():
+return deposit(_that);case AdapterCall_Withdrawal():
+return withdrawal(_that);case AdapterCall_CancelWithdrawal():
+return cancelWithdrawal(_that);case AdapterCall_Deposits():
 return deposits(_that);case AdapterCall_Withdrawals():
 return withdrawals(_that);case AdapterCall_OpenOrders():
 return openOrders(_that);case AdapterCall_Order():
@@ -157,7 +163,7 @@ return cancelStream(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( AdapterCall_Markets value)?  markets,TResult? Function( AdapterCall_Trades value)?  trades,TResult? Function( AdapterCall_OrderBook value)?  orderBook,TResult? Function( AdapterCall_Ticker value)?  ticker,TResult? Function( AdapterCall_Candles value)?  candles,TResult? Function( AdapterCall_Balances value)?  balances,TResult? Function( AdapterCall_OrderRules value)?  orderRules,TResult? Function( AdapterCall_AssetNetworks value)?  assetNetworks,TResult? Function( AdapterCall_DepositAddresses value)?  depositAddresses,TResult? Function( AdapterCall_DepositAddress value)?  depositAddress,TResult? Function( AdapterCall_CreateDepositAddress value)?  createDepositAddress,TResult? Function( AdapterCall_PrepareWithdrawal value)?  prepareWithdrawal,TResult? Function( AdapterCall_Withdraw value)?  withdraw,TResult? Function( AdapterCall_Deposits value)?  deposits,TResult? Function( AdapterCall_Withdrawals value)?  withdrawals,TResult? Function( AdapterCall_OpenOrders value)?  openOrders,TResult? Function( AdapterCall_Order value)?  order,TResult? Function( AdapterCall_OrderByClientId value)?  orderByClientId,TResult? Function( AdapterCall_OrdersByIds value)?  ordersByIds,TResult? Function( AdapterCall_OrderHistory value)?  orderHistory,TResult? Function( AdapterCall_PlaceOrder value)?  placeOrder,TResult? Function( AdapterCall_CancelOrder value)?  cancelOrder,TResult? Function( AdapterCall_CancelOrderByClientId value)?  cancelOrderByClientId,TResult? Function( AdapterCall_CancelOrders value)?  cancelOrders,TResult? Function( AdapterCall_Positions value)?  positions,TResult? Function( AdapterCall_MarginSummary value)?  marginSummary,TResult? Function( AdapterCall_FundingRates value)?  fundingRates,TResult? Function( AdapterCall_FundingPayments value)?  fundingPayments,TResult? Function( AdapterCall_SetMargin value)?  setMargin,TResult? Function( AdapterCall_Subscribe value)?  subscribe,TResult? Function( AdapterCall_SubscribeAccount value)?  subscribeAccount,TResult? Function( AdapterCall_CancelStream value)?  cancelStream,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( AdapterCall_Markets value)?  markets,TResult? Function( AdapterCall_Trades value)?  trades,TResult? Function( AdapterCall_OrderBook value)?  orderBook,TResult? Function( AdapterCall_Ticker value)?  ticker,TResult? Function( AdapterCall_Candles value)?  candles,TResult? Function( AdapterCall_Balances value)?  balances,TResult? Function( AdapterCall_OrderRules value)?  orderRules,TResult? Function( AdapterCall_AssetNetworks value)?  assetNetworks,TResult? Function( AdapterCall_DepositAddresses value)?  depositAddresses,TResult? Function( AdapterCall_DepositAddress value)?  depositAddress,TResult? Function( AdapterCall_CreateDepositAddress value)?  createDepositAddress,TResult? Function( AdapterCall_PrepareWithdrawal value)?  prepareWithdrawal,TResult? Function( AdapterCall_Withdraw value)?  withdraw,TResult? Function( AdapterCall_Deposit value)?  deposit,TResult? Function( AdapterCall_Withdrawal value)?  withdrawal,TResult? Function( AdapterCall_CancelWithdrawal value)?  cancelWithdrawal,TResult? Function( AdapterCall_Deposits value)?  deposits,TResult? Function( AdapterCall_Withdrawals value)?  withdrawals,TResult? Function( AdapterCall_OpenOrders value)?  openOrders,TResult? Function( AdapterCall_Order value)?  order,TResult? Function( AdapterCall_OrderByClientId value)?  orderByClientId,TResult? Function( AdapterCall_OrdersByIds value)?  ordersByIds,TResult? Function( AdapterCall_OrderHistory value)?  orderHistory,TResult? Function( AdapterCall_PlaceOrder value)?  placeOrder,TResult? Function( AdapterCall_CancelOrder value)?  cancelOrder,TResult? Function( AdapterCall_CancelOrderByClientId value)?  cancelOrderByClientId,TResult? Function( AdapterCall_CancelOrders value)?  cancelOrders,TResult? Function( AdapterCall_Positions value)?  positions,TResult? Function( AdapterCall_MarginSummary value)?  marginSummary,TResult? Function( AdapterCall_FundingRates value)?  fundingRates,TResult? Function( AdapterCall_FundingPayments value)?  fundingPayments,TResult? Function( AdapterCall_SetMargin value)?  setMargin,TResult? Function( AdapterCall_Subscribe value)?  subscribe,TResult? Function( AdapterCall_SubscribeAccount value)?  subscribeAccount,TResult? Function( AdapterCall_CancelStream value)?  cancelStream,}){
 final _that = this;
 switch (_that) {
 case AdapterCall_Markets() when markets != null:
@@ -173,7 +179,10 @@ return depositAddresses(_that);case AdapterCall_DepositAddress() when depositAdd
 return depositAddress(_that);case AdapterCall_CreateDepositAddress() when createDepositAddress != null:
 return createDepositAddress(_that);case AdapterCall_PrepareWithdrawal() when prepareWithdrawal != null:
 return prepareWithdrawal(_that);case AdapterCall_Withdraw() when withdraw != null:
-return withdraw(_that);case AdapterCall_Deposits() when deposits != null:
+return withdraw(_that);case AdapterCall_Deposit() when deposit != null:
+return deposit(_that);case AdapterCall_Withdrawal() when withdrawal != null:
+return withdrawal(_that);case AdapterCall_CancelWithdrawal() when cancelWithdrawal != null:
+return cancelWithdrawal(_that);case AdapterCall_Deposits() when deposits != null:
 return deposits(_that);case AdapterCall_Withdrawals() when withdrawals != null:
 return withdrawals(_that);case AdapterCall_OpenOrders() when openOrders != null:
 return openOrders(_that);case AdapterCall_Order() when order != null:
@@ -209,7 +218,7 @@ return cancelStream(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( WireMarketKind kind)?  markets,TResult Function( WireMarket market,  int? limit)?  trades,TResult Function( WireMarket market,  int? depth)?  orderBook,TResult Function( WireMarket market)?  ticker,TResult Function( WireCandleRequest request)?  candles,TResult Function()?  balances,TResult Function( WireMarket market)?  orderRules,TResult Function( String asset)?  assetNetworks,TResult Function()?  depositAddresses,TResult Function( WireDepositAddressRequest request)?  depositAddress,TResult Function( WireDepositAddressRequest request)?  createDepositAddress,TResult Function( WireWithdrawRequest request)?  prepareWithdrawal,TResult Function( WireWithdrawRequest request)?  withdraw,TResult Function( WireTransferHistoryRequest request)?  deposits,TResult Function( WireTransferHistoryRequest request)?  withdrawals,TResult Function( WireMarket? market)?  openOrders,TResult Function( WireMarket market,  String orderId)?  order,TResult Function( WireMarket market,  String clientId)?  orderByClientId,TResult Function( WireOrderLookupRequest request)?  ordersByIds,TResult Function( WireOrderHistoryRequest request)?  orderHistory,TResult Function( WireOrderRequest request)?  placeOrder,TResult Function( WireMarket market,  String orderId)?  cancelOrder,TResult Function( WireMarket market,  String clientId)?  cancelOrderByClientId,TResult Function( WireCancelOrdersRequest request)?  cancelOrders,TResult Function( WireMarket? market)?  positions,TResult Function()?  marginSummary,TResult Function( WireHistoryRequest request)?  fundingRates,TResult Function( WireHistoryRequest request)?  fundingPayments,TResult Function( WireMarginRequest request)?  setMargin,TResult Function( String streamId,  WireSubscription subscription,  WireStreamConfig config,  MarketStreamSink sink)?  subscribe,TResult Function( String streamId,  WireStreamConfig config,  AccountStreamSink sink)?  subscribeAccount,TResult Function( String streamId)?  cancelStream,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( WireMarketKind kind)?  markets,TResult Function( WireMarket market,  int? limit)?  trades,TResult Function( WireMarket market,  int? depth)?  orderBook,TResult Function( WireMarket market)?  ticker,TResult Function( WireCandleRequest request)?  candles,TResult Function()?  balances,TResult Function( WireMarket market)?  orderRules,TResult Function( String asset)?  assetNetworks,TResult Function()?  depositAddresses,TResult Function( WireDepositAddressRequest request)?  depositAddress,TResult Function( WireDepositAddressRequest request)?  createDepositAddress,TResult Function( WireWithdrawRequest request)?  prepareWithdrawal,TResult Function( WireWithdrawRequest request)?  withdraw,TResult Function( WireTransferLookupRequest request)?  deposit,TResult Function( WireTransferLookupRequest request)?  withdrawal,TResult Function( String withdrawalId)?  cancelWithdrawal,TResult Function( WireTransferHistoryRequest request)?  deposits,TResult Function( WireTransferHistoryRequest request)?  withdrawals,TResult Function( WireMarket? market)?  openOrders,TResult Function( WireMarket market,  String orderId)?  order,TResult Function( WireMarket market,  String clientId)?  orderByClientId,TResult Function( WireOrderLookupRequest request)?  ordersByIds,TResult Function( WireOrderHistoryRequest request)?  orderHistory,TResult Function( WireOrderRequest request)?  placeOrder,TResult Function( WireMarket market,  String orderId)?  cancelOrder,TResult Function( WireMarket market,  String clientId)?  cancelOrderByClientId,TResult Function( WireCancelOrdersRequest request)?  cancelOrders,TResult Function( WireMarket? market)?  positions,TResult Function()?  marginSummary,TResult Function( WireHistoryRequest request)?  fundingRates,TResult Function( WireHistoryRequest request)?  fundingPayments,TResult Function( WireMarginRequest request)?  setMargin,TResult Function( String streamId,  WireSubscription subscription,  WireStreamConfig config,  MarketStreamSink sink)?  subscribe,TResult Function( String streamId,  WireStreamConfig config,  AccountStreamSink sink)?  subscribeAccount,TResult Function( String streamId)?  cancelStream,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case AdapterCall_Markets() when markets != null:
 return markets(_that.kind);case AdapterCall_Trades() when trades != null:
@@ -224,7 +233,10 @@ return depositAddresses();case AdapterCall_DepositAddress() when depositAddress 
 return depositAddress(_that.request);case AdapterCall_CreateDepositAddress() when createDepositAddress != null:
 return createDepositAddress(_that.request);case AdapterCall_PrepareWithdrawal() when prepareWithdrawal != null:
 return prepareWithdrawal(_that.request);case AdapterCall_Withdraw() when withdraw != null:
-return withdraw(_that.request);case AdapterCall_Deposits() when deposits != null:
+return withdraw(_that.request);case AdapterCall_Deposit() when deposit != null:
+return deposit(_that.request);case AdapterCall_Withdrawal() when withdrawal != null:
+return withdrawal(_that.request);case AdapterCall_CancelWithdrawal() when cancelWithdrawal != null:
+return cancelWithdrawal(_that.withdrawalId);case AdapterCall_Deposits() when deposits != null:
 return deposits(_that.request);case AdapterCall_Withdrawals() when withdrawals != null:
 return withdrawals(_that.request);case AdapterCall_OpenOrders() when openOrders != null:
 return openOrders(_that.market);case AdapterCall_Order() when order != null:
@@ -261,7 +273,7 @@ return cancelStream(_that.streamId);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( WireMarketKind kind)  markets,required TResult Function( WireMarket market,  int? limit)  trades,required TResult Function( WireMarket market,  int? depth)  orderBook,required TResult Function( WireMarket market)  ticker,required TResult Function( WireCandleRequest request)  candles,required TResult Function()  balances,required TResult Function( WireMarket market)  orderRules,required TResult Function( String asset)  assetNetworks,required TResult Function()  depositAddresses,required TResult Function( WireDepositAddressRequest request)  depositAddress,required TResult Function( WireDepositAddressRequest request)  createDepositAddress,required TResult Function( WireWithdrawRequest request)  prepareWithdrawal,required TResult Function( WireWithdrawRequest request)  withdraw,required TResult Function( WireTransferHistoryRequest request)  deposits,required TResult Function( WireTransferHistoryRequest request)  withdrawals,required TResult Function( WireMarket? market)  openOrders,required TResult Function( WireMarket market,  String orderId)  order,required TResult Function( WireMarket market,  String clientId)  orderByClientId,required TResult Function( WireOrderLookupRequest request)  ordersByIds,required TResult Function( WireOrderHistoryRequest request)  orderHistory,required TResult Function( WireOrderRequest request)  placeOrder,required TResult Function( WireMarket market,  String orderId)  cancelOrder,required TResult Function( WireMarket market,  String clientId)  cancelOrderByClientId,required TResult Function( WireCancelOrdersRequest request)  cancelOrders,required TResult Function( WireMarket? market)  positions,required TResult Function()  marginSummary,required TResult Function( WireHistoryRequest request)  fundingRates,required TResult Function( WireHistoryRequest request)  fundingPayments,required TResult Function( WireMarginRequest request)  setMargin,required TResult Function( String streamId,  WireSubscription subscription,  WireStreamConfig config,  MarketStreamSink sink)  subscribe,required TResult Function( String streamId,  WireStreamConfig config,  AccountStreamSink sink)  subscribeAccount,required TResult Function( String streamId)  cancelStream,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( WireMarketKind kind)  markets,required TResult Function( WireMarket market,  int? limit)  trades,required TResult Function( WireMarket market,  int? depth)  orderBook,required TResult Function( WireMarket market)  ticker,required TResult Function( WireCandleRequest request)  candles,required TResult Function()  balances,required TResult Function( WireMarket market)  orderRules,required TResult Function( String asset)  assetNetworks,required TResult Function()  depositAddresses,required TResult Function( WireDepositAddressRequest request)  depositAddress,required TResult Function( WireDepositAddressRequest request)  createDepositAddress,required TResult Function( WireWithdrawRequest request)  prepareWithdrawal,required TResult Function( WireWithdrawRequest request)  withdraw,required TResult Function( WireTransferLookupRequest request)  deposit,required TResult Function( WireTransferLookupRequest request)  withdrawal,required TResult Function( String withdrawalId)  cancelWithdrawal,required TResult Function( WireTransferHistoryRequest request)  deposits,required TResult Function( WireTransferHistoryRequest request)  withdrawals,required TResult Function( WireMarket? market)  openOrders,required TResult Function( WireMarket market,  String orderId)  order,required TResult Function( WireMarket market,  String clientId)  orderByClientId,required TResult Function( WireOrderLookupRequest request)  ordersByIds,required TResult Function( WireOrderHistoryRequest request)  orderHistory,required TResult Function( WireOrderRequest request)  placeOrder,required TResult Function( WireMarket market,  String orderId)  cancelOrder,required TResult Function( WireMarket market,  String clientId)  cancelOrderByClientId,required TResult Function( WireCancelOrdersRequest request)  cancelOrders,required TResult Function( WireMarket? market)  positions,required TResult Function()  marginSummary,required TResult Function( WireHistoryRequest request)  fundingRates,required TResult Function( WireHistoryRequest request)  fundingPayments,required TResult Function( WireMarginRequest request)  setMargin,required TResult Function( String streamId,  WireSubscription subscription,  WireStreamConfig config,  MarketStreamSink sink)  subscribe,required TResult Function( String streamId,  WireStreamConfig config,  AccountStreamSink sink)  subscribeAccount,required TResult Function( String streamId)  cancelStream,}) {final _that = this;
 switch (_that) {
 case AdapterCall_Markets():
 return markets(_that.kind);case AdapterCall_Trades():
@@ -276,7 +288,10 @@ return depositAddresses();case AdapterCall_DepositAddress():
 return depositAddress(_that.request);case AdapterCall_CreateDepositAddress():
 return createDepositAddress(_that.request);case AdapterCall_PrepareWithdrawal():
 return prepareWithdrawal(_that.request);case AdapterCall_Withdraw():
-return withdraw(_that.request);case AdapterCall_Deposits():
+return withdraw(_that.request);case AdapterCall_Deposit():
+return deposit(_that.request);case AdapterCall_Withdrawal():
+return withdrawal(_that.request);case AdapterCall_CancelWithdrawal():
+return cancelWithdrawal(_that.withdrawalId);case AdapterCall_Deposits():
 return deposits(_that.request);case AdapterCall_Withdrawals():
 return withdrawals(_that.request);case AdapterCall_OpenOrders():
 return openOrders(_that.market);case AdapterCall_Order():
@@ -309,7 +324,7 @@ return cancelStream(_that.streamId);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( WireMarketKind kind)?  markets,TResult? Function( WireMarket market,  int? limit)?  trades,TResult? Function( WireMarket market,  int? depth)?  orderBook,TResult? Function( WireMarket market)?  ticker,TResult? Function( WireCandleRequest request)?  candles,TResult? Function()?  balances,TResult? Function( WireMarket market)?  orderRules,TResult? Function( String asset)?  assetNetworks,TResult? Function()?  depositAddresses,TResult? Function( WireDepositAddressRequest request)?  depositAddress,TResult? Function( WireDepositAddressRequest request)?  createDepositAddress,TResult? Function( WireWithdrawRequest request)?  prepareWithdrawal,TResult? Function( WireWithdrawRequest request)?  withdraw,TResult? Function( WireTransferHistoryRequest request)?  deposits,TResult? Function( WireTransferHistoryRequest request)?  withdrawals,TResult? Function( WireMarket? market)?  openOrders,TResult? Function( WireMarket market,  String orderId)?  order,TResult? Function( WireMarket market,  String clientId)?  orderByClientId,TResult? Function( WireOrderLookupRequest request)?  ordersByIds,TResult? Function( WireOrderHistoryRequest request)?  orderHistory,TResult? Function( WireOrderRequest request)?  placeOrder,TResult? Function( WireMarket market,  String orderId)?  cancelOrder,TResult? Function( WireMarket market,  String clientId)?  cancelOrderByClientId,TResult? Function( WireCancelOrdersRequest request)?  cancelOrders,TResult? Function( WireMarket? market)?  positions,TResult? Function()?  marginSummary,TResult? Function( WireHistoryRequest request)?  fundingRates,TResult? Function( WireHistoryRequest request)?  fundingPayments,TResult? Function( WireMarginRequest request)?  setMargin,TResult? Function( String streamId,  WireSubscription subscription,  WireStreamConfig config,  MarketStreamSink sink)?  subscribe,TResult? Function( String streamId,  WireStreamConfig config,  AccountStreamSink sink)?  subscribeAccount,TResult? Function( String streamId)?  cancelStream,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( WireMarketKind kind)?  markets,TResult? Function( WireMarket market,  int? limit)?  trades,TResult? Function( WireMarket market,  int? depth)?  orderBook,TResult? Function( WireMarket market)?  ticker,TResult? Function( WireCandleRequest request)?  candles,TResult? Function()?  balances,TResult? Function( WireMarket market)?  orderRules,TResult? Function( String asset)?  assetNetworks,TResult? Function()?  depositAddresses,TResult? Function( WireDepositAddressRequest request)?  depositAddress,TResult? Function( WireDepositAddressRequest request)?  createDepositAddress,TResult? Function( WireWithdrawRequest request)?  prepareWithdrawal,TResult? Function( WireWithdrawRequest request)?  withdraw,TResult? Function( WireTransferLookupRequest request)?  deposit,TResult? Function( WireTransferLookupRequest request)?  withdrawal,TResult? Function( String withdrawalId)?  cancelWithdrawal,TResult? Function( WireTransferHistoryRequest request)?  deposits,TResult? Function( WireTransferHistoryRequest request)?  withdrawals,TResult? Function( WireMarket? market)?  openOrders,TResult? Function( WireMarket market,  String orderId)?  order,TResult? Function( WireMarket market,  String clientId)?  orderByClientId,TResult? Function( WireOrderLookupRequest request)?  ordersByIds,TResult? Function( WireOrderHistoryRequest request)?  orderHistory,TResult? Function( WireOrderRequest request)?  placeOrder,TResult? Function( WireMarket market,  String orderId)?  cancelOrder,TResult? Function( WireMarket market,  String clientId)?  cancelOrderByClientId,TResult? Function( WireCancelOrdersRequest request)?  cancelOrders,TResult? Function( WireMarket? market)?  positions,TResult? Function()?  marginSummary,TResult? Function( WireHistoryRequest request)?  fundingRates,TResult? Function( WireHistoryRequest request)?  fundingPayments,TResult? Function( WireMarginRequest request)?  setMargin,TResult? Function( String streamId,  WireSubscription subscription,  WireStreamConfig config,  MarketStreamSink sink)?  subscribe,TResult? Function( String streamId,  WireStreamConfig config,  AccountStreamSink sink)?  subscribeAccount,TResult? Function( String streamId)?  cancelStream,}) {final _that = this;
 switch (_that) {
 case AdapterCall_Markets() when markets != null:
 return markets(_that.kind);case AdapterCall_Trades() when trades != null:
@@ -324,7 +339,10 @@ return depositAddresses();case AdapterCall_DepositAddress() when depositAddress 
 return depositAddress(_that.request);case AdapterCall_CreateDepositAddress() when createDepositAddress != null:
 return createDepositAddress(_that.request);case AdapterCall_PrepareWithdrawal() when prepareWithdrawal != null:
 return prepareWithdrawal(_that.request);case AdapterCall_Withdraw() when withdraw != null:
-return withdraw(_that.request);case AdapterCall_Deposits() when deposits != null:
+return withdraw(_that.request);case AdapterCall_Deposit() when deposit != null:
+return deposit(_that.request);case AdapterCall_Withdrawal() when withdrawal != null:
+return withdrawal(_that.request);case AdapterCall_CancelWithdrawal() when cancelWithdrawal != null:
+return cancelWithdrawal(_that.withdrawalId);case AdapterCall_Deposits() when deposits != null:
 return deposits(_that.request);case AdapterCall_Withdrawals() when withdrawals != null:
 return withdrawals(_that.request);case AdapterCall_OpenOrders() when openOrders != null:
 return openOrders(_that.market);case AdapterCall_Order() when order != null:
@@ -1139,6 +1157,204 @@ class _$AdapterCall_WithdrawCopyWithImpl<$Res>
   return _then(AdapterCall_Withdraw(
 request: null == request ? _self.request : request // ignore: cast_nullable_to_non_nullable
 as WireWithdrawRequest,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterCall_Deposit extends AdapterCall {
+  const AdapterCall_Deposit({required this.request}): super._();
+
+
+ final  WireTransferLookupRequest request;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterCall_DepositCopyWith<AdapterCall_Deposit> get copyWith => _$AdapterCall_DepositCopyWithImpl<AdapterCall_Deposit>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterCall_Deposit&&(identical(other.request, request) || other.request == request));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,request);
+
+@override
+String toString() {
+  return 'AdapterCall.deposit(request: $request)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterCall_DepositCopyWith<$Res> implements $AdapterCallCopyWith<$Res> {
+  factory $AdapterCall_DepositCopyWith(AdapterCall_Deposit value, $Res Function(AdapterCall_Deposit) _then) = _$AdapterCall_DepositCopyWithImpl;
+@useResult
+$Res call({
+ WireTransferLookupRequest request
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterCall_DepositCopyWithImpl<$Res>
+    implements $AdapterCall_DepositCopyWith<$Res> {
+  _$AdapterCall_DepositCopyWithImpl(this._self, this._then);
+
+  final AdapterCall_Deposit _self;
+  final $Res Function(AdapterCall_Deposit) _then;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? request = null,}) {
+  return _then(AdapterCall_Deposit(
+request: null == request ? _self.request : request // ignore: cast_nullable_to_non_nullable
+as WireTransferLookupRequest,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterCall_Withdrawal extends AdapterCall {
+  const AdapterCall_Withdrawal({required this.request}): super._();
+
+
+ final  WireTransferLookupRequest request;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterCall_WithdrawalCopyWith<AdapterCall_Withdrawal> get copyWith => _$AdapterCall_WithdrawalCopyWithImpl<AdapterCall_Withdrawal>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterCall_Withdrawal&&(identical(other.request, request) || other.request == request));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,request);
+
+@override
+String toString() {
+  return 'AdapterCall.withdrawal(request: $request)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterCall_WithdrawalCopyWith<$Res> implements $AdapterCallCopyWith<$Res> {
+  factory $AdapterCall_WithdrawalCopyWith(AdapterCall_Withdrawal value, $Res Function(AdapterCall_Withdrawal) _then) = _$AdapterCall_WithdrawalCopyWithImpl;
+@useResult
+$Res call({
+ WireTransferLookupRequest request
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterCall_WithdrawalCopyWithImpl<$Res>
+    implements $AdapterCall_WithdrawalCopyWith<$Res> {
+  _$AdapterCall_WithdrawalCopyWithImpl(this._self, this._then);
+
+  final AdapterCall_Withdrawal _self;
+  final $Res Function(AdapterCall_Withdrawal) _then;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? request = null,}) {
+  return _then(AdapterCall_Withdrawal(
+request: null == request ? _self.request : request // ignore: cast_nullable_to_non_nullable
+as WireTransferLookupRequest,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterCall_CancelWithdrawal extends AdapterCall {
+  const AdapterCall_CancelWithdrawal({required this.withdrawalId}): super._();
+
+
+ final  String withdrawalId;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterCall_CancelWithdrawalCopyWith<AdapterCall_CancelWithdrawal> get copyWith => _$AdapterCall_CancelWithdrawalCopyWithImpl<AdapterCall_CancelWithdrawal>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterCall_CancelWithdrawal&&(identical(other.withdrawalId, withdrawalId) || other.withdrawalId == withdrawalId));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,withdrawalId);
+
+@override
+String toString() {
+  return 'AdapterCall.cancelWithdrawal(withdrawalId: $withdrawalId)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterCall_CancelWithdrawalCopyWith<$Res> implements $AdapterCallCopyWith<$Res> {
+  factory $AdapterCall_CancelWithdrawalCopyWith(AdapterCall_CancelWithdrawal value, $Res Function(AdapterCall_CancelWithdrawal) _then) = _$AdapterCall_CancelWithdrawalCopyWithImpl;
+@useResult
+$Res call({
+ String withdrawalId
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterCall_CancelWithdrawalCopyWithImpl<$Res>
+    implements $AdapterCall_CancelWithdrawalCopyWith<$Res> {
+  _$AdapterCall_CancelWithdrawalCopyWithImpl(this._self, this._then);
+
+  final AdapterCall_CancelWithdrawal _self;
+  final $Res Function(AdapterCall_CancelWithdrawal) _then;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? withdrawalId = null,}) {
+  return _then(AdapterCall_CancelWithdrawal(
+withdrawalId: null == withdrawalId ? _self.withdrawalId : withdrawalId // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 
@@ -2427,7 +2643,7 @@ extension AdapterReplyPatterns on AdapterReply {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( AdapterReply_Markets value)?  markets,TResult Function( AdapterReply_Trades value)?  trades,TResult Function( AdapterReply_OrderBook value)?  orderBook,TResult Function( AdapterReply_Ticker value)?  ticker,TResult Function( AdapterReply_Candles value)?  candles,TResult Function( AdapterReply_Balances value)?  balances,TResult Function( AdapterReply_OrderRules value)?  orderRules,TResult Function( AdapterReply_AssetNetworks value)?  assetNetworks,TResult Function( AdapterReply_DepositAddresses value)?  depositAddresses,TResult Function( AdapterReply_DepositAddress value)?  depositAddress,TResult Function( AdapterReply_CreateDepositAddress value)?  createDepositAddress,TResult Function( AdapterReply_PrepareWithdrawal value)?  prepareWithdrawal,TResult Function( AdapterReply_Withdraw value)?  withdraw,TResult Function( AdapterReply_Deposits value)?  deposits,TResult Function( AdapterReply_Withdrawals value)?  withdrawals,TResult Function( AdapterReply_OpenOrders value)?  openOrders,TResult Function( AdapterReply_Order value)?  order,TResult Function( AdapterReply_OrdersByIds value)?  ordersByIds,TResult Function( AdapterReply_OrderHistory value)?  orderHistory,TResult Function( AdapterReply_PlaceOrder value)?  placeOrder,TResult Function( AdapterReply_CancelOrders value)?  cancelOrders,TResult Function( AdapterReply_Positions value)?  positions,TResult Function( AdapterReply_MarginSummary value)?  marginSummary,TResult Function( AdapterReply_FundingRates value)?  fundingRates,TResult Function( AdapterReply_FundingPayments value)?  fundingPayments,TResult Function( AdapterReply_Unit value)?  unit,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( AdapterReply_Markets value)?  markets,TResult Function( AdapterReply_Trades value)?  trades,TResult Function( AdapterReply_OrderBook value)?  orderBook,TResult Function( AdapterReply_Ticker value)?  ticker,TResult Function( AdapterReply_Candles value)?  candles,TResult Function( AdapterReply_Balances value)?  balances,TResult Function( AdapterReply_OrderRules value)?  orderRules,TResult Function( AdapterReply_AssetNetworks value)?  assetNetworks,TResult Function( AdapterReply_DepositAddresses value)?  depositAddresses,TResult Function( AdapterReply_DepositAddress value)?  depositAddress,TResult Function( AdapterReply_CreateDepositAddress value)?  createDepositAddress,TResult Function( AdapterReply_PrepareWithdrawal value)?  prepareWithdrawal,TResult Function( AdapterReply_Withdraw value)?  withdraw,TResult Function( AdapterReply_Deposit value)?  deposit,TResult Function( AdapterReply_Withdrawal value)?  withdrawal,TResult Function( AdapterReply_Deposits value)?  deposits,TResult Function( AdapterReply_Withdrawals value)?  withdrawals,TResult Function( AdapterReply_OpenOrders value)?  openOrders,TResult Function( AdapterReply_Order value)?  order,TResult Function( AdapterReply_OrdersByIds value)?  ordersByIds,TResult Function( AdapterReply_OrderHistory value)?  orderHistory,TResult Function( AdapterReply_PlaceOrder value)?  placeOrder,TResult Function( AdapterReply_CancelOrders value)?  cancelOrders,TResult Function( AdapterReply_Positions value)?  positions,TResult Function( AdapterReply_MarginSummary value)?  marginSummary,TResult Function( AdapterReply_FundingRates value)?  fundingRates,TResult Function( AdapterReply_FundingPayments value)?  fundingPayments,TResult Function( AdapterReply_Unit value)?  unit,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case AdapterReply_Markets() when markets != null:
@@ -2443,7 +2659,9 @@ return depositAddresses(_that);case AdapterReply_DepositAddress() when depositAd
 return depositAddress(_that);case AdapterReply_CreateDepositAddress() when createDepositAddress != null:
 return createDepositAddress(_that);case AdapterReply_PrepareWithdrawal() when prepareWithdrawal != null:
 return prepareWithdrawal(_that);case AdapterReply_Withdraw() when withdraw != null:
-return withdraw(_that);case AdapterReply_Deposits() when deposits != null:
+return withdraw(_that);case AdapterReply_Deposit() when deposit != null:
+return deposit(_that);case AdapterReply_Withdrawal() when withdrawal != null:
+return withdrawal(_that);case AdapterReply_Deposits() when deposits != null:
 return deposits(_that);case AdapterReply_Withdrawals() when withdrawals != null:
 return withdrawals(_that);case AdapterReply_OpenOrders() when openOrders != null:
 return openOrders(_that);case AdapterReply_Order() when order != null:
@@ -2474,7 +2692,7 @@ return unit(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( AdapterReply_Markets value)  markets,required TResult Function( AdapterReply_Trades value)  trades,required TResult Function( AdapterReply_OrderBook value)  orderBook,required TResult Function( AdapterReply_Ticker value)  ticker,required TResult Function( AdapterReply_Candles value)  candles,required TResult Function( AdapterReply_Balances value)  balances,required TResult Function( AdapterReply_OrderRules value)  orderRules,required TResult Function( AdapterReply_AssetNetworks value)  assetNetworks,required TResult Function( AdapterReply_DepositAddresses value)  depositAddresses,required TResult Function( AdapterReply_DepositAddress value)  depositAddress,required TResult Function( AdapterReply_CreateDepositAddress value)  createDepositAddress,required TResult Function( AdapterReply_PrepareWithdrawal value)  prepareWithdrawal,required TResult Function( AdapterReply_Withdraw value)  withdraw,required TResult Function( AdapterReply_Deposits value)  deposits,required TResult Function( AdapterReply_Withdrawals value)  withdrawals,required TResult Function( AdapterReply_OpenOrders value)  openOrders,required TResult Function( AdapterReply_Order value)  order,required TResult Function( AdapterReply_OrdersByIds value)  ordersByIds,required TResult Function( AdapterReply_OrderHistory value)  orderHistory,required TResult Function( AdapterReply_PlaceOrder value)  placeOrder,required TResult Function( AdapterReply_CancelOrders value)  cancelOrders,required TResult Function( AdapterReply_Positions value)  positions,required TResult Function( AdapterReply_MarginSummary value)  marginSummary,required TResult Function( AdapterReply_FundingRates value)  fundingRates,required TResult Function( AdapterReply_FundingPayments value)  fundingPayments,required TResult Function( AdapterReply_Unit value)  unit,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( AdapterReply_Markets value)  markets,required TResult Function( AdapterReply_Trades value)  trades,required TResult Function( AdapterReply_OrderBook value)  orderBook,required TResult Function( AdapterReply_Ticker value)  ticker,required TResult Function( AdapterReply_Candles value)  candles,required TResult Function( AdapterReply_Balances value)  balances,required TResult Function( AdapterReply_OrderRules value)  orderRules,required TResult Function( AdapterReply_AssetNetworks value)  assetNetworks,required TResult Function( AdapterReply_DepositAddresses value)  depositAddresses,required TResult Function( AdapterReply_DepositAddress value)  depositAddress,required TResult Function( AdapterReply_CreateDepositAddress value)  createDepositAddress,required TResult Function( AdapterReply_PrepareWithdrawal value)  prepareWithdrawal,required TResult Function( AdapterReply_Withdraw value)  withdraw,required TResult Function( AdapterReply_Deposit value)  deposit,required TResult Function( AdapterReply_Withdrawal value)  withdrawal,required TResult Function( AdapterReply_Deposits value)  deposits,required TResult Function( AdapterReply_Withdrawals value)  withdrawals,required TResult Function( AdapterReply_OpenOrders value)  openOrders,required TResult Function( AdapterReply_Order value)  order,required TResult Function( AdapterReply_OrdersByIds value)  ordersByIds,required TResult Function( AdapterReply_OrderHistory value)  orderHistory,required TResult Function( AdapterReply_PlaceOrder value)  placeOrder,required TResult Function( AdapterReply_CancelOrders value)  cancelOrders,required TResult Function( AdapterReply_Positions value)  positions,required TResult Function( AdapterReply_MarginSummary value)  marginSummary,required TResult Function( AdapterReply_FundingRates value)  fundingRates,required TResult Function( AdapterReply_FundingPayments value)  fundingPayments,required TResult Function( AdapterReply_Unit value)  unit,}){
 final _that = this;
 switch (_that) {
 case AdapterReply_Markets():
@@ -2490,7 +2708,9 @@ return depositAddresses(_that);case AdapterReply_DepositAddress():
 return depositAddress(_that);case AdapterReply_CreateDepositAddress():
 return createDepositAddress(_that);case AdapterReply_PrepareWithdrawal():
 return prepareWithdrawal(_that);case AdapterReply_Withdraw():
-return withdraw(_that);case AdapterReply_Deposits():
+return withdraw(_that);case AdapterReply_Deposit():
+return deposit(_that);case AdapterReply_Withdrawal():
+return withdrawal(_that);case AdapterReply_Deposits():
 return deposits(_that);case AdapterReply_Withdrawals():
 return withdrawals(_that);case AdapterReply_OpenOrders():
 return openOrders(_that);case AdapterReply_Order():
@@ -2517,7 +2737,7 @@ return unit(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( AdapterReply_Markets value)?  markets,TResult? Function( AdapterReply_Trades value)?  trades,TResult? Function( AdapterReply_OrderBook value)?  orderBook,TResult? Function( AdapterReply_Ticker value)?  ticker,TResult? Function( AdapterReply_Candles value)?  candles,TResult? Function( AdapterReply_Balances value)?  balances,TResult? Function( AdapterReply_OrderRules value)?  orderRules,TResult? Function( AdapterReply_AssetNetworks value)?  assetNetworks,TResult? Function( AdapterReply_DepositAddresses value)?  depositAddresses,TResult? Function( AdapterReply_DepositAddress value)?  depositAddress,TResult? Function( AdapterReply_CreateDepositAddress value)?  createDepositAddress,TResult? Function( AdapterReply_PrepareWithdrawal value)?  prepareWithdrawal,TResult? Function( AdapterReply_Withdraw value)?  withdraw,TResult? Function( AdapterReply_Deposits value)?  deposits,TResult? Function( AdapterReply_Withdrawals value)?  withdrawals,TResult? Function( AdapterReply_OpenOrders value)?  openOrders,TResult? Function( AdapterReply_Order value)?  order,TResult? Function( AdapterReply_OrdersByIds value)?  ordersByIds,TResult? Function( AdapterReply_OrderHistory value)?  orderHistory,TResult? Function( AdapterReply_PlaceOrder value)?  placeOrder,TResult? Function( AdapterReply_CancelOrders value)?  cancelOrders,TResult? Function( AdapterReply_Positions value)?  positions,TResult? Function( AdapterReply_MarginSummary value)?  marginSummary,TResult? Function( AdapterReply_FundingRates value)?  fundingRates,TResult? Function( AdapterReply_FundingPayments value)?  fundingPayments,TResult? Function( AdapterReply_Unit value)?  unit,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( AdapterReply_Markets value)?  markets,TResult? Function( AdapterReply_Trades value)?  trades,TResult? Function( AdapterReply_OrderBook value)?  orderBook,TResult? Function( AdapterReply_Ticker value)?  ticker,TResult? Function( AdapterReply_Candles value)?  candles,TResult? Function( AdapterReply_Balances value)?  balances,TResult? Function( AdapterReply_OrderRules value)?  orderRules,TResult? Function( AdapterReply_AssetNetworks value)?  assetNetworks,TResult? Function( AdapterReply_DepositAddresses value)?  depositAddresses,TResult? Function( AdapterReply_DepositAddress value)?  depositAddress,TResult? Function( AdapterReply_CreateDepositAddress value)?  createDepositAddress,TResult? Function( AdapterReply_PrepareWithdrawal value)?  prepareWithdrawal,TResult? Function( AdapterReply_Withdraw value)?  withdraw,TResult? Function( AdapterReply_Deposit value)?  deposit,TResult? Function( AdapterReply_Withdrawal value)?  withdrawal,TResult? Function( AdapterReply_Deposits value)?  deposits,TResult? Function( AdapterReply_Withdrawals value)?  withdrawals,TResult? Function( AdapterReply_OpenOrders value)?  openOrders,TResult? Function( AdapterReply_Order value)?  order,TResult? Function( AdapterReply_OrdersByIds value)?  ordersByIds,TResult? Function( AdapterReply_OrderHistory value)?  orderHistory,TResult? Function( AdapterReply_PlaceOrder value)?  placeOrder,TResult? Function( AdapterReply_CancelOrders value)?  cancelOrders,TResult? Function( AdapterReply_Positions value)?  positions,TResult? Function( AdapterReply_MarginSummary value)?  marginSummary,TResult? Function( AdapterReply_FundingRates value)?  fundingRates,TResult? Function( AdapterReply_FundingPayments value)?  fundingPayments,TResult? Function( AdapterReply_Unit value)?  unit,}){
 final _that = this;
 switch (_that) {
 case AdapterReply_Markets() when markets != null:
@@ -2533,7 +2753,9 @@ return depositAddresses(_that);case AdapterReply_DepositAddress() when depositAd
 return depositAddress(_that);case AdapterReply_CreateDepositAddress() when createDepositAddress != null:
 return createDepositAddress(_that);case AdapterReply_PrepareWithdrawal() when prepareWithdrawal != null:
 return prepareWithdrawal(_that);case AdapterReply_Withdraw() when withdraw != null:
-return withdraw(_that);case AdapterReply_Deposits() when deposits != null:
+return withdraw(_that);case AdapterReply_Deposit() when deposit != null:
+return deposit(_that);case AdapterReply_Withdrawal() when withdrawal != null:
+return withdrawal(_that);case AdapterReply_Deposits() when deposits != null:
 return deposits(_that);case AdapterReply_Withdrawals() when withdrawals != null:
 return withdrawals(_that);case AdapterReply_OpenOrders() when openOrders != null:
 return openOrders(_that);case AdapterReply_Order() when order != null:
@@ -2563,7 +2785,7 @@ return unit(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( List<WireMarketInfo> field0)?  markets,TResult Function( List<WireTrade> field0)?  trades,TResult Function( WireOrderBook field0)?  orderBook,TResult Function( WireTicker field0)?  ticker,TResult Function( List<WireCandle> field0)?  candles,TResult Function( List<WireBalance> field0)?  balances,TResult Function( WireOrderRules field0)?  orderRules,TResult Function( List<WireAssetNetwork> field0)?  assetNetworks,TResult Function( List<WireDepositAddressEntry> field0)?  depositAddresses,TResult Function( WireDepositAddress field0)?  depositAddress,TResult Function( WireDepositAddress field0)?  createDepositAddress,TResult Function( WireWithdrawalQuote field0)?  prepareWithdrawal,TResult Function( WireWithdrawal field0)?  withdraw,TResult Function( WireDepositPage field0)?  deposits,TResult Function( WireWithdrawalPage field0)?  withdrawals,TResult Function( List<WireOrder> field0)?  openOrders,TResult Function( WireOrder field0)?  order,TResult Function( List<WireOrder> field0)?  ordersByIds,TResult Function( WireOrderPage field0)?  orderHistory,TResult Function( WireOrder field0)?  placeOrder,TResult Function( WireCancelOrdersResult field0)?  cancelOrders,TResult Function( List<WirePosition> field0)?  positions,TResult Function( WireMarginSummary field0)?  marginSummary,TResult Function( WireFundingRatePage field0)?  fundingRates,TResult Function( WireFundingPaymentPage field0)?  fundingPayments,TResult Function()?  unit,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( List<WireMarketInfo> field0)?  markets,TResult Function( List<WireTrade> field0)?  trades,TResult Function( WireOrderBook field0)?  orderBook,TResult Function( WireTicker field0)?  ticker,TResult Function( List<WireCandle> field0)?  candles,TResult Function( List<WireBalance> field0)?  balances,TResult Function( WireOrderRules field0)?  orderRules,TResult Function( List<WireAssetNetwork> field0)?  assetNetworks,TResult Function( List<WireDepositAddressEntry> field0)?  depositAddresses,TResult Function( WireDepositAddress field0)?  depositAddress,TResult Function( WireDepositAddress field0)?  createDepositAddress,TResult Function( WireWithdrawalQuote field0)?  prepareWithdrawal,TResult Function( WireWithdrawal field0)?  withdraw,TResult Function( WireDeposit field0)?  deposit,TResult Function( WireWithdrawal field0)?  withdrawal,TResult Function( WireDepositPage field0)?  deposits,TResult Function( WireWithdrawalPage field0)?  withdrawals,TResult Function( List<WireOrder> field0)?  openOrders,TResult Function( WireOrder field0)?  order,TResult Function( List<WireOrder> field0)?  ordersByIds,TResult Function( WireOrderPage field0)?  orderHistory,TResult Function( WireOrder field0)?  placeOrder,TResult Function( WireCancelOrdersResult field0)?  cancelOrders,TResult Function( List<WirePosition> field0)?  positions,TResult Function( WireMarginSummary field0)?  marginSummary,TResult Function( WireFundingRatePage field0)?  fundingRates,TResult Function( WireFundingPaymentPage field0)?  fundingPayments,TResult Function()?  unit,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case AdapterReply_Markets() when markets != null:
 return markets(_that.field0);case AdapterReply_Trades() when trades != null:
@@ -2578,7 +2800,9 @@ return depositAddresses(_that.field0);case AdapterReply_DepositAddress() when de
 return depositAddress(_that.field0);case AdapterReply_CreateDepositAddress() when createDepositAddress != null:
 return createDepositAddress(_that.field0);case AdapterReply_PrepareWithdrawal() when prepareWithdrawal != null:
 return prepareWithdrawal(_that.field0);case AdapterReply_Withdraw() when withdraw != null:
-return withdraw(_that.field0);case AdapterReply_Deposits() when deposits != null:
+return withdraw(_that.field0);case AdapterReply_Deposit() when deposit != null:
+return deposit(_that.field0);case AdapterReply_Withdrawal() when withdrawal != null:
+return withdrawal(_that.field0);case AdapterReply_Deposits() when deposits != null:
 return deposits(_that.field0);case AdapterReply_Withdrawals() when withdrawals != null:
 return withdrawals(_that.field0);case AdapterReply_OpenOrders() when openOrders != null:
 return openOrders(_that.field0);case AdapterReply_Order() when order != null:
@@ -2609,7 +2833,7 @@ return unit();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( List<WireMarketInfo> field0)  markets,required TResult Function( List<WireTrade> field0)  trades,required TResult Function( WireOrderBook field0)  orderBook,required TResult Function( WireTicker field0)  ticker,required TResult Function( List<WireCandle> field0)  candles,required TResult Function( List<WireBalance> field0)  balances,required TResult Function( WireOrderRules field0)  orderRules,required TResult Function( List<WireAssetNetwork> field0)  assetNetworks,required TResult Function( List<WireDepositAddressEntry> field0)  depositAddresses,required TResult Function( WireDepositAddress field0)  depositAddress,required TResult Function( WireDepositAddress field0)  createDepositAddress,required TResult Function( WireWithdrawalQuote field0)  prepareWithdrawal,required TResult Function( WireWithdrawal field0)  withdraw,required TResult Function( WireDepositPage field0)  deposits,required TResult Function( WireWithdrawalPage field0)  withdrawals,required TResult Function( List<WireOrder> field0)  openOrders,required TResult Function( WireOrder field0)  order,required TResult Function( List<WireOrder> field0)  ordersByIds,required TResult Function( WireOrderPage field0)  orderHistory,required TResult Function( WireOrder field0)  placeOrder,required TResult Function( WireCancelOrdersResult field0)  cancelOrders,required TResult Function( List<WirePosition> field0)  positions,required TResult Function( WireMarginSummary field0)  marginSummary,required TResult Function( WireFundingRatePage field0)  fundingRates,required TResult Function( WireFundingPaymentPage field0)  fundingPayments,required TResult Function()  unit,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( List<WireMarketInfo> field0)  markets,required TResult Function( List<WireTrade> field0)  trades,required TResult Function( WireOrderBook field0)  orderBook,required TResult Function( WireTicker field0)  ticker,required TResult Function( List<WireCandle> field0)  candles,required TResult Function( List<WireBalance> field0)  balances,required TResult Function( WireOrderRules field0)  orderRules,required TResult Function( List<WireAssetNetwork> field0)  assetNetworks,required TResult Function( List<WireDepositAddressEntry> field0)  depositAddresses,required TResult Function( WireDepositAddress field0)  depositAddress,required TResult Function( WireDepositAddress field0)  createDepositAddress,required TResult Function( WireWithdrawalQuote field0)  prepareWithdrawal,required TResult Function( WireWithdrawal field0)  withdraw,required TResult Function( WireDeposit field0)  deposit,required TResult Function( WireWithdrawal field0)  withdrawal,required TResult Function( WireDepositPage field0)  deposits,required TResult Function( WireWithdrawalPage field0)  withdrawals,required TResult Function( List<WireOrder> field0)  openOrders,required TResult Function( WireOrder field0)  order,required TResult Function( List<WireOrder> field0)  ordersByIds,required TResult Function( WireOrderPage field0)  orderHistory,required TResult Function( WireOrder field0)  placeOrder,required TResult Function( WireCancelOrdersResult field0)  cancelOrders,required TResult Function( List<WirePosition> field0)  positions,required TResult Function( WireMarginSummary field0)  marginSummary,required TResult Function( WireFundingRatePage field0)  fundingRates,required TResult Function( WireFundingPaymentPage field0)  fundingPayments,required TResult Function()  unit,}) {final _that = this;
 switch (_that) {
 case AdapterReply_Markets():
 return markets(_that.field0);case AdapterReply_Trades():
@@ -2624,7 +2848,9 @@ return depositAddresses(_that.field0);case AdapterReply_DepositAddress():
 return depositAddress(_that.field0);case AdapterReply_CreateDepositAddress():
 return createDepositAddress(_that.field0);case AdapterReply_PrepareWithdrawal():
 return prepareWithdrawal(_that.field0);case AdapterReply_Withdraw():
-return withdraw(_that.field0);case AdapterReply_Deposits():
+return withdraw(_that.field0);case AdapterReply_Deposit():
+return deposit(_that.field0);case AdapterReply_Withdrawal():
+return withdrawal(_that.field0);case AdapterReply_Deposits():
 return deposits(_that.field0);case AdapterReply_Withdrawals():
 return withdrawals(_that.field0);case AdapterReply_OpenOrders():
 return openOrders(_that.field0);case AdapterReply_Order():
@@ -2651,7 +2877,7 @@ return unit();}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( List<WireMarketInfo> field0)?  markets,TResult? Function( List<WireTrade> field0)?  trades,TResult? Function( WireOrderBook field0)?  orderBook,TResult? Function( WireTicker field0)?  ticker,TResult? Function( List<WireCandle> field0)?  candles,TResult? Function( List<WireBalance> field0)?  balances,TResult? Function( WireOrderRules field0)?  orderRules,TResult? Function( List<WireAssetNetwork> field0)?  assetNetworks,TResult? Function( List<WireDepositAddressEntry> field0)?  depositAddresses,TResult? Function( WireDepositAddress field0)?  depositAddress,TResult? Function( WireDepositAddress field0)?  createDepositAddress,TResult? Function( WireWithdrawalQuote field0)?  prepareWithdrawal,TResult? Function( WireWithdrawal field0)?  withdraw,TResult? Function( WireDepositPage field0)?  deposits,TResult? Function( WireWithdrawalPage field0)?  withdrawals,TResult? Function( List<WireOrder> field0)?  openOrders,TResult? Function( WireOrder field0)?  order,TResult? Function( List<WireOrder> field0)?  ordersByIds,TResult? Function( WireOrderPage field0)?  orderHistory,TResult? Function( WireOrder field0)?  placeOrder,TResult? Function( WireCancelOrdersResult field0)?  cancelOrders,TResult? Function( List<WirePosition> field0)?  positions,TResult? Function( WireMarginSummary field0)?  marginSummary,TResult? Function( WireFundingRatePage field0)?  fundingRates,TResult? Function( WireFundingPaymentPage field0)?  fundingPayments,TResult? Function()?  unit,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( List<WireMarketInfo> field0)?  markets,TResult? Function( List<WireTrade> field0)?  trades,TResult? Function( WireOrderBook field0)?  orderBook,TResult? Function( WireTicker field0)?  ticker,TResult? Function( List<WireCandle> field0)?  candles,TResult? Function( List<WireBalance> field0)?  balances,TResult? Function( WireOrderRules field0)?  orderRules,TResult? Function( List<WireAssetNetwork> field0)?  assetNetworks,TResult? Function( List<WireDepositAddressEntry> field0)?  depositAddresses,TResult? Function( WireDepositAddress field0)?  depositAddress,TResult? Function( WireDepositAddress field0)?  createDepositAddress,TResult? Function( WireWithdrawalQuote field0)?  prepareWithdrawal,TResult? Function( WireWithdrawal field0)?  withdraw,TResult? Function( WireDeposit field0)?  deposit,TResult? Function( WireWithdrawal field0)?  withdrawal,TResult? Function( WireDepositPage field0)?  deposits,TResult? Function( WireWithdrawalPage field0)?  withdrawals,TResult? Function( List<WireOrder> field0)?  openOrders,TResult? Function( WireOrder field0)?  order,TResult? Function( List<WireOrder> field0)?  ordersByIds,TResult? Function( WireOrderPage field0)?  orderHistory,TResult? Function( WireOrder field0)?  placeOrder,TResult? Function( WireCancelOrdersResult field0)?  cancelOrders,TResult? Function( List<WirePosition> field0)?  positions,TResult? Function( WireMarginSummary field0)?  marginSummary,TResult? Function( WireFundingRatePage field0)?  fundingRates,TResult? Function( WireFundingPaymentPage field0)?  fundingPayments,TResult? Function()?  unit,}) {final _that = this;
 switch (_that) {
 case AdapterReply_Markets() when markets != null:
 return markets(_that.field0);case AdapterReply_Trades() when trades != null:
@@ -2666,7 +2892,9 @@ return depositAddresses(_that.field0);case AdapterReply_DepositAddress() when de
 return depositAddress(_that.field0);case AdapterReply_CreateDepositAddress() when createDepositAddress != null:
 return createDepositAddress(_that.field0);case AdapterReply_PrepareWithdrawal() when prepareWithdrawal != null:
 return prepareWithdrawal(_that.field0);case AdapterReply_Withdraw() when withdraw != null:
-return withdraw(_that.field0);case AdapterReply_Deposits() when deposits != null:
+return withdraw(_that.field0);case AdapterReply_Deposit() when deposit != null:
+return deposit(_that.field0);case AdapterReply_Withdrawal() when withdrawal != null:
+return withdrawal(_that.field0);case AdapterReply_Deposits() when deposits != null:
 return deposits(_that.field0);case AdapterReply_Withdrawals() when withdrawals != null:
 return withdrawals(_that.field0);case AdapterReply_OpenOrders() when openOrders != null:
 return openOrders(_that.field0);case AdapterReply_Order() when order != null:
@@ -3573,6 +3801,138 @@ class _$AdapterReply_WithdrawCopyWithImpl<$Res>
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
   return _then(AdapterReply_Withdraw(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireWithdrawal,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterReply_Deposit extends AdapterReply {
+  const AdapterReply_Deposit(this.field0): super._();
+
+
+ final  WireDeposit field0;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterReply_DepositCopyWith<AdapterReply_Deposit> get copyWith => _$AdapterReply_DepositCopyWithImpl<AdapterReply_Deposit>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterReply_Deposit&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'AdapterReply.deposit(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterReply_DepositCopyWith<$Res> implements $AdapterReplyCopyWith<$Res> {
+  factory $AdapterReply_DepositCopyWith(AdapterReply_Deposit value, $Res Function(AdapterReply_Deposit) _then) = _$AdapterReply_DepositCopyWithImpl;
+@useResult
+$Res call({
+ WireDeposit field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterReply_DepositCopyWithImpl<$Res>
+    implements $AdapterReply_DepositCopyWith<$Res> {
+  _$AdapterReply_DepositCopyWithImpl(this._self, this._then);
+
+  final AdapterReply_Deposit _self;
+  final $Res Function(AdapterReply_Deposit) _then;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(AdapterReply_Deposit(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireDeposit,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterReply_Withdrawal extends AdapterReply {
+  const AdapterReply_Withdrawal(this.field0): super._();
+
+
+ final  WireWithdrawal field0;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterReply_WithdrawalCopyWith<AdapterReply_Withdrawal> get copyWith => _$AdapterReply_WithdrawalCopyWithImpl<AdapterReply_Withdrawal>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterReply_Withdrawal&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'AdapterReply.withdrawal(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterReply_WithdrawalCopyWith<$Res> implements $AdapterReplyCopyWith<$Res> {
+  factory $AdapterReply_WithdrawalCopyWith(AdapterReply_Withdrawal value, $Res Function(AdapterReply_Withdrawal) _then) = _$AdapterReply_WithdrawalCopyWithImpl;
+@useResult
+$Res call({
+ WireWithdrawal field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterReply_WithdrawalCopyWithImpl<$Res>
+    implements $AdapterReply_WithdrawalCopyWith<$Res> {
+  _$AdapterReply_WithdrawalCopyWithImpl(this._self, this._then);
+
+  final AdapterReply_Withdrawal _self;
+  final $Res Function(AdapterReply_Withdrawal) _then;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(AdapterReply_Withdrawal(
 null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
 as WireWithdrawal,
   ));

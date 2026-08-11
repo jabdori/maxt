@@ -7,7 +7,7 @@ import { AccountStream, MarketStream, StreamError } from "../stream.js";
 import * as Codec from "./codec.js";
 import type * as Wire from "./contract.js";
 
-export const NATIVE_API_VERSION = 9 as const;
+export const NATIVE_API_VERSION = 10 as const;
 
 export type NativeOutcome<T> =
   | { readonly ok: true; readonly value: T }
@@ -31,6 +31,9 @@ export interface RawNativeClient {
   createDepositAddress(request: string): Promise<unknown>;
   prepareWithdrawal(request: string): Promise<unknown>;
   withdraw(request: string): Promise<unknown>;
+  deposit(request: string): Promise<unknown>;
+  withdrawal(request: string): Promise<unknown>;
+  cancelWithdrawal(withdrawalId: string): Promise<unknown>;
   deposits(request: string): Promise<unknown>;
   withdrawals(request: string): Promise<unknown>;
   openOrders(): Promise<unknown>;
@@ -134,6 +137,9 @@ export interface NativeClientHandle {
   createDepositAddress(request: Wire.DepositAddressRequestWire): Promise<NativeOutcome<Wire.DepositAddressWire>>;
   prepareWithdrawal(request: Wire.WithdrawRequestWire): Promise<NativeOutcome<Wire.WithdrawalQuoteWire>>;
   withdraw(request: Wire.WithdrawRequestWire): Promise<NativeOutcome<Wire.WithdrawalWire>>;
+  deposit(request: Wire.TransferLookupRequestWire): Promise<NativeOutcome<Wire.DepositWire>>;
+  withdrawal(request: Wire.TransferLookupRequestWire): Promise<NativeOutcome<Wire.WithdrawalWire>>;
+  cancelWithdrawal(withdrawalId: string): Promise<NativeOutcome<null>>;
   deposits(request: Wire.TransferHistoryRequestWire): Promise<NativeOutcome<Wire.PageWire<Wire.DepositWire>>>;
   withdrawals(request: Wire.TransferHistoryRequestWire): Promise<NativeOutcome<Wire.PageWire<Wire.WithdrawalWire>>>;
   openOrders(): Promise<NativeOutcome<readonly Wire.OrderWire[]>>;
@@ -323,6 +329,9 @@ function wrapJsonClient(raw: RawNativeClient): NativeClientHandle {
     createDepositAddress: (request: Wire.DepositAddressRequestWire) => raw.createDepositAddress(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.DepositAddressWire>>,
     prepareWithdrawal: (request: Wire.WithdrawRequestWire) => raw.prepareWithdrawal(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.WithdrawalQuoteWire>>,
     withdraw: (request: Wire.WithdrawRequestWire) => raw.withdraw(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.WithdrawalWire>>,
+    deposit: (request: Wire.TransferLookupRequestWire) => raw.deposit(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.DepositWire>>,
+    withdrawal: (request: Wire.TransferLookupRequestWire) => raw.withdrawal(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.WithdrawalWire>>,
+    cancelWithdrawal: (withdrawalId: string) => raw.cancelWithdrawal(Codec.stringifyWire(withdrawalId)) as Promise<NativeOutcome<null>>,
     deposits: (request: Wire.TransferHistoryRequestWire) => raw.deposits(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.PageWire<Wire.DepositWire>>>,
     withdrawals: (request: Wire.TransferHistoryRequestWire) => raw.withdrawals(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.PageWire<Wire.WithdrawalWire>>>,
     openOrders: () => raw.openOrders() as Promise<NativeOutcome<readonly Wire.OrderWire[]>>,
@@ -498,6 +507,24 @@ export abstract class Adapter {
     ));
   }
 
+  deposit(request: Model.TransferLookupRequest): Promise<Model.Deposit> {
+    return Promise.reject(new UnsupportedError(
+      featureById("deposit_lookup"), this.exchange, "feature is not supported",
+    ));
+  }
+
+  withdrawal(request: Model.TransferLookupRequest): Promise<Model.Withdrawal> {
+    return Promise.reject(new UnsupportedError(
+      featureById("withdrawal_lookup"), this.exchange, "feature is not supported",
+    ));
+  }
+
+  cancelWithdrawal(withdrawalId: string): Promise<void> {
+    return Promise.reject(new UnsupportedError(
+      featureById("withdrawal_cancellation"), this.exchange, "feature is not supported",
+    ));
+  }
+
   deposits(request: Model.TransferHistoryRequest): Promise<Model.Page<Model.Deposit>> {
     return Promise.reject(new UnsupportedError(
       featureById("deposit_history"), this.exchange, "feature is not supported",
@@ -622,6 +649,9 @@ class CustomCallbacks implements ForeignAdapterCallbacks {
         case "create_deposit_address": return ok({ kind: "create_deposit_address", value: Codec.depositAddressToWire(await this.adapter.createDepositAddress(Codec.depositAddressRequestFromWire(call.request))) });
         case "prepare_withdrawal": return ok({ kind: "withdrawal_quote", value: Codec.withdrawalQuoteToWire(await this.adapter.prepareWithdrawal(Codec.withdrawRequestFromWire(call.request))) });
         case "withdraw": return ok({ kind: "withdrawal", value: Codec.withdrawalToWire(await this.adapter.withdraw(Codec.withdrawRequestFromWire(call.request))) });
+        case "deposit": return ok({ kind: "deposit", value: Codec.depositToWire(await this.adapter.deposit(Codec.transferLookupRequestFromWire(call.request))) });
+        case "withdrawal": return ok({ kind: "withdrawal_lookup", value: Codec.withdrawalToWire(await this.adapter.withdrawal(Codec.transferLookupRequestFromWire(call.request))) });
+        case "cancel_withdrawal": await this.adapter.cancelWithdrawal(call.withdrawal_id); return ok({ kind: "unit" });
         case "deposits": { const value = await this.adapter.deposits(Codec.transferHistoryRequestFromWire(call.request)); return ok({ kind: "deposits", value: { items: value.items.map(Codec.depositToWire), next: value.next?.value ?? null } }); }
         case "withdrawals": { const value = await this.adapter.withdrawals(Codec.transferHistoryRequestFromWire(call.request)); return ok({ kind: "withdrawals", value: { items: value.items.map(Codec.withdrawalToWire), next: value.next?.value ?? null } }); }
         case "open_orders": return ok({ kind: "open_orders", value: (await this.adapter.openOrders(call.market === null ? null : Codec.marketFromWire(call.market))).map(Codec.orderToWire) });
@@ -745,6 +775,21 @@ export class Client<A extends Adapter> {
   async withdraw(request: Model.WithdrawRequest): Promise<Model.Withdrawal> {
     await ensureInitialized();
     return Codec.withdrawalFromWire(Codec.unwrapOutcome(await this.#native.withdraw(Codec.withdrawRequestToWire(request))));
+  }
+
+  async deposit(request: Model.TransferLookupRequest): Promise<Model.Deposit> {
+    await ensureInitialized();
+    return Codec.depositFromWire(Codec.unwrapOutcome(await this.#native.deposit(Codec.transferLookupRequestToWire(request))));
+  }
+
+  async withdrawal(request: Model.TransferLookupRequest): Promise<Model.Withdrawal> {
+    await ensureInitialized();
+    return Codec.withdrawalFromWire(Codec.unwrapOutcome(await this.#native.withdrawal(Codec.transferLookupRequestToWire(request))));
+  }
+
+  async cancelWithdrawal(withdrawalId: string): Promise<void> {
+    await ensureInitialized();
+    Codec.unwrapOutcome(await this.#native.cancelWithdrawal(withdrawalId));
   }
 
   async deposits(request: Model.TransferHistoryRequest): Promise<Model.Page<Model.Deposit>> {
@@ -889,6 +934,9 @@ class NativeAdapter extends Adapter {
   createDepositAddress(request: Model.DepositAddressRequest): Promise<Model.DepositAddress> { return new Client(this).createDepositAddress(request); }
   prepareWithdrawal(request: Model.WithdrawRequest): Promise<Model.WithdrawalQuote> { return new Client(this).prepareWithdrawal(request); }
   withdraw(request: Model.WithdrawRequest): Promise<Model.Withdrawal> { return new Client(this).withdraw(request); }
+  deposit(request: Model.TransferLookupRequest): Promise<Model.Deposit> { return new Client(this).deposit(request); }
+  withdrawal(request: Model.TransferLookupRequest): Promise<Model.Withdrawal> { return new Client(this).withdrawal(request); }
+  cancelWithdrawal(withdrawalId: string): Promise<void> { return new Client(this).cancelWithdrawal(withdrawalId); }
   deposits(request: Model.TransferHistoryRequest): Promise<Model.Page<Model.Deposit>> { return new Client(this).deposits(request); }
   withdrawals(request: Model.TransferHistoryRequest): Promise<Model.Page<Model.Withdrawal>> { return new Client(this).withdrawals(request); }
   openOrders(market: Model.Market | null = null): Promise<readonly Model.Order[]> { return market === null ? new Client(this).openOrders() : new Client(this).openOrdersOn(market); }

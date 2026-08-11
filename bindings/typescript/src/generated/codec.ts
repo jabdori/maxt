@@ -656,6 +656,18 @@ export function withdrawRequestToWire(value: Model.WithdrawRequest): Wire.Withdr
   };
 }
 
+export function transferLookupRequestFromWire(value: Wire.TransferLookupRequestWire): Model.TransferLookupRequest {
+  return new Model.TransferLookupRequest(value.asset, value.id === null ? null : value.id, value.tx_id === null ? null : value.tx_id);
+}
+
+export function transferLookupRequestToWire(value: Model.TransferLookupRequest): Wire.TransferLookupRequestWire {
+  return {
+    asset: value.asset,
+    id: value.id === null ? null : value.id,
+    tx_id: value.txId === null ? null : value.txId,
+  };
+}
+
 export function transferHistoryRequestFromWire(value: Wire.TransferHistoryRequestWire): Model.TransferHistoryRequest {
   return new Model.TransferHistoryRequest(
     value.asset,

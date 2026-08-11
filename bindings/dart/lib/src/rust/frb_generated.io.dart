@@ -260,6 +260,9 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireDeposit dco_decode_box_autoadd_wire_deposit(dynamic raw);
+
+  @protected
   WireDepositAddress dco_decode_box_autoadd_wire_deposit_address(dynamic raw);
 
   @protected
@@ -377,6 +380,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   WireTransferHistoryRequest
   dco_decode_box_autoadd_wire_transfer_history_request(dynamic raw);
+
+  @protected
+  WireTransferLookupRequest dco_decode_box_autoadd_wire_transfer_lookup_request(
+    dynamic raw,
+  );
 
   @protected
   WireTransferPlan dco_decode_box_autoadd_wire_transfer_plan(dynamic raw);
@@ -837,6 +845,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireTransferLookupRequest dco_decode_wire_transfer_lookup_request(
+    dynamic raw,
+  );
+
+  @protected
   WireTransferPlan dco_decode_wire_transfer_plan(dynamic raw);
 
   @protected
@@ -1086,6 +1099,9 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireDeposit sse_decode_box_autoadd_wire_deposit(SseDeserializer deserializer);
+
+  @protected
   WireDepositAddress sse_decode_box_autoadd_wire_deposit_address(
     SseDeserializer deserializer,
   );
@@ -1237,6 +1253,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   WireTransferHistoryRequest
   sse_decode_box_autoadd_wire_transfer_history_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireTransferLookupRequest sse_decode_box_autoadd_wire_transfer_lookup_request(
     SseDeserializer deserializer,
   );
 
@@ -1805,6 +1826,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireTransferLookupRequest sse_decode_wire_transfer_lookup_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireTransferPlan sse_decode_wire_transfer_plan(SseDeserializer deserializer);
 
   @protected
@@ -2119,6 +2145,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_wire_deposit(
+    WireDeposit self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_wire_deposit_address(
     WireDepositAddress self,
     SseSerializer serializer,
@@ -2313,6 +2345,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_box_autoadd_wire_transfer_history_request(
     WireTransferHistoryRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_transfer_lookup_request(
+    WireTransferLookupRequest self,
     SseSerializer serializer,
   );
 
@@ -3048,6 +3086,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_transfer_history_request(
     WireTransferHistoryRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_transfer_lookup_request(
+    WireTransferLookupRequest self,
     SseSerializer serializer,
   );
 

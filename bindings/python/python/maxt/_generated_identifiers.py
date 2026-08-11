@@ -40,9 +40,12 @@ class Feature(str, Enum):
     ASSET_NETWORKS = "asset_networks"
     DEPOSIT_ADDRESSES = "deposit_addresses"
     DEPOSIT_HISTORY = "deposit_history"
+    DEPOSIT_LOOKUP = "deposit_lookup"
     WITHDRAWAL_QUOTES = "withdrawal_quotes"
     WITHDRAWALS = "withdrawals"
     WITHDRAWAL_HISTORY = "withdrawal_history"
+    WITHDRAWAL_LOOKUP = "withdrawal_lookup"
+    WITHDRAWAL_CANCELLATION = "withdrawal_cancellation"
     OPEN_ORDERS = "open_orders"
     ORDER_HISTORY = "order_history"
     ACCOUNT_STREAM = "account_stream"
@@ -60,9 +63,12 @@ class Feature(str, Enum):
             "asset_networks",
             "deposit_addresses",
             "deposit_history",
+            "deposit_lookup",
             "withdrawal_quotes",
             "withdrawals",
             "withdrawal_history",
+            "withdrawal_lookup",
+            "withdrawal_cancellation",
             "open_orders",
             "order_history",
             "account_stream",

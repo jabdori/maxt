@@ -198,6 +198,10 @@ fn decode_reply(
             value.try_into().map(AdapterReply::WithdrawalQuote)
         }
         WireAdapterReply::Withdrawal { value } => value.try_into().map(AdapterReply::Withdrawal),
+        WireAdapterReply::Deposit { value } => value.try_into().map(AdapterReply::Deposit),
+        WireAdapterReply::WithdrawalLookup { value } => {
+            value.try_into().map(AdapterReply::LookupWithdrawal)
+        }
         WireAdapterReply::Deposits { value } => value.try_into().map(AdapterReply::Deposits),
         WireAdapterReply::Withdrawals { value } => value.try_into().map(AdapterReply::Withdrawals),
         WireAdapterReply::OpenOrders { value } => wire_vec(value).map(AdapterReply::OpenOrders),

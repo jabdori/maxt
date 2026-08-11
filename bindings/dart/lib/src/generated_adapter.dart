@@ -46,6 +46,12 @@ abstract interface class GeneratedAdapterContract {
 
   Future<Withdrawal> withdraw(WithdrawRequest request);
 
+  Future<Deposit> deposit(TransferLookupRequest request);
+
+  Future<Withdrawal> withdrawal(TransferLookupRequest request);
+
+  Future<void> cancelWithdrawal(String withdrawalId);
+
   Future<Page<Deposit>> deposits(TransferHistoryRequest request);
 
   Future<Page<Withdrawal>> withdrawals(TransferHistoryRequest request);
@@ -142,6 +148,18 @@ abstract base class GeneratedAdapterDefaults
   @override
   Future<Withdrawal> withdraw(WithdrawRequest request) =>
       _unsupported(Feature.withdrawals);
+
+  @override
+  Future<Deposit> deposit(TransferLookupRequest request) =>
+      _unsupported(Feature.depositLookup);
+
+  @override
+  Future<Withdrawal> withdrawal(TransferLookupRequest request) =>
+      _unsupported(Feature.withdrawalLookup);
+
+  @override
+  Future<void> cancelWithdrawal(String withdrawalId) =>
+      _unsupported(Feature.withdrawalCancellation);
 
   @override
   Future<Page<Deposit>> deposits(TransferHistoryRequest request) =>

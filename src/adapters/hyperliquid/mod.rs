@@ -291,8 +291,11 @@ impl Adapter for HyperliquidAdapter {
         match feature {
             Feature::AssetNetworks
             | Feature::DepositAddresses
+            | Feature::DepositLookup
             | Feature::WithdrawalQuotes
             | Feature::Withdrawals
+            | Feature::WithdrawalLookup
+            | Feature::WithdrawalCancellation
             | Feature::OrderHistory => false,
             Feature::Balances
             | Feature::DepositHistory

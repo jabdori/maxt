@@ -73,6 +73,20 @@ sealed class AdapterCall with _$AdapterCall {
   const factory AdapterCall.withdraw({required WireWithdrawRequest request}) =
       AdapterCall_Withdraw;
 
+  /// 입금 조회를 요청합니다.
+  const factory AdapterCall.deposit({
+    required WireTransferLookupRequest request,
+  }) = AdapterCall_Deposit;
+
+  /// 출금 조회를 요청합니다.
+  const factory AdapterCall.withdrawal({
+    required WireTransferLookupRequest request,
+  }) = AdapterCall_Withdrawal;
+
+  /// 출금 취소를 요청합니다.
+  const factory AdapterCall.cancelWithdrawal({required String withdrawalId}) =
+      AdapterCall_CancelWithdrawal;
+
   /// 입금 이력을 요청합니다.
   const factory AdapterCall.deposits({
     required WireTransferHistoryRequest request,
@@ -226,6 +240,13 @@ sealed class AdapterReply with _$AdapterReply {
   /// 출금 접수 응답입니다.
   const factory AdapterReply.withdraw(WireWithdrawal field0) =
       AdapterReply_Withdraw;
+
+  /// 입금 조회 응답입니다.
+  const factory AdapterReply.deposit(WireDeposit field0) = AdapterReply_Deposit;
+
+  /// 출금 조회 응답입니다.
+  const factory AdapterReply.withdrawal(WireWithdrawal field0) =
+      AdapterReply_Withdrawal;
 
   /// 입금 이력 응답입니다.
   const factory AdapterReply.deposits(WireDepositPage field0) =

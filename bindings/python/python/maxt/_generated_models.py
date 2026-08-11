@@ -395,6 +395,16 @@ class WithdrawRequest(WireModel):
 
 
 @dataclass(frozen=True)
+class TransferLookupRequest(WireModel):
+    asset: str
+    id: Optional[str] = None
+    tx_id: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "asset", _ascii_upper(self.asset))
+
+
+@dataclass(frozen=True)
 class TransferHistoryRequest(WireModel):
     asset: Optional[str] = None
     network: Optional[Network] = None
@@ -432,5 +442,6 @@ __all__ = [
     "OrderHistoryRequest",
     "DepositAddressRequest",
     "WithdrawRequest",
+    "TransferLookupRequest",
     "TransferHistoryRequest",
 ]

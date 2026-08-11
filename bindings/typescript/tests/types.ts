@@ -15,6 +15,7 @@ import {
   TransferError,
   TransferErrorKind,
   TransferHistoryRequest,
+  TransferLookupRequest,
   WithdrawRequest,
   type AssetNetwork,
   type Deposit,
@@ -47,6 +48,9 @@ const addresses: Promise<readonly DepositAddressEntry[]> = client.depositAddress
 const address = client.depositAddress(new DepositAddressRequest("BTC", Network.Bitcoin));
 const quote: Promise<WithdrawalQuote> = client.prepareWithdrawal(withdrawRequest);
 const withdrawal: Promise<Withdrawal> = client.withdraw(withdrawRequest);
+const deposit = client.deposit(new TransferLookupRequest("BTC", "deposit-1"));
+const withdrawalLookup = client.withdrawal(new TransferLookupRequest("BTC", "withdrawal-1"));
+const cancellation: Promise<void> = client.cancelWithdrawal("withdrawal-1");
 const deposits: Promise<Page<Deposit>> = client.deposits(new TransferHistoryRequest());
 const withdrawals: Promise<Page<Withdrawal>> = client.withdrawals(new TransferHistoryRequest());
 const orders = client.ordersByIds(new OrderLookupRequest(OrderIdKind.Exchange, ["order-1"], market));
@@ -61,6 +65,9 @@ void addresses;
 void address;
 void quote;
 void withdrawal;
+void deposit;
+void withdrawalLookup;
+void cancellation;
 void deposits;
 void withdrawals;
 void orders;

@@ -10,11 +10,12 @@ use futures_util::stream;
 use futures_util::{Stream, StreamExt};
 use maxt::{
     AccountEvent, AccountStream, Adapter, Balance, BoxFuture, CancelOrdersRequest,
-    CancelOrdersResult, CandleRequest, Client, Decimal, Error, Exchange, Feature, Feed,
-    HistoryRequest, Interval, MarginRequest, MarginSummary, Market, MarketEvent, MarketKind,
-    MarketStatus, MarketStream, Order, OrderAccount, OrderBook, OrderHistoryRequest,
+    CancelOrdersResult, CandleRequest, Client, Decimal, Deposit, DepositStatus, Error, Exchange,
+    Feature, Feed, HistoryRequest, Interval, MarginRequest, MarginSummary, Market, MarketEvent,
+    MarketKind, MarketStatus, MarketStream, Order, OrderAccount, OrderBook, OrderHistoryRequest,
     OrderLookupRequest, OrderOption, OrderRequest, OrderRules, OrderStatus, OrderType, Page,
     Result, Side, Size, StreamConfig, Subscription, Ticker, TimeInForce, Timestamp,
+    TransferLookupRequest, Withdrawal, WithdrawalStatus,
 };
 use maxt_bindings_common::{AdapterCall, AdapterReply, ForeignAdapter, ForeignDispatcher};
 
@@ -130,6 +131,38 @@ fn order(id: &str) -> Order {
         filled_quantity: Decimal::ZERO,
         remaining_quantity: Decimal::ONE,
         price: Some(Decimal::ONE),
+        created_at: None,
+    }
+}
+
+fn deposit() -> Deposit {
+    Deposit {
+        id: "deposit-1".to_string(),
+        asset: "BTC".to_string(),
+        network: None,
+        provider_network: None,
+        amount: Decimal::ONE,
+        address: None,
+        memo: None,
+        status: DepositStatus::Pending,
+        provider_status: "pending".to_string(),
+        tx_id: None,
+        created_at: None,
+    }
+}
+
+fn withdrawal() -> Withdrawal {
+    Withdrawal {
+        id: "withdrawal-1".to_string(),
+        asset: "BTC".to_string(),
+        network: None,
+        provider_network: None,
+        amount: Decimal::ONE,
+        fee: None,
+        destination: None,
+        status: WithdrawalStatus::Pending,
+        provider_status: "pending".to_string(),
+        tx_id: None,
         created_at: None,
     }
 }
@@ -388,6 +421,44 @@ async fn a_reply_variant_mismatch_is_an_adapter_error() {
     assert_eq!(
         error.to_string(),
         "adapter failed: foreign dispatcher returned Ticker where Trades was required"
+    );
+}
+
+#[tokio::test]
+async fn transfer_lookup_and_cancellation_use_operation_specific_replies() {
+    let dispatcher = RecordingDispatcher::new([
+        AdapterReply::Deposit(deposit()),
+        AdapterReply::LookupWithdrawal(withdrawal()),
+        AdapterReply::Unit,
+    ]);
+    let adapter = adapter(
+        dispatcher.clone(),
+        [
+            Feature::DepositLookup,
+            Feature::WithdrawalLookup,
+            Feature::WithdrawalCancellation,
+        ],
+    );
+    let lookup = TransferLookupRequest::by_id("BTC", "deposit-1");
+
+    assert_eq!(adapter.deposit(&lookup).await.unwrap().id, "deposit-1");
+    assert_eq!(
+        adapter.withdrawal(&lookup).await.unwrap().id,
+        "withdrawal-1"
+    );
+    adapter.cancel_withdrawal("withdrawal-1").await.unwrap();
+
+    assert_eq!(
+        dispatcher.calls(),
+        vec![
+            AdapterCall::Deposit {
+                request: lookup.clone(),
+            },
+            AdapterCall::Withdrawal { request: lookup },
+            AdapterCall::CancelWithdrawal {
+                withdrawal_id: "withdrawal-1".to_string(),
+            },
+        ]
     );
 }
 

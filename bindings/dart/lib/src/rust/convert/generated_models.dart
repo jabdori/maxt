@@ -727,6 +727,26 @@ class WireTransferHistoryRequest {
           limit == other.limit;
 }
 
+class WireTransferLookupRequest {
+  final String asset;
+  final String? id;
+  final String? txId;
+
+  const WireTransferLookupRequest({required this.asset, this.id, this.txId});
+
+  @override
+  int get hashCode => asset.hashCode ^ id.hashCode ^ txId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireTransferLookupRequest &&
+          runtimeType == other.runtimeType &&
+          asset == other.asset &&
+          id == other.id &&
+          txId == other.txId;
+}
+
 class WireTransferPlan {
   final WireExchange source;
   final WireExchange? destination;

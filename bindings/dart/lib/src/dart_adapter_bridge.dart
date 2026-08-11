@@ -628,6 +628,25 @@ final class DartAdapterBridge {
             (value) =>
                 native_adapter.AdapterReply.withdraw(_withdrawalToWire(value)),
           ),
+    native_adapter.AdapterCall_Deposit(:final request) =>
+      adapter
+          .deposit(_transferLookupRequestFromWire(request))
+          .then(
+            (value) =>
+                native_adapter.AdapterReply.deposit(_depositToWire(value)),
+          ),
+    native_adapter.AdapterCall_Withdrawal(:final request) =>
+      adapter
+          .withdrawal(_transferLookupRequestFromWire(request))
+          .then(
+            (value) => native_adapter.AdapterReply.withdrawal(
+              _withdrawalToWire(value),
+            ),
+          ),
+    native_adapter.AdapterCall_CancelWithdrawal(:final withdrawalId) =>
+      adapter
+          .cancelWithdrawal(withdrawalId)
+          .then((_) => const native_adapter.AdapterReply.unit()),
     native_adapter.AdapterCall_Deposits(:final request) =>
       adapter
           .deposits(_transferHistoryRequestFromWire(request))
@@ -958,6 +977,10 @@ final class DartAdapterBridge {
       Feature.depositAddresses,
     native_adapter.AdapterCall_PrepareWithdrawal() => Feature.withdrawalQuotes,
     native_adapter.AdapterCall_Withdraw() => Feature.withdrawals,
+    native_adapter.AdapterCall_Deposit() => Feature.depositLookup,
+    native_adapter.AdapterCall_Withdrawal() => Feature.withdrawalLookup,
+    native_adapter.AdapterCall_CancelWithdrawal() =>
+      Feature.withdrawalCancellation,
     native_adapter.AdapterCall_Deposits() => Feature.depositHistory,
     native_adapter.AdapterCall_Withdrawals() => Feature.withdrawalHistory,
     native_adapter.AdapterCall_OpenOrders() => Feature.openOrders,

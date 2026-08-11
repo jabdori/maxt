@@ -5,7 +5,8 @@ use crate::error::Result;
 use crate::feature::Feature;
 use crate::request::{
     CancelOrdersRequest, CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest,
-    OrderHistoryRequest, OrderLookupRequest, OrderRequest, TransferHistoryRequest, WithdrawRequest,
+    OrderHistoryRequest, OrderLookupRequest, OrderRequest, TransferHistoryRequest,
+    TransferLookupRequest, WithdrawRequest,
 };
 use crate::stream::{AccountStream, MarketStream};
 use crate::types::{
@@ -206,6 +207,33 @@ impl<A: Adapter> Client<A> {
     pub async fn withdraw(&self, request: &WithdrawRequest) -> Result<Withdrawal> {
         validate_withdraw_request(request)?;
         self.adapter.withdraw(request).await
+    }
+
+    /// Looks up one deposit by exchange UUID or transaction ID.
+    pub async fn deposit(&self, request: &TransferLookupRequest) -> Result<Deposit> {
+        request.reference()?;
+        self.adapter.deposit(request).await
+    }
+
+    /// Looks up one withdrawal by exchange UUID or transaction ID.
+    pub async fn withdrawal(&self, request: &TransferLookupRequest) -> Result<Withdrawal> {
+        request.reference()?;
+        self.adapter.withdrawal(request).await
+    }
+
+    /// Cancels a withdrawal that the exchange still permits to be cancelled.
+    ///
+    /// A successful return confirms only that the exchange accepted the
+    /// cancellation request. Call [`Self::withdrawal`] afterwards to observe
+    /// the terminal withdrawal state.
+    pub async fn cancel_withdrawal(&self, withdrawal_id: &str) -> Result<()> {
+        if withdrawal_id.trim().is_empty() {
+            return Err(crate::Error::invalid_request(
+                "withdrawal_id",
+                "withdrawal ID must not be empty",
+            ));
+        }
+        self.adapter.cancel_withdrawal(withdrawal_id).await
     }
 
     /// Reads one page of deposit history.

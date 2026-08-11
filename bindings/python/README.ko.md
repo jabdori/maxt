@@ -47,6 +47,9 @@ Binance 테스트넷(testnet) 생성자는 제공하지 않습니다. Hyperliqui
   `orders_by_ids()`, `order_history()`
 - 비공개 주문 가능 정보: Upbit, Bithumb의 `order_rules()`
 - 비공개 다건 취소: Upbit, Bithumb의 `cancel_orders()`
+- 비공개 입출금 조회·취소: Upbit, Bithumb의 `deposit()`, `withdrawal()`,
+  `cancel_withdrawal()`; 조회에는 자산과 거래소 ID 또는 온체인 트랜잭션 ID 하나가 필요하며,
+  취소 후에는 반드시 다시 조회해 최종 상태를 확인
 - 비공개 무기한 선물: Binance USD-M, Hyperliquid의 `positions()`,
   `margin_summary()`, `set_margin()`, `funding_payments()`
 

@@ -1242,7 +1242,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("withdraw"),
         Validation::Fixture,
     ),
-    planned(operation(
+    partial(operation(
         Exchange::Upbit,
         "wallet",
         "withdrawal",
@@ -1252,9 +1252,9 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         Authentication::Jwt,
         OperationRisk::Read,
         OperationMapping::Common("withdrawal"),
-        Validation::Documented,
+        Validation::Fixture,
     )),
-    planned(operation(
+    partial(operation(
         Exchange::Upbit,
         "wallet",
         "cancel_withdrawal",
@@ -1264,7 +1264,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         Authentication::Jwt,
         OperationRisk::FinancialWrite,
         OperationMapping::Common("cancel_withdrawal"),
-        Validation::Documented,
+        Validation::Fixture,
     )),
     operation(
         Exchange::Upbit,
@@ -1278,7 +1278,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("deposits"),
         Validation::Fixture,
     ),
-    planned(operation(
+    partial(operation(
         Exchange::Upbit,
         "wallet",
         "deposit",
@@ -1288,7 +1288,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         Authentication::Jwt,
         OperationRisk::Read,
         OperationMapping::Common("deposit"),
-        Validation::Documented,
+        Validation::Fixture,
     )),
     operation(
         Exchange::Upbit,
@@ -1758,7 +1758,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("withdraw"),
         Validation::Fixture,
     ),
-    planned(operation(
+    partial(operation(
         Exchange::Bithumb,
         "wallet",
         "withdrawal",
@@ -1768,9 +1768,9 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         Authentication::Jwt,
         OperationRisk::Read,
         OperationMapping::Common("withdrawal"),
-        Validation::Documented,
+        Validation::Fixture,
     )),
-    planned(operation(
+    partial(operation(
         Exchange::Bithumb,
         "wallet",
         "cancel_withdrawal",
@@ -1780,7 +1780,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         Authentication::Jwt,
         OperationRisk::FinancialWrite,
         OperationMapping::Common("cancel_withdrawal"),
-        Validation::Documented,
+        Validation::Fixture,
     )),
     operation(
         Exchange::Bithumb,
@@ -1794,7 +1794,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("deposits"),
         Validation::Fixture,
     ),
-    planned(operation(
+    partial(operation(
         Exchange::Bithumb,
         "wallet",
         "deposit",
@@ -1804,7 +1804,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         Authentication::Jwt,
         OperationRisk::Read,
         OperationMapping::Common("deposit"),
-        Validation::Documented,
+        Validation::Fixture,
     )),
     operation(
         Exchange::Bithumb,

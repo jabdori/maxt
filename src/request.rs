@@ -2,6 +2,7 @@
 
 use rust_decimal::Decimal;
 
+use crate::error::{Error, Result};
 use crate::types::{
     Cursor, Interval, MarginMode, Market, Network, OrderStatus, OrderType, Side, Size, TimeInForce,
     Timestamp, TransferDestination,
@@ -73,6 +74,72 @@ impl WithdrawRequest {
     pub fn client_id(mut self, client_id: impl Into<String>) -> Self {
         self.client_id = Some(client_id.into());
         self
+    }
+}
+
+/// Identifies one deposit or withdrawal by the exchange UUID or transaction ID.
+///
+/// Both currently supported exchanges require the asset symbol for a precise
+/// lookup. Exactly one reference is required; this deliberately never falls
+/// back to the provider's newest transfer.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TransferLookupRequest {
+    /// Asset symbol, uppercase.
+    pub asset: String,
+    /// Exchange-issued transfer UUID, when used as the reference.
+    pub id: Option<String>,
+    /// On-chain transaction ID, when used as the reference.
+    pub tx_id: Option<String>,
+}
+
+impl TransferLookupRequest {
+    /// Looks up one transfer by its exchange-issued UUID.
+    pub fn by_id(asset: impl Into<String>, id: impl Into<String>) -> Self {
+        Self {
+            asset: asset.into().to_ascii_uppercase(),
+            id: Some(id.into()),
+            tx_id: None,
+        }
+    }
+
+    /// Looks up one transfer by its on-chain transaction ID.
+    pub fn by_tx_id(asset: impl Into<String>, tx_id: impl Into<String>) -> Self {
+        Self {
+            asset: asset.into().to_ascii_uppercase(),
+            id: None,
+            tx_id: Some(tx_id.into()),
+        }
+    }
+
+    /// Validates that this request identifies exactly one transfer.
+    pub fn validate(&self) -> Result<()> {
+        self.reference().map(|_| ())
+    }
+
+    pub(crate) fn reference(&self) -> Result<(&'static str, &str)> {
+        if self.asset.trim().is_empty() {
+            return Err(Error::invalid_request("asset", "asset must not be empty"));
+        }
+        match (&self.id, &self.tx_id) {
+            (Some(id), None) if !id.trim().is_empty() => Ok(("uuid", id)),
+            (None, Some(tx_id)) if !tx_id.trim().is_empty() => Ok(("txid", tx_id)),
+            (None, None) => Err(Error::invalid_request(
+                "reference",
+                "set either an exchange transfer ID or a transaction ID",
+            )),
+            (Some(_), Some(_)) => Err(Error::invalid_request(
+                "reference",
+                "set exactly one of the exchange transfer ID or transaction ID",
+            )),
+            (Some(_), None) => Err(Error::invalid_request(
+                "id",
+                "exchange transfer ID must not be empty",
+            )),
+            (None, Some(_)) => Err(Error::invalid_request(
+                "tx_id",
+                "transaction ID must not be empty",
+            )),
+        }
     }
 }
 
@@ -618,5 +685,39 @@ mod tests {
         assert_eq!(leverage_only.margin_mode, None);
         assert_eq!(mode_only.leverage, None);
         assert_eq!(mode_only.margin_mode, Some(MarginMode::Isolated));
+    }
+
+    #[test]
+    fn transfer_lookup_requires_one_nonempty_reference() {
+        assert_eq!(
+            TransferLookupRequest::by_id("btc", "deposit-1")
+                .reference()
+                .expect("exchange ID"),
+            ("uuid", "deposit-1")
+        );
+        assert_eq!(
+            TransferLookupRequest::by_tx_id("btc", "tx-1")
+                .reference()
+                .expect("transaction ID"),
+            ("txid", "tx-1")
+        );
+        assert!(
+            TransferLookupRequest {
+                asset: "BTC".to_string(),
+                id: Some("deposit-1".to_string()),
+                tx_id: Some("tx-1".to_string()),
+            }
+            .reference()
+            .is_err()
+        );
+        assert!(
+            TransferLookupRequest {
+                asset: "BTC".to_string(),
+                id: None,
+                tx_id: None,
+            }
+            .validate()
+            .is_err()
+        );
     }
 }

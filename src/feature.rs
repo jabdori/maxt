@@ -90,12 +90,18 @@ define_features! {
     DepositAddresses => ("deposit_addresses", "reading deposit addresses"),
     /// Reading deposit history.
     DepositHistory => ("deposit_history", "reading deposit history"),
+    /// Looking up one deposit.
+    DepositLookup => ("deposit_lookup", "looking up deposits"),
     /// Checking a withdrawal before submitting it.
     WithdrawalQuotes => ("withdrawal_quotes", "checking withdrawals"),
     /// Submitting withdrawals.
     Withdrawals => ("withdrawals", "submitting withdrawals"),
     /// Reading withdrawal history.
     WithdrawalHistory => ("withdrawal_history", "reading withdrawal history"),
+    /// Looking up one withdrawal.
+    WithdrawalLookup => ("withdrawal_lookup", "looking up withdrawals"),
+    /// Cancelling a pending withdrawal.
+    WithdrawalCancellation => ("withdrawal_cancellation", "cancelling withdrawals"),
     /// Reading open orders.
     OpenOrders => ("open_orders", "reading open orders"),
     /// Reading one order or final-order history.
@@ -141,9 +147,12 @@ impl Feature {
             | Self::AssetNetworks
             | Self::DepositAddresses
             | Self::DepositHistory
+            | Self::DepositLookup
             | Self::WithdrawalQuotes
             | Self::Withdrawals
             | Self::WithdrawalHistory
+            | Self::WithdrawalLookup
+            | Self::WithdrawalCancellation
             | Self::OpenOrders
             | Self::OrderHistory
             | Self::AccountStream
@@ -200,10 +209,13 @@ mod tests {
     fn everything_touching_an_account_needs_credentials() {
         for feature in [
             Feature::Balances,
+            Feature::DepositLookup,
             Feature::OpenOrders,
             Feature::OrderHistory,
             Feature::AccountStream,
             Feature::Trading,
+            Feature::WithdrawalLookup,
+            Feature::WithdrawalCancellation,
             Feature::Positions,
             Feature::Margin,
             Feature::FundingPayments,

@@ -37,9 +37,12 @@ pub(crate) fn feature_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::Feat
         "asset_networks" => Ok(maxt::Feature::AssetNetworks),
         "deposit_addresses" => Ok(maxt::Feature::DepositAddresses),
         "deposit_history" => Ok(maxt::Feature::DepositHistory),
+        "deposit_lookup" => Ok(maxt::Feature::DepositLookup),
         "withdrawal_quotes" => Ok(maxt::Feature::WithdrawalQuotes),
         "withdrawals" => Ok(maxt::Feature::Withdrawals),
         "withdrawal_history" => Ok(maxt::Feature::WithdrawalHistory),
+        "withdrawal_lookup" => Ok(maxt::Feature::WithdrawalLookup),
+        "withdrawal_cancellation" => Ok(maxt::Feature::WithdrawalCancellation),
         "open_orders" => Ok(maxt::Feature::OpenOrders),
         "order_history" => Ok(maxt::Feature::OrderHistory),
         "account_stream" => Ok(maxt::Feature::AccountStream),
@@ -69,9 +72,12 @@ pub(crate) fn feature_to_wire(value: maxt::Feature) -> PyResult<&'static str> {
         maxt::Feature::AssetNetworks => Ok("asset_networks"),
         maxt::Feature::DepositAddresses => Ok("deposit_addresses"),
         maxt::Feature::DepositHistory => Ok("deposit_history"),
+        maxt::Feature::DepositLookup => Ok("deposit_lookup"),
         maxt::Feature::WithdrawalQuotes => Ok("withdrawal_quotes"),
         maxt::Feature::Withdrawals => Ok("withdrawals"),
         maxt::Feature::WithdrawalHistory => Ok("withdrawal_history"),
+        maxt::Feature::WithdrawalLookup => Ok("withdrawal_lookup"),
+        maxt::Feature::WithdrawalCancellation => Ok("withdrawal_cancellation"),
         maxt::Feature::OpenOrders => Ok("open_orders"),
         maxt::Feature::OrderHistory => Ok("order_history"),
         maxt::Feature::AccountStream => Ok("account_stream"),
@@ -1322,6 +1328,28 @@ pub(crate) fn withdraw_request_to_wire(
         "amount" => decimal_to_wire(value.amount),
         "destination" => transfer_destination_to_wire(py, &value.destination)?,
         "client_id" => &value.client_id,
+    )
+}
+
+pub(crate) fn transfer_lookup_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::TransferLookupRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::TransferLookupRequest {
+        asset: required(dict, "asset")?.extract::<String>()?,
+        id: optional(dict, "id")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        tx_id: optional(dict, "tx_id")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+    })
+}
+
+pub(crate) fn transfer_lookup_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::TransferLookupRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "asset" => &value.asset,
+        "id" => &value.id,
+        "tx_id" => &value.tx_id,
     )
 }
 

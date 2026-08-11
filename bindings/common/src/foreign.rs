@@ -7,8 +7,8 @@ use maxt::{
     DepositAddressRequest, Exchange, Feature, FundingPayment, FundingRate, HistoryRequest,
     MarginRequest, MarginSummary, Market, MarketInfo, MarketKind, MarketStream, Order, OrderBook,
     OrderHistoryRequest, OrderLookupRequest, OrderRequest, OrderRules, Page, Position, Result,
-    StreamConfig, Subscription, Ticker, Trade, TransferHistoryRequest, WithdrawRequest, Withdrawal,
-    WithdrawalQuote,
+    StreamConfig, Subscription, Ticker, Trade, TransferHistoryRequest, TransferLookupRequest,
+    WithdrawRequest, Withdrawal, WithdrawalQuote,
 };
 
 use crate::{AdapterCall, AdapterReply, ForeignDispatcher};
@@ -229,6 +229,40 @@ impl Adapter for ForeignAdapter {
             AdapterReply::Withdrawal,
             "Withdrawal"
         )
+    }
+
+    fn deposit(&self, request: &TransferLookupRequest) -> BoxFuture<'_, Result<Deposit>> {
+        dispatch!(
+            self,
+            AdapterCall::Deposit {
+                request: request.clone(),
+            },
+            AdapterReply::Deposit,
+            "Deposit"
+        )
+    }
+
+    fn withdrawal(&self, request: &TransferLookupRequest) -> BoxFuture<'_, Result<Withdrawal>> {
+        dispatch!(
+            self,
+            AdapterCall::Withdrawal {
+                request: request.clone(),
+            },
+            AdapterReply::LookupWithdrawal,
+            "LookupWithdrawal"
+        )
+    }
+
+    fn cancel_withdrawal(&self, withdrawal_id: &str) -> BoxFuture<'_, Result<()>> {
+        let future = self.dispatcher.dispatch(AdapterCall::CancelWithdrawal {
+            withdrawal_id: withdrawal_id.to_owned(),
+        });
+        Box::pin(async move {
+            match future.await? {
+                AdapterReply::Unit => Ok(()),
+                reply => Err(unexpected_reply("Unit", &reply)),
+            }
+        })
     }
 
     fn deposits(&self, request: &TransferHistoryRequest) -> BoxFuture<'_, Result<Page<Deposit>>> {

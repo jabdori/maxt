@@ -72,6 +72,19 @@ abstract base class GeneratedClient<A extends Adapter> {
   Future<Withdrawal> withdraw(WithdrawRequest request) =>
       _native.withdraw(request);
 
+  Future<Deposit> deposit(TransferLookupRequest request) async {
+    _validateTransferLookupRequest(request);
+    return _native.deposit(request);
+  }
+
+  Future<Withdrawal> withdrawal(TransferLookupRequest request) async {
+    _validateTransferLookupRequest(request);
+    return _native.withdrawal(request);
+  }
+
+  Future<void> cancelWithdrawal(String withdrawalId) =>
+      _native.cancelWithdrawal(withdrawalId);
+
   Future<Page<Deposit>> deposits(TransferHistoryRequest request) async {
     checkedUint32(request.limit, field: 'limit');
     return _native.deposits(request);
@@ -177,4 +190,39 @@ abstract base class GeneratedClient<A extends Adapter> {
 
   static List<Position> _openPositions(List<Position> positions) =>
       positions.where((position) => !position.isFlat).toList(growable: false);
+}
+
+void _validateTransferLookupRequest(TransferLookupRequest request) {
+  if (request.asset.trim().isEmpty) {
+    throw const InvalidRequestError(
+      field: 'asset',
+      detail: 'asset must not be empty',
+    );
+  }
+  final id = request.id;
+  final txId = request.txId;
+  if (id == null && txId == null) {
+    throw const InvalidRequestError(
+      field: 'reference',
+      detail: 'set either an exchange transfer ID or a transaction ID',
+    );
+  }
+  if (id != null && txId != null) {
+    throw const InvalidRequestError(
+      field: 'reference',
+      detail: 'set exactly one of the exchange transfer ID or transaction ID',
+    );
+  }
+  if (id != null && id.trim().isEmpty) {
+    throw const InvalidRequestError(
+      field: 'id',
+      detail: 'exchange transfer ID must not be empty',
+    );
+  }
+  if (txId != null && txId.trim().isEmpty) {
+    throw const InvalidRequestError(
+      field: 'tx_id',
+      detail: 'transaction ID must not be empty',
+    );
+  }
 }

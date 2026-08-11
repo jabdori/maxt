@@ -208,6 +208,47 @@ impl NativeClient {
         )
     }
 
+    fn deposit<'py>(
+        &self,
+        py: Python<'py>,
+        request: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::transfer_lookup_request_from_wire(request)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.deposit(&request).await },
+            |py, value| crate::convert::deposit_to_wire(py, &value),
+        )
+    }
+
+    fn withdrawal<'py>(
+        &self,
+        py: Python<'py>,
+        request: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::transfer_lookup_request_from_wire(request)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.withdrawal(&request).await },
+            |py, value| crate::convert::withdrawal_to_wire(py, &value),
+        )
+    }
+
+    fn cancel_withdrawal<'py>(
+        &self,
+        py: Python<'py>,
+        withdrawal_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let core = self.core();
+        operation(
+            py,
+            async move { core.cancel_withdrawal(&withdrawal_id).await },
+            |py, ()| Ok(py.None()),
+        )
+    }
+
     fn deposits<'py>(
         &self,
         py: Python<'py>,

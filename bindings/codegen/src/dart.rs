@@ -484,8 +484,15 @@ fn render_rust_wire_record(schema: &Schema, name: &str, fields: &[Field]) -> Str
             )
         })
         .collect::<String>();
+    let from_body = if name == "TransferLookupRequest" {
+        format!(
+            "        let request = Self {{\n{from_fields}        }};\n        request.validate().map_err(NativeError::from)?;\n        Ok(request)"
+        )
+    } else {
+        format!("        Ok(Self {{\n{from_fields}        }})")
+    };
     format!(
-        "\n#[derive(Debug, Clone, PartialEq, Eq)]\npub struct Wire{name} {{\n{declarations}}}\n\nimpl From<maxt::{name}> for Wire{name} {{\n    fn from(value: maxt::{name}) -> Self {{\n        Self {{\n{to_fields}        }}\n    }}\n}}\n\nimpl TryFrom<Wire{name}> for maxt::{name} {{\n    type Error = NativeError;\n\n    fn try_from(value: Wire{name}) -> Result<Self, Self::Error> {{\n        Ok(Self {{\n{from_fields}        }})\n    }}\n}}\n"
+        "\n#[derive(Debug, Clone, PartialEq, Eq)]\npub struct Wire{name} {{\n{declarations}}}\n\nimpl From<maxt::{name}> for Wire{name} {{\n    fn from(value: maxt::{name}) -> Self {{\n        Self {{\n{to_fields}        }}\n    }}\n}}\n\nimpl TryFrom<Wire{name}> for maxt::{name} {{\n    type Error = NativeError;\n\n    fn try_from(value: Wire{name}) -> Result<Self, Self::Error> {{\n{from_body}\n    }}\n}}\n"
     )
 }
 
@@ -897,7 +904,7 @@ pub(crate) fn render_client_api(schema: &Schema) -> String {
         output.push('\n');
         output.push_str(&render_composed_client_method(method));
     }
-    output.push_str("\n  static List<Position> _openPositions(List<Position> positions) =>\n      positions.where((position) => !position.isFlat).toList(growable: false);\n}\n");
+    output.push_str("\n  static List<Position> _openPositions(List<Position> positions) =>\n      positions.where((position) => !position.isFlat).toList(growable: false);\n}\n\nvoid _validateTransferLookupRequest(TransferLookupRequest request) {\n  if (request.asset.trim().isEmpty) {\n    throw const InvalidRequestError(\n      field: 'asset',\n      detail: 'asset must not be empty',\n    );\n  }\n  final id = request.id;\n  final txId = request.txId;\n  if (id == null && txId == null) {\n    throw const InvalidRequestError(\n      field: 'reference',\n      detail: 'set either an exchange transfer ID or a transaction ID',\n    );\n  }\n  if (id != null && txId != null) {\n    throw const InvalidRequestError(\n      field: 'reference',\n      detail: 'set exactly one of the exchange transfer ID or transaction ID',\n    );\n  }\n  if (id != null && id.trim().isEmpty) {\n    throw const InvalidRequestError(\n      field: 'id',\n      detail: 'exchange transfer ID must not be empty',\n    );\n  }\n  if (txId != null && txId.trim().isEmpty) {\n    throw const InvalidRequestError(\n      field: 'tx_id',\n      detail: 'transaction ID must not be empty',\n    );\n  }\n}\n");
     output
 }
 
@@ -1416,6 +1423,7 @@ fn render_native_method(operation: &Operation) -> String {
                 | "MarginRequest"
                 | "DepositAddressRequest"
                 | "WithdrawRequest"
+                | "TransferLookupRequest"
                 | "TransferHistoryRequest",
             ) => {
                 output.push_str(&format!("        let {name} = {name}.try_into()?;\n"));
@@ -1484,6 +1492,7 @@ fn native_call_argument(argument: &Argument) -> String {
             | "MarginRequest"
             | "DepositAddressRequest"
             | "WithdrawRequest"
+            | "TransferLookupRequest"
             | "TransferHistoryRequest",
         ) => format!("&{name}"),
         ApiType::Named(_) => format!("&{name}.into()"),
@@ -2137,6 +2146,12 @@ fn render_client_method(
         "cancelOrders" => {
             " async {\n    if (request.ids.isEmpty) {\n      throw const InvalidRequestError(\n        field: 'ids',\n        detail: 'a batch cancellation requires at least one identifier',\n      );\n    }\n    if (request.ids.any((id) => id.trim().isEmpty)) {\n      throw const InvalidRequestError(\n        field: 'ids',\n        detail: 'order identifiers must not be empty',\n      );\n    }\n    return _native.cancelOrders(request);\n  }"
         }
+        "deposit" | "withdrawal" => {
+            return format!(
+                "{signature} async {{\n    _validateTransferLookupRequest(request);\n    return _native.{}(request);\n  }}\n",
+                method.native_name
+            );
+        }
         "subscribeAccount" => " =>\n      subscribeAccountWith(defaultStreamConfig());",
         "subscribeAccountWith" => {
             " async {\n    validateStreamConfigIntegers(config);\n    return _native.subscribeAccount(config);\n  }"
@@ -2369,7 +2384,7 @@ mod tests {
     use super::{
         render_adapter_api, render_client_api, render_delegate_methods, render_identifiers,
         render_models, render_native_client_api, render_provider_guard, render_provider_methods,
-        render_rust_adapter_dispatch, render_wire_shape_guard,
+        render_rust_adapter_dispatch, render_rust_models, render_wire_shape_guard,
     };
 
     #[test]
@@ -2413,6 +2428,9 @@ mod tests {
         assert!(client.contains("an order lookup requires 1 to 100 identifiers"));
         assert!(client.contains("a batch cancellation requires at least one identifier"));
         assert!(client.contains("order identifiers must not be empty"));
+        assert!(client.contains("_validateTransferLookupRequest(request)"));
+        assert!(client.contains("set exactly one of the exchange transfer ID or transaction ID"));
+        assert!(client.contains("field: 'tx_id'"));
     }
 
     #[test]
@@ -2430,7 +2448,16 @@ mod tests {
         }
         assert!(!output.contains("pub async fn subscribe("));
         assert!(output.contains("let request = request.try_into()?;"));
+        assert!(output.contains(".deposit(&request)"));
+        assert!(output.contains(".withdrawal(&request)"));
         assert!(output.contains("positions.retain(|position| !position.is_flat())"));
+    }
+
+    #[test]
+    fn transfer_lookup_wire_validates_its_single_reference() {
+        let output = render_rust_models(&binding_schema());
+
+        assert!(output.contains("request.validate().map_err(NativeError::from)?;"));
     }
 
     #[test]

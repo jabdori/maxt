@@ -7,7 +7,8 @@ use crate::error::{Error, Result};
 use crate::feature::Feature;
 use crate::request::{
     CancelOrdersRequest, CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest,
-    OrderHistoryRequest, OrderLookupRequest, OrderRequest, TransferHistoryRequest, WithdrawRequest,
+    OrderHistoryRequest, OrderLookupRequest, OrderRequest, TransferHistoryRequest,
+    TransferLookupRequest, WithdrawRequest,
 };
 use crate::stream::{AccountStream, MarketStream};
 use crate::types::{
@@ -165,6 +166,24 @@ pub trait Adapter: Send + Sync + 'static {
     fn withdraw(&self, request: &WithdrawRequest) -> BoxFuture<'_, Result<Withdrawal>> {
         let _ = request;
         unsupported(self.exchange(), Feature::Withdrawals)
+    }
+
+    /// Looks up one deposit by exchange UUID or transaction ID.
+    fn deposit(&self, request: &TransferLookupRequest) -> BoxFuture<'_, Result<Deposit>> {
+        let _ = request;
+        unsupported(self.exchange(), Feature::DepositLookup)
+    }
+
+    /// Looks up one withdrawal by exchange UUID or transaction ID.
+    fn withdrawal(&self, request: &TransferLookupRequest) -> BoxFuture<'_, Result<Withdrawal>> {
+        let _ = request;
+        unsupported(self.exchange(), Feature::WithdrawalLookup)
+    }
+
+    /// Cancels a withdrawal that the exchange still permits to be cancelled.
+    fn cancel_withdrawal(&self, withdrawal_id: &str) -> BoxFuture<'_, Result<()>> {
+        let _ = withdrawal_id;
+        unsupported(self.exchange(), Feature::WithdrawalCancellation)
     }
 
     /// Reads one page of deposit history.
@@ -376,6 +395,18 @@ impl Adapter for Box<dyn Adapter> {
 
     fn withdraw(&self, request: &WithdrawRequest) -> BoxFuture<'_, Result<Withdrawal>> {
         (**self).withdraw(request)
+    }
+
+    fn deposit(&self, request: &TransferLookupRequest) -> BoxFuture<'_, Result<Deposit>> {
+        (**self).deposit(request)
+    }
+
+    fn withdrawal(&self, request: &TransferLookupRequest) -> BoxFuture<'_, Result<Withdrawal>> {
+        (**self).withdrawal(request)
+    }
+
+    fn cancel_withdrawal(&self, withdrawal_id: &str) -> BoxFuture<'_, Result<()>> {
+        (**self).cancel_withdrawal(withdrawal_id)
     }
 
     fn deposits(&self, request: &TransferHistoryRequest) -> BoxFuture<'_, Result<Page<Deposit>>> {

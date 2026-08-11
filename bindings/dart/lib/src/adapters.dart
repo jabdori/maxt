@@ -234,6 +234,20 @@ abstract base class _NativeAdapterBase
   ).then(_withdrawalFromWire);
 
   @override
+  Future<Deposit> deposit(TransferLookupRequest request) => _nativeFuture(
+    () => _handle.deposit(request: _transferLookupRequestToWire(request)),
+  ).then(_depositFromWire);
+
+  @override
+  Future<Withdrawal> withdrawal(TransferLookupRequest request) => _nativeFuture(
+    () => _handle.withdrawal(request: _transferLookupRequestToWire(request)),
+  ).then(_withdrawalFromWire);
+
+  @override
+  Future<void> cancelWithdrawal(String withdrawalId) =>
+      _nativeFuture(() => _handle.cancelWithdrawal(withdrawalId: withdrawalId));
+
+  @override
   Future<Page<Deposit>> deposits(TransferHistoryRequest request) =>
       _nativeFuture(
         () => _handle.deposits(request: _transferHistoryRequestToWire(request)),

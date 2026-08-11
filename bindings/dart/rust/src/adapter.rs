@@ -10,13 +10,13 @@ use maxt_bindings_common::{
 
 use crate::convert::{
     NativeError, WireAssetNetwork, WireBalance, WireCancelOrdersRequest, WireCancelOrdersResult,
-    WireCandle, WireCandleRequest, WireDepositAddress, WireDepositAddressEntry,
+    WireCandle, WireCandleRequest, WireDeposit, WireDepositAddress, WireDepositAddressEntry,
     WireDepositAddressRequest, WireDepositPage, WireExchange, WireFeature, WireFundingPaymentPage,
     WireFundingRatePage, WireHistoryRequest, WireMarginRequest, WireMarginSummary, WireMarket,
     WireMarketInfo, WireMarketKind, WireOrder, WireOrderBook, WireOrderHistoryRequest,
     WireOrderLookupRequest, WireOrderPage, WireOrderRequest, WireOrderRules, WirePosition,
-    WireTicker, WireTrade, WireTransferHistoryRequest, WireWithdrawRequest, WireWithdrawal,
-    WireWithdrawalPage, WireWithdrawalQuote,
+    WireTicker, WireTrade, WireTransferHistoryRequest, WireTransferLookupRequest,
+    WireWithdrawRequest, WireWithdrawal, WireWithdrawalPage, WireWithdrawalQuote,
 };
 use crate::stream::{
     AccountStreamSink, CancelCallback, CancelFuture, MarketStreamSink, account_stream_channel,
@@ -133,6 +133,12 @@ pub enum AdapterCall {
     PrepareWithdrawal { request: WireWithdrawRequest },
     /// 출금 제출을 요청합니다.
     Withdraw { request: WireWithdrawRequest },
+    /// 입금 조회를 요청합니다.
+    Deposit { request: WireTransferLookupRequest },
+    /// 출금 조회를 요청합니다.
+    Withdrawal { request: WireTransferLookupRequest },
+    /// 출금 취소를 요청합니다.
+    CancelWithdrawal { withdrawal_id: String },
     /// 입금 이력을 요청합니다.
     Deposits { request: WireTransferHistoryRequest },
     /// 출금 이력을 요청합니다.
@@ -224,6 +230,10 @@ pub enum AdapterReply {
     PrepareWithdrawal(WireWithdrawalQuote),
     /// 출금 접수 응답입니다.
     Withdraw(WireWithdrawal),
+    /// 입금 조회 응답입니다.
+    Deposit(WireDeposit),
+    /// 출금 조회 응답입니다.
+    Withdrawal(WireWithdrawal),
     /// 입금 이력 응답입니다.
     Deposits(WireDepositPage),
     /// 출금 이력 응답입니다.
@@ -268,6 +278,8 @@ impl AdapterReply {
             Self::CreateDepositAddress(_) => "CreateDepositAddress",
             Self::PrepareWithdrawal(_) => "PrepareWithdrawal",
             Self::Withdraw(_) => "Withdraw",
+            Self::Deposit(_) => "Deposit",
+            Self::Withdrawal(_) => "Withdrawal",
             Self::Deposits(_) => "Deposits",
             Self::Withdrawals(_) => "Withdrawals",
             Self::OpenOrders(_) => "OpenOrders",
@@ -399,6 +411,8 @@ enum ExpectedReply {
     CreateDepositAddress,
     PrepareWithdrawal,
     Withdraw,
+    Deposit,
+    Withdrawal,
     Deposits,
     Withdrawals,
     OpenOrders,
@@ -431,6 +445,8 @@ impl ExpectedReply {
             Self::CreateDepositAddress => "CreateDepositAddress",
             Self::PrepareWithdrawal => "PrepareWithdrawal",
             Self::Withdraw => "Withdraw",
+            Self::Deposit => "Deposit",
+            Self::Withdrawal => "Withdrawal",
             Self::Deposits => "Deposits",
             Self::Withdrawals => "Withdrawals",
             Self::OpenOrders => "OpenOrders",
@@ -532,6 +548,14 @@ impl AdapterReply {
                 .try_into()
                 .map(CommonAdapterReply::Withdrawal)
                 .map_err(|error| invalid_reply("Withdraw", error)),
+            (ExpectedReply::Deposit, Self::Deposit(value)) => value
+                .try_into()
+                .map(CommonAdapterReply::Deposit)
+                .map_err(|error| invalid_reply("Deposit", error)),
+            (ExpectedReply::Withdrawal, Self::Withdrawal(value)) => value
+                .try_into()
+                .map(CommonAdapterReply::LookupWithdrawal)
+                .map_err(|error| invalid_reply("Withdrawal", error)),
             (ExpectedReply::Deposits, Self::Deposits(value)) => value
                 .try_into()
                 .map(CommonAdapterReply::Deposits)

@@ -41,16 +41,16 @@ use crate::convert::outcome;
 use crate::convert::{
     WireAccountStreamItem, WireAssetNetwork, WireBalance, WireCancelOrdersResult, WireCandle,
     WireDeposit, WireDepositAddress, WireDepositAddressEntry, WireFundingPayment, WireFundingRate,
-    WireMarginSummary,
-    WireMarketInfo, WireMarketStreamItem, WireOrder, WireOrderBook, WireOrderRules, WirePage,
-    WirePosition, WireTicker, WireTrade, WireWithdrawal, WireWithdrawalQuote,
+    WireMarginSummary, WireMarketInfo, WireMarketStreamItem, WireOrder, WireOrderBook,
+    WireOrderRules, WirePage, WirePosition, WireTicker, WireTrade, WireWithdrawal,
+    WireWithdrawalQuote,
 };
 use crate::convert::{
     WireCancelOrdersRequest, WireCandleRequest, WireDepositAddressRequest, WireError,
     WireHistoryRequest, WireMarginRequest, WireMarket, WireOrderHistoryRequest,
     WireOrderLookupRequest, WireOrderRequest, WireStreamConfig, WireSubscription,
-    WireTransferHistoryRequest, WireWithdrawRequest, feature_from_id, from_wire_text,
-    from_wire_value,
+    WireTransferHistoryRequest, WireTransferLookupRequest, WireWithdrawRequest, feature_from_id,
+    from_wire_text, from_wire_value,
 };
 
 #[derive(Debug, Serialize)]
@@ -97,6 +97,15 @@ enum WireAdapterCall {
     },
     Withdraw {
         request: WireWithdrawRequest,
+    },
+    Deposit {
+        request: WireTransferLookupRequest,
+    },
+    Withdrawal {
+        request: WireTransferLookupRequest,
+    },
+    CancelWithdrawal {
+        withdrawal_id: String,
     },
     Deposits {
         request: WireTransferHistoryRequest,
@@ -172,6 +181,8 @@ enum WireAdapterReply {
     CreateDepositAddress { value: WireDepositAddress },
     WithdrawalQuote { value: WireWithdrawalQuote },
     Withdrawal { value: WireWithdrawal },
+    Deposit { value: WireDeposit },
+    WithdrawalLookup { value: WireWithdrawal },
     Deposits { value: WirePage<WireDeposit> },
     Withdrawals { value: WirePage<WireWithdrawal> },
     OpenOrders { value: Vec<WireOrder> },
@@ -235,6 +246,15 @@ fn call_to_wire(call: AdapterCall, stream_id: Option<String>) -> maxt::Result<Wi
         AdapterCall::Withdraw { request } => Ok(WireAdapterCall::Withdraw {
             request: request.try_into()?,
         }),
+        AdapterCall::Deposit { request } => Ok(WireAdapterCall::Deposit {
+            request: request.try_into()?,
+        }),
+        AdapterCall::Withdrawal { request } => Ok(WireAdapterCall::Withdrawal {
+            request: request.try_into()?,
+        }),
+        AdapterCall::CancelWithdrawal { withdrawal_id } => {
+            Ok(WireAdapterCall::CancelWithdrawal { withdrawal_id })
+        }
         AdapterCall::Deposits { request } => Ok(WireAdapterCall::Deposits {
             request: request.try_into()?,
         }),
@@ -630,6 +650,10 @@ impl JsForeignDispatcher {
             WireAdapterReply::Withdrawal { value } => {
                 value.try_into().map(AdapterReply::Withdrawal)
             }
+            WireAdapterReply::Deposit { value } => value.try_into().map(AdapterReply::Deposit),
+            WireAdapterReply::WithdrawalLookup { value } => {
+                value.try_into().map(AdapterReply::LookupWithdrawal)
+            }
             WireAdapterReply::Deposits { value } => value.try_into().map(AdapterReply::Deposits),
             WireAdapterReply::Withdrawals { value } => {
                 value.try_into().map(AdapterReply::Withdrawals)
@@ -771,7 +795,7 @@ mod tests {
         CandleRequest, ChainDestination, Decimal, DepositAddressRequest, HistoryRequest,
         MarginRequest, Market, MarketEvent, MarketStream, Network, OrderHistoryRequest,
         OrderRequest, Side, Size, StreamConfig, Subscription, TransferDestination,
-        TransferHistoryRequest, WithdrawRequest,
+        TransferHistoryRequest, TransferLookupRequest, WithdrawRequest,
     };
 
     use super::*;
@@ -858,6 +882,15 @@ mod tests {
             AdapterCall::Withdraw {
                 request: withdraw_request,
             },
+            AdapterCall::Deposit {
+                request: TransferLookupRequest::by_id("BTC", "deposit-1"),
+            },
+            AdapterCall::Withdrawal {
+                request: TransferLookupRequest::by_tx_id("BTC", "tx-1"),
+            },
+            AdapterCall::CancelWithdrawal {
+                withdrawal_id: "withdrawal-1".to_owned(),
+            },
             AdapterCall::Deposits {
                 request: TransferHistoryRequest::new(),
             },
@@ -921,6 +954,9 @@ mod tests {
             "create_deposit_address",
             "prepare_withdrawal",
             "withdraw",
+            "deposit",
+            "withdrawal",
+            "cancel_withdrawal",
             "deposits",
             "withdrawals",
             "open_orders",

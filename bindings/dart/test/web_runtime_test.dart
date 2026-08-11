@@ -9,17 +9,35 @@ import 'package:test/test.dart';
 final class _ConfigAdapter extends AdapterBase {
   StreamConfig? received;
   int tradeCalls = 0;
+  int depositCalls = 0;
+  int withdrawalCalls = 0;
 
   @override
   Exchange get exchange => Exchange.binance;
 
   @override
-  Set<Feature> get features => const {Feature.tradeStream};
+  Set<Feature> get features => const {
+    Feature.tradeStream,
+    Feature.depositLookup,
+    Feature.withdrawalLookup,
+  };
 
   @override
   Future<List<Trade>> trades(Market market, [int? limit]) async {
     tradeCalls++;
     return const [];
+  }
+
+  @override
+  Future<Deposit> deposit(TransferLookupRequest request) async {
+    depositCalls++;
+    throw StateError('invalid deposit lookup reached the custom adapter');
+  }
+
+  @override
+  Future<Withdrawal> withdrawal(TransferLookupRequest request) async {
+    withdrawalCalls++;
+    throw StateError('invalid withdrawal lookup reached the custom adapter');
   }
 
   @override
@@ -104,5 +122,46 @@ void main() {
     );
     expect(adapter.tradeCalls, 0);
     expect(adapter.received, isNull);
+  });
+
+  test('Web 사용자 정의 Adapter에 유효하지 않은 입출금 조회를 전달하지 않는다', () async {
+    final adapter = _ConfigAdapter();
+    final client = Client(adapter);
+
+    await expectLater(
+      client.deposit(TransferLookupRequest(asset: 'BTC')),
+      throwsA(
+        isA<InvalidRequestError>().having(
+          (error) => error.field,
+          'field',
+          'reference',
+        ),
+      ),
+    );
+    await expectLater(
+      client.withdrawal(
+        TransferLookupRequest(asset: 'BTC', id: 'withdrawal-1', txId: 'tx-1'),
+      ),
+      throwsA(
+        isA<InvalidRequestError>().having(
+          (error) => error.field,
+          'field',
+          'reference',
+        ),
+      ),
+    );
+    await expectLater(
+      client.withdrawal(TransferLookupRequest(asset: 'BTC', txId: '  ')),
+      throwsA(
+        isA<InvalidRequestError>().having(
+          (error) => error.field,
+          'field',
+          'tx_id',
+        ),
+      ),
+    );
+
+    expect(adapter.depositCalls, 0);
+    expect(adapter.withdrawalCalls, 0);
   });
 }

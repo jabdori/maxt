@@ -14,7 +14,8 @@ use crate::error::{Error, Result};
 use crate::feature::Feature;
 use crate::request::{
     CancelOrdersRequest, CandleRequest, DepositAddressRequest, OrderHistoryRequest,
-    OrderLookupRequest, OrderRequest, TransferHistoryRequest, WithdrawRequest,
+    OrderLookupRequest, OrderRequest, TransferHistoryRequest, TransferLookupRequest,
+    WithdrawRequest,
 };
 use crate::stream::{AccountStream, MarketStream};
 use crate::transport::{HttpTransport, WsCommand, WsConnect, WsSession, ws};
@@ -364,6 +365,25 @@ impl Adapter for UpbitAdapter {
         })
     }
 
+    fn deposit(&self, request: &TransferLookupRequest) -> BoxFuture<'_, Result<Deposit>> {
+        let request = request.clone();
+        Box::pin(async move { wallet::deposit(self.credentials()?, self.http()?, &request).await })
+    }
+
+    fn withdrawal(&self, request: &TransferLookupRequest) -> BoxFuture<'_, Result<Withdrawal>> {
+        let request = request.clone();
+        Box::pin(
+            async move { wallet::withdrawal(self.credentials()?, self.http()?, &request).await },
+        )
+    }
+
+    fn cancel_withdrawal(&self, withdrawal_id: &str) -> BoxFuture<'_, Result<()>> {
+        let withdrawal_id = withdrawal_id.to_owned();
+        Box::pin(async move {
+            wallet::cancel_withdrawal(self.credentials()?, self.http()?, &withdrawal_id).await
+        })
+    }
+
     fn deposits(&self, request: &TransferHistoryRequest) -> BoxFuture<'_, Result<Page<Deposit>>> {
         let request = request.clone();
         Box::pin(async move { wallet::deposits(self.credentials()?, self.http()?, &request).await })
@@ -559,9 +579,12 @@ mod tests {
             Feature::AssetNetworks,
             Feature::DepositAddresses,
             Feature::DepositHistory,
+            Feature::DepositLookup,
             Feature::WithdrawalQuotes,
             Feature::Withdrawals,
             Feature::WithdrawalHistory,
+            Feature::WithdrawalLookup,
+            Feature::WithdrawalCancellation,
             Feature::Trading,
             Feature::AccountStream,
         ] {

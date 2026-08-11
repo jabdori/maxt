@@ -12,7 +12,7 @@ import 'stream.dart';
 
 // These functions are ignored because they are not marked as `pub`: `as_adapter`, `binance`, `built_in`, `credential_pair`, `from_adapter`, `from_built_in`, `provider_mismatch`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `BuiltInAdapter`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `balances`, `cancel_order`, `candles`, `clone`, `clone`, `eq`, `eq`, `exchange`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`, `from`, `funding_payments`, `funding_rates`, `margin_summary`, `markets`, `open_orders`, `order_book`, `place_order`, `positions`, `set_margin`, `subscribe_account`, `subscribe`, `supports`, `ticker`, `trades`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `asset_networks`, `balances`, `cancel_order_by_client_id`, `cancel_order`, `cancel_orders`, `cancel_withdrawal`, `candles`, `clone`, `clone`, `create_deposit_address`, `deposit_address`, `deposit_addresses`, `deposit`, `deposits`, `eq`, `eq`, `exchange`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`, `from`, `funding_payments`, `funding_rates`, `margin_summary`, `markets`, `open_orders`, `order_book`, `order_by_client_id`, `order_history`, `order_rules`, `order`, `orders_by_ids`, `place_order`, `positions`, `prepare_withdrawal`, `set_margin`, `subscribe_account`, `subscribe`, `supports`, `ticker`, `trades`, `withdraw`, `withdrawal`, `withdrawals`
 
 /// 설치된 Dart/Rust 경계의 버전입니다.
 String bridgeVersion() => MaxtRustLib.instance.api.crateApiBridgeVersion();
@@ -144,11 +144,15 @@ abstract class NativeClient implements RustOpaqueInterface {
     required WireCancelOrdersRequest request,
   });
 
+  Future<void> cancelWithdrawal({required String withdrawalId});
+
   Future<List<WireCandle>> candles({required WireCandleRequest request});
 
   Future<WireDepositAddress> createDepositAddress({
     required WireDepositAddressRequest request,
   });
+
+  Future<WireDeposit> deposit({required WireTransferLookupRequest request});
 
   Future<WireDepositAddress> depositAddress({
     required WireDepositAddressRequest request,
@@ -289,6 +293,10 @@ abstract class NativeClient implements RustOpaqueInterface {
   Future<List<WireTicker>> upbitTickers({required List<WireMarket> markets});
 
   Future<WireWithdrawal> withdraw({required WireWithdrawRequest request});
+
+  Future<WireWithdrawal> withdrawal({
+    required WireTransferLookupRequest request,
+  });
 
   Future<WireWithdrawalPage> withdrawals({
     required WireTransferHistoryRequest request,

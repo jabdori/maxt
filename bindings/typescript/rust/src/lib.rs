@@ -15,10 +15,10 @@ mod web;
 
 #[cfg(not(target_arch = "wasm32"))]
 #[napi]
-pub const NATIVE_API_VERSION: u32 = 11;
+pub const NATIVE_API_VERSION: u32 = 12;
 
 #[cfg(target_arch = "wasm32")]
-#[wasm_bindgen(inline_js = "export const NATIVE_API_VERSION = 11;")]
+#[wasm_bindgen(inline_js = "export const NATIVE_API_VERSION = 12;")]
 extern "C" {
     #[wasm_bindgen(thread_local_v2, reexport)]
     static NATIVE_API_VERSION: JsValue;

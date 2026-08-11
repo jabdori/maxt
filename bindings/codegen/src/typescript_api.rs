@@ -210,6 +210,9 @@ fn wire_named_type(name: &str, schema: &Schema) -> String {
     if matches!(name, "Cursor") {
         return "string".to_owned();
     }
+    if matches!(name, "Decimal") {
+        return "string".to_owned();
+    }
     if schema.has_identifier(name) {
         return "string".to_owned();
     }
@@ -553,6 +556,7 @@ fn encode_argument(argument: &Argument, schema: &Schema) -> String {
         ApiType::Named(value) if schema.has_identifier(value) => format!("{name}.id"),
         ApiType::Named("Timestamp") => format!("{name}.nanosecondsSinceEpoch.toString()"),
         ApiType::Named("Cursor") => format!("{name}.value"),
+        ApiType::Named("Decimal") => format!("{name}.toString()"),
         ApiType::Named("BinanceListenKey") => format!("{name}.id"),
         ApiType::HandleToken(_) => format!("{name}.id"),
         ApiType::Named(value) => format!("Codec.{}ToWire({name})", lower_camel(value)),

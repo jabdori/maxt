@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from importlib import import_module
 from typing import Any, Awaitable, Callable, Optional, TypeVar, Union
 
@@ -41,6 +42,7 @@ from .models import (
     UpbitOrderBookInstrument,
     UpbitRegion,
     UpbitYearCandle,
+    _decimal_to_wire,
     _model_from_wire,
 )
 
@@ -204,6 +206,20 @@ class UpbitAdapter(_NativeAdapter):
         depth: Optional[int] = None,
     ) -> list[OrderBook]:
         values = await self._call(self._handle.order_books, markets, depth)
+        return [_model_from_wire("OrderBook", value) for value in values]
+
+    async def order_books_at_level(
+        self,
+        markets: list[Market],
+        level: Decimal,
+        depth: Optional[int] = None,
+    ) -> list[OrderBook]:
+        values = await self._call(
+            self._handle.order_books_at_level,
+            markets,
+            _decimal_to_wire(level),
+            depth,
+        )
         return [_model_from_wire("OrderBook", value) for value in values]
 
     async def tickers(self, markets: list[Market]) -> list[Ticker]:

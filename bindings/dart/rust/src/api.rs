@@ -614,6 +614,25 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
+    pub async fn upbit_order_books_at_level(
+        &self,
+        markets: Vec<WireMarket>,
+        level: String,
+        depth: Option<u32>,
+    ) -> Result<Vec<WireOrderBook>, NativeError> {
+        let adapter = match self.built_in("upbit_order_books_at_level")? {
+            BuiltInAdapter::Upbit(adapter) => adapter,
+            _ => return Err(provider_mismatch("Upbit")),
+        };
+        let markets: Vec<_> = markets.into_iter().map(Into::into).collect();
+        let level = decimal_from_wire(&level, "level").map_err(NativeError::from)?;
+        adapter
+            .order_books_at_level(&markets, level, depth)
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
     pub async fn upbit_tickers(
         &self,
         markets: Vec<WireMarket>,

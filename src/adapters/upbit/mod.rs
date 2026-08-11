@@ -208,6 +208,28 @@ impl UpbitAdapter {
         rest::order_books(self.http()?, markets, depth).await
     }
 
+    /// Fetches Upbit Korea order books aggregated at one provider level.
+    ///
+    /// `level` must be zero or positive. Read [`Self::orderbook_instruments`]
+    /// immediately before this call to select a current non-zero value: Upbit
+    /// changes supported levels when a market moves between price bands. Global
+    /// regional deployments do not accept this parameter.
+    pub async fn order_books_at_level(
+        &self,
+        markets: &[Market],
+        level: Decimal,
+        depth: Option<u32>,
+    ) -> Result<Vec<OrderBook>> {
+        if self.region != UpbitRegion::Korea {
+            return Err(Error::unsupported(
+                Feature::OrderBook,
+                Exchange::Upbit.id(),
+                "order-book aggregation levels are available only in the Upbit Korea region",
+            ));
+        }
+        rest::order_books_at_level(self.http()?, markets, level, depth).await
+    }
+
     /// Fetches tickers for one or more markets in one REST request.
     ///
     /// # Errors
@@ -694,6 +716,22 @@ mod tests {
         ] {
             assert!(public.supports(feature), "{feature:?}");
         }
+    }
+
+    #[tokio::test]
+    async fn aggregated_order_books_fail_before_network_outside_korea() {
+        let singapore = UpbitAdapter::with_region(UpbitRegion::Singapore);
+        let market = Market::spot(Exchange::Upbit, "BTC", "SGD");
+
+        assert!(matches!(
+            singapore
+                .order_books_at_level(&[market], Decimal::ONE, Some(1))
+                .await,
+            Err(Error::Unsupported {
+                feature: Feature::OrderBook,
+                ..
+            })
+        ));
     }
 
     #[tokio::test]

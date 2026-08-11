@@ -65,6 +65,22 @@ void main() {
     }
   });
 
+  test('Upbit 호가 묶음 단위는 Decimal로 native 경계까지 전달한다', () async {
+    final upbit = UpbitAdapter();
+    final market = Market.spot(Exchange.upbit, 'BTC', 'KRW');
+
+    await expectLater(
+      upbit.orderBooksAtLevel([market], Decimal.parse('-1')),
+      throwsA(
+        isA<InvalidRequestError>().having(
+          (error) => error.field,
+          'field',
+          'level',
+        ),
+      ),
+    );
+  });
+
   test('built-in Adapter는 빈 구독을 native 호출 전에 거절한다', () async {
     final adapter = UpbitAdapter();
     final market = Market.spot(Exchange.upbit, 'BTC', 'KRW');

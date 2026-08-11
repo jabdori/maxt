@@ -45,7 +45,7 @@
 
 | Exchange | Adapter | Python | Dart / TypeScript |
 | --- | --- | --- | --- |
-| upbit | `UpbitAdapter` | `region`, `order_books`, `tickers`, `tickers_by_quote`, `year_candles`, `orderbook_instruments`, `market_events` | `region`, `orderBooks`, `tickers`, `tickersByQuote`, `yearCandles`, `orderbookInstruments`, `marketEvents` |
+| upbit | `UpbitAdapter` | `region`, `order_books`, `order_books_at_level`, `tickers`, `tickers_by_quote`, `year_candles`, `orderbook_instruments`, `market_events` | `region`, `orderBooks`, `orderBooksAtLevel`, `tickers`, `tickersByQuote`, `yearCandles`, `orderbookInstruments`, `marketEvents` |
 | bithumb | `BithumbAdapter` | `market_warnings`, `market_alerts` | `marketWarnings`, `marketAlerts` |
 | binance | `BinanceAdapter` | `venue`, `spot_symbol_filters`, `spot_order`, `usd_m_create_listen_key`, `usd_m_keepalive_listen_key`, `usd_m_close_listen_key` | `venue`, `spotSymbolFilters`, `spotOrder`, `usdMCreateListenKey`, `usdMKeepaliveListenKey`, `usdMCloseListenKey` |
 | hyperliquid | `HyperliquidAdapter` | `is_testnet`, `non_funding_ledger`, `asset_context` | `isTestnet`, `nonFundingLedger`, `assetContext` |
@@ -126,7 +126,7 @@ Documentation baseline: `2026-08-10`.
 | upbit | quotation | `trades_ticks` | `GET` | `/v1/trades/ticks` | `http` | public | read | general | common `trades` | `Implemented` | `LiveRead` |
 | upbit | quotation | `ticker` | `GET` | `/v1/ticker` | `http` | public | read | general | common `ticker`; provider `tickers` | `Implemented` | `LiveRead` |
 | upbit | quotation | `tickers_by_quote` | `GET` | `/v1/ticker/all` | `http` | public | read | general | provider `tickers_by_quote` | `Implemented` | `LiveRead` |
-| upbit | quotation | `orderbook` | `GET` | `/v1/orderbook` | `http` | public | read | general | common `order_book`; provider `order_books` | `Partial` | `LiveRead` |
+| upbit | quotation | `orderbook` | `GET` | `/v1/orderbook` | `http` | public | read | general | common `order_book`; provider `order_books`, `order_books_at_level` | `Implemented` | `LiveRead` |
 | upbit | quotation | `orderbook_instruments` | `GET` | `/v1/orderbook/instruments` | `http` | public | read | general | provider `orderbook_instruments` | `Implemented` | `LiveRead` |
 | upbit | quotation | `ticker_stream` | `SUBSCRIBE` | `ticker` | `websocket_stream` | public | read | general | common `subscribe` | `Partial` | `LiveRead` |
 | upbit | quotation | `trade_stream` | `SUBSCRIBE` | `trade` | `websocket_stream` | public | read | general | common `subscribe` | `Partial` | `LiveRead` |

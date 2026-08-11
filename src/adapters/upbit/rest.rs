@@ -2,6 +2,8 @@
 
 use std::cmp::Reverse;
 
+use rust_decimal::Decimal;
+
 use crate::adapters::candles as candle_pages;
 use crate::error::{Error, Result};
 use crate::feature::Feature;
@@ -62,6 +64,33 @@ pub(crate) fn trades_request(market: &Market, limit: Option<u32>) -> Result<Http
 }
 
 pub(crate) fn order_book_request(markets: &[Market], depth: Option<u32>) -> Result<HttpRequest> {
+    order_book_request_with_level(markets, None, depth)
+}
+
+/// Builds an Upbit Korea aggregated-orderbook request.
+///
+/// The provider accepts `0` for an unaggregated book. Positive values are live
+/// market metadata and should come from `orderbook_instruments`.
+pub(crate) fn order_book_with_level_request(
+    markets: &[Market],
+    level: Decimal,
+    depth: Option<u32>,
+) -> Result<HttpRequest> {
+    if level < Decimal::ZERO {
+        return Err(Error::invalid_request(
+            "level",
+            "Upbit order-book aggregation level must be zero or positive",
+        ));
+    }
+
+    order_book_request_with_level(markets, Some(level), depth)
+}
+
+fn order_book_request_with_level(
+    markets: &[Market],
+    level: Option<Decimal>,
+    depth: Option<u32>,
+) -> Result<HttpRequest> {
     if markets.is_empty() {
         return Err(Error::invalid_request(
             "markets",
@@ -75,6 +104,9 @@ pub(crate) fn order_book_request(markets: &[Market], depth: Option<u32>) -> Resu
         .collect::<Result<Vec<_>>>()?
         .join(",");
     let mut params = vec![("markets", codes)];
+    if let Some(level) = level {
+        params.push(("level", level.normalize().to_string()));
+    }
     if let Some(depth) = depth {
         if !(1..=MAX_BOOK_DEPTH).contains(&depth) {
             return Err(Error::invalid_request(
@@ -293,6 +325,19 @@ pub(crate) async fn order_books(
         .collect()
 }
 
+pub(crate) async fn order_books_at_level(
+    http: &HttpTransport,
+    markets: &[Market],
+    level: Decimal,
+    depth: Option<u32>,
+) -> Result<Vec<OrderBook>> {
+    let body = send(http, &order_book_with_level_request(markets, level, depth)?).await?;
+    parse::json::<Vec<parse::RawOrderBook>>(&body)?
+        .iter()
+        .map(parse::order_book)
+        .collect()
+}
+
 pub(crate) async fn tickers(http: &HttpTransport, markets: &[Market]) -> Result<Vec<Ticker>> {
     let body = send(http, &ticker_request(markets)?).await?;
     parse::json::<Vec<parse::RawTicker>>(&body)?
@@ -404,6 +449,24 @@ mod tests {
                 .expect("a valid depth")
                 .target(),
             "/v1/orderbook?markets=KRW-BTC&count=5"
+        );
+        assert_eq!(
+            order_book_with_level_request(&[btc_krw()], Decimal::new(1_000_000, 1), Some(2),)
+                .expect("a valid aggregation level")
+                .target(),
+            "/v1/orderbook?markets=KRW-BTC&level=100000&count=2"
+        );
+        assert_eq!(
+            order_book_with_level_request(&[btc_krw()], Decimal::new(10, 2), None)
+                .expect("a valid fractional aggregation level")
+                .target(),
+            "/v1/orderbook?markets=KRW-BTC&level=0.1"
+        );
+        assert_eq!(
+            order_book_with_level_request(&[btc_krw()], Decimal::ZERO, None)
+                .expect("the documented unaggregated level")
+                .target(),
+            "/v1/orderbook?markets=KRW-BTC&level=0"
         );
         assert_eq!(
             ticker_request(&[btc_krw()]).expect("a market").target(),
@@ -604,6 +667,10 @@ mod tests {
         assert!(matches!(
             orderbook_instruments_request(&[]),
             Err(Error::InvalidRequest { field, .. }) if field == "markets"
+        ));
+        assert!(matches!(
+            order_book_with_level_request(&[btc_krw()], Decimal::new(-1, 0), None),
+            Err(Error::InvalidRequest { field, .. }) if field == "level"
         ));
     }
 

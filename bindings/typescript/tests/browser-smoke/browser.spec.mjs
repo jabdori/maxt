@@ -164,6 +164,17 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
         ["client-1", "missing-1"],
       ),
     );
+    const upbit = new maxt.UpbitAdapter();
+    const upbitMarket = maxt.Market.spot(maxt.Exchange.Upbit, "BTC", "KRW");
+    let aggregationError;
+    try {
+      await upbit.orderBooksAtLevel([upbitMarket], maxt.Decimal.parse("-1"));
+    } catch (error) {
+      aggregationError = {
+        name: error.constructor.name,
+        field: error.field,
+      };
+    }
     return {
       exchange: client.exchange.id,
       markets: (await client.markets(maxt.MarketKind.Spot)).length,
@@ -187,6 +198,7 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
       orderHistory: orderHistory.items[0].id,
       cancelledAt: cancelResult.cancelled[0].cancelledAt.nanosecondsSinceEpoch.toString(),
       cancelFailure: cancelResult.failed[0].code,
+      aggregationError,
     };
   });
 
@@ -213,5 +225,6 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
     orderHistory: "order-1",
     cancelledAt: "125",
     cancelFailure: "order_not_found",
+    aggregationError: { name: "InvalidRequestError", field: "level" },
   });
 });

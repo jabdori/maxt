@@ -1143,6 +1143,11 @@ const MARKETS_DEPTH: &[Argument] = &[
     argument("markets", ApiType::List("Market"), None),
     argument("depth", ApiType::OptionalNumber, Some("null")),
 ];
+const MARKETS_LEVEL_DEPTH: &[Argument] = &[
+    argument("markets", ApiType::List("Market"), None),
+    argument("level", ApiType::Named("Decimal"), None),
+    argument("depth", ApiType::OptionalNumber, Some("null")),
+];
 const MARKETS: &[Argument] = &[argument("markets", ApiType::List("Market"), None)];
 const QUOTE_CURRENCIES: &[Argument] = &[argument("quoteCurrencies", ApiType::List("String"), None)];
 const YEAR_CANDLE_QUERY: &[Argument] = &[
@@ -1285,6 +1290,13 @@ const UPBIT_METHODS: &[ProviderMethod] = &[
         name: "orderBooks",
         kind: ProviderMethodKind::Async,
         arguments: MARKETS_DEPTH,
+        result: ApiType::List("OrderBook"),
+    },
+    ProviderMethod {
+        rust_name: "order_books_at_level",
+        name: "orderBooksAtLevel",
+        kind: ProviderMethodKind::Async,
+        arguments: MARKETS_LEVEL_DEPTH,
         result: ApiType::List("OrderBook"),
     },
     ProviderMethod {
@@ -2511,7 +2523,7 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
-        native_api_version: 11,
+        native_api_version: 12,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
         identifiers: IDENTIFIERS,

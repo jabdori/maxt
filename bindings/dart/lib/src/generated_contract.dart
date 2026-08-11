@@ -128,6 +128,7 @@ const providerMethods = <String, List<String>>{
   'upbit': <String>[
     'region',
     'orderBooks',
+    'orderBooksAtLevel',
     'tickers',
     'tickersByQuote',
     'yearCandles',

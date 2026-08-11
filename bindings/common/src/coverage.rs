@@ -891,7 +891,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Provider("tickers_by_quote"),
         Validation::LiveRead,
     ),
-    partial(operation(
+    operation(
         Exchange::Upbit,
         "quotation",
         "orderbook",
@@ -902,10 +902,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationRisk::Read,
         OperationMapping::CommonAndProvider {
             common: &["order_book"],
-            provider: &["order_books"],
+            provider: &["order_books", "order_books_at_level"],
         },
         Validation::LiveRead,
-    )),
+    ),
     operation(
         Exchange::Upbit,
         "quotation",

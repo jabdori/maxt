@@ -27,7 +27,7 @@ accounts, and credentials are not shared across regions.
 | `markets(MarketKind::Spot)` | `/v1/market/all?is_details=true` | Listed Spot markets |
 | `markets(MarketKind::Perpetual)` | — | `Ok(vec![])` |
 | `trades(market, limit)` | `/v1/trades/ticks` | `limit: 1..=500`; newest-first |
-| `order_book(market, depth)` | `/v1/orderbook` | `depth: 1..=30`; at most `depth` levels per side; `None -> 30`; the provider's aggregation `level` option is not exposed yet |
+| `order_book(market, depth)` | `/v1/orderbook` | Shared unaggregated view; `depth: 1..=30`; at most `depth` levels per side; `None -> 30` |
 | `ticker(market)` | `/v1/ticker` | One market snapshot |
 
 Derivative methods return `Error::Unsupported`.
@@ -100,6 +100,7 @@ Access the following provider-specific methods through `Client::adapter()`.
 | `tickers(&[Market])` | `markets.len() >= 1`; one ticker per market | `ticker` |
 | `tickers_by_quote(&[String])` | At least one quote currency; normalizes to uppercase; returns all matching ticker snapshots | `ticker` |
 | `order_books(&[Market], depth)` | `markets.len() >= 1`; `depth: 1..=30` or `None` | `orderbook` |
+| `order_books_at_level(&[Market], Decimal, depth)` | Upbit Korea only; `level >= 0`; use the current `supported_levels` metadata before a non-zero request | `orderbook` |
 | `orderbook_instruments(&[Market])` | `markets.len() >= 1`; current price-band tick size and supported aggregation levels; levels are empty when the region does not return them | `orderbook` |
 | `year_candles(market, to, count)` | `count: 1..=200` or `None`; optional ISO-8601 boundary; oldest-first; Korean open time is optional by region | `candle` |
 | `market_events()` | Investment warning and caution criteria by market | `market` |

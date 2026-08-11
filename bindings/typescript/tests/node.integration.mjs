@@ -103,6 +103,17 @@ test("built-in adapters load through the generated Node backend", () => {
   );
 });
 
+test("Upbit orderbook aggregation carries Decimal through the Node boundary", async () => {
+  await maxt.initialize();
+  const upbit = new maxt.UpbitAdapter();
+  const market = Market.spot(Exchange.Upbit, "BTC", "KRW");
+
+  await assert.rejects(
+    upbit.orderBooksAtLevel([market], Decimal.parse("-1")),
+    (error) => error instanceof InvalidRequestError && error.field === "level",
+  );
+});
+
 test("custom Adapter calls round-trip through Rust without losing values", async () => {
   const market = Market.spot(Exchange.Binance, "BTC", "USDT");
   const expected = new Ticker(

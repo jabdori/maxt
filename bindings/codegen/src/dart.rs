@@ -1331,6 +1331,9 @@ fn provider_method_source(exchange: &str, method: &str) -> &'static str {
         ("upbit", "order_books") => {
             "  Future<List<OrderBook>> orderBooks(List<Market> markets, [int? depth]) =>\n      _nativeFuture(\n        () => _handle.upbitOrderBooks(\n          markets: markets.map(_marketToWire).toList(growable: false),\n          depth: checkedUint32(depth, field: 'depth'),\n        ),\n      ).then(\n        (values) => values.map(_orderBookFromWire).toList(growable: false),\n      );\n"
         }
+        ("upbit", "order_books_at_level") => {
+            "  Future<List<OrderBook>> orderBooksAtLevel(\n    List<Market> markets,\n    Decimal level, [\n    int? depth,\n  ]) => _nativeFuture(\n    () => _handle.upbitOrderBooksAtLevel(\n      markets: markets.map(_marketToWire).toList(growable: false),\n      level: level.toString(),\n      depth: checkedUint32(depth, field: 'depth'),\n    ),\n  ).then((values) => values.map(_orderBookFromWire).toList(growable: false));\n"
+        }
         ("upbit", "tickers") => {
             "  Future<List<Ticker>> tickers(List<Market> markets) => _nativeFuture(\n    () => _handle.upbitTickers(\n      markets: markets.map(_marketToWire).toList(growable: false),\n    ),\n  ).then((values) => values.map(_tickerFromWire).toList(growable: false));\n"
         }

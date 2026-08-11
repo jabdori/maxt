@@ -288,6 +288,12 @@ abstract class NativeClient implements RustOpaqueInterface {
     int? depth,
   });
 
+  Future<List<WireOrderBook>> upbitOrderBooksAtLevel({
+    required List<WireMarket> markets,
+    required String level,
+    int? depth,
+  });
+
   Future<List<WireUpbitOrderBookInstrument>> upbitOrderbookInstruments({
     required List<WireMarket> markets,
   });

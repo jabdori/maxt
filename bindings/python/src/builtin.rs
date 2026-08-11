@@ -14,8 +14,8 @@ use pyo3::types::PyDict;
 
 use crate::client::{NativeClient, operation};
 use crate::convert::{
-    decimal_to_wire, list_to_wire, market_from_wire, market_to_wire, markets_from_wire,
-    order_book_to_wire, order_to_wire, ticker_to_wire, timestamp_to_wire,
+    decimal_from_wire, decimal_to_wire, list_to_wire, market_from_wire, market_to_wire,
+    markets_from_wire, order_book_to_wire, order_to_wire, ticker_to_wire, timestamp_to_wire,
 };
 
 macro_rules! provider_dict {
@@ -133,6 +133,24 @@ impl NativeUpbitAdapter {
         operation(
             py,
             async move { adapter.order_books(&markets, depth).await },
+            |py, values| list_to_wire(py, &values, order_book_to_wire),
+        )
+    }
+
+    #[pyo3(signature = (markets, level, depth=None))]
+    fn order_books_at_level<'py>(
+        &self,
+        py: Python<'py>,
+        markets: &Bound<'_, PyAny>,
+        level: &Bound<'_, PyAny>,
+        depth: Option<u32>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let markets = markets_from_wire(markets)?;
+        let level = decimal_from_wire(level, "level")?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.order_books_at_level(&markets, level, depth).await },
             |py, values| list_to_wire(py, &values, order_book_to_wire),
         )
     }

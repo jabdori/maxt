@@ -7,7 +7,7 @@ import { AccountStream, MarketStream, StreamError } from "../stream.js";
 import * as Codec from "./codec.js";
 import type * as Wire from "./contract.js";
 
-export const NATIVE_API_VERSION = 11 as const;
+export const NATIVE_API_VERSION = 12 as const;
 
 export type NativeOutcome<T> =
   | { readonly ok: true; readonly value: T }
@@ -65,6 +65,7 @@ export interface RawNativeUpbitHandle {
   client(): RawNativeClient;
   region(): string;
   orderBooks(markets: string, depth: string): Promise<unknown>;
+  orderBooksAtLevel(markets: string, level: string, depth: string): Promise<unknown>;
   tickers(markets: string): Promise<unknown>;
   tickersByQuote(quoteCurrencies: string): Promise<unknown>;
   yearCandles(market: string, to: string, count: string): Promise<unknown>;
@@ -178,6 +179,7 @@ export interface NativeUpbitHandle {
   client(): NativeClientHandle;
   region(): string;
   orderBooks(markets: readonly Wire.MarketWire[], depth: number | null): Promise<NativeOutcome<readonly Wire.OrderBookWire[]>>;
+  orderBooksAtLevel(markets: readonly Wire.MarketWire[], level: string, depth: number | null): Promise<NativeOutcome<readonly Wire.OrderBookWire[]>>;
   tickers(markets: readonly Wire.MarketWire[]): Promise<NativeOutcome<readonly Wire.TickerWire[]>>;
   tickersByQuote(quoteCurrencies: readonly string[]): Promise<NativeOutcome<readonly Wire.TickerWire[]>>;
   yearCandles(market: Wire.MarketWire, to: Wire.TimestampWire | null, count: number | null): Promise<NativeOutcome<readonly Wire.UpbitYearCandleWire[]>>;
@@ -269,6 +271,7 @@ export function createJsonBackend(raw: RawNativeModule): NativeBackend {
         client: () => wrapJsonClient(handle.client()),
         region: () => handle.region(),
         orderBooks: (markets: readonly Wire.MarketWire[], depth: number | null) => handle.orderBooks(Codec.stringifyWire(markets), Codec.stringifyWire(depth)) as Promise<NativeOutcome<readonly Wire.OrderBookWire[]>>,
+        orderBooksAtLevel: (markets: readonly Wire.MarketWire[], level: string, depth: number | null) => handle.orderBooksAtLevel(Codec.stringifyWire(markets), Codec.stringifyWire(level), Codec.stringifyWire(depth)) as Promise<NativeOutcome<readonly Wire.OrderBookWire[]>>,
         tickers: (markets: readonly Wire.MarketWire[]) => handle.tickers(Codec.stringifyWire(markets)) as Promise<NativeOutcome<readonly Wire.TickerWire[]>>,
         tickersByQuote: (quoteCurrencies: readonly string[]) => handle.tickersByQuote(Codec.stringifyWire(quoteCurrencies)) as Promise<NativeOutcome<readonly Wire.TickerWire[]>>,
         yearCandles: (market: Wire.MarketWire, to: Wire.TimestampWire | null, count: number | null) => handle.yearCandles(Codec.stringifyWire(market), Codec.stringifyWire(to), Codec.stringifyWire(count)) as Promise<NativeOutcome<readonly Wire.UpbitYearCandleWire[]>>,
@@ -980,6 +983,7 @@ export class UpbitAdapter extends NativeAdapter {
   }
   get region(): Model.UpbitRegion { return Codec.upbitRegionFromWire(this.#provider.region()); }
   async orderBooks(markets: readonly Model.Market[], depth: number | null = null): Promise<readonly Model.OrderBook[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.orderBooks(markets.map(Codec.marketToWire), depth)).map(Codec.orderBookFromWire); }
+  async orderBooksAtLevel(markets: readonly Model.Market[], level: Model.Decimal, depth: number | null = null): Promise<readonly Model.OrderBook[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.orderBooksAtLevel(markets.map(Codec.marketToWire), level.toString(), depth)).map(Codec.orderBookFromWire); }
   async tickers(markets: readonly Model.Market[]): Promise<readonly Model.Ticker[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.tickers(markets.map(Codec.marketToWire))).map(Codec.tickerFromWire); }
   async tickersByQuote(quoteCurrencies: readonly string[]): Promise<readonly Model.Ticker[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.tickersByQuote(quoteCurrencies)).map(Codec.tickerFromWire); }
   async yearCandles(market: Model.Market, to: Model.Timestamp | null = null, count: number | null = null): Promise<readonly Model.UpbitYearCandle[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.yearCandles(Codec.marketToWire(market), to?.nanosecondsSinceEpoch.toString() ?? null, count)).map(Codec.upbitYearCandleFromWire); }

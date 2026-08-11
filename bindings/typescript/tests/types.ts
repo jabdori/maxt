@@ -45,6 +45,10 @@ const filters = client.adapter.spotSymbolFilters(market);
 const upbit = new UpbitAdapter();
 const upbitMarket = Market.spot(Exchange.Upbit, "BTC", "KRW");
 const quoteTickers: Promise<readonly Ticker[]> = upbit.tickersByQuote(["KRW"]);
+const aggregatedBooks = upbit.orderBooksAtLevel(
+  [upbitMarket],
+  Decimal.parse("100000"),
+);
 const yearCandles: Promise<readonly UpbitYearCandle[]> = upbit.yearCandles(upbitMarket);
 const instruments: Promise<readonly UpbitOrderBookInstrument[]> =
   upbit.orderbookInstruments([upbitMarket]);
@@ -70,6 +74,7 @@ const transferError = new TransferError(TransferErrorKind.NetworkMismatch, "chai
 void ticker;
 void filters;
 void quoteTickers;
+void aggregatedBooks;
 void yearCandles;
 void instruments;
 void networks;

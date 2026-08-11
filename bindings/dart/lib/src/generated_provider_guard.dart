@@ -15,6 +15,10 @@ void _generatedProviderGuard({
   UpbitAdapter.withRegion(_generatedProviderValue<UpbitRegion>());
   upbit.region;
   upbit.orderBooks(_generatedProviderValue<List<Market>>());
+  upbit.orderBooksAtLevel(
+    _generatedProviderValue<List<Market>>(),
+    _generatedProviderValue<Decimal>(),
+  );
   upbit.tickers(_generatedProviderValue<List<Market>>());
   upbit.tickersByQuote(_generatedProviderValue<List<String>>());
   upbit.yearCandles(_generatedProviderValue<Market>());

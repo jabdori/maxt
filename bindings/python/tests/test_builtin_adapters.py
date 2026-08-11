@@ -137,6 +137,17 @@ class FakeNativeUpbitAdapter:
             }
         ]
 
+    async def order_books_at_level(self, markets, level, depth=None):
+        self.order_book_level_args = (markets, level, depth)
+        return [
+            {
+                "market": MARKET_WIRE,
+                "timestamp": 1_700_000_000_000_000_013,
+                "bids": [{"price": "50000000", "quantity": "0.1"}],
+                "asks": [{"price": "50001000", "quantity": "0.2"}],
+            }
+        ]
+
     async def year_candles(self, market, to=None, count=None):
         self.year_candle_args = (market, to, count)
         return [
@@ -330,6 +341,9 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
             trades = await client.trades(market)
             events = await adapter.market_events()
             quote_tickers = await adapter.tickers_by_quote(["KRW"])
+            aggregated_books = await adapter.order_books_at_level(
+                [market], Decimal("100000.0"), depth=2
+            )
             annual = await adapter.year_candles(market, to=1_767_225_600_000_000_000, count=2)
             policies = await adapter.orderbook_instruments([market])
 
@@ -346,6 +360,9 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(events[0][1].warning)
         self.assertEqual(adapter._handle.quote_currencies, ["KRW"])
         self.assertEqual(quote_tickers[0].last_price, Decimal("50000000.0100"))
+        self.assertEqual(adapter._handle.order_book_level_args[1], "100000.0")
+        self.assertEqual(adapter._handle.order_book_level_args[2], 2)
+        self.assertEqual(aggregated_books[0].asks[0].price, Decimal("50001000"))
         self.assertIsInstance(annual[0], UpbitYearCandle)
         self.assertEqual(annual[0].korea_open_time, annual[0].open_time)
         self.assertEqual(annual[0].quote_volume, Decimal("37189906239683.17623000"))

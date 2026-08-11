@@ -27,7 +27,7 @@
 | `markets(MarketKind::Spot)` | `/v1/market/all?is_details=true` | 상장된 Spot 시장 |
 | `markets(MarketKind::Perpetual)` | — | `Ok(vec![])` |
 | `trades(market, limit)` | `/v1/trades/ticks` | `limit: 1..=500`; 최신순 |
-| `order_book(market, depth)` | `/v1/orderbook` | `depth: 1..=30`; 각 측 `len() <= depth`; `None → 30`; 거래소의 호가 묶음 단위(`level`) 옵션은 아직 노출하지 않음 |
+| `order_book(market, depth)` | `/v1/orderbook` | 공통 API의 묶지 않은 호가; `depth: 1..=30`; 각 측 `len() <= depth`; `None → 30` |
 | `ticker(market)` | `/v1/ticker` | 시장 스냅샷(snapshot) 1건 |
 
 파생상품 메서드는 `Error::Unsupported`를 반환합니다.
@@ -99,6 +99,7 @@
 | `tickers(&[Market])` | `markets.len() >= 1`; 시장당 ticker 1건 | `ticker` |
 | `tickers_by_quote(&[String])` | 견적 통화 1개 이상; 대문자로 정규화; 해당 통화의 ticker 스냅샷 전체 반환 | `ticker` |
 | `order_books(&[Market], depth)` | `markets.len() >= 1`; `depth: 1..=30` 또는 `None` | `orderbook` |
+| `order_books_at_level(&[Market], Decimal, depth)` | Upbit 한국만 지원; `level >= 0`; 0이 아닌 값은 현재 `supported_levels` 메타데이터를 확인한 뒤 요청 | `orderbook` |
 | `orderbook_instruments(&[Market])` | `markets.len() >= 1`; 현재 가격 구간의 호가 단위와 지원하는 묶음 단위 반환; 지역 응답에 없으면 묶음 단위는 빈 배열 | `orderbook` |
 | `year_candles(market, to, count)` | `count: 1..=200` 또는 `None`; ISO-8601 기준 시각 선택; 오래된 순서; 한국 시작 시각은 지역에 따라 없을 수 있음 | `candle` |
 | `market_events()` | 시장별 투자 유의 여부와 기준 | `market` |

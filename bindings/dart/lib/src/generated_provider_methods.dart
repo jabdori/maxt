@@ -13,6 +13,18 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
         (values) => values.map(_orderBookFromWire).toList(growable: false),
       );
 
+  Future<List<OrderBook>> orderBooksAtLevel(
+    List<Market> markets,
+    Decimal level, [
+    int? depth,
+  ]) => _nativeFuture(
+    () => _handle.upbitOrderBooksAtLevel(
+      markets: markets.map(_marketToWire).toList(growable: false),
+      level: level.toString(),
+      depth: checkedUint32(depth, field: 'depth'),
+    ),
+  ).then((values) => values.map(_orderBookFromWire).toList(growable: false));
+
   Future<List<Ticker>> tickers(List<Market> markets) => _nativeFuture(
     () => _handle.upbitTickers(
       markets: markets.map(_marketToWire).toList(growable: false),

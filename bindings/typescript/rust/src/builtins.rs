@@ -29,7 +29,7 @@ use crate::convert::{
     WireBinanceSpotOrderDetail, WireBinanceSymbolFilters, WireBithumbMarketAlert,
     WireHyperliquidAssetContext, WireHyperliquidLedgerEntry, WireMarket, WireOrderBook, WirePage,
     WireTicker, WireUpbitMarketEvent, WireUpbitOrderBookInstrument, WireUpbitYearCandle,
-    from_wire_text, outcome, timestamp_from_wire,
+    decimal_from_wire, from_wire_text, outcome, timestamp_from_wire,
 };
 
 #[derive(Debug, Deserialize)]
@@ -220,6 +220,33 @@ impl NativeUpbit {
         }
     }
 
+    async fn order_books_at_level(
+        &self,
+        markets: maxt::Result<String>,
+        level: maxt::Result<String>,
+        depth: maxt::Result<String>,
+    ) -> Value {
+        let markets = parse_text::<Vec<WireMarket>>(markets, "markets").and_then(|markets| {
+            markets
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<maxt::Result<Vec<Market>>>()
+        });
+        let level = parse_text::<String>(level, "level")
+            .and_then(|level| decimal_from_wire(&level, "level"));
+        let depth = parse_text::<Option<u32>>(depth, "depth");
+        match (markets, level, depth) {
+            (Ok(markets), Ok(level), Ok(depth)) => outcome(wire_vec::<_, WireOrderBook>(
+                self.adapter
+                    .order_books_at_level(&markets, level, depth)
+                    .await,
+            )),
+            (Err(error), _, _) | (_, Err(error), _) | (_, _, Err(error)) => {
+                outcome::<Value>(Err(error))
+            }
+        }
+    }
+
     async fn tickers(&self, markets: maxt::Result<String>) -> Value {
         let markets = parse_text::<Vec<WireMarket>>(markets, "markets").and_then(|markets| {
             markets
@@ -317,6 +344,26 @@ impl NativeUpbit {
         let markets = native_json_text(markets, "markets");
         let depth = native_json_text(depth, "depth");
         spawn_native(env, async move { this.order_books(markets, depth).await })
+    }
+
+    #[napi(
+        js_name = "orderBooksAtLevel",
+        ts_args_type = "markets: string, level: string, depth: string"
+    )]
+    pub fn order_books_at_level_native<'env>(
+        &self,
+        env: &'env Env,
+        markets: NativeJsonText<'env>,
+        level: NativeJsonText<'env>,
+        depth: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let markets = native_json_text(markets, "markets");
+        let level = native_json_text(level, "level");
+        let depth = native_json_text(depth, "depth");
+        spawn_native(env, async move {
+            this.order_books_at_level(markets, level, depth).await
+        })
     }
 
     #[napi(js_name = "tickers", ts_args_type = "markets: string")]
@@ -857,6 +904,19 @@ impl NativeUpbit {
         crate::web::value(self.order_books(Ok(markets), Ok(depth)).await)
     }
 
+    #[wasm_bindgen(js_name = "orderBooksAtLevel")]
+    pub async fn order_books_at_level_wasm(
+        &self,
+        markets: String,
+        level: String,
+        depth: String,
+    ) -> JsValue {
+        crate::web::value(
+            self.order_books_at_level(Ok(markets), Ok(level), Ok(depth))
+                .await,
+        )
+    }
+
     #[wasm_bindgen(js_name = "tickers")]
     pub async fn tickers_wasm(&self, markets: String) -> JsValue {
         crate::web::value(self.tickers(Ok(markets)).await)
@@ -1075,6 +1135,17 @@ mod tests {
         assert_eq!(result["ok"], false);
         assert_eq!(result["error"]["kind"], "invalid_request");
         assert_eq!(result["error"]["field"], "quote_currencies");
+
+        let result = upbit
+            .order_books_at_level(
+                Ok(r#"[{"exchange":"upbit","kind":"spot","base":"BTC","quote":"KRW"}]"#.to_owned()),
+                Ok(r#""-1""#.to_owned()),
+                Ok("null".to_owned()),
+            )
+            .await;
+        assert_eq!(result["ok"], false);
+        assert_eq!(result["error"]["kind"], "invalid_request");
+        assert_eq!(result["error"]["field"], "level");
 
         assert_eq!(ok_value(outcome(Ok(Value::Null))), Value::Null);
     }

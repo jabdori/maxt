@@ -91,6 +91,22 @@ void main() {
     );
   });
 
+  test('WebAssembly도 Upbit 호가 묶음 단위를 native와 동일하게 검증한다', () async {
+    final upbit = UpbitAdapter();
+    final market = Market.spot(Exchange.upbit, 'BTC', 'KRW');
+
+    await expectLater(
+      upbit.orderBooksAtLevel([market], Decimal.parse('-1')),
+      throwsA(
+        isA<InvalidRequestError>().having(
+          (error) => error.field,
+          'field',
+          'level',
+        ),
+      ),
+    );
+  });
+
   test('기본 Web 스트림은 네트워크 backpressure를 사용하지 않는다', () async {
     final adapter = _ConfigAdapter();
     final client = Client(adapter);

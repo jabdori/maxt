@@ -120,6 +120,7 @@ void main() {
       'upbit': {
         'region': (UpbitAdapter value) => value.region,
         'orderBooks': (UpbitAdapter value) => value.orderBooks,
+        'orderBooksAtLevel': (UpbitAdapter value) => value.orderBooksAtLevel,
         'tickers': (UpbitAdapter value) => value.tickers,
         'tickersByQuote': (UpbitAdapter value) => value.tickersByQuote,
         'yearCandles': (UpbitAdapter value) => value.yearCandles,

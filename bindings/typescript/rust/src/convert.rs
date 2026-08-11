@@ -1,5 +1,6 @@
 use maxt::adapters::{
     BinanceSpotOrderDetail, BinanceSymbolFilters, BithumbAlertStep, BithumbMarketAlert,
+    BithumbNotice,
     HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind, UpbitMarketEvent,
     UpbitOrderBookInstrument, UpbitYearCandle,
 };
@@ -269,6 +270,16 @@ pub(crate) struct WireBithumbMarketAlert {
     pub(crate) kind: String,
     pub(crate) step: String,
     pub(crate) ends_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBithumbNotice {
+    pub(crate) categories: Vec<String>,
+    pub(crate) title: String,
+    pub(crate) url: String,
+    pub(crate) published_at: String,
+    pub(crate) modified_at: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1599,6 +1610,20 @@ impl TryFrom<BithumbMarketAlert> for WireBithumbMarketAlert {
             kind: value.kind,
             step: bithumb_alert_step_to_wire(value.step)?.to_owned(),
             ends_at: timestamp_to_wire(value.ends_at),
+        })
+    }
+}
+
+impl TryFrom<BithumbNotice> for WireBithumbNotice {
+    type Error = Error;
+
+    fn try_from(value: BithumbNotice) -> Result<Self, Self::Error> {
+        Ok(Self {
+            categories: value.categories,
+            title: value.title,
+            url: value.url,
+            published_at: timestamp_to_wire(value.published_at),
+            modified_at: timestamp_to_wire(value.modified_at),
         })
     }
 }

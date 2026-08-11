@@ -1268,6 +1268,41 @@ impl TryFrom<WireUpbitOrderBookInstrument> for maxt::UpbitOrderBookInstrument {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbNotice {
+    pub categories: Vec<String>,
+    pub title: String,
+    pub url: String,
+    pub published_at_ns: i64,
+    pub modified_at_ns: i64,
+}
+
+impl From<maxt::BithumbNotice> for WireBithumbNotice {
+    fn from(value: maxt::BithumbNotice) -> Self {
+        Self {
+            categories: value.categories,
+            title: value.title,
+            url: value.url,
+            published_at_ns: timestamp_to_wire(value.published_at),
+            modified_at_ns: timestamp_to_wire(value.modified_at),
+        }
+    }
+}
+
+impl TryFrom<WireBithumbNotice> for maxt::BithumbNotice {
+    type Error = NativeError;
+
+    fn try_from(value: WireBithumbNotice) -> Result<Self, Self::Error> {
+        Ok(Self {
+            categories: value.categories,
+            title: value.title,
+            url: value.url,
+            published_at: Timestamp::from_nanos(value.published_at_ns),
+            modified_at: Timestamp::from_nanos(value.modified_at_ns),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireDepositPage {
     pub items: Vec<WireDeposit>,
     pub next: Option<String>,

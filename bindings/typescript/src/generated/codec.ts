@@ -25,6 +25,17 @@ function unsignedInteger(value: string, field: string): number {
   return parsed;
 }
 
+export function checkedU32(value: number, field: string): number {
+  if (!Number.isSafeInteger(value) || value < 0 || value > 4_294_967_295) {
+    throw new InvalidRequestError(field, "must be a non-negative safe integer within the u32 range");
+  }
+  return value;
+}
+
+export function checkedOptionalU32(value: number | null, field: string): number | null {
+  return value === null ? null : checkedU32(value, field);
+}
+
 function assertNever(value: never): never {
   throw new InvalidRequestError("kind", `unknown tagged union variant: ${String(value)}`);
 }
@@ -803,6 +814,20 @@ export function bithumbMarketAlertToWire(value: Model.BithumbMarketAlert): Wire.
     kind: value.kind,
     step: value.step.id,
     ends_at: value.endsAt.nanosecondsSinceEpoch.toString(),
+  };
+}
+
+export function bithumbNoticeFromWire(value: Wire.BithumbNoticeWire): Model.BithumbNotice {
+  return new Model.BithumbNotice(value.categories.map((item) => item), value.title, value.url, Model.Timestamp.fromNanoseconds(BigInt(value.published_at)), Model.Timestamp.fromNanoseconds(BigInt(value.modified_at)));
+}
+
+export function bithumbNoticeToWire(value: Model.BithumbNotice): Wire.BithumbNoticeWire {
+  return {
+    categories: value.categories.map((item) => item),
+    title: value.title,
+    url: value.url,
+    published_at: value.publishedAt.nanosecondsSinceEpoch.toString(),
+    modified_at: value.modifiedAt.nanosecondsSinceEpoch.toString(),
   };
 }
 

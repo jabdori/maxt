@@ -279,6 +279,20 @@ impl NativeBithumbAdapter {
             |py, values| list_to_wire(py, &values, bithumb_market_alert_to_wire),
         )
     }
+
+    #[pyo3(signature = (count=None))]
+    fn notices<'py>(
+        &self,
+        py: Python<'py>,
+        count: Option<u32>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.notices(count).await },
+            |py, values| list_to_wire(py, &values, crate::convert::bithumb_notice_to_wire),
+        )
+    }
 }
 
 #[pyclass(module = "maxt._native", frozen)]

@@ -27,9 +27,9 @@ use wasm_bindgen::prelude::*;
 use crate::client::NativeClient;
 use crate::convert::{
     WireBinanceSpotOrderDetail, WireBinanceSymbolFilters, WireBithumbMarketAlert,
-    WireHyperliquidAssetContext, WireHyperliquidLedgerEntry, WireMarket, WireOrderBook, WirePage,
-    WireTicker, WireUpbitMarketEvent, WireUpbitOrderBookInstrument, WireUpbitYearCandle,
-    decimal_from_wire, from_wire_text, outcome, timestamp_from_wire,
+    WireBithumbNotice, WireHyperliquidAssetContext, WireHyperliquidLedgerEntry, WireMarket,
+    WireOrderBook, WirePage, WireTicker, WireUpbitMarketEvent, WireUpbitOrderBookInstrument,
+    WireUpbitYearCandle, decimal_from_wire, from_wire_text, outcome, timestamp_from_wire,
 };
 
 #[derive(Debug, Deserialize)]
@@ -482,6 +482,13 @@ impl NativeBithumb {
             self.adapter.market_alerts().await,
         ))
     }
+
+    async fn notices(&self, count: maxt::Result<String>) -> Value {
+        match parse_text::<Option<u32>>(count, "count") {
+            Ok(count) => outcome(wire_vec::<_, WireBithumbNotice>(self.adapter.notices(count).await)),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
 }
 
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
@@ -500,6 +507,25 @@ impl NativeBithumb {
     #[napi(js_name = "marketAlerts")]
     pub async fn market_alerts_native(&self) -> Value {
         self.market_alerts().await
+    }
+
+    #[napi(js_name = "notices", ts_args_type = "count: string")]
+    pub fn notices_native<'env>(
+        &self,
+        env: &'env Env,
+        count: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let count = native_json_text(count, "count");
+        spawn_native(env, async move { this.notices(count).await })
+    }
+}
+
+impl Clone for NativeBithumb {
+    fn clone(&self) -> Self {
+        Self {
+            adapter: Arc::clone(&self.adapter),
+        }
     }
 }
 
@@ -959,6 +985,11 @@ impl NativeBithumb {
     #[wasm_bindgen(js_name = "marketAlerts")]
     pub async fn market_alerts_wasm(&self) -> JsValue {
         crate::web::value(self.market_alerts().await)
+    }
+
+    #[wasm_bindgen(js_name = "notices")]
+    pub async fn notices_wasm(&self, count: String) -> JsValue {
+        crate::web::value(self.notices(Ok(count)).await)
     }
 }
 

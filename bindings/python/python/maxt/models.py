@@ -673,6 +673,7 @@ def _model_from_wire(type_name: str, value: dict[str, Any]) -> Any:
 
 from ._generated_models import (  # noqa: E402
     AssetNetwork,
+    BithumbNotice,
     CancelOrdersRequest,
     CancelOrdersResult,
     CancelledOrder,
@@ -715,6 +716,7 @@ __all__ = [
     "BinanceSymbolFilters",
     "BithumbAlertStep",
     "BithumbMarketAlert",
+    "BithumbNotice",
     "Candle",
     "CandleRequest",
     "ChainDestination",

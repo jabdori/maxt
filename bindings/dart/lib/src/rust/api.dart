@@ -130,6 +130,8 @@ abstract class NativeClient implements RustOpaqueInterface {
 
   Future<List<WireBithumbMarketWarning>> bithumbMarketWarnings();
 
+  Future<List<WireBithumbNotice>> bithumbNotices({int? count});
+
   Future<void> cancelOrder({
     required WireMarket market,
     required String orderId,

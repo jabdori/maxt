@@ -41,7 +41,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1948967356;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -571066432;
 
 // Section: executor
 
@@ -707,6 +707,64 @@ fn wire__crate__api__NativeClient_bithumb_market_warnings_impl(
                         let api_that_guard = api_that_guard.unwrap();
                         let output_ok =
                             crate::api::NativeClient::bithumb_market_warnings(&*api_that_guard)
+                                .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__NativeClient_bithumb_notices_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_bithumb_notices",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_count = <Option<u32>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok =
+                            crate::api::NativeClient::bithumb_notices(&*api_that_guard, api_count)
                                 .await?;
                         Ok(output_ok)
                     })()
@@ -5015,6 +5073,20 @@ impl SseDecode for Vec<crate::convert::WireBithumbMarketWarning> {
     }
 }
 
+impl SseDecode for Vec<crate::convert::generated_models::WireBithumbNotice> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireBithumbNotice>::sse_decode(deserializer),
+            );
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<crate::convert::generated_models::WireCancelledOrder> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -5847,6 +5919,24 @@ impl SseDecode for crate::convert::WireBithumbMarketWarning {
         return crate::convert::WireBithumbMarketWarning {
             market: var_market,
             warning: var_warning,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBithumbNotice {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_categories = <Vec<String>>::sse_decode(deserializer);
+        let mut var_title = <String>::sse_decode(deserializer);
+        let mut var_url = <String>::sse_decode(deserializer);
+        let mut var_publishedAtNs = <i64>::sse_decode(deserializer);
+        let mut var_modifiedAtNs = <i64>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBithumbNotice {
+            categories: var_categories,
+            title: var_title,
+            url: var_url,
+            published_at_ns: var_publishedAtNs,
+            modified_at_ns: var_modifiedAtNs,
         };
     }
 }
@@ -7358,156 +7448,159 @@ fn pde_ffi_dispatcher_primary_impl(
             rust_vec_len,
             data_len,
         ),
-        14 => wire__crate__api__NativeClient_cancel_order_impl(port, ptr, rust_vec_len, data_len),
-        15 => wire__crate__api__NativeClient_cancel_order_by_client_id_impl(
+        14 => {
+            wire__crate__api__NativeClient_bithumb_notices_impl(port, ptr, rust_vec_len, data_len)
+        }
+        15 => wire__crate__api__NativeClient_cancel_order_impl(port, ptr, rust_vec_len, data_len),
+        16 => wire__crate__api__NativeClient_cancel_order_by_client_id_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        16 => wire__crate__api__NativeClient_cancel_orders_impl(port, ptr, rust_vec_len, data_len),
-        17 => {
+        17 => wire__crate__api__NativeClient_cancel_orders_impl(port, ptr, rust_vec_len, data_len),
+        18 => {
             wire__crate__api__NativeClient_cancel_withdrawal_impl(port, ptr, rust_vec_len, data_len)
         }
-        18 => wire__crate__api__NativeClient_candles_impl(port, ptr, rust_vec_len, data_len),
-        19 => wire__crate__api__NativeClient_create_deposit_address_impl(
+        19 => wire__crate__api__NativeClient_candles_impl(port, ptr, rust_vec_len, data_len),
+        20 => wire__crate__api__NativeClient_create_deposit_address_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        20 => wire__crate__api__NativeClient_deposit_impl(port, ptr, rust_vec_len, data_len),
-        21 => {
+        21 => wire__crate__api__NativeClient_deposit_impl(port, ptr, rust_vec_len, data_len),
+        22 => {
             wire__crate__api__NativeClient_deposit_address_impl(port, ptr, rust_vec_len, data_len)
         }
-        22 => {
+        23 => {
             wire__crate__api__NativeClient_deposit_addresses_impl(port, ptr, rust_vec_len, data_len)
         }
-        23 => wire__crate__api__NativeClient_deposits_impl(port, ptr, rust_vec_len, data_len),
-        25 => {
+        24 => wire__crate__api__NativeClient_deposits_impl(port, ptr, rust_vec_len, data_len),
+        26 => {
             wire__crate__api__NativeClient_execute_transfer_impl(port, ptr, rust_vec_len, data_len)
         }
-        27 => {
+        28 => {
             wire__crate__api__NativeClient_funding_payments_impl(port, ptr, rust_vec_len, data_len)
         }
-        28 => wire__crate__api__NativeClient_funding_rates_impl(port, ptr, rust_vec_len, data_len),
-        30 => wire__crate__api__NativeClient_hyperliquid_asset_context_impl(
+        29 => wire__crate__api__NativeClient_funding_rates_impl(port, ptr, rust_vec_len, data_len),
+        31 => wire__crate__api__NativeClient_hyperliquid_asset_context_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        31 => wire__crate__api__NativeClient_hyperliquid_non_funding_ledger_impl(
+        32 => wire__crate__api__NativeClient_hyperliquid_non_funding_ledger_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        33 => wire__crate__api__NativeClient_margin_summary_impl(port, ptr, rust_vec_len, data_len),
-        34 => wire__crate__api__NativeClient_markets_impl(port, ptr, rust_vec_len, data_len),
-        35 => wire__crate__api__NativeClient_open_orders_impl(port, ptr, rust_vec_len, data_len),
-        36 => wire__crate__api__NativeClient_order_impl(port, ptr, rust_vec_len, data_len),
-        37 => wire__crate__api__NativeClient_order_book_impl(port, ptr, rust_vec_len, data_len),
-        38 => wire__crate__api__NativeClient_order_by_client_id_impl(
+        34 => wire__crate__api__NativeClient_margin_summary_impl(port, ptr, rust_vec_len, data_len),
+        35 => wire__crate__api__NativeClient_markets_impl(port, ptr, rust_vec_len, data_len),
+        36 => wire__crate__api__NativeClient_open_orders_impl(port, ptr, rust_vec_len, data_len),
+        37 => wire__crate__api__NativeClient_order_impl(port, ptr, rust_vec_len, data_len),
+        38 => wire__crate__api__NativeClient_order_book_impl(port, ptr, rust_vec_len, data_len),
+        39 => wire__crate__api__NativeClient_order_by_client_id_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        39 => wire__crate__api__NativeClient_order_history_impl(port, ptr, rust_vec_len, data_len),
-        40 => wire__crate__api__NativeClient_order_rules_impl(port, ptr, rust_vec_len, data_len),
-        41 => wire__crate__api__NativeClient_orders_by_ids_impl(port, ptr, rust_vec_len, data_len),
-        42 => wire__crate__api__NativeClient_place_order_impl(port, ptr, rust_vec_len, data_len),
-        43 => wire__crate__api__NativeClient_positions_impl(port, ptr, rust_vec_len, data_len),
-        44 => wire__crate__api__NativeClient_prepare_transfer_to_impl(
+        40 => wire__crate__api__NativeClient_order_history_impl(port, ptr, rust_vec_len, data_len),
+        41 => wire__crate__api__NativeClient_order_rules_impl(port, ptr, rust_vec_len, data_len),
+        42 => wire__crate__api__NativeClient_orders_by_ids_impl(port, ptr, rust_vec_len, data_len),
+        43 => wire__crate__api__NativeClient_place_order_impl(port, ptr, rust_vec_len, data_len),
+        44 => wire__crate__api__NativeClient_positions_impl(port, ptr, rust_vec_len, data_len),
+        45 => wire__crate__api__NativeClient_prepare_transfer_to_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        45 => wire__crate__api__NativeClient_prepare_transfer_to_chain_impl(
+        46 => wire__crate__api__NativeClient_prepare_transfer_to_chain_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        46 => wire__crate__api__NativeClient_prepare_withdrawal_impl(
+        47 => wire__crate__api__NativeClient_prepare_withdrawal_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        47 => wire__crate__api__NativeClient_set_margin_impl(port, ptr, rust_vec_len, data_len),
-        48 => wire__crate__api__NativeClient_subscribe_impl(port, ptr, rust_vec_len, data_len),
-        49 => {
+        48 => wire__crate__api__NativeClient_set_margin_impl(port, ptr, rust_vec_len, data_len),
+        49 => wire__crate__api__NativeClient_subscribe_impl(port, ptr, rust_vec_len, data_len),
+        50 => {
             wire__crate__api__NativeClient_subscribe_account_impl(port, ptr, rust_vec_len, data_len)
         }
-        51 => wire__crate__api__NativeClient_ticker_impl(port, ptr, rust_vec_len, data_len),
-        52 => wire__crate__api__NativeClient_trades_impl(port, ptr, rust_vec_len, data_len),
-        54 => wire__crate__api__NativeClient_upbit_market_events_impl(
+        52 => wire__crate__api__NativeClient_ticker_impl(port, ptr, rust_vec_len, data_len),
+        53 => wire__crate__api__NativeClient_trades_impl(port, ptr, rust_vec_len, data_len),
+        55 => wire__crate__api__NativeClient_upbit_market_events_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        55 => {
+        56 => {
             wire__crate__api__NativeClient_upbit_order_books_impl(port, ptr, rust_vec_len, data_len)
         }
-        56 => wire__crate__api__NativeClient_upbit_order_books_at_level_impl(
+        57 => wire__crate__api__NativeClient_upbit_order_books_at_level_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        57 => wire__crate__api__NativeClient_upbit_orderbook_instruments_impl(
+        58 => wire__crate__api__NativeClient_upbit_orderbook_instruments_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        59 => wire__crate__api__NativeClient_upbit_tickers_impl(port, ptr, rust_vec_len, data_len),
-        60 => wire__crate__api__NativeClient_upbit_tickers_by_quote_impl(
+        60 => wire__crate__api__NativeClient_upbit_tickers_impl(port, ptr, rust_vec_len, data_len),
+        61 => wire__crate__api__NativeClient_upbit_tickers_by_quote_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        61 => wire__crate__api__NativeClient_upbit_year_candles_impl(
+        62 => wire__crate__api__NativeClient_upbit_year_candles_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        62 => wire__crate__api__NativeClient_withdraw_impl(port, ptr, rust_vec_len, data_len),
-        63 => wire__crate__api__NativeClient_withdrawal_impl(port, ptr, rust_vec_len, data_len),
-        64 => wire__crate__api__NativeClient_withdrawals_impl(port, ptr, rust_vec_len, data_len),
-        66 => wire__crate__api__account_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
-        69 => wire__crate__api__market_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
-        70 => wire__crate__api__native_account_subscription_close_impl(
+        63 => wire__crate__api__NativeClient_withdraw_impl(port, ptr, rust_vec_len, data_len),
+        64 => wire__crate__api__NativeClient_withdrawal_impl(port, ptr, rust_vec_len, data_len),
+        65 => wire__crate__api__NativeClient_withdrawals_impl(port, ptr, rust_vec_len, data_len),
+        67 => wire__crate__api__account_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
+        70 => wire__crate__api__market_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
+        71 => wire__crate__api__native_account_subscription_close_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        71 => wire__crate__api__native_account_subscription_next_impl(
+        72 => wire__crate__api__native_account_subscription_next_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        72 => wire__crate__api__native_market_subscription_close_impl(
+        73 => wire__crate__api__native_market_subscription_close_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        73 => wire__crate__api__native_market_subscription_next_impl(
+        74 => wire__crate__api__native_market_subscription_next_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        75 => wire__crate__api__register_dart_adapter_impl(port, ptr, rust_vec_len, data_len),
+        76 => wire__crate__api__register_dart_adapter_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -7524,17 +7617,17 @@ fn pde_ffi_dispatcher_sync_impl(
         8 => wire__crate__api__NativeClient_binance_usd_m_futures_impl(ptr, rust_vec_len, data_len),
         10 => wire__crate__api__NativeClient_binance_venue_impl(ptr, rust_vec_len, data_len),
         11 => wire__crate__api__NativeClient_bithumb_impl(ptr, rust_vec_len, data_len),
-        24 => wire__crate__api__NativeClient_exchange_impl(ptr, rust_vec_len, data_len),
-        26 => wire__crate__api__NativeClient_from_dart_adapter_impl(ptr, rust_vec_len, data_len),
-        29 => wire__crate__api__NativeClient_hyperliquid_impl(ptr, rust_vec_len, data_len),
-        32 => wire__crate__api__NativeClient_is_testnet_impl(ptr, rust_vec_len, data_len),
-        50 => wire__crate__api__NativeClient_supports_impl(ptr, rust_vec_len, data_len),
-        53 => wire__crate__api__NativeClient_upbit_impl(ptr, rust_vec_len, data_len),
-        58 => wire__crate__api__NativeClient_upbit_region_impl(ptr, rust_vec_len, data_len),
-        65 => wire__crate__api__WireBinanceListenKey_value_impl(ptr, rust_vec_len, data_len),
-        67 => wire__crate__api__bridge_version_impl(ptr, rust_vec_len, data_len),
-        68 => wire__crate__api__configure_browser_relay_impl(ptr, rust_vec_len, data_len),
-        74 => {
+        25 => wire__crate__api__NativeClient_exchange_impl(ptr, rust_vec_len, data_len),
+        27 => wire__crate__api__NativeClient_from_dart_adapter_impl(ptr, rust_vec_len, data_len),
+        30 => wire__crate__api__NativeClient_hyperliquid_impl(ptr, rust_vec_len, data_len),
+        33 => wire__crate__api__NativeClient_is_testnet_impl(ptr, rust_vec_len, data_len),
+        51 => wire__crate__api__NativeClient_supports_impl(ptr, rust_vec_len, data_len),
+        54 => wire__crate__api__NativeClient_upbit_impl(ptr, rust_vec_len, data_len),
+        59 => wire__crate__api__NativeClient_upbit_region_impl(ptr, rust_vec_len, data_len),
+        66 => wire__crate__api__WireBinanceListenKey_value_impl(ptr, rust_vec_len, data_len),
+        68 => wire__crate__api__bridge_version_impl(ptr, rust_vec_len, data_len),
+        69 => wire__crate__api__configure_browser_relay_impl(ptr, rust_vec_len, data_len),
+        75 => {
             wire__crate__api__pending_market_subscription_for_test_impl(ptr, rust_vec_len, data_len)
         }
         _ => unreachable!(),
@@ -8287,6 +8380,30 @@ impl flutter_rust_bridge::IntoIntoDart<crate::convert::WireBithumbMarketWarning>
     for crate::convert::WireBithumbMarketWarning
 {
     fn into_into_dart(self) -> crate::convert::WireBithumbMarketWarning {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireBithumbNotice {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.categories.into_into_dart().into_dart(),
+            self.title.into_into_dart().into_dart(),
+            self.url.into_into_dart().into_dart(),
+            self.published_at_ns.into_into_dart().into_dart(),
+            self.modified_at_ns.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBithumbNotice
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireBithumbNotice>
+    for crate::convert::generated_models::WireBithumbNotice
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBithumbNotice {
         self
     }
 }
@@ -10788,6 +10905,16 @@ impl SseEncode for Vec<crate::convert::WireBithumbMarketWarning> {
     }
 }
 
+impl SseEncode for Vec<crate::convert::generated_models::WireBithumbNotice> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireBithumbNotice>::sse_encode(item, serializer);
+        }
+    }
+}
+
 impl SseEncode for Vec<crate::convert::generated_models::WireCancelledOrder> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -11478,6 +11605,17 @@ impl SseEncode for crate::convert::WireBithumbMarketWarning {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <crate::convert::WireMarket>::sse_encode(self.market, serializer);
         <String>::sse_encode(self.warning, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBithumbNotice {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<String>>::sse_encode(self.categories, serializer);
+        <String>::sse_encode(self.title, serializer);
+        <String>::sse_encode(self.url, serializer);
+        <i64>::sse_encode(self.published_at_ns, serializer);
+        <i64>::sse_encode(self.modified_at_ns, serializer);
     }
 }
 

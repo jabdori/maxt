@@ -1174,6 +1174,7 @@ pub(crate) fn render_wire_shape_guard(schema: &Schema) -> String {
         "PageWire",
         "UpbitMarketEventWire",
         "BithumbMarketAlertWire",
+        "BithumbNoticeWire",
         "BinanceListenKeyWire",
         "HyperliquidLedgerEntryWire",
         "UpbitOptionsWire",
@@ -1354,6 +1355,9 @@ fn provider_method_source(exchange: &str, method: &str) -> &'static str {
         }
         ("bithumb", "market_alerts") => {
             "  Future<List<BithumbMarketAlert>> marketAlerts() =>\n      _nativeFuture(_handle.bithumbMarketAlerts).then(\n        (values) =>\n            values.map(_bithumbMarketAlertFromWire).toList(growable: false),\n      );\n"
+        }
+        ("bithumb", "notices") => {
+            "  Future<List<BithumbNotice>> notices([int? count]) => _nativeFuture(\n    () => _handle.bithumbNotices(count: checkedUint32(count, field: 'count')),\n  ).then((values) => values.map(_bithumbNoticeFromWire).toList(growable: false));\n"
         }
         ("binance", "spot_symbol_filters") => {
             "  Future<BinanceSymbolFilters> spotSymbolFilters(Market market) =>\n      _nativeFuture(\n        () => _handle.binanceSpotSymbolFilters(market: _marketToWire(market)),\n      ).then(_binanceSymbolFiltersFromWire);\n"

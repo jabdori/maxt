@@ -131,6 +131,7 @@ void main() {
       'bithumb': {
         'marketWarnings': (BithumbAdapter value) => value.marketWarnings,
         'marketAlerts': (BithumbAdapter value) => value.marketAlerts,
+        'notices': (BithumbAdapter value) => value.notices,
       },
       'binance': {
         'venue': (BinanceAdapter value) => value.venue,

@@ -86,6 +86,14 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
         (values) =>
             values.map(_bithumbMarketAlertFromWire).toList(growable: false),
       );
+
+  Future<List<BithumbNotice>> notices([int? count]) =>
+      _nativeFuture(
+        () =>
+            _handle.bithumbNotices(count: checkedUint32(count, field: 'count')),
+      ).then(
+        (values) => values.map(_bithumbNoticeFromWire).toList(growable: false),
+      );
 }
 
 extension BinanceAdapterGeneratedMethods on BinanceAdapter {

@@ -19,6 +19,8 @@ const MAX_TRADE_COUNT: u32 = 500;
 const MAX_BOOK_DEPTH: u32 = 30;
 /// Maximum candles in one Bithumb response.
 const MAX_CANDLE_COUNT: u32 = 200;
+/// Maximum notices in one Bithumb response.
+const MAX_NOTICE_COUNT: u32 = 20;
 
 /// Percent-encodes one query value.
 fn encode(raw: &str) -> String {
@@ -48,6 +50,21 @@ pub(crate) fn markets_request() -> HttpRequest {
 /// Builds the separate alert-system request (경보제).
 pub(crate) fn market_alerts_request() -> HttpRequest {
     HttpRequest::get("/v1/market/virtual_asset_warning")
+}
+
+/// Builds Bithumb's public exchange-notice request.
+pub(crate) fn notices_request(count: Option<u32>) -> Result<HttpRequest> {
+    let mut request = HttpRequest::get("/v1/notices");
+    if let Some(count) = count {
+        if !(1..=MAX_NOTICE_COUNT).contains(&count) {
+            return Err(Error::invalid_request(
+                "count",
+                format!("bithumb serves 1 to {MAX_NOTICE_COUNT} notices per call, not {count}"),
+            ));
+        }
+        request = request.query(format!("count={count}"));
+    }
+    Ok(request)
 }
 
 pub(crate) fn trades_request(market: &Market, limit: Option<u32>) -> Result<HttpRequest> {
@@ -188,6 +205,13 @@ pub(crate) async fn market_alerts(
     parse::market_alerts(&send(http, &market_alerts_request()).await?)
 }
 
+pub(crate) async fn notices(
+    http: &HttpTransport,
+    count: Option<u32>,
+) -> Result<Vec<super::BithumbNotice>> {
+    parse::notices(&send(http, &notices_request(count)?).await?)
+}
+
 pub(crate) async fn trades(
     http: &HttpTransport,
     market: &Market,
@@ -264,6 +288,18 @@ mod tests {
     #[test]
     fn public_requests_target_the_documented_paths() {
         assert_eq!(markets_request().target(), "/v1/market/all?isDetails=true");
+        assert_eq!(
+            notices_request(None)
+                .expect("the documented default")
+                .target(),
+            "/v1/notices"
+        );
+        assert_eq!(
+            notices_request(Some(20))
+                .expect("the documented maximum")
+                .target(),
+            "/v1/notices?count=20"
+        );
         assert_eq!(
             trades_request(&btc_krw(), Some(10))
                 .expect("a valid limit")
@@ -401,6 +437,13 @@ mod tests {
             Err(Error::InvalidRequest { field, .. }) if field == "depth"
         ));
         assert!(order_book_request(&btc_krw(), Some(30)).is_ok());
+        for count in [0, 21, u32::MAX] {
+            assert!(matches!(
+                notices_request(Some(count)),
+                Err(Error::InvalidRequest { field, .. }) if field == "count"
+            ));
+        }
+        assert!(notices_request(Some(MAX_NOTICE_COUNT)).is_ok());
     }
 
     #[test]
@@ -408,6 +451,7 @@ mod tests {
         assert_eq!(MAX_TRADE_COUNT, 500);
         assert_eq!(MAX_BOOK_DEPTH, 30);
         assert_eq!(MAX_CANDLE_COUNT, 200);
+        assert_eq!(MAX_NOTICE_COUNT, 20);
     }
 
     #[test]

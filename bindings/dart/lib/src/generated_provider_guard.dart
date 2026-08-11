@@ -27,6 +27,7 @@ void _generatedProviderGuard({
   BithumbAdapter();
   bithumb.marketWarnings();
   bithumb.marketAlerts();
+  bithumb.notices();
   BinanceAdapter.spot();
   BinanceAdapter.usdMFutures();
   binance.venue;

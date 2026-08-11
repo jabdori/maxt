@@ -18,6 +18,7 @@ import {
   TransferLookupRequest,
   WithdrawRequest,
   UpbitAdapter,
+  BithumbAdapter,
   type AssetNetwork,
   type Deposit,
   type Page,
@@ -26,6 +27,7 @@ import {
   type WithdrawalQuote,
   type UpbitOrderBookInstrument,
   type UpbitYearCandle,
+  type BithumbNotice,
 } from "../src/node.js";
 
 type NodeExports = typeof import("../src/node.js");
@@ -52,6 +54,8 @@ const aggregatedBooks = upbit.orderBooksAtLevel(
 const yearCandles: Promise<readonly UpbitYearCandle[]> = upbit.yearCandles(upbitMarket);
 const instruments: Promise<readonly UpbitOrderBookInstrument[]> =
   upbit.orderbookInstruments([upbitMarket]);
+const bithumb = new BithumbAdapter();
+const notices: Promise<readonly BithumbNotice[]> = bithumb.notices();
 const destination = TransferDestination.chain(
   new ChainDestination("BTC", Network.Bitcoin, "bc1qdestination"),
 );
@@ -77,6 +81,7 @@ void quoteTickers;
 void aggregatedBooks;
 void yearCandles;
 void instruments;
+void notices;
 void networks;
 void addresses;
 void address;

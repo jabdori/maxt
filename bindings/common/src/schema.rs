@@ -1133,6 +1133,7 @@ const MODELS: &[&str] = &[
     "UpbitYearCandle",
     "UpbitOrderBookInstrument",
     "BithumbMarketAlert",
+    "BithumbNotice",
     "BinanceSymbolFilters",
     "BinanceSpotOrderDetail",
     "HyperliquidLedgerEntry",
@@ -1155,6 +1156,7 @@ const YEAR_CANDLE_QUERY: &[Argument] = &[
     argument("to", ApiType::OptionalNamed("Timestamp"), Some("null")),
     argument("count", ApiType::OptionalNumber, Some("null")),
 ];
+const NOTICE_COUNT: &[Argument] = &[argument("count", ApiType::OptionalNumber, Some("null"))];
 const LEDGER_RANGE: &[Argument] = &[
     argument("from", ApiType::OptionalNamed("Timestamp"), Some("null")),
     argument("to", ApiType::OptionalNamed("Timestamp"), Some("null")),
@@ -1349,6 +1351,13 @@ const BITHUMB_METHODS: &[ProviderMethod] = &[
         kind: ProviderMethodKind::Async,
         arguments: &[],
         result: ApiType::PairList("Market", "BithumbMarketAlert"),
+    },
+    ProviderMethod {
+        rust_name: "notices",
+        name: "notices",
+        kind: ProviderMethodKind::Async,
+        arguments: NOTICE_COUNT,
+        result: ApiType::List("BithumbNotice"),
     },
 ];
 const BINANCE_METHODS: &[ProviderMethod] = &[
@@ -2021,6 +2030,16 @@ pub fn binding_schema() -> Schema {
             ],
         ),
         record(
+            "BithumbNoticeWire",
+            vec![
+                field("categories", Type::list(Type::String)),
+                field("title", Type::String),
+                field("url", Type::String),
+                field("published_at", timestamp.clone()),
+                field("modified_at", timestamp.clone()),
+            ],
+        ),
+        record(
             "BinanceSymbolFiltersWire",
             vec![
                 field("symbol", Type::String),
@@ -2523,7 +2542,7 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
-        native_api_version: 12,
+        native_api_version: 13,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
         identifiers: IDENTIFIERS,

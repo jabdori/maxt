@@ -7,7 +7,7 @@ import { AccountStream, MarketStream, StreamError } from "../stream.js";
 import * as Codec from "./codec.js";
 import type * as Wire from "./contract.js";
 
-export const NATIVE_API_VERSION = 12 as const;
+export const NATIVE_API_VERSION = 13 as const;
 
 export type NativeOutcome<T> =
   | { readonly ok: true; readonly value: T }
@@ -77,6 +77,7 @@ export interface RawNativeBithumbHandle {
   client(): RawNativeClient;
   marketWarnings(): Promise<unknown>;
   marketAlerts(): Promise<unknown>;
+  notices(count: string): Promise<unknown>;
 }
 
 export interface RawNativeBinanceHandle {
@@ -191,6 +192,7 @@ export interface NativeBithumbHandle {
   client(): NativeClientHandle;
   marketWarnings(): Promise<NativeOutcome<readonly (readonly [Wire.MarketWire, string])[]>>;
   marketAlerts(): Promise<NativeOutcome<readonly (readonly [Wire.MarketWire, Wire.BithumbMarketAlertWire])[]>>;
+  notices(count: number | null): Promise<NativeOutcome<readonly Wire.BithumbNoticeWire[]>>;
 }
 
 export interface NativeBinanceHandle {
@@ -285,6 +287,7 @@ export function createJsonBackend(raw: RawNativeModule): NativeBackend {
         client: () => wrapJsonClient(handle.client()),
         marketWarnings: () => handle.marketWarnings() as Promise<NativeOutcome<readonly (readonly [Wire.MarketWire, string])[]>>,
         marketAlerts: () => handle.marketAlerts() as Promise<NativeOutcome<readonly (readonly [Wire.MarketWire, Wire.BithumbMarketAlertWire])[]>>,
+        notices: (count: number | null) => handle.notices(Codec.stringifyWire(count)) as Promise<NativeOutcome<readonly Wire.BithumbNoticeWire[]>>,
       };
     },
     binance(options) {
@@ -721,12 +724,12 @@ export class Client<A extends Adapter> {
 
   async trades(market: Model.Market, limit: number | null = null): Promise<readonly Model.Trade[]> {
     await ensureInitialized();
-    return Codec.unwrapOutcome(await this.#native.trades(Codec.marketToWire(market), limit)).map(Codec.tradeFromWire);
+    return Codec.unwrapOutcome(await this.#native.trades(Codec.marketToWire(market), Codec.checkedOptionalU32(limit, "limit"))).map(Codec.tradeFromWire);
   }
 
   async orderBook(market: Model.Market, depth: number | null = null): Promise<Model.OrderBook> {
     await ensureInitialized();
-    return Codec.orderBookFromWire(Codec.unwrapOutcome(await this.#native.orderBook(Codec.marketToWire(market), depth)));
+    return Codec.orderBookFromWire(Codec.unwrapOutcome(await this.#native.orderBook(Codec.marketToWire(market), Codec.checkedOptionalU32(depth, "depth"))));
   }
 
   async ticker(market: Model.Market): Promise<Model.Ticker> {
@@ -982,11 +985,11 @@ export class UpbitAdapter extends NativeAdapter {
     return new UpbitAdapter({ region, ...options });
   }
   get region(): Model.UpbitRegion { return Codec.upbitRegionFromWire(this.#provider.region()); }
-  async orderBooks(markets: readonly Model.Market[], depth: number | null = null): Promise<readonly Model.OrderBook[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.orderBooks(markets.map(Codec.marketToWire), depth)).map(Codec.orderBookFromWire); }
-  async orderBooksAtLevel(markets: readonly Model.Market[], level: Model.Decimal, depth: number | null = null): Promise<readonly Model.OrderBook[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.orderBooksAtLevel(markets.map(Codec.marketToWire), level.toString(), depth)).map(Codec.orderBookFromWire); }
+  async orderBooks(markets: readonly Model.Market[], depth: number | null = null): Promise<readonly Model.OrderBook[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.orderBooks(markets.map(Codec.marketToWire), Codec.checkedOptionalU32(depth, "depth"))).map(Codec.orderBookFromWire); }
+  async orderBooksAtLevel(markets: readonly Model.Market[], level: Model.Decimal, depth: number | null = null): Promise<readonly Model.OrderBook[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.orderBooksAtLevel(markets.map(Codec.marketToWire), level.toString(), Codec.checkedOptionalU32(depth, "depth"))).map(Codec.orderBookFromWire); }
   async tickers(markets: readonly Model.Market[]): Promise<readonly Model.Ticker[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.tickers(markets.map(Codec.marketToWire))).map(Codec.tickerFromWire); }
   async tickersByQuote(quoteCurrencies: readonly string[]): Promise<readonly Model.Ticker[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.tickersByQuote(quoteCurrencies)).map(Codec.tickerFromWire); }
-  async yearCandles(market: Model.Market, to: Model.Timestamp | null = null, count: number | null = null): Promise<readonly Model.UpbitYearCandle[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.yearCandles(Codec.marketToWire(market), to?.nanosecondsSinceEpoch.toString() ?? null, count)).map(Codec.upbitYearCandleFromWire); }
+  async yearCandles(market: Model.Market, to: Model.Timestamp | null = null, count: number | null = null): Promise<readonly Model.UpbitYearCandle[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.yearCandles(Codec.marketToWire(market), to?.nanosecondsSinceEpoch.toString() ?? null, Codec.checkedOptionalU32(count, "count"))).map(Codec.upbitYearCandleFromWire); }
   async orderbookInstruments(markets: readonly Model.Market[]): Promise<readonly Model.UpbitOrderBookInstrument[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.orderbookInstruments(markets.map(Codec.marketToWire))).map(Codec.upbitOrderBookInstrumentFromWire); }
   async marketEvents(): Promise<readonly (readonly [Model.Market, Model.UpbitMarketEvent])[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.marketEvents()).map(Codec.upbitMarketEventPairFromWire); }
 }
@@ -999,6 +1002,7 @@ export class BithumbAdapter extends NativeAdapter {
   }
   async marketWarnings(): Promise<readonly (readonly [Model.Market, string])[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.marketWarnings()).map(Codec.marketStringPairFromWire); }
   async marketAlerts(): Promise<readonly (readonly [Model.Market, Model.BithumbMarketAlert])[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.marketAlerts()).map(Codec.bithumbMarketAlertPairFromWire); }
+  async notices(count: number | null = null): Promise<readonly Model.BithumbNotice[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.notices(Codec.checkedOptionalU32(count, "count"))).map(Codec.bithumbNoticeFromWire); }
 }
 
 export class BinanceAdapter extends NativeAdapter {
@@ -1031,6 +1035,6 @@ export class HyperliquidAdapter extends NativeAdapter {
     return new HyperliquidAdapter({ ...options, testnet: true });
   }
   get isTestnet(): boolean { return this.#provider.isTestnet(); }
-  async nonFundingLedger(from: Model.Timestamp | null = null, to: Model.Timestamp | null = null, cursor: Model.Cursor | null = null, limit: number | null = null): Promise<Model.Page<Model.HyperliquidLedgerEntry>> { await ensureInitialized(); return Codec.pageFromWire(Codec.unwrapOutcome(await this.#provider.nonFundingLedger(from?.nanosecondsSinceEpoch.toString() ?? null, to?.nanosecondsSinceEpoch.toString() ?? null, cursor?.value ?? null, limit)), Codec.hyperliquidLedgerEntryFromWire); }
+  async nonFundingLedger(from: Model.Timestamp | null = null, to: Model.Timestamp | null = null, cursor: Model.Cursor | null = null, limit: number | null = null): Promise<Model.Page<Model.HyperliquidLedgerEntry>> { await ensureInitialized(); return Codec.pageFromWire(Codec.unwrapOutcome(await this.#provider.nonFundingLedger(from?.nanosecondsSinceEpoch.toString() ?? null, to?.nanosecondsSinceEpoch.toString() ?? null, cursor?.value ?? null, Codec.checkedOptionalU32(limit, "limit"))), Codec.hyperliquidLedgerEntryFromWire); }
   async assetContext(market: Model.Market): Promise<Model.HyperliquidAssetContext> { await ensureInitialized(); return Codec.hyperliquidAssetContextFromWire(Codec.unwrapOutcome(await this.#provider.assetContext(Codec.marketToWire(market)))); }
 }

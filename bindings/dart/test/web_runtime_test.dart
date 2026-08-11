@@ -107,6 +107,19 @@ void main() {
     );
   });
 
+  test('WebAssembly도 Bithumb 공지 개수를 검증한다', () async {
+    await expectLater(
+      BithumbAdapter().notices(0),
+      throwsA(
+        isA<InvalidRequestError>().having(
+          (error) => error.field,
+          'field',
+          'count',
+        ),
+      ),
+    );
+  });
+
   test('기본 Web 스트림은 네트워크 backpressure를 사용하지 않는다', () async {
     final adapter = _ConfigAdapter();
     final client = Client(adapter);

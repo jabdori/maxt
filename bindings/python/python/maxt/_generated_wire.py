@@ -356,6 +356,13 @@ RECORD_FIELDS = {
         "step": "identifier:BithumbAlertStep",
         "ends_at": "timestamp",
     },
+    "BithumbNotice": {
+        "categories": "list:string",
+        "title": "string",
+        "url": "string",
+        "published_at": "timestamp",
+        "modified_at": "timestamp",
+    },
     "BinanceSymbolFilters": {
         "symbol": "string",
         "tick_size": "optional:decimal",

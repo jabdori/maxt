@@ -914,6 +914,23 @@ wire.WireUpbitOrderBookInstrument _upbitOrderBookInstrumentToWire(
       .toList(growable: false),
 );
 
+BithumbNotice _bithumbNoticeFromWire(wire.WireBithumbNotice value) =>
+    BithumbNotice(
+      categories: value.categories,
+      title: value.title,
+      url: value.url,
+      publishedAt: _timestampFromWire(value.publishedAtNs)!,
+      modifiedAt: _timestampFromWire(value.modifiedAtNs)!,
+    );
+wire.WireBithumbNotice _bithumbNoticeToWire(BithumbNotice value) =>
+    wire.WireBithumbNotice(
+      categories: value.categories.toList(growable: false),
+      title: value.title,
+      url: value.url,
+      publishedAtNs: _timestampToWire(value.publishedAt),
+      modifiedAtNs: _timestampToWire(value.modifiedAt),
+    );
+
 Page<Deposit> _depositPageFromWire(wire.WireDepositPage value) => Page(
   items: value.items.map(_depositFromWire),
   next: value.next == null ? null : Cursor(value.next!),

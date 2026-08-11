@@ -13,6 +13,7 @@ from .models import (
     BinanceSpotOrderDetail,
     BinanceSymbolFilters,
     BithumbMarketAlert,
+    BithumbNotice,
     Candle,
     CandleRequest,
     Exchange,
@@ -283,6 +284,10 @@ class BithumbAdapter(_NativeAdapter):
             (Market.from_wire(value["market"]), BithumbMarketAlert.from_wire(value))
             for value in values
         ]
+
+    async def notices(self, count: Optional[int] = None) -> list[BithumbNotice]:
+        values = await self._call(self._handle.notices, count)
+        return [_model_from_wire("BithumbNotice", value) for value in values]
 
 
 class BinanceListenKey:

@@ -235,7 +235,6 @@ fn planned_korean_operations_pin_official_request_contracts() {
         "upbit|travel_rule|travel_rule_vasps|GET|/v1/travel_rule/vasps|http|Jwt|Read|Region(\"Singapore\")",
         "upbit|travel_rule|travel_rule_verify_uuid|POST|/v1/travel_rule/deposit/uuid|http|Jwt|FinancialWrite|Region(\"Singapore\")",
         "upbit|travel_rule|travel_rule_verify_txid|POST|/v1/travel_rule/deposit/txid|http|Jwt|FinancialWrite|Region(\"Singapore\")",
-        "bithumb|quotation|notices|GET|/v1/notices|http|Public|Read|General",
         "bithumb|quotation|inout_fee|GET|/v2/fee/inout/{currency}|http|Public|Read|General",
         "bithumb|exchange|pending_orders|GET|/v2/orders/pending|http|Jwt|Read|General",
         "bithumb|exchange|batch_orders|POST|/v2/orders/batch|http|Jwt|FinancialWrite|General",

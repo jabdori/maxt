@@ -870,6 +870,16 @@ export class BithumbMarketAlert {
   }
 }
 
+export class BithumbNotice {
+  readonly categories: readonly string[];
+  constructor(
+    categories: readonly string[], readonly title: string, readonly url: string,
+    readonly publishedAt: Timestamp, readonly modifiedAt: Timestamp,
+  ) {
+    this.categories = Object.freeze([...categories]); freezeRecord(this);
+  }
+}
+
 export class BinanceSymbolFilters {
   constructor(
     readonly symbol: string, readonly tickSize: Decimal | null, readonly minPrice: Decimal | null,

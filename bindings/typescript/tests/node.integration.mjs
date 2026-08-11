@@ -114,6 +114,18 @@ test("Upbit orderbook aggregation carries Decimal through the Node boundary", as
   );
 });
 
+test("Bithumb notices reject invalid counts before the Node boundary", async () => {
+  await maxt.initialize();
+  const bithumb = new maxt.BithumbAdapter();
+
+  for (const count of [0, Number.NaN, Number.POSITIVE_INFINITY]) {
+    await assert.rejects(
+      bithumb.notices(count),
+      (error) => error instanceof InvalidRequestError && error.field === "count",
+    );
+  }
+});
+
 test("custom Adapter calls round-trip through Rust without losing values", async () => {
   const market = Market.spot(Exchange.Binance, "BTC", "USDT");
   const expected = new Ticker(

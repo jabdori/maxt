@@ -441,6 +441,9 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  List<WireBithumbNotice> dco_decode_list_wire_bithumb_notice(dynamic raw);
+
+  @protected
   List<WireCancelledOrder> dco_decode_list_wire_cancelled_order(dynamic raw);
 
   @protected
@@ -643,6 +646,9 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireBithumbMarketWarning dco_decode_wire_bithumb_market_warning(dynamic raw);
+
+  @protected
+  WireBithumbNotice dco_decode_wire_bithumb_notice(dynamic raw);
 
   @protected
   WireCancelOrdersRequest dco_decode_wire_cancel_orders_request(dynamic raw);
@@ -1347,6 +1353,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  List<WireBithumbNotice> sse_decode_list_wire_bithumb_notice(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<WireCancelledOrder> sse_decode_list_wire_cancelled_order(
     SseDeserializer deserializer,
   );
@@ -1595,6 +1606,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireBithumbMarketWarning sse_decode_wire_bithumb_market_warning(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbNotice sse_decode_wire_bithumb_notice(
     SseDeserializer deserializer,
   );
 
@@ -2477,6 +2493,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_list_wire_bithumb_notice(
+    List<WireBithumbNotice> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_wire_cancelled_order(
     List<WireCancelledOrder> self,
     SseSerializer serializer,
@@ -2803,6 +2825,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_bithumb_market_warning(
     WireBithumbMarketWarning self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_bithumb_notice(
+    WireBithumbNotice self,
     SseSerializer serializer,
   );
 

@@ -14,7 +14,7 @@ use crate::types::{
     MarketKind, MarketStatus, Order, OrderBook, OrderStatus, Side, Ticker, Timestamp, Trade,
 };
 
-use super::{BithumbAlertStep, BithumbMarketAlert};
+use super::{BithumbAlertStep, BithumbMarketAlert, BithumbNotice};
 
 /// Exchange identifier used in adapter errors.
 pub(crate) const EXCHANGE: &str = Exchange::Bithumb.id();
@@ -271,22 +271,47 @@ pub(crate) fn market_alerts(value: &Value) -> Result<Vec<(Market, BithumbMarketA
                         "DANGER" => BithumbAlertStep::Danger,
                         _ => BithumbAlertStep::Unknown,
                     },
-                    ends_at: alert_end(text(entry, "end_date")?)?,
+                    ends_at: kst_timestamp(text(entry, "end_date")?, "end_date")?,
                 },
             ))
         })
         .collect()
 }
 
-/// Parses a zone-less KST alert expiry and converts it to UTC.
-fn alert_end(raw: &str) -> Result<Timestamp> {
+/// Parses a zone-less KST wall-clock value and converts it to UTC.
+fn kst_timestamp(raw: &str, field: &'static str) -> Result<Timestamp> {
     const KST_OFFSET_SECS: i64 = 9 * 3_600;
 
     chrono::NaiveDateTime::parse_from_str(raw, "%Y-%m-%d %H:%M:%S")
         .map(|naive| {
             Timestamp::from_secs(naive.and_utc().timestamp().saturating_sub(KST_OFFSET_SECS))
         })
-        .map_err(|err| Error::decode(format!("`end_date` is not a Korean wall clock: {err}")))
+        .map_err(|err| Error::decode(format!("`{field}` is not a Korean wall clock: {err}")))
+}
+
+/// Parses `/v1/notices`, preserving Bithumb's documented newest-first order.
+pub(crate) fn notices(value: &Value) -> Result<Vec<BithumbNotice>> {
+    entries(value)?
+        .iter()
+        .map(|entry| {
+            let categories = entries(field(entry, "categories")?)?
+                .iter()
+                .map(|category| {
+                    category
+                        .as_str()
+                        .map(str::to_owned)
+                        .ok_or_else(|| Error::decode("`categories` contains a non-string"))
+                })
+                .collect::<Result<Vec<_>>>()?;
+            Ok(BithumbNotice {
+                categories,
+                title: text(entry, "title")?.to_owned(),
+                url: text(entry, "pc_url")?.to_owned(),
+                published_at: kst_timestamp(text(entry, "published_at")?, "published_at")?,
+                modified_at: kst_timestamp(text(entry, "modified_at")?, "modified_at")?,
+            })
+        })
+        .collect()
 }
 
 /// Parses `/v1/trades/ticks` and returns a stable newest-first order.
@@ -730,6 +755,17 @@ mod tests {
         "warning_type": "DEPOSIT_AMOUNT_SUDDEN_FLUCTUATION",
         "warning_step": "DANGER",
         "end_date": "2026-07-31 07:04:59"
+      }
+    ]"#;
+
+    // Shape reference: https://apidocs.bithumb.com/reference/공지사항-조회.md
+    const NOTICES: &str = r#"[
+      {
+        "categories": ["입출금", "점검"],
+        "title": "네트워크 점검 안내",
+        "pc_url": "https://feed.bithumb.com/notice/1654458",
+        "published_at": "2026-08-11 18:00:00",
+        "modified_at": "2026-08-11 16:24:36"
       }
     ]"#;
 
@@ -1226,6 +1262,18 @@ mod tests {
         assert_eq!(alerts[0].1.ends_at, Timestamp::from_secs(1_785_448_799));
         assert_eq!(alerts[3].1.step, BithumbAlertStep::Caution);
         assert_eq!(alerts[3].1.ends_at, Timestamp::from_secs(1_785_449_399));
+    }
+
+    #[test]
+    fn notices_keep_categories_urls_and_korean_wall_clock_timestamps() {
+        let notices = notices(&parsed(NOTICES)).expect("notices parse");
+
+        assert_eq!(notices.len(), 1);
+        assert_eq!(notices[0].categories, ["입출금", "점검"]);
+        assert_eq!(notices[0].title, "네트워크 점검 안내");
+        assert_eq!(notices[0].url, "https://feed.bithumb.com/notice/1654458");
+        assert_eq!(notices[0].published_at, Timestamp::from_secs(1_786_438_800));
+        assert_eq!(notices[0].modified_at, Timestamp::from_secs(1_786_433_076));
     }
 
     #[test]

@@ -175,6 +175,18 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
         field: error.field,
       };
     }
+    const bithumb = new maxt.BithumbAdapter();
+    const noticeErrors = [];
+    for (const count of [0, Number.NaN]) {
+      try {
+        await bithumb.notices(count);
+      } catch (error) {
+        noticeErrors.push({
+          name: error.constructor.name,
+          field: error.field,
+        });
+      }
+    }
     return {
       exchange: client.exchange.id,
       markets: (await client.markets(maxt.MarketKind.Spot)).length,
@@ -199,6 +211,7 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
       cancelledAt: cancelResult.cancelled[0].cancelledAt.nanosecondsSinceEpoch.toString(),
       cancelFailure: cancelResult.failed[0].code,
       aggregationError,
+      noticeErrors,
     };
   });
 
@@ -226,5 +239,9 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
     cancelledAt: "125",
     cancelFailure: "order_not_found",
     aggregationError: { name: "InvalidRequestError", field: "level" },
+    noticeErrors: [
+      { name: "InvalidRequestError", field: "count" },
+      { name: "InvalidRequestError", field: "count" },
+    ],
   });
 });

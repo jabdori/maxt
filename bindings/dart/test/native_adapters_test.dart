@@ -36,6 +36,7 @@ void main() {
 
   test('공급자 전용 u32 인자를 native 호출 전에 범위 검증한다', () async {
     final upbit = UpbitAdapter();
+    final bithumb = BithumbAdapter();
     final hyperliquid = HyperliquidAdapter();
     final cases =
         <({String field, Future<Object?> Function(int value) invoke})>[
@@ -47,6 +48,7 @@ void main() {
             field: 'limit',
             invoke: (value) => hyperliquid.nonFundingLedger(limit: value),
           ),
+          (field: 'count', invoke: (value) => bithumb.notices(value)),
         ];
 
     for (final testCase in cases) {

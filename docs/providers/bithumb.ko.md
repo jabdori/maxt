@@ -96,6 +96,7 @@ code로 보존합니다.
 | --- | --- |
 | `market_warnings()` | 상장 시장마다 원본 `NONE` 또는 `CAUTION` 1건 |
 | `market_alerts()` | 활성 행만 반환; 시장·기준당 1행; `ends_at`은 KST에서 UTC로 변환 |
+| `notices(count)` | `GET /v1/notices`; `count: 1..=20`; `None → 거래소 기본값 5`; 최신순; `published_at`, `modified_at`을 KST에서 UTC로 변환 |
 
 | 거래소 상태 | 매핑 |
 | --- | --- |
@@ -117,6 +118,7 @@ code로 보존합니다.
 - [문서 색인](https://apidocs.bithumb.com/llms.txt)
 - [요청 한도](https://apidocs.bithumb.com/docs/api-%EC%9A%94%EC%B2%AD-%EC%88%98-%EC%A0%9C%ED%95%9C-%EC%95%88%EB%82%B4.md)
 - [최근 체결](https://apidocs.bithumb.com/reference/%EC%B2%B4%EA%B2%B0-%EB%82%B4%EC%97%AD-%EC%A1%B0%ED%9A%8C.md)
+- [공지사항](https://apidocs.bithumb.com/reference/%EA%B3%B5%EC%A7%80%EC%82%AC%ED%95%AD-%EC%A1%B0%ED%9A%8C.md)
 - [캔들](https://apidocs.bithumb.com/reference/%EB%B6%84minute-%EC%BA%94%EB%93%A4-%EC%A1%B0%ED%9A%8C.md)
 - [WebSocket](https://apidocs.bithumb.com/reference/%EA%B8%B0%EB%B3%B8-%EC%A0%95%EB%B3%B4.md)
 - [주문](https://apidocs.bithumb.com/reference/%EC%A3%BC%EB%AC%B8-%EC%9A%94%EC%B2%AD.md)

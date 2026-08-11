@@ -507,3 +507,19 @@ final class UpbitOrderBookInstrument {
   final Decimal tickSize;
   final List<Decimal> supportedLevels;
 }
+
+final class BithumbNotice {
+  const BithumbNotice({
+    required this.categories,
+    required this.title,
+    required this.url,
+    required this.publishedAt,
+    required this.modifiedAt,
+  });
+
+  final List<String> categories;
+  final String title;
+  final String url;
+  final Timestamp publishedAt;
+  final Timestamp modifiedAt;
+}

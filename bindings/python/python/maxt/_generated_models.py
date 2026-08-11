@@ -439,6 +439,15 @@ class UpbitOrderBookInstrument(WireModel):
     supported_levels: list[Decimal]
 
 
+@dataclass(frozen=True)
+class BithumbNotice(WireModel):
+    categories: list[str]
+    title: str
+    url: str
+    published_at: Timestamp
+    modified_at: Timestamp
+
+
 __all__ = [
     "OrderAccount",
     "OrderOption",
@@ -469,4 +478,5 @@ __all__ = [
     "TransferHistoryRequest",
     "UpbitYearCandle",
     "UpbitOrderBookInstrument",
+    "BithumbNotice",
 ]

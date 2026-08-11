@@ -553,6 +553,8 @@ fn encode_argument(argument: &Argument, schema: &Schema) -> String {
     let name = argument.name;
     match argument.ty {
         ApiType::Client => format!("{name}.#native"),
+        ApiType::Number => format!("Codec.checkedU32({name}, \"{name}\")"),
+        ApiType::OptionalNumber => format!("Codec.checkedOptionalU32({name}, \"{name}\")"),
         ApiType::Named(value) if schema.has_identifier(value) => format!("{name}.id"),
         ApiType::Named("Timestamp") => format!("{name}.nanosecondsSinceEpoch.toString()"),
         ApiType::Named("Cursor") => format!("{name}.value"),

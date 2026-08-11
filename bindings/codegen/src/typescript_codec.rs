@@ -31,6 +31,17 @@ function unsignedInteger(value: string, field: string): number {
   return parsed;
 }
 
+export function checkedU32(value: number, field: string): number {
+  if (!Number.isSafeInteger(value) || value < 0 || value > 4_294_967_295) {
+    throw new InvalidRequestError(field, "must be a non-negative safe integer within the u32 range");
+  }
+  return value;
+}
+
+export function checkedOptionalU32(value: number | null, field: string): number | null {
+  return value === null ? null : checkedU32(value, field);
+}
+
 function assertNever(value: never): never {
   throw new InvalidRequestError("kind", `unknown tagged union variant: ${String(value)}`);
 }

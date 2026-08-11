@@ -8,6 +8,7 @@ from maxt import (
     BithumbAdapter,
     BithumbAlertStep,
     BithumbMarketAlert,
+    BithumbNotice,
     BinanceAdapter,
     BinanceListenKey,
     BinanceMarket,
@@ -199,6 +200,18 @@ class FakeNativeBithumbAdapter:
                 "kind": "PRICE_FLUCTUATION",
                 "step": "danger",
                 "ends_at": 1_700_000_000_000_000_008,
+            }
+        ]
+
+    async def notices(self, count=None):
+        self.notice_count = count
+        return [
+            {
+                "categories": ["입출금"],
+                "title": "네트워크 점검 안내",
+                "url": "https://feed.bithumb.com/notice/1654458",
+                "published_at": 1_700_000_000_000_000_009,
+                "modified_at": 1_700_000_000_000_000_010,
             }
         ]
 
@@ -399,6 +412,7 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
             adapter = BithumbAdapter(access_key="key", secret_key="secret")
             warnings = await adapter.market_warnings()
             alerts = await adapter.market_alerts()
+            notices = await adapter.notices(1)
 
         self.assertEqual(adapter.exchange, Exchange.BITHUMB)
         self.assertTrue(adapter.authenticated)
@@ -406,6 +420,10 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(alerts[0][1], BithumbMarketAlert)
         self.assertEqual(alerts[0][1].step, BithumbAlertStep.DANGER)
         self.assertEqual(alerts[0][1].ends_at, 1_700_000_000_000_000_008)
+        self.assertEqual(adapter._handle.notice_count, 1)
+        self.assertIsInstance(notices[0], BithumbNotice)
+        self.assertEqual(notices[0].categories, ["입출금"])
+        self.assertEqual(notices[0].url, "https://feed.bithumb.com/notice/1654458")
 
     async def test_binance_exposes_spot_details_and_usd_m_listen_keys(self) -> None:
         native = SimpleNamespace(NativeBinanceAdapter=FakeNativeBinanceAdapter)

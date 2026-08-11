@@ -56,6 +56,24 @@ pub struct BithumbMarketAlert {
     pub ends_at: Timestamp,
 }
 
+/// One Bithumb exchange notice.
+///
+/// Bithumb publishes `published_at` and `modified_at` as Korea Standard Time
+/// wall-clock values. They are converted to UTC timestamps at the boundary.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BithumbNotice {
+    /// Bithumb's notice categories, in the order supplied by the provider.
+    pub categories: Vec<String>,
+    /// Notice title.
+    pub title: String,
+    /// Provider-hosted notice URL.
+    pub url: String,
+    /// Publication time converted from KST to UTC.
+    pub published_at: Timestamp,
+    /// Most recent modification time converted from KST to UTC.
+    pub modified_at: Timestamp,
+}
+
 /// Adapter for Bithumb spot markets.
 ///
 /// Public REST supports markets, trades, order books, tickers, and candles.
@@ -112,6 +130,14 @@ impl BithumbAdapter {
     /// [`MarketStatus`](crate::MarketStatus).
     pub async fn market_alerts(&self) -> Result<Vec<(Market, BithumbMarketAlert)>> {
         rest::market_alerts(self.http()?).await
+    }
+
+    /// Returns the newest Bithumb exchange notices first.
+    ///
+    /// `count` must be from 1 through 20. `None` uses Bithumb's documented
+    /// five-notice default.
+    pub async fn notices(&self, count: Option<u32>) -> Result<Vec<BithumbNotice>> {
+        rest::notices(self.http()?, count).await
     }
 
     pub(crate) fn is_authenticated(&self) -> bool {

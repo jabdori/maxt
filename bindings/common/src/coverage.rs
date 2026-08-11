@@ -1458,7 +1458,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Provider("market_alerts"),
         Validation::LiveRead,
     ),
-    planned(operation(
+    operation(
         Exchange::Bithumb,
         "quotation",
         "notices",
@@ -1468,8 +1468,8 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         Authentication::Public,
         OperationRisk::Read,
         OperationMapping::Provider("notices"),
-        Validation::Documented,
-    )),
+        Validation::LiveRead,
+    ),
     planned(operation(
         Exchange::Bithumb,
         "quotation",

@@ -68,7 +68,7 @@ Binance 테스트넷(testnet) 생성자는 제공하지 않습니다. Hyperliqui
 | 어댑터 | 생성 | 추가 메서드 |
 | --- | --- | --- |
 | `UpbitAdapter` | `new UpbitAdapter()` 또는 `UpbitAdapter.withRegion(...)` | `orderBooks()`, `orderBooksAtLevel()`, `tickers()`, `tickersByQuote()`, `yearCandles()`, `orderbookInstruments()`, `marketEvents()` |
-| `BithumbAdapter` | `new BithumbAdapter()` | `marketWarnings()`, `marketAlerts()` |
+| `BithumbAdapter` | `new BithumbAdapter()` | `marketWarnings()`, `marketAlerts()`, `notices()` |
 | `BinanceAdapter` | `BinanceAdapter.spot()` | `spotSymbolFilters()`; 인증 필요: `spotOrder()` |
 | `BinanceAdapter` | `BinanceAdapter.usdMFutures()` | 인증 필요: `usdMCreateListenKey()`, `usdMKeepaliveListenKey()`, `usdMCloseListenKey()` |
 | `HyperliquidAdapter` | `new HyperliquidAdapter()` 또는 `HyperliquidAdapter.testnet()` | `assetContext()`, `nonFundingLedger()` |

@@ -64,6 +64,41 @@ class WireAssetNetwork {
           memoRequired == other.memoRequired;
 }
 
+class WireBithumbNotice {
+  final List<String> categories;
+  final String title;
+  final String url;
+  final PlatformInt64 publishedAtNs;
+  final PlatformInt64 modifiedAtNs;
+
+  const WireBithumbNotice({
+    required this.categories,
+    required this.title,
+    required this.url,
+    required this.publishedAtNs,
+    required this.modifiedAtNs,
+  });
+
+  @override
+  int get hashCode =>
+      categories.hashCode ^
+      title.hashCode ^
+      url.hashCode ^
+      publishedAtNs.hashCode ^
+      modifiedAtNs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbNotice &&
+          runtimeType == other.runtimeType &&
+          categories == other.categories &&
+          title == other.title &&
+          url == other.url &&
+          publishedAtNs == other.publishedAtNs &&
+          modifiedAtNs == other.modifiedAtNs;
+}
+
 class WireCancelOrdersRequest {
   final WireOrderIdKind kind;
   final List<String> ids;

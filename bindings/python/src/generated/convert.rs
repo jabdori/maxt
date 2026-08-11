@@ -1439,6 +1439,32 @@ pub(crate) fn upbit_order_book_instrument_to_wire(
     )
 }
 
+pub(crate) fn bithumb_notice_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::BithumbNotice> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::BithumbNotice {
+        categories: required(dict, "categories")?.extract::<Vec<String>>()?,
+        title: required(dict, "title")?.extract::<String>()?,
+        url: required(dict, "url")?.extract::<String>()?,
+        published_at: required(dict, "published_at")?.extract().map(Timestamp::from_nanos)?,
+        modified_at: required(dict, "modified_at")?.extract().map(Timestamp::from_nanos)?,
+    })
+}
+
+pub(crate) fn bithumb_notice_to_wire(
+    py: Python<'_>,
+    value: &maxt::BithumbNotice,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "categories" => &value.categories,
+        "title" => &value.title,
+        "url" => &value.url,
+        "published_at" => timestamp_to_wire(value.published_at),
+        "modified_at" => timestamp_to_wire(value.modified_at),
+    )
+}
+
 pub(crate) fn deposits_page_to_wire(
     py: Python<'_>,
     value: &Page<maxt::Deposit>,

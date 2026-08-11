@@ -70,7 +70,7 @@ class MaxtRustLib
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => 1464436966;
+  int get rustContentHash => -2081329458;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -391,6 +391,11 @@ abstract class MaxtRustLibApi extends BaseApi {
 
   WireUpbitRegion? crateApiNativeClientUpbitRegion({
     required NativeClient that,
+  });
+
+  Future<WireOrder> crateApiNativeClientUpbitTestOrder({
+    required NativeClient that,
+    required WireOrderRequest request,
   });
 
   Future<List<WireTicker>> crateApiNativeClientUpbitTickers({
@@ -2864,6 +2869,44 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       );
 
   @override
+  Future<WireOrder> crateApiNativeClientUpbitTestOrder({
+    required NativeClient that,
+    required WireOrderRequest request,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
+            that,
+            serializer,
+          );
+          sse_encode_box_autoadd_wire_order_request(request, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 63,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_wire_order,
+          decodeErrorData: sse_decode_native_error,
+        ),
+        constMeta: kCrateApiNativeClientUpbitTestOrderConstMeta,
+        argValues: [that, request],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiNativeClientUpbitTestOrderConstMeta =>
+      const TaskConstMeta(
+        debugName: "NativeClient_upbit_test_order",
+        argNames: ["that", "request"],
+      );
+
+  @override
   Future<List<WireTicker>> crateApiNativeClientUpbitTickers({
     required NativeClient that,
     required List<WireMarket> markets,
@@ -2880,7 +2923,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 63,
+            funcId: 64,
             port: port_,
           );
         },
@@ -2918,7 +2961,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 64,
+            funcId: 65,
             port: port_,
           );
         },
@@ -2960,7 +3003,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 65,
+            funcId: 66,
             port: port_,
           );
         },
@@ -2998,7 +3041,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 66,
+            funcId: 67,
             port: port_,
           );
         },
@@ -3039,7 +3082,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 67,
+            funcId: 68,
             port: port_,
           );
         },
@@ -3080,7 +3123,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 68,
+            funcId: 69,
             port: port_,
           );
         },
@@ -3113,7 +3156,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
             that,
             serializer,
           );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 69)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 70)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -3149,7 +3192,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 70,
+            funcId: 71,
             port: port_,
           );
         },
@@ -3176,7 +3219,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 71)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 72)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -3199,7 +3242,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(relayUrl, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 72)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 73)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
@@ -3235,7 +3278,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 73,
+            funcId: 74,
             port: port_,
           );
         },
@@ -3271,7 +3314,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 74,
+            funcId: 75,
             port: port_,
           );
         },
@@ -3307,7 +3350,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 75,
+            funcId: 76,
             port: port_,
           );
         },
@@ -3343,7 +3386,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 76,
+            funcId: 77,
             port: port_,
           );
         },
@@ -3379,7 +3422,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 77,
+            funcId: 78,
             port: port_,
           );
         },
@@ -3406,7 +3449,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 78)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 79)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -3445,7 +3488,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 79,
+            funcId: 80,
             port: port_,
           );
         },
@@ -13217,6 +13260,12 @@ class NativeClientImpl extends RustOpaque implements NativeClient {
 
   WireUpbitRegion? upbitRegion() =>
       MaxtRustLib.instance.api.crateApiNativeClientUpbitRegion(that: this);
+
+  Future<WireOrder> upbitTestOrder({required WireOrderRequest request}) =>
+      MaxtRustLib.instance.api.crateApiNativeClientUpbitTestOrder(
+        that: this,
+        request: request,
+      );
 
   Future<List<WireTicker>> upbitTickers({required List<WireMarket> markets}) =>
       MaxtRustLib.instance.api.crateApiNativeClientUpbitTickers(

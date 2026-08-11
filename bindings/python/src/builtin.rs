@@ -229,6 +229,20 @@ impl NativeUpbitAdapter {
             |py, values| list_to_wire(py, &values, upbit_market_event_to_wire),
         )
     }
+
+    fn test_order<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::order_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.test_order(&request).await },
+            |py, value| order_to_wire(py, &value),
+        )
+    }
 }
 
 #[pyclass(module = "maxt._native", frozen)]

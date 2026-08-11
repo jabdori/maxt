@@ -67,11 +67,15 @@ backends.
 
 | Adapter | Construction | Additional methods |
 | --- | --- | --- |
-| `UpbitAdapter` | `new UpbitAdapter()` or `UpbitAdapter.withRegion(...)` | `orderBooks()`, `orderBooksAtLevel()`, `tickers()`, `tickersByQuote()`, `yearCandles()`, `orderbookInstruments()`, `marketEvents()` |
+| `UpbitAdapter` | `new UpbitAdapter()` or `UpbitAdapter.withRegion(...)` | `orderBooks()`, `orderBooksAtLevel()`, `tickers()`, `tickersByQuote()`, `yearCandles()`, `orderbookInstruments()`, `marketEvents()`; authenticated: `testOrder()` |
 | `BithumbAdapter` | `new BithumbAdapter()` | `marketWarnings()`, `marketAlerts()`, `notices()`, `transferFees()`; authenticated: `apiKeys()`, `pendingOrders()` |
 | `BinanceAdapter` | `BinanceAdapter.spot()` | `spotSymbolFilters()`; authenticated: `spotOrder()` |
 | `BinanceAdapter` | `BinanceAdapter.usdMFutures()` | Authenticated: `usdMCreateListenKey()`, `usdMKeepaliveListenKey()`, `usdMCloseListenKey()` |
 | `HyperliquidAdapter` | `new HyperliquidAdapter()` or `HyperliquidAdapter.testnet()` | `assetContext()`, `nonFundingLedger()` |
+
+`UpbitAdapter.testOrder()` validates an order without creating it. The returned
+`Order` is a dry-run result: do not query or cancel its `id`, and do not treat
+its status as a live order.
 
 ## Node.js
 

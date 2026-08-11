@@ -109,6 +109,22 @@ void main() {
     );
   });
 
+  test('Upbit 테스트 주문은 자격증명 없이 네트워크 요청 전에 거절한다', () async {
+    final market = Market.spot(Exchange.upbit, 'BTC', 'KRW');
+
+    await expectLater(
+      UpbitAdapter().testOrder(
+        OrderRequest.limit(
+          market,
+          Side.buy,
+          Size.base(Decimal.parse('0.01')),
+          Decimal.parse('100000000'),
+        ),
+      ),
+      throwsA(isA<AuthenticationError>()),
+    );
+  });
+
   test('built-in Adapter는 빈 구독을 native 호출 전에 거절한다', () async {
     final adapter = UpbitAdapter();
     final market = Market.spot(Exchange.upbit, 'BTC', 'KRW');

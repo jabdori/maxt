@@ -45,7 +45,7 @@
 
 | Exchange | Adapter | Python | Dart / TypeScript |
 | --- | --- | --- | --- |
-| upbit | `UpbitAdapter` | `region`, `order_books`, `order_books_at_level`, `tickers`, `tickers_by_quote`, `year_candles`, `orderbook_instruments`, `market_events` | `region`, `orderBooks`, `orderBooksAtLevel`, `tickers`, `tickersByQuote`, `yearCandles`, `orderbookInstruments`, `marketEvents` |
+| upbit | `UpbitAdapter` | `region`, `order_books`, `order_books_at_level`, `tickers`, `tickers_by_quote`, `year_candles`, `orderbook_instruments`, `market_events`, `test_order` | `region`, `orderBooks`, `orderBooksAtLevel`, `tickers`, `tickersByQuote`, `yearCandles`, `orderbookInstruments`, `marketEvents`, `testOrder` |
 | bithumb | `BithumbAdapter` | `market_warnings`, `market_alerts`, `notices`, `transfer_fees`, `api_keys`, `pending_orders` | `marketWarnings`, `marketAlerts`, `notices`, `transferFees`, `apiKeys`, `pendingOrders` |
 | binance | `BinanceAdapter` | `venue`, `spot_symbol_filters`, `spot_order`, `usd_m_create_listen_key`, `usd_m_keepalive_listen_key`, `usd_m_close_listen_key` | `venue`, `spotSymbolFilters`, `spotOrder`, `usdMCreateListenKey`, `usdMKeepaliveListenKey`, `usdMCloseListenKey` |
 | hyperliquid | `HyperliquidAdapter` | `is_testnet`, `non_funding_ledger`, `asset_context` | `isTestnet`, `nonFundingLedger`, `assetContext` |
@@ -135,7 +135,7 @@ Documentation baseline: `2026-08-10`.
 | upbit | quotation | `list_subscriptions` | `LIST_SUBSCRIPTIONS` | `LIST_SUBSCRIPTIONS` | `websocket_request` | public | read | general | provider `list_subscriptions` | `Planned` | `Documented` |
 | upbit | exchange | `balances` | `GET` | `/v1/accounts` | `http` | JWT | read | general | common `balances` | `Implemented` | `Fixture` |
 | upbit | exchange | `available_order_info` | `GET` | `/v1/orders/chance` | `http` | JWT | read | general | common `order_rules` | `Implemented` | `Fixture` |
-| upbit | exchange | `test_order` | `POST` | `/v1/orders/test` | `http` | JWT | read | general | provider `test_order` | `Planned` | `Documented` |
+| upbit | exchange | `test_order` | `POST` | `/v1/orders/test` | `http` | JWT | read | general | provider `test_order` | `Partial` | `Fixture` |
 | upbit | exchange | `open_orders` | `GET` | `/v1/orders/open` | `http` | JWT | read | general | common `open_orders` | `Implemented` | `Fixture` |
 | upbit | exchange | `get_order` | `GET` | `/v1/order` | `http` | JWT | read | general | common `order`, `order_by_client_id` | `Partial` | `Fixture` |
 | upbit | exchange | `orders_by_ids` | `GET` | `/v1/orders/uuids` | `http` | JWT | read | general | common `orders_by_ids` | `Partial` | `Fixture` |

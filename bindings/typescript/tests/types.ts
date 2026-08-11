@@ -10,6 +10,7 @@ import {
   Market,
   Network,
   OrderIdKind,
+  OrderRequest,
   OrderLookupRequest,
   TransferDestination,
   TransferError,
@@ -35,6 +36,8 @@ import {
   type BithumbAssetFee,
   type BithumbNotice,
   type Order,
+  Side,
+  Size,
 } from "../src/node.js";
 
 type NodeExports = typeof import("../src/node.js");
@@ -61,6 +64,14 @@ const aggregatedBooks = upbit.orderBooksAtLevel(
 const yearCandles: Promise<readonly UpbitYearCandle[]> = upbit.yearCandles(upbitMarket);
 const instruments: Promise<readonly UpbitOrderBookInstrument[]> =
   upbit.orderbookInstruments([upbitMarket]);
+const testOrder: Promise<Order> = upbit.testOrder(
+  OrderRequest.limit(
+    upbitMarket,
+    Side.Buy,
+    Size.base(Decimal.parse("0.01")),
+    Decimal.parse("100000000"),
+  ),
+);
 const bithumb = new BithumbAdapter();
 const notices: Promise<readonly BithumbNotice[]> = bithumb.notices();
 const transferFees: Promise<readonly BithumbAssetFee[]> = bithumb.transferFees("BTC");
@@ -99,6 +110,7 @@ void quoteTickers;
 void aggregatedBooks;
 void yearCandles;
 void instruments;
+void testOrder;
 void notices;
 void transferFees;
 void apiKeys;

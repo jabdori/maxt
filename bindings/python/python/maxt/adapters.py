@@ -259,6 +259,15 @@ class UpbitAdapter(_NativeAdapter):
             for value in values
         ]
 
+    async def test_order(self, request: OrderRequest) -> Order:
+        """Validate an Upbit order without creating it.
+
+        The returned order is a dry-run result. Its ID cannot be queried or
+        cancelled, and its status does not represent a live order.
+        """
+        value = await self._call(self._handle.test_order, request.to_wire())
+        return _model_from_wire("Order", value)
+
 
 class BithumbAdapter(_NativeAdapter):
     def __init__(

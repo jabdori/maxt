@@ -29,7 +29,7 @@ use crate::convert::{
     WireBinanceSpotOrderDetail, WireBinanceSymbolFilters, WireBithumbMarketAlert,
     WireBithumbApiKey, WireBithumbAssetFee, WireBithumbNotice, WireBithumbPendingOrdersRequest,
     WireHyperliquidAssetContext, WireHyperliquidLedgerEntry, WireMarket, WireOrder,
-    WireOrderBook, WirePage, WireTicker,
+    WireOrderBook, WireOrderRequest, WirePage, WireTicker,
     WireUpbitMarketEvent, WireUpbitOrderBookInstrument, WireUpbitYearCandle, decimal_from_wire,
     from_wire_text, outcome, timestamp_from_wire,
 };
@@ -317,6 +317,18 @@ impl NativeUpbit {
             self.adapter.market_events().await,
         ))
     }
+
+    async fn test_order(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<maxt::OrderRequest, WireOrderRequest>(request, "request") {
+            Ok(request) => outcome(
+                self.adapter
+                    .test_order(&request)
+                    .await
+                    .and_then(TryInto::<WireOrder>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
 }
 
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
@@ -424,6 +436,17 @@ impl NativeUpbit {
     #[napi(js_name = "marketEvents")]
     pub async fn market_events_native(&self) -> Value {
         self.market_events().await
+    }
+
+    #[napi(js_name = "testOrder", ts_args_type = "request: string")]
+    pub fn test_order_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.test_order(request).await })
     }
 }
 
@@ -1023,6 +1046,11 @@ impl NativeUpbit {
     #[wasm_bindgen(js_name = "marketEvents")]
     pub async fn market_events_wasm(&self) -> JsValue {
         crate::web::value(self.market_events().await)
+    }
+
+    #[wasm_bindgen(js_name = "testOrder")]
+    pub async fn test_order_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.test_order(Ok(request)).await)
     }
 }
 

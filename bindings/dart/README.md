@@ -64,11 +64,15 @@ Exchange-specific methods remain available through `client.adapter`.
 
 | Adapter | Construction | Additional methods |
 | --- | --- | --- |
-| `UpbitAdapter` | `UpbitAdapter()` or `UpbitAdapter.withRegion(...)` | `orderBooks()`, `orderBooksAtLevel()`, `tickers()`, `tickersByQuote()`, `yearCandles()`, `orderbookInstruments()`, `marketEvents()` |
+| `UpbitAdapter` | `UpbitAdapter()` or `UpbitAdapter.withRegion(...)` | `orderBooks()`, `orderBooksAtLevel()`, `tickers()`, `tickersByQuote()`, `yearCandles()`, `orderbookInstruments()`, `marketEvents()`; authenticated: `testOrder()` |
 | `BithumbAdapter` | `BithumbAdapter()` | `marketWarnings()`, `marketAlerts()`, `notices()`, `transferFees()`; authenticated: `apiKeys()`, `pendingOrders()` |
 | `BinanceAdapter` | `BinanceAdapter.spot()` | `spotSymbolFilters()`; authenticated: `spotOrder()` |
 | `BinanceAdapter` | `BinanceAdapter.usdMFutures()` | Authenticated: `usdMCreateListenKey()`, `usdMKeepaliveListenKey()`, `usdMCloseListenKey()` |
 | `HyperliquidAdapter` | `HyperliquidAdapter()` or `HyperliquidAdapter.testnet()` | `assetContext()`, `nonFundingLedger()` |
+
+`UpbitAdapter.testOrder()` validates an order without creating it. The returned
+`Order` is a dry-run result: do not query or cancel its `id`, and do not treat
+its status as a live order.
 
 ## Install
 

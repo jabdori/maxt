@@ -31,6 +31,10 @@ from maxt import (
     InvalidRequestError,
     Market,
     MarketEvent,
+    OrderRequest,
+    OrderStatus,
+    Side,
+    Size,
     StreamError,
     StreamEvent,
     StreamConfig,
@@ -184,6 +188,19 @@ class FakeNativeUpbitAdapter:
                 "supported_levels": ["0", "10000"],
             }
         ]
+
+    async def test_order(self, request):
+        self.test_order_request = request
+        return {
+            "id": "dry-run-order",
+            "market": MARKET_WIRE,
+            "side": "buy",
+            "status": "accepted",
+            "filled_quantity": "0",
+            "remaining_quantity": "0.01",
+            "price": "100000000",
+            "created_at": 1_700_000_000_000_000_014,
+        }
 
 
 class FakeNativeBithumbAdapter:
@@ -397,6 +414,14 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
             )
             annual = await adapter.year_candles(market, to=1_767_225_600_000_000_000, count=2)
             policies = await adapter.orderbook_instruments([market])
+            test_order = await adapter.test_order(
+                OrderRequest.limit_order(
+                    market,
+                    Side.BUY,
+                    Size.base(Decimal("0.01")),
+                    Decimal("100000000"),
+                )
+            )
 
         self.assertIsInstance(adapter, Adapter)
         self.assertIs(client.adapter, adapter)
@@ -419,6 +444,9 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(annual[0].quote_volume, Decimal("37189906239683.17623000"))
         self.assertIsInstance(policies[0], UpbitOrderBookInstrument)
         self.assertEqual(policies[0].supported_levels, [Decimal("0"), Decimal("10000")])
+        self.assertEqual(adapter._handle.test_order_request["order_type"], "limit")
+        self.assertEqual(test_order.id, "dry-run-order")
+        self.assertIs(test_order.status, OrderStatus.ACCEPTED)
 
     async def test_native_stream_items_are_decoded_and_only_termination_ends(self) -> None:
         native = SimpleNamespace(NativeUpbitAdapter=FakeNativeUpbitAdapter)

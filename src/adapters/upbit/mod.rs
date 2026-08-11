@@ -289,6 +289,14 @@ impl UpbitAdapter {
         rest::market_events(self.http()?).await
     }
 
+    /// Validates an order without creating it on Upbit.
+    ///
+    /// Upbit returns a dry-run order object. Its identifier and status do not
+    /// represent a live order, so it cannot be queried or cancelled.
+    pub async fn test_order(&self, request: &OrderRequest) -> Result<Order> {
+        private::test_order(self.credentials()?, self.http()?, request).await
+    }
+
     pub(crate) fn is_authenticated(&self) -> bool {
         self.credentials.is_some()
     }
@@ -751,6 +759,10 @@ mod tests {
         ));
         assert!(matches!(
             public.place_order(&order).await,
+            Err(Error::Auth { .. })
+        ));
+        assert!(matches!(
+            public.test_order(&order).await,
             Err(Error::Auth { .. })
         ));
         assert!(matches!(

@@ -713,6 +713,18 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
+    pub async fn upbit_test_order(
+        &self,
+        request: WireOrderRequest,
+    ) -> Result<WireOrder, NativeError> {
+        let request: OrderRequest = request.try_into()?;
+        let adapter = match self.built_in("upbit_test_order")? {
+            BuiltInAdapter::Upbit(adapter) => adapter,
+            _ => return Err(provider_mismatch("Upbit")),
+        };
+        adapter.test_order(&request).await.map(Into::into).map_err(Into::into)
+    }
+
     pub async fn bithumb_market_warnings(
         &self,
     ) -> Result<Vec<WireBithumbMarketWarning>, NativeError> {

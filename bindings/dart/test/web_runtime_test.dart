@@ -147,6 +147,22 @@ void main() {
     );
   });
 
+  test('WebAssembly도 자격증명 없는 Upbit 테스트 주문을 거절한다', () async {
+    final market = Market.spot(Exchange.upbit, 'BTC', 'KRW');
+
+    await expectLater(
+      UpbitAdapter().testOrder(
+        OrderRequest.limit(
+          market,
+          Side.buy,
+          Size.base(Decimal.parse('0.01')),
+          Decimal.parse('100000000'),
+        ),
+      ),
+      throwsA(isA<AuthenticationError>()),
+    );
+  });
+
   test('기본 Web 스트림은 네트워크 backpressure를 사용하지 않는다', () async {
     final adapter = _ConfigAdapter();
     final client = Client(adapter);

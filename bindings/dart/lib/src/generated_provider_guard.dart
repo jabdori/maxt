@@ -24,6 +24,7 @@ void _generatedProviderGuard({
   upbit.yearCandles(_generatedProviderValue<Market>());
   upbit.orderbookInstruments(_generatedProviderValue<List<Market>>());
   upbit.marketEvents();
+  upbit.testOrder(_generatedProviderValue<OrderRequest>());
   BithumbAdapter();
   bithumb.marketWarnings();
   bithumb.marketAlerts();

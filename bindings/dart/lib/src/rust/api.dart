@@ -312,6 +312,8 @@ abstract class NativeClient implements RustOpaqueInterface {
 
   WireUpbitRegion? upbitRegion();
 
+  Future<WireOrder> upbitTestOrder({required WireOrderRequest request});
+
   Future<List<WireTicker>> upbitTickers({required List<WireMarket> markets});
 
   Future<List<WireTicker>> upbitTickersByQuote({

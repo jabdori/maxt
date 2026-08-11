@@ -1364,6 +1364,13 @@ const UPBIT_METHODS: &[ProviderMethod] = &[
         arguments: &[],
         result: ApiType::PairList("Market", "UpbitMarketEvent"),
     },
+    ProviderMethod {
+        rust_name: "test_order",
+        name: "testOrder",
+        kind: ProviderMethodKind::Async,
+        arguments: ORDER_REQUEST,
+        result: ApiType::Named("Order"),
+    },
 ];
 const BITHUMB_METHODS: &[ProviderMethod] = &[
     ProviderMethod {
@@ -2633,7 +2640,7 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
-        native_api_version: 16,
+        native_api_version: 17,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
         identifiers: IDENTIFIERS,

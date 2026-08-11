@@ -35,6 +35,7 @@ const OPEN_ORDERS_PATH: &str = "/v1/orders/open";
 const ORDERS_BY_IDS_PATH: &str = "/v1/orders/uuids";
 const ORDER_HISTORY_PATH: &str = "/v1/orders/closed";
 const PLACE_ORDER_PATH: &str = "/v1/orders";
+const TEST_ORDER_PATH: &str = "/v1/orders/test";
 const ORDER_PATH: &str = "/v1/order";
 
 #[derive(Debug, Deserialize)]
@@ -311,11 +312,26 @@ pub(crate) fn place_order_request(
     credentials: &UpbitCredentials,
     request: &OrderRequest,
 ) -> Result<HttpRequest> {
+    order_submission_request(credentials, PLACE_ORDER_PATH, request)
+}
+
+pub(crate) fn test_order_request(
+    credentials: &UpbitCredentials,
+    request: &OrderRequest,
+) -> Result<HttpRequest> {
+    order_submission_request(credentials, TEST_ORDER_PATH, request)
+}
+
+fn order_submission_request(
+    credentials: &UpbitCredentials,
+    path: &'static str,
+    request: &OrderRequest,
+) -> Result<HttpRequest> {
     let params = order_params(request)?;
     // The JWT hashes the query representation of the JSON parameters.
     let query = query(&params)?;
 
-    Ok(HttpRequest::post(PLACE_ORDER_PATH)
+    Ok(HttpRequest::post(path)
         .json_body(json_body(&params)?)
         .header(AUTHORIZATION, authorization(credentials, &query)?))
 }
@@ -696,6 +712,15 @@ pub(crate) async fn place_order(
     request: &OrderRequest,
 ) -> Result<Order> {
     let body = rest::send(http, &place_order_request(credentials, request)?).await?;
+    parse::order(&parse::json::<parse::RawOrder>(&body)?)
+}
+
+pub(crate) async fn test_order(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    request: &OrderRequest,
+) -> Result<Order> {
+    let body = rest::send(http, &test_order_request(credentials, request)?).await?;
     parse::order(&parse::json::<parse::RawOrder>(&body)?)
 }
 
@@ -1289,6 +1314,29 @@ mod tests {
             Some(
                 r#"{"market":"KRW-BTC","side":"ask","volume":"0.01","ord_type":"best","time_in_force":"fok"}"#
             )
+        );
+    }
+
+    #[test]
+    fn a_test_order_uses_the_same_signed_payload_without_creating_an_order() {
+        let order = OrderRequest::limit(
+            btc_krw(),
+            Side::Buy,
+            Size::Base(Decimal::new(1, 2)),
+            Decimal::from(100_000_000),
+        );
+        let request = test_order_request(&credentials(), &order).expect("a signable test order");
+
+        assert_eq!(request.target(), "/v1/orders/test");
+        assert_eq!(
+            request.body.as_deref(),
+            Some(
+                r#"{"market":"KRW-BTC","side":"bid","volume":"0.01","price":"100000000","ord_type":"limit"}"#
+            )
+        );
+        assert_eq!(
+            claims_of(&authorization_of(&request)).query_hash.as_deref(),
+            Some(LIMIT_ORDER_HASH)
         );
     }
 

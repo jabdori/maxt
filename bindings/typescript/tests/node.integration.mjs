@@ -26,11 +26,13 @@ import {
   OrderIdKind,
   OrderLookupRequest,
   OrderOption,
+  OrderRequest,
   OrderRules,
   OrderStatus,
   OrderType,
   Page,
   Side,
+  Size,
   Ticker,
   Timestamp,
   TimeInForce,
@@ -112,6 +114,21 @@ test("Upbit orderbook aggregation carries Decimal through the Node boundary", as
   await assert.rejects(
     upbit.orderBooksAtLevel([market], Decimal.parse("-1")),
     (error) => error instanceof InvalidRequestError && error.field === "level",
+  );
+});
+
+test("Upbit test orders reject missing credentials before a network request", async () => {
+  await maxt.initialize();
+  const market = Market.spot(Exchange.Upbit, "BTC", "KRW");
+
+  await assert.rejects(
+    new maxt.UpbitAdapter().testOrder(OrderRequest.limit(
+      market,
+      Side.Buy,
+      Size.base(Decimal.parse("0.01")),
+      Decimal.parse("100000000"),
+    )),
+    (error) => error instanceof AuthError,
   );
 });
 

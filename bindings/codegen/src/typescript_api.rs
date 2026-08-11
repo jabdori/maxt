@@ -718,8 +718,13 @@ fn render_provider_method(provider: &Provider, method: &ProviderMethod, schema: 
             provider.exchange, method.name
         ),
     };
+    let documentation = if provider.exchange == "upbit" && method.rust_name == "test_order" {
+        "  /** Validates an Upbit order without creating it. The returned dry-run ID cannot be queried or cancelled, and its status is not a live order. */\n"
+    } else {
+        ""
+    };
     format!(
-        "  async {}({}): Promise<{}> {{ await ensureInitialized(); {} }}\n",
+        "{documentation}  async {}({}): Promise<{}> {{ await ensureInitialized(); {} }}\n",
         method.name,
         public_parameters(method.arguments),
         public_type(method.result),

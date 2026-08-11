@@ -175,6 +175,17 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
         field: error.field,
       };
     }
+    let testOrderError;
+    try {
+      await upbit.testOrder(maxt.OrderRequest.limit(
+        upbitMarket,
+        maxt.Side.Buy,
+        maxt.Size.base(maxt.Decimal.parse("0.01")),
+        maxt.Decimal.parse("100000000"),
+      ));
+    } catch (error) {
+      testOrderError = { name: error.constructor.name };
+    }
     const bithumb = new maxt.BithumbAdapter();
     const noticeErrors = [];
     for (const count of [0, Number.NaN]) {
@@ -232,6 +243,7 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
       cancelledAt: cancelResult.cancelled[0].cancelledAt.nanosecondsSinceEpoch.toString(),
       cancelFailure: cancelResult.failed[0].code,
       aggregationError,
+      testOrderError,
       noticeErrors,
       feeError,
       apiKeysError,
@@ -263,6 +275,7 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
     cancelledAt: "125",
     cancelFailure: "order_not_found",
     aggregationError: { name: "InvalidRequestError", field: "level" },
+    testOrderError: { name: "AuthError" },
     noticeErrors: [
       { name: "InvalidRequestError", field: "count" },
       { name: "InvalidRequestError", field: "count" },

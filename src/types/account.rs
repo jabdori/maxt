@@ -155,7 +155,7 @@ impl OrderStatus {
 /// An order as the exchange currently reports it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Order {
-    /// The exchange's own order identifier. Pass this to cancel.
+    /// The exchange's own order identifier. Pass it to cancel only for a live order.
     pub id: String,
     /// The market it was placed on.
     pub market: Market,

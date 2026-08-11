@@ -7,7 +7,7 @@ import { AccountStream, MarketStream, StreamError } from "../stream.js";
 import * as Codec from "./codec.js";
 import type * as Wire from "./contract.js";
 
-export const NATIVE_API_VERSION = 16 as const;
+export const NATIVE_API_VERSION = 17 as const;
 
 export type NativeOutcome<T> =
   | { readonly ok: true; readonly value: T }
@@ -71,6 +71,7 @@ export interface RawNativeUpbitHandle {
   yearCandles(market: string, to: string, count: string): Promise<unknown>;
   orderbookInstruments(markets: string): Promise<unknown>;
   marketEvents(): Promise<unknown>;
+  testOrder(request: string): Promise<unknown>;
 }
 
 export interface RawNativeBithumbHandle {
@@ -189,6 +190,7 @@ export interface NativeUpbitHandle {
   yearCandles(market: Wire.MarketWire, to: Wire.TimestampWire | null, count: number | null): Promise<NativeOutcome<readonly Wire.UpbitYearCandleWire[]>>;
   orderbookInstruments(markets: readonly Wire.MarketWire[]): Promise<NativeOutcome<readonly Wire.UpbitOrderBookInstrumentWire[]>>;
   marketEvents(): Promise<NativeOutcome<readonly (readonly [Wire.MarketWire, Wire.UpbitMarketEventWire])[]>>;
+  testOrder(request: Wire.OrderRequestWire): Promise<NativeOutcome<Wire.OrderWire>>;
 }
 
 export interface NativeBithumbHandle {
@@ -285,6 +287,7 @@ export function createJsonBackend(raw: RawNativeModule): NativeBackend {
         yearCandles: (market: Wire.MarketWire, to: Wire.TimestampWire | null, count: number | null) => handle.yearCandles(Codec.stringifyWire(market), Codec.stringifyWire(to), Codec.stringifyWire(count)) as Promise<NativeOutcome<readonly Wire.UpbitYearCandleWire[]>>,
         orderbookInstruments: (markets: readonly Wire.MarketWire[]) => handle.orderbookInstruments(Codec.stringifyWire(markets)) as Promise<NativeOutcome<readonly Wire.UpbitOrderBookInstrumentWire[]>>,
         marketEvents: () => handle.marketEvents() as Promise<NativeOutcome<readonly (readonly [Wire.MarketWire, Wire.UpbitMarketEventWire])[]>>,
+        testOrder: (request: Wire.OrderRequestWire) => handle.testOrder(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.OrderWire>>,
       };
     },
     bithumb(options) {
@@ -1001,6 +1004,8 @@ export class UpbitAdapter extends NativeAdapter {
   async yearCandles(market: Model.Market, to: Model.Timestamp | null = null, count: number | null = null): Promise<readonly Model.UpbitYearCandle[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.yearCandles(Codec.marketToWire(market), to?.nanosecondsSinceEpoch.toString() ?? null, Codec.checkedOptionalU32(count, "count"))).map(Codec.upbitYearCandleFromWire); }
   async orderbookInstruments(markets: readonly Model.Market[]): Promise<readonly Model.UpbitOrderBookInstrument[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.orderbookInstruments(markets.map(Codec.marketToWire))).map(Codec.upbitOrderBookInstrumentFromWire); }
   async marketEvents(): Promise<readonly (readonly [Model.Market, Model.UpbitMarketEvent])[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.marketEvents()).map(Codec.upbitMarketEventPairFromWire); }
+  /** Validates an Upbit order without creating it. The returned dry-run ID cannot be queried or cancelled, and its status is not a live order. */
+  async testOrder(request: Model.OrderRequest): Promise<Model.Order> { await ensureInitialized(); return Codec.orderFromWire(Codec.unwrapOutcome(await this.#provider.testOrder(Codec.orderRequestToWire(request)))); }
 }
 
 export class BithumbAdapter extends NativeAdapter {

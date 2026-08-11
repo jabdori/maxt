@@ -63,11 +63,14 @@ Binance 테스트넷(testnet) 생성자는 제공하지 않습니다. Hyperliqui
 
 | 어댑터 | 생성 | 추가 메서드 |
 | --- | --- | --- |
-| `UpbitAdapter` | `UpbitAdapter()` 또는 `UpbitAdapter(region=...)` | `order_books()`, `order_books_at_level()`, `tickers()`, `tickers_by_quote()`, `year_candles()`, `orderbook_instruments()`, `market_events()` |
+| `UpbitAdapter` | `UpbitAdapter()` 또는 `UpbitAdapter(region=...)` | `order_books()`, `order_books_at_level()`, `tickers()`, `tickers_by_quote()`, `year_candles()`, `orderbook_instruments()`, `market_events()`; 인증 필요: `test_order()` |
 | `BithumbAdapter` | `BithumbAdapter()` | `market_warnings()`, `market_alerts()`, `notices()`, `transfer_fees()`; 인증 필요: `api_keys()`, `pending_orders()` |
 | `BinanceAdapter` | `BinanceAdapter.spot()` | `spot_symbol_filters()`; 인증 필요: `spot_order()` |
 | `BinanceAdapter` | `BinanceAdapter.usd_m_futures()` | 인증 필요: `usd_m_create_listen_key()`, `usd_m_keepalive_listen_key()`, `usd_m_close_listen_key()` |
 | `HyperliquidAdapter` | `HyperliquidAdapter()` 또는 `HyperliquidAdapter.testnet()` | `asset_context()`, `non_funding_ledger()` |
+
+`UpbitAdapter.test_order()`는 주문을 생성하지 않고 검증합니다. 반환 `Order`는
+dry-run 결과이므로 `id`를 조회·취소에 사용하면 안 되며 상태도 실제 활성 주문을 뜻하지 않습니다.
 
 ## Binance 공통 API와 거래소 전용 API
 

@@ -832,16 +832,21 @@ pub(crate) fn stream_order(raw: &RawStreamOrder) -> Result<Order> {
     })
 }
 
-/// Reads `created_at`, which REST orders carry as an offset datetime in the
-/// region's local zone.
+/// Reads `created_at`, which REST orders normally carry with an explicit
+/// offset. Upbit's Global Test Order example omits its documented `+00:00`,
+/// so that exact offset-free form is interpreted as UTC.
 fn created_at(raw: &str) -> Result<Timestamp> {
-    let parsed = DateTime::parse_from_rfc3339(raw).map_err(|err| {
-        Error::decode(format!(
-            "`created_at` is not an RFC 3339 datetime: {raw} ({err})"
-        ))
-    })?;
-    parsed
-        .timestamp_nanos_opt()
+    let nanos = match DateTime::parse_from_rfc3339(raw) {
+        Ok(parsed) => parsed.timestamp_nanos_opt(),
+        Err(rfc3339_error) => NaiveDateTime::parse_from_str(raw, "%Y-%m-%dT%H:%M:%S")
+            .map(|naive| naive.and_utc().timestamp_nanos_opt())
+            .map_err(|naive_error| {
+                Error::decode(format!(
+                    "`created_at` is neither an RFC 3339 datetime nor Upbit's offset-free UTC form: {raw} ({rfc3339_error}; {naive_error})"
+                ))
+            })?,
+    };
+    nanos
         .map(Timestamp::from_nanos)
         .ok_or_else(|| Error::decode(format!("`created_at` is outside timestamp range: {raw}")))
 }
@@ -1083,6 +1088,20 @@ mod tests {
         "trades_count": 0
       }
     ]"#;
+
+    // Global Test Order's current successful example omits the documented UTC offset.
+    const TEST_ORDER_RESPONSE: &str = r#"{
+      "uuid": "d098ceaf-6811-4df8-97f2-b7e01aefc03f",
+      "side": "bid",
+      "ord_type": "limit",
+      "price": "153559.00",
+      "state": "wait",
+      "market": "SGD-BTC",
+      "created_at": "2025-07-04T15:00:00",
+      "volume": "1.0",
+      "remaining_volume": "1.0",
+      "executed_volume": "0.0"
+    }"#;
 
     // Representative private account payload used only by offline parsing tests.
     const ACCOUNTS: &str = r#"[
@@ -1599,6 +1618,16 @@ mod tests {
             created_at("2024-06-13T10:28:36.123456789+09:00").expect("an offset time"),
             Timestamp::from_nanos(1_718_242_116_123_456_789)
         );
+    }
+
+    #[test]
+    fn test_order_accepts_the_global_example_without_an_offset() {
+        let raw: RawOrder = json(TEST_ORDER_RESPONSE).expect("official test-order payload");
+        let order = order(&raw).expect("test order");
+
+        assert_eq!(order.id, "d098ceaf-6811-4df8-97f2-b7e01aefc03f");
+        assert_eq!(order.status, OrderStatus::Open);
+        assert_eq!(order.created_at, Some(Timestamp::from_secs(1_751_641_200)));
     }
 
     #[test]

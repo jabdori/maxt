@@ -104,6 +104,7 @@ Access the following provider-specific methods through `Client::adapter()`.
 | `orderbook_instruments(&[Market])` | `markets.len() >= 1`; current price-band tick size and supported aggregation levels; levels are empty when the region does not return them | `orderbook` |
 | `year_candles(market, to, count)` | `count: 1..=200` or `None`; optional ISO-8601 boundary; oldest-first; Korean open time is optional by region | `candle` |
 | `market_events()` | Investment warning and caution criteria by market | `market` |
+| `test_order(request)` | Validates an order without creating it; requires the order-placement permission; the returned `Order` is dry-run only, so its ID cannot be queried or cancelled and its status is not a live order | `order-test` |
 
 | Market event | Mapping |
 | --- | --- |
@@ -139,6 +140,7 @@ satisfy `Error::is_rate_limited() == true`.
 - [WebSocket](https://global-docs.upbit.com/reference/websocket-guide)
 - [Rate limits](https://global-docs.upbit.com/reference/rate-limits)
 - [Authentication](https://global-docs.upbit.com/reference/auth)
+- [Test order](https://global-docs.upbit.com/reference/order-test)
 - [Get order](https://global-docs.upbit.com/reference/get-order)
 - [Closed orders](https://global-docs.upbit.com/reference/list-closed-orders)
 

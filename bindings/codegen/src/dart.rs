@@ -1358,6 +1358,9 @@ fn provider_method_source(exchange: &str, method: &str) -> &'static str {
         ("upbit", "market_events") => {
             "  Future<List<UpbitMarketEvent>> marketEvents() =>\n      _nativeFuture(_handle.upbitMarketEvents).then(\n        (values) =>\n            values.map(_upbitMarketEventFromWire).toList(growable: false),\n      );\n"
         }
+        ("upbit", "test_order") => {
+            "  /// Validates an Upbit order without creating it.\n  ///\n  /// The returned [Order] is a dry-run result. Do not query or cancel its ID,\n  /// and do not treat its status as a live order.\n  Future<Order> testOrder(OrderRequest request) => _nativeFuture(\n    () => _handle.upbitTestOrder(request: _orderRequestToWire(request)),\n  ).then(_orderFromWire);\n"
+        }
         ("bithumb", "market_warnings") => {
             "  Future<List<BithumbMarketWarning>> marketWarnings() =>\n      _nativeFuture(_handle.bithumbMarketWarnings).then(\n        (values) =>\n            values.map(_bithumbMarketWarningFromWire).toList(growable: false),\n      );\n"
         }

@@ -64,11 +64,15 @@ Exchange-specific methods remain available through `client.adapter`.
 
 | Adapter | Construction | Additional methods |
 | --- | --- | --- |
-| `UpbitAdapter` | `UpbitAdapter()` or `UpbitAdapter(region=...)` | `order_books()`, `order_books_at_level()`, `tickers()`, `tickers_by_quote()`, `year_candles()`, `orderbook_instruments()`, `market_events()` |
+| `UpbitAdapter` | `UpbitAdapter()` or `UpbitAdapter(region=...)` | `order_books()`, `order_books_at_level()`, `tickers()`, `tickers_by_quote()`, `year_candles()`, `orderbook_instruments()`, `market_events()`; authenticated: `test_order()` |
 | `BithumbAdapter` | `BithumbAdapter()` | `market_warnings()`, `market_alerts()`, `notices()`, `transfer_fees()`; authenticated: `api_keys()`, `pending_orders()` |
 | `BinanceAdapter` | `BinanceAdapter.spot()` | `spot_symbol_filters()`; authenticated: `spot_order()` |
 | `BinanceAdapter` | `BinanceAdapter.usd_m_futures()` | Authenticated: `usd_m_create_listen_key()`, `usd_m_keepalive_listen_key()`, `usd_m_close_listen_key()` |
 | `HyperliquidAdapter` | `HyperliquidAdapter()` or `HyperliquidAdapter.testnet()` | `asset_context()`, `non_funding_ledger()` |
+
+`UpbitAdapter.test_order()` validates an order without creating it. The returned
+`Order` is a dry-run result: do not query or cancel its `id`, and do not treat
+its status as a live order.
 
 ## Binance common and exchange-specific APIs
 

@@ -72,6 +72,14 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
         (values) =>
             values.map(_upbitMarketEventFromWire).toList(growable: false),
       );
+
+  /// Validates an Upbit order without creating it.
+  ///
+  /// The returned [Order] is a dry-run result. Do not query or cancel its ID,
+  /// and do not treat its status as a live order.
+  Future<Order> testOrder(OrderRequest request) => _nativeFuture(
+    () => _handle.upbitTestOrder(request: _orderRequestToWire(request)),
+  ).then(_orderFromWire);
 }
 
 extension BithumbAdapterGeneratedMethods on BithumbAdapter {

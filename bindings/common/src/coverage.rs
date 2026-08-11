@@ -1002,7 +1002,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("order_rules"),
         Validation::Fixture,
     ),
-    planned(operation(
+    partial(operation(
         Exchange::Upbit,
         "exchange",
         "test_order",
@@ -1012,7 +1012,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         Authentication::Jwt,
         OperationRisk::Read,
         OperationMapping::Provider("test_order"),
-        Validation::Documented,
+        Validation::Fixture,
     )),
     operation(
         Exchange::Upbit,

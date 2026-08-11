@@ -37,6 +37,10 @@ abstract base class GeneratedNativeDelegate extends AdapterBase {
       (await delegateAdapter).assetNetworks(asset);
 
   @override
+  Future<List<DepositAddressEntry>> depositAddresses() async =>
+      (await delegateAdapter).depositAddresses();
+
+  @override
   Future<DepositAddress> depositAddress(DepositAddressRequest request) async =>
       (await delegateAdapter).depositAddress(request);
 

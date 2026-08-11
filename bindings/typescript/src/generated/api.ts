@@ -7,7 +7,7 @@ import { AccountStream, MarketStream, StreamError } from "../stream.js";
 import * as Codec from "./codec.js";
 import type * as Wire from "./contract.js";
 
-export const NATIVE_API_VERSION = 8 as const;
+export const NATIVE_API_VERSION = 9 as const;
 
 export type NativeOutcome<T> =
   | { readonly ok: true; readonly value: T }
@@ -26,6 +26,7 @@ export interface RawNativeClient {
   balances(): Promise<unknown>;
   orderRules(market: string): Promise<unknown>;
   assetNetworks(asset: string): Promise<unknown>;
+  depositAddresses(): Promise<unknown>;
   depositAddress(request: string): Promise<unknown>;
   createDepositAddress(request: string): Promise<unknown>;
   prepareWithdrawal(request: string): Promise<unknown>;
@@ -128,6 +129,7 @@ export interface NativeClientHandle {
   balances(): Promise<NativeOutcome<readonly Wire.BalanceWire[]>>;
   orderRules(market: Wire.MarketWire): Promise<NativeOutcome<Wire.OrderRulesWire>>;
   assetNetworks(asset: string): Promise<NativeOutcome<readonly Wire.AssetNetworkWire[]>>;
+  depositAddresses(): Promise<NativeOutcome<readonly Wire.DepositAddressEntryWire[]>>;
   depositAddress(request: Wire.DepositAddressRequestWire): Promise<NativeOutcome<Wire.DepositAddressWire>>;
   createDepositAddress(request: Wire.DepositAddressRequestWire): Promise<NativeOutcome<Wire.DepositAddressWire>>;
   prepareWithdrawal(request: Wire.WithdrawRequestWire): Promise<NativeOutcome<Wire.WithdrawalQuoteWire>>;
@@ -316,6 +318,7 @@ function wrapJsonClient(raw: RawNativeClient): NativeClientHandle {
     balances: () => raw.balances() as Promise<NativeOutcome<readonly Wire.BalanceWire[]>>,
     orderRules: (market: Wire.MarketWire) => raw.orderRules(Codec.stringifyWire(market)) as Promise<NativeOutcome<Wire.OrderRulesWire>>,
     assetNetworks: (asset: string) => raw.assetNetworks(Codec.stringifyWire(asset)) as Promise<NativeOutcome<readonly Wire.AssetNetworkWire[]>>,
+    depositAddresses: () => raw.depositAddresses() as Promise<NativeOutcome<readonly Wire.DepositAddressEntryWire[]>>,
     depositAddress: (request: Wire.DepositAddressRequestWire) => raw.depositAddress(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.DepositAddressWire>>,
     createDepositAddress: (request: Wire.DepositAddressRequestWire) => raw.createDepositAddress(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.DepositAddressWire>>,
     prepareWithdrawal: (request: Wire.WithdrawRequestWire) => raw.prepareWithdrawal(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.WithdrawalQuoteWire>>,
@@ -465,6 +468,12 @@ export abstract class Adapter {
     ));
   }
 
+  depositAddresses(): Promise<readonly Model.DepositAddressEntry[]> {
+    return Promise.reject(new UnsupportedError(
+      featureById("deposit_addresses"), this.exchange, "feature is not supported",
+    ));
+  }
+
   depositAddress(request: Model.DepositAddressRequest): Promise<Model.DepositAddress> {
     return Promise.reject(new UnsupportedError(
       featureById("deposit_addresses"), this.exchange, "feature is not supported",
@@ -608,6 +617,7 @@ class CustomCallbacks implements ForeignAdapterCallbacks {
         case "balances": return ok({ kind: "balances", value: (await this.adapter.balances()).map(Codec.balanceToWire) });
         case "order_rules": return ok({ kind: "order_rules", value: Codec.orderRulesToWire(await this.adapter.orderRules(Codec.marketFromWire(call.market))) });
         case "asset_networks": return ok({ kind: "asset_networks", value: (await this.adapter.assetNetworks(call.asset)).map(Codec.assetNetworkToWire) });
+        case "deposit_addresses": return ok({ kind: "deposit_addresses", value: (await this.adapter.depositAddresses()).map(Codec.depositAddressEntryToWire) });
         case "deposit_address": return ok({ kind: "deposit_address", value: Codec.depositAddressToWire(await this.adapter.depositAddress(Codec.depositAddressRequestFromWire(call.request))) });
         case "create_deposit_address": return ok({ kind: "create_deposit_address", value: Codec.depositAddressToWire(await this.adapter.createDepositAddress(Codec.depositAddressRequestFromWire(call.request))) });
         case "prepare_withdrawal": return ok({ kind: "withdrawal_quote", value: Codec.withdrawalQuoteToWire(await this.adapter.prepareWithdrawal(Codec.withdrawRequestFromWire(call.request))) });
@@ -710,6 +720,11 @@ export class Client<A extends Adapter> {
   async assetNetworks(asset: string): Promise<readonly Model.AssetNetwork[]> {
     await ensureInitialized();
     return Codec.unwrapOutcome(await this.#native.assetNetworks(asset)).map(Codec.assetNetworkFromWire);
+  }
+
+  async depositAddresses(): Promise<readonly Model.DepositAddressEntry[]> {
+    await ensureInitialized();
+    return Codec.unwrapOutcome(await this.#native.depositAddresses()).map(Codec.depositAddressEntryFromWire);
   }
 
   async depositAddress(request: Model.DepositAddressRequest): Promise<Model.DepositAddress> {
@@ -869,6 +884,7 @@ class NativeAdapter extends Adapter {
   balances(): Promise<readonly Model.Balance[]> { return new Client(this).balances(); }
   orderRules(market: Model.Market): Promise<Model.OrderRules> { return new Client(this).orderRules(market); }
   assetNetworks(asset: string): Promise<readonly Model.AssetNetwork[]> { return new Client(this).assetNetworks(asset); }
+  depositAddresses(): Promise<readonly Model.DepositAddressEntry[]> { return new Client(this).depositAddresses(); }
   depositAddress(request: Model.DepositAddressRequest): Promise<Model.DepositAddress> { return new Client(this).depositAddress(request); }
   createDepositAddress(request: Model.DepositAddressRequest): Promise<Model.DepositAddress> { return new Client(this).createDepositAddress(request); }
   prepareWithdrawal(request: Model.WithdrawRequest): Promise<Model.WithdrawalQuote> { return new Client(this).prepareWithdrawal(request); }

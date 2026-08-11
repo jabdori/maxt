@@ -20,8 +20,9 @@ use crate::stream::{AccountStream, MarketStream};
 use crate::transport::{HttpTransport, WsCommand, WsConnect, WsSession, ws};
 use crate::types::{
     AccountEvent, AssetNetwork, Balance, CancelOrdersResult, Candle, Deposit, DepositAddress,
-    Exchange, Market, MarketEvent, MarketInfo, MarketKind, Order, OrderBook, OrderRules, Page,
-    StreamConfig, Subscription, Ticker, Trade, TransferDestination, Withdrawal, WithdrawalQuote,
+    DepositAddressEntry, Exchange, Market, MarketEvent, MarketInfo, MarketKind, Order, OrderBook,
+    OrderRules, Page, StreamConfig, Subscription, Ticker, Trade, TransferDestination, Withdrawal,
+    WithdrawalQuote,
 };
 
 /// Selects an Upbit regional deployment.
@@ -318,6 +319,10 @@ impl Adapter for UpbitAdapter {
         Box::pin(
             async move { wallet::asset_networks(self.credentials()?, self.http()?, &asset).await },
         )
+    }
+
+    fn deposit_addresses(&self) -> BoxFuture<'_, Result<Vec<DepositAddressEntry>>> {
+        Box::pin(async move { wallet::deposit_addresses(self.credentials()?, self.http()?).await })
     }
 
     fn deposit_address(

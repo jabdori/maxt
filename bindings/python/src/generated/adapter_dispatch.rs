@@ -11,6 +11,7 @@ enum ReplyKind {
     Balances,
     OrderRules,
     AssetNetworks,
+    DepositAddresses,
     DepositAddress,
     CreateDepositAddress,
     PrepareWithdrawal,
@@ -88,6 +89,7 @@ fn prepare_call(
             vec![asset.into_py_any(py)?],
             ReplyKind::AssetNetworks,
         ),
+        AdapterCall::DepositAddresses => ("deposit_addresses", vec![], ReplyKind::DepositAddresses),
         AdapterCall::DepositAddress { request } => (
             "deposit_address",
             vec![model_object(py, "DepositAddressRequest", crate::convert::deposit_address_request_to_wire(py, &request)?)?],
@@ -220,6 +222,7 @@ fn decode_generated_reply(
     match reply {
         ReplyKind::OrderRules => Some(crate::convert::order_rules_from_wire(value).map(Box::new).map(AdapterReply::OrderRules)),
         ReplyKind::AssetNetworks => Some(list_from_wire(value, crate::convert::asset_network_from_wire).map(AdapterReply::AssetNetworks)),
+        ReplyKind::DepositAddresses => Some(list_from_wire(value, crate::convert::deposit_address_entry_from_wire).map(AdapterReply::DepositAddresses)),
         ReplyKind::DepositAddress => Some(crate::convert::deposit_address_from_wire(value).map(AdapterReply::DepositAddress)),
         ReplyKind::CreateDepositAddress => Some(crate::convert::deposit_address_from_wire(value).map(AdapterReply::CreateDepositAddress)),
         ReplyKind::PrepareWithdrawal => Some(crate::convert::withdrawal_quote_from_wire(value).map(AdapterReply::WithdrawalQuote)),

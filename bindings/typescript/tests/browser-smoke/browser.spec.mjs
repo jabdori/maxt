@@ -72,6 +72,16 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
           null,
         );
       }
+      async depositAddresses() {
+        return [new maxt.DepositAddressEntry(
+          this.exchange,
+          "XRP",
+          null,
+          null,
+          null,
+          "tag-7",
+        )];
+      }
       async prepareWithdrawal() {
         return new maxt.WithdrawalQuote(
           maxt.Decimal.parse("0.0001"),
@@ -132,6 +142,7 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
     );
     const historyRequest = new maxt.TransferHistoryRequest();
     const networks = await client.assetNetworks("BTC");
+    const depositAddressEntry = (await client.depositAddresses())[0];
     const depositAddress = await client.depositAddress(
       new maxt.DepositAddressRequest("BTC", maxt.Network.Bitcoin),
     );
@@ -158,6 +169,12 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
       markets: (await client.markets(maxt.MarketKind.Spot)).length,
       supportsMarkets: client.supports(maxt.Feature.Markets),
       network: networks[0].network.id,
+      depositAddressEntry: {
+        asset: depositAddressEntry.asset,
+        network: depositAddressEntry.network,
+        address: depositAddressEntry.address,
+        memo: depositAddressEntry.memo,
+      },
       depositAddress: depositAddress.address,
       withdrawalFee: quote.fee.toString(),
       withdrawal: withdrawal.id,
@@ -178,6 +195,12 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
     markets: 0,
     supportsMarkets: true,
     network: "bitcoin",
+    depositAddressEntry: {
+      asset: "XRP",
+      network: null,
+      address: null,
+      memo: "tag-7",
+    },
     depositAddress: "bc1qdestination",
     withdrawalFee: "0.0001",
     withdrawal: "withdrawal-1",

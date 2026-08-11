@@ -160,12 +160,29 @@ impl WithdrawalFee {
 /// A deposit address issued by a centralized exchange.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DepositAddress {
-    /// Destination exchange.
+    /// Exchange that issued the address.
     pub exchange: Exchange,
     /// Asset symbol, uppercase.
     pub asset: String,
     /// Canonical network.
     pub network: Network,
+    /// On-chain address, or `None` while asynchronous generation is pending.
+    pub address: Option<String>,
+    /// Memo, tag, or secondary address when required.
+    pub memo: Option<String>,
+}
+
+/// One exchange-issued deposit address returned by an account-wide listing.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DepositAddressEntry {
+    /// Destination exchange.
+    pub exchange: Exchange,
+    /// Asset symbol, uppercase.
+    pub asset: String,
+    /// Canonical network, when the provider returns one.
+    pub network: Option<Network>,
+    /// Provider's raw network identifier, when published.
+    pub provider_network: Option<String>,
     /// On-chain address, or `None` while asynchronous generation is pending.
     pub address: Option<String>,
     /// Memo, tag, or secondary address when required.

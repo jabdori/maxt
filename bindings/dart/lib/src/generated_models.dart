@@ -110,6 +110,24 @@ final class DepositAddress {
   final String? memo;
 }
 
+final class DepositAddressEntry {
+  DepositAddressEntry({
+    required this.exchange,
+    required String asset,
+    this.network,
+    this.providerNetwork,
+    this.address,
+    this.memo,
+  }) : asset = _asciiUpper(asset);
+
+  final Exchange exchange;
+  final String asset;
+  final Network? network;
+  final String? providerNetwork;
+  final String? address;
+  final String? memo;
+}
+
 final class ExchangeDestination {
   ExchangeDestination({
     required this.exchange,

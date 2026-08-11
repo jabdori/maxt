@@ -51,6 +51,9 @@ sealed class AdapterCall with _$AdapterCall {
   const factory AdapterCall.assetNetworks({required String asset}) =
       AdapterCall_AssetNetworks;
 
+  /// 계정의 전체 입금 주소를 요청합니다.
+  const factory AdapterCall.depositAddresses() = AdapterCall_DepositAddresses;
+
   /// 입금 주소를 요청합니다.
   const factory AdapterCall.depositAddress({
     required WireDepositAddressRequest request,
@@ -202,6 +205,11 @@ sealed class AdapterReply with _$AdapterReply {
   /// 자산별 네트워크 응답입니다.
   const factory AdapterReply.assetNetworks(List<WireAssetNetwork> field0) =
       AdapterReply_AssetNetworks;
+
+  /// 계정의 전체 입금 주소 응답입니다.
+  const factory AdapterReply.depositAddresses(
+    List<WireDepositAddressEntry> field0,
+  ) = AdapterReply_DepositAddresses;
 
   /// 입금 주소 응답입니다.
   const factory AdapterReply.depositAddress(WireDepositAddress field0) =

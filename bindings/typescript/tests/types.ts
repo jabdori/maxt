@@ -4,6 +4,7 @@ import {
   Client,
   CancelOrdersRequest,
   Decimal,
+  type DepositAddressEntry,
   DepositAddressRequest,
   Exchange,
   Market,
@@ -42,6 +43,7 @@ const destination = TransferDestination.chain(
 );
 const withdrawRequest = new WithdrawRequest("BTC", Network.Bitcoin, Decimal.one, destination);
 const networks: Promise<readonly AssetNetwork[]> = client.assetNetworks("BTC");
+const addresses: Promise<readonly DepositAddressEntry[]> = client.depositAddresses();
 const address = client.depositAddress(new DepositAddressRequest("BTC", Network.Bitcoin));
 const quote: Promise<WithdrawalQuote> = client.prepareWithdrawal(withdrawRequest);
 const withdrawal: Promise<Withdrawal> = client.withdraw(withdrawRequest);
@@ -55,6 +57,7 @@ const transferError = new TransferError(TransferErrorKind.NetworkMismatch, "chai
 void ticker;
 void filters;
 void networks;
+void addresses;
 void address;
 void quote;
 void withdrawal;

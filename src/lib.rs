@@ -61,12 +61,12 @@ pub use request::{
 pub use stream::{AccountStream, MarketStream};
 pub use types::{
     AccountEvent, AssetNetwork, Balance, CancelOrdersResult, CancelledOrder, Candle,
-    ChainDestination, ChainTransferRequest, Cursor, Deposit, DepositAddress, DepositStatus,
-    Exchange, ExchangeDestination, ExchangeTransferRequest, Feed, FundingPayment, FundingRate,
-    Interval, Level, MarginMode, MarginSummary, Market, MarketEvent, MarketInfo, MarketKind,
-    MarketStatus, Network, Order, OrderAccount, OrderBook, OrderCancelFailure, OrderOption,
-    OrderRules, OrderStatus, OrderType, Overflow, Page, Position, Side, Size, StreamConfig,
-    Subscription, Ticker, TimeInForce, Timestamp, Trade, TransferDestination,
+    ChainDestination, ChainTransferRequest, Cursor, Deposit, DepositAddress, DepositAddressEntry,
+    DepositStatus, Exchange, ExchangeDestination, ExchangeTransferRequest, Feed, FundingPayment,
+    FundingRate, Interval, Level, MarginMode, MarginSummary, Market, MarketEvent, MarketInfo,
+    MarketKind, MarketStatus, Network, Order, OrderAccount, OrderBook, OrderCancelFailure,
+    OrderOption, OrderRules, OrderStatus, OrderType, Overflow, Page, Position, Side, Size,
+    StreamConfig, Subscription, Ticker, TimeInForce, Timestamp, Trade, TransferDestination,
     TravelRuleRequirement, Withdrawal, WithdrawalFee, WithdrawalQuote, WithdrawalStatus,
 };
 pub use wallet::{

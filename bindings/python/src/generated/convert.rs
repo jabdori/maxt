@@ -730,6 +730,34 @@ pub(crate) fn deposit_address_to_wire(
     )
 }
 
+pub(crate) fn deposit_address_entry_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::DepositAddressEntry> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::DepositAddressEntry {
+        exchange: exchange_from_wire(&required(dict, "exchange")?)?,
+        asset: required(dict, "asset")?.extract::<String>()?,
+        network: optional(dict, "network")?.map(|value| -> PyResult<_> { network_from_wire(&value) }).transpose()?,
+        provider_network: optional(dict, "provider_network")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        address: optional(dict, "address")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        memo: optional(dict, "memo")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+    })
+}
+
+pub(crate) fn deposit_address_entry_to_wire(
+    py: Python<'_>,
+    value: &maxt::DepositAddressEntry,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "exchange" => exchange_to_wire(value.exchange)?,
+        "asset" => &value.asset,
+        "network" => value.network.as_ref().map(network_to_wire).transpose()?,
+        "provider_network" => &value.provider_network,
+        "address" => &value.address,
+        "memo" => &value.memo,
+    )
+}
+
 pub(crate) fn exchange_destination_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::ExchangeDestination> {
     let value = wire_object(value)?;
     let dict = value.cast::<PyDict>()?;

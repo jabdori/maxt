@@ -151,6 +151,17 @@ fn _guard_deposit_address_wire(value: WireDepositAddress) {
     } = value;
 }
 
+fn _guard_deposit_address_entry_wire(value: WireDepositAddressEntry) {
+    let WireDepositAddressEntry {
+        exchange: _,
+        asset: _,
+        network: _,
+        provider_network: _,
+        address: _,
+        memo: _,
+    } = value;
+}
+
 fn _guard_exchange_destination_wire(value: WireExchangeDestination) {
     let WireExchangeDestination {
         exchange: _,

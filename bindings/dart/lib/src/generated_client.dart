@@ -57,6 +57,9 @@ abstract base class GeneratedClient<A extends Adapter> {
   Future<List<AssetNetwork>> assetNetworks(String asset) =>
       _native.assetNetworks(asset);
 
+  Future<List<DepositAddressEntry>> depositAddresses() =>
+      _native.depositAddresses();
+
   Future<DepositAddress> depositAddress(DepositAddressRequest request) =>
       _native.depositAddress(request);
 

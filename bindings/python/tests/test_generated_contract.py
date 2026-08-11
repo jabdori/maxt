@@ -2,6 +2,7 @@ from dataclasses import fields, is_dataclass
 from inspect import iscoroutinefunction
 from typing import get_type_hints
 
+import maxt
 from maxt import (
     Adapter,
     AdapterError,
@@ -32,7 +33,7 @@ from maxt._generated_contract import (
 from maxt._generated_api import _GeneratedAdapterApi, _GeneratedClientApi
 from maxt._generated_delegate import _GeneratedNativeClientDelegateApi
 from maxt._generated_wire import ERROR_FIELDS, IDENTIFIER_VARIANTS, RECORD_FIELDS
-from maxt import _generated_identifiers, models
+from maxt import _generated_identifiers, _generated_models, models
 
 
 def test_generated_exchange_and_feature_inventories_match_public_models() -> None:
@@ -104,6 +105,15 @@ def test_generated_runtime_annotations_resolve() -> None:
         for value in generated_type.__dict__.values():
             if callable(value):
                 get_type_hints(value)
+
+
+def test_deposit_address_entry_is_publicly_exported() -> None:
+    for name in ("DepositAddressEntry",):
+        generated = getattr(_generated_models, name)
+        assert getattr(models, name) is generated
+        assert getattr(maxt, name) is generated
+        assert name in models.__all__
+        assert name in maxt.__all__
 
 
 def test_generated_wire_fields_match_public_models_and_errors() -> None:

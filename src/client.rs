@@ -9,10 +9,10 @@ use crate::request::{
 };
 use crate::stream::{AccountStream, MarketStream};
 use crate::types::{
-    AssetNetwork, Balance, CancelOrdersResult, Candle, Deposit, DepositAddress, Exchange,
-    FundingPayment, FundingRate, MarginSummary, Market, MarketInfo, MarketKind, Order, OrderBook,
-    OrderRules, Page, Position, StreamConfig, Subscription, Ticker, Trade, Withdrawal,
-    WithdrawalQuote,
+    AssetNetwork, Balance, CancelOrdersResult, Candle, Deposit, DepositAddress,
+    DepositAddressEntry, Exchange, FundingPayment, FundingRate, MarginSummary, Market, MarketInfo,
+    MarketKind, Order, OrderBook, OrderRules, Page, Position, StreamConfig, Subscription, Ticker,
+    Trade, Withdrawal, WithdrawalQuote,
 };
 
 /// The common API over one exchange adapter.
@@ -169,6 +169,14 @@ impl<A: Adapter> Client<A> {
             ));
         }
         self.adapter.asset_networks(asset).await
+    }
+
+    /// Lists all exchange-issued deposit addresses for this account.
+    ///
+    /// A provider can omit network metadata, and an address can be absent
+    /// while issuance is still pending.
+    pub async fn deposit_addresses(&self) -> Result<Vec<DepositAddressEntry>> {
+        self.adapter.deposit_addresses().await
     }
 
     /// Reads an exchange-issued deposit address for one asset and network.

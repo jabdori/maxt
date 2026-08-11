@@ -5,7 +5,8 @@ use maxt::adapters::{
 use maxt::{
     AccountEvent, AssetNetwork, Balance, CancelOrdersRequest, CancelOrdersResult, CancelledOrder,
     Candle, CandleRequest, ChainDestination, ChainTransferRequest, Cursor, Decimal, Deposit,
-    DepositAddress, DepositAddressRequest, DepositStatus, Error, Exchange, ExchangeDestination,
+    DepositAddress, DepositAddressEntry, DepositAddressRequest, DepositStatus, Error, Exchange,
+    ExchangeDestination,
     ExchangeErrorKind, ExchangeTransferRequest, Feature, Feed, FundingPayment, FundingRate,
     HistoryRequest, Interval, Level, MarginMode, MarginRequest, MarginSummary, Market, MarketEvent,
     MarketInfo, MarketKind, MarketStatus, Network, Order, OrderAccount, OrderBook,
@@ -471,6 +472,21 @@ pub(crate) struct WireDepositAddress {
     pub(crate) exchange: String,
     pub(crate) asset: String,
     pub(crate) network: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) address: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) memo: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireDepositAddressEntry {
+    pub(crate) exchange: String,
+    pub(crate) asset: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) network: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) provider_network: Option<String>,
     #[serde(deserialize_with = "explicit_option")]
     pub(crate) address: Option<String>,
     #[serde(deserialize_with = "explicit_option")]
@@ -2058,6 +2074,36 @@ impl TryFrom<WireDepositAddress> for DepositAddress {
     }
 }
 
+impl TryFrom<DepositAddressEntry> for WireDepositAddressEntry {
+    type Error = Error;
+
+    fn try_from(value: DepositAddressEntry) -> Result<Self, Self::Error> {
+        Ok(Self {
+            exchange: value.exchange.id().to_owned(),
+            asset: value.asset,
+            network: value.network.map(network_to_wire).transpose()?,
+            provider_network: value.provider_network,
+            address: value.address,
+            memo: value.memo,
+        })
+    }
+}
+
+impl TryFrom<WireDepositAddressEntry> for DepositAddressEntry {
+    type Error = Error;
+
+    fn try_from(value: WireDepositAddressEntry) -> Result<Self, Self::Error> {
+        Ok(Self {
+            exchange: exchange_from_wire(&value.exchange, "exchange")?,
+            asset: value.asset,
+            network: value.network.as_deref().map(network_from_wire),
+            provider_network: value.provider_network,
+            address: value.address,
+            memo: value.memo,
+        })
+    }
+}
+
 impl TryFrom<ExchangeDestination> for WireExchangeDestination {
     type Error = Error;
 
@@ -3588,7 +3634,8 @@ mod tests {
     fn every_common_response_dto_round_trips_without_loss() {
         use maxt::{
             AssetNetwork, Balance, Candle, ChainDestination, Cursor, Deposit, DepositAddress,
-            DepositStatus, FundingPayment, FundingRate, Level, MarginMode, MarginSummary,
+            DepositAddressEntry, DepositStatus, FundingPayment, FundingRate, Level, MarginMode,
+            MarginSummary,
             MarketInfo, MarketStatus, Network, Order, OrderBook, OrderStatus, Page, Position,
             Ticker, Trade, TransferDestination, TravelRuleRequirement, Withdrawal, WithdrawalFee,
             WithdrawalQuote, WithdrawalStatus,
@@ -3674,6 +3721,14 @@ mod tests {
             network: Network::Bitcoin,
             address: Some("bc1qdestination".to_owned()),
             memo: None,
+        });
+        assert_wire_round_trip::<_, WireDepositAddressEntry>(DepositAddressEntry {
+            exchange: Exchange::Bithumb,
+            asset: "XRP".to_owned(),
+            network: None,
+            provider_network: None,
+            address: None,
+            memo: Some("tag-7".to_owned()),
         });
         let destination = TransferDestination::Chain(ChainDestination {
             asset: "BTC".to_owned(),

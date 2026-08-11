@@ -234,6 +234,21 @@ export function depositAddressToWire(value: Model.DepositAddress): Wire.DepositA
   };
 }
 
+export function depositAddressEntryFromWire(value: Wire.DepositAddressEntryWire): Model.DepositAddressEntry {
+  return new Model.DepositAddressEntry(identifier(Model.Exchange.values, value.exchange, "exchange"), value.asset, value.network === null ? null : Model.Network.other(value.network), value.provider_network === null ? null : value.provider_network, value.address === null ? null : value.address, value.memo === null ? null : value.memo);
+}
+
+export function depositAddressEntryToWire(value: Model.DepositAddressEntry): Wire.DepositAddressEntryWire {
+  return {
+    exchange: value.exchange.id,
+    asset: value.asset,
+    network: value.network === null ? null : value.network.id,
+    provider_network: value.providerNetwork === null ? null : value.providerNetwork,
+    address: value.address === null ? null : value.address,
+    memo: value.memo === null ? null : value.memo,
+  };
+}
+
 export function exchangeDestinationFromWire(value: Wire.ExchangeDestinationWire): Model.ExchangeDestination {
   return new Model.ExchangeDestination(identifier(Model.Exchange.values, value.exchange, "exchange"), value.asset, Model.Network.other(value.network), value.address, value.memo === null ? null : value.memo);
 }

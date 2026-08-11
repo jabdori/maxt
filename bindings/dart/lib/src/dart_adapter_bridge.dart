@@ -591,6 +591,12 @@ final class DartAdapterBridge {
               values.map(_assetNetworkToWire).toList(growable: false),
             ),
           ),
+    native_adapter.AdapterCall_DepositAddresses() =>
+      adapter.depositAddresses().then(
+        (values) => native_adapter.AdapterReply.depositAddresses(
+          values.map(_depositAddressEntryToWire).toList(growable: false),
+        ),
+      ),
     native_adapter.AdapterCall_DepositAddress(:final request) =>
       adapter
           .depositAddress(_depositAddressRequestFromWire(request))
@@ -946,8 +952,10 @@ final class DartAdapterBridge {
     native_adapter.AdapterCall_Balances() => Feature.balances,
     native_adapter.AdapterCall_OrderRules() => Feature.trading,
     native_adapter.AdapterCall_AssetNetworks() => Feature.assetNetworks,
+    native_adapter.AdapterCall_DepositAddresses() => Feature.depositAddresses,
     native_adapter.AdapterCall_DepositAddress() => Feature.depositAddresses,
-    native_adapter.AdapterCall_CreateDepositAddress() => Feature.depositAddresses,
+    native_adapter.AdapterCall_CreateDepositAddress() =>
+      Feature.depositAddresses,
     native_adapter.AdapterCall_PrepareWithdrawal() => Feature.withdrawalQuotes,
     native_adapter.AdapterCall_Withdraw() => Feature.withdrawals,
     native_adapter.AdapterCall_Deposits() => Feature.depositHistory,

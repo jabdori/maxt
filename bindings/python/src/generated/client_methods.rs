@@ -140,6 +140,18 @@ impl NativeClient {
         )
     }
 
+    fn deposit_addresses<'py>(
+        &self,
+        py: Python<'py>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let core = self.core();
+        operation(
+            py,
+            async move { core.deposit_addresses().await },
+            |py, values| crate::convert::list_to_wire(py, &values, crate::convert::deposit_address_entry_to_wire),
+        )
+    }
+
     fn deposit_address<'py>(
         &self,
         py: Python<'py>,

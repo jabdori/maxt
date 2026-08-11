@@ -10,13 +10,13 @@ use maxt_bindings_common::{
 
 use crate::convert::{
     NativeError, WireAssetNetwork, WireBalance, WireCancelOrdersRequest, WireCancelOrdersResult,
-    WireCandle, WireCandleRequest, WireDepositAddress, WireDepositAddressRequest, WireDepositPage,
-    WireExchange, WireFeature, WireFundingPaymentPage, WireFundingRatePage, WireHistoryRequest,
-    WireMarginRequest, WireMarginSummary, WireMarket, WireMarketInfo, WireMarketKind, WireOrder,
-    WireOrderBook, WireOrderHistoryRequest, WireOrderLookupRequest, WireOrderPage,
-    WireOrderRequest, WireOrderRules, WirePosition, WireTicker, WireTrade,
-    WireTransferHistoryRequest, WireWithdrawRequest, WireWithdrawal, WireWithdrawalPage,
-    WireWithdrawalQuote,
+    WireCandle, WireCandleRequest, WireDepositAddress, WireDepositAddressEntry,
+    WireDepositAddressRequest, WireDepositPage, WireExchange, WireFeature, WireFundingPaymentPage,
+    WireFundingRatePage, WireHistoryRequest, WireMarginRequest, WireMarginSummary, WireMarket,
+    WireMarketInfo, WireMarketKind, WireOrder, WireOrderBook, WireOrderHistoryRequest,
+    WireOrderLookupRequest, WireOrderPage, WireOrderRequest, WireOrderRules, WirePosition,
+    WireTicker, WireTrade, WireTransferHistoryRequest, WireWithdrawRequest, WireWithdrawal,
+    WireWithdrawalPage, WireWithdrawalQuote,
 };
 use crate::stream::{
     AccountStreamSink, CancelCallback, CancelFuture, MarketStreamSink, account_stream_channel,
@@ -123,6 +123,8 @@ pub enum AdapterCall {
     OrderRules { market: WireMarket },
     /// 자산별 입출금 네트워크를 요청합니다.
     AssetNetworks { asset: String },
+    /// 계정의 전체 입금 주소를 요청합니다.
+    DepositAddresses,
     /// 입금 주소를 요청합니다.
     DepositAddress { request: WireDepositAddressRequest },
     /// 입금 주소 생성을 요청합니다.
@@ -212,6 +214,8 @@ pub enum AdapterReply {
     OrderRules(WireOrderRules),
     /// 자산별 네트워크 응답입니다.
     AssetNetworks(Vec<WireAssetNetwork>),
+    /// 계정의 전체 입금 주소 응답입니다.
+    DepositAddresses(Vec<WireDepositAddressEntry>),
     /// 입금 주소 응답입니다.
     DepositAddress(WireDepositAddress),
     /// 입금 주소 생성 응답입니다.
@@ -259,6 +263,7 @@ impl AdapterReply {
             Self::Balances(_) => "Balances",
             Self::OrderRules(_) => "OrderRules",
             Self::AssetNetworks(_) => "AssetNetworks",
+            Self::DepositAddresses(_) => "DepositAddresses",
             Self::DepositAddress(_) => "DepositAddress",
             Self::CreateDepositAddress(_) => "CreateDepositAddress",
             Self::PrepareWithdrawal(_) => "PrepareWithdrawal",
@@ -389,6 +394,7 @@ enum ExpectedReply {
     Balances,
     OrderRules,
     AssetNetworks,
+    DepositAddresses,
     DepositAddress,
     CreateDepositAddress,
     PrepareWithdrawal,
@@ -420,6 +426,7 @@ impl ExpectedReply {
             Self::Balances => "Balances",
             Self::OrderRules => "OrderRules",
             Self::AssetNetworks => "AssetNetworks",
+            Self::DepositAddresses => "DepositAddresses",
             Self::DepositAddress => "DepositAddress",
             Self::CreateDepositAddress => "CreateDepositAddress",
             Self::PrepareWithdrawal => "PrepareWithdrawal",
@@ -505,6 +512,9 @@ impl AdapterReply {
                 .map_err(|error| invalid_reply("OrderRules", error)),
             (ExpectedReply::AssetNetworks, Self::AssetNetworks(values)) => {
                 convert_vec(values, "AssetNetworks").map(CommonAdapterReply::AssetNetworks)
+            }
+            (ExpectedReply::DepositAddresses, Self::DepositAddresses(values)) => {
+                convert_vec(values, "DepositAddresses").map(CommonAdapterReply::DepositAddresses)
             }
             (ExpectedReply::DepositAddress, Self::DepositAddress(value)) => value
                 .try_into()

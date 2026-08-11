@@ -3,11 +3,11 @@ use std::sync::Arc;
 
 use maxt::{
     AccountStream, Adapter, AssetNetwork, Balance, BoxFuture, CancelOrdersRequest,
-    CancelOrdersResult, Candle, CandleRequest, Deposit, DepositAddress, DepositAddressRequest,
-    Exchange, Feature, FundingPayment, FundingRate, HistoryRequest, MarginRequest, MarginSummary,
-    Market, MarketInfo, MarketKind, MarketStream, Order, OrderBook, OrderHistoryRequest,
-    OrderLookupRequest, OrderRequest, OrderRules, Page, Position, Result, StreamConfig,
-    Subscription, Ticker, Trade, TransferHistoryRequest, WithdrawRequest, Withdrawal,
+    CancelOrdersResult, Candle, CandleRequest, Deposit, DepositAddress, DepositAddressEntry,
+    DepositAddressRequest, Exchange, Feature, FundingPayment, FundingRate, HistoryRequest,
+    MarginRequest, MarginSummary, Market, MarketInfo, MarketKind, MarketStream, Order, OrderBook,
+    OrderHistoryRequest, OrderLookupRequest, OrderRequest, OrderRules, Page, Position, Result,
+    StreamConfig, Subscription, Ticker, Trade, TransferHistoryRequest, WithdrawRequest, Withdrawal,
     WithdrawalQuote,
 };
 
@@ -166,6 +166,15 @@ impl Adapter for ForeignAdapter {
             },
             AdapterReply::AssetNetworks,
             "AssetNetworks"
+        )
+    }
+
+    fn deposit_addresses(&self) -> BoxFuture<'_, Result<Vec<DepositAddressEntry>>> {
+        dispatch!(
+            self,
+            AdapterCall::DepositAddresses,
+            AdapterReply::DepositAddresses,
+            "DepositAddresses"
         )
     }
 

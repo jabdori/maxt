@@ -284,6 +284,45 @@ class WireDepositAddress {
           memo == other.memo;
 }
 
+class WireDepositAddressEntry {
+  final WireExchange exchange;
+  final String asset;
+  final String? network;
+  final String? providerNetwork;
+  final String? address;
+  final String? memo;
+
+  const WireDepositAddressEntry({
+    required this.exchange,
+    required this.asset,
+    this.network,
+    this.providerNetwork,
+    this.address,
+    this.memo,
+  });
+
+  @override
+  int get hashCode =>
+      exchange.hashCode ^
+      asset.hashCode ^
+      network.hashCode ^
+      providerNetwork.hashCode ^
+      address.hashCode ^
+      memo.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireDepositAddressEntry &&
+          runtimeType == other.runtimeType &&
+          exchange == other.exchange &&
+          asset == other.asset &&
+          network == other.network &&
+          providerNetwork == other.providerNetwork &&
+          address == other.address &&
+          memo == other.memo;
+}
+
 class WireDepositAddressRequest {
   final String asset;
   final String network;

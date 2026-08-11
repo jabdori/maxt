@@ -64,6 +64,10 @@ class _GeneratedNativeClientDelegateApi:
         value = await self._call(self._client.asset_networks, asset)
         return [_model_from_wire("AssetNetwork", item) for item in value]
 
+    async def deposit_addresses(self) -> list[DepositAddressEntry]:
+        value = await self._call(self._client.deposit_addresses)
+        return [_model_from_wire("DepositAddressEntry", item) for item in value]
+
     async def deposit_address(self, request: DepositAddressRequest) -> DepositAddress:
         value = await self._call(self._client.deposit_address, request)
         return _model_from_wire("DepositAddress", value)

@@ -40,7 +40,8 @@ use crate::convert::outcome;
 #[cfg(not(test))]
 use crate::convert::{
     WireAccountStreamItem, WireAssetNetwork, WireBalance, WireCancelOrdersResult, WireCandle,
-    WireDeposit, WireDepositAddress, WireFundingPayment, WireFundingRate, WireMarginSummary,
+    WireDeposit, WireDepositAddress, WireDepositAddressEntry, WireFundingPayment, WireFundingRate,
+    WireMarginSummary,
     WireMarketInfo, WireMarketStreamItem, WireOrder, WireOrderBook, WireOrderRules, WirePage,
     WirePosition, WireTicker, WireTrade, WireWithdrawal, WireWithdrawalQuote,
 };
@@ -84,6 +85,7 @@ enum WireAdapterCall {
     AssetNetworks {
         asset: String,
     },
+    DepositAddresses,
     DepositAddress {
         request: WireDepositAddressRequest,
     },
@@ -165,6 +167,7 @@ enum WireAdapterReply {
     Balances { value: Vec<WireBalance> },
     OrderRules { value: Box<WireOrderRules> },
     AssetNetworks { value: Vec<WireAssetNetwork> },
+    DepositAddresses { value: Vec<WireDepositAddressEntry> },
     DepositAddress { value: WireDepositAddress },
     CreateDepositAddress { value: WireDepositAddress },
     WithdrawalQuote { value: WireWithdrawalQuote },
@@ -217,6 +220,7 @@ fn call_to_wire(call: AdapterCall, stream_id: Option<String>) -> maxt::Result<Wi
             market: market.try_into()?,
         }),
         AdapterCall::AssetNetworks { asset } => Ok(WireAdapterCall::AssetNetworks { asset }),
+        AdapterCall::DepositAddresses => Ok(WireAdapterCall::DepositAddresses),
         AdapterCall::DepositAddress { request } => Ok(WireAdapterCall::DepositAddress {
             request: request.try_into()?,
         }),
@@ -609,6 +613,11 @@ impl JsForeignDispatcher {
                 .map(TryInto::try_into)
                 .collect::<maxt::Result<_>>()
                 .map(AdapterReply::AssetNetworks),
+            WireAdapterReply::DepositAddresses { value } => value
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<maxt::Result<_>>()
+                .map(AdapterReply::DepositAddresses),
             WireAdapterReply::DepositAddress { value } => {
                 value.try_into().map(AdapterReply::DepositAddress)
             }
@@ -836,6 +845,7 @@ mod tests {
             AdapterCall::AssetNetworks {
                 asset: "BTC".to_owned(),
             },
+            AdapterCall::DepositAddresses,
             AdapterCall::DepositAddress {
                 request: DepositAddressRequest::new("BTC", Network::Bitcoin),
             },
@@ -906,6 +916,7 @@ mod tests {
             "balances",
             "order_rules",
             "asset_networks",
+            "deposit_addresses",
             "deposit_address",
             "create_deposit_address",
             "prepare_withdrawal",

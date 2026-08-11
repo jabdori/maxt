@@ -76,6 +76,19 @@ class DepositAddress(WireModel):
 
 
 @dataclass(frozen=True)
+class DepositAddressEntry(WireModel):
+    exchange: Exchange
+    asset: str
+    network: Optional[Network] = None
+    provider_network: Optional[str] = None
+    address: Optional[str] = None
+    memo: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "asset", _ascii_upper(self.asset))
+
+
+@dataclass(frozen=True)
 class ExchangeDestination(WireModel):
     exchange: Exchange
     asset: str
@@ -399,6 +412,7 @@ __all__ = [
     "OrderRules",
     "AssetNetwork",
     "DepositAddress",
+    "DepositAddressEntry",
     "ExchangeDestination",
     "ChainDestination",
     "ExchangeTransferRequest",

@@ -111,6 +111,18 @@ test("custom client dispatches every Adapter operation and owns stream cleanup",
             memo: null,
           },
         });
+      case "deposit_addresses":
+        return ok({
+          kind: "deposit_addresses",
+          value: [{
+            exchange: "binance",
+            asset: "XRP",
+            network: null,
+            provider_network: null,
+            address: null,
+            memo: "tag-7",
+          }],
+        });
       case "prepare_withdrawal":
         return ok({
           kind: "withdrawal_quote",
@@ -206,6 +218,14 @@ test("custom client dispatches every Adapter operation and owns stream cleanup",
   })));
   await nativeValue(client.balances());
   await nativeValue(client.assetNetworks(JSON.stringify("BTC")));
+  assert.deepEqual(await nativeValue(client.depositAddresses()), [{
+    exchange: "binance",
+    asset: "XRP",
+    network: null,
+    provider_network: null,
+    address: null,
+    memo: "tag-7",
+  }]);
   await nativeValue(client.depositAddress(JSON.stringify(depositAddressRequest)));
   await nativeValue(client.prepareWithdrawal(JSON.stringify(withdrawRequest)));
   await nativeValue(client.withdraw(JSON.stringify(withdrawRequest)));
@@ -265,7 +285,7 @@ test("custom client dispatches every Adapter operation and owns stream cleanup",
   assert.deepEqual(
     [...new Set(calls.map(({ kind }) => kind))].sort(),
     [
-      "asset_networks", "balances", "cancel_order", "cancel_order_by_client_id", "candles", "deposit_address", "deposits",
+      "asset_networks", "balances", "cancel_order", "cancel_order_by_client_id", "candles", "deposit_address", "deposit_addresses", "deposits",
       "funding_payments", "funding_rates", "margin_summary", "markets", "open_orders",
       "order", "order_book", "order_by_client_id", "order_history", "place_order", "positions", "prepare_withdrawal", "set_margin", "subscribe",
       "subscribe_account", "ticker", "trades", "withdraw", "withdrawals",

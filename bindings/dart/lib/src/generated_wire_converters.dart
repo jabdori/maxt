@@ -439,6 +439,27 @@ wire.WireDepositAddress _depositAddressToWire(DepositAddress value) =>
       memo: value.memo,
     );
 
+DepositAddressEntry _depositAddressEntryFromWire(
+  wire.WireDepositAddressEntry value,
+) => DepositAddressEntry(
+  exchange: _exchangeFromWire(value.exchange),
+  asset: value.asset,
+  network: value.network == null ? null : _networkFromWire(value.network!),
+  providerNetwork: value.providerNetwork,
+  address: value.address,
+  memo: value.memo,
+);
+wire.WireDepositAddressEntry _depositAddressEntryToWire(
+  DepositAddressEntry value,
+) => wire.WireDepositAddressEntry(
+  exchange: _exchangeToWire(value.exchange),
+  asset: value.asset,
+  network: value.network == null ? null : _networkToWire(value.network!),
+  providerNetwork: value.providerNetwork,
+  address: value.address,
+  memo: value.memo,
+);
+
 ExchangeDestination _exchangeDestinationFromWire(
   wire.WireExchangeDestination value,
 ) => ExchangeDestination(

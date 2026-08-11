@@ -9,15 +9,16 @@ use crate::error::{Error, Result, TransferErrorKind};
 use crate::request::{DepositAddressRequest, TransferHistoryRequest, WithdrawRequest};
 use crate::transport::{HttpRequest, HttpTransport};
 use crate::types::{
-    AssetNetwork, Cursor, Deposit, DepositAddress, DepositStatus, Exchange, Network, Page,
-    TransferDestination, TravelRuleRequirement, Withdrawal, WithdrawalFee, WithdrawalQuote,
-    WithdrawalStatus,
+    AssetNetwork, Cursor, Deposit, DepositAddress, DepositAddressEntry, DepositStatus, Exchange,
+    Network, Page, TransferDestination, TravelRuleRequirement, Withdrawal, WithdrawalFee,
+    WithdrawalQuote, WithdrawalStatus,
 };
 
 use super::parse::{self, EXCHANGE};
 use super::{UpbitCredentials, private, rest};
 
 const WALLET_STATUS_PATH: &str = "/v1/status/wallet";
+const DEPOSIT_ADDRESSES_PATH: &str = "/v1/deposits/coin_addresses";
 const DEPOSIT_ADDRESS_PATH: &str = "/v1/deposits/coin_address";
 const CREATE_DEPOSIT_ADDRESS_PATH: &str = "/v1/deposits/generate_coin_address";
 const WITHDRAW_CHANCE_PATH: &str = "/v1/withdraws/chance";
@@ -165,6 +166,15 @@ pub(crate) async fn asset_networks(
     }
 
     Ok(networks)
+}
+
+pub(crate) async fn deposit_addresses(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+) -> Result<Vec<DepositAddressEntry>> {
+    let request = signed_get(credentials, DEPOSIT_ADDRESSES_PATH, &[])?;
+    let body = rest::send(http, &request).await?;
+    parse_deposit_addresses(&body)
 }
 
 pub(crate) async fn deposit_address(
@@ -579,6 +589,29 @@ fn parse_deposit_address(
 ) -> Result<DepositAddress> {
     let raw: RawDepositAddress = parse::json(body)?;
     normalize_deposit_address(raw, expected_asset, expected_provider, requested_network)
+}
+
+fn parse_deposit_addresses(body: &str) -> Result<Vec<DepositAddressEntry>> {
+    parse::json::<Vec<RawDepositAddress>>(body)?
+        .into_iter()
+        .map(|raw| {
+            let asset = raw.currency.trim().to_ascii_uppercase();
+            if asset.is_empty() {
+                return Err(Error::decode(
+                    "Upbit returned a deposit-address entry without a currency",
+                ));
+            }
+            let provider_network = raw.net_type;
+            Ok(DepositAddressEntry {
+                exchange: Exchange::Upbit,
+                asset,
+                network: provider_network.as_deref().map(network_from_provider),
+                provider_network,
+                address: raw.deposit_address,
+                memo: raw.secondary_address,
+            })
+        })
+        .collect()
 }
 
 fn parse_created_deposit_address(
@@ -1010,6 +1043,18 @@ mod tests {
     }
 
     #[test]
+    fn deposit_address_list_preserves_pending_entries_and_provider_networks() {
+        let entries = parse_deposit_addresses(
+            r#"[{"currency":"BTC","net_type":"BTC","deposit_address":"bc1qissued","secondary_address":null},{"currency":"XRP","net_type":null,"deposit_address":null,"secondary_address":null}]"#,
+        )
+        .expect("official list response");
+        assert_eq!(entries[0].network, Some(Network::Bitcoin));
+        assert_eq!(entries[0].provider_network.as_deref(), Some("BTC"));
+        assert_eq!(entries[1].network, None);
+        assert_eq!(entries[1].address, None);
+    }
+
+    #[test]
     fn deposit_address_amount_is_rejected_before_signing() {
         let request = DepositAddressRequest::new("BTC", Network::Bitcoin).amount(Decimal::ONE);
         assert!(reject_deposit_address_amount(&request).is_err());
@@ -1061,6 +1106,8 @@ mod tests {
     fn every_wallet_read_uses_the_documented_path_and_history_parameters() {
         let credentials = credentials();
         let status = signed_get(&credentials, WALLET_STATUS_PATH, &[]).expect("status request");
+        let addresses =
+            signed_get(&credentials, DEPOSIT_ADDRESSES_PATH, &[]).expect("addresses request");
         let address = signed_get(
             &credentials,
             DEPOSIT_ADDRESS_PATH,
@@ -1080,6 +1127,7 @@ mod tests {
             .expect("withdrawal history request");
 
         assert_eq!(status.target(), WALLET_STATUS_PATH);
+        assert_eq!(addresses.target(), DEPOSIT_ADDRESSES_PATH);
         assert_eq!(
             address.target(),
             "/v1/deposits/coin_address?currency=BTC&net_type=BTC"

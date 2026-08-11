@@ -199,6 +199,13 @@ abstract base class _NativeAdapterBase
   ).then((values) => values.map(_assetNetworkFromWire).toList(growable: false));
 
   @override
+  Future<List<DepositAddressEntry>> depositAddresses() =>
+      _nativeFuture(_handle.depositAddresses).then(
+        (values) =>
+            values.map(_depositAddressEntryFromWire).toList(growable: false),
+      );
+
+  @override
   Future<DepositAddress> depositAddress(DepositAddressRequest request) =>
       _nativeFuture(
         () => _handle.depositAddress(

@@ -10,6 +10,7 @@ import {
   ChainDestination,
   CandleRequest,
   Decimal,
+  DepositAddressEntry,
   DepositAddressRequest,
   DepositStatus,
   Exchange,
@@ -55,6 +56,8 @@ import {
   cancelOrdersRequestToWire,
   cancelOrdersResultFromWire,
   cancelOrdersResultToWire,
+  depositAddressEntryFromWire,
+  depositAddressEntryToWire,
   depositFromWire,
   depositToWire,
   orderRequestFromWire,
@@ -305,6 +308,22 @@ test("wallet unions, statuses, open networks, and pages preserve the wire contra
   assert.equal(WithdrawalFee.fixed(Decimal.one).kind, "fixed");
   assert.equal(TravelRuleRequirement.NotRequired.kind, "not_required");
   assert.equal(new DepositAddressRequest("btc", Network.Bitcoin).asset, "BTC");
+  const depositAddressEntryWire = {
+    exchange: "binance",
+    asset: "XRP",
+    network: null,
+    provider_network: null,
+    address: null,
+    memo: "tag-7",
+  };
+  assert.deepEqual(
+    depositAddressEntryToWire(depositAddressEntryFromWire(depositAddressEntryWire)),
+    depositAddressEntryWire,
+  );
+  assert.equal(
+    new DepositAddressEntry(Exchange.Binance, "xrp", null, null, null, "tag-7").asset,
+    "XRP",
+  );
 });
 
 test("wire unsigned integers reject malformed and unsafe values", () => {

@@ -600,6 +600,21 @@ export class DepositAddress {
   }
 }
 
+export class DepositAddressEntry {
+  readonly asset: string;
+  constructor(
+    readonly exchange: Exchange,
+    asset: string,
+    readonly network: Network | null,
+    readonly providerNetwork: string | null,
+    readonly address: string | null,
+    readonly memo: string | null,
+  ) {
+    this.asset = asciiUpper(asset);
+    freezeRecord(this);
+  }
+}
+
 export class ExchangeDestination {
   readonly asset: string;
   constructor(

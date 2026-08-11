@@ -340,6 +340,11 @@ const CLIENT_ASSET_NETWORKS: &[ClientMethod] = &[ClientMethod {
     native_name: "assetNetworks",
     arguments: ASSET,
 }];
+const CLIENT_DEPOSIT_ADDRESSES: &[ClientMethod] = &[ClientMethod {
+    name: "depositAddresses",
+    native_name: "depositAddresses",
+    arguments: &[],
+}];
 const CLIENT_DEPOSIT_ADDRESS: &[ClientMethod] = &[ClientMethod {
     name: "depositAddress",
     native_name: "depositAddress",
@@ -539,6 +544,14 @@ const ADAPTER_OPERATIONS: &[Operation] = &[
         arguments: ASSET,
         result: ApiType::List("AssetNetwork"),
         client_methods: CLIENT_ASSET_NETWORKS,
+    },
+    Operation {
+        rust_name: "deposit_addresses",
+        language_name: "depositAddresses",
+        feature: "deposit_addresses",
+        arguments: &[],
+        result: ApiType::List("DepositAddressEntry"),
+        client_methods: CLIENT_DEPOSIT_ADDRESSES,
     },
     Operation {
         rust_name: "deposit_address",
@@ -745,6 +758,7 @@ const CLIENT_MEMBERS: &[&str] = &[
     "balances",
     "orderRules",
     "assetNetworks",
+    "depositAddresses",
     "depositAddress",
     "createDepositAddress",
     "prepareWithdrawal",
@@ -1031,6 +1045,7 @@ const MODELS: &[&str] = &[
     "OrderRules",
     "AssetNetwork",
     "DepositAddress",
+    "DepositAddressEntry",
     "ExchangeDestination",
     "ChainDestination",
     "ExchangeTransferRequest",
@@ -1535,6 +1550,17 @@ pub fn binding_schema() -> Schema {
                 field("exchange", Type::Identifier("Exchange")),
                 field("asset", Type::String),
                 field("network", Type::Identifier("Network")),
+                field("address", Type::optional(Type::String)),
+                field("memo", Type::optional(Type::String)),
+            ],
+        ),
+        record(
+            "DepositAddressEntryWire",
+            vec![
+                field("exchange", Type::Identifier("Exchange")),
+                field("asset", Type::String),
+                field("network", Type::optional(Type::Identifier("Network"))),
+                field("provider_network", Type::optional(Type::String)),
                 field("address", Type::optional(Type::String)),
                 field("memo", Type::optional(Type::String)),
             ],
@@ -2146,6 +2172,7 @@ pub fn binding_schema() -> Schema {
                     vec![field("market", Type::named("MarketWire"))],
                 ),
                 variant("asset_networks", vec![field("asset", Type::String)]),
+                variant("deposit_addresses", vec![]),
                 variant(
                     "deposit_address",
                     vec![field("request", Type::named("DepositAddressRequestWire"))],
@@ -2279,6 +2306,13 @@ pub fn binding_schema() -> Schema {
                     vec![field("value", Type::list(Type::named("AssetNetworkWire")))],
                 ),
                 variant(
+                    "deposit_addresses",
+                    vec![field(
+                        "value",
+                        Type::list(Type::named("DepositAddressEntryWire")),
+                    )],
+                ),
+                variant(
                     "deposit_address",
                     vec![field("value", Type::named("DepositAddressWire"))],
                 ),
@@ -2346,7 +2380,7 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
-        native_api_version: 8,
+        native_api_version: 9,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
         identifiers: IDENTIFIERS,

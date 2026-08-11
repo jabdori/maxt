@@ -22,6 +22,7 @@ from maxt import (
     Cursor,
     DecodeError,
     DepositAddress,
+    DepositAddressEntry,
     DepositAddressRequest,
     Exchange,
     Feature,
@@ -107,6 +108,13 @@ class NativeReplayAdapter(Adapter):
             "bc1qcustomadapter",
             "memo-7",
         )
+        self.sample_deposit_addresses = [
+            DepositAddressEntry(
+                Exchange.BINANCE,
+                "XRP",
+                memo="tag-7",
+            )
+        ]
         self.rules = OrderRules(
             market=market,
             market_name="BTC/USDT",
@@ -226,6 +234,10 @@ class NativeReplayAdapter(Adapter):
     async def deposit_address(self, request: DepositAddressRequest) -> DepositAddress:
         self.received.append(("deposit_address", request))
         return self.sample_deposit_address
+
+    async def deposit_addresses(self) -> list[DepositAddressEntry]:
+        self.received.append(("deposit_addresses",))
+        return self.sample_deposit_addresses
 
     async def create_deposit_address(
         self, request: DepositAddressRequest
@@ -518,6 +530,11 @@ class NativeCustomAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await client.ticker(market)).last_price, Decimal("50000.01"))
         self.assertEqual((await client.candles(candle_request))[0].volume, Decimal("12.5000"))
         self.assertEqual((await client.balances())[0].total(), Decimal("102.7500"))
+        deposit_address_entry = (await client.deposit_addresses())[0]
+        self.assertEqual(deposit_address_entry.asset, "XRP")
+        self.assertIsNone(deposit_address_entry.network)
+        self.assertIsNone(deposit_address_entry.address)
+        self.assertEqual(deposit_address_entry.memo, "tag-7")
         self.assertEqual(
             (await client.deposit_address(deposit_address_request)).memo,
             "memo-7",

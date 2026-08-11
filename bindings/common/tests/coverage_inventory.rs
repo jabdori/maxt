@@ -138,10 +138,10 @@ fn operation_inventory_matches_the_current_implemented_surface() {
         std::collections::BTreeMap::from([
             ((Exchange::Upbit, "quotation"), 13),
             ((Exchange::Upbit, "exchange"), 11),
-            ((Exchange::Upbit, "wallet"), 8),
+            ((Exchange::Upbit, "wallet"), 9),
             ((Exchange::Bithumb, "quotation"), 12),
             ((Exchange::Bithumb, "exchange"), 11),
-            ((Exchange::Bithumb, "wallet"), 8),
+            ((Exchange::Bithumb, "wallet"), 9),
             ((Exchange::Binance, "spot"), 15),
             ((Exchange::Binance, "usd_m"), 21),
             ((Exchange::Binance, "wallet"), 8),
@@ -163,6 +163,7 @@ fn implemented_wallet_endpoint_sets_match_the_current_adapters() {
     };
     let upbit_and_bithumb = BTreeSet::from([
         ("GET", "/v1/status/wallet"),
+        ("GET", "/v1/deposits/coin_addresses"),
         ("GET", "/v1/deposits/coin_address"),
         ("POST", "/v1/deposits/generate_coin_address"),
         ("GET", "/v1/withdraws/chance"),

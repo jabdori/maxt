@@ -34,6 +34,9 @@ pub(super) fn dispatch(call: CommonAdapterCall) -> Option<(AdapterCall, Expected
             AdapterCall::AssetNetworks { asset },
             ExpectedReply::AssetNetworks,
         )),
+        CommonAdapterCall::DepositAddresses => {
+            Some((AdapterCall::DepositAddresses, ExpectedReply::DepositAddresses))
+        }
         CommonAdapterCall::DepositAddress { request } => Some((
             AdapterCall::DepositAddress { request: request.into() },
             ExpectedReply::DepositAddress,

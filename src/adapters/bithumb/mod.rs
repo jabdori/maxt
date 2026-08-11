@@ -16,9 +16,9 @@ use crate::request::{
 use crate::stream::{AccountStream, MarketStream};
 use crate::transport::HttpTransport;
 use crate::types::{
-    AssetNetwork, Balance, CancelOrdersResult, Candle, Deposit, DepositAddress, Exchange, Market,
-    MarketInfo, MarketKind, Order, OrderBook, OrderRules, Page, StreamConfig, Subscription, Ticker,
-    Timestamp, Trade, Withdrawal, WithdrawalQuote,
+    AssetNetwork, Balance, CancelOrdersResult, Candle, Deposit, DepositAddress,
+    DepositAddressEntry, Exchange, Market, MarketInfo, MarketKind, Order, OrderBook, OrderRules,
+    Page, StreamConfig, Subscription, Ticker, Timestamp, Trade, Withdrawal, WithdrawalQuote,
 };
 
 pub(crate) const REST_BASE_URL: &str = "https://api.bithumb.com";
@@ -209,6 +209,10 @@ impl Adapter for BithumbAdapter {
         Box::pin(
             async move { wallet::asset_networks(self.http()?, self.credentials()?, &asset).await },
         )
+    }
+
+    fn deposit_addresses(&self) -> BoxFuture<'_, Result<Vec<DepositAddressEntry>>> {
+        Box::pin(async move { wallet::deposit_addresses(self.http()?, self.credentials()?).await })
     }
 
     fn deposit_address(

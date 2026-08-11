@@ -39,6 +39,9 @@ class _GeneratedAdapterApi:
     async def asset_networks(self, asset: str) -> list[AssetNetwork]:
         raise self._unsupported(Feature.ASSET_NETWORKS)
 
+    async def deposit_addresses(self) -> list[DepositAddressEntry]:
+        raise self._unsupported(Feature.DEPOSIT_ADDRESSES)
+
     async def deposit_address(self, request: DepositAddressRequest) -> DepositAddress:
         raise self._unsupported(Feature.DEPOSIT_ADDRESSES)
 
@@ -135,6 +138,9 @@ class _GeneratedClientApi:
 
     async def asset_networks(self, asset: str) -> list[AssetNetwork]:
         return await self._delegate.asset_networks(asset)
+
+    async def deposit_addresses(self) -> list[DepositAddressEntry]:
+        return await self._delegate.deposit_addresses()
 
     async def deposit_address(self, request: DepositAddressRequest) -> DepositAddress:
         return await self._delegate.deposit_address(request)

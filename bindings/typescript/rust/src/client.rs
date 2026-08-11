@@ -19,7 +19,8 @@ use wasm_bindgen::prelude::*;
 use crate::convert::{
     WireAssetNetwork, WireBalance, WireCancelOrdersRequest, WireCancelOrdersResult, WireCandle,
     WireCandleRequest, WireChainTransferRequest, WireDeposit, WireDepositAddress,
-    WireDepositAddressRequest, WireExchangeTransferRequest, WireFundingPayment, WireFundingRate,
+    WireDepositAddressEntry, WireDepositAddressRequest, WireExchangeTransferRequest,
+    WireFundingPayment, WireFundingRate,
     WireHistoryRequest, WireMarginRequest, WireMarginSummary, WireMarket, WireMarketInfo,
     WireOrder, WireOrderBook, WireOrderHistoryRequest, WireOrderLookupRequest, WireOrderRequest,
     WireOrderRules, WirePage, WirePosition, WireStreamConfig, WireSubscription, WireTicker,
@@ -128,6 +129,12 @@ impl NativeClient {
             )),
             Err(error) => outcome::<Value>(Err(error)),
         }
+    }
+
+    async fn deposit_addresses(&self) -> Value {
+        outcome(wire_vec::<_, WireDepositAddressEntry>(
+            self.inner.deposit_addresses().await,
+        ))
     }
 
     async fn deposit_address(&self, request: maxt::Result<String>) -> Value {
@@ -561,6 +568,15 @@ impl NativeClient {
         spawn_native(env, async move { client.asset_networks(asset).await })
     }
 
+    #[napi(js_name = "depositAddresses")]
+    pub fn deposit_addresses_native<'env>(
+        &self,
+        env: &'env Env,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let client = self.clone();
+        spawn_native(env, async move { client.deposit_addresses().await })
+    }
+
     #[napi(js_name = "depositAddress", ts_args_type = "request: string")]
     pub fn deposit_address_native<'env>(
         &self,
@@ -987,6 +1003,11 @@ impl NativeClient {
         crate::web::value(self.asset_networks(Ok(asset)).await)
     }
 
+    #[wasm_bindgen(js_name = "depositAddresses")]
+    pub async fn deposit_addresses_wasm(&self) -> JsValue {
+        crate::web::value(self.deposit_addresses().await)
+    }
+
     #[wasm_bindgen(js_name = "depositAddress")]
     pub async fn deposit_address_wasm(&self, request: String) -> JsValue {
         crate::web::value(self.deposit_address(Ok(request)).await)
@@ -1372,6 +1393,20 @@ mod tests {
         fn asset_networks(&self, _asset: &str) -> BoxFuture<'_, maxt::Result<Vec<AssetNetwork>>> {
             self.calls.lock().unwrap().push("asset_networks");
             Box::pin(async { Ok(vec![]) })
+        }
+
+        fn deposit_addresses(&self) -> BoxFuture<'_, maxt::Result<Vec<maxt::DepositAddressEntry>>> {
+            self.calls.lock().unwrap().push("deposit_addresses");
+            Box::pin(async {
+                Ok(vec![maxt::DepositAddressEntry {
+                    exchange: Exchange::Binance,
+                    asset: "BTC".to_owned(),
+                    network: None,
+                    provider_network: None,
+                    address: None,
+                    memo: None,
+                }])
+            })
         }
 
         fn deposit_address(
@@ -1880,6 +1915,7 @@ mod tests {
             client
                 .asset_networks(json_text(serde_json::json!("BTC")))
                 .await,
+            client.deposit_addresses().await,
             client
                 .deposit_address(json_text(deposit_address_request.clone()))
                 .await,
@@ -1936,7 +1972,7 @@ mod tests {
             client.set_margin(json_text(margin_request)).await,
         ];
         assert!(results.iter().all(|value| value["ok"] == true));
-        assert_eq!(results[23]["value"]["failed"][0]["code"], "order_not_found");
+        assert_eq!(results[24]["value"]["failed"][0]["code"], "order_not_found");
         assert_eq!(
             *calls.lock().unwrap(),
             vec![
@@ -1948,6 +1984,7 @@ mod tests {
                 "balances",
                 "order_rules",
                 "asset_networks",
+                "deposit_addresses",
                 "deposit_address",
                 "create_deposit_address",
                 "prepare_withdrawal",

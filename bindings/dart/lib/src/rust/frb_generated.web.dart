@@ -442,6 +442,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   List<WireDeposit> dco_decode_list_wire_deposit(dynamic raw);
 
   @protected
+  List<WireDepositAddressEntry> dco_decode_list_wire_deposit_address_entry(
+    dynamic raw,
+  );
+
+  @protected
   List<WireFeature> dco_decode_list_wire_feature(dynamic raw);
 
   @protected
@@ -650,6 +655,9 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireDepositAddress dco_decode_wire_deposit_address(dynamic raw);
+
+  @protected
+  WireDepositAddressEntry dco_decode_wire_deposit_address_entry(dynamic raw);
 
   @protected
   WireDepositAddressRequest dco_decode_wire_deposit_address_request(
@@ -1314,6 +1322,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   List<WireDeposit> sse_decode_list_wire_deposit(SseDeserializer deserializer);
 
   @protected
+  List<WireDepositAddressEntry> sse_decode_list_wire_deposit_address_entry(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<WireFeature> sse_decode_list_wire_feature(SseDeserializer deserializer);
 
   @protected
@@ -1576,6 +1589,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireDepositAddress sse_decode_wire_deposit_address(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireDepositAddressEntry sse_decode_wire_deposit_address_entry(
     SseDeserializer deserializer,
   );
 
@@ -2403,6 +2421,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_list_wire_deposit_address_entry(
+    List<WireDepositAddressEntry> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_wire_feature(
     List<WireFeature> self,
     SseSerializer serializer,
@@ -2741,6 +2765,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_deposit_address(
     WireDepositAddress self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_deposit_address_entry(
+    WireDepositAddressEntry self,
     SseSerializer serializer,
   );
 

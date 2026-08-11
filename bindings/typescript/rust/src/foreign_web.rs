@@ -185,6 +185,9 @@ fn decode_reply(
         WireAdapterReply::AssetNetworks { value } => {
             wire_vec(value).map(AdapterReply::AssetNetworks)
         }
+        WireAdapterReply::DepositAddresses { value } => {
+            wire_vec(value).map(AdapterReply::DepositAddresses)
+        }
         WireAdapterReply::DepositAddress { value } => {
             value.try_into().map(AdapterReply::DepositAddress)
         }

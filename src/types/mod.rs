@@ -20,9 +20,10 @@ pub use market::{Exchange, Market, MarketInfo, MarketKind, MarketStatus};
 pub use stream::{AccountEvent, Feed, MarketEvent, Overflow, StreamConfig, Subscription};
 pub use time::Timestamp;
 pub use wallet::{
-    AssetNetwork, ChainDestination, ChainTransferRequest, Deposit, DepositAddress, DepositStatus,
-    ExchangeDestination, ExchangeTransferRequest, Network, TransferDestination,
-    TravelRuleRequirement, Withdrawal, WithdrawalFee, WithdrawalQuote, WithdrawalStatus,
+    AssetNetwork, ChainDestination, ChainTransferRequest, Deposit, DepositAddress,
+    DepositAddressEntry, DepositStatus, ExchangeDestination, ExchangeTransferRequest, Network,
+    TransferDestination, TravelRuleRequirement, Withdrawal, WithdrawalFee, WithdrawalQuote,
+    WithdrawalStatus,
 };
 
 #[cfg(test)]

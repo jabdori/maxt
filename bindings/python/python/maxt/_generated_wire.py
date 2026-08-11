@@ -110,6 +110,14 @@ RECORD_FIELDS = {
         "address": "optional:string",
         "memo": "optional:string",
     },
+    "DepositAddressEntry": {
+        "exchange": "identifier:Exchange",
+        "asset": "string",
+        "network": "optional:identifier:Network",
+        "provider_network": "optional:string",
+        "address": "optional:string",
+        "memo": "optional:string",
+    },
     "ExchangeDestination": {
         "exchange": "identifier:Exchange",
         "asset": "string",
@@ -541,6 +549,8 @@ UNION_FIELDS = {
         "asset_networks": {
             "asset": "string",
         },
+        "deposit_addresses": {
+        },
         "deposit_address": {
             "request": "named:DepositAddressRequest",
         },
@@ -636,6 +646,9 @@ UNION_FIELDS = {
         },
         "asset_networks": {
             "value": "list:named:AssetNetwork",
+        },
+        "deposit_addresses": {
+            "value": "list:named:DepositAddressEntry",
         },
         "deposit_address": {
             "value": "named:DepositAddress",

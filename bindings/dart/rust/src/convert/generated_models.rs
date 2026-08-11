@@ -355,6 +355,44 @@ impl TryFrom<WireDepositAddress> for maxt::DepositAddress {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireDepositAddressEntry {
+    pub exchange: WireExchange,
+    pub asset: String,
+    pub network: Option<String>,
+    pub provider_network: Option<String>,
+    pub address: Option<String>,
+    pub memo: Option<String>,
+}
+
+impl From<maxt::DepositAddressEntry> for WireDepositAddressEntry {
+    fn from(value: maxt::DepositAddressEntry) -> Self {
+        Self {
+            exchange: value.exchange.into(),
+            asset: value.asset,
+            network: value.network.map(network_to_wire),
+            provider_network: value.provider_network,
+            address: value.address,
+            memo: value.memo,
+        }
+    }
+}
+
+impl TryFrom<WireDepositAddressEntry> for maxt::DepositAddressEntry {
+    type Error = NativeError;
+
+    fn try_from(value: WireDepositAddressEntry) -> Result<Self, Self::Error> {
+        Ok(Self {
+            exchange: value.exchange.into(),
+            asset: value.asset,
+            network: value.network.map(network_from_wire),
+            provider_network: value.provider_network,
+            address: value.address,
+            memo: value.memo,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireExchangeDestination {
     pub exchange: WireExchange,
     pub asset: String,

@@ -11,10 +11,10 @@ use crate::request::{
 };
 use crate::stream::{AccountStream, MarketStream};
 use crate::types::{
-    AssetNetwork, Balance, CancelOrdersResult, Candle, Deposit, DepositAddress, Exchange, Feed,
-    FundingPayment, FundingRate, MarginSummary, Market, MarketInfo, MarketKind, Order, OrderBook,
-    OrderRules, Page, Position, StreamConfig, Subscription, Ticker, Trade, Withdrawal,
-    WithdrawalQuote,
+    AssetNetwork, Balance, CancelOrdersResult, Candle, Deposit, DepositAddress,
+    DepositAddressEntry, Exchange, Feed, FundingPayment, FundingRate, MarginSummary, Market,
+    MarketInfo, MarketKind, Order, OrderBook, OrderRules, Page, Position, StreamConfig,
+    Subscription, Ticker, Trade, Withdrawal, WithdrawalQuote,
 };
 
 /// A boxed future used to keep [`Adapter`] dyn-compatible.
@@ -120,6 +120,14 @@ pub trait Adapter: Send + Sync + 'static {
     fn asset_networks(&self, asset: &str) -> BoxFuture<'_, Result<Vec<AssetNetwork>>> {
         let _ = asset;
         unsupported(self.exchange(), Feature::AssetNetworks)
+    }
+
+    /// Lists all exchange-issued deposit addresses for this account.
+    ///
+    /// A provider can omit network metadata, and an address can be absent
+    /// while issuance is still pending.
+    fn deposit_addresses(&self) -> BoxFuture<'_, Result<Vec<DepositAddressEntry>>> {
+        unsupported(self.exchange(), Feature::DepositAddresses)
     }
 
     /// Reads an exchange-issued deposit address.
@@ -339,6 +347,10 @@ impl Adapter for Box<dyn Adapter> {
 
     fn asset_networks(&self, asset: &str) -> BoxFuture<'_, Result<Vec<AssetNetwork>>> {
         (**self).asset_networks(asset)
+    }
+
+    fn deposit_addresses(&self) -> BoxFuture<'_, Result<Vec<DepositAddressEntry>>> {
+        (**self).deposit_addresses()
     }
 
     fn deposit_address(

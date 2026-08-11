@@ -36,6 +36,8 @@ abstract interface class GeneratedAdapterContract {
 
   Future<List<AssetNetwork>> assetNetworks(String asset);
 
+  Future<List<DepositAddressEntry>> depositAddresses();
+
   Future<DepositAddress> depositAddress(DepositAddressRequest request);
 
   Future<DepositAddress> createDepositAddress(DepositAddressRequest request);
@@ -120,6 +122,10 @@ abstract base class GeneratedAdapterDefaults
   @override
   Future<List<AssetNetwork>> assetNetworks(String asset) =>
       _unsupported(Feature.assetNetworks);
+
+  @override
+  Future<List<DepositAddressEntry>> depositAddresses() =>
+      _unsupported(Feature.depositAddresses);
 
   @override
   Future<DepositAddress> depositAddress(DepositAddressRequest request) =>

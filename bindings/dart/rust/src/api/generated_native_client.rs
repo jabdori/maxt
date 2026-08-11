@@ -81,6 +81,14 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
+    pub async fn deposit_addresses(&self) -> Result<Vec<WireDepositAddressEntry>, NativeError> {
+        self.adapter
+            .deposit_addresses()
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
     pub async fn deposit_address(
         &self,
         request: WireDepositAddressRequest,

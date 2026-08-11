@@ -1,9 +1,9 @@
 use maxt::{
     AccountStream, AssetNetwork, Balance, BoxFuture, CancelOrdersRequest, CancelOrdersResult,
-    Candle, CandleRequest, Deposit, DepositAddress, DepositAddressRequest, FundingPayment,
-    FundingRate, HistoryRequest, MarginRequest, MarginSummary, Market, MarketInfo, MarketKind,
-    MarketStream, Order, OrderBook, OrderHistoryRequest, OrderLookupRequest, OrderRequest,
-    OrderRules, Page, Position, Result, StreamConfig, Subscription, Ticker, Trade,
+    Candle, CandleRequest, Deposit, DepositAddress, DepositAddressEntry, DepositAddressRequest,
+    FundingPayment, FundingRate, HistoryRequest, MarginRequest, MarginSummary, Market, MarketInfo,
+    MarketKind, MarketStream, Order, OrderBook, OrderHistoryRequest, OrderLookupRequest,
+    OrderRequest, OrderRules, Page, Position, Result, StreamConfig, Subscription, Ticker, Trade,
     TransferHistoryRequest, WithdrawRequest, Withdrawal, WithdrawalQuote,
 };
 
@@ -59,6 +59,8 @@ pub enum AdapterCall {
         /// Asset symbol.
         asset: String,
     },
+    /// Lists all deposit addresses.
+    DepositAddresses,
     /// Reads one deposit address.
     DepositAddress {
         /// Complete address request.
@@ -193,6 +195,8 @@ pub enum AdapterReply {
     OrderRules(Box<OrderRules>),
     /// Result of [`AdapterCall::AssetNetworks`].
     AssetNetworks(Vec<AssetNetwork>),
+    /// Result of [`AdapterCall::DepositAddresses`].
+    DepositAddresses(Vec<DepositAddressEntry>),
     /// Result of [`AdapterCall::DepositAddress`].
     DepositAddress(DepositAddress),
     /// Result of [`AdapterCall::CreateDepositAddress`].
@@ -249,6 +253,7 @@ impl AdapterReply {
             Self::Balances(_) => "Balances",
             Self::OrderRules(_) => "OrderRules",
             Self::AssetNetworks(_) => "AssetNetworks",
+            Self::DepositAddresses(_) => "DepositAddresses",
             Self::DepositAddress(_) => "DepositAddress",
             Self::CreateDepositAddress(_) => "CreateDepositAddress",
             Self::WithdrawalQuote(_) => "WithdrawalQuote",

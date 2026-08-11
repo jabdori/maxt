@@ -204,6 +204,66 @@ fn korean_exchange_product_counts_match_the_pinned_official_catalogs() {
 }
 
 #[test]
+fn planned_korean_operations_pin_official_request_contracts() {
+    let actual = OPERATIONS
+        .iter()
+        .filter(|operation| {
+            matches!(operation.exchange, Exchange::Upbit | Exchange::Bithumb)
+                && operation.implementation == Implementation::Planned
+        })
+        .map(|operation| {
+            format!(
+                "{}|{}|{}|{}|{}|{}|{:?}|{:?}|{:?}",
+                operation.exchange.id(),
+                operation.product,
+                operation.id,
+                operation.method,
+                operation.path,
+                operation.interface.id(),
+                operation.authentication,
+                operation.risk,
+                operation.availability,
+            )
+        })
+        .collect::<BTreeSet<_>>();
+    let expected = [
+        "upbit|quotation|candles_years|GET|/v1/candles/years|http|Public|Read|General",
+        "upbit|quotation|tickers_by_quote|GET|/v1/ticker/all|http|Public|Read|General",
+        "upbit|quotation|orderbook_instruments|GET|/v1/orderbook/instruments|http|Public|Read|General",
+        "upbit|quotation|list_subscriptions|LIST_SUBSCRIPTIONS|LIST_SUBSCRIPTIONS|websocket_request|Public|Read|General",
+        "upbit|exchange|test_order|POST|/v1/orders/test|http|Jwt|Read|General",
+        "upbit|exchange|batch_cancel_open_orders|DELETE|/v1/orders/open|http|Jwt|FinancialWrite|General",
+        "upbit|exchange|cancel_and_new_order|POST|/v1/orders/cancel_and_new|http|Jwt|FinancialWrite|General",
+        "upbit|wallet|deposit_chance|GET|/v1/deposits/chance/coin|http|Jwt|Read|General",
+        "upbit|wallet|withdrawal|GET|/v1/withdraw|http|Jwt|Read|General",
+        "upbit|wallet|cancel_withdrawal|DELETE|/v1/withdraws/coin|http|Jwt|FinancialWrite|General",
+        "upbit|wallet|deposit|GET|/v1/deposit|http|Jwt|Read|General",
+        "upbit|travel_rule|travel_rule_vasps|GET|/v1/travel_rule/vasps|http|Jwt|Read|Region(\"Singapore\")",
+        "upbit|travel_rule|travel_rule_verify_uuid|POST|/v1/travel_rule/deposit/uuid|http|Jwt|FinancialWrite|Region(\"Singapore\")",
+        "upbit|travel_rule|travel_rule_verify_txid|POST|/v1/travel_rule/deposit/txid|http|Jwt|FinancialWrite|Region(\"Singapore\")",
+        "bithumb|quotation|notices|GET|/v1/notices|http|Public|Read|General",
+        "bithumb|quotation|inout_fee|GET|/v2/fee/inout/{currency}|http|Public|Read|General",
+        "bithumb|exchange|pending_orders|GET|/v2/orders/pending|http|Jwt|Read|General",
+        "bithumb|exchange|batch_orders|POST|/v2/orders/batch|http|Jwt|FinancialWrite|General",
+        "bithumb|wallet|withdrawal|GET|/v1/withdraw|http|Jwt|Read|General",
+        "bithumb|wallet|cancel_withdrawal|DELETE|/v1/withdraws/coin|http|Jwt|FinancialWrite|General",
+        "bithumb|wallet|deposit|GET|/v1/deposit|http|Jwt|Read|General",
+        "bithumb|wallet|api_keys|GET|/v1/api_keys|http|Jwt|Read|General",
+        "bithumb|twap|twap|GET|/v1/twap|http|Jwt|Read|General",
+        "bithumb|twap|create_twap|POST|/v1/twap|http|Jwt|FinancialWrite|General",
+        "bithumb|twap|cancel_twap|DELETE|/v1/twap|http|Jwt|FinancialWrite|General",
+        "bithumb|krw|withdrawals|GET|/v1/withdraws/krw|http|Jwt|Read|General",
+        "bithumb|krw|withdraw|POST|/v1/withdraws/krw|http|Jwt|FinancialWrite|General",
+        "bithumb|krw|deposits|GET|/v1/deposits/krw|http|Jwt|Read|General",
+        "bithumb|krw|deposit|POST|/v1/deposits/krw|http|Jwt|FinancialWrite|General",
+    ]
+    .into_iter()
+    .map(str::to_owned)
+    .collect::<BTreeSet<_>>();
+    assert_eq!(actual, expected);
+}
+
+#[test]
 fn implemented_wallet_endpoint_sets_match_the_current_adapters() {
     let paths = |exchange, product| {
         OPERATIONS

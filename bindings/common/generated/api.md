@@ -158,8 +158,8 @@ Documentation baseline: `2026-08-10`.
 | upbit | wallet | `deposit` | `GET` | `/v1/deposit` | `http` | JWT | read | general | common `deposit` | `Planned` | `Documented` |
 | upbit | wallet | `withdrawals` | `GET` | `/v1/withdraws` | `http` | JWT | read | general | common `withdrawals` | `Implemented` | `Fixture` |
 | upbit | travel_rule | `travel_rule_vasps` | `GET` | `/v1/travel_rule/vasps` | `http` | JWT | read | Singapore only | provider `travel_rule_vasps` | `Planned` | `Documented` |
-| upbit | travel_rule | `travel_rule_verify_uuid` | `POST` | `/v1/travel_rule/deposit/uuid` | `http` | JWT | account write | Singapore only | provider `verify_travel_rule_by_uuid` | `Planned` | `Documented` |
-| upbit | travel_rule | `travel_rule_verify_txid` | `POST` | `/v1/travel_rule/deposit/txid` | `http` | JWT | account write | Singapore only | provider `verify_travel_rule_by_txid` | `Planned` | `Documented` |
+| upbit | travel_rule | `travel_rule_verify_uuid` | `POST` | `/v1/travel_rule/deposit/uuid` | `http` | JWT | financial write | Singapore only | provider `verify_travel_rule_by_uuid` | `Planned` | `Documented` |
+| upbit | travel_rule | `travel_rule_verify_txid` | `POST` | `/v1/travel_rule/deposit/txid` | `http` | JWT | financial write | Singapore only | provider `verify_travel_rule_by_txid` | `Planned` | `Documented` |
 | bithumb | quotation | `markets` | `GET` | `/v1/market/all` | `http` | public | read | general | common `markets`; provider `market_warnings` | `Implemented` | `LiveRead` |
 | bithumb | quotation | `candles_minutes` | `GET` | `/v1/candles/minutes/{unit}` | `http` | public | read | general | common `candles` | `Implemented` | `LiveRead` |
 | bithumb | quotation | `candles_days` | `GET` | `/v1/candles/days` | `http` | public | read | general | common `candles` | `Implemented` | `LiveRead` |

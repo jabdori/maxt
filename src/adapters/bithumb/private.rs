@@ -22,7 +22,10 @@ use crate::types::{
 
 use super::parse::{self, EXCHANGE};
 use super::rest;
-use super::{BithumbApiKey, BithumbCredentials};
+use super::{
+    BithumbApiKey, BithumbCredentials, BithumbOrderDirection, BithumbPendingOrderState,
+    BithumbPendingOrdersRequest,
+};
 
 /// JWT claims sent to Bithumb; query fields are omitted for parameterless calls.
 #[derive(Debug, Serialize)]
@@ -137,6 +140,28 @@ fn signed_get(
         .header("authorization", authorization(credentials, &signed)?))
 }
 
+fn signed_get_with_cursor(
+    credentials: &BithumbCredentials,
+    path: &str,
+    mut params: Vec<(&str, String)>,
+    cursor: Option<&Cursor>,
+) -> Result<HttpRequest> {
+    let mut signed = signed_query(&params)?;
+    if let Some(cursor) = cursor {
+        let cursor = checked_cursor(cursor)?;
+        if !signed.is_empty() {
+            signed.push('&');
+        }
+        signed.push_str("next_key=");
+        signed.push_str(cursor);
+        params.push(("next_key", cursor.to_owned()));
+    }
+
+    Ok(HttpRequest::get(path)
+        .query(encoded_query(&params))
+        .header("authorization", authorization(credentials, &signed)?))
+}
+
 fn encoded_query(params: &[(&str, String)]) -> String {
     params
         .iter()
@@ -191,6 +216,51 @@ pub(crate) fn open_orders_request(
     params.push(("state", "wait".to_string()));
 
     signed_get(credentials, "/v1/orders", &params)
+}
+
+pub(crate) fn pending_orders_request(
+    credentials: &BithumbCredentials,
+    request: &BithumbPendingOrdersRequest,
+) -> Result<HttpRequest> {
+    let mut params = Vec::new();
+    if let Some(market) = &request.market {
+        params.push(("market", parse::native_symbol(market)?));
+    }
+    if let Some(state) = request.state {
+        params.push((
+            "state",
+            match state {
+                BithumbPendingOrderState::Wait => "wait",
+                BithumbPendingOrderState::Watch => "watch",
+            }
+            .to_owned(),
+        ));
+    }
+    if let Some(limit) = request.limit {
+        if !(1..=100).contains(&limit) {
+            return Err(Error::invalid_request(
+                "limit",
+                format!("bithumb serves 1 to 100 pending orders per page, not {limit}"),
+            ));
+        }
+        params.push(("limit", limit.to_string()));
+    }
+    if let Some(order_by) = request.order_by {
+        params.push((
+            "order_by",
+            match order_by {
+                BithumbOrderDirection::Ascending => "asc",
+                BithumbOrderDirection::Descending => "desc",
+            }
+            .to_owned(),
+        ));
+    }
+    signed_get_with_cursor(
+        credentials,
+        "/v2/orders/pending",
+        params,
+        request.cursor.as_ref(),
+    )
 }
 
 pub(crate) fn order_request(
@@ -287,27 +357,12 @@ pub(crate) fn order_history_request(
     }
     params.push(("limit", limit.to_string()));
     params.push(("order_by", "desc".to_string()));
-    let mut signed = signed_query(&params)?;
-    if let Some(cursor) = &request.cursor {
-        let cursor = cursor.as_str();
-        if cursor.is_empty()
-            || !cursor.bytes().all(|byte| {
-                byte.is_ascii_alphanumeric() || matches!(byte, b'+' | b'/' | b'=' | b'-' | b'_')
-            })
-        {
-            return Err(Error::invalid_request(
-                "cursor",
-                "not a Bithumb order-history cursor",
-            ));
-        }
-        signed.push_str("&next_key=");
-        signed.push_str(cursor);
-        params.push(("next_key", cursor.to_string()));
-    }
-
-    Ok(HttpRequest::get("/v2/orders/history")
-        .query(encoded_query(&params))
-        .header("authorization", authorization(credentials, &signed)?))
+    signed_get_with_cursor(
+        credentials,
+        "/v2/orders/history",
+        params,
+        request.cursor.as_ref(),
+    )
 }
 
 pub(crate) fn cancel_order_request(
@@ -604,6 +659,15 @@ pub(crate) async fn open_orders(
     parse::orders(&rest::send(http, &open_orders_request(credentials, market)?).await?)
 }
 
+pub(crate) async fn pending_orders(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    request: &BithumbPendingOrdersRequest,
+) -> Result<Page<Order>> {
+    let body = rest::send(http, &pending_orders_request(credentials, request)?).await?;
+    order_page(&body)
+}
+
 pub(crate) async fn api_keys(
     http: &HttpTransport,
     credentials: &BithumbCredentials,
@@ -650,26 +714,43 @@ pub(crate) async fn order_history(
     request: &OrderHistoryRequest,
 ) -> Result<Page<Order>> {
     let body = rest::send(http, &order_history_request(credentials, request)?).await?;
-    order_history_page(&body)
+    order_page(&body)
 }
 
-fn order_history_page(body: &Value) -> Result<Page<Order>> {
+fn order_page(body: &Value) -> Result<Page<Order>> {
     let data = body
         .get("data")
-        .ok_or_else(|| Error::decode("bithumb order history carries no `data`"))?;
+        .ok_or_else(|| Error::decode("bithumb order page carries no `data`"))?;
+    let has_next = body
+        .get("has_next")
+        .and_then(Value::as_bool)
+        .ok_or_else(|| Error::decode("bithumb order page `has_next` is not a boolean"))?;
     let next = match body.get("next_key") {
         None | Some(Value::Null) => None,
         Some(Value::String(value)) if !value.is_empty() => Some(Cursor::new(value.clone())),
         Some(_) => {
             return Err(Error::decode(
-                "bithumb order history `next_key` is not a non-empty string or null",
+                "bithumb order page `next_key` is not a non-empty string or null",
             ));
         }
     };
+    if has_next != next.is_some() {
+        return Err(Error::decode(
+            "bithumb order page disagrees about `has_next` and `next_key`",
+        ));
+    }
     Ok(Page {
         items: parse::orders(data)?,
         next,
     })
+}
+
+fn checked_cursor(cursor: &Cursor) -> Result<&str> {
+    let cursor = cursor.as_str();
+    if cursor.is_empty() {
+        return Err(Error::invalid_request("cursor", "must not be empty"));
+    }
+    Ok(cursor)
 }
 
 fn checked_market(order: Order, expected: &Market) -> Result<Order> {
@@ -963,6 +1044,27 @@ mod tests {
                 .target(),
             "/v1/orders?state=wait"
         );
+        let pending = BithumbPendingOrdersRequest::new()
+            .market(btc_krw())
+            .state(BithumbPendingOrderState::Watch)
+            .limit(25)
+            .order_by(BithumbOrderDirection::Ascending)
+            .cursor(Cursor::new("page+/=="));
+        let request = pending_orders_request(&credentials(), &pending).expect("signed");
+        assert_eq!(
+            request.target(),
+            "/v2/orders/pending?market=KRW-BTC&state=watch&limit=25&order_by=asc&next_key=page%2B%2F%3D%3D"
+        );
+        let authorization = request
+            .headers
+            .iter()
+            .find(|(name, _)| name == "authorization")
+            .map(|(_, value)| value)
+            .expect("an authorization header");
+        assert_eq!(
+            payload(authorization)["query_hash"],
+            sha512_hex(b"market=KRW-BTC&state=watch&limit=25&order_by=asc&next_key=page+/==")
+        );
         // Shape reference: https://apidocs.bithumb.com/reference/주문-취소-접수.md
         assert_eq!(
             cancel_order_request(&credentials(), "C0101000000001818113")
@@ -1090,19 +1192,19 @@ mod tests {
     }
 
     #[test]
-    fn final_order_history_encodes_the_opaque_cursor_but_hashes_its_raw_value() {
+    fn final_order_history_encodes_an_opaque_cursor_but_hashes_its_raw_value() {
         let history = OrderHistoryRequest::new()
             .market(btc_krw())
             .status(OrderStatus::Cancelled)
             .from(Timestamp::from_millis(1_700_000_000_000))
             .to(Timestamp::from_millis(1_700_001_000_000))
-            .cursor(Cursor::new("page+/=="))
+            .cursor(Cursor::new("opaque:cursor%2F"))
             .limit(25);
         let request = order_history_request(&credentials(), &history).expect("signed history");
 
         assert_eq!(
             request.target(),
-            "/v2/orders/history?market=KRW-BTC&state=cancel&start_time=1700000000000&end_time=1700000999999&limit=25&order_by=desc&next_key=page%2B%2F%3D%3D"
+            "/v2/orders/history?market=KRW-BTC&state=cancel&start_time=1700000000000&end_time=1700000999999&limit=25&order_by=desc&next_key=opaque%3Acursor%252F"
         );
         let authorization = request
             .headers
@@ -1113,14 +1215,38 @@ mod tests {
         assert_eq!(
             payload(authorization)["query_hash"],
             sha512_hex(
-                b"market=KRW-BTC&state=cancel&start_time=1700000000000&end_time=1700000999999&limit=25&order_by=desc&next_key=page+/=="
+                b"market=KRW-BTC&state=cancel&start_time=1700000000000&end_time=1700000999999&limit=25&order_by=desc&next_key=opaque:cursor%2F"
             )
         );
     }
 
     #[test]
+    fn pending_orders_reject_an_empty_cursor() {
+        assert!(matches!(
+            pending_orders_request(
+                &credentials(),
+                &BithumbPendingOrdersRequest::new().cursor(Cursor::new("")),
+            ),
+            Err(Error::InvalidRequest { field, .. }) if field == "cursor"
+        ));
+    }
+
+    #[test]
+    fn pending_orders_refuse_a_page_size_outside_bithumbs_limit() {
+        for limit in [0, 101] {
+            assert!(matches!(
+                pending_orders_request(
+                    &credentials(),
+                    &BithumbPendingOrdersRequest::new().limit(limit),
+                ),
+                Err(Error::InvalidRequest { field, .. }) if field == "limit"
+            ));
+        }
+    }
+
+    #[test]
     fn bithumb_history_decodes_data_and_next_key() {
-        let page = order_history_page(&serde_json::json!({
+        let page = order_page(&serde_json::json!({
             "data": [{
                 "order_id": "C0101000007410714100",
                 "side": "bid",
@@ -1131,12 +1257,34 @@ mod tests {
                 "executed_volume": "0.001",
                 "created_at": "2026-04-09T10:00:00.123+09:00"
             }],
+            "has_next": true,
             "next_key": "page+/=="
         }))
         .expect("a v2.1.5 history page");
 
         assert_eq!(page.items[0].id, "C0101000007410714100");
         assert_eq!(page.next.expect("another page").as_str(), "page+/==");
+    }
+
+    #[test]
+    fn pending_orders_preserve_watch_orders_and_page_cursors() {
+        let page = order_page(&serde_json::json!({
+            "data": [{
+                "order_id": "watch-1",
+                "side": "bid",
+                "state": "watch",
+                "market": "KRW-BTC",
+                "remaining_volume": "0.001",
+                "executed_volume": "0",
+                "created_at": "2026-04-09T10:00:00.123+09:00"
+            }],
+            "has_next": false,
+            "next_key": null
+        }))
+        .expect("a pending-order page");
+
+        assert_eq!(page.items[0].status, OrderStatus::Open);
+        assert!(page.next.is_none());
     }
 
     #[test]

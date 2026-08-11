@@ -7,9 +7,13 @@ import {
   BithumbApiKey,
   BithumbAssetFee,
   BithumbNetworkFee,
+  BithumbOrderDirection,
+  BithumbPendingOrderState,
+  BithumbPendingOrdersRequest,
   CancelOrdersRequest,
   CancelOrdersResult,
   CancelledOrder,
+  Cursor,
   ChainDestination,
   CandleRequest,
   Decimal,
@@ -58,6 +62,8 @@ import { InvalidRequestError } from "../dist/errors.js";
 import {
   assetNetworkFromWire,
   assetNetworkToWire,
+  bithumbPendingOrdersRequestFromWire,
+  bithumbPendingOrdersRequestToWire,
   cancelOrdersRequestFromWire,
   cancelOrdersRequestToWire,
   cancelOrdersResultFromWire,
@@ -199,6 +205,29 @@ test("Bithumb API keys preserve their identifier and expiry", () => {
   assert.equal(key.accessKey, "example-access-key-1");
   assert.equal(key.expiresAt.nanosecondsSinceEpoch, 1812672000000000000n);
   assert.equal(Object.isFrozen(key), true);
+});
+
+test("Bithumb pending-order requests preserve filters and opaque cursors", () => {
+  const request = new BithumbPendingOrdersRequest(
+    Market.spot(Exchange.Bithumb, "BTC", "KRW"),
+    BithumbPendingOrderState.Watch,
+    25,
+    BithumbOrderDirection.Ascending,
+    new Cursor("page+/=="),
+  );
+  const wire = bithumbPendingOrdersRequestToWire(request);
+
+  assert.deepEqual(wire, {
+    market: { exchange: "bithumb", kind: "spot", base: "BTC", quote: "KRW" },
+    state: "watch",
+    limit: 25,
+    order_by: "asc",
+    cursor: "page+/==",
+  });
+  const decoded = bithumbPendingOrdersRequestFromWire(wire);
+  assert.equal(decoded.state, BithumbPendingOrderState.Watch);
+  assert.equal(decoded.orderBy, BithumbOrderDirection.Ascending);
+  assert.equal(decoded.cursor.value, "page+/==");
 });
 
 test("string variants are stable singleton values in Rust declaration order", () => {

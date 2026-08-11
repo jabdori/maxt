@@ -396,6 +396,16 @@ fn schema_identifier_variants_match_the_core_enums() {
             include_str!("../../../src/adapters/bithumb/mod.rs"),
         ),
         (
+            "BithumbPendingOrderState",
+            "BithumbPendingOrderState",
+            include_str!("../../../src/adapters/bithumb/mod.rs"),
+        ),
+        (
+            "BithumbOrderDirection",
+            "BithumbOrderDirection",
+            include_str!("../../../src/adapters/bithumb/mod.rs"),
+        ),
+        (
             "BinanceMarket",
             "BinanceMarket",
             include_str!("../../../src/adapters/binance/mod.rs"),

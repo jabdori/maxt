@@ -1578,7 +1578,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("orders_by_ids"),
         Validation::Fixture,
     )),
-    planned(operation(
+    operation(
         Exchange::Bithumb,
         "exchange",
         "pending_orders",
@@ -1587,9 +1587,9 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::Read,
-        OperationMapping::Common("open_orders"),
-        Validation::Documented,
-    )),
+        OperationMapping::Provider("pending_orders"),
+        Validation::Fixture,
+    ),
     partial(operation(
         Exchange::Bithumb,
         "exchange",

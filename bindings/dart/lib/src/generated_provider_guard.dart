@@ -30,6 +30,7 @@ void _generatedProviderGuard({
   bithumb.notices();
   bithumb.transferFees(_generatedProviderValue<String>());
   bithumb.apiKeys();
+  bithumb.pendingOrders(_generatedProviderValue<BithumbPendingOrdersRequest>());
   BinanceAdapter.spot();
   BinanceAdapter.usdMFutures();
   binance.venue;

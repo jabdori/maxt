@@ -77,6 +77,13 @@ void main() {
       accessKey: 'example-access-key-1',
       expiresAt: Timestamp.fromSeconds(1812672000),
     );
+    final pendingOrders = BithumbPendingOrdersRequest(
+      market: Market.spot(Exchange.bithumb, 'BTC', 'KRW'),
+      state: BithumbPendingOrderState.watch,
+      limit: 25,
+      orderBy: BithumbOrderDirection.ascending,
+      cursor: Cursor('page+/=='),
+    );
     final ledger = HyperliquidLedgerEntry(
       kind: HyperliquidLedgerKind.other('futureKind'),
       time: Timestamp.fromNanoseconds(BigInt.parse("1700000000123456790")),
@@ -97,6 +104,9 @@ void main() {
     expect(fee.networks.single.withdrawalFee, isA<WithdrawalFeeFixed>());
     expect(apiKey.accessKey, 'example-access-key-1');
     expect(apiKey.expiresAt, Timestamp.fromSeconds(1812672000));
+    expect(pendingOrders.state, BithumbPendingOrderState.watch);
+    expect(pendingOrders.orderBy, BithumbOrderDirection.ascending);
+    expect(pendingOrders.cursor?.value, 'page+/==');
     expect(market.kind, MarketKind.perpetual);
   });
 

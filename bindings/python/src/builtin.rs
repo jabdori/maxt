@@ -315,6 +315,20 @@ impl NativeBithumbAdapter {
             |py, values| list_to_wire(py, &values, crate::convert::bithumb_api_key_to_wire),
         )
     }
+
+    fn pending_orders<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::bithumb_pending_orders_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.pending_orders(&request).await },
+            |py, value| crate::convert::order_history_page_to_wire(py, &value),
+        )
+    }
 }
 
 #[pyclass(module = "maxt._native", frozen)]

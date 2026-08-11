@@ -249,6 +249,24 @@ extension BithumbAlertStepWireName on BithumbAlertStep {
   };
 }
 
+enum BithumbPendingOrderState { wait, watch }
+
+extension BithumbPendingOrderStateWireName on BithumbPendingOrderState {
+  String get wireName => switch (this) {
+    BithumbPendingOrderState.wait => 'wait',
+    BithumbPendingOrderState.watch => 'watch',
+  };
+}
+
+enum BithumbOrderDirection { ascending, descending }
+
+extension BithumbOrderDirectionWireName on BithumbOrderDirection {
+  String get wireName => switch (this) {
+    BithumbOrderDirection.ascending => 'asc',
+    BithumbOrderDirection.descending => 'desc',
+  };
+}
+
 enum BinanceMarket { spot, usdMFutures }
 
 extension BinanceMarketWireName on BinanceMarket {

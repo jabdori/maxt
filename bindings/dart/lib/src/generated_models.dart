@@ -531,6 +531,22 @@ final class BithumbApiKey {
   final Timestamp expiresAt;
 }
 
+final class BithumbPendingOrdersRequest {
+  const BithumbPendingOrdersRequest({
+    this.market,
+    this.state,
+    this.limit,
+    this.orderBy,
+    this.cursor,
+  });
+
+  final Market? market;
+  final BithumbPendingOrderState? state;
+  final int? limit;
+  final BithumbOrderDirection? orderBy;
+  final Cursor? cursor;
+}
+
 final class BithumbAssetFee {
   BithumbAssetFee({
     required this.displayName,

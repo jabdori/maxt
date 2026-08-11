@@ -455,6 +455,15 @@ class BithumbApiKey(WireModel):
 
 
 @dataclass(frozen=True)
+class BithumbPendingOrdersRequest(WireModel):
+    market: Optional[Market] = None
+    state: Optional[BithumbPendingOrderState] = None
+    limit: Optional[int] = None
+    order_by: Optional[BithumbOrderDirection] = None
+    cursor: Optional[Cursor] = None
+
+
+@dataclass(frozen=True)
 class BithumbAssetFee(WireModel):
     display_name: str
     asset: str
@@ -506,6 +515,7 @@ __all__ = [
     "UpbitOrderBookInstrument",
     "BithumbNotice",
     "BithumbApiKey",
+    "BithumbPendingOrdersRequest",
     "BithumbAssetFee",
     "BithumbNetworkFee",
 ]

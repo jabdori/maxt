@@ -99,6 +99,7 @@ code로 보존합니다.
 | `notices(count)` | `GET /v1/notices`; `count: 1..=20`; `None → 거래소 기본값 5`; 최신순; `published_at`, `modified_at`을 KST에서 UTC로 변환 |
 | `transfer_fees(currency)` | `GET /v2/fee/inout/{currency}`; 자산 코드 또는 `ALL`; 네트워크별 입금 수수료·최소 입금액과 고정 또는 정률 출금 수수료 규칙; 계정별 입출금 가능 상태는 포함하지 않음 |
 | `api_keys()` | 인증 필요 `GET /v1/api_keys`; 등록된 각 access key 식별자와 만료 시각 |
+| `pending_orders(request)` | 인증 필요 `GET /v2/orders/pending`; 선택 시장, `wait` 또는 `watch` 상태, `1..=100` 개수, 오름·내림차순, 불투명 `next_key`를 `Page::next` 커서로 반환 |
 
 | 거래소 상태 | 매핑 |
 | --- | --- |
@@ -123,6 +124,7 @@ code로 보존합니다.
 - [공지사항](https://apidocs.bithumb.com/reference/%EA%B3%B5%EC%A7%80%EC%82%AC%ED%95%AD-%EC%A1%B0%ED%9A%8C.md)
 - [입출금 수수료](https://apidocs.bithumb.com/reference/%EC%9E%85%EC%B6%9C%EA%B8%88-%EC%88%98%EC%88%98%EB%A3%8C-%EC%A1%B0%ED%9A%8C.md)
 - [API 키](https://apidocs.bithumb.com/reference/api-%ED%82%A4-%EB%A6%AC%EC%8A%A4%ED%8A%B8-%EC%A1%B0%ED%9A%8C.md)
+- [대기 주문 목록](https://apidocs.bithumb.com/reference/%EB%8C%80%EA%B8%B0-%EC%A3%BC%EB%AC%B8-%EB%AA%A9%EB%A1%9D-%EC%A1%B0%ED%9A%8C.md)
 - [캔들](https://apidocs.bithumb.com/reference/%EB%B6%84minute-%EC%BA%94%EB%93%A4-%EC%A1%B0%ED%9A%8C.md)
 - [WebSocket](https://apidocs.bithumb.com/reference/%EA%B8%B0%EB%B3%B8-%EC%A0%95%EB%B3%B4.md)
 - [주문](https://apidocs.bithumb.com/reference/%EC%A3%BC%EB%AC%B8-%EC%9A%94%EC%B2%AD.md)

@@ -105,6 +105,13 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
       _nativeFuture(_handle.bithumbApiKeys).then(
         (values) => values.map(_bithumbApiKeyFromWire).toList(growable: false),
       );
+
+  Future<Page<Order>> pendingOrders(BithumbPendingOrdersRequest request) =>
+      _nativeFuture(
+        () => _handle.bithumbPendingOrders(
+          request: _bithumbPendingOrdersRequestToWire(request),
+        ),
+      ).then(_orderPageFromWire);
 }
 
 extension BinanceAdapterGeneratedMethods on BinanceAdapter {

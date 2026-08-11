@@ -180,6 +180,41 @@ class WireBithumbNotice {
           modifiedAtNs == other.modifiedAtNs;
 }
 
+class WireBithumbPendingOrdersRequest {
+  final WireMarket? market;
+  final WireBithumbPendingOrderState? state;
+  final int? limit;
+  final WireBithumbOrderDirection? orderBy;
+  final String? cursor;
+
+  const WireBithumbPendingOrdersRequest({
+    this.market,
+    this.state,
+    this.limit,
+    this.orderBy,
+    this.cursor,
+  });
+
+  @override
+  int get hashCode =>
+      market.hashCode ^
+      state.hashCode ^
+      limit.hashCode ^
+      orderBy.hashCode ^
+      cursor.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbPendingOrdersRequest &&
+          runtimeType == other.runtimeType &&
+          market == other.market &&
+          state == other.state &&
+          limit == other.limit &&
+          orderBy == other.orderBy &&
+          cursor == other.cursor;
+}
+
 class WireCancelOrdersRequest {
   final WireOrderIdKind kind;
   final List<String> ids;

@@ -1329,6 +1329,41 @@ impl TryFrom<WireBithumbApiKey> for maxt::BithumbApiKey {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbPendingOrdersRequest {
+    pub market: Option<WireMarket>,
+    pub state: Option<WireBithumbPendingOrderState>,
+    pub limit: Option<u32>,
+    pub order_by: Option<WireBithumbOrderDirection>,
+    pub cursor: Option<String>,
+}
+
+impl From<maxt::BithumbPendingOrdersRequest> for WireBithumbPendingOrdersRequest {
+    fn from(value: maxt::BithumbPendingOrdersRequest) -> Self {
+        Self {
+            market: value.market.map(Into::into),
+            state: value.state.map(Into::into),
+            limit: value.limit,
+            order_by: value.order_by.map(Into::into),
+            cursor: value.cursor.map(|cursor| cursor.as_str().to_owned()),
+        }
+    }
+}
+
+impl TryFrom<WireBithumbPendingOrdersRequest> for maxt::BithumbPendingOrdersRequest {
+    type Error = NativeError;
+
+    fn try_from(value: WireBithumbPendingOrdersRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.map(Into::into),
+            state: value.state.map(Into::into),
+            limit: value.limit,
+            order_by: value.order_by.map(Into::into),
+            cursor: value.cursor.map(maxt::Cursor::new),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireBithumbAssetFee {
     pub display_name: String,
     pub asset: String,

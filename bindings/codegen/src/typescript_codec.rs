@@ -87,14 +87,7 @@ fn render_model(schema: &Schema, name: &str, fields: &[Field]) -> String {
     let function = lower_camel(name);
     let arguments = fields
         .iter()
-        .map(|field| {
-            from_expression(
-                schema,
-                &field.ty,
-                &format!("value.{}", field.name),
-                field.name,
-            )
-        })
+        .map(|field| record_from_expression(schema, field, &format!("value.{}", field.name)))
         .collect::<Vec<_>>()
         .join(", ");
     let values = fields
@@ -104,13 +97,27 @@ fn render_model(schema: &Schema, name: &str, fields: &[Field]) -> String {
             format!(
                 "    {}: {},\n",
                 field.name,
-                to_expression(&field.ty, &format!("value.{property}"))
+                record_to_expression(field, &format!("value.{property}"))
             )
         })
         .collect::<String>();
     format!(
         "export function {function}FromWire(value: Wire.{name}Wire): Model.{name} {{\n  return new Model.{name}({arguments});\n}}\n\nexport function {function}ToWire(value: Model.{name}): Wire.{name}Wire {{\n  return {{\n{values}  }};\n}}\n\n"
     )
+}
+
+fn record_from_expression(schema: &Schema, field: &Field, value: &str) -> String {
+    if field.name == "cursor" {
+        return format!("{value} === null ? null : new Model.Cursor({value})");
+    }
+    from_expression(schema, &field.ty, value, field.name)
+}
+
+fn record_to_expression(field: &Field, value: &str) -> String {
+    if field.name == "cursor" {
+        return format!("{value} === null ? null : {value}.value");
+    }
+    to_expression(&field.ty, value)
 }
 
 fn render_union_model(schema: &Schema, name: &str, union: &TaggedUnion) -> String {

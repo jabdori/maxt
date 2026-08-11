@@ -7,7 +7,8 @@ pub use generated_models::*;
 
 use maxt::adapters::{
     BinanceSpotOrderDetail, BinanceSymbolFilters, BithumbAlertStep, BithumbMarketAlert,
-    HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind, UpbitMarketEvent,
+    BithumbOrderDirection, BithumbPendingOrderState, HyperliquidAssetContext,
+    HyperliquidLedgerEntry, HyperliquidLedgerKind, UpbitMarketEvent,
 };
 use maxt::{
     Balance, Candle, CandleRequest, Cursor, Decimal, Error, Exchange, ExchangeErrorKind, Feature,
@@ -343,6 +344,18 @@ pub enum WireBithumbAlertStep {
     Warning,
     Danger,
     Unknown,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireBithumbPendingOrderState {
+    Wait,
+    Watch,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireBithumbOrderDirection {
+    Ascending,
+    Descending,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1236,6 +1249,42 @@ impl From<BithumbAlertStep> for WireBithumbAlertStep {
             BithumbAlertStep::Danger => Self::Danger,
             BithumbAlertStep::Unknown => Self::Unknown,
             _ => Self::Unknown,
+        }
+    }
+}
+
+impl From<BithumbPendingOrderState> for WireBithumbPendingOrderState {
+    fn from(value: BithumbPendingOrderState) -> Self {
+        match value {
+            BithumbPendingOrderState::Wait => Self::Wait,
+            BithumbPendingOrderState::Watch => Self::Watch,
+        }
+    }
+}
+
+impl From<WireBithumbPendingOrderState> for BithumbPendingOrderState {
+    fn from(value: WireBithumbPendingOrderState) -> Self {
+        match value {
+            WireBithumbPendingOrderState::Wait => Self::Wait,
+            WireBithumbPendingOrderState::Watch => Self::Watch,
+        }
+    }
+}
+
+impl From<BithumbOrderDirection> for WireBithumbOrderDirection {
+    fn from(value: BithumbOrderDirection) -> Self {
+        match value {
+            BithumbOrderDirection::Ascending => Self::Ascending,
+            BithumbOrderDirection::Descending => Self::Descending,
+        }
+    }
+}
+
+impl From<WireBithumbOrderDirection> for BithumbOrderDirection {
+    fn from(value: WireBithumbOrderDirection) -> Self {
+        match value {
+            WireBithumbOrderDirection::Ascending => Self::Ascending,
+            WireBithumbOrderDirection::Descending => Self::Descending,
         }
     }
 }

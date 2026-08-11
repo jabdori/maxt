@@ -154,7 +154,8 @@ pub use binance::{
 };
 pub use bithumb::{
     BithumbAdapter, BithumbAlertStep, BithumbApiKey, BithumbAssetFee, BithumbMarketAlert,
-    BithumbNetworkFee, BithumbNotice,
+    BithumbNetworkFee, BithumbNotice, BithumbOrderDirection, BithumbPendingOrderState,
+    BithumbPendingOrdersRequest,
 };
 pub use hyperliquid::{
     HyperliquidAdapter, HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind,

@@ -19,6 +19,10 @@ import {
   WithdrawRequest,
   UpbitAdapter,
   BithumbAdapter,
+  BithumbOrderDirection,
+  BithumbPendingOrderState,
+  BithumbPendingOrdersRequest,
+  Cursor,
   type AssetNetwork,
   type Deposit,
   type Page,
@@ -30,6 +34,7 @@ import {
   type BithumbApiKey,
   type BithumbAssetFee,
   type BithumbNotice,
+  type Order,
 } from "../src/node.js";
 
 type NodeExports = typeof import("../src/node.js");
@@ -60,6 +65,15 @@ const bithumb = new BithumbAdapter();
 const notices: Promise<readonly BithumbNotice[]> = bithumb.notices();
 const transferFees: Promise<readonly BithumbAssetFee[]> = bithumb.transferFees("BTC");
 const apiKeys: Promise<readonly BithumbApiKey[]> = bithumb.apiKeys();
+const pendingOrders: Promise<Page<Order>> = bithumb.pendingOrders(
+  new BithumbPendingOrdersRequest(
+    Market.spot(Exchange.Bithumb, "BTC", "KRW"),
+    BithumbPendingOrderState.Watch,
+    25,
+    BithumbOrderDirection.Ascending,
+    new Cursor("page+/=="),
+  ),
+);
 const destination = TransferDestination.chain(
   new ChainDestination("BTC", Network.Bitcoin, "bc1qdestination"),
 );
@@ -88,6 +102,7 @@ void instruments;
 void notices;
 void transferFees;
 void apiKeys;
+void pendingOrders;
 void networks;
 void addresses;
 void address;

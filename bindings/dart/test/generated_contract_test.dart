@@ -134,6 +134,7 @@ void main() {
         'notices': (BithumbAdapter value) => value.notices,
         'transferFees': (BithumbAdapter value) => value.transferFees,
         'apiKeys': (BithumbAdapter value) => value.apiKeys,
+        'pendingOrders': (BithumbAdapter value) => value.pendingOrders,
       },
       'binance': {
         'venue': (BinanceAdapter value) => value.venue,

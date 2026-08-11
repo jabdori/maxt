@@ -1,5 +1,7 @@
 import {
   BithumbAlertStep,
+  BithumbOrderDirection,
+  BithumbPendingOrderState,
   DepositStatus,
   Exchange,
   HyperliquidLedgerKind,
@@ -22,6 +24,8 @@ import {
 export {
   BinanceMarket,
   BithumbAlertStep,
+  BithumbOrderDirection,
+  BithumbPendingOrderState,
   DepositStatus,
   Exchange,
   Feature,
@@ -882,6 +886,20 @@ export class BithumbNotice {
 
 export class BithumbApiKey {
   constructor(readonly accessKey: string, readonly expiresAt: Timestamp) { freezeRecord(this); }
+}
+
+export class BithumbPendingOrdersRequest {
+  readonly limit: number | null;
+  constructor(
+    readonly market: Market | null = null,
+    readonly state: BithumbPendingOrderState | null = null,
+    limit: number | null = null,
+    readonly orderBy: BithumbOrderDirection | null = null,
+    readonly cursor: Cursor | null = null,
+  ) {
+    this.limit = checkedOptionalU32(limit, "limit");
+    freezeRecord(this);
+  }
 }
 
 export class BithumbAssetFee {

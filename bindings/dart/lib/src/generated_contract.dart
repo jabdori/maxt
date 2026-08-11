@@ -141,6 +141,7 @@ const providerMethods = <String, List<String>>{
     'notices',
     'transferFees',
     'apiKeys',
+    'pendingOrders',
   ],
   'binance': <String>[
     'venue',

@@ -1,6 +1,7 @@
 use maxt::adapters::{
     BinanceSpotOrderDetail, BinanceSymbolFilters, BithumbAlertStep, BithumbMarketAlert,
-    BithumbApiKey, BithumbAssetFee, BithumbNetworkFee, BithumbNotice,
+    BithumbApiKey, BithumbAssetFee, BithumbNetworkFee, BithumbNotice, BithumbOrderDirection,
+    BithumbPendingOrderState, BithumbPendingOrdersRequest,
     HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind, UpbitMarketEvent,
     UpbitOrderBookInstrument, UpbitYearCandle,
 };
@@ -287,6 +288,21 @@ pub(crate) struct WireBithumbNotice {
 pub(crate) struct WireBithumbApiKey {
     pub(crate) access_key: String,
     pub(crate) expires_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBithumbPendingOrdersRequest {
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) market: Option<WireMarket>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) state: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) limit: Option<u32>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) order_by: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) cursor: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1052,6 +1068,36 @@ impl TryFrom<WireOrderHistoryRequest> for OrderHistoryRequest {
             to: timestamp_option_from_wire(value.to, "to")?,
             cursor: value.cursor.map(Cursor::new),
             limit: value.limit,
+        })
+    }
+}
+
+impl TryFrom<WireBithumbPendingOrdersRequest> for BithumbPendingOrdersRequest {
+    type Error = Error;
+
+    fn try_from(value: WireBithumbPendingOrdersRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.map(TryInto::try_into).transpose()?,
+            state: value
+                .state
+                .as_deref()
+                .map(|value| match value {
+                    "wait" => Ok(BithumbPendingOrderState::Wait),
+                    "watch" => Ok(BithumbPendingOrderState::Watch),
+                    _ => Err(invalid_enum("state", value)),
+                })
+                .transpose()?,
+            limit: value.limit,
+            order_by: value
+                .order_by
+                .as_deref()
+                .map(|value| match value {
+                    "asc" => Ok(BithumbOrderDirection::Ascending),
+                    "desc" => Ok(BithumbOrderDirection::Descending),
+                    _ => Err(invalid_enum("order_by", value)),
+                })
+                .transpose()?,
+            cursor: value.cursor.map(Cursor::new),
         })
     }
 }

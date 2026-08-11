@@ -16,6 +16,7 @@ from .models import (
     BithumbAssetFee,
     BithumbMarketAlert,
     BithumbNotice,
+    BithumbPendingOrdersRequest,
     Candle,
     CandleRequest,
     Exchange,
@@ -298,6 +299,15 @@ class BithumbAdapter(_NativeAdapter):
     async def api_keys(self) -> list[BithumbApiKey]:
         values = await self._call(self._handle.api_keys)
         return [_model_from_wire("BithumbApiKey", value) for value in values]
+
+    async def pending_orders(
+        self, request: BithumbPendingOrdersRequest
+    ) -> Page[Order]:
+        value = await self._call(self._handle.pending_orders, request.to_wire())
+        return Page(
+            [_model_from_wire("Order", item) for item in value["items"]],
+            Cursor(value["next"]) if value.get("next") is not None else None,
+        )
 
 
 class BinanceListenKey:

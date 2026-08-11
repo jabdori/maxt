@@ -12,12 +12,16 @@ from maxt import (
     BithumbMarketAlert,
     BithumbNetworkFee,
     BithumbNotice,
+    BithumbOrderDirection,
+    BithumbPendingOrderState,
+    BithumbPendingOrdersRequest,
     BinanceAdapter,
     BinanceListenKey,
     BinanceMarket,
     BinanceSpotOrderDetail,
     BinanceSymbolFilters,
     Client,
+    Cursor,
     Exchange,
     Feature,
     HyperliquidAdapter,
@@ -245,6 +249,10 @@ class FakeNativeBithumbAdapter:
             }
         ]
 
+    async def pending_orders(self, request):
+        self.pending_request = request
+        return {"items": [], "next": "page+/=="}
+
 
 class FakeNativeBinanceListenKey:
     value = "listen-key"
@@ -445,6 +453,15 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
             notices = await adapter.notices(1)
             fees = await adapter.transfer_fees("BTC")
             api_keys = await adapter.api_keys()
+            pending = await adapter.pending_orders(
+                BithumbPendingOrdersRequest(
+                    market=Market.spot(Exchange.BITHUMB, "BTC", "KRW"),
+                    state=BithumbPendingOrderState.WATCH,
+                    limit=25,
+                    order_by=BithumbOrderDirection.ASCENDING,
+                    cursor=Cursor("page+/=="),
+                )
+            )
 
         self.assertEqual(adapter.exchange, Exchange.BITHUMB)
         self.assertTrue(adapter.authenticated)
@@ -463,6 +480,19 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(api_keys[0], BithumbApiKey)
         self.assertEqual(api_keys[0].access_key, "example-access-key-1")
         self.assertEqual(api_keys[0].expires_at, 1_812_672_000_000_000_000)
+        self.assertEqual(adapter._handle.pending_request["state"], "watch")
+        self.assertEqual(adapter._handle.pending_request["order_by"], "asc")
+        self.assertEqual(adapter._handle.pending_request["cursor"], "page+/==")
+        self.assertEqual(str(pending.next), "page+/==")
+
+    async def test_bithumb_pending_order_limit_uses_the_public_error_contract(self) -> None:
+        adapter = BithumbAdapter(access_key="key", secret_key="secret")
+
+        for limit in (-1, 4_294_967_296):
+            with self.assertRaises(InvalidRequestError) as error:
+                await adapter.pending_orders(BithumbPendingOrdersRequest(limit=limit))
+
+            self.assertEqual(error.exception.field, "limit")
 
     async def test_binance_exposes_spot_details_and_usd_m_listen_keys(self) -> None:
         native = SimpleNamespace(NativeBinanceAdapter=FakeNativeBinanceAdapter)

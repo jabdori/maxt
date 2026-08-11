@@ -57,6 +57,20 @@ wire.WireMarginMode _marginModeToWire(MarginMode value) =>
 MarginMode _marginModeFromWire(wire.WireMarginMode value) =>
     _enumByName(MarginMode.values, value);
 
+wire.WireBithumbPendingOrderState _bithumbPendingOrderStateToWire(
+  BithumbPendingOrderState value,
+) => _enumByName(wire.WireBithumbPendingOrderState.values, value);
+BithumbPendingOrderState _bithumbPendingOrderStateFromWire(
+  wire.WireBithumbPendingOrderState value,
+) => _enumByName(BithumbPendingOrderState.values, value);
+
+wire.WireBithumbOrderDirection _bithumbOrderDirectionToWire(
+  BithumbOrderDirection value,
+) => _enumByName(wire.WireBithumbOrderDirection.values, value);
+BithumbOrderDirection _bithumbOrderDirectionFromWire(
+  wire.WireBithumbOrderDirection value,
+) => _enumByName(BithumbOrderDirection.values, value);
+
 wire.WireWithdrawalStatus _withdrawalStatusToWire(WithdrawalStatus value) =>
     _enumByName(wire.WireWithdrawalStatus.values, value);
 WithdrawalStatus _withdrawalStatusFromWire(wire.WireWithdrawalStatus value) =>
@@ -801,7 +815,7 @@ wire.WireOrderHistoryRequest _orderHistoryRequestToWire(
   fromNs: _optionalTimestampToWire(value.from),
   toNs: _optionalTimestampToWire(value.to),
   cursor: value.cursor?.value,
-  limit: value.limit,
+  limit: checkedUint32(value.limit, field: 'limit'),
 );
 
 DepositAddressRequest _depositAddressRequestFromWire(
@@ -861,7 +875,7 @@ wire.WireTransferHistoryRequest _transferHistoryRequestToWire(
   asset: value.asset,
   network: value.network == null ? null : _networkToWire(value.network!),
   cursor: value.cursor?.value,
-  limit: value.limit,
+  limit: checkedUint32(value.limit, field: 'limit'),
 );
 
 UpbitYearCandle _upbitYearCandleFromWire(wire.WireUpbitYearCandle value) =>
@@ -941,6 +955,33 @@ wire.WireBithumbApiKey _bithumbApiKeyToWire(BithumbApiKey value) =>
       accessKey: value.accessKey,
       expiresAtNs: _timestampToWire(value.expiresAt),
     );
+
+BithumbPendingOrdersRequest _bithumbPendingOrdersRequestFromWire(
+  wire.WireBithumbPendingOrdersRequest value,
+) => BithumbPendingOrdersRequest(
+  market: value.market == null ? null : _marketFromWire(value.market!),
+  state: value.state == null
+      ? null
+      : _bithumbPendingOrderStateFromWire(value.state!),
+  limit: value.limit,
+  orderBy: value.orderBy == null
+      ? null
+      : _bithumbOrderDirectionFromWire(value.orderBy!),
+  cursor: value.cursor == null ? null : Cursor(value.cursor!),
+);
+wire.WireBithumbPendingOrdersRequest _bithumbPendingOrdersRequestToWire(
+  BithumbPendingOrdersRequest value,
+) => wire.WireBithumbPendingOrdersRequest(
+  market: value.market == null ? null : _marketToWire(value.market!),
+  state: value.state == null
+      ? null
+      : _bithumbPendingOrderStateToWire(value.state!),
+  limit: checkedUint32(value.limit, field: 'limit'),
+  orderBy: value.orderBy == null
+      ? null
+      : _bithumbOrderDirectionToWire(value.orderBy!),
+  cursor: value.cursor?.value,
+);
 
 BithumbAssetFee _bithumbAssetFeeFromWire(wire.WireBithumbAssetFee value) =>
     BithumbAssetFee(

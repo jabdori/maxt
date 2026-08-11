@@ -246,6 +246,16 @@ class BithumbAlertStep(str, Enum):
     UNKNOWN = "unknown"
 
 
+class BithumbPendingOrderState(str, Enum):
+    WAIT = "wait"
+    WATCH = "watch"
+
+
+class BithumbOrderDirection(str, Enum):
+    ASCENDING = "asc"
+    DESCENDING = "desc"
+
+
 class BinanceMarket(str, Enum):
     SPOT = "spot"
     USD_M_FUTURES = "usd_m"
@@ -366,6 +376,8 @@ TimeInForce.__module__ = "maxt.models"
 SizeKind.__module__ = "maxt.models"
 UpbitRegion.__module__ = "maxt.models"
 BithumbAlertStep.__module__ = "maxt.models"
+BithumbPendingOrderState.__module__ = "maxt.models"
+BithumbOrderDirection.__module__ = "maxt.models"
 BinanceMarket.__module__ = "maxt.models"
 HyperliquidLedgerKind.__module__ = "maxt.models"
 ExchangeErrorKind.__module__ = "maxt._api"
@@ -390,6 +402,8 @@ __all__ = [
     "SizeKind",
     "UpbitRegion",
     "BithumbAlertStep",
+    "BithumbPendingOrderState",
+    "BithumbOrderDirection",
     "BinanceMarket",
     "HyperliquidLedgerKind",
     "ExchangeErrorKind",

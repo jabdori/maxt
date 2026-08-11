@@ -289,6 +289,26 @@ export class BithumbAlertStep extends StringValue {
   private constructor(id: string) { super(id); Object.freeze(this); }
 }
 
+export class BithumbPendingOrderState extends StringValue {
+  static readonly Wait = new BithumbPendingOrderState("wait");
+  static readonly Watch = new BithumbPendingOrderState("watch");
+  static readonly values: readonly BithumbPendingOrderState[] = Object.freeze([
+    BithumbPendingOrderState.Wait,
+    BithumbPendingOrderState.Watch,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class BithumbOrderDirection extends StringValue {
+  static readonly Ascending = new BithumbOrderDirection("asc");
+  static readonly Descending = new BithumbOrderDirection("desc");
+  static readonly values: readonly BithumbOrderDirection[] = Object.freeze([
+    BithumbOrderDirection.Ascending,
+    BithumbOrderDirection.Descending,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
 export class BinanceMarket extends StringValue {
   static readonly Spot = new BinanceMarket("spot");
   static readonly UsdMFutures = new BinanceMarket("usd_m");

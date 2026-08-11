@@ -9,7 +9,7 @@ use std::future::Future;
 use maxt::Adapter;
 use maxt::adapters::{
     BinanceAdapter, BinanceListenKey, BinanceMarket, BithumbAdapter, HyperliquidAdapter,
-    UpbitAdapter, UpbitRegion,
+    BithumbPendingOrdersRequest, UpbitAdapter, UpbitRegion,
 };
 use maxt::{Cursor, Error, Market};
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
@@ -27,8 +27,9 @@ use wasm_bindgen::prelude::*;
 use crate::client::NativeClient;
 use crate::convert::{
     WireBinanceSpotOrderDetail, WireBinanceSymbolFilters, WireBithumbMarketAlert,
-    WireBithumbApiKey, WireBithumbAssetFee, WireBithumbNotice, WireHyperliquidAssetContext,
-    WireHyperliquidLedgerEntry, WireMarket, WireOrderBook, WirePage, WireTicker,
+    WireBithumbApiKey, WireBithumbAssetFee, WireBithumbNotice, WireBithumbPendingOrdersRequest,
+    WireHyperliquidAssetContext, WireHyperliquidLedgerEntry, WireMarket, WireOrder,
+    WireOrderBook, WirePage, WireTicker,
     WireUpbitMarketEvent, WireUpbitOrderBookInstrument, WireUpbitYearCandle, decimal_from_wire,
     from_wire_text, outcome, timestamp_from_wire,
 };
@@ -503,6 +504,20 @@ impl NativeBithumb {
     async fn api_keys(&self) -> Value {
         outcome(wire_vec::<_, WireBithumbApiKey>(self.adapter.api_keys().await))
     }
+
+    async fn pending_orders(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<BithumbPendingOrdersRequest, WireBithumbPendingOrdersRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(
+                self.adapter
+                    .pending_orders(&request)
+                    .await
+                    .and_then(TryInto::<WirePage<WireOrder>>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
 }
 
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
@@ -549,6 +564,17 @@ impl NativeBithumb {
     pub fn api_keys_native<'env>(&self, env: &'env Env) -> napi::Result<PromiseRaw<'env, Value>> {
         let this = self.clone();
         spawn_native(env, async move { this.api_keys().await })
+    }
+
+    #[napi(js_name = "pendingOrders", ts_args_type = "request: string")]
+    pub fn pending_orders_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.pending_orders(request).await })
     }
 }
 
@@ -1031,6 +1057,11 @@ impl NativeBithumb {
     #[wasm_bindgen(js_name = "apiKeys")]
     pub async fn api_keys_wasm(&self) -> JsValue {
         crate::web::value(self.api_keys().await)
+    }
+
+    #[wasm_bindgen(js_name = "pendingOrders")]
+    pub async fn pending_orders_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.pending_orders(Ok(request)).await)
     }
 }
 

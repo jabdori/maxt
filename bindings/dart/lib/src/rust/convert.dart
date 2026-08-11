@@ -238,6 +238,10 @@ class WireBithumbMarketWarning {
           warning == other.warning;
 }
 
+enum WireBithumbOrderDirection { ascending, descending }
+
+enum WireBithumbPendingOrderState { wait, watch }
+
 class WireCandle {
   final WireMarket market;
   final WireInterval interval;

@@ -984,6 +984,14 @@ const BITHUMB_ALERT_STEP_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("Danger", "danger"),
     identifier_variant("Unknown", "unknown"),
 ];
+const BITHUMB_PENDING_ORDER_STATE_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Wait", "wait"),
+    identifier_variant("Watch", "watch"),
+];
+const BITHUMB_ORDER_DIRECTION_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Ascending", "asc"),
+    identifier_variant("Descending", "desc"),
+];
 const BINANCE_MARKET_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("Spot", "spot"),
     identifier_variant("UsdMFutures", "usd_m"),
@@ -1069,6 +1077,16 @@ const IDENTIFIERS: &[Identifier] = &[
     identifier("SizeKind", SIZE_KIND_VARIANTS, false),
     identifier("UpbitRegion", UPBIT_REGION_VARIANTS, false),
     identifier("BithumbAlertStep", BITHUMB_ALERT_STEP_VARIANTS, false),
+    identifier(
+        "BithumbPendingOrderState",
+        BITHUMB_PENDING_ORDER_STATE_VARIANTS,
+        false,
+    ),
+    identifier(
+        "BithumbOrderDirection",
+        BITHUMB_ORDER_DIRECTION_VARIANTS,
+        false,
+    ),
     identifier("BinanceMarket", BINANCE_MARKET_VARIANTS, false),
     identifier(
         "HyperliquidLedgerKind",
@@ -1135,6 +1153,7 @@ const MODELS: &[&str] = &[
     "BithumbMarketAlert",
     "BithumbNotice",
     "BithumbApiKey",
+    "BithumbPendingOrdersRequest",
     "BithumbAssetFee",
     "BithumbNetworkFee",
     "BinanceSymbolFilters",
@@ -1161,6 +1180,11 @@ const YEAR_CANDLE_QUERY: &[Argument] = &[
 ];
 const NOTICE_COUNT: &[Argument] = &[argument("count", ApiType::OptionalNumber, Some("null"))];
 const FEE_CURRENCY: &[Argument] = &[argument("currency", ApiType::String, None)];
+const BITHUMB_PENDING_ORDERS_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("BithumbPendingOrdersRequest"),
+    None,
+)];
 const LEDGER_RANGE: &[Argument] = &[
     argument("from", ApiType::OptionalNamed("Timestamp"), Some("null")),
     argument("to", ApiType::OptionalNamed("Timestamp"), Some("null")),
@@ -1376,6 +1400,13 @@ const BITHUMB_METHODS: &[ProviderMethod] = &[
         kind: ProviderMethodKind::Async,
         arguments: &[],
         result: ApiType::List("BithumbApiKey"),
+    },
+    ProviderMethod {
+        rust_name: "pending_orders",
+        name: "pendingOrders",
+        kind: ProviderMethodKind::Async,
+        arguments: BITHUMB_PENDING_ORDERS_REQUEST,
+        result: ApiType::Page("Order"),
     },
 ];
 const BINANCE_METHODS: &[ProviderMethod] = &[
@@ -2073,6 +2104,22 @@ pub fn binding_schema() -> Schema {
             ],
         ),
         record(
+            "BithumbPendingOrdersRequestWire",
+            vec![
+                field("market", Type::optional(market.clone())),
+                field(
+                    "state",
+                    Type::optional(Type::Identifier("BithumbPendingOrderState")),
+                ),
+                field("limit", Type::optional(Number)),
+                field(
+                    "order_by",
+                    Type::optional(Type::Identifier("BithumbOrderDirection")),
+                ),
+                field("cursor", Type::optional(Type::String)),
+            ],
+        ),
+        record(
             "BithumbNetworkFeeWire",
             vec![
                 field("network", Type::Identifier("Network")),
@@ -2586,7 +2633,7 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
-        native_api_version: 15,
+        native_api_version: 16,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
         identifiers: IDENTIFIERS,

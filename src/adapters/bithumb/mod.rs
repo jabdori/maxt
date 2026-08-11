@@ -17,7 +17,7 @@ use crate::request::{
 use crate::stream::{AccountStream, MarketStream};
 use crate::transport::HttpTransport;
 use crate::types::{
-    AssetNetwork, Balance, CancelOrdersResult, Candle, Deposit, DepositAddress,
+    AssetNetwork, Balance, CancelOrdersResult, Candle, Cursor, Deposit, DepositAddress,
     DepositAddressEntry, Exchange, Market, MarketInfo, MarketKind, Network, Order, OrderBook,
     OrderRules, Page, StreamConfig, Subscription, Ticker, Timestamp, Trade, Withdrawal,
     WithdrawalFee, WithdrawalQuote,
@@ -106,6 +106,84 @@ pub struct BithumbApiKey {
     pub access_key: String,
     /// Key expiration time, converted from Bithumb's offset timestamp.
     pub expires_at: Timestamp,
+}
+
+/// A state accepted by Bithumb's pending-order endpoint.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BithumbPendingOrderState {
+    /// An order resting in the order book.
+    Wait,
+    /// A reserved order waiting for its trigger price.
+    Watch,
+}
+
+/// A sort direction accepted by Bithumb's pending-order endpoint.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BithumbOrderDirection {
+    /// Oldest orders first.
+    Ascending,
+    /// Newest orders first.
+    Descending,
+}
+
+/// Filters for Bithumb's paginated pending-order endpoint.
+///
+/// Leave `state` and `order_by` unset to use Bithumb's `wait` and `desc`
+/// defaults. Leave `limit` unset to use Bithumb's default page size of 100.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct BithumbPendingOrdersRequest {
+    /// Optional market filter.
+    pub market: Option<Market>,
+    /// Resting (`wait`) or trigger-waiting (`watch`) orders.
+    pub state: Option<BithumbPendingOrderState>,
+    /// Page size from 1 through 100.
+    pub limit: Option<u32>,
+    /// Optional result order; Bithumb defaults to newest first.
+    pub order_by: Option<BithumbOrderDirection>,
+    /// Cursor returned by the preceding page.
+    pub cursor: Option<Cursor>,
+}
+
+impl BithumbPendingOrdersRequest {
+    /// Starts an unfiltered request using Bithumb's defaults.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Filters by market.
+    #[must_use]
+    pub fn market(mut self, market: Market) -> Self {
+        self.market = Some(market);
+        self
+    }
+
+    /// Selects the pending-order state.
+    #[must_use]
+    pub fn state(mut self, state: BithumbPendingOrderState) -> Self {
+        self.state = Some(state);
+        self
+    }
+
+    /// Sets the page size.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+
+    /// Selects the result order.
+    #[must_use]
+    pub fn order_by(mut self, order_by: BithumbOrderDirection) -> Self {
+        self.order_by = Some(order_by);
+        self
+    }
+
+    /// Resumes from a cursor returned by the preceding page.
+    #[must_use]
+    pub fn cursor(mut self, cursor: Cursor) -> Self {
+        self.cursor = Some(cursor);
+        self
+    }
 }
 
 /// One Bithumb asset's public transfer-fee catalog entry.
@@ -214,6 +292,14 @@ impl BithumbAdapter {
     /// Returns the API keys registered on this Bithumb account.
     pub async fn api_keys(&self) -> Result<Vec<BithumbApiKey>> {
         private::api_keys(self.http()?, self.credentials()?).await
+    }
+
+    /// Returns one page of Bithumb `wait` or `watch` orders.
+    pub async fn pending_orders(
+        &self,
+        request: &BithumbPendingOrdersRequest,
+    ) -> Result<Page<Order>> {
+        private::pending_orders(self.http()?, self.credentials()?, request).await
     }
 
     pub(crate) fn is_authenticated(&self) -> bool {
@@ -538,6 +624,16 @@ mod tests {
             matches!(error, Error::Auth { .. }),
             "expected an auth failure, got {error:?}"
         );
+    }
+
+    #[tokio::test]
+    async fn pending_orders_without_credentials_are_rejected_before_network_io() {
+        let error = BithumbAdapter::new()
+            .pending_orders(&BithumbPendingOrdersRequest::new())
+            .await
+            .expect_err("no credentials were supplied");
+
+        assert!(matches!(error, Error::Auth { .. }));
     }
 
     #[test]

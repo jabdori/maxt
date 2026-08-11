@@ -842,6 +842,20 @@ export function bithumbApiKeyToWire(value: Model.BithumbApiKey): Wire.BithumbApi
   };
 }
 
+export function bithumbPendingOrdersRequestFromWire(value: Wire.BithumbPendingOrdersRequestWire): Model.BithumbPendingOrdersRequest {
+  return new Model.BithumbPendingOrdersRequest(value.market === null ? null : marketFromWire(value.market), value.state === null ? null : identifier(Model.BithumbPendingOrderState.values, value.state, "state"), value.limit === null ? null : value.limit, value.order_by === null ? null : identifier(Model.BithumbOrderDirection.values, value.order_by, "order_by"), value.cursor === null ? null : new Model.Cursor(value.cursor));
+}
+
+export function bithumbPendingOrdersRequestToWire(value: Model.BithumbPendingOrdersRequest): Wire.BithumbPendingOrdersRequestWire {
+  return {
+    market: value.market === null ? null : marketToWire(value.market),
+    state: value.state === null ? null : value.state.id,
+    limit: value.limit === null ? null : value.limit,
+    order_by: value.orderBy === null ? null : value.orderBy.id,
+    cursor: value.cursor === null ? null : value.cursor.value,
+  };
+}
+
 export function bithumbAssetFeeFromWire(value: Wire.BithumbAssetFeeWire): Model.BithumbAssetFee {
   return new Model.BithumbAssetFee(value.display_name, value.asset, value.networks.map((item) => bithumbNetworkFeeFromWire(item)));
 }

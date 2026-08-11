@@ -134,6 +134,10 @@ abstract class NativeClient implements RustOpaqueInterface {
 
   Future<List<WireBithumbNotice>> bithumbNotices({int? count});
 
+  Future<WireOrderPage> bithumbPendingOrders({
+    required WireBithumbPendingOrdersRequest request,
+  });
+
   Future<List<WireBithumbAssetFee>> bithumbTransferFees({
     required String currency,
   });

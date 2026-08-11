@@ -48,11 +48,17 @@ void main() {
             field: 'limit',
             invoke: (value) => hyperliquid.nonFundingLedger(limit: value),
           ),
+          (
+            field: 'limit',
+            invoke: (value) => bithumb.pendingOrders(
+              BithumbPendingOrdersRequest(limit: value),
+            ),
+          ),
           (field: 'count', invoke: (value) => bithumb.notices(value)),
         ];
 
     for (final testCase in cases) {
-      for (final value in [-1, 4294967296]) {
+      for (final value in [-1, 4294967296, 4294967297]) {
         await expectLater(
           testCase.invoke(value),
           throwsA(

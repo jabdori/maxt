@@ -37,6 +37,21 @@ pub(crate) fn timestamp_to_wire(value: Timestamp) -> i64 {
     value.as_nanos()
 }
 
+pub(crate) fn u32_from_wire(value: &Bound<'_, PyAny>, field: &str) -> PyResult<u32> {
+    let value = value.extract::<u64>().map_err(|_| {
+        core_error(maxt::Error::InvalidRequest {
+            field: field.to_owned(),
+            detail: "must be an unsigned 32-bit integer".to_owned(),
+        })
+    })?;
+    u32::try_from(value).map_err(|_| {
+        core_error(maxt::Error::InvalidRequest {
+            field: field.to_owned(),
+            detail: "must be an unsigned 32-bit integer".to_owned(),
+        })
+    })
+}
+
 fn invalid(field: &str, value: &str) -> PyErr {
     PyValueError::new_err(format!("invalid {field}: {value}"))
 }

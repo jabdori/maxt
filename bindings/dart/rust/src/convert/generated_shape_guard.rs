@@ -697,6 +697,20 @@ fn _guard_bithumb_alert_step(value: WireBithumbAlertStep) {
     }
 }
 
+fn _guard_bithumb_pending_order_state(value: WireBithumbPendingOrderState) {
+    match value {
+        WireBithumbPendingOrderState::Wait => {}
+        WireBithumbPendingOrderState::Watch => {}
+    }
+}
+
+fn _guard_bithumb_order_direction(value: WireBithumbOrderDirection) {
+    match value {
+        WireBithumbOrderDirection::Ascending => {}
+        WireBithumbOrderDirection::Descending => {}
+    }
+}
+
 fn _guard_exchange_error_kind(value: WireExchangeErrorKind) {
     match value {
         WireExchangeErrorKind::Rejected => {}

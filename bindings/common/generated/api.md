@@ -46,7 +46,7 @@
 | Exchange | Adapter | Python | Dart / TypeScript |
 | --- | --- | --- | --- |
 | upbit | `UpbitAdapter` | `region`, `order_books`, `order_books_at_level`, `tickers`, `tickers_by_quote`, `year_candles`, `orderbook_instruments`, `market_events` | `region`, `orderBooks`, `orderBooksAtLevel`, `tickers`, `tickersByQuote`, `yearCandles`, `orderbookInstruments`, `marketEvents` |
-| bithumb | `BithumbAdapter` | `market_warnings`, `market_alerts`, `notices`, `transfer_fees`, `api_keys` | `marketWarnings`, `marketAlerts`, `notices`, `transferFees`, `apiKeys` |
+| bithumb | `BithumbAdapter` | `market_warnings`, `market_alerts`, `notices`, `transfer_fees`, `api_keys`, `pending_orders` | `marketWarnings`, `marketAlerts`, `notices`, `transferFees`, `apiKeys`, `pendingOrders` |
 | binance | `BinanceAdapter` | `venue`, `spot_symbol_filters`, `spot_order`, `usd_m_create_listen_key`, `usd_m_keepalive_listen_key`, `usd_m_close_listen_key` | `venue`, `spotSymbolFilters`, `spotOrder`, `usdMCreateListenKey`, `usdMKeepaliveListenKey`, `usdMCloseListenKey` |
 | hyperliquid | `HyperliquidAdapter` | `is_testnet`, `non_funding_ledger`, `asset_context` | `isTestnet`, `nonFundingLedger`, `assetContext` |
 
@@ -182,7 +182,7 @@ Documentation baseline: `2026-08-10`.
 | bithumb | exchange | `orders` | `GET` | `/v1/orders` | `http` | JWT | read | general | common `open_orders` | `Partial` | `Fixture` |
 | bithumb | exchange | `get_order` | `GET` | `/v1/order` | `http` | JWT | read | general | common `order`, `order_by_client_id` | `Partial` | `Fixture` |
 | bithumb | exchange | `orders_by_ids` | `POST` | `/v2/orders/search` | `http` | JWT | read | general | common `orders_by_ids` | `Partial` | `Fixture` |
-| bithumb | exchange | `pending_orders` | `GET` | `/v2/orders/pending` | `http` | JWT | read | general | common `open_orders` | `Planned` | `Documented` |
+| bithumb | exchange | `pending_orders` | `GET` | `/v2/orders/pending` | `http` | JWT | read | general | provider `pending_orders` | `Implemented` | `Fixture` |
 | bithumb | exchange | `closed_orders` | `GET` | `/v2/orders/history` | `http` | JWT | read | general | common `order_history` | `Partial` | `Fixture` |
 | bithumb | exchange | `new_order` | `POST` | `/v2/orders` | `http` | JWT | financial write | general | common `place_order` | `Partial` | `Fixture` |
 | bithumb | exchange | `batch_orders` | `POST` | `/v2/orders/batch` | `http` | JWT | financial write | general | common `place_orders` | `Planned` | `Documented` |

@@ -312,6 +312,40 @@ pub(crate) fn time_in_force_to_wire(value: maxt::TimeInForce) -> PyResult<&'stat
     }
 }
 
+pub(crate) fn bithumb_pending_order_state_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::adapters::BithumbPendingOrderState> {
+    let value = text(value)?;
+    match value.as_str() {
+        "wait" => Ok(maxt::adapters::BithumbPendingOrderState::Wait),
+        "watch" => Ok(maxt::adapters::BithumbPendingOrderState::Watch),
+        _ => Err(invalid("bithumb pending order state", &value)),
+    }
+}
+
+pub(crate) fn bithumb_pending_order_state_to_wire(value: maxt::adapters::BithumbPendingOrderState) -> PyResult<&'static str> {
+    match value {
+        maxt::adapters::BithumbPendingOrderState::Wait => Ok("wait"),
+        maxt::adapters::BithumbPendingOrderState::Watch => Ok("watch"),
+        _ => Err(binding_contract("BithumbPendingOrderState")),
+    }
+}
+
+pub(crate) fn bithumb_order_direction_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::adapters::BithumbOrderDirection> {
+    let value = text(value)?;
+    match value.as_str() {
+        "asc" => Ok(maxt::adapters::BithumbOrderDirection::Ascending),
+        "desc" => Ok(maxt::adapters::BithumbOrderDirection::Descending),
+        _ => Err(invalid("bithumb order direction", &value)),
+    }
+}
+
+pub(crate) fn bithumb_order_direction_to_wire(value: maxt::adapters::BithumbOrderDirection) -> PyResult<&'static str> {
+    match value {
+        maxt::adapters::BithumbOrderDirection::Ascending => Ok("asc"),
+        maxt::adapters::BithumbOrderDirection::Descending => Ok("desc"),
+        _ => Err(binding_contract("BithumbOrderDirection")),
+    }
+}
+
 pub(crate) fn exchange_error_kind_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::ExchangeErrorKind> {
     let value = text(value)?;
     match value.as_str() {
@@ -1264,7 +1298,7 @@ pub(crate) fn order_history_request_from_wire(value: &Bound<'_, PyAny>) -> PyRes
         from: optional(dict, "from")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
         to: optional(dict, "to")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
         cursor: optional(dict, "cursor")?.map(|value| value.extract::<String>().map(Cursor::new)).transpose()?,
-        limit: optional(dict, "limit")?.map(|value| -> PyResult<_> { value.extract() }).transpose()?,
+        limit: optional(dict, "limit")?.map(|value| -> PyResult<_> { u32_from_wire(&value, "limit") }).transpose()?,
     })
 }
 
@@ -1360,7 +1394,7 @@ pub(crate) fn transfer_history_request_from_wire(value: &Bound<'_, PyAny>) -> Py
         asset: optional(dict, "asset")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
         network: optional(dict, "network")?.map(|value| -> PyResult<_> { network_from_wire(&value) }).transpose()?,
         cursor: optional(dict, "cursor")?.map(|value| value.extract::<String>().map(Cursor::new)).transpose()?,
-        limit: optional(dict, "limit")?.map(|value| -> PyResult<_> { value.extract() }).transpose()?,
+        limit: optional(dict, "limit")?.map(|value| -> PyResult<_> { u32_from_wire(&value, "limit") }).transpose()?,
     })
 }
 
@@ -1482,6 +1516,32 @@ pub(crate) fn bithumb_api_key_to_wire(
         py,
         "access_key" => &value.access_key,
         "expires_at" => timestamp_to_wire(value.expires_at),
+    )
+}
+
+pub(crate) fn bithumb_pending_orders_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::BithumbPendingOrdersRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    Ok(maxt::BithumbPendingOrdersRequest {
+        market: optional(dict, "market")?.map(|value| -> PyResult<_> { market_from_wire(&value) }).transpose()?,
+        state: optional(dict, "state")?.map(|value| -> PyResult<_> { bithumb_pending_order_state_from_wire(&value) }).transpose()?,
+        limit: optional(dict, "limit")?.map(|value| -> PyResult<_> { u32_from_wire(&value, "limit") }).transpose()?,
+        order_by: optional(dict, "order_by")?.map(|value| -> PyResult<_> { bithumb_order_direction_from_wire(&value) }).transpose()?,
+        cursor: optional(dict, "cursor")?.map(|value| value.extract::<String>().map(Cursor::new)).transpose()?,
+    })
+}
+
+pub(crate) fn bithumb_pending_orders_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::BithumbPendingOrdersRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "market" => value.market.as_ref().map(|item| market_to_wire(py, item)).transpose()?,
+        "state" => value.state.map(bithumb_pending_order_state_to_wire).transpose()?,
+        "limit" => value.limit,
+        "order_by" => value.order_by.map(bithumb_order_direction_to_wire).transpose()?,
+        "cursor" => value.cursor.as_ref().map(Cursor::as_str),
     )
 }
 

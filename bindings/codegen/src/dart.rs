@@ -745,6 +745,8 @@ pub(crate) fn render_wire_converters(schema: &Schema) -> String {
         "OrderType",
         "TimeInForce",
         "MarginMode",
+        "BithumbPendingOrderState",
+        "BithumbOrderDirection",
         "WithdrawalStatus",
         "DepositStatus",
     ] {
@@ -1176,6 +1178,7 @@ pub(crate) fn render_wire_shape_guard(schema: &Schema) -> String {
         "BithumbMarketAlertWire",
         "BithumbNoticeWire",
         "BithumbApiKeyWire",
+        "BithumbPendingOrdersRequestWire",
         "BithumbAssetFeeWire",
         "BithumbNetworkFeeWire",
         "BinanceListenKeyWire",
@@ -1211,6 +1214,8 @@ pub(crate) fn render_wire_shape_guard(schema: &Schema) -> String {
         ("TimeInForce", "WireTimeInForce"),
         ("SizeKind", "WireSizeKind"),
         ("BithumbAlertStep", "WireBithumbAlertStep"),
+        ("BithumbPendingOrderState", "WireBithumbPendingOrderState"),
+        ("BithumbOrderDirection", "WireBithumbOrderDirection"),
         ("ExchangeErrorKind", "WireExchangeErrorKind"),
         ("WithdrawalStatus", "WireWithdrawalStatus"),
         ("DepositStatus", "WireDepositStatus"),
@@ -1367,6 +1372,9 @@ fn provider_method_source(exchange: &str, method: &str) -> &'static str {
         }
         ("bithumb", "api_keys") => {
             "  Future<List<BithumbApiKey>> apiKeys() =>\n      _nativeFuture(_handle.bithumbApiKeys).then(\n        (values) => values.map(_bithumbApiKeyFromWire).toList(growable: false),\n      );\n"
+        }
+        ("bithumb", "pending_orders") => {
+            "  Future<Page<Order>> pendingOrders(BithumbPendingOrdersRequest request) =>\n      _nativeFuture(\n        () => _handle.bithumbPendingOrders(\n          request: _bithumbPendingOrdersRequestToWire(request),\n        ),\n      ).then(_orderPageFromWire);\n"
         }
         ("binance", "spot_symbol_filters") => {
             "  Future<BinanceSymbolFilters> spotSymbolFilters(Market market) =>\n      _nativeFuture(\n        () => _handle.binanceSpotSymbolFilters(market: _marketToWire(market)),\n      ).then(_binanceSymbolFiltersFromWire);\n"
@@ -1591,7 +1599,7 @@ fn render_dart_record_converter(name: &str, fields: &[Field]) -> String {
             let value = if field.name == "cursor" {
                 format!("value.{public}?.value")
             } else {
-                dart_to_wire_expression(&format!("value.{public}"), &field.ty)
+                dart_to_wire_expression(&format!("value.{public}"), &field.ty, field.name)
             };
             format!("  {wire}: {value},\n")
         })
@@ -1663,7 +1671,7 @@ fn render_dart_union_converter(
                 ),
                 [field] if field.name == "value" => format!(
                     "  {name}{suffix}(:final value) => wire.Wire{name}.{wire_constructor}({}),\n",
-                    dart_to_wire_expression("value", &field.ty)
+                    dart_to_wire_expression("value", &field.ty, field.name)
                 ),
                 fields => {
                     let pattern = fields
@@ -1678,7 +1686,7 @@ fn render_dart_union_converter(
                             let wire = dart_wire_field(field.name, &field.ty);
                             format!(
                                 "    {wire}: {},\n",
-                                dart_to_wire_expression(&public, &field.ty)
+                                dart_to_wire_expression(&public, &field.ty, field.name)
                             )
                         })
                         .collect::<String>();
@@ -1966,9 +1974,10 @@ fn dart_from_wire_value_expression(field: &str, ty: &Type) -> String {
     }
 }
 
-fn dart_to_wire_expression(value: &str, ty: &Type) -> String {
+fn dart_to_wire_expression(value: &str, ty: &Type, field: &str) -> String {
     match ty {
-        Type::String | Type::Boolean | Type::Number => value.to_owned(),
+        Type::String | Type::Boolean => value.to_owned(),
+        Type::Number => format!("checkedUint32({value}, field: '{field}')"),
         Type::UnsignedInteger => format!("BigInt.from({value})"),
         Type::Decimal => format!("{value}.toString()"),
         Type::Timestamp => format!("_timestampToWire({value})"),
@@ -1981,7 +1990,8 @@ fn dart_to_wire_expression(value: &str, ty: &Type) -> String {
             lower_camel(named.trim_end_matches("Wire"))
         ),
         Type::Optional(inner) => match inner.as_ref() {
-            Type::String | Type::Boolean | Type::Number => value.to_owned(),
+            Type::String | Type::Boolean => value.to_owned(),
+            Type::Number => format!("checkedUint32({value}, field: '{field}')"),
             Type::UnsignedInteger => format!("{value} == null ? null : BigInt.from({value}!)"),
             Type::Decimal => format!("{value}?.toString()"),
             Type::Timestamp => format!("_optionalTimestampToWire({value})"),
@@ -2417,7 +2427,8 @@ mod tests {
     use super::{
         render_adapter_api, render_client_api, render_delegate_methods, render_identifiers,
         render_models, render_native_client_api, render_provider_guard, render_provider_methods,
-        render_rust_adapter_dispatch, render_rust_models, render_wire_shape_guard,
+        render_rust_adapter_dispatch, render_rust_models, render_wire_converters,
+        render_wire_shape_guard,
     };
 
     #[test]
@@ -2446,6 +2457,7 @@ mod tests {
         let schema = binding_schema();
         let adapter = render_adapter_api(&schema);
         let client = render_client_api(&schema);
+        let converters = render_wire_converters(&schema);
 
         for operation in schema.adapter_operations {
             assert!(adapter.contains(&format!(" {}(", operation.language_name)));
@@ -2464,6 +2476,7 @@ mod tests {
         assert!(client.contains("_validateTransferLookupRequest(request)"));
         assert!(client.contains("set exactly one of the exchange transfer ID or transaction ID"));
         assert!(client.contains("field: 'tx_id'"));
+        assert!(converters.contains("checkedUint32(value.limit, field: 'limit')"));
     }
 
     #[test]

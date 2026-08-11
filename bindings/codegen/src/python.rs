@@ -1073,7 +1073,12 @@ fn render_rust_identifier(identifier: &maxt_bindings_common::schema::Identifier)
     let function = snake_case(identifier.name);
     let rust_type = if matches!(
         identifier.name,
-        "UpbitRegion" | "BithumbAlertStep" | "BinanceMarket" | "HyperliquidLedgerKind"
+        "UpbitRegion"
+            | "BithumbAlertStep"
+            | "BithumbPendingOrderState"
+            | "BithumbOrderDirection"
+            | "BinanceMarket"
+            | "HyperliquidLedgerKind"
     ) {
         format!("maxt::adapters::{}", identifier.name)
     } else {
@@ -1169,9 +1174,9 @@ fn render_rust_record(
 
 fn rust_record_from_wire_field(
     field: &maxt_bindings_common::schema::Field,
-    record: &str,
+    _record: &str,
 ) -> String {
-    if field.name == "cursor" && record.ends_with("HistoryRequest") {
+    if field.name == "cursor" {
         return format!(
             "optional(dict, \"{}\")?.map(|value| value.extract::<String>().map(Cursor::new)).transpose()?",
             field.name
@@ -1200,7 +1205,8 @@ fn rust_from_wire_value(ty: &Type, value: &str, field: &str) -> String {
 fn rust_from_wire_result(ty: &Type, value: &str, field: &str) -> String {
     match ty {
         Type::String => format!("{value}.extract::<String>()"),
-        Type::Boolean | Type::Number | Type::UnsignedInteger => format!("{value}.extract()"),
+        Type::Boolean | Type::UnsignedInteger => format!("{value}.extract()"),
+        Type::Number => format!("u32_from_wire(&{value}, \"{field}\")"),
         Type::Decimal => format!("decimal_from_wire(&{value}, \"{field}\")"),
         Type::Timestamp => format!("{value}.extract().map(Timestamp::from_nanos)"),
         Type::Identifier(identifier) => {
@@ -1231,9 +1237,9 @@ fn rust_from_wire_result(ty: &Type, value: &str, field: &str) -> String {
     }
 }
 
-fn rust_record_field(schema: &Schema, record: &str, name: &str, ty: &Type) -> String {
+fn rust_record_field(schema: &Schema, _record: &str, name: &str, ty: &Type) -> String {
     let field = format!("value.{name}");
-    if name == "cursor" && record.ends_with("HistoryRequest") {
+    if name == "cursor" {
         return format!("{field}.as_ref().map(Cursor::as_str)");
     }
     match ty {

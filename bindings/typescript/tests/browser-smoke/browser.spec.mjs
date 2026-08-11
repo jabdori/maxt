@@ -202,6 +202,12 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
     } catch (error) {
       apiKeysError = { name: error.constructor.name };
     }
+    let pendingOrdersError;
+    try {
+      await bithumb.pendingOrders(new maxt.BithumbPendingOrdersRequest());
+    } catch (error) {
+      pendingOrdersError = { name: error.constructor.name };
+    }
     return {
       exchange: client.exchange.id,
       markets: (await client.markets(maxt.MarketKind.Spot)).length,
@@ -229,6 +235,7 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
       noticeErrors,
       feeError,
       apiKeysError,
+      pendingOrdersError,
     };
   });
 
@@ -262,5 +269,6 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
     ],
     feeError: { name: "InvalidRequestError", field: "currency" },
     apiKeysError: { name: "AuthError" },
+    pendingOrdersError: { name: "AuthError" },
   });
 });

@@ -234,6 +234,19 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireBinanceVenue dco_decode_box_autoadd_wire_binance_venue(dynamic raw);
 
   @protected
+  WireBithumbOrderDirection dco_decode_box_autoadd_wire_bithumb_order_direction(
+    dynamic raw,
+  );
+
+  @protected
+  WireBithumbPendingOrderState
+  dco_decode_box_autoadd_wire_bithumb_pending_order_state(dynamic raw);
+
+  @protected
+  WireBithumbPendingOrdersRequest
+  dco_decode_box_autoadd_wire_bithumb_pending_orders_request(dynamic raw);
+
+  @protected
   WireCancelOrdersRequest dco_decode_box_autoadd_wire_cancel_orders_request(
     dynamic raw,
   );
@@ -563,6 +576,14 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireBinanceVenue? dco_decode_opt_box_autoadd_wire_binance_venue(dynamic raw);
 
   @protected
+  WireBithumbOrderDirection?
+  dco_decode_opt_box_autoadd_wire_bithumb_order_direction(dynamic raw);
+
+  @protected
+  WireBithumbPendingOrderState?
+  dco_decode_opt_box_autoadd_wire_bithumb_pending_order_state(dynamic raw);
+
+  @protected
   WireExchange? dco_decode_opt_box_autoadd_wire_exchange(dynamic raw);
 
   @protected
@@ -667,6 +688,20 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireBithumbNotice dco_decode_wire_bithumb_notice(dynamic raw);
+
+  @protected
+  WireBithumbOrderDirection dco_decode_wire_bithumb_order_direction(
+    dynamic raw,
+  );
+
+  @protected
+  WireBithumbPendingOrderState dco_decode_wire_bithumb_pending_order_state(
+    dynamic raw,
+  );
+
+  @protected
+  WireBithumbPendingOrdersRequest
+  dco_decode_wire_bithumb_pending_orders_request(dynamic raw);
 
   @protected
   WireCancelOrdersRequest dco_decode_wire_cancel_orders_request(dynamic raw);
@@ -1112,6 +1147,23 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireBithumbOrderDirection sse_decode_box_autoadd_wire_bithumb_order_direction(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbPendingOrderState
+  sse_decode_box_autoadd_wire_bithumb_pending_order_state(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbPendingOrdersRequest
+  sse_decode_box_autoadd_wire_bithumb_pending_orders_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireCancelOrdersRequest sse_decode_box_autoadd_wire_cancel_orders_request(
     SseDeserializer deserializer,
   );
@@ -1525,6 +1577,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireBithumbOrderDirection?
+  sse_decode_opt_box_autoadd_wire_bithumb_order_direction(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbPendingOrderState?
+  sse_decode_opt_box_autoadd_wire_bithumb_pending_order_state(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireExchange? sse_decode_opt_box_autoadd_wire_exchange(
     SseDeserializer deserializer,
   );
@@ -1661,6 +1725,20 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireBithumbNotice sse_decode_wire_bithumb_notice(
     SseDeserializer deserializer,
   );
+
+  @protected
+  WireBithumbOrderDirection sse_decode_wire_bithumb_order_direction(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbPendingOrderState sse_decode_wire_bithumb_pending_order_state(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbPendingOrdersRequest
+  sse_decode_wire_bithumb_pending_orders_request(SseDeserializer deserializer);
 
   @protected
   WireCancelOrdersRequest sse_decode_wire_cancel_orders_request(
@@ -2211,6 +2289,24 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_wire_bithumb_order_direction(
+    WireBithumbOrderDirection self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_bithumb_pending_order_state(
+    WireBithumbPendingOrderState self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_bithumb_pending_orders_request(
+    WireBithumbPendingOrdersRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_wire_cancel_orders_request(
     WireCancelOrdersRequest self,
     SseSerializer serializer,
@@ -2748,6 +2844,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_opt_box_autoadd_wire_bithumb_order_direction(
+    WireBithumbOrderDirection? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_wire_bithumb_pending_order_state(
+    WireBithumbPendingOrderState? self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_opt_box_autoadd_wire_exchange(
     WireExchange? self,
     SseSerializer serializer,
@@ -2915,6 +3023,24 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_bithumb_notice(
     WireBithumbNotice self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_bithumb_order_direction(
+    WireBithumbOrderDirection self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_bithumb_pending_order_state(
+    WireBithumbPendingOrderState self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_bithumb_pending_orders_request(
+    WireBithumbPendingOrdersRequest self,
     SseSerializer serializer,
   );
 

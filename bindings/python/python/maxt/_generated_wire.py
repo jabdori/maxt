@@ -372,6 +372,13 @@ RECORD_FIELDS = {
         "access_key": "string",
         "expires_at": "timestamp",
     },
+    "BithumbPendingOrdersRequest": {
+        "market": "optional:named:Market",
+        "state": "optional:identifier:BithumbPendingOrderState",
+        "limit": "optional:number",
+        "order_by": "optional:identifier:BithumbOrderDirection",
+        "cursor": "optional:string",
+    },
     "BithumbNetworkFee": {
         "network": "identifier:Network",
         "provider_name": "string",
@@ -785,6 +792,8 @@ IDENTIFIER_VARIANTS = {
     "SizeKind": ("base", "quote",),
     "UpbitRegion": ("korea", "singapore", "indonesia", "thailand",),
     "BithumbAlertStep": ("caution", "warning", "danger", "unknown",),
+    "BithumbPendingOrderState": ("wait", "watch",),
+    "BithumbOrderDirection": ("asc", "desc",),
     "BinanceMarket": ("spot", "usd_m",),
     "HyperliquidLedgerKind": ("deposit", "withdraw", "internal_transfer", "sub_account_transfer", "spot_transfer", "account_class_transfer", "vault_deposit", "vault_withdraw", "vault_distribution", "liquidation",),
     "ExchangeErrorKind": ("rejected", "rate_limited", "unavailable", "unknown",),

@@ -146,6 +146,16 @@ test("Bithumb API keys reject missing credentials before a network request", asy
   );
 });
 
+test("Bithumb pending orders validate the provider limit before a network request", async () => {
+  await maxt.initialize();
+  const bithumb = new maxt.BithumbAdapter({ accessKey: "key", secretKey: "secret" });
+
+  await assert.rejects(
+    bithumb.pendingOrders(new maxt.BithumbPendingOrdersRequest(null, null, 101)),
+    (error) => error instanceof InvalidRequestError && error.field === "limit",
+  );
+});
+
 test("custom Adapter calls round-trip through Rust without losing values", async () => {
   const market = Market.spot(Exchange.Binance, "BTC", "USDT");
   const expected = new Ticker(

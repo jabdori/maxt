@@ -781,6 +781,18 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
+    pub async fn bithumb_pending_orders(
+        &self,
+        request: WireBithumbPendingOrdersRequest,
+    ) -> Result<WireOrderPage, NativeError> {
+        let request: maxt::BithumbPendingOrdersRequest = request.try_into()?;
+        let adapter = match self.built_in("bithumb_pending_orders")? {
+            BuiltInAdapter::Bithumb(adapter) => adapter,
+            _ => return Err(provider_mismatch("Bithumb")),
+        };
+        adapter.pending_orders(&request).await.map(Into::into).map_err(Into::into)
+    }
+
     pub async fn binance_spot_symbol_filters(
         &self,
         market: WireMarket,

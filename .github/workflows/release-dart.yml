@@ -13,10 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@1.92.0
         with:
-          components: rust-src
-          targets: wasm32-unknown-unknown
+          components: rustfmt
       - uses: dart-lang/setup-dart@v1
       - shell: bash
         run: |
@@ -40,6 +39,7 @@ jobs:
       - working-directory: bindings/dart
         shell: bash
         run: |
+          rustup toolchain install nightly --profile minimal --component rust-src --target wasm32-unknown-unknown
           rustup toolchain install stable --profile minimal
           cargo +stable install wasm-pack --version 0.15.0 --locked
           mkdir -p web

@@ -1554,7 +1554,7 @@ fn rust_union_field(schema: &Schema, name: &str, ty: &Type) -> String {
                 }
             }
             Type::Named(named) => format!(
-                "list_to_wire(py, &{name}, {}_to_wire)?",
+                "list_to_wire(py, {name}, {}_to_wire)?",
                 snake_case(named.strip_suffix("Wire").unwrap_or(named))
             ),
             other => panic!("unsupported Python union list item: {other:?}"),

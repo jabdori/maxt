@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.2
+
+- Reissued 0.3.1 after aligning release code generation with the pinned Rust
+  formatter.
+
 ## 0.3.1
 
 - Reissued 0.3.0 with the same Travel Rule and KRW transfer APIs after GitHub

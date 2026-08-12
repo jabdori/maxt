@@ -1704,7 +1704,7 @@ pub(crate) fn upbit_batch_cancel_scope_to_wire(
     match value {
         maxt::UpbitBatchCancelScope::All => wire_dict!(py, "kind" => "all"),
         maxt::UpbitBatchCancelScope::QuoteCurrencies { values } => wire_dict!(py, "kind" => "quote_currencies", "values" => &values),
-        maxt::UpbitBatchCancelScope::Pairs { values } => wire_dict!(py, "kind" => "pairs", "values" => list_to_wire(py, &values, market_to_wire)?),
+        maxt::UpbitBatchCancelScope::Pairs { values } => wire_dict!(py, "kind" => "pairs", "values" => list_to_wire(py, values, market_to_wire)?),
         _ => Err(binding_contract("UpbitBatchCancelScope")),
     }
 }

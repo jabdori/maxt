@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.2
+
+- Reissued 0.2.1 after fixing generated native conversion code for the release
+  compiler.
+
 ## 0.2.1
 
 - Reissued 0.2.0 with the same Travel Rule and KRW transfer APIs after GitHub

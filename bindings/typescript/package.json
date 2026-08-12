@@ -1,6 +1,6 @@
 {
   "name": "@jabdori/maxt",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "One TypeScript API for Upbit, Bithumb, Binance, and Hyperliquid.",
   "type": "module",
   "license": "MIT",
@@ -62,11 +62,11 @@
     "artifacts": "napi artifacts"
   },
   "optionalDependencies": {
-    "@jabdori/maxt-linux-x64-gnu": "0.2.1",
-    "@jabdori/maxt-linux-arm64-gnu": "0.2.1",
-    "@jabdori/maxt-darwin-x64": "0.2.1",
-    "@jabdori/maxt-darwin-arm64": "0.2.1",
-    "@jabdori/maxt-win32-x64-msvc": "0.2.1"
+    "@jabdori/maxt-linux-x64-gnu": "0.2.2",
+    "@jabdori/maxt-linux-arm64-gnu": "0.2.2",
+    "@jabdori/maxt-darwin-x64": "0.2.2",
+    "@jabdori/maxt-darwin-arm64": "0.2.2",
+    "@jabdori/maxt-win32-x64-msvc": "0.2.2"
   },
   "devDependencies": {
     "@napi-rs/cli": "3.8.2",

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2
+
+- Reissued 0.2.1 after restoring npm lockfile metadata required by `npm ci`.
+
 ## 0.2.1
 
 - Reissued 0.2.0 with the same Travel Rule and KRW transfer APIs after GitHub

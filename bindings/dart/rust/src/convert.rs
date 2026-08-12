@@ -7,9 +7,9 @@ pub use generated_models::*;
 
 use maxt::adapters::{
     BinanceSpotOrderDetail, BinanceSymbolFilters, BithumbAlertStep, BithumbMarketAlert,
-    BithumbOrderDirection, BithumbPendingOrderState, BithumbTwapOrderDirection,
-    BithumbTwapState, HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind,
-    UpbitMarketEvent, UpbitOrderDirection,
+    BithumbOrderDirection, BithumbPendingOrderState, BithumbTwapOrderDirection, BithumbTwapState,
+    HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind, UpbitMarketEvent,
+    UpbitOrderDirection,
 };
 use maxt::{
     Balance, Candle, CandleRequest, Cursor, Decimal, Error, Exchange, ExchangeErrorKind, Feature,

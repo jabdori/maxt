@@ -131,6 +131,9 @@ Match the nearest adapter. Do not add empty files for structural symmetry.
 Each registry release is triggered by its matching tag. The tag version must
 match that package's manifest version.
 
+Push release tags one at a time. GitHub does not create push events when more
+than three tags are pushed together.
+
 ## Generated files
 
 Do not edit files whose first line says they were generated. The complete list

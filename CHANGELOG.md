@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+
+- Reissued 0.2.0 with the same Travel Rule and KRW transfer APIs after GitHub
+  Actions skipped the multi-tag push event.
+
 ## 0.2.0
 
 - Added Upbit Travel Rule VASP lookup and verification for Korea and Singapore.

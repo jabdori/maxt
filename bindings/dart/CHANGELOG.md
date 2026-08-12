@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.3
+
+- Reissued 0.3.2 after formatting the release test source with the pinned Dart
+  SDK.
+
 ## 0.3.2
 
 - Reissued 0.3.1 after aligning release code generation with the pinned Rust

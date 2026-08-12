@@ -1193,7 +1193,7 @@ dependencies = [
 
 [[package]]
 name = "maxt_dart_bridge"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "anyhow",
  "flutter_rust_bridge",

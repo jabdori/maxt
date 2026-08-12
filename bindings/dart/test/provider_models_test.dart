@@ -74,8 +74,12 @@ void main() {
       categories: ['입출금'],
       title: '네트워크 점검 안내',
       url: 'https://feed.bithumb.com/notice/1654458',
-      publishedAt: Timestamp.fromNanoseconds(BigInt.parse('1700000000123456790')),
-      modifiedAt: Timestamp.fromNanoseconds(BigInt.parse('1700000000123456791')),
+      publishedAt: Timestamp.fromNanoseconds(
+        BigInt.parse('1700000000123456790'),
+      ),
+      modifiedAt: Timestamp.fromNanoseconds(
+        BigInt.parse('1700000000123456791'),
+      ),
     );
     final fee = BithumbAssetFee(
       displayName: '비트코인',
@@ -125,7 +129,10 @@ void main() {
     expect(ledger.kind.isOther, isTrue);
     expect(ledger.amount.toString(), '0.000000000000000001');
     expect(notice.categories, ['입출금']);
-    expect(notice.modifiedAt.nanosecondsSinceEpoch, BigInt.parse('1700000000123456791'));
+    expect(
+      notice.modifiedAt.nanosecondsSinceEpoch,
+      BigInt.parse('1700000000123456791'),
+    );
     expect(fee.asset, 'BTC');
     expect(fee.networks.single.withdrawalFee, isA<WithdrawalFeeFixed>());
     expect(apiKey.accessKey, 'example-access-key-1');

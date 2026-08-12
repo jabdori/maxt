@@ -8,10 +8,11 @@ use std::future::Future;
 #[cfg(test)]
 use maxt::Adapter;
 use maxt::adapters::{
-    BinanceAdapter, BinanceAggregateTradesRequest, BinanceListenKey, BinanceMarket,
-    BithumbAdapter, BithumbBatchOrdersRequest,
-    BithumbPendingOrdersRequest, BithumbTwapOrderRequest, BithumbTwapOrdersRequest,
-    HyperliquidAdapter, UpbitAdapter, UpbitCancelAndNewOrderRequest, UpbitRegion,
+    BinanceAdapter, BinanceAggregateTradesRequest, BinanceListenKey, BinanceMarket, BithumbAdapter,
+    BithumbBatchOrdersRequest, BithumbKrwDepositsRequest, BithumbKrwTransferRequest,
+    BithumbKrwWithdrawalsRequest, BithumbPendingOrdersRequest, BithumbTwapOrderRequest,
+    BithumbTwapOrdersRequest, HyperliquidAdapter, UpbitAdapter, UpbitCancelAndNewOrderRequest,
+    UpbitRegion,
 };
 use maxt::{Cursor, Error, Market};
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
@@ -31,14 +32,17 @@ use crate::convert::{
     WireBinanceAggregateTrade, WireBinanceAggregateTradesRequest, WireBinanceMarkPrice,
     WireBinanceOpenInterest, WireBinanceSpotOrderDetail, WireBinanceSymbolFilters,
     WireBithumbApiKey, WireBithumbAssetFee, WireBithumbBatchOrdersRequest,
-    WireBithumbBatchOrdersResult, WireBithumbMarketAlert,
-    WireBithumbNotice, WireBithumbPendingOrdersRequest, WireBithumbTwapOrder,
-    WireBithumbTwapOrderRequest, WireBithumbTwapOrdersRequest, WireCancelOrdersResult,
-    WireHyperliquidAssetContext, WireHyperliquidLedgerEntry, WireHyperliquidMidPrice, WireMarket,
-    WireOrder, WireOrderBook, WireOrderRequest, WirePage, WireTicker, WireUpbitBatchCancelRequest,
-    WireUpbitCancelAndNewOrderRequest, WireUpbitCancelAndNewOrderResult, WireUpbitDepositInfo,
-    WireUpbitMarketEvent, WireUpbitOrderBookInstrument, WireUpbitYearCandle, decimal_from_wire,
-    from_wire_text, network_from_wire, outcome, timestamp_from_wire,
+    WireBithumbBatchOrdersResult, WireBithumbKrwDeposit, WireBithumbKrwDepositsRequest,
+    WireBithumbKrwTransferRequest, WireBithumbKrwWithdrawal, WireBithumbKrwWithdrawalsRequest,
+    WireBithumbMarketAlert, WireBithumbNotice, WireBithumbPendingOrdersRequest,
+    WireBithumbTwapOrder, WireBithumbTwapOrderRequest, WireBithumbTwapOrdersRequest,
+    WireCancelOrdersResult, WireHyperliquidAssetContext, WireHyperliquidLedgerEntry,
+    WireHyperliquidMidPrice, WireMarket, WireOrder, WireOrderBook, WireOrderRequest, WirePage,
+    WireTicker, WireUpbitBatchCancelRequest, WireUpbitCancelAndNewOrderRequest,
+    WireUpbitCancelAndNewOrderResult, WireUpbitDepositInfo, WireUpbitMarketEvent,
+    WireUpbitOrderBookInstrument, WireUpbitTravelRuleVasp, WireUpbitTravelRuleVerification,
+    WireUpbitYearCandle, decimal_from_wire, from_wire_text, network_from_wire, outcome,
+    timestamp_from_wire,
 };
 
 #[derive(Debug, Deserialize)]
@@ -356,6 +360,56 @@ impl NativeUpbit {
         }
     }
 
+    async fn travel_rule_vasps(&self) -> Value {
+        outcome(wire_vec::<_, WireUpbitTravelRuleVasp>(
+            self.adapter.travel_rule_vasps().await,
+        ))
+    }
+
+    async fn verify_travel_rule_by_uuid(
+        &self,
+        deposit_uuid: maxt::Result<String>,
+        vasp_uuid: maxt::Result<String>,
+    ) -> Value {
+        match (
+            parse_text::<String>(deposit_uuid, "deposit_uuid"),
+            parse_text::<String>(vasp_uuid, "vasp_uuid"),
+        ) {
+            (Ok(deposit_uuid), Ok(vasp_uuid)) => outcome(
+                self.adapter
+                    .verify_travel_rule_by_uuid(&deposit_uuid, &vasp_uuid)
+                    .await
+                    .and_then(TryInto::<WireUpbitTravelRuleVerification>::try_into),
+            ),
+            (Err(error), _) | (_, Err(error)) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn verify_travel_rule_by_txid(
+        &self,
+        txid: maxt::Result<String>,
+        vasp_uuid: maxt::Result<String>,
+        currency: maxt::Result<String>,
+        net_type: maxt::Result<String>,
+    ) -> Value {
+        let txid = parse_text::<String>(txid, "txid");
+        let vasp_uuid = parse_text::<String>(vasp_uuid, "vasp_uuid");
+        let currency = parse_text::<String>(currency, "currency");
+        let net_type = parse_text::<String>(net_type, "net_type");
+        match (txid, vasp_uuid, currency, net_type) {
+            (Ok(txid), Ok(vasp_uuid), Ok(currency), Ok(net_type)) => outcome(
+                self.adapter
+                    .verify_travel_rule_by_txid(&txid, &vasp_uuid, &currency, &net_type)
+                    .await
+                    .and_then(TryInto::<WireUpbitTravelRuleVerification>::try_into),
+            ),
+            (Err(error), _, _, _)
+            | (_, Err(error), _, _)
+            | (_, _, Err(error), _)
+            | (_, _, _, Err(error)) => outcome::<Value>(Err(error)),
+        }
+    }
+
     async fn batch_cancel_open_orders(&self, request: maxt::Result<String>) -> Value {
         match parse_wire::<maxt::UpbitBatchCancelRequest, WireUpbitBatchCancelRequest>(
             request, "request",
@@ -526,6 +580,53 @@ impl NativeUpbit {
         spawn_native(env, async move { this.deposit_info(asset, network).await })
     }
 
+    #[napi(js_name = "travelRuleVasps")]
+    pub async fn travel_rule_vasps_native(&self) -> Value {
+        self.travel_rule_vasps().await
+    }
+
+    #[napi(
+        js_name = "verifyTravelRuleByUuid",
+        ts_args_type = "depositUuid: string, vaspUuid: string"
+    )]
+    pub fn verify_travel_rule_by_uuid_native<'env>(
+        &self,
+        env: &'env Env,
+        deposit_uuid: NativeJsonText<'env>,
+        vasp_uuid: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let deposit_uuid = native_json_text(deposit_uuid, "deposit_uuid");
+        let vasp_uuid = native_json_text(vasp_uuid, "vasp_uuid");
+        spawn_native(env, async move {
+            this.verify_travel_rule_by_uuid(deposit_uuid, vasp_uuid)
+                .await
+        })
+    }
+
+    #[napi(
+        js_name = "verifyTravelRuleByTxid",
+        ts_args_type = "txid: string, vaspUuid: string, currency: string, netType: string"
+    )]
+    pub fn verify_travel_rule_by_txid_native<'env>(
+        &self,
+        env: &'env Env,
+        txid: NativeJsonText<'env>,
+        vasp_uuid: NativeJsonText<'env>,
+        currency: NativeJsonText<'env>,
+        net_type: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let txid = native_json_text(txid, "txid");
+        let vasp_uuid = native_json_text(vasp_uuid, "vasp_uuid");
+        let currency = native_json_text(currency, "currency");
+        let net_type = native_json_text(net_type, "net_type");
+        spawn_native(env, async move {
+            this.verify_travel_rule_by_txid(txid, vasp_uuid, currency, net_type)
+                .await
+        })
+    }
+
     #[napi(js_name = "batchCancelOpenOrders", ts_args_type = "request: string")]
     pub fn batch_cancel_open_orders_native<'env>(
         &self,
@@ -676,6 +777,56 @@ impl NativeBithumb {
         }
     }
 
+    async fn krw_withdrawals(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<BithumbKrwWithdrawalsRequest, WireBithumbKrwWithdrawalsRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(wire_vec::<_, WireBithumbKrwWithdrawal>(
+                self.adapter.krw_withdrawals(&request).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn withdraw_krw(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<BithumbKrwTransferRequest, WireBithumbKrwTransferRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(
+                self.adapter
+                    .withdraw_krw(&request)
+                    .await
+                    .and_then(TryInto::<WireBithumbKrwWithdrawal>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn krw_deposits(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<BithumbKrwDepositsRequest, WireBithumbKrwDepositsRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(wire_vec::<_, WireBithumbKrwDeposit>(
+                self.adapter.krw_deposits(&request).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn deposit_krw(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<BithumbKrwTransferRequest, WireBithumbKrwTransferRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(
+                self.adapter
+                    .deposit_krw(&request)
+                    .await
+                    .and_then(TryInto::<WireBithumbKrwDeposit>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
     async fn create_twap_order(&self, request: maxt::Result<String>) -> Value {
         match parse_wire::<BithumbTwapOrderRequest, WireBithumbTwapOrderRequest>(request, "request")
         {
@@ -769,6 +920,50 @@ impl NativeBithumb {
         let this = self.clone();
         let request = native_json_text(request, "request");
         spawn_native(env, async move { this.twap_orders(request).await })
+    }
+
+    #[napi(js_name = "krwWithdrawals", ts_args_type = "request: string")]
+    pub fn krw_withdrawals_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.krw_withdrawals(request).await })
+    }
+
+    #[napi(js_name = "withdrawKrw", ts_args_type = "request: string")]
+    pub fn withdraw_krw_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.withdraw_krw(request).await })
+    }
+
+    #[napi(js_name = "krwDeposits", ts_args_type = "request: string")]
+    pub fn krw_deposits_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.krw_deposits(request).await })
+    }
+
+    #[napi(js_name = "depositKrw", ts_args_type = "request: string")]
+    pub fn deposit_krw_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.deposit_krw(request).await })
     }
 
     #[napi(js_name = "createTwapOrder", ts_args_type = "request: string")]
@@ -1349,6 +1544,37 @@ impl NativeUpbit {
         crate::web::value(self.deposit_info(Ok(asset), Ok(network)).await)
     }
 
+    #[wasm_bindgen(js_name = "travelRuleVasps")]
+    pub async fn travel_rule_vasps_wasm(&self) -> JsValue {
+        crate::web::value(self.travel_rule_vasps().await)
+    }
+
+    #[wasm_bindgen(js_name = "verifyTravelRuleByUuid")]
+    pub async fn verify_travel_rule_by_uuid_wasm(
+        &self,
+        deposit_uuid: String,
+        vasp_uuid: String,
+    ) -> JsValue {
+        crate::web::value(
+            self.verify_travel_rule_by_uuid(Ok(deposit_uuid), Ok(vasp_uuid))
+                .await,
+        )
+    }
+
+    #[wasm_bindgen(js_name = "verifyTravelRuleByTxid")]
+    pub async fn verify_travel_rule_by_txid_wasm(
+        &self,
+        txid: String,
+        vasp_uuid: String,
+        currency: String,
+        net_type: String,
+    ) -> JsValue {
+        crate::web::value(
+            self.verify_travel_rule_by_txid(Ok(txid), Ok(vasp_uuid), Ok(currency), Ok(net_type))
+                .await,
+        )
+    }
+
     #[wasm_bindgen(js_name = "batchCancelOpenOrders")]
     pub async fn batch_cancel_open_orders_wasm(&self, request: String) -> JsValue {
         crate::web::value(self.batch_cancel_open_orders(Ok(request)).await)
@@ -1406,6 +1632,26 @@ impl NativeBithumb {
     #[wasm_bindgen(js_name = "twapOrders")]
     pub async fn twap_orders_wasm(&self, request: String) -> JsValue {
         crate::web::value(self.twap_orders(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "krwWithdrawals")]
+    pub async fn krw_withdrawals_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.krw_withdrawals(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "withdrawKrw")]
+    pub async fn withdraw_krw_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.withdraw_krw(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "krwDeposits")]
+    pub async fn krw_deposits_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.krw_deposits(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "depositKrw")]
+    pub async fn deposit_krw_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.deposit_krw(Ok(request)).await)
     }
 
     #[wasm_bindgen(js_name = "createTwapOrder")]

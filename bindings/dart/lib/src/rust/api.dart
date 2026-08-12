@@ -150,6 +150,18 @@ abstract class NativeClient implements RustOpaqueInterface {
     required WireBithumbTwapOrderRequest request,
   });
 
+  Future<WireBithumbKrwDeposit> bithumbDepositKrw({
+    required WireBithumbKrwTransferRequest request,
+  });
+
+  Future<List<WireBithumbKrwDeposit>> bithumbKrwDeposits({
+    required WireBithumbKrwDepositsRequest request,
+  });
+
+  Future<List<WireBithumbKrwWithdrawal>> bithumbKrwWithdrawals({
+    required WireBithumbKrwWithdrawalsRequest request,
+  });
+
   Future<List<WireBithumbMarketAlert>> bithumbMarketAlerts();
 
   Future<List<WireBithumbMarketWarning>> bithumbMarketWarnings();
@@ -166,6 +178,10 @@ abstract class NativeClient implements RustOpaqueInterface {
 
   Future<WireBithumbTwapOrderPage> bithumbTwapOrders({
     required WireBithumbTwapOrdersRequest request,
+  });
+
+  Future<WireBithumbKrwWithdrawal> bithumbWithdrawKrw({
+    required WireBithumbKrwTransferRequest request,
   });
 
   Future<void> cancelOrder({
@@ -359,6 +375,20 @@ abstract class NativeClient implements RustOpaqueInterface {
 
   Future<List<WireTicker>> upbitTickersByQuote({
     required List<String> quoteCurrencies,
+  });
+
+  Future<List<WireUpbitTravelRuleVasp>> upbitTravelRuleVasps();
+
+  Future<WireUpbitTravelRuleVerification> upbitVerifyTravelRuleByTxid({
+    required String txid,
+    required String vaspUuid,
+    required String currency,
+    required String netType,
+  });
+
+  Future<WireUpbitTravelRuleVerification> upbitVerifyTravelRuleByUuid({
+    required String depositUuid,
+    required String vaspUuid,
   });
 
   Future<List<WireUpbitYearCandle>> upbitYearCandles({

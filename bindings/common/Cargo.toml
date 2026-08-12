@@ -1,6 +1,6 @@
 [package]
 name = "maxt-bindings-common"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.85"
 license = "MIT"
@@ -14,7 +14,7 @@ readme = "README.md"
 codegen = []
 
 [dependencies]
-maxt = { version = "0.1.0", path = "../.." }
+maxt = { version = "=0.2.0", path = "../.." }
 
 [dev-dependencies]
 futures-util = { version = "0.3", default-features = false, features = ["std"] }

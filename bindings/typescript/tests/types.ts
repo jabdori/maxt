@@ -33,7 +33,12 @@ import {
   UpbitSmpType,
   BithumbAdapter,
   BithumbBatchOrdersRequest,
+  BithumbKrwDepositsRequest,
+  BithumbKrwTransferRequest,
+  BithumbKrwWithdrawalsRequest,
   type BithumbBatchOrdersResult,
+  type BithumbKrwDeposit,
+  type BithumbKrwWithdrawal,
   BithumbOrderDirection,
   BithumbPendingOrderState,
   BithumbPendingOrdersRequest,
@@ -51,6 +56,8 @@ import {
   type WithdrawalQuote,
   type UpbitOrderBookInstrument,
   type UpbitDepositInfo,
+  type UpbitTravelRuleVasp,
+  type UpbitTravelRuleVerification,
   type UpbitYearCandle,
   type BithumbApiKey,
   type BithumbAssetFee,
@@ -125,6 +132,17 @@ const cancelAndNew = upbit.cancelAndNewOrder(
     UpbitSmpType.Reduce,
   ),
 );
+const travelRuleVasps: Promise<readonly UpbitTravelRuleVasp[]> = upbit.travelRuleVasps();
+const travelRuleByUuid: Promise<UpbitTravelRuleVerification> = upbit.verifyTravelRuleByUuid(
+  "deposit-1",
+  "vasp-1",
+);
+const travelRuleByTxid: Promise<UpbitTravelRuleVerification> = upbit.verifyTravelRuleByTxid(
+  "tx-1",
+  "vasp-1",
+  "BTC",
+  "BTC",
+);
 const bithumb = new BithumbAdapter();
 const notices: Promise<readonly BithumbNotice[]> = bithumb.notices();
 const transferFees: Promise<readonly BithumbAssetFee[]> = bithumb.transferFees("BTC");
@@ -155,6 +173,18 @@ const twapOrder: Promise<string> = bithumb.createTwapOrder(
   ),
 );
 const twapCancellation: Promise<string> = bithumb.cancelTwapOrder("twap-1");
+const krwWithdrawals: Promise<readonly BithumbKrwWithdrawal[]> = bithumb.krwWithdrawals(
+  new BithumbKrwWithdrawalsRequest(),
+);
+const krwWithdrawal: Promise<BithumbKrwWithdrawal> = bithumb.withdrawKrw(
+  new BithumbKrwTransferRequest(Decimal.parse("10000")),
+);
+const krwDeposits: Promise<readonly BithumbKrwDeposit[]> = bithumb.krwDeposits(
+  new BithumbKrwDepositsRequest(),
+);
+const krwDeposit: Promise<BithumbKrwDeposit> = bithumb.depositKrw(
+  new BithumbKrwTransferRequest(Decimal.parse("10000")),
+);
 const destination = TransferDestination.chain(
   new ChainDestination("BTC", Network.Bitcoin, "bc1qdestination"),
 );
@@ -189,6 +219,9 @@ void testOrder;
 void depositInfo;
 void batchCancellation;
 void cancelAndNew;
+void travelRuleVasps;
+void travelRuleByUuid;
+void travelRuleByTxid;
 void notices;
 void transferFees;
 void apiKeys;
@@ -197,6 +230,10 @@ void batchOrders;
 void twapOrders;
 void twapOrder;
 void twapCancellation;
+void krwWithdrawals;
+void krwWithdrawal;
+void krwDeposits;
+void krwDeposit;
 void networks;
 void addresses;
 void address;

@@ -41,6 +41,7 @@ class Feature(str, Enum):
     DEPOSIT_ADDRESSES = "deposit_addresses"
     DEPOSIT_HISTORY = "deposit_history"
     DEPOSIT_LOOKUP = "deposit_lookup"
+    TRAVEL_RULE = "travel_rule"
     WITHDRAWAL_QUOTES = "withdrawal_quotes"
     WITHDRAWALS = "withdrawals"
     WITHDRAWAL_HISTORY = "withdrawal_history"
@@ -64,6 +65,7 @@ class Feature(str, Enum):
             "deposit_addresses",
             "deposit_history",
             "deposit_lookup",
+            "travel_rule",
             "withdrawal_quotes",
             "withdrawals",
             "withdrawal_history",

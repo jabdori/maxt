@@ -17,7 +17,11 @@ use crate::types::{
 };
 
 use super::parse::{self, EXCHANGE};
-use super::{BithumbCredentials, network_from_provider, private, rest};
+use super::{
+    BithumbCredentials, BithumbKrwDeposit, BithumbKrwDepositsRequest, BithumbKrwTransferRequest,
+    BithumbKrwWithdrawal, BithumbKrwWithdrawalsRequest, BithumbOrderDirection,
+    network_from_provider, private, rest,
+};
 
 const WALLET_STATUS_PATH: &str = "/v1/status/wallet";
 const DEPOSIT_ADDRESSES_PATH: &str = "/v1/deposits/coin_addresses";
@@ -31,7 +35,31 @@ const CANCEL_WITHDRAWAL_PATH: &str = "/v1/withdraws/coin";
 const DEPOSITS_PATH: &str = "/v1/deposits";
 const DEPOSIT_PATH: &str = "/v1/deposit";
 const WITHDRAWALS_PATH: &str = "/v1/withdraws";
+const KRW_WITHDRAWALS_PATH: &str = "/v1/withdraws/krw";
+const KRW_DEPOSITS_PATH: &str = "/v1/deposits/krw";
 const MAX_HISTORY_COUNT: u32 = 100;
+const MAX_KRW_HISTORY_COUNT: u32 = 100;
+
+#[derive(Debug, Deserialize)]
+struct RawKrwTransfer {
+    #[serde(rename = "type")]
+    transfer_type: String,
+    uuid: String,
+    currency: String,
+    #[serde(default)]
+    net_type: Option<String>,
+    #[serde(default)]
+    txid: Option<String>,
+    state: String,
+    #[serde(default)]
+    created_at: Option<String>,
+    #[serde(default)]
+    done_at: Option<String>,
+    amount: Value,
+    fee: Value,
+    #[serde(default)]
+    transaction_type: Option<String>,
+}
 
 #[derive(Debug, Deserialize)]
 struct RawWalletStatus {
@@ -369,6 +397,52 @@ pub(crate) async fn withdrawals(
     })
 }
 
+pub(crate) async fn krw_withdrawals(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    request: &BithumbKrwWithdrawalsRequest,
+) -> Result<Vec<BithumbKrwWithdrawal>> {
+    let api_request = krw_list_request(credentials, KRW_WITHDRAWALS_PATH, request)?;
+    let body = rest::send(http, &api_request).await?;
+    decode::<Vec<RawKrwTransfer>>(&body)?
+        .iter()
+        .map(parse_krw_withdrawal)
+        .collect()
+}
+
+pub(crate) async fn withdraw_krw(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    request: &BithumbKrwTransferRequest,
+) -> Result<BithumbKrwWithdrawal> {
+    let api_request = krw_transfer_request(credentials, KRW_WITHDRAWALS_PATH, request)?;
+    let body = rest::send(http, &api_request).await?;
+    parse_krw_withdrawal(&decode(&body)?)
+}
+
+pub(crate) async fn krw_deposits(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    request: &BithumbKrwDepositsRequest,
+) -> Result<Vec<BithumbKrwDeposit>> {
+    let api_request = krw_list_request(credentials, KRW_DEPOSITS_PATH, request)?;
+    let body = rest::send(http, &api_request).await?;
+    decode::<Vec<RawKrwTransfer>>(&body)?
+        .iter()
+        .map(parse_krw_deposit)
+        .collect()
+}
+
+pub(crate) async fn deposit_krw(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    request: &BithumbKrwTransferRequest,
+) -> Result<BithumbKrwDeposit> {
+    let api_request = krw_transfer_request(credentials, KRW_DEPOSITS_PATH, request)?;
+    let body = rest::send(http, &api_request).await?;
+    parse_krw_deposit(&decode(&body)?)
+}
+
 async fn wallet_statuses(
     http: &HttpTransport,
     credentials: &BithumbCredentials,
@@ -459,6 +533,164 @@ fn signed_delete(
         request
     } else {
         request.query(query)
+    })
+}
+
+fn krw_list_request<T>(
+    credentials: &BithumbCredentials,
+    path: &str,
+    request: &T,
+) -> Result<HttpRequest>
+where
+    T: KrwListQuery,
+{
+    signed_get(credentials, path, &request.query_params()?)
+}
+
+trait KrwListQuery {
+    fn query_params(&self) -> Result<Vec<(&'static str, String)>>;
+}
+
+impl KrwListQuery for BithumbKrwWithdrawalsRequest {
+    fn query_params(&self) -> Result<Vec<(&'static str, String)>> {
+        krw_list_params(
+            self.state.as_deref(),
+            &self.uuids,
+            &self.txids,
+            self.page,
+            self.limit,
+            self.order_by,
+        )
+    }
+}
+
+impl KrwListQuery for BithumbKrwDepositsRequest {
+    fn query_params(&self) -> Result<Vec<(&'static str, String)>> {
+        krw_list_params(
+            self.state.as_deref(),
+            &self.uuids,
+            &self.txids,
+            self.page,
+            self.limit,
+            self.order_by,
+        )
+    }
+}
+
+fn krw_list_params(
+    state: Option<&str>,
+    uuids: &[String],
+    txids: &[String],
+    page: Option<u32>,
+    limit: Option<u32>,
+    order_by: Option<BithumbOrderDirection>,
+) -> Result<Vec<(&'static str, String)>> {
+    let page = page.unwrap_or(1);
+    if page == 0 {
+        return Err(Error::invalid_request(
+            "page",
+            "Bithumb KRW transfer pages start at 1",
+        ));
+    }
+    let limit = limit.unwrap_or(MAX_KRW_HISTORY_COUNT);
+    if !(1..=MAX_KRW_HISTORY_COUNT).contains(&limit) {
+        return Err(Error::invalid_request(
+            "limit",
+            format!("Bithumb serves 1 to {MAX_KRW_HISTORY_COUNT} KRW transfers per page"),
+        ));
+    }
+
+    let mut params = vec![
+        ("limit", limit.to_string()),
+        ("page", page.to_string()),
+        (
+            "order_by",
+            match order_by.unwrap_or(BithumbOrderDirection::Descending) {
+                BithumbOrderDirection::Ascending => "asc",
+                BithumbOrderDirection::Descending => "desc",
+            }
+            .to_string(),
+        ),
+    ];
+    if let Some(state) = state {
+        params.push(("state", state.to_string()));
+    }
+    for uuid in uuids {
+        validate_krw_query_value("uuids", uuid)?;
+        params.push(("uuids[]", uuid.clone()));
+    }
+    for txid in txids {
+        validate_krw_query_value("txids", txid)?;
+        params.push(("txids[]", txid.clone()));
+    }
+    Ok(params)
+}
+
+fn validate_krw_query_value(field: &'static str, value: &str) -> Result<()> {
+    if value.is_empty() || !value.bytes().all(is_unreserved) {
+        return Err(Error::invalid_request(
+            field,
+            format!("`{value}` is not a safe Bithumb query value"),
+        ));
+    }
+    Ok(())
+}
+
+fn krw_transfer_request(
+    credentials: &BithumbCredentials,
+    path: &str,
+    request: &BithumbKrwTransferRequest,
+) -> Result<HttpRequest> {
+    if request.amount <= Decimal::ZERO {
+        return Err(Error::invalid_request(
+            "amount",
+            "Bithumb KRW transfer amounts must be greater than zero",
+        ));
+    }
+    let amount = request.amount.to_string();
+    let two_factor_type = "kakao";
+    let query = format!("amount={amount}&two_factor_type={two_factor_type}");
+    let body = serde_json::json!({
+        "amount": amount,
+        "two_factor_type": two_factor_type,
+    })
+    .to_string();
+
+    Ok(HttpRequest::post(path).json_body(body).header(
+        "authorization",
+        private::authorization(credentials, &query)?,
+    ))
+}
+
+fn parse_krw_withdrawal(value: &RawKrwTransfer) -> Result<BithumbKrwWithdrawal> {
+    Ok(BithumbKrwWithdrawal {
+        transfer_type: value.transfer_type.clone(),
+        uuid: value.uuid.clone(),
+        currency: value.currency.to_ascii_uppercase(),
+        net_type: value.net_type.clone(),
+        txid: value.txid.clone(),
+        state: value.state.clone(),
+        created_at: timestamp_opt(value.created_at.as_deref())?,
+        done_at: timestamp_opt(value.done_at.as_deref())?,
+        amount: decimal_value(&value.amount, "amount")?,
+        fee: decimal_value(&value.fee, "fee")?,
+        transaction_type: value.transaction_type.clone(),
+    })
+}
+
+fn parse_krw_deposit(value: &RawKrwTransfer) -> Result<BithumbKrwDeposit> {
+    Ok(BithumbKrwDeposit {
+        transfer_type: value.transfer_type.clone(),
+        uuid: value.uuid.clone(),
+        currency: value.currency.to_ascii_uppercase(),
+        net_type: value.net_type.clone(),
+        txid: value.txid.clone(),
+        state: value.state.clone(),
+        created_at: timestamp_opt(value.created_at.as_deref())?,
+        done_at: timestamp_opt(value.done_at.as_deref())?,
+        amount: decimal_value(&value.amount, "amount")?,
+        fee: decimal_value(&value.fee, "fee")?,
+        transaction_type: value.transaction_type.clone(),
     })
 }
 
@@ -1407,6 +1639,109 @@ mod tests {
             deposit.created_at,
             Some(Timestamp::from_secs(1_720_931_741))
         );
+    }
+
+    #[test]
+    fn krw_list_requests_expand_arrays_and_hash_the_exact_wire_query() {
+        let request = BithumbKrwWithdrawalsRequest::new()
+            .state("DONE")
+            .uuids(vec!["12703781".to_string(), "12703780".to_string()])
+            .txids(vec!["1596146".to_string()])
+            .page(2)
+            .limit(25)
+            .order_by(BithumbOrderDirection::Ascending);
+        let built = krw_list_request(&credentials(), KRW_WITHDRAWALS_PATH, &request)
+            .expect("KRW withdrawal list request");
+        let query = "limit=25&page=2&order_by=asc&state=DONE&uuids[]=12703781&uuids[]=12703780&txids[]=1596146";
+
+        assert_eq!(built.target(), format!("{KRW_WITHDRAWALS_PATH}?{query}"));
+        assert_eq!(
+            claims(&built)["query_hash"],
+            hex::encode(Sha512::digest(query.as_bytes()))
+        );
+    }
+
+    #[test]
+    fn krw_list_requests_reject_invalid_page_limit_and_identifiers() {
+        assert!(
+            krw_list_request(
+                &credentials(),
+                KRW_DEPOSITS_PATH,
+                &BithumbKrwDepositsRequest::new().page(0)
+            )
+            .is_err()
+        );
+        assert!(
+            krw_list_request(
+                &credentials(),
+                KRW_DEPOSITS_PATH,
+                &BithumbKrwDepositsRequest::new().limit(101)
+            )
+            .is_err()
+        );
+        assert!(
+            krw_list_request(
+                &credentials(),
+                KRW_DEPOSITS_PATH,
+                &BithumbKrwDepositsRequest::new().uuids(vec!["id with spaces".to_string()])
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn krw_transfer_requests_use_string_amount_kakao_and_body_hash() {
+        let request = krw_transfer_request(
+            &credentials(),
+            KRW_WITHDRAWALS_PATH,
+            &BithumbKrwTransferRequest::new(Decimal::from(6_000)),
+        )
+        .expect("KRW withdrawal request");
+        let query = "amount=6000&two_factor_type=kakao";
+
+        assert_eq!(request.path, KRW_WITHDRAWALS_PATH);
+        assert_eq!(
+            request.body.as_deref(),
+            Some(r#"{"amount":"6000","two_factor_type":"kakao"}"#)
+        );
+        assert_eq!(
+            claims(&request)["query_hash"],
+            hex::encode(Sha512::digest(query.as_bytes()))
+        );
+    }
+
+    #[test]
+    fn krw_transfer_requests_reject_non_positive_amounts_before_signing() {
+        assert!(
+            krw_transfer_request(
+                &credentials(),
+                KRW_DEPOSITS_PATH,
+                &BithumbKrwTransferRequest::new(Decimal::ZERO)
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn krw_response_fixtures_preserve_provider_fields_and_states() {
+        let withdrawal: RawKrwTransfer = decode(&parsed(
+            r#"{"type":"withdraw","uuid":"12703781","currency":"KRW","net_type":null,"txid":"1596146","state":"DONE","created_at":"2024-07-06T17:36:22+09:00","done_at":"2024-07-06T17:36:39+09:00","amount":"6000","fee":"1000","transaction_type":"default"}"#,
+        ))
+        .expect("KRW withdrawal fixture");
+        let withdrawal = parse_krw_withdrawal(&withdrawal).expect("KRW withdrawal parse");
+        assert_eq!(withdrawal.currency, "KRW");
+        assert_eq!(withdrawal.amount, Decimal::from(6_000));
+        assert_eq!(withdrawal.fee, Decimal::from(1_000));
+        assert_eq!(withdrawal.state, "DONE");
+
+        let deposit: RawKrwTransfer = decode(&parsed(
+            r#"{"type":"deposit","uuid":"15371593","currency":"KRW","txid":"1596126","state":"ACCEPTED","created_at":"2024-07-06T15:14:37+09:00","done_at":"2024-07-08T15:19:40+09:00","amount":"20000","fee":"0","transaction_type":"default"}"#,
+        ))
+        .expect("KRW deposit fixture");
+        let deposit = parse_krw_deposit(&deposit).expect("KRW deposit parse");
+        assert_eq!(deposit.amount, Decimal::from(20_000));
+        assert_eq!(deposit.fee, Decimal::ZERO);
+        assert_eq!(deposit.state, "ACCEPTED");
     }
 
     #[test]

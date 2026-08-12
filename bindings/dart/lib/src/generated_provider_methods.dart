@@ -93,6 +93,45 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
         ),
       ).then(_upbitDepositInfoFromWire);
 
+  /// Lists VASPs available for Upbit Korea or Singapore Travel Rule verification.
+  Future<List<UpbitTravelRuleVasp>> travelRuleVasps() =>
+      _nativeFuture(_handle.upbitTravelRuleVasps).then(
+        (values) =>
+            values.map(_upbitTravelRuleVaspFromWire).toList(growable: false),
+      );
+
+  /// Requests Korea or Singapore Travel Rule verification for a deposit UUID.
+  ///
+  /// This is a financial write; Upbit limits repeated verification for one
+  /// deposit.
+  Future<UpbitTravelRuleVerification> verifyTravelRuleByUuid(
+    String depositUuid,
+    String vaspUuid,
+  ) => _nativeFuture(
+    () => _handle.upbitVerifyTravelRuleByUuid(
+      depositUuid: depositUuid,
+      vaspUuid: vaspUuid,
+    ),
+  ).then(_upbitTravelRuleVerificationFromWire);
+
+  /// Requests Korea or Singapore Travel Rule verification for a transaction ID.
+  ///
+  /// This is a financial write; Upbit limits repeated verification for one
+  /// deposit.
+  Future<UpbitTravelRuleVerification> verifyTravelRuleByTxid(
+    String txid,
+    String vaspUuid,
+    String currency,
+    String netType,
+  ) => _nativeFuture(
+    () => _handle.upbitVerifyTravelRuleByTxid(
+      txid: txid,
+      vaspUuid: vaspUuid,
+      currency: currency,
+      netType: netType,
+    ),
+  ).then(_upbitTravelRuleVerificationFromWire);
+
   /// Cancels matching Upbit wait orders in one conditional request.
   ///
   /// [UpbitBatchCancelScope.all] selects every eligible market; Upbit still
@@ -150,6 +189,46 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
       _nativeFuture(_handle.bithumbApiKeys).then(
         (values) => values.map(_bithumbApiKeyFromWire).toList(growable: false),
       );
+
+  Future<List<BithumbKrwWithdrawal>> krwWithdrawals(
+    BithumbKrwWithdrawalsRequest request,
+  ) =>
+      _nativeFuture(
+        () => _handle.bithumbKrwWithdrawals(
+          request: _bithumbKrwWithdrawalsRequestToWire(request),
+        ),
+      ).then(
+        (values) =>
+            values.map(_bithumbKrwWithdrawalFromWire).toList(growable: false),
+      );
+
+  /// Requests a KRW withdrawal. This is a financial write.
+  Future<BithumbKrwWithdrawal> withdrawKrw(BithumbKrwTransferRequest request) =>
+      _nativeFuture(
+        () => _handle.bithumbWithdrawKrw(
+          request: _bithumbKrwTransferRequestToWire(request),
+        ),
+      ).then(_bithumbKrwWithdrawalFromWire);
+
+  Future<List<BithumbKrwDeposit>> krwDeposits(
+    BithumbKrwDepositsRequest request,
+  ) =>
+      _nativeFuture(
+        () => _handle.bithumbKrwDeposits(
+          request: _bithumbKrwDepositsRequestToWire(request),
+        ),
+      ).then(
+        (values) =>
+            values.map(_bithumbKrwDepositFromWire).toList(growable: false),
+      );
+
+  /// Requests a KRW deposit. This is a financial write.
+  Future<BithumbKrwDeposit> depositKrw(BithumbKrwTransferRequest request) =>
+      _nativeFuture(
+        () => _handle.bithumbDepositKrw(
+          request: _bithumbKrwTransferRequestToWire(request),
+        ),
+      ).then(_bithumbKrwDepositFromWire);
 
   Future<Page<Order>> pendingOrders(BithumbPendingOrdersRequest request) =>
       _nativeFuture(

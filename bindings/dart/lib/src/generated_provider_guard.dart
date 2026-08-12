@@ -29,6 +29,17 @@ void _generatedProviderGuard({
     _generatedProviderValue<String>(),
     _generatedProviderValue<Network>(),
   );
+  upbit.travelRuleVasps();
+  upbit.verifyTravelRuleByUuid(
+    _generatedProviderValue<String>(),
+    _generatedProviderValue<String>(),
+  );
+  upbit.verifyTravelRuleByTxid(
+    _generatedProviderValue<String>(),
+    _generatedProviderValue<String>(),
+    _generatedProviderValue<String>(),
+    _generatedProviderValue<String>(),
+  );
   upbit.batchCancelOpenOrders(
     _generatedProviderValue<UpbitBatchCancelRequest>(),
   );
@@ -41,6 +52,12 @@ void _generatedProviderGuard({
   bithumb.notices();
   bithumb.transferFees(_generatedProviderValue<String>());
   bithumb.apiKeys();
+  bithumb.krwWithdrawals(
+    _generatedProviderValue<BithumbKrwWithdrawalsRequest>(),
+  );
+  bithumb.withdrawKrw(_generatedProviderValue<BithumbKrwTransferRequest>());
+  bithumb.krwDeposits(_generatedProviderValue<BithumbKrwDepositsRequest>());
+  bithumb.depositKrw(_generatedProviderValue<BithumbKrwTransferRequest>());
   bithumb.pendingOrders(_generatedProviderValue<BithumbPendingOrdersRequest>());
   bithumb.batchOrders(_generatedProviderValue<BithumbBatchOrdersRequest>());
   bithumb.twapOrders(_generatedProviderValue<BithumbTwapOrdersRequest>());

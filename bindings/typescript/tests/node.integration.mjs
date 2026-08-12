@@ -141,6 +141,23 @@ test("Upbit deposit information rejects missing credentials before a network req
   );
 });
 
+test("Travel Rule and KRW transfer history reject unsupported or unauthenticated calls", async () => {
+  await maxt.initialize();
+
+  await assert.rejects(
+    new maxt.UpbitAdapter({ region: maxt.UpbitRegion.Indonesia }).travelRuleVasps(),
+    (error) => error instanceof maxt.UnsupportedError,
+  );
+  await assert.rejects(
+    new maxt.UpbitAdapter().travelRuleVasps(),
+    (error) => error instanceof AuthError,
+  );
+  await assert.rejects(
+    new maxt.BithumbAdapter().krwWithdrawals(new maxt.BithumbKrwWithdrawalsRequest()),
+    (error) => error instanceof AuthError,
+  );
+});
+
 test("Upbit conditional batch cancellation rejects missing credentials before a network request", async () => {
   await maxt.initialize();
 

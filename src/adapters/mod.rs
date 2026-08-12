@@ -157,8 +157,10 @@ pub use binance::{
 pub use bithumb::{
     BithumbAdapter, BithumbAlertStep, BithumbApiKey, BithumbAssetFee, BithumbBatchOrder,
     BithumbBatchOrderFailure, BithumbBatchOrderOutcome, BithumbBatchOrdersRequest,
-    BithumbBatchOrdersResult, BithumbMarketAlert, BithumbNetworkFee, BithumbNotice,
-    BithumbOrderDirection, BithumbPendingOrderState, BithumbPendingOrdersRequest, BithumbTwapOrder,
+    BithumbBatchOrdersResult, BithumbKrwDeposit, BithumbKrwDepositsRequest,
+    BithumbKrwTransferRequest, BithumbKrwWithdrawal, BithumbKrwWithdrawalsRequest,
+    BithumbMarketAlert, BithumbNetworkFee, BithumbNotice, BithumbOrderDirection,
+    BithumbPendingOrderState, BithumbPendingOrdersRequest, BithumbTwapOrder,
     BithumbTwapOrderDirection, BithumbTwapOrderRequest, BithumbTwapOrdersRequest, BithumbTwapState,
 };
 pub use hyperliquid::{
@@ -169,5 +171,6 @@ pub use upbit::{
     UpbitAdapter, UpbitBatchCancelRequest, UpbitBatchCancelScope, UpbitCancelAndNewOrder,
     UpbitCancelAndNewOrderRequest, UpbitCancelAndNewOrderResult, UpbitDepositInfo,
     UpbitMarketEvent, UpbitOrderBookInstrument, UpbitOrderDirection, UpbitOrderReference,
-    UpbitOrderVolume, UpbitRegion, UpbitSmpType, UpbitYearCandle,
+    UpbitOrderVolume, UpbitRegion, UpbitSmpType, UpbitTravelRuleVasp, UpbitTravelRuleVerification,
+    UpbitYearCandle,
 };

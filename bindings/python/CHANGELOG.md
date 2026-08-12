@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0
+
+- Added Upbit Travel Rule VASP lookup and verification APIs for Korea and Singapore.
+- Added Bithumb KRW transfer history and transfer request APIs.
+- Generated and checked the matching Python models, adapters, and native dispatch.
+
 ## 0.1.1
 
 - Generated public APIs, identifiers, native client methods, adapter dispatch,

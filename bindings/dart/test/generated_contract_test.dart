@@ -129,6 +129,11 @@ void main() {
         'marketEvents': (UpbitAdapter value) => value.marketEvents,
         'testOrder': (UpbitAdapter value) => value.testOrder,
         'depositInfo': (UpbitAdapter value) => value.depositInfo,
+        'travelRuleVasps': (UpbitAdapter value) => value.travelRuleVasps,
+        'verifyTravelRuleByUuid': (UpbitAdapter value) =>
+            value.verifyTravelRuleByUuid,
+        'verifyTravelRuleByTxid': (UpbitAdapter value) =>
+            value.verifyTravelRuleByTxid,
         'batchCancelOpenOrders': (UpbitAdapter value) =>
             value.batchCancelOpenOrders,
         'cancelAndNewOrder': (UpbitAdapter value) => value.cancelAndNewOrder,
@@ -139,6 +144,10 @@ void main() {
         'notices': (BithumbAdapter value) => value.notices,
         'transferFees': (BithumbAdapter value) => value.transferFees,
         'apiKeys': (BithumbAdapter value) => value.apiKeys,
+        'krwWithdrawals': (BithumbAdapter value) => value.krwWithdrawals,
+        'withdrawKrw': (BithumbAdapter value) => value.withdrawKrw,
+        'krwDeposits': (BithumbAdapter value) => value.krwDeposits,
+        'depositKrw': (BithumbAdapter value) => value.depositKrw,
         'pendingOrders': (BithumbAdapter value) => value.pendingOrders,
         'batchOrders': (BithumbAdapter value) => value.batchOrders,
         'twapOrders': (BithumbAdapter value) => value.twapOrders,

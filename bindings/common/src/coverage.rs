@@ -1303,7 +1303,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         Validation::Fixture,
     ),
     restricted(
-        planned(operation(
+        operation(
             Exchange::Upbit,
             "travel_rule",
             "travel_rule_vasps",
@@ -1313,12 +1313,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
             Authentication::Jwt,
             OperationRisk::Read,
             OperationMapping::Provider("travel_rule_vasps"),
-            Validation::Documented,
-        )),
-        Availability::Region("Singapore"),
+            Validation::Fixture,
+        ),
+        Availability::Region("Korea or Singapore"),
     ),
     restricted(
-        planned(operation(
+        operation(
             Exchange::Upbit,
             "travel_rule",
             "travel_rule_verify_uuid",
@@ -1328,12 +1328,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
             Authentication::Jwt,
             OperationRisk::FinancialWrite,
             OperationMapping::Provider("verify_travel_rule_by_uuid"),
-            Validation::Documented,
-        )),
-        Availability::Region("Singapore"),
+            Validation::Fixture,
+        ),
+        Availability::Region("Korea or Singapore"),
     ),
     restricted(
-        planned(operation(
+        operation(
             Exchange::Upbit,
             "travel_rule",
             "travel_rule_verify_txid",
@@ -1343,9 +1343,9 @@ pub const OPERATIONS: &[OperationCoverage] = &[
             Authentication::Jwt,
             OperationRisk::FinancialWrite,
             OperationMapping::Provider("verify_travel_rule_by_txid"),
-            Validation::Documented,
-        )),
-        Availability::Region("Singapore"),
+            Validation::Fixture,
+        ),
+        Availability::Region("Korea or Singapore"),
     ),
     operation(
         Exchange::Bithumb,
@@ -1866,7 +1866,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Provider("cancel_twap_order"),
         Validation::Fixture,
     ),
-    planned(operation(
+    operation(
         Exchange::Bithumb,
         "krw",
         "withdrawals",
@@ -1876,9 +1876,9 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         Authentication::Jwt,
         OperationRisk::Read,
         OperationMapping::Provider("krw_withdrawals"),
-        Validation::Documented,
-    )),
-    planned(operation(
+        Validation::Fixture,
+    ),
+    operation(
         Exchange::Bithumb,
         "krw",
         "withdraw",
@@ -1888,9 +1888,9 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         Authentication::Jwt,
         OperationRisk::FinancialWrite,
         OperationMapping::Provider("withdraw_krw"),
-        Validation::Documented,
-    )),
-    planned(operation(
+        Validation::Fixture,
+    ),
+    operation(
         Exchange::Bithumb,
         "krw",
         "deposits",
@@ -1900,9 +1900,9 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         Authentication::Jwt,
         OperationRisk::Read,
         OperationMapping::Provider("krw_deposits"),
-        Validation::Documented,
-    )),
-    planned(operation(
+        Validation::Fixture,
+    ),
+    operation(
         Exchange::Bithumb,
         "krw",
         "deposit",
@@ -1912,8 +1912,8 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         Authentication::Jwt,
         OperationRisk::FinancialWrite,
         OperationMapping::Provider("deposit_krw"),
-        Validation::Documented,
-    )),
+        Validation::Fixture,
+    ),
     operation(
         Exchange::Binance,
         "spot",

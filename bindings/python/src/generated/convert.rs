@@ -38,6 +38,7 @@ pub(crate) fn feature_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::Feat
         "deposit_addresses" => Ok(maxt::Feature::DepositAddresses),
         "deposit_history" => Ok(maxt::Feature::DepositHistory),
         "deposit_lookup" => Ok(maxt::Feature::DepositLookup),
+        "travel_rule" => Ok(maxt::Feature::TravelRule),
         "withdrawal_quotes" => Ok(maxt::Feature::WithdrawalQuotes),
         "withdrawals" => Ok(maxt::Feature::Withdrawals),
         "withdrawal_history" => Ok(maxt::Feature::WithdrawalHistory),
@@ -73,6 +74,7 @@ pub(crate) fn feature_to_wire(value: maxt::Feature) -> PyResult<&'static str> {
         maxt::Feature::DepositAddresses => Ok("deposit_addresses"),
         maxt::Feature::DepositHistory => Ok("deposit_history"),
         maxt::Feature::DepositLookup => Ok("deposit_lookup"),
+        maxt::Feature::TravelRule => Ok("travel_rule"),
         maxt::Feature::WithdrawalQuotes => Ok("withdrawal_quotes"),
         maxt::Feature::Withdrawals => Ok("withdrawals"),
         maxt::Feature::WithdrawalHistory => Ok("withdrawal_history"),
@@ -1622,6 +1624,54 @@ pub(crate) fn upbit_deposit_info_to_wire(
     )
 }
 
+pub(crate) fn upbit_travel_rule_vasp_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitTravelRuleVasp> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["vasp_name", "vasp_uuid", "depositable", "withdrawable"], "upbit_travel_rule_vasp")?;
+    Ok(maxt::UpbitTravelRuleVasp {
+        vasp_name: required(dict, "vasp_name")?.extract::<String>()?,
+        vasp_uuid: required(dict, "vasp_uuid")?.extract::<String>()?,
+        depositable: required(dict, "depositable")?.extract()?,
+        withdrawable: required(dict, "withdrawable")?.extract()?,
+    })
+}
+
+pub(crate) fn upbit_travel_rule_vasp_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitTravelRuleVasp,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "vasp_name" => &value.vasp_name,
+        "vasp_uuid" => &value.vasp_uuid,
+        "depositable" => value.depositable,
+        "withdrawable" => value.withdrawable,
+    )
+}
+
+pub(crate) fn upbit_travel_rule_verification_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitTravelRuleVerification> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["deposit_uuid", "deposit_state", "verification_result"], "upbit_travel_rule_verification")?;
+    Ok(maxt::UpbitTravelRuleVerification {
+        deposit_uuid: required(dict, "deposit_uuid")?.extract::<String>()?,
+        deposit_state: required(dict, "deposit_state")?.extract::<String>()?,
+        verification_result: required(dict, "verification_result")?.extract::<String>()?,
+    })
+}
+
+pub(crate) fn upbit_travel_rule_verification_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitTravelRuleVerification,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "deposit_uuid" => &value.deposit_uuid,
+        "deposit_state" => &value.deposit_state,
+        "verification_result" => &value.verification_result,
+    )
+}
+
 pub(crate) fn upbit_batch_cancel_scope_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitBatchCancelScope> {
     let value = wire_object(value)?;
     let dict = value.cast::<PyDict>()?;
@@ -1892,6 +1942,161 @@ pub(crate) fn bithumb_api_key_to_wire(
         py,
         "access_key" => &value.access_key,
         "expires_at" => timestamp_to_wire(value.expires_at),
+    )
+}
+
+pub(crate) fn bithumb_krw_withdrawals_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::BithumbKrwWithdrawalsRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["state", "uuids", "txids", "page", "limit", "order_by"], "bithumb_krw_withdrawals_request")?;
+    Ok(maxt::BithumbKrwWithdrawalsRequest {
+        state: optional(dict, "state")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        uuids: required(dict, "uuids")?.extract::<Vec<String>>()?,
+        txids: required(dict, "txids")?.extract::<Vec<String>>()?,
+        page: optional(dict, "page")?.map(|value| -> PyResult<_> { u32_from_wire(&value, "page") }).transpose()?,
+        limit: optional(dict, "limit")?.map(|value| -> PyResult<_> { u32_from_wire(&value, "limit") }).transpose()?,
+        order_by: optional(dict, "order_by")?.map(|value| -> PyResult<_> { bithumb_order_direction_from_wire(&value) }).transpose()?,
+    })
+}
+
+pub(crate) fn bithumb_krw_withdrawals_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::BithumbKrwWithdrawalsRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "state" => &value.state,
+        "uuids" => &value.uuids,
+        "txids" => &value.txids,
+        "page" => value.page,
+        "limit" => value.limit,
+        "order_by" => value.order_by.map(bithumb_order_direction_to_wire).transpose()?,
+    )
+}
+
+pub(crate) fn bithumb_krw_deposits_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::BithumbKrwDepositsRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["state", "uuids", "txids", "page", "limit", "order_by"], "bithumb_krw_deposits_request")?;
+    Ok(maxt::BithumbKrwDepositsRequest {
+        state: optional(dict, "state")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        uuids: required(dict, "uuids")?.extract::<Vec<String>>()?,
+        txids: required(dict, "txids")?.extract::<Vec<String>>()?,
+        page: optional(dict, "page")?.map(|value| -> PyResult<_> { u32_from_wire(&value, "page") }).transpose()?,
+        limit: optional(dict, "limit")?.map(|value| -> PyResult<_> { u32_from_wire(&value, "limit") }).transpose()?,
+        order_by: optional(dict, "order_by")?.map(|value| -> PyResult<_> { bithumb_order_direction_from_wire(&value) }).transpose()?,
+    })
+}
+
+pub(crate) fn bithumb_krw_deposits_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::BithumbKrwDepositsRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "state" => &value.state,
+        "uuids" => &value.uuids,
+        "txids" => &value.txids,
+        "page" => value.page,
+        "limit" => value.limit,
+        "order_by" => value.order_by.map(bithumb_order_direction_to_wire).transpose()?,
+    )
+}
+
+pub(crate) fn bithumb_krw_transfer_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::BithumbKrwTransferRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["amount"], "bithumb_krw_transfer_request")?;
+    Ok(maxt::BithumbKrwTransferRequest {
+        amount: decimal_from_wire(&required(dict, "amount")?, "amount")?,
+    })
+}
+
+pub(crate) fn bithumb_krw_transfer_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::BithumbKrwTransferRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "amount" => decimal_to_wire(value.amount),
+    )
+}
+
+pub(crate) fn bithumb_krw_withdrawal_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::BithumbKrwWithdrawal> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["transfer_type", "uuid", "currency", "net_type", "txid", "state", "created_at", "done_at", "amount", "fee", "transaction_type"], "bithumb_krw_withdrawal")?;
+    Ok(maxt::BithumbKrwWithdrawal {
+        transfer_type: required(dict, "transfer_type")?.extract::<String>()?,
+        uuid: required(dict, "uuid")?.extract::<String>()?,
+        currency: required(dict, "currency")?.extract::<String>()?,
+        net_type: optional(dict, "net_type")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        txid: optional(dict, "txid")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        state: required(dict, "state")?.extract::<String>()?,
+        created_at: optional(dict, "created_at")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
+        done_at: optional(dict, "done_at")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
+        amount: decimal_from_wire(&required(dict, "amount")?, "amount")?,
+        fee: decimal_from_wire(&required(dict, "fee")?, "fee")?,
+        transaction_type: optional(dict, "transaction_type")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+    })
+}
+
+pub(crate) fn bithumb_krw_withdrawal_to_wire(
+    py: Python<'_>,
+    value: &maxt::BithumbKrwWithdrawal,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "transfer_type" => &value.transfer_type,
+        "uuid" => &value.uuid,
+        "currency" => &value.currency,
+        "net_type" => &value.net_type,
+        "txid" => &value.txid,
+        "state" => &value.state,
+        "created_at" => value.created_at.map(timestamp_to_wire),
+        "done_at" => value.done_at.map(timestamp_to_wire),
+        "amount" => decimal_to_wire(value.amount),
+        "fee" => decimal_to_wire(value.fee),
+        "transaction_type" => &value.transaction_type,
+    )
+}
+
+pub(crate) fn bithumb_krw_deposit_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::BithumbKrwDeposit> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["transfer_type", "uuid", "currency", "net_type", "txid", "state", "created_at", "done_at", "amount", "fee", "transaction_type"], "bithumb_krw_deposit")?;
+    Ok(maxt::BithumbKrwDeposit {
+        transfer_type: required(dict, "transfer_type")?.extract::<String>()?,
+        uuid: required(dict, "uuid")?.extract::<String>()?,
+        currency: required(dict, "currency")?.extract::<String>()?,
+        net_type: optional(dict, "net_type")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        txid: optional(dict, "txid")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        state: required(dict, "state")?.extract::<String>()?,
+        created_at: optional(dict, "created_at")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
+        done_at: optional(dict, "done_at")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
+        amount: decimal_from_wire(&required(dict, "amount")?, "amount")?,
+        fee: decimal_from_wire(&required(dict, "fee")?, "fee")?,
+        transaction_type: optional(dict, "transaction_type")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+    })
+}
+
+pub(crate) fn bithumb_krw_deposit_to_wire(
+    py: Python<'_>,
+    value: &maxt::BithumbKrwDeposit,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "transfer_type" => &value.transfer_type,
+        "uuid" => &value.uuid,
+        "currency" => &value.currency,
+        "net_type" => &value.net_type,
+        "txid" => &value.txid,
+        "state" => &value.state,
+        "created_at" => value.created_at.map(timestamp_to_wire),
+        "done_at" => value.done_at.map(timestamp_to_wire),
+        "amount" => decimal_to_wire(value.amount),
+        "fee" => decimal_to_wire(value.fee),
+        "transaction_type" => &value.transaction_type,
     )
 }
 

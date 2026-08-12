@@ -91,6 +91,71 @@ fn hyperliquid_asset_context_to_wire(
     )
 }
 
+fn upbit_travel_rule_vasp_to_wire(
+    py: Python<'_>,
+    value: &maxt::adapters::UpbitTravelRuleVasp,
+) -> PyResult<Py<PyAny>> {
+    provider_dict!(
+        py,
+        "vasp_name" => &value.vasp_name,
+        "vasp_uuid" => &value.vasp_uuid,
+        "depositable" => value.depositable,
+        "withdrawable" => value.withdrawable,
+    )
+}
+
+fn upbit_travel_rule_verification_to_wire(
+    py: Python<'_>,
+    value: &maxt::adapters::UpbitTravelRuleVerification,
+) -> PyResult<Py<PyAny>> {
+    provider_dict!(
+        py,
+        "deposit_uuid" => &value.deposit_uuid,
+        "deposit_state" => &value.deposit_state,
+        "verification_result" => &value.verification_result,
+    )
+}
+
+fn bithumb_krw_withdrawal_to_wire(
+    py: Python<'_>,
+    value: &maxt::adapters::BithumbKrwWithdrawal,
+) -> PyResult<Py<PyAny>> {
+    provider_dict!(
+        py,
+        "transfer_type" => &value.transfer_type,
+        "uuid" => &value.uuid,
+        "currency" => &value.currency,
+        "net_type" => &value.net_type,
+        "txid" => &value.txid,
+        "state" => &value.state,
+        "created_at" => value.created_at.map(timestamp_to_wire),
+        "done_at" => value.done_at.map(timestamp_to_wire),
+        "amount" => decimal_to_wire(value.amount),
+        "fee" => decimal_to_wire(value.fee),
+        "transaction_type" => &value.transaction_type,
+    )
+}
+
+fn bithumb_krw_deposit_to_wire(
+    py: Python<'_>,
+    value: &maxt::adapters::BithumbKrwDeposit,
+) -> PyResult<Py<PyAny>> {
+    provider_dict!(
+        py,
+        "transfer_type" => &value.transfer_type,
+        "uuid" => &value.uuid,
+        "currency" => &value.currency,
+        "net_type" => &value.net_type,
+        "txid" => &value.txid,
+        "state" => &value.state,
+        "created_at" => value.created_at.map(timestamp_to_wire),
+        "done_at" => value.done_at.map(timestamp_to_wire),
+        "amount" => decimal_to_wire(value.amount),
+        "fee" => decimal_to_wire(value.fee),
+        "transaction_type" => &value.transaction_type,
+    )
+}
+
 fn upbit_market_event_to_wire(
     py: Python<'_>,
     value: &(Market, UpbitMarketEvent),

@@ -54,13 +54,14 @@ pub use adapters::{
     BinanceAggregateTrade, BinanceAggregateTradesRequest, BinanceMarkPrice, BinanceOpenInterest,
     BithumbApiKey, BithumbAssetFee, BithumbBatchOrder, BithumbBatchOrderFailure,
     BithumbBatchOrderOutcome, BithumbBatchOrdersRequest, BithumbBatchOrdersResult,
-    BithumbNetworkFee, BithumbNotice, BithumbOrderDirection, BithumbPendingOrderState,
-    BithumbPendingOrdersRequest, BithumbTwapOrder, BithumbTwapOrderDirection,
-    BithumbTwapOrderRequest, BithumbTwapOrdersRequest, BithumbTwapState, HyperliquidMidPrice,
-    UpbitBatchCancelRequest, UpbitBatchCancelScope, UpbitCancelAndNewOrder,
+    BithumbKrwDeposit, BithumbKrwDepositsRequest, BithumbKrwTransferRequest, BithumbKrwWithdrawal,
+    BithumbKrwWithdrawalsRequest, BithumbNetworkFee, BithumbNotice, BithumbOrderDirection,
+    BithumbPendingOrderState, BithumbPendingOrdersRequest, BithumbTwapOrder,
+    BithumbTwapOrderDirection, BithumbTwapOrderRequest, BithumbTwapOrdersRequest, BithumbTwapState,
+    HyperliquidMidPrice, UpbitBatchCancelRequest, UpbitBatchCancelScope, UpbitCancelAndNewOrder,
     UpbitCancelAndNewOrderRequest, UpbitCancelAndNewOrderResult, UpbitDepositInfo,
     UpbitOrderBookInstrument, UpbitOrderDirection, UpbitOrderReference, UpbitOrderVolume,
-    UpbitSmpType, UpbitYearCandle,
+    UpbitSmpType, UpbitTravelRuleVasp, UpbitTravelRuleVerification, UpbitYearCandle,
 };
 pub use client::Client;
 pub use error::{Error, ExchangeErrorKind, Result, TransferErrorKind};

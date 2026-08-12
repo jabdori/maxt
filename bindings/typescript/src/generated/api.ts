@@ -7,7 +7,7 @@ import { AccountStream, MarketStream, StreamError } from "../stream.js";
 import * as Codec from "./codec.js";
 import type * as Wire from "./contract.js";
 
-export const NATIVE_API_VERSION = 20 as const;
+export const NATIVE_API_VERSION = 21 as const;
 
 export type NativeOutcome<T> =
   | { readonly ok: true; readonly value: T }
@@ -73,6 +73,9 @@ export interface RawNativeUpbitHandle {
   marketEvents(): Promise<unknown>;
   testOrder(request: string): Promise<unknown>;
   depositInfo(asset: string, network: string): Promise<unknown>;
+  travelRuleVasps(): Promise<unknown>;
+  verifyTravelRuleByUuid(depositUuid: string, vaspUuid: string): Promise<unknown>;
+  verifyTravelRuleByTxid(txid: string, vaspUuid: string, currency: string, netType: string): Promise<unknown>;
   batchCancelOpenOrders(request: string): Promise<unknown>;
   cancelAndNewOrder(request: string): Promise<unknown>;
 }
@@ -84,6 +87,10 @@ export interface RawNativeBithumbHandle {
   notices(count: string): Promise<unknown>;
   transferFees(currency: string): Promise<unknown>;
   apiKeys(): Promise<unknown>;
+  krwWithdrawals(request: string): Promise<unknown>;
+  withdrawKrw(request: string): Promise<unknown>;
+  krwDeposits(request: string): Promise<unknown>;
+  depositKrw(request: string): Promise<unknown>;
   pendingOrders(request: string): Promise<unknown>;
   batchOrders(request: string): Promise<unknown>;
   twapOrders(request: string): Promise<unknown>;
@@ -204,6 +211,9 @@ export interface NativeUpbitHandle {
   marketEvents(): Promise<NativeOutcome<readonly (readonly [Wire.MarketWire, Wire.UpbitMarketEventWire])[]>>;
   testOrder(request: Wire.OrderRequestWire): Promise<NativeOutcome<Wire.OrderWire>>;
   depositInfo(asset: string, network: string): Promise<NativeOutcome<Wire.UpbitDepositInfoWire>>;
+  travelRuleVasps(): Promise<NativeOutcome<readonly Wire.UpbitTravelRuleVaspWire[]>>;
+  verifyTravelRuleByUuid(depositUuid: string, vaspUuid: string): Promise<NativeOutcome<Wire.UpbitTravelRuleVerificationWire>>;
+  verifyTravelRuleByTxid(txid: string, vaspUuid: string, currency: string, netType: string): Promise<NativeOutcome<Wire.UpbitTravelRuleVerificationWire>>;
   batchCancelOpenOrders(request: Wire.UpbitBatchCancelRequestWire): Promise<NativeOutcome<Wire.CancelOrdersResultWire>>;
   cancelAndNewOrder(request: Wire.UpbitCancelAndNewOrderRequestWire): Promise<NativeOutcome<Wire.UpbitCancelAndNewOrderResultWire>>;
 }
@@ -215,6 +225,10 @@ export interface NativeBithumbHandle {
   notices(count: number | null): Promise<NativeOutcome<readonly Wire.BithumbNoticeWire[]>>;
   transferFees(currency: string): Promise<NativeOutcome<readonly Wire.BithumbAssetFeeWire[]>>;
   apiKeys(): Promise<NativeOutcome<readonly Wire.BithumbApiKeyWire[]>>;
+  krwWithdrawals(request: Wire.BithumbKrwWithdrawalsRequestWire): Promise<NativeOutcome<readonly Wire.BithumbKrwWithdrawalWire[]>>;
+  withdrawKrw(request: Wire.BithumbKrwTransferRequestWire): Promise<NativeOutcome<Wire.BithumbKrwWithdrawalWire>>;
+  krwDeposits(request: Wire.BithumbKrwDepositsRequestWire): Promise<NativeOutcome<readonly Wire.BithumbKrwDepositWire[]>>;
+  depositKrw(request: Wire.BithumbKrwTransferRequestWire): Promise<NativeOutcome<Wire.BithumbKrwDepositWire>>;
   pendingOrders(request: Wire.BithumbPendingOrdersRequestWire): Promise<NativeOutcome<Wire.PageWire<Wire.OrderWire>>>;
   batchOrders(request: Wire.BithumbBatchOrdersRequestWire): Promise<NativeOutcome<Wire.BithumbBatchOrdersResultWire>>;
   twapOrders(request: Wire.BithumbTwapOrdersRequestWire): Promise<NativeOutcome<Wire.PageWire<Wire.BithumbTwapOrderWire>>>;
@@ -313,6 +327,9 @@ export function createJsonBackend(raw: RawNativeModule): NativeBackend {
         marketEvents: () => handle.marketEvents() as Promise<NativeOutcome<readonly (readonly [Wire.MarketWire, Wire.UpbitMarketEventWire])[]>>,
         testOrder: (request: Wire.OrderRequestWire) => handle.testOrder(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.OrderWire>>,
         depositInfo: (asset: string, network: string) => handle.depositInfo(Codec.stringifyWire(asset), Codec.stringifyWire(network)) as Promise<NativeOutcome<Wire.UpbitDepositInfoWire>>,
+        travelRuleVasps: () => handle.travelRuleVasps() as Promise<NativeOutcome<readonly Wire.UpbitTravelRuleVaspWire[]>>,
+        verifyTravelRuleByUuid: (depositUuid: string, vaspUuid: string) => handle.verifyTravelRuleByUuid(Codec.stringifyWire(depositUuid), Codec.stringifyWire(vaspUuid)) as Promise<NativeOutcome<Wire.UpbitTravelRuleVerificationWire>>,
+        verifyTravelRuleByTxid: (txid: string, vaspUuid: string, currency: string, netType: string) => handle.verifyTravelRuleByTxid(Codec.stringifyWire(txid), Codec.stringifyWire(vaspUuid), Codec.stringifyWire(currency), Codec.stringifyWire(netType)) as Promise<NativeOutcome<Wire.UpbitTravelRuleVerificationWire>>,
         batchCancelOpenOrders: (request: Wire.UpbitBatchCancelRequestWire) => handle.batchCancelOpenOrders(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.CancelOrdersResultWire>>,
         cancelAndNewOrder: (request: Wire.UpbitCancelAndNewOrderRequestWire) => handle.cancelAndNewOrder(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.UpbitCancelAndNewOrderResultWire>>,
       };
@@ -326,6 +343,10 @@ export function createJsonBackend(raw: RawNativeModule): NativeBackend {
         notices: (count: number | null) => handle.notices(Codec.stringifyWire(count)) as Promise<NativeOutcome<readonly Wire.BithumbNoticeWire[]>>,
         transferFees: (currency: string) => handle.transferFees(Codec.stringifyWire(currency)) as Promise<NativeOutcome<readonly Wire.BithumbAssetFeeWire[]>>,
         apiKeys: () => handle.apiKeys() as Promise<NativeOutcome<readonly Wire.BithumbApiKeyWire[]>>,
+        krwWithdrawals: (request: Wire.BithumbKrwWithdrawalsRequestWire) => handle.krwWithdrawals(Codec.stringifyWire(request)) as Promise<NativeOutcome<readonly Wire.BithumbKrwWithdrawalWire[]>>,
+        withdrawKrw: (request: Wire.BithumbKrwTransferRequestWire) => handle.withdrawKrw(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.BithumbKrwWithdrawalWire>>,
+        krwDeposits: (request: Wire.BithumbKrwDepositsRequestWire) => handle.krwDeposits(Codec.stringifyWire(request)) as Promise<NativeOutcome<readonly Wire.BithumbKrwDepositWire[]>>,
+        depositKrw: (request: Wire.BithumbKrwTransferRequestWire) => handle.depositKrw(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.BithumbKrwDepositWire>>,
         pendingOrders: (request: Wire.BithumbPendingOrdersRequestWire) => handle.pendingOrders(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.PageWire<Wire.OrderWire>>>,
         batchOrders: (request: Wire.BithumbBatchOrdersRequestWire) => handle.batchOrders(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.BithumbBatchOrdersResultWire>>,
         twapOrders: (request: Wire.BithumbTwapOrdersRequestWire) => handle.twapOrders(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.PageWire<Wire.BithumbTwapOrderWire>>>,
@@ -1043,6 +1064,12 @@ export class UpbitAdapter extends NativeAdapter {
   /** Validates an Upbit order without creating it. The returned dry-run ID cannot be queried or cancelled, and its status is not a live order. */
   async testOrder(request: Model.OrderRequest): Promise<Model.Order> { await ensureInitialized(); return Codec.orderFromWire(Codec.unwrapOutcome(await this.#provider.testOrder(Codec.orderRequestToWire(request)))); }
   async depositInfo(asset: string, network: Model.Network): Promise<Model.UpbitDepositInfo> { await ensureInitialized(); return Codec.upbitDepositInfoFromWire(Codec.unwrapOutcome(await this.#provider.depositInfo(asset, network.id))); }
+  /** Lists VASPs available for Upbit Korea or Singapore Travel Rule verification. */
+  async travelRuleVasps(): Promise<readonly Model.UpbitTravelRuleVasp[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.travelRuleVasps()).map(Codec.upbitTravelRuleVaspFromWire); }
+  /** Submits an Upbit Korea or Singapore Travel Rule verification request. This is a financial write. */
+  async verifyTravelRuleByUuid(depositUuid: string, vaspUuid: string): Promise<Model.UpbitTravelRuleVerification> { await ensureInitialized(); return Codec.upbitTravelRuleVerificationFromWire(Codec.unwrapOutcome(await this.#provider.verifyTravelRuleByUuid(depositUuid, vaspUuid))); }
+  /** Submits an Upbit Korea or Singapore Travel Rule verification request. This is a financial write. */
+  async verifyTravelRuleByTxid(txid: string, vaspUuid: string, currency: string, netType: string): Promise<Model.UpbitTravelRuleVerification> { await ensureInitialized(); return Codec.upbitTravelRuleVerificationFromWire(Codec.unwrapOutcome(await this.#provider.verifyTravelRuleByTxid(txid, vaspUuid, currency, netType))); }
   async batchCancelOpenOrders(request: Model.UpbitBatchCancelRequest): Promise<Model.CancelOrdersResult> { await ensureInitialized(); return Codec.cancelOrdersResultFromWire(Codec.unwrapOutcome(await this.#provider.batchCancelOpenOrders(Codec.upbitBatchCancelRequestToWire(request)))); }
   async cancelAndNewOrder(request: Model.UpbitCancelAndNewOrderRequest): Promise<Model.UpbitCancelAndNewOrderResult> { await ensureInitialized(); return Codec.upbitCancelAndNewOrderResultFromWire(Codec.unwrapOutcome(await this.#provider.cancelAndNewOrder(Codec.upbitCancelAndNewOrderRequestToWire(request)))); }
 }
@@ -1058,6 +1085,12 @@ export class BithumbAdapter extends NativeAdapter {
   async notices(count: number | null = null): Promise<readonly Model.BithumbNotice[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.notices(Codec.checkedOptionalU32(count, "count"))).map(Codec.bithumbNoticeFromWire); }
   async transferFees(currency: string): Promise<readonly Model.BithumbAssetFee[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.transferFees(currency)).map(Codec.bithumbAssetFeeFromWire); }
   async apiKeys(): Promise<readonly Model.BithumbApiKey[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.apiKeys()).map(Codec.bithumbApiKeyFromWire); }
+  async krwWithdrawals(request: Model.BithumbKrwWithdrawalsRequest): Promise<readonly Model.BithumbKrwWithdrawal[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.krwWithdrawals(Codec.bithumbKrwWithdrawalsRequestToWire(request))).map(Codec.bithumbKrwWithdrawalFromWire); }
+  /** Submits a Bithumb KRW transfer request. This is a financial write. */
+  async withdrawKrw(request: Model.BithumbKrwTransferRequest): Promise<Model.BithumbKrwWithdrawal> { await ensureInitialized(); return Codec.bithumbKrwWithdrawalFromWire(Codec.unwrapOutcome(await this.#provider.withdrawKrw(Codec.bithumbKrwTransferRequestToWire(request)))); }
+  async krwDeposits(request: Model.BithumbKrwDepositsRequest): Promise<readonly Model.BithumbKrwDeposit[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.krwDeposits(Codec.bithumbKrwDepositsRequestToWire(request))).map(Codec.bithumbKrwDepositFromWire); }
+  /** Submits a Bithumb KRW transfer request. This is a financial write. */
+  async depositKrw(request: Model.BithumbKrwTransferRequest): Promise<Model.BithumbKrwDeposit> { await ensureInitialized(); return Codec.bithumbKrwDepositFromWire(Codec.unwrapOutcome(await this.#provider.depositKrw(Codec.bithumbKrwTransferRequestToWire(request)))); }
   async pendingOrders(request: Model.BithumbPendingOrdersRequest): Promise<Model.Page<Model.Order>> { await ensureInitialized(); return Codec.pageFromWire(Codec.unwrapOutcome(await this.#provider.pendingOrders(Codec.bithumbPendingOrdersRequestToWire(request))), Codec.orderFromWire); }
   async batchOrders(request: Model.BithumbBatchOrdersRequest): Promise<Model.BithumbBatchOrdersResult> { await ensureInitialized(); return Codec.bithumbBatchOrdersResultFromWire(Codec.unwrapOutcome(await this.#provider.batchOrders(Codec.bithumbBatchOrdersRequestToWire(request)))); }
   async twapOrders(request: Model.BithumbTwapOrdersRequest): Promise<Model.Page<Model.BithumbTwapOrder>> { await ensureInitialized(); return Codec.pageFromWire(Codec.unwrapOutcome(await this.#provider.twapOrders(Codec.bithumbTwapOrdersRequestToWire(request))), Codec.bithumbTwapOrderFromWire); }

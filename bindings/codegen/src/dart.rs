@@ -131,7 +131,10 @@ fn render_dart_model_record(name: &str, fields: &[Field]) -> String {
         let public = snake_to_lower_camel(field.name);
         if matches!(
             (name, field.name),
-            ("OrderHistoryRequest", "statuses") | ("BithumbTwapOrdersRequest", "uuids")
+            ("OrderHistoryRequest", "statuses")
+                | ("BithumbTwapOrdersRequest", "uuids")
+                | ("BithumbKrwWithdrawalsRequest", "uuids" | "txids")
+                | ("BithumbKrwDepositsRequest", "uuids" | "txids")
         ) {
             return format!("this.{public} = const []");
         }
@@ -1423,6 +1426,15 @@ fn provider_method_source(exchange: &str, method: &str) -> &'static str {
         ("upbit", "deposit_info") => {
             "  /// Fetches Upbit deposit availability for one asset and network.\n  ///\n  /// Upbit may delay this metadata by several minutes, so it is not a\n  /// real-time service-status signal.\n  Future<UpbitDepositInfo> depositInfo(String asset, Network network) =>\n      _nativeFuture(\n        () => _handle.upbitDepositInfo(\n          asset: asset,\n          network: _networkToWire(network),\n        ),\n      ).then(_upbitDepositInfoFromWire);\n"
         }
+        ("upbit", "travel_rule_vasps") => {
+            "  /// Lists VASPs available for Upbit Korea or Singapore Travel Rule verification.\n  Future<List<UpbitTravelRuleVasp>> travelRuleVasps() => _nativeFuture(\n    _handle.upbitTravelRuleVasps,\n  ).then(\n    (values) => values\n        .map(_upbitTravelRuleVaspFromWire)\n        .toList(growable: false),\n  );\n"
+        }
+        ("upbit", "verify_travel_rule_by_uuid") => {
+            "  /// Requests Korea or Singapore Travel Rule verification for a deposit UUID.\n  ///\n  /// This is a financial write; Upbit limits repeated verification for one\n  /// deposit.\n  Future<UpbitTravelRuleVerification> verifyTravelRuleByUuid(\n    String depositUuid,\n    String vaspUuid,\n  ) => _nativeFuture(\n    () => _handle.upbitVerifyTravelRuleByUuid(\n      depositUuid: depositUuid,\n      vaspUuid: vaspUuid,\n    ),\n  ).then(_upbitTravelRuleVerificationFromWire);\n"
+        }
+        ("upbit", "verify_travel_rule_by_txid") => {
+            "  /// Requests Korea or Singapore Travel Rule verification for a transaction ID.\n  ///\n  /// This is a financial write; Upbit limits repeated verification for one\n  /// deposit.\n  Future<UpbitTravelRuleVerification> verifyTravelRuleByTxid(\n    String txid,\n    String vaspUuid,\n    String currency,\n    String netType,\n  ) => _nativeFuture(\n    () => _handle.upbitVerifyTravelRuleByTxid(\n      txid: txid,\n      vaspUuid: vaspUuid,\n      currency: currency,\n      netType: netType,\n    ),\n  ).then(_upbitTravelRuleVerificationFromWire);\n"
+        }
         ("upbit", "batch_cancel_open_orders") => {
             "  /// Cancels matching Upbit wait orders in one conditional request.\n  ///\n  /// [UpbitBatchCancelScope.all] selects every eligible market; Upbit still\n  /// applies the request count (default 20, maximum 300). The result separates\n  /// completed and failed cancels.\n  Future<CancelOrdersResult> batchCancelOpenOrders(\n    UpbitBatchCancelRequest request,\n  ) => _nativeFuture(\n    () => _handle.upbitBatchCancelOpenOrders(\n      request: _upbitBatchCancelRequestToWire(request),\n    ),\n  ).then(_cancelOrdersResultFromWire);\n"
         }
@@ -1443,6 +1455,18 @@ fn provider_method_source(exchange: &str, method: &str) -> &'static str {
         }
         ("bithumb", "api_keys") => {
             "  Future<List<BithumbApiKey>> apiKeys() =>\n      _nativeFuture(_handle.bithumbApiKeys).then(\n        (values) => values.map(_bithumbApiKeyFromWire).toList(growable: false),\n      );\n"
+        }
+        ("bithumb", "krw_withdrawals") => {
+            "  Future<List<BithumbKrwWithdrawal>> krwWithdrawals(\n    BithumbKrwWithdrawalsRequest request,\n  ) => _nativeFuture(\n    () => _handle.bithumbKrwWithdrawals(\n      request: _bithumbKrwWithdrawalsRequestToWire(request),\n    ),\n  ).then(\n    (values) => values\n        .map(_bithumbKrwWithdrawalFromWire)\n        .toList(growable: false),\n  );\n"
+        }
+        ("bithumb", "withdraw_krw") => {
+            "  /// Requests a KRW withdrawal. This is a financial write.\n  Future<BithumbKrwWithdrawal> withdrawKrw(\n    BithumbKrwTransferRequest request,\n  ) => _nativeFuture(\n    () => _handle.bithumbWithdrawKrw(\n      request: _bithumbKrwTransferRequestToWire(request),\n    ),\n  ).then(_bithumbKrwWithdrawalFromWire);\n"
+        }
+        ("bithumb", "krw_deposits") => {
+            "  Future<List<BithumbKrwDeposit>> krwDeposits(\n    BithumbKrwDepositsRequest request,\n  ) => _nativeFuture(\n    () => _handle.bithumbKrwDeposits(\n      request: _bithumbKrwDepositsRequestToWire(request),\n    ),\n  ).then(\n    (values) => values.map(_bithumbKrwDepositFromWire).toList(growable: false),\n  );\n"
+        }
+        ("bithumb", "deposit_krw") => {
+            "  /// Requests a KRW deposit. This is a financial write.\n  Future<BithumbKrwDeposit> depositKrw(\n    BithumbKrwTransferRequest request,\n  ) => _nativeFuture(\n    () => _handle.bithumbDepositKrw(\n      request: _bithumbKrwTransferRequestToWire(request),\n    ),\n  ).then(_bithumbKrwDepositFromWire);\n"
         }
         ("bithumb", "pending_orders") => {
             "  Future<Page<Order>> pendingOrders(BithumbPendingOrdersRequest request) =>\n      _nativeFuture(\n        () => _handle.bithumbPendingOrders(\n          request: _bithumbPendingOrdersRequestToWire(request),\n        ),\n      ).then(_orderPageFromWire);\n"

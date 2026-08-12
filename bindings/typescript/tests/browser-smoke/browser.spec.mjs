@@ -192,6 +192,20 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
     } catch (error) {
       depositInfoError = { name: error.constructor.name };
     }
+    let travelRuleUnsupportedError;
+    try {
+      await new maxt.UpbitAdapter({
+        region: maxt.UpbitRegion.Indonesia,
+      }).travelRuleVasps();
+    } catch (error) {
+      travelRuleUnsupportedError = { name: error.constructor.name };
+    }
+    let travelRuleAuthError;
+    try {
+      await upbit.travelRuleVasps();
+    } catch (error) {
+      travelRuleAuthError = { name: error.constructor.name };
+    }
     let batchCancelError;
     try {
       await upbit.batchCancelOpenOrders(
@@ -233,6 +247,12 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
     } catch (error) {
       pendingOrdersError = { name: error.constructor.name };
     }
+    let krwWithdrawalsError;
+    try {
+      await bithumb.krwWithdrawals(new maxt.BithumbKrwWithdrawalsRequest());
+    } catch (error) {
+      krwWithdrawalsError = { name: error.constructor.name };
+    }
     return {
       exchange: client.exchange.id,
       markets: (await client.markets(maxt.MarketKind.Spot)).length,
@@ -259,11 +279,14 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
       aggregationError,
       testOrderError,
       depositInfoError,
+      travelRuleUnsupportedError,
+      travelRuleAuthError,
       batchCancelError,
       noticeErrors,
       feeError,
       apiKeysError,
       pendingOrdersError,
+      krwWithdrawalsError,
     };
   });
 
@@ -293,6 +316,8 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
     aggregationError: { name: "InvalidRequestError", field: "level" },
     testOrderError: { name: "AuthError" },
     depositInfoError: { name: "AuthError" },
+    travelRuleUnsupportedError: { name: "UnsupportedError" },
+    travelRuleAuthError: { name: "AuthError" },
     batchCancelError: { name: "AuthError" },
     noticeErrors: [
       { name: "InvalidRequestError", field: "count" },
@@ -301,5 +326,6 @@ test("browser export initializes WebAssembly and bridges a custom Adapter", asyn
     feeError: { name: "InvalidRequestError", field: "currency" },
     apiKeysError: { name: "AuthError" },
     pendingOrdersError: { name: "AuthError" },
+    krwWithdrawalsError: { name: "AuthError" },
   });
 });

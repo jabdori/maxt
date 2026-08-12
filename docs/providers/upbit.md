@@ -106,6 +106,8 @@ Access the following provider-specific methods through `Client::adapter()`.
 | `market_events()` | Investment warning and caution criteria by market | `market` |
 | `test_order(request)` | Validates an order without creating it; requires the order-placement permission; the returned `Order` is dry-run only, so its ID cannot be queried or cancelled and its status is not a live order | `order-test` |
 | `deposit_info(asset, network)` | Requires `View Deposits`; returns availability, reason, minimum amount, confirmation count, and decimal precision. The response network is nullable and is preserved as returned. This metadata may be delayed by several minutes | `default` |
+| `travel_rule_vasps()` | Requires `View Deposits`; lists VASPs available for Travel Rule verification in Korea or Singapore. Indonesia and Thailand return `Error::Unsupported` before authentication or network I/O | `default` |
+| `verify_travel_rule_by_uuid(...)`, `verify_travel_rule_by_txid(...)` | Korea or Singapore only; financial writes that request account-owner verification. Upbit enforces the per-deposit repeat limit. Fixture-verified only; maxt does not submit a live verification | `default` |
 | `batch_cancel_open_orders(request)` | Requires order-placement permission. `UpbitBatchCancelScope::All` explicitly selects every eligible market, not an unbounded number of orders; Upbit applies the request count (default 20, maximum 300). Quote-currency and pair scopes are alternatives, with up to 20 excluded pairs. The result keeps both completed and failed cancellations. Fixture-verified only; no live cancellation is run by maxt | `order-cancel-all` |
 | `cancel_and_new_order(request)` | Requires order-placement permission; JSON `POST /v1/orders/cancel_and_new` only. The replacement keeps the original market and side, and can change order type, size, price, TIF, and SMP. `post_only` cannot be combined with SMP. A successful HTTP response does not guarantee a new order: if the previous order fills before cancellation completes, `new_order_uuid` is absent. Fixture-verified only; no live order is submitted by maxt | `order` |
 
@@ -147,6 +149,8 @@ satisfy `Error::is_rate_limited() == true`.
 - [Batch cancel orders](https://global-docs.upbit.com/reference/batch-cancel-orders)
 - [Cancel and new order](https://global-docs.upbit.com/reference/cancel-and-new-order)
 - [Deposit availability](https://global-docs.upbit.com/reference/available-deposit-information)
+- [Korea Travel Rule VASPs](https://docs.upbit.com/kr/reference/list-travelrule-vasps)
+- [Singapore Travel Rule VASPs](https://global-docs.upbit.com/reference/list-travelrule-vasps)
 - [Get order](https://global-docs.upbit.com/reference/get-order)
 - [Closed orders](https://global-docs.upbit.com/reference/list-closed-orders)
 

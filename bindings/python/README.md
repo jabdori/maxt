@@ -10,7 +10,7 @@ native API.
 ## Install
 
 GIL-enabled CPython 3.9 or newer is required. PyPy and free-threaded CPython
-are not supported in 0.1.0. Prebuilt wheels cover glibc 2.17 or newer Linux
+are not currently supported. Prebuilt wheels cover glibc 2.17 or newer Linux
 (x64 and ARM64),
 macOS (x64 and ARM64), and Windows (x64). Other platforms build from the source
 distribution and require Rust and a native compiler toolchain.
@@ -64,8 +64,8 @@ Exchange-specific methods remain available through `client.adapter`.
 
 | Adapter | Construction | Additional methods |
 | --- | --- | --- |
-| `UpbitAdapter` | `UpbitAdapter()` or `UpbitAdapter(region=...)` | `order_books()`, `order_books_at_level()`, `tickers()`, `tickers_by_quote()`, `year_candles()`, `orderbook_instruments()`, `market_events()`; authenticated: `test_order()`, `deposit_info()`, `batch_cancel_open_orders()`, `cancel_and_new_order()` |
-| `BithumbAdapter` | `BithumbAdapter()` | `market_warnings()`, `market_alerts()`, `notices()`, `transfer_fees()`; authenticated: `api_keys()`, `pending_orders()`, `batch_orders()`, `twap_orders()`, `create_twap_order()`, `cancel_twap_order()` |
+| `UpbitAdapter` | `UpbitAdapter()` or `UpbitAdapter(region=...)` | `order_books()`, `order_books_at_level()`, `tickers()`, `tickers_by_quote()`, `year_candles()`, `orderbook_instruments()`, `market_events()`; authenticated: `test_order()`, `deposit_info()`, `travel_rule_vasps()`, `verify_travel_rule_by_uuid()`, `verify_travel_rule_by_txid()`, `batch_cancel_open_orders()`, `cancel_and_new_order()` |
+| `BithumbAdapter` | `BithumbAdapter()` | `market_warnings()`, `market_alerts()`, `notices()`, `transfer_fees()`; authenticated: `api_keys()`, `krw_withdrawals()`, `withdraw_krw()`, `krw_deposits()`, `deposit_krw()`, `pending_orders()`, `batch_orders()`, `twap_orders()`, `create_twap_order()`, `cancel_twap_order()` |
 | `BinanceAdapter` | `BinanceAdapter.spot()` | `spot_symbol_filters()`; authenticated: `spot_order()` |
 | `BinanceAdapter` | `BinanceAdapter.usd_m_futures()` | Public: `mark_price()`, `mark_prices()`, `open_interest()`, `aggregate_trades()`; authenticated: `usd_m_create_listen_key()`, `usd_m_keepalive_listen_key()`, `usd_m_close_listen_key()` |
 | `HyperliquidAdapter` | `HyperliquidAdapter()` or `HyperliquidAdapter.testnet()` | Public: `all_mids()`; `asset_context()`, `non_funding_ledger()` |
@@ -77,6 +77,11 @@ its status as a live order.
 `UpbitAdapter.deposit_info(asset, network)` returns the provider's deposit
 availability, minimum amount, confirmation, and precision metadata. Upbit may
 delay this information by several minutes; it is not a real-time service-status signal.
+
+`UpbitAdapter.travel_rule_vasps()` lists VASPs for Travel Rule verification.
+The verification methods are financial writes and are available only in Korea
+and Singapore; Indonesia and Thailand fail before a network request. These
+paths are fixture-verified only.
 
 `UpbitAdapter.batch_cancel_open_orders(request)` is a financial write.
 `UpbitBatchCancelScope.all()` explicitly selects every eligible market; Upbit
@@ -98,6 +103,11 @@ items preserve `time_in_force` and `stp_type`; rejected items preserve returned
 query for Bithumb's KRW markets. `create_twap_order()` and
 `cancel_twap_order()` are financial writes; do not call them in a read-only
 verification.
+
+`BithumbAdapter.krw_withdrawals()` and `krw_deposits()` read KRW transfer
+history. `withdraw_krw()` and `deposit_krw()` are financial writes. Bithumb
+requires its registered account and Kakao second-factor flow; maxt neither
+accepts nor stores those credentials. These paths are fixture-verified only.
 
 ```python
 from maxt import (

@@ -530,6 +530,32 @@ final class UpbitDepositInfo {
   final BigInt decimalPrecision;
 }
 
+final class UpbitTravelRuleVasp {
+  const UpbitTravelRuleVasp({
+    required this.vaspName,
+    required this.vaspUuid,
+    required this.depositable,
+    required this.withdrawable,
+  });
+
+  final String vaspName;
+  final String vaspUuid;
+  final bool depositable;
+  final bool withdrawable;
+}
+
+final class UpbitTravelRuleVerification {
+  const UpbitTravelRuleVerification({
+    required this.depositUuid,
+    required this.depositState,
+    required this.verificationResult,
+  });
+
+  final String depositUuid;
+  final String depositState;
+  final String verificationResult;
+}
+
 sealed class UpbitBatchCancelScope {
   const UpbitBatchCancelScope();
 
@@ -725,6 +751,104 @@ final class BithumbApiKey {
 
   final String accessKey;
   final Timestamp expiresAt;
+}
+
+final class BithumbKrwWithdrawalsRequest {
+  const BithumbKrwWithdrawalsRequest({
+    this.state,
+    this.uuids = const [],
+    this.txids = const [],
+    this.page,
+    this.limit,
+    this.orderBy,
+  });
+
+  final String? state;
+  final List<String> uuids;
+  final List<String> txids;
+  final int? page;
+  final int? limit;
+  final BithumbOrderDirection? orderBy;
+}
+
+final class BithumbKrwDepositsRequest {
+  const BithumbKrwDepositsRequest({
+    this.state,
+    this.uuids = const [],
+    this.txids = const [],
+    this.page,
+    this.limit,
+    this.orderBy,
+  });
+
+  final String? state;
+  final List<String> uuids;
+  final List<String> txids;
+  final int? page;
+  final int? limit;
+  final BithumbOrderDirection? orderBy;
+}
+
+final class BithumbKrwTransferRequest {
+  const BithumbKrwTransferRequest({required this.amount});
+
+  final Decimal amount;
+}
+
+final class BithumbKrwWithdrawal {
+  const BithumbKrwWithdrawal({
+    required this.transferType,
+    required this.uuid,
+    required this.currency,
+    this.netType,
+    this.txid,
+    required this.state,
+    this.createdAt,
+    this.doneAt,
+    required this.amount,
+    required this.fee,
+    this.transactionType,
+  });
+
+  final String transferType;
+  final String uuid;
+  final String currency;
+  final String? netType;
+  final String? txid;
+  final String state;
+  final Timestamp? createdAt;
+  final Timestamp? doneAt;
+  final Decimal amount;
+  final Decimal fee;
+  final String? transactionType;
+}
+
+final class BithumbKrwDeposit {
+  const BithumbKrwDeposit({
+    required this.transferType,
+    required this.uuid,
+    required this.currency,
+    this.netType,
+    this.txid,
+    required this.state,
+    this.createdAt,
+    this.doneAt,
+    required this.amount,
+    required this.fee,
+    this.transactionType,
+  });
+
+  final String transferType;
+  final String uuid;
+  final String currency;
+  final String? netType;
+  final String? txid;
+  final String state;
+  final Timestamp? createdAt;
+  final Timestamp? doneAt;
+  final Decimal amount;
+  final Decimal fee;
+  final String? transactionType;
 }
 
 final class BithumbPendingOrdersRequest {

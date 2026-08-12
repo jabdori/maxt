@@ -99,6 +99,8 @@ code로 보존합니다.
 | `notices(count)` | `GET /v1/notices`; `count: 1..=20`; `None → 거래소 기본값 5`; 최신순; `published_at`, `modified_at`을 KST에서 UTC로 변환 |
 | `transfer_fees(currency)` | `GET /v2/fee/inout/{currency}`; 자산 코드 또는 `ALL`; 네트워크별 입금 수수료·최소 입금액과 고정 또는 정률 출금 수수료 규칙; 계정별 입출금 가능 상태는 포함하지 않음 |
 | `api_keys()` | 인증 필요 `GET /v1/api_keys`; 등록된 각 access key 식별자와 만료 시각 |
+| `krw_withdrawals(request)`, `krw_deposits(request)` | 인증 필요 원화 입출금 이력. 상태, UUID, 거래 ID, 페이지, 개수, 정렬 필터를 지원하며 거래소 상태 값은 새 값도 잃지 않도록 문자열로 보존 |
+| `withdraw_krw(request)`, `deposit_krw(request)` | `amount`를 사용하는 금전성 쓰기. Bithumb의 등록 계좌와 카카오 2차 인증 절차가 필요하며, maxt는 계좌나 인증 수단을 받거나 저장하지 않음. fixture만 검증했고 실제 원화 입출금은 실행하지 않음 |
 | `pending_orders(request)` | 인증 필요 `GET /v2/orders/pending`; 선택 시장, `wait` 또는 `watch` 상태, `1..=100` 개수, 오름·내림차순, 불투명 `next_key`를 `Page::next` 커서로 반환 |
 | `batch_orders(request)` | 인증 필요 `POST /v2/orders/batch`; 1~20건. HTTP 200이어도 항목별 성공·실패가 함께 올 수 있으므로 `BithumbBatchOrderOutcome`의 각 항목을 확인해야 함. 성공 항목은 거래소 원문 `time_in_force`와 `stp_type`을, 실패 항목은 반환된 `time_in_force`를 보존. fixture 검증만 했고 maxt가 실제 주문을 제출하지는 않음 |
 
@@ -148,6 +150,8 @@ let page = adapter
 - [공지사항](https://apidocs.bithumb.com/reference/%EA%B3%B5%EC%A7%80%EC%82%AC%ED%95%AD-%EC%A1%B0%ED%9A%8C.md)
 - [입출금 수수료](https://apidocs.bithumb.com/reference/%EC%9E%85%EC%B6%9C%EA%B8%88-%EC%88%98%EC%88%98%EB%A3%8C-%EC%A1%B0%ED%9A%8C.md)
 - [API 키](https://apidocs.bithumb.com/reference/api-%ED%82%A4-%EB%A6%AC%EC%8A%A4%ED%8A%B8-%EC%A1%B0%ED%9A%8C.md)
+- [원화 출금 이력](https://apidocs.bithumb.com/reference/%EC%9B%90%ED%99%94-%EC%B6%9C%EA%B8%88-%EB%A6%AC%EC%8A%A4%ED%8A%B8-%EC%A1%B0%ED%9A%8C)
+- [원화 입금 이력](https://apidocs.bithumb.com/reference/%EC%9B%90%ED%99%94-%EC%9E%85%EA%B8%88-%EB%A6%AC%EC%8A%A4%ED%8A%B8-%EC%A1%B0%ED%9A%8C)
 - [대기 주문 목록](https://apidocs.bithumb.com/reference/%EB%8C%80%EA%B8%B0-%EC%A3%BC%EB%AC%B8-%EB%AA%A9%EB%A1%9D-%EC%A1%B0%ED%9A%8C.md)
 - [다건 주문 요청](https://apidocs.bithumb.com/reference/%EB%8B%A4%EA%B1%B4-%EC%A3%BC%EB%AC%B8-%EC%9A%94%EC%B2%AD)
 - [다건 주문 취소 접수](https://apidocs.bithumb.com/reference/%EB%8B%A4%EA%B1%B4-%EC%A3%BC%EB%AC%B8-%EC%B7%A8%EC%86%8C-%EC%A0%91%EC%88%98)

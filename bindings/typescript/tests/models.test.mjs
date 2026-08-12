@@ -15,6 +15,11 @@ import {
   BithumbBatchOrderOutcome,
   BithumbBatchOrdersRequest,
   BithumbBatchOrdersResult,
+  BithumbKrwDeposit,
+  BithumbKrwDepositsRequest,
+  BithumbKrwTransferRequest,
+  BithumbKrwWithdrawal,
+  BithumbKrwWithdrawalsRequest,
   BithumbNetworkFee,
   BithumbOrderDirection,
   BithumbPendingOrderState,
@@ -74,6 +79,8 @@ import {
   UpbitCancelAndNewOrderRequest,
   UpbitCancelAndNewOrderResult,
   UpbitDepositInfo,
+  UpbitTravelRuleVasp,
+  UpbitTravelRuleVerification,
   UpbitOrderDirection,
   UpbitOrderReference,
   UpbitOrderVolume,
@@ -99,6 +106,16 @@ import {
   bithumbBatchOrdersRequestToWire,
   bithumbBatchOrdersResultFromWire,
   bithumbBatchOrdersResultToWire,
+  bithumbKrwDepositFromWire,
+  bithumbKrwDepositToWire,
+  bithumbKrwDepositsRequestFromWire,
+  bithumbKrwDepositsRequestToWire,
+  bithumbKrwTransferRequestFromWire,
+  bithumbKrwTransferRequestToWire,
+  bithumbKrwWithdrawalFromWire,
+  bithumbKrwWithdrawalToWire,
+  bithumbKrwWithdrawalsRequestFromWire,
+  bithumbKrwWithdrawalsRequestToWire,
   bithumbPendingOrdersRequestFromWire,
   bithumbPendingOrdersRequestToWire,
   bithumbTwapOrderRequestFromWire,
@@ -128,6 +145,10 @@ import {
   transferLookupRequestToWire,
   upbitDepositInfoFromWire,
   upbitDepositInfoToWire,
+  upbitTravelRuleVaspFromWire,
+  upbitTravelRuleVaspToWire,
+  upbitTravelRuleVerificationFromWire,
+  upbitTravelRuleVerificationToWire,
   upbitBatchCancelRequestFromWire,
   upbitBatchCancelRequestToWire,
   upbitBatchCancelScopeToWire,
@@ -255,6 +276,49 @@ test("Upbit deposit information preserves nullable network metadata and policy",
     upbitDepositInfoToWire(upbitDepositInfoFromWire(upbitDepositInfoToWire(deposit))),
     upbitDepositInfoToWire(deposit),
   );
+});
+
+test("Upbit Travel Rule and Bithumb KRW records preserve provider values", () => {
+  const vasp = new UpbitTravelRuleVasp("Example VASP", "vasp-1", true, false);
+  const verification = new UpbitTravelRuleVerification("deposit-1", "ACCEPTED", "verified");
+  const withdrawals = new BithumbKrwWithdrawalsRequest(
+    "DONE", ["withdrawal-1"], ["tx-1"], 2, 20, BithumbOrderDirection.Descending,
+  );
+  const deposits = new BithumbKrwDepositsRequest();
+  const transfer = new BithumbKrwTransferRequest(Decimal.parse("10000.00"));
+  const withdrawal = new BithumbKrwWithdrawal(
+    "withdraw", "withdrawal-1", "KRW", null, "tx-1", "DONE",
+    Timestamp.fromMilliseconds(1_760_000_000_000n), null,
+    Decimal.parse("10000.00"), Decimal.zero, "default",
+  );
+  const deposit = new BithumbKrwDeposit(
+    "deposit", "deposit-1", "KRW", null, null, "ACCEPTED",
+    Timestamp.fromMilliseconds(1_760_000_000_000n), null,
+    Decimal.parse("10000.00"), Decimal.zero, null,
+  );
+
+  assert.deepEqual(upbitTravelRuleVaspToWire(upbitTravelRuleVaspFromWire(
+    upbitTravelRuleVaspToWire(vasp),
+  )), upbitTravelRuleVaspToWire(vasp));
+  assert.deepEqual(upbitTravelRuleVerificationToWire(upbitTravelRuleVerificationFromWire(
+    upbitTravelRuleVerificationToWire(verification),
+  )), upbitTravelRuleVerificationToWire(verification));
+  assert.deepEqual(bithumbKrwWithdrawalsRequestToWire(bithumbKrwWithdrawalsRequestFromWire(
+    bithumbKrwWithdrawalsRequestToWire(withdrawals),
+  )), bithumbKrwWithdrawalsRequestToWire(withdrawals));
+  assert.deepEqual(new BithumbKrwDepositsRequest().uuids, []);
+  assert.deepEqual(bithumbKrwDepositsRequestToWire(bithumbKrwDepositsRequestFromWire(
+    bithumbKrwDepositsRequestToWire(deposits),
+  )), bithumbKrwDepositsRequestToWire(deposits));
+  assert.deepEqual(bithumbKrwTransferRequestToWire(bithumbKrwTransferRequestFromWire(
+    bithumbKrwTransferRequestToWire(transfer),
+  )), bithumbKrwTransferRequestToWire(transfer));
+  assert.deepEqual(bithumbKrwWithdrawalToWire(bithumbKrwWithdrawalFromWire(
+    bithumbKrwWithdrawalToWire(withdrawal),
+  )), bithumbKrwWithdrawalToWire(withdrawal));
+  assert.deepEqual(bithumbKrwDepositToWire(bithumbKrwDepositFromWire(
+    bithumbKrwDepositToWire(deposit),
+  )), bithumbKrwDepositToWire(deposit));
 });
 
 test("Upbit conditional batch cancellation keeps its explicit scope and filters", () => {
@@ -548,6 +612,7 @@ test("string variants are stable singleton values in Rust declaration order", ()
   assert.equal(Network.other("future_chain").id, "future_chain");
   assert.equal(Feature.Balances.needsCredentials, true);
   assert.equal(Feature.AssetNetworks.needsCredentials, true);
+  assert.equal(Feature.TravelRule.needsCredentials, true);
   assert.equal(Feature.FundingRates.needsCredentials, false);
   assert.equal(Feature.FundingRates.isDerivativesOnly, true);
   assert.equal(MarketKind.Perpetual.isDerivative, true);

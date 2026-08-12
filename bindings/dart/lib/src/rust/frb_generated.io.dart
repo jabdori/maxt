@@ -254,6 +254,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   dco_decode_box_autoadd_wire_bithumb_batch_orders_request(dynamic raw);
 
   @protected
+  WireBithumbKrwDepositsRequest
+  dco_decode_box_autoadd_wire_bithumb_krw_deposits_request(dynamic raw);
+
+  @protected
+  WireBithumbKrwTransferRequest
+  dco_decode_box_autoadd_wire_bithumb_krw_transfer_request(dynamic raw);
+
+  @protected
+  WireBithumbKrwWithdrawalsRequest
+  dco_decode_box_autoadd_wire_bithumb_krw_withdrawals_request(dynamic raw);
+
+  @protected
   WireBithumbOrderDirection dco_decode_box_autoadd_wire_bithumb_order_direction(
     dynamic raw,
   );
@@ -520,6 +532,16 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   dco_decode_list_wire_bithumb_batch_order_outcome(dynamic raw);
 
   @protected
+  List<WireBithumbKrwDeposit> dco_decode_list_wire_bithumb_krw_deposit(
+    dynamic raw,
+  );
+
+  @protected
+  List<WireBithumbKrwWithdrawal> dco_decode_list_wire_bithumb_krw_withdrawal(
+    dynamic raw,
+  );
+
+  @protected
   List<WireBithumbMarketAlert> dco_decode_list_wire_bithumb_market_alert(
     dynamic raw,
   );
@@ -626,6 +648,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   List<WireUpbitOrderBookInstrument>
   dco_decode_list_wire_upbit_order_book_instrument(dynamic raw);
+
+  @protected
+  List<WireUpbitTravelRuleVasp> dco_decode_list_wire_upbit_travel_rule_vasp(
+    dynamic raw,
+  );
 
   @protected
   List<WireUpbitYearCandle> dco_decode_list_wire_upbit_year_candle(dynamic raw);
@@ -821,6 +848,26 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireBithumbBatchOrdersResult dco_decode_wire_bithumb_batch_orders_result(
     dynamic raw,
   );
+
+  @protected
+  WireBithumbKrwDeposit dco_decode_wire_bithumb_krw_deposit(dynamic raw);
+
+  @protected
+  WireBithumbKrwDepositsRequest dco_decode_wire_bithumb_krw_deposits_request(
+    dynamic raw,
+  );
+
+  @protected
+  WireBithumbKrwTransferRequest dco_decode_wire_bithumb_krw_transfer_request(
+    dynamic raw,
+  );
+
+  @protected
+  WireBithumbKrwWithdrawal dco_decode_wire_bithumb_krw_withdrawal(dynamic raw);
+
+  @protected
+  WireBithumbKrwWithdrawalsRequest
+  dco_decode_wire_bithumb_krw_withdrawals_request(dynamic raw);
 
   @protected
   WireBithumbMarketAlert dco_decode_wire_bithumb_market_alert(dynamic raw);
@@ -1147,6 +1194,13 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireUpbitSmpType dco_decode_wire_upbit_smp_type(dynamic raw);
 
   @protected
+  WireUpbitTravelRuleVasp dco_decode_wire_upbit_travel_rule_vasp(dynamic raw);
+
+  @protected
+  WireUpbitTravelRuleVerification
+  dco_decode_wire_upbit_travel_rule_verification(dynamic raw);
+
+  @protected
   WireUpbitYearCandle dco_decode_wire_upbit_year_candle(dynamic raw);
 
   @protected
@@ -1379,6 +1433,24 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   WireBithumbBatchOrdersRequest
   sse_decode_box_autoadd_wire_bithumb_batch_orders_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbKrwDepositsRequest
+  sse_decode_box_autoadd_wire_bithumb_krw_deposits_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbKrwTransferRequest
+  sse_decode_box_autoadd_wire_bithumb_krw_transfer_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbKrwWithdrawalsRequest
+  sse_decode_box_autoadd_wire_bithumb_krw_withdrawals_request(
     SseDeserializer deserializer,
   );
 
@@ -1725,6 +1797,16 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  List<WireBithumbKrwDeposit> sse_decode_list_wire_bithumb_krw_deposit(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<WireBithumbKrwWithdrawal> sse_decode_list_wire_bithumb_krw_withdrawal(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<WireBithumbMarketAlert> sse_decode_list_wire_bithumb_market_alert(
     SseDeserializer deserializer,
   );
@@ -1851,6 +1933,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   List<WireUpbitOrderBookInstrument>
   sse_decode_list_wire_upbit_order_book_instrument(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<WireUpbitTravelRuleVasp> sse_decode_list_wire_upbit_travel_rule_vasp(
     SseDeserializer deserializer,
   );
 
@@ -2098,6 +2185,30 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireBithumbBatchOrdersResult sse_decode_wire_bithumb_batch_orders_result(
     SseDeserializer deserializer,
   );
+
+  @protected
+  WireBithumbKrwDeposit sse_decode_wire_bithumb_krw_deposit(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbKrwDepositsRequest sse_decode_wire_bithumb_krw_deposits_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbKrwTransferRequest sse_decode_wire_bithumb_krw_transfer_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbKrwWithdrawal sse_decode_wire_bithumb_krw_withdrawal(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbKrwWithdrawalsRequest
+  sse_decode_wire_bithumb_krw_withdrawals_request(SseDeserializer deserializer);
 
   @protected
   WireBithumbMarketAlert sse_decode_wire_bithumb_market_alert(
@@ -2500,6 +2611,15 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireUpbitSmpType sse_decode_wire_upbit_smp_type(SseDeserializer deserializer);
 
   @protected
+  WireUpbitTravelRuleVasp sse_decode_wire_upbit_travel_rule_vasp(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireUpbitTravelRuleVerification
+  sse_decode_wire_upbit_travel_rule_verification(SseDeserializer deserializer);
+
+  @protected
   WireUpbitYearCandle sse_decode_wire_upbit_year_candle(
     SseDeserializer deserializer,
   );
@@ -2790,6 +2910,24 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_box_autoadd_wire_bithumb_batch_orders_request(
     WireBithumbBatchOrdersRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_bithumb_krw_deposits_request(
+    WireBithumbKrwDepositsRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_bithumb_krw_transfer_request(
+    WireBithumbKrwTransferRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_bithumb_krw_withdrawals_request(
+    WireBithumbKrwWithdrawalsRequest self,
     SseSerializer serializer,
   );
 
@@ -3214,6 +3352,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_list_wire_bithumb_krw_deposit(
+    List<WireBithumbKrwDeposit> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_wire_bithumb_krw_withdrawal(
+    List<WireBithumbKrwWithdrawal> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_wire_bithumb_market_alert(
     List<WireBithumbMarketAlert> self,
     SseSerializer serializer,
@@ -3384,6 +3534,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_list_wire_upbit_order_book_instrument(
     List<WireUpbitOrderBookInstrument> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_wire_upbit_travel_rule_vasp(
+    List<WireUpbitTravelRuleVasp> self,
     SseSerializer serializer,
   );
 
@@ -3681,6 +3837,36 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_bithumb_batch_orders_result(
     WireBithumbBatchOrdersResult self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_bithumb_krw_deposit(
+    WireBithumbKrwDeposit self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_bithumb_krw_deposits_request(
+    WireBithumbKrwDepositsRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_bithumb_krw_transfer_request(
+    WireBithumbKrwTransferRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_bithumb_krw_withdrawal(
+    WireBithumbKrwWithdrawal self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_bithumb_krw_withdrawals_request(
+    WireBithumbKrwWithdrawalsRequest self,
     SseSerializer serializer,
   );
 
@@ -4194,6 +4380,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_upbit_smp_type(
     WireUpbitSmpType self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_upbit_travel_rule_vasp(
+    WireUpbitTravelRuleVasp self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_upbit_travel_rule_verification(
+    WireUpbitTravelRuleVerification self,
     SseSerializer serializer,
   );
 

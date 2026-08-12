@@ -612,6 +612,7 @@ impl Adapter for BinanceAdapter {
             feature,
             Feature::OrderHistory
                 | Feature::DepositLookup
+                | Feature::TravelRule
                 | Feature::WithdrawalLookup
                 | Feature::WithdrawalCancellation
         ) {

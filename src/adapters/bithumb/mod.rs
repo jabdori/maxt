@@ -23,6 +23,211 @@ use crate::types::{
     Withdrawal, WithdrawalFee, WithdrawalQuote,
 };
 
+/// Query parameters for Bithumb's KRW withdrawal list.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct BithumbKrwWithdrawalsRequest {
+    /// Optional provider withdrawal state, under Bithumb's spelling.
+    pub state: Option<String>,
+    /// Optional provider withdrawal IDs.
+    pub uuids: Vec<String>,
+    /// Optional provider transaction IDs.
+    pub txids: Vec<String>,
+    /// Page number; Bithumb defaults to 1.
+    pub page: Option<u32>,
+    /// Number of rows; Bithumb defaults to 100 and caps this at 100.
+    pub limit: Option<u32>,
+    /// Result order; Bithumb defaults to newest first.
+    pub order_by: Option<BithumbOrderDirection>,
+}
+
+impl BithumbKrwWithdrawalsRequest {
+    /// Starts an unfiltered request using Bithumb's defaults.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Filters by provider state.
+    #[must_use]
+    pub fn state(mut self, state: impl Into<String>) -> Self {
+        self.state = Some(state.into());
+        self
+    }
+
+    /// Filters by provider withdrawal IDs.
+    #[must_use]
+    pub fn uuids(mut self, uuids: impl Into<Vec<String>>) -> Self {
+        self.uuids = uuids.into();
+        self
+    }
+
+    /// Filters by provider transaction IDs.
+    #[must_use]
+    pub fn txids(mut self, txids: impl Into<Vec<String>>) -> Self {
+        self.txids = txids.into();
+        self
+    }
+
+    /// Selects the page number.
+    #[must_use]
+    pub fn page(mut self, page: u32) -> Self {
+        self.page = Some(page);
+        self
+    }
+
+    /// Selects the page size.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+
+    /// Selects the result order.
+    #[must_use]
+    pub fn order_by(mut self, order_by: BithumbOrderDirection) -> Self {
+        self.order_by = Some(order_by);
+        self
+    }
+}
+
+/// Query parameters for Bithumb's KRW deposit list.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct BithumbKrwDepositsRequest {
+    /// Optional provider deposit state, under Bithumb's spelling.
+    pub state: Option<String>,
+    /// Optional provider deposit IDs.
+    pub uuids: Vec<String>,
+    /// Optional provider transaction IDs.
+    pub txids: Vec<String>,
+    /// Page number; Bithumb defaults to 1.
+    pub page: Option<u32>,
+    /// Number of rows; Bithumb defaults to 100 and caps this at 100.
+    pub limit: Option<u32>,
+    /// Result order; Bithumb defaults to newest first.
+    pub order_by: Option<BithumbOrderDirection>,
+}
+
+impl BithumbKrwDepositsRequest {
+    /// Starts an unfiltered request using Bithumb's defaults.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Filters by provider state.
+    #[must_use]
+    pub fn state(mut self, state: impl Into<String>) -> Self {
+        self.state = Some(state.into());
+        self
+    }
+
+    /// Filters by provider deposit IDs.
+    #[must_use]
+    pub fn uuids(mut self, uuids: impl Into<Vec<String>>) -> Self {
+        self.uuids = uuids.into();
+        self
+    }
+
+    /// Filters by provider transaction IDs.
+    #[must_use]
+    pub fn txids(mut self, txids: impl Into<Vec<String>>) -> Self {
+        self.txids = txids.into();
+        self
+    }
+
+    /// Selects the page number.
+    #[must_use]
+    pub fn page(mut self, page: u32) -> Self {
+        self.page = Some(page);
+        self
+    }
+
+    /// Selects the page size.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+
+    /// Selects the result order.
+    #[must_use]
+    pub fn order_by(mut self, order_by: BithumbOrderDirection) -> Self {
+        self.order_by = Some(order_by);
+        self
+    }
+}
+
+/// Request body for a Bithumb KRW deposit or withdrawal.
+///
+/// Bithumb requires a registered bank account for KRW withdrawals and Kakao
+/// second-factor authorization for both KRW transfer writes. The account is a
+/// provider-side eligibility condition; Kakao is the only documented request
+/// value and is supplied by the adapter.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BithumbKrwTransferRequest {
+    /// KRW amount submitted to Bithumb.
+    pub amount: rust_decimal::Decimal,
+}
+
+impl BithumbKrwTransferRequest {
+    /// Builds a request using Bithumb's only documented second-factor method.
+    pub fn new(amount: rust_decimal::Decimal) -> Self {
+        Self { amount }
+    }
+}
+
+/// One KRW withdrawal returned by Bithumb.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BithumbKrwWithdrawal {
+    /// Bithumb's transfer type (`withdraw`).
+    pub transfer_type: String,
+    /// Provider withdrawal identifier.
+    pub uuid: String,
+    /// Currency returned by Bithumb (normally `KRW`).
+    pub currency: String,
+    /// Provider network, when Bithumb returns one.
+    pub net_type: Option<String>,
+    /// Provider transaction identifier, when assigned.
+    pub txid: Option<String>,
+    /// Provider withdrawal state, under Bithumb's spelling.
+    pub state: String,
+    /// Creation time.
+    pub created_at: Option<Timestamp>,
+    /// Completion time, when complete.
+    pub done_at: Option<Timestamp>,
+    /// Withdrawal amount.
+    pub amount: rust_decimal::Decimal,
+    /// Withdrawal fee.
+    pub fee: rust_decimal::Decimal,
+    /// Provider transaction type, normally `default`.
+    pub transaction_type: Option<String>,
+}
+
+/// One KRW deposit returned by Bithumb.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BithumbKrwDeposit {
+    /// Bithumb's transfer type (`deposit`).
+    pub transfer_type: String,
+    /// Provider deposit identifier.
+    pub uuid: String,
+    /// Currency returned by Bithumb (normally `KRW`).
+    pub currency: String,
+    /// Provider network, when Bithumb returns one.
+    pub net_type: Option<String>,
+    /// Provider transaction identifier, when assigned.
+    pub txid: Option<String>,
+    /// Provider deposit state, under Bithumb's spelling.
+    pub state: String,
+    /// Creation time.
+    pub created_at: Option<Timestamp>,
+    /// Completion time, when complete.
+    pub done_at: Option<Timestamp>,
+    /// Deposit amount.
+    pub amount: rust_decimal::Decimal,
+    /// Deposit fee.
+    pub fee: rust_decimal::Decimal,
+    /// Provider transaction type, normally `default`.
+    pub transaction_type: Option<String>,
+}
+
 pub(crate) const REST_BASE_URL: &str = "https://api.bithumb.com";
 pub(crate) const WEBSOCKET_URL: &str = "wss://ws-api.bithumb.com/websocket/v1";
 /// Private account events use a separate v2 WebSocket endpoint.
@@ -514,6 +719,45 @@ impl BithumbAdapter {
         rest::transfer_fees(self.http()?, currency).await
     }
 
+    /// Returns Bithumb's KRW withdrawal list.
+    pub async fn krw_withdrawals(
+        &self,
+        request: &BithumbKrwWithdrawalsRequest,
+    ) -> Result<Vec<BithumbKrwWithdrawal>> {
+        wallet::krw_withdrawals(self.http()?, self.credentials()?, request).await
+    }
+
+    /// Requests a KRW withdrawal to the bank account registered with Bithumb.
+    ///
+    /// The account must be eligible on Bithumb and the API key must permit
+    /// KRW withdrawals. Bithumb performs the Kakao second-factor step; this
+    /// method does not accept or store local bank-account credentials.
+    pub async fn withdraw_krw(
+        &self,
+        request: &BithumbKrwTransferRequest,
+    ) -> Result<BithumbKrwWithdrawal> {
+        wallet::withdraw_krw(self.http()?, self.credentials()?, request).await
+    }
+
+    /// Returns Bithumb's KRW deposit list.
+    pub async fn krw_deposits(
+        &self,
+        request: &BithumbKrwDepositsRequest,
+    ) -> Result<Vec<BithumbKrwDeposit>> {
+        wallet::krw_deposits(self.http()?, self.credentials()?, request).await
+    }
+
+    /// Requests a KRW deposit using Bithumb's Kakao second-factor method.
+    ///
+    /// The source bank account and second-factor approval are provider-side
+    /// eligibility conditions, not request fields accepted by this API.
+    pub async fn deposit_krw(
+        &self,
+        request: &BithumbKrwTransferRequest,
+    ) -> Result<BithumbKrwDeposit> {
+        wallet::deposit_krw(self.http()?, self.credentials()?, request).await
+    }
+
     /// Returns the API keys registered on this Bithumb account.
     pub async fn api_keys(&self) -> Result<Vec<BithumbApiKey>> {
         private::api_keys(self.http()?, self.credentials()?).await
@@ -584,6 +828,9 @@ impl Adapter for BithumbAdapter {
     }
 
     fn supports(&self, feature: Feature) -> bool {
+        if matches!(feature, Feature::TravelRule) {
+            return false;
+        }
         if feature.is_derivatives_only() {
             return false;
         }
@@ -909,6 +1156,8 @@ mod tests {
     fn credentials_are_what_unlock_the_private_half() {
         let public = BithumbAdapter::new();
         let private = BithumbAdapter::new().with_credentials("access", "secret");
+
+        assert!(!private.supports(Feature::TravelRule));
 
         for feature in [
             Feature::Balances,

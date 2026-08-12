@@ -975,6 +975,38 @@ wire.WireUpbitDepositInfo _upbitDepositInfoToWire(UpbitDepositInfo value) =>
       decimalPrecision: value.decimalPrecision,
     );
 
+UpbitTravelRuleVasp _upbitTravelRuleVaspFromWire(
+  wire.WireUpbitTravelRuleVasp value,
+) => UpbitTravelRuleVasp(
+  vaspName: value.vaspName,
+  vaspUuid: value.vaspUuid,
+  depositable: value.depositable,
+  withdrawable: value.withdrawable,
+);
+wire.WireUpbitTravelRuleVasp _upbitTravelRuleVaspToWire(
+  UpbitTravelRuleVasp value,
+) => wire.WireUpbitTravelRuleVasp(
+  vaspName: value.vaspName,
+  vaspUuid: value.vaspUuid,
+  depositable: value.depositable,
+  withdrawable: value.withdrawable,
+);
+
+UpbitTravelRuleVerification _upbitTravelRuleVerificationFromWire(
+  wire.WireUpbitTravelRuleVerification value,
+) => UpbitTravelRuleVerification(
+  depositUuid: value.depositUuid,
+  depositState: value.depositState,
+  verificationResult: value.verificationResult,
+);
+wire.WireUpbitTravelRuleVerification _upbitTravelRuleVerificationToWire(
+  UpbitTravelRuleVerification value,
+) => wire.WireUpbitTravelRuleVerification(
+  depositUuid: value.depositUuid,
+  depositState: value.depositState,
+  verificationResult: value.verificationResult,
+);
+
 UpbitBatchCancelScope _upbitBatchCancelScopeFromWire(
   wire.WireUpbitBatchCancelScope value,
 ) => switch (value) {
@@ -1191,6 +1223,124 @@ wire.WireBithumbApiKey _bithumbApiKeyToWire(BithumbApiKey value) =>
     wire.WireBithumbApiKey(
       accessKey: value.accessKey,
       expiresAtNs: _timestampToWire(value.expiresAt),
+    );
+
+BithumbKrwWithdrawalsRequest _bithumbKrwWithdrawalsRequestFromWire(
+  wire.WireBithumbKrwWithdrawalsRequest value,
+) => BithumbKrwWithdrawalsRequest(
+  state: value.state,
+  uuids: value.uuids,
+  txids: value.txids,
+  page: value.page,
+  limit: value.limit,
+  orderBy: value.orderBy == null
+      ? null
+      : _bithumbOrderDirectionFromWire(value.orderBy!),
+);
+wire.WireBithumbKrwWithdrawalsRequest _bithumbKrwWithdrawalsRequestToWire(
+  BithumbKrwWithdrawalsRequest value,
+) => wire.WireBithumbKrwWithdrawalsRequest(
+  state: value.state,
+  uuids: value.uuids.toList(growable: false),
+  txids: value.txids.toList(growable: false),
+  page: checkedUint32(value.page, field: 'page'),
+  limit: checkedUint32(value.limit, field: 'limit'),
+  orderBy: value.orderBy == null
+      ? null
+      : _bithumbOrderDirectionToWire(value.orderBy!),
+);
+
+BithumbKrwDepositsRequest _bithumbKrwDepositsRequestFromWire(
+  wire.WireBithumbKrwDepositsRequest value,
+) => BithumbKrwDepositsRequest(
+  state: value.state,
+  uuids: value.uuids,
+  txids: value.txids,
+  page: value.page,
+  limit: value.limit,
+  orderBy: value.orderBy == null
+      ? null
+      : _bithumbOrderDirectionFromWire(value.orderBy!),
+);
+wire.WireBithumbKrwDepositsRequest _bithumbKrwDepositsRequestToWire(
+  BithumbKrwDepositsRequest value,
+) => wire.WireBithumbKrwDepositsRequest(
+  state: value.state,
+  uuids: value.uuids.toList(growable: false),
+  txids: value.txids.toList(growable: false),
+  page: checkedUint32(value.page, field: 'page'),
+  limit: checkedUint32(value.limit, field: 'limit'),
+  orderBy: value.orderBy == null
+      ? null
+      : _bithumbOrderDirectionToWire(value.orderBy!),
+);
+
+BithumbKrwTransferRequest _bithumbKrwTransferRequestFromWire(
+  wire.WireBithumbKrwTransferRequest value,
+) => BithumbKrwTransferRequest(amount: Decimal.parse(value.amount));
+wire.WireBithumbKrwTransferRequest _bithumbKrwTransferRequestToWire(
+  BithumbKrwTransferRequest value,
+) => wire.WireBithumbKrwTransferRequest(amount: value.amount.toString());
+
+BithumbKrwWithdrawal _bithumbKrwWithdrawalFromWire(
+  wire.WireBithumbKrwWithdrawal value,
+) => BithumbKrwWithdrawal(
+  transferType: value.transferType,
+  uuid: value.uuid,
+  currency: value.currency,
+  netType: value.netType,
+  txid: value.txid,
+  state: value.state,
+  createdAt: _timestampFromWire(value.createdAtNs),
+  doneAt: _timestampFromWire(value.doneAtNs),
+  amount: Decimal.parse(value.amount),
+  fee: Decimal.parse(value.fee),
+  transactionType: value.transactionType,
+);
+wire.WireBithumbKrwWithdrawal _bithumbKrwWithdrawalToWire(
+  BithumbKrwWithdrawal value,
+) => wire.WireBithumbKrwWithdrawal(
+  transferType: value.transferType,
+  uuid: value.uuid,
+  currency: value.currency,
+  netType: value.netType,
+  txid: value.txid,
+  state: value.state,
+  createdAtNs: _optionalTimestampToWire(value.createdAt),
+  doneAtNs: _optionalTimestampToWire(value.doneAt),
+  amount: value.amount.toString(),
+  fee: value.fee.toString(),
+  transactionType: value.transactionType,
+);
+
+BithumbKrwDeposit _bithumbKrwDepositFromWire(
+  wire.WireBithumbKrwDeposit value,
+) => BithumbKrwDeposit(
+  transferType: value.transferType,
+  uuid: value.uuid,
+  currency: value.currency,
+  netType: value.netType,
+  txid: value.txid,
+  state: value.state,
+  createdAt: _timestampFromWire(value.createdAtNs),
+  doneAt: _timestampFromWire(value.doneAtNs),
+  amount: Decimal.parse(value.amount),
+  fee: Decimal.parse(value.fee),
+  transactionType: value.transactionType,
+);
+wire.WireBithumbKrwDeposit _bithumbKrwDepositToWire(BithumbKrwDeposit value) =>
+    wire.WireBithumbKrwDeposit(
+      transferType: value.transferType,
+      uuid: value.uuid,
+      currency: value.currency,
+      netType: value.netType,
+      txid: value.txid,
+      state: value.state,
+      createdAtNs: _optionalTimestampToWire(value.createdAt),
+      doneAtNs: _optionalTimestampToWire(value.doneAt),
+      amount: value.amount.toString(),
+      fee: value.fee.toString(),
+      transactionType: value.transactionType,
     );
 
 BithumbPendingOrdersRequest _bithumbPendingOrdersRequestFromWire(

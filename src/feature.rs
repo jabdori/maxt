@@ -92,6 +92,8 @@ define_features! {
     DepositHistory => ("deposit_history", "reading deposit history"),
     /// Looking up one deposit.
     DepositLookup => ("deposit_lookup", "looking up deposits"),
+    /// Verifying a deposit through a provider's Travel Rule service.
+    TravelRule => ("travel_rule", "verifying Travel Rule deposits"),
     /// Checking a withdrawal before submitting it.
     WithdrawalQuotes => ("withdrawal_quotes", "checking withdrawals"),
     /// Submitting withdrawals.
@@ -148,6 +150,7 @@ impl Feature {
             | Self::DepositAddresses
             | Self::DepositHistory
             | Self::DepositLookup
+            | Self::TravelRule
             | Self::WithdrawalQuotes
             | Self::Withdrawals
             | Self::WithdrawalHistory
@@ -210,6 +213,7 @@ mod tests {
         for feature in [
             Feature::Balances,
             Feature::DepositLookup,
+            Feature::TravelRule,
             Feature::OpenOrders,
             Feature::OrderHistory,
             Feature::AccountStream,

@@ -203,7 +203,10 @@ fn render_python_model_record(
         !matches!(field.ty, Type::Optional(_))
             && !matches!(
                 (name, field.name),
-                ("OrderHistoryRequest", "statuses") | ("BithumbTwapOrdersRequest", "uuids")
+                ("OrderHistoryRequest", "statuses")
+                    | ("BithumbTwapOrdersRequest", "uuids")
+                    | ("BithumbKrwWithdrawalsRequest", "uuids" | "txids")
+                    | ("BithumbKrwDepositsRequest", "uuids" | "txids")
             )
     });
     let values = fields
@@ -214,7 +217,10 @@ fn render_python_model_record(
                 && last_required.is_none_or(|last| index > last);
             let empty_list_default = matches!(
                 (name, field.name),
-                ("OrderHistoryRequest", "statuses") | ("BithumbTwapOrdersRequest", "uuids")
+                ("OrderHistoryRequest", "statuses")
+                    | ("BithumbTwapOrdersRequest", "uuids")
+                    | ("BithumbKrwWithdrawalsRequest", "uuids" | "txids")
+                    | ("BithumbKrwDepositsRequest", "uuids" | "txids")
             );
             let name = python_name(field.name);
             let default = if empty_list_default {
@@ -1058,6 +1064,10 @@ pub(crate) fn render_rust_provider_convert(schema: &Schema) -> String {
         "BinanceSpotOrderDetail",
         "HyperliquidLedgerEntry",
         "HyperliquidAssetContext",
+        "UpbitTravelRuleVasp",
+        "UpbitTravelRuleVerification",
+        "BithumbKrwWithdrawal",
+        "BithumbKrwDeposit",
     ] {
         let record = schema
             .records
@@ -2099,6 +2109,7 @@ fn identifier_helpers(name: &str) -> &'static str {
             "deposit_addresses",
             "deposit_history",
             "deposit_lookup",
+            "travel_rule",
             "withdrawal_quotes",
             "withdrawals",
             "withdrawal_history",

@@ -256,6 +256,16 @@ const UPBIT_CANCEL_AND_NEW_ORDER_REQUEST: &[Argument] = &[argument(
     ApiType::Named("UpbitCancelAndNewOrderRequest"),
     None,
 )];
+const UPBIT_TRAVEL_RULE_UUID: &[Argument] = &[
+    argument("depositUuid", ApiType::String, None),
+    argument("vaspUuid", ApiType::String, None),
+];
+const UPBIT_TRAVEL_RULE_TXID: &[Argument] = &[
+    argument("txid", ApiType::String, None),
+    argument("vaspUuid", ApiType::String, None),
+    argument("currency", ApiType::String, None),
+    argument("netType", ApiType::String, None),
+];
 const ASSET: &[Argument] = &[argument("asset", ApiType::String, None)];
 const ASSET_NETWORK: &[Argument] = &[
     argument("asset", ApiType::String, None),
@@ -901,6 +911,7 @@ const FEATURE_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("DepositAddresses", "deposit_addresses"),
     identifier_variant("DepositHistory", "deposit_history"),
     identifier_variant("DepositLookup", "deposit_lookup"),
+    identifier_variant("TravelRule", "travel_rule"),
     identifier_variant("WithdrawalQuotes", "withdrawal_quotes"),
     identifier_variant("Withdrawals", "withdrawals"),
     identifier_variant("WithdrawalHistory", "withdrawal_history"),
@@ -1191,6 +1202,8 @@ const MODELS: &[&str] = &[
     "UpbitYearCandle",
     "UpbitOrderBookInstrument",
     "UpbitDepositInfo",
+    "UpbitTravelRuleVasp",
+    "UpbitTravelRuleVerification",
     "UpbitBatchCancelScope",
     "UpbitBatchCancelRequest",
     "UpbitOrderReference",
@@ -1201,6 +1214,11 @@ const MODELS: &[&str] = &[
     "BithumbMarketAlert",
     "BithumbNotice",
     "BithumbApiKey",
+    "BithumbKrwWithdrawalsRequest",
+    "BithumbKrwDepositsRequest",
+    "BithumbKrwTransferRequest",
+    "BithumbKrwWithdrawal",
+    "BithumbKrwDeposit",
     "BithumbPendingOrdersRequest",
     "BithumbBatchOrdersRequest",
     "BithumbBatchOrder",
@@ -1249,6 +1267,21 @@ const BITHUMB_PENDING_ORDERS_REQUEST: &[Argument] = &[argument(
 const BITHUMB_BATCH_ORDERS_REQUEST: &[Argument] = &[argument(
     "request",
     ApiType::Named("BithumbBatchOrdersRequest"),
+    None,
+)];
+const BITHUMB_KRW_WITHDRAWALS_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("BithumbKrwWithdrawalsRequest"),
+    None,
+)];
+const BITHUMB_KRW_DEPOSITS_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("BithumbKrwDepositsRequest"),
+    None,
+)];
+const BITHUMB_KRW_TRANSFER_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("BithumbKrwTransferRequest"),
     None,
 )];
 const BITHUMB_TWAP_ORDERS_REQUEST: &[Argument] = &[argument(
@@ -1461,6 +1494,27 @@ const UPBIT_METHODS: &[ProviderMethod] = &[
         result: ApiType::Named("UpbitDepositInfo"),
     },
     ProviderMethod {
+        rust_name: "travel_rule_vasps",
+        name: "travelRuleVasps",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::List("UpbitTravelRuleVasp"),
+    },
+    ProviderMethod {
+        rust_name: "verify_travel_rule_by_uuid",
+        name: "verifyTravelRuleByUuid",
+        kind: ProviderMethodKind::Async,
+        arguments: UPBIT_TRAVEL_RULE_UUID,
+        result: ApiType::Named("UpbitTravelRuleVerification"),
+    },
+    ProviderMethod {
+        rust_name: "verify_travel_rule_by_txid",
+        name: "verifyTravelRuleByTxid",
+        kind: ProviderMethodKind::Async,
+        arguments: UPBIT_TRAVEL_RULE_TXID,
+        result: ApiType::Named("UpbitTravelRuleVerification"),
+    },
+    ProviderMethod {
         rust_name: "batch_cancel_open_orders",
         name: "batchCancelOpenOrders",
         kind: ProviderMethodKind::Async,
@@ -1510,6 +1564,34 @@ const BITHUMB_METHODS: &[ProviderMethod] = &[
         kind: ProviderMethodKind::Async,
         arguments: &[],
         result: ApiType::List("BithumbApiKey"),
+    },
+    ProviderMethod {
+        rust_name: "krw_withdrawals",
+        name: "krwWithdrawals",
+        kind: ProviderMethodKind::Async,
+        arguments: BITHUMB_KRW_WITHDRAWALS_REQUEST,
+        result: ApiType::List("BithumbKrwWithdrawal"),
+    },
+    ProviderMethod {
+        rust_name: "withdraw_krw",
+        name: "withdrawKrw",
+        kind: ProviderMethodKind::Async,
+        arguments: BITHUMB_KRW_TRANSFER_REQUEST,
+        result: ApiType::Named("BithumbKrwWithdrawal"),
+    },
+    ProviderMethod {
+        rust_name: "krw_deposits",
+        name: "krwDeposits",
+        kind: ProviderMethodKind::Async,
+        arguments: BITHUMB_KRW_DEPOSITS_REQUEST,
+        result: ApiType::List("BithumbKrwDeposit"),
+    },
+    ProviderMethod {
+        rust_name: "deposit_krw",
+        name: "depositKrw",
+        kind: ProviderMethodKind::Async,
+        arguments: BITHUMB_KRW_TRANSFER_REQUEST,
+        result: ApiType::Named("BithumbKrwDeposit"),
     },
     ProviderMethod {
         rust_name: "pending_orders",
@@ -2257,6 +2339,23 @@ pub fn binding_schema() -> Schema {
             ],
         ),
         record(
+            "UpbitTravelRuleVaspWire",
+            vec![
+                field("vasp_name", Type::String),
+                field("vasp_uuid", Type::String),
+                field("depositable", Boolean),
+                field("withdrawable", Boolean),
+            ],
+        ),
+        record(
+            "UpbitTravelRuleVerificationWire",
+            vec![
+                field("deposit_uuid", Type::String),
+                field("deposit_state", Type::String),
+                field("verification_result", Type::String),
+            ],
+        ),
+        record(
             "UpbitBatchCancelRequestWire",
             vec![
                 field("scope", Type::named("UpbitBatchCancelScopeWire")),
@@ -2320,6 +2419,70 @@ pub fn binding_schema() -> Schema {
             vec![
                 field("access_key", Type::String),
                 field("expires_at", timestamp.clone()),
+            ],
+        ),
+        record(
+            "BithumbKrwWithdrawalsRequestWire",
+            vec![
+                field("state", Type::optional(Type::String)),
+                field("uuids", Type::list(Type::String)),
+                field("txids", Type::list(Type::String)),
+                field("page", Type::optional(Number)),
+                field("limit", Type::optional(Number)),
+                field(
+                    "order_by",
+                    Type::optional(Type::Identifier("BithumbOrderDirection")),
+                ),
+            ],
+        ),
+        record(
+            "BithumbKrwDepositsRequestWire",
+            vec![
+                field("state", Type::optional(Type::String)),
+                field("uuids", Type::list(Type::String)),
+                field("txids", Type::list(Type::String)),
+                field("page", Type::optional(Number)),
+                field("limit", Type::optional(Number)),
+                field(
+                    "order_by",
+                    Type::optional(Type::Identifier("BithumbOrderDirection")),
+                ),
+            ],
+        ),
+        record(
+            "BithumbKrwTransferRequestWire",
+            vec![field("amount", decimal.clone())],
+        ),
+        record(
+            "BithumbKrwWithdrawalWire",
+            vec![
+                field("transfer_type", Type::String),
+                field("uuid", Type::String),
+                field("currency", Type::String),
+                field("net_type", Type::optional(Type::String)),
+                field("txid", Type::optional(Type::String)),
+                field("state", Type::String),
+                field("created_at", Type::optional(timestamp.clone())),
+                field("done_at", Type::optional(timestamp.clone())),
+                field("amount", decimal.clone()),
+                field("fee", decimal.clone()),
+                field("transaction_type", Type::optional(Type::String)),
+            ],
+        ),
+        record(
+            "BithumbKrwDepositWire",
+            vec![
+                field("transfer_type", Type::String),
+                field("uuid", Type::String),
+                field("currency", Type::String),
+                field("net_type", Type::optional(Type::String)),
+                field("txid", Type::optional(Type::String)),
+                field("state", Type::String),
+                field("created_at", Type::optional(timestamp.clone())),
+                field("done_at", Type::optional(timestamp.clone())),
+                field("amount", decimal.clone()),
+                field("fee", decimal.clone()),
+                field("transaction_type", Type::optional(Type::String)),
             ],
         ),
         record(
@@ -3065,7 +3228,7 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
-        native_api_version: 20,
+        native_api_version: 21,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
         identifiers: IDENTIFIERS,

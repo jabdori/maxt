@@ -64,8 +64,8 @@ Exchange-specific methods remain available through `client.adapter`.
 
 | Adapter | Construction | Additional methods |
 | --- | --- | --- |
-| `UpbitAdapter` | `UpbitAdapter()` or `UpbitAdapter.withRegion(...)` | `orderBooks()`, `orderBooksAtLevel()`, `tickers()`, `tickersByQuote()`, `yearCandles()`, `orderbookInstruments()`, `marketEvents()`; authenticated: `testOrder()`, `depositInfo()`, `batchCancelOpenOrders()`, `cancelAndNewOrder()` |
-| `BithumbAdapter` | `BithumbAdapter()` | `marketWarnings()`, `marketAlerts()`, `notices()`, `transferFees()`; authenticated: `apiKeys()`, `pendingOrders()`, `batchOrders()`, `twapOrders()`, `createTwapOrder()`, `cancelTwapOrder()` |
+| `UpbitAdapter` | `UpbitAdapter()` or `UpbitAdapter.withRegion(...)` | `orderBooks()`, `orderBooksAtLevel()`, `tickers()`, `tickersByQuote()`, `yearCandles()`, `orderbookInstruments()`, `marketEvents()`; authenticated: `testOrder()`, `depositInfo()`, `travelRuleVasps()`, `verifyTravelRuleByUuid()`, `verifyTravelRuleByTxid()`, `batchCancelOpenOrders()`, `cancelAndNewOrder()` |
+| `BithumbAdapter` | `BithumbAdapter()` | `marketWarnings()`, `marketAlerts()`, `notices()`, `transferFees()`; authenticated: `apiKeys()`, `krwWithdrawals()`, `withdrawKrw()`, `krwDeposits()`, `depositKrw()`, `pendingOrders()`, `batchOrders()`, `twapOrders()`, `createTwapOrder()`, `cancelTwapOrder()` |
 | `BinanceAdapter` | `BinanceAdapter.spot()` | `spotSymbolFilters()`; authenticated: `spotOrder()` |
 | `BinanceAdapter` | `BinanceAdapter.usdMFutures()` | Public: `markPrice()`, `markPrices()`, `openInterest()`, `aggregateTrades()`; authenticated: `usdMCreateListenKey()`, `usdMKeepaliveListenKey()`, `usdMCloseListenKey()` |
 | `HyperliquidAdapter` | `HyperliquidAdapter()` or `HyperliquidAdapter.testnet()` | Public: `allMids()`; `assetContext()`, `nonFundingLedger()` |
@@ -77,6 +77,11 @@ its status as a live order.
 `UpbitAdapter.depositInfo(asset, network)` returns the provider's deposit
 availability, minimum amount, confirmation, and precision metadata. Upbit may
 delay this information by several minutes; it is not a real-time service-status signal.
+
+`UpbitAdapter.travelRuleVasps()` lists VASPs for Travel Rule verification.
+The verification methods are financial writes and are available only in Korea
+and Singapore; Indonesia and Thailand fail before a network request. These
+paths are fixture-verified only.
 
 `UpbitAdapter.batchCancelOpenOrders(request)` is a financial write.
 `UpbitBatchCancelScope.all()` explicitly selects every eligible market; Upbit
@@ -98,6 +103,11 @@ items preserve `timeInForce` and `stpType`; rejected items preserve returned
 query for Bithumb's KRW markets. `createTwapOrder()` and
 `cancelTwapOrder()` are financial writes; do not call them in a read-only
 verification.
+
+`BithumbAdapter.krwWithdrawals()` and `krwDeposits()` read KRW transfer
+history. `withdrawKrw()` and `depositKrw()` are financial writes. Bithumb
+requires its registered account and Kakao second-factor flow; maxt neither
+accepts nor stores those credentials. These paths are fixture-verified only.
 
 ```dart
 Future<void> readTwapHistory() async {

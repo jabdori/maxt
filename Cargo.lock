@@ -1043,7 +1043,7 @@ checksum = "0ceec5bc11778974d1bcb055b18002eba7f4b3518b6a0081b3af5f21666da9ad"
 
 [[package]]
 name = "maxt"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "base64",
  "chrono",
@@ -1077,14 +1077,14 @@ dependencies = [
 
 [[package]]
 name = "maxt-bindings-codegen"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "maxt-bindings-common",
 ]
 
 [[package]]
 name = "maxt-bindings-common"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "futures-util",
  "maxt",

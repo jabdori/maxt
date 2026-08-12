@@ -226,8 +226,8 @@ fn identifier_body(name: &str, open: bool) -> String {
     this.needsCredentials = new Set([
       "balances", "open_orders", "order_history", "account_stream", "trading", "positions", "margin",
       "funding_payments", "margin_config", "reduce_only_orders", "asset_networks",
-      "deposit_addresses", "deposit_history", "withdrawal_quotes", "withdrawals",
-      "withdrawal_history", "deposit_lookup", "withdrawal_lookup", "withdrawal_cancellation",
+      "deposit_addresses", "deposit_history", "deposit_lookup", "travel_rule", "withdrawal_quotes", "withdrawals",
+      "withdrawal_history", "withdrawal_lookup", "withdrawal_cancellation",
     ]).has(id);
     this.isDerivativesOnly = new Set([
       "positions", "margin", "funding_rates", "funding_payments", "margin_config",

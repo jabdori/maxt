@@ -361,6 +361,17 @@ RECORD_FIELDS = {
         "minimum_deposit_confirmations": "unsigned_integer",
         "decimal_precision": "unsigned_integer",
     },
+    "UpbitTravelRuleVasp": {
+        "vasp_name": "string",
+        "vasp_uuid": "string",
+        "depositable": "boolean",
+        "withdrawable": "boolean",
+    },
+    "UpbitTravelRuleVerification": {
+        "deposit_uuid": "string",
+        "deposit_state": "string",
+        "verification_result": "string",
+    },
     "UpbitBatchCancelRequest": {
         "scope": "named:UpbitBatchCancelScope",
         "excluded_pairs": "optional:list:named:Market",
@@ -399,6 +410,51 @@ RECORD_FIELDS = {
     "BithumbApiKey": {
         "access_key": "string",
         "expires_at": "timestamp",
+    },
+    "BithumbKrwWithdrawalsRequest": {
+        "state": "optional:string",
+        "uuids": "list:string",
+        "txids": "list:string",
+        "page": "optional:number",
+        "limit": "optional:number",
+        "order_by": "optional:identifier:BithumbOrderDirection",
+    },
+    "BithumbKrwDepositsRequest": {
+        "state": "optional:string",
+        "uuids": "list:string",
+        "txids": "list:string",
+        "page": "optional:number",
+        "limit": "optional:number",
+        "order_by": "optional:identifier:BithumbOrderDirection",
+    },
+    "BithumbKrwTransferRequest": {
+        "amount": "decimal",
+    },
+    "BithumbKrwWithdrawal": {
+        "transfer_type": "string",
+        "uuid": "string",
+        "currency": "string",
+        "net_type": "optional:string",
+        "txid": "optional:string",
+        "state": "string",
+        "created_at": "optional:timestamp",
+        "done_at": "optional:timestamp",
+        "amount": "decimal",
+        "fee": "decimal",
+        "transaction_type": "optional:string",
+    },
+    "BithumbKrwDeposit": {
+        "transfer_type": "string",
+        "uuid": "string",
+        "currency": "string",
+        "net_type": "optional:string",
+        "txid": "optional:string",
+        "state": "string",
+        "created_at": "optional:timestamp",
+        "done_at": "optional:timestamp",
+        "amount": "decimal",
+        "fee": "decimal",
+        "transaction_type": "optional:string",
     },
     "BithumbPendingOrdersRequest": {
         "market": "optional:named:Market",
@@ -954,7 +1010,7 @@ UNION_FIELDS = {
 
 IDENTIFIER_VARIANTS = {
     "Exchange": ("upbit", "bithumb", "binance", "hyperliquid",),
-    "Feature": ("markets", "trades", "order_book", "ticker", "candles", "trade_stream", "order_book_stream", "ticker_stream", "candle_stream", "balances", "asset_networks", "deposit_addresses", "deposit_history", "deposit_lookup", "withdrawal_quotes", "withdrawals", "withdrawal_history", "withdrawal_lookup", "withdrawal_cancellation", "open_orders", "order_history", "account_stream", "trading", "positions", "margin", "funding_rates", "funding_payments", "margin_config", "reduce_only_orders",),
+    "Feature": ("markets", "trades", "order_book", "ticker", "candles", "trade_stream", "order_book_stream", "ticker_stream", "candle_stream", "balances", "asset_networks", "deposit_addresses", "deposit_history", "deposit_lookup", "travel_rule", "withdrawal_quotes", "withdrawals", "withdrawal_history", "withdrawal_lookup", "withdrawal_cancellation", "open_orders", "order_history", "account_stream", "trading", "positions", "margin", "funding_rates", "funding_payments", "margin_config", "reduce_only_orders",),
     "MarketKind": ("spot", "perpetual",),
     "MarketStatus": ("active", "paused", "delisted", "unknown",),
     "Side": ("buy", "sell",),

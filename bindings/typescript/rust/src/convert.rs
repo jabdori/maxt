@@ -1,16 +1,18 @@
 use maxt::adapters::{
     BinanceAggregateTrade, BinanceAggregateTradesRequest, BinanceMarkPrice, BinanceOpenInterest,
-    BinanceSpotOrderDetail, BinanceSymbolFilters, BithumbAlertStep, BithumbApiKey,
-    BithumbAssetFee, BithumbBatchOrder, BithumbBatchOrderFailure,
-    BithumbBatchOrderOutcome, BithumbBatchOrdersRequest, BithumbBatchOrdersResult,
-    BithumbMarketAlert, BithumbNetworkFee, BithumbNotice, BithumbOrderDirection,
-    BithumbPendingOrderState, BithumbPendingOrdersRequest, BithumbTwapOrder,
-    BithumbTwapOrderDirection, BithumbTwapOrderRequest, BithumbTwapOrdersRequest,
-    BithumbTwapState, HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind,
-    HyperliquidMidPrice, UpbitBatchCancelRequest, UpbitBatchCancelScope, UpbitCancelAndNewOrder,
+    BinanceSpotOrderDetail, BinanceSymbolFilters, BithumbAlertStep, BithumbApiKey, BithumbAssetFee,
+    BithumbBatchOrder, BithumbBatchOrderFailure, BithumbBatchOrderOutcome,
+    BithumbBatchOrdersRequest, BithumbBatchOrdersResult, BithumbKrwDeposit,
+    BithumbKrwDepositsRequest, BithumbKrwTransferRequest, BithumbKrwWithdrawal,
+    BithumbKrwWithdrawalsRequest, BithumbMarketAlert, BithumbNetworkFee, BithumbNotice,
+    BithumbOrderDirection, BithumbPendingOrderState, BithumbPendingOrdersRequest, BithumbTwapOrder,
+    BithumbTwapOrderDirection, BithumbTwapOrderRequest, BithumbTwapOrdersRequest, BithumbTwapState,
+    HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind, HyperliquidMidPrice,
+    UpbitBatchCancelRequest, UpbitBatchCancelScope, UpbitCancelAndNewOrder,
     UpbitCancelAndNewOrderRequest, UpbitCancelAndNewOrderResult, UpbitDepositInfo,
     UpbitMarketEvent, UpbitOrderBookInstrument, UpbitOrderDirection, UpbitOrderReference,
-    UpbitOrderVolume, UpbitSmpType, UpbitYearCandle,
+    UpbitOrderVolume, UpbitSmpType, UpbitTravelRuleVasp, UpbitTravelRuleVerification,
+    UpbitYearCandle,
 };
 use maxt::{
     AccountEvent, AssetNetwork, Balance, CancelOrdersRequest, CancelOrdersResult, CancelledOrder,
@@ -288,6 +290,23 @@ pub(crate) struct WireUpbitDepositInfo {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitTravelRuleVasp {
+    pub(crate) vasp_name: String,
+    pub(crate) vasp_uuid: String,
+    pub(crate) depositable: bool,
+    pub(crate) withdrawable: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitTravelRuleVerification {
+    pub(crate) deposit_uuid: String,
+    pub(crate) deposit_state: String,
+    pub(crate) verification_result: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub(crate) enum WireUpbitBatchCancelScope {
     All,
@@ -393,6 +412,84 @@ pub(crate) struct WireBithumbNotice {
 pub(crate) struct WireBithumbApiKey {
     pub(crate) access_key: String,
     pub(crate) expires_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBithumbKrwWithdrawalsRequest {
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) state: Option<String>,
+    pub(crate) uuids: Vec<String>,
+    pub(crate) txids: Vec<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) page: Option<u32>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) limit: Option<u32>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) order_by: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBithumbKrwDepositsRequest {
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) state: Option<String>,
+    pub(crate) uuids: Vec<String>,
+    pub(crate) txids: Vec<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) page: Option<u32>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) limit: Option<u32>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) order_by: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBithumbKrwTransferRequest {
+    pub(crate) amount: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBithumbKrwWithdrawal {
+    pub(crate) transfer_type: String,
+    pub(crate) uuid: String,
+    pub(crate) currency: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) net_type: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) txid: Option<String>,
+    pub(crate) state: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) created_at: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) done_at: Option<String>,
+    pub(crate) amount: String,
+    pub(crate) fee: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) transaction_type: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBithumbKrwDeposit {
+    pub(crate) transfer_type: String,
+    pub(crate) uuid: String,
+    pub(crate) currency: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) net_type: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) txid: Option<String>,
+    pub(crate) state: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) created_at: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) done_at: Option<String>,
+    pub(crate) amount: String,
+    pub(crate) fee: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) transaction_type: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1380,6 +1477,57 @@ impl TryFrom<WireBithumbPendingOrdersRequest> for BithumbPendingOrdersRequest {
     }
 }
 
+fn bithumb_order_direction_from_wire(
+    value: Option<String>,
+) -> Result<Option<BithumbOrderDirection>, Error> {
+    value
+        .as_deref()
+        .map(|value| match value {
+            "asc" => Ok(BithumbOrderDirection::Ascending),
+            "desc" => Ok(BithumbOrderDirection::Descending),
+            _ => Err(invalid_enum("order_by", value)),
+        })
+        .transpose()
+}
+
+impl TryFrom<WireBithumbKrwWithdrawalsRequest> for BithumbKrwWithdrawalsRequest {
+    type Error = Error;
+
+    fn try_from(value: WireBithumbKrwWithdrawalsRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            state: value.state,
+            uuids: value.uuids,
+            txids: value.txids,
+            page: value.page,
+            limit: value.limit,
+            order_by: bithumb_order_direction_from_wire(value.order_by)?,
+        })
+    }
+}
+
+impl TryFrom<WireBithumbKrwDepositsRequest> for BithumbKrwDepositsRequest {
+    type Error = Error;
+
+    fn try_from(value: WireBithumbKrwDepositsRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            state: value.state,
+            uuids: value.uuids,
+            txids: value.txids,
+            page: value.page,
+            limit: value.limit,
+            order_by: bithumb_order_direction_from_wire(value.order_by)?,
+        })
+    }
+}
+
+impl TryFrom<WireBithumbKrwTransferRequest> for BithumbKrwTransferRequest {
+    type Error = Error;
+
+    fn try_from(value: WireBithumbKrwTransferRequest) -> Result<Self, Self::Error> {
+        Ok(Self::new(decimal_from_wire(&value.amount, "amount")?))
+    }
+}
+
 impl TryFrom<WireBithumbTwapOrdersRequest> for BithumbTwapOrdersRequest {
     type Error = Error;
 
@@ -2266,6 +2414,31 @@ impl TryFrom<UpbitDepositInfo> for WireUpbitDepositInfo {
     }
 }
 
+impl TryFrom<UpbitTravelRuleVasp> for WireUpbitTravelRuleVasp {
+    type Error = Error;
+
+    fn try_from(value: UpbitTravelRuleVasp) -> Result<Self, Self::Error> {
+        Ok(Self {
+            vasp_name: value.vasp_name,
+            vasp_uuid: value.vasp_uuid,
+            depositable: value.depositable,
+            withdrawable: value.withdrawable,
+        })
+    }
+}
+
+impl TryFrom<UpbitTravelRuleVerification> for WireUpbitTravelRuleVerification {
+    type Error = Error;
+
+    fn try_from(value: UpbitTravelRuleVerification) -> Result<Self, Self::Error> {
+        Ok(Self {
+            deposit_uuid: value.deposit_uuid,
+            deposit_state: value.deposit_state,
+            verification_result: value.verification_result,
+        })
+    }
+}
+
 impl TryFrom<BithumbMarketAlert> for WireBithumbMarketAlert {
     type Error = Error;
 
@@ -2299,6 +2472,46 @@ impl TryFrom<BithumbApiKey> for WireBithumbApiKey {
         Ok(Self {
             access_key: value.access_key,
             expires_at: timestamp_to_wire(value.expires_at),
+        })
+    }
+}
+
+impl TryFrom<BithumbKrwWithdrawal> for WireBithumbKrwWithdrawal {
+    type Error = Error;
+
+    fn try_from(value: BithumbKrwWithdrawal) -> Result<Self, Self::Error> {
+        Ok(Self {
+            transfer_type: value.transfer_type,
+            uuid: value.uuid,
+            currency: value.currency,
+            net_type: value.net_type,
+            txid: value.txid,
+            state: value.state,
+            created_at: timestamp_option_to_wire(value.created_at),
+            done_at: timestamp_option_to_wire(value.done_at),
+            amount: decimal_to_wire(value.amount),
+            fee: decimal_to_wire(value.fee),
+            transaction_type: value.transaction_type,
+        })
+    }
+}
+
+impl TryFrom<BithumbKrwDeposit> for WireBithumbKrwDeposit {
+    type Error = Error;
+
+    fn try_from(value: BithumbKrwDeposit) -> Result<Self, Self::Error> {
+        Ok(Self {
+            transfer_type: value.transfer_type,
+            uuid: value.uuid,
+            currency: value.currency,
+            net_type: value.net_type,
+            txid: value.txid,
+            state: value.state,
+            created_at: timestamp_option_to_wire(value.created_at),
+            done_at: timestamp_option_to_wire(value.done_at),
+            amount: decimal_to_wire(value.amount),
+            fee: decimal_to_wire(value.fee),
+            transaction_type: value.transaction_type,
         })
     }
 }
@@ -4263,7 +4476,6 @@ mod tests {
             ))
         })
     }
-
     #[test]
     fn decimal_and_timestamp_wire_boundaries_are_lossless() {
         let decimal = decimal_from_wire("1.2300", "price").unwrap();

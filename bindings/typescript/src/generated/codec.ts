@@ -1082,6 +1082,41 @@ export function upbitDepositInfoToWire(value: Model.UpbitDepositInfo): Wire.Upbi
   };
 }
 
+export function upbitTravelRuleVaspFromWire(value: Wire.UpbitTravelRuleVaspWire): Model.UpbitTravelRuleVasp {
+  return new Model.UpbitTravelRuleVasp(value.vasp_name, value.vasp_uuid, value.depositable, value.withdrawable);
+}
+
+export function upbitTravelRuleVaspToWire(value: Model.UpbitTravelRuleVasp): Wire.UpbitTravelRuleVaspWire {
+  for (const key of Object.keys(value)) {
+    if (!["vaspName", "vaspUuid", "depositable", "withdrawable"].includes(key)) {
+      throw new InvalidRequestError("upbitTravelRuleVasp." + key, "UpbitTravelRuleVasp does not accept " + key);
+    }
+  }
+  return {
+    vasp_name: value.vaspName,
+    vasp_uuid: value.vaspUuid,
+    depositable: value.depositable,
+    withdrawable: value.withdrawable,
+  };
+}
+
+export function upbitTravelRuleVerificationFromWire(value: Wire.UpbitTravelRuleVerificationWire): Model.UpbitTravelRuleVerification {
+  return new Model.UpbitTravelRuleVerification(value.deposit_uuid, value.deposit_state, value.verification_result);
+}
+
+export function upbitTravelRuleVerificationToWire(value: Model.UpbitTravelRuleVerification): Wire.UpbitTravelRuleVerificationWire {
+  for (const key of Object.keys(value)) {
+    if (!["depositUuid", "depositState", "verificationResult"].includes(key)) {
+      throw new InvalidRequestError("upbitTravelRuleVerification." + key, "UpbitTravelRuleVerification does not accept " + key);
+    }
+  }
+  return {
+    deposit_uuid: value.depositUuid,
+    deposit_state: value.depositState,
+    verification_result: value.verificationResult,
+  };
+}
+
 export function upbitBatchCancelScopeFromWire(value: Wire.UpbitBatchCancelScopeWire): Model.UpbitBatchCancelScope {
   switch (value.kind) {
     case "all": return Object.freeze({ kind: "all" });
@@ -1341,6 +1376,111 @@ export function bithumbApiKeyToWire(value: Model.BithumbApiKey): Wire.BithumbApi
   return {
     access_key: value.accessKey,
     expires_at: value.expiresAt.nanosecondsSinceEpoch.toString(),
+  };
+}
+
+export function bithumbKrwWithdrawalsRequestFromWire(value: Wire.BithumbKrwWithdrawalsRequestWire): Model.BithumbKrwWithdrawalsRequest {
+  return new Model.BithumbKrwWithdrawalsRequest(value.state === null ? null : value.state, value.uuids.map((item) => item), value.txids.map((item) => item), value.page === null ? null : value.page, value.limit === null ? null : value.limit, value.order_by === null ? null : identifier(Model.BithumbOrderDirection.values, value.order_by, "order_by"));
+}
+
+export function bithumbKrwWithdrawalsRequestToWire(value: Model.BithumbKrwWithdrawalsRequest): Wire.BithumbKrwWithdrawalsRequestWire {
+  for (const key of Object.keys(value)) {
+    if (!["state", "uuids", "txids", "page", "limit", "orderBy"].includes(key)) {
+      throw new InvalidRequestError("bithumbKrwWithdrawalsRequest." + key, "BithumbKrwWithdrawalsRequest does not accept " + key);
+    }
+  }
+  return {
+    state: value.state === null ? null : value.state,
+    uuids: value.uuids.map((item) => item),
+    txids: value.txids.map((item) => item),
+    page: value.page === null ? null : value.page,
+    limit: value.limit === null ? null : value.limit,
+    order_by: value.orderBy === null ? null : value.orderBy.id,
+  };
+}
+
+export function bithumbKrwDepositsRequestFromWire(value: Wire.BithumbKrwDepositsRequestWire): Model.BithumbKrwDepositsRequest {
+  return new Model.BithumbKrwDepositsRequest(value.state === null ? null : value.state, value.uuids.map((item) => item), value.txids.map((item) => item), value.page === null ? null : value.page, value.limit === null ? null : value.limit, value.order_by === null ? null : identifier(Model.BithumbOrderDirection.values, value.order_by, "order_by"));
+}
+
+export function bithumbKrwDepositsRequestToWire(value: Model.BithumbKrwDepositsRequest): Wire.BithumbKrwDepositsRequestWire {
+  for (const key of Object.keys(value)) {
+    if (!["state", "uuids", "txids", "page", "limit", "orderBy"].includes(key)) {
+      throw new InvalidRequestError("bithumbKrwDepositsRequest." + key, "BithumbKrwDepositsRequest does not accept " + key);
+    }
+  }
+  return {
+    state: value.state === null ? null : value.state,
+    uuids: value.uuids.map((item) => item),
+    txids: value.txids.map((item) => item),
+    page: value.page === null ? null : value.page,
+    limit: value.limit === null ? null : value.limit,
+    order_by: value.orderBy === null ? null : value.orderBy.id,
+  };
+}
+
+export function bithumbKrwTransferRequestFromWire(value: Wire.BithumbKrwTransferRequestWire): Model.BithumbKrwTransferRequest {
+  return new Model.BithumbKrwTransferRequest(Model.Decimal.parse(value.amount));
+}
+
+export function bithumbKrwTransferRequestToWire(value: Model.BithumbKrwTransferRequest): Wire.BithumbKrwTransferRequestWire {
+  for (const key of Object.keys(value)) {
+    if (!["amount"].includes(key)) {
+      throw new InvalidRequestError("bithumbKrwTransferRequest." + key, "BithumbKrwTransferRequest does not accept " + key);
+    }
+  }
+  return {
+    amount: value.amount.toString(),
+  };
+}
+
+export function bithumbKrwWithdrawalFromWire(value: Wire.BithumbKrwWithdrawalWire): Model.BithumbKrwWithdrawal {
+  return new Model.BithumbKrwWithdrawal(value.transfer_type, value.uuid, value.currency, value.net_type === null ? null : value.net_type, value.txid === null ? null : value.txid, value.state, value.created_at === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.created_at)), value.done_at === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.done_at)), Model.Decimal.parse(value.amount), Model.Decimal.parse(value.fee), value.transaction_type === null ? null : value.transaction_type);
+}
+
+export function bithumbKrwWithdrawalToWire(value: Model.BithumbKrwWithdrawal): Wire.BithumbKrwWithdrawalWire {
+  for (const key of Object.keys(value)) {
+    if (!["transferType", "uuid", "currency", "netType", "txid", "state", "createdAt", "doneAt", "amount", "fee", "transactionType"].includes(key)) {
+      throw new InvalidRequestError("bithumbKrwWithdrawal." + key, "BithumbKrwWithdrawal does not accept " + key);
+    }
+  }
+  return {
+    transfer_type: value.transferType,
+    uuid: value.uuid,
+    currency: value.currency,
+    net_type: value.netType === null ? null : value.netType,
+    txid: value.txid === null ? null : value.txid,
+    state: value.state,
+    created_at: value.createdAt === null ? null : value.createdAt.nanosecondsSinceEpoch.toString(),
+    done_at: value.doneAt === null ? null : value.doneAt.nanosecondsSinceEpoch.toString(),
+    amount: value.amount.toString(),
+    fee: value.fee.toString(),
+    transaction_type: value.transactionType === null ? null : value.transactionType,
+  };
+}
+
+export function bithumbKrwDepositFromWire(value: Wire.BithumbKrwDepositWire): Model.BithumbKrwDeposit {
+  return new Model.BithumbKrwDeposit(value.transfer_type, value.uuid, value.currency, value.net_type === null ? null : value.net_type, value.txid === null ? null : value.txid, value.state, value.created_at === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.created_at)), value.done_at === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.done_at)), Model.Decimal.parse(value.amount), Model.Decimal.parse(value.fee), value.transaction_type === null ? null : value.transaction_type);
+}
+
+export function bithumbKrwDepositToWire(value: Model.BithumbKrwDeposit): Wire.BithumbKrwDepositWire {
+  for (const key of Object.keys(value)) {
+    if (!["transferType", "uuid", "currency", "netType", "txid", "state", "createdAt", "doneAt", "amount", "fee", "transactionType"].includes(key)) {
+      throw new InvalidRequestError("bithumbKrwDeposit." + key, "BithumbKrwDeposit does not accept " + key);
+    }
+  }
+  return {
+    transfer_type: value.transferType,
+    uuid: value.uuid,
+    currency: value.currency,
+    net_type: value.netType === null ? null : value.netType,
+    txid: value.txid === null ? null : value.txid,
+    state: value.state,
+    created_at: value.createdAt === null ? null : value.createdAt.nanosecondsSinceEpoch.toString(),
+    done_at: value.doneAt === null ? null : value.doneAt.nanosecondsSinceEpoch.toString(),
+    amount: value.amount.toString(),
+    fee: value.fee.toString(),
+    transaction_type: value.transactionType === null ? null : value.transactionType,
   };
 }
 

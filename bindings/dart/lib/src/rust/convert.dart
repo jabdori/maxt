@@ -355,6 +355,7 @@ enum WireFeature {
   depositAddresses,
   depositHistory,
   depositLookup,
+  travelRule,
   withdrawalQuotes,
   withdrawals,
   withdrawalHistory,

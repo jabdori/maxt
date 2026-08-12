@@ -45,8 +45,8 @@
 
 | Exchange | Adapter | Python | Dart / TypeScript |
 | --- | --- | --- | --- |
-| upbit | `UpbitAdapter` | `region`, `order_books`, `order_books_at_level`, `tickers`, `tickers_by_quote`, `year_candles`, `orderbook_instruments`, `market_events`, `test_order`, `deposit_info`, `batch_cancel_open_orders`, `cancel_and_new_order` | `region`, `orderBooks`, `orderBooksAtLevel`, `tickers`, `tickersByQuote`, `yearCandles`, `orderbookInstruments`, `marketEvents`, `testOrder`, `depositInfo`, `batchCancelOpenOrders`, `cancelAndNewOrder` |
-| bithumb | `BithumbAdapter` | `market_warnings`, `market_alerts`, `notices`, `transfer_fees`, `api_keys`, `pending_orders`, `batch_orders`, `twap_orders`, `create_twap_order`, `cancel_twap_order` | `marketWarnings`, `marketAlerts`, `notices`, `transferFees`, `apiKeys`, `pendingOrders`, `batchOrders`, `twapOrders`, `createTwapOrder`, `cancelTwapOrder` |
+| upbit | `UpbitAdapter` | `region`, `order_books`, `order_books_at_level`, `tickers`, `tickers_by_quote`, `year_candles`, `orderbook_instruments`, `market_events`, `test_order`, `deposit_info`, `travel_rule_vasps`, `verify_travel_rule_by_uuid`, `verify_travel_rule_by_txid`, `batch_cancel_open_orders`, `cancel_and_new_order` | `region`, `orderBooks`, `orderBooksAtLevel`, `tickers`, `tickersByQuote`, `yearCandles`, `orderbookInstruments`, `marketEvents`, `testOrder`, `depositInfo`, `travelRuleVasps`, `verifyTravelRuleByUuid`, `verifyTravelRuleByTxid`, `batchCancelOpenOrders`, `cancelAndNewOrder` |
+| bithumb | `BithumbAdapter` | `market_warnings`, `market_alerts`, `notices`, `transfer_fees`, `api_keys`, `krw_withdrawals`, `withdraw_krw`, `krw_deposits`, `deposit_krw`, `pending_orders`, `batch_orders`, `twap_orders`, `create_twap_order`, `cancel_twap_order` | `marketWarnings`, `marketAlerts`, `notices`, `transferFees`, `apiKeys`, `krwWithdrawals`, `withdrawKrw`, `krwDeposits`, `depositKrw`, `pendingOrders`, `batchOrders`, `twapOrders`, `createTwapOrder`, `cancelTwapOrder` |
 | binance | `BinanceAdapter` | `venue`, `spot_symbol_filters`, `spot_order`, `mark_price`, `mark_prices`, `open_interest`, `aggregate_trades`, `usd_m_create_listen_key`, `usd_m_keepalive_listen_key`, `usd_m_close_listen_key` | `venue`, `spotSymbolFilters`, `spotOrder`, `markPrice`, `markPrices`, `openInterest`, `aggregateTrades`, `usdMCreateListenKey`, `usdMKeepaliveListenKey`, `usdMCloseListenKey` |
 | hyperliquid | `HyperliquidAdapter` | `is_testnet`, `all_mids`, `non_funding_ledger`, `asset_context` | `isTestnet`, `allMids`, `nonFundingLedger`, `assetContext` |
 
@@ -59,13 +59,13 @@ Documentation baseline: `2026-08-10`.
 | upbit | Quotation | 17 / 17 | `http`, `websocket_request`, `websocket_stream` | `json` | Partial |
 | upbit | Exchange | 14 / 14 | `http`, `websocket_stream` | `json` | Partial |
 | upbit | Deposits and withdrawals | 13 / 13 | `http` | `json` | Partial |
-| upbit | Travel Rule | 3 / 3 | `http` | `json` | Planned |
+| upbit | Travel Rule | 3 / 3 | `http` | `json` | Complete |
 | upbit | Korea pockets | 0 / — | `http` | `json` | Planned |
 | bithumb | Quotation | 14 / 14 | `http`, `websocket_stream` | `json` | Partial |
 | bithumb | Exchange | 13 / 13 | `http`, `websocket_stream` | `json` | Partial |
 | bithumb | Deposits and withdrawals | 13 / 13 | `http` | `json` | Partial |
 | bithumb | TWAP | 3 / 3 | `http` | `json` | Complete |
-| bithumb | KRW deposits and withdrawals | 4 / 4 | `http` | `json` | Planned |
+| bithumb | KRW deposits and withdrawals | 4 / 4 | `http` | `json` | Complete |
 | binance | Spot Trading | 15 / 118 | `http`, `websocket_request`, `websocket_stream`, `fix` | `json`, `sbe`, `fix_tag_value`, `fix_sbe` | Partial |
 | binance | Futures (USDⓈ-M) | 25 / 133 | `http`, `websocket_request`, `websocket_stream` | `json` | Partial |
 | binance | Futures (COIN-M) | 0 / 93 | `http`, `websocket_request`, `websocket_stream` | `json` | Planned |
@@ -160,9 +160,9 @@ Documentation baseline: `2026-08-10`.
 | upbit | wallet | `deposits` | `GET` | `/v1/deposits` | `http` | JWT | read | general | common `deposits` | `Implemented` | `Fixture` |
 | upbit | wallet | `deposit` | `GET` | `/v1/deposit` | `http` | JWT | read | general | common `deposit` | `Partial` | `Fixture` |
 | upbit | wallet | `withdrawals` | `GET` | `/v1/withdraws` | `http` | JWT | read | general | common `withdrawals` | `Implemented` | `Fixture` |
-| upbit | travel_rule | `travel_rule_vasps` | `GET` | `/v1/travel_rule/vasps` | `http` | JWT | read | Singapore only | provider `travel_rule_vasps` | `Planned` | `Documented` |
-| upbit | travel_rule | `travel_rule_verify_uuid` | `POST` | `/v1/travel_rule/deposit/uuid` | `http` | JWT | financial write | Singapore only | provider `verify_travel_rule_by_uuid` | `Planned` | `Documented` |
-| upbit | travel_rule | `travel_rule_verify_txid` | `POST` | `/v1/travel_rule/deposit/txid` | `http` | JWT | financial write | Singapore only | provider `verify_travel_rule_by_txid` | `Planned` | `Documented` |
+| upbit | travel_rule | `travel_rule_vasps` | `GET` | `/v1/travel_rule/vasps` | `http` | JWT | read | Korea or Singapore only | provider `travel_rule_vasps` | `Implemented` | `Fixture` |
+| upbit | travel_rule | `travel_rule_verify_uuid` | `POST` | `/v1/travel_rule/deposit/uuid` | `http` | JWT | financial write | Korea or Singapore only | provider `verify_travel_rule_by_uuid` | `Implemented` | `Fixture` |
+| upbit | travel_rule | `travel_rule_verify_txid` | `POST` | `/v1/travel_rule/deposit/txid` | `http` | JWT | financial write | Korea or Singapore only | provider `verify_travel_rule_by_txid` | `Implemented` | `Fixture` |
 | bithumb | quotation | `markets` | `GET` | `/v1/market/all` | `http` | public | read | general | common `markets`; provider `market_warnings` | `Implemented` | `LiveRead` |
 | bithumb | quotation | `candles_minutes` | `GET` | `/v1/candles/minutes/{unit}` | `http` | public | read | general | common `candles` | `Implemented` | `LiveRead` |
 | bithumb | quotation | `candles_days` | `GET` | `/v1/candles/days` | `http` | public | read | general | common `candles` | `Implemented` | `LiveRead` |
@@ -206,10 +206,10 @@ Documentation baseline: `2026-08-10`.
 | bithumb | twap | `twap` | `GET` | `/v1/twap` | `http` | JWT | read | general | provider `twap_orders` | `Implemented` | `Fixture` |
 | bithumb | twap | `create_twap` | `POST` | `/v1/twap` | `http` | JWT | financial write | general | provider `create_twap_order` | `Implemented` | `Fixture` |
 | bithumb | twap | `cancel_twap` | `DELETE` | `/v1/twap` | `http` | JWT | financial write | general | provider `cancel_twap_order` | `Implemented` | `Fixture` |
-| bithumb | krw | `withdrawals` | `GET` | `/v1/withdraws/krw` | `http` | JWT | read | general | provider `krw_withdrawals` | `Planned` | `Documented` |
-| bithumb | krw | `withdraw` | `POST` | `/v1/withdraws/krw` | `http` | JWT | financial write | general | provider `withdraw_krw` | `Planned` | `Documented` |
-| bithumb | krw | `deposits` | `GET` | `/v1/deposits/krw` | `http` | JWT | read | general | provider `krw_deposits` | `Planned` | `Documented` |
-| bithumb | krw | `deposit` | `POST` | `/v1/deposits/krw` | `http` | JWT | financial write | general | provider `deposit_krw` | `Planned` | `Documented` |
+| bithumb | krw | `withdrawals` | `GET` | `/v1/withdraws/krw` | `http` | JWT | read | general | provider `krw_withdrawals` | `Implemented` | `Fixture` |
+| bithumb | krw | `withdraw` | `POST` | `/v1/withdraws/krw` | `http` | JWT | financial write | general | provider `withdraw_krw` | `Implemented` | `Fixture` |
+| bithumb | krw | `deposits` | `GET` | `/v1/deposits/krw` | `http` | JWT | read | general | provider `krw_deposits` | `Implemented` | `Fixture` |
+| bithumb | krw | `deposit` | `POST` | `/v1/deposits/krw` | `http` | JWT | financial write | general | provider `deposit_krw` | `Implemented` | `Fixture` |
 | binance | spot | `exchange_info` | `GET` | `/api/v3/exchangeInfo` | `http` | public | read | general | common `markets`; provider `spot_symbol_filters` | `Implemented` | `LiveRead` |
 | binance | spot | `recent_trades` | `GET` | `/api/v3/trades` | `http` | public | read | general | common `trades` | `Implemented` | `LiveRead` |
 | binance | spot | `order_book` | `GET` | `/api/v3/depth` | `http` | public | read | general | common `order_book` | `Implemented` | `LiveRead` |

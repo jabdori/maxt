@@ -719,10 +719,20 @@ fn render_provider_method(provider: &Provider, method: &ProviderMethod, schema: 
             provider.exchange, method.name
         ),
     };
-    let documentation = if provider.exchange == "upbit" && method.rust_name == "test_order" {
-        "  /** Validates an Upbit order without creating it. The returned dry-run ID cannot be queried or cancelled, and its status is not a live order. */\n"
-    } else {
-        ""
+    let documentation = match (provider.exchange, method.rust_name) {
+        ("upbit", "test_order") => {
+            "  /** Validates an Upbit order without creating it. The returned dry-run ID cannot be queried or cancelled, and its status is not a live order. */\n"
+        }
+        ("upbit", "travel_rule_vasps") => {
+            "  /** Lists VASPs available for Upbit Korea or Singapore Travel Rule verification. */\n"
+        }
+        ("upbit", "verify_travel_rule_by_uuid") | ("upbit", "verify_travel_rule_by_txid") => {
+            "  /** Submits an Upbit Korea or Singapore Travel Rule verification request. This is a financial write. */\n"
+        }
+        ("bithumb", "withdraw_krw") | ("bithumb", "deposit_krw") => {
+            "  /** Submits a Bithumb KRW transfer request. This is a financial write. */\n"
+        }
+        _ => "",
     };
     format!(
         "{documentation}  async {}({}): Promise<{}> {{ await ensureInitialized(); {} }}\n",

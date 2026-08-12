@@ -385,6 +385,218 @@ class WireBithumbBatchOrdersResult {
           outcomes == other.outcomes;
 }
 
+class WireBithumbKrwDeposit {
+  final String transferType;
+  final String uuid;
+  final String currency;
+  final String? netType;
+  final String? txid;
+  final String state;
+  final PlatformInt64? createdAtNs;
+  final PlatformInt64? doneAtNs;
+  final String amount;
+  final String fee;
+  final String? transactionType;
+
+  const WireBithumbKrwDeposit({
+    required this.transferType,
+    required this.uuid,
+    required this.currency,
+    this.netType,
+    this.txid,
+    required this.state,
+    this.createdAtNs,
+    this.doneAtNs,
+    required this.amount,
+    required this.fee,
+    this.transactionType,
+  });
+
+  @override
+  int get hashCode =>
+      transferType.hashCode ^
+      uuid.hashCode ^
+      currency.hashCode ^
+      netType.hashCode ^
+      txid.hashCode ^
+      state.hashCode ^
+      createdAtNs.hashCode ^
+      doneAtNs.hashCode ^
+      amount.hashCode ^
+      fee.hashCode ^
+      transactionType.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbKrwDeposit &&
+          runtimeType == other.runtimeType &&
+          transferType == other.transferType &&
+          uuid == other.uuid &&
+          currency == other.currency &&
+          netType == other.netType &&
+          txid == other.txid &&
+          state == other.state &&
+          createdAtNs == other.createdAtNs &&
+          doneAtNs == other.doneAtNs &&
+          amount == other.amount &&
+          fee == other.fee &&
+          transactionType == other.transactionType;
+}
+
+class WireBithumbKrwDepositsRequest {
+  final String? state;
+  final List<String> uuids;
+  final List<String> txids;
+  final int? page;
+  final int? limit;
+  final WireBithumbOrderDirection? orderBy;
+
+  const WireBithumbKrwDepositsRequest({
+    this.state,
+    required this.uuids,
+    required this.txids,
+    this.page,
+    this.limit,
+    this.orderBy,
+  });
+
+  @override
+  int get hashCode =>
+      state.hashCode ^
+      uuids.hashCode ^
+      txids.hashCode ^
+      page.hashCode ^
+      limit.hashCode ^
+      orderBy.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbKrwDepositsRequest &&
+          runtimeType == other.runtimeType &&
+          state == other.state &&
+          uuids == other.uuids &&
+          txids == other.txids &&
+          page == other.page &&
+          limit == other.limit &&
+          orderBy == other.orderBy;
+}
+
+class WireBithumbKrwTransferRequest {
+  final String amount;
+
+  const WireBithumbKrwTransferRequest({required this.amount});
+
+  @override
+  int get hashCode => amount.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbKrwTransferRequest &&
+          runtimeType == other.runtimeType &&
+          amount == other.amount;
+}
+
+class WireBithumbKrwWithdrawal {
+  final String transferType;
+  final String uuid;
+  final String currency;
+  final String? netType;
+  final String? txid;
+  final String state;
+  final PlatformInt64? createdAtNs;
+  final PlatformInt64? doneAtNs;
+  final String amount;
+  final String fee;
+  final String? transactionType;
+
+  const WireBithumbKrwWithdrawal({
+    required this.transferType,
+    required this.uuid,
+    required this.currency,
+    this.netType,
+    this.txid,
+    required this.state,
+    this.createdAtNs,
+    this.doneAtNs,
+    required this.amount,
+    required this.fee,
+    this.transactionType,
+  });
+
+  @override
+  int get hashCode =>
+      transferType.hashCode ^
+      uuid.hashCode ^
+      currency.hashCode ^
+      netType.hashCode ^
+      txid.hashCode ^
+      state.hashCode ^
+      createdAtNs.hashCode ^
+      doneAtNs.hashCode ^
+      amount.hashCode ^
+      fee.hashCode ^
+      transactionType.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbKrwWithdrawal &&
+          runtimeType == other.runtimeType &&
+          transferType == other.transferType &&
+          uuid == other.uuid &&
+          currency == other.currency &&
+          netType == other.netType &&
+          txid == other.txid &&
+          state == other.state &&
+          createdAtNs == other.createdAtNs &&
+          doneAtNs == other.doneAtNs &&
+          amount == other.amount &&
+          fee == other.fee &&
+          transactionType == other.transactionType;
+}
+
+class WireBithumbKrwWithdrawalsRequest {
+  final String? state;
+  final List<String> uuids;
+  final List<String> txids;
+  final int? page;
+  final int? limit;
+  final WireBithumbOrderDirection? orderBy;
+
+  const WireBithumbKrwWithdrawalsRequest({
+    this.state,
+    required this.uuids,
+    required this.txids,
+    this.page,
+    this.limit,
+    this.orderBy,
+  });
+
+  @override
+  int get hashCode =>
+      state.hashCode ^
+      uuids.hashCode ^
+      txids.hashCode ^
+      page.hashCode ^
+      limit.hashCode ^
+      orderBy.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbKrwWithdrawalsRequest &&
+          runtimeType == other.runtimeType &&
+          state == other.state &&
+          uuids == other.uuids &&
+          txids == other.txids &&
+          page == other.page &&
+          limit == other.limit &&
+          orderBy == other.orderBy;
+}
+
 class WireBithumbNetworkFee {
   final String network;
   final String providerName;
@@ -1649,6 +1861,64 @@ sealed class WireUpbitOrderVolume with _$WireUpbitOrderVolume {
       WireUpbitOrderVolume_Amount;
   const factory WireUpbitOrderVolume.remainOnly() =
       WireUpbitOrderVolume_RemainOnly;
+}
+
+class WireUpbitTravelRuleVasp {
+  final String vaspName;
+  final String vaspUuid;
+  final bool depositable;
+  final bool withdrawable;
+
+  const WireUpbitTravelRuleVasp({
+    required this.vaspName,
+    required this.vaspUuid,
+    required this.depositable,
+    required this.withdrawable,
+  });
+
+  @override
+  int get hashCode =>
+      vaspName.hashCode ^
+      vaspUuid.hashCode ^
+      depositable.hashCode ^
+      withdrawable.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitTravelRuleVasp &&
+          runtimeType == other.runtimeType &&
+          vaspName == other.vaspName &&
+          vaspUuid == other.vaspUuid &&
+          depositable == other.depositable &&
+          withdrawable == other.withdrawable;
+}
+
+class WireUpbitTravelRuleVerification {
+  final String depositUuid;
+  final String depositState;
+  final String verificationResult;
+
+  const WireUpbitTravelRuleVerification({
+    required this.depositUuid,
+    required this.depositState,
+    required this.verificationResult,
+  });
+
+  @override
+  int get hashCode =>
+      depositUuid.hashCode ^
+      depositState.hashCode ^
+      verificationResult.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitTravelRuleVerification &&
+          runtimeType == other.runtimeType &&
+          depositUuid == other.depositUuid &&
+          depositState == other.depositState &&
+          verificationResult == other.verificationResult;
 }
 
 class WireUpbitYearCandle {

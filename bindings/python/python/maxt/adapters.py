@@ -21,6 +21,11 @@ from .models import (
     BithumbAssetFee,
     BithumbBatchOrdersRequest,
     BithumbBatchOrdersResult,
+    BithumbKrwDeposit,
+    BithumbKrwDepositsRequest,
+    BithumbKrwTransferRequest,
+    BithumbKrwWithdrawal,
+    BithumbKrwWithdrawalsRequest,
     BithumbMarketAlert,
     BithumbNotice,
     BithumbPendingOrdersRequest,
@@ -54,6 +59,8 @@ from .models import (
     Ticker,
     Network,
     UpbitDepositInfo,
+    UpbitTravelRuleVasp,
+    UpbitTravelRuleVerification,
     UpbitBatchCancelRequest,
     UpbitCancelAndNewOrderRequest,
     UpbitCancelAndNewOrderResult,
@@ -293,6 +300,41 @@ class UpbitAdapter(_NativeAdapter):
         value = await self._call(self._handle.deposit_info, asset, network)
         return _model_from_wire("UpbitDepositInfo", value)
 
+    async def travel_rule_vasps(self) -> list[UpbitTravelRuleVasp]:
+        """List supported Travel Rule VASPs for Upbit Korea or Singapore."""
+        values = await self._call(self._handle.travel_rule_vasps)
+        return [_model_from_wire("UpbitTravelRuleVasp", value) for value in values]
+
+    async def verify_travel_rule_by_uuid(
+        self,
+        deposit_uuid: str,
+        vasp_uuid: str,
+    ) -> UpbitTravelRuleVerification:
+        """Request Travel Rule verification by Upbit deposit UUID."""
+        value = await self._call(
+            self._handle.verify_travel_rule_by_uuid,
+            deposit_uuid,
+            vasp_uuid,
+        )
+        return _model_from_wire("UpbitTravelRuleVerification", value)
+
+    async def verify_travel_rule_by_txid(
+        self,
+        txid: str,
+        vasp_uuid: str,
+        currency: str,
+        net_type: str,
+    ) -> UpbitTravelRuleVerification:
+        """Request Travel Rule verification by transaction ID."""
+        value = await self._call(
+            self._handle.verify_travel_rule_by_txid,
+            txid,
+            vasp_uuid,
+            currency,
+            net_type,
+        )
+        return _model_from_wire("UpbitTravelRuleVerification", value)
+
     async def batch_cancel_open_orders(
         self,
         request: UpbitBatchCancelRequest,
@@ -365,6 +407,36 @@ class BithumbAdapter(_NativeAdapter):
     async def api_keys(self) -> list[BithumbApiKey]:
         values = await self._call(self._handle.api_keys)
         return [_model_from_wire("BithumbApiKey", value) for value in values]
+
+    async def krw_withdrawals(
+        self,
+        request: BithumbKrwWithdrawalsRequest,
+    ) -> list[BithumbKrwWithdrawal]:
+        values = await self._call(self._handle.krw_withdrawals, request.to_wire())
+        return [_model_from_wire("BithumbKrwWithdrawal", value) for value in values]
+
+    async def withdraw_krw(
+        self,
+        request: BithumbKrwTransferRequest,
+    ) -> BithumbKrwWithdrawal:
+        """Request a KRW withdrawal; this is a financial write."""
+        value = await self._call(self._handle.withdraw_krw, request.to_wire())
+        return _model_from_wire("BithumbKrwWithdrawal", value)
+
+    async def krw_deposits(
+        self,
+        request: BithumbKrwDepositsRequest,
+    ) -> list[BithumbKrwDeposit]:
+        values = await self._call(self._handle.krw_deposits, request.to_wire())
+        return [_model_from_wire("BithumbKrwDeposit", value) for value in values]
+
+    async def deposit_krw(
+        self,
+        request: BithumbKrwTransferRequest,
+    ) -> BithumbKrwDeposit:
+        """Request a KRW deposit; this is a financial write."""
+        value = await self._call(self._handle.deposit_krw, request.to_wire())
+        return _model_from_wire("BithumbKrwDeposit", value)
 
     async def pending_orders(
         self, request: BithumbPendingOrdersRequest

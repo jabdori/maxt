@@ -908,6 +908,23 @@ export class UpbitDepositInfo {
   }
 }
 
+export class UpbitTravelRuleVasp {
+  constructor(
+    readonly vaspName: string,
+    readonly vaspUuid: string,
+    readonly depositable: boolean,
+    readonly withdrawable: boolean,
+  ) { freezeRecord(this); }
+}
+
+export class UpbitTravelRuleVerification {
+  constructor(
+    readonly depositUuid: string,
+    readonly depositState: string,
+    readonly verificationResult: string,
+  ) { freezeRecord(this); }
+}
+
 export type UpbitBatchCancelScope =
   | { readonly kind: "all" }
   | { readonly kind: "quote_currencies"; readonly values: readonly string[] }
@@ -1038,6 +1055,84 @@ export class BithumbNotice {
 
 export class BithumbApiKey {
   constructor(readonly accessKey: string, readonly expiresAt: Timestamp) { freezeRecord(this); }
+}
+
+export class BithumbKrwWithdrawalsRequest {
+  readonly uuids: readonly string[];
+  readonly txids: readonly string[];
+  readonly page: number | null;
+  readonly limit: number | null;
+  constructor(
+    readonly state: string | null = null,
+    uuids: readonly string[] = [],
+    txids: readonly string[] = [],
+    page: number | null = null,
+    limit: number | null = null,
+    readonly orderBy: BithumbOrderDirection | null = null,
+  ) {
+    this.uuids = Object.freeze([...uuids]);
+    this.txids = Object.freeze([...txids]);
+    this.page = checkedOptionalU32(page, "page");
+    this.limit = checkedOptionalU32(limit, "limit");
+    freezeRecord(this);
+  }
+}
+
+export class BithumbKrwDepositsRequest {
+  readonly uuids: readonly string[];
+  readonly txids: readonly string[];
+  readonly page: number | null;
+  readonly limit: number | null;
+  constructor(
+    readonly state: string | null = null,
+    uuids: readonly string[] = [],
+    txids: readonly string[] = [],
+    page: number | null = null,
+    limit: number | null = null,
+    readonly orderBy: BithumbOrderDirection | null = null,
+  ) {
+    this.uuids = Object.freeze([...uuids]);
+    this.txids = Object.freeze([...txids]);
+    this.page = checkedOptionalU32(page, "page");
+    this.limit = checkedOptionalU32(limit, "limit");
+    freezeRecord(this);
+  }
+}
+
+export class BithumbKrwTransferRequest {
+  constructor(readonly amount: Decimal) { freezeRecord(this); }
+}
+
+export class BithumbKrwWithdrawal {
+  constructor(
+    readonly transferType: string,
+    readonly uuid: string,
+    readonly currency: string,
+    readonly netType: string | null,
+    readonly txid: string | null,
+    readonly state: string,
+    readonly createdAt: Timestamp | null,
+    readonly doneAt: Timestamp | null,
+    readonly amount: Decimal,
+    readonly fee: Decimal,
+    readonly transactionType: string | null,
+  ) { freezeRecord(this); }
+}
+
+export class BithumbKrwDeposit {
+  constructor(
+    readonly transferType: string,
+    readonly uuid: string,
+    readonly currency: string,
+    readonly netType: string | null,
+    readonly txid: string | null,
+    readonly state: string,
+    readonly createdAt: Timestamp | null,
+    readonly doneAt: Timestamp | null,
+    readonly amount: Decimal,
+    readonly fee: Decimal,
+    readonly transactionType: string | null,
+  ) { freezeRecord(this); }
 }
 
 export class BithumbPendingOrdersRequest {

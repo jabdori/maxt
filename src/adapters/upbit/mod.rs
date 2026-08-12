@@ -4,6 +4,7 @@ mod parse;
 mod private;
 mod rest;
 mod stream;
+mod travel_rule;
 mod wallet;
 
 use futures_core::Stream;
@@ -26,6 +27,8 @@ use crate::types::{
     OrderBook, OrderRules, Page, Side, StreamConfig, Subscription, Ticker, TimeInForce, Trade,
     TransferDestination, Withdrawal, WithdrawalQuote,
 };
+
+pub use travel_rule::{UpbitTravelRuleVasp, UpbitTravelRuleVerification};
 
 /// Selects an Upbit regional deployment.
 ///
@@ -566,6 +569,66 @@ impl UpbitAdapter {
         wallet::deposit_info(self.credentials()?, self.http()?, asset, network).await
     }
 
+    /// Lists VASPs supported by Upbit's Travel Rule service.
+    ///
+    /// This read requires the API key's `View Deposits` permission and is
+    /// available only when this adapter targets [`UpbitRegion::Korea`] or
+    /// [`UpbitRegion::Singapore`].
+    pub async fn travel_rule_vasps(&self) -> Result<Vec<UpbitTravelRuleVasp>> {
+        travel_rule::ensure_supported_region(self.region)?;
+        travel_rule::vasps(self.region, self.credentials()?, self.http()?).await
+    }
+
+    /// Requests Travel Rule account-owner verification by deposit UUID.
+    ///
+    /// This is a financial write requiring the API key's `Deposit` permission.
+    /// Upbit permits at most one request for the same deposit every 10 minutes;
+    /// that repeat restriction is enforced by Upbit, not tracked client-side.
+    /// The endpoint is available only in [`UpbitRegion::Korea`] or
+    /// [`UpbitRegion::Singapore`].
+    pub async fn verify_travel_rule_by_uuid(
+        &self,
+        deposit_uuid: &str,
+        vasp_uuid: &str,
+    ) -> Result<UpbitTravelRuleVerification> {
+        travel_rule::ensure_supported_region(self.region)?;
+        travel_rule::verify_by_uuid(
+            self.region,
+            self.credentials()?,
+            self.http()?,
+            deposit_uuid,
+            vasp_uuid,
+        )
+        .await
+    }
+
+    /// Requests Travel Rule account-owner verification by deposit transaction ID.
+    ///
+    /// This is a financial write requiring the API key's `Deposit` permission.
+    /// Upbit permits at most one request for the same deposit every 10 minutes;
+    /// that repeat restriction is enforced by Upbit, not tracked client-side.
+    /// The endpoint is available only in [`UpbitRegion::Korea`] or
+    /// [`UpbitRegion::Singapore`].
+    pub async fn verify_travel_rule_by_txid(
+        &self,
+        txid: &str,
+        vasp_uuid: &str,
+        currency: &str,
+        net_type: &str,
+    ) -> Result<UpbitTravelRuleVerification> {
+        travel_rule::ensure_supported_region(self.region)?;
+        travel_rule::verify_by_txid(
+            self.region,
+            self.credentials()?,
+            self.http()?,
+            txid,
+            vasp_uuid,
+            currency,
+            net_type,
+        )
+        .await
+    }
+
     /// Cancels matching Upbit `wait` orders in one conditional request.
     ///
     /// This is a financial write. The returned value separates orders Upbit
@@ -639,6 +702,10 @@ impl Adapter for UpbitAdapter {
     fn supports(&self, feature: Feature) -> bool {
         if feature.is_derivatives_only() {
             return false;
+        }
+        if feature == Feature::TravelRule {
+            return matches!(self.region, UpbitRegion::Korea | UpbitRegion::Singapore)
+                && self.is_authenticated();
         }
         if feature.needs_credentials() {
             return self.is_authenticated();
@@ -1017,6 +1084,42 @@ mod tests {
         ] {
             assert!(public.supports(feature), "{feature:?}");
         }
+    }
+
+    #[test]
+    fn travel_rule_requires_a_supported_region_and_credentials() {
+        assert!(!UpbitAdapter::new().supports(Feature::TravelRule));
+        assert!(!UpbitAdapter::with_region(UpbitRegion::Singapore).supports(Feature::TravelRule));
+        assert!(
+            UpbitAdapter::new()
+                .with_credentials("access", "secret")
+                .supports(Feature::TravelRule)
+        );
+        assert!(
+            UpbitAdapter::with_region(UpbitRegion::Singapore)
+                .with_credentials("access", "secret")
+                .supports(Feature::TravelRule)
+        );
+        assert!(
+            !UpbitAdapter::with_region(UpbitRegion::Indonesia)
+                .with_credentials("access", "secret")
+                .supports(Feature::TravelRule)
+        );
+    }
+
+    #[tokio::test]
+    async fn travel_rule_region_precedes_credential_validation() {
+        let error = UpbitAdapter::with_region(UpbitRegion::Indonesia)
+            .travel_rule_vasps()
+            .await
+            .expect_err("unsupported region must fail before credentials");
+        assert!(matches!(
+            error,
+            Error::Unsupported {
+                feature: Feature::TravelRule,
+                ..
+            }
+        ));
     }
 
     #[tokio::test]

@@ -177,6 +177,24 @@ void main() {
     );
   });
 
+  test('WebAssembly도 Travel Rule 지원 지역과 인증을 먼저 확인한다', () async {
+    await expectLater(
+      UpbitAdapter.withRegion(UpbitRegion.indonesia).travelRuleVasps(),
+      throwsA(isA<UnsupportedError>()),
+    );
+    await expectLater(
+      UpbitAdapter().travelRuleVasps(),
+      throwsA(isA<AuthenticationError>()),
+    );
+  });
+
+  test('WebAssembly도 자격증명 없는 Bithumb 원화 이력 조회를 거절한다', () async {
+    await expectLater(
+      BithumbAdapter().krwWithdrawals(const BithumbKrwWithdrawalsRequest()),
+      throwsA(isA<AuthenticationError>()),
+    );
+  });
+
   test('WebAssembly도 자격증명 없는 Upbit 조건부 일괄 취소를 거절한다', () async {
     await expectLater(
       UpbitAdapter().batchCancelOpenOrders(

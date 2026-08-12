@@ -1316,6 +1316,67 @@ impl TryFrom<WireUpbitDepositInfo> for maxt::UpbitDepositInfo {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitTravelRuleVasp {
+    pub vasp_name: String,
+    pub vasp_uuid: String,
+    pub depositable: bool,
+    pub withdrawable: bool,
+}
+
+impl From<maxt::UpbitTravelRuleVasp> for WireUpbitTravelRuleVasp {
+    fn from(value: maxt::UpbitTravelRuleVasp) -> Self {
+        Self {
+            vasp_name: value.vasp_name,
+            vasp_uuid: value.vasp_uuid,
+            depositable: value.depositable,
+            withdrawable: value.withdrawable,
+        }
+    }
+}
+
+impl TryFrom<WireUpbitTravelRuleVasp> for maxt::UpbitTravelRuleVasp {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitTravelRuleVasp) -> Result<Self, Self::Error> {
+        Ok(Self {
+            vasp_name: value.vasp_name,
+            vasp_uuid: value.vasp_uuid,
+            depositable: value.depositable,
+            withdrawable: value.withdrawable,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitTravelRuleVerification {
+    pub deposit_uuid: String,
+    pub deposit_state: String,
+    pub verification_result: String,
+}
+
+impl From<maxt::UpbitTravelRuleVerification> for WireUpbitTravelRuleVerification {
+    fn from(value: maxt::UpbitTravelRuleVerification) -> Self {
+        Self {
+            deposit_uuid: value.deposit_uuid,
+            deposit_state: value.deposit_state,
+            verification_result: value.verification_result,
+        }
+    }
+}
+
+impl TryFrom<WireUpbitTravelRuleVerification> for maxt::UpbitTravelRuleVerification {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitTravelRuleVerification) -> Result<Self, Self::Error> {
+        Ok(Self {
+            deposit_uuid: value.deposit_uuid,
+            deposit_state: value.deposit_state,
+            verification_result: value.verification_result,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WireUpbitBatchCancelScope {
     All,
     QuoteCurrencies { values: Vec<String> },
@@ -1661,6 +1722,211 @@ impl TryFrom<WireBithumbApiKey> for maxt::BithumbApiKey {
         Ok(Self {
             access_key: value.access_key,
             expires_at: Timestamp::from_nanos(value.expires_at_ns),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbKrwWithdrawalsRequest {
+    pub state: Option<String>,
+    pub uuids: Vec<String>,
+    pub txids: Vec<String>,
+    pub page: Option<u32>,
+    pub limit: Option<u32>,
+    pub order_by: Option<WireBithumbOrderDirection>,
+}
+
+impl From<maxt::BithumbKrwWithdrawalsRequest> for WireBithumbKrwWithdrawalsRequest {
+    fn from(value: maxt::BithumbKrwWithdrawalsRequest) -> Self {
+        Self {
+            state: value.state,
+            uuids: value.uuids,
+            txids: value.txids,
+            page: value.page,
+            limit: value.limit,
+            order_by: value.order_by.map(Into::into),
+        }
+    }
+}
+
+impl TryFrom<WireBithumbKrwWithdrawalsRequest> for maxt::BithumbKrwWithdrawalsRequest {
+    type Error = NativeError;
+
+    fn try_from(value: WireBithumbKrwWithdrawalsRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            state: value.state,
+            uuids: value.uuids,
+            txids: value.txids,
+            page: value.page,
+            limit: value.limit,
+            order_by: value.order_by.map(Into::into),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbKrwDepositsRequest {
+    pub state: Option<String>,
+    pub uuids: Vec<String>,
+    pub txids: Vec<String>,
+    pub page: Option<u32>,
+    pub limit: Option<u32>,
+    pub order_by: Option<WireBithumbOrderDirection>,
+}
+
+impl From<maxt::BithumbKrwDepositsRequest> for WireBithumbKrwDepositsRequest {
+    fn from(value: maxt::BithumbKrwDepositsRequest) -> Self {
+        Self {
+            state: value.state,
+            uuids: value.uuids,
+            txids: value.txids,
+            page: value.page,
+            limit: value.limit,
+            order_by: value.order_by.map(Into::into),
+        }
+    }
+}
+
+impl TryFrom<WireBithumbKrwDepositsRequest> for maxt::BithumbKrwDepositsRequest {
+    type Error = NativeError;
+
+    fn try_from(value: WireBithumbKrwDepositsRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            state: value.state,
+            uuids: value.uuids,
+            txids: value.txids,
+            page: value.page,
+            limit: value.limit,
+            order_by: value.order_by.map(Into::into),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbKrwTransferRequest {
+    pub amount: String,
+}
+
+impl From<maxt::BithumbKrwTransferRequest> for WireBithumbKrwTransferRequest {
+    fn from(value: maxt::BithumbKrwTransferRequest) -> Self {
+        Self {
+            amount: decimal_to_wire(value.amount),
+        }
+    }
+}
+
+impl TryFrom<WireBithumbKrwTransferRequest> for maxt::BithumbKrwTransferRequest {
+    type Error = NativeError;
+
+    fn try_from(value: WireBithumbKrwTransferRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            amount: decimal_from_wire(&value.amount, "amount").map_err(NativeError::from)?,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbKrwWithdrawal {
+    pub transfer_type: String,
+    pub uuid: String,
+    pub currency: String,
+    pub net_type: Option<String>,
+    pub txid: Option<String>,
+    pub state: String,
+    pub created_at_ns: Option<i64>,
+    pub done_at_ns: Option<i64>,
+    pub amount: String,
+    pub fee: String,
+    pub transaction_type: Option<String>,
+}
+
+impl From<maxt::BithumbKrwWithdrawal> for WireBithumbKrwWithdrawal {
+    fn from(value: maxt::BithumbKrwWithdrawal) -> Self {
+        Self {
+            transfer_type: value.transfer_type,
+            uuid: value.uuid,
+            currency: value.currency,
+            net_type: value.net_type,
+            txid: value.txid,
+            state: value.state,
+            created_at_ns: value.created_at.map(timestamp_to_wire),
+            done_at_ns: value.done_at.map(timestamp_to_wire),
+            amount: decimal_to_wire(value.amount),
+            fee: decimal_to_wire(value.fee),
+            transaction_type: value.transaction_type,
+        }
+    }
+}
+
+impl TryFrom<WireBithumbKrwWithdrawal> for maxt::BithumbKrwWithdrawal {
+    type Error = NativeError;
+
+    fn try_from(value: WireBithumbKrwWithdrawal) -> Result<Self, Self::Error> {
+        Ok(Self {
+            transfer_type: value.transfer_type,
+            uuid: value.uuid,
+            currency: value.currency,
+            net_type: value.net_type,
+            txid: value.txid,
+            state: value.state,
+            created_at: value.created_at_ns.map(Timestamp::from_nanos),
+            done_at: value.done_at_ns.map(Timestamp::from_nanos),
+            amount: decimal_from_wire(&value.amount, "amount").map_err(NativeError::from)?,
+            fee: decimal_from_wire(&value.fee, "fee").map_err(NativeError::from)?,
+            transaction_type: value.transaction_type,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbKrwDeposit {
+    pub transfer_type: String,
+    pub uuid: String,
+    pub currency: String,
+    pub net_type: Option<String>,
+    pub txid: Option<String>,
+    pub state: String,
+    pub created_at_ns: Option<i64>,
+    pub done_at_ns: Option<i64>,
+    pub amount: String,
+    pub fee: String,
+    pub transaction_type: Option<String>,
+}
+
+impl From<maxt::BithumbKrwDeposit> for WireBithumbKrwDeposit {
+    fn from(value: maxt::BithumbKrwDeposit) -> Self {
+        Self {
+            transfer_type: value.transfer_type,
+            uuid: value.uuid,
+            currency: value.currency,
+            net_type: value.net_type,
+            txid: value.txid,
+            state: value.state,
+            created_at_ns: value.created_at.map(timestamp_to_wire),
+            done_at_ns: value.done_at.map(timestamp_to_wire),
+            amount: decimal_to_wire(value.amount),
+            fee: decimal_to_wire(value.fee),
+            transaction_type: value.transaction_type,
+        }
+    }
+}
+
+impl TryFrom<WireBithumbKrwDeposit> for maxt::BithumbKrwDeposit {
+    type Error = NativeError;
+
+    fn try_from(value: WireBithumbKrwDeposit) -> Result<Self, Self::Error> {
+        Ok(Self {
+            transfer_type: value.transfer_type,
+            uuid: value.uuid,
+            currency: value.currency,
+            net_type: value.net_type,
+            txid: value.txid,
+            state: value.state,
+            created_at: value.created_at_ns.map(Timestamp::from_nanos),
+            done_at: value.done_at_ns.map(Timestamp::from_nanos),
+            amount: decimal_from_wire(&value.amount, "amount").map_err(NativeError::from)?,
+            fee: decimal_from_wire(&value.fee, "fee").map_err(NativeError::from)?,
+            transaction_type: value.transaction_type,
         })
     }
 }

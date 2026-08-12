@@ -9,7 +9,7 @@ Rust 계약과 같은 작업, 모델, 오류, 스트림을 제공하는 비동�
 ## 설치
 
 GIL을 사용하는 CPython 3.9 이상이 필요합니다. PyPy와 free-threaded CPython은
-0.1.0에서 지원하지 않습니다. 미리 빌드된 wheel은 glibc 2.17 이상
+현재 지원하지 않습니다. 미리 빌드된 wheel은 glibc 2.17 이상
 Linux(x64, ARM64),
 macOS(x64, ARM64), Windows(x64)를 지원합니다. 다른 플랫폼은 source
 distribution에서 빌드하므로 Rust와 네이티브 컴파일 도구가 필요합니다.
@@ -63,8 +63,8 @@ Binance 테스트넷(testnet) 생성자는 제공하지 않습니다. Hyperliqui
 
 | 어댑터 | 생성 | 추가 메서드 |
 | --- | --- | --- |
-| `UpbitAdapter` | `UpbitAdapter()` 또는 `UpbitAdapter(region=...)` | `order_books()`, `order_books_at_level()`, `tickers()`, `tickers_by_quote()`, `year_candles()`, `orderbook_instruments()`, `market_events()`; 인증 필요: `test_order()`, `deposit_info()`, `batch_cancel_open_orders()`, `cancel_and_new_order()` |
-| `BithumbAdapter` | `BithumbAdapter()` | `market_warnings()`, `market_alerts()`, `notices()`, `transfer_fees()`; 인증 필요: `api_keys()`, `pending_orders()`, `batch_orders()`, `twap_orders()`, `create_twap_order()`, `cancel_twap_order()` |
+| `UpbitAdapter` | `UpbitAdapter()` 또는 `UpbitAdapter(region=...)` | `order_books()`, `order_books_at_level()`, `tickers()`, `tickers_by_quote()`, `year_candles()`, `orderbook_instruments()`, `market_events()`; 인증 필요: `test_order()`, `deposit_info()`, `travel_rule_vasps()`, `verify_travel_rule_by_uuid()`, `verify_travel_rule_by_txid()`, `batch_cancel_open_orders()`, `cancel_and_new_order()` |
+| `BithumbAdapter` | `BithumbAdapter()` | `market_warnings()`, `market_alerts()`, `notices()`, `transfer_fees()`; 인증 필요: `api_keys()`, `krw_withdrawals()`, `withdraw_krw()`, `krw_deposits()`, `deposit_krw()`, `pending_orders()`, `batch_orders()`, `twap_orders()`, `create_twap_order()`, `cancel_twap_order()` |
 | `BinanceAdapter` | `BinanceAdapter.spot()` | `spot_symbol_filters()`; 인증 필요: `spot_order()` |
 | `BinanceAdapter` | `BinanceAdapter.usd_m_futures()` | 공개: `mark_price()`, `mark_prices()`, `open_interest()`, `aggregate_trades()`; 인증 필요: `usd_m_create_listen_key()`, `usd_m_keepalive_listen_key()`, `usd_m_close_listen_key()` |
 | `HyperliquidAdapter` | `HyperliquidAdapter()` 또는 `HyperliquidAdapter.testnet()` | 공개: `all_mids()`; `asset_context()`, `non_funding_ledger()` |
@@ -75,6 +75,10 @@ dry-run 결과이므로 `id`를 조회·취소에 사용하면 안 되며 상태
 `UpbitAdapter.deposit_info(asset, network)`는 거래소가 제공하는 입금 가능 여부, 최소
 수량, 확인 수, 소수 자릿수 메타데이터를 반환합니다. Upbit 응답은 몇 분 지연될 수 있어
 실시간 서비스 상태로 사용하면 안 됩니다.
+
+`UpbitAdapter.travel_rule_vasps()`는 Travel Rule 확인에 사용할 수 있는 VASP 목록을
+조회합니다. 검증 메서드는 금전성 쓰기이며 한국과 싱가포르에서만 사용할 수 있습니다.
+인도네시아와 태국에서는 네트워크 요청 전에 실패합니다. 이 경로는 fixture로만 검증했습니다.
 
 `UpbitAdapter.batch_cancel_open_orders(request)`는 금전성 쓰기 요청입니다.
 `UpbitBatchCancelScope.all()`은 모든 대상 마켓 범위를 명시적으로 선택하며, Upbit는
@@ -94,6 +98,11 @@ dry-run 결과이므로 `id`를 조회·취소에 사용하면 안 되며 상태
 `BithumbAdapter.twap_orders(request)`는 Bithumb KRW 마켓의 인증된 읽기 전용
 주문 이력 조회입니다. `create_twap_order()`와 `cancel_twap_order()`는 금전성
 쓰기이므로 읽기 전용 검증에서 호출하지 마세요.
+
+`BithumbAdapter.krw_withdrawals()`와 `krw_deposits()`는 원화 입출금 이력을
+조회합니다. `withdraw_krw()`와 `deposit_krw()`는 금전성 쓰기입니다. Bithumb의
+등록 계좌와 카카오 2차 인증 절차가 필요하며, maxt는 계좌나 인증 수단을 받거나 저장하지
+않습니다. 이 경로는 fixture로만 검증했습니다.
 
 ```python
 from maxt import (

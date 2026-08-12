@@ -34,6 +34,7 @@ export class Feature extends StringValue {
   static readonly DepositAddresses = new Feature("deposit_addresses");
   static readonly DepositHistory = new Feature("deposit_history");
   static readonly DepositLookup = new Feature("deposit_lookup");
+  static readonly TravelRule = new Feature("travel_rule");
   static readonly WithdrawalQuotes = new Feature("withdrawal_quotes");
   static readonly Withdrawals = new Feature("withdrawals");
   static readonly WithdrawalHistory = new Feature("withdrawal_history");
@@ -64,6 +65,7 @@ export class Feature extends StringValue {
     Feature.DepositAddresses,
     Feature.DepositHistory,
     Feature.DepositLookup,
+    Feature.TravelRule,
     Feature.WithdrawalQuotes,
     Feature.Withdrawals,
     Feature.WithdrawalHistory,
@@ -85,8 +87,8 @@ export class Feature extends StringValue {
     this.needsCredentials = new Set([
       "balances", "open_orders", "order_history", "account_stream", "trading", "positions", "margin",
       "funding_payments", "margin_config", "reduce_only_orders", "asset_networks",
-      "deposit_addresses", "deposit_history", "withdrawal_quotes", "withdrawals",
-      "withdrawal_history", "deposit_lookup", "withdrawal_lookup", "withdrawal_cancellation",
+      "deposit_addresses", "deposit_history", "deposit_lookup", "travel_rule", "withdrawal_quotes", "withdrawals",
+      "withdrawal_history", "withdrawal_lookup", "withdrawal_cancellation",
     ]).has(id);
     this.isDerivativesOnly = new Set([
       "positions", "margin", "funding_rates", "funding_payments", "margin_config",

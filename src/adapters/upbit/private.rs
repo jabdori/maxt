@@ -148,7 +148,7 @@ pub(crate) fn authorization(credentials: &UpbitCredentials, query: &str) -> Resu
 ///
 /// Values must contain only RFC 3986 unreserved bytes so the request target and
 /// signed string have identical meaning.
-fn query(params: &[(&'static str, String)]) -> Result<String> {
+pub(crate) fn query(params: &[(&'static str, String)]) -> Result<String> {
     for (name, value) in params {
         if !value.bytes().all(is_url_safe) {
             return Err(Error::invalid_request(
@@ -165,6 +165,20 @@ fn query(params: &[(&'static str, String)]) -> Result<String> {
         .join("&"))
 }
 
+/// Builds the string hashed for a JSON request body.
+///
+/// Upbit documents this as the result of URL-encoding body fields and then
+/// unquoting the encoded string. Unlike a URL query, a JSON body can carry
+/// reserved characters such as `/` and `=` without changing the request
+/// target, so those values must not be rejected here.
+pub(crate) fn json_body_query(params: &[(&'static str, String)]) -> String {
+    params
+        .iter()
+        .map(|(name, value)| format!("{name}={value}"))
+        .collect::<Vec<_>>()
+        .join("&")
+}
+
 /// Returns whether a byte is in the RFC 3986 unreserved set.
 fn is_url_safe(byte: u8) -> bool {
     byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~')
@@ -173,7 +187,7 @@ fn is_url_safe(byte: u8) -> bool {
 /// Builds the string-valued JSON body used by the order endpoint.
 ///
 /// Decimal parameters remain strings to preserve their exact representation.
-fn json_body(params: &[(&'static str, String)]) -> Result<String> {
+pub(crate) fn json_body(params: &[(&'static str, String)]) -> Result<String> {
     let object = params
         .iter()
         .map(|(name, value)| ((*name).to_string(), Value::String(value.clone())))

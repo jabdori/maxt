@@ -472,6 +472,23 @@ fn _guard_upbit_deposit_info_wire(value: WireUpbitDepositInfo) {
     } = value;
 }
 
+fn _guard_upbit_travel_rule_vasp_wire(value: WireUpbitTravelRuleVasp) {
+    let WireUpbitTravelRuleVasp {
+        vasp_name: _,
+        vasp_uuid: _,
+        depositable: _,
+        withdrawable: _,
+    } = value;
+}
+
+fn _guard_upbit_travel_rule_verification_wire(value: WireUpbitTravelRuleVerification) {
+    let WireUpbitTravelRuleVerification {
+        deposit_uuid: _,
+        deposit_state: _,
+        verification_result: _,
+    } = value;
+}
+
 fn _guard_upbit_cancel_and_new_order_request_wire(value: WireUpbitCancelAndNewOrderRequest) {
     let WireUpbitCancelAndNewOrderRequest {
         previous_order: _,
@@ -486,6 +503,64 @@ fn _guard_upbit_cancel_and_new_order_result_wire(value: WireUpbitCancelAndNewOrd
         previous_order: _,
         new_order_uuid: _,
         new_order_identifier: _,
+    } = value;
+}
+
+fn _guard_bithumb_krw_withdrawals_request_wire(value: WireBithumbKrwWithdrawalsRequest) {
+    let WireBithumbKrwWithdrawalsRequest {
+        state: _,
+        uuids: _,
+        txids: _,
+        page: _,
+        limit: _,
+        order_by: _,
+    } = value;
+}
+
+fn _guard_bithumb_krw_deposits_request_wire(value: WireBithumbKrwDepositsRequest) {
+    let WireBithumbKrwDepositsRequest {
+        state: _,
+        uuids: _,
+        txids: _,
+        page: _,
+        limit: _,
+        order_by: _,
+    } = value;
+}
+
+fn _guard_bithumb_krw_transfer_request_wire(value: WireBithumbKrwTransferRequest) {
+    let WireBithumbKrwTransferRequest { amount: _ } = value;
+}
+
+fn _guard_bithumb_krw_withdrawal_wire(value: WireBithumbKrwWithdrawal) {
+    let WireBithumbKrwWithdrawal {
+        transfer_type: _,
+        uuid: _,
+        currency: _,
+        net_type: _,
+        txid: _,
+        state: _,
+        created_at_ns: _,
+        done_at_ns: _,
+        amount: _,
+        fee: _,
+        transaction_type: _,
+    } = value;
+}
+
+fn _guard_bithumb_krw_deposit_wire(value: WireBithumbKrwDeposit) {
+    let WireBithumbKrwDeposit {
+        transfer_type: _,
+        uuid: _,
+        currency: _,
+        net_type: _,
+        txid: _,
+        state: _,
+        created_at_ns: _,
+        done_at_ns: _,
+        amount: _,
+        fee: _,
+        transaction_type: _,
     } = value;
 }
 
@@ -780,6 +855,7 @@ fn _guard_feature(value: WireFeature) {
         WireFeature::DepositAddresses => {}
         WireFeature::DepositHistory => {}
         WireFeature::DepositLookup => {}
+        WireFeature::TravelRule => {}
         WireFeature::WithdrawalQuotes => {}
         WireFeature::Withdrawals => {}
         WireFeature::WithdrawalHistory => {}

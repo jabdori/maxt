@@ -9,6 +9,9 @@ from maxt import (
     BithumbAlertStep,
     BithumbApiKey,
     BithumbAssetFee,
+    BithumbKrwDepositsRequest,
+    BithumbKrwTransferRequest,
+    BithumbKrwWithdrawalsRequest,
     BithumbMarketAlert,
     BithumbNetworkFee,
     BithumbNotice,
@@ -57,6 +60,8 @@ from maxt import (
     UpbitOrderBookInstrument,
     UpbitOrderDirection,
     UpbitRegion,
+    UpbitTravelRuleVasp,
+    UpbitTravelRuleVerification,
     UpbitYearCandle,
 )
 
@@ -227,6 +232,32 @@ class FakeNativeUpbitAdapter:
             "decimal_precision": 18_446_744_073_709_551_615,
         }
 
+    async def travel_rule_vasps(self):
+        return [
+            {
+                "vasp_name": "Upbit Singapore",
+                "vasp_uuid": "vasp-1",
+                "depositable": True,
+                "withdrawable": False,
+            }
+        ]
+
+    async def verify_travel_rule_by_uuid(self, deposit_uuid, vasp_uuid):
+        self.travel_rule_uuid_args = (deposit_uuid, vasp_uuid)
+        return {
+            "deposit_uuid": deposit_uuid,
+            "deposit_state": "ACCEPTED",
+            "verification_result": "verified",
+        }
+
+    async def verify_travel_rule_by_txid(self, txid, vasp_uuid, currency, net_type):
+        self.travel_rule_txid_args = (txid, vasp_uuid, currency, net_type)
+        return {
+            "deposit_uuid": "deposit-from-txid",
+            "deposit_state": "PROCESSING",
+            "verification_result": "pending",
+        }
+
     async def batch_cancel_open_orders(self, request):
         self.batch_cancel_open_orders_request = request
         return {
@@ -312,6 +343,38 @@ class FakeNativeBithumbAdapter:
                 "expires_at": 1_812_672_000_000_000_000,
             }
         ]
+
+    async def krw_withdrawals(self, request):
+        self.krw_withdrawals_request = request
+        return [self._krw_transfer("withdraw")]
+
+    async def withdraw_krw(self, request):
+        self.withdraw_krw_request = request
+        return self._krw_transfer("withdraw")
+
+    async def krw_deposits(self, request):
+        self.krw_deposits_request = request
+        return [self._krw_transfer("deposit")]
+
+    async def deposit_krw(self, request):
+        self.deposit_krw_request = request
+        return self._krw_transfer("deposit")
+
+    @staticmethod
+    def _krw_transfer(transfer_type):
+        return {
+            "transfer_type": transfer_type,
+            "uuid": "krw-transfer-1",
+            "currency": "KRW",
+            "net_type": None,
+            "txid": None,
+            "state": "PROCESSING",
+            "created_at": 1_700_000_000_000_000_000,
+            "done_at": None,
+            "amount": "10000",
+            "fee": "0",
+            "transaction_type": "default",
+        }
 
     async def pending_orders(self, request):
         self.pending_request = request
@@ -544,6 +607,13 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
                 )
             )
             deposit_info = await adapter.deposit_info("BTC", Network.BITCOIN)
+            vasps = await adapter.travel_rule_vasps()
+            verification_by_uuid = await adapter.verify_travel_rule_by_uuid(
+                "deposit-1", "vasp-1"
+            )
+            verification_by_txid = await adapter.verify_travel_rule_by_txid(
+                "tx-1", "vasp-1", "BTC", "BTC"
+            )
             batch_result = await adapter.batch_cancel_open_orders(
                 UpbitBatchCancelRequest(
                     scope=UpbitBatchCancelScope.quote_currencies(["KRW"]),
@@ -586,6 +656,18 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
             18_446_744_073_709_551_615,
         )
         self.assertEqual(deposit_info.decimal_precision, 18_446_744_073_709_551_615)
+        self.assertIsInstance(vasps[0], UpbitTravelRuleVasp)
+        self.assertEqual(vasps[0].vasp_uuid, "vasp-1")
+        self.assertIsInstance(verification_by_uuid, UpbitTravelRuleVerification)
+        self.assertEqual(verification_by_uuid.deposit_state, "ACCEPTED")
+        self.assertEqual(
+            adapter._handle.travel_rule_uuid_args, ("deposit-1", "vasp-1")
+        )
+        self.assertEqual(
+            adapter._handle.travel_rule_txid_args,
+            ("tx-1", "vasp-1", "BTC", "BTC"),
+        )
+        self.assertEqual(verification_by_txid.verification_result, "pending")
         self.assertEqual(
             adapter._handle.batch_cancel_open_orders_request["scope"],
             {"kind": "quote_currencies", "values": ["KRW"]},
@@ -656,6 +738,16 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
                 )
             )
             cancelled = await adapter.cancel_twap_order("twap-1")
+            krw_withdrawals = await adapter.krw_withdrawals(
+                BithumbKrwWithdrawalsRequest(uuids=["krw-transfer-1"])
+            )
+            krw_withdrawal = await adapter.withdraw_krw(
+                BithumbKrwTransferRequest(Decimal("10000"))
+            )
+            krw_deposits = await adapter.krw_deposits(BithumbKrwDepositsRequest())
+            krw_deposit = await adapter.deposit_krw(
+                BithumbKrwTransferRequest(Decimal("20000"))
+            )
 
         self.assertEqual(adapter.exchange, Exchange.BITHUMB)
         self.assertTrue(adapter.authenticated)
@@ -686,6 +778,15 @@ class BuiltinAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(created, "twap-created")
         self.assertEqual(adapter._handle.cancel_twap_id, "twap-1")
         self.assertEqual(cancelled, "twap-cancelled")
+        self.assertEqual(
+            adapter._handle.krw_withdrawals_request["uuids"], ["krw-transfer-1"]
+        )
+        self.assertEqual(krw_withdrawals[0].currency, "KRW")
+        self.assertEqual(krw_withdrawal.amount, Decimal("10000"))
+        self.assertEqual(adapter._handle.withdraw_krw_request["amount"], "10000")
+        self.assertEqual(krw_deposits[0].transfer_type, "deposit")
+        self.assertEqual(krw_deposit.amount, Decimal("10000"))
+        self.assertEqual(adapter._handle.deposit_krw_request["amount"], "20000")
 
     async def test_bithumb_pending_order_limit_uses_the_public_error_contract(self) -> None:
         adapter = BithumbAdapter(access_key="key", secret_key="secret")

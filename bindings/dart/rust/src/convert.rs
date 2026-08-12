@@ -7,9 +7,9 @@ pub use generated_models::*;
 
 use maxt::adapters::{
     BinanceSpotOrderDetail, BinanceSymbolFilters, BithumbAlertStep, BithumbMarketAlert,
-    BithumbOrderDirection, BithumbPendingOrderState, BithumbTwapOrderDirection, BithumbTwapState,
-    HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind, UpbitMarketEvent,
-    UpbitOrderDirection,
+    BithumbOrderDirection, BithumbPendingOrderState, BithumbTwapOrderDirection,
+    BithumbTwapState, HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind,
+    UpbitMarketEvent, UpbitOrderDirection,
 };
 use maxt::{
     Balance, Candle, CandleRequest, Cursor, Decimal, Error, Exchange, ExchangeErrorKind, Feature,
@@ -84,6 +84,7 @@ pub enum WireFeature {
     DepositAddresses,
     DepositHistory,
     DepositLookup,
+    TravelRule,
     WithdrawalQuotes,
     Withdrawals,
     WithdrawalHistory,
@@ -705,6 +706,7 @@ impl From<Feature> for WireFeature {
             Feature::DepositAddresses => Self::DepositAddresses,
             Feature::DepositHistory => Self::DepositHistory,
             Feature::DepositLookup => Self::DepositLookup,
+            Feature::TravelRule => Self::TravelRule,
             Feature::WithdrawalQuotes => Self::WithdrawalQuotes,
             Feature::Withdrawals => Self::Withdrawals,
             Feature::WithdrawalHistory => Self::WithdrawalHistory,
@@ -742,6 +744,7 @@ impl From<WireFeature> for Feature {
             WireFeature::DepositAddresses => Self::DepositAddresses,
             WireFeature::DepositHistory => Self::DepositHistory,
             WireFeature::DepositLookup => Self::DepositLookup,
+            WireFeature::TravelRule => Self::TravelRule,
             WireFeature::WithdrawalQuotes => Self::WithdrawalQuotes,
             WireFeature::Withdrawals => Self::Withdrawals,
             WireFeature::WithdrawalHistory => Self::WithdrawalHistory,

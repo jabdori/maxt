@@ -84,6 +84,7 @@ class WireModelTests(unittest.TestCase):
                 Feature.DEPOSIT_ADDRESSES,
                 Feature.DEPOSIT_HISTORY,
                 Feature.DEPOSIT_LOOKUP,
+                Feature.TRAVEL_RULE,
                 Feature.WITHDRAWAL_QUOTES,
                 Feature.WITHDRAWALS,
                 Feature.WITHDRAWAL_HISTORY,

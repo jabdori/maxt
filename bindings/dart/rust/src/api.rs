@@ -746,6 +746,54 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
+    pub async fn upbit_travel_rule_vasps(
+        &self,
+    ) -> Result<Vec<WireUpbitTravelRuleVasp>, NativeError> {
+        let adapter = match self.built_in("upbit_travel_rule_vasps")? {
+            BuiltInAdapter::Upbit(adapter) => adapter,
+            _ => return Err(provider_mismatch("Upbit")),
+        };
+        adapter
+            .travel_rule_vasps()
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
+    pub async fn upbit_verify_travel_rule_by_uuid(
+        &self,
+        deposit_uuid: String,
+        vasp_uuid: String,
+    ) -> Result<WireUpbitTravelRuleVerification, NativeError> {
+        let adapter = match self.built_in("upbit_verify_travel_rule_by_uuid")? {
+            BuiltInAdapter::Upbit(adapter) => adapter,
+            _ => return Err(provider_mismatch("Upbit")),
+        };
+        adapter
+            .verify_travel_rule_by_uuid(&deposit_uuid, &vasp_uuid)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn upbit_verify_travel_rule_by_txid(
+        &self,
+        txid: String,
+        vasp_uuid: String,
+        currency: String,
+        net_type: String,
+    ) -> Result<WireUpbitTravelRuleVerification, NativeError> {
+        let adapter = match self.built_in("upbit_verify_travel_rule_by_txid")? {
+            BuiltInAdapter::Upbit(adapter) => adapter,
+            _ => return Err(provider_mismatch("Upbit")),
+        };
+        adapter
+            .verify_travel_rule_by_txid(&txid, &vasp_uuid, &currency, &net_type)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
     pub async fn upbit_batch_cancel_open_orders(
         &self,
         request: WireUpbitBatchCancelRequest,
@@ -843,6 +891,70 @@ impl NativeClient {
             .api_keys()
             .await
             .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
+    pub async fn bithumb_krw_withdrawals(
+        &self,
+        request: WireBithumbKrwWithdrawalsRequest,
+    ) -> Result<Vec<WireBithumbKrwWithdrawal>, NativeError> {
+        let request: maxt::BithumbKrwWithdrawalsRequest = request.try_into()?;
+        let adapter = match self.built_in("bithumb_krw_withdrawals")? {
+            BuiltInAdapter::Bithumb(adapter) => adapter,
+            _ => return Err(provider_mismatch("Bithumb")),
+        };
+        adapter
+            .krw_withdrawals(&request)
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
+    pub async fn bithumb_withdraw_krw(
+        &self,
+        request: WireBithumbKrwTransferRequest,
+    ) -> Result<WireBithumbKrwWithdrawal, NativeError> {
+        let request: maxt::BithumbKrwTransferRequest = request.try_into()?;
+        let adapter = match self.built_in("bithumb_withdraw_krw")? {
+            BuiltInAdapter::Bithumb(adapter) => adapter,
+            _ => return Err(provider_mismatch("Bithumb")),
+        };
+        adapter
+            .withdraw_krw(&request)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn bithumb_krw_deposits(
+        &self,
+        request: WireBithumbKrwDepositsRequest,
+    ) -> Result<Vec<WireBithumbKrwDeposit>, NativeError> {
+        let request: maxt::BithumbKrwDepositsRequest = request.try_into()?;
+        let adapter = match self.built_in("bithumb_krw_deposits")? {
+            BuiltInAdapter::Bithumb(adapter) => adapter,
+            _ => return Err(provider_mismatch("Bithumb")),
+        };
+        adapter
+            .krw_deposits(&request)
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
+    pub async fn bithumb_deposit_krw(
+        &self,
+        request: WireBithumbKrwTransferRequest,
+    ) -> Result<WireBithumbKrwDeposit, NativeError> {
+        let request: maxt::BithumbKrwTransferRequest = request.try_into()?;
+        let adapter = match self.built_in("bithumb_deposit_krw")? {
+            BuiltInAdapter::Bithumb(adapter) => adapter,
+            _ => return Err(provider_mismatch("Bithumb")),
+        };
+        adapter
+            .deposit_krw(&request)
+            .await
+            .map(Into::into)
             .map_err(Into::into)
     }
 
@@ -1136,10 +1248,35 @@ mod tests {
 
     #[test]
     fn factories_preserve_region_venue_testnet_and_credential_features() {
+        let upbit_korea = NativeClient::upbit(
+            WireUpbitRegion::Korea,
+            Some("key".to_owned()),
+            Some("secret".to_owned()),
+        )
+        .unwrap();
+        assert!(upbit_korea.supports(WireFeature::TravelRule));
+
         let upbit = NativeClient::upbit(WireUpbitRegion::Singapore, None, None).unwrap();
         assert_eq!(upbit.exchange(), WireExchange::Upbit);
         assert_eq!(upbit.upbit_region(), Some(WireUpbitRegion::Singapore));
         assert!(!upbit.supports(WireFeature::Trading));
+        assert!(!upbit.supports(WireFeature::TravelRule));
+
+        let upbit_with_credentials = NativeClient::upbit(
+            WireUpbitRegion::Singapore,
+            Some("key".to_owned()),
+            Some("secret".to_owned()),
+        )
+        .unwrap();
+        assert!(upbit_with_credentials.supports(WireFeature::TravelRule));
+
+        let upbit_indonesia = NativeClient::upbit(
+            WireUpbitRegion::Indonesia,
+            Some("key".to_owned()),
+            Some("secret".to_owned()),
+        )
+        .unwrap();
+        assert!(!upbit_indonesia.supports(WireFeature::TravelRule));
 
         let binance =
             NativeClient::binance_usd_m_futures(Some("key".to_owned()), Some("secret".to_owned()))

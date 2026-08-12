@@ -450,7 +450,7 @@ mod tests {
             "| Method | Path / message | Interface | Authentication | Risk | Availability |"
         ));
         assert!(output.contains(
-            "| upbit | travel_rule | `travel_rule_vasps` | `GET` | `/v1/travel_rule/vasps` | `http` | JWT | read | Singapore only |"
+            "| upbit | travel_rule | `travel_rule_vasps` | `GET` | `/v1/travel_rule/vasps` | `http` | JWT | read | Korea or Singapore only |"
         ));
     }
 

@@ -490,6 +490,21 @@ class UpbitDepositInfo(WireModel):
 
 
 @dataclass(frozen=True)
+class UpbitTravelRuleVasp(WireModel):
+    vasp_name: str
+    vasp_uuid: str
+    depositable: bool
+    withdrawable: bool
+
+
+@dataclass(frozen=True)
+class UpbitTravelRuleVerification(WireModel):
+    deposit_uuid: str
+    deposit_state: str
+    verification_result: str
+
+
+@dataclass(frozen=True)
 class UpbitBatchCancelScope(WireModel):
     _wire_union: ClassVar[bool] = True
     kind: str
@@ -831,6 +846,64 @@ class BithumbApiKey(WireModel):
 
 
 @dataclass(frozen=True)
+class BithumbKrwWithdrawalsRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    state: Optional[str] = None
+    uuids: list[str] = field(default_factory=list)
+    txids: list[str] = field(default_factory=list)
+    page: Optional[int] = None
+    limit: Optional[int] = None
+    order_by: Optional[BithumbOrderDirection] = None
+
+
+@dataclass(frozen=True)
+class BithumbKrwDepositsRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    state: Optional[str] = None
+    uuids: list[str] = field(default_factory=list)
+    txids: list[str] = field(default_factory=list)
+    page: Optional[int] = None
+    limit: Optional[int] = None
+    order_by: Optional[BithumbOrderDirection] = None
+
+
+@dataclass(frozen=True)
+class BithumbKrwTransferRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    amount: Decimal
+
+
+@dataclass(frozen=True)
+class BithumbKrwWithdrawal(WireModel):
+    transfer_type: str
+    uuid: str
+    currency: str
+    net_type: Optional[str]
+    txid: Optional[str]
+    state: str
+    created_at: Optional[Timestamp]
+    done_at: Optional[Timestamp]
+    amount: Decimal
+    fee: Decimal
+    transaction_type: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class BithumbKrwDeposit(WireModel):
+    transfer_type: str
+    uuid: str
+    currency: str
+    net_type: Optional[str]
+    txid: Optional[str]
+    state: str
+    created_at: Optional[Timestamp]
+    done_at: Optional[Timestamp]
+    amount: Decimal
+    fee: Decimal
+    transaction_type: Optional[str] = None
+
+
+@dataclass(frozen=True)
 class BithumbPendingOrdersRequest(WireModel):
     __wire_strict__: ClassVar[bool] = True
     market: Optional[Market] = None
@@ -1064,6 +1137,8 @@ __all__ = [
     "UpbitYearCandle",
     "UpbitOrderBookInstrument",
     "UpbitDepositInfo",
+    "UpbitTravelRuleVasp",
+    "UpbitTravelRuleVerification",
     "UpbitBatchCancelScope",
     "UpbitBatchCancelRequest",
     "UpbitOrderReference",
@@ -1073,6 +1148,11 @@ __all__ = [
     "UpbitCancelAndNewOrderResult",
     "BithumbNotice",
     "BithumbApiKey",
+    "BithumbKrwWithdrawalsRequest",
+    "BithumbKrwDepositsRequest",
+    "BithumbKrwTransferRequest",
+    "BithumbKrwWithdrawal",
+    "BithumbKrwDeposit",
     "BithumbPendingOrdersRequest",
     "BithumbBatchOrdersRequest",
     "BithumbBatchOrder",

@@ -228,13 +228,6 @@ fn planned_korean_operations_pin_official_request_contracts() {
         .collect::<BTreeSet<_>>();
     let expected = [
         "upbit|quotation|list_subscriptions|LIST_SUBSCRIPTIONS|LIST_SUBSCRIPTIONS|websocket_request|Public|Read|General",
-        "upbit|travel_rule|travel_rule_vasps|GET|/v1/travel_rule/vasps|http|Jwt|Read|Region(\"Singapore\")",
-        "upbit|travel_rule|travel_rule_verify_uuid|POST|/v1/travel_rule/deposit/uuid|http|Jwt|FinancialWrite|Region(\"Singapore\")",
-        "upbit|travel_rule|travel_rule_verify_txid|POST|/v1/travel_rule/deposit/txid|http|Jwt|FinancialWrite|Region(\"Singapore\")",
-        "bithumb|krw|withdrawals|GET|/v1/withdraws/krw|http|Jwt|Read|General",
-        "bithumb|krw|withdraw|POST|/v1/withdraws/krw|http|Jwt|FinancialWrite|General",
-        "bithumb|krw|deposits|GET|/v1/deposits/krw|http|Jwt|Read|General",
-        "bithumb|krw|deposit|POST|/v1/deposits/krw|http|Jwt|FinancialWrite|General",
     ]
     .into_iter()
     .map(str::to_owned)

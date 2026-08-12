@@ -13,7 +13,7 @@ API입니다. 두 backend가 같은 생성 모델, 오류, 어댑터, 스트림 
 
 Node.js 패키지는 ESM만 지원합니다. 미리 빌드된 네이티브 모듈은 glibc Linux
 (x64, ARM64), macOS(x64, ARM64), Windows(x64)를 지원합니다. Alpine을 포함한
-musl Linux는 0.1.0에서 지원하지 않습니다. 브라우저는 Chromium, Firefox,
+musl Linux는 현재 지원하지 않습니다. 브라우저는 Chromium, Firefox,
 WebKit에서 검사합니다.
 
 ## 설치
@@ -67,8 +67,8 @@ Binance 테스트넷(testnet) 생성자는 제공하지 않습니다. Hyperliqui
 
 | 어댑터 | 생성 | 추가 메서드 |
 | --- | --- | --- |
-| `UpbitAdapter` | `new UpbitAdapter()` 또는 `UpbitAdapter.withRegion(...)` | `orderBooks()`, `orderBooksAtLevel()`, `tickers()`, `tickersByQuote()`, `yearCandles()`, `orderbookInstruments()`, `marketEvents()`; 인증 필요: `testOrder()`, `depositInfo()`, `batchCancelOpenOrders()`, `cancelAndNewOrder()` |
-| `BithumbAdapter` | `new BithumbAdapter()` | `marketWarnings()`, `marketAlerts()`, `notices()`, `transferFees()`; 인증 필요: `apiKeys()`, `pendingOrders()`, `batchOrders()`, `twapOrders()`, `createTwapOrder()`, `cancelTwapOrder()` |
+| `UpbitAdapter` | `new UpbitAdapter()` 또는 `UpbitAdapter.withRegion(...)` | `orderBooks()`, `orderBooksAtLevel()`, `tickers()`, `tickersByQuote()`, `yearCandles()`, `orderbookInstruments()`, `marketEvents()`; 인증 필요: `testOrder()`, `depositInfo()`, `travelRuleVasps()`, `verifyTravelRuleByUuid()`, `verifyTravelRuleByTxid()`, `batchCancelOpenOrders()`, `cancelAndNewOrder()` |
+| `BithumbAdapter` | `new BithumbAdapter()` | `marketWarnings()`, `marketAlerts()`, `notices()`, `transferFees()`; 인증 필요: `apiKeys()`, `krwWithdrawals()`, `withdrawKrw()`, `krwDeposits()`, `depositKrw()`, `pendingOrders()`, `batchOrders()`, `twapOrders()`, `createTwapOrder()`, `cancelTwapOrder()` |
 | `BinanceAdapter` | `BinanceAdapter.spot()` | `spotSymbolFilters()`; 인증 필요: `spotOrder()` |
 | `BinanceAdapter` | `BinanceAdapter.usdMFutures()` | 공개: `markPrice()`, `markPrices()`, `openInterest()`, `aggregateTrades()`; 인증 필요: `usdMCreateListenKey()`, `usdMKeepaliveListenKey()`, `usdMCloseListenKey()` |
 | `HyperliquidAdapter` | `new HyperliquidAdapter()` 또는 `HyperliquidAdapter.testnet()` | 공개: `allMids()`; `assetContext()`, `nonFundingLedger()` |
@@ -79,6 +79,10 @@ dry-run 결과이므로 `id`를 조회·취소에 사용하면 안 되며 상태
 `UpbitAdapter.depositInfo(asset, network)`는 거래소가 제공하는 입금 가능 여부, 최소
 수량, 확인 수, 소수 자릿수 메타데이터를 반환합니다. Upbit 응답은 몇 분 지연될 수 있어
 실시간 서비스 상태로 사용하면 안 됩니다.
+
+`UpbitAdapter.travelRuleVasps()`는 Travel Rule 확인에 사용할 수 있는 VASP 목록을
+조회합니다. 검증 메서드는 금전성 쓰기이며 한국과 싱가포르에서만 사용할 수 있습니다.
+인도네시아와 태국에서는 네트워크 요청 전에 실패합니다. 이 경로는 fixture로만 검증했습니다.
 
 `UpbitAdapter.batchCancelOpenOrders(request)`는 금전성 쓰기 요청입니다.
 `UpbitBatchCancelScope.all()`은 모든 대상 마켓 범위를 명시적으로 선택하며, Upbit는
@@ -98,6 +102,11 @@ dry-run 결과이므로 `id`를 조회·취소에 사용하면 안 되며 상태
 `BithumbAdapter.twapOrders(request)`는 Bithumb KRW 마켓의 인증된 읽기 전용
 주문 이력 조회입니다. `createTwapOrder()`와 `cancelTwapOrder()`는 금전성
 쓰기이므로 읽기 전용 검증에서 호출하지 마세요.
+
+`BithumbAdapter.krwWithdrawals()`와 `krwDeposits()`는 원화 입출금 이력을
+조회합니다. `withdrawKrw()`와 `depositKrw()`는 금전성 쓰기입니다. Bithumb의
+등록 계좌와 카카오 2차 인증 절차가 필요하며, maxt는 계좌나 인증 수단을 받거나 저장하지
+않습니다. 이 경로는 fixture로만 검증했습니다.
 
 ```ts
 const adapter = new BithumbAdapter({ accessKey, secretKey });

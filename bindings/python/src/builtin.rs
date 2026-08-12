@@ -263,6 +263,53 @@ impl NativeUpbitAdapter {
         )
     }
 
+    fn travel_rule_vasps<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.travel_rule_vasps().await },
+            |py, values| list_to_wire(py, &values, upbit_travel_rule_vasp_to_wire),
+        )
+    }
+
+    fn verify_travel_rule_by_uuid<'py>(
+        &self,
+        py: Python<'py>,
+        deposit_uuid: String,
+        vasp_uuid: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move {
+                adapter
+                    .verify_travel_rule_by_uuid(&deposit_uuid, &vasp_uuid)
+                    .await
+            },
+            |py, value| upbit_travel_rule_verification_to_wire(py, &value),
+        )
+    }
+
+    fn verify_travel_rule_by_txid<'py>(
+        &self,
+        py: Python<'py>,
+        txid: String,
+        vasp_uuid: String,
+        currency: String,
+        net_type: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move {
+                adapter
+                    .verify_travel_rule_by_txid(&txid, &vasp_uuid, &currency, &net_type)
+                    .await
+            },
+            |py, value| upbit_travel_rule_verification_to_wire(py, &value),
+        )
+    }
+
     fn batch_cancel_open_orders<'py>(
         &self,
         py: Python<'py>,
@@ -365,6 +412,62 @@ impl NativeBithumbAdapter {
         operation(py, async move { adapter.api_keys().await }, |py, values| {
             list_to_wire(py, &values, crate::convert::bithumb_api_key_to_wire)
         })
+    }
+
+    fn krw_withdrawals<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::bithumb_krw_withdrawals_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.krw_withdrawals(&request).await },
+            |py, values| list_to_wire(py, &values, bithumb_krw_withdrawal_to_wire),
+        )
+    }
+
+    fn withdraw_krw<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::bithumb_krw_transfer_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.withdraw_krw(&request).await },
+            |py, value| bithumb_krw_withdrawal_to_wire(py, &value),
+        )
+    }
+
+    fn krw_deposits<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::bithumb_krw_deposits_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.krw_deposits(&request).await },
+            |py, values| list_to_wire(py, &values, bithumb_krw_deposit_to_wire),
+        )
+    }
+
+    fn deposit_krw<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::bithumb_krw_transfer_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.deposit_krw(&request).await },
+            |py, value| bithumb_krw_deposit_to_wire(py, &value),
+        )
     }
 
     fn pending_orders<'py>(

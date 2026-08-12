@@ -88,6 +88,10 @@ abstract class NativeClient implements RustOpaqueInterface {
 
   Future<List<WireBalance>> balances();
 
+  Future<List<WireBinanceAggregateTrade>> binanceAggregateTrades({
+    required WireBinanceAggregateTradesRequest request,
+  });
+
   Future<WireBinanceMarkPrice> binanceMarkPrice({required WireMarket market});
 
   Future<List<WireBinanceMarkPrice>> binanceMarkPrices();
@@ -135,6 +139,10 @@ abstract class NativeClient implements RustOpaqueInterface {
       );
 
   Future<List<WireBithumbApiKey>> bithumbApiKeys();
+
+  Future<WireBithumbBatchOrdersResult> bithumbBatchOrders({
+    required WireBithumbBatchOrdersRequest request,
+  });
 
   Future<String> bithumbCancelTwapOrder({required String algoOrderId});
 
@@ -315,6 +323,10 @@ abstract class NativeClient implements RustOpaqueInterface {
 
   Future<WireCancelOrdersResult> upbitBatchCancelOpenOrders({
     required WireUpbitBatchCancelRequest request,
+  });
+
+  Future<WireUpbitCancelAndNewOrderResult> upbitCancelAndNewOrder({
+    required WireUpbitCancelAndNewOrderRequest request,
   });
 
   Future<WireUpbitDepositInfo> upbitDepositInfo({

@@ -150,20 +150,24 @@ pub(crate) fn validate_cancel_order_limit(
 }
 
 pub use binance::{
-    BinanceAdapter, BinanceListenKey, BinanceMarkPrice, BinanceMarket, BinanceOpenInterest,
-    BinanceSpotOrderDetail, BinanceSymbolFilters,
+    BinanceAdapter, BinanceAggregateTrade, BinanceAggregateTradesRequest, BinanceListenKey,
+    BinanceMarkPrice, BinanceMarket, BinanceOpenInterest, BinanceSpotOrderDetail,
+    BinanceSymbolFilters,
 };
 pub use bithumb::{
-    BithumbAdapter, BithumbAlertStep, BithumbApiKey, BithumbAssetFee, BithumbMarketAlert,
-    BithumbNetworkFee, BithumbNotice, BithumbOrderDirection, BithumbPendingOrderState,
-    BithumbPendingOrdersRequest, BithumbTwapOrder, BithumbTwapOrderDirection,
-    BithumbTwapOrderRequest, BithumbTwapOrdersRequest, BithumbTwapState,
+    BithumbAdapter, BithumbAlertStep, BithumbApiKey, BithumbAssetFee, BithumbBatchOrder,
+    BithumbBatchOrderFailure, BithumbBatchOrderOutcome, BithumbBatchOrdersRequest,
+    BithumbBatchOrdersResult, BithumbMarketAlert, BithumbNetworkFee, BithumbNotice,
+    BithumbOrderDirection, BithumbPendingOrderState, BithumbPendingOrdersRequest, BithumbTwapOrder,
+    BithumbTwapOrderDirection, BithumbTwapOrderRequest, BithumbTwapOrdersRequest, BithumbTwapState,
 };
 pub use hyperliquid::{
     HyperliquidAdapter, HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind,
     HyperliquidMidPrice,
 };
 pub use upbit::{
-    UpbitAdapter, UpbitBatchCancelRequest, UpbitBatchCancelScope, UpbitDepositInfo,
-    UpbitMarketEvent, UpbitOrderBookInstrument, UpbitOrderDirection, UpbitRegion, UpbitYearCandle,
+    UpbitAdapter, UpbitBatchCancelRequest, UpbitBatchCancelScope, UpbitCancelAndNewOrder,
+    UpbitCancelAndNewOrderRequest, UpbitCancelAndNewOrderResult, UpbitDepositInfo,
+    UpbitMarketEvent, UpbitOrderBookInstrument, UpbitOrderDirection, UpbitOrderReference,
+    UpbitOrderVolume, UpbitRegion, UpbitSmpType, UpbitYearCandle,
 };

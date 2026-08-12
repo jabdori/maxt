@@ -243,6 +243,53 @@ fn size_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Size> {
     }
 }
 
+pub(crate) fn size_to_wire(py: Python<'_>, value: &Size) -> PyResult<Py<PyAny>> {
+    match value {
+        Size::Base(value) => wire_dict!(py, "kind" => "base", "value" => decimal_to_wire(*value)),
+        Size::Quote(value) => wire_dict!(py, "kind" => "quote", "value" => decimal_to_wire(*value)),
+        _ => Err(binding_contract("Size")),
+    }
+}
+
+pub(crate) fn order_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::Order> {
+    let value = wire_object(value)?;
+    let value = value.cast::<PyDict>()?;
+    Ok(maxt::Order {
+        id: required(value, "id")?.extract()?,
+        market: market_from_wire(&required(value, "market")?)?,
+        side: side_from_wire(&required(value, "side")?)?,
+        status: order_status_from_wire(&required(value, "status")?)?,
+        filled_quantity: decimal_from_wire(
+            &required(value, "filled_quantity")?,
+            "filled_quantity",
+        )?,
+        remaining_quantity: decimal_from_wire(
+            &required(value, "remaining_quantity")?,
+            "remaining_quantity",
+        )?,
+        price: optional(value, "price")?
+            .map(|value| decimal_from_wire(&value, "price"))
+            .transpose()?,
+        created_at: optional(value, "created_at")?
+            .map(|value| value.extract().map(Timestamp::from_nanos))
+            .transpose()?,
+    })
+}
+
+pub(crate) fn order_request_to_wire(py: Python<'_>, value: &OrderRequest) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "market" => market_to_wire(py, &value.market)?,
+        "side" => side_to_wire(value.side)?,
+        "order_type" => order_type_to_wire(value.order_type)?,
+        "size" => size_to_wire(py, &value.size)?,
+        "price" => value.price.map(decimal_to_wire),
+        "time_in_force" => value.time_in_force.map(time_in_force_to_wire).transpose()?,
+        "reduce_only" => value.reduce_only,
+        "client_id" => &value.client_id,
+    )
+}
+
 pub(crate) fn order_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<OrderRequest> {
     let value = wire_object(value)?;
     let dict = value.cast::<PyDict>()?;

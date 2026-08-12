@@ -101,6 +101,7 @@ Access the following provider-specific methods through `Client::adapter()`.
 | `transfer_fees(currency)` | `GET /v2/fee/inout/{currency}`; an asset symbol or `ALL`; per-network deposit fee/minimum and a fixed or rate-based withdrawal fee rule; not account-specific availability |
 | `api_keys()` | Authenticated `GET /v1/api_keys`; each registered access-key identifier and its expiration time |
 | `pending_orders(request)` | Authenticated `GET /v2/orders/pending`; optional market, `wait` or `watch` state, `1..=100` limit, ascending or descending order, and an opaque `next_key` cursor in `Page::next` |
+| `batch_orders(request)` | Authenticated `POST /v2/orders/batch`; 1–20 orders. HTTP 200 can contain both accepted and rejected items, so inspect every `BithumbBatchOrderOutcome`; accepted items preserve provider `time_in_force` and `stp_type`, and rejected items preserve returned `time_in_force`. Fixture-verified only; no live order is submitted by maxt |
 
 ### TWAP
 
@@ -149,6 +150,8 @@ public candle streams are not supported.
 - [Transfer fees](https://apidocs.bithumb.com/reference/%EC%9E%85%EC%B6%9C%EA%B8%88-%EC%88%98%EC%88%98%EB%A3%8C-%EC%A1%B0%ED%9A%8C.md)
 - [API keys](https://apidocs.bithumb.com/reference/api-%ED%82%A4-%EB%A6%AC%EC%8A%A4%ED%8A%B8-%EC%A1%B0%ED%9A%8C.md)
 - [Pending orders](https://apidocs.bithumb.com/reference/%EB%8C%80%EA%B8%B0-%EC%A3%BC%EB%AC%B8-%EB%AA%A9%EB%A1%9D-%EC%A1%B0%ED%9A%8C.md)
+- [Batch order](https://apidocs.bithumb.com/reference/%EB%8B%A4%EA%B1%B4-%EC%A3%BC%EB%AC%B8-%EC%9A%94%EC%B2%AD)
+- [Batch order cancellation](https://apidocs.bithumb.com/reference/%EB%8B%A4%EA%B1%B4-%EC%A3%BC%EB%AC%B8-%EC%B7%A8%EC%86%8C-%EC%A0%91%EC%88%98)
 - [TWAP order history](https://apidocs.bithumb.com/reference/twap-%EC%A3%BC%EB%AC%B8%EB%82%B4%EC%97%AD-%EC%A1%B0%ED%9A%8C)
 - [TWAP order request](https://apidocs.bithumb.com/reference/twap-%EC%A3%BC%EB%AC%B8-%EC%9A%94%EC%B2%AD)
 - [TWAP order cancellation](https://apidocs.bithumb.com/reference/twap-%EC%A3%BC%EB%AC%B8-%EC%B7%A8%EC%86%8C)

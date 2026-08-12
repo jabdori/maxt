@@ -25,8 +25,9 @@ use crate::types::{
 
 use super::parse::{self, EXCHANGE};
 use super::{
-    UpbitBatchCancelRequest, UpbitBatchCancelScope, UpbitCredentials, UpbitOrderDirection, rest,
-    stream,
+    UpbitBatchCancelRequest, UpbitBatchCancelScope, UpbitCancelAndNewOrder,
+    UpbitCancelAndNewOrderRequest, UpbitCredentials, UpbitOrderDirection, UpbitOrderReference,
+    UpbitOrderVolume, UpbitSmpType, rest, stream,
 };
 
 /// Authentication header used by REST and private WebSocket handshakes.
@@ -40,6 +41,7 @@ const ORDER_HISTORY_PATH: &str = "/v1/orders/closed";
 const PLACE_ORDER_PATH: &str = "/v1/orders";
 const TEST_ORDER_PATH: &str = "/v1/orders/test";
 const ORDER_PATH: &str = "/v1/order";
+const CANCEL_AND_NEW_ORDER_PATH: &str = "/v1/orders/cancel_and_new";
 
 #[derive(Debug, Deserialize)]
 struct RawCancelOrdersResult {
@@ -59,6 +61,16 @@ struct RawCancelledOrder {
     market: String,
     #[serde(default)]
     identifier: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct RawCancelAndNewOrder {
+    #[serde(flatten)]
+    order: parse::RawOrder,
+    #[serde(default)]
+    new_order_uuid: Option<String>,
+    #[serde(default)]
+    new_order_identifier: Option<String>,
 }
 
 /// Query-hash algorithm declared in the JWT claims.
@@ -336,6 +348,172 @@ fn order_submission_request(
     Ok(HttpRequest::post(path)
         .json_body(json_body(&params)?)
         .header(AUTHORIZATION, authorization(credentials, &query)?))
+}
+
+pub(crate) fn cancel_and_new_order_request(
+    credentials: &UpbitCredentials,
+    request: &UpbitCancelAndNewOrderRequest,
+) -> Result<HttpRequest> {
+    let params = cancel_and_new_order_params(request)?;
+    // Upbit hashes the exact query representation of the JSON parameters.
+    let signed_query = query(&params)?;
+
+    Ok(HttpRequest::post(CANCEL_AND_NEW_ORDER_PATH)
+        .json_body(json_body(&params)?)
+        .header(AUTHORIZATION, authorization(credentials, &signed_query)?))
+}
+
+fn cancel_and_new_order_params(
+    request: &UpbitCancelAndNewOrderRequest,
+) -> Result<Vec<(&'static str, String)>> {
+    let mut params = Vec::new();
+    match &request.previous_order {
+        UpbitOrderReference::Uuid(value) => {
+            validate_order_reference(value, "previous_order_uuid")?;
+            params.push(("prev_order_uuid", value.clone()));
+        }
+        UpbitOrderReference::Identifier(value) => {
+            validate_client_order_id(value).map_err(|error| match error {
+                Error::InvalidRequest { detail, .. } => Error::InvalidRequest {
+                    field: "previous_order_identifier".to_string(),
+                    detail,
+                },
+                other => other,
+            })?;
+            params.push(("prev_order_identifier", value.clone()));
+        }
+    }
+
+    match &request.new_order {
+        UpbitCancelAndNewOrder::Limit {
+            volume,
+            price,
+            time_in_force,
+        } => {
+            if matches!(time_in_force, Some(TimeInForce::PostOnly)) {
+                if request.new_smp_type.is_some() {
+                    return Err(Error::invalid_request(
+                        "new_smp_type",
+                        "Upbit does not allow post-only with self-match prevention",
+                    ));
+                }
+                if matches!(volume, UpbitOrderVolume::RemainOnly) {
+                    return Err(Error::invalid_request(
+                        "new_volume",
+                        "Upbit does not allow remain_only with post-only",
+                    ));
+                }
+            }
+            params.push(("new_ord_type", "limit".to_string()));
+            params.push(("new_volume", new_volume(volume, "new_volume")?));
+            params.push(("new_price", amount(price, "new_price")?));
+            push_new_time_in_force(&mut params, *time_in_force, false)?;
+        }
+        UpbitCancelAndNewOrder::MarketBuy { price } => {
+            params.push(("new_ord_type", "price".to_string()));
+            params.push(("new_price", amount(price, "new_price")?));
+        }
+        UpbitCancelAndNewOrder::MarketSell { volume } => {
+            params.push(("new_ord_type", "market".to_string()));
+            params.push(("new_volume", new_volume(volume, "new_volume")?));
+        }
+        UpbitCancelAndNewOrder::BestBuy {
+            price,
+            time_in_force,
+        } => {
+            params.push(("new_ord_type", "best".to_string()));
+            params.push(("new_price", amount(price, "new_price")?));
+            push_new_time_in_force(&mut params, Some(*time_in_force), true)?;
+        }
+        UpbitCancelAndNewOrder::BestSell {
+            volume,
+            time_in_force,
+        } => {
+            params.push(("new_ord_type", "best".to_string()));
+            params.push(("new_volume", new_volume(volume, "new_volume")?));
+            push_new_time_in_force(&mut params, Some(*time_in_force), true)?;
+        }
+    }
+
+    if let Some(identifier) = &request.new_identifier {
+        validate_client_order_id(identifier).map_err(|error| match error {
+            Error::InvalidRequest { detail, .. } => Error::InvalidRequest {
+                field: "new_identifier".to_string(),
+                detail,
+            },
+            other => other,
+        })?;
+        if let UpbitOrderReference::Identifier(previous) = &request.previous_order
+            && identifier == previous
+        {
+            return Err(Error::invalid_request(
+                "new_identifier",
+                "must differ from prev_order_identifier",
+            ));
+        }
+        params.push(("new_identifier", identifier.clone()));
+    }
+    if let Some(smp) = request.new_smp_type {
+        params.push(("new_smp_type", smp_code(smp).to_string()));
+    }
+
+    Ok(params)
+}
+
+fn validate_order_reference(value: &str, field: &'static str) -> Result<()> {
+    if value.is_empty() || !value.bytes().all(is_url_safe) {
+        return Err(Error::invalid_request(
+            field,
+            "must contain at least one RFC 3986 unreserved ASCII byte",
+        ));
+    }
+    Ok(())
+}
+
+fn new_volume(volume: &UpbitOrderVolume, field: &'static str) -> Result<String> {
+    match volume {
+        UpbitOrderVolume::Amount(value) => amount(value, field),
+        UpbitOrderVolume::RemainOnly => Ok("remain_only".to_string()),
+    }
+}
+
+fn push_new_time_in_force(
+    params: &mut Vec<(&'static str, String)>,
+    time_in_force: Option<TimeInForce>,
+    required: bool,
+) -> Result<()> {
+    let Some(time_in_force) = time_in_force else {
+        if required {
+            return Err(Error::invalid_request(
+                "new_time_in_force",
+                "Upbit best orders require IOC or FOK",
+            ));
+        }
+        return Ok(());
+    };
+
+    let value = match time_in_force {
+        TimeInForce::ImmediateOrCancel => "ioc",
+        TimeInForce::FillOrKill => "fok",
+        TimeInForce::PostOnly if !required => "post_only",
+        TimeInForce::GoodTilCancelled if !required => return Ok(()),
+        TimeInForce::PostOnly | TimeInForce::GoodTilCancelled => {
+            return Err(Error::invalid_request(
+                "new_time_in_force",
+                "Upbit best orders accept only IOC or FOK",
+            ));
+        }
+    };
+    params.push(("new_time_in_force", value.to_string()));
+    Ok(())
+}
+
+fn smp_code(smp: UpbitSmpType) -> &'static str {
+    match smp {
+        UpbitSmpType::CancelMaker => "cancel_maker",
+        UpbitSmpType::CancelTaker => "cancel_taker",
+        UpbitSmpType::Reduce => "reduce",
+    }
 }
 
 pub(crate) fn cancel_order_request(
@@ -814,6 +992,29 @@ pub(crate) async fn place_order(
 ) -> Result<Order> {
     let body = rest::send(http, &place_order_request(credentials, request)?).await?;
     parse::order(&parse::json::<parse::RawOrder>(&body)?)
+}
+
+pub(crate) async fn cancel_and_new_order(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    request: &UpbitCancelAndNewOrderRequest,
+) -> Result<super::UpbitCancelAndNewOrderResult> {
+    let response = http
+        .send(&cancel_and_new_order_request(credentials, request)?)
+        .await?;
+    if response.status != 201 {
+        return Err(parse::exchange_error(response.status, &response.body));
+    }
+    cancel_and_new_order_result(&response.body)
+}
+
+fn cancel_and_new_order_result(body: &str) -> Result<super::UpbitCancelAndNewOrderResult> {
+    let response = parse::json::<RawCancelAndNewOrder>(body)?;
+    Ok(super::UpbitCancelAndNewOrderResult {
+        previous_order: parse::order(&response.order)?,
+        new_order_uuid: response.new_order_uuid,
+        new_order_identifier: response.new_order_identifier,
+    })
 }
 
 pub(crate) async fn test_order(
@@ -1390,6 +1591,149 @@ mod tests {
             ),
             Err(Error::Decode { .. })
         ));
+    }
+
+    #[test]
+    fn cancel_and_new_request_hashes_the_exact_json_body() {
+        let request = UpbitCancelAndNewOrderRequest::new(
+            UpbitOrderReference::identifier("client-1"),
+            UpbitCancelAndNewOrder::Limit {
+                volume: UpbitOrderVolume::Amount(Decimal::new(1, 2)),
+                price: Decimal::from(100_000_000),
+                time_in_force: Some(TimeInForce::ImmediateOrCancel),
+            },
+        )
+        .new_identifier("client-2")
+        .new_smp_type(UpbitSmpType::Reduce);
+        let request = cancel_and_new_order_request(&credentials(), &request)
+            .expect("a signable cancel-and-new request");
+
+        assert_eq!(request.target(), "/v1/orders/cancel_and_new");
+        assert_eq!(
+            request.body.as_deref(),
+            Some(
+                r#"{"prev_order_identifier":"client-1","new_ord_type":"limit","new_volume":"0.01","new_price":"100000000","new_time_in_force":"ioc","new_identifier":"client-2","new_smp_type":"reduce"}"#
+            )
+        );
+        assert_eq!(
+            claims_of(&authorization_of(&request)).query_hash.as_deref(),
+            Some(
+                "5bb613f17c24a300bc8bf2a0c4d98056a1e746d1ea63a9972a118890c2c3435086aed11cc02b5e54cd47af878361542e4da588cd98ca8b2651d95a2a06adbbfe",
+            )
+        );
+    }
+
+    #[test]
+    fn cancel_and_new_rejects_invalid_or_ambiguous_replacement_fields() {
+        let same_identifier = UpbitCancelAndNewOrderRequest::new(
+            UpbitOrderReference::identifier("client-1"),
+            UpbitCancelAndNewOrder::MarketSell {
+                volume: UpbitOrderVolume::RemainOnly,
+            },
+        )
+        .new_identifier("client-1");
+        assert!(matches!(
+            cancel_and_new_order_request(&credentials(), &same_identifier),
+            Err(Error::InvalidRequest { field, .. }) if field == "new_identifier"
+        ));
+
+        let best_post_only = UpbitCancelAndNewOrderRequest::new(
+            UpbitOrderReference::Uuid(ORDER_ID.to_string()),
+            UpbitCancelAndNewOrder::BestBuy {
+                price: Decimal::from(10_000),
+                time_in_force: TimeInForce::PostOnly,
+            },
+        );
+        assert!(matches!(
+            cancel_and_new_order_request(&credentials(), &best_post_only),
+            Err(Error::InvalidRequest { field, .. }) if field == "new_time_in_force"
+        ));
+
+        let best_good_til_cancelled = UpbitCancelAndNewOrderRequest::new(
+            UpbitOrderReference::Uuid(ORDER_ID.to_string()),
+            UpbitCancelAndNewOrder::BestBuy {
+                price: Decimal::from(10_000),
+                time_in_force: TimeInForce::GoodTilCancelled,
+            },
+        );
+        assert!(matches!(
+            cancel_and_new_order_request(&credentials(), &best_good_til_cancelled),
+            Err(Error::InvalidRequest { field, .. }) if field == "new_time_in_force"
+        ));
+
+        let unsafe_uuid = UpbitCancelAndNewOrderRequest::new(
+            UpbitOrderReference::Uuid("order&id".to_string()),
+            UpbitCancelAndNewOrder::MarketBuy {
+                price: Decimal::from(10_000),
+            },
+        );
+        assert!(matches!(
+            cancel_and_new_order_request(&credentials(), &unsafe_uuid),
+            Err(Error::InvalidRequest { field, .. }) if field == "previous_order_uuid"
+        ));
+
+        let post_only_with_smp = UpbitCancelAndNewOrderRequest::new(
+            UpbitOrderReference::Uuid(ORDER_ID.to_string()),
+            UpbitCancelAndNewOrder::Limit {
+                volume: UpbitOrderVolume::Amount(Decimal::ONE),
+                price: Decimal::from(10_000),
+                time_in_force: Some(TimeInForce::PostOnly),
+            },
+        )
+        .new_smp_type(UpbitSmpType::Reduce);
+        assert!(matches!(
+            cancel_and_new_order_request(&credentials(), &post_only_with_smp),
+            Err(Error::InvalidRequest { field, .. }) if field == "new_smp_type"
+        ));
+
+        let remain_only_post_only = UpbitCancelAndNewOrderRequest::new(
+            UpbitOrderReference::Uuid(ORDER_ID.to_string()),
+            UpbitCancelAndNewOrder::Limit {
+                volume: UpbitOrderVolume::RemainOnly,
+                price: Decimal::from(10_000),
+                time_in_force: Some(TimeInForce::PostOnly),
+            },
+        );
+        assert!(matches!(
+            cancel_and_new_order_request(&credentials(), &remain_only_post_only),
+            Err(Error::InvalidRequest { field, .. }) if field == "new_volume"
+        ));
+
+        let invalid_new_identifier = UpbitCancelAndNewOrderRequest::new(
+            UpbitOrderReference::Uuid(ORDER_ID.to_string()),
+            UpbitCancelAndNewOrder::MarketBuy {
+                price: Decimal::from(10_000),
+            },
+        )
+        .new_identifier("invalid&identifier");
+        assert!(matches!(
+            cancel_and_new_order_request(&credentials(), &invalid_new_identifier),
+            Err(Error::InvalidRequest { field, .. }) if field == "new_identifier"
+        ));
+    }
+
+    #[test]
+    fn cancel_and_new_preserves_a_filled_previous_order_without_claiming_replacement_creation() {
+        let result = cancel_and_new_order_result(
+            r#"{
+                "uuid":"old-order",
+                "market":"KRW-BTC",
+                "side":"bid",
+                "state":"done",
+                "price":"100000000",
+                "remaining_volume":"0",
+                "executed_volume":"0.02",
+                "created_at":"2026-08-12T00:00:00+00:00",
+                "new_order_uuid":null,
+                "new_order_identifier":null
+            }"#,
+        )
+        .expect("a documented race response");
+
+        assert_eq!(result.previous_order.id, "old-order");
+        assert_eq!(result.previous_order.status, OrderStatus::Filled);
+        assert_eq!(result.previous_order.filled_quantity, Decimal::new(2, 2));
+        assert!(!result.replacement_created());
     }
 
     #[test]

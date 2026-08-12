@@ -247,6 +247,16 @@ extension UpbitOrderDirectionWireName on UpbitOrderDirection {
   };
 }
 
+enum UpbitSmpType { cancelMaker, cancelTaker, reduce }
+
+extension UpbitSmpTypeWireName on UpbitSmpType {
+  String get wireName => switch (this) {
+    UpbitSmpType.cancelMaker => 'cancel_maker',
+    UpbitSmpType.cancelTaker => 'cancel_taker',
+    UpbitSmpType.reduce => 'reduce',
+  };
+}
+
 enum BithumbAlertStep { caution, warning, danger, unknown }
 
 extension BithumbAlertStepWireName on BithumbAlertStep {

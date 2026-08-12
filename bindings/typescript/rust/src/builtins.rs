@@ -8,9 +8,10 @@ use std::future::Future;
 #[cfg(test)]
 use maxt::Adapter;
 use maxt::adapters::{
-    BinanceAdapter, BinanceListenKey, BinanceMarket, BithumbAdapter, BithumbPendingOrdersRequest,
-    BithumbTwapOrderRequest, BithumbTwapOrdersRequest, HyperliquidAdapter, UpbitAdapter,
-    UpbitRegion,
+    BinanceAdapter, BinanceAggregateTradesRequest, BinanceListenKey, BinanceMarket,
+    BithumbAdapter, BithumbBatchOrdersRequest,
+    BithumbPendingOrdersRequest, BithumbTwapOrderRequest, BithumbTwapOrdersRequest,
+    HyperliquidAdapter, UpbitAdapter, UpbitCancelAndNewOrderRequest, UpbitRegion,
 };
 use maxt::{Cursor, Error, Market};
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
@@ -27,14 +28,17 @@ use wasm_bindgen::prelude::*;
 
 use crate::client::NativeClient;
 use crate::convert::{
-    WireBinanceMarkPrice, WireBinanceOpenInterest, WireBinanceSpotOrderDetail,
-    WireBinanceSymbolFilters, WireBithumbApiKey, WireBithumbAssetFee, WireBithumbMarketAlert,
+    WireBinanceAggregateTrade, WireBinanceAggregateTradesRequest, WireBinanceMarkPrice,
+    WireBinanceOpenInterest, WireBinanceSpotOrderDetail, WireBinanceSymbolFilters,
+    WireBithumbApiKey, WireBithumbAssetFee, WireBithumbBatchOrdersRequest,
+    WireBithumbBatchOrdersResult, WireBithumbMarketAlert,
     WireBithumbNotice, WireBithumbPendingOrdersRequest, WireBithumbTwapOrder,
     WireBithumbTwapOrderRequest, WireBithumbTwapOrdersRequest, WireCancelOrdersResult,
     WireHyperliquidAssetContext, WireHyperliquidLedgerEntry, WireHyperliquidMidPrice, WireMarket,
     WireOrder, WireOrderBook, WireOrderRequest, WirePage, WireTicker, WireUpbitBatchCancelRequest,
-    WireUpbitDepositInfo, WireUpbitMarketEvent, WireUpbitOrderBookInstrument, WireUpbitYearCandle,
-    decimal_from_wire, from_wire_text, network_from_wire, outcome, timestamp_from_wire,
+    WireUpbitCancelAndNewOrderRequest, WireUpbitCancelAndNewOrderResult, WireUpbitDepositInfo,
+    WireUpbitMarketEvent, WireUpbitOrderBookInstrument, WireUpbitYearCandle, decimal_from_wire,
+    from_wire_text, network_from_wire, outcome, timestamp_from_wire,
 };
 
 #[derive(Debug, Deserialize)]
@@ -365,6 +369,20 @@ impl NativeUpbit {
             Err(error) => outcome::<Value>(Err(error)),
         }
     }
+
+    async fn cancel_and_new_order(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<UpbitCancelAndNewOrderRequest, WireUpbitCancelAndNewOrderRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(
+                self.adapter
+                    .cancel_and_new_order(&request)
+                    .await
+                    .and_then(TryInto::<WireUpbitCancelAndNewOrderResult>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
 }
 
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
@@ -521,6 +539,17 @@ impl NativeUpbit {
             async move { this.batch_cancel_open_orders(request).await },
         )
     }
+
+    #[napi(js_name = "cancelAndNewOrder", ts_args_type = "request: string")]
+    pub fn cancel_and_new_order_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.cancel_and_new_order(request).await })
+    }
 }
 
 impl Clone for NativeUpbit {
@@ -619,6 +648,20 @@ impl NativeBithumb {
         }
     }
 
+    async fn batch_orders(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<BithumbBatchOrdersRequest, WireBithumbBatchOrdersRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(
+                self.adapter
+                    .batch_orders(&request)
+                    .await
+                    .and_then(TryInto::<WireBithumbBatchOrdersResult>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
     async fn twap_orders(&self, request: maxt::Result<String>) -> Value {
         match parse_wire::<BithumbTwapOrdersRequest, WireBithumbTwapOrdersRequest>(
             request, "request",
@@ -704,6 +747,17 @@ impl NativeBithumb {
         let this = self.clone();
         let request = native_json_text(request, "request");
         spawn_native(env, async move { this.pending_orders(request).await })
+    }
+
+    #[napi(js_name = "batchOrders", ts_args_type = "request: string")]
+    pub fn batch_orders_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.batch_orders(request).await })
     }
 
     #[napi(js_name = "twapOrders", ts_args_type = "request: string")]
@@ -855,6 +909,17 @@ impl NativeBinance {
         }
     }
 
+    async fn aggregate_trades(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<BinanceAggregateTradesRequest, WireBinanceAggregateTradesRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(wire_vec::<_, WireBinanceAggregateTrade>(
+                self.adapter.aggregate_trades(&request).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
     async fn usd_m_create_listen_key(&self) -> Value {
         let result = match self.adapter.usd_m_create_listen_key().await {
             Ok(key) => {
@@ -962,6 +1027,17 @@ impl NativeBinance {
         let this = self.clone();
         let market = native_json_text(market, "market");
         spawn_native(env, async move { this.open_interest(market).await })
+    }
+
+    #[napi(js_name = "aggregateTrades", ts_args_type = "request: string")]
+    pub fn aggregate_trades_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.aggregate_trades(request).await })
     }
 
     #[napi(js_name = "usdMCreateListenKey")]
@@ -1277,6 +1353,11 @@ impl NativeUpbit {
     pub async fn batch_cancel_open_orders_wasm(&self, request: String) -> JsValue {
         crate::web::value(self.batch_cancel_open_orders(Ok(request)).await)
     }
+
+    #[wasm_bindgen(js_name = "cancelAndNewOrder")]
+    pub async fn cancel_and_new_order_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.cancel_and_new_order(Ok(request)).await)
+    }
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -1315,6 +1396,11 @@ impl NativeBithumb {
     #[wasm_bindgen(js_name = "pendingOrders")]
     pub async fn pending_orders_wasm(&self, request: String) -> JsValue {
         crate::web::value(self.pending_orders(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "batchOrders")]
+    pub async fn batch_orders_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.batch_orders(Ok(request)).await)
     }
 
     #[wasm_bindgen(js_name = "twapOrders")]
@@ -1369,6 +1455,11 @@ impl NativeBinance {
     #[wasm_bindgen(js_name = "openInterest")]
     pub async fn open_interest_wasm(&self, market: String) -> JsValue {
         crate::web::value(self.open_interest(Ok(market)).await)
+    }
+
+    #[wasm_bindgen(js_name = "aggregateTrades")]
+    pub async fn aggregate_trades_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.aggregate_trades(Ok(request)).await)
     }
 
     #[wasm_bindgen(js_name = "usdMCreateListenKey")]

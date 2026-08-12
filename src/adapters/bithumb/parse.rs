@@ -44,7 +44,7 @@ pub(crate) fn native_symbol(market: &Market) -> Result<String> {
 }
 
 /// Parses a response market code, reporting malformed payloads as decode errors.
-fn market_field(value: &Value, name: &'static str) -> Result<Market> {
+pub(crate) fn market_field(value: &Value, name: &'static str) -> Result<Market> {
     let symbol = text(value, name)?;
     split_symbol(symbol)
         .ok_or_else(|| Error::decode(format!("`{name}` is not a market code: `{symbol}`")))
@@ -195,7 +195,7 @@ fn millis_opt(value: &Value, name: &'static str) -> Result<Option<Timestamp>> {
 }
 
 /// Parses the side spellings used by public REST, private REST, and WebSocket.
-fn side(value: &Value, name: &'static str) -> Result<Side> {
+pub(crate) fn side(value: &Value, name: &'static str) -> Result<Side> {
     match text(value, name)? {
         "BID" | "bid" | "buy" => Ok(Side::Buy),
         "ASK" | "ask" | "sell" => Ok(Side::Sell),

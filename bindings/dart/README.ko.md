@@ -63,10 +63,10 @@ Binance 테스트넷(testnet) 생성자는 제공하지 않습니다. Hyperliqui
 
 | 어댑터 | 생성 | 추가 메서드 |
 | --- | --- | --- |
-| `UpbitAdapter` | `UpbitAdapter()` 또는 `UpbitAdapter.withRegion(...)` | `orderBooks()`, `orderBooksAtLevel()`, `tickers()`, `tickersByQuote()`, `yearCandles()`, `orderbookInstruments()`, `marketEvents()`; 인증 필요: `testOrder()`, `depositInfo()`, `batchCancelOpenOrders()` |
-| `BithumbAdapter` | `BithumbAdapter()` | `marketWarnings()`, `marketAlerts()`, `notices()`, `transferFees()`; 인증 필요: `apiKeys()`, `pendingOrders()`, `twapOrders()`, `createTwapOrder()`, `cancelTwapOrder()` |
+| `UpbitAdapter` | `UpbitAdapter()` 또는 `UpbitAdapter.withRegion(...)` | `orderBooks()`, `orderBooksAtLevel()`, `tickers()`, `tickersByQuote()`, `yearCandles()`, `orderbookInstruments()`, `marketEvents()`; 인증 필요: `testOrder()`, `depositInfo()`, `batchCancelOpenOrders()`, `cancelAndNewOrder()` |
+| `BithumbAdapter` | `BithumbAdapter()` | `marketWarnings()`, `marketAlerts()`, `notices()`, `transferFees()`; 인증 필요: `apiKeys()`, `pendingOrders()`, `batchOrders()`, `twapOrders()`, `createTwapOrder()`, `cancelTwapOrder()` |
 | `BinanceAdapter` | `BinanceAdapter.spot()` | `spotSymbolFilters()`; 인증 필요: `spotOrder()` |
-| `BinanceAdapter` | `BinanceAdapter.usdMFutures()` | 공개: `markPrice()`, `markPrices()`, `openInterest()`; 인증 필요: `usdMCreateListenKey()`, `usdMKeepaliveListenKey()`, `usdMCloseListenKey()` |
+| `BinanceAdapter` | `BinanceAdapter.usdMFutures()` | 공개: `markPrice()`, `markPrices()`, `openInterest()`, `aggregateTrades()`; 인증 필요: `usdMCreateListenKey()`, `usdMKeepaliveListenKey()`, `usdMCloseListenKey()` |
 | `HyperliquidAdapter` | `HyperliquidAdapter()` 또는 `HyperliquidAdapter.testnet()` | 공개: `allMids()`; `assetContext()`, `nonFundingLedger()` |
 
 `UpbitAdapter.testOrder()`는 주문을 생성하지 않고 검증합니다. 반환 `Order`는
@@ -80,6 +80,16 @@ dry-run 결과이므로 `id`를 조회·취소에 사용하면 안 되며 상태
 `UpbitBatchCancelScope.all()`은 모든 대상 마켓 범위를 명시적으로 선택하며, Upbit는
 요청 수량을 적용해 기본 20개·최대 300개의 일치하는 `wait` 주문만 취소합니다. 일부
 실패도 결과에 보존합니다.
+
+`UpbitAdapter.cancelAndNewOrder(request)`는 JSON endpoint를 사용하는 금전성
+쓰기입니다. 새 주문은 기존 주문의 시장과 매수/매도 방향을 유지하며
+`postOnly`와 SMP를 함께 사용할 수 없습니다. HTTP 요청이 성공해도 취소 완료 전에
+기존 주문이 체결되면 새 주문이 없을 수 있습니다. 이 경로는 fixture 검증만 했습니다.
+
+`BithumbAdapter.batchOrders(request)`는 1~20건을 받고 항목별 실패가 있어도 HTTP
+200을 반환할 수 있으므로 `BithumbBatchOrderOutcome`를 모두 확인해야 합니다. 성공
+항목은 `timeInForce`와 `stpType`을, 실패 항목은 반환된 `timeInForce`를 보존합니다.
+이 메서드는 fixture로만 검증한 금전성 쓰기입니다.
 
 `BithumbAdapter.twapOrders(request)`는 Bithumb KRW 마켓의 인증된 읽기 전용
 주문 이력 조회입니다. `createTwapOrder()`와 `cancelTwapOrder()`는 금전성
@@ -105,7 +115,11 @@ Bithumb TWAP API는 `progress`, `done`, `cancel` 상태와 1~100개 페이지 �
 `BinanceAdapter.usdMFutures()`는 USD-M 무기한 선물의 공개 읽기 전용
 시세 데이터 메서드 `markPrice()`, `markPrices()`, `openInterest()`를
 제공합니다. 이 메서드들은 fixture로 검증했으며 실제 읽기 요청(live read)은
-아직 검증하지 않았습니다. `HyperliquidAdapter.allMids()`도 공개 읽기 전용이며,
+아직 검증하지 않았습니다. `aggregateTrades(request)`도 공개 USD-M 읽기입니다.
+`fromId`부터 조회하거나 `startTime`~`endTime` 범위를 조회하며, 두 방식은 함께 사용할 수 없습니다. 시간 간격은 1시간 미만이고 `limit`은
+1~1,000(`null → 500`)입니다. Binance는 최근 48시간만 보관하며 이 메서드도
+fixture 검증만 했습니다.
+`HyperliquidAdapter.allMids()`는 공개 읽기 전용이며,
 기본 무기한 선물 DEX와 첫 번째 DEX의 Spot mid 가격을 반환합니다. 호가가 비어
 있으면 Hyperliquid가 마지막 체결 가격을 대체값으로 사용합니다. 이 메서드도
 fixture로 검증했으며 실제 읽기 요청은 아직 검증하지 않았습니다.

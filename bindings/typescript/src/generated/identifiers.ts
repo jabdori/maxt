@@ -285,6 +285,18 @@ export class UpbitOrderDirection extends StringValue {
   private constructor(id: string) { super(id); Object.freeze(this); }
 }
 
+export class UpbitSmpType extends StringValue {
+  static readonly CancelMaker = new UpbitSmpType("cancel_maker");
+  static readonly CancelTaker = new UpbitSmpType("cancel_taker");
+  static readonly Reduce = new UpbitSmpType("reduce");
+  static readonly values: readonly UpbitSmpType[] = Object.freeze([
+    UpbitSmpType.CancelMaker,
+    UpbitSmpType.CancelTaker,
+    UpbitSmpType.Reduce,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
 export class BithumbAlertStep extends StringValue {
   static readonly Caution = new BithumbAlertStep("caution");
   static readonly Warning = new BithumbAlertStep("warning");

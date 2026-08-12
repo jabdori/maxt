@@ -1,5 +1,7 @@
 import {
   BinanceAdapter,
+  BinanceAggregateTradesRequest,
+  type BinanceAggregateTrade,
   type BinanceMarkPrice,
   type BinanceOpenInterest,
   ChainDestination,
@@ -23,8 +25,15 @@ import {
   UpbitAdapter,
   UpbitBatchCancelRequest,
   UpbitBatchCancelScope,
+  UpbitCancelAndNewOrder,
+  UpbitCancelAndNewOrderRequest,
   UpbitOrderDirection,
+  UpbitOrderReference,
+  UpbitOrderVolume,
+  UpbitSmpType,
   BithumbAdapter,
+  BithumbBatchOrdersRequest,
+  type BithumbBatchOrdersResult,
   BithumbOrderDirection,
   BithumbPendingOrderState,
   BithumbPendingOrdersRequest,
@@ -49,6 +58,7 @@ import {
   type Order,
   Side,
   Size,
+  TimeInForce,
 } from "../src/node.js";
 
 type NodeExports = typeof import("../src/node.js");
@@ -70,6 +80,9 @@ const usdMMarket = Market.perpetual(Exchange.Binance, "BTC", "USDT");
 const markPrice: Promise<BinanceMarkPrice> = usdM.markPrice(usdMMarket);
 const markPrices: Promise<readonly BinanceMarkPrice[]> = usdM.markPrices();
 const openInterest: Promise<BinanceOpenInterest> = usdM.openInterest(usdMMarket);
+const aggregateTrades: Promise<readonly BinanceAggregateTrade[]> = usdM.aggregateTrades(
+  new BinanceAggregateTradesRequest(usdMMarket, 100n),
+);
 const hyperliquid = new HyperliquidAdapter();
 const allMids: Promise<readonly HyperliquidMidPrice[]> = hyperliquid.allMids();
 const upbit = new UpbitAdapter();
@@ -100,6 +113,18 @@ const batchCancellation = upbit.batchCancelOpenOrders(
     UpbitOrderDirection.Ascending,
   ),
 );
+const cancelAndNew = upbit.cancelAndNewOrder(
+  new UpbitCancelAndNewOrderRequest(
+    UpbitOrderReference.identifier("old-client-id"),
+    UpbitCancelAndNewOrder.limit(
+      UpbitOrderVolume.amount(Decimal.parse("0.01")),
+      Decimal.parse("100000000"),
+      TimeInForce.ImmediateOrCancel,
+    ),
+    "new-client-id",
+    UpbitSmpType.Reduce,
+  ),
+);
 const bithumb = new BithumbAdapter();
 const notices: Promise<readonly BithumbNotice[]> = bithumb.notices();
 const transferFees: Promise<readonly BithumbAssetFee[]> = bithumb.transferFees("BTC");
@@ -112,6 +137,9 @@ const pendingOrders: Promise<Page<Order>> = bithumb.pendingOrders(
     BithumbOrderDirection.Ascending,
     new Cursor("page+/=="),
   ),
+);
+const batchOrders: Promise<BithumbBatchOrdersResult> = bithumb.batchOrders(
+  new BithumbBatchOrdersRequest([]),
 );
 const twapOrders: Promise<Page<BithumbTwapOrder>> = bithumb.twapOrders(
   new BithumbTwapOrdersRequest(),
@@ -151,6 +179,7 @@ void filters;
 void markPrice;
 void markPrices;
 void openInterest;
+void aggregateTrades;
 void allMids;
 void quoteTickers;
 void aggregatedBooks;
@@ -159,10 +188,12 @@ void instruments;
 void testOrder;
 void depositInfo;
 void batchCancellation;
+void cancelAndNew;
 void notices;
 void transferFees;
 void apiKeys;
 void pendingOrders;
+void batchOrders;
 void twapOrders;
 void twapOrder;
 void twapCancellation;

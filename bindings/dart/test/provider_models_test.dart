@@ -193,4 +193,42 @@ void main() {
     expect(cancellation.excludedPairs, [market]);
     expect(cancellation.count, 20);
   });
+
+  test('이번 제공자 기능의 식별자·원본 응답·큰 ID를 보존한다', () {
+    final aggregateMarket = Market.perpetual(Exchange.binance, 'BTC', 'USDT');
+    final replacement = UpbitCancelAndNewOrderRequest(
+      previousOrder: UpbitOrderReference.uuid('previous-order'),
+      newOrder: UpbitCancelAndNewOrder.limit(
+        volume: UpbitOrderVolume.amount(Decimal.parse('0.01')),
+        price: Decimal.parse('50000'),
+        timeInForce: TimeInForce.postOnly,
+      ),
+      newSmpType: UpbitSmpType.cancelMaker,
+    );
+    final accepted = BithumbBatchOrder(
+      orderId: 'order-1',
+      market: Market.spot(Exchange.bithumb, 'BTC', 'KRW'),
+      side: Side.buy,
+      orderType: OrderType.limit,
+      timeInForce: 'post_only',
+      stpType: 'cancel_maker',
+    );
+    final aggregate = BinanceAggregateTrade(
+      market: aggregateMarket,
+      aggregateId: BigInt.parse('18446744073709551614'),
+      firstTradeId: BigInt.parse('18446744073709551600'),
+      lastTradeId: BigInt.parse('18446744073709551614'),
+      timestamp: Timestamp.fromSeconds(1700000000),
+      price: Decimal.parse('50000.25'),
+      quantity: Decimal.parse('0.01'),
+      takerSide: Side.buy,
+    );
+
+    expect(replacement.previousOrder, isA<UpbitOrderReferenceUuid>());
+    expect(replacement.newSmpType, UpbitSmpType.cancelMaker);
+    expect(accepted.timeInForce, 'post_only');
+    expect(accepted.stpType, 'cancel_maker');
+    expect(aggregate.aggregateId, BigInt.parse('18446744073709551614'));
+    expect(aggregate.lastTradeId, BigInt.parse('18446744073709551614'));
+  });
 }

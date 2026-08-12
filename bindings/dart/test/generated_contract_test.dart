@@ -131,6 +131,7 @@ void main() {
         'depositInfo': (UpbitAdapter value) => value.depositInfo,
         'batchCancelOpenOrders': (UpbitAdapter value) =>
             value.batchCancelOpenOrders,
+        'cancelAndNewOrder': (UpbitAdapter value) => value.cancelAndNewOrder,
       },
       'bithumb': {
         'marketWarnings': (BithumbAdapter value) => value.marketWarnings,
@@ -139,6 +140,7 @@ void main() {
         'transferFees': (BithumbAdapter value) => value.transferFees,
         'apiKeys': (BithumbAdapter value) => value.apiKeys,
         'pendingOrders': (BithumbAdapter value) => value.pendingOrders,
+        'batchOrders': (BithumbAdapter value) => value.batchOrders,
         'twapOrders': (BithumbAdapter value) => value.twapOrders,
         'createTwapOrder': (BithumbAdapter value) => value.createTwapOrder,
         'cancelTwapOrder': (BithumbAdapter value) => value.cancelTwapOrder,
@@ -150,6 +152,7 @@ void main() {
         'markPrice': (BinanceAdapter value) => value.markPrice,
         'markPrices': (BinanceAdapter value) => value.markPrices,
         'openInterest': (BinanceAdapter value) => value.openInterest,
+        'aggregateTrades': (BinanceAdapter value) => value.aggregateTrades,
         'usdMCreateListenKey': (BinanceAdapter value) =>
             value.usdMCreateListenKey,
         'usdMKeepaliveListenKey': (BinanceAdapter value) =>

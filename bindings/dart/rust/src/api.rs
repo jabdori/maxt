@@ -762,6 +762,22 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
+    pub async fn upbit_cancel_and_new_order(
+        &self,
+        request: WireUpbitCancelAndNewOrderRequest,
+    ) -> Result<WireUpbitCancelAndNewOrderResult, NativeError> {
+        let request: maxt::UpbitCancelAndNewOrderRequest = request.try_into()?;
+        let adapter = match self.built_in("upbit_cancel_and_new_order")? {
+            BuiltInAdapter::Upbit(adapter) => adapter,
+            _ => return Err(provider_mismatch("Upbit")),
+        };
+        adapter
+            .cancel_and_new_order(&request)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
     pub async fn bithumb_market_warnings(
         &self,
     ) -> Result<Vec<WireBithumbMarketWarning>, NativeError> {
@@ -841,6 +857,22 @@ impl NativeClient {
         };
         adapter
             .pending_orders(&request)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn bithumb_batch_orders(
+        &self,
+        request: WireBithumbBatchOrdersRequest,
+    ) -> Result<WireBithumbBatchOrdersResult, NativeError> {
+        let request: maxt::BithumbBatchOrdersRequest = request.try_into()?;
+        let adapter = match self.built_in("bithumb_batch_orders")? {
+            BuiltInAdapter::Bithumb(adapter) => adapter,
+            _ => return Err(provider_mismatch("Bithumb")),
+        };
+        adapter
+            .batch_orders(&request)
             .await
             .map(Into::into)
             .map_err(Into::into)
@@ -961,6 +993,22 @@ impl NativeClient {
             .open_interest(&market.into())
             .await
             .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn binance_aggregate_trades(
+        &self,
+        request: WireBinanceAggregateTradesRequest,
+    ) -> Result<Vec<WireBinanceAggregateTrade>, NativeError> {
+        let request: maxt::BinanceAggregateTradesRequest = request.try_into()?;
+        let adapter = match self.built_in("binance_aggregate_trades")? {
+            BuiltInAdapter::Binance(adapter) => adapter,
+            _ => return Err(provider_mismatch("Binance")),
+        };
+        adapter
+            .aggregate_trades(&request)
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
             .map_err(Into::into)
     }
 

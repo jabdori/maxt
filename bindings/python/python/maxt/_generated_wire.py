@@ -368,6 +368,17 @@ RECORD_FIELDS = {
         "count": "optional:number",
         "order_by": "optional:identifier:UpbitOrderDirection",
     },
+    "UpbitCancelAndNewOrderRequest": {
+        "previous_order": "named:UpbitOrderReference",
+        "new_order": "named:UpbitCancelAndNewOrder",
+        "new_identifier": "optional:string",
+        "new_smp_type": "optional:identifier:UpbitSmpType",
+    },
+    "UpbitCancelAndNewOrderResult": {
+        "previous_order": "named:Order",
+        "new_order_uuid": "optional:string",
+        "new_order_identifier": "optional:string",
+    },
     "BithumbMarketAlert": {
         "kind": "string",
         "step": "identifier:BithumbAlertStep",
@@ -403,6 +414,28 @@ RECORD_FIELDS = {
         "cursor": "optional:string",
         "limit": "optional:number",
         "order_by": "optional:identifier:BithumbTwapOrderDirection",
+    },
+    "BithumbBatchOrdersRequest": {
+        "orders": "list:named:OrderRequest",
+    },
+    "BithumbBatchOrder": {
+        "order_id": "string",
+        "client_order_id": "optional:string",
+        "market": "named:Market",
+        "side": "identifier:Side",
+        "order_type": "identifier:OrderType",
+        "time_in_force": "optional:string",
+        "stp_type": "optional:string",
+        "created_at": "optional:timestamp",
+    },
+    "BithumbBatchOrderFailure": {
+        "client_order_id": "optional:string",
+        "time_in_force": "optional:string",
+        "code": "string",
+        "message": "string",
+    },
+    "BithumbBatchOrdersResult": {
+        "outcomes": "list:named:BithumbBatchOrderOutcome",
     },
     "BithumbTwapOrderRequest": {
         "market": "named:Market",
@@ -472,6 +505,24 @@ RECORD_FIELDS = {
         "open_interest": "decimal",
         "time": "timestamp",
     },
+    "BinanceAggregateTradesRequest": {
+        "market": "named:Market",
+        "from_id": "optional:unsigned_integer",
+        "start_time": "optional:timestamp",
+        "end_time": "optional:timestamp",
+        "limit": "optional:number",
+    },
+    "BinanceAggregateTrade": {
+        "market": "named:Market",
+        "aggregate_id": "unsigned_integer",
+        "first_trade_id": "unsigned_integer",
+        "last_trade_id": "unsigned_integer",
+        "timestamp": "timestamp",
+        "price": "decimal",
+        "quantity": "decimal",
+        "normal_quantity": "optional:decimal",
+        "taker_side": "identifier:Side",
+    },
     "BinanceListenKey": {
         "id": "string",
         "value": "string",
@@ -532,6 +583,50 @@ UNION_FIELDS = {
         },
         "pairs": {
             "values": "list:named:Market",
+        },
+    },
+    "UpbitOrderReference": {
+        "uuid": {
+            "value": "string",
+        },
+        "identifier": {
+            "value": "string",
+        },
+    },
+    "UpbitOrderVolume": {
+        "amount": {
+            "value": "decimal",
+        },
+        "remain_only": {
+        },
+    },
+    "UpbitCancelAndNewOrder": {
+        "limit": {
+            "volume": "named:UpbitOrderVolume",
+            "price": "decimal",
+            "time_in_force": "optional:identifier:TimeInForce",
+        },
+        "market_buy": {
+            "price": "decimal",
+        },
+        "market_sell": {
+            "volume": "named:UpbitOrderVolume",
+        },
+        "best_buy": {
+            "price": "decimal",
+            "time_in_force": "identifier:TimeInForce",
+        },
+        "best_sell": {
+            "volume": "named:UpbitOrderVolume",
+            "time_in_force": "identifier:TimeInForce",
+        },
+    },
+    "BithumbBatchOrderOutcome": {
+        "accepted": {
+            "value": "named:BithumbBatchOrder",
+        },
+        "rejected": {
+            "value": "named:BithumbBatchOrderFailure",
         },
     },
     "Size": {
@@ -873,6 +968,7 @@ IDENTIFIER_VARIANTS = {
     "SizeKind": ("base", "quote",),
     "UpbitRegion": ("korea", "singapore", "indonesia", "thailand",),
     "UpbitOrderDirection": ("asc", "desc",),
+    "UpbitSmpType": ("cancel_maker", "cancel_taker", "reduce",),
     "BithumbAlertStep": ("caution", "warning", "danger", "unknown",),
     "BithumbPendingOrderState": ("wait", "watch",),
     "BithumbOrderDirection": ("asc", "desc",),

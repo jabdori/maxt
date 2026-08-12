@@ -784,6 +784,7 @@ pub(crate) fn render_wire_converters(schema: &Schema) -> String {
         "TimeInForce",
         "MarginMode",
         "UpbitOrderDirection",
+        "UpbitSmpType",
         "BithumbPendingOrderState",
         "BithumbOrderDirection",
         "BithumbTwapState",
@@ -1268,6 +1269,7 @@ pub(crate) fn render_wire_shape_guard(schema: &Schema) -> String {
         ("TimeInForce", "WireTimeInForce"),
         ("SizeKind", "WireSizeKind"),
         ("UpbitOrderDirection", "WireUpbitOrderDirection"),
+        ("UpbitSmpType", "WireUpbitSmpType"),
         ("BithumbAlertStep", "WireBithumbAlertStep"),
         ("BithumbPendingOrderState", "WireBithumbPendingOrderState"),
         ("BithumbOrderDirection", "WireBithumbOrderDirection"),
@@ -1424,6 +1426,9 @@ fn provider_method_source(exchange: &str, method: &str) -> &'static str {
         ("upbit", "batch_cancel_open_orders") => {
             "  /// Cancels matching Upbit wait orders in one conditional request.\n  ///\n  /// [UpbitBatchCancelScope.all] selects every eligible market; Upbit still\n  /// applies the request count (default 20, maximum 300). The result separates\n  /// completed and failed cancels.\n  Future<CancelOrdersResult> batchCancelOpenOrders(\n    UpbitBatchCancelRequest request,\n  ) => _nativeFuture(\n    () => _handle.upbitBatchCancelOpenOrders(\n      request: _upbitBatchCancelRequestToWire(request),\n    ),\n  ).then(_cancelOrdersResultFromWire);\n"
         }
+        ("upbit", "cancel_and_new_order") => {
+            "  /// Cancels an Upbit order and requests its replacement.\n  ///\n  /// A successful response can still contain a filled previous order and no\n  /// replacement. Inspect [UpbitCancelAndNewOrderResult.newOrderUuid].\n  Future<UpbitCancelAndNewOrderResult> cancelAndNewOrder(\n    UpbitCancelAndNewOrderRequest request,\n  ) => _nativeFuture(\n    () => _handle.upbitCancelAndNewOrder(\n      request: _upbitCancelAndNewOrderRequestToWire(request),\n    ),\n  ).then(_upbitCancelAndNewOrderResultFromWire);\n"
+        }
         ("bithumb", "market_warnings") => {
             "  Future<List<BithumbMarketWarning>> marketWarnings() =>\n      _nativeFuture(_handle.bithumbMarketWarnings).then(\n        (values) =>\n            values.map(_bithumbMarketWarningFromWire).toList(growable: false),\n      );\n"
         }
@@ -1441,6 +1446,9 @@ fn provider_method_source(exchange: &str, method: &str) -> &'static str {
         }
         ("bithumb", "pending_orders") => {
             "  Future<Page<Order>> pendingOrders(BithumbPendingOrdersRequest request) =>\n      _nativeFuture(\n        () => _handle.bithumbPendingOrders(\n          request: _bithumbPendingOrdersRequestToWire(request),\n        ),\n      ).then(_orderPageFromWire);\n"
+        }
+        ("bithumb", "batch_orders") => {
+            "  /// Submits Bithumb orders together; each outcome is independent.\n  Future<BithumbBatchOrdersResult> batchOrders(\n    BithumbBatchOrdersRequest request,\n  ) => _nativeFuture(\n    () => _handle.bithumbBatchOrders(\n      request: _bithumbBatchOrdersRequestToWire(request),\n    ),\n  ).then(_bithumbBatchOrdersResultFromWire);\n"
         }
         ("bithumb", "twap_orders") => {
             "  Future<Page<BithumbTwapOrder>> twapOrders(\n    BithumbTwapOrdersRequest request,\n  ) => _nativeFuture(\n    () => _handle.bithumbTwapOrders(\n      request: _bithumbTwapOrdersRequestToWire(request),\n    ),\n  ).then(_bithumbTwapOrderPageFromWire);\n"
@@ -1465,6 +1473,9 @@ fn provider_method_source(exchange: &str, method: &str) -> &'static str {
         }
         ("binance", "open_interest") => {
             "  Future<BinanceOpenInterest> openInterest(Market market) =>\n      _nativeFuture(\n        () => _handle.binanceOpenInterest(market: _marketToWire(market)),\n      ).then(_binanceOpenInterestFromWire);\n"
+        }
+        ("binance", "aggregate_trades") => {
+            "  Future<List<BinanceAggregateTrade>> aggregateTrades(\n    BinanceAggregateTradesRequest request,\n  ) => _nativeFuture(\n    () => _handle.binanceAggregateTrades(\n      request: _binanceAggregateTradesRequestToWire(request),\n    ),\n  ).then(\n    (values) => values\n        .map(_binanceAggregateTradeFromWire)\n        .toList(growable: false),\n  );\n"
         }
         ("binance", "usd_m_create_listen_key") => {
             "  Future<BinanceListenKey> usdMCreateListenKey() => _nativeFuture(\n    _handle.binanceUsdMCreateListenKey,\n  ).then(BinanceListenKey._);\n"
@@ -1718,7 +1729,7 @@ fn render_dart_union_converter(
                 ),
                 [field] if field.name == "value" => format!(
                     "  wire.Wire{name}_{suffix}(:final field0) => {name}.{constructor}({}),\n",
-                    dart_from_wire_value_expression("field0", &field.ty)
+                    dart_from_wire_union_value_expression("field0", &field.ty)
                 ),
                 fields => {
                     let pattern = fields
@@ -1735,7 +1746,7 @@ fn render_dart_union_converter(
                             let wire = dart_wire_field(field.name, &field.ty);
                             format!(
                                 "    {public}: {},\n",
-                                dart_from_wire_value_expression(&wire, &field.ty)
+                                dart_from_wire_union_value_expression(&wire, &field.ty)
                             )
                         })
                         .collect::<String>();
@@ -1758,7 +1769,7 @@ fn render_dart_union_converter(
                 ),
                 [field] if field.name == "value" => format!(
                     "  {name}{suffix}(:final value) => wire.Wire{name}.{wire_constructor}({}),\n",
-                    dart_to_wire_expression("value", &field.ty, field.name)
+                    dart_to_wire_union_value_expression("value", &field.ty, field.name)
                 ),
                 fields => {
                     let pattern = fields
@@ -1773,7 +1784,7 @@ fn render_dart_union_converter(
                             let wire = dart_wire_field(field.name, &field.ty);
                             format!(
                                 "    {wire}: {},\n",
-                                dart_to_wire_expression(&public, &field.ty, field.name)
+                                dart_to_wire_union_value_expression(&public, &field.ty, field.name)
                             )
                         })
                         .collect::<String>();
@@ -2006,6 +2017,19 @@ fn dart_from_wire_expression(name: &str, ty: &Type) -> String {
     dart_from_wire_value_expression(&field, ty)
 }
 
+fn dart_from_wire_union_value_expression(field: &str, ty: &Type) -> String {
+    match ty {
+        Type::Optional(inner) => match inner.as_ref() {
+            Type::Identifier(identifier) => format!(
+                "{field} == null ? null : _{}FromWire({field})",
+                lower_camel(identifier)
+            ),
+            _ => dart_from_wire_value_expression(field, ty),
+        },
+        _ => dart_from_wire_value_expression(field, ty),
+    }
+}
+
 fn dart_from_wire_value_expression(field: &str, ty: &Type) -> String {
     match ty {
         Type::String | Type::Boolean | Type::Number => field.to_owned(),
@@ -2127,6 +2151,19 @@ fn dart_to_wire_expression(value: &str, ty: &Type, field: &str) -> String {
             other => panic!("unsupported Dart model list field: {other:?}"),
         },
         Type::Tuple(_) => panic!("tuple record fields are not used by Dart DTOs"),
+    }
+}
+
+fn dart_to_wire_union_value_expression(value: &str, ty: &Type, field: &str) -> String {
+    match ty {
+        Type::Optional(inner) => match inner.as_ref() {
+            Type::Identifier(identifier) => format!(
+                "{value} == null ? null : _{}ToWire({value})",
+                lower_camel(identifier)
+            ),
+            _ => dart_to_wire_expression(value, ty, field),
+        },
+        _ => dart_to_wire_expression(value, ty, field),
     }
 }
 

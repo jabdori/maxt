@@ -16,7 +16,7 @@ use maxt::{
     FundingPayment, FundingRate, HistoryRequest, Interval, Level, MarginMode, MarginRequest,
     MarginSummary, Market, MarketInfo, MarketKind, MarketStatus, Order, OrderBook, OrderIdKind,
     OrderRequest, OrderStatus, OrderType, Page, Position, Side, Size, Ticker, TimeInForce,
-    Timestamp, Trade, TransferErrorKind,
+    Timestamp, Trade, TransferErrorKind, UpbitSmpType,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -376,6 +376,13 @@ pub enum WireBithumbTwapOrderDirection {
 pub enum WireUpbitOrderDirection {
     Ascending,
     Descending,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireUpbitSmpType {
+    CancelMaker,
+    CancelTaker,
+    Reduce,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1361,6 +1368,26 @@ impl From<WireUpbitOrderDirection> for UpbitOrderDirection {
         match value {
             WireUpbitOrderDirection::Ascending => Self::Ascending,
             WireUpbitOrderDirection::Descending => Self::Descending,
+        }
+    }
+}
+
+impl From<UpbitSmpType> for WireUpbitSmpType {
+    fn from(value: UpbitSmpType) -> Self {
+        match value {
+            UpbitSmpType::CancelMaker => Self::CancelMaker,
+            UpbitSmpType::CancelTaker => Self::CancelTaker,
+            UpbitSmpType::Reduce => Self::Reduce,
+        }
+    }
+}
+
+impl From<WireUpbitSmpType> for UpbitSmpType {
+    fn from(value: WireUpbitSmpType) -> Self {
+        match value {
+            WireUpbitSmpType::CancelMaker => Self::CancelMaker,
+            WireUpbitSmpType::CancelTaker => Self::CancelTaker,
+            WireUpbitSmpType::Reduce => Self::Reduce,
         }
     }
 }

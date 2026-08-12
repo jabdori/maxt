@@ -106,6 +106,7 @@
 | `test_order(request)` | 주문을 생성하지 않고 검증; 주문 생성 권한 필요; 반환 `Order`는 dry-run 결과이므로 ID를 조회·취소할 수 없고 상태도 실제 활성 주문을 뜻하지 않음 | `order-test` |
 | `deposit_info(asset, network)` | `View Deposits` 권한 필요; 입금 가능 여부·사유·최소 수량·확인 수·소수 자릿수를 반환. 응답 네트워크는 null일 수 있으며 받은 값을 그대로 보존. 이 메타데이터는 몇 분 지연될 수 있음 | `default` |
 | `batch_cancel_open_orders(request)` | 주문 생성 권한 필요. `UpbitBatchCancelScope::All`은 전체 마켓 범위를 명시적으로 선택하며, 무제한 주문 취소를 뜻하지 않음. Upbit가 요청 수량을 적용해 기본 20개·최대 300개의 일치하는 `wait` 주문만 취소. 견적 통화와 시장 쌍 범위 중 하나를 선택하고, 제외 시장은 최대 20개 지정. 성공·실패를 모두 결과에 보존. fixture 검증만 했고 maxt가 실제 취소를 실행하지는 않음 | `order-cancel-all` |
+| `cancel_and_new_order(request)` | 주문 생성 권한 필요; JSON `POST /v1/orders/cancel_and_new`만 사용. 새 주문은 기존 주문과 같은 시장·매수/매도 방향을 유지하며 주문 유형·수량·가격·유효 조건(TIF)·자전거래 방지(SMP)를 바꿀 수 있음. `post_only`와 SMP는 함께 사용할 수 없음. HTTP 요청이 성공해도 새 주문 생성을 보장하지 않음. 취소 완료 전에 기존 주문이 체결되면 `new_order_uuid`가 없음. fixture 검증만 했고 maxt가 실제 주문을 제출하지는 않음 | `order` |
 
 | 시장 이벤트(market event) | 매핑 |
 | --- | --- |
@@ -142,6 +143,7 @@
 - [인증](https://global-docs.upbit.com/reference/auth)
 - [테스트 주문](https://global-docs.upbit.com/reference/order-test)
 - [조건부 일괄 주문 취소](https://global-docs.upbit.com/reference/batch-cancel-orders)
+- [주문 취소 후 재주문](https://global-docs.upbit.com/reference/cancel-and-new-order)
 - [입금 가능 정보](https://global-docs.upbit.com/reference/available-deposit-information)
 - [주문 단건 조회](https://global-docs.upbit.com/reference/get-order)
 - [종료 주문 목록](https://global-docs.upbit.com/reference/list-closed-orders)

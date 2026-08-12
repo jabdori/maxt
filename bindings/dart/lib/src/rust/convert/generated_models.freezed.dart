@@ -12,6 +12,298 @@ part of 'generated_models.dart';
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
+mixin _$WireBithumbBatchOrderOutcome {
+
+ Object get field0;
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBithumbBatchOrderOutcome&&const DeepCollectionEquality().equals(other.field0, field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(field0));
+
+@override
+String toString() {
+  return 'WireBithumbBatchOrderOutcome(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+class $WireBithumbBatchOrderOutcomeCopyWith<$Res>  {
+$WireBithumbBatchOrderOutcomeCopyWith(WireBithumbBatchOrderOutcome _, $Res Function(WireBithumbBatchOrderOutcome) __);
+}
+
+
+/// Adds pattern-matching-related methods to [WireBithumbBatchOrderOutcome].
+extension WireBithumbBatchOrderOutcomePatterns on WireBithumbBatchOrderOutcome {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( WireBithumbBatchOrderOutcome_Accepted value)?  accepted,TResult Function( WireBithumbBatchOrderOutcome_Rejected value)?  rejected,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case WireBithumbBatchOrderOutcome_Accepted() when accepted != null:
+return accepted(_that);case WireBithumbBatchOrderOutcome_Rejected() when rejected != null:
+return rejected(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( WireBithumbBatchOrderOutcome_Accepted value)  accepted,required TResult Function( WireBithumbBatchOrderOutcome_Rejected value)  rejected,}){
+final _that = this;
+switch (_that) {
+case WireBithumbBatchOrderOutcome_Accepted():
+return accepted(_that);case WireBithumbBatchOrderOutcome_Rejected():
+return rejected(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( WireBithumbBatchOrderOutcome_Accepted value)?  accepted,TResult? Function( WireBithumbBatchOrderOutcome_Rejected value)?  rejected,}){
+final _that = this;
+switch (_that) {
+case WireBithumbBatchOrderOutcome_Accepted() when accepted != null:
+return accepted(_that);case WireBithumbBatchOrderOutcome_Rejected() when rejected != null:
+return rejected(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( WireBithumbBatchOrder field0)?  accepted,TResult Function( WireBithumbBatchOrderFailure field0)?  rejected,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case WireBithumbBatchOrderOutcome_Accepted() when accepted != null:
+return accepted(_that.field0);case WireBithumbBatchOrderOutcome_Rejected() when rejected != null:
+return rejected(_that.field0);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( WireBithumbBatchOrder field0)  accepted,required TResult Function( WireBithumbBatchOrderFailure field0)  rejected,}) {final _that = this;
+switch (_that) {
+case WireBithumbBatchOrderOutcome_Accepted():
+return accepted(_that.field0);case WireBithumbBatchOrderOutcome_Rejected():
+return rejected(_that.field0);}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( WireBithumbBatchOrder field0)?  accepted,TResult? Function( WireBithumbBatchOrderFailure field0)?  rejected,}) {final _that = this;
+switch (_that) {
+case WireBithumbBatchOrderOutcome_Accepted() when accepted != null:
+return accepted(_that.field0);case WireBithumbBatchOrderOutcome_Rejected() when rejected != null:
+return rejected(_that.field0);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class WireBithumbBatchOrderOutcome_Accepted extends WireBithumbBatchOrderOutcome {
+  const WireBithumbBatchOrderOutcome_Accepted(this.field0): super._();
+
+
+@override final  WireBithumbBatchOrder field0;
+
+/// Create a copy of WireBithumbBatchOrderOutcome
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireBithumbBatchOrderOutcome_AcceptedCopyWith<WireBithumbBatchOrderOutcome_Accepted> get copyWith => _$WireBithumbBatchOrderOutcome_AcceptedCopyWithImpl<WireBithumbBatchOrderOutcome_Accepted>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBithumbBatchOrderOutcome_Accepted&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireBithumbBatchOrderOutcome.accepted(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireBithumbBatchOrderOutcome_AcceptedCopyWith<$Res> implements $WireBithumbBatchOrderOutcomeCopyWith<$Res> {
+  factory $WireBithumbBatchOrderOutcome_AcceptedCopyWith(WireBithumbBatchOrderOutcome_Accepted value, $Res Function(WireBithumbBatchOrderOutcome_Accepted) _then) = _$WireBithumbBatchOrderOutcome_AcceptedCopyWithImpl;
+@useResult
+$Res call({
+ WireBithumbBatchOrder field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireBithumbBatchOrderOutcome_AcceptedCopyWithImpl<$Res>
+    implements $WireBithumbBatchOrderOutcome_AcceptedCopyWith<$Res> {
+  _$WireBithumbBatchOrderOutcome_AcceptedCopyWithImpl(this._self, this._then);
+
+  final WireBithumbBatchOrderOutcome_Accepted _self;
+  final $Res Function(WireBithumbBatchOrderOutcome_Accepted) _then;
+
+/// Create a copy of WireBithumbBatchOrderOutcome
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireBithumbBatchOrderOutcome_Accepted(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireBithumbBatchOrder,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireBithumbBatchOrderOutcome_Rejected extends WireBithumbBatchOrderOutcome {
+  const WireBithumbBatchOrderOutcome_Rejected(this.field0): super._();
+
+
+@override final  WireBithumbBatchOrderFailure field0;
+
+/// Create a copy of WireBithumbBatchOrderOutcome
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireBithumbBatchOrderOutcome_RejectedCopyWith<WireBithumbBatchOrderOutcome_Rejected> get copyWith => _$WireBithumbBatchOrderOutcome_RejectedCopyWithImpl<WireBithumbBatchOrderOutcome_Rejected>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBithumbBatchOrderOutcome_Rejected&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireBithumbBatchOrderOutcome.rejected(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireBithumbBatchOrderOutcome_RejectedCopyWith<$Res> implements $WireBithumbBatchOrderOutcomeCopyWith<$Res> {
+  factory $WireBithumbBatchOrderOutcome_RejectedCopyWith(WireBithumbBatchOrderOutcome_Rejected value, $Res Function(WireBithumbBatchOrderOutcome_Rejected) _then) = _$WireBithumbBatchOrderOutcome_RejectedCopyWithImpl;
+@useResult
+$Res call({
+ WireBithumbBatchOrderFailure field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireBithumbBatchOrderOutcome_RejectedCopyWithImpl<$Res>
+    implements $WireBithumbBatchOrderOutcome_RejectedCopyWith<$Res> {
+  _$WireBithumbBatchOrderOutcome_RejectedCopyWithImpl(this._self, this._then);
+
+  final WireBithumbBatchOrderOutcome_Rejected _self;
+  final $Res Function(WireBithumbBatchOrderOutcome_Rejected) _then;
+
+/// Create a copy of WireBithumbBatchOrderOutcome
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireBithumbBatchOrderOutcome_Rejected(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireBithumbBatchOrderFailure,
+  ));
+}
+
+
+}
+
+/// @nodoc
 mixin _$WireTransferDestination {
 
  Object get field0;
@@ -902,6 +1194,1130 @@ as List<WireMarket>,
 
 
 }
+
+/// @nodoc
+mixin _$WireUpbitCancelAndNewOrder {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitCancelAndNewOrder);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireUpbitCancelAndNewOrder()';
+}
+
+
+}
+
+/// @nodoc
+class $WireUpbitCancelAndNewOrderCopyWith<$Res>  {
+$WireUpbitCancelAndNewOrderCopyWith(WireUpbitCancelAndNewOrder _, $Res Function(WireUpbitCancelAndNewOrder) __);
+}
+
+
+/// Adds pattern-matching-related methods to [WireUpbitCancelAndNewOrder].
+extension WireUpbitCancelAndNewOrderPatterns on WireUpbitCancelAndNewOrder {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( WireUpbitCancelAndNewOrder_Limit value)?  limit,TResult Function( WireUpbitCancelAndNewOrder_MarketBuy value)?  marketBuy,TResult Function( WireUpbitCancelAndNewOrder_MarketSell value)?  marketSell,TResult Function( WireUpbitCancelAndNewOrder_BestBuy value)?  bestBuy,TResult Function( WireUpbitCancelAndNewOrder_BestSell value)?  bestSell,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case WireUpbitCancelAndNewOrder_Limit() when limit != null:
+return limit(_that);case WireUpbitCancelAndNewOrder_MarketBuy() when marketBuy != null:
+return marketBuy(_that);case WireUpbitCancelAndNewOrder_MarketSell() when marketSell != null:
+return marketSell(_that);case WireUpbitCancelAndNewOrder_BestBuy() when bestBuy != null:
+return bestBuy(_that);case WireUpbitCancelAndNewOrder_BestSell() when bestSell != null:
+return bestSell(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( WireUpbitCancelAndNewOrder_Limit value)  limit,required TResult Function( WireUpbitCancelAndNewOrder_MarketBuy value)  marketBuy,required TResult Function( WireUpbitCancelAndNewOrder_MarketSell value)  marketSell,required TResult Function( WireUpbitCancelAndNewOrder_BestBuy value)  bestBuy,required TResult Function( WireUpbitCancelAndNewOrder_BestSell value)  bestSell,}){
+final _that = this;
+switch (_that) {
+case WireUpbitCancelAndNewOrder_Limit():
+return limit(_that);case WireUpbitCancelAndNewOrder_MarketBuy():
+return marketBuy(_that);case WireUpbitCancelAndNewOrder_MarketSell():
+return marketSell(_that);case WireUpbitCancelAndNewOrder_BestBuy():
+return bestBuy(_that);case WireUpbitCancelAndNewOrder_BestSell():
+return bestSell(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( WireUpbitCancelAndNewOrder_Limit value)?  limit,TResult? Function( WireUpbitCancelAndNewOrder_MarketBuy value)?  marketBuy,TResult? Function( WireUpbitCancelAndNewOrder_MarketSell value)?  marketSell,TResult? Function( WireUpbitCancelAndNewOrder_BestBuy value)?  bestBuy,TResult? Function( WireUpbitCancelAndNewOrder_BestSell value)?  bestSell,}){
+final _that = this;
+switch (_that) {
+case WireUpbitCancelAndNewOrder_Limit() when limit != null:
+return limit(_that);case WireUpbitCancelAndNewOrder_MarketBuy() when marketBuy != null:
+return marketBuy(_that);case WireUpbitCancelAndNewOrder_MarketSell() when marketSell != null:
+return marketSell(_that);case WireUpbitCancelAndNewOrder_BestBuy() when bestBuy != null:
+return bestBuy(_that);case WireUpbitCancelAndNewOrder_BestSell() when bestSell != null:
+return bestSell(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( WireUpbitOrderVolume volume,  String price,  WireTimeInForce? timeInForce)?  limit,TResult Function( String price)?  marketBuy,TResult Function( WireUpbitOrderVolume volume)?  marketSell,TResult Function( String price,  WireTimeInForce timeInForce)?  bestBuy,TResult Function( WireUpbitOrderVolume volume,  WireTimeInForce timeInForce)?  bestSell,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case WireUpbitCancelAndNewOrder_Limit() when limit != null:
+return limit(_that.volume,_that.price,_that.timeInForce);case WireUpbitCancelAndNewOrder_MarketBuy() when marketBuy != null:
+return marketBuy(_that.price);case WireUpbitCancelAndNewOrder_MarketSell() when marketSell != null:
+return marketSell(_that.volume);case WireUpbitCancelAndNewOrder_BestBuy() when bestBuy != null:
+return bestBuy(_that.price,_that.timeInForce);case WireUpbitCancelAndNewOrder_BestSell() when bestSell != null:
+return bestSell(_that.volume,_that.timeInForce);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( WireUpbitOrderVolume volume,  String price,  WireTimeInForce? timeInForce)  limit,required TResult Function( String price)  marketBuy,required TResult Function( WireUpbitOrderVolume volume)  marketSell,required TResult Function( String price,  WireTimeInForce timeInForce)  bestBuy,required TResult Function( WireUpbitOrderVolume volume,  WireTimeInForce timeInForce)  bestSell,}) {final _that = this;
+switch (_that) {
+case WireUpbitCancelAndNewOrder_Limit():
+return limit(_that.volume,_that.price,_that.timeInForce);case WireUpbitCancelAndNewOrder_MarketBuy():
+return marketBuy(_that.price);case WireUpbitCancelAndNewOrder_MarketSell():
+return marketSell(_that.volume);case WireUpbitCancelAndNewOrder_BestBuy():
+return bestBuy(_that.price,_that.timeInForce);case WireUpbitCancelAndNewOrder_BestSell():
+return bestSell(_that.volume,_that.timeInForce);}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( WireUpbitOrderVolume volume,  String price,  WireTimeInForce? timeInForce)?  limit,TResult? Function( String price)?  marketBuy,TResult? Function( WireUpbitOrderVolume volume)?  marketSell,TResult? Function( String price,  WireTimeInForce timeInForce)?  bestBuy,TResult? Function( WireUpbitOrderVolume volume,  WireTimeInForce timeInForce)?  bestSell,}) {final _that = this;
+switch (_that) {
+case WireUpbitCancelAndNewOrder_Limit() when limit != null:
+return limit(_that.volume,_that.price,_that.timeInForce);case WireUpbitCancelAndNewOrder_MarketBuy() when marketBuy != null:
+return marketBuy(_that.price);case WireUpbitCancelAndNewOrder_MarketSell() when marketSell != null:
+return marketSell(_that.volume);case WireUpbitCancelAndNewOrder_BestBuy() when bestBuy != null:
+return bestBuy(_that.price,_that.timeInForce);case WireUpbitCancelAndNewOrder_BestSell() when bestSell != null:
+return bestSell(_that.volume,_that.timeInForce);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class WireUpbitCancelAndNewOrder_Limit extends WireUpbitCancelAndNewOrder {
+  const WireUpbitCancelAndNewOrder_Limit({required this.volume, required this.price, this.timeInForce}): super._();
+
+
+ final  WireUpbitOrderVolume volume;
+ final  String price;
+ final  WireTimeInForce? timeInForce;
+
+/// Create a copy of WireUpbitCancelAndNewOrder
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireUpbitCancelAndNewOrder_LimitCopyWith<WireUpbitCancelAndNewOrder_Limit> get copyWith => _$WireUpbitCancelAndNewOrder_LimitCopyWithImpl<WireUpbitCancelAndNewOrder_Limit>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitCancelAndNewOrder_Limit&&(identical(other.volume, volume) || other.volume == volume)&&(identical(other.price, price) || other.price == price)&&(identical(other.timeInForce, timeInForce) || other.timeInForce == timeInForce));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,volume,price,timeInForce);
+
+@override
+String toString() {
+  return 'WireUpbitCancelAndNewOrder.limit(volume: $volume, price: $price, timeInForce: $timeInForce)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireUpbitCancelAndNewOrder_LimitCopyWith<$Res> implements $WireUpbitCancelAndNewOrderCopyWith<$Res> {
+  factory $WireUpbitCancelAndNewOrder_LimitCopyWith(WireUpbitCancelAndNewOrder_Limit value, $Res Function(WireUpbitCancelAndNewOrder_Limit) _then) = _$WireUpbitCancelAndNewOrder_LimitCopyWithImpl;
+@useResult
+$Res call({
+ WireUpbitOrderVolume volume, String price, WireTimeInForce? timeInForce
+});
+
+
+$WireUpbitOrderVolumeCopyWith<$Res> get volume;
+
+}
+/// @nodoc
+class _$WireUpbitCancelAndNewOrder_LimitCopyWithImpl<$Res>
+    implements $WireUpbitCancelAndNewOrder_LimitCopyWith<$Res> {
+  _$WireUpbitCancelAndNewOrder_LimitCopyWithImpl(this._self, this._then);
+
+  final WireUpbitCancelAndNewOrder_Limit _self;
+  final $Res Function(WireUpbitCancelAndNewOrder_Limit) _then;
+
+/// Create a copy of WireUpbitCancelAndNewOrder
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? volume = null,Object? price = null,Object? timeInForce = freezed,}) {
+  return _then(WireUpbitCancelAndNewOrder_Limit(
+volume: null == volume ? _self.volume : volume // ignore: cast_nullable_to_non_nullable
+as WireUpbitOrderVolume,price: null == price ? _self.price : price // ignore: cast_nullable_to_non_nullable
+as String,timeInForce: freezed == timeInForce ? _self.timeInForce : timeInForce // ignore: cast_nullable_to_non_nullable
+as WireTimeInForce?,
+  ));
+}
+
+/// Create a copy of WireUpbitCancelAndNewOrder
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$WireUpbitOrderVolumeCopyWith<$Res> get volume {
+
+  return $WireUpbitOrderVolumeCopyWith<$Res>(_self.volume, (value) {
+    return _then(_self.copyWith(volume: value));
+  });
+}
+}
+
+/// @nodoc
+
+
+class WireUpbitCancelAndNewOrder_MarketBuy extends WireUpbitCancelAndNewOrder {
+  const WireUpbitCancelAndNewOrder_MarketBuy({required this.price}): super._();
+
+
+ final  String price;
+
+/// Create a copy of WireUpbitCancelAndNewOrder
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireUpbitCancelAndNewOrder_MarketBuyCopyWith<WireUpbitCancelAndNewOrder_MarketBuy> get copyWith => _$WireUpbitCancelAndNewOrder_MarketBuyCopyWithImpl<WireUpbitCancelAndNewOrder_MarketBuy>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitCancelAndNewOrder_MarketBuy&&(identical(other.price, price) || other.price == price));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,price);
+
+@override
+String toString() {
+  return 'WireUpbitCancelAndNewOrder.marketBuy(price: $price)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireUpbitCancelAndNewOrder_MarketBuyCopyWith<$Res> implements $WireUpbitCancelAndNewOrderCopyWith<$Res> {
+  factory $WireUpbitCancelAndNewOrder_MarketBuyCopyWith(WireUpbitCancelAndNewOrder_MarketBuy value, $Res Function(WireUpbitCancelAndNewOrder_MarketBuy) _then) = _$WireUpbitCancelAndNewOrder_MarketBuyCopyWithImpl;
+@useResult
+$Res call({
+ String price
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireUpbitCancelAndNewOrder_MarketBuyCopyWithImpl<$Res>
+    implements $WireUpbitCancelAndNewOrder_MarketBuyCopyWith<$Res> {
+  _$WireUpbitCancelAndNewOrder_MarketBuyCopyWithImpl(this._self, this._then);
+
+  final WireUpbitCancelAndNewOrder_MarketBuy _self;
+  final $Res Function(WireUpbitCancelAndNewOrder_MarketBuy) _then;
+
+/// Create a copy of WireUpbitCancelAndNewOrder
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? price = null,}) {
+  return _then(WireUpbitCancelAndNewOrder_MarketBuy(
+price: null == price ? _self.price : price // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireUpbitCancelAndNewOrder_MarketSell extends WireUpbitCancelAndNewOrder {
+  const WireUpbitCancelAndNewOrder_MarketSell({required this.volume}): super._();
+
+
+ final  WireUpbitOrderVolume volume;
+
+/// Create a copy of WireUpbitCancelAndNewOrder
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireUpbitCancelAndNewOrder_MarketSellCopyWith<WireUpbitCancelAndNewOrder_MarketSell> get copyWith => _$WireUpbitCancelAndNewOrder_MarketSellCopyWithImpl<WireUpbitCancelAndNewOrder_MarketSell>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitCancelAndNewOrder_MarketSell&&(identical(other.volume, volume) || other.volume == volume));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,volume);
+
+@override
+String toString() {
+  return 'WireUpbitCancelAndNewOrder.marketSell(volume: $volume)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireUpbitCancelAndNewOrder_MarketSellCopyWith<$Res> implements $WireUpbitCancelAndNewOrderCopyWith<$Res> {
+  factory $WireUpbitCancelAndNewOrder_MarketSellCopyWith(WireUpbitCancelAndNewOrder_MarketSell value, $Res Function(WireUpbitCancelAndNewOrder_MarketSell) _then) = _$WireUpbitCancelAndNewOrder_MarketSellCopyWithImpl;
+@useResult
+$Res call({
+ WireUpbitOrderVolume volume
+});
+
+
+$WireUpbitOrderVolumeCopyWith<$Res> get volume;
+
+}
+/// @nodoc
+class _$WireUpbitCancelAndNewOrder_MarketSellCopyWithImpl<$Res>
+    implements $WireUpbitCancelAndNewOrder_MarketSellCopyWith<$Res> {
+  _$WireUpbitCancelAndNewOrder_MarketSellCopyWithImpl(this._self, this._then);
+
+  final WireUpbitCancelAndNewOrder_MarketSell _self;
+  final $Res Function(WireUpbitCancelAndNewOrder_MarketSell) _then;
+
+/// Create a copy of WireUpbitCancelAndNewOrder
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? volume = null,}) {
+  return _then(WireUpbitCancelAndNewOrder_MarketSell(
+volume: null == volume ? _self.volume : volume // ignore: cast_nullable_to_non_nullable
+as WireUpbitOrderVolume,
+  ));
+}
+
+/// Create a copy of WireUpbitCancelAndNewOrder
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$WireUpbitOrderVolumeCopyWith<$Res> get volume {
+
+  return $WireUpbitOrderVolumeCopyWith<$Res>(_self.volume, (value) {
+    return _then(_self.copyWith(volume: value));
+  });
+}
+}
+
+/// @nodoc
+
+
+class WireUpbitCancelAndNewOrder_BestBuy extends WireUpbitCancelAndNewOrder {
+  const WireUpbitCancelAndNewOrder_BestBuy({required this.price, required this.timeInForce}): super._();
+
+
+ final  String price;
+ final  WireTimeInForce timeInForce;
+
+/// Create a copy of WireUpbitCancelAndNewOrder
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireUpbitCancelAndNewOrder_BestBuyCopyWith<WireUpbitCancelAndNewOrder_BestBuy> get copyWith => _$WireUpbitCancelAndNewOrder_BestBuyCopyWithImpl<WireUpbitCancelAndNewOrder_BestBuy>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitCancelAndNewOrder_BestBuy&&(identical(other.price, price) || other.price == price)&&(identical(other.timeInForce, timeInForce) || other.timeInForce == timeInForce));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,price,timeInForce);
+
+@override
+String toString() {
+  return 'WireUpbitCancelAndNewOrder.bestBuy(price: $price, timeInForce: $timeInForce)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireUpbitCancelAndNewOrder_BestBuyCopyWith<$Res> implements $WireUpbitCancelAndNewOrderCopyWith<$Res> {
+  factory $WireUpbitCancelAndNewOrder_BestBuyCopyWith(WireUpbitCancelAndNewOrder_BestBuy value, $Res Function(WireUpbitCancelAndNewOrder_BestBuy) _then) = _$WireUpbitCancelAndNewOrder_BestBuyCopyWithImpl;
+@useResult
+$Res call({
+ String price, WireTimeInForce timeInForce
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireUpbitCancelAndNewOrder_BestBuyCopyWithImpl<$Res>
+    implements $WireUpbitCancelAndNewOrder_BestBuyCopyWith<$Res> {
+  _$WireUpbitCancelAndNewOrder_BestBuyCopyWithImpl(this._self, this._then);
+
+  final WireUpbitCancelAndNewOrder_BestBuy _self;
+  final $Res Function(WireUpbitCancelAndNewOrder_BestBuy) _then;
+
+/// Create a copy of WireUpbitCancelAndNewOrder
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? price = null,Object? timeInForce = null,}) {
+  return _then(WireUpbitCancelAndNewOrder_BestBuy(
+price: null == price ? _self.price : price // ignore: cast_nullable_to_non_nullable
+as String,timeInForce: null == timeInForce ? _self.timeInForce : timeInForce // ignore: cast_nullable_to_non_nullable
+as WireTimeInForce,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireUpbitCancelAndNewOrder_BestSell extends WireUpbitCancelAndNewOrder {
+  const WireUpbitCancelAndNewOrder_BestSell({required this.volume, required this.timeInForce}): super._();
+
+
+ final  WireUpbitOrderVolume volume;
+ final  WireTimeInForce timeInForce;
+
+/// Create a copy of WireUpbitCancelAndNewOrder
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireUpbitCancelAndNewOrder_BestSellCopyWith<WireUpbitCancelAndNewOrder_BestSell> get copyWith => _$WireUpbitCancelAndNewOrder_BestSellCopyWithImpl<WireUpbitCancelAndNewOrder_BestSell>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitCancelAndNewOrder_BestSell&&(identical(other.volume, volume) || other.volume == volume)&&(identical(other.timeInForce, timeInForce) || other.timeInForce == timeInForce));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,volume,timeInForce);
+
+@override
+String toString() {
+  return 'WireUpbitCancelAndNewOrder.bestSell(volume: $volume, timeInForce: $timeInForce)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireUpbitCancelAndNewOrder_BestSellCopyWith<$Res> implements $WireUpbitCancelAndNewOrderCopyWith<$Res> {
+  factory $WireUpbitCancelAndNewOrder_BestSellCopyWith(WireUpbitCancelAndNewOrder_BestSell value, $Res Function(WireUpbitCancelAndNewOrder_BestSell) _then) = _$WireUpbitCancelAndNewOrder_BestSellCopyWithImpl;
+@useResult
+$Res call({
+ WireUpbitOrderVolume volume, WireTimeInForce timeInForce
+});
+
+
+$WireUpbitOrderVolumeCopyWith<$Res> get volume;
+
+}
+/// @nodoc
+class _$WireUpbitCancelAndNewOrder_BestSellCopyWithImpl<$Res>
+    implements $WireUpbitCancelAndNewOrder_BestSellCopyWith<$Res> {
+  _$WireUpbitCancelAndNewOrder_BestSellCopyWithImpl(this._self, this._then);
+
+  final WireUpbitCancelAndNewOrder_BestSell _self;
+  final $Res Function(WireUpbitCancelAndNewOrder_BestSell) _then;
+
+/// Create a copy of WireUpbitCancelAndNewOrder
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? volume = null,Object? timeInForce = null,}) {
+  return _then(WireUpbitCancelAndNewOrder_BestSell(
+volume: null == volume ? _self.volume : volume // ignore: cast_nullable_to_non_nullable
+as WireUpbitOrderVolume,timeInForce: null == timeInForce ? _self.timeInForce : timeInForce // ignore: cast_nullable_to_non_nullable
+as WireTimeInForce,
+  ));
+}
+
+/// Create a copy of WireUpbitCancelAndNewOrder
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$WireUpbitOrderVolumeCopyWith<$Res> get volume {
+
+  return $WireUpbitOrderVolumeCopyWith<$Res>(_self.volume, (value) {
+    return _then(_self.copyWith(volume: value));
+  });
+}
+}
+
+/// @nodoc
+mixin _$WireUpbitOrderReference {
+
+ String get field0;
+/// Create a copy of WireUpbitOrderReference
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireUpbitOrderReferenceCopyWith<WireUpbitOrderReference> get copyWith => _$WireUpbitOrderReferenceCopyWithImpl<WireUpbitOrderReference>(this as WireUpbitOrderReference, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitOrderReference&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireUpbitOrderReference(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireUpbitOrderReferenceCopyWith<$Res>  {
+  factory $WireUpbitOrderReferenceCopyWith(WireUpbitOrderReference value, $Res Function(WireUpbitOrderReference) _then) = _$WireUpbitOrderReferenceCopyWithImpl;
+@useResult
+$Res call({
+ String field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireUpbitOrderReferenceCopyWithImpl<$Res>
+    implements $WireUpbitOrderReferenceCopyWith<$Res> {
+  _$WireUpbitOrderReferenceCopyWithImpl(this._self, this._then);
+
+  final WireUpbitOrderReference _self;
+  final $Res Function(WireUpbitOrderReference) _then;
+
+/// Create a copy of WireUpbitOrderReference
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? field0 = null,}) {
+  return _then(_self.copyWith(
+field0: null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [WireUpbitOrderReference].
+extension WireUpbitOrderReferencePatterns on WireUpbitOrderReference {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( WireUpbitOrderReference_Uuid value)?  uuid,TResult Function( WireUpbitOrderReference_Identifier value)?  identifier,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case WireUpbitOrderReference_Uuid() when uuid != null:
+return uuid(_that);case WireUpbitOrderReference_Identifier() when identifier != null:
+return identifier(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( WireUpbitOrderReference_Uuid value)  uuid,required TResult Function( WireUpbitOrderReference_Identifier value)  identifier,}){
+final _that = this;
+switch (_that) {
+case WireUpbitOrderReference_Uuid():
+return uuid(_that);case WireUpbitOrderReference_Identifier():
+return identifier(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( WireUpbitOrderReference_Uuid value)?  uuid,TResult? Function( WireUpbitOrderReference_Identifier value)?  identifier,}){
+final _that = this;
+switch (_that) {
+case WireUpbitOrderReference_Uuid() when uuid != null:
+return uuid(_that);case WireUpbitOrderReference_Identifier() when identifier != null:
+return identifier(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String field0)?  uuid,TResult Function( String field0)?  identifier,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case WireUpbitOrderReference_Uuid() when uuid != null:
+return uuid(_that.field0);case WireUpbitOrderReference_Identifier() when identifier != null:
+return identifier(_that.field0);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String field0)  uuid,required TResult Function( String field0)  identifier,}) {final _that = this;
+switch (_that) {
+case WireUpbitOrderReference_Uuid():
+return uuid(_that.field0);case WireUpbitOrderReference_Identifier():
+return identifier(_that.field0);}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String field0)?  uuid,TResult? Function( String field0)?  identifier,}) {final _that = this;
+switch (_that) {
+case WireUpbitOrderReference_Uuid() when uuid != null:
+return uuid(_that.field0);case WireUpbitOrderReference_Identifier() when identifier != null:
+return identifier(_that.field0);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class WireUpbitOrderReference_Uuid extends WireUpbitOrderReference {
+  const WireUpbitOrderReference_Uuid(this.field0): super._();
+
+
+@override final  String field0;
+
+/// Create a copy of WireUpbitOrderReference
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireUpbitOrderReference_UuidCopyWith<WireUpbitOrderReference_Uuid> get copyWith => _$WireUpbitOrderReference_UuidCopyWithImpl<WireUpbitOrderReference_Uuid>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitOrderReference_Uuid&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireUpbitOrderReference.uuid(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireUpbitOrderReference_UuidCopyWith<$Res> implements $WireUpbitOrderReferenceCopyWith<$Res> {
+  factory $WireUpbitOrderReference_UuidCopyWith(WireUpbitOrderReference_Uuid value, $Res Function(WireUpbitOrderReference_Uuid) _then) = _$WireUpbitOrderReference_UuidCopyWithImpl;
+@override @useResult
+$Res call({
+ String field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireUpbitOrderReference_UuidCopyWithImpl<$Res>
+    implements $WireUpbitOrderReference_UuidCopyWith<$Res> {
+  _$WireUpbitOrderReference_UuidCopyWithImpl(this._self, this._then);
+
+  final WireUpbitOrderReference_Uuid _self;
+  final $Res Function(WireUpbitOrderReference_Uuid) _then;
+
+/// Create a copy of WireUpbitOrderReference
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireUpbitOrderReference_Uuid(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireUpbitOrderReference_Identifier extends WireUpbitOrderReference {
+  const WireUpbitOrderReference_Identifier(this.field0): super._();
+
+
+@override final  String field0;
+
+/// Create a copy of WireUpbitOrderReference
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireUpbitOrderReference_IdentifierCopyWith<WireUpbitOrderReference_Identifier> get copyWith => _$WireUpbitOrderReference_IdentifierCopyWithImpl<WireUpbitOrderReference_Identifier>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitOrderReference_Identifier&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireUpbitOrderReference.identifier(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireUpbitOrderReference_IdentifierCopyWith<$Res> implements $WireUpbitOrderReferenceCopyWith<$Res> {
+  factory $WireUpbitOrderReference_IdentifierCopyWith(WireUpbitOrderReference_Identifier value, $Res Function(WireUpbitOrderReference_Identifier) _then) = _$WireUpbitOrderReference_IdentifierCopyWithImpl;
+@override @useResult
+$Res call({
+ String field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireUpbitOrderReference_IdentifierCopyWithImpl<$Res>
+    implements $WireUpbitOrderReference_IdentifierCopyWith<$Res> {
+  _$WireUpbitOrderReference_IdentifierCopyWithImpl(this._self, this._then);
+
+  final WireUpbitOrderReference_Identifier _self;
+  final $Res Function(WireUpbitOrderReference_Identifier) _then;
+
+/// Create a copy of WireUpbitOrderReference
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireUpbitOrderReference_Identifier(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+mixin _$WireUpbitOrderVolume {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitOrderVolume);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireUpbitOrderVolume()';
+}
+
+
+}
+
+/// @nodoc
+class $WireUpbitOrderVolumeCopyWith<$Res>  {
+$WireUpbitOrderVolumeCopyWith(WireUpbitOrderVolume _, $Res Function(WireUpbitOrderVolume) __);
+}
+
+
+/// Adds pattern-matching-related methods to [WireUpbitOrderVolume].
+extension WireUpbitOrderVolumePatterns on WireUpbitOrderVolume {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( WireUpbitOrderVolume_Amount value)?  amount,TResult Function( WireUpbitOrderVolume_RemainOnly value)?  remainOnly,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case WireUpbitOrderVolume_Amount() when amount != null:
+return amount(_that);case WireUpbitOrderVolume_RemainOnly() when remainOnly != null:
+return remainOnly(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( WireUpbitOrderVolume_Amount value)  amount,required TResult Function( WireUpbitOrderVolume_RemainOnly value)  remainOnly,}){
+final _that = this;
+switch (_that) {
+case WireUpbitOrderVolume_Amount():
+return amount(_that);case WireUpbitOrderVolume_RemainOnly():
+return remainOnly(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( WireUpbitOrderVolume_Amount value)?  amount,TResult? Function( WireUpbitOrderVolume_RemainOnly value)?  remainOnly,}){
+final _that = this;
+switch (_that) {
+case WireUpbitOrderVolume_Amount() when amount != null:
+return amount(_that);case WireUpbitOrderVolume_RemainOnly() when remainOnly != null:
+return remainOnly(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String field0)?  amount,TResult Function()?  remainOnly,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case WireUpbitOrderVolume_Amount() when amount != null:
+return amount(_that.field0);case WireUpbitOrderVolume_RemainOnly() when remainOnly != null:
+return remainOnly();case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String field0)  amount,required TResult Function()  remainOnly,}) {final _that = this;
+switch (_that) {
+case WireUpbitOrderVolume_Amount():
+return amount(_that.field0);case WireUpbitOrderVolume_RemainOnly():
+return remainOnly();}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String field0)?  amount,TResult? Function()?  remainOnly,}) {final _that = this;
+switch (_that) {
+case WireUpbitOrderVolume_Amount() when amount != null:
+return amount(_that.field0);case WireUpbitOrderVolume_RemainOnly() when remainOnly != null:
+return remainOnly();case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class WireUpbitOrderVolume_Amount extends WireUpbitOrderVolume {
+  const WireUpbitOrderVolume_Amount(this.field0): super._();
+
+
+ final  String field0;
+
+/// Create a copy of WireUpbitOrderVolume
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireUpbitOrderVolume_AmountCopyWith<WireUpbitOrderVolume_Amount> get copyWith => _$WireUpbitOrderVolume_AmountCopyWithImpl<WireUpbitOrderVolume_Amount>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitOrderVolume_Amount&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireUpbitOrderVolume.amount(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireUpbitOrderVolume_AmountCopyWith<$Res> implements $WireUpbitOrderVolumeCopyWith<$Res> {
+  factory $WireUpbitOrderVolume_AmountCopyWith(WireUpbitOrderVolume_Amount value, $Res Function(WireUpbitOrderVolume_Amount) _then) = _$WireUpbitOrderVolume_AmountCopyWithImpl;
+@useResult
+$Res call({
+ String field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireUpbitOrderVolume_AmountCopyWithImpl<$Res>
+    implements $WireUpbitOrderVolume_AmountCopyWith<$Res> {
+  _$WireUpbitOrderVolume_AmountCopyWithImpl(this._self, this._then);
+
+  final WireUpbitOrderVolume_Amount _self;
+  final $Res Function(WireUpbitOrderVolume_Amount) _then;
+
+/// Create a copy of WireUpbitOrderVolume
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireUpbitOrderVolume_Amount(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireUpbitOrderVolume_RemainOnly extends WireUpbitOrderVolume {
+  const WireUpbitOrderVolume_RemainOnly(): super._();
+
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitOrderVolume_RemainOnly);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireUpbitOrderVolume.remainOnly()';
+}
+
+
+}
+
+
+
 
 /// @nodoc
 mixin _$WireWithdrawalFee {

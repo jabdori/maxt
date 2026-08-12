@@ -64,6 +64,11 @@ UpbitOrderDirection _upbitOrderDirectionFromWire(
   wire.WireUpbitOrderDirection value,
 ) => _enumByName(UpbitOrderDirection.values, value);
 
+wire.WireUpbitSmpType _upbitSmpTypeToWire(UpbitSmpType value) =>
+    _enumByName(wire.WireUpbitSmpType.values, value);
+UpbitSmpType _upbitSmpTypeFromWire(wire.WireUpbitSmpType value) =>
+    _enumByName(UpbitSmpType.values, value);
+
 wire.WireBithumbPendingOrderState _bithumbPendingOrderStateToWire(
   BithumbPendingOrderState value,
 ) => _enumByName(wire.WireBithumbPendingOrderState.values, value);
@@ -1023,6 +1028,143 @@ wire.WireUpbitBatchCancelRequest _upbitBatchCancelRequestToWire(
       : _upbitOrderDirectionToWire(value.orderBy!),
 );
 
+UpbitOrderReference _upbitOrderReferenceFromWire(
+  wire.WireUpbitOrderReference value,
+) => switch (value) {
+  wire.WireUpbitOrderReference_Uuid(:final field0) => UpbitOrderReference.uuid(
+    field0,
+  ),
+  wire.WireUpbitOrderReference_Identifier(:final field0) =>
+    UpbitOrderReference.identifier(field0),
+};
+
+wire.WireUpbitOrderReference _upbitOrderReferenceToWire(
+  UpbitOrderReference value,
+) => switch (value) {
+  UpbitOrderReferenceUuid(:final value) => wire.WireUpbitOrderReference.uuid(
+    value,
+  ),
+  UpbitOrderReferenceIdentifier(:final value) =>
+    wire.WireUpbitOrderReference.identifier(value),
+};
+
+UpbitOrderVolume _upbitOrderVolumeFromWire(wire.WireUpbitOrderVolume value) =>
+    switch (value) {
+      wire.WireUpbitOrderVolume_Amount(:final field0) =>
+        UpbitOrderVolume.amount(Decimal.parse(field0)),
+      wire.WireUpbitOrderVolume_RemainOnly() =>
+        const UpbitOrderVolume.remainOnly(),
+    };
+
+wire.WireUpbitOrderVolume _upbitOrderVolumeToWire(UpbitOrderVolume value) =>
+    switch (value) {
+      UpbitOrderVolumeAmount(:final value) => wire.WireUpbitOrderVolume.amount(
+        value.toString(),
+      ),
+      UpbitOrderVolumeRemainOnly() =>
+        const wire.WireUpbitOrderVolume.remainOnly(),
+    };
+
+UpbitCancelAndNewOrder _upbitCancelAndNewOrderFromWire(
+  wire.WireUpbitCancelAndNewOrder value,
+) => switch (value) {
+  wire.WireUpbitCancelAndNewOrder_Limit(
+    :final volume,
+    :final price,
+    :final timeInForce,
+  ) =>
+    UpbitCancelAndNewOrder.limit(
+      volume: _upbitOrderVolumeFromWire(volume),
+      price: Decimal.parse(price),
+      timeInForce: timeInForce == null
+          ? null
+          : _timeInForceFromWire(timeInForce),
+    ),
+  wire.WireUpbitCancelAndNewOrder_MarketBuy(:final price) =>
+    UpbitCancelAndNewOrder.marketBuy(price: Decimal.parse(price)),
+  wire.WireUpbitCancelAndNewOrder_MarketSell(:final volume) =>
+    UpbitCancelAndNewOrder.marketSell(
+      volume: _upbitOrderVolumeFromWire(volume),
+    ),
+  wire.WireUpbitCancelAndNewOrder_BestBuy(:final price, :final timeInForce) =>
+    UpbitCancelAndNewOrder.bestBuy(
+      price: Decimal.parse(price),
+      timeInForce: _timeInForceFromWire(timeInForce),
+    ),
+  wire.WireUpbitCancelAndNewOrder_BestSell(:final volume, :final timeInForce) =>
+    UpbitCancelAndNewOrder.bestSell(
+      volume: _upbitOrderVolumeFromWire(volume),
+      timeInForce: _timeInForceFromWire(timeInForce),
+    ),
+};
+
+wire.WireUpbitCancelAndNewOrder _upbitCancelAndNewOrderToWire(
+  UpbitCancelAndNewOrder value,
+) => switch (value) {
+  UpbitCancelAndNewOrderLimit(
+    :final volume,
+    :final price,
+    :final timeInForce,
+  ) =>
+    wire.WireUpbitCancelAndNewOrder.limit(
+      volume: _upbitOrderVolumeToWire(volume),
+      price: price.toString(),
+      timeInForce: timeInForce == null ? null : _timeInForceToWire(timeInForce),
+    ),
+  UpbitCancelAndNewOrderMarketBuy(:final price) =>
+    wire.WireUpbitCancelAndNewOrder.marketBuy(price: price.toString()),
+  UpbitCancelAndNewOrderMarketSell(:final volume) =>
+    wire.WireUpbitCancelAndNewOrder.marketSell(
+      volume: _upbitOrderVolumeToWire(volume),
+    ),
+  UpbitCancelAndNewOrderBestBuy(:final price, :final timeInForce) =>
+    wire.WireUpbitCancelAndNewOrder.bestBuy(
+      price: price.toString(),
+      timeInForce: _timeInForceToWire(timeInForce),
+    ),
+  UpbitCancelAndNewOrderBestSell(:final volume, :final timeInForce) =>
+    wire.WireUpbitCancelAndNewOrder.bestSell(
+      volume: _upbitOrderVolumeToWire(volume),
+      timeInForce: _timeInForceToWire(timeInForce),
+    ),
+};
+
+UpbitCancelAndNewOrderRequest _upbitCancelAndNewOrderRequestFromWire(
+  wire.WireUpbitCancelAndNewOrderRequest value,
+) => UpbitCancelAndNewOrderRequest(
+  previousOrder: _upbitOrderReferenceFromWire(value.previousOrder),
+  newOrder: _upbitCancelAndNewOrderFromWire(value.newOrder),
+  newIdentifier: value.newIdentifier,
+  newSmpType: value.newSmpType == null
+      ? null
+      : _upbitSmpTypeFromWire(value.newSmpType!),
+);
+wire.WireUpbitCancelAndNewOrderRequest _upbitCancelAndNewOrderRequestToWire(
+  UpbitCancelAndNewOrderRequest value,
+) => wire.WireUpbitCancelAndNewOrderRequest(
+  previousOrder: _upbitOrderReferenceToWire(value.previousOrder),
+  newOrder: _upbitCancelAndNewOrderToWire(value.newOrder),
+  newIdentifier: value.newIdentifier,
+  newSmpType: value.newSmpType == null
+      ? null
+      : _upbitSmpTypeToWire(value.newSmpType!),
+);
+
+UpbitCancelAndNewOrderResult _upbitCancelAndNewOrderResultFromWire(
+  wire.WireUpbitCancelAndNewOrderResult value,
+) => UpbitCancelAndNewOrderResult(
+  previousOrder: _orderFromWire(value.previousOrder),
+  newOrderUuid: value.newOrderUuid,
+  newOrderIdentifier: value.newOrderIdentifier,
+);
+wire.WireUpbitCancelAndNewOrderResult _upbitCancelAndNewOrderResultToWire(
+  UpbitCancelAndNewOrderResult value,
+) => wire.WireUpbitCancelAndNewOrderResult(
+  previousOrder: _orderToWire(value.previousOrder),
+  newOrderUuid: value.newOrderUuid,
+  newOrderIdentifier: value.newOrderIdentifier,
+);
+
 BithumbNotice _bithumbNoticeFromWire(wire.WireBithumbNotice value) =>
     BithumbNotice(
       categories: value.categories,
@@ -1076,6 +1218,95 @@ wire.WireBithumbPendingOrdersRequest _bithumbPendingOrdersRequestToWire(
       ? null
       : _bithumbOrderDirectionToWire(value.orderBy!),
   cursor: value.cursor?.value,
+);
+
+BithumbBatchOrdersRequest _bithumbBatchOrdersRequestFromWire(
+  wire.WireBithumbBatchOrdersRequest value,
+) => BithumbBatchOrdersRequest(
+  orders: value.orders.map(_orderRequestFromWire).toList(growable: false),
+);
+wire.WireBithumbBatchOrdersRequest _bithumbBatchOrdersRequestToWire(
+  BithumbBatchOrdersRequest value,
+) => wire.WireBithumbBatchOrdersRequest(
+  orders: value.orders.map(_orderRequestToWire).toList(growable: false),
+);
+
+BithumbBatchOrder _bithumbBatchOrderFromWire(
+  wire.WireBithumbBatchOrder value,
+) => BithumbBatchOrder(
+  orderId: value.orderId,
+  clientOrderId: value.clientOrderId,
+  market: _marketFromWire(value.market),
+  side: _sideFromWire(value.side),
+  orderType: _orderTypeFromWire(value.orderType),
+  timeInForce: value.timeInForce,
+  stpType: value.stpType,
+  createdAt: _timestampFromWire(value.createdAtNs),
+);
+wire.WireBithumbBatchOrder _bithumbBatchOrderToWire(BithumbBatchOrder value) =>
+    wire.WireBithumbBatchOrder(
+      orderId: value.orderId,
+      clientOrderId: value.clientOrderId,
+      market: _marketToWire(value.market),
+      side: _sideToWire(value.side),
+      orderType: _orderTypeToWire(value.orderType),
+      timeInForce: value.timeInForce,
+      stpType: value.stpType,
+      createdAtNs: _optionalTimestampToWire(value.createdAt),
+    );
+
+BithumbBatchOrderFailure _bithumbBatchOrderFailureFromWire(
+  wire.WireBithumbBatchOrderFailure value,
+) => BithumbBatchOrderFailure(
+  clientOrderId: value.clientOrderId,
+  timeInForce: value.timeInForce,
+  code: value.code,
+  message: value.message,
+);
+wire.WireBithumbBatchOrderFailure _bithumbBatchOrderFailureToWire(
+  BithumbBatchOrderFailure value,
+) => wire.WireBithumbBatchOrderFailure(
+  clientOrderId: value.clientOrderId,
+  timeInForce: value.timeInForce,
+  code: value.code,
+  message: value.message,
+);
+
+BithumbBatchOrderOutcome _bithumbBatchOrderOutcomeFromWire(
+  wire.WireBithumbBatchOrderOutcome value,
+) => switch (value) {
+  wire.WireBithumbBatchOrderOutcome_Accepted(:final field0) =>
+    BithumbBatchOrderOutcome.accepted(_bithumbBatchOrderFromWire(field0)),
+  wire.WireBithumbBatchOrderOutcome_Rejected(:final field0) =>
+    BithumbBatchOrderOutcome.rejected(
+      _bithumbBatchOrderFailureFromWire(field0),
+    ),
+};
+
+wire.WireBithumbBatchOrderOutcome _bithumbBatchOrderOutcomeToWire(
+  BithumbBatchOrderOutcome value,
+) => switch (value) {
+  BithumbBatchOrderOutcomeAccepted(:final value) =>
+    wire.WireBithumbBatchOrderOutcome.accepted(_bithumbBatchOrderToWire(value)),
+  BithumbBatchOrderOutcomeRejected(:final value) =>
+    wire.WireBithumbBatchOrderOutcome.rejected(
+      _bithumbBatchOrderFailureToWire(value),
+    ),
+};
+
+BithumbBatchOrdersResult _bithumbBatchOrdersResultFromWire(
+  wire.WireBithumbBatchOrdersResult value,
+) => BithumbBatchOrdersResult(
+  outcomes: value.outcomes
+      .map(_bithumbBatchOrderOutcomeFromWire)
+      .toList(growable: false),
+);
+wire.WireBithumbBatchOrdersResult _bithumbBatchOrdersResultToWire(
+  BithumbBatchOrdersResult value,
+) => wire.WireBithumbBatchOrdersResult(
+  outcomes: value.outcomes
+      .map(_bithumbBatchOrderOutcomeToWire)
+      .toList(growable: false),
 );
 
 BithumbTwapOrdersRequest _bithumbTwapOrdersRequestFromWire(
@@ -1247,6 +1478,52 @@ wire.WireBinanceOpenInterest _binanceOpenInterestToWire(
   market: _marketToWire(value.market),
   openInterest: value.openInterest.toString(),
   timeNs: _timestampToWire(value.time),
+);
+
+BinanceAggregateTradesRequest _binanceAggregateTradesRequestFromWire(
+  wire.WireBinanceAggregateTradesRequest value,
+) => BinanceAggregateTradesRequest(
+  market: _marketFromWire(value.market),
+  fromId: value.fromId,
+  startTime: _timestampFromWire(value.startTimeNs),
+  endTime: _timestampFromWire(value.endTimeNs),
+  limit: value.limit,
+);
+wire.WireBinanceAggregateTradesRequest _binanceAggregateTradesRequestToWire(
+  BinanceAggregateTradesRequest value,
+) => wire.WireBinanceAggregateTradesRequest(
+  market: _marketToWire(value.market),
+  fromId: value.fromId,
+  startTimeNs: _optionalTimestampToWire(value.startTime),
+  endTimeNs: _optionalTimestampToWire(value.endTime),
+  limit: checkedUint32(value.limit, field: 'limit'),
+);
+
+BinanceAggregateTrade _binanceAggregateTradeFromWire(
+  wire.WireBinanceAggregateTrade value,
+) => BinanceAggregateTrade(
+  market: _marketFromWire(value.market),
+  aggregateId: value.aggregateId,
+  firstTradeId: value.firstTradeId,
+  lastTradeId: value.lastTradeId,
+  timestamp: _timestampFromWire(value.timestampNs)!,
+  price: Decimal.parse(value.price),
+  quantity: Decimal.parse(value.quantity),
+  normalQuantity: _decimalFromWire(value.normalQuantity),
+  takerSide: _sideFromWire(value.takerSide),
+);
+wire.WireBinanceAggregateTrade _binanceAggregateTradeToWire(
+  BinanceAggregateTrade value,
+) => wire.WireBinanceAggregateTrade(
+  market: _marketToWire(value.market),
+  aggregateId: value.aggregateId,
+  firstTradeId: value.firstTradeId,
+  lastTradeId: value.lastTradeId,
+  timestampNs: _timestampToWire(value.timestamp),
+  price: value.price.toString(),
+  quantity: value.quantity.toString(),
+  normalQuantity: value.normalQuantity?.toString(),
+  takerSide: _sideToWire(value.takerSide),
 );
 
 HyperliquidMidPrice _hyperliquidMidPriceFromWire(

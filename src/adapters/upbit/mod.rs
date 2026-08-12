@@ -23,7 +23,7 @@ use crate::transport::{HttpTransport, WsCommand, WsConnect, WsSession, ws};
 use crate::types::{
     AccountEvent, AssetNetwork, Balance, CancelOrdersResult, Candle, Deposit, DepositAddress,
     DepositAddressEntry, Exchange, Market, MarketEvent, MarketInfo, MarketKind, Network, Order,
-    OrderBook, OrderRules, Page, Side, StreamConfig, Subscription, Ticker, Trade,
+    OrderBook, OrderRules, Page, Side, StreamConfig, Subscription, Ticker, TimeInForce, Trade,
     TransferDestination, Withdrawal, WithdrawalQuote,
 };
 
@@ -251,6 +251,152 @@ impl UpbitBatchCancelRequest {
     }
 }
 
+/// Identifies the existing order for Upbit's cancel-and-new operation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum UpbitOrderReference {
+    /// Upbit-issued order UUID.
+    Uuid(String),
+    /// Caller-assigned order identifier.
+    Identifier(String),
+}
+
+impl UpbitOrderReference {
+    /// Uses an Upbit-issued order UUID.
+    pub fn uuid(value: impl Into<String>) -> Self {
+        Self::Uuid(value.into())
+    }
+
+    /// Uses a caller-assigned order identifier.
+    pub fn identifier(value: impl Into<String>) -> Self {
+        Self::Identifier(value.into())
+    }
+}
+
+/// New-order volume for Upbit cancel-and-new.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum UpbitOrderVolume {
+    /// Explicit base-asset volume.
+    Amount(Decimal),
+    /// Reuse the previous order's remaining volume.
+    RemainOnly,
+}
+
+/// Self-match prevention mode for the replacement order.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UpbitSmpType {
+    /// Cancel the maker order when a self-match would occur.
+    CancelMaker,
+    /// Cancel the taker order when a self-match would occur.
+    CancelTaker,
+    /// Reduce both orders by the self-matched amount.
+    Reduce,
+}
+
+/// The replacement order shape accepted by Upbit's cancel-and-new endpoint.
+///
+/// The endpoint inherits the previous order's market and side. The buy/sell
+/// variants make Upbit's direction-dependent `price`/`volume` fields explicit
+/// without pretending that the endpoint accepts a new market or side.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum UpbitCancelAndNewOrder {
+    /// Limit order. `time_in_force` may be omitted for Upbit's default GTC.
+    Limit {
+        /// New base-asset volume, or `RemainOnly`.
+        volume: UpbitOrderVolume,
+        /// New quote price.
+        price: Decimal,
+        /// Optional IOC, FOK, or post-only policy.
+        time_in_force: Option<TimeInForce>,
+    },
+    /// Market buy (`new_ord_type = "price"`).
+    MarketBuy {
+        /// Total quote amount to spend.
+        price: Decimal,
+    },
+    /// Market sell (`new_ord_type = "market"`).
+    MarketSell {
+        /// New base-asset volume, or `RemainOnly`.
+        volume: UpbitOrderVolume,
+    },
+    /// Best-price buy. Upbit requires IOC or FOK.
+    BestBuy {
+        /// Total quote amount to spend.
+        price: Decimal,
+        /// Required IOC or FOK policy.
+        time_in_force: TimeInForce,
+    },
+    /// Best-price sell. Upbit requires IOC or FOK.
+    BestSell {
+        /// New base-asset volume, or `RemainOnly`.
+        volume: UpbitOrderVolume,
+        /// Required IOC or FOK policy.
+        time_in_force: TimeInForce,
+    },
+}
+
+/// Request for Upbit's single-request cancel-then-create order operation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpbitCancelAndNewOrderRequest {
+    /// Existing order to cancel.
+    pub previous_order: UpbitOrderReference,
+    /// Replacement order to create after cancellation.
+    pub new_order: UpbitCancelAndNewOrder,
+    /// Optional new caller-assigned identifier.
+    pub new_identifier: Option<String>,
+    /// Optional self-match prevention mode for the replacement order.
+    pub new_smp_type: Option<UpbitSmpType>,
+}
+
+impl UpbitCancelAndNewOrderRequest {
+    /// Starts a cancel-and-new request.
+    pub fn new(previous_order: UpbitOrderReference, new_order: UpbitCancelAndNewOrder) -> Self {
+        Self {
+            previous_order,
+            new_order,
+            new_identifier: None,
+            new_smp_type: None,
+        }
+    }
+
+    /// Assigns the replacement order's client identifier.
+    #[must_use]
+    pub fn new_identifier(mut self, value: impl Into<String>) -> Self {
+        self.new_identifier = Some(value.into());
+        self
+    }
+
+    /// Selects the replacement order's self-match prevention mode.
+    #[must_use]
+    pub fn new_smp_type(mut self, value: UpbitSmpType) -> Self {
+        self.new_smp_type = Some(value);
+        self
+    }
+}
+
+/// Result returned by Upbit's cancel-and-new endpoint.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpbitCancelAndNewOrderResult {
+    /// The previous order after Upbit processed the request.
+    ///
+    /// It is usually cancelled, but it can be filled when it completed before
+    /// cancellation. Inspect its status instead of assuming cancellation.
+    pub previous_order: Order,
+    /// UUID of the replacement order, when one was created.
+    ///
+    /// This is `None` when the old order filled before cancellation completed;
+    /// a successful HTTP response alone does not imply replacement creation.
+    pub new_order_uuid: Option<String>,
+    /// Identifier of the replacement order, when one was requested and created.
+    pub new_order_identifier: Option<String>,
+}
+
+impl UpbitCancelAndNewOrderResult {
+    /// Whether Upbit reported that a replacement order was created.
+    pub fn replacement_created(&self) -> bool {
+        self.new_order_uuid.is_some()
+    }
+}
+
 /// Adapter for Upbit spot markets.
 ///
 /// Derivative features return [`Error::Unsupported`](crate::Error::Unsupported).
@@ -429,6 +575,19 @@ impl UpbitAdapter {
         request: &UpbitBatchCancelRequest,
     ) -> Result<CancelOrdersResult> {
         private::batch_cancel_open_orders(self.credentials()?, self.http()?, request).await
+    }
+
+    /// Cancels one existing order and creates its replacement in one request.
+    ///
+    /// Upbit keeps the previous order's market and side. A `201` response can
+    /// still report no replacement UUID when the previous order filled before
+    /// cancellation completed; inspect [`UpbitCancelAndNewOrderResult::replacement_created`]
+    /// instead of treating HTTP success as an atomic replacement guarantee.
+    pub async fn cancel_and_new_order(
+        &self,
+        request: &UpbitCancelAndNewOrderRequest,
+    ) -> Result<UpbitCancelAndNewOrderResult> {
+        private::cancel_and_new_order(self.credentials()?, self.http()?, request).await
     }
 
     pub(crate) fn is_authenticated(&self) -> bool {
@@ -897,6 +1056,17 @@ mod tests {
         ));
         assert!(matches!(
             public.test_order(&order).await,
+            Err(Error::Auth { .. })
+        ));
+        assert!(matches!(
+            public
+                .cancel_and_new_order(&UpbitCancelAndNewOrderRequest::new(
+                    UpbitOrderReference::uuid("order-1"),
+                    UpbitCancelAndNewOrder::MarketSell {
+                        volume: UpbitOrderVolume::RemainOnly,
+                    },
+                ))
+                .await,
             Err(Error::Auth { .. })
         ));
         assert!(matches!(

@@ -4,10 +4,17 @@ import test from "node:test";
 import {
   Balance,
   BinanceMarket,
+  BinanceAggregateTrade,
+  BinanceAggregateTradesRequest,
   BinanceMarkPrice,
   BinanceOpenInterest,
   BithumbApiKey,
   BithumbAssetFee,
+  BithumbBatchOrder,
+  BithumbBatchOrderFailure,
+  BithumbBatchOrderOutcome,
+  BithumbBatchOrdersRequest,
+  BithumbBatchOrdersResult,
   BithumbNetworkFee,
   BithumbOrderDirection,
   BithumbPendingOrderState,
@@ -43,6 +50,7 @@ import {
   OrderIdKind,
   OrderLookupRequest,
   OrderOption,
+  Order,
   OrderRequest,
   OrderRules,
   OrderStatus,
@@ -62,8 +70,14 @@ import {
   UpbitOrderBookInstrument,
   UpbitBatchCancelRequest,
   UpbitBatchCancelScope,
+  UpbitCancelAndNewOrder,
+  UpbitCancelAndNewOrderRequest,
+  UpbitCancelAndNewOrderResult,
   UpbitDepositInfo,
   UpbitOrderDirection,
+  UpbitOrderReference,
+  UpbitOrderVolume,
+  UpbitSmpType,
   UpbitYearCandle,
   WithdrawRequest,
   WithdrawalFee,
@@ -77,6 +91,14 @@ import {
   binanceMarkPriceToWire,
   binanceOpenInterestFromWire,
   binanceOpenInterestToWire,
+  binanceAggregateTradeFromWire,
+  binanceAggregateTradeToWire,
+  binanceAggregateTradesRequestFromWire,
+  binanceAggregateTradesRequestToWire,
+  bithumbBatchOrdersRequestFromWire,
+  bithumbBatchOrdersRequestToWire,
+  bithumbBatchOrdersResultFromWire,
+  bithumbBatchOrdersResultToWire,
   bithumbPendingOrdersRequestFromWire,
   bithumbPendingOrdersRequestToWire,
   bithumbTwapOrderRequestFromWire,
@@ -109,6 +131,10 @@ import {
   upbitBatchCancelRequestFromWire,
   upbitBatchCancelRequestToWire,
   upbitBatchCancelScopeToWire,
+  upbitCancelAndNewOrderRequestFromWire,
+  upbitCancelAndNewOrderRequestToWire,
+  upbitCancelAndNewOrderResultFromWire,
+  upbitCancelAndNewOrderResultToWire,
   upbitOrderBookInstrumentFromWire,
   upbitOrderBookInstrumentToWire,
   upbitYearCandleFromWire,
@@ -274,6 +300,48 @@ test("Upbit batch cancellation rejects a restriction on the all scope", () => {
   );
 });
 
+test("Upbit cancel-and-new preserves the previous-order race outcome", () => {
+  const market = Market.spot(Exchange.Upbit, "BTC", "KRW");
+  const request = new UpbitCancelAndNewOrderRequest(
+    UpbitOrderReference.identifier("old-client-id"),
+    UpbitCancelAndNewOrder.limit(
+      UpbitOrderVolume.amount(Decimal.parse("0.01")),
+      Decimal.parse("100000000"),
+      TimeInForce.ImmediateOrCancel,
+    ),
+    "replacement-client-id",
+    UpbitSmpType.Reduce,
+  );
+  const result = new UpbitCancelAndNewOrderResult(
+    new Order(
+      "old-order",
+      market,
+      Side.Buy,
+      OrderStatus.Filled,
+      Decimal.parse("0.02"),
+      Decimal.zero,
+      Decimal.parse("100000000"),
+      Timestamp.fromNanoseconds(1n),
+    ),
+    null,
+    null,
+  );
+
+  assert.deepEqual(
+    upbitCancelAndNewOrderRequestToWire(upbitCancelAndNewOrderRequestFromWire(
+      upbitCancelAndNewOrderRequestToWire(request),
+    )),
+    upbitCancelAndNewOrderRequestToWire(request),
+  );
+  assert.deepEqual(
+    upbitCancelAndNewOrderResultToWire(upbitCancelAndNewOrderResultFromWire(
+      upbitCancelAndNewOrderResultToWire(result),
+    )),
+    upbitCancelAndNewOrderResultToWire(result),
+  );
+  assert.equal(result.replacementCreated, false);
+});
+
 test("Bithumb transfer fees preserve fixed and rate rules per network", () => {
   const fixed = new BithumbNetworkFee(
     Network.Bitcoin, "Bitcoin", Decimal.zero, Decimal.zero,
@@ -321,6 +389,44 @@ test("Bithumb pending-order requests preserve filters and opaque cursors", () =>
   assert.equal(decoded.state, BithumbPendingOrderState.Watch);
   assert.equal(decoded.orderBy, BithumbOrderDirection.Ascending);
   assert.equal(decoded.cursor.value, "page+/==");
+});
+
+test("Bithumb batch requests retain partial outcomes and provider fields", () => {
+  const market = Market.spot(Exchange.Bithumb, "BTC", "KRW");
+  const request = new BithumbBatchOrdersRequest([
+    OrderRequest.limit(market, Side.Buy, Size.base(Decimal.parse("0.01")), Decimal.parse("1000")),
+  ]);
+  const result = new BithumbBatchOrdersResult([
+    BithumbBatchOrderOutcome.accepted(new BithumbBatchOrder(
+      "order-1",
+      "client-1",
+      market,
+      Side.Buy,
+      OrderType.Limit,
+      "post_only",
+      "cancel_maker",
+      Timestamp.fromNanoseconds(2n),
+    )),
+    BithumbBatchOrderOutcome.rejected(new BithumbBatchOrderFailure(
+      "second",
+      "ioc",
+      "cross_trading",
+      "rejected",
+    )),
+  ]);
+
+  assert.deepEqual(
+    bithumbBatchOrdersRequestToWire(bithumbBatchOrdersRequestFromWire(
+      bithumbBatchOrdersRequestToWire(request),
+    )),
+    bithumbBatchOrdersRequestToWire(request),
+  );
+  assert.deepEqual(
+    bithumbBatchOrdersResultToWire(bithumbBatchOrdersResultFromWire(
+      bithumbBatchOrdersResultToWire(result),
+    )),
+    bithumbBatchOrdersResultToWire(result),
+  );
 });
 
 test("Bithumb TWAP requests preserve defaults, filters, and u32 boundaries", () => {
@@ -393,6 +499,37 @@ test("Binance USD-M and Hyperliquid market snapshots preserve provider values", 
   assert.deepEqual(
     hyperliquidMidPriceToWire(hyperliquidMidPriceFromWire(hyperliquidMidPriceToWire(midPrice))),
     hyperliquidMidPriceToWire(midPrice),
+  );
+
+  const aggregateRequest = new BinanceAggregateTradesRequest(
+    binanceMarket,
+    18_446_744_073_709_551_615n,
+    Timestamp.fromMilliseconds(1759996400000n),
+    Timestamp.fromMilliseconds(1759999999000n),
+    1000,
+  );
+  const aggregateTrade = new BinanceAggregateTrade(
+    binanceMarket,
+    18_446_744_073_709_551_615n,
+    18_446_744_073_709_551_614n,
+    18_446_744_073_709_551_615n,
+    Timestamp.fromMilliseconds(1759999999000n),
+    Decimal.parse("100001.25"),
+    Decimal.parse("0.01"),
+    null,
+    Side.Sell,
+  );
+  assert.deepEqual(
+    binanceAggregateTradesRequestToWire(binanceAggregateTradesRequestFromWire(
+      binanceAggregateTradesRequestToWire(aggregateRequest),
+    )),
+    binanceAggregateTradesRequestToWire(aggregateRequest),
+  );
+  assert.deepEqual(
+    binanceAggregateTradeToWire(binanceAggregateTradeFromWire(
+      binanceAggregateTradeToWire(aggregateTrade),
+    )),
+    binanceAggregateTradeToWire(aggregateTrade),
   );
 });
 

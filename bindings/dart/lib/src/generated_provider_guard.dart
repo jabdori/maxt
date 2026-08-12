@@ -32,6 +32,9 @@ void _generatedProviderGuard({
   upbit.batchCancelOpenOrders(
     _generatedProviderValue<UpbitBatchCancelRequest>(),
   );
+  upbit.cancelAndNewOrder(
+    _generatedProviderValue<UpbitCancelAndNewOrderRequest>(),
+  );
   BithumbAdapter();
   bithumb.marketWarnings();
   bithumb.marketAlerts();
@@ -39,6 +42,7 @@ void _generatedProviderGuard({
   bithumb.transferFees(_generatedProviderValue<String>());
   bithumb.apiKeys();
   bithumb.pendingOrders(_generatedProviderValue<BithumbPendingOrdersRequest>());
+  bithumb.batchOrders(_generatedProviderValue<BithumbBatchOrdersRequest>());
   bithumb.twapOrders(_generatedProviderValue<BithumbTwapOrdersRequest>());
   bithumb.createTwapOrder(_generatedProviderValue<BithumbTwapOrderRequest>());
   bithumb.cancelTwapOrder(_generatedProviderValue<String>());
@@ -53,6 +57,9 @@ void _generatedProviderGuard({
   binance.markPrice(_generatedProviderValue<Market>());
   binance.markPrices();
   binance.openInterest(_generatedProviderValue<Market>());
+  binance.aggregateTrades(
+    _generatedProviderValue<BinanceAggregateTradesRequest>(),
+  );
   binance.usdMCreateListenKey();
   binance.usdMKeepaliveListenKey();
   binance.usdMCloseListenKey();

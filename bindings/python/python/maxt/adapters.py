@@ -11,12 +11,16 @@ from .models import (
     Balance,
     CancelOrdersResult,
     BinanceMarket,
+    BinanceAggregateTrade,
+    BinanceAggregateTradesRequest,
     BinanceMarkPrice,
     BinanceOpenInterest,
     BinanceSpotOrderDetail,
     BinanceSymbolFilters,
     BithumbApiKey,
     BithumbAssetFee,
+    BithumbBatchOrdersRequest,
+    BithumbBatchOrdersResult,
     BithumbMarketAlert,
     BithumbNotice,
     BithumbPendingOrdersRequest,
@@ -51,6 +55,8 @@ from .models import (
     Network,
     UpbitDepositInfo,
     UpbitBatchCancelRequest,
+    UpbitCancelAndNewOrderRequest,
+    UpbitCancelAndNewOrderResult,
     Trade,
     UpbitMarketEvent,
     UpbitOrderBookInstrument,
@@ -304,6 +310,21 @@ class UpbitAdapter(_NativeAdapter):
         )
         return _model_from_wire("CancelOrdersResult", value)
 
+    async def cancel_and_new_order(
+        self,
+        request: UpbitCancelAndNewOrderRequest,
+    ) -> UpbitCancelAndNewOrderResult:
+        """Cancel an existing order and conditionally place its replacement.
+
+        This is a financial write. Upbit can return no replacement UUID when
+        the previous order changes state during the cancellation race.
+        """
+        value = await self._call(
+            self._handle.cancel_and_new_order,
+            request.to_wire(),
+        )
+        return _model_from_wire("UpbitCancelAndNewOrderResult", value)
+
 
 class BithumbAdapter(_NativeAdapter):
     def __init__(
@@ -371,6 +392,17 @@ class BithumbAdapter(_NativeAdapter):
         """Cancel a TWAP order; this submits a financial write to Bithumb."""
         return await self._call(self._handle.cancel_twap_order, algo_order_id)
 
+    async def batch_orders(
+        self,
+        request: BithumbBatchOrdersRequest,
+    ) -> BithumbBatchOrdersResult:
+        """Submit up to 20 independent Bithumb orders.
+
+        This is a financial write. The result preserves accepted and rejected
+        outcomes in the provider response order.
+        """
+        value = await self._call(self._handle.batch_orders, request.to_wire())
+        return _model_from_wire("BithumbBatchOrdersResult", value)
 
 class BinanceListenKey:
     _handle: Any
@@ -465,6 +497,16 @@ class BinanceAdapter(_NativeAdapter):
     async def open_interest(self, market: Market) -> BinanceOpenInterest:
         value = await self._call(self._handle.open_interest, market)
         return BinanceOpenInterest.from_wire(value)
+
+    async def aggregate_trades(
+        self,
+        request: BinanceAggregateTradesRequest,
+    ) -> list[BinanceAggregateTrade]:
+        values = await self._call(
+            self._handle.aggregate_trades,
+            request.to_wire(),
+        )
+        return [BinanceAggregateTrade.from_wire(value) for value in values]
 
     async def usd_m_create_listen_key(self) -> BinanceListenKey:
         handle = await self._call(self._handle.usd_m_create_listen_key)

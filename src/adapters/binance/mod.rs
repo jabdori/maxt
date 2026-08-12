@@ -22,12 +22,104 @@ use crate::transport::{HttpRequest, HttpTransport};
 use crate::types::{
     AssetNetwork, Balance, Candle, Cursor, Deposit, DepositAddress, Exchange, FundingPayment,
     FundingRate, Interval, MarginSummary, Market, MarketInfo, MarketKind, MarketStatus, Order,
-    OrderBook, Page, Position, StreamConfig, Subscription, Ticker, Timestamp, Trade, Withdrawal,
-    WithdrawalQuote,
+    OrderBook, Page, Position, Side, StreamConfig, Subscription, Ticker, Timestamp, Trade,
+    Withdrawal, WithdrawalQuote,
 };
 
 pub use private::{BinanceListenKey, BinanceSpotOrderDetail};
 pub use rest::BinanceSymbolFilters;
+
+/// A request for Binance USD-M compressed aggregate trades.
+///
+/// `from_id` selects an inclusive aggregate-trade cursor. `start_time` and
+/// `end_time` select inclusive millisecond time bounds; Binance permits a
+/// window shorter than one hour and only keeps the last 48 hours. The two
+/// selection modes cannot be combined because Binance warns that doing so can
+/// time out. The endpoint returns one page; use the last aggregate ID plus one
+/// as the next `from_id` when walking by ID.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BinanceAggregateTradesRequest {
+    /// The USD-M perpetual market to query.
+    pub market: Market,
+    /// Inclusive Binance aggregate-trade ID to start at.
+    pub from_id: Option<u64>,
+    /// Inclusive lower time bound.
+    pub start_time: Option<Timestamp>,
+    /// Inclusive upper time bound.
+    pub end_time: Option<Timestamp>,
+    /// Number of aggregate trades, from 1 through 1,000. `None` uses Binance's
+    /// documented default of 500.
+    pub limit: Option<u32>,
+}
+
+impl BinanceAggregateTradesRequest {
+    /// Starts a request for one USD-M perpetual market.
+    pub fn new(market: Market) -> Self {
+        Self {
+            market,
+            from_id: None,
+            start_time: None,
+            end_time: None,
+            limit: None,
+        }
+    }
+
+    /// Starts at an inclusive Binance aggregate-trade ID.
+    #[must_use]
+    pub fn with_from_id(mut self, from_id: u64) -> Self {
+        self.from_id = Some(from_id);
+        self
+    }
+
+    /// Sets the inclusive lower time bound.
+    #[must_use]
+    pub fn start_time(mut self, start_time: Timestamp) -> Self {
+        self.start_time = Some(start_time);
+        self
+    }
+
+    /// Sets the inclusive upper time bound.
+    #[must_use]
+    pub fn end_time(mut self, end_time: Timestamp) -> Self {
+        self.end_time = Some(end_time);
+        self
+    }
+
+    /// Sets the page size from 1 through 1,000.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+}
+
+/// One Binance USD-M compressed aggregate trade.
+///
+/// Binance combines market fills that occur within 100 ms at the same price
+/// and taking side. `first_trade_id` and `last_trade_id` preserve the covered
+/// individual-fill range; this is not interchangeable with [`Trade`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BinanceAggregateTrade {
+    /// The USD-M perpetual market.
+    pub market: Market,
+    /// Binance's aggregate-trade identifier.
+    pub aggregate_id: u64,
+    /// The first individual trade ID covered by this aggregate.
+    pub first_trade_id: u64,
+    /// The last individual trade ID covered by this aggregate.
+    pub last_trade_id: u64,
+    /// Execution time of the aggregate, in milliseconds at the provider.
+    pub timestamp: Timestamp,
+    /// Aggregate execution price, in the quote asset.
+    pub price: Decimal,
+    /// Aggregate quantity, in the base asset. RPI fills may be included.
+    pub quantity: Decimal,
+    /// Quantity excluding RPI fills when Binance provides the `nq` field.
+    pub normal_quantity: Option<Decimal>,
+    /// The side that took liquidity. Binance's `m` field identifies the maker
+    /// as the buyer, so it is inverted here.
+    pub taker_side: Side,
+}
 
 /// Binance USD-M's current mark-price snapshot for one perpetual market.
 ///
@@ -348,6 +440,17 @@ impl BinanceAdapter {
     /// Reads the current USD-M open interest for one market.
     pub async fn open_interest(&self, market: &Market) -> Result<BinanceOpenInterest> {
         rest::open_interest(self, market).await
+    }
+
+    /// Reads one page of USD-M compressed aggregate trades.
+    ///
+    /// This is Binance's 100 ms/same-price/same-taking-side aggregation, not a
+    /// list of individual fills. The endpoint is public and needs no key.
+    pub async fn aggregate_trades(
+        &self,
+        request: &BinanceAggregateTradesRequest,
+    ) -> Result<Vec<BinanceAggregateTrade>> {
+        rest::aggregate_trades(self, request).await
     }
 
     /// Creates or extends the account's USD-M user-data listen key.

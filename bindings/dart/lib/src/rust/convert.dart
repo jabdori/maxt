@@ -1141,3 +1141,5 @@ class WireUpbitMarketEvent {
 }
 
 enum WireUpbitOrderDirection { ascending, descending }
+
+enum WireUpbitSmpType { cancelMaker, cancelTaker, reduce }

@@ -1110,7 +1110,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Provider("batch_cancel_open_orders"),
         Validation::Fixture,
     ),
-    planned(operation(
+    partial(operation(
         Exchange::Upbit,
         "exchange",
         "cancel_and_new_order",
@@ -1120,7 +1120,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         Authentication::Jwt,
         OperationRisk::FinancialWrite,
         OperationMapping::Provider("cancel_and_new_order"),
-        Validation::Documented,
+        Validation::Fixture,
     )),
     partial(operation(
         Exchange::Upbit,
@@ -1614,7 +1614,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("place_order"),
         Validation::Fixture,
     )),
-    planned(operation(
+    partial(operation(
         Exchange::Bithumb,
         "exchange",
         "batch_orders",
@@ -1623,8 +1623,8 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::FinancialWrite,
-        OperationMapping::Common("place_orders"),
-        Validation::Documented,
+        OperationMapping::Provider("batch_orders"),
+        Validation::Fixture,
     )),
     partial(operation(
         Exchange::Bithumb,
@@ -2337,6 +2337,18 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Provider("usd_m_close_listen_key"),
         Validation::Fixture,
     ),
+    partial(operation(
+        Exchange::Binance,
+        "usd_m",
+        "aggregate_trades",
+        "GET",
+        "/fapi/v1/aggTrades",
+        ApiInterface::Http,
+        Authentication::Public,
+        OperationRisk::Read,
+        OperationMapping::Provider("aggregate_trades"),
+        Validation::Fixture,
+    )),
     planned(operation(
         Exchange::Binance,
         "usd_m",

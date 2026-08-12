@@ -1140,6 +1140,158 @@ export function upbitBatchCancelRequestToWire(value: Model.UpbitBatchCancelReque
   };
 }
 
+export function upbitOrderReferenceFromWire(value: Wire.UpbitOrderReferenceWire): Model.UpbitOrderReference {
+  switch (value.kind) {
+    case "uuid": return Object.freeze({ kind: "uuid", value: value.value });
+    case "identifier": return Object.freeze({ kind: "identifier", value: value.value });
+  }
+  return assertNever(value);
+}
+
+export function upbitOrderReferenceToWire(value: Model.UpbitOrderReference): Wire.UpbitOrderReferenceWire {
+  switch (value.kind) {
+    case "uuid": {
+      for (const key of Object.keys(value)) {
+        if (!["kind", "value"].includes(key)) {
+          throw new InvalidRequestError("upbitOrderReference." + key, "UpbitOrderReference.uuid does not accept " + key);
+        }
+      }
+      return { kind: "uuid", value: value.value };
+    }
+    case "identifier": {
+      for (const key of Object.keys(value)) {
+        if (!["kind", "value"].includes(key)) {
+          throw new InvalidRequestError("upbitOrderReference." + key, "UpbitOrderReference.identifier does not accept " + key);
+        }
+      }
+      return { kind: "identifier", value: value.value };
+    }
+  }
+  return assertNever(value);
+}
+
+export function upbitOrderVolumeFromWire(value: Wire.UpbitOrderVolumeWire): Model.UpbitOrderVolume {
+  switch (value.kind) {
+    case "amount": return Object.freeze({ kind: "amount", value: Model.Decimal.parse(value.value) });
+    case "remain_only": return Object.freeze({ kind: "remain_only" });
+  }
+  return assertNever(value);
+}
+
+export function upbitOrderVolumeToWire(value: Model.UpbitOrderVolume): Wire.UpbitOrderVolumeWire {
+  switch (value.kind) {
+    case "amount": {
+      for (const key of Object.keys(value)) {
+        if (!["kind", "value"].includes(key)) {
+          throw new InvalidRequestError("upbitOrderVolume." + key, "UpbitOrderVolume.amount does not accept " + key);
+        }
+      }
+      return { kind: "amount", value: value.value.toString() };
+    }
+    case "remain_only": {
+      for (const key of Object.keys(value)) {
+        if (!["kind"].includes(key)) {
+          throw new InvalidRequestError("upbitOrderVolume." + key, "UpbitOrderVolume.remain_only does not accept " + key);
+        }
+      }
+      return { kind: "remain_only" };
+    }
+  }
+  return assertNever(value);
+}
+
+export function upbitCancelAndNewOrderFromWire(value: Wire.UpbitCancelAndNewOrderWire): Model.UpbitCancelAndNewOrder {
+  switch (value.kind) {
+    case "limit": return Object.freeze({ kind: "limit", volume: upbitOrderVolumeFromWire(value.volume), price: Model.Decimal.parse(value.price), timeInForce: value.time_in_force === null ? null : identifier(Model.TimeInForce.values, value.time_in_force, "time_in_force") });
+    case "market_buy": return Object.freeze({ kind: "market_buy", price: Model.Decimal.parse(value.price) });
+    case "market_sell": return Object.freeze({ kind: "market_sell", volume: upbitOrderVolumeFromWire(value.volume) });
+    case "best_buy": return Object.freeze({ kind: "best_buy", price: Model.Decimal.parse(value.price), timeInForce: identifier(Model.TimeInForce.values, value.time_in_force, "time_in_force") });
+    case "best_sell": return Object.freeze({ kind: "best_sell", volume: upbitOrderVolumeFromWire(value.volume), timeInForce: identifier(Model.TimeInForce.values, value.time_in_force, "time_in_force") });
+  }
+  return assertNever(value);
+}
+
+export function upbitCancelAndNewOrderToWire(value: Model.UpbitCancelAndNewOrder): Wire.UpbitCancelAndNewOrderWire {
+  switch (value.kind) {
+    case "limit": {
+      for (const key of Object.keys(value)) {
+        if (!["kind", "volume", "price", "timeInForce"].includes(key)) {
+          throw new InvalidRequestError("upbitCancelAndNewOrder." + key, "UpbitCancelAndNewOrder.limit does not accept " + key);
+        }
+      }
+      return { kind: "limit", volume: upbitOrderVolumeToWire(value.volume), price: value.price.toString(), time_in_force: value.timeInForce === null ? null : value.timeInForce.id };
+    }
+    case "market_buy": {
+      for (const key of Object.keys(value)) {
+        if (!["kind", "price"].includes(key)) {
+          throw new InvalidRequestError("upbitCancelAndNewOrder." + key, "UpbitCancelAndNewOrder.market_buy does not accept " + key);
+        }
+      }
+      return { kind: "market_buy", price: value.price.toString() };
+    }
+    case "market_sell": {
+      for (const key of Object.keys(value)) {
+        if (!["kind", "volume"].includes(key)) {
+          throw new InvalidRequestError("upbitCancelAndNewOrder." + key, "UpbitCancelAndNewOrder.market_sell does not accept " + key);
+        }
+      }
+      return { kind: "market_sell", volume: upbitOrderVolumeToWire(value.volume) };
+    }
+    case "best_buy": {
+      for (const key of Object.keys(value)) {
+        if (!["kind", "price", "timeInForce"].includes(key)) {
+          throw new InvalidRequestError("upbitCancelAndNewOrder." + key, "UpbitCancelAndNewOrder.best_buy does not accept " + key);
+        }
+      }
+      return { kind: "best_buy", price: value.price.toString(), time_in_force: value.timeInForce.id };
+    }
+    case "best_sell": {
+      for (const key of Object.keys(value)) {
+        if (!["kind", "volume", "timeInForce"].includes(key)) {
+          throw new InvalidRequestError("upbitCancelAndNewOrder." + key, "UpbitCancelAndNewOrder.best_sell does not accept " + key);
+        }
+      }
+      return { kind: "best_sell", volume: upbitOrderVolumeToWire(value.volume), time_in_force: value.timeInForce.id };
+    }
+  }
+  return assertNever(value);
+}
+
+export function upbitCancelAndNewOrderRequestFromWire(value: Wire.UpbitCancelAndNewOrderRequestWire): Model.UpbitCancelAndNewOrderRequest {
+  return new Model.UpbitCancelAndNewOrderRequest(upbitOrderReferenceFromWire(value.previous_order), upbitCancelAndNewOrderFromWire(value.new_order), value.new_identifier === null ? null : value.new_identifier, value.new_smp_type === null ? null : identifier(Model.UpbitSmpType.values, value.new_smp_type, "new_smp_type"));
+}
+
+export function upbitCancelAndNewOrderRequestToWire(value: Model.UpbitCancelAndNewOrderRequest): Wire.UpbitCancelAndNewOrderRequestWire {
+  for (const key of Object.keys(value)) {
+    if (!["previousOrder", "newOrder", "newIdentifier", "newSmpType"].includes(key)) {
+      throw new InvalidRequestError("upbitCancelAndNewOrderRequest." + key, "UpbitCancelAndNewOrderRequest does not accept " + key);
+    }
+  }
+  return {
+    previous_order: upbitOrderReferenceToWire(value.previousOrder),
+    new_order: upbitCancelAndNewOrderToWire(value.newOrder),
+    new_identifier: value.newIdentifier === null ? null : value.newIdentifier,
+    new_smp_type: value.newSmpType === null ? null : value.newSmpType.id,
+  };
+}
+
+export function upbitCancelAndNewOrderResultFromWire(value: Wire.UpbitCancelAndNewOrderResultWire): Model.UpbitCancelAndNewOrderResult {
+  return new Model.UpbitCancelAndNewOrderResult(orderFromWire(value.previous_order), value.new_order_uuid === null ? null : value.new_order_uuid, value.new_order_identifier === null ? null : value.new_order_identifier);
+}
+
+export function upbitCancelAndNewOrderResultToWire(value: Model.UpbitCancelAndNewOrderResult): Wire.UpbitCancelAndNewOrderResultWire {
+  for (const key of Object.keys(value)) {
+    if (!["previousOrder", "newOrderUuid", "newOrderIdentifier"].includes(key)) {
+      throw new InvalidRequestError("upbitCancelAndNewOrderResult." + key, "UpbitCancelAndNewOrderResult does not accept " + key);
+    }
+  }
+  return {
+    previous_order: orderToWire(value.previousOrder),
+    new_order_uuid: value.newOrderUuid === null ? null : value.newOrderUuid,
+    new_order_identifier: value.newOrderIdentifier === null ? null : value.newOrderIdentifier,
+  };
+}
+
 export function bithumbMarketAlertFromWire(value: Wire.BithumbMarketAlertWire): Model.BithumbMarketAlert {
   return new Model.BithumbMarketAlert(value.kind, identifier(Model.BithumbAlertStep.values, value.step, "step"), Model.Timestamp.fromNanoseconds(BigInt(value.ends_at)));
 }
@@ -1208,6 +1360,106 @@ export function bithumbPendingOrdersRequestToWire(value: Model.BithumbPendingOrd
     limit: value.limit === null ? null : value.limit,
     order_by: value.orderBy === null ? null : value.orderBy.id,
     cursor: value.cursor === null ? null : value.cursor.value,
+  };
+}
+
+export function bithumbBatchOrdersRequestFromWire(value: Wire.BithumbBatchOrdersRequestWire): Model.BithumbBatchOrdersRequest {
+  return new Model.BithumbBatchOrdersRequest(value.orders.map((item) => orderRequestFromWire(item)));
+}
+
+export function bithumbBatchOrdersRequestToWire(value: Model.BithumbBatchOrdersRequest): Wire.BithumbBatchOrdersRequestWire {
+  for (const key of Object.keys(value)) {
+    if (!["orders"].includes(key)) {
+      throw new InvalidRequestError("bithumbBatchOrdersRequest." + key, "BithumbBatchOrdersRequest does not accept " + key);
+    }
+  }
+  return {
+    orders: value.orders.map((item) => orderRequestToWire(item)),
+  };
+}
+
+export function bithumbBatchOrderFromWire(value: Wire.BithumbBatchOrderWire): Model.BithumbBatchOrder {
+  return new Model.BithumbBatchOrder(value.order_id, value.client_order_id === null ? null : value.client_order_id, marketFromWire(value.market), identifier(Model.Side.values, value.side, "side"), identifier(Model.OrderType.values, value.order_type, "order_type"), value.time_in_force === null ? null : value.time_in_force, value.stp_type === null ? null : value.stp_type, value.created_at === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.created_at)));
+}
+
+export function bithumbBatchOrderToWire(value: Model.BithumbBatchOrder): Wire.BithumbBatchOrderWire {
+  for (const key of Object.keys(value)) {
+    if (!["orderId", "clientOrderId", "market", "side", "orderType", "timeInForce", "stpType", "createdAt"].includes(key)) {
+      throw new InvalidRequestError("bithumbBatchOrder." + key, "BithumbBatchOrder does not accept " + key);
+    }
+  }
+  return {
+    order_id: value.orderId,
+    client_order_id: value.clientOrderId === null ? null : value.clientOrderId,
+    market: marketToWire(value.market),
+    side: value.side.id,
+    order_type: value.orderType.id,
+    time_in_force: value.timeInForce === null ? null : value.timeInForce,
+    stp_type: value.stpType === null ? null : value.stpType,
+    created_at: value.createdAt === null ? null : value.createdAt.nanosecondsSinceEpoch.toString(),
+  };
+}
+
+export function bithumbBatchOrderFailureFromWire(value: Wire.BithumbBatchOrderFailureWire): Model.BithumbBatchOrderFailure {
+  return new Model.BithumbBatchOrderFailure(value.client_order_id === null ? null : value.client_order_id, value.time_in_force === null ? null : value.time_in_force, value.code, value.message);
+}
+
+export function bithumbBatchOrderFailureToWire(value: Model.BithumbBatchOrderFailure): Wire.BithumbBatchOrderFailureWire {
+  for (const key of Object.keys(value)) {
+    if (!["clientOrderId", "timeInForce", "code", "message"].includes(key)) {
+      throw new InvalidRequestError("bithumbBatchOrderFailure." + key, "BithumbBatchOrderFailure does not accept " + key);
+    }
+  }
+  return {
+    client_order_id: value.clientOrderId === null ? null : value.clientOrderId,
+    time_in_force: value.timeInForce === null ? null : value.timeInForce,
+    code: value.code,
+    message: value.message,
+  };
+}
+
+export function bithumbBatchOrderOutcomeFromWire(value: Wire.BithumbBatchOrderOutcomeWire): Model.BithumbBatchOrderOutcome {
+  switch (value.kind) {
+    case "accepted": return Object.freeze({ kind: "accepted", value: bithumbBatchOrderFromWire(value.value) });
+    case "rejected": return Object.freeze({ kind: "rejected", value: bithumbBatchOrderFailureFromWire(value.value) });
+  }
+  return assertNever(value);
+}
+
+export function bithumbBatchOrderOutcomeToWire(value: Model.BithumbBatchOrderOutcome): Wire.BithumbBatchOrderOutcomeWire {
+  switch (value.kind) {
+    case "accepted": {
+      for (const key of Object.keys(value)) {
+        if (!["kind", "value"].includes(key)) {
+          throw new InvalidRequestError("bithumbBatchOrderOutcome." + key, "BithumbBatchOrderOutcome.accepted does not accept " + key);
+        }
+      }
+      return { kind: "accepted", value: bithumbBatchOrderToWire(value.value) };
+    }
+    case "rejected": {
+      for (const key of Object.keys(value)) {
+        if (!["kind", "value"].includes(key)) {
+          throw new InvalidRequestError("bithumbBatchOrderOutcome." + key, "BithumbBatchOrderOutcome.rejected does not accept " + key);
+        }
+      }
+      return { kind: "rejected", value: bithumbBatchOrderFailureToWire(value.value) };
+    }
+  }
+  return assertNever(value);
+}
+
+export function bithumbBatchOrdersResultFromWire(value: Wire.BithumbBatchOrdersResultWire): Model.BithumbBatchOrdersResult {
+  return new Model.BithumbBatchOrdersResult(value.outcomes.map((item) => bithumbBatchOrderOutcomeFromWire(item)));
+}
+
+export function bithumbBatchOrdersResultToWire(value: Model.BithumbBatchOrdersResult): Wire.BithumbBatchOrdersResultWire {
+  for (const key of Object.keys(value)) {
+    if (!["outcomes"].includes(key)) {
+      throw new InvalidRequestError("bithumbBatchOrdersResult." + key, "BithumbBatchOrdersResult does not accept " + key);
+    }
+  }
+  return {
+    outcomes: value.outcomes.map((item) => bithumbBatchOrderOutcomeToWire(item)),
   };
 }
 
@@ -1397,6 +1649,48 @@ export function binanceOpenInterestToWire(value: Model.BinanceOpenInterest): Wir
     market: marketToWire(value.market),
     open_interest: value.openInterest.toString(),
     time: value.time.nanosecondsSinceEpoch.toString(),
+  };
+}
+
+export function binanceAggregateTradesRequestFromWire(value: Wire.BinanceAggregateTradesRequestWire): Model.BinanceAggregateTradesRequest {
+  return new Model.BinanceAggregateTradesRequest(marketFromWire(value.market), value.from_id === null ? null : unsignedInteger(value.from_id, "from_id"), value.start_time === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.start_time)), value.end_time === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.end_time)), value.limit === null ? null : value.limit);
+}
+
+export function binanceAggregateTradesRequestToWire(value: Model.BinanceAggregateTradesRequest): Wire.BinanceAggregateTradesRequestWire {
+  for (const key of Object.keys(value)) {
+    if (!["market", "fromId", "startTime", "endTime", "limit"].includes(key)) {
+      throw new InvalidRequestError("binanceAggregateTradesRequest." + key, "BinanceAggregateTradesRequest does not accept " + key);
+    }
+  }
+  return {
+    market: marketToWire(value.market),
+    from_id: value.fromId === null ? null : value.fromId.toString(),
+    start_time: value.startTime === null ? null : value.startTime.nanosecondsSinceEpoch.toString(),
+    end_time: value.endTime === null ? null : value.endTime.nanosecondsSinceEpoch.toString(),
+    limit: value.limit === null ? null : value.limit,
+  };
+}
+
+export function binanceAggregateTradeFromWire(value: Wire.BinanceAggregateTradeWire): Model.BinanceAggregateTrade {
+  return new Model.BinanceAggregateTrade(marketFromWire(value.market), unsignedInteger(value.aggregate_id, "aggregate_id"), unsignedInteger(value.first_trade_id, "first_trade_id"), unsignedInteger(value.last_trade_id, "last_trade_id"), Model.Timestamp.fromNanoseconds(BigInt(value.timestamp)), Model.Decimal.parse(value.price), Model.Decimal.parse(value.quantity), value.normal_quantity === null ? null : Model.Decimal.parse(value.normal_quantity), identifier(Model.Side.values, value.taker_side, "taker_side"));
+}
+
+export function binanceAggregateTradeToWire(value: Model.BinanceAggregateTrade): Wire.BinanceAggregateTradeWire {
+  for (const key of Object.keys(value)) {
+    if (!["market", "aggregateId", "firstTradeId", "lastTradeId", "timestamp", "price", "quantity", "normalQuantity", "takerSide"].includes(key)) {
+      throw new InvalidRequestError("binanceAggregateTrade." + key, "BinanceAggregateTrade does not accept " + key);
+    }
+  }
+  return {
+    market: marketToWire(value.market),
+    aggregate_id: value.aggregateId.toString(),
+    first_trade_id: value.firstTradeId.toString(),
+    last_trade_id: value.lastTradeId.toString(),
+    timestamp: value.timestamp.nanosecondsSinceEpoch.toString(),
+    price: value.price.toString(),
+    quantity: value.quantity.toString(),
+    normal_quantity: value.normalQuantity === null ? null : value.normalQuantity.toString(),
+    taker_side: value.takerSide.id,
   };
 }
 

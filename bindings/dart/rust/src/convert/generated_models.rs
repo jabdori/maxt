@@ -1393,6 +1393,218 @@ impl TryFrom<WireUpbitBatchCancelRequest> for maxt::UpbitBatchCancelRequest {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WireUpbitOrderReference {
+    Uuid(String),
+    Identifier(String),
+}
+
+impl From<maxt::UpbitOrderReference> for WireUpbitOrderReference {
+    fn from(value: maxt::UpbitOrderReference) -> Self {
+        match value {
+            maxt::UpbitOrderReference::Uuid(value) => Self::Uuid(value),
+            maxt::UpbitOrderReference::Identifier(value) => Self::Identifier(value),
+        }
+    }
+}
+
+impl TryFrom<WireUpbitOrderReference> for maxt::UpbitOrderReference {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitOrderReference) -> Result<Self, Self::Error> {
+        Ok(match value {
+            WireUpbitOrderReference::Uuid(value) => Self::Uuid(value),
+            WireUpbitOrderReference::Identifier(value) => Self::Identifier(value),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WireUpbitOrderVolume {
+    Amount(String),
+    RemainOnly,
+}
+
+impl From<maxt::UpbitOrderVolume> for WireUpbitOrderVolume {
+    fn from(value: maxt::UpbitOrderVolume) -> Self {
+        match value {
+            maxt::UpbitOrderVolume::Amount(value) => Self::Amount(decimal_to_wire(value)),
+            maxt::UpbitOrderVolume::RemainOnly => Self::RemainOnly,
+        }
+    }
+}
+
+impl TryFrom<WireUpbitOrderVolume> for maxt::UpbitOrderVolume {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitOrderVolume) -> Result<Self, Self::Error> {
+        Ok(match value {
+            WireUpbitOrderVolume::Amount(value) => {
+                Self::Amount(decimal_from_wire(&value, "value").map_err(NativeError::from)?)
+            }
+            WireUpbitOrderVolume::RemainOnly => Self::RemainOnly,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WireUpbitCancelAndNewOrder {
+    Limit {
+        volume: WireUpbitOrderVolume,
+        price: String,
+        time_in_force: Option<WireTimeInForce>,
+    },
+    MarketBuy {
+        price: String,
+    },
+    MarketSell {
+        volume: WireUpbitOrderVolume,
+    },
+    BestBuy {
+        price: String,
+        time_in_force: WireTimeInForce,
+    },
+    BestSell {
+        volume: WireUpbitOrderVolume,
+        time_in_force: WireTimeInForce,
+    },
+}
+
+impl From<maxt::UpbitCancelAndNewOrder> for WireUpbitCancelAndNewOrder {
+    fn from(value: maxt::UpbitCancelAndNewOrder) -> Self {
+        match value {
+            maxt::UpbitCancelAndNewOrder::Limit {
+                volume,
+                price,
+                time_in_force,
+            } => Self::Limit {
+                volume: volume.into(),
+                price: decimal_to_wire(price),
+                time_in_force: time_in_force.map(Into::into),
+            },
+            maxt::UpbitCancelAndNewOrder::MarketBuy { price } => Self::MarketBuy {
+                price: decimal_to_wire(price),
+            },
+            maxt::UpbitCancelAndNewOrder::MarketSell { volume } => Self::MarketSell {
+                volume: volume.into(),
+            },
+            maxt::UpbitCancelAndNewOrder::BestBuy {
+                price,
+                time_in_force,
+            } => Self::BestBuy {
+                price: decimal_to_wire(price),
+                time_in_force: time_in_force.into(),
+            },
+            maxt::UpbitCancelAndNewOrder::BestSell {
+                volume,
+                time_in_force,
+            } => Self::BestSell {
+                volume: volume.into(),
+                time_in_force: time_in_force.into(),
+            },
+        }
+    }
+}
+
+impl TryFrom<WireUpbitCancelAndNewOrder> for maxt::UpbitCancelAndNewOrder {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitCancelAndNewOrder) -> Result<Self, Self::Error> {
+        Ok(match value {
+            WireUpbitCancelAndNewOrder::Limit {
+                volume,
+                price,
+                time_in_force,
+            } => Self::Limit {
+                volume: volume.try_into()?,
+                price: decimal_from_wire(&price, "price").map_err(NativeError::from)?,
+                time_in_force: time_in_force.map(Into::into),
+            },
+            WireUpbitCancelAndNewOrder::MarketBuy { price } => Self::MarketBuy {
+                price: decimal_from_wire(&price, "price").map_err(NativeError::from)?,
+            },
+            WireUpbitCancelAndNewOrder::MarketSell { volume } => Self::MarketSell {
+                volume: volume.try_into()?,
+            },
+            WireUpbitCancelAndNewOrder::BestBuy {
+                price,
+                time_in_force,
+            } => Self::BestBuy {
+                price: decimal_from_wire(&price, "price").map_err(NativeError::from)?,
+                time_in_force: time_in_force.into(),
+            },
+            WireUpbitCancelAndNewOrder::BestSell {
+                volume,
+                time_in_force,
+            } => Self::BestSell {
+                volume: volume.try_into()?,
+                time_in_force: time_in_force.into(),
+            },
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitCancelAndNewOrderRequest {
+    pub previous_order: WireUpbitOrderReference,
+    pub new_order: WireUpbitCancelAndNewOrder,
+    pub new_identifier: Option<String>,
+    pub new_smp_type: Option<WireUpbitSmpType>,
+}
+
+impl From<maxt::UpbitCancelAndNewOrderRequest> for WireUpbitCancelAndNewOrderRequest {
+    fn from(value: maxt::UpbitCancelAndNewOrderRequest) -> Self {
+        Self {
+            previous_order: value.previous_order.into(),
+            new_order: value.new_order.into(),
+            new_identifier: value.new_identifier,
+            new_smp_type: value.new_smp_type.map(Into::into),
+        }
+    }
+}
+
+impl TryFrom<WireUpbitCancelAndNewOrderRequest> for maxt::UpbitCancelAndNewOrderRequest {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitCancelAndNewOrderRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            previous_order: value.previous_order.try_into()?,
+            new_order: value.new_order.try_into()?,
+            new_identifier: value.new_identifier,
+            new_smp_type: value.new_smp_type.map(Into::into),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitCancelAndNewOrderResult {
+    pub previous_order: WireOrder,
+    pub new_order_uuid: Option<String>,
+    pub new_order_identifier: Option<String>,
+}
+
+impl From<maxt::UpbitCancelAndNewOrderResult> for WireUpbitCancelAndNewOrderResult {
+    fn from(value: maxt::UpbitCancelAndNewOrderResult) -> Self {
+        Self {
+            previous_order: value.previous_order.into(),
+            new_order_uuid: value.new_order_uuid,
+            new_order_identifier: value.new_order_identifier,
+        }
+    }
+}
+
+impl TryFrom<WireUpbitCancelAndNewOrderResult> for maxt::UpbitCancelAndNewOrderResult {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitCancelAndNewOrderResult) -> Result<Self, Self::Error> {
+        Ok(Self {
+            previous_order: value.previous_order.try_into()?,
+            new_order_uuid: value.new_order_uuid,
+            new_order_identifier: value.new_order_identifier,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireBithumbNotice {
     pub categories: Vec<String>,
     pub title: String,
@@ -1484,6 +1696,162 @@ impl TryFrom<WireBithumbPendingOrdersRequest> for maxt::BithumbPendingOrdersRequ
             limit: value.limit,
             order_by: value.order_by.map(Into::into),
             cursor: value.cursor.map(maxt::Cursor::new),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbBatchOrdersRequest {
+    pub orders: Vec<WireOrderRequest>,
+}
+
+impl From<maxt::BithumbBatchOrdersRequest> for WireBithumbBatchOrdersRequest {
+    fn from(value: maxt::BithumbBatchOrdersRequest) -> Self {
+        Self {
+            orders: value.orders.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl TryFrom<WireBithumbBatchOrdersRequest> for maxt::BithumbBatchOrdersRequest {
+    type Error = NativeError;
+
+    fn try_from(value: WireBithumbBatchOrdersRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            orders: value
+                .orders
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbBatchOrder {
+    pub order_id: String,
+    pub client_order_id: Option<String>,
+    pub market: WireMarket,
+    pub side: WireSide,
+    pub order_type: WireOrderType,
+    pub time_in_force: Option<String>,
+    pub stp_type: Option<String>,
+    pub created_at_ns: Option<i64>,
+}
+
+impl From<maxt::BithumbBatchOrder> for WireBithumbBatchOrder {
+    fn from(value: maxt::BithumbBatchOrder) -> Self {
+        Self {
+            order_id: value.order_id,
+            client_order_id: value.client_order_id,
+            market: value.market.into(),
+            side: value.side.into(),
+            order_type: value.order_type.into(),
+            time_in_force: value.time_in_force,
+            stp_type: value.stp_type,
+            created_at_ns: value.created_at.map(timestamp_to_wire),
+        }
+    }
+}
+
+impl TryFrom<WireBithumbBatchOrder> for maxt::BithumbBatchOrder {
+    type Error = NativeError;
+
+    fn try_from(value: WireBithumbBatchOrder) -> Result<Self, Self::Error> {
+        Ok(Self {
+            order_id: value.order_id,
+            client_order_id: value.client_order_id,
+            market: value.market.into(),
+            side: value.side.into(),
+            order_type: value.order_type.into(),
+            time_in_force: value.time_in_force,
+            stp_type: value.stp_type,
+            created_at: value.created_at_ns.map(Timestamp::from_nanos),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbBatchOrderFailure {
+    pub client_order_id: Option<String>,
+    pub time_in_force: Option<String>,
+    pub code: String,
+    pub message: String,
+}
+
+impl From<maxt::BithumbBatchOrderFailure> for WireBithumbBatchOrderFailure {
+    fn from(value: maxt::BithumbBatchOrderFailure) -> Self {
+        Self {
+            client_order_id: value.client_order_id,
+            time_in_force: value.time_in_force,
+            code: value.code,
+            message: value.message,
+        }
+    }
+}
+
+impl TryFrom<WireBithumbBatchOrderFailure> for maxt::BithumbBatchOrderFailure {
+    type Error = NativeError;
+
+    fn try_from(value: WireBithumbBatchOrderFailure) -> Result<Self, Self::Error> {
+        Ok(Self {
+            client_order_id: value.client_order_id,
+            time_in_force: value.time_in_force,
+            code: value.code,
+            message: value.message,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WireBithumbBatchOrderOutcome {
+    Accepted(WireBithumbBatchOrder),
+    Rejected(WireBithumbBatchOrderFailure),
+}
+
+impl From<maxt::BithumbBatchOrderOutcome> for WireBithumbBatchOrderOutcome {
+    fn from(value: maxt::BithumbBatchOrderOutcome) -> Self {
+        match value {
+            maxt::BithumbBatchOrderOutcome::Accepted(value) => Self::Accepted(value.into()),
+            maxt::BithumbBatchOrderOutcome::Rejected(value) => Self::Rejected(value.into()),
+        }
+    }
+}
+
+impl TryFrom<WireBithumbBatchOrderOutcome> for maxt::BithumbBatchOrderOutcome {
+    type Error = NativeError;
+
+    fn try_from(value: WireBithumbBatchOrderOutcome) -> Result<Self, Self::Error> {
+        Ok(match value {
+            WireBithumbBatchOrderOutcome::Accepted(value) => Self::Accepted(value.try_into()?),
+            WireBithumbBatchOrderOutcome::Rejected(value) => Self::Rejected(value.try_into()?),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbBatchOrdersResult {
+    pub outcomes: Vec<WireBithumbBatchOrderOutcome>,
+}
+
+impl From<maxt::BithumbBatchOrdersResult> for WireBithumbBatchOrdersResult {
+    fn from(value: maxt::BithumbBatchOrdersResult) -> Self {
+        Self {
+            outcomes: value.outcomes.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl TryFrom<WireBithumbBatchOrdersResult> for maxt::BithumbBatchOrdersResult {
+    type Error = NativeError;
+
+    fn try_from(value: WireBithumbBatchOrdersResult) -> Result<Self, Self::Error> {
+        Ok(Self {
+            outcomes: value
+                .outcomes
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
         })
     }
 }
@@ -1807,6 +2175,93 @@ impl TryFrom<WireBinanceOpenInterest> for maxt::BinanceOpenInterest {
             open_interest: decimal_from_wire(&value.open_interest, "open_interest")
                 .map_err(NativeError::from)?,
             time: Timestamp::from_nanos(value.time_ns),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBinanceAggregateTradesRequest {
+    pub market: WireMarket,
+    pub from_id: Option<u64>,
+    pub start_time_ns: Option<i64>,
+    pub end_time_ns: Option<i64>,
+    pub limit: Option<u32>,
+}
+
+impl From<maxt::BinanceAggregateTradesRequest> for WireBinanceAggregateTradesRequest {
+    fn from(value: maxt::BinanceAggregateTradesRequest) -> Self {
+        Self {
+            market: value.market.into(),
+            from_id: value.from_id,
+            start_time_ns: value.start_time.map(timestamp_to_wire),
+            end_time_ns: value.end_time.map(timestamp_to_wire),
+            limit: value.limit,
+        }
+    }
+}
+
+impl TryFrom<WireBinanceAggregateTradesRequest> for maxt::BinanceAggregateTradesRequest {
+    type Error = NativeError;
+
+    fn try_from(value: WireBinanceAggregateTradesRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.into(),
+            from_id: value.from_id,
+            start_time: value.start_time_ns.map(Timestamp::from_nanos),
+            end_time: value.end_time_ns.map(Timestamp::from_nanos),
+            limit: value.limit,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBinanceAggregateTrade {
+    pub market: WireMarket,
+    pub aggregate_id: u64,
+    pub first_trade_id: u64,
+    pub last_trade_id: u64,
+    pub timestamp_ns: i64,
+    pub price: String,
+    pub quantity: String,
+    pub normal_quantity: Option<String>,
+    pub taker_side: WireSide,
+}
+
+impl From<maxt::BinanceAggregateTrade> for WireBinanceAggregateTrade {
+    fn from(value: maxt::BinanceAggregateTrade) -> Self {
+        Self {
+            market: value.market.into(),
+            aggregate_id: value.aggregate_id,
+            first_trade_id: value.first_trade_id,
+            last_trade_id: value.last_trade_id,
+            timestamp_ns: timestamp_to_wire(value.timestamp),
+            price: decimal_to_wire(value.price),
+            quantity: decimal_to_wire(value.quantity),
+            normal_quantity: value.normal_quantity.map(decimal_to_wire),
+            taker_side: value.taker_side.into(),
+        }
+    }
+}
+
+impl TryFrom<WireBinanceAggregateTrade> for maxt::BinanceAggregateTrade {
+    type Error = NativeError;
+
+    fn try_from(value: WireBinanceAggregateTrade) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.into(),
+            aggregate_id: value.aggregate_id,
+            first_trade_id: value.first_trade_id,
+            last_trade_id: value.last_trade_id,
+            timestamp: Timestamp::from_nanos(value.timestamp_ns),
+            price: decimal_from_wire(&value.price, "price").map_err(NativeError::from)?,
+            quantity: decimal_from_wire(&value.quantity, "quantity").map_err(NativeError::from)?,
+            normal_quantity: value
+                .normal_quantity
+                .as_deref()
+                .map(|value| decimal_from_wire(value, "normal_quantity"))
+                .transpose()
+                .map_err(NativeError::from)?,
+            taker_side: value.taker_side.into(),
         })
     }
 }

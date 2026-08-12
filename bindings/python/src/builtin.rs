@@ -1,24 +1,23 @@
 use std::sync::Arc;
 
-#[cfg(test)]
-use maxt::Adapter;
 use maxt::adapters::{
     BinanceAdapter, BinanceListenKey, BinanceMarket, BithumbAdapter, BithumbAlertStep,
     BithumbMarketAlert, HyperliquidAdapter, HyperliquidLedgerEntry, HyperliquidLedgerKind,
     UpbitAdapter, UpbitMarketEvent, UpbitRegion,
 };
+#[cfg(test)]
+use maxt::Adapter;
 use maxt::{Cursor, Market, Page, Timestamp};
-use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
+use pyo3::IntoPyObjectExt;
 
-use crate::client::{NativeClient, operation};
+use crate::client::{operation, NativeClient};
 use crate::convert::{
-    binance_mark_price_to_wire, binance_open_interest_to_wire, decimal_from_wire,
-    decimal_to_wire, hyperliquid_mid_price_to_wire, list_to_wire, market_from_wire,
-    market_to_wire, markets_from_wire, order_book_to_wire, order_to_wire, ticker_to_wire,
-    timestamp_to_wire,
+    binance_mark_price_to_wire, binance_open_interest_to_wire, decimal_from_wire, decimal_to_wire,
+    hyperliquid_mid_price_to_wire, list_to_wire, market_from_wire, market_to_wire,
+    markets_from_wire, order_book_to_wire, order_to_wire, ticker_to_wire, timestamp_to_wire,
 };
 
 macro_rules! provider_dict {
@@ -277,6 +276,20 @@ impl NativeUpbitAdapter {
             |py, value| crate::convert::cancel_orders_result_to_wire(py, &value),
         )
     }
+
+    fn cancel_and_new_order<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::upbit_cancel_and_new_order_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.cancel_and_new_order(&request).await },
+            |py, value| crate::convert::upbit_cancel_and_new_order_result_to_wire(py, &value),
+        )
+    }
 }
 
 #[pyclass(module = "maxt._native", frozen)]
@@ -408,6 +421,21 @@ impl NativeBithumbAdapter {
             |py, value| value.into_py_any(py),
         )
     }
+
+    fn batch_orders<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::bithumb_batch_orders_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.batch_orders(&request).await },
+            |py, value| crate::convert::bithumb_batch_orders_result_to_wire(py, &value),
+        )
+    }
+
 }
 
 #[pyclass(module = "maxt._native", frozen)]
@@ -514,6 +542,20 @@ impl NativeBinanceAdapter {
             py,
             async move { adapter.open_interest(&market).await },
             |py, value| binance_open_interest_to_wire(py, &value),
+        )
+    }
+
+    fn aggregate_trades<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::binance_aggregate_trades_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.aggregate_trades(&request).await },
+            |py, values| list_to_wire(py, &values, crate::convert::binance_aggregate_trade_to_wire),
         )
     }
 

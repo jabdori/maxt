@@ -472,6 +472,23 @@ fn _guard_upbit_deposit_info_wire(value: WireUpbitDepositInfo) {
     } = value;
 }
 
+fn _guard_upbit_cancel_and_new_order_request_wire(value: WireUpbitCancelAndNewOrderRequest) {
+    let WireUpbitCancelAndNewOrderRequest {
+        previous_order: _,
+        new_order: _,
+        new_identifier: _,
+        new_smp_type: _,
+    } = value;
+}
+
+fn _guard_upbit_cancel_and_new_order_result_wire(value: WireUpbitCancelAndNewOrderResult) {
+    let WireUpbitCancelAndNewOrderResult {
+        previous_order: _,
+        new_order_uuid: _,
+        new_order_identifier: _,
+    } = value;
+}
+
 fn _guard_bithumb_twap_orders_request_wire(value: WireBithumbTwapOrdersRequest) {
     let WireBithumbTwapOrdersRequest {
         market: _,
@@ -481,6 +498,36 @@ fn _guard_bithumb_twap_orders_request_wire(value: WireBithumbTwapOrdersRequest) 
         limit: _,
         order_by: _,
     } = value;
+}
+
+fn _guard_bithumb_batch_orders_request_wire(value: WireBithumbBatchOrdersRequest) {
+    let WireBithumbBatchOrdersRequest { orders: _ } = value;
+}
+
+fn _guard_bithumb_batch_order_wire(value: WireBithumbBatchOrder) {
+    let WireBithumbBatchOrder {
+        order_id: _,
+        client_order_id: _,
+        market: _,
+        side: _,
+        order_type: _,
+        time_in_force: _,
+        stp_type: _,
+        created_at_ns: _,
+    } = value;
+}
+
+fn _guard_bithumb_batch_order_failure_wire(value: WireBithumbBatchOrderFailure) {
+    let WireBithumbBatchOrderFailure {
+        client_order_id: _,
+        time_in_force: _,
+        code: _,
+        message: _,
+    } = value;
+}
+
+fn _guard_bithumb_batch_orders_result_wire(value: WireBithumbBatchOrdersResult) {
+    let WireBithumbBatchOrdersResult { outcomes: _ } = value;
 }
 
 fn _guard_bithumb_twap_order_request_wire(value: WireBithumbTwapOrderRequest) {
@@ -561,6 +608,30 @@ fn _guard_binance_open_interest_wire(value: WireBinanceOpenInterest) {
     } = value;
 }
 
+fn _guard_binance_aggregate_trades_request_wire(value: WireBinanceAggregateTradesRequest) {
+    let WireBinanceAggregateTradesRequest {
+        market: _,
+        from_id: _,
+        start_time_ns: _,
+        end_time_ns: _,
+        limit: _,
+    } = value;
+}
+
+fn _guard_binance_aggregate_trade_wire(value: WireBinanceAggregateTrade) {
+    let WireBinanceAggregateTrade {
+        market: _,
+        aggregate_id: _,
+        first_trade_id: _,
+        last_trade_id: _,
+        timestamp_ns: _,
+        price: _,
+        quantity: _,
+        normal_quantity: _,
+        taker_side: _,
+    } = value;
+}
+
 fn _guard_hyperliquid_mid_price_wire(value: WireHyperliquidMidPrice) {
     let WireHyperliquidMidPrice {
         market: _,
@@ -585,6 +656,47 @@ fn _guard_upbit_batch_cancel_scope_wire(value: WireUpbitBatchCancelScope) {
         WireUpbitBatchCancelScope::All => {}
         WireUpbitBatchCancelScope::QuoteCurrencies { values: _ } => {}
         WireUpbitBatchCancelScope::Pairs { values: _ } => {}
+    }
+}
+
+fn _guard_upbit_order_reference_wire(value: WireUpbitOrderReference) {
+    match value {
+        WireUpbitOrderReference::Uuid(_) => {}
+        WireUpbitOrderReference::Identifier(_) => {}
+    }
+}
+
+fn _guard_upbit_order_volume_wire(value: WireUpbitOrderVolume) {
+    match value {
+        WireUpbitOrderVolume::Amount(_) => {}
+        WireUpbitOrderVolume::RemainOnly => {}
+    }
+}
+
+fn _guard_upbit_cancel_and_new_order_wire(value: WireUpbitCancelAndNewOrder) {
+    match value {
+        WireUpbitCancelAndNewOrder::Limit {
+            volume: _,
+            price: _,
+            time_in_force: _,
+        } => {}
+        WireUpbitCancelAndNewOrder::MarketBuy { price: _ } => {}
+        WireUpbitCancelAndNewOrder::MarketSell { volume: _ } => {}
+        WireUpbitCancelAndNewOrder::BestBuy {
+            price: _,
+            time_in_force: _,
+        } => {}
+        WireUpbitCancelAndNewOrder::BestSell {
+            volume: _,
+            time_in_force: _,
+        } => {}
+    }
+}
+
+fn _guard_bithumb_batch_order_outcome_wire(value: WireBithumbBatchOrderOutcome) {
+    match value {
+        WireBithumbBatchOrderOutcome::Accepted(_) => {}
+        WireBithumbBatchOrderOutcome::Rejected(_) => {}
     }
 }
 
@@ -785,6 +897,14 @@ fn _guard_upbit_order_direction(value: WireUpbitOrderDirection) {
     match value {
         WireUpbitOrderDirection::Ascending => {}
         WireUpbitOrderDirection::Descending => {}
+    }
+}
+
+fn _guard_upbit_smp_type(value: WireUpbitSmpType) {
+    match value {
+        WireUpbitSmpType::CancelMaker => {}
+        WireUpbitSmpType::CancelTaker => {}
+        WireUpbitSmpType::Reduce => {}
     }
 }
 

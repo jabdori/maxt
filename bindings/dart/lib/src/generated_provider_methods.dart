@@ -105,6 +105,18 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
       request: _upbitBatchCancelRequestToWire(request),
     ),
   ).then(_cancelOrdersResultFromWire);
+
+  /// Cancels an Upbit order and requests its replacement.
+  ///
+  /// A successful response can still contain a filled previous order and no
+  /// replacement. Inspect [UpbitCancelAndNewOrderResult.newOrderUuid].
+  Future<UpbitCancelAndNewOrderResult> cancelAndNewOrder(
+    UpbitCancelAndNewOrderRequest request,
+  ) => _nativeFuture(
+    () => _handle.upbitCancelAndNewOrder(
+      request: _upbitCancelAndNewOrderRequestToWire(request),
+    ),
+  ).then(_upbitCancelAndNewOrderResultFromWire);
 }
 
 extension BithumbAdapterGeneratedMethods on BithumbAdapter {
@@ -145,6 +157,15 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
           request: _bithumbPendingOrdersRequestToWire(request),
         ),
       ).then(_orderPageFromWire);
+
+  /// Submits Bithumb orders together; each outcome is independent.
+  Future<BithumbBatchOrdersResult> batchOrders(
+    BithumbBatchOrdersRequest request,
+  ) => _nativeFuture(
+    () => _handle.bithumbBatchOrders(
+      request: _bithumbBatchOrdersRequestToWire(request),
+    ),
+  ).then(_bithumbBatchOrdersResultFromWire);
 
   Future<Page<BithumbTwapOrder>> twapOrders(BithumbTwapOrdersRequest request) =>
       _nativeFuture(
@@ -194,6 +215,18 @@ extension BinanceAdapterGeneratedMethods on BinanceAdapter {
   Future<BinanceOpenInterest> openInterest(Market market) => _nativeFuture(
     () => _handle.binanceOpenInterest(market: _marketToWire(market)),
   ).then(_binanceOpenInterestFromWire);
+
+  Future<List<BinanceAggregateTrade>> aggregateTrades(
+    BinanceAggregateTradesRequest request,
+  ) =>
+      _nativeFuture(
+        () => _handle.binanceAggregateTrades(
+          request: _binanceAggregateTradesRequestToWire(request),
+        ),
+      ).then(
+        (values) =>
+            values.map(_binanceAggregateTradeFromWire).toList(growable: false),
+      );
 
   Future<BinanceListenKey> usdMCreateListenKey() => _nativeFuture(
     _handle.binanceUsdMCreateListenKey,

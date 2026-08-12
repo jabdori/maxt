@@ -45,9 +45,9 @@
 
 | Exchange | Adapter | Python | Dart / TypeScript |
 | --- | --- | --- | --- |
-| upbit | `UpbitAdapter` | `region`, `order_books`, `order_books_at_level`, `tickers`, `tickers_by_quote`, `year_candles`, `orderbook_instruments`, `market_events`, `test_order`, `deposit_info`, `batch_cancel_open_orders` | `region`, `orderBooks`, `orderBooksAtLevel`, `tickers`, `tickersByQuote`, `yearCandles`, `orderbookInstruments`, `marketEvents`, `testOrder`, `depositInfo`, `batchCancelOpenOrders` |
-| bithumb | `BithumbAdapter` | `market_warnings`, `market_alerts`, `notices`, `transfer_fees`, `api_keys`, `pending_orders`, `twap_orders`, `create_twap_order`, `cancel_twap_order` | `marketWarnings`, `marketAlerts`, `notices`, `transferFees`, `apiKeys`, `pendingOrders`, `twapOrders`, `createTwapOrder`, `cancelTwapOrder` |
-| binance | `BinanceAdapter` | `venue`, `spot_symbol_filters`, `spot_order`, `mark_price`, `mark_prices`, `open_interest`, `usd_m_create_listen_key`, `usd_m_keepalive_listen_key`, `usd_m_close_listen_key` | `venue`, `spotSymbolFilters`, `spotOrder`, `markPrice`, `markPrices`, `openInterest`, `usdMCreateListenKey`, `usdMKeepaliveListenKey`, `usdMCloseListenKey` |
+| upbit | `UpbitAdapter` | `region`, `order_books`, `order_books_at_level`, `tickers`, `tickers_by_quote`, `year_candles`, `orderbook_instruments`, `market_events`, `test_order`, `deposit_info`, `batch_cancel_open_orders`, `cancel_and_new_order` | `region`, `orderBooks`, `orderBooksAtLevel`, `tickers`, `tickersByQuote`, `yearCandles`, `orderbookInstruments`, `marketEvents`, `testOrder`, `depositInfo`, `batchCancelOpenOrders`, `cancelAndNewOrder` |
+| bithumb | `BithumbAdapter` | `market_warnings`, `market_alerts`, `notices`, `transfer_fees`, `api_keys`, `pending_orders`, `batch_orders`, `twap_orders`, `create_twap_order`, `cancel_twap_order` | `marketWarnings`, `marketAlerts`, `notices`, `transferFees`, `apiKeys`, `pendingOrders`, `batchOrders`, `twapOrders`, `createTwapOrder`, `cancelTwapOrder` |
+| binance | `BinanceAdapter` | `venue`, `spot_symbol_filters`, `spot_order`, `mark_price`, `mark_prices`, `open_interest`, `aggregate_trades`, `usd_m_create_listen_key`, `usd_m_keepalive_listen_key`, `usd_m_close_listen_key` | `venue`, `spotSymbolFilters`, `spotOrder`, `markPrice`, `markPrices`, `openInterest`, `aggregateTrades`, `usdMCreateListenKey`, `usdMKeepaliveListenKey`, `usdMCloseListenKey` |
 | hyperliquid | `HyperliquidAdapter` | `is_testnet`, `all_mids`, `non_funding_ledger`, `asset_context` | `isTestnet`, `allMids`, `nonFundingLedger`, `assetContext` |
 
 ## Official API products
@@ -67,7 +67,7 @@ Documentation baseline: `2026-08-10`.
 | bithumb | TWAP | 3 / 3 | `http` | `json` | Complete |
 | bithumb | KRW deposits and withdrawals | 4 / 4 | `http` | `json` | Planned |
 | binance | Spot Trading | 15 / 118 | `http`, `websocket_request`, `websocket_stream`, `fix` | `json`, `sbe`, `fix_tag_value`, `fix_sbe` | Partial |
-| binance | Futures (USDⓈ-M) | 24 / 133 | `http`, `websocket_request`, `websocket_stream` | `json` | Partial |
+| binance | Futures (USDⓈ-M) | 25 / 133 | `http`, `websocket_request`, `websocket_stream` | `json` | Partial |
 | binance | Futures (COIN-M) | 0 / 93 | `http`, `websocket_request`, `websocket_stream` | `json` | Planned |
 | binance | Options | 0 / 54 | `http`, `websocket_stream` | `json` | Planned |
 | binance | Margin | 0 / 65 | `http` | `json` | Planned |
@@ -144,7 +144,7 @@ Documentation baseline: `2026-08-10`.
 | upbit | exchange | `cancel_order` | `DELETE` | `/v1/order` | `http` | JWT | financial write | general | common `cancel_order`, `cancel_order_by_client_id` | `Partial` | `Fixture` |
 | upbit | exchange | `cancel_orders_by_ids` | `DELETE` | `/v1/orders/uuids` | `http` | JWT | financial write | general | common `cancel_orders` | `Partial` | `Fixture` |
 | upbit | exchange | `batch_cancel_open_orders` | `DELETE` | `/v1/orders/open` | `http` | JWT | financial write | general | provider `batch_cancel_open_orders` | `Implemented` | `Fixture` |
-| upbit | exchange | `cancel_and_new_order` | `POST` | `/v1/orders/cancel_and_new` | `http` | JWT | financial write | general | provider `cancel_and_new_order` | `Planned` | `Documented` |
+| upbit | exchange | `cancel_and_new_order` | `POST` | `/v1/orders/cancel_and_new` | `http` | JWT | financial write | general | provider `cancel_and_new_order` | `Partial` | `Fixture` |
 | upbit | exchange | `my_order_stream` | `SUBSCRIBE` | `myOrder` | `websocket_stream` | JWT | read | general | common `subscribe_account` | `Partial` | `Fixture` |
 | upbit | exchange | `my_asset_stream` | `SUBSCRIBE` | `myAsset` | `websocket_stream` | JWT | read | general | common `subscribe_account` | `Partial` | `Fixture` |
 | upbit | wallet | `wallet_status` | `GET` | `/v1/status/wallet` | `http` | JWT | read | general | common `asset_networks` | `Implemented` | `Fixture` |
@@ -185,7 +185,7 @@ Documentation baseline: `2026-08-10`.
 | bithumb | exchange | `pending_orders` | `GET` | `/v2/orders/pending` | `http` | JWT | read | general | provider `pending_orders` | `Implemented` | `Fixture` |
 | bithumb | exchange | `closed_orders` | `GET` | `/v2/orders/history` | `http` | JWT | read | general | common `order_history` | `Partial` | `Fixture` |
 | bithumb | exchange | `new_order` | `POST` | `/v2/orders` | `http` | JWT | financial write | general | common `place_order` | `Partial` | `Fixture` |
-| bithumb | exchange | `batch_orders` | `POST` | `/v2/orders/batch` | `http` | JWT | financial write | general | common `place_orders` | `Planned` | `Documented` |
+| bithumb | exchange | `batch_orders` | `POST` | `/v2/orders/batch` | `http` | JWT | financial write | general | provider `batch_orders` | `Partial` | `Fixture` |
 | bithumb | exchange | `cancel_order` | `DELETE` | `/v2/order` | `http` | JWT | financial write | general | common `cancel_order`, `cancel_order_by_client_id` | `Partial` | `Fixture` |
 | bithumb | exchange | `cancel_orders` | `POST` | `/v2/orders/cancel` | `http` | JWT | financial write | general | common `cancel_orders` | `Partial` | `Fixture` |
 | bithumb | exchange | `my_order_stream` | `SUBSCRIBE` | `myOrder` | `websocket_stream` | JWT | read | general | common `subscribe_account` | `Partial` | `Fixture` |
@@ -245,6 +245,7 @@ Documentation baseline: `2026-08-10`.
 | binance | usd_m | `start_user_data_stream` | `POST` | `/fapi/v1/listenKey` | `http` | API key | account write | general | provider `usd_m_create_listen_key` | `Implemented` | `Fixture` |
 | binance | usd_m | `keepalive_user_data_stream` | `PUT` | `/fapi/v1/listenKey` | `http` | API key | account write | general | provider `usd_m_keepalive_listen_key` | `Implemented` | `Fixture` |
 | binance | usd_m | `close_user_data_stream` | `DELETE` | `/fapi/v1/listenKey` | `http` | API key | account write | general | provider `usd_m_close_listen_key` | `Implemented` | `Fixture` |
+| binance | usd_m | `aggregate_trades` | `GET` | `/fapi/v1/aggTrades` | `http` | public | read | general | provider `aggregate_trades` | `Partial` | `Fixture` |
 | binance | usd_m | `aggregate_trade_stream` | `SUBSCRIBE` | `{symbol}@aggTrade` | `websocket_stream` | public | read | general | provider `aggregate_trades` | `Planned` | `Documented` |
 | binance | usd_m | `partial_book_depth_stream` | `SUBSCRIBE` | `{symbol}@depth{levels}@{updateSpeed}` | `websocket_stream` | public | read | general | common `subscribe` | `Partial` | `LiveRead` |
 | binance | usd_m | `ticker_stream` | `SUBSCRIBE` | `{symbol}@ticker` | `websocket_stream` | public | read | general | common `subscribe` | `Partial` | `LiveRead` |

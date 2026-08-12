@@ -251,6 +251,11 @@ const UPBIT_BATCH_CANCEL_REQUEST: &[Argument] = &[argument(
     ApiType::Named("UpbitBatchCancelRequest"),
     None,
 )];
+const UPBIT_CANCEL_AND_NEW_ORDER_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("UpbitCancelAndNewOrderRequest"),
+    None,
+)];
 const ASSET: &[Argument] = &[argument("asset", ApiType::String, None)];
 const ASSET_NETWORK: &[Argument] = &[
     argument("asset", ApiType::String, None),
@@ -991,6 +996,11 @@ const UPBIT_ORDER_DIRECTION_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("Ascending", "asc"),
     identifier_variant("Descending", "desc"),
 ];
+const UPBIT_SMP_TYPE_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("CancelMaker", "cancel_maker"),
+    identifier_variant("CancelTaker", "cancel_taker"),
+    identifier_variant("Reduce", "reduce"),
+];
 const BITHUMB_ALERT_STEP_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("Caution", "caution"),
     identifier_variant("Warning", "warning"),
@@ -1099,6 +1109,7 @@ const IDENTIFIERS: &[Identifier] = &[
     identifier("SizeKind", SIZE_KIND_VARIANTS, false),
     identifier("UpbitRegion", UPBIT_REGION_VARIANTS, false),
     identifier("UpbitOrderDirection", UPBIT_ORDER_DIRECTION_VARIANTS, false),
+    identifier("UpbitSmpType", UPBIT_SMP_TYPE_VARIANTS, false),
     identifier("BithumbAlertStep", BITHUMB_ALERT_STEP_VARIANTS, false),
     identifier(
         "BithumbPendingOrderState",
@@ -1182,10 +1193,20 @@ const MODELS: &[&str] = &[
     "UpbitDepositInfo",
     "UpbitBatchCancelScope",
     "UpbitBatchCancelRequest",
+    "UpbitOrderReference",
+    "UpbitOrderVolume",
+    "UpbitCancelAndNewOrder",
+    "UpbitCancelAndNewOrderRequest",
+    "UpbitCancelAndNewOrderResult",
     "BithumbMarketAlert",
     "BithumbNotice",
     "BithumbApiKey",
     "BithumbPendingOrdersRequest",
+    "BithumbBatchOrdersRequest",
+    "BithumbBatchOrder",
+    "BithumbBatchOrderFailure",
+    "BithumbBatchOrderOutcome",
+    "BithumbBatchOrdersResult",
     "BithumbTwapOrdersRequest",
     "BithumbTwapOrderRequest",
     "BithumbTwapOrder",
@@ -1195,6 +1216,8 @@ const MODELS: &[&str] = &[
     "BinanceSpotOrderDetail",
     "BinanceMarkPrice",
     "BinanceOpenInterest",
+    "BinanceAggregateTradesRequest",
+    "BinanceAggregateTrade",
     "HyperliquidLedgerEntry",
     "HyperliquidMidPrice",
     "HyperliquidAssetContext",
@@ -1223,6 +1246,11 @@ const BITHUMB_PENDING_ORDERS_REQUEST: &[Argument] = &[argument(
     ApiType::Named("BithumbPendingOrdersRequest"),
     None,
 )];
+const BITHUMB_BATCH_ORDERS_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("BithumbBatchOrdersRequest"),
+    None,
+)];
 const BITHUMB_TWAP_ORDERS_REQUEST: &[Argument] = &[argument(
     "request",
     ApiType::Named("BithumbTwapOrdersRequest"),
@@ -1234,6 +1262,11 @@ const BITHUMB_TWAP_ORDER_REQUEST: &[Argument] = &[argument(
     None,
 )];
 const BITHUMB_TWAP_ORDER_ID: &[Argument] = &[argument("algoOrderId", ApiType::String, None)];
+const BINANCE_AGGREGATE_TRADES_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("BinanceAggregateTradesRequest"),
+    None,
+)];
 const LEDGER_RANGE: &[Argument] = &[
     argument("from", ApiType::OptionalNamed("Timestamp"), Some("null")),
     argument("to", ApiType::OptionalNamed("Timestamp"), Some("null")),
@@ -1434,6 +1467,13 @@ const UPBIT_METHODS: &[ProviderMethod] = &[
         arguments: UPBIT_BATCH_CANCEL_REQUEST,
         result: ApiType::Named("CancelOrdersResult"),
     },
+    ProviderMethod {
+        rust_name: "cancel_and_new_order",
+        name: "cancelAndNewOrder",
+        kind: ProviderMethodKind::Async,
+        arguments: UPBIT_CANCEL_AND_NEW_ORDER_REQUEST,
+        result: ApiType::Named("UpbitCancelAndNewOrderResult"),
+    },
 ];
 const BITHUMB_METHODS: &[ProviderMethod] = &[
     ProviderMethod {
@@ -1477,6 +1517,13 @@ const BITHUMB_METHODS: &[ProviderMethod] = &[
         kind: ProviderMethodKind::Async,
         arguments: BITHUMB_PENDING_ORDERS_REQUEST,
         result: ApiType::Page("Order"),
+    },
+    ProviderMethod {
+        rust_name: "batch_orders",
+        name: "batchOrders",
+        kind: ProviderMethodKind::Async,
+        arguments: BITHUMB_BATCH_ORDERS_REQUEST,
+        result: ApiType::Named("BithumbBatchOrdersResult"),
     },
     ProviderMethod {
         rust_name: "twap_orders",
@@ -1542,6 +1589,13 @@ const BINANCE_METHODS: &[ProviderMethod] = &[
         kind: ProviderMethodKind::Async,
         arguments: MARKET,
         result: ApiType::Named("BinanceOpenInterest"),
+    },
+    ProviderMethod {
+        rust_name: "aggregate_trades",
+        name: "aggregateTrades",
+        kind: ProviderMethodKind::Async,
+        arguments: BINANCE_AGGREGATE_TRADES_REQUEST,
+        result: ApiType::List("BinanceAggregateTrade"),
     },
     ProviderMethod {
         rust_name: "usd_m_create_listen_key",
@@ -2216,6 +2270,26 @@ pub fn binding_schema() -> Schema {
             ],
         ),
         record(
+            "UpbitCancelAndNewOrderRequestWire",
+            vec![
+                field("previous_order", Type::named("UpbitOrderReferenceWire")),
+                field("new_order", Type::named("UpbitCancelAndNewOrderWire")),
+                field("new_identifier", Type::optional(Type::String)),
+                field(
+                    "new_smp_type",
+                    Type::optional(Type::Identifier("UpbitSmpType")),
+                ),
+            ],
+        ),
+        record(
+            "UpbitCancelAndNewOrderResultWire",
+            vec![
+                field("previous_order", Type::named("OrderWire")),
+                field("new_order_uuid", Type::optional(Type::String)),
+                field("new_order_identifier", Type::optional(Type::String)),
+            ],
+        ),
+        record(
             "BithumbMarketAlertWire",
             vec![
                 field("kind", Type::String),
@@ -2280,6 +2354,39 @@ pub fn binding_schema() -> Schema {
                     Type::optional(Type::Identifier("BithumbTwapOrderDirection")),
                 ),
             ],
+        ),
+        record(
+            "BithumbBatchOrdersRequestWire",
+            vec![field("orders", Type::list(Type::named("OrderRequestWire")))],
+        ),
+        record(
+            "BithumbBatchOrderWire",
+            vec![
+                field("order_id", Type::String),
+                field("client_order_id", Type::optional(Type::String)),
+                field("market", market.clone()),
+                field("side", Type::Identifier("Side")),
+                field("order_type", Type::Identifier("OrderType")),
+                field("time_in_force", Type::optional(Type::String)),
+                field("stp_type", Type::optional(Type::String)),
+                field("created_at", Type::optional(timestamp.clone())),
+            ],
+        ),
+        record(
+            "BithumbBatchOrderFailureWire",
+            vec![
+                field("client_order_id", Type::optional(Type::String)),
+                field("time_in_force", Type::optional(Type::String)),
+                field("code", Type::String),
+                field("message", Type::String),
+            ],
+        ),
+        record(
+            "BithumbBatchOrdersResultWire",
+            vec![field(
+                "outcomes",
+                Type::list(Type::named("BithumbBatchOrderOutcomeWire")),
+            )],
         ),
         record(
             "BithumbTwapOrderRequestWire",
@@ -2371,6 +2478,30 @@ pub fn binding_schema() -> Schema {
             ],
         ),
         record(
+            "BinanceAggregateTradesRequestWire",
+            vec![
+                field("market", market.clone()),
+                field("from_id", Type::optional(Type::UnsignedInteger)),
+                field("start_time", Type::optional(timestamp.clone())),
+                field("end_time", Type::optional(timestamp.clone())),
+                field("limit", Type::optional(Number)),
+            ],
+        ),
+        record(
+            "BinanceAggregateTradeWire",
+            vec![
+                field("market", market.clone()),
+                field("aggregate_id", Type::UnsignedInteger),
+                field("first_trade_id", Type::UnsignedInteger),
+                field("last_trade_id", Type::UnsignedInteger),
+                field("timestamp", timestamp.clone()),
+                field("price", decimal.clone()),
+                field("quantity", decimal.clone()),
+                field("normal_quantity", Type::optional(decimal.clone())),
+                field("taker_side", Type::Identifier("Side")),
+            ],
+        ),
+        record(
             "BinanceListenKeyWire",
             vec![field("id", Type::String), field("value", Type::String)],
         ),
@@ -2452,6 +2583,72 @@ pub fn binding_schema() -> Schema {
                     vec![field("values", Type::list(Type::String))],
                 ),
                 variant("pairs", vec![field("values", Type::list(market.clone()))]),
+            ],
+        },
+        TaggedUnion {
+            name: "UpbitOrderReferenceWire",
+            type_parameters: &[],
+            variants: vec![
+                variant("uuid", vec![field("value", Type::String)]),
+                variant("identifier", vec![field("value", Type::String)]),
+            ],
+        },
+        TaggedUnion {
+            name: "UpbitOrderVolumeWire",
+            type_parameters: &[],
+            variants: vec![
+                variant("amount", vec![field("value", Type::Decimal)]),
+                variant("remain_only", vec![]),
+            ],
+        },
+        TaggedUnion {
+            name: "UpbitCancelAndNewOrderWire",
+            type_parameters: &[],
+            variants: vec![
+                variant(
+                    "limit",
+                    vec![
+                        field("volume", Type::named("UpbitOrderVolumeWire")),
+                        field("price", Type::Decimal),
+                        field(
+                            "time_in_force",
+                            Type::optional(Type::Identifier("TimeInForce")),
+                        ),
+                    ],
+                ),
+                variant("market_buy", vec![field("price", Type::Decimal)]),
+                variant(
+                    "market_sell",
+                    vec![field("volume", Type::named("UpbitOrderVolumeWire"))],
+                ),
+                variant(
+                    "best_buy",
+                    vec![
+                        field("price", Type::Decimal),
+                        field("time_in_force", Type::Identifier("TimeInForce")),
+                    ],
+                ),
+                variant(
+                    "best_sell",
+                    vec![
+                        field("volume", Type::named("UpbitOrderVolumeWire")),
+                        field("time_in_force", Type::Identifier("TimeInForce")),
+                    ],
+                ),
+            ],
+        },
+        TaggedUnion {
+            name: "BithumbBatchOrderOutcomeWire",
+            type_parameters: &[],
+            variants: vec![
+                variant(
+                    "accepted",
+                    vec![field("value", Type::named("BithumbBatchOrderWire"))],
+                ),
+                variant(
+                    "rejected",
+                    vec![field("value", Type::named("BithumbBatchOrderFailureWire"))],
+                ),
             ],
         },
         TaggedUnion {
@@ -2868,7 +3065,7 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
-        native_api_version: 19,
+        native_api_version: 20,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
         identifiers: IDENTIFIERS,

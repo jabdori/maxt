@@ -21,6 +21,7 @@ import {
   TimeInForce,
   TransferErrorKind,
   UpbitOrderDirection,
+  UpbitSmpType,
   WithdrawalStatus,
 } from "./generated/identifiers.js";
 
@@ -50,6 +51,7 @@ export {
   TransferErrorKind,
   UpbitOrderDirection,
   UpbitRegion,
+  UpbitSmpType,
   WithdrawalStatus,
 } from "./generated/identifiers.js";
 
@@ -943,6 +945,81 @@ export class UpbitBatchCancelRequest {
   }
 }
 
+export type UpbitOrderReference =
+  | { readonly kind: "uuid"; readonly value: string }
+  | { readonly kind: "identifier"; readonly value: string };
+
+export const UpbitOrderReference = Object.freeze({
+  uuid(value: string): UpbitOrderReference { return Object.freeze({ kind: "uuid", value }); },
+  identifier(value: string): UpbitOrderReference {
+    return Object.freeze({ kind: "identifier", value });
+  },
+});
+
+export type UpbitOrderVolume =
+  | { readonly kind: "amount"; readonly value: Decimal }
+  | { readonly kind: "remain_only" };
+
+export const UpbitOrderVolume = Object.freeze({
+  amount(value: Decimal): UpbitOrderVolume { return Object.freeze({ kind: "amount", value }); },
+  remainOnly(): UpbitOrderVolume { return Object.freeze({ kind: "remain_only" }); },
+});
+
+export type UpbitCancelAndNewOrder =
+  | {
+    readonly kind: "limit";
+    readonly volume: UpbitOrderVolume;
+    readonly price: Decimal;
+    readonly timeInForce: TimeInForce | null;
+  }
+  | { readonly kind: "market_buy"; readonly price: Decimal }
+  | { readonly kind: "market_sell"; readonly volume: UpbitOrderVolume }
+  | { readonly kind: "best_buy"; readonly price: Decimal; readonly timeInForce: TimeInForce }
+  | {
+    readonly kind: "best_sell";
+    readonly volume: UpbitOrderVolume;
+    readonly timeInForce: TimeInForce;
+  };
+
+export const UpbitCancelAndNewOrder = Object.freeze({
+  limit(
+    volume: UpbitOrderVolume, price: Decimal, timeInForce: TimeInForce | null = null,
+  ): UpbitCancelAndNewOrder {
+    return Object.freeze({ kind: "limit", volume, price, timeInForce });
+  },
+  marketBuy(price: Decimal): UpbitCancelAndNewOrder {
+    return Object.freeze({ kind: "market_buy", price });
+  },
+  marketSell(volume: UpbitOrderVolume): UpbitCancelAndNewOrder {
+    return Object.freeze({ kind: "market_sell", volume });
+  },
+  bestBuy(price: Decimal, timeInForce: TimeInForce): UpbitCancelAndNewOrder {
+    return Object.freeze({ kind: "best_buy", price, timeInForce });
+  },
+  bestSell(volume: UpbitOrderVolume, timeInForce: TimeInForce): UpbitCancelAndNewOrder {
+    return Object.freeze({ kind: "best_sell", volume, timeInForce });
+  },
+});
+
+export class UpbitCancelAndNewOrderRequest {
+  constructor(
+    readonly previousOrder: UpbitOrderReference,
+    readonly newOrder: UpbitCancelAndNewOrder,
+    readonly newIdentifier: string | null = null,
+    readonly newSmpType: UpbitSmpType | null = null,
+  ) { freezeRecord(this); }
+}
+
+export class UpbitCancelAndNewOrderResult {
+  constructor(
+    readonly previousOrder: Order,
+    readonly newOrderUuid: string | null,
+    readonly newOrderIdentifier: string | null,
+  ) { freezeRecord(this); }
+
+  get replacementCreated(): boolean { return this.newOrderUuid !== null; }
+}
+
 export class BithumbMarketAlert {
   constructor(readonly kind: string, readonly step: BithumbAlertStep, readonly endsAt: Timestamp) {
     freezeRecord(this);
@@ -973,6 +1050,57 @@ export class BithumbPendingOrdersRequest {
     readonly cursor: Cursor | null = null,
   ) {
     this.limit = checkedOptionalU32(limit, "limit");
+    freezeRecord(this);
+  }
+}
+
+export class BithumbBatchOrdersRequest {
+  readonly orders: readonly OrderRequest[];
+  constructor(orders: readonly OrderRequest[]) {
+    this.orders = Object.freeze([...orders]);
+    freezeRecord(this);
+  }
+}
+
+export class BithumbBatchOrder {
+  constructor(
+    readonly orderId: string,
+    readonly clientOrderId: string | null,
+    readonly market: Market,
+    readonly side: Side,
+    readonly orderType: OrderType,
+    readonly timeInForce: string | null,
+    readonly stpType: string | null,
+    readonly createdAt: Timestamp | null,
+  ) { freezeRecord(this); }
+}
+
+export class BithumbBatchOrderFailure {
+  constructor(
+    readonly clientOrderId: string | null,
+    readonly timeInForce: string | null,
+    readonly code: string,
+    readonly message: string,
+  ) { freezeRecord(this); }
+}
+
+export type BithumbBatchOrderOutcome =
+  | { readonly kind: "accepted"; readonly value: BithumbBatchOrder }
+  | { readonly kind: "rejected"; readonly value: BithumbBatchOrderFailure };
+
+export const BithumbBatchOrderOutcome = Object.freeze({
+  accepted(value: BithumbBatchOrder): BithumbBatchOrderOutcome {
+    return Object.freeze({ kind: "accepted", value });
+  },
+  rejected(value: BithumbBatchOrderFailure): BithumbBatchOrderOutcome {
+    return Object.freeze({ kind: "rejected", value });
+  },
+});
+
+export class BithumbBatchOrdersResult {
+  readonly outcomes: readonly BithumbBatchOrderOutcome[];
+  constructor(outcomes: readonly BithumbBatchOrderOutcome[]) {
+    this.outcomes = Object.freeze([...outcomes]);
     freezeRecord(this);
   }
 }
@@ -1093,6 +1221,44 @@ export class BinanceOpenInterest {
   constructor(
     readonly market: Market, readonly openInterest: Decimal, readonly time: Timestamp,
   ) { freezeRecord(this); }
+}
+
+export class BinanceAggregateTradesRequest {
+  readonly fromId: bigint | null;
+  readonly limit: number | null;
+  constructor(
+    readonly market: Market,
+    fromId: bigint | null = null,
+    readonly startTime: Timestamp | null = null,
+    readonly endTime: Timestamp | null = null,
+    limit: number | null = null,
+  ) {
+    this.fromId = fromId === null ? null : checkedU64(fromId, "fromId");
+    this.limit = checkedOptionalU32(limit, "limit");
+    freezeRecord(this);
+  }
+}
+
+export class BinanceAggregateTrade {
+  readonly aggregateId: bigint;
+  readonly firstTradeId: bigint;
+  readonly lastTradeId: bigint;
+  constructor(
+    readonly market: Market,
+    aggregateId: bigint,
+    firstTradeId: bigint,
+    lastTradeId: bigint,
+    readonly timestamp: Timestamp,
+    readonly price: Decimal,
+    readonly quantity: Decimal,
+    readonly normalQuantity: Decimal | null,
+    readonly takerSide: Side,
+  ) {
+    this.aggregateId = checkedU64(aggregateId, "aggregateId");
+    this.firstTradeId = checkedU64(firstTradeId, "firstTradeId");
+    this.lastTradeId = checkedU64(lastTradeId, "lastTradeId");
+    freezeRecord(this);
+  }
 }
 
 export class HyperliquidLedgerEntry {

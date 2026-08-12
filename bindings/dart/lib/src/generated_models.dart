@@ -573,6 +573,137 @@ final class UpbitBatchCancelRequest {
   final UpbitOrderDirection? orderBy;
 }
 
+sealed class UpbitOrderReference {
+  const UpbitOrderReference();
+
+  const factory UpbitOrderReference.uuid(String value) =
+      UpbitOrderReferenceUuid;
+  const factory UpbitOrderReference.identifier(String value) =
+      UpbitOrderReferenceIdentifier;
+}
+
+final class UpbitOrderReferenceUuid extends UpbitOrderReference {
+  const UpbitOrderReferenceUuid(this.value);
+
+  final String value;
+}
+
+final class UpbitOrderReferenceIdentifier extends UpbitOrderReference {
+  const UpbitOrderReferenceIdentifier(this.value);
+
+  final String value;
+}
+
+sealed class UpbitOrderVolume {
+  const UpbitOrderVolume();
+
+  const factory UpbitOrderVolume.amount(Decimal value) = UpbitOrderVolumeAmount;
+  const factory UpbitOrderVolume.remainOnly() = UpbitOrderVolumeRemainOnly;
+}
+
+final class UpbitOrderVolumeAmount extends UpbitOrderVolume {
+  const UpbitOrderVolumeAmount(this.value);
+
+  final Decimal value;
+}
+
+final class UpbitOrderVolumeRemainOnly extends UpbitOrderVolume {
+  const UpbitOrderVolumeRemainOnly();
+}
+
+sealed class UpbitCancelAndNewOrder {
+  const UpbitCancelAndNewOrder();
+
+  const factory UpbitCancelAndNewOrder.limit({
+    required UpbitOrderVolume volume,
+    required Decimal price,
+    TimeInForce? timeInForce,
+  }) = UpbitCancelAndNewOrderLimit;
+  const factory UpbitCancelAndNewOrder.marketBuy({required Decimal price}) =
+      UpbitCancelAndNewOrderMarketBuy;
+  const factory UpbitCancelAndNewOrder.marketSell({
+    required UpbitOrderVolume volume,
+  }) = UpbitCancelAndNewOrderMarketSell;
+  const factory UpbitCancelAndNewOrder.bestBuy({
+    required Decimal price,
+    required TimeInForce timeInForce,
+  }) = UpbitCancelAndNewOrderBestBuy;
+  const factory UpbitCancelAndNewOrder.bestSell({
+    required UpbitOrderVolume volume,
+    required TimeInForce timeInForce,
+  }) = UpbitCancelAndNewOrderBestSell;
+}
+
+final class UpbitCancelAndNewOrderLimit extends UpbitCancelAndNewOrder {
+  const UpbitCancelAndNewOrderLimit({
+    required this.volume,
+    required this.price,
+    this.timeInForce,
+  });
+
+  final UpbitOrderVolume volume;
+  final Decimal price;
+  final TimeInForce? timeInForce;
+}
+
+final class UpbitCancelAndNewOrderMarketBuy extends UpbitCancelAndNewOrder {
+  const UpbitCancelAndNewOrderMarketBuy({required this.price});
+
+  final Decimal price;
+}
+
+final class UpbitCancelAndNewOrderMarketSell extends UpbitCancelAndNewOrder {
+  const UpbitCancelAndNewOrderMarketSell({required this.volume});
+
+  final UpbitOrderVolume volume;
+}
+
+final class UpbitCancelAndNewOrderBestBuy extends UpbitCancelAndNewOrder {
+  const UpbitCancelAndNewOrderBestBuy({
+    required this.price,
+    required this.timeInForce,
+  });
+
+  final Decimal price;
+  final TimeInForce timeInForce;
+}
+
+final class UpbitCancelAndNewOrderBestSell extends UpbitCancelAndNewOrder {
+  const UpbitCancelAndNewOrderBestSell({
+    required this.volume,
+    required this.timeInForce,
+  });
+
+  final UpbitOrderVolume volume;
+  final TimeInForce timeInForce;
+}
+
+final class UpbitCancelAndNewOrderRequest {
+  const UpbitCancelAndNewOrderRequest({
+    required this.previousOrder,
+    required this.newOrder,
+    this.newIdentifier,
+    this.newSmpType,
+  });
+
+  final UpbitOrderReference previousOrder;
+  final UpbitCancelAndNewOrder newOrder;
+  final String? newIdentifier;
+  final UpbitSmpType? newSmpType;
+}
+
+final class UpbitCancelAndNewOrderResult {
+  const UpbitCancelAndNewOrderResult({
+    required this.previousOrder,
+    this.newOrderUuid,
+    this.newOrderIdentifier,
+  });
+
+  final Order previousOrder;
+  final String? newOrderUuid;
+  final String? newOrderIdentifier;
+}
+
 final class BithumbNotice {
   const BithumbNotice({
     required this.categories,
@@ -610,6 +741,76 @@ final class BithumbPendingOrdersRequest {
   final int? limit;
   final BithumbOrderDirection? orderBy;
   final Cursor? cursor;
+}
+
+final class BithumbBatchOrdersRequest {
+  const BithumbBatchOrdersRequest({required this.orders});
+
+  final List<OrderRequest> orders;
+}
+
+final class BithumbBatchOrder {
+  const BithumbBatchOrder({
+    required this.orderId,
+    this.clientOrderId,
+    required this.market,
+    required this.side,
+    required this.orderType,
+    this.timeInForce,
+    this.stpType,
+    this.createdAt,
+  });
+
+  final String orderId;
+  final String? clientOrderId;
+  final Market market;
+  final Side side;
+  final OrderType orderType;
+  final String? timeInForce;
+  final String? stpType;
+  final Timestamp? createdAt;
+}
+
+final class BithumbBatchOrderFailure {
+  const BithumbBatchOrderFailure({
+    this.clientOrderId,
+    this.timeInForce,
+    required this.code,
+    required this.message,
+  });
+
+  final String? clientOrderId;
+  final String? timeInForce;
+  final String code;
+  final String message;
+}
+
+sealed class BithumbBatchOrderOutcome {
+  const BithumbBatchOrderOutcome();
+
+  const factory BithumbBatchOrderOutcome.accepted(BithumbBatchOrder value) =
+      BithumbBatchOrderOutcomeAccepted;
+  const factory BithumbBatchOrderOutcome.rejected(
+    BithumbBatchOrderFailure value,
+  ) = BithumbBatchOrderOutcomeRejected;
+}
+
+final class BithumbBatchOrderOutcomeAccepted extends BithumbBatchOrderOutcome {
+  const BithumbBatchOrderOutcomeAccepted(this.value);
+
+  final BithumbBatchOrder value;
+}
+
+final class BithumbBatchOrderOutcomeRejected extends BithumbBatchOrderOutcome {
+  const BithumbBatchOrderOutcomeRejected(this.value);
+
+  final BithumbBatchOrderFailure value;
+}
+
+final class BithumbBatchOrdersResult {
+  const BithumbBatchOrdersResult({required this.outcomes});
+
+  final List<BithumbBatchOrderOutcome> outcomes;
 }
 
 final class BithumbTwapOrdersRequest {
@@ -750,6 +951,46 @@ final class BinanceOpenInterest {
   final Market market;
   final Decimal openInterest;
   final Timestamp time;
+}
+
+final class BinanceAggregateTradesRequest {
+  const BinanceAggregateTradesRequest({
+    required this.market,
+    this.fromId,
+    this.startTime,
+    this.endTime,
+    this.limit,
+  });
+
+  final Market market;
+  final BigInt? fromId;
+  final Timestamp? startTime;
+  final Timestamp? endTime;
+  final int? limit;
+}
+
+final class BinanceAggregateTrade {
+  const BinanceAggregateTrade({
+    required this.market,
+    required this.aggregateId,
+    required this.firstTradeId,
+    required this.lastTradeId,
+    required this.timestamp,
+    required this.price,
+    required this.quantity,
+    this.normalQuantity,
+    required this.takerSide,
+  });
+
+  final Market market;
+  final BigInt aggregateId;
+  final BigInt firstTradeId;
+  final BigInt lastTradeId;
+  final Timestamp timestamp;
+  final Decimal price;
+  final Decimal quantity;
+  final Decimal? normalQuantity;
+  final Side takerSide;
 }
 
 final class HyperliquidMidPrice {

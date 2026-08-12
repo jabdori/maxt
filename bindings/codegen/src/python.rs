@@ -163,7 +163,7 @@ from dataclasses import dataclass, field\n\
 from decimal import Decimal\n\
 from typing import Any, ClassVar, Optional, Union\n\n\
 from ._generated_identifiers import *  # noqa: F403\n\
-from .models import Balance, Cursor, Market, Timestamp, WireModel, _ascii_upper, _decode_value, _model_to_wire\n",
+from .models import Balance, Cursor, Market, Order, OrderRequest, Timestamp, WireModel, _ascii_upper, _decode_value, _model_to_wire\n",
     );
     for name in &generated {
         if let Some(record) = schema
@@ -1512,6 +1512,15 @@ fn rust_union_field(schema: &Schema, name: &str, ty: &Type) -> String {
             Type::String => format!("{name}.as_deref()"),
             Type::Decimal => format!("{name}.map(decimal_to_wire)"),
             Type::Timestamp => format!("{name}.map(timestamp_to_wire)"),
+            Type::Identifier(identifier) => {
+                let function = snake_case(identifier);
+                let open = schema.identifier(identifier).expect("identifier").open;
+                if open {
+                    format!("{name}.as_ref().map({function}_to_wire).transpose()?")
+                } else {
+                    format!("{name}.map({function}_to_wire).transpose()?")
+                }
+            }
             Type::Named(named) => format!(
                 "{name}.as_ref().map(|item| {}_to_wire(py, item)).transpose()?",
                 snake_case(named.strip_suffix("Wire").unwrap_or(named))

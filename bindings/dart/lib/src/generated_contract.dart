@@ -137,6 +137,7 @@ const providerMethods = <String, List<String>>{
     'testOrder',
     'depositInfo',
     'batchCancelOpenOrders',
+    'cancelAndNewOrder',
   ],
   'bithumb': <String>[
     'marketWarnings',
@@ -145,6 +146,7 @@ const providerMethods = <String, List<String>>{
     'transferFees',
     'apiKeys',
     'pendingOrders',
+    'batchOrders',
     'twapOrders',
     'createTwapOrder',
     'cancelTwapOrder',
@@ -156,6 +158,7 @@ const providerMethods = <String, List<String>>{
     'markPrice',
     'markPrices',
     'openInterest',
+    'aggregateTrades',
     'usdMCreateListenKey',
     'usdMKeepaliveListenKey',
     'usdMCloseListenKey',

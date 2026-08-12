@@ -70,7 +70,7 @@ class MaxtRustLib
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => 1333330311;
+  int get rustContentHash => -647127535;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -89,6 +89,12 @@ abstract class MaxtRustLibApi extends BaseApi {
 
   Future<List<WireBalance>> crateApiNativeClientBalances({
     required NativeClient that,
+  });
+
+  Future<List<WireBinanceAggregateTrade>>
+  crateApiNativeClientBinanceAggregateTrades({
+    required NativeClient that,
+    required WireBinanceAggregateTradesRequest request,
   });
 
   Future<WireBinanceMarkPrice> crateApiNativeClientBinanceMarkPrice({
@@ -150,6 +156,11 @@ abstract class MaxtRustLibApi extends BaseApi {
 
   Future<List<WireBithumbApiKey>> crateApiNativeClientBithumbApiKeys({
     required NativeClient that,
+  });
+
+  Future<WireBithumbBatchOrdersResult> crateApiNativeClientBithumbBatchOrders({
+    required NativeClient that,
+    required WireBithumbBatchOrdersRequest request,
   });
 
   Future<String> crateApiNativeClientBithumbCancelTwapOrder({
@@ -403,6 +414,12 @@ abstract class MaxtRustLibApi extends BaseApi {
   crateApiNativeClientUpbitBatchCancelOpenOrders({
     required NativeClient that,
     required WireUpbitBatchCancelRequest request,
+  });
+
+  Future<WireUpbitCancelAndNewOrderResult>
+  crateApiNativeClientUpbitCancelAndNewOrder({
+    required NativeClient that,
+    required WireUpbitCancelAndNewOrderRequest request,
   });
 
   Future<WireUpbitDepositInfo> crateApiNativeClientUpbitDepositInfo({
@@ -663,6 +680,48 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       );
 
   @override
+  Future<List<WireBinanceAggregateTrade>>
+  crateApiNativeClientBinanceAggregateTrades({
+    required NativeClient that,
+    required WireBinanceAggregateTradesRequest request,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
+            that,
+            serializer,
+          );
+          sse_encode_box_autoadd_wire_binance_aggregate_trades_request(
+            request,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 3,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_wire_binance_aggregate_trade,
+          decodeErrorData: sse_decode_native_error,
+        ),
+        constMeta: kCrateApiNativeClientBinanceAggregateTradesConstMeta,
+        argValues: [that, request],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiNativeClientBinanceAggregateTradesConstMeta =>
+      const TaskConstMeta(
+        debugName: "NativeClient_binance_aggregate_trades",
+        argNames: ["that", "request"],
+      );
+
+  @override
   Future<WireBinanceMarkPrice> crateApiNativeClientBinanceMarkPrice({
     required NativeClient that,
     required WireMarket market,
@@ -679,7 +738,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 3,
+            funcId: 4,
             port: port_,
           );
         },
@@ -715,7 +774,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 4,
+            funcId: 5,
             port: port_,
           );
         },
@@ -753,7 +812,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 5,
+            funcId: 6,
             port: port_,
           );
         },
@@ -785,7 +844,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_opt_String(apiKey, serializer);
           sse_encode_opt_String(secretKey, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 6)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 7)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -824,7 +883,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 7,
+            funcId: 8,
             port: port_,
           );
         },
@@ -863,7 +922,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 8,
+            funcId: 9,
             port: port_,
           );
         },
@@ -899,7 +958,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 9,
+            funcId: 10,
             port: port_,
           );
         },
@@ -935,7 +994,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 10,
+            funcId: 11,
             port: port_,
           );
         },
@@ -968,7 +1027,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_opt_String(apiKey, serializer);
           sse_encode_opt_String(secretKey, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 11)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 12)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -1003,7 +1062,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 12,
+            funcId: 13,
             port: port_,
           );
         },
@@ -1037,7 +1096,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
             that,
             serializer,
           );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 13)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 14)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_opt_box_autoadd_wire_binance_venue,
@@ -1067,7 +1126,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_opt_String(accessKey, serializer);
           sse_encode_opt_String(secretKey, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 14)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -1102,7 +1161,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 15,
+            funcId: 16,
             port: port_,
           );
         },
@@ -1124,6 +1183,47 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       );
 
   @override
+  Future<WireBithumbBatchOrdersResult> crateApiNativeClientBithumbBatchOrders({
+    required NativeClient that,
+    required WireBithumbBatchOrdersRequest request,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
+            that,
+            serializer,
+          );
+          sse_encode_box_autoadd_wire_bithumb_batch_orders_request(
+            request,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 17,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_wire_bithumb_batch_orders_result,
+          decodeErrorData: sse_decode_native_error,
+        ),
+        constMeta: kCrateApiNativeClientBithumbBatchOrdersConstMeta,
+        argValues: [that, request],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiNativeClientBithumbBatchOrdersConstMeta =>
+      const TaskConstMeta(
+        debugName: "NativeClient_bithumb_batch_orders",
+        argNames: ["that", "request"],
+      );
+
+  @override
   Future<String> crateApiNativeClientBithumbCancelTwapOrder({
     required NativeClient that,
     required String algoOrderId,
@@ -1140,7 +1240,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 16,
+            funcId: 18,
             port: port_,
           );
         },
@@ -1181,7 +1281,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 17,
+            funcId: 19,
             port: port_,
           );
         },
@@ -1217,7 +1317,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 18,
+            funcId: 20,
             port: port_,
           );
         },
@@ -1252,7 +1352,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 19,
+            funcId: 21,
             port: port_,
           );
         },
@@ -1290,7 +1390,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 20,
+            funcId: 22,
             port: port_,
           );
         },
@@ -1331,7 +1431,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 21,
+            funcId: 23,
             port: port_,
           );
         },
@@ -1369,7 +1469,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 22,
+            funcId: 24,
             port: port_,
           );
         },
@@ -1410,7 +1510,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 23,
+            funcId: 25,
             port: port_,
           );
         },
@@ -1450,7 +1550,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 24,
+            funcId: 26,
             port: port_,
           );
         },
@@ -1490,7 +1590,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 25,
+            funcId: 27,
             port: port_,
           );
         },
@@ -1531,7 +1631,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 26,
+            funcId: 28,
             port: port_,
           );
         },
@@ -1569,7 +1669,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 27,
+            funcId: 29,
             port: port_,
           );
         },
@@ -1607,7 +1707,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 28,
+            funcId: 30,
             port: port_,
           );
         },
@@ -1648,7 +1748,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 29,
+            funcId: 31,
             port: port_,
           );
         },
@@ -1689,7 +1789,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 30,
+            funcId: 32,
             port: port_,
           );
         },
@@ -1730,7 +1830,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 31,
+            funcId: 33,
             port: port_,
           );
         },
@@ -1766,7 +1866,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 32,
+            funcId: 34,
             port: port_,
           );
         },
@@ -1807,7 +1907,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 33,
+            funcId: 35,
             port: port_,
           );
         },
@@ -1838,7 +1938,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
             that,
             serializer,
           );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 34)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 36)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_wire_exchange,
@@ -1874,7 +1974,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 35,
+            funcId: 37,
             port: port_,
           );
         },
@@ -1907,7 +2007,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
             adapter,
             serializer,
           );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 36)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 38)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -1944,7 +2044,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 37,
+            funcId: 39,
             port: port_,
           );
         },
@@ -1982,7 +2082,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 38,
+            funcId: 40,
             port: port_,
           );
         },
@@ -2016,7 +2116,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           sse_encode_bool(testnet, serializer);
           sse_encode_opt_String(address, serializer);
           sse_encode_opt_String(privateKey, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 39)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 41)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -2051,7 +2151,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 40,
+            funcId: 42,
             port: port_,
           );
         },
@@ -2090,7 +2190,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 41,
+            funcId: 43,
             port: port_,
           );
         },
@@ -2135,7 +2235,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 42,
+            funcId: 44,
             port: port_,
           );
         },
@@ -2166,7 +2266,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
             that,
             serializer,
           );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 43)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 45)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_opt_box_autoadd_bool,
@@ -2200,7 +2300,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 44,
+            funcId: 46,
             port: port_,
           );
         },
@@ -2238,7 +2338,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 45,
+            funcId: 47,
             port: port_,
           );
         },
@@ -2276,7 +2376,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 46,
+            funcId: 48,
             port: port_,
           );
         },
@@ -2316,7 +2416,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 47,
+            funcId: 49,
             port: port_,
           );
         },
@@ -2355,7 +2455,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 48,
+            funcId: 50,
             port: port_,
           );
         },
@@ -2395,7 +2495,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 49,
+            funcId: 51,
             port: port_,
           );
         },
@@ -2436,7 +2536,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 50,
+            funcId: 52,
             port: port_,
           );
         },
@@ -2474,7 +2574,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 51,
+            funcId: 53,
             port: port_,
           );
         },
@@ -2512,7 +2612,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 52,
+            funcId: 54,
             port: port_,
           );
         },
@@ -2550,7 +2650,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 53,
+            funcId: 55,
             port: port_,
           );
         },
@@ -2588,7 +2688,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 54,
+            funcId: 56,
             port: port_,
           );
         },
@@ -2634,7 +2734,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 55,
+            funcId: 57,
             port: port_,
           );
         },
@@ -2675,7 +2775,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 56,
+            funcId: 58,
             port: port_,
           );
         },
@@ -2713,7 +2813,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 57,
+            funcId: 59,
             port: port_,
           );
         },
@@ -2751,7 +2851,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 58,
+            funcId: 60,
             port: port_,
           );
         },
@@ -2791,7 +2891,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 59,
+            funcId: 61,
             port: port_,
           );
         },
@@ -2830,7 +2930,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 60,
+            funcId: 62,
             port: port_,
           );
         },
@@ -2866,7 +2966,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
             serializer,
           );
           sse_encode_wire_feature(feature, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 61)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 63)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_bool,
@@ -2902,7 +3002,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 62,
+            funcId: 64,
             port: port_,
           );
         },
@@ -2941,7 +3041,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 63,
+            funcId: 65,
             port: port_,
           );
         },
@@ -2974,7 +3074,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           sse_encode_wire_upbit_region(region, serializer);
           sse_encode_opt_String(accessKey, serializer);
           sse_encode_opt_String(secretKey, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 64)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 66)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -3014,7 +3114,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 65,
+            funcId: 67,
             port: port_,
           );
         },
@@ -3032,6 +3132,48 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   TaskConstMeta get kCrateApiNativeClientUpbitBatchCancelOpenOrdersConstMeta =>
       const TaskConstMeta(
         debugName: "NativeClient_upbit_batch_cancel_open_orders",
+        argNames: ["that", "request"],
+      );
+
+  @override
+  Future<WireUpbitCancelAndNewOrderResult>
+  crateApiNativeClientUpbitCancelAndNewOrder({
+    required NativeClient that,
+    required WireUpbitCancelAndNewOrderRequest request,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
+            that,
+            serializer,
+          );
+          sse_encode_box_autoadd_wire_upbit_cancel_and_new_order_request(
+            request,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 68,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_wire_upbit_cancel_and_new_order_result,
+          decodeErrorData: sse_decode_native_error,
+        ),
+        constMeta: kCrateApiNativeClientUpbitCancelAndNewOrderConstMeta,
+        argValues: [that, request],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiNativeClientUpbitCancelAndNewOrderConstMeta =>
+      const TaskConstMeta(
+        debugName: "NativeClient_upbit_cancel_and_new_order",
         argNames: ["that", "request"],
       );
 
@@ -3054,7 +3196,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 66,
+            funcId: 69,
             port: port_,
           );
         },
@@ -3090,7 +3232,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 67,
+            funcId: 70,
             port: port_,
           );
         },
@@ -3130,7 +3272,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 68,
+            funcId: 71,
             port: port_,
           );
         },
@@ -3172,7 +3314,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 69,
+            funcId: 72,
             port: port_,
           );
         },
@@ -3211,7 +3353,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 70,
+            funcId: 73,
             port: port_,
           );
         },
@@ -3244,7 +3386,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
             that,
             serializer,
           );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 71)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 74)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_opt_box_autoadd_wire_upbit_region,
@@ -3280,7 +3422,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 72,
+            funcId: 75,
             port: port_,
           );
         },
@@ -3318,7 +3460,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 73,
+            funcId: 76,
             port: port_,
           );
         },
@@ -3356,7 +3498,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 74,
+            funcId: 77,
             port: port_,
           );
         },
@@ -3398,7 +3540,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 75,
+            funcId: 78,
             port: port_,
           );
         },
@@ -3436,7 +3578,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 76,
+            funcId: 79,
             port: port_,
           );
         },
@@ -3477,7 +3619,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 77,
+            funcId: 80,
             port: port_,
           );
         },
@@ -3518,7 +3660,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 78,
+            funcId: 81,
             port: port_,
           );
         },
@@ -3551,7 +3693,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
             that,
             serializer,
           );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 79)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 82)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -3587,7 +3729,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 80,
+            funcId: 83,
             port: port_,
           );
         },
@@ -3614,7 +3756,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 81)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 84)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -3637,7 +3779,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(relayUrl, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 82)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 85)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
@@ -3673,7 +3815,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 83,
+            funcId: 86,
             port: port_,
           );
         },
@@ -3709,7 +3851,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 84,
+            funcId: 87,
             port: port_,
           );
         },
@@ -3745,7 +3887,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 85,
+            funcId: 88,
             port: port_,
           );
         },
@@ -3781,7 +3923,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 86,
+            funcId: 89,
             port: port_,
           );
         },
@@ -3817,7 +3959,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 87,
+            funcId: 90,
             port: port_,
           );
         },
@@ -3844,7 +3986,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 88)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 91)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -3883,7 +4025,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 89,
+            funcId: 92,
             port: port_,
           );
         },
@@ -4559,6 +4701,12 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  BigInt dco_decode_box_autoadd_u_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_u_64(raw);
+  }
+
+  @protected
   WireAccountEvent dco_decode_box_autoadd_wire_account_event(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_wire_account_event(raw);
@@ -4571,9 +4719,38 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireBinanceAggregateTradesRequest
+  dco_decode_box_autoadd_wire_binance_aggregate_trades_request(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_wire_binance_aggregate_trades_request(raw);
+  }
+
+  @protected
   WireBinanceVenue dco_decode_box_autoadd_wire_binance_venue(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_wire_binance_venue(raw);
+  }
+
+  @protected
+  WireBithumbBatchOrder dco_decode_box_autoadd_wire_bithumb_batch_order(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_wire_bithumb_batch_order(raw);
+  }
+
+  @protected
+  WireBithumbBatchOrderFailure
+  dco_decode_box_autoadd_wire_bithumb_batch_order_failure(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_wire_bithumb_batch_order_failure(raw);
+  }
+
+  @protected
+  WireBithumbBatchOrdersRequest
+  dco_decode_box_autoadd_wire_bithumb_batch_orders_request(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_wire_bithumb_batch_orders_request(raw);
   }
 
   @protected
@@ -4917,6 +5094,13 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireUpbitCancelAndNewOrderRequest
+  dco_decode_box_autoadd_wire_upbit_cancel_and_new_order_request(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_wire_upbit_cancel_and_new_order_request(raw);
+  }
+
+  @protected
   WireUpbitOrderDirection dco_decode_box_autoadd_wire_upbit_order_direction(
     dynamic raw,
   ) {
@@ -4925,9 +5109,23 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireUpbitOrderVolume dco_decode_box_autoadd_wire_upbit_order_volume(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_wire_upbit_order_volume(raw);
+  }
+
+  @protected
   WireUpbitRegion dco_decode_box_autoadd_wire_upbit_region(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_wire_upbit_region(raw);
+  }
+
+  @protected
+  WireUpbitSmpType dco_decode_box_autoadd_wire_upbit_smp_type(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_wire_upbit_smp_type(raw);
   }
 
   @protected
@@ -5007,6 +5205,16 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  List<WireBinanceAggregateTrade> dco_decode_list_wire_binance_aggregate_trade(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>)
+        .map(dco_decode_wire_binance_aggregate_trade)
+        .toList();
+  }
+
+  @protected
   List<WireBinanceMarkPrice> dco_decode_list_wire_binance_mark_price(
     dynamic raw,
   ) {
@@ -5029,6 +5237,15 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>)
         .map(dco_decode_wire_bithumb_asset_fee)
+        .toList();
+  }
+
+  @protected
+  List<WireBithumbBatchOrderOutcome>
+  dco_decode_list_wire_bithumb_batch_order_outcome(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>)
+        .map(dco_decode_wire_bithumb_batch_order_outcome)
         .toList();
   }
 
@@ -5196,6 +5413,12 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  List<WireOrderRequest> dco_decode_list_wire_order_request(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_wire_order_request).toList();
+  }
+
+  @protected
   List<WireOrderStatus> dco_decode_list_wire_order_status(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_wire_order_status).toList();
@@ -5338,6 +5561,12 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  BigInt? dco_decode_opt_box_autoadd_u_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_u_64(raw);
+  }
+
+  @protected
   WireBinanceVenue? dco_decode_opt_box_autoadd_wire_binance_venue(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_box_autoadd_wire_binance_venue(raw);
@@ -5468,6 +5697,14 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireUpbitSmpType? dco_decode_opt_box_autoadd_wire_upbit_smp_type(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_wire_upbit_smp_type(raw);
+  }
+
+  @protected
   WireWithdrawalFee? dco_decode_opt_box_autoadd_wire_withdrawal_fee(
     dynamic raw,
   ) {
@@ -5589,6 +5826,43 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireBinanceAggregateTrade dco_decode_wire_binance_aggregate_trade(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 9)
+      throw Exception('unexpected arr length: expect 9 but see ${arr.length}');
+    return WireBinanceAggregateTrade(
+      market: dco_decode_wire_market(arr[0]),
+      aggregateId: dco_decode_u_64(arr[1]),
+      firstTradeId: dco_decode_u_64(arr[2]),
+      lastTradeId: dco_decode_u_64(arr[3]),
+      timestampNs: dco_decode_i_64(arr[4]),
+      price: dco_decode_String(arr[5]),
+      quantity: dco_decode_String(arr[6]),
+      normalQuantity: dco_decode_opt_String(arr[7]),
+      takerSide: dco_decode_wire_side(arr[8]),
+    );
+  }
+
+  @protected
+  WireBinanceAggregateTradesRequest
+  dco_decode_wire_binance_aggregate_trades_request(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    return WireBinanceAggregateTradesRequest(
+      market: dco_decode_wire_market(arr[0]),
+      fromId: dco_decode_opt_box_autoadd_u_64(arr[1]),
+      startTimeNs: dco_decode_opt_box_autoadd_i_64(arr[2]),
+      endTimeNs: dco_decode_opt_box_autoadd_i_64(arr[3]),
+      limit: dco_decode_opt_box_autoadd_u_32(arr[4]),
+    );
+  }
+
+  @protected
   WireBinanceMarkPrice dco_decode_wire_binance_mark_price(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -5689,6 +5963,85 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       displayName: dco_decode_String(arr[0]),
       asset: dco_decode_String(arr[1]),
       networks: dco_decode_list_wire_bithumb_network_fee(arr[2]),
+    );
+  }
+
+  @protected
+  WireBithumbBatchOrder dco_decode_wire_bithumb_batch_order(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 8)
+      throw Exception('unexpected arr length: expect 8 but see ${arr.length}');
+    return WireBithumbBatchOrder(
+      orderId: dco_decode_String(arr[0]),
+      clientOrderId: dco_decode_opt_String(arr[1]),
+      market: dco_decode_wire_market(arr[2]),
+      side: dco_decode_wire_side(arr[3]),
+      orderType: dco_decode_wire_order_type(arr[4]),
+      timeInForce: dco_decode_opt_String(arr[5]),
+      stpType: dco_decode_opt_String(arr[6]),
+      createdAtNs: dco_decode_opt_box_autoadd_i_64(arr[7]),
+    );
+  }
+
+  @protected
+  WireBithumbBatchOrderFailure dco_decode_wire_bithumb_batch_order_failure(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return WireBithumbBatchOrderFailure(
+      clientOrderId: dco_decode_opt_String(arr[0]),
+      timeInForce: dco_decode_opt_String(arr[1]),
+      code: dco_decode_String(arr[2]),
+      message: dco_decode_String(arr[3]),
+    );
+  }
+
+  @protected
+  WireBithumbBatchOrderOutcome dco_decode_wire_bithumb_batch_order_outcome(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    switch (raw[0]) {
+      case 0:
+        return WireBithumbBatchOrderOutcome_Accepted(
+          dco_decode_box_autoadd_wire_bithumb_batch_order(raw[1]),
+        );
+      case 1:
+        return WireBithumbBatchOrderOutcome_Rejected(
+          dco_decode_box_autoadd_wire_bithumb_batch_order_failure(raw[1]),
+        );
+      default:
+        throw Exception("unreachable");
+    }
+  }
+
+  @protected
+  WireBithumbBatchOrdersRequest dco_decode_wire_bithumb_batch_orders_request(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 1)
+      throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
+    return WireBithumbBatchOrdersRequest(
+      orders: dco_decode_list_wire_order_request(arr[0]),
+    );
+  }
+
+  @protected
+  WireBithumbBatchOrdersResult dco_decode_wire_bithumb_batch_orders_result(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 1)
+      throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
+    return WireBithumbBatchOrdersResult(
+      outcomes: dco_decode_list_wire_bithumb_batch_order_outcome(arr[0]),
     );
   }
 
@@ -6828,6 +7181,70 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireUpbitCancelAndNewOrder dco_decode_wire_upbit_cancel_and_new_order(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    switch (raw[0]) {
+      case 0:
+        return WireUpbitCancelAndNewOrder_Limit(
+          volume: dco_decode_box_autoadd_wire_upbit_order_volume(raw[1]),
+          price: dco_decode_String(raw[2]),
+          timeInForce: dco_decode_opt_box_autoadd_wire_time_in_force(raw[3]),
+        );
+      case 1:
+        return WireUpbitCancelAndNewOrder_MarketBuy(
+          price: dco_decode_String(raw[1]),
+        );
+      case 2:
+        return WireUpbitCancelAndNewOrder_MarketSell(
+          volume: dco_decode_box_autoadd_wire_upbit_order_volume(raw[1]),
+        );
+      case 3:
+        return WireUpbitCancelAndNewOrder_BestBuy(
+          price: dco_decode_String(raw[1]),
+          timeInForce: dco_decode_wire_time_in_force(raw[2]),
+        );
+      case 4:
+        return WireUpbitCancelAndNewOrder_BestSell(
+          volume: dco_decode_box_autoadd_wire_upbit_order_volume(raw[1]),
+          timeInForce: dco_decode_wire_time_in_force(raw[2]),
+        );
+      default:
+        throw Exception("unreachable");
+    }
+  }
+
+  @protected
+  WireUpbitCancelAndNewOrderRequest
+  dco_decode_wire_upbit_cancel_and_new_order_request(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return WireUpbitCancelAndNewOrderRequest(
+      previousOrder: dco_decode_wire_upbit_order_reference(arr[0]),
+      newOrder: dco_decode_wire_upbit_cancel_and_new_order(arr[1]),
+      newIdentifier: dco_decode_opt_String(arr[2]),
+      newSmpType: dco_decode_opt_box_autoadd_wire_upbit_smp_type(arr[3]),
+    );
+  }
+
+  @protected
+  WireUpbitCancelAndNewOrderResult
+  dco_decode_wire_upbit_cancel_and_new_order_result(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return WireUpbitCancelAndNewOrderResult(
+      previousOrder: dco_decode_wire_order(arr[0]),
+      newOrderUuid: dco_decode_opt_String(arr[1]),
+      newOrderIdentifier: dco_decode_opt_String(arr[2]),
+    );
+  }
+
+  @protected
   WireUpbitDepositInfo dco_decode_wire_upbit_deposit_info(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -6881,9 +7298,41 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireUpbitOrderReference dco_decode_wire_upbit_order_reference(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    switch (raw[0]) {
+      case 0:
+        return WireUpbitOrderReference_Uuid(dco_decode_String(raw[1]));
+      case 1:
+        return WireUpbitOrderReference_Identifier(dco_decode_String(raw[1]));
+      default:
+        throw Exception("unreachable");
+    }
+  }
+
+  @protected
+  WireUpbitOrderVolume dco_decode_wire_upbit_order_volume(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    switch (raw[0]) {
+      case 0:
+        return WireUpbitOrderVolume_Amount(dco_decode_String(raw[1]));
+      case 1:
+        return WireUpbitOrderVolume_RemainOnly();
+      default:
+        throw Exception("unreachable");
+    }
+  }
+
+  @protected
   WireUpbitRegion dco_decode_wire_upbit_region(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return WireUpbitRegion.values[raw as int];
+  }
+
+  @protected
+  WireUpbitSmpType dco_decode_wire_upbit_smp_type(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return WireUpbitSmpType.values[raw as int];
   }
 
   @protected
@@ -7657,6 +8106,12 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  BigInt sse_decode_box_autoadd_u_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_u_64(deserializer));
+  }
+
+  @protected
   WireAccountEvent sse_decode_box_autoadd_wire_account_event(
     SseDeserializer deserializer,
   ) {
@@ -7673,11 +8128,46 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireBinanceAggregateTradesRequest
+  sse_decode_box_autoadd_wire_binance_aggregate_trades_request(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_wire_binance_aggregate_trades_request(deserializer));
+  }
+
+  @protected
   WireBinanceVenue sse_decode_box_autoadd_wire_binance_venue(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_wire_binance_venue(deserializer));
+  }
+
+  @protected
+  WireBithumbBatchOrder sse_decode_box_autoadd_wire_bithumb_batch_order(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_wire_bithumb_batch_order(deserializer));
+  }
+
+  @protected
+  WireBithumbBatchOrderFailure
+  sse_decode_box_autoadd_wire_bithumb_batch_order_failure(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_wire_bithumb_batch_order_failure(deserializer));
+  }
+
+  @protected
+  WireBithumbBatchOrdersRequest
+  sse_decode_box_autoadd_wire_bithumb_batch_orders_request(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_wire_bithumb_batch_orders_request(deserializer));
   }
 
   @protected
@@ -8077,6 +8567,15 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireUpbitCancelAndNewOrderRequest
+  sse_decode_box_autoadd_wire_upbit_cancel_and_new_order_request(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_wire_upbit_cancel_and_new_order_request(deserializer));
+  }
+
+  @protected
   WireUpbitOrderDirection sse_decode_box_autoadd_wire_upbit_order_direction(
     SseDeserializer deserializer,
   ) {
@@ -8085,11 +8584,27 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireUpbitOrderVolume sse_decode_box_autoadd_wire_upbit_order_volume(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_wire_upbit_order_volume(deserializer));
+  }
+
+  @protected
   WireUpbitRegion sse_decode_box_autoadd_wire_upbit_region(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_wire_upbit_region(deserializer));
+  }
+
+  @protected
+  WireUpbitSmpType sse_decode_box_autoadd_wire_upbit_smp_type(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_wire_upbit_smp_type(deserializer));
   }
 
   @protected
@@ -8196,6 +8711,20 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  List<WireBinanceAggregateTrade> sse_decode_list_wire_binance_aggregate_trade(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <WireBinanceAggregateTrade>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_wire_binance_aggregate_trade(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
   List<WireBinanceMarkPrice> sse_decode_list_wire_binance_mark_price(
     SseDeserializer deserializer,
   ) {
@@ -8233,6 +8762,21 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
     var ans_ = <WireBithumbAssetFee>[];
     for (var idx_ = 0; idx_ < len_; ++idx_) {
       ans_.add(sse_decode_wire_bithumb_asset_fee(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<WireBithumbBatchOrderOutcome>
+  sse_decode_list_wire_bithumb_batch_order_outcome(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <WireBithumbBatchOrderOutcome>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_wire_bithumb_batch_order_outcome(deserializer));
     }
     return ans_;
   }
@@ -8531,6 +9075,20 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  List<WireOrderRequest> sse_decode_list_wire_order_request(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <WireOrderRequest>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_wire_order_request(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
   List<WireOrderStatus> sse_decode_list_wire_order_status(
     SseDeserializer deserializer,
   ) {
@@ -8768,6 +9326,17 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  BigInt? sse_decode_opt_box_autoadd_u_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_u_64(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
   WireBinanceVenue? sse_decode_opt_box_autoadd_wire_binance_venue(
     SseDeserializer deserializer,
   ) {
@@ -8997,6 +9566,19 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireUpbitSmpType? sse_decode_opt_box_autoadd_wire_upbit_smp_type(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_wire_upbit_smp_type(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
   WireWithdrawalFee? sse_decode_opt_box_autoadd_wire_withdrawal_fee(
     SseDeserializer deserializer,
   ) {
@@ -9142,6 +9724,53 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireBinanceAggregateTrade sse_decode_wire_binance_aggregate_trade(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_market = sse_decode_wire_market(deserializer);
+    var var_aggregateId = sse_decode_u_64(deserializer);
+    var var_firstTradeId = sse_decode_u_64(deserializer);
+    var var_lastTradeId = sse_decode_u_64(deserializer);
+    var var_timestampNs = sse_decode_i_64(deserializer);
+    var var_price = sse_decode_String(deserializer);
+    var var_quantity = sse_decode_String(deserializer);
+    var var_normalQuantity = sse_decode_opt_String(deserializer);
+    var var_takerSide = sse_decode_wire_side(deserializer);
+    return WireBinanceAggregateTrade(
+      market: var_market,
+      aggregateId: var_aggregateId,
+      firstTradeId: var_firstTradeId,
+      lastTradeId: var_lastTradeId,
+      timestampNs: var_timestampNs,
+      price: var_price,
+      quantity: var_quantity,
+      normalQuantity: var_normalQuantity,
+      takerSide: var_takerSide,
+    );
+  }
+
+  @protected
+  WireBinanceAggregateTradesRequest
+  sse_decode_wire_binance_aggregate_trades_request(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_market = sse_decode_wire_market(deserializer);
+    var var_fromId = sse_decode_opt_box_autoadd_u_64(deserializer);
+    var var_startTimeNs = sse_decode_opt_box_autoadd_i_64(deserializer);
+    var var_endTimeNs = sse_decode_opt_box_autoadd_i_64(deserializer);
+    var var_limit = sse_decode_opt_box_autoadd_u_32(deserializer);
+    return WireBinanceAggregateTradesRequest(
+      market: var_market,
+      fromId: var_fromId,
+      startTimeNs: var_startTimeNs,
+      endTimeNs: var_endTimeNs,
+      limit: var_limit,
+    );
+  }
+
+  @protected
   WireBinanceMarkPrice sse_decode_wire_binance_mark_price(
     SseDeserializer deserializer,
   ) {
@@ -9269,6 +9898,92 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       asset: var_asset,
       networks: var_networks,
     );
+  }
+
+  @protected
+  WireBithumbBatchOrder sse_decode_wire_bithumb_batch_order(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_orderId = sse_decode_String(deserializer);
+    var var_clientOrderId = sse_decode_opt_String(deserializer);
+    var var_market = sse_decode_wire_market(deserializer);
+    var var_side = sse_decode_wire_side(deserializer);
+    var var_orderType = sse_decode_wire_order_type(deserializer);
+    var var_timeInForce = sse_decode_opt_String(deserializer);
+    var var_stpType = sse_decode_opt_String(deserializer);
+    var var_createdAtNs = sse_decode_opt_box_autoadd_i_64(deserializer);
+    return WireBithumbBatchOrder(
+      orderId: var_orderId,
+      clientOrderId: var_clientOrderId,
+      market: var_market,
+      side: var_side,
+      orderType: var_orderType,
+      timeInForce: var_timeInForce,
+      stpType: var_stpType,
+      createdAtNs: var_createdAtNs,
+    );
+  }
+
+  @protected
+  WireBithumbBatchOrderFailure sse_decode_wire_bithumb_batch_order_failure(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_clientOrderId = sse_decode_opt_String(deserializer);
+    var var_timeInForce = sse_decode_opt_String(deserializer);
+    var var_code = sse_decode_String(deserializer);
+    var var_message = sse_decode_String(deserializer);
+    return WireBithumbBatchOrderFailure(
+      clientOrderId: var_clientOrderId,
+      timeInForce: var_timeInForce,
+      code: var_code,
+      message: var_message,
+    );
+  }
+
+  @protected
+  WireBithumbBatchOrderOutcome sse_decode_wire_bithumb_batch_order_outcome(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var tag_ = sse_decode_i_32(deserializer);
+    switch (tag_) {
+      case 0:
+        var var_field0 = sse_decode_box_autoadd_wire_bithumb_batch_order(
+          deserializer,
+        );
+        return WireBithumbBatchOrderOutcome_Accepted(var_field0);
+      case 1:
+        var var_field0 =
+            sse_decode_box_autoadd_wire_bithumb_batch_order_failure(
+              deserializer,
+            );
+        return WireBithumbBatchOrderOutcome_Rejected(var_field0);
+      default:
+        throw UnimplementedError('');
+    }
+  }
+
+  @protected
+  WireBithumbBatchOrdersRequest sse_decode_wire_bithumb_batch_orders_request(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_orders = sse_decode_list_wire_order_request(deserializer);
+    return WireBithumbBatchOrdersRequest(orders: var_orders);
+  }
+
+  @protected
+  WireBithumbBatchOrdersResult sse_decode_wire_bithumb_batch_orders_result(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_outcomes = sse_decode_list_wire_bithumb_batch_order_outcome(
+      deserializer,
+    );
+    return WireBithumbBatchOrdersResult(outcomes: var_outcomes);
   }
 
   @protected
@@ -10595,6 +11310,92 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireUpbitCancelAndNewOrder sse_decode_wire_upbit_cancel_and_new_order(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var tag_ = sse_decode_i_32(deserializer);
+    switch (tag_) {
+      case 0:
+        var var_volume = sse_decode_box_autoadd_wire_upbit_order_volume(
+          deserializer,
+        );
+        var var_price = sse_decode_String(deserializer);
+        var var_timeInForce = sse_decode_opt_box_autoadd_wire_time_in_force(
+          deserializer,
+        );
+        return WireUpbitCancelAndNewOrder_Limit(
+          volume: var_volume,
+          price: var_price,
+          timeInForce: var_timeInForce,
+        );
+      case 1:
+        var var_price = sse_decode_String(deserializer);
+        return WireUpbitCancelAndNewOrder_MarketBuy(price: var_price);
+      case 2:
+        var var_volume = sse_decode_box_autoadd_wire_upbit_order_volume(
+          deserializer,
+        );
+        return WireUpbitCancelAndNewOrder_MarketSell(volume: var_volume);
+      case 3:
+        var var_price = sse_decode_String(deserializer);
+        var var_timeInForce = sse_decode_wire_time_in_force(deserializer);
+        return WireUpbitCancelAndNewOrder_BestBuy(
+          price: var_price,
+          timeInForce: var_timeInForce,
+        );
+      case 4:
+        var var_volume = sse_decode_box_autoadd_wire_upbit_order_volume(
+          deserializer,
+        );
+        var var_timeInForce = sse_decode_wire_time_in_force(deserializer);
+        return WireUpbitCancelAndNewOrder_BestSell(
+          volume: var_volume,
+          timeInForce: var_timeInForce,
+        );
+      default:
+        throw UnimplementedError('');
+    }
+  }
+
+  @protected
+  WireUpbitCancelAndNewOrderRequest
+  sse_decode_wire_upbit_cancel_and_new_order_request(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_previousOrder = sse_decode_wire_upbit_order_reference(deserializer);
+    var var_newOrder = sse_decode_wire_upbit_cancel_and_new_order(deserializer);
+    var var_newIdentifier = sse_decode_opt_String(deserializer);
+    var var_newSmpType = sse_decode_opt_box_autoadd_wire_upbit_smp_type(
+      deserializer,
+    );
+    return WireUpbitCancelAndNewOrderRequest(
+      previousOrder: var_previousOrder,
+      newOrder: var_newOrder,
+      newIdentifier: var_newIdentifier,
+      newSmpType: var_newSmpType,
+    );
+  }
+
+  @protected
+  WireUpbitCancelAndNewOrderResult
+  sse_decode_wire_upbit_cancel_and_new_order_result(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_previousOrder = sse_decode_wire_order(deserializer);
+    var var_newOrderUuid = sse_decode_opt_String(deserializer);
+    var var_newOrderIdentifier = sse_decode_opt_String(deserializer);
+    return WireUpbitCancelAndNewOrderResult(
+      previousOrder: var_previousOrder,
+      newOrderUuid: var_newOrderUuid,
+      newOrderIdentifier: var_newOrderIdentifier,
+    );
+  }
+
+  @protected
   WireUpbitDepositInfo sse_decode_wire_upbit_deposit_info(
     SseDeserializer deserializer,
   ) {
@@ -10661,10 +11462,56 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireUpbitOrderReference sse_decode_wire_upbit_order_reference(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var tag_ = sse_decode_i_32(deserializer);
+    switch (tag_) {
+      case 0:
+        var var_field0 = sse_decode_String(deserializer);
+        return WireUpbitOrderReference_Uuid(var_field0);
+      case 1:
+        var var_field0 = sse_decode_String(deserializer);
+        return WireUpbitOrderReference_Identifier(var_field0);
+      default:
+        throw UnimplementedError('');
+    }
+  }
+
+  @protected
+  WireUpbitOrderVolume sse_decode_wire_upbit_order_volume(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var tag_ = sse_decode_i_32(deserializer);
+    switch (tag_) {
+      case 0:
+        var var_field0 = sse_decode_String(deserializer);
+        return WireUpbitOrderVolume_Amount(var_field0);
+      case 1:
+        return WireUpbitOrderVolume_RemainOnly();
+      default:
+        throw UnimplementedError('');
+    }
+  }
+
+  @protected
   WireUpbitRegion sse_decode_wire_upbit_region(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_i_32(deserializer);
     return WireUpbitRegion.values[inner];
+  }
+
+  @protected
+  WireUpbitSmpType sse_decode_wire_upbit_smp_type(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return WireUpbitSmpType.values[inner];
   }
 
   @protected
@@ -11473,6 +12320,12 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  void sse_encode_box_autoadd_u_64(BigInt self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_u_64(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_wire_account_event(
     WireAccountEvent self,
     SseSerializer serializer,
@@ -11491,12 +12344,48 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  void sse_encode_box_autoadd_wire_binance_aggregate_trades_request(
+    WireBinanceAggregateTradesRequest self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_binance_aggregate_trades_request(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_wire_binance_venue(
     WireBinanceVenue self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_wire_binance_venue(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_wire_bithumb_batch_order(
+    WireBithumbBatchOrder self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_bithumb_batch_order(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_wire_bithumb_batch_order_failure(
+    WireBithumbBatchOrderFailure self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_bithumb_batch_order_failure(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_wire_bithumb_batch_orders_request(
+    WireBithumbBatchOrdersRequest self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_bithumb_batch_orders_request(self, serializer);
   }
 
   @protected
@@ -11950,6 +12839,15 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  void sse_encode_box_autoadd_wire_upbit_cancel_and_new_order_request(
+    WireUpbitCancelAndNewOrderRequest self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_upbit_cancel_and_new_order_request(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_wire_upbit_order_direction(
     WireUpbitOrderDirection self,
     SseSerializer serializer,
@@ -11959,12 +12857,30 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  void sse_encode_box_autoadd_wire_upbit_order_volume(
+    WireUpbitOrderVolume self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_upbit_order_volume(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_wire_upbit_region(
     WireUpbitRegion self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_wire_upbit_region(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_wire_upbit_smp_type(
+    WireUpbitSmpType self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_upbit_smp_type(self, serializer);
   }
 
   @protected
@@ -12074,6 +12990,18 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  void sse_encode_list_wire_binance_aggregate_trade(
+    List<WireBinanceAggregateTrade> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_wire_binance_aggregate_trade(item, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_list_wire_binance_mark_price(
     List<WireBinanceMarkPrice> self,
     SseSerializer serializer,
@@ -12106,6 +13034,18 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
     sse_encode_i_32(self.length, serializer);
     for (final item in self) {
       sse_encode_wire_bithumb_asset_fee(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_wire_bithumb_batch_order_outcome(
+    List<WireBithumbBatchOrderOutcome> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_wire_bithumb_batch_order_outcome(item, serializer);
     }
   }
 
@@ -12374,6 +13314,18 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  void sse_encode_list_wire_order_request(
+    List<WireOrderRequest> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_wire_order_request(item, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_list_wire_order_status(
     List<WireOrderStatus> self,
     SseSerializer serializer,
@@ -12581,6 +13533,16 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
     sse_encode_bool(self != null, serializer);
     if (self != null) {
       sse_encode_box_autoadd_u_32(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_u_64(BigInt? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_u_64(self, serializer);
     }
   }
 
@@ -12809,6 +13771,19 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  void sse_encode_opt_box_autoadd_wire_upbit_smp_type(
+    WireUpbitSmpType? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_wire_upbit_smp_type(self, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_opt_box_autoadd_wire_withdrawal_fee(
     WireWithdrawalFee? self,
     SseSerializer serializer,
@@ -12935,6 +13910,36 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  void sse_encode_wire_binance_aggregate_trade(
+    WireBinanceAggregateTrade self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_market(self.market, serializer);
+    sse_encode_u_64(self.aggregateId, serializer);
+    sse_encode_u_64(self.firstTradeId, serializer);
+    sse_encode_u_64(self.lastTradeId, serializer);
+    sse_encode_i_64(self.timestampNs, serializer);
+    sse_encode_String(self.price, serializer);
+    sse_encode_String(self.quantity, serializer);
+    sse_encode_opt_String(self.normalQuantity, serializer);
+    sse_encode_wire_side(self.takerSide, serializer);
+  }
+
+  @protected
+  void sse_encode_wire_binance_aggregate_trades_request(
+    WireBinanceAggregateTradesRequest self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_market(self.market, serializer);
+    sse_encode_opt_box_autoadd_u_64(self.fromId, serializer);
+    sse_encode_opt_box_autoadd_i_64(self.startTimeNs, serializer);
+    sse_encode_opt_box_autoadd_i_64(self.endTimeNs, serializer);
+    sse_encode_opt_box_autoadd_u_32(self.limit, serializer);
+  }
+
+  @protected
   void sse_encode_wire_binance_mark_price(
     WireBinanceMarkPrice self,
     SseSerializer serializer,
@@ -13028,6 +14033,71 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
     sse_encode_String(self.displayName, serializer);
     sse_encode_String(self.asset, serializer);
     sse_encode_list_wire_bithumb_network_fee(self.networks, serializer);
+  }
+
+  @protected
+  void sse_encode_wire_bithumb_batch_order(
+    WireBithumbBatchOrder self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.orderId, serializer);
+    sse_encode_opt_String(self.clientOrderId, serializer);
+    sse_encode_wire_market(self.market, serializer);
+    sse_encode_wire_side(self.side, serializer);
+    sse_encode_wire_order_type(self.orderType, serializer);
+    sse_encode_opt_String(self.timeInForce, serializer);
+    sse_encode_opt_String(self.stpType, serializer);
+    sse_encode_opt_box_autoadd_i_64(self.createdAtNs, serializer);
+  }
+
+  @protected
+  void sse_encode_wire_bithumb_batch_order_failure(
+    WireBithumbBatchOrderFailure self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_opt_String(self.clientOrderId, serializer);
+    sse_encode_opt_String(self.timeInForce, serializer);
+    sse_encode_String(self.code, serializer);
+    sse_encode_String(self.message, serializer);
+  }
+
+  @protected
+  void sse_encode_wire_bithumb_batch_order_outcome(
+    WireBithumbBatchOrderOutcome self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    switch (self) {
+      case WireBithumbBatchOrderOutcome_Accepted(field0: final field0):
+        sse_encode_i_32(0, serializer);
+        sse_encode_box_autoadd_wire_bithumb_batch_order(field0, serializer);
+      case WireBithumbBatchOrderOutcome_Rejected(field0: final field0):
+        sse_encode_i_32(1, serializer);
+        sse_encode_box_autoadd_wire_bithumb_batch_order_failure(
+          field0,
+          serializer,
+        );
+    }
+  }
+
+  @protected
+  void sse_encode_wire_bithumb_batch_orders_request(
+    WireBithumbBatchOrdersRequest self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_wire_order_request(self.orders, serializer);
+  }
+
+  @protected
+  void sse_encode_wire_bithumb_batch_orders_result(
+    WireBithumbBatchOrdersResult self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_wire_bithumb_batch_order_outcome(self.outcomes, serializer);
   }
 
   @protected
@@ -14038,6 +15108,68 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  void sse_encode_wire_upbit_cancel_and_new_order(
+    WireUpbitCancelAndNewOrder self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    switch (self) {
+      case WireUpbitCancelAndNewOrder_Limit(
+        volume: final volume,
+        price: final price,
+        timeInForce: final timeInForce,
+      ):
+        sse_encode_i_32(0, serializer);
+        sse_encode_box_autoadd_wire_upbit_order_volume(volume, serializer);
+        sse_encode_String(price, serializer);
+        sse_encode_opt_box_autoadd_wire_time_in_force(timeInForce, serializer);
+      case WireUpbitCancelAndNewOrder_MarketBuy(price: final price):
+        sse_encode_i_32(1, serializer);
+        sse_encode_String(price, serializer);
+      case WireUpbitCancelAndNewOrder_MarketSell(volume: final volume):
+        sse_encode_i_32(2, serializer);
+        sse_encode_box_autoadd_wire_upbit_order_volume(volume, serializer);
+      case WireUpbitCancelAndNewOrder_BestBuy(
+        price: final price,
+        timeInForce: final timeInForce,
+      ):
+        sse_encode_i_32(3, serializer);
+        sse_encode_String(price, serializer);
+        sse_encode_wire_time_in_force(timeInForce, serializer);
+      case WireUpbitCancelAndNewOrder_BestSell(
+        volume: final volume,
+        timeInForce: final timeInForce,
+      ):
+        sse_encode_i_32(4, serializer);
+        sse_encode_box_autoadd_wire_upbit_order_volume(volume, serializer);
+        sse_encode_wire_time_in_force(timeInForce, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_wire_upbit_cancel_and_new_order_request(
+    WireUpbitCancelAndNewOrderRequest self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_upbit_order_reference(self.previousOrder, serializer);
+    sse_encode_wire_upbit_cancel_and_new_order(self.newOrder, serializer);
+    sse_encode_opt_String(self.newIdentifier, serializer);
+    sse_encode_opt_box_autoadd_wire_upbit_smp_type(self.newSmpType, serializer);
+  }
+
+  @protected
+  void sse_encode_wire_upbit_cancel_and_new_order_result(
+    WireUpbitCancelAndNewOrderResult self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_order(self.previousOrder, serializer);
+    sse_encode_opt_String(self.newOrderUuid, serializer);
+    sse_encode_opt_String(self.newOrderIdentifier, serializer);
+  }
+
+  @protected
   void sse_encode_wire_upbit_deposit_info(
     WireUpbitDepositInfo self,
     SseSerializer serializer,
@@ -14086,8 +15218,48 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  void sse_encode_wire_upbit_order_reference(
+    WireUpbitOrderReference self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    switch (self) {
+      case WireUpbitOrderReference_Uuid(field0: final field0):
+        sse_encode_i_32(0, serializer);
+        sse_encode_String(field0, serializer);
+      case WireUpbitOrderReference_Identifier(field0: final field0):
+        sse_encode_i_32(1, serializer);
+        sse_encode_String(field0, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_wire_upbit_order_volume(
+    WireUpbitOrderVolume self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    switch (self) {
+      case WireUpbitOrderVolume_Amount(field0: final field0):
+        sse_encode_i_32(0, serializer);
+        sse_encode_String(field0, serializer);
+      case WireUpbitOrderVolume_RemainOnly():
+        sse_encode_i_32(1, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_wire_upbit_region(
     WireUpbitRegion self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
+  void sse_encode_wire_upbit_smp_type(
+    WireUpbitSmpType self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -14340,6 +15512,13 @@ class NativeClientImpl extends RustOpaque implements NativeClient {
   Future<List<WireBalance>> balances() =>
       MaxtRustLib.instance.api.crateApiNativeClientBalances(that: this);
 
+  Future<List<WireBinanceAggregateTrade>> binanceAggregateTrades({
+    required WireBinanceAggregateTradesRequest request,
+  }) => MaxtRustLib.instance.api.crateApiNativeClientBinanceAggregateTrades(
+    that: this,
+    request: request,
+  );
+
   Future<WireBinanceMarkPrice> binanceMarkPrice({required WireMarket market}) =>
       MaxtRustLib.instance.api.crateApiNativeClientBinanceMarkPrice(
         that: this,
@@ -14390,6 +15569,13 @@ class NativeClientImpl extends RustOpaque implements NativeClient {
 
   Future<List<WireBithumbApiKey>> bithumbApiKeys() =>
       MaxtRustLib.instance.api.crateApiNativeClientBithumbApiKeys(that: this);
+
+  Future<WireBithumbBatchOrdersResult> bithumbBatchOrders({
+    required WireBithumbBatchOrdersRequest request,
+  }) => MaxtRustLib.instance.api.crateApiNativeClientBithumbBatchOrders(
+    that: this,
+    request: request,
+  );
 
   Future<String> bithumbCancelTwapOrder({required String algoOrderId}) =>
       MaxtRustLib.instance.api.crateApiNativeClientBithumbCancelTwapOrder(
@@ -14692,6 +15878,13 @@ class NativeClientImpl extends RustOpaque implements NativeClient {
   Future<WireCancelOrdersResult> upbitBatchCancelOpenOrders({
     required WireUpbitBatchCancelRequest request,
   }) => MaxtRustLib.instance.api.crateApiNativeClientUpbitBatchCancelOpenOrders(
+    that: this,
+    request: request,
+  );
+
+  Future<WireUpbitCancelAndNewOrderResult> upbitCancelAndNewOrder({
+    required WireUpbitCancelAndNewOrderRequest request,
+  }) => MaxtRustLib.instance.api.crateApiNativeClientUpbitCancelAndNewOrder(
     that: this,
     request: request,
   );

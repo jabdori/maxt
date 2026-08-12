@@ -64,6 +64,92 @@ class WireAssetNetwork {
           memoRequired == other.memoRequired;
 }
 
+class WireBinanceAggregateTrade {
+  final WireMarket market;
+  final BigInt aggregateId;
+  final BigInt firstTradeId;
+  final BigInt lastTradeId;
+  final PlatformInt64 timestampNs;
+  final String price;
+  final String quantity;
+  final String? normalQuantity;
+  final WireSide takerSide;
+
+  const WireBinanceAggregateTrade({
+    required this.market,
+    required this.aggregateId,
+    required this.firstTradeId,
+    required this.lastTradeId,
+    required this.timestampNs,
+    required this.price,
+    required this.quantity,
+    this.normalQuantity,
+    required this.takerSide,
+  });
+
+  @override
+  int get hashCode =>
+      market.hashCode ^
+      aggregateId.hashCode ^
+      firstTradeId.hashCode ^
+      lastTradeId.hashCode ^
+      timestampNs.hashCode ^
+      price.hashCode ^
+      quantity.hashCode ^
+      normalQuantity.hashCode ^
+      takerSide.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBinanceAggregateTrade &&
+          runtimeType == other.runtimeType &&
+          market == other.market &&
+          aggregateId == other.aggregateId &&
+          firstTradeId == other.firstTradeId &&
+          lastTradeId == other.lastTradeId &&
+          timestampNs == other.timestampNs &&
+          price == other.price &&
+          quantity == other.quantity &&
+          normalQuantity == other.normalQuantity &&
+          takerSide == other.takerSide;
+}
+
+class WireBinanceAggregateTradesRequest {
+  final WireMarket market;
+  final BigInt? fromId;
+  final PlatformInt64? startTimeNs;
+  final PlatformInt64? endTimeNs;
+  final int? limit;
+
+  const WireBinanceAggregateTradesRequest({
+    required this.market,
+    this.fromId,
+    this.startTimeNs,
+    this.endTimeNs,
+    this.limit,
+  });
+
+  @override
+  int get hashCode =>
+      market.hashCode ^
+      fromId.hashCode ^
+      startTimeNs.hashCode ^
+      endTimeNs.hashCode ^
+      limit.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBinanceAggregateTradesRequest &&
+          runtimeType == other.runtimeType &&
+          market == other.market &&
+          fromId == other.fromId &&
+          startTimeNs == other.startTimeNs &&
+          endTimeNs == other.endTimeNs &&
+          limit == other.limit;
+}
+
 class WireBinanceMarkPrice {
   final WireMarket market;
   final String markPrice;
@@ -175,6 +261,128 @@ class WireBithumbAssetFee {
           displayName == other.displayName &&
           asset == other.asset &&
           networks == other.networks;
+}
+
+class WireBithumbBatchOrder {
+  final String orderId;
+  final String? clientOrderId;
+  final WireMarket market;
+  final WireSide side;
+  final WireOrderType orderType;
+  final String? timeInForce;
+  final String? stpType;
+  final PlatformInt64? createdAtNs;
+
+  const WireBithumbBatchOrder({
+    required this.orderId,
+    this.clientOrderId,
+    required this.market,
+    required this.side,
+    required this.orderType,
+    this.timeInForce,
+    this.stpType,
+    this.createdAtNs,
+  });
+
+  @override
+  int get hashCode =>
+      orderId.hashCode ^
+      clientOrderId.hashCode ^
+      market.hashCode ^
+      side.hashCode ^
+      orderType.hashCode ^
+      timeInForce.hashCode ^
+      stpType.hashCode ^
+      createdAtNs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbBatchOrder &&
+          runtimeType == other.runtimeType &&
+          orderId == other.orderId &&
+          clientOrderId == other.clientOrderId &&
+          market == other.market &&
+          side == other.side &&
+          orderType == other.orderType &&
+          timeInForce == other.timeInForce &&
+          stpType == other.stpType &&
+          createdAtNs == other.createdAtNs;
+}
+
+class WireBithumbBatchOrderFailure {
+  final String? clientOrderId;
+  final String? timeInForce;
+  final String code;
+  final String message;
+
+  const WireBithumbBatchOrderFailure({
+    this.clientOrderId,
+    this.timeInForce,
+    required this.code,
+    required this.message,
+  });
+
+  @override
+  int get hashCode =>
+      clientOrderId.hashCode ^
+      timeInForce.hashCode ^
+      code.hashCode ^
+      message.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbBatchOrderFailure &&
+          runtimeType == other.runtimeType &&
+          clientOrderId == other.clientOrderId &&
+          timeInForce == other.timeInForce &&
+          code == other.code &&
+          message == other.message;
+}
+
+@freezed
+sealed class WireBithumbBatchOrderOutcome with _$WireBithumbBatchOrderOutcome {
+  const WireBithumbBatchOrderOutcome._();
+
+  const factory WireBithumbBatchOrderOutcome.accepted(
+    WireBithumbBatchOrder field0,
+  ) = WireBithumbBatchOrderOutcome_Accepted;
+  const factory WireBithumbBatchOrderOutcome.rejected(
+    WireBithumbBatchOrderFailure field0,
+  ) = WireBithumbBatchOrderOutcome_Rejected;
+}
+
+class WireBithumbBatchOrdersRequest {
+  final List<WireOrderRequest> orders;
+
+  const WireBithumbBatchOrdersRequest({required this.orders});
+
+  @override
+  int get hashCode => orders.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbBatchOrdersRequest &&
+          runtimeType == other.runtimeType &&
+          orders == other.orders;
+}
+
+class WireBithumbBatchOrdersResult {
+  final List<WireBithumbBatchOrderOutcome> outcomes;
+
+  const WireBithumbBatchOrdersResult({required this.outcomes});
+
+  @override
+  int get hashCode => outcomes.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbBatchOrdersResult &&
+          runtimeType == other.runtimeType &&
+          outcomes == other.outcomes;
 }
 
 class WireBithumbNetworkFee {
@@ -1263,6 +1471,88 @@ sealed class WireUpbitBatchCancelScope with _$WireUpbitBatchCancelScope {
   }) = WireUpbitBatchCancelScope_Pairs;
 }
 
+@freezed
+sealed class WireUpbitCancelAndNewOrder with _$WireUpbitCancelAndNewOrder {
+  const WireUpbitCancelAndNewOrder._();
+
+  const factory WireUpbitCancelAndNewOrder.limit({
+    required WireUpbitOrderVolume volume,
+    required String price,
+    WireTimeInForce? timeInForce,
+  }) = WireUpbitCancelAndNewOrder_Limit;
+  const factory WireUpbitCancelAndNewOrder.marketBuy({required String price}) =
+      WireUpbitCancelAndNewOrder_MarketBuy;
+  const factory WireUpbitCancelAndNewOrder.marketSell({
+    required WireUpbitOrderVolume volume,
+  }) = WireUpbitCancelAndNewOrder_MarketSell;
+  const factory WireUpbitCancelAndNewOrder.bestBuy({
+    required String price,
+    required WireTimeInForce timeInForce,
+  }) = WireUpbitCancelAndNewOrder_BestBuy;
+  const factory WireUpbitCancelAndNewOrder.bestSell({
+    required WireUpbitOrderVolume volume,
+    required WireTimeInForce timeInForce,
+  }) = WireUpbitCancelAndNewOrder_BestSell;
+}
+
+class WireUpbitCancelAndNewOrderRequest {
+  final WireUpbitOrderReference previousOrder;
+  final WireUpbitCancelAndNewOrder newOrder;
+  final String? newIdentifier;
+  final WireUpbitSmpType? newSmpType;
+
+  const WireUpbitCancelAndNewOrderRequest({
+    required this.previousOrder,
+    required this.newOrder,
+    this.newIdentifier,
+    this.newSmpType,
+  });
+
+  @override
+  int get hashCode =>
+      previousOrder.hashCode ^
+      newOrder.hashCode ^
+      newIdentifier.hashCode ^
+      newSmpType.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitCancelAndNewOrderRequest &&
+          runtimeType == other.runtimeType &&
+          previousOrder == other.previousOrder &&
+          newOrder == other.newOrder &&
+          newIdentifier == other.newIdentifier &&
+          newSmpType == other.newSmpType;
+}
+
+class WireUpbitCancelAndNewOrderResult {
+  final WireOrder previousOrder;
+  final String? newOrderUuid;
+  final String? newOrderIdentifier;
+
+  const WireUpbitCancelAndNewOrderResult({
+    required this.previousOrder,
+    this.newOrderUuid,
+    this.newOrderIdentifier,
+  });
+
+  @override
+  int get hashCode =>
+      previousOrder.hashCode ^
+      newOrderUuid.hashCode ^
+      newOrderIdentifier.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitCancelAndNewOrderResult &&
+          runtimeType == other.runtimeType &&
+          previousOrder == other.previousOrder &&
+          newOrderUuid == other.newOrderUuid &&
+          newOrderIdentifier == other.newOrderIdentifier;
+}
+
 class WireUpbitDepositInfo {
   final String asset;
   final String? network;
@@ -1339,6 +1629,26 @@ class WireUpbitOrderBookInstrument {
           quoteCurrency == other.quoteCurrency &&
           tickSize == other.tickSize &&
           supportedLevels == other.supportedLevels;
+}
+
+@freezed
+sealed class WireUpbitOrderReference with _$WireUpbitOrderReference {
+  const WireUpbitOrderReference._();
+
+  const factory WireUpbitOrderReference.uuid(String field0) =
+      WireUpbitOrderReference_Uuid;
+  const factory WireUpbitOrderReference.identifier(String field0) =
+      WireUpbitOrderReference_Identifier;
+}
+
+@freezed
+sealed class WireUpbitOrderVolume with _$WireUpbitOrderVolume {
+  const WireUpbitOrderVolume._();
+
+  const factory WireUpbitOrderVolume.amount(String field0) =
+      WireUpbitOrderVolume_Amount;
+  const factory WireUpbitOrderVolume.remainOnly() =
+      WireUpbitOrderVolume_RemainOnly;
 }
 
 class WireUpbitYearCandle {

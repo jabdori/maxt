@@ -7,7 +7,7 @@ from decimal import Decimal
 from typing import Any, ClassVar, Optional, Union
 
 from ._generated_identifiers import *  # noqa: F403
-from .models import Balance, Cursor, Market, Timestamp, WireModel, _ascii_upper, _decode_value, _model_to_wire
+from .models import Balance, Cursor, Market, Order, OrderRequest, Timestamp, WireModel, _ascii_upper, _decode_value, _model_to_wire
 
 
 @dataclass(frozen=True)
@@ -567,6 +567,255 @@ class UpbitBatchCancelRequest(WireModel):
 
 
 @dataclass(frozen=True)
+class UpbitOrderReference(WireModel):
+    _wire_union: ClassVar[bool] = True
+    kind: str
+    value: Optional[str] = None
+
+    @classmethod
+    def uuid(cls, value: str) -> UpbitOrderReference:
+        return cls("uuid", value=value)
+
+    @classmethod
+    def identifier(cls, value: str) -> UpbitOrderReference:
+        return cls("identifier", value=value)
+
+    @classmethod
+    def from_wire(cls, value: dict[str, Any]) -> UpbitOrderReference:
+        kind = value.get("kind")
+        if kind == "uuid":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"UpbitOrderReference.uuid does not accept {key}")
+            return cls.uuid(
+                value=_decode_value(str, value["value"]),
+            )
+        if kind == "identifier":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"UpbitOrderReference.identifier does not accept {key}")
+            return cls.identifier(
+                value=_decode_value(str, value["value"]),
+            )
+        raise ValueError(f"unknown UpbitOrderReference kind: {kind}")
+
+    def to_wire(self) -> dict[str, Any]:
+        if self.kind == "uuid":
+            if self.value is None:
+                raise ValueError("UpbitOrderReference.uuid requires value")
+            return {
+                "kind": "uuid",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "identifier":
+            if self.value is None:
+                raise ValueError("UpbitOrderReference.identifier requires value")
+            return {
+                "kind": "identifier",
+                "value": _model_to_wire(self.value),
+            }
+        raise ValueError(f"unknown UpbitOrderReference kind: {self.kind}")
+
+
+@dataclass(frozen=True)
+class UpbitOrderVolume(WireModel):
+    _wire_union: ClassVar[bool] = True
+    kind: str
+    value: Optional[Decimal] = None
+
+    @classmethod
+    def amount(cls, value: Decimal) -> UpbitOrderVolume:
+        return cls("amount", value=value)
+
+    @classmethod
+    def remain_only(cls) -> UpbitOrderVolume:
+        return cls("remain_only")
+
+    @classmethod
+    def from_wire(cls, value: dict[str, Any]) -> UpbitOrderVolume:
+        kind = value.get("kind")
+        if kind == "amount":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"UpbitOrderVolume.amount does not accept {key}")
+            return cls.amount(
+                value=_decode_value(Decimal, value["value"]),
+            )
+        if kind == "remain_only":
+            for key in value:
+                if key not in {"kind"}:
+                    raise ValueError(f"UpbitOrderVolume.remain_only does not accept {key}")
+            return cls.remain_only(
+            )
+        raise ValueError(f"unknown UpbitOrderVolume kind: {kind}")
+
+    def to_wire(self) -> dict[str, Any]:
+        if self.kind == "amount":
+            if self.value is None:
+                raise ValueError("UpbitOrderVolume.amount requires value")
+            return {
+                "kind": "amount",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "remain_only":
+            if self.value is not None:
+                raise ValueError("UpbitOrderVolume.remain_only does not accept value")
+            return {
+                "kind": "remain_only",
+            }
+        raise ValueError(f"unknown UpbitOrderVolume kind: {self.kind}")
+
+
+@dataclass(frozen=True)
+class UpbitCancelAndNewOrder(WireModel):
+    _wire_union: ClassVar[bool] = True
+    kind: str
+    volume: Optional[UpbitOrderVolume] = None
+    price: Optional[Decimal] = None
+    time_in_force: Optional[TimeInForce] = None
+
+    @classmethod
+    def limit(cls, volume: UpbitOrderVolume, price: Decimal, time_in_force: Optional[TimeInForce] = None) -> UpbitCancelAndNewOrder:
+        return cls("limit", volume=volume, price=price, time_in_force=time_in_force)
+
+    @classmethod
+    def market_buy(cls, price: Decimal) -> UpbitCancelAndNewOrder:
+        return cls("market_buy", price=price)
+
+    @classmethod
+    def market_sell(cls, volume: UpbitOrderVolume) -> UpbitCancelAndNewOrder:
+        return cls("market_sell", volume=volume)
+
+    @classmethod
+    def best_buy(cls, price: Decimal, time_in_force: TimeInForce) -> UpbitCancelAndNewOrder:
+        return cls("best_buy", price=price, time_in_force=time_in_force)
+
+    @classmethod
+    def best_sell(cls, volume: UpbitOrderVolume, time_in_force: TimeInForce) -> UpbitCancelAndNewOrder:
+        return cls("best_sell", volume=volume, time_in_force=time_in_force)
+
+    @classmethod
+    def from_wire(cls, value: dict[str, Any]) -> UpbitCancelAndNewOrder:
+        kind = value.get("kind")
+        if kind == "limit":
+            for key in value:
+                if key not in {"kind", "volume", "price", "time_in_force"}:
+                    raise ValueError(f"UpbitCancelAndNewOrder.limit does not accept {key}")
+            return cls.limit(
+                volume=_decode_value(UpbitOrderVolume, value["volume"]),
+                price=_decode_value(Decimal, value["price"]),
+                time_in_force=_decode_value(Optional[TimeInForce], value.get("time_in_force")),
+            )
+        if kind == "market_buy":
+            for key in value:
+                if key not in {"kind", "price"}:
+                    raise ValueError(f"UpbitCancelAndNewOrder.market_buy does not accept {key}")
+            return cls.market_buy(
+                price=_decode_value(Decimal, value["price"]),
+            )
+        if kind == "market_sell":
+            for key in value:
+                if key not in {"kind", "volume"}:
+                    raise ValueError(f"UpbitCancelAndNewOrder.market_sell does not accept {key}")
+            return cls.market_sell(
+                volume=_decode_value(UpbitOrderVolume, value["volume"]),
+            )
+        if kind == "best_buy":
+            for key in value:
+                if key not in {"kind", "price", "time_in_force"}:
+                    raise ValueError(f"UpbitCancelAndNewOrder.best_buy does not accept {key}")
+            return cls.best_buy(
+                price=_decode_value(Decimal, value["price"]),
+                time_in_force=_decode_value(TimeInForce, value["time_in_force"]),
+            )
+        if kind == "best_sell":
+            for key in value:
+                if key not in {"kind", "volume", "time_in_force"}:
+                    raise ValueError(f"UpbitCancelAndNewOrder.best_sell does not accept {key}")
+            return cls.best_sell(
+                volume=_decode_value(UpbitOrderVolume, value["volume"]),
+                time_in_force=_decode_value(TimeInForce, value["time_in_force"]),
+            )
+        raise ValueError(f"unknown UpbitCancelAndNewOrder kind: {kind}")
+
+    def to_wire(self) -> dict[str, Any]:
+        if self.kind == "limit":
+            if self.volume is None:
+                raise ValueError("UpbitCancelAndNewOrder.limit requires volume")
+            if self.price is None:
+                raise ValueError("UpbitCancelAndNewOrder.limit requires price")
+            return {
+                "kind": "limit",
+                "volume": _model_to_wire(self.volume),
+                "price": _model_to_wire(self.price),
+                "time_in_force": _model_to_wire(self.time_in_force),
+            }
+        if self.kind == "market_buy":
+            if self.volume is not None:
+                raise ValueError("UpbitCancelAndNewOrder.market_buy does not accept volume")
+            if self.time_in_force is not None:
+                raise ValueError("UpbitCancelAndNewOrder.market_buy does not accept time_in_force")
+            if self.price is None:
+                raise ValueError("UpbitCancelAndNewOrder.market_buy requires price")
+            return {
+                "kind": "market_buy",
+                "price": _model_to_wire(self.price),
+            }
+        if self.kind == "market_sell":
+            if self.price is not None:
+                raise ValueError("UpbitCancelAndNewOrder.market_sell does not accept price")
+            if self.time_in_force is not None:
+                raise ValueError("UpbitCancelAndNewOrder.market_sell does not accept time_in_force")
+            if self.volume is None:
+                raise ValueError("UpbitCancelAndNewOrder.market_sell requires volume")
+            return {
+                "kind": "market_sell",
+                "volume": _model_to_wire(self.volume),
+            }
+        if self.kind == "best_buy":
+            if self.volume is not None:
+                raise ValueError("UpbitCancelAndNewOrder.best_buy does not accept volume")
+            if self.price is None:
+                raise ValueError("UpbitCancelAndNewOrder.best_buy requires price")
+            if self.time_in_force is None:
+                raise ValueError("UpbitCancelAndNewOrder.best_buy requires time_in_force")
+            return {
+                "kind": "best_buy",
+                "price": _model_to_wire(self.price),
+                "time_in_force": _model_to_wire(self.time_in_force),
+            }
+        if self.kind == "best_sell":
+            if self.price is not None:
+                raise ValueError("UpbitCancelAndNewOrder.best_sell does not accept price")
+            if self.volume is None:
+                raise ValueError("UpbitCancelAndNewOrder.best_sell requires volume")
+            if self.time_in_force is None:
+                raise ValueError("UpbitCancelAndNewOrder.best_sell requires time_in_force")
+            return {
+                "kind": "best_sell",
+                "volume": _model_to_wire(self.volume),
+                "time_in_force": _model_to_wire(self.time_in_force),
+            }
+        raise ValueError(f"unknown UpbitCancelAndNewOrder kind: {self.kind}")
+
+
+@dataclass(frozen=True)
+class UpbitCancelAndNewOrderRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    previous_order: UpbitOrderReference
+    new_order: UpbitCancelAndNewOrder
+    new_identifier: Optional[str] = None
+    new_smp_type: Optional[UpbitSmpType] = None
+
+
+@dataclass(frozen=True)
+class UpbitCancelAndNewOrderResult(WireModel):
+    previous_order: Order
+    new_order_uuid: Optional[str] = None
+    new_order_identifier: Optional[str] = None
+
+
+@dataclass(frozen=True)
 class BithumbNotice(WireModel):
     categories: list[str]
     title: str
@@ -589,6 +838,88 @@ class BithumbPendingOrdersRequest(WireModel):
     limit: Optional[int] = None
     order_by: Optional[BithumbOrderDirection] = None
     cursor: Optional[Cursor] = None
+
+
+@dataclass(frozen=True)
+class BithumbBatchOrdersRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    orders: list[OrderRequest]
+
+
+@dataclass(frozen=True)
+class BithumbBatchOrder(WireModel):
+    order_id: str
+    client_order_id: Optional[str]
+    market: Market
+    side: Side
+    order_type: OrderType
+    time_in_force: Optional[str] = None
+    stp_type: Optional[str] = None
+    created_at: Optional[Timestamp] = None
+
+
+@dataclass(frozen=True)
+class BithumbBatchOrderFailure(WireModel):
+    client_order_id: Optional[str]
+    time_in_force: Optional[str]
+    code: str
+    message: str
+
+
+@dataclass(frozen=True)
+class BithumbBatchOrderOutcome(WireModel):
+    _wire_union: ClassVar[bool] = True
+    kind: str
+    value: Optional[Union[BithumbBatchOrder, BithumbBatchOrderFailure]] = None
+
+    @classmethod
+    def accepted(cls, value: BithumbBatchOrder) -> BithumbBatchOrderOutcome:
+        return cls("accepted", value=value)
+
+    @classmethod
+    def rejected(cls, value: BithumbBatchOrderFailure) -> BithumbBatchOrderOutcome:
+        return cls("rejected", value=value)
+
+    @classmethod
+    def from_wire(cls, value: dict[str, Any]) -> BithumbBatchOrderOutcome:
+        kind = value.get("kind")
+        if kind == "accepted":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"BithumbBatchOrderOutcome.accepted does not accept {key}")
+            return cls.accepted(
+                value=_decode_value(BithumbBatchOrder, value["value"]),
+            )
+        if kind == "rejected":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"BithumbBatchOrderOutcome.rejected does not accept {key}")
+            return cls.rejected(
+                value=_decode_value(BithumbBatchOrderFailure, value["value"]),
+            )
+        raise ValueError(f"unknown BithumbBatchOrderOutcome kind: {kind}")
+
+    def to_wire(self) -> dict[str, Any]:
+        if self.kind == "accepted":
+            if self.value is None:
+                raise ValueError("BithumbBatchOrderOutcome.accepted requires value")
+            return {
+                "kind": "accepted",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "rejected":
+            if self.value is None:
+                raise ValueError("BithumbBatchOrderOutcome.rejected requires value")
+            return {
+                "kind": "rejected",
+                "value": _model_to_wire(self.value),
+            }
+        raise ValueError(f"unknown BithumbBatchOrderOutcome kind: {self.kind}")
+
+
+@dataclass(frozen=True)
+class BithumbBatchOrdersResult(WireModel):
+    outcomes: list[BithumbBatchOrderOutcome]
 
 
 @dataclass(frozen=True)
@@ -674,6 +1005,29 @@ class BinanceOpenInterest(WireModel):
 
 
 @dataclass(frozen=True)
+class BinanceAggregateTradesRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    market: Market
+    from_id: Optional[int] = None
+    start_time: Optional[Timestamp] = None
+    end_time: Optional[Timestamp] = None
+    limit: Optional[int] = None
+
+
+@dataclass(frozen=True)
+class BinanceAggregateTrade(WireModel):
+    market: Market
+    aggregate_id: int
+    first_trade_id: int
+    last_trade_id: int
+    timestamp: Timestamp
+    price: Decimal
+    quantity: Decimal
+    normal_quantity: Optional[Decimal]
+    taker_side: Side
+
+
+@dataclass(frozen=True)
 class HyperliquidMidPrice(WireModel):
     market: Market
     price: Decimal
@@ -712,9 +1066,19 @@ __all__ = [
     "UpbitDepositInfo",
     "UpbitBatchCancelScope",
     "UpbitBatchCancelRequest",
+    "UpbitOrderReference",
+    "UpbitOrderVolume",
+    "UpbitCancelAndNewOrder",
+    "UpbitCancelAndNewOrderRequest",
+    "UpbitCancelAndNewOrderResult",
     "BithumbNotice",
     "BithumbApiKey",
     "BithumbPendingOrdersRequest",
+    "BithumbBatchOrdersRequest",
+    "BithumbBatchOrder",
+    "BithumbBatchOrderFailure",
+    "BithumbBatchOrderOutcome",
+    "BithumbBatchOrdersResult",
     "BithumbTwapOrdersRequest",
     "BithumbTwapOrderRequest",
     "BithumbTwapOrder",
@@ -722,5 +1086,7 @@ __all__ = [
     "BithumbNetworkFee",
     "BinanceMarkPrice",
     "BinanceOpenInterest",
+    "BinanceAggregateTradesRequest",
+    "BinanceAggregateTrade",
     "HyperliquidMidPrice",
 ]

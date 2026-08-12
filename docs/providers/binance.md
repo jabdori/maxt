@@ -26,6 +26,7 @@ One `BinanceAdapter` is fixed to Spot or USD-M perpetual futures.
 | `mark_price(market)` | `Error::Unsupported` | `/fapi/v1/premiumIndex`; one USD-M perpetual mark-price snapshot |
 | `mark_prices()` | `Error::Unsupported` | `/fapi/v1/premiumIndex`; current snapshots for supported USD-M perpetual markets |
 | `open_interest(market)` | `Error::Unsupported` | `/fapi/v1/openInterest`; one USD-M perpetual open-interest snapshot |
+| `aggregate_trades(request)` | `Error::Unsupported` | USD-M only, public `/fapi/v1/aggTrades`; `limit: 1..=1000` (`None -> 500`); `from_id` is inclusive and cannot be combined with time bounds; `start_time` and `end_time` are inclusive and must span less than one hour |
 
 Trades are newest-first. Spot order books have no provider timestamp and use
 local read time; USD-M order books retain the provider timestamp. Unknown
@@ -100,6 +101,12 @@ The USD-M `mark_price`, `mark_prices`, and `open_interest` calls are public and
 read-only. They are fixture-verified; live reads have not been verified. The
 `mark_prices()` result is limited to maxt's USD-M perpetual market universe.
 
+`aggregate_trades(request)` is also a public, read-only USD-M endpoint. Binance
+only retains the latest 48 hours of futures trade history. The endpoint returns
+one page, so use the last aggregate ID plus one as the next `from_id` when
+walking by cursor. This method is fixture-verified; live reads have not been
+verified.
+
 `subscribe_account` manages USD-M listen keys. Spot uses the signed
 `userDataStream.subscribe.signature` request and no listen key.
 
@@ -121,6 +128,7 @@ consume that header. HTTP 429 and 418 satisfy
 - [USD-M REST market data](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data)
 - [USD-M Mark Price](https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Mark-Price)
 - [USD-M Open Interest](https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Open-Interest)
+- [USD-M Compressed/Aggregate Trades](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data#compressed-aggregate-trades-list)
 - [USD-M public streams](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/public)
 - [USD-M market streams](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market)
 

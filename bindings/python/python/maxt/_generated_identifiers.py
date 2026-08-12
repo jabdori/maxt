@@ -244,6 +244,12 @@ class UpbitOrderDirection(str, Enum):
     DESCENDING = "desc"
 
 
+class UpbitSmpType(str, Enum):
+    CANCEL_MAKER = "cancel_maker"
+    CANCEL_TAKER = "cancel_taker"
+    REDUCE = "reduce"
+
+
 class BithumbAlertStep(str, Enum):
     CAUTION = "caution"
     WARNING = "warning"
@@ -392,6 +398,7 @@ TimeInForce.__module__ = "maxt.models"
 SizeKind.__module__ = "maxt.models"
 UpbitRegion.__module__ = "maxt.models"
 UpbitOrderDirection.__module__ = "maxt.models"
+UpbitSmpType.__module__ = "maxt.models"
 BithumbAlertStep.__module__ = "maxt.models"
 BithumbPendingOrderState.__module__ = "maxt.models"
 BithumbOrderDirection.__module__ = "maxt.models"
@@ -421,6 +428,7 @@ __all__ = [
     "SizeKind",
     "UpbitRegion",
     "UpbitOrderDirection",
+    "UpbitSmpType",
     "BithumbAlertStep",
     "BithumbPendingOrderState",
     "BithumbOrderDirection",

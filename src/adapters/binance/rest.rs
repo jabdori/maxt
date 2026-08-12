@@ -9,7 +9,9 @@ use std::cmp::Reverse;
 
 use rust_decimal::Decimal;
 
-use crate::adapters::{candles as candle_pages, inclusive_millis_before};
+use crate::adapters::{
+    candles as candle_pages, inclusive_millis_at_or_after, inclusive_millis_before,
+};
 use crate::error::{Error, Result};
 use crate::feature::Feature;
 use crate::request::CandleRequest;
@@ -17,12 +19,15 @@ use crate::transport::HttpRequest;
 use crate::types::{Candle, Market, MarketInfo, MarketKind, OrderBook, Ticker, Timestamp, Trade};
 
 use super::{
-    BinanceAdapter, BinanceMarkPrice, BinanceMarket, BinanceOpenInterest, EXCHANGE, now_millis,
-    parse,
+    BinanceAdapter, BinanceAggregateTrade, BinanceAggregateTradesRequest, BinanceMarkPrice,
+    BinanceMarket, BinanceOpenInterest, EXCHANGE, now_millis, parse,
 };
 
 /// The most recent trades either venue will return in one call.
 const MAX_TRADE_LIMIT: u32 = 1_000;
+/// Binance's maximum number of compressed aggregate trades in one response.
+const MAX_AGGREGATE_TRADE_LIMIT: u32 = 1_000;
+const AGGREGATE_TRADE_WINDOW_NANOS: i64 = 60 * 60 * 1_000_000_000;
 
 /// The largest spot depth Binance returns in one response.
 const MAX_SPOT_DEPTH: u32 = 5_000;
@@ -104,6 +109,101 @@ pub(super) fn trades_request(
         HttpRequest::get(format!("{}/trades", adapter.venue().public_prefix()))
             .query(query(&params)),
     )
+}
+
+fn check_usd_m_aggregate_trades(adapter: &BinanceAdapter) -> Result<()> {
+    if adapter.venue() == BinanceMarket::UsdMFutures {
+        return Ok(());
+    }
+    Err(Error::unsupported(
+        Feature::Trades,
+        EXCHANGE,
+        "compressed aggregate trades are available on the USD-M futures adapter only",
+    ))
+}
+
+/// Builds one USD-M compressed aggregate-trade request.
+pub(super) fn aggregate_trades_request(
+    adapter: &BinanceAdapter,
+    request: &BinanceAggregateTradesRequest,
+) -> Result<HttpRequest> {
+    check_usd_m_aggregate_trades(adapter)?;
+
+    let limit = request.limit.unwrap_or(500);
+    if !(1..=MAX_AGGREGATE_TRADE_LIMIT).contains(&limit) {
+        return Err(Error::invalid_request(
+            "limit",
+            format!(
+                "binance serves 1 to {MAX_AGGREGATE_TRADE_LIMIT} aggregate trades per call, not {limit}"
+            ),
+        ));
+    }
+    if request.from_id.is_some() && (request.start_time.is_some() || request.end_time.is_some()) {
+        return Err(Error::invalid_request(
+            "from_id",
+            "Binance aggregate trades use either from_id or start/end time bounds, not both",
+        ));
+    }
+    if request
+        .from_id
+        .is_some_and(|from_id| from_id > i64::MAX as u64)
+    {
+        return Err(Error::invalid_request(
+            "from_id",
+            "Binance aggregate trade IDs must fit the documented signed 64-bit range",
+        ));
+    }
+    let start_millis = request.start_time.map(inclusive_millis_at_or_after);
+    let end_millis = request.end_time.map(inclusive_millis_at_or_before);
+    if let (Some(start), Some(end)) = (request.start_time, request.end_time) {
+        let width = end
+            .as_nanos()
+            .checked_sub(start.as_nanos())
+            .ok_or_else(|| Error::invalid_request("end_time", "must not precede start_time"))?;
+        if width < 0 {
+            return Err(Error::invalid_request(
+                "end_time",
+                "must not precede start_time",
+            ));
+        }
+        if width >= AGGREGATE_TRADE_WINDOW_NANOS {
+            return Err(Error::invalid_request(
+                "end_time",
+                "Binance aggregate trade time windows must be shorter than one hour",
+            ));
+        }
+        if start_millis > end_millis {
+            return Err(Error::invalid_request(
+                "end_time",
+                "start_time and end_time do not overlap at millisecond precision",
+            ));
+        }
+    }
+
+    let mut params = vec![("symbol", adapter.symbol(&request.market)?)];
+    if let Some(from_id) = request.from_id {
+        params.push(("fromId", from_id.to_string()));
+    } else {
+        if let Some(start) = start_millis {
+            params.push(("startTime", start.to_string()));
+        }
+        if let Some(end) = end_millis {
+            params.push(("endTime", end.to_string()));
+        }
+    }
+    // Sending the documented default is explicit and keeps generated clients'
+    // request snapshots stable across Binance default changes.
+    params.push(("limit", limit.to_string()));
+
+    Ok(HttpRequest::get(format!(
+        "{}/aggTrades",
+        BinanceMarket::UsdMFutures.public_prefix()
+    ))
+    .query(query(&params)))
+}
+
+fn inclusive_millis_at_or_before(value: Timestamp) -> i64 {
+    value.as_nanos().div_euclid(1_000_000)
 }
 
 pub(super) fn order_book_request(
@@ -241,6 +341,19 @@ pub(super) async fn trades(
         .await?;
 
     newest_first(market, parse::json(&body, "trades")?)
+}
+
+pub(super) async fn aggregate_trades(
+    adapter: &BinanceAdapter,
+    request: &BinanceAggregateTradesRequest,
+) -> Result<Vec<BinanceAggregateTrade>> {
+    let body = adapter
+        .send(aggregate_trades_request(adapter, request)?)
+        .await?;
+    let raw: Vec<parse::RawAggregateTrade> = parse::json(&body, "aggregate trades")?;
+    raw.iter()
+        .map(|trade| parse::aggregate_trade(&request.market, trade))
+        .collect()
 }
 
 /// Puts a trades payload in the order the common API promises.
@@ -514,6 +627,120 @@ mod tests {
                 .target(),
             "/fapi/v1/openInterest?symbol=BTCUSDT"
         );
+    }
+
+    #[test]
+    fn aggregate_trades_use_usd_m_and_preserve_binances_query_order() {
+        let request = BinanceAggregateTradesRequest::new(btc_usdt_perp())
+            .with_from_id(26129)
+            .limit(50);
+        assert_eq!(
+            aggregate_trades_request(&perp(), &request)
+                .expect("a valid aggregate-trade request")
+                .target(),
+            "/fapi/v1/aggTrades?symbol=BTCUSDT&fromId=26129&limit=50"
+        );
+
+        let timed = BinanceAggregateTradesRequest::new(btc_usdt_perp())
+            .start_time(Timestamp::from_nanos(1_623_319_461_670_500_000))
+            .end_time(Timestamp::from_nanos(1_623_319_462_670_499_999));
+        assert_eq!(
+            aggregate_trades_request(&perp(), &timed)
+                .expect("a valid time window")
+                .target(),
+            "/fapi/v1/aggTrades?symbol=BTCUSDT&startTime=1623319461671&endTime=1623319462670&limit=500"
+        );
+    }
+
+    #[test]
+    fn aggregate_trades_reject_wrong_venue_and_unsafe_windows_before_network() {
+        let spot_request = BinanceAggregateTradesRequest::new(btc_usdt());
+        assert!(matches!(
+            aggregate_trades_request(&spot(), &spot_request),
+            Err(Error::Unsupported {
+                feature: Feature::Trades,
+                ..
+            })
+        ));
+
+        let mixed = BinanceAggregateTradesRequest::new(btc_usdt_perp())
+            .with_from_id(10)
+            .start_time(Timestamp::from_millis(1_000));
+        assert!(matches!(
+            aggregate_trades_request(&perp(), &mixed),
+            Err(Error::InvalidRequest { field, .. }) if field == "from_id"
+        ));
+
+        let out_of_range =
+            BinanceAggregateTradesRequest::new(btc_usdt_perp()).with_from_id(i64::MAX as u64 + 1);
+        assert!(matches!(
+            aggregate_trades_request(&perp(), &out_of_range),
+            Err(Error::InvalidRequest { field, .. }) if field == "from_id"
+        ));
+
+        let too_wide = BinanceAggregateTradesRequest::new(btc_usdt_perp())
+            .start_time(Timestamp::from_millis(1_000))
+            .end_time(Timestamp::from_millis(3_601_000));
+        assert!(matches!(
+            aggregate_trades_request(&perp(), &too_wide),
+            Err(Error::InvalidRequest { field, .. }) if field == "end_time"
+        ));
+
+        for request in [
+            BinanceAggregateTradesRequest::new(btc_usdt_perp()).limit(0),
+            BinanceAggregateTradesRequest::new(btc_usdt_perp()).limit(1_001),
+        ] {
+            assert!(matches!(
+                aggregate_trades_request(&perp(), &request),
+                Err(Error::InvalidRequest { .. })
+            ));
+        }
+    }
+
+    #[test]
+    fn aggregate_trades_preserve_ids_rpi_quantity_and_taker_side() {
+        let raw: Vec<parse::RawAggregateTrade> = parse::json(
+            r#"[
+              {"a":26129,"p":"0.01633102","q":"4.70443515","nq":"4.00000000",
+               "f":27781,"l":27784,"T":1498793709153,"m":true},
+              {"a":26130,"p":"0.01633103","q":"1.2",
+               "f":27785,"l":27785,"T":1498793709253,"m":false}
+            ]"#,
+            "aggregate trades",
+        )
+        .expect("official aggregate-trade payload");
+        let trades: Vec<_> = raw
+            .iter()
+            .map(|entry| parse::aggregate_trade(&btc_usdt_perp(), entry))
+            .collect::<Result<_>>()
+            .expect("aggregate trades");
+
+        assert_eq!(trades[0].aggregate_id, 26129);
+        assert_eq!(trades[0].first_trade_id, 27781);
+        assert_eq!(trades[0].last_trade_id, 27784);
+        assert_eq!(trades[0].quantity.to_string(), "4.70443515");
+        assert_eq!(
+            trades[0].normal_quantity.expect("nq").to_string(),
+            "4.00000000"
+        );
+        assert_eq!(trades[0].taker_side, crate::types::Side::Sell);
+        assert_eq!(trades[1].normal_quantity, None);
+        assert_eq!(trades[1].taker_side, crate::types::Side::Buy);
+
+        let invalid = parse::RawAggregateTrade {
+            aggregate_id: 1,
+            price: "1".to_owned(),
+            quantity: "1".to_owned(),
+            normal_quantity: None,
+            first_trade_id: 3,
+            last_trade_id: 2,
+            time: 0,
+            is_buyer_maker: false,
+        };
+        assert!(matches!(
+            parse::aggregate_trade(&btc_usdt_perp(), &invalid),
+            Err(Error::Decode { .. })
+        ));
     }
 
     #[test]

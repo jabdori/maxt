@@ -16,7 +16,9 @@ use crate::types::{
     Timestamp, Trade,
 };
 
-use super::{BinanceMarkPrice, BinanceMarket, BinanceOpenInterest, market_status};
+use super::{
+    BinanceAggregateTrade, BinanceMarkPrice, BinanceMarket, BinanceOpenInterest, market_status,
+};
 
 /// Reads a decimal out of the raw text Binance sent.
 ///
@@ -99,6 +101,35 @@ pub(super) struct RawTrade {
     #[serde(rename = "time", alias = "T")]
     pub(super) time: i64,
     #[serde(rename = "isBuyerMaker", alias = "m")]
+    pub(super) is_buyer_maker: bool,
+}
+
+/// One compressed aggregate trade from USD-M `/fapi/v1/aggTrades`.
+#[derive(Debug, Clone, Deserialize)]
+pub(super) struct RawAggregateTrade {
+    /// Aggregate trade ID.
+    #[serde(rename = "a")]
+    pub(super) aggregate_id: u64,
+    /// Aggregate price.
+    #[serde(rename = "p")]
+    pub(super) price: String,
+    /// Aggregate quantity, including RPI fills when present.
+    #[serde(rename = "q")]
+    pub(super) quantity: String,
+    /// Quantity excluding RPI fills. Older payloads may omit this field.
+    #[serde(rename = "nq", default)]
+    pub(super) normal_quantity: Option<String>,
+    /// First individual trade ID covered by the aggregate.
+    #[serde(rename = "f")]
+    pub(super) first_trade_id: u64,
+    /// Last individual trade ID covered by the aggregate.
+    #[serde(rename = "l")]
+    pub(super) last_trade_id: u64,
+    /// Aggregate timestamp in milliseconds.
+    #[serde(rename = "T")]
+    pub(super) time: i64,
+    /// Whether the buyer was the maker.
+    #[serde(rename = "m")]
     pub(super) is_buyer_maker: bool,
 }
 
@@ -307,6 +338,38 @@ pub(super) fn trade(market: &Market, raw: &RawTrade) -> Result<Trade> {
             Side::Buy
         },
         id: Some(raw.id.to_string()),
+    })
+}
+
+/// Converts a compressed aggregate trade while preserving its fill range.
+pub(super) fn aggregate_trade(
+    market: &Market,
+    raw: &RawAggregateTrade,
+) -> Result<BinanceAggregateTrade> {
+    if raw.last_trade_id < raw.first_trade_id {
+        return Err(Error::decode(
+            "aggregate trade fill IDs are not an ascending range",
+        ));
+    }
+
+    Ok(BinanceAggregateTrade {
+        market: market.clone(),
+        aggregate_id: raw.aggregate_id,
+        first_trade_id: raw.first_trade_id,
+        last_trade_id: raw.last_trade_id,
+        timestamp: millis(raw.time),
+        price: decimal(&raw.price, "p")?,
+        quantity: decimal(&raw.quantity, "q")?,
+        normal_quantity: raw
+            .normal_quantity
+            .as_deref()
+            .map(|value| decimal(value, "nq"))
+            .transpose()?,
+        taker_side: if raw.is_buyer_maker {
+            Side::Sell
+        } else {
+            Side::Buy
+        },
     })
 }
 

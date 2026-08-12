@@ -23,9 +23,10 @@ use crate::types::{
 use super::parse::{self, EXCHANGE};
 use super::rest;
 use super::{
-    BithumbApiKey, BithumbCredentials, BithumbOrderDirection, BithumbPendingOrderState,
-    BithumbPendingOrdersRequest, BithumbTwapOrder, BithumbTwapOrderDirection,
-    BithumbTwapOrderRequest, BithumbTwapOrdersRequest, BithumbTwapState,
+    BithumbApiKey, BithumbBatchOrder, BithumbBatchOrderFailure, BithumbBatchOrderOutcome,
+    BithumbBatchOrdersRequest, BithumbBatchOrdersResult, BithumbCredentials, BithumbOrderDirection,
+    BithumbPendingOrderState, BithumbPendingOrdersRequest, BithumbTwapOrder,
+    BithumbTwapOrderDirection, BithumbTwapOrderRequest, BithumbTwapOrdersRequest, BithumbTwapState,
 };
 
 /// JWT claims sent to Bithumb; query fields are omitted for parameterless calls.
@@ -371,6 +372,48 @@ pub(crate) fn create_twap_order_request(
         .map_err(|err| Error::decode(format!("could not build the Bithumb TWAP body: {err}")))?;
 
     Ok(HttpRequest::post("/v1/twap")
+        .json_body(body)
+        .header("authorization", authorization(credentials, &query)?))
+}
+
+/// Builds Bithumb's non-atomic batch-order request.
+pub(crate) fn batch_orders_request(
+    credentials: &BithumbCredentials,
+    request: &BithumbBatchOrdersRequest,
+) -> Result<HttpRequest> {
+    if !(1..=20).contains(&request.orders.len()) {
+        return Err(Error::invalid_request(
+            "orders",
+            format!(
+                "bithumb accepts 1 to 20 batch orders, not {}",
+                request.orders.len()
+            ),
+        ));
+    }
+
+    let mut body_orders = Vec::with_capacity(request.orders.len());
+    let mut signed_params = Vec::new();
+    for (index, order) in request.orders.iter().enumerate() {
+        let placed = placed_order(order)?;
+        let mut body = serde_json::Map::new();
+        for (key, value) in placed.params {
+            signed_params.push((format!("batch_orders[{index}][{key}]"), value.clone()));
+            body.insert(key.to_string(), Value::String(value));
+        }
+        body_orders.push(Value::Object(body));
+    }
+
+    let signed_params = signed_params
+        .iter()
+        .map(|(key, value)| (key.as_str(), value.clone()))
+        .collect::<Vec<_>>();
+    let query = signed_query(&signed_params)?;
+    let body = serde_json::to_string(&serde_json::json!({
+        "batch_orders": body_orders
+    }))
+    .map_err(|err| Error::decode(format!("could not build the Bithumb batch body: {err}")))?;
+
+    Ok(HttpRequest::post("/v2/orders/batch")
         .json_body(body)
         .header("authorization", authorization(credentials, &query)?))
 }
@@ -1087,6 +1130,89 @@ pub(crate) async fn place_order(
     )
 }
 
+pub(crate) async fn batch_orders(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    request: &BithumbBatchOrdersRequest,
+) -> Result<BithumbBatchOrdersResult> {
+    let body = rest::send(http, &batch_orders_request(credentials, request)?).await?;
+    batch_orders_result(&body)
+}
+
+fn batch_orders_result(body: &Value) -> Result<BithumbBatchOrdersResult> {
+    let outcomes = body
+        .get("batch_orders_response")
+        .and_then(Value::as_array)
+        .ok_or_else(|| {
+            Error::decode("bithumb batch-order response has no `batch_orders_response` array")
+        })?
+        .iter()
+        .map(batch_order_outcome)
+        .collect::<Result<Vec<_>>>()?;
+    Ok(BithumbBatchOrdersResult { outcomes })
+}
+
+fn batch_order_outcome(entry: &Value) -> Result<BithumbBatchOrderOutcome> {
+    let client_order_id = batch_text(entry, "client_order_id")?;
+    if let Some(order_id) = batch_text(entry, "order_id")? {
+        if order_id.is_empty() {
+            return Err(Error::decode(
+                "bithumb batch-order success carries an empty `order_id`",
+            ));
+        }
+        let market = parse::market_field(entry, "market")?;
+        let side = parse::side(entry, "side")?;
+        let order_type = match batch_text(entry, "order_type")?
+            .ok_or_else(|| Error::decode("bithumb batch-order success carries no `order_type`"))?
+            .as_str()
+        {
+            "limit" => crate::types::OrderType::Limit,
+            "price" | "market" => crate::types::OrderType::Market,
+            "best" => crate::types::OrderType::Best,
+            other => {
+                return Err(Error::decode(format!(
+                    "bithumb batch-order has unknown `order_type`: `{other}`"
+                )));
+            }
+        };
+        let created_at = batch_text(entry, "created_at")?
+            .map(|raw| {
+                parse::offset_time(&raw).ok_or_else(|| {
+                    Error::decode(format!(
+                        "bithumb batch-order `created_at` is not RFC 3339: `{raw}`"
+                    ))
+                })
+            })
+            .transpose()?;
+        let time_in_force = batch_text(entry, "time_in_force")?;
+        let stp_type = batch_text(entry, "stp_type")?;
+        return Ok(BithumbBatchOrderOutcome::Accepted(BithumbBatchOrder {
+            order_id,
+            client_order_id,
+            market,
+            side,
+            order_type,
+            time_in_force,
+            stp_type,
+            created_at,
+        }));
+    }
+
+    let time_in_force = batch_text(entry, "time_in_force")?;
+    let code = batch_text(entry, "name")?
+        .ok_or_else(|| Error::decode("bithumb batch-order failure carries no `name`"))?;
+    let message = batch_text(entry, "message")?
+        .ok_or_else(|| Error::decode("bithumb batch-order failure carries no `message`"))?;
+    Ok(BithumbBatchOrderOutcome::Rejected(
+        BithumbBatchOrderFailure {
+            client_order_id,
+            time_in_force,
+            code,
+            message,
+        },
+    ))
+}
+
 pub(crate) async fn cancel_order(
     http: &HttpTransport,
     credentials: &BithumbCredentials,
@@ -1490,6 +1616,137 @@ mod tests {
         assert_eq!(result.failed[0].order_id, None);
         assert_eq!(result.failed[0].client_id.as_deref(), Some("missing-1"));
         assert_eq!(result.failed[0].code.as_deref(), Some("order_not_found"));
+    }
+
+    #[test]
+    fn batch_order_hash_matches_the_flattened_body_and_preserves_duplicate_ids() {
+        let first = OrderRequest::limit(
+            btc_krw(),
+            Side::Buy,
+            Size::Base(Decimal::new(1, 3)),
+            Decimal::from(100_000_000),
+        )
+        .client_id("duplicate");
+        let second = OrderRequest::limit(
+            btc_krw(),
+            Side::Sell,
+            Size::Base(Decimal::new(2, 3)),
+            Decimal::from(101_000_000),
+        )
+        .client_id("duplicate");
+        let request = batch_orders_request(
+            &credentials(),
+            &BithumbBatchOrdersRequest::new(vec![first, second]),
+        )
+        .expect("a signed batch request");
+        let body: Value =
+            serde_json::from_str(request.body.as_deref().expect("a body")).expect("valid JSON");
+        let authorization = request
+            .headers
+            .iter()
+            .find(|(name, _)| name == "authorization")
+            .map(|(_, value)| value)
+            .expect("an authorization header");
+
+        assert_eq!(request.target(), "/v2/orders/batch");
+        assert_eq!(
+            body,
+            serde_json::json!({
+                "batch_orders": [
+                    {
+                        "market": "KRW-BTC",
+                        "side": "bid",
+                        "order_type": "limit",
+                        "price": "100000000",
+                        "volume": "0.001",
+                        "client_order_id": "duplicate"
+                    },
+                    {
+                        "market": "KRW-BTC",
+                        "side": "ask",
+                        "order_type": "limit",
+                        "price": "101000000",
+                        "volume": "0.002",
+                        "client_order_id": "duplicate"
+                    }
+                ]
+            })
+        );
+        assert_eq!(
+            payload(authorization)["query_hash"],
+            sha512_hex(
+                b"batch_orders[0][market]=KRW-BTC&batch_orders[0][side]=bid&batch_orders[0][order_type]=limit&batch_orders[0][price]=100000000&batch_orders[0][volume]=0.001&batch_orders[0][client_order_id]=duplicate&batch_orders[1][market]=KRW-BTC&batch_orders[1][side]=ask&batch_orders[1][order_type]=limit&batch_orders[1][price]=101000000&batch_orders[1][volume]=0.002&batch_orders[1][client_order_id]=duplicate"
+            )
+        );
+    }
+
+    #[test]
+    fn batch_order_limit_and_market_validation_happen_before_signing() {
+        let order = OrderRequest::market(btc_krw(), Side::Buy, Size::Quote(Decimal::ONE));
+        let twenty = BithumbBatchOrdersRequest::new(vec![order.clone(); 20]);
+        assert!(batch_orders_request(&credentials(), &twenty).is_ok());
+        assert!(matches!(
+            batch_orders_request(
+                &credentials(),
+                &BithumbBatchOrdersRequest::new(vec![order.clone(); 21]),
+            ),
+            Err(Error::InvalidRequest { field, .. }) if field == "orders"
+        ));
+
+        let elsewhere = OrderRequest::market(
+            Market::spot(Exchange::Upbit, "BTC", "KRW"),
+            Side::Buy,
+            Size::Quote(Decimal::ONE),
+        );
+        assert!(matches!(
+            batch_orders_request(
+                &credentials(),
+                &BithumbBatchOrdersRequest::new(vec![elsewhere]),
+            ),
+            Err(Error::InvalidRequest { field, .. }) if field == "market.exchange"
+        ));
+    }
+
+    #[test]
+    fn batch_order_response_keeps_partial_success_and_failure() {
+        let result = batch_orders_result(&serde_json::json!({
+            "batch_orders_response": [
+                {
+                    "client_order_id": "first",
+                    "order_id": "C0101",
+                    "market": "KRW-BTC",
+                    "side": "bid",
+                    "order_type": "limit",
+                    "time_in_force": "post_only",
+                    "stp_type": "cancel_maker",
+                    "created_at": "2026-02-10T13:56:38+09:00"
+                },
+                {
+                    "client_order_id": "second",
+                    "time_in_force": "ioc",
+                    "name": "cross_trading",
+                    "message": "rejected"
+                }
+            ]
+        }))
+        .expect("a partial result");
+
+        assert!(matches!(
+            &result.outcomes[0],
+            BithumbBatchOrderOutcome::Accepted(order)
+                if order.order_id == "C0101"
+                    && order.market == btc_krw()
+                    && order.side == Side::Buy
+                    && order.time_in_force.as_deref() == Some("post_only")
+                    && order.stp_type.as_deref() == Some("cancel_maker")
+        ));
+        assert!(matches!(
+            &result.outcomes[1],
+            BithumbBatchOrderOutcome::Rejected(failure)
+                if failure.client_order_id.as_deref() == Some("second")
+                    && failure.time_in_force.as_deref() == Some("ioc")
+                    && failure.code == "cross_trading"
+        ));
     }
 
     #[test]

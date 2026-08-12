@@ -7,7 +7,7 @@ import { AccountStream, MarketStream, StreamError } from "../stream.js";
 import * as Codec from "./codec.js";
 import type * as Wire from "./contract.js";
 
-export const NATIVE_API_VERSION = 19 as const;
+export const NATIVE_API_VERSION = 20 as const;
 
 export type NativeOutcome<T> =
   | { readonly ok: true; readonly value: T }
@@ -74,6 +74,7 @@ export interface RawNativeUpbitHandle {
   testOrder(request: string): Promise<unknown>;
   depositInfo(asset: string, network: string): Promise<unknown>;
   batchCancelOpenOrders(request: string): Promise<unknown>;
+  cancelAndNewOrder(request: string): Promise<unknown>;
 }
 
 export interface RawNativeBithumbHandle {
@@ -84,6 +85,7 @@ export interface RawNativeBithumbHandle {
   transferFees(currency: string): Promise<unknown>;
   apiKeys(): Promise<unknown>;
   pendingOrders(request: string): Promise<unknown>;
+  batchOrders(request: string): Promise<unknown>;
   twapOrders(request: string): Promise<unknown>;
   createTwapOrder(request: string): Promise<unknown>;
   cancelTwapOrder(algoOrderId: string): Promise<unknown>;
@@ -97,6 +99,7 @@ export interface RawNativeBinanceHandle {
   markPrice(market: string): Promise<unknown>;
   markPrices(): Promise<unknown>;
   openInterest(market: string): Promise<unknown>;
+  aggregateTrades(request: string): Promise<unknown>;
   usdMCreateListenKey(): Promise<unknown>;
   usdMKeepaliveListenKey(): Promise<unknown>;
   usdMCloseListenKey(): Promise<unknown>;
@@ -202,6 +205,7 @@ export interface NativeUpbitHandle {
   testOrder(request: Wire.OrderRequestWire): Promise<NativeOutcome<Wire.OrderWire>>;
   depositInfo(asset: string, network: string): Promise<NativeOutcome<Wire.UpbitDepositInfoWire>>;
   batchCancelOpenOrders(request: Wire.UpbitBatchCancelRequestWire): Promise<NativeOutcome<Wire.CancelOrdersResultWire>>;
+  cancelAndNewOrder(request: Wire.UpbitCancelAndNewOrderRequestWire): Promise<NativeOutcome<Wire.UpbitCancelAndNewOrderResultWire>>;
 }
 
 export interface NativeBithumbHandle {
@@ -212,6 +216,7 @@ export interface NativeBithumbHandle {
   transferFees(currency: string): Promise<NativeOutcome<readonly Wire.BithumbAssetFeeWire[]>>;
   apiKeys(): Promise<NativeOutcome<readonly Wire.BithumbApiKeyWire[]>>;
   pendingOrders(request: Wire.BithumbPendingOrdersRequestWire): Promise<NativeOutcome<Wire.PageWire<Wire.OrderWire>>>;
+  batchOrders(request: Wire.BithumbBatchOrdersRequestWire): Promise<NativeOutcome<Wire.BithumbBatchOrdersResultWire>>;
   twapOrders(request: Wire.BithumbTwapOrdersRequestWire): Promise<NativeOutcome<Wire.PageWire<Wire.BithumbTwapOrderWire>>>;
   createTwapOrder(request: Wire.BithumbTwapOrderRequestWire): Promise<NativeOutcome<string>>;
   cancelTwapOrder(algoOrderId: string): Promise<NativeOutcome<string>>;
@@ -225,6 +230,7 @@ export interface NativeBinanceHandle {
   markPrice(market: Wire.MarketWire): Promise<NativeOutcome<Wire.BinanceMarkPriceWire>>;
   markPrices(): Promise<NativeOutcome<readonly Wire.BinanceMarkPriceWire[]>>;
   openInterest(market: Wire.MarketWire): Promise<NativeOutcome<Wire.BinanceOpenInterestWire>>;
+  aggregateTrades(request: Wire.BinanceAggregateTradesRequestWire): Promise<NativeOutcome<readonly Wire.BinanceAggregateTradeWire[]>>;
   usdMCreateListenKey(): Promise<NativeOutcome<Wire.BinanceListenKeyWire>>;
   usdMKeepaliveListenKey(): Promise<NativeOutcome<null>>;
   usdMCloseListenKey(): Promise<NativeOutcome<null>>;
@@ -308,6 +314,7 @@ export function createJsonBackend(raw: RawNativeModule): NativeBackend {
         testOrder: (request: Wire.OrderRequestWire) => handle.testOrder(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.OrderWire>>,
         depositInfo: (asset: string, network: string) => handle.depositInfo(Codec.stringifyWire(asset), Codec.stringifyWire(network)) as Promise<NativeOutcome<Wire.UpbitDepositInfoWire>>,
         batchCancelOpenOrders: (request: Wire.UpbitBatchCancelRequestWire) => handle.batchCancelOpenOrders(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.CancelOrdersResultWire>>,
+        cancelAndNewOrder: (request: Wire.UpbitCancelAndNewOrderRequestWire) => handle.cancelAndNewOrder(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.UpbitCancelAndNewOrderResultWire>>,
       };
     },
     bithumb(options) {
@@ -320,6 +327,7 @@ export function createJsonBackend(raw: RawNativeModule): NativeBackend {
         transferFees: (currency: string) => handle.transferFees(Codec.stringifyWire(currency)) as Promise<NativeOutcome<readonly Wire.BithumbAssetFeeWire[]>>,
         apiKeys: () => handle.apiKeys() as Promise<NativeOutcome<readonly Wire.BithumbApiKeyWire[]>>,
         pendingOrders: (request: Wire.BithumbPendingOrdersRequestWire) => handle.pendingOrders(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.PageWire<Wire.OrderWire>>>,
+        batchOrders: (request: Wire.BithumbBatchOrdersRequestWire) => handle.batchOrders(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.BithumbBatchOrdersResultWire>>,
         twapOrders: (request: Wire.BithumbTwapOrdersRequestWire) => handle.twapOrders(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.PageWire<Wire.BithumbTwapOrderWire>>>,
         createTwapOrder: (request: Wire.BithumbTwapOrderRequestWire) => handle.createTwapOrder(Codec.stringifyWire(request)) as Promise<NativeOutcome<string>>,
         cancelTwapOrder: (algoOrderId: string) => handle.cancelTwapOrder(Codec.stringifyWire(algoOrderId)) as Promise<NativeOutcome<string>>,
@@ -335,6 +343,7 @@ export function createJsonBackend(raw: RawNativeModule): NativeBackend {
         markPrice: (market: Wire.MarketWire) => handle.markPrice(Codec.stringifyWire(market)) as Promise<NativeOutcome<Wire.BinanceMarkPriceWire>>,
         markPrices: () => handle.markPrices() as Promise<NativeOutcome<readonly Wire.BinanceMarkPriceWire[]>>,
         openInterest: (market: Wire.MarketWire) => handle.openInterest(Codec.stringifyWire(market)) as Promise<NativeOutcome<Wire.BinanceOpenInterestWire>>,
+        aggregateTrades: (request: Wire.BinanceAggregateTradesRequestWire) => handle.aggregateTrades(Codec.stringifyWire(request)) as Promise<NativeOutcome<readonly Wire.BinanceAggregateTradeWire[]>>,
         usdMCreateListenKey: () => handle.usdMCreateListenKey() as Promise<NativeOutcome<Wire.BinanceListenKeyWire>>,
         usdMKeepaliveListenKey: () => handle.usdMKeepaliveListenKey() as Promise<NativeOutcome<null>>,
         usdMCloseListenKey: () => handle.usdMCloseListenKey() as Promise<NativeOutcome<null>>,
@@ -1035,6 +1044,7 @@ export class UpbitAdapter extends NativeAdapter {
   async testOrder(request: Model.OrderRequest): Promise<Model.Order> { await ensureInitialized(); return Codec.orderFromWire(Codec.unwrapOutcome(await this.#provider.testOrder(Codec.orderRequestToWire(request)))); }
   async depositInfo(asset: string, network: Model.Network): Promise<Model.UpbitDepositInfo> { await ensureInitialized(); return Codec.upbitDepositInfoFromWire(Codec.unwrapOutcome(await this.#provider.depositInfo(asset, network.id))); }
   async batchCancelOpenOrders(request: Model.UpbitBatchCancelRequest): Promise<Model.CancelOrdersResult> { await ensureInitialized(); return Codec.cancelOrdersResultFromWire(Codec.unwrapOutcome(await this.#provider.batchCancelOpenOrders(Codec.upbitBatchCancelRequestToWire(request)))); }
+  async cancelAndNewOrder(request: Model.UpbitCancelAndNewOrderRequest): Promise<Model.UpbitCancelAndNewOrderResult> { await ensureInitialized(); return Codec.upbitCancelAndNewOrderResultFromWire(Codec.unwrapOutcome(await this.#provider.cancelAndNewOrder(Codec.upbitCancelAndNewOrderRequestToWire(request)))); }
 }
 
 export class BithumbAdapter extends NativeAdapter {
@@ -1049,6 +1059,7 @@ export class BithumbAdapter extends NativeAdapter {
   async transferFees(currency: string): Promise<readonly Model.BithumbAssetFee[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.transferFees(currency)).map(Codec.bithumbAssetFeeFromWire); }
   async apiKeys(): Promise<readonly Model.BithumbApiKey[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.apiKeys()).map(Codec.bithumbApiKeyFromWire); }
   async pendingOrders(request: Model.BithumbPendingOrdersRequest): Promise<Model.Page<Model.Order>> { await ensureInitialized(); return Codec.pageFromWire(Codec.unwrapOutcome(await this.#provider.pendingOrders(Codec.bithumbPendingOrdersRequestToWire(request))), Codec.orderFromWire); }
+  async batchOrders(request: Model.BithumbBatchOrdersRequest): Promise<Model.BithumbBatchOrdersResult> { await ensureInitialized(); return Codec.bithumbBatchOrdersResultFromWire(Codec.unwrapOutcome(await this.#provider.batchOrders(Codec.bithumbBatchOrdersRequestToWire(request)))); }
   async twapOrders(request: Model.BithumbTwapOrdersRequest): Promise<Model.Page<Model.BithumbTwapOrder>> { await ensureInitialized(); return Codec.pageFromWire(Codec.unwrapOutcome(await this.#provider.twapOrders(Codec.bithumbTwapOrdersRequestToWire(request))), Codec.bithumbTwapOrderFromWire); }
   async createTwapOrder(request: Model.BithumbTwapOrderRequest): Promise<string> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.createTwapOrder(Codec.bithumbTwapOrderRequestToWire(request))); }
   async cancelTwapOrder(algoOrderId: string): Promise<string> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.cancelTwapOrder(algoOrderId)); }
@@ -1072,6 +1083,7 @@ export class BinanceAdapter extends NativeAdapter {
   async markPrice(market: Model.Market): Promise<Model.BinanceMarkPrice> { await ensureInitialized(); return Codec.binanceMarkPriceFromWire(Codec.unwrapOutcome(await this.#provider.markPrice(Codec.marketToWire(market)))); }
   async markPrices(): Promise<readonly Model.BinanceMarkPrice[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.markPrices()).map(Codec.binanceMarkPriceFromWire); }
   async openInterest(market: Model.Market): Promise<Model.BinanceOpenInterest> { await ensureInitialized(); return Codec.binanceOpenInterestFromWire(Codec.unwrapOutcome(await this.#provider.openInterest(Codec.marketToWire(market)))); }
+  async aggregateTrades(request: Model.BinanceAggregateTradesRequest): Promise<readonly Model.BinanceAggregateTrade[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.aggregateTrades(Codec.binanceAggregateTradesRequestToWire(request))).map(Codec.binanceAggregateTradeFromWire); }
   async usdMCreateListenKey(): Promise<BinanceListenKey> { await ensureInitialized(); const value = Codec.unwrapOutcome(await this.#provider.usdMCreateListenKey()); return new BinanceListenKey(value.id, value.value); }
   async usdMKeepaliveListenKey(): Promise<void> { await ensureInitialized(); Codec.unwrapOutcome(await this.#provider.usdMKeepaliveListenKey()); }
   async usdMCloseListenKey(): Promise<void> { await ensureInitialized(); Codec.unwrapOutcome(await this.#provider.usdMCloseListenKey()); }

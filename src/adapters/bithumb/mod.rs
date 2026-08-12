@@ -19,8 +19,8 @@ use crate::transport::HttpTransport;
 use crate::types::{
     AssetNetwork, Balance, CancelOrdersResult, Candle, Cursor, Deposit, DepositAddress,
     DepositAddressEntry, Exchange, Market, MarketInfo, MarketKind, Network, Order, OrderBook,
-    OrderRules, Page, Side, StreamConfig, Subscription, Ticker, Timestamp, Trade, Withdrawal,
-    WithdrawalFee, WithdrawalQuote,
+    OrderRules, OrderType, Page, Side, StreamConfig, Subscription, Ticker, Timestamp, Trade,
+    Withdrawal, WithdrawalFee, WithdrawalQuote,
 };
 
 pub(crate) const REST_BASE_URL: &str = "https://api.bithumb.com";
@@ -142,6 +142,89 @@ pub struct BithumbPendingOrdersRequest {
     pub order_by: Option<BithumbOrderDirection>,
     /// Cursor returned by the preceding page.
     pub cursor: Option<Cursor>,
+}
+
+/// One order in a Bithumb batch-order request.
+///
+/// The common [`OrderRequest`] is used directly so the validation and amount
+/// semantics stay identical to single-order placement. Bithumb still exposes
+/// this endpoint as a provider-specific operation because its response is
+/// non-atomic: every item can be accepted or rejected independently.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BithumbBatchOrdersRequest {
+    /// Orders to submit. Bithumb accepts between 1 and 20 items.
+    pub orders: Vec<OrderRequest>,
+}
+
+impl BithumbBatchOrdersRequest {
+    /// Creates a batch request from the supplied order list.
+    pub fn new(orders: impl Into<Vec<OrderRequest>>) -> Self {
+        Self {
+            orders: orders.into(),
+        }
+    }
+}
+
+impl From<Vec<OrderRequest>> for BithumbBatchOrdersRequest {
+    fn from(orders: Vec<OrderRequest>) -> Self {
+        Self::new(orders)
+    }
+}
+
+/// One accepted order returned by Bithumb's batch-order endpoint.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BithumbBatchOrder {
+    /// Exchange-assigned order identifier.
+    pub order_id: String,
+    /// Caller-assigned identifier, when supplied.
+    pub client_order_id: Option<String>,
+    /// Market returned by Bithumb.
+    pub market: Market,
+    /// Buy or sell.
+    pub side: Side,
+    /// Provider order type.
+    pub order_type: OrderType,
+    /// Provider time-in-force value, when the request specified one.
+    ///
+    /// This is retained as Bithumb's raw value so a newly introduced provider
+    /// value does not make an otherwise successful batch response undecodable.
+    pub time_in_force: Option<String>,
+    /// Provider self-trade-prevention value, when returned.
+    ///
+    /// Bithumb may add values independently of the common order model, so the
+    /// raw value is retained rather than narrowing it to a closed enum.
+    pub stp_type: Option<String>,
+    /// Acceptance time, when returned.
+    pub created_at: Option<Timestamp>,
+}
+
+/// One rejected item returned by Bithumb's batch-order endpoint.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BithumbBatchOrderFailure {
+    /// Caller-assigned identifier, when supplied.
+    pub client_order_id: Option<String>,
+    /// Provider time-in-force value, when returned.
+    pub time_in_force: Option<String>,
+    /// Provider error code (`name`).
+    pub code: String,
+    /// Provider error message.
+    pub message: String,
+}
+
+/// The non-atomic result of a Bithumb batch-order request.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BithumbBatchOrderOutcome {
+    /// This item was accepted for placement.
+    Accepted(BithumbBatchOrder),
+    /// This item was rejected while other items may have succeeded.
+    Rejected(BithumbBatchOrderFailure),
+}
+
+/// All per-item outcomes returned by Bithumb.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BithumbBatchOrdersResult {
+    /// Results retain Bithumb's response order.
+    pub outcomes: Vec<BithumbBatchOrderOutcome>,
 }
 
 /// State filter accepted by Bithumb's TWAP history endpoint.
@@ -460,6 +543,17 @@ impl BithumbAdapter {
     /// Cancels a TWAP order and returns the cancelled identifier.
     pub async fn cancel_twap_order(&self, algo_order_id: &str) -> Result<String> {
         private::cancel_twap_order(self.http()?, self.credentials()?, algo_order_id).await
+    }
+
+    /// Submits up to 20 orders and preserves each accepted/rejected outcome.
+    ///
+    /// This is a financial write. Bithumb processes items independently and
+    /// may return HTTP 200 even when one or more items fail.
+    pub async fn batch_orders(
+        &self,
+        request: &BithumbBatchOrdersRequest,
+    ) -> Result<BithumbBatchOrdersResult> {
+        private::batch_orders(self.http()?, self.credentials()?, request).await
     }
 
     pub(crate) fn is_authenticated(&self) -> bool {
@@ -790,6 +884,21 @@ mod tests {
     async fn pending_orders_without_credentials_are_rejected_before_network_io() {
         let error = BithumbAdapter::new()
             .pending_orders(&BithumbPendingOrdersRequest::new())
+            .await
+            .expect_err("no credentials were supplied");
+
+        assert!(matches!(error, Error::Auth { .. }));
+    }
+
+    #[tokio::test]
+    async fn batch_order_writes_without_credentials_are_rejected_before_network_io() {
+        let request = BithumbBatchOrdersRequest::new(vec![OrderRequest::market(
+            Market::spot(Exchange::Bithumb, "BTC", "KRW"),
+            Side::Buy,
+            crate::types::Size::Quote(crate::Decimal::ONE),
+        )]);
+        let error = BithumbAdapter::new()
+            .batch_orders(&request)
             .await
             .expect_err("no credentials were supplied");
 

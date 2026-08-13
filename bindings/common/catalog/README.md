@@ -2,24 +2,22 @@
 
 [한국어](README.ko.md)
 
-This directory pins the official API inventory at 2026-08-10. `src/coverage.rs`
+This directory pins the official API inventory at **2026-08-10**. `src/coverage.rs`
 is the curated record of implementation and validation state; the source lists
 here preserve every documented operation. They are not interchangeable.
 
+All TSV files use ASCII English. The snapshot date is recorded here, rather
+than repeated in filenames or TSV metadata.
+
 ## Files
 
-| File | Purpose |
+| Path | Purpose |
 | --- | --- |
-| `*-2026-08-10.tsv` | Official exchange operation source list; Binance and Hyperliquid also carry their per-operation `exposure` decision |
-| `*-coverage-2026-08-10.tsv` | Mapping from current `OPERATIONS` rows to source operations |
-| `binance-products-2026-08-10.tsv` | Binance official product to local-product mapping |
-| `*-classification-2026-08-10.tsv` | Per-operation public-exposure classification for Upbit and Bithumb |
-| `hyperliquid-unresolved-2026-08-10.tsv` | Scope whose exact count cannot be derived from official documentation |
-| `audit-ledger-2026-08-10.tsv` | Draft 1,374-row active-operation audit ledger, including Implemented rows |
-| `audit-queue-2026-08-10.tsv` | All 937 general-SDK rows retained for semantic audit; Unreviewed is not an implementation list |
-| `implementation-worklist-2026-08-10.tsv` | The 52 official `Partial`/`Planned`/`Blocked` candidate rows; not 52 independent tasks |
-| `execution-checklist-2026-08-10.tsv` | The 52 rows grouped into 41 unique local-operation execution units |
-| `platform-service-worklist-2026-08-10.tsv` | `platform_limited` rows derived for separate platform/protocol services |
+| `binance/{manifest,coverage,products}.tsv` | Binance source operations, bridge, and product normalization |
+| `bithumb/{manifest,coverage,classification}.tsv` | Bithumb source operations, bridge, and exposure classification |
+| `upbit/{manifest,korea,coverage,classification}.tsv` | Upbit Global and Korea-only source operations, bridge, and classification |
+| `hyperliquid/{manifest,coverage,unresolved}.tsv` | Hyperliquid source operations, bridge, and unresolved official scope |
+| `audit/{ledger,queue,worklist,execution-checklist,platform-service-worklist}.tsv` | Derived audit ledger and queues |
 
 Binance and Hyperliquid keep their `exposure` decision in the source rows so
 their large lists are not duplicated. The `coverage_inventory` test verifies
@@ -117,7 +115,7 @@ and official-contract preservation.
 
 Where the official source lacks a complete request schema or operation list,
 the inventory does not guess a count or discard the scope. It retains `Blocked`
-evidence and a source locator in `hyperliquid-unresolved-2026-08-10.tsv` until
+evidence and a source locator in `hyperliquid/unresolved.tsv` until
 the official schema permits manifest rows and an implementation status.
 
 ## Central contract decision
@@ -132,7 +130,7 @@ it as a provider typed API.
 The Hyperliquid rate-limit documentation names `blockList` and the Explorer
 family but provides no complete request schema or operation list. Its count is
 not guessed; its `Blocked` status remains in
-`hyperliquid-unresolved-2026-08-10.tsv` until an official schema is available.
+`hyperliquid/unresolved.tsv` until an official schema is available.
 
 ## Verification
 

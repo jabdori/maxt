@@ -1,5 +1,4 @@
 # Hyperliquid unresolved official-inventory status snapshot
-# baseline_date: 2026-08-10
 # explorer_source: https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits.md
 # explorer_evidence: the official rate-limits page names all explorer API requests and blockList, but publishes no complete explorer request schema or operation list
 # sdk_source: https://github.com/hyperliquid-dex/hyperliquid-python-sdk

@@ -1,5 +1,4 @@
 # Binance official catalog product normalization
-# baseline_date: 2026-08-10
 # columns: official_product	product
 Algo Trading REST	algo
 Alpha Trading REST	alpha
@@ -17,9 +16,9 @@ Options REST	options
 Options WebSocket Market Streams	options
 Portfolio Margin Pro REST	portfolio_margin_pro
 Portfolio Margin REST	portfolio_margin
-Futures (USDⓈ-M) REST	usd_m
-Futures (USDⓈ-M) WebSocket	usd_m
-Futures (USDⓈ-M) WebSocket Market Streams	usd_m
+Futures (USD-M) REST	usd_m
+Futures (USD-M) WebSocket	usd_m
+Futures (USD-M) WebSocket Market Streams	usd_m
 Discount Buy REST	discount_buy
 Dual Investment REST	dual_investment
 Exchange Link REST	exchange_link

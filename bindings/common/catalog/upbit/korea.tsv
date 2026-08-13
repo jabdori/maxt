@@ -1,6 +1,5 @@
 # Upbit Korea-only official API catalog additions
-# baseline_date: 2026-08-10
-# scope: Korea-only additions; combine with upbit-2026-08-10.tsv for the 57-operation Korea catalog
+# scope: Korea-only additions; combine with manifest.tsv for the 57-operation Korea catalog
 # source_catalog: https://docs.upbit.com/kr/llms.txt
 # source_detail: https://docs.upbit.com/kr/reference/*.md
 # Deprecated /v1/orderbook/supported_levels is intentionally excluded; /v1/orderbook/instruments is the active replacement in the Global catalog.

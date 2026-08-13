@@ -1,5 +1,4 @@
 # Binance official API catalog snapshot
-# baseline_date: 2026-08-10
 # source_catalog: https://developers.binance.com/en/docs/llms.txt
 # source_detail: https://developers.binance.com/en/docs/llms-full.txt
 # source_catalog_sha256: 44fa6608f682b03358e5b7f53d25e791f5eea4d790bff91db86b95151116fc8e
@@ -367,139 +366,139 @@ Portfolio Margin REST	Http	POST	/papi/v1/um/stock/contract	futuresTradfiPerpsCon
 Portfolio Margin REST	Http	PUT	/papi/v1/listenKey	keepaliveUserDataStream	USER_STREAM	AccountWrite	documented_active	platform_limited
 Portfolio Margin REST	Http	POST	/papi/v1/listenKey	startUserDataStream	USER_STREAM	AccountWrite	documented_active	platform_limited
 Portfolio Margin REST	Http	DELETE	/papi/v1/listenKey	closeUserDataStream	USER_STREAM	AccountWrite	documented_active	platform_limited
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v2/account	accountInformationV2	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v3/account	accountInformationV3	USER_DATA	Read	documented_active	common_existing
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v2/balance	futuresAccountBalanceV2	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v3/balance	futuresAccountBalanceV3	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/accountConfig	futuresAccountConfiguration	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/apiTradingStatus	futuresTradingQuantitativeRulesIndicators	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/feeBurn	getBnbBurnStatus	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	POST	/fapi/v1/feeBurn	toggleBnbBurnOnFuturesTrade	TRADE	FinancialWrite	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/multiAssetsMargin	getCurrentMultiAssetsMode	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/positionSide/dual	getCurrentPositionMode	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/order/asyn	getDownloadIdForFuturesOrderHistory	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/trade/asyn	getDownloadIdForFuturesTradeHistory	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/income/asyn	getDownloadIdForFuturesTransactionHistory	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/order/asyn/id	getFuturesOrderHistoryDownloadLinkById	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/trade/asyn/id	getFuturesTradeDownloadLinkById	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/income/asyn/id	getFuturesTransactionHistoryDownloadLinkById	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/income	getIncomeHistory	USER_DATA	Read	documented_active	common_existing
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/leverageBracket	notionalAndLeverageBrackets	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/rateLimit/order	queryUserRateLimit	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/symbolConfig	symbolConfiguration	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/commissionRate	userCommissionRate	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	POST	/fapi/v1/multiAssetsMargin	changeMultiAssetsMode	TRADE	FinancialWrite	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	POST	/fapi/v1/positionSide/dual	changePositionMode	TRADE	FinancialWrite	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/userTrades	accountTradeList	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/allOrders	allOrders	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	POST	/fapi/v1/countdownCancelAll	autoCancelAllOpenOrders	TRADE	FinancialWrite	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/algoOrder	queryAlgoOrder	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	POST	/fapi/v1/algoOrder	newAlgoOrder	TRADE	FinancialWrite	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	DELETE	/fapi/v1/algoOrder	cancelAlgoOrder	TRADE	FinancialWrite	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	DELETE	/fapi/v1/algoOpenOrders	cancelAllAlgoOpenOrders	TRADE	FinancialWrite	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	DELETE	/fapi/v1/allOpenOrders	cancelAllOpenOrders	TRADE	FinancialWrite	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	PUT	/fapi/v1/batchOrders	modifyMultipleOrders	TRADE	FinancialWrite	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	POST	/fapi/v1/batchOrders	placeMultipleOrders	TRADE	FinancialWrite	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	DELETE	/fapi/v1/batchOrders	cancelMultipleOrders	TRADE	FinancialWrite	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/order	queryOrder	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	PUT	/fapi/v1/order	modifyOrder	TRADE	FinancialWrite	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	POST	/fapi/v1/order	newOrder	TRADE	FinancialWrite	documented_active	common_existing
-Futures (USDⓈ-M) REST	Http	DELETE	/fapi/v1/order	cancelOrder	TRADE	FinancialWrite	documented_active	common_existing
-Futures (USDⓈ-M) REST	Http	POST	/fapi/v1/leverage	changeInitialLeverage	TRADE	FinancialWrite	documented_active	common_existing
-Futures (USDⓈ-M) REST	Http	POST	/fapi/v1/marginType	changeMarginType	TRADE	FinancialWrite	documented_active	common_existing
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/openAlgoOrders	currentAllAlgoOpenOrders	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/openOrders	currentAllOpenOrders	USER_DATA	Read	documented_active	common_existing
-Futures (USDⓈ-M) REST	Http	POST	/fapi/v1/stock/contract	futuresTradfiPerpsContract	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/orderAmendment	getOrderModifyHistory	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/positionMargin/history	getPositionMarginChangeHistory	TRADE	FinancialWrite	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	POST	/fapi/v1/positionMargin	modifyIsolatedPositionMargin	TRADE	FinancialWrite	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/adlQuantile	positionAdlQuantileEstimation	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v2/positionRisk	positionInformationV2	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v3/positionRisk	positionInformationV3	USER_DATA	Read	documented_active	common_existing
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/allAlgoOrders	queryAllAlgoOrders	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/openOrder	queryCurrentOpenOrder	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	POST	/fapi/v1/order/test	testOrder	TRADE	FinancialWrite	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/forceOrders	usersForceOrders	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	POST	/fapi/v1/convert/acceptQuote	acceptTheOfferedQuote	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/convert/exchangeInfo	listAllConvertPairs	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/convert/orderStatus	orderStatus	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	POST	/fapi/v1/convert/getQuote	sendQuoteRequest	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/symbolAdlRisk	adlRisk	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/futures/data/basis	basis	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/time	checkServerTime	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/indexInfo	compositeIndexSymbolInformation	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/aggTrades	compressedAggregateTradesList	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/continuousKlines	continuousContractKlineCandlestickData	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/exchangeInfo	exchangeInformation	Public	Read	documented_active	common_existing
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/fundingRate	getFundingRateHistory	Public	Read	documented_active	common_existing
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/fundingInfo	getFundingRateInfo	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/indexPriceKlines	indexPriceKlineCandlestickData	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/klines	klineCandlestickData	Public	Read	documented_active	common_existing
-Futures (USDⓈ-M) REST	Http	GET	/futures/data/globalLongShortAccountRatio	longShortRatio	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/premiumIndex	markPrice	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/markPriceKlines	markPriceKlineCandlestickData	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/assetIndex	assetIndex	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/historicalTrades	oldTradesLookup	MARKET_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/openInterest	openInterest	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/futures/data/openInterestHist	openInterestStatistics	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/depth	orderBook	Public	Read	documented_active	common_existing
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/premiumIndexKlines	premiumIndexKlineData	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/futures/data/delivery-price	quarterlyContractSettlementPrice	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/constituents	queryIndexPriceConstituents	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/insuranceBalance	queryInsuranceFundBalanceSnapshot	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/trades	recentTradesList	Public	Read	documented_active	common_existing
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/rpiDepth	rpiOrderBook	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/ticker/bookTicker	symbolOrderBookTicker	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/ticker/price	symbolPriceTicker	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v2/ticker/price	symbolPriceTickerV2	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/futures/data/takerlongshortRatio	takerBuySellVolume	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/ping	testConnectivity	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/ticker/24hr	ticker24hrPriceChangeStatistics	Public	Read	documented_active	common_existing
-Futures (USDⓈ-M) REST	Http	GET	/futures/data/topLongShortAccountRatio	topTraderLongShortRatioAccounts	MARKET_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/futures/data/topLongShortPositionRatio	topTraderLongShortRatioPositions	MARKET_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/tradingSchedule	tradingSchedule	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/pmAccountInfo	classicPortfolioMarginAccountInformation	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	PUT	/fapi/v1/listenKey	keepaliveUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	POST	/fapi/v1/listenKey	startUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
-Futures (USDⓈ-M) REST	Http	DELETE	/fapi/v1/listenKey	closeUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket	WebSocketRequest	POST	/account.status	accountInformation	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket	WebSocketRequest	POST	/v2/account.status	accountInformationV2	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket	WebSocketRequest	POST	/account.balance	futuresAccountBalance	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket	WebSocketRequest	POST	/v2/account.balance	futuresAccountBalanceV2	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket	WebSocketRequest	POST	/depth	orderBook	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket	WebSocketRequest	POST	/ticker.book	symbolOrderBookTicker	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket	WebSocketRequest	POST	/ticker.price	symbolPriceTicker	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket	WebSocketRequest	POST	/algoOrder.cancel	cancelAlgoOrder	TRADE	FinancialWrite	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket	WebSocketRequest	POST	/order.cancel	cancelOrder	TRADE	FinancialWrite	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket	WebSocketRequest	POST	/order.modify	modifyOrder	TRADE	FinancialWrite	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket	WebSocketRequest	POST	/algoOrder.place	newAlgoOrder	TRADE	FinancialWrite	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket	WebSocketRequest	POST	/order.place	newOrder	TRADE	FinancialWrite	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket	WebSocketRequest	POST	/account.position	positionInformation	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket	WebSocketRequest	POST	/v2/account.position	positionInformationV2	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket	WebSocketRequest	POST	/order.status	queryOrder	USER_DATA	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket	WebSocketRequest	POST	/userDataStream.stop	closeUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket	WebSocketRequest	POST	/userDataStream.ping	keepaliveUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket	WebSocketRequest	POST	/userDataStream.start	startUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@aggTrade	aggregateTradeStreams	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/!forceOrder@arr	allMarketLiquidationOrderStreams	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/!miniTicker@arr	allMarketMiniTickersStream	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/!ticker@arr	allMarketTickersStreams	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@compositeIndex	compositeIndexSymbolInformationStreams	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/{pair}_{contractType}@continuousKline_{interval}	continuousContractKlineCandlestickStreams	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/!contractInfo	contractInfoStream	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@miniTicker	individualSymbolMiniTickerStream	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@ticker	individualSymbolTickerStreams	Public	Read	documented_active	common_existing
-Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@kline_{interval}	klineCandlestickStreams	Public	Read	documented_active	common_existing
-Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@forceOrder	liquidationOrderStreams	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@markPrice@{updateSpeed}	markPriceStream	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/!markPrice@arr@{updateSpeed}	markPriceStreamForAllMarket	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/!assetIndex@arr	assetIndex	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/tradingSession	tradingSessionStream	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/!bookTicker	allBookTickersStream	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth@{updateSpeed}	diffBookDepthStreams	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@bookTicker	individualSymbolBookTickerStreams	Public	Read	documented_active	provider_typed
-Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth{levels}@{updateSpeed}	partialBookDepthStreams	Public	Read	documented_active	common_existing
-Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@rpiDepth@500ms	rpiDiffBookDepthStreams	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v2/account	accountInformationV2	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v3/account	accountInformationV3	USER_DATA	Read	documented_active	common_existing
+Futures (USD-M) REST	Http	GET	/fapi/v2/balance	futuresAccountBalanceV2	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v3/balance	futuresAccountBalanceV3	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/accountConfig	futuresAccountConfiguration	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/apiTradingStatus	futuresTradingQuantitativeRulesIndicators	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/feeBurn	getBnbBurnStatus	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/feeBurn	toggleBnbBurnOnFuturesTrade	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/multiAssetsMargin	getCurrentMultiAssetsMode	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/positionSide/dual	getCurrentPositionMode	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/order/asyn	getDownloadIdForFuturesOrderHistory	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/trade/asyn	getDownloadIdForFuturesTradeHistory	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/income/asyn	getDownloadIdForFuturesTransactionHistory	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/order/asyn/id	getFuturesOrderHistoryDownloadLinkById	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/trade/asyn/id	getFuturesTradeDownloadLinkById	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/income/asyn/id	getFuturesTransactionHistoryDownloadLinkById	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/income	getIncomeHistory	USER_DATA	Read	documented_active	common_existing
+Futures (USD-M) REST	Http	GET	/fapi/v1/leverageBracket	notionalAndLeverageBrackets	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/rateLimit/order	queryUserRateLimit	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/symbolConfig	symbolConfiguration	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/commissionRate	userCommissionRate	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/multiAssetsMargin	changeMultiAssetsMode	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/positionSide/dual	changePositionMode	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/userTrades	accountTradeList	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/allOrders	allOrders	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/countdownCancelAll	autoCancelAllOpenOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/algoOrder	queryAlgoOrder	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/algoOrder	newAlgoOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	DELETE	/fapi/v1/algoOrder	cancelAlgoOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	DELETE	/fapi/v1/algoOpenOrders	cancelAllAlgoOpenOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	DELETE	/fapi/v1/allOpenOrders	cancelAllOpenOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	PUT	/fapi/v1/batchOrders	modifyMultipleOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/batchOrders	placeMultipleOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	DELETE	/fapi/v1/batchOrders	cancelMultipleOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/order	queryOrder	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	PUT	/fapi/v1/order	modifyOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/order	newOrder	TRADE	FinancialWrite	documented_active	common_existing
+Futures (USD-M) REST	Http	DELETE	/fapi/v1/order	cancelOrder	TRADE	FinancialWrite	documented_active	common_existing
+Futures (USD-M) REST	Http	POST	/fapi/v1/leverage	changeInitialLeverage	TRADE	FinancialWrite	documented_active	common_existing
+Futures (USD-M) REST	Http	POST	/fapi/v1/marginType	changeMarginType	TRADE	FinancialWrite	documented_active	common_existing
+Futures (USD-M) REST	Http	GET	/fapi/v1/openAlgoOrders	currentAllAlgoOpenOrders	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/openOrders	currentAllOpenOrders	USER_DATA	Read	documented_active	common_existing
+Futures (USD-M) REST	Http	POST	/fapi/v1/stock/contract	futuresTradfiPerpsContract	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/orderAmendment	getOrderModifyHistory	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/positionMargin/history	getPositionMarginChangeHistory	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/positionMargin	modifyIsolatedPositionMargin	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/adlQuantile	positionAdlQuantileEstimation	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v2/positionRisk	positionInformationV2	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v3/positionRisk	positionInformationV3	USER_DATA	Read	documented_active	common_existing
+Futures (USD-M) REST	Http	GET	/fapi/v1/allAlgoOrders	queryAllAlgoOrders	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/openOrder	queryCurrentOpenOrder	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/order/test	testOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/forceOrders	usersForceOrders	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/convert/acceptQuote	acceptTheOfferedQuote	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/convert/exchangeInfo	listAllConvertPairs	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/convert/orderStatus	orderStatus	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/convert/getQuote	sendQuoteRequest	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/symbolAdlRisk	adlRisk	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/futures/data/basis	basis	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/time	checkServerTime	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/indexInfo	compositeIndexSymbolInformation	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/aggTrades	compressedAggregateTradesList	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/continuousKlines	continuousContractKlineCandlestickData	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/exchangeInfo	exchangeInformation	Public	Read	documented_active	common_existing
+Futures (USD-M) REST	Http	GET	/fapi/v1/fundingRate	getFundingRateHistory	Public	Read	documented_active	common_existing
+Futures (USD-M) REST	Http	GET	/fapi/v1/fundingInfo	getFundingRateInfo	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/indexPriceKlines	indexPriceKlineCandlestickData	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/klines	klineCandlestickData	Public	Read	documented_active	common_existing
+Futures (USD-M) REST	Http	GET	/futures/data/globalLongShortAccountRatio	longShortRatio	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/premiumIndex	markPrice	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/markPriceKlines	markPriceKlineCandlestickData	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/assetIndex	assetIndex	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/historicalTrades	oldTradesLookup	MARKET_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/openInterest	openInterest	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/futures/data/openInterestHist	openInterestStatistics	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/depth	orderBook	Public	Read	documented_active	common_existing
+Futures (USD-M) REST	Http	GET	/fapi/v1/premiumIndexKlines	premiumIndexKlineData	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/futures/data/delivery-price	quarterlyContractSettlementPrice	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/constituents	queryIndexPriceConstituents	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/insuranceBalance	queryInsuranceFundBalanceSnapshot	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/trades	recentTradesList	Public	Read	documented_active	common_existing
+Futures (USD-M) REST	Http	GET	/fapi/v1/rpiDepth	rpiOrderBook	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/ticker/bookTicker	symbolOrderBookTicker	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/ticker/price	symbolPriceTicker	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v2/ticker/price	symbolPriceTickerV2	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/futures/data/takerlongshortRatio	takerBuySellVolume	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/ping	testConnectivity	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/ticker/24hr	ticker24hrPriceChangeStatistics	Public	Read	documented_active	common_existing
+Futures (USD-M) REST	Http	GET	/futures/data/topLongShortAccountRatio	topTraderLongShortRatioAccounts	MARKET_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/futures/data/topLongShortPositionRatio	topTraderLongShortRatioPositions	MARKET_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/tradingSchedule	tradingSchedule	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/pmAccountInfo	classicPortfolioMarginAccountInformation	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	PUT	/fapi/v1/listenKey	keepaliveUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/listenKey	startUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	DELETE	/fapi/v1/listenKey	closeUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/account.status	accountInformation	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/v2/account.status	accountInformationV2	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/account.balance	futuresAccountBalance	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/v2/account.balance	futuresAccountBalanceV2	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/depth	orderBook	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/ticker.book	symbolOrderBookTicker	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/ticker.price	symbolPriceTicker	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/algoOrder.cancel	cancelAlgoOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/order.cancel	cancelOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/order.modify	modifyOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/algoOrder.place	newAlgoOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/order.place	newOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/account.position	positionInformation	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/v2/account.position	positionInformationV2	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/order.status	queryOrder	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/userDataStream.stop	closeUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/userDataStream.ping	keepaliveUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/userDataStream.start	startUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@aggTrade	aggregateTradeStreams	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/!forceOrder@arr	allMarketLiquidationOrderStreams	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/!miniTicker@arr	allMarketMiniTickersStream	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/!ticker@arr	allMarketTickersStreams	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@compositeIndex	compositeIndexSymbolInformationStreams	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{pair}_{contractType}@continuousKline_{interval}	continuousContractKlineCandlestickStreams	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/!contractInfo	contractInfoStream	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@miniTicker	individualSymbolMiniTickerStream	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@ticker	individualSymbolTickerStreams	Public	Read	documented_active	common_existing
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@kline_{interval}	klineCandlestickStreams	Public	Read	documented_active	common_existing
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@forceOrder	liquidationOrderStreams	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@markPrice@{updateSpeed}	markPriceStream	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/!markPrice@arr@{updateSpeed}	markPriceStreamForAllMarket	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/!assetIndex@arr	assetIndex	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/tradingSession	tradingSessionStream	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/!bookTicker	allBookTickersStream	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth@{updateSpeed}	diffBookDepthStreams	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@bookTicker	individualSymbolBookTickerStreams	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth{levels}@{updateSpeed}	partialBookDepthStreams	Public	Read	documented_active	common_existing
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@rpiDepth@500ms	rpiDiffBookDepthStreams	Public	Read	documented_active	provider_typed
 Discount Buy REST	Http	GET	/sapi/v1/accumulator/product/list	getDiscountBuyProductList	Public	Read	documented_active	provider_typed
 Discount Buy REST	Http	GET	/sapi/v1/accumulator/product/sum-holding	checkDiscountBuyAccounts	USER_DATA	Read	documented_active	provider_typed
 Discount Buy REST	Http	GET	/sapi/v1/accumulator/product/position/list	getDiscountBuyPositions	USER_DATA	Read	documented_active	provider_typed

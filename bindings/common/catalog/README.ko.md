@@ -2,24 +2,22 @@
 
 [English](README.md)
 
-이 디렉터리는 2026-08-10 기준 공식 API 목록을 고정합니다. `src/coverage.rs`는
+이 디렉터리는 **2026-08-10** 기준 공식 API 목록을 고정합니다. `src/coverage.rs`는
 구현·검증 상태를 기록하는 선별된 목록이고, 이 디렉터리의 원본 목록은 공식 문서에
 공개된 operation 전체를 보존합니다. 둘을 같은 것으로 취급하지 않습니다.
 
+TSV는 모두 ASCII 영어로 유지합니다. 기준일은 파일명과 TSV 메타데이터에 반복하지 않고 이
+README에만 기록합니다.
+
 ## 파일 역할
 
-| 파일 | 역할 |
+| 경로 | 역할 |
 | --- | --- |
-| `*-2026-08-10.tsv` | 거래소 공식 operation 원본 목록. Binance·Hyperliquid 행에는 공개 노출 분류(`exposure`)도 함께 기록 |
-| `*-coverage-2026-08-10.tsv` | 현재 `OPERATIONS` 행과 공식 원본 operation의 연결표 |
-| `binance-products-2026-08-10.tsv` | Binance 공식 제품명과 로컬 제품 식별자의 연결표 |
-| `*-classification-2026-08-10.tsv` | Upbit·Bithumb의 operation별 공개 노출 분류 |
-| `hyperliquid-unresolved-2026-08-10.tsv` | 공식 문서가 완전한 목록을 제공하지 않아 수를 확정할 수 없는 범위 |
-| `audit-ledger-2026-08-10.tsv` | 활성 공식 행 1,374개 전체의 감사 초안 원장. 연결된 Implemented 행도 제외하지 않음 |
-| `audit-queue-2026-08-10.tsv` | 원장에서 일반 SDK 937개 전체를 추출한 감사 큐. Unreviewed는 구현 목록이 아님 |
-| `implementation-worklist-2026-08-10.tsv` | 원장에서 `Partial`·`Planned`·`Blocked` 공식 행 52개를 파생한 후보 목록. 독립 작업 52개를 뜻하지 않음 |
-| `execution-checklist-2026-08-10.tsv` | 후보 52행을 중복 없는 41개 local operation 실행 단위로 묶은 체크리스트 |
-| `platform-service-worklist-2026-08-10.tsv` | 원장에서 `platform_limited`로 파생한 별도 플랫폼·프로토콜 service 목록 |
+| `binance/{manifest,coverage,products}.tsv` | Binance 원본 operation, 연결표, 제품 식별자 정규화 |
+| `bithumb/{manifest,coverage,classification}.tsv` | Bithumb 원본 operation, 연결표, 공개 노출 분류 |
+| `upbit/{manifest,korea,coverage,classification}.tsv` | Upbit Global·Korea 전용 원본 operation, 연결표, 분류 |
+| `hyperliquid/{manifest,coverage,unresolved}.tsv` | Hyperliquid 원본 operation, 연결표, 공식 근거가 불완전한 범위 |
+| `audit/{ledger,queue,worklist,execution-checklist,platform-service-worklist}.tsv` | 파생 감사 원장과 큐 |
 
 Binance와 Hyperliquid는 큰 원본 목록을 복제하지 않고 각 행의 `exposure` 열에 분류를
 기록합니다. `coverage_inventory` 테스트가 모든 원본 행의 분류·lifecycle·현재 연결표를
@@ -102,7 +100,7 @@ Complete로 해석하거나 `Unreviewed`를 잔여 구현 수로 해석하면 �
 보고하지 않습니다.
 
 공식 request schema 또는 완전한 operation 목록이 없는 범위는 숫자를 추측해 분모에서 제거하지
-않습니다. `hyperliquid-unresolved-2026-08-10.tsv`에 `Blocked` 근거와 source locator를
+않습니다. `hyperliquid/unresolved.tsv`에 `Blocked` 근거와 source locator를
 남기고, 공식 schema가 생기면 manifest 행과 implementation 상태로 승격합니다.
 
 ## 중앙 계약 결정
@@ -115,7 +113,7 @@ Complete로 해석하거나 `Unreviewed`를 잔여 구현 수로 해석하면 �
 
 Hyperliquid Explorer는 공식 rate-limit 문서가 `blockList`와 Explorer API family의 존재는
 명시하지만 완전한 request schema/operation 목록은 제공하지 않습니다. 따라서 수를 임의로
-세지 않고, 원본 schema가 제공되기 전까지 `hyperliquid-unresolved-2026-08-10.tsv`의
+세지 않고, 원본 schema가 제공되기 전까지 `hyperliquid/unresolved.tsv`의
 `Blocked` 상태로 유지합니다.
 
 ## 검증

@@ -1,0 +1,52 @@
+# Bithumb official API catalog snapshot
+# source_catalog: https://apidocs.bithumb.com/llms.txt
+# source_detail: https://apidocs.bithumb.com/reference/*.md
+# HTTP paths include the documented v1 or v2 server prefix.
+# columns: official_product	interface	method	path_or_message	operation_id	lifecycle
+Quotation	Http	GET	/v1/market/all	listTradingPairs	documented_active
+Quotation	Http	GET	/v1/candles/minutes/{unit}	listMinuteCandles	documented_active
+Quotation	Http	GET	/v1/candles/days	listDayCandles	documented_active
+Quotation	Http	GET	/v1/candles/weeks	listWeekCandles	documented_active
+Quotation	Http	GET	/v1/candles/months	listMonthCandles	documented_active
+Quotation	Http	GET	/v1/trades/ticks	listRecentTrades	documented_active
+Quotation	Http	GET	/v1/ticker	getTicker	documented_active
+Quotation	Http	GET	/v1/orderbook	getOrderBook	documented_active
+Quotation	Http	GET	/v1/market/virtual_asset_warning	listMarketWarnings	documented_active
+Quotation	Http	GET	/v1/notices	listNotices	documented_active
+Quotation	Http	GET	/v2/fee/inout/{currency}	getDepositWithdrawalFee	documented_active
+Quotation	WebSocketStream	SUBSCRIBE	type=ticker	ticker	documented_active
+Quotation	WebSocketStream	SUBSCRIBE	type=trade	trade	documented_active
+Quotation	WebSocketStream	SUBSCRIBE	type=orderbook	orderbook	documented_active
+Exchange	Http	GET	/v1/accounts	getAccounts	documented_active
+Exchange	Http	GET	/v1/orders/chance	getOrderChance	documented_active
+Exchange	Http	GET	/v1/orders	listOrders	documented_active
+Exchange	Http	GET	/v1/order	getOrder	documented_active
+Exchange	Http	POST	/v2/orders/search	searchOrders	documented_active
+Exchange	Http	GET	/v2/orders/pending	listPendingOrders	documented_active
+Exchange	Http	GET	/v2/orders/history	listClosedOrders	documented_active
+Exchange	Http	POST	/v2/orders	createOrder	documented_active
+Exchange	Http	DELETE	/v2/order	cancelOrder	documented_active
+Exchange	Http	POST	/v2/orders/batch	createBatchOrders	documented_active
+Exchange	Http	POST	/v2/orders/cancel	cancelBatchOrders	documented_active
+Exchange	WebSocketStream	SUBSCRIBE	type=myOrder	myOrder	documented_active
+Exchange	WebSocketStream	SUBSCRIBE	type=myAsset	myAsset	documented_active
+Deposits and withdrawals	Http	GET	/v1/status/wallet	getWalletStatus	documented_active
+Deposits and withdrawals	Http	GET	/v1/deposits/coin_addresses	listDepositAddresses	documented_active
+Deposits and withdrawals	Http	GET	/v1/deposits/coin_address	getDepositAddress	documented_active
+Deposits and withdrawals	Http	POST	/v1/deposits/generate_coin_address	createDepositAddress	documented_active
+Deposits and withdrawals	Http	GET	/v1/withdraws/chance	getWithdrawalChance	documented_active
+Deposits and withdrawals	Http	GET	/v1/withdraws/coin_addresses	listWithdrawalAddresses	documented_active
+Deposits and withdrawals	Http	POST	/v1/withdraws/coin	createCoinWithdrawal	documented_active
+Deposits and withdrawals	Http	GET	/v1/withdraw	getWithdrawal	documented_active
+Deposits and withdrawals	Http	DELETE	/v1/withdraws/coin	cancelCoinWithdrawal	documented_active
+Deposits and withdrawals	Http	GET	/v1/deposits	listDeposits	documented_active
+Deposits and withdrawals	Http	GET	/v1/deposit	getDeposit	documented_active
+Deposits and withdrawals	Http	GET	/v1/withdraws	listWithdrawals	documented_active
+Deposits and withdrawals	Http	GET	/v1/api_keys	listApiKeys	documented_active
+TWAP	Http	GET	/v1/twap	listTwapOrders	documented_active
+TWAP	Http	POST	/v1/twap	createTwapOrder	documented_active
+TWAP	Http	DELETE	/v1/twap	cancelTwapOrder	documented_active
+KRW deposits and withdrawals	Http	GET	/v1/withdraws/krw	listKrwWithdrawals	documented_active
+KRW deposits and withdrawals	Http	POST	/v1/withdraws/krw	createKrwWithdrawal	documented_active
+KRW deposits and withdrawals	Http	GET	/v1/deposits/krw	listKrwDeposits	documented_active
+KRW deposits and withdrawals	Http	POST	/v1/deposits/krw	createKrwDeposit	documented_active

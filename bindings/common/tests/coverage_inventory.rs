@@ -4,30 +4,25 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-const BINANCE_CATALOG: &str = include_str!("../catalog/binance-2026-08-10.tsv");
-const BINANCE_COVERAGE_BRIDGE: &str = include_str!("../catalog/binance-coverage-2026-08-10.tsv");
-const BINANCE_PRODUCT_NORMALIZATION: &str =
-    include_str!("../catalog/binance-products-2026-08-10.tsv");
-const HYPERLIQUID_CATALOG: &str = include_str!("../catalog/hyperliquid-2026-08-10.tsv");
-const HYPERLIQUID_COVERAGE_BRIDGE: &str =
-    include_str!("../catalog/hyperliquid-coverage-2026-08-10.tsv");
-const HYPERLIQUID_UNRESOLVED: &str =
-    include_str!("../catalog/hyperliquid-unresolved-2026-08-10.tsv");
-const UPBIT_CATALOG: &str = include_str!("../catalog/upbit-2026-08-10.tsv");
-const UPBIT_KOREA_CATALOG: &str = include_str!("../catalog/upbit-korea-2026-08-10.tsv");
-const BITHUMB_CATALOG: &str = include_str!("../catalog/bithumb-2026-08-10.tsv");
-const UPBIT_COVERAGE_BRIDGE: &str = include_str!("../catalog/upbit-coverage-2026-08-10.tsv");
-const BITHUMB_COVERAGE_BRIDGE: &str = include_str!("../catalog/bithumb-coverage-2026-08-10.tsv");
-const UPBIT_CLASSIFICATION: &str = include_str!("../catalog/upbit-classification-2026-08-10.tsv");
-const BITHUMB_CLASSIFICATION: &str =
-    include_str!("../catalog/bithumb-classification-2026-08-10.tsv");
-const AUDIT_LEDGER: &str = include_str!("../catalog/audit-ledger-2026-08-10.tsv");
-const AUDIT_QUEUE: &str = include_str!("../catalog/audit-queue-2026-08-10.tsv");
-const IMPLEMENTATION_WORKLIST: &str =
-    include_str!("../catalog/implementation-worklist-2026-08-10.tsv");
-const EXECUTION_CHECKLIST: &str = include_str!("../catalog/execution-checklist-2026-08-10.tsv");
+const BINANCE_CATALOG: &str = include_str!("../catalog/binance/manifest.tsv");
+const BINANCE_COVERAGE_BRIDGE: &str = include_str!("../catalog/binance/coverage.tsv");
+const BINANCE_PRODUCT_NORMALIZATION: &str = include_str!("../catalog/binance/products.tsv");
+const HYPERLIQUID_CATALOG: &str = include_str!("../catalog/hyperliquid/manifest.tsv");
+const HYPERLIQUID_COVERAGE_BRIDGE: &str = include_str!("../catalog/hyperliquid/coverage.tsv");
+const HYPERLIQUID_UNRESOLVED: &str = include_str!("../catalog/hyperliquid/unresolved.tsv");
+const UPBIT_CATALOG: &str = include_str!("../catalog/upbit/manifest.tsv");
+const UPBIT_KOREA_CATALOG: &str = include_str!("../catalog/upbit/korea.tsv");
+const BITHUMB_CATALOG: &str = include_str!("../catalog/bithumb/manifest.tsv");
+const UPBIT_COVERAGE_BRIDGE: &str = include_str!("../catalog/upbit/coverage.tsv");
+const BITHUMB_COVERAGE_BRIDGE: &str = include_str!("../catalog/bithumb/coverage.tsv");
+const UPBIT_CLASSIFICATION: &str = include_str!("../catalog/upbit/classification.tsv");
+const BITHUMB_CLASSIFICATION: &str = include_str!("../catalog/bithumb/classification.tsv");
+const AUDIT_LEDGER: &str = include_str!("../catalog/audit/ledger.tsv");
+const AUDIT_QUEUE: &str = include_str!("../catalog/audit/queue.tsv");
+const IMPLEMENTATION_WORKLIST: &str = include_str!("../catalog/audit/worklist.tsv");
+const EXECUTION_CHECKLIST: &str = include_str!("../catalog/audit/execution-checklist.tsv");
 const PLATFORM_SERVICE_WORKLIST: &str =
-    include_str!("../catalog/platform-service-worklist-2026-08-10.tsv");
+    include_str!("../catalog/audit/platform-service-worklist.tsv");
 
 const EXPOSURES: &[&str] = &[
     "common_existing",
@@ -108,7 +103,9 @@ fn frozen_active_audit_ledger_and_derived_queues_are_consistent() {
         row[7] != "platform_limited"
             || matches!(
                 row[9],
-                "별도 service 구현" | "Blocked" | "이번 릴리스 보류(임시; 사용자 승인 필요)"
+                "separate_service_implementation"
+                    | "Blocked"
+                    | "release_deferred_pending_user_approval"
             )
     }));
     assert!(queue.iter().all(|row| row[7] != "platform_limited"
@@ -155,8 +152,9 @@ fn frozen_active_audit_ledger_and_derived_queues_are_consistent() {
         52
     );
     assert!(execution.iter().all(|row| {
-        row[11] == "고정 후보; 목록 밖 추가 금지"
-            && (row[12] == "사용자 승인 대기; 구현 미승인" || row[12].starts_with("Blocked:"))
+        row[11] == "fixed_candidate;_do_not_add_items_outside_this_list"
+            && (row[12] == "pending_user_approval;_implementation_not_authorized"
+                || row[12].starts_with("Blocked:"))
     }));
     let owner_counts = execution.iter().fold(BTreeMap::new(), |mut counts, row| {
         *counts.entry(row[2]).or_insert(0usize) += 1;
@@ -173,7 +171,7 @@ fn frozen_active_audit_ledger_and_derived_queues_are_consistent() {
         .find(|row| row[10] == "usd_m.aggregate_trade_stream")
         .unwrap();
     assert_eq!(aggregate_stream[27], "Blocked");
-    assert!(aggregate_stream[29].contains("fill ID 범위"));
+    assert!(aggregate_stream[29].contains("fill_ID_range"));
     let execution_aggregate_stream = execution
         .iter()
         .find(|row| row[0] == "usd_m.aggregate_trade_stream")
@@ -991,9 +989,9 @@ fn binance_catalog_matches_the_pinned_official_exact_set() {
             ("Futures (COIN-M) REST", 64),
             ("Futures (COIN-M) WebSocket", 10),
             ("Futures (COIN-M) WebSocket Market Streams", 19),
-            ("Futures (USDⓈ-M) REST", 95),
-            ("Futures (USDⓈ-M) WebSocket", 18),
-            ("Futures (USDⓈ-M) WebSocket Market Streams", 20),
+            ("Futures (USD-M) REST", 95),
+            ("Futures (USD-M) WebSocket", 18),
+            ("Futures (USD-M) WebSocket Market Streams", 20),
             ("Gift Card REST", 6),
             ("Institutional Loan REST", 16),
             ("KYC SaaS REST", 12),
@@ -1164,7 +1162,7 @@ fn binance_curated_coverage_maps_to_the_pinned_official_catalog() {
             .collect::<BTreeMap<_, _>>(),
         BTreeMap::from([(
             (
-                "Futures (USDⓈ-M) REST",
+                "Futures (USD-M) REST",
                 "Http",
                 "GET",
                 "/fapi/v1/premiumIndex",

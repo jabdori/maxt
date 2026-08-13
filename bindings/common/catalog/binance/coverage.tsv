@@ -1,6 +1,5 @@
 # Binance current curated coverage bridge snapshot
-# baseline_date: 2026-08-10
-# official_catalog: binance-2026-08-10.tsv
+# official_catalog: manifest.tsv
 # source_catalog: https://developers.binance.com/en/docs/llms.txt
 # source_detail: https://developers.binance.com/en/docs/llms-full.txt
 # Source catalog risk classifications intentionally differ from current curated coverage for spot/user_data_stream_signature, usd_m/change_initial_leverage, usd_m/change_margin_type, and wallet/withdraw; this bridge does not reconcile them.
@@ -25,34 +24,34 @@ spot	partial_book_depth_stream	Spot WebSocket Market Streams	WebSocketStream	POS
 spot	ticker_stream	Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@ticker	ticker	exact; local SUBSCRIBE maps to documented stream
 spot	kline_stream	Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@kline_{interval}	kline	exact; local SUBSCRIBE maps to documented stream
 spot	user_data_stream_signature	Spot WebSocket	WebSocketRequest	POST	/userDataStream.subscribe.signature	userDataStreamSubscribeSignature	exact; local REQUEST maps to documented WebSocket request
-usd_m	exchange_info	Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/exchangeInfo	exchangeInformation	exact
-usd_m	recent_trades	Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/trades	recentTradesList	exact
-usd_m	order_book	Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/depth	orderBook	exact
-usd_m	ticker_24hr	Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/ticker/24hr	ticker24hrPriceChangeStatistics	exact
-usd_m	mark_price	Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/premiumIndex	markPrice	intentional two-to-one: local symbol-filtered view of markPrice
-usd_m	mark_prices	Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/premiumIndex	markPrice	intentional two-to-one: local all-symbol view of markPrice
-usd_m	open_interest	Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/openInterest	openInterest	exact
-usd_m	klines	Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/klines	klineCandlestickData	exact
-usd_m	account_information_v3	Futures (USDⓈ-M) REST	Http	GET	/fapi/v3/account	accountInformationV3	exact
-usd_m	open_orders	Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/openOrders	currentAllOpenOrders	exact
-usd_m	new_order	Futures (USDⓈ-M) REST	Http	POST	/fapi/v1/order	newOrder	exact
-usd_m	cancel_order	Futures (USDⓈ-M) REST	Http	DELETE	/fapi/v1/order	cancelOrder	exact
-usd_m	account_trades	Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/userTrades	accountTradeList	exact
-usd_m	test_order	Futures (USDⓈ-M) REST	Http	POST	/fapi/v1/order/test	testOrder	exact
-usd_m	cancel_all_open_orders	Futures (USDⓈ-M) REST	Http	DELETE	/fapi/v1/allOpenOrders	cancelAllOpenOrders	exact
-usd_m	position_information_v3	Futures (USDⓈ-M) REST	Http	GET	/fapi/v3/positionRisk	positionInformationV3	exact
-usd_m	funding_rate_history	Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/fundingRate	getFundingRateHistory	exact
-usd_m	income_history	Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/income	getIncomeHistory	exact
-usd_m	change_initial_leverage	Futures (USDⓈ-M) REST	Http	POST	/fapi/v1/leverage	changeInitialLeverage	exact
-usd_m	change_margin_type	Futures (USDⓈ-M) REST	Http	POST	/fapi/v1/marginType	changeMarginType	exact
-usd_m	start_user_data_stream	Futures (USDⓈ-M) REST	Http	POST	/fapi/v1/listenKey	startUserDataStream	exact
-usd_m	keepalive_user_data_stream	Futures (USDⓈ-M) REST	Http	PUT	/fapi/v1/listenKey	keepaliveUserDataStream	exact
-usd_m	close_user_data_stream	Futures (USDⓈ-M) REST	Http	DELETE	/fapi/v1/listenKey	closeUserDataStream	exact
-usd_m	aggregate_trades	Futures (USDⓈ-M) REST	Http	GET	/fapi/v1/aggTrades	compressedAggregateTradesList	exact
-usd_m	aggregate_trade_stream	Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@aggTrade	aggregateTradeStreams	exact; local SUBSCRIBE maps to documented stream
-usd_m	partial_book_depth_stream	Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth{levels}@{updateSpeed}	partialBookDepthStreams	exact; local SUBSCRIBE maps to documented stream
-usd_m	ticker_stream	Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@ticker	individualSymbolTickerStreams	exact; local SUBSCRIBE maps to documented stream
-usd_m	kline_stream	Futures (USDⓈ-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@kline_{interval}	klineCandlestickStreams	exact; local SUBSCRIBE maps to documented stream
+usd_m	exchange_info	Futures (USD-M) REST	Http	GET	/fapi/v1/exchangeInfo	exchangeInformation	exact
+usd_m	recent_trades	Futures (USD-M) REST	Http	GET	/fapi/v1/trades	recentTradesList	exact
+usd_m	order_book	Futures (USD-M) REST	Http	GET	/fapi/v1/depth	orderBook	exact
+usd_m	ticker_24hr	Futures (USD-M) REST	Http	GET	/fapi/v1/ticker/24hr	ticker24hrPriceChangeStatistics	exact
+usd_m	mark_price	Futures (USD-M) REST	Http	GET	/fapi/v1/premiumIndex	markPrice	intentional two-to-one: local symbol-filtered view of markPrice
+usd_m	mark_prices	Futures (USD-M) REST	Http	GET	/fapi/v1/premiumIndex	markPrice	intentional two-to-one: local all-symbol view of markPrice
+usd_m	open_interest	Futures (USD-M) REST	Http	GET	/fapi/v1/openInterest	openInterest	exact
+usd_m	klines	Futures (USD-M) REST	Http	GET	/fapi/v1/klines	klineCandlestickData	exact
+usd_m	account_information_v3	Futures (USD-M) REST	Http	GET	/fapi/v3/account	accountInformationV3	exact
+usd_m	open_orders	Futures (USD-M) REST	Http	GET	/fapi/v1/openOrders	currentAllOpenOrders	exact
+usd_m	new_order	Futures (USD-M) REST	Http	POST	/fapi/v1/order	newOrder	exact
+usd_m	cancel_order	Futures (USD-M) REST	Http	DELETE	/fapi/v1/order	cancelOrder	exact
+usd_m	account_trades	Futures (USD-M) REST	Http	GET	/fapi/v1/userTrades	accountTradeList	exact
+usd_m	test_order	Futures (USD-M) REST	Http	POST	/fapi/v1/order/test	testOrder	exact
+usd_m	cancel_all_open_orders	Futures (USD-M) REST	Http	DELETE	/fapi/v1/allOpenOrders	cancelAllOpenOrders	exact
+usd_m	position_information_v3	Futures (USD-M) REST	Http	GET	/fapi/v3/positionRisk	positionInformationV3	exact
+usd_m	funding_rate_history	Futures (USD-M) REST	Http	GET	/fapi/v1/fundingRate	getFundingRateHistory	exact
+usd_m	income_history	Futures (USD-M) REST	Http	GET	/fapi/v1/income	getIncomeHistory	exact
+usd_m	change_initial_leverage	Futures (USD-M) REST	Http	POST	/fapi/v1/leverage	changeInitialLeverage	exact
+usd_m	change_margin_type	Futures (USD-M) REST	Http	POST	/fapi/v1/marginType	changeMarginType	exact
+usd_m	start_user_data_stream	Futures (USD-M) REST	Http	POST	/fapi/v1/listenKey	startUserDataStream	exact
+usd_m	keepalive_user_data_stream	Futures (USD-M) REST	Http	PUT	/fapi/v1/listenKey	keepaliveUserDataStream	exact
+usd_m	close_user_data_stream	Futures (USD-M) REST	Http	DELETE	/fapi/v1/listenKey	closeUserDataStream	exact
+usd_m	aggregate_trades	Futures (USD-M) REST	Http	GET	/fapi/v1/aggTrades	compressedAggregateTradesList	exact
+usd_m	aggregate_trade_stream	Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@aggTrade	aggregateTradeStreams	exact; local SUBSCRIBE maps to documented stream
+usd_m	partial_book_depth_stream	Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth{levels}@{updateSpeed}	partialBookDepthStreams	exact; local SUBSCRIBE maps to documented stream
+usd_m	ticker_stream	Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@ticker	individualSymbolTickerStreams	exact; local SUBSCRIBE maps to documented stream
+usd_m	kline_stream	Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@kline_{interval}	klineCandlestickStreams	exact; local SUBSCRIBE maps to documented stream
 wallet	all_coins_information	Wallet REST	Http	GET	/sapi/v1/capital/config/getall	allCoinsInformation	exact
 wallet	deposit_address	Wallet REST	Http	GET	/sapi/v1/capital/deposit/address	depositAddress	exact
 wallet	api_key_permissions	Wallet REST	Http	GET	/sapi/v1/account/apiRestrictions	getApiKeyPermission	exact

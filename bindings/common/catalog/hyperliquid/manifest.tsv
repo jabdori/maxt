@@ -1,7 +1,6 @@
 # Hyperliquid documented-exact logical-operation catalog snapshot
-# baseline_date: 2026-08-10
 # source_index: https://hyperliquid.gitbook.io/hyperliquid-docs/llms.txt
-# source_note: Hyperliquid GitBook pages are mutable; this file is the reviewed 2026-08-10 snapshot.
+# source_note: Hyperliquid GitBook pages are mutable; see catalog README for the reviewed snapshot date.
 # source_api: https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint ; https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint ; https://hyperliquid.gitbook.io/hyperliquid-docs/hypercore/multi-sig ; https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/priority-fees
 # source_websocket: https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/subscriptions ; https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/timeouts-and-heartbeats
 # source_deployers: https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/hip-3-deployer-actions ; https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/hip-4-deployer-actions ; https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/deploying-hip-1-and-hip-2-assets

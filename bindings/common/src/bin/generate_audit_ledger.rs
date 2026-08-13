@@ -16,11 +16,11 @@ use maxt_bindings_common::{
     schema::binding_schema,
 };
 
-const OUT_LEDGER: &str = "audit-ledger-2026-08-10.tsv";
-const OUT_QUEUE: &str = "audit-queue-2026-08-10.tsv";
-const OUT_WORK: &str = "implementation-worklist-2026-08-10.tsv";
-const OUT_EXECUTION: &str = "execution-checklist-2026-08-10.tsv";
-const OUT_PLATFORM: &str = "platform-service-worklist-2026-08-10.tsv";
+const OUT_LEDGER: &str = "audit/ledger.tsv";
+const OUT_QUEUE: &str = "audit/queue.tsv";
+const OUT_WORK: &str = "audit/worklist.tsv";
+const OUT_EXECUTION: &str = "audit/execution-checklist.tsv";
+const OUT_PLATFORM: &str = "audit/platform-service-worklist.tsv";
 
 // 하나의 공식 operation이 여러 provider surface를 공급하는 명시적 감사 alias입니다.
 const PROVIDER_AUDIT_ALIASES: &[(Exchange, &str, &str)] = &[(
@@ -215,46 +215,46 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
             exchange: Exchange::Upbit,
             source: include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/catalog/upbit-2026-08-10.tsv"
+                "/catalog/upbit/manifest.tsv"
             )),
             lifecycle: 5,
             exposure: None,
             classification: Some(include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/catalog/upbit-classification-2026-08-10.tsv"
+                "/catalog/upbit/classification.tsv"
             ))),
         },
         Catalog {
             exchange: Exchange::Upbit,
             source: include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/catalog/upbit-korea-2026-08-10.tsv"
+                "/catalog/upbit/korea.tsv"
             )),
             lifecycle: 5,
             exposure: None,
             classification: Some(include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/catalog/upbit-classification-2026-08-10.tsv"
+                "/catalog/upbit/classification.tsv"
             ))),
         },
         Catalog {
             exchange: Exchange::Bithumb,
             source: include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/catalog/bithumb-2026-08-10.tsv"
+                "/catalog/bithumb/manifest.tsv"
             )),
             lifecycle: 5,
             exposure: None,
             classification: Some(include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/catalog/bithumb-classification-2026-08-10.tsv"
+                "/catalog/bithumb/classification.tsv"
             ))),
         },
         Catalog {
             exchange: Exchange::Binance,
             source: include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/catalog/binance-2026-08-10.tsv"
+                "/catalog/binance/manifest.tsv"
             )),
             lifecycle: 7,
             exposure: Some(8),
@@ -264,7 +264,7 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
             exchange: Exchange::Hyperliquid,
             source: include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/catalog/hyperliquid-2026-08-10.tsv"
+                "/catalog/hyperliquid/manifest.tsv"
             )),
             lifecycle: 5,
             exposure: Some(6),
@@ -276,28 +276,28 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
             Exchange::Upbit,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/catalog/upbit-coverage-2026-08-10.tsv"
+                "/catalog/upbit/coverage.tsv"
             )),
         ),
         (
             Exchange::Bithumb,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/catalog/bithumb-coverage-2026-08-10.tsv"
+                "/catalog/bithumb/coverage.tsv"
             )),
         ),
         (
             Exchange::Binance,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/catalog/binance-coverage-2026-08-10.tsv"
+                "/catalog/binance/coverage.tsv"
             )),
         ),
         (
             Exchange::Hyperliquid,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/catalog/hyperliquid-coverage-2026-08-10.tsv"
+                "/catalog/hyperliquid/coverage.tsv"
             )),
         ),
     ];
@@ -492,12 +492,12 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
                 .collect::<Vec<_>>()
                 .join("+");
             let platform_decision = if exposure == "platform_limited" {
-                "이번 릴리스 보류(임시; 사용자 승인 필요)"
+                "release_deferred_pending_user_approval"
             } else {
-                "해당 없음"
+                "not_applicable"
             };
             let semantic_blocker = catalog.exchange == Exchange::Binance
-                && fields[0] == "Futures (USDⓈ-M) WebSocket Market Streams"
+                && fields[0] == "Futures (USD-M) WebSocket Market Streams"
                 && fields[4] == "aggregateTradeStreams";
             let audit_status = if semantic_blocker {
                 "Blocked"
@@ -632,13 +632,13 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
                 audit_status.to_owned(),
                 mapping_names.into_iter().collect::<Vec<_>>().join(";"),
                 if exposure == "platform_limited" {
-                    "별도 platform/protocol service 결정 대기; 사용자 승인 전 구현 재개 금지".to_owned()
+                    "await_separate_platform_or_protocol_service_decision;_do_not_implement_without_user_approval".to_owned()
                 } else if semantic_blocker {
-                    "공용 MarketEvent가 집계 체결의 fill ID 범위를 보존하지 못함; 억지 변환·새 공개 API 금지".to_owned()
+                    "common_MarketEvent_does_not_preserve_aggregate_trade_fill_ID_range;_do_not_force_conversion_or_add_a_public_API".to_owned()
                 } else if audit_status == "MechanicallyConnected" {
-                    "감사 초안; 의미상 Complete 아님".to_owned()
+                    "mechanical_audit_baseline_only;_not_semantically_Complete".to_owned()
                 } else {
-                    "원장/감사 queue에 유지; 새 발견은 다음 backlog".to_owned()
+                    "retain_in_ledger_and_audit_queue;_record_new_findings_in_the_next_backlog".to_owned()
                 },
             ];
             if exposure == "platform_limited" {
@@ -750,9 +750,9 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
                     .collect::<Vec<_>>()
                     .join(";"),
                 group.verification.into_iter().collect::<Vec<_>>().join("+"),
-                "고정 후보; 목록 밖 추가 금지".to_owned(),
+                "fixed_candidate;_do_not_add_items_outside_this_list".to_owned(),
                 if group.approval_states.is_empty() {
-                    "사용자 승인 대기; 구현 미승인".to_owned()
+                    "pending_user_approval;_implementation_not_authorized".to_owned()
                 } else {
                     format!(
                         "Blocked: {}",
@@ -916,7 +916,7 @@ fn run() -> Result<(), String> {
         _ => return Err("usage: generate_audit_ledger --check|--write".to_owned()),
     }
     println!(
-        "mechanical audit baseline: {} active; {} audit queue; {} candidate rows; {} execution units; {} platform rows",
+        "catalog baseline: {} active; {} audit queue; {} candidate rows; {} execution units; {} platform rows",
         outputs[0].rows, outputs[1].rows, outputs[2].rows, outputs[3].rows, outputs[4].rows
     );
     Ok(())

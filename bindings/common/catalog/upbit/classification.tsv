@@ -1,7 +1,6 @@
 # Upbit official API exposure classification
-# baseline_date: 2026-08-10
-# source_catalogs: upbit-2026-08-10.tsv, upbit-korea-2026-08-10.tsv
-# coverage_bridge: upbit-coverage-2026-08-10.tsv
+# source_catalogs: manifest.tsv, korea.tsv
+# coverage_bridge: coverage.tsv
 # columns: official_product	interface	method	path_or_message	operation_id	lifecycle	exposure
 Quotation	Http	GET	/v1/market/all	list-trading-pairs	documented_active	common_and_provider
 Quotation	Http	GET	/v1/candles/seconds	list-candles-seconds	documented_active	common_existing

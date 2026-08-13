@@ -23,6 +23,7 @@ const IMPLEMENTATION_WORKLIST: &str = include_str!("../catalog/audit/worklist.ts
 const EXECUTION_CHECKLIST: &str = include_str!("../catalog/audit/execution-checklist.tsv");
 const PLATFORM_SERVICE_WORKLIST: &str =
     include_str!("../catalog/audit/platform-service-worklist.tsv");
+const AUDIT_REVIEWS: &str = include_str!("../catalog/audit/reviews.tsv");
 
 const EXPOSURES: &[&str] = &[
     "common_existing",
@@ -74,16 +75,19 @@ fn frozen_active_audit_ledger_and_derived_queues_are_consistent() {
     let work = audit_rows(IMPLEMENTATION_WORKLIST);
     let execution = audit_rows(EXECUTION_CHECKLIST);
     let platform = audit_rows(PLATFORM_SERVICE_WORKLIST);
+    let reviews = audit_rows(AUDIT_REVIEWS);
     assert_eq!(ledger.len(), 1_374);
     assert_eq!(queue.len(), 937);
-    assert_eq!(work.len(), 52);
-    assert_eq!(execution.len(), 41);
+    assert_eq!(work.len(), 28);
+    assert_eq!(execution.len(), 28);
     assert_eq!(platform.len(), 437);
-    assert!(ledger.iter().all(|row| row.len() == 30));
-    assert!(queue.iter().all(|row| row.len() == 30));
-    assert!(work.iter().all(|row| row.len() == 30));
-    assert!(execution.iter().all(|row| row.len() == 13));
-    assert!(platform.iter().all(|row| row.len() == 30));
+    assert_eq!(reviews.len(), 185);
+    assert!(ledger.iter().all(|row| row.len() == 31));
+    assert!(queue.iter().all(|row| row.len() == 31));
+    assert!(work.iter().all(|row| row.len() == 31));
+    assert!(execution.iter().all(|row| row.len() == 14));
+    assert!(platform.iter().all(|row| row.len() == 31));
+    assert!(reviews.iter().all(|row| row.len() == 9));
 
     let ledger_keys = ledger
         .iter()
@@ -95,31 +99,38 @@ fn frozen_active_audit_ledger_and_derived_queues_are_consistent() {
             row[6],
             "documented_active" | "documented_active_korea_only" | "documented_testnet"
         ) && matches!(
-            row[27],
-            "MechanicallyConnected" | "Partial" | "Planned" | "Unreviewed" | "Blocked"
-        ) && row[27] != "Complete"
+            (row[28], row[29]),
+            ("verified", "none")
+                | ("gap_found", "needs_approval")
+                | ("needs_design", "service_or_contract_decision")
+                | ("needs_evidence", "continue_audit")
+                | ("not_checked", "continue_audit")
+        ) && !row[30].is_empty()
     }));
     assert!(ledger.iter().all(|row| {
-        row[7] != "platform_limited"
-            || matches!(
-                row[9],
-                "separate_service_implementation"
-                    | "Blocked"
-                    | "release_deferred_pending_user_approval"
-            )
+        !matches!(row[28], "verified" | "gap_found")
+            || (row[11] == "connected"
+                && row[13] == "Implemented"
+                && row[14] == "present"
+                && row[16] == "present"
+                && row[18] == "present"
+                && row[20] == "present"
+                && row[22] == "present"
+                && row[24] == "present"
+                && !row[26].is_empty())
     }));
+    assert!(
+        ledger.iter().all(|row| {
+            row[7] != "platform_limited" || row[9] == "pending_service_scope_decision"
+        })
+    );
     assert!(queue.iter().all(|row| row[7] != "platform_limited"
         && ledger_keys.contains(&row[..6].iter().copied().collect::<Vec<_>>().join("\t"))));
-    assert!(queue.iter().all(|row| matches!(
-        row[27],
-        "Partial" | "Planned" | "Unreviewed" | "MechanicallyConnected" | "Blocked"
-    )));
-    assert!(
-        work.iter()
-            .all(|row| matches!(row[27], "Partial" | "Planned" | "Blocked")
-                && row[7] != "platform_limited"
-                && ledger_keys.contains(&row[..6].iter().copied().collect::<Vec<_>>().join("\t")))
-    );
+    assert!(queue.iter().all(|row| row[7] != "platform_limited"));
+    assert!(work.iter().all(|row| row[28] == "gap_found"
+        && row[29] == "needs_approval"
+        && row[7] != "platform_limited"
+        && ledger_keys.contains(&row[..6].iter().copied().collect::<Vec<_>>().join("\t"))));
     assert!(platform.iter().all(|row| row[7] == "platform_limited"
         && ledger_keys.contains(&row[..6].iter().copied().collect::<Vec<_>>().join("\t"))));
 
@@ -130,7 +141,7 @@ fn frozen_active_audit_ledger_and_derived_queues_are_consistent() {
         .collect::<BTreeSet<_>>();
     let actual_local_operations = execution.iter().map(|row| row[0]).collect::<BTreeSet<_>>();
     assert_eq!(actual_local_operations, expected_local_operations);
-    assert_eq!(actual_local_operations.len(), 41);
+    assert_eq!(actual_local_operations.len(), execution.len());
     assert!(execution.iter().all(|row| {
         (row[1].contains(';') && row[2] == "common_contract")
             || (!row[1].contains(';') && row[2].ends_with("_owner"))
@@ -138,45 +149,30 @@ fn frozen_active_audit_ledger_and_derived_queues_are_consistent() {
     assert_eq!(
         execution
             .iter()
-            .flat_map(|row| row[4].split(';'))
-            .filter(|value| !value.is_empty())
-            .collect::<BTreeSet<_>>()
-            .len(),
-        23
-    );
-    assert_eq!(
-        execution
-            .iter()
             .map(|row| row[5].parse::<usize>().unwrap())
             .sum::<usize>(),
-        52
+        work.len()
     );
-    assert!(execution.iter().all(|row| {
-        row[11] == "fixed_candidate;_do_not_add_items_outside_this_list"
-            && (row[12] == "pending_user_approval;_implementation_not_authorized"
-                || row[12].starts_with("Blocked:"))
-    }));
-    let owner_counts = execution.iter().fold(BTreeMap::new(), |mut counts, row| {
-        *counts.entry(row[2]).or_insert(0usize) += 1;
-        counts
-    });
-    assert_eq!(owner_counts.get("common_contract"), Some(&11));
-    assert_eq!(owner_counts.get("upbit_owner"), Some(&4));
-    assert_eq!(owner_counts.get("bithumb_owner"), Some(&4));
-    assert_eq!(owner_counts.get("binance_owner"), Some(&15));
-    assert_eq!(owner_counts.get("hyperliquid_owner"), Some(&7));
+    assert!(
+        execution
+            .iter()
+            .all(|row| { row[11] == "gap_found" && row[12] == "needs_approval" })
+    );
 
-    let aggregate_stream = work
+    let review_keys = reviews
         .iter()
-        .find(|row| row[10] == "usd_m.aggregate_trade_stream")
-        .unwrap();
-    assert_eq!(aggregate_stream[27], "Blocked");
-    assert!(aggregate_stream[29].contains("fill_ID_range"));
-    let execution_aggregate_stream = execution
-        .iter()
-        .find(|row| row[0] == "usd_m.aggregate_trade_stream")
-        .unwrap();
-    assert!(execution_aggregate_stream[12].starts_with("Blocked:"));
+        .map(|row| row[..6].iter().copied().collect::<Vec<_>>().join("\t"))
+        .collect::<BTreeSet<_>>();
+    assert_eq!(review_keys.len(), reviews.len());
+    assert!(review_keys.is_subset(&ledger_keys));
+    assert!(reviews.iter().all(|row| matches!(
+        (row[6], row[7]),
+        ("verified", "none")
+            | ("gap_found", "needs_approval")
+            | ("needs_design", "service_or_contract_decision")
+            | ("needs_evidence", "continue_audit")
+            | ("not_checked", "continue_audit")
+    ) && !row[8].is_empty()));
 }
 
 use maxt::Exchange;
@@ -1306,21 +1302,21 @@ fn hyperliquid_operation_exposure_is_complete_and_matches_current_coverage() {
 #[test]
 fn hyperliquid_unresolved_inventory_is_explicitly_bounded() {
     let unresolved = catalog_rows(HYPERLIQUID_UNRESOLVED);
-    assert!(unresolved.iter().all(|fields| fields.len() == 4));
+    assert!(unresolved.iter().all(|fields| fields.len() == 5));
     assert_eq!(unresolved.len(), 9);
     assert_eq!(
         unresolved
             .iter()
-            .filter(|fields| fields[1] == "blocked_exact_count")
-            .map(|fields| (fields[0], fields[2]))
+            .filter(|fields| fields[0] == "explorer")
+            .map(|fields| (fields[0], fields[1], fields[2], fields[3]))
             .collect::<BTreeSet<_>>(),
-        BTreeSet::from([("explorer", "blockList")]),
+        BTreeSet::from([("explorer", "needs_evidence", "continue_audit", "blockList",)]),
     );
     assert_eq!(
         unresolved
             .iter()
-            .filter(|fields| fields[1] == "sdk_only_unverified")
-            .map(|fields| fields[2])
+            .filter(|fields| fields[0] == "sdk")
+            .map(|fields| fields[3])
             .collect::<BTreeSet<_>>(),
         BTreeSet::from([
             "CSignerAction",
@@ -1332,6 +1328,11 @@ fn hyperliquid_unresolved_inventory_is_explicitly_bounded() {
             "subAccountTransfer",
             "userToMultiSigSigners",
         ]),
+    );
+    assert!(
+        unresolved
+            .iter()
+            .all(|fields| { fields[1] == "needs_evidence" && fields[2] == "continue_audit" })
     );
 }
 

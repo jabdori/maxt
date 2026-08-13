@@ -1,7 +1,8 @@
 //! 공식 catalog 전체와 현재 공개 계약을 한 번에 감사하는 Cargo 도구입니다.
 //!
-//! 이 도구는 Rust `OPERATIONS`/`binding_schema()`와 고정 TSV만 사용합니다. Rust 소스를
-//! 정규식으로 재해석하지 않으며, 연결되지 않은 공식 행은 `Unreviewed`로 남깁니다.
+//! 이 도구는 Rust `OPERATIONS`/`binding_schema()`와 고정 TSV를 사용합니다. 기계적으로
+//! 확인할 수 있는 연결 근거와 사람이 검토한 감사 결과를 분리하며, Rust 소스를 정규식으로
+//! 재해석하지 않습니다.
 
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -21,6 +22,10 @@ const OUT_QUEUE: &str = "audit/queue.tsv";
 const OUT_WORK: &str = "audit/worklist.tsv";
 const OUT_EXECUTION: &str = "audit/execution-checklist.tsv";
 const OUT_PLATFORM: &str = "audit/platform-service-worklist.tsv";
+const REVIEW_INPUT: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/catalog/audit/reviews.tsv"
+));
 
 // 하나의 공식 operation이 여러 provider surface를 공급하는 명시적 감사 alias입니다.
 const PROVIDER_AUDIT_ALIASES: &[(Exchange, &str, &str)] = &[(
@@ -44,6 +49,13 @@ struct Bridge<'a> {
     local_id: &'a str,
 }
 
+#[derive(Clone, Copy)]
+struct AuditReview<'a> {
+    result: &'a str,
+    next_action: &'a str,
+    reason: &'a str,
+}
+
 struct RenderedOutput {
     name: &'static str,
     contents: String,
@@ -60,7 +72,9 @@ struct ExecutionGroup {
     coverage_locators: BTreeSet<String>,
     rust_locators: BTreeSet<String>,
     verification: BTreeSet<String>,
-    approval_states: BTreeSet<String>,
+    audit_results: BTreeSet<String>,
+    next_actions: BTreeSet<String>,
+    reasons: BTreeSet<String>,
 }
 
 fn rows(source: &'static str) -> impl Iterator<Item = Vec<&'static str>> {
@@ -92,6 +106,57 @@ fn exchange_slug(exchange: Exchange) -> &'static str {
         Exchange::Hyperliquid => "hyperliquid",
         _ => "other",
     }
+}
+
+fn exchange_from_name(value: &str) -> Exchange {
+    match value {
+        "Upbit" => Exchange::Upbit,
+        "Bithumb" => Exchange::Bithumb,
+        "Binance" => Exchange::Binance,
+        "Hyperliquid" => Exchange::Hyperliquid,
+        _ => panic!("unknown audit review exchange {value}"),
+    }
+}
+
+fn valid_audit_result(result: &str, next_action: &str) -> bool {
+    matches!(
+        (result, next_action),
+        ("verified", "none")
+            | ("gap_found", "needs_approval")
+            | ("needs_design", "service_or_contract_decision")
+            | ("needs_evidence", "continue_audit")
+            | ("not_checked", "continue_audit")
+    )
+}
+
+fn audit_reviews() -> BTreeMap<(Exchange, String), AuditReview<'static>> {
+    let mut reviews = BTreeMap::new();
+    for fields in
+        rows(REVIEW_INPUT).filter(|fields| !matches!(fields.first().copied(), Some("exchange")))
+    {
+        assert_eq!(fields.len(), 9, "audit review must have nine columns");
+        let review = AuditReview {
+            result: fields[6],
+            next_action: fields[7],
+            reason: fields[8],
+        };
+        assert!(
+            valid_audit_result(review.result, review.next_action),
+            "invalid audit result/action for {}",
+            fields[5]
+        );
+        assert!(
+            !review.reason.is_empty(),
+            "audit review reason must not be empty"
+        );
+        let review_key = (exchange_from_name(fields[0]), key(&fields[1..6]));
+        assert!(
+            reviews.insert(review_key, review).is_none(),
+            "duplicate audit review for {}",
+            fields[5]
+        );
+    }
+    reviews
 }
 
 fn snake_to_camel(value: &str) -> String {
@@ -321,6 +386,7 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
             }
         }
     }
+    let reviews = audit_reviews();
     let schema = binding_schema();
     let schema_names = [
         operation_names(&schema, Exchange::Upbit),
@@ -377,6 +443,7 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
     let mut queue = Vec::<Vec<String>>::new();
     let mut work = Vec::<Vec<String>>::new();
     let mut platform = Vec::<Vec<String>>::new();
+    let mut used_reviews = BTreeSet::new();
     for catalog in catalogs {
         for fields in rows(catalog.source) {
             let lifecycle = fields[catalog.lifecycle];
@@ -492,32 +559,57 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
                 .collect::<Vec<_>>()
                 .join("+");
             let platform_decision = if exposure == "platform_limited" {
-                "release_deferred_pending_user_approval"
+                "pending_service_scope_decision"
             } else {
                 "not_applicable"
             };
-            let semantic_blocker = catalog.exchange == Exchange::Binance
-                && fields[0] == "Futures (USD-M) WebSocket Market Streams"
-                && fields[4] == "aggregateTradeStreams";
-            let audit_status = if semantic_blocker {
-                "Blocked"
-            } else if exposure == "platform_limited" || state == "Unlinked" {
-                "Unreviewed"
-            } else if state == "Planned" {
-                "Planned"
-            } else if state == "Partial"
-                || !rust_present
-                || !schema_present
-                || !codegen_names_present
-                || !python_present
-                || !dart_present
-                || !typescript_present
-                || verification.is_empty()
-            {
-                "Partial"
+            let default_review = if exposure == "platform_limited" {
+                AuditReview {
+                    result: "needs_design",
+                    next_action: "service_or_contract_decision",
+                    reason: "Requires a separate platform or protocol service; release scope requires user approval.",
+                }
+            } else if matches!(state.as_str(), "Partial" | "Planned") {
+                AuditReview {
+                    result: "needs_evidence",
+                    next_action: "continue_audit",
+                    reason: "The existing implementation scope is retained, but operation-level semantic audit evidence is incomplete.",
+                }
             } else {
-                "MechanicallyConnected"
+                AuditReview {
+                    result: "not_checked",
+                    next_action: "continue_audit",
+                    reason: "No semantic audit record is available for this operation.",
+                }
             };
+            let review_key = (catalog.exchange, official.clone());
+            let review = if let Some(review) = reviews.get(&review_key).copied() {
+                used_reviews.insert(review_key);
+                review
+            } else {
+                default_review
+            };
+            assert!(
+                valid_audit_result(review.result, review.next_action),
+                "invalid derived audit result/action for {}",
+                fields[4]
+            );
+            if matches!(review.result, "verified" | "gap_found") {
+                assert!(
+                    bridges.len() > 0
+                        && state == "Implemented"
+                        && rust_present
+                        && schema_present
+                        && codegen_names_present
+                        && python_present
+                        && dart_present
+                        && typescript_present
+                        && !verification.is_empty(),
+                    "{} audit review lacks required mechanical evidence for {}",
+                    review.result,
+                    fields[4]
+                );
+            }
             let source_locator_text = source_locators.into_iter().collect::<Vec<_>>().join(";");
             let local_status = if local_ops.is_empty() {
                 "unreviewed"
@@ -629,29 +721,30 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
                 }
                 .to_owned(),
                 verification,
-                audit_status.to_owned(),
                 mapping_names.into_iter().collect::<Vec<_>>().join(";"),
-                if exposure == "platform_limited" {
-                    "await_separate_platform_or_protocol_service_decision;_do_not_implement_without_user_approval".to_owned()
-                } else if semantic_blocker {
-                    "common_MarketEvent_does_not_preserve_aggregate_trade_fill_ID_range;_do_not_force_conversion_or_add_a_public_API".to_owned()
-                } else if audit_status == "MechanicallyConnected" {
-                    "mechanical_audit_baseline_only;_not_semantically_Complete".to_owned()
-                } else {
-                    "retain_in_ledger_and_audit_queue;_record_new_findings_in_the_next_backlog".to_owned()
-                },
+                review.result.to_owned(),
+                review.next_action.to_owned(),
+                review.reason.to_owned(),
             ];
             if exposure == "platform_limited" {
                 platform.push(row.clone());
             } else {
                 queue.push(row.clone());
-                if matches!(audit_status, "Partial" | "Planned" | "Blocked") {
+                if review.result == "gap_found"
+                    && review.next_action == "needs_approval"
+                    && !local.is_empty()
+                {
                     work.push(row.clone());
                 }
             }
             ledger.push(row);
         }
     }
+    assert_eq!(
+        used_reviews.len(),
+        reviews.len(),
+        "an audit review does not match an active official operation"
+    );
     ledger.sort_by(|a, b| a[..6].cmp(&b[..6]));
     queue.sort_by(|a, b| a[..6].cmp(&b[..6]));
     work.sort_by(|a, b| a[..6].cmp(&b[..6]));
@@ -659,7 +752,6 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
     assert_eq!(ledger.len(), 1_374);
     assert_eq!(platform.len(), 437);
     assert_eq!(queue.len(), 937);
-    assert_eq!(work.len(), 52);
     let mut execution_groups = BTreeMap::<String, ExecutionGroup>::new();
     for row in &work {
         for local_operation in row[10].split(';').filter(|value| !value.is_empty()) {
@@ -682,11 +774,11 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
                     .filter(|value| !value.is_empty())
                     .map(str::to_owned),
             );
-            if row[27] == "Blocked" {
-                group.approval_states.insert(row[29].clone());
-            }
+            group.audit_results.insert(row[28].clone());
+            group.next_actions.insert(row[29].clone());
+            group.reasons.insert(row[30].clone());
             group.mapping_methods.extend(
-                row[28]
+                row[27]
                     .split(';')
                     .filter(|value| !value.is_empty())
                     .map(str::to_owned),
@@ -697,15 +789,6 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
             ));
         }
     }
-    assert_eq!(execution_groups.len(), 41);
-    assert_eq!(
-        execution_groups
-            .values()
-            .flat_map(|group| group.mapping_methods.iter())
-            .collect::<BTreeSet<_>>()
-            .len(),
-        23
-    );
     let execution = execution_groups
         .into_iter()
         .map(|(local_operation, group)| {
@@ -750,19 +833,13 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
                     .collect::<Vec<_>>()
                     .join(";"),
                 group.verification.into_iter().collect::<Vec<_>>().join("+"),
-                "fixed_candidate;_do_not_add_items_outside_this_list".to_owned(),
-                if group.approval_states.is_empty() {
-                    "pending_user_approval;_implementation_not_authorized".to_owned()
-                } else {
-                    format!(
-                        "Blocked: {}",
-                        group
-                            .approval_states
-                            .into_iter()
-                            .collect::<Vec<_>>()
-                            .join(";")
-                    )
-                },
+                group
+                    .audit_results
+                    .into_iter()
+                    .collect::<Vec<_>>()
+                    .join(";"),
+                group.next_actions.into_iter().collect::<Vec<_>>().join(";"),
+                group.reasons.into_iter().collect::<Vec<_>>().join(" || "),
             ]
         })
         .collect::<Vec<_>>();
@@ -780,7 +857,7 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
         "local_operations",
         "bridge_status",
         "coverage_locator",
-        "coverage_state",
+        "coverage_implementation_state",
         "rust_status",
         "rust_locators",
         "schema_status",
@@ -794,9 +871,10 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
         "TypeScript_status",
         "TypeScript_locator",
         "verification",
-        "audit_status",
         "mapping_names",
-        "next_batch",
+        "audit_result",
+        "next_action",
+        "reason",
     ];
     let execution_header = [
         "local_operation",
@@ -810,8 +888,9 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
         "coverage_locators",
         "rust_locators",
         "verification",
-        "implementation_scope",
-        "approval_state",
+        "audit_result",
+        "next_action",
+        "reasons",
     ];
     vec![
         RenderedOutput {
@@ -819,9 +898,9 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
             contents: emit(
                 &header,
                 &[
-                    "mechanical audit baseline for all 1,374 active official rows; not a semantic completion audit",
+                    "audit ledger for all 1,374 active official rows",
                     "deprecated source rows are retained but excluded from this active ledger",
-                    "Unlinked rows are Unreviewed, never automatically treated as unimplemented",
+                    "not_checked means no semantic audit record; it never means automatically unimplemented",
                     "platform_limited rows remain in the ledger and are separated from general Adapter work",
                 ],
                 &ledger,
@@ -833,7 +912,7 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
             contents: emit(
                 &header,
                 &[
-                    "all 937 general-SDK rows retained for semantic audit; Unreviewed is not implementation work",
+                    "all 937 general-SDK rows retained for semantic audit; not_checked is not implementation work",
                 ],
                 &queue,
             ),
@@ -844,7 +923,7 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
             contents: emit(
                 &header,
                 &[
-                    "52 official Partial/Planned/Blocked rows; this is a candidate-row list, not 52 independent implementation tasks",
+                    "official rows with gap_found and needs_approval; this is not an approved implementation list",
                 ],
                 &work,
             ),
@@ -855,9 +934,9 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
             contents: emit(
                 &execution_header,
                 &[
-                    "41 unique local-operation execution units derived from the 52 candidate rows",
-                    "23 unique mapping methods; shared common contracts remain grouped to prevent duplicate implementation",
-                    "implementation remains unapproved until the user approves this checklist",
+                    "unique local-operation groups derived from the current worklist",
+                    "each group keeps all mapped official rows together to prevent duplicate implementation",
+                    "needs_approval means implementation remains unauthorized until the user approves it",
                 ],
                 &execution,
             ),
@@ -884,7 +963,7 @@ fn check(outputs: &[RenderedOutput]) -> Result<(), String> {
             .map_err(|error| format!("read {}: {error}", output.name))?;
         if checked_in != output.contents.as_bytes() {
             return Err(format!(
-                "{} differs from the mechanical audit baseline; run with --write after reviewing the diff",
+                "{} differs from the rendered audit ledger; run with --write after reviewing the diff",
                 output.name
             ));
         }
@@ -916,7 +995,7 @@ fn run() -> Result<(), String> {
         _ => return Err("usage: generate_audit_ledger --check|--write".to_owned()),
     }
     println!(
-        "catalog baseline: {} active; {} audit queue; {} candidate rows; {} execution units; {} platform rows",
+        "audit ledger: {} active; {} audit queue; {} approval candidates; {} execution units; {} platform rows",
         outputs[0].rows, outputs[1].rows, outputs[2].rows, outputs[3].rows, outputs[4].rows
     );
     Ok(())
@@ -950,7 +1029,7 @@ mod tests {
         for (output, (expected_rows, expected_columns)) in
             outputs
                 .iter()
-                .zip([(1_374, 30), (937, 30), (52, 30), (41, 13), (437, 30)])
+                .zip([(1_374, 31), (937, 31), (28, 31), (28, 14), (437, 31)])
         {
             let rows = output
                 .contents

@@ -1,0 +1,189 @@
+# Human semantic-audit inputs. Each row is an exact active-manifest operation key.
+# The generator validates keys and result/action pairs before rendering the ledger.
+# columns: exchange	official_product	interface	method	path_or_message	operation_id	audit_result	next_action	reason
+exchange	official_product	interface	method	path_or_message	operation_id	audit_result	next_action	reason
+Binance	Alpha WebSocket Market Streams	WebSocketStream	POST	/{symbol}@aggTrade	aggregateTradeStream	needs_design	service_or_contract_decision	The current MarketEvent contract cannot preserve the official stream semantics.
+Binance	C2C REST	Http	GET	/sapi/v1/c2c/orderMatch/listUserOrderHistory	getC2CTradeHistory	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Futures (COIN-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@aggTrade	aggregateTradeStreams	needs_design	service_or_contract_decision	The current MarketEvent contract cannot preserve the official stream semantics.
+Binance	Futures (COIN-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth@{updateSpeed}	diffBookDepthStreams	needs_design	service_or_contract_decision	The current MarketEvent contract cannot preserve the official stream semantics.
+Binance	Futures (USD-M) REST	Http	DELETE	/fapi/v1/allOpenOrders	cancelAllOpenOrders	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Futures (USD-M) REST	Http	DELETE	/fapi/v1/listenKey	closeUserDataStream	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Futures (USD-M) REST	Http	GET	/fapi/v1/depth	orderBook	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Futures (USD-M) REST	Http	GET	/fapi/v1/exchangeInfo	exchangeInformation	gap_found	needs_approval	Only PERPETUAL symbols are retained; the official exchangeInfo product set is not exposed.
+Binance	Futures (USD-M) REST	Http	GET	/fapi/v1/fundingRate	getFundingRateHistory	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Futures (USD-M) REST	Http	GET	/fapi/v1/income	getIncomeHistory	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Futures (USD-M) REST	Http	GET	/fapi/v1/klines	klineCandlestickData	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Futures (USD-M) REST	Http	GET	/fapi/v1/openInterest	openInterest	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Futures (USD-M) REST	Http	GET	/fapi/v1/openOrders	currentAllOpenOrders	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Futures (USD-M) REST	Http	GET	/fapi/v1/premiumIndex	markPrice	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Futures (USD-M) REST	Http	GET	/fapi/v1/ticker/24hr	ticker24hrPriceChangeStatistics	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Futures (USD-M) REST	Http	GET	/fapi/v1/trades	recentTradesList	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Futures (USD-M) REST	Http	GET	/fapi/v1/userTrades	accountTradeList	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Futures (USD-M) REST	Http	GET	/fapi/v3/account	accountInformationV3	gap_found	needs_approval	Only margin totals and assets are retained; other official account fields are not exposed.
+Binance	Futures (USD-M) REST	Http	GET	/fapi/v3/positionRisk	positionInformationV3	gap_found	needs_approval	Leverage and margin mode are not preserved in the public output.
+Binance	Futures (USD-M) REST	Http	POST	/fapi/v1/leverage	changeInitialLeverage	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Futures (USD-M) REST	Http	POST	/fapi/v1/listenKey	startUserDataStream	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Futures (USD-M) REST	Http	POST	/fapi/v1/marginType	changeMarginType	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Futures (USD-M) REST	Http	POST	/fapi/v1/order/test	testOrder	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Futures (USD-M) REST	Http	PUT	/fapi/v1/listenKey	keepaliveUserDataStream	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@aggTrade	aggregateTradeStreams	needs_design	service_or_contract_decision	Aggregate trade events contain a fill-ID range that MarketEvent::Trade cannot preserve.
+Binance	Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth@{updateSpeed}	diffBookDepthStreams	needs_design	service_or_contract_decision	The current MarketEvent contract cannot preserve the official stream semantics.
+Binance	Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@rpiDepth@500ms	rpiDiffBookDepthStreams	needs_design	service_or_contract_decision	The current MarketEvent contract cannot preserve the official stream semantics.
+Binance	Options WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth@{updateSpeed}	diffBookDepthStreams	needs_design	service_or_contract_decision	The current MarketEvent contract cannot preserve the official stream semantics.
+Binance	Spot REST	Http	DELETE	/api/v3/openOrders	deleteOpenOrders	gap_found	needs_approval	Official cancellation reports are discarded by the common cancel-all result.
+Binance	Spot REST	Http	GET	/api/v3/account	getAccount	gap_found	needs_approval	Only balances are exposed; commissions and permissions are not preserved.
+Binance	Spot REST	Http	GET	/api/v3/avgPrice	avgPrice	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Spot REST	Http	GET	/api/v3/depth	depth	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Spot REST	Http	GET	/api/v3/exchangeInfo	exchangeInfo	gap_found	needs_approval	Only selected symbol filters are exposed; the full exchangeInfo filter contract is not preserved.
+Binance	Spot REST	Http	GET	/api/v3/klines	klines	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Spot REST	Http	GET	/api/v3/myTrades	myTrades	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Spot REST	Http	GET	/api/v3/openOrders	getOpenOrders	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Spot REST	Http	GET	/api/v3/order	getOrder	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Spot REST	Http	GET	/api/v3/ticker/24hr	ticker24hr	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Spot REST	Http	GET	/api/v3/trades	getTrades	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Spot REST	Http	POST	/api/v3/order/test	orderTest	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@aggTrade	aggTrade	needs_design	service_or_contract_decision	The current MarketEvent contract cannot preserve the official stream semantics.
+Binance	Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth@{updateSpeed}	diffBookDepth	needs_design	service_or_contract_decision	The current MarketEvent contract cannot preserve the official stream semantics.
+Binance	Wallet REST	Http	GET	/sapi/v1/account/apiRestrictions	getApiKeyPermission	gap_found	needs_approval	The endpoint is reduced to withdrawal-preflight booleans, not its public permission result.
+Binance	Wallet REST	Http	GET	/sapi/v1/capital/config/getall	allCoinsInformation	gap_found	needs_approval	Only selected asset and network transfer rules are retained; full coin configuration is not exposed.
+Binance	Wallet REST	Http	GET	/sapi/v1/capital/deposit/address	depositAddress	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Binance	Wallet REST	Http	GET	/sapi/v1/capital/deposit/hisrec	depositHistory	gap_found	needs_approval	The common history model loses official status, time, and pagination semantics.
+Binance	Wallet REST	Http	GET	/sapi/v1/capital/withdraw/address/list	fetchWithdrawAddressList	gap_found	needs_approval	The list is used by withdrawal preflight and is not publicly returned.
+Binance	Wallet REST	Http	GET	/sapi/v1/capital/withdraw/history	withdrawHistory	gap_found	needs_approval	The common history model loses official status, time, and pagination semantics.
+Binance	Wallet REST	Http	GET	/sapi/v1/localentity/questionnaire-requirements	checkQuestionnaireRequirements	gap_found	needs_approval	The response is reduced to a country/required preflight decision instead of its public result.
+Binance	Wallet REST	Http	POST	/sapi/v1/capital/withdraw/apply	withdraw	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Deposits and withdrawals	Http	GET	/v1/api_keys	listApiKeys	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Deposits and withdrawals	Http	GET	/v1/deposits	listDeposits	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Deposits and withdrawals	Http	GET	/v1/deposits/coin_address	getDepositAddress	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Deposits and withdrawals	Http	GET	/v1/deposits/coin_addresses	listDepositAddresses	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Deposits and withdrawals	Http	GET	/v1/status/wallet	getWalletStatus	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Deposits and withdrawals	Http	GET	/v1/withdraws	listWithdrawals	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Deposits and withdrawals	Http	GET	/v1/withdraws/chance	getWithdrawalChance	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Deposits and withdrawals	Http	GET	/v1/withdraws/coin_addresses	listWithdrawalAddresses	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Deposits and withdrawals	Http	POST	/v1/deposits/generate_coin_address	createDepositAddress	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Deposits and withdrawals	Http	POST	/v1/withdraws/coin	createCoinWithdrawal	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Exchange	Http	GET	/v1/accounts	getAccounts	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Exchange	Http	GET	/v1/order	getOrder	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Exchange	Http	GET	/v1/orders/chance	getOrderChance	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Exchange	Http	GET	/v2/orders/history	listClosedOrders	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Exchange	Http	GET	/v2/orders/pending	listPendingOrders	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	KRW deposits and withdrawals	Http	GET	/v1/deposits/krw	listKrwDeposits	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	KRW deposits and withdrawals	Http	GET	/v1/withdraws/krw	listKrwWithdrawals	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	KRW deposits and withdrawals	Http	POST	/v1/deposits/krw	createKrwDeposit	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	KRW deposits and withdrawals	Http	POST	/v1/withdraws/krw	createKrwWithdrawal	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Quotation	Http	GET	/v1/candles/days	listDayCandles	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Quotation	Http	GET	/v1/candles/minutes/{unit}	listMinuteCandles	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Quotation	Http	GET	/v1/candles/months	listMonthCandles	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Quotation	Http	GET	/v1/candles/weeks	listWeekCandles	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Quotation	Http	GET	/v1/market/all	listTradingPairs	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Quotation	Http	GET	/v1/market/virtual_asset_warning	listMarketWarnings	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Quotation	Http	GET	/v1/notices	listNotices	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Quotation	Http	GET	/v1/ticker	getTicker	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Quotation	Http	GET	/v1/trades/ticks	listRecentTrades	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	Quotation	Http	GET	/v2/fee/inout/{currency}	getDepositWithdrawalFee	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	TWAP	Http	DELETE	/v1/twap	cancelTwapOrder	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	TWAP	Http	GET	/v1/twap	listTwapOrders	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Bithumb	TWAP	Http	POST	/v1/twap	createTwapOrder	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Hyperliquid	Exchange endpoint	Http	POST	/exchange action=cWithdraw	cWithdraw	needs_design	service_or_contract_decision	Requires an exchange action or signer contract outside the current general Adapter boundary.
+Hyperliquid	Exchange endpoint	Http	POST	/exchange action=cancelByCloid	cancelByCloid	needs_design	service_or_contract_decision	Requires an exchange action or signer contract outside the current general Adapter boundary.
+Hyperliquid	Exchange endpoint	Http	POST	/exchange action=updateIsolatedMargin	updateIsolatedMargin	needs_design	service_or_contract_decision	Requires an exchange action or signer contract outside the current general Adapter boundary.
+Hyperliquid	Exchange endpoint	Http	POST	/exchange action=updateLeverage	updateLeverage	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Hyperliquid	Exchange endpoint	Http	POST	/exchange action=withdraw3	withdraw3	needs_design	service_or_contract_decision	Requires an exchange action or signer contract outside the current general Adapter boundary.
+Hyperliquid	Info endpoint	Http	POST	/info type=candleSnapshot	candleSnapshot	gap_found	needs_approval	The common candle model does not preserve the official trade-count field.
+Hyperliquid	Info endpoint	Http	POST	/info type=historicalOrders	historicalOrders	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Hyperliquid	Info endpoint	Http	POST	/info type=l2Book	l2Book	gap_found	needs_approval	The common order-book model does not preserve the official per-level order-count field.
+Hyperliquid	Info endpoint	Http	POST	/info type=openOrders	openOrders	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Hyperliquid	Info endpoint	Http	POST	/info type=orderStatus	orderStatus	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Hyperliquid	Info endpoint	Http	POST	/info type=portfolio	portfolio	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Hyperliquid	Info endpoint	Http	POST	/info type=referral	referral	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Hyperliquid	Info endpoint	Http	POST	/info type=subAccounts	subAccounts	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Hyperliquid	Info endpoint	Http	POST	/info type=userFees	userFees	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Hyperliquid	Info endpoint	Http	POST	/info type=userFills	userFills	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Hyperliquid	Info endpoint	Http	POST	/info type=userFillsByTime	userFillsByTime	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Hyperliquid	Info endpoint	Http	POST	/info type=userRateLimit	userRateLimit	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Hyperliquid	Info endpoint	Http	POST	/info type=userRole	userRole	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Hyperliquid	Info endpoint	Http	POST	/info type=userVaultEquities	userVaultEquities	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Hyperliquid	Info rate limits	Http	POST	/info type=recentTrades	recentTrades	gap_found	needs_approval	The common trade model does not preserve official hash and user fields.
+Hyperliquid	Perpetuals info	Http	POST	/info type=allPerpMetas	allPerpMetas	needs_design	service_or_contract_decision	Requires a Hyperliquid protocol-specific service boundary.
+Hyperliquid	Perpetuals info	Http	POST	/info type=fundingHistory	fundingHistory	gap_found	needs_approval	The common funding model does not preserve the official premium field.
+Hyperliquid	Perpetuals info	Http	POST	/info type=perpDeployAuctionStatus	perpDeployAuctionStatus	needs_design	service_or_contract_decision	Requires a Hyperliquid protocol-specific service boundary.
+Hyperliquid	Perpetuals info	Http	POST	/info type=perpDexLimits	perpDexLimits	needs_design	service_or_contract_decision	Requires a Hyperliquid protocol-specific service boundary.
+Hyperliquid	Perpetuals info	Http	POST	/info type=perpDexStatus	perpDexStatus	needs_design	service_or_contract_decision	Requires a Hyperliquid protocol-specific service boundary.
+Hyperliquid	Perpetuals info	Http	POST	/info type=perpDexs	perpDexs	needs_design	service_or_contract_decision	Requires a Hyperliquid protocol-specific service boundary.
+Hyperliquid	Perpetuals info	Http	POST	/info type=perpsAtOpenInterestCap	perpsAtOpenInterestCap	needs_design	service_or_contract_decision	Requires a Hyperliquid protocol-specific service boundary.
+Hyperliquid	Perpetuals info	Http	POST	/info type=userFunding	userFunding	gap_found	needs_approval	The common funding model does not preserve the official premium field.
+Hyperliquid	Perpetuals info	Http	POST	/info type=userNonFundingLedgerUpdates	userNonFundingLedgerUpdates	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Hyperliquid	Spot info	Http	POST	/info type=outcomeMeta	outcomeMeta	needs_design	service_or_contract_decision	Requires a Hyperliquid protocol-specific service boundary.
+Hyperliquid	Spot info	Http	POST	/info type=settledOutcome	settledOutcome	needs_design	service_or_contract_decision	Requires a Hyperliquid protocol-specific service boundary.
+Hyperliquid	Spot info	Http	POST	/info type=spotClearinghouseState	spotClearinghouseState	gap_found	needs_approval	The common account model does not preserve the official spot entryNtl field.
+Hyperliquid	Spot info	Http	POST	/info type=spotMeta	spotMeta	gap_found	needs_approval	The common market model does not preserve provider-specific spot metadata fields.
+Hyperliquid	Spot info	Http	POST	/info type=spotMetaAndAssetCtxs	spotMetaAndAssetCtxs	gap_found	needs_approval	The common market model does not preserve provider-specific spot context fields.
+Hyperliquid	WebSocket control	WebSocket	ping	method=ping	ping	needs_design	service_or_contract_decision	WebSocket control is internal lifecycle behavior, not a public Adapter operation.
+Hyperliquid	WebSocket control	WebSocket	subscribe	method=subscribe subscription=<type>	subscribe	needs_design	service_or_contract_decision	WebSocket control is internal lifecycle behavior, not a public Adapter operation.
+Hyperliquid	WebSocket control	WebSocket	unsubscribe	method=unsubscribe subscription=<type>	unsubscribe	needs_design	service_or_contract_decision	WebSocket control is internal lifecycle behavior, not a public Adapter operation.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=activeAssetCtx	activeAssetCtx	gap_found	needs_approval	The common market event does not preserve the provider-specific asset-context fields.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=activeAssetData	activeAssetData	needs_design	service_or_contract_decision	Requires a market stream contract beyond the current MarketEvent boundary.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=allDexsAssetCtxs	allDexsAssetCtxs	needs_design	service_or_contract_decision	Requires a market stream contract beyond the current MarketEvent boundary.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=allDexsClearinghouseState	allDexsClearinghouseState	needs_design	service_or_contract_decision	Requires an account stream contract beyond the current AccountEvent boundary.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=allMids	allMids	needs_design	service_or_contract_decision	Requires a market stream contract beyond the current MarketEvent boundary.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=bbo	bbo	needs_design	service_or_contract_decision	Requires a market stream contract beyond the current MarketEvent boundary.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=candle	candle	gap_found	needs_approval	The common candle event does not preserve the official trade-count field.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=clearinghouseState	clearinghouseState	needs_design	service_or_contract_decision	Requires an account stream contract beyond the current AccountEvent boundary.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=fastAssetCtxs	fastAssetCtxs	needs_design	service_or_contract_decision	Requires a market stream contract beyond the current MarketEvent boundary.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=l2Book	l2Book	gap_found	needs_approval	The common order-book event does not preserve the official per-level order-count field.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=notification	notification	needs_design	service_or_contract_decision	Requires an account stream contract beyond the current AccountEvent boundary.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=openOrders	openOrders	needs_design	service_or_contract_decision	Requires an account stream contract beyond the current AccountEvent boundary.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=orderUpdates	orderUpdates	gap_found	needs_approval	The common account event does not preserve detailed official order status fields.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=outcomeMetaUpdates	outcomeMetaUpdates	needs_design	service_or_contract_decision	Requires a market stream contract beyond the current MarketEvent boundary.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=spotState	spotState	gap_found	needs_approval	The common account event does not preserve the official spot entryNtl field.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=trades	trades	gap_found	needs_approval	The common trade event does not preserve official hash and user fields.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=twapStates	twapStates	needs_design	service_or_contract_decision	Requires an account stream contract beyond the current AccountEvent boundary.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=userEvents	userEvents	needs_design	service_or_contract_decision	Requires an account stream contract beyond the current AccountEvent boundary.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=userFills	userFills	needs_design	service_or_contract_decision	Requires an account stream contract beyond the current AccountEvent boundary.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=userFundings	userFundings	needs_design	service_or_contract_decision	Requires an account stream contract beyond the current AccountEvent boundary.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=userNonFundingLedgerUpdates	userNonFundingLedgerUpdates	needs_design	service_or_contract_decision	Requires an account stream contract beyond the current AccountEvent boundary.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=userTwapHistory	userTwapHistory	needs_design	service_or_contract_decision	Requires an account stream contract beyond the current AccountEvent boundary.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=userTwapSliceFills	userTwapSliceFills	needs_design	service_or_contract_decision	Requires an account stream contract beyond the current AccountEvent boundary.
+Hyperliquid	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=webData3	webData3	needs_design	service_or_contract_decision	Requires an account stream contract beyond the current AccountEvent boundary.
+Upbit	Deposits and withdrawals	Http	GET	/v1/deposits	list-deposits	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Deposits and withdrawals	Http	GET	/v1/deposits/chance/coin	available-deposit-information	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Deposits and withdrawals	Http	GET	/v1/deposits/coin_address	get-deposit-address	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Deposits and withdrawals	Http	GET	/v1/deposits/coin_addresses	list-deposit-addresses	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Deposits and withdrawals	Http	GET	/v1/status/wallet	get-service-status	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Deposits and withdrawals	Http	GET	/v1/withdraws	list-withdrawals	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Deposits and withdrawals	Http	GET	/v1/withdraws/chance	available-withdrawal-information	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Deposits and withdrawals	Http	GET	/v1/withdraws/coin_addresses	list-withdrawal-addresses	gap_found	needs_approval	The endpoint is used only for an internal allowlist check; its official address result is not publicly exposed.
+Upbit	Deposits and withdrawals	Http	POST	/v1/deposits/generate_coin_address	create-deposit-address	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Deposits and withdrawals	Http	POST	/v1/withdraws/coin	withdraw	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Exchange	Http	DELETE	/v1/orders/open	batch-cancel-orders	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Exchange	Http	GET	/v1/accounts	get-balance	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Exchange	Http	GET	/v1/order	get-order	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Exchange	Http	GET	/v1/orders/chance	available-order-information	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Exchange	Http	GET	/v1/orders/closed	list-closed-orders	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Exchange	Http	GET	/v1/orders/open	list-open-orders	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Korea deposits and withdrawals	Http	GET	/v1/api_keys	list-api-keys	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Korea deposits and withdrawals	Http	POST	/v1/deposits/krw	deposit-krw	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Korea deposits and withdrawals	Http	POST	/v1/withdraws/krw	withdraw-krw	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Korea pockets	Http	GET	/v1/pockets	list-pockets	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Korea pockets	Http	GET	/v1/pockets/api_keys	list-pocket-api-keys	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Korea pockets	Http	GET	/v1/pockets/assets	get-sub-pocket-balance	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Korea pockets	Http	GET	/v1/pockets/transfers	list-transfers	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Korea pockets	Http	GET	/v1/pockets/universal_transfers	list-universal-transfers	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Korea pockets	Http	POST	/v1/pockets/transfers	transfer	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Korea pockets	Http	POST	/v1/pockets/universal_transfers	universal-transfer	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Quotation	Http	GET	/v1/candles/days	list-candles-days	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Quotation	Http	GET	/v1/candles/minutes/{unit}	list-candles-minutes	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Quotation	Http	GET	/v1/candles/months	list-candles-months	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Quotation	Http	GET	/v1/candles/seconds	list-candles-seconds	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Quotation	Http	GET	/v1/candles/weeks	list-candles-weeks	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Quotation	Http	GET	/v1/candles/years	list-candles-years	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Quotation	Http	GET	/v1/market/all	list-trading-pairs	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Quotation	Http	GET	/v1/orderbook	list-orderbooks	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Quotation	Http	GET	/v1/orderbook/instruments	list-orderbook-instruments	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Quotation	Http	GET	/v1/ticker	list-tickers	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Quotation	Http	GET	/v1/ticker/all	list-quote-tickers	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Quotation	Http	GET	/v1/trades/ticks	list-pair-trades	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Quotation	WebSocketRequest	LIST_SUBSCRIPTIONS	method=LIST_SUBSCRIPTIONS	LIST_SUBSCRIPTIONS	gap_found	needs_approval	The method creates a new public socket instead of querying the existing connection.
+Upbit	Travel Rule	Http	GET	/v1/travel_rule/vasps	list-travelrule-vasps	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Travel Rule	Http	POST	/v1/travel_rule/deposit/txid	verify-travelrule-by-txid	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
+Upbit	Travel Rule	Http	POST	/v1/travel_rule/deposit/uuid	verify-travelrule-by-uuid	verified	none	Audited Rust contract, public bindings, and verification evidence are present.

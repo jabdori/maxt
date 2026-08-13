@@ -17,7 +17,8 @@ than repeated in filenames or TSV metadata.
 | `bithumb/{manifest,coverage,classification}.tsv` | Bithumb source operations, bridge, and exposure classification |
 | `upbit/{manifest,korea,coverage,classification}.tsv` | Upbit Global and Korea-only source operations, bridge, and classification |
 | `hyperliquid/{manifest,coverage,unresolved}.tsv` | Hyperliquid source operations, bridge, and unresolved official scope |
-| `audit/{ledger,queue,worklist,execution-checklist,platform-service-worklist}.tsv` | Derived audit ledger and queues |
+| `audit/reviews.tsv` | Human semantic-audit inputs keyed to exact official operations |
+| `audit/{ledger,queue,worklist,execution-checklist,platform-service-worklist}.tsv` | Generated audit ledger and derived queues |
 
 Binance and Hyperliquid keep their `exposure` decision in the source rows so
 their large lists are not duplicated. The `coverage_inventory` test verifies
@@ -65,42 +66,44 @@ bridged or implemented. The separate active platform/protocol boundary has 340
 Binance and 97 Hyperliquid operations. They remain implementation and
 audit targets, but are not counted as the general exchange `Adapter` work for
 the same release. Each product family requires an explicit decision: support it
-through its own platform/protocol service, retain it as `Blocked` because its
-protocol or entitlement evidence is insufficient, or defer it from this
-release.
+through its own platform/protocol service, record it as `needs_design` until a
+service or contract decision is made, or defer it from this release.
 
 `OPERATIONS` currently has no `OperationMapping::PlatformLimited` bridge row.
 The 437 operations are therefore classified as requiring separate services;
 this does not claim that those service contracts exist, that they are
 implemented, or that all must be implemented immediately.
 
-The draft ledger `audit_status` is one of `MechanicallyConnected`, `Partial`,
-`Planned`, `Unreviewed`, or `Blocked`. `MechanicallyConnected` only means that
-coverage, schema, and generated-contract links are present; it is not semantic
-`Complete`. Request/parse behavior, response preservation, public facades, and
-operation-level fixture locators must be reviewed before a row can become
-`Complete`. An active operation outside a bridge remains `Unreviewed`, never
-automatically unimplemented. `audit-queue` retains all 937 general-SDK rows.
-The 52 `Partial`/`Planned`/`Blocked` official rows overlap across 41 local operations and
-23 mapping methods, so they are not 52 independent tasks. The 41 entries in
-`execution-checklist` are the current execution units.
-Newly discovered items go to the next-batch backlog only.
+The human-readable ledger separates current coverage from an audit conclusion
+and its next action. `coverage_implementation_state` is the current curated
+coverage value; it is not an audit verdict. The checked-in `audit/reviews.tsv`
+records exact operation keys that a reviewer has read. Rows without a review
+record never become a completion claim automatically.
 
-Execution ownership is fixed to prevent duplicate shared-contract changes:
-11 common-contract units, 4 Upbit units, 4 Bithumb units, 15 Binance units,
-and 7 Hyperliquid units. One owner controls the 11 common units; Upbit and
-Bithumb owners do not split or concurrently modify them.
+| `audit_result` | `next_action` | Meaning |
+| --- | --- | --- |
+| `verified` | `none` | Rust, public bindings, and verification evidence were reviewed. |
+| `gap_found` | `needs_approval` | The operation works, but the official contract is not fully preserved. |
+| `needs_design` | `service_or_contract_decision` | A general Adapter would misstate the protocol or platform boundary. |
+| `needs_evidence` | `continue_audit` | Current evidence is insufficient for a semantic conclusion. |
+| `not_checked` | `continue_audit` | No semantic review has been recorded yet. |
 
-The draft's mechanical status counts are below. `MechanicallyConnected` is not
-semantic `Complete`, and `Unreviewed` is not a remaining-work count.
+`reason` explains the concrete basis. This deliberately removes
+`MechanicallyConnected` from the final ledger: bridge, Rust, schema, generated
+contract, binding, and validation columns retain the machine evidence without
+claiming semantic completion. `audit-queue` retains all 937 general-SDK rows.
+The current worklist contains only 28 reviewed `gap_found` rows whose next
+action is `needs_approval`; it is not approval to implement them. Their 28
+local-operation groups stay in `execution-checklist`. New discoveries remain
+in the audit queue until reviewed; they do not enter the worklist.
 
-| Scope | MechanicallyConnected | Partial | Planned | Unreviewed | Total |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Upbit general SDK | 42 | 15 | 0 | 0 | 57 |
-| Bithumb general SDK | 32 | 15 | 0 | 0 | 47 |
-| Binance general SDK | 41 | 14 | 1 | 657 | 713 |
-| Hyperliquid general SDK | 28 | 7 | 0 | 85 | 120 |
-| General SDK total | 143 | 51 | 1 | 742 | 937 |
+The current semantic-audit result summary is below. It is not a remaining-work
+count.
+
+| Scope | Verified | Gap found | Needs design | Needs evidence | Not checked | Total |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| General SDK | 115 | 28 | 42 | 51 | 701 | 937 |
+| Separate platform/protocol boundary | 0 | 0 | 437 | 0 | 0 | 437 |
 
 Current coverage bridges contain 57 Upbit, 47 Bithumb, 57 Binance, and 35
 Hyperliquid local rows: 196 total. Binance `mark_price` and `mark_prices` both
@@ -114,9 +117,10 @@ unimplemented before an operation-by-operation audit of existing Rust behavior
 and official-contract preservation.
 
 Where the official source lacks a complete request schema or operation list,
-the inventory does not guess a count or discard the scope. It retains `Blocked`
-evidence and a source locator in `hyperliquid/unresolved.tsv` until
-the official schema permits manifest rows and an implementation status.
+the inventory does not guess a count or discard the scope.
+`hyperliquid/unresolved.tsv` records `needs_evidence / continue_audit` with a
+source locator until an official schema permits manifest rows and an audit
+result.
 
 ## Central contract decision
 
@@ -129,7 +133,7 @@ it as a provider typed API.
 
 The Hyperliquid rate-limit documentation names `blockList` and the Explorer
 family but provides no complete request schema or operation list. Its count is
-not guessed; its `Blocked` status remains in
+not guessed; it remains `needs_evidence / continue_audit` in
 `hyperliquid/unresolved.tsv` until an official schema is available.
 
 ## Verification
@@ -148,9 +152,9 @@ cargo run -p maxt-bindings-common --bin generate_audit_ledger --features codegen
 
 `--check` renders and compares entirely in memory without writing files.
 Only `--write` updates the active 1,374-row ledger, 937-row audit queue,
-52-row candidate list, 41-row execution checklist, and 437-row separate-service
-list. `coverage_inventory` verifies row/column counts, allowed statuses,
-derivation, and the 41-operation/23-method grouping.
+28-row approval-candidate list, 28-row execution checklist, and 437-row
+separate-service list. `coverage_inventory` verifies row/column counts,
+allowed result/action pairs, review-key integrity, and derived grouping.
 
 This test checks source row counts and fields, official bridges, regional Upbit
 inventory, explicit deprecations, and the connection to current coverage rows.

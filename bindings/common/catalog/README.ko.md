@@ -17,7 +17,8 @@ README에만 기록합니다.
 | `bithumb/{manifest,coverage,classification}.tsv` | Bithumb 원본 operation, 연결표, 공개 노출 분류 |
 | `upbit/{manifest,korea,coverage,classification}.tsv` | Upbit Global·Korea 전용 원본 operation, 연결표, 분류 |
 | `hyperliquid/{manifest,coverage,unresolved}.tsv` | Hyperliquid 원본 operation, 연결표, 공식 근거가 불완전한 범위 |
-| `audit/{ledger,queue,worklist,execution-checklist,platform-service-worklist}.tsv` | 파생 감사 원장과 큐 |
+| `audit/reviews.tsv` | 정확한 공식 operation key별 사람이 검토한 의미 감사 입력 |
+| `audit/{ledger,queue,worklist,execution-checklist,platform-service-worklist}.tsv` | 생성된 감사 원장과 파생 큐 |
 
 Binance와 Hyperliquid는 큰 원본 목록을 복제하지 않고 각 행의 `exposure` 열에 분류를
 기록합니다. `coverage_inventory` 테스트가 모든 원본 행의 분류·lifecycle·현재 연결표를
@@ -58,37 +59,40 @@ Hyperliquid 120개로 합계 937개입니다. 이 숫자는 잔여 구현 수가
 연결되었거나 구현된 행까지 포함한 exposure 분류 합계입니다. 별도 플랫폼·프로토콜 경계의
 활성 행은 Binance 340개와 Hyperliquid 97개입니다. 이들은 manifest·감사 대상으로 관리하되,
 일반 거래소 `Adapter`의 동일 릴리스 구현 대상으로 합산하지 않습니다. 각 제품군은 별도
-platform/protocol service 지원, 권한·프로토콜 근거 부족 `Blocked`, 또는 이번 릴리스 보류를
-명시적으로 결정한 뒤 해당 service 경계에서만 구현합니다.
+platform/protocol service 지원, service 또는 contract 결정이 필요한 `needs_design`, 또는 이번
+릴리스 보류를 명시적으로 결정한 뒤 해당 service 경계에서만 구현합니다.
 
 현재 `OPERATIONS`에는 `OperationMapping::PlatformLimited` 연결 행이 없습니다. 즉 437개는
 별도 service가 필요하다고 분류된 상태일 뿐, 그 service 계약·구현이 존재하거나 모든 행을 즉시
 구현해야 한다는 뜻이 아닙니다.
 
-감사 초안 원장의 `audit_status`는 `MechanicallyConnected`, `Partial`, `Planned`,
-`Unreviewed`, `Blocked` 중 하나입니다. `MechanicallyConnected`는 coverage·schema·생성
-계약의 기계적 연결만 뜻하며 의미상 `Complete`가 아닙니다. 공식 계약의 request/parse,
-응답 필드 보존, facade, fixture 검증 locator를 operation별로 확인하기 전에는 Complete를
-부여하지 않습니다. 공식 행이 bridge에 없으면 `Unreviewed`로 남기며 미구현으로 단정하지 않습니다.
-`audit-queue`는 일반 SDK 937개 전체입니다. Partial·Planned·Blocked 공식 행 52개는 41개 local operation과
-23개 mapping method로 겹치므로 52개 독립 구현 작업으로 취급하지 않습니다. 실제 실행 후보는
-`execution-checklist`의 41개 단위입니다. 새 발견 항목은
-다음 배치 backlog로만 기록합니다.
+사람이 읽는 원장은 현재 coverage와 감사 결론, 다음 행동을 분리합니다.
+`coverage_implementation_state`는 현재 선별 coverage 값일 뿐 감사 판정이 아닙니다.
+검토자가 실제로 읽은 공식 operation key는 `audit/reviews.tsv`에 고정합니다. review record가
+없는 행은 자동으로 완료 판정을 받지 않습니다.
 
-실행 단위의 소유권은 공용 계약 중복을 막기 위해 고정합니다: 공용 공통 계약 11개,
-Upbit 4개, Bithumb 4개, Binance 15개, Hyperliquid 7개입니다. 공용 11개는 한 담당자만
-소유하며 Upbit·Bithumb 담당자가 나누어 수정하지 않습니다.
+| `audit_result` | `next_action` | 의미 |
+| --- | --- | --- |
+| `verified` | `none` | Rust, 공개 바인딩, 검증 근거를 확인했습니다. |
+| `gap_found` | `needs_approval` | 동작하지만 공식 계약 일부를 보존하지 못합니다. |
+| `needs_design` | `service_or_contract_decision` | 일반 Adapter에 넣으면 프로토콜 또는 플랫폼 경계를 잘못 표현합니다. |
+| `needs_evidence` | `continue_audit` | 의미상 결론을 내리기에 현재 근거가 부족합니다. |
+| `not_checked` | `continue_audit` | 아직 의미 감사를 기록하지 않았습니다. |
 
-감사 초안의 기계 상태 집계는 다음과 같습니다. `MechanicallyConnected`를 의미상
-Complete로 해석하거나 `Unreviewed`를 잔여 구현 수로 해석하면 안 됩니다.
+`reason` 열은 구체적 근거를 기록합니다. 따라서 최종 원장에서
+`MechanicallyConnected`를 제거했습니다. bridge, Rust, schema, 생성 계약, 바인딩, 검증 열이
+기계적 근거를 그대로 보존하되 의미상 완료를 주장하지 않습니다. `audit-queue`는 일반 SDK
+937개 전체를 유지합니다. 현재 worklist에는 `gap_found / needs_approval`로 검토된 28개 행만
+들어가며, 이것은 구현 승인 자체가 아닙니다. 해당 28개 local operation 묶음은
+`execution-checklist`에 보존합니다. 새 발견은 검토 전까지 worklist가 아니라 audit queue에만
+남습니다.
 
-| 범위 | MechanicallyConnected | Partial | Planned | Unreviewed | 합계 |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Upbit 일반 SDK | 42 | 15 | 0 | 0 | 57 |
-| Bithumb 일반 SDK | 32 | 15 | 0 | 0 | 47 |
-| Binance 일반 SDK | 41 | 14 | 1 | 657 | 713 |
-| Hyperliquid 일반 SDK | 28 | 7 | 0 | 85 | 120 |
-| 일반 SDK 합계 | 143 | 51 | 1 | 742 | 937 |
+현재 의미 감사 결과 집계는 아래와 같습니다. 잔여 구현 수가 아닙니다.
+
+| 범위 | Verified | Gap found | Needs design | Needs evidence | Not checked | 합계 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 일반 SDK | 115 | 28 | 42 | 51 | 701 | 937 |
+| 별도 플랫폼·프로토콜 경계 | 0 | 0 | 437 | 0 | 0 | 437 |
 
 현재 coverage의 local 행은 Upbit 57개, Bithumb 47개, Binance 57개, Hyperliquid 35개로
 합계 196개입니다. 이 중 Binance의 `mark_price`와 `mark_prices` 두 local 행이 하나의 공식
@@ -100,8 +104,8 @@ Complete로 해석하거나 `Unreviewed`를 잔여 구현 수로 해석하면 �
 보고하지 않습니다.
 
 공식 request schema 또는 완전한 operation 목록이 없는 범위는 숫자를 추측해 분모에서 제거하지
-않습니다. `hyperliquid/unresolved.tsv`에 `Blocked` 근거와 source locator를
-남기고, 공식 schema가 생기면 manifest 행과 implementation 상태로 승격합니다.
+않습니다. `hyperliquid/unresolved.tsv`에 `needs_evidence / continue_audit`와 source locator를
+남기고, 공식 schema가 생기면 manifest 행과 audit result로 승격합니다.
 
 ## 중앙 계약 결정
 
@@ -114,7 +118,7 @@ Complete로 해석하거나 `Unreviewed`를 잔여 구현 수로 해석하면 �
 Hyperliquid Explorer는 공식 rate-limit 문서가 `blockList`와 Explorer API family의 존재는
 명시하지만 완전한 request schema/operation 목록은 제공하지 않습니다. 따라서 수를 임의로
 세지 않고, 원본 schema가 제공되기 전까지 `hyperliquid/unresolved.tsv`의
-`Blocked` 상태로 유지합니다.
+`needs_evidence / continue_audit` 상태로 유지합니다.
 
 ## 검증
 
@@ -130,8 +134,9 @@ cargo run -p maxt-bindings-common --bin generate_audit_ledger --features codegen
 ```
 
 `--check`는 메모리에서 렌더링한 결과와 현재 파일을 비교할 뿐 파일을 쓰지 않습니다. `--write`만
-활성 1,374행, 감사 큐 937행, 후보 52행, 실행 단위 41행, 별도 플랫폼 service 437행을 갱신합니다.
-`coverage_inventory`는 행 수·열 수·상태값·파생 관계와 41개/23개 중복 제거 수를 검증합니다.
+활성 1,374행, 감사 큐 937행, 승인 후보 28행, 실행 단위 28행, 별도 플랫폼 service 437행을 갱신합니다.
+`coverage_inventory`는 행 수·열 수·허용된 result/action 조합, review key 무결성, 파생 관계를
+검증합니다.
 
 이 테스트는 원본 목록의 행 수·필드 수·공식 연결표·지역별 Upbit 목록·명시적 deprecated
 operation과 현재 coverage 행의 연결을 검사합니다. coverage 연결 수와 구현 상태 수는 별도

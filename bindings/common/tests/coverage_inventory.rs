@@ -81,7 +81,7 @@ fn frozen_active_audit_ledger_and_derived_queues_are_consistent() {
     assert_eq!(work.len(), 7);
     assert_eq!(execution.len(), 7);
     assert_eq!(platform.len(), 437);
-    assert_eq!(reviews.len(), 185);
+    assert_eq!(reviews.len(), 886);
     assert!(ledger.iter().all(|row| row.len() == 31));
     assert!(queue.iter().all(|row| row.len() == 31));
     assert!(work.iter().all(|row| row.len() == 31));

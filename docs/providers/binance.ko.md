@@ -95,6 +95,14 @@ USD-M은 `OrderBook`을 `/public/stream`으로, `Ticker`, `Candles`를
 | --- | --- |
 | `spot_symbol_filters(&market)` | Spot `PRICE_FILTER`, `LOT_SIZE`, `NOTIONAL`; USD-M은 미지원 |
 | `spot_order(&market, order_id)` | 숫자 `order_id`로 Spot 주문 1건 조회; 완료 주문 포함 |
+| `spot_exchange_info()` | 공개 Spot `GET /api/v3/exchangeInfo`. 상장 symbol 메타데이터와 원본 filter payload를 보존. fixture만 검증 |
+| `spot_account_information()` | 수수료·권한·잔고·원본 거래소 필드를 보존하는 서명된 Spot 계정 조회. fixture만 검증 |
+| `spot_cancel_all_open_orders(&market)` | 공통 단위 반환 취소와 달리 Binance의 취소 보고서를 반환하는 서명된 Spot 전체 취소. fixture만 검증 |
+| `usd_m_exchange_info()` | 공개 USD-M `GET /fapi/v1/exchangeInfo`. 만기 계약을 포함한 contract 상장 정보와 원본 filter payload를 보존. fixture만 검증 |
+| `usd_m_account_information()`, `usd_m_position_information(market)` | 공통 잔고·포지션에 담기지 않는 자산·증거금·leverage·위험 필드를 보존하는 서명된 USD-M 계정·포지션 위험 조회. fixture만 검증 |
+| `all_coins_information()`, `api_key_permissions()`, `withdraw_address_list()` | 코인·네트워크 규칙, 설정된 권한, 등록 출금 주소 메타데이터를 읽는 서명된 Wallet 조회. fixture만 검증 |
+| `deposit_history(request)`, `withdraw_history(request)` | 공통 이체 이력으로 축소하지 않고 거래소 상태·페이지·시각 필드를 보존하는 서명된 Wallet 이력 조회. fixture만 검증 |
+| `questionnaire_requirements()` | 서명된 Wallet Travel Rule 설문 요구사항 조회. 자격 조건은 Binance가 적용. fixture만 검증 |
 | `account_trades(request)` | 서명된 계정 체결 페이지: Spot `GET /api/v3/myTrades`, USD-M `GET /fapi/v1/userTrades`. 시장 1개를 지정한 `HistoryRequest`를 사용하며 `limit`은 1~1,000(기본 500). 안전한 공통 재개 커서가 없어 `next == None`. fixture만 검증 |
 | `c2c_trade_history(request)` | 서명된 Spot/Funding `GET /sapi/v1/c2c/orderMatch/listUserOrderHistory`. `BUY` 또는 `SELL`이 필수이고, page 기본값은 1, rows 기본값은 100이며 rows는 최대 100, 조회 기간은 최대 30일. 공통 페이지 커서로 억지 변환하지 않고 Binance의 선택 C2C 응답 envelope을 보존. fixture만 검증 |
 | `test_order(request)` | 서명된 TRADE 검증: Spot `POST /api/v3/order/test`, USD-M `POST /fapi/v1/order/test`; 매칭 엔진에 주문을 제출하지 않음. `BinanceTestOrderRequest::compute_commission_rates`는 Spot에서만 사용 가능하고 USD-M에서는 요청 전 거절. fixture만 검증 |
@@ -133,16 +141,19 @@ Binance는 IP 기준 `REQUEST_WEIGHT`를 부과합니다. 현재 한도는 `exch
 
 - [Spot REST 시장 데이터](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/market)
 - [Spot 계정 체결](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/account)
+- [Spot 계정·거래소 정보](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/account)
 - [C2C 거래 이력](https://developers.binance.com/en/docs/catalog/investment-and-services-c2-c/api/rest-api/~#get-c2-ctrade-history)
 - [Spot 주문 테스트·일괄 취소](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/trade)
 - [Spot REST 한도](https://developers.binance.com/en/docs/products/spot/rest-api)
 - [Spot WebSocket stream](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/ws-streams/~)
 - [USD-M REST 시장 데이터](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data)
 - [USD-M 계정 체결·주문 테스트·일괄 취소](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/trade)
+- [USD-M 계정 정보](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/account)
 - [USD-M Mark Price](https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Mark-Price)
 - [USD-M Open Interest](https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Open-Interest)
 - [USD-M 압축/집계 체결](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data#compressed-aggregate-trades-list)
 - [USD-M 공개 stream](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/public)
 - [USD-M 시장 stream](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market)
+- [Wallet 계정·자본 API](https://developers.binance.com/en/docs/catalog/core-trading-wallet/api/rest-api/account)
 
 [공통 API](../common-api.ko.md) · [거래소 지원](../providers.ko.md)

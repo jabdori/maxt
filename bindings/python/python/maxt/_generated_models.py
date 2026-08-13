@@ -585,6 +585,21 @@ class UpbitDepositInfo(WireModel):
 
 
 @dataclass(frozen=True)
+class UpbitWithdrawalAddress(WireModel):
+    currency: str
+    net_type: str
+    network_name: str
+    withdraw_address: str
+    secondary_address: Optional[str]
+    beneficiary_name: Optional[str]
+    beneficiary_company_name: Optional[str]
+    beneficiary_type: Optional[str]
+    exchange_name: Optional[str]
+    wallet_type: Optional[str]
+    raw_json: str
+
+
+@dataclass(frozen=True)
 class UpbitTravelRuleVasp(WireModel):
     vasp_name: str
     vasp_uuid: str
@@ -1418,6 +1433,313 @@ class BithumbOrderListItem(WireModel):
 
 
 @dataclass(frozen=True)
+class BinanceDepositHistoryRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    coin: Optional[str] = None
+    status: Optional[int] = None
+    start_time: Optional[Timestamp] = None
+    end_time: Optional[Timestamp] = None
+    offset: Optional[int] = None
+    limit: Optional[int] = None
+    tx_id: Optional[str] = None
+    include_source: bool = False
+
+
+@dataclass(frozen=True)
+class BinanceWithdrawHistoryRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    coin: Optional[str] = None
+    withdraw_order_id: Optional[str] = None
+    status: Optional[int] = None
+    offset: Optional[int] = None
+    limit: Optional[int] = None
+    id_list: list[str] = field(default_factory=list)
+    start_time: Optional[Timestamp] = None
+    end_time: Optional[Timestamp] = None
+
+
+@dataclass(frozen=True)
+class BinanceSpotAccountInformation(WireModel):
+    maker_commission: int
+    taker_commission: int
+    buyer_commission: int
+    seller_commission: int
+    commission_rates: BinanceSpotCommissionRates
+    can_trade: bool
+    can_withdraw: bool
+    can_deposit: bool
+    update_time: Timestamp
+    account_type: str
+    balances: list[BinanceSpotAccountBalance]
+    permissions: list[str]
+    uid: Optional[int]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceSpotCommissionRates(WireModel):
+    maker: Decimal
+    taker: Decimal
+    buyer: Decimal
+    seller: Decimal
+
+
+@dataclass(frozen=True)
+class BinanceSpotAccountBalance(WireModel):
+    asset: str
+    free: Decimal
+    locked: Decimal
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "asset", _ascii_upper(self.asset))
+
+
+@dataclass(frozen=True)
+class BinanceSpotCancelAllOpenOrders(WireModel):
+    reports: list[BinanceSpotCancelledOrder]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceSpotCancelledOrder(WireModel):
+    symbol: Optional[str]
+    original_client_order_id: Optional[str]
+    order_id: Optional[str]
+    client_order_id: Optional[str]
+    status: Optional[str]
+    price: Optional[Decimal]
+    original_quantity: Optional[Decimal]
+    executed_quantity: Optional[Decimal]
+    cumulative_quote_quantity: Optional[Decimal]
+    transact_time: Optional[Timestamp]
+    order_list_id: Optional[str]
+    contingency_type: Optional[str]
+    list_status_type: Optional[str]
+    list_order_status: Optional[str]
+    list_client_order_id: Optional[str]
+    transaction_time: Optional[Timestamp]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceUsdMAccountInformation(WireModel):
+    total_initial_margin: Decimal
+    total_maintenance_margin: Decimal
+    total_wallet_balance: Decimal
+    total_unrealized_profit: Decimal
+    total_margin_balance: Decimal
+    total_position_initial_margin: Decimal
+    total_open_order_initial_margin: Decimal
+    total_cross_wallet_balance: Decimal
+    total_cross_unrealized_profit: Decimal
+    available_balance: Decimal
+    max_withdraw_amount: Decimal
+    assets: list[BinanceUsdMAccountAsset]
+    positions: list[BinanceUsdMAccountPosition]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceUsdMAccountAsset(WireModel):
+    asset: str
+    wallet_balance: Decimal
+    unrealized_profit: Decimal
+    margin_balance: Decimal
+    maintenance_margin: Decimal
+    initial_margin: Decimal
+    position_initial_margin: Decimal
+    open_order_initial_margin: Decimal
+    cross_wallet_balance: Decimal
+    cross_unrealized_profit: Decimal
+    available_balance: Decimal
+    max_withdraw_amount: Decimal
+    update_time: Timestamp
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "asset", _ascii_upper(self.asset))
+
+
+@dataclass(frozen=True)
+class BinanceUsdMAccountPosition(WireModel):
+    symbol: str
+    position_side: str
+    position_amount: Decimal
+    unrealized_profit: Decimal
+    isolated_margin: Decimal
+    notional: Decimal
+    isolated_wallet: Decimal
+    initial_margin: Decimal
+    maintenance_margin: Decimal
+    update_time: Timestamp
+
+
+@dataclass(frozen=True)
+class BinanceUsdMPositionInformation(WireModel):
+    symbol: str
+    position_side: str
+    position_amount: Decimal
+    entry_price: Decimal
+    break_even_price: Decimal
+    mark_price: Decimal
+    unrealized_profit: Decimal
+    liquidation_price: Decimal
+    isolated_margin: Decimal
+    notional: Decimal
+    margin_asset: str
+    isolated_wallet: Decimal
+    initial_margin: Decimal
+    maintenance_margin: Decimal
+    position_initial_margin: Decimal
+    open_order_initial_margin: Decimal
+    adl: int
+    bid_notional: Decimal
+    ask_notional: Decimal
+    update_time: Timestamp
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceExchangeInfo(WireModel):
+    venue: BinanceMarket
+    timezone: Optional[str]
+    server_time: Optional[Timestamp]
+    symbols: list[BinanceExchangeSymbol]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceExchangeSymbol(WireModel):
+    symbol: str
+    status: str
+    base_asset: str
+    quote_asset: str
+    contract_type: Optional[str]
+    margin_asset: Optional[str]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceCoinInformation(WireModel):
+    coin: str
+    deposit_all_enabled: bool
+    withdraw_all_enabled: bool
+    name: Optional[str]
+    free: Optional[Decimal]
+    locked: Optional[Decimal]
+    freeze: Optional[Decimal]
+    withdrawing: Optional[Decimal]
+    is_legal_money: Optional[bool]
+    trading: Optional[bool]
+    networks: list[BinanceCoinNetworkInformation]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceCoinNetworkInformation(WireModel):
+    network: str
+    deposit_enabled: bool
+    withdraw_enabled: bool
+    busy: bool
+    withdrawal_integer_multiple: Optional[Decimal]
+    withdrawal_fee: Optional[Decimal]
+    minimum_withdrawal: Optional[Decimal]
+    maximum_withdrawal: Optional[Decimal]
+    withdrawal_tag: Optional[bool]
+    is_default: Optional[bool]
+    minimum_confirmations: Optional[int]
+    unlock_confirmations: Optional[int]
+    contract_address: Optional[str]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceApiKeyPermissions(WireModel):
+    ip_restrict: bool
+    create_time: Optional[Timestamp]
+    enable_reading: bool
+    enable_withdrawals: bool
+    enable_internal_transfer: bool
+    enable_margin: bool
+    enable_spot_and_margin_trading: bool
+    enable_futures: bool
+    permits_universal_transfer: bool
+    enable_vanilla_options: bool
+    enable_fix_api_trade: bool
+    enable_fix_read_only: bool
+    enable_portfolio_margin_trading: bool
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceDepositHistory(WireModel):
+    entries: list[BinanceDepositHistoryEntry]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceDepositHistoryEntry(WireModel):
+    id: str
+    amount: Decimal
+    coin: str
+    network: str
+    status: int
+    address: Optional[str]
+    address_tag: Optional[str]
+    tx_id: Optional[str]
+    insert_time: Timestamp
+    complete_time: Optional[Timestamp]
+    transfer_type: Optional[int]
+    source_address: Optional[str]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceQuestionnaireRequirements(WireModel):
+    questionnaire_country_code: str
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceWithdrawalAddress(WireModel):
+    address: str
+    address_tag: Optional[str]
+    coin: str
+    network: str
+    white_status: bool
+    name: Optional[str]
+    origin: Optional[str]
+    origin_type: Optional[str]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceWithdrawHistory(WireModel):
+    entries: list[BinanceWithdrawHistoryEntry]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceWithdrawHistoryEntry(WireModel):
+    id: str
+    amount: Decimal
+    transaction_fee: Decimal
+    coin: str
+    status: int
+    address: Optional[str]
+    tx_id: Optional[str]
+    apply_time: Optional[str]
+    network: Optional[str]
+    withdraw_order_id: Optional[str]
+    info: Optional[str]
+    transfer_type: Optional[int]
+    confirm_no: Optional[int]
+    wallet_type: Optional[int]
+    tx_key: Optional[str]
+    complete_time: Optional[str]
+    raw_json: str
+
+
+@dataclass(frozen=True)
 class BinanceSpotAveragePrice(WireModel):
     market: Market
     minutes: int
@@ -1546,6 +1868,149 @@ class BinanceC2cTradeHistoryPage(WireModel):
     data: Optional[list[BinanceC2cTrade]] = None
     total: Optional[int] = None
     success: Optional[bool] = None
+
+
+@dataclass(frozen=True)
+class HyperliquidCandleSnapshot(WireModel):
+    coin: str
+    market: Market
+    interval: str
+    open_time: Timestamp
+    close_time: Timestamp
+    open: Decimal
+    high: Decimal
+    low: Decimal
+    close: Decimal
+    volume: Decimal
+    trade_count: Optional[int]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidBookLevel(WireModel):
+    price: Decimal
+    size: Decimal
+    order_count: Optional[int] = None
+
+
+@dataclass(frozen=True)
+class HyperliquidL2Book(WireModel):
+    coin: str
+    market: Market
+    time: Timestamp
+    bids: list[HyperliquidBookLevel]
+    asks: list[HyperliquidBookLevel]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidRecentTrade(WireModel):
+    coin: str
+    market: Market
+    side: str
+    price: Decimal
+    size: Decimal
+    time: Timestamp
+    trade_id: str
+    hash: Optional[str]
+    users: list[str]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidFundingHistoryEntry(WireModel):
+    coin: str
+    market: Market
+    funding_rate: Decimal
+    premium: Optional[Decimal]
+    time: Timestamp
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidUserFunding(WireModel):
+    kind: Optional[str]
+    coin: str
+    market: Market
+    usdc: Decimal
+    funding_rate: Decimal
+    position_size: Optional[Decimal]
+    sample_count: Optional[int]
+    hash: str
+    time: Timestamp
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidSpotBalance(WireModel):
+    coin: str
+    token: Optional[int]
+    total: Decimal
+    hold: Decimal
+    entry_notional: Optional[Decimal]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidSpotClearinghouseState(WireModel):
+    balances: list[HyperliquidSpotBalance]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidEvmContract(WireModel):
+    address: str
+    extra_wei_decimals: int
+
+
+@dataclass(frozen=True)
+class HyperliquidSpotToken(WireModel):
+    name: str
+    size_decimals: int
+    wei_decimals: Optional[int]
+    index: int
+    token_id: Optional[str]
+    is_canonical: Optional[bool]
+    evm_contract: Optional[HyperliquidEvmContract]
+    full_name: Optional[str]
+    deployer_trading_fee_share: Optional[Decimal]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidSpotPair(WireModel):
+    name: str
+    tokens: list[int]
+    index: int
+    is_canonical: Optional[bool]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidSpotMeta(WireModel):
+    tokens: list[HyperliquidSpotToken]
+    universe: list[HyperliquidSpotPair]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidSpotAssetContext(WireModel):
+    coin: Optional[str]
+    mid_price: Optional[Decimal]
+    mark_price: Optional[Decimal]
+    previous_day_price: Optional[Decimal]
+    day_base_volume: Optional[Decimal]
+    day_notional_volume: Optional[Decimal]
+    circulating_supply: Optional[Decimal]
+    total_supply: Optional[Decimal]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidSpotMetaAndAssetContexts(WireModel):
+    meta: HyperliquidSpotMeta
+    contexts: list[HyperliquidSpotAssetContext]
+    raw_json: str
 
 
 @dataclass(frozen=True)
@@ -2015,6 +2480,7 @@ __all__ = [
     "UpbitClosedOrdersRequest",
     "UpbitClosedOrder",
     "UpbitDepositInfo",
+    "UpbitWithdrawalAddress",
     "UpbitTravelRuleVasp",
     "UpbitTravelRuleVerification",
     "UpbitBatchCancelScope",
@@ -2063,6 +2529,28 @@ __all__ = [
     "BithumbOrderDetail",
     "BithumbOrderListRequest",
     "BithumbOrderListItem",
+    "BinanceDepositHistoryRequest",
+    "BinanceWithdrawHistoryRequest",
+    "BinanceSpotAccountInformation",
+    "BinanceSpotCommissionRates",
+    "BinanceSpotAccountBalance",
+    "BinanceSpotCancelAllOpenOrders",
+    "BinanceSpotCancelledOrder",
+    "BinanceUsdMAccountInformation",
+    "BinanceUsdMAccountAsset",
+    "BinanceUsdMAccountPosition",
+    "BinanceUsdMPositionInformation",
+    "BinanceExchangeInfo",
+    "BinanceExchangeSymbol",
+    "BinanceCoinInformation",
+    "BinanceCoinNetworkInformation",
+    "BinanceApiKeyPermissions",
+    "BinanceDepositHistory",
+    "BinanceDepositHistoryEntry",
+    "BinanceQuestionnaireRequirements",
+    "BinanceWithdrawalAddress",
+    "BinanceWithdrawHistory",
+    "BinanceWithdrawHistoryEntry",
     "BinanceSpotAveragePrice",
     "BinanceMarkPrice",
     "BinanceOpenInterest",
@@ -2074,6 +2562,20 @@ __all__ = [
     "BinanceC2cTradeHistoryRequest",
     "BinanceC2cTrade",
     "BinanceC2cTradeHistoryPage",
+    "HyperliquidCandleSnapshot",
+    "HyperliquidBookLevel",
+    "HyperliquidL2Book",
+    "HyperliquidRecentTrade",
+    "HyperliquidFundingHistoryEntry",
+    "HyperliquidUserFunding",
+    "HyperliquidSpotBalance",
+    "HyperliquidSpotClearinghouseState",
+    "HyperliquidEvmContract",
+    "HyperliquidSpotToken",
+    "HyperliquidSpotPair",
+    "HyperliquidSpotMeta",
+    "HyperliquidSpotAssetContext",
+    "HyperliquidSpotMetaAndAssetContexts",
     "HyperliquidMidPrice",
     "HyperliquidUserRateLimit",
     "HyperliquidUserRole",

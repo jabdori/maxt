@@ -30,11 +30,16 @@ use parse::Universe;
 
 #[allow(unused_imports)]
 pub use native::{
-    HyperliquidAssetContext, HyperliquidDailyVolume, HyperliquidLedgerEntry, HyperliquidLedgerKind,
-    HyperliquidOpenOrder, HyperliquidOrderDetail, HyperliquidOrderInfo, HyperliquidOrderReference,
+    HyperliquidAssetContext, HyperliquidBookLevel, HyperliquidCandleSnapshot,
+    HyperliquidDailyVolume, HyperliquidEvmContract, HyperliquidFundingHistoryEntry,
+    HyperliquidL2Book, HyperliquidLedgerEntry, HyperliquidLedgerKind, HyperliquidOpenOrder,
+    HyperliquidOrderDetail, HyperliquidOrderInfo, HyperliquidOrderReference,
     HyperliquidOrderStatusResponse, HyperliquidPortfolioPeriod, HyperliquidPortfolioPoint,
-    HyperliquidReferral, HyperliquidReferrer, HyperliquidSubAccount, HyperliquidUserFees,
-    HyperliquidUserFill, HyperliquidUserRateLimit, HyperliquidUserRole, HyperliquidVaultEquity,
+    HyperliquidRecentTrade, HyperliquidReferral, HyperliquidReferrer, HyperliquidSpotAssetContext,
+    HyperliquidSpotBalance, HyperliquidSpotClearinghouseState, HyperliquidSpotMeta,
+    HyperliquidSpotMetaAndAssetContexts, HyperliquidSpotPair, HyperliquidSpotToken,
+    HyperliquidSubAccount, HyperliquidUserFees, HyperliquidUserFill, HyperliquidUserFunding,
+    HyperliquidUserRateLimit, HyperliquidUserRole, HyperliquidVaultEquity,
 };
 
 /// Hyperliquid's current mid price for one market.
@@ -424,6 +429,120 @@ impl HyperliquidAdapter {
         let asset = connection.universe.asset(market)?;
 
         native::asset_context(&raw, asset)
+    }
+
+    /// Reads one raw candle snapshot window with Hyperliquid's trade count intact.
+    ///
+    /// `interval` must use Hyperliquid's documented spelling such as `"1m"`.
+    /// `from` is required and maps to `startTime`; `to`, when supplied, maps
+    /// to the provider's inclusive `endTime`.
+    pub async fn candle_snapshot(
+        &self,
+        market: &Market,
+        interval: &str,
+        from: Timestamp,
+        to: Option<Timestamp>,
+    ) -> Result<Vec<HyperliquidCandleSnapshot>> {
+        if to.is_some_and(|to| to < from) {
+            return Err(Error::invalid_request(
+                "to",
+                "must not be earlier than `from`",
+            ));
+        }
+        let connection = self.connect().await?;
+        let native = connection.universe.native_symbol(market)?;
+
+        rest::candle_snapshot(
+            &connection.http,
+            &connection.universe,
+            native,
+            interval,
+            from.as_millis(),
+            to.map(Timestamp::as_millis),
+        )
+        .await
+    }
+
+    /// Reads an L2 snapshot with Hyperliquid's order count for every level.
+    pub async fn l2_book(&self, market: &Market) -> Result<HyperliquidL2Book> {
+        let connection = self.connect().await?;
+
+        rest::l2_book(&connection.http, &connection.universe, market).await
+    }
+
+    /// Reads the provider's recent trades without dropping hashes or account lists.
+    ///
+    /// Hyperliquid returns at most ten entries and accepts no count parameter.
+    pub async fn recent_trades(&self, market: &Market) -> Result<Vec<HyperliquidRecentTrade>> {
+        let connection = self.connect().await?;
+
+        rest::recent_trades(&connection.http, &connection.universe, market).await
+    }
+
+    /// Reads historical funding observations with Hyperliquid's premium index.
+    ///
+    /// The supplied time bounds map directly to Hyperliquid's millisecond
+    /// `startTime` and optional inclusive `endTime`.
+    pub async fn funding_history(
+        &self,
+        market: &Market,
+        from: Timestamp,
+        to: Option<Timestamp>,
+    ) -> Result<Vec<HyperliquidFundingHistoryEntry>> {
+        if to.is_some_and(|to| to < from) {
+            return Err(Error::invalid_request(
+                "to",
+                "must not be earlier than `from`",
+            ));
+        }
+        let connection = self.connect().await?;
+
+        rest::funding_history(&connection.http, &connection.universe, market, from, to).await
+    }
+
+    /// Reads account funding records with position size and sample count intact.
+    ///
+    /// This is a public account read and needs a configured query address, not
+    /// a signing key.
+    pub async fn user_funding(
+        &self,
+        from: Timestamp,
+        to: Option<Timestamp>,
+    ) -> Result<Vec<HyperliquidUserFunding>> {
+        if to.is_some_and(|to| to < from) {
+            return Err(Error::invalid_request(
+                "to",
+                "must not be earlier than `from`",
+            ));
+        }
+        let user = self.query_address()?;
+        let connection = self.connect().await?;
+
+        rest::user_funding(&connection.http, &connection.universe, &user, from, to).await
+    }
+
+    /// Reads the configured account's spot state with entry notional intact.
+    pub async fn spot_clearinghouse_state(&self) -> Result<HyperliquidSpotClearinghouseState> {
+        let user = self.query_address()?;
+        let connection = self.connect().await?;
+
+        rest::spot_clearinghouse_state(&connection.http, &user).await
+    }
+
+    /// Reads all spot token and pair metadata without narrowing provider fields.
+    pub async fn spot_meta(&self) -> Result<HyperliquidSpotMeta> {
+        let connection = self.connect().await?;
+
+        rest::spot_meta(&connection.http).await
+    }
+
+    /// Reads spot metadata and asset contexts without dropping supply fields.
+    pub async fn spot_meta_and_asset_contexts(
+        &self,
+    ) -> Result<HyperliquidSpotMetaAndAssetContexts> {
+        let connection = self.connect().await?;
+
+        rest::spot_meta_and_asset_contexts(&connection.http).await
     }
 
     /// Reads the current mid price for every market in the default universe.
@@ -1013,6 +1132,14 @@ mod tests {
             Err(Error::Auth { .. })
         ));
         assert!(matches!(
+            public.user_funding(Timestamp::from_millis(0), None).await,
+            Err(Error::Auth { .. })
+        ));
+        assert!(matches!(
+            public.spot_clearinghouse_state().await,
+            Err(Error::Auth { .. })
+        ));
+        assert!(matches!(
             public.basic_open_orders().await,
             Err(Error::Auth { .. })
         ));
@@ -1061,6 +1188,27 @@ mod tests {
             matches!(&refused, Err(Error::InvalidRequest { field, .. }) if *field == "limit"),
             "{refused:?}"
         );
+    }
+
+    #[tokio::test]
+    async fn provider_history_ranges_are_checked_before_connecting() {
+        let public = HyperliquidAdapter::new();
+        let market = Market::perpetual(Exchange::Hyperliquid, "BTC", "USDC");
+        let later = Timestamp::from_millis(2);
+        let earlier = Timestamp::from_millis(1);
+
+        assert!(matches!(
+            public.candle_snapshot(&market, "1m", later, Some(earlier)).await,
+            Err(Error::InvalidRequest { field, .. }) if field == "to"
+        ));
+        assert!(matches!(
+            public.funding_history(&market, later, Some(earlier)).await,
+            Err(Error::InvalidRequest { field, .. }) if field == "to"
+        ));
+        assert!(matches!(
+            public.user_funding(later, Some(earlier)).await,
+            Err(Error::InvalidRequest { field, .. }) if field == "to"
+        ));
     }
 
     #[tokio::test]

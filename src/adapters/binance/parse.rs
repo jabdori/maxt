@@ -47,6 +47,15 @@ pub(super) fn json<T: DeserializeOwned>(body: &str, what: &'static str) -> Resul
     serde_json::from_str(body).map_err(|err| Error::decode(format!("unreadable {what}: {err}")))
 }
 
+/// Serializes a successfully decoded provider payload in a stable compact form.
+///
+/// Provider-specific contracts expose this alongside their typed fields so a
+/// later Binance field does not disappear while the typed model is extended.
+pub(super) fn canonical_json(value: &serde_json::Value, what: &'static str) -> Result<String> {
+    serde_json::to_string(value)
+        .map_err(|err| Error::decode(format!("could not serialize {what}: {err}")))
+}
+
 /// Binance timestamps are milliseconds since the epoch, everywhere.
 pub(super) const fn millis(value: i64) -> Timestamp {
     Timestamp::from_millis(value)

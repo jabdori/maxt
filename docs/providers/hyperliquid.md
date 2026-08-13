@@ -124,6 +124,11 @@ Access the following provider-specific methods through `Client::adapter()`:
 | Method | Contract |
 | --- | --- |
 | `asset_context(&market)` | Mid, mark, oracle, funding, open interest, and order precision |
+| `candle_snapshot(&market, interval, from, to)` | Public `POST /info` `candleSnapshot` read that preserves the provider trade count and raw fields. Fixture-verified only. |
+| `l2_book(&market)`, `recent_trades(&market)` | Public `l2Book` and `recentTrades` reads that preserve per-level order counts, trade hashes, and participant data. Fixture-verified only. |
+| `funding_history(&market, from, to)` | Public `fundingHistory` read that preserves the provider premium index. Fixture-verified only. |
+| `user_funding(from, to)`, `spot_clearinghouse_state()` | Unsigned, configured-address reads that preserve funding position/sample fields and Spot entry-notional balances. Fixture-verified only. |
+| `spot_meta()`, `spot_meta_and_asset_contexts()` | Public Spot metadata reads that preserve token, pair, EVM, and supply/context fields. Fixture-verified only. |
 | `basic_open_orders()` | Public-address-bound, unsigned `POST /info` `openOrders` read. This compact provider response is deliberately separate from the common open-order surface, which uses Hyperliquid's richer `frontendOpenOrders` response. Fixture-verified only |
 | `order_status(reference)` | Public-address-bound, unsigned `POST /info` `orderStatus` read. `reference` accepts a numeric server `oid` or a `0x`-prefixed 32-hex-character client order ID. `unknownOid` is the normal `HyperliquidOrderStatusResponse::UnknownOrder` result; future top-level statuses retain their status string and raw JSON. Fixture-verified only |
 | `historical_orders()` | Public-address-bound, unsigned `POST /info` `historicalOrders` read of up to the latest 2,000 orders. Detailed orders retain Hyperliquid trigger, time-in-force, reduce-only, client-ID, status, and raw JSON fields. Fixture-verified only |

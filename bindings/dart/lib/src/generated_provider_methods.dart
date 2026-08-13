@@ -130,6 +130,13 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
         ),
       ).then(_upbitDepositInfoFromWire);
 
+  /// Returns every withdrawal address registered on this Upbit account.
+  Future<List<UpbitWithdrawalAddress>> withdrawalAddresses() =>
+      _nativeFuture(_handle.upbitWithdrawalAddresses).then(
+        (values) =>
+            values.map(_upbitWithdrawalAddressFromWire).toList(growable: false),
+      );
+
   /// Lists VASPs available for Upbit Korea or Singapore Travel Rule verification.
   Future<List<UpbitTravelRuleVasp>> travelRuleVasps() =>
       _nativeFuture(_handle.upbitTravelRuleVasps).then(
@@ -467,6 +474,93 @@ extension BinanceAdapterGeneratedMethods on BinanceAdapter {
         () => _handle.binanceSpotAveragePrice(market: _marketToWire(market)),
       ).then(_binanceSpotAveragePriceFromWire);
 
+  /// Reads Binance Spot account information without discarding provider fields.
+  Future<BinanceSpotAccountInformation> spotAccountInformation() =>
+      _nativeFuture(
+        _handle.binanceSpotAccountInformation,
+      ).then(_binanceSpotAccountInformationFromWire);
+
+  /// Cancels all open Spot orders for [market] and returns Binance reports.
+  Future<BinanceSpotCancelAllOpenOrders> spotCancelAllOpenOrders(
+    Market market,
+  ) => _nativeFuture(
+    () => _handle.binanceSpotCancelAllOpenOrders(market: _marketToWire(market)),
+  ).then(_binanceSpotCancelAllOpenOrdersFromWire);
+
+  /// Reads Binance Spot exchange metadata, including provider symbols and filters.
+  Future<BinanceExchangeInfo> spotExchangeInfo() => _nativeFuture(
+    _handle.binanceSpotExchangeInfo,
+  ).then(_binanceExchangeInfoFromWire);
+
+  /// Reads Binance USD-M account balances and provider risk fields.
+  Future<BinanceUsdMAccountInformation> usdMAccountInformation() =>
+      _nativeFuture(
+        _handle.binanceUsdMAccountInformation,
+      ).then(_binanceUsdMAccountInformationFromWire);
+
+  /// Reads Binance USD-M exchange metadata, including dated contracts.
+  Future<BinanceExchangeInfo> usdMExchangeInfo() => _nativeFuture(
+    _handle.binanceUsdMExchangeInfo,
+  ).then(_binanceExchangeInfoFromWire);
+
+  /// Reads Binance USD-M position-risk details.
+  Future<List<BinanceUsdMPositionInformation>> usdMPositionInformation([
+    Market? market,
+  ]) =>
+      _nativeFuture(
+        () => _handle.binanceUsdMPositionInformation(
+          market: market == null ? null : _marketToWire(market),
+        ),
+      ).then(
+        (values) => values
+            .map(_binanceUsdMPositionInformationFromWire)
+            .toList(growable: false),
+      );
+
+  /// Reads Binance Wallet coin and network configuration.
+  Future<List<BinanceCoinInformation>> allCoinsInformation() =>
+      _nativeFuture(_handle.binanceAllCoinsInformation).then(
+        (values) =>
+            values.map(_binanceCoinInformationFromWire).toList(growable: false),
+      );
+
+  /// Reads the configured Binance API key permission flags.
+  Future<BinanceApiKeyPermissions> apiKeyPermissions() => _nativeFuture(
+    _handle.binanceApiKeyPermissions,
+  ).then(_binanceApiKeyPermissionsFromWire);
+
+  /// Reads Binance Wallet deposit history with provider status fields intact.
+  Future<BinanceDepositHistory> depositHistory(
+    BinanceDepositHistoryRequest request,
+  ) => _nativeFuture(
+    () => _handle.binanceDepositHistory(
+      request: _binanceDepositHistoryRequestToWire(request),
+    ),
+  ).then(_binanceDepositHistoryFromWire);
+
+  /// Reads the Binance Travel Rule questionnaire requirement for this account.
+  Future<BinanceQuestionnaireRequirements> questionnaireRequirements() =>
+      _nativeFuture(
+        _handle.binanceQuestionnaireRequirements,
+      ).then(_binanceQuestionnaireRequirementsFromWire);
+
+  /// Reads registered Binance withdrawal addresses and whitelist state.
+  Future<List<BinanceWithdrawalAddress>> withdrawAddressList() =>
+      _nativeFuture(_handle.binanceWithdrawAddressList).then(
+        (values) => values
+            .map(_binanceWithdrawalAddressFromWire)
+            .toList(growable: false),
+      );
+
+  /// Reads Binance Wallet withdrawal history with provider status fields intact.
+  Future<BinanceWithdrawHistory> withdrawHistory(
+    BinanceWithdrawHistoryRequest request,
+  ) => _nativeFuture(
+    () => _handle.binanceWithdrawHistory(
+      request: _binanceWithdrawHistoryRequestToWire(request),
+    ),
+  ).then(_binanceWithdrawHistoryFromWire);
+
   /// Binance 전용 API인 `mark_price`를 호출합니다.
   Future<BinanceMarkPrice> markPrice(Market market) => _nativeFuture(
     () => _handle.binanceMarkPrice(market: _marketToWire(market)),
@@ -624,6 +718,96 @@ extension HyperliquidAdapterGeneratedMethods on HyperliquidAdapter {
   Future<HyperliquidAssetContext> assetContext(Market market) => _nativeFuture(
     () => _handle.hyperliquidAssetContext(market: _marketToWire(market)),
   ).then(_hyperliquidAssetContextFromWire);
+
+  /// Reads Hyperliquid candle snapshots with their provider trade count.
+  Future<List<HyperliquidCandleSnapshot>> candleSnapshot(
+    Market market,
+    String interval,
+    Timestamp from, [
+    Timestamp? to,
+  ]) =>
+      _nativeFuture(
+        () => _handle.hyperliquidCandleSnapshot(
+          market: _marketToWire(market),
+          interval: interval,
+          fromNs: platformInt64FromBigInt(from.nanosecondsSinceEpoch),
+          toNs: to == null
+              ? null
+              : platformInt64FromBigInt(to.nanosecondsSinceEpoch),
+        ),
+      ).then(
+        (values) => values
+            .map(_hyperliquidCandleSnapshotFromWire)
+            .toList(growable: false),
+      );
+
+  /// Reads a Hyperliquid L2 book with the provider order count per level.
+  Future<HyperliquidL2Book> l2Book(Market market) => _nativeFuture(
+    () => _handle.hyperliquidL2Book(market: _marketToWire(market)),
+  ).then(_hyperliquidL2BookFromWire);
+
+  /// Reads recent Hyperliquid trades with hash and participant data.
+  Future<List<HyperliquidRecentTrade>> recentTrades(Market market) =>
+      _nativeFuture(
+        () => _handle.hyperliquidRecentTrades(market: _marketToWire(market)),
+      ).then(
+        (values) =>
+            values.map(_hyperliquidRecentTradeFromWire).toList(growable: false),
+      );
+
+  /// Reads Hyperliquid funding history with the provider premium index.
+  Future<List<HyperliquidFundingHistoryEntry>> fundingHistory(
+    Market market,
+    Timestamp from, [
+    Timestamp? to,
+  ]) =>
+      _nativeFuture(
+        () => _handle.hyperliquidFundingHistory(
+          market: _marketToWire(market),
+          fromNs: platformInt64FromBigInt(from.nanosecondsSinceEpoch),
+          toNs: to == null
+              ? null
+              : platformInt64FromBigInt(to.nanosecondsSinceEpoch),
+        ),
+      ).then(
+        (values) => values
+            .map(_hyperliquidFundingHistoryEntryFromWire)
+            .toList(growable: false),
+      );
+
+  /// Reads account funding entries with position size and sample count.
+  Future<List<HyperliquidUserFunding>> userFunding(
+    Timestamp from, [
+    Timestamp? to,
+  ]) =>
+      _nativeFuture(
+        () => _handle.hyperliquidUserFunding(
+          fromNs: platformInt64FromBigInt(from.nanosecondsSinceEpoch),
+          toNs: to == null
+              ? null
+              : platformInt64FromBigInt(to.nanosecondsSinceEpoch),
+        ),
+      ).then(
+        (values) =>
+            values.map(_hyperliquidUserFundingFromWire).toList(growable: false),
+      );
+
+  /// Reads the configured account's Hyperliquid Spot balance state.
+  Future<HyperliquidSpotClearinghouseState> spotClearinghouseState() =>
+      _nativeFuture(
+        _handle.hyperliquidSpotClearinghouseState,
+      ).then(_hyperliquidSpotClearinghouseStateFromWire);
+
+  /// Reads Hyperliquid Spot token and pair metadata.
+  Future<HyperliquidSpotMeta> spotMeta() => _nativeFuture(
+    _handle.hyperliquidSpotMeta,
+  ).then(_hyperliquidSpotMetaFromWire);
+
+  /// Reads Hyperliquid Spot metadata and asset contexts with supply fields.
+  Future<HyperliquidSpotMetaAndAssetContexts> spotMetaAndAssetContexts() =>
+      _nativeFuture(
+        _handle.hyperliquidSpotMetaAndAssetContexts,
+      ).then(_hyperliquidSpotMetaAndAssetContextsFromWire);
 
   /// Hyperliquid 전용 API인 `user_rate_limit`를 호출합니다.
   Future<HyperliquidUserRateLimit> userRateLimit() => _nativeFuture(

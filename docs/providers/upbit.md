@@ -122,6 +122,7 @@ Access the following provider-specific methods through `Client::adapter()`.
 | `order_detail(request)` | Authenticated provider-specific `GET /v1/order`. The request supplies the expected `market` plus a UUID and/or `identifier`; one identifier is required and Upbit gives the UUID priority when both are set. Preserves detailed fills, fees, locked amounts, SMP, and time-in-force raw fields that the common `Order` does not carry. Reserved characters in `identifier` are safely percent-encoded while the original query text is used for the JWT query hash. Fixture-verified only | `default` |
 | `closed_orders(request)` | Authenticated provider-specific `GET /v1/orders/closed` summary list. Optional `market`, `state`, or `states[]`; `state` and `states[]` are mutually exclusive. Creation-time window is at most seven days; `limit: 1..=1_000`; ascending or descending ordering. Timestamps are sent directly as milliseconds. Preserves fee, SMP, `identifier`, and time-in-force fields, but no individual `trades`. Fixture-verified only; no live trade or read | `default` |
 | `deposit_info(asset, network)` | Requires `View Deposits`; returns availability, reason, minimum amount, confirmation count, and decimal precision. The response network is nullable and is preserved as returned. This metadata may be delayed by several minutes | `default` |
+| `withdrawal_addresses()` | Authenticated `GET /v1/withdraws/coin_addresses` provider read. Preserves registered address, network, recipient, and wallet metadata for this account. Fixture-verified only | `default` |
 | `travel_rule_vasps()` | Requires `View Deposits`; lists VASPs available for Travel Rule verification in Korea or Singapore. Indonesia and Thailand return `Error::Unsupported` before authentication or network I/O | `default` |
 | `verify_travel_rule_by_uuid(...)`, `verify_travel_rule_by_txid(...)` | Korea or Singapore only; financial writes that request account-owner verification. Upbit enforces the per-deposit repeat limit. Fixture-verified only; maxt does not submit a live verification | `default` |
 | `batch_cancel_open_orders(request)` | Requires order-placement permission. `UpbitBatchCancelScope::All` explicitly selects every eligible market, not an unbounded number of orders; Upbit applies the request count (default 20, maximum 300). Quote-currency and pair scopes are alternatives, with up to 20 excluded pairs. The result keeps both completed and failed cancellations. Fixture-verified only; no live cancellation is run by maxt | `order-cancel-all` |
@@ -172,6 +173,7 @@ satisfy `Error::is_rate_limited() == true`.
 - [Batch cancel orders](https://global-docs.upbit.com/reference/batch-cancel-orders)
 - [Cancel and new order](https://global-docs.upbit.com/reference/cancel-and-new-order)
 - [Deposit availability](https://global-docs.upbit.com/reference/available-deposit-information)
+- [Registered withdrawal addresses](https://docs.upbit.com/kr/reference/list-withdrawal-addresses)
 - [KRW deposit](https://docs.upbit.com/kr/reference/deposit-krw)
 - [KRW withdrawal](https://docs.upbit.com/kr/reference/withdraw-krw)
 - [API key list](https://docs.upbit.com/kr/reference/list-api-keys)

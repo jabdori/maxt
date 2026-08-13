@@ -35,7 +35,7 @@ Exchange	WebSocketStream	SUBSCRIBE	type=myOrder	myOrder	documented_active	common
 Exchange	WebSocketStream	SUBSCRIBE	type=myAsset	myAsset	documented_active	common_existing
 Deposits and withdrawals	Http	GET	/v1/status/wallet	get-service-status	documented_active	common_existing
 Deposits and withdrawals	Http	GET	/v1/withdraws/chance	available-withdrawal-information	documented_active	common_existing
-Deposits and withdrawals	Http	GET	/v1/withdraws/coin_addresses	list-withdrawal-addresses	documented_active	common_existing
+Deposits and withdrawals	Http	GET	/v1/withdraws/coin_addresses	list-withdrawal-addresses	documented_active	common_and_provider
 Deposits and withdrawals	Http	POST	/v1/withdraws/coin	withdraw	documented_active	common_existing
 Deposits and withdrawals	Http	GET	/v1/withdraw	get-withdrawal	documented_active	common_existing
 Deposits and withdrawals	Http	GET	/v1/withdraws	list-withdrawals	documented_active	common_existing

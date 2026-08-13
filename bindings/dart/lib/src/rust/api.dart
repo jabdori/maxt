@@ -103,6 +103,12 @@ abstract class NativeClient implements RustOpaqueInterface {
     required WireBinanceAggregateTradesRequest request,
   });
 
+  /// Binance Wallet 코인·네트워크 설정을 반환합니다.
+  Future<List<WireBinanceCoinInformation>> binanceAllCoinsInformation();
+
+  /// Binance API 키의 권한 상태를 반환합니다.
+  Future<WireBinanceApiKeyPermissions> binanceApiKeyPermissions();
+
   /// Binance Spot Funding Wallet의 C2C 거래 이력 응답을 그대로 반환합니다.
   ///
   /// `page`를 증가시켜 조회하며, 일반 cursor를 만들지 않고 제공자 envelope을 보존합니다.
@@ -115,6 +121,11 @@ abstract class NativeClient implements RustOpaqueInterface {
   /// Spot과 USD-M의 응답 형태가 달라 성공 여부만 반환합니다.
   Future<void> binanceCancelAllOpenOrders({required WireMarket market});
 
+  /// Binance 입금 이력을 반환합니다.
+  Future<WireBinanceDepositHistory> binanceDepositHistory({
+    required WireBinanceDepositHistoryRequest request,
+  });
+
   /// 한 Binance USD-M 시장의 현재 mark price와 펀딩 정보를 반환합니다.
   Future<WireBinanceMarkPrice> binanceMarkPrice({required WireMarket market});
 
@@ -126,6 +137,10 @@ abstract class NativeClient implements RustOpaqueInterface {
     required WireMarket market,
   });
 
+  /// Binance Travel Rule 설문 국가 요구사항을 반환합니다.
+  Future<WireBinanceQuestionnaireRequirements>
+  binanceQuestionnaireRequirements();
+
   /// Binance Spot의 선택적 자격증명을 구성합니다.
   static NativeClient binanceSpot({String? apiKey, String? secretKey}) =>
       MaxtRustLib.instance.api.crateApiNativeClientBinanceSpot(
@@ -133,10 +148,21 @@ abstract class NativeClient implements RustOpaqueInterface {
         secretKey: secretKey,
       );
 
+  /// Binance Spot 계정의 권한·수수료·잔고 정보를 반환합니다.
+  Future<WireBinanceSpotAccountInformation> binanceSpotAccountInformation();
+
   /// 한 Binance Spot 시장의 현재 평균 가격을 반환합니다.
   Future<WireBinanceSpotAveragePrice> binanceSpotAveragePrice({
     required WireMarket market,
   });
+
+  /// Binance Spot 시장의 모든 미체결 주문을 취소하고 보고서를 반환합니다.
+  Future<WireBinanceSpotCancelAllOpenOrders> binanceSpotCancelAllOpenOrders({
+    required WireMarket market,
+  });
+
+  /// Binance Spot 거래소 메타데이터를 반환합니다.
+  Future<WireBinanceExchangeInfo> binanceSpotExchangeInfo();
 
   /// 숫자 주문 ID로 Binance Spot 주문 상세를 반환합니다.
   ///
@@ -160,6 +186,9 @@ abstract class NativeClient implements RustOpaqueInterface {
     required WireBinanceTestOrderRequest request,
   });
 
+  /// Binance USD-M 계정의 마진·자산·포지션 정보를 반환합니다.
+  Future<WireBinanceUsdMAccountInformation> binanceUsdMAccountInformation();
+
   /// 현재 API 키가 소유한 Binance USD-M listen key를 닫습니다.
   Future<void> binanceUsdMCloseListenKey();
 
@@ -167,6 +196,9 @@ abstract class NativeClient implements RustOpaqueInterface {
   ///
   /// 일반적으로 [subscribe_account]가 이 수명을 관리합니다.
   Future<WireBinanceListenKey> binanceUsdMCreateListenKey();
+
+  /// Binance USD-M 거래소 메타데이터를 반환합니다.
+  Future<WireBinanceExchangeInfo> binanceUsdMExchangeInfo();
 
   /// Binance USD-M의 선택적 자격증명을 구성합니다.
   static NativeClient binanceUsdMFutures({String? apiKey, String? secretKey}) =>
@@ -178,8 +210,20 @@ abstract class NativeClient implements RustOpaqueInterface {
   /// 현재 API 키가 소유한 Binance USD-M listen key를 연장합니다.
   Future<void> binanceUsdMKeepaliveListenKey();
 
+  /// Binance USD-M 포지션 위험 정보를 반환합니다.
+  Future<List<WireBinanceUsdMPositionInformation>>
+  binanceUsdMPositionInformation({WireMarket? market});
+
   /// Binance handle이면 선택된 제품군을, 아니면 null을 반환합니다.
   WireBinanceVenue? binanceVenue();
+
+  /// Binance에 등록된 출금 주소 목록을 반환합니다.
+  Future<List<WireBinanceWithdrawalAddress>> binanceWithdrawAddressList();
+
+  /// Binance 출금 이력을 반환합니다.
+  Future<WireBinanceWithdrawHistory> binanceWithdrawHistory({
+    required WireBinanceWithdrawHistoryRequest request,
+  });
 
   /// Bithumb의 선택적 자격증명을 구성합니다.
   static NativeClient bithumb({String? accessKey, String? secretKey}) =>
@@ -365,8 +409,26 @@ abstract class NativeClient implements RustOpaqueInterface {
   /// 구성된 Hyperliquid 주소의 간략한 현재 미체결 주문을 반환합니다.
   Future<List<WireHyperliquidOpenOrder>> hyperliquidBasicOpenOrders();
 
+  /// Hyperliquid 캔들 snapshot과 거래 건수를 반환합니다.
+  Future<List<WireHyperliquidCandleSnapshot>> hyperliquidCandleSnapshot({
+    required WireMarket market,
+    required String interval,
+    required PlatformInt64 fromNs,
+    PlatformInt64? toNs,
+  });
+
+  /// Hyperliquid 펀딩 이력과 premium 값을 반환합니다.
+  Future<List<WireHyperliquidFundingHistoryEntry>> hyperliquidFundingHistory({
+    required WireMarket market,
+    required PlatformInt64 fromNs,
+    PlatformInt64? toNs,
+  });
+
   /// 구성된 Hyperliquid 주소의 최근 주문 이력을 반환합니다.
   Future<List<WireHyperliquidOrderInfo>> hyperliquidHistoricalOrders();
+
+  /// Hyperliquid L2 호가와 레벨별 주문 수를 반환합니다.
+  Future<WireHyperliquidL2Book> hyperliquidL2Book({required WireMarket market});
 
   /// 구성된 Hyperliquid 계정의 비펀딩 원장 페이지를 반환합니다.
   ///
@@ -389,8 +451,24 @@ abstract class NativeClient implements RustOpaqueInterface {
   /// 구성된 Hyperliquid 주소의 제공자 기간별 포트폴리오 이력을 반환합니다.
   Future<List<WireHyperliquidPortfolioPeriod>> hyperliquidPortfolio();
 
+  /// Hyperliquid 최근 체결과 hash·참여자 정보를 반환합니다.
+  Future<List<WireHyperliquidRecentTrade>> hyperliquidRecentTrades({
+    required WireMarket market,
+  });
+
   /// 구성된 Hyperliquid 주소의 추천 프로그램 상태를 반환합니다.
   Future<WireHyperliquidReferral> hyperliquidReferral();
+
+  /// Hyperliquid Spot 계정 잔고 상태를 반환합니다.
+  Future<WireHyperliquidSpotClearinghouseState>
+  hyperliquidSpotClearinghouseState();
+
+  /// Hyperliquid Spot 토큰·페어 메타데이터를 반환합니다.
+  Future<WireHyperliquidSpotMeta> hyperliquidSpotMeta();
+
+  /// Hyperliquid Spot 메타데이터와 asset context를 함께 반환합니다.
+  Future<WireHyperliquidSpotMetaAndAssetContexts>
+  hyperliquidSpotMetaAndAssetContexts();
 
   /// 구성된 Hyperliquid 주소의 서브 계정을 반환합니다.
   ///
@@ -412,6 +490,12 @@ abstract class NativeClient implements RustOpaqueInterface {
     required PlatformInt64 fromNs,
     PlatformInt64? toNs,
     required bool aggregateByTime,
+  });
+
+  /// Hyperliquid 계정 펀딩 항목을 반환합니다.
+  Future<List<WireHyperliquidUserFunding>> hyperliquidUserFunding({
+    required PlatformInt64 fromNs,
+    PlatformInt64? toNs,
   });
 
   /// 구성된 Hyperliquid 주소의 현재 Info API 요청 한도를 반환합니다.
@@ -664,6 +748,9 @@ abstract class NativeClient implements RustOpaqueInterface {
   Future<WireUpbitKrwWithdrawal> upbitWithdrawKrw({
     required WireUpbitKrwTransferRequest request,
   });
+
+  /// Upbit 계정에 등록된 출금 허용 주소 목록을 반환합니다.
+  Future<List<WireUpbitWithdrawalAddress>> upbitWithdrawalAddresses();
 
   /// 한 Upbit 시장의 연간 캔들을 오래된 순서로 반환합니다.
   ///

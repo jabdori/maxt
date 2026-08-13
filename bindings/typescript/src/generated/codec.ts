@@ -1245,6 +1245,31 @@ export function upbitDepositInfoToWire(value: Model.UpbitDepositInfo): Wire.Upbi
   };
 }
 
+export function upbitWithdrawalAddressFromWire(value: Wire.UpbitWithdrawalAddressWire): Model.UpbitWithdrawalAddress {
+  return new Model.UpbitWithdrawalAddress(value.currency, value.net_type, value.network_name, value.withdraw_address, value.secondary_address === null ? null : value.secondary_address, value.beneficiary_name === null ? null : value.beneficiary_name, value.beneficiary_company_name === null ? null : value.beneficiary_company_name, value.beneficiary_type === null ? null : value.beneficiary_type, value.exchange_name === null ? null : value.exchange_name, value.wallet_type === null ? null : value.wallet_type, value.raw_json);
+}
+
+export function upbitWithdrawalAddressToWire(value: Model.UpbitWithdrawalAddress): Wire.UpbitWithdrawalAddressWire {
+  for (const key of Object.keys(value)) {
+    if (!["currency", "netType", "networkName", "withdrawAddress", "secondaryAddress", "beneficiaryName", "beneficiaryCompanyName", "beneficiaryType", "exchangeName", "walletType", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("upbitWithdrawalAddress." + key, "UpbitWithdrawalAddress does not accept " + key);
+    }
+  }
+  return {
+    currency: value.currency,
+    net_type: value.netType,
+    network_name: value.networkName,
+    withdraw_address: value.withdrawAddress,
+    secondary_address: value.secondaryAddress === null ? null : value.secondaryAddress,
+    beneficiary_name: value.beneficiaryName === null ? null : value.beneficiaryName,
+    beneficiary_company_name: value.beneficiaryCompanyName === null ? null : value.beneficiaryCompanyName,
+    beneficiary_type: value.beneficiaryType === null ? null : value.beneficiaryType,
+    exchange_name: value.exchangeName === null ? null : value.exchangeName,
+    wallet_type: value.walletType === null ? null : value.walletType,
+    raw_json: value.rawJson,
+  };
+}
+
 export function upbitTravelRuleVaspFromWire(value: Wire.UpbitTravelRuleVaspWire): Model.UpbitTravelRuleVasp {
   return new Model.UpbitTravelRuleVasp(value.vasp_name, value.vasp_uuid, value.depositable, value.withdrawable);
 }
@@ -2382,6 +2407,525 @@ export function binanceSpotOrderDetailToWire(value: Model.BinanceSpotOrderDetail
   };
 }
 
+export function binanceDepositHistoryRequestFromWire(value: Wire.BinanceDepositHistoryRequestWire): Model.BinanceDepositHistoryRequest {
+  return new Model.BinanceDepositHistoryRequest(value.coin === null ? null : value.coin, value.status === null ? null : value.status, value.start_time === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.start_time)), value.end_time === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.end_time)), value.offset === null ? null : unsignedInteger(value.offset, "offset"), value.limit === null ? null : value.limit, value.tx_id === null ? null : value.tx_id, value.include_source);
+}
+
+export function binanceDepositHistoryRequestToWire(value: Model.BinanceDepositHistoryRequest): Wire.BinanceDepositHistoryRequestWire {
+  for (const key of Object.keys(value)) {
+    if (!["coin", "status", "startTime", "endTime", "offset", "limit", "txId", "includeSource"].includes(key)) {
+      throw new InvalidRequestError("binanceDepositHistoryRequest." + key, "BinanceDepositHistoryRequest does not accept " + key);
+    }
+  }
+  return {
+    coin: value.coin === null ? null : value.coin,
+    status: value.status === null ? null : value.status,
+    start_time: value.startTime === null ? null : value.startTime.nanosecondsSinceEpoch.toString(),
+    end_time: value.endTime === null ? null : value.endTime.nanosecondsSinceEpoch.toString(),
+    offset: value.offset === null ? null : value.offset.toString(),
+    limit: value.limit === null ? null : value.limit,
+    tx_id: value.txId === null ? null : value.txId,
+    include_source: value.includeSource,
+  };
+}
+
+export function binanceWithdrawHistoryRequestFromWire(value: Wire.BinanceWithdrawHistoryRequestWire): Model.BinanceWithdrawHistoryRequest {
+  return new Model.BinanceWithdrawHistoryRequest(value.coin === null ? null : value.coin, value.withdraw_order_id === null ? null : value.withdraw_order_id, value.status === null ? null : value.status, value.offset === null ? null : unsignedInteger(value.offset, "offset"), value.limit === null ? null : value.limit, value.id_list.map((item) => item), value.start_time === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.start_time)), value.end_time === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.end_time)));
+}
+
+export function binanceWithdrawHistoryRequestToWire(value: Model.BinanceWithdrawHistoryRequest): Wire.BinanceWithdrawHistoryRequestWire {
+  for (const key of Object.keys(value)) {
+    if (!["coin", "withdrawOrderId", "status", "offset", "limit", "idList", "startTime", "endTime"].includes(key)) {
+      throw new InvalidRequestError("binanceWithdrawHistoryRequest." + key, "BinanceWithdrawHistoryRequest does not accept " + key);
+    }
+  }
+  return {
+    coin: value.coin === null ? null : value.coin,
+    withdraw_order_id: value.withdrawOrderId === null ? null : value.withdrawOrderId,
+    status: value.status === null ? null : value.status,
+    offset: value.offset === null ? null : value.offset.toString(),
+    limit: value.limit === null ? null : value.limit,
+    id_list: value.idList.map((item) => item),
+    start_time: value.startTime === null ? null : value.startTime.nanosecondsSinceEpoch.toString(),
+    end_time: value.endTime === null ? null : value.endTime.nanosecondsSinceEpoch.toString(),
+  };
+}
+
+export function binanceSpotAccountInformationFromWire(value: Wire.BinanceSpotAccountInformationWire): Model.BinanceSpotAccountInformation {
+  return new Model.BinanceSpotAccountInformation(unsignedInteger(value.maker_commission, "maker_commission"), unsignedInteger(value.taker_commission, "taker_commission"), unsignedInteger(value.buyer_commission, "buyer_commission"), unsignedInteger(value.seller_commission, "seller_commission"), binanceSpotCommissionRatesFromWire(value.commission_rates), value.can_trade, value.can_withdraw, value.can_deposit, Model.Timestamp.fromNanoseconds(BigInt(value.update_time)), value.account_type, value.balances.map((item) => binanceSpotAccountBalanceFromWire(item)), value.permissions.map((item) => item), value.uid === null ? null : unsignedInteger(value.uid, "uid"), value.raw_json);
+}
+
+export function binanceSpotAccountInformationToWire(value: Model.BinanceSpotAccountInformation): Wire.BinanceSpotAccountInformationWire {
+  for (const key of Object.keys(value)) {
+    if (!["makerCommission", "takerCommission", "buyerCommission", "sellerCommission", "commissionRates", "canTrade", "canWithdraw", "canDeposit", "updateTime", "accountType", "balances", "permissions", "uid", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("binanceSpotAccountInformation." + key, "BinanceSpotAccountInformation does not accept " + key);
+    }
+  }
+  return {
+    maker_commission: value.makerCommission.toString(),
+    taker_commission: value.takerCommission.toString(),
+    buyer_commission: value.buyerCommission.toString(),
+    seller_commission: value.sellerCommission.toString(),
+    commission_rates: binanceSpotCommissionRatesToWire(value.commissionRates),
+    can_trade: value.canTrade,
+    can_withdraw: value.canWithdraw,
+    can_deposit: value.canDeposit,
+    update_time: value.updateTime.nanosecondsSinceEpoch.toString(),
+    account_type: value.accountType,
+    balances: value.balances.map((item) => binanceSpotAccountBalanceToWire(item)),
+    permissions: value.permissions.map((item) => item),
+    uid: value.uid === null ? null : value.uid.toString(),
+    raw_json: value.rawJson,
+  };
+}
+
+export function binanceSpotCommissionRatesFromWire(value: Wire.BinanceSpotCommissionRatesWire): Model.BinanceSpotCommissionRates {
+  return new Model.BinanceSpotCommissionRates(Model.Decimal.parse(value.maker), Model.Decimal.parse(value.taker), Model.Decimal.parse(value.buyer), Model.Decimal.parse(value.seller));
+}
+
+export function binanceSpotCommissionRatesToWire(value: Model.BinanceSpotCommissionRates): Wire.BinanceSpotCommissionRatesWire {
+  for (const key of Object.keys(value)) {
+    if (!["maker", "taker", "buyer", "seller"].includes(key)) {
+      throw new InvalidRequestError("binanceSpotCommissionRates." + key, "BinanceSpotCommissionRates does not accept " + key);
+    }
+  }
+  return {
+    maker: value.maker.toString(),
+    taker: value.taker.toString(),
+    buyer: value.buyer.toString(),
+    seller: value.seller.toString(),
+  };
+}
+
+export function binanceSpotAccountBalanceFromWire(value: Wire.BinanceSpotAccountBalanceWire): Model.BinanceSpotAccountBalance {
+  return new Model.BinanceSpotAccountBalance(value.asset, Model.Decimal.parse(value.free), Model.Decimal.parse(value.locked));
+}
+
+export function binanceSpotAccountBalanceToWire(value: Model.BinanceSpotAccountBalance): Wire.BinanceSpotAccountBalanceWire {
+  for (const key of Object.keys(value)) {
+    if (!["asset", "free", "locked"].includes(key)) {
+      throw new InvalidRequestError("binanceSpotAccountBalance." + key, "BinanceSpotAccountBalance does not accept " + key);
+    }
+  }
+  return {
+    asset: value.asset,
+    free: value.free.toString(),
+    locked: value.locked.toString(),
+  };
+}
+
+export function binanceSpotCancelAllOpenOrdersFromWire(value: Wire.BinanceSpotCancelAllOpenOrdersWire): Model.BinanceSpotCancelAllOpenOrders {
+  return new Model.BinanceSpotCancelAllOpenOrders(value.reports.map((item) => binanceSpotCancelledOrderFromWire(item)), value.raw_json);
+}
+
+export function binanceSpotCancelAllOpenOrdersToWire(value: Model.BinanceSpotCancelAllOpenOrders): Wire.BinanceSpotCancelAllOpenOrdersWire {
+  for (const key of Object.keys(value)) {
+    if (!["reports", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("binanceSpotCancelAllOpenOrders." + key, "BinanceSpotCancelAllOpenOrders does not accept " + key);
+    }
+  }
+  return {
+    reports: value.reports.map((item) => binanceSpotCancelledOrderToWire(item)),
+    raw_json: value.rawJson,
+  };
+}
+
+export function binanceSpotCancelledOrderFromWire(value: Wire.BinanceSpotCancelledOrderWire): Model.BinanceSpotCancelledOrder {
+  return new Model.BinanceSpotCancelledOrder(value.symbol === null ? null : value.symbol, value.original_client_order_id === null ? null : value.original_client_order_id, value.order_id === null ? null : value.order_id, value.client_order_id === null ? null : value.client_order_id, value.status === null ? null : value.status, value.price === null ? null : Model.Decimal.parse(value.price), value.original_quantity === null ? null : Model.Decimal.parse(value.original_quantity), value.executed_quantity === null ? null : Model.Decimal.parse(value.executed_quantity), value.cumulative_quote_quantity === null ? null : Model.Decimal.parse(value.cumulative_quote_quantity), value.transact_time === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.transact_time)), value.order_list_id === null ? null : value.order_list_id, value.contingency_type === null ? null : value.contingency_type, value.list_status_type === null ? null : value.list_status_type, value.list_order_status === null ? null : value.list_order_status, value.list_client_order_id === null ? null : value.list_client_order_id, value.transaction_time === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.transaction_time)), value.raw_json);
+}
+
+export function binanceSpotCancelledOrderToWire(value: Model.BinanceSpotCancelledOrder): Wire.BinanceSpotCancelledOrderWire {
+  for (const key of Object.keys(value)) {
+    if (!["symbol", "originalClientOrderId", "orderId", "clientOrderId", "status", "price", "originalQuantity", "executedQuantity", "cumulativeQuoteQuantity", "transactTime", "orderListId", "contingencyType", "listStatusType", "listOrderStatus", "listClientOrderId", "transactionTime", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("binanceSpotCancelledOrder." + key, "BinanceSpotCancelledOrder does not accept " + key);
+    }
+  }
+  return {
+    symbol: value.symbol === null ? null : value.symbol,
+    original_client_order_id: value.originalClientOrderId === null ? null : value.originalClientOrderId,
+    order_id: value.orderId === null ? null : value.orderId,
+    client_order_id: value.clientOrderId === null ? null : value.clientOrderId,
+    status: value.status === null ? null : value.status,
+    price: value.price === null ? null : value.price.toString(),
+    original_quantity: value.originalQuantity === null ? null : value.originalQuantity.toString(),
+    executed_quantity: value.executedQuantity === null ? null : value.executedQuantity.toString(),
+    cumulative_quote_quantity: value.cumulativeQuoteQuantity === null ? null : value.cumulativeQuoteQuantity.toString(),
+    transact_time: value.transactTime === null ? null : value.transactTime.nanosecondsSinceEpoch.toString(),
+    order_list_id: value.orderListId === null ? null : value.orderListId,
+    contingency_type: value.contingencyType === null ? null : value.contingencyType,
+    list_status_type: value.listStatusType === null ? null : value.listStatusType,
+    list_order_status: value.listOrderStatus === null ? null : value.listOrderStatus,
+    list_client_order_id: value.listClientOrderId === null ? null : value.listClientOrderId,
+    transaction_time: value.transactionTime === null ? null : value.transactionTime.nanosecondsSinceEpoch.toString(),
+    raw_json: value.rawJson,
+  };
+}
+
+export function binanceUsdMAccountInformationFromWire(value: Wire.BinanceUsdMAccountInformationWire): Model.BinanceUsdMAccountInformation {
+  return new Model.BinanceUsdMAccountInformation(Model.Decimal.parse(value.total_initial_margin), Model.Decimal.parse(value.total_maintenance_margin), Model.Decimal.parse(value.total_wallet_balance), Model.Decimal.parse(value.total_unrealized_profit), Model.Decimal.parse(value.total_margin_balance), Model.Decimal.parse(value.total_position_initial_margin), Model.Decimal.parse(value.total_open_order_initial_margin), Model.Decimal.parse(value.total_cross_wallet_balance), Model.Decimal.parse(value.total_cross_unrealized_profit), Model.Decimal.parse(value.available_balance), Model.Decimal.parse(value.max_withdraw_amount), value.assets.map((item) => binanceUsdMAccountAssetFromWire(item)), value.positions.map((item) => binanceUsdMAccountPositionFromWire(item)), value.raw_json);
+}
+
+export function binanceUsdMAccountInformationToWire(value: Model.BinanceUsdMAccountInformation): Wire.BinanceUsdMAccountInformationWire {
+  for (const key of Object.keys(value)) {
+    if (!["totalInitialMargin", "totalMaintenanceMargin", "totalWalletBalance", "totalUnrealizedProfit", "totalMarginBalance", "totalPositionInitialMargin", "totalOpenOrderInitialMargin", "totalCrossWalletBalance", "totalCrossUnrealizedProfit", "availableBalance", "maxWithdrawAmount", "assets", "positions", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("binanceUsdMAccountInformation." + key, "BinanceUsdMAccountInformation does not accept " + key);
+    }
+  }
+  return {
+    total_initial_margin: value.totalInitialMargin.toString(),
+    total_maintenance_margin: value.totalMaintenanceMargin.toString(),
+    total_wallet_balance: value.totalWalletBalance.toString(),
+    total_unrealized_profit: value.totalUnrealizedProfit.toString(),
+    total_margin_balance: value.totalMarginBalance.toString(),
+    total_position_initial_margin: value.totalPositionInitialMargin.toString(),
+    total_open_order_initial_margin: value.totalOpenOrderInitialMargin.toString(),
+    total_cross_wallet_balance: value.totalCrossWalletBalance.toString(),
+    total_cross_unrealized_profit: value.totalCrossUnrealizedProfit.toString(),
+    available_balance: value.availableBalance.toString(),
+    max_withdraw_amount: value.maxWithdrawAmount.toString(),
+    assets: value.assets.map((item) => binanceUsdMAccountAssetToWire(item)),
+    positions: value.positions.map((item) => binanceUsdMAccountPositionToWire(item)),
+    raw_json: value.rawJson,
+  };
+}
+
+export function binanceUsdMAccountAssetFromWire(value: Wire.BinanceUsdMAccountAssetWire): Model.BinanceUsdMAccountAsset {
+  return new Model.BinanceUsdMAccountAsset(value.asset, Model.Decimal.parse(value.wallet_balance), Model.Decimal.parse(value.unrealized_profit), Model.Decimal.parse(value.margin_balance), Model.Decimal.parse(value.maintenance_margin), Model.Decimal.parse(value.initial_margin), Model.Decimal.parse(value.position_initial_margin), Model.Decimal.parse(value.open_order_initial_margin), Model.Decimal.parse(value.cross_wallet_balance), Model.Decimal.parse(value.cross_unrealized_profit), Model.Decimal.parse(value.available_balance), Model.Decimal.parse(value.max_withdraw_amount), Model.Timestamp.fromNanoseconds(BigInt(value.update_time)));
+}
+
+export function binanceUsdMAccountAssetToWire(value: Model.BinanceUsdMAccountAsset): Wire.BinanceUsdMAccountAssetWire {
+  for (const key of Object.keys(value)) {
+    if (!["asset", "walletBalance", "unrealizedProfit", "marginBalance", "maintenanceMargin", "initialMargin", "positionInitialMargin", "openOrderInitialMargin", "crossWalletBalance", "crossUnrealizedProfit", "availableBalance", "maxWithdrawAmount", "updateTime"].includes(key)) {
+      throw new InvalidRequestError("binanceUsdMAccountAsset." + key, "BinanceUsdMAccountAsset does not accept " + key);
+    }
+  }
+  return {
+    asset: value.asset,
+    wallet_balance: value.walletBalance.toString(),
+    unrealized_profit: value.unrealizedProfit.toString(),
+    margin_balance: value.marginBalance.toString(),
+    maintenance_margin: value.maintenanceMargin.toString(),
+    initial_margin: value.initialMargin.toString(),
+    position_initial_margin: value.positionInitialMargin.toString(),
+    open_order_initial_margin: value.openOrderInitialMargin.toString(),
+    cross_wallet_balance: value.crossWalletBalance.toString(),
+    cross_unrealized_profit: value.crossUnrealizedProfit.toString(),
+    available_balance: value.availableBalance.toString(),
+    max_withdraw_amount: value.maxWithdrawAmount.toString(),
+    update_time: value.updateTime.nanosecondsSinceEpoch.toString(),
+  };
+}
+
+export function binanceUsdMAccountPositionFromWire(value: Wire.BinanceUsdMAccountPositionWire): Model.BinanceUsdMAccountPosition {
+  return new Model.BinanceUsdMAccountPosition(value.symbol, value.position_side, Model.Decimal.parse(value.position_amount), Model.Decimal.parse(value.unrealized_profit), Model.Decimal.parse(value.isolated_margin), Model.Decimal.parse(value.notional), Model.Decimal.parse(value.isolated_wallet), Model.Decimal.parse(value.initial_margin), Model.Decimal.parse(value.maintenance_margin), Model.Timestamp.fromNanoseconds(BigInt(value.update_time)));
+}
+
+export function binanceUsdMAccountPositionToWire(value: Model.BinanceUsdMAccountPosition): Wire.BinanceUsdMAccountPositionWire {
+  for (const key of Object.keys(value)) {
+    if (!["symbol", "positionSide", "positionAmount", "unrealizedProfit", "isolatedMargin", "notional", "isolatedWallet", "initialMargin", "maintenanceMargin", "updateTime"].includes(key)) {
+      throw new InvalidRequestError("binanceUsdMAccountPosition." + key, "BinanceUsdMAccountPosition does not accept " + key);
+    }
+  }
+  return {
+    symbol: value.symbol,
+    position_side: value.positionSide,
+    position_amount: value.positionAmount.toString(),
+    unrealized_profit: value.unrealizedProfit.toString(),
+    isolated_margin: value.isolatedMargin.toString(),
+    notional: value.notional.toString(),
+    isolated_wallet: value.isolatedWallet.toString(),
+    initial_margin: value.initialMargin.toString(),
+    maintenance_margin: value.maintenanceMargin.toString(),
+    update_time: value.updateTime.nanosecondsSinceEpoch.toString(),
+  };
+}
+
+export function binanceUsdMPositionInformationFromWire(value: Wire.BinanceUsdMPositionInformationWire): Model.BinanceUsdMPositionInformation {
+  return new Model.BinanceUsdMPositionInformation(value.symbol, value.position_side, Model.Decimal.parse(value.position_amount), Model.Decimal.parse(value.entry_price), Model.Decimal.parse(value.break_even_price), Model.Decimal.parse(value.mark_price), Model.Decimal.parse(value.unrealized_profit), Model.Decimal.parse(value.liquidation_price), Model.Decimal.parse(value.isolated_margin), Model.Decimal.parse(value.notional), value.margin_asset, Model.Decimal.parse(value.isolated_wallet), Model.Decimal.parse(value.initial_margin), Model.Decimal.parse(value.maintenance_margin), Model.Decimal.parse(value.position_initial_margin), Model.Decimal.parse(value.open_order_initial_margin), unsignedInteger(value.adl, "adl"), Model.Decimal.parse(value.bid_notional), Model.Decimal.parse(value.ask_notional), Model.Timestamp.fromNanoseconds(BigInt(value.update_time)), value.raw_json);
+}
+
+export function binanceUsdMPositionInformationToWire(value: Model.BinanceUsdMPositionInformation): Wire.BinanceUsdMPositionInformationWire {
+  for (const key of Object.keys(value)) {
+    if (!["symbol", "positionSide", "positionAmount", "entryPrice", "breakEvenPrice", "markPrice", "unrealizedProfit", "liquidationPrice", "isolatedMargin", "notional", "marginAsset", "isolatedWallet", "initialMargin", "maintenanceMargin", "positionInitialMargin", "openOrderInitialMargin", "adl", "bidNotional", "askNotional", "updateTime", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("binanceUsdMPositionInformation." + key, "BinanceUsdMPositionInformation does not accept " + key);
+    }
+  }
+  return {
+    symbol: value.symbol,
+    position_side: value.positionSide,
+    position_amount: value.positionAmount.toString(),
+    entry_price: value.entryPrice.toString(),
+    break_even_price: value.breakEvenPrice.toString(),
+    mark_price: value.markPrice.toString(),
+    unrealized_profit: value.unrealizedProfit.toString(),
+    liquidation_price: value.liquidationPrice.toString(),
+    isolated_margin: value.isolatedMargin.toString(),
+    notional: value.notional.toString(),
+    margin_asset: value.marginAsset,
+    isolated_wallet: value.isolatedWallet.toString(),
+    initial_margin: value.initialMargin.toString(),
+    maintenance_margin: value.maintenanceMargin.toString(),
+    position_initial_margin: value.positionInitialMargin.toString(),
+    open_order_initial_margin: value.openOrderInitialMargin.toString(),
+    adl: value.adl.toString(),
+    bid_notional: value.bidNotional.toString(),
+    ask_notional: value.askNotional.toString(),
+    update_time: value.updateTime.nanosecondsSinceEpoch.toString(),
+    raw_json: value.rawJson,
+  };
+}
+
+export function binanceExchangeInfoFromWire(value: Wire.BinanceExchangeInfoWire): Model.BinanceExchangeInfo {
+  return new Model.BinanceExchangeInfo(identifier(Model.BinanceMarket.values, value.venue, "venue"), value.timezone === null ? null : value.timezone, value.server_time === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.server_time)), value.symbols.map((item) => binanceExchangeSymbolFromWire(item)), value.raw_json);
+}
+
+export function binanceExchangeInfoToWire(value: Model.BinanceExchangeInfo): Wire.BinanceExchangeInfoWire {
+  for (const key of Object.keys(value)) {
+    if (!["venue", "timezone", "serverTime", "symbols", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("binanceExchangeInfo." + key, "BinanceExchangeInfo does not accept " + key);
+    }
+  }
+  return {
+    venue: value.venue.id,
+    timezone: value.timezone === null ? null : value.timezone,
+    server_time: value.serverTime === null ? null : value.serverTime.nanosecondsSinceEpoch.toString(),
+    symbols: value.symbols.map((item) => binanceExchangeSymbolToWire(item)),
+    raw_json: value.rawJson,
+  };
+}
+
+export function binanceExchangeSymbolFromWire(value: Wire.BinanceExchangeSymbolWire): Model.BinanceExchangeSymbol {
+  return new Model.BinanceExchangeSymbol(value.symbol, value.status, value.base_asset, value.quote_asset, value.contract_type === null ? null : value.contract_type, value.margin_asset === null ? null : value.margin_asset, value.raw_json);
+}
+
+export function binanceExchangeSymbolToWire(value: Model.BinanceExchangeSymbol): Wire.BinanceExchangeSymbolWire {
+  for (const key of Object.keys(value)) {
+    if (!["symbol", "status", "baseAsset", "quoteAsset", "contractType", "marginAsset", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("binanceExchangeSymbol." + key, "BinanceExchangeSymbol does not accept " + key);
+    }
+  }
+  return {
+    symbol: value.symbol,
+    status: value.status,
+    base_asset: value.baseAsset,
+    quote_asset: value.quoteAsset,
+    contract_type: value.contractType === null ? null : value.contractType,
+    margin_asset: value.marginAsset === null ? null : value.marginAsset,
+    raw_json: value.rawJson,
+  };
+}
+
+export function binanceCoinInformationFromWire(value: Wire.BinanceCoinInformationWire): Model.BinanceCoinInformation {
+  return new Model.BinanceCoinInformation(value.coin, value.deposit_all_enabled, value.withdraw_all_enabled, value.name === null ? null : value.name, value.free === null ? null : Model.Decimal.parse(value.free), value.locked === null ? null : Model.Decimal.parse(value.locked), value.freeze === null ? null : Model.Decimal.parse(value.freeze), value.withdrawing === null ? null : Model.Decimal.parse(value.withdrawing), value.is_legal_money === null ? null : value.is_legal_money, value.trading === null ? null : value.trading, value.networks.map((item) => binanceCoinNetworkInformationFromWire(item)), value.raw_json);
+}
+
+export function binanceCoinInformationToWire(value: Model.BinanceCoinInformation): Wire.BinanceCoinInformationWire {
+  for (const key of Object.keys(value)) {
+    if (!["coin", "depositAllEnabled", "withdrawAllEnabled", "name", "free", "locked", "freeze", "withdrawing", "isLegalMoney", "trading", "networks", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("binanceCoinInformation." + key, "BinanceCoinInformation does not accept " + key);
+    }
+  }
+  return {
+    coin: value.coin,
+    deposit_all_enabled: value.depositAllEnabled,
+    withdraw_all_enabled: value.withdrawAllEnabled,
+    name: value.name === null ? null : value.name,
+    free: value.free === null ? null : value.free.toString(),
+    locked: value.locked === null ? null : value.locked.toString(),
+    freeze: value.freeze === null ? null : value.freeze.toString(),
+    withdrawing: value.withdrawing === null ? null : value.withdrawing.toString(),
+    is_legal_money: value.isLegalMoney === null ? null : value.isLegalMoney,
+    trading: value.trading === null ? null : value.trading,
+    networks: value.networks.map((item) => binanceCoinNetworkInformationToWire(item)),
+    raw_json: value.rawJson,
+  };
+}
+
+export function binanceCoinNetworkInformationFromWire(value: Wire.BinanceCoinNetworkInformationWire): Model.BinanceCoinNetworkInformation {
+  return new Model.BinanceCoinNetworkInformation(value.network, value.deposit_enabled, value.withdraw_enabled, value.busy, value.withdrawal_integer_multiple === null ? null : Model.Decimal.parse(value.withdrawal_integer_multiple), value.withdrawal_fee === null ? null : Model.Decimal.parse(value.withdrawal_fee), value.minimum_withdrawal === null ? null : Model.Decimal.parse(value.minimum_withdrawal), value.maximum_withdrawal === null ? null : Model.Decimal.parse(value.maximum_withdrawal), value.withdrawal_tag === null ? null : value.withdrawal_tag, value.is_default === null ? null : value.is_default, value.minimum_confirmations === null ? null : unsignedInteger(value.minimum_confirmations, "minimum_confirmations"), value.unlock_confirmations === null ? null : unsignedInteger(value.unlock_confirmations, "unlock_confirmations"), value.contract_address === null ? null : value.contract_address, value.raw_json);
+}
+
+export function binanceCoinNetworkInformationToWire(value: Model.BinanceCoinNetworkInformation): Wire.BinanceCoinNetworkInformationWire {
+  for (const key of Object.keys(value)) {
+    if (!["network", "depositEnabled", "withdrawEnabled", "busy", "withdrawalIntegerMultiple", "withdrawalFee", "minimumWithdrawal", "maximumWithdrawal", "withdrawalTag", "isDefault", "minimumConfirmations", "unlockConfirmations", "contractAddress", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("binanceCoinNetworkInformation." + key, "BinanceCoinNetworkInformation does not accept " + key);
+    }
+  }
+  return {
+    network: value.network,
+    deposit_enabled: value.depositEnabled,
+    withdraw_enabled: value.withdrawEnabled,
+    busy: value.busy,
+    withdrawal_integer_multiple: value.withdrawalIntegerMultiple === null ? null : value.withdrawalIntegerMultiple.toString(),
+    withdrawal_fee: value.withdrawalFee === null ? null : value.withdrawalFee.toString(),
+    minimum_withdrawal: value.minimumWithdrawal === null ? null : value.minimumWithdrawal.toString(),
+    maximum_withdrawal: value.maximumWithdrawal === null ? null : value.maximumWithdrawal.toString(),
+    withdrawal_tag: value.withdrawalTag === null ? null : value.withdrawalTag,
+    is_default: value.isDefault === null ? null : value.isDefault,
+    minimum_confirmations: value.minimumConfirmations === null ? null : value.minimumConfirmations.toString(),
+    unlock_confirmations: value.unlockConfirmations === null ? null : value.unlockConfirmations.toString(),
+    contract_address: value.contractAddress === null ? null : value.contractAddress,
+    raw_json: value.rawJson,
+  };
+}
+
+export function binanceApiKeyPermissionsFromWire(value: Wire.BinanceApiKeyPermissionsWire): Model.BinanceApiKeyPermissions {
+  return new Model.BinanceApiKeyPermissions(value.ip_restrict, value.create_time === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.create_time)), value.enable_reading, value.enable_withdrawals, value.enable_internal_transfer, value.enable_margin, value.enable_spot_and_margin_trading, value.enable_futures, value.permits_universal_transfer, value.enable_vanilla_options, value.enable_fix_api_trade, value.enable_fix_read_only, value.enable_portfolio_margin_trading, value.raw_json);
+}
+
+export function binanceApiKeyPermissionsToWire(value: Model.BinanceApiKeyPermissions): Wire.BinanceApiKeyPermissionsWire {
+  for (const key of Object.keys(value)) {
+    if (!["ipRestrict", "createTime", "enableReading", "enableWithdrawals", "enableInternalTransfer", "enableMargin", "enableSpotAndMarginTrading", "enableFutures", "permitsUniversalTransfer", "enableVanillaOptions", "enableFixApiTrade", "enableFixReadOnly", "enablePortfolioMarginTrading", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("binanceApiKeyPermissions." + key, "BinanceApiKeyPermissions does not accept " + key);
+    }
+  }
+  return {
+    ip_restrict: value.ipRestrict,
+    create_time: value.createTime === null ? null : value.createTime.nanosecondsSinceEpoch.toString(),
+    enable_reading: value.enableReading,
+    enable_withdrawals: value.enableWithdrawals,
+    enable_internal_transfer: value.enableInternalTransfer,
+    enable_margin: value.enableMargin,
+    enable_spot_and_margin_trading: value.enableSpotAndMarginTrading,
+    enable_futures: value.enableFutures,
+    permits_universal_transfer: value.permitsUniversalTransfer,
+    enable_vanilla_options: value.enableVanillaOptions,
+    enable_fix_api_trade: value.enableFixApiTrade,
+    enable_fix_read_only: value.enableFixReadOnly,
+    enable_portfolio_margin_trading: value.enablePortfolioMarginTrading,
+    raw_json: value.rawJson,
+  };
+}
+
+export function binanceDepositHistoryFromWire(value: Wire.BinanceDepositHistoryWire): Model.BinanceDepositHistory {
+  return new Model.BinanceDepositHistory(value.entries.map((item) => binanceDepositHistoryEntryFromWire(item)), value.raw_json);
+}
+
+export function binanceDepositHistoryToWire(value: Model.BinanceDepositHistory): Wire.BinanceDepositHistoryWire {
+  for (const key of Object.keys(value)) {
+    if (!["entries", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("binanceDepositHistory." + key, "BinanceDepositHistory does not accept " + key);
+    }
+  }
+  return {
+    entries: value.entries.map((item) => binanceDepositHistoryEntryToWire(item)),
+    raw_json: value.rawJson,
+  };
+}
+
+export function binanceDepositHistoryEntryFromWire(value: Wire.BinanceDepositHistoryEntryWire): Model.BinanceDepositHistoryEntry {
+  return new Model.BinanceDepositHistoryEntry(value.id, Model.Decimal.parse(value.amount), value.coin, value.network, value.status, value.address === null ? null : value.address, value.address_tag === null ? null : value.address_tag, value.tx_id === null ? null : value.tx_id, Model.Timestamp.fromNanoseconds(BigInt(value.insert_time)), value.complete_time === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.complete_time)), value.transfer_type === null ? null : value.transfer_type, value.source_address === null ? null : value.source_address, value.raw_json);
+}
+
+export function binanceDepositHistoryEntryToWire(value: Model.BinanceDepositHistoryEntry): Wire.BinanceDepositHistoryEntryWire {
+  for (const key of Object.keys(value)) {
+    if (!["id", "amount", "coin", "network", "status", "address", "addressTag", "txId", "insertTime", "completeTime", "transferType", "sourceAddress", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("binanceDepositHistoryEntry." + key, "BinanceDepositHistoryEntry does not accept " + key);
+    }
+  }
+  return {
+    id: value.id,
+    amount: value.amount.toString(),
+    coin: value.coin,
+    network: value.network,
+    status: value.status,
+    address: value.address === null ? null : value.address,
+    address_tag: value.addressTag === null ? null : value.addressTag,
+    tx_id: value.txId === null ? null : value.txId,
+    insert_time: value.insertTime.nanosecondsSinceEpoch.toString(),
+    complete_time: value.completeTime === null ? null : value.completeTime.nanosecondsSinceEpoch.toString(),
+    transfer_type: value.transferType === null ? null : value.transferType,
+    source_address: value.sourceAddress === null ? null : value.sourceAddress,
+    raw_json: value.rawJson,
+  };
+}
+
+export function binanceQuestionnaireRequirementsFromWire(value: Wire.BinanceQuestionnaireRequirementsWire): Model.BinanceQuestionnaireRequirements {
+  return new Model.BinanceQuestionnaireRequirements(value.questionnaire_country_code, value.raw_json);
+}
+
+export function binanceQuestionnaireRequirementsToWire(value: Model.BinanceQuestionnaireRequirements): Wire.BinanceQuestionnaireRequirementsWire {
+  for (const key of Object.keys(value)) {
+    if (!["questionnaireCountryCode", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("binanceQuestionnaireRequirements." + key, "BinanceQuestionnaireRequirements does not accept " + key);
+    }
+  }
+  return {
+    questionnaire_country_code: value.questionnaireCountryCode,
+    raw_json: value.rawJson,
+  };
+}
+
+export function binanceWithdrawalAddressFromWire(value: Wire.BinanceWithdrawalAddressWire): Model.BinanceWithdrawalAddress {
+  return new Model.BinanceWithdrawalAddress(value.address, value.address_tag === null ? null : value.address_tag, value.coin, value.network, value.white_status, value.name === null ? null : value.name, value.origin === null ? null : value.origin, value.origin_type === null ? null : value.origin_type, value.raw_json);
+}
+
+export function binanceWithdrawalAddressToWire(value: Model.BinanceWithdrawalAddress): Wire.BinanceWithdrawalAddressWire {
+  for (const key of Object.keys(value)) {
+    if (!["address", "addressTag", "coin", "network", "whiteStatus", "name", "origin", "originType", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("binanceWithdrawalAddress." + key, "BinanceWithdrawalAddress does not accept " + key);
+    }
+  }
+  return {
+    address: value.address,
+    address_tag: value.addressTag === null ? null : value.addressTag,
+    coin: value.coin,
+    network: value.network,
+    white_status: value.whiteStatus,
+    name: value.name === null ? null : value.name,
+    origin: value.origin === null ? null : value.origin,
+    origin_type: value.originType === null ? null : value.originType,
+    raw_json: value.rawJson,
+  };
+}
+
+export function binanceWithdrawHistoryFromWire(value: Wire.BinanceWithdrawHistoryWire): Model.BinanceWithdrawHistory {
+  return new Model.BinanceWithdrawHistory(value.entries.map((item) => binanceWithdrawHistoryEntryFromWire(item)), value.raw_json);
+}
+
+export function binanceWithdrawHistoryToWire(value: Model.BinanceWithdrawHistory): Wire.BinanceWithdrawHistoryWire {
+  for (const key of Object.keys(value)) {
+    if (!["entries", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("binanceWithdrawHistory." + key, "BinanceWithdrawHistory does not accept " + key);
+    }
+  }
+  return {
+    entries: value.entries.map((item) => binanceWithdrawHistoryEntryToWire(item)),
+    raw_json: value.rawJson,
+  };
+}
+
+export function binanceWithdrawHistoryEntryFromWire(value: Wire.BinanceWithdrawHistoryEntryWire): Model.BinanceWithdrawHistoryEntry {
+  return new Model.BinanceWithdrawHistoryEntry(value.id, Model.Decimal.parse(value.amount), Model.Decimal.parse(value.transaction_fee), value.coin, value.status, value.address === null ? null : value.address, value.tx_id === null ? null : value.tx_id, value.apply_time === null ? null : value.apply_time, value.network === null ? null : value.network, value.withdraw_order_id === null ? null : value.withdraw_order_id, value.info === null ? null : value.info, value.transfer_type === null ? null : value.transfer_type, value.confirm_no === null ? null : value.confirm_no, value.wallet_type === null ? null : value.wallet_type, value.tx_key === null ? null : value.tx_key, value.complete_time === null ? null : value.complete_time, value.raw_json);
+}
+
+export function binanceWithdrawHistoryEntryToWire(value: Model.BinanceWithdrawHistoryEntry): Wire.BinanceWithdrawHistoryEntryWire {
+  for (const key of Object.keys(value)) {
+    if (!["id", "amount", "transactionFee", "coin", "status", "address", "txId", "applyTime", "network", "withdrawOrderId", "info", "transferType", "confirmNo", "walletType", "txKey", "completeTime", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("binanceWithdrawHistoryEntry." + key, "BinanceWithdrawHistoryEntry does not accept " + key);
+    }
+  }
+  return {
+    id: value.id,
+    amount: value.amount.toString(),
+    transaction_fee: value.transactionFee.toString(),
+    coin: value.coin,
+    status: value.status,
+    address: value.address === null ? null : value.address,
+    tx_id: value.txId === null ? null : value.txId,
+    apply_time: value.applyTime === null ? null : value.applyTime,
+    network: value.network === null ? null : value.network,
+    withdraw_order_id: value.withdrawOrderId === null ? null : value.withdrawOrderId,
+    info: value.info === null ? null : value.info,
+    transfer_type: value.transferType === null ? null : value.transferType,
+    confirm_no: value.confirmNo === null ? null : value.confirmNo,
+    wallet_type: value.walletType === null ? null : value.walletType,
+    tx_key: value.txKey === null ? null : value.txKey,
+    complete_time: value.completeTime === null ? null : value.completeTime,
+    raw_json: value.rawJson,
+  };
+}
+
 export function binanceSpotAveragePriceFromWire(value: Wire.BinanceSpotAveragePriceWire): Model.BinanceSpotAveragePrice {
   return new Model.BinanceSpotAveragePrice(marketFromWire(value.market), value.minutes, Model.Decimal.parse(value.price), Model.Timestamp.fromNanoseconds(BigInt(value.close_time)));
 }
@@ -2634,6 +3178,289 @@ export function hyperliquidLedgerEntryToWire(value: Model.HyperliquidLedgerEntry
     amount: value.amount === null ? null : value.amount.toString(),
     fee: value.fee === null ? null : value.fee.toString(),
     counterparty: value.counterparty === null ? null : value.counterparty,
+  };
+}
+
+export function hyperliquidCandleSnapshotFromWire(value: Wire.HyperliquidCandleSnapshotWire): Model.HyperliquidCandleSnapshot {
+  return new Model.HyperliquidCandleSnapshot(value.coin, marketFromWire(value.market), value.interval, Model.Timestamp.fromNanoseconds(BigInt(value.open_time)), Model.Timestamp.fromNanoseconds(BigInt(value.close_time)), Model.Decimal.parse(value.open), Model.Decimal.parse(value.high), Model.Decimal.parse(value.low), Model.Decimal.parse(value.close), Model.Decimal.parse(value.volume), value.trade_count === null ? null : unsignedInteger(value.trade_count, "trade_count"), value.raw_json);
+}
+
+export function hyperliquidCandleSnapshotToWire(value: Model.HyperliquidCandleSnapshot): Wire.HyperliquidCandleSnapshotWire {
+  for (const key of Object.keys(value)) {
+    if (!["coin", "market", "interval", "openTime", "closeTime", "open", "high", "low", "close", "volume", "tradeCount", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("hyperliquidCandleSnapshot." + key, "HyperliquidCandleSnapshot does not accept " + key);
+    }
+  }
+  return {
+    coin: value.coin,
+    market: marketToWire(value.market),
+    interval: value.interval,
+    open_time: value.openTime.nanosecondsSinceEpoch.toString(),
+    close_time: value.closeTime.nanosecondsSinceEpoch.toString(),
+    open: value.open.toString(),
+    high: value.high.toString(),
+    low: value.low.toString(),
+    close: value.close.toString(),
+    volume: value.volume.toString(),
+    trade_count: value.tradeCount === null ? null : value.tradeCount.toString(),
+    raw_json: value.rawJson,
+  };
+}
+
+export function hyperliquidBookLevelFromWire(value: Wire.HyperliquidBookLevelWire): Model.HyperliquidBookLevel {
+  return new Model.HyperliquidBookLevel(Model.Decimal.parse(value.price), Model.Decimal.parse(value.size), value.order_count === null ? null : unsignedInteger(value.order_count, "order_count"));
+}
+
+export function hyperliquidBookLevelToWire(value: Model.HyperliquidBookLevel): Wire.HyperliquidBookLevelWire {
+  for (const key of Object.keys(value)) {
+    if (!["price", "size", "orderCount"].includes(key)) {
+      throw new InvalidRequestError("hyperliquidBookLevel." + key, "HyperliquidBookLevel does not accept " + key);
+    }
+  }
+  return {
+    price: value.price.toString(),
+    size: value.size.toString(),
+    order_count: value.orderCount === null ? null : value.orderCount.toString(),
+  };
+}
+
+export function hyperliquidL2BookFromWire(value: Wire.HyperliquidL2BookWire): Model.HyperliquidL2Book {
+  return new Model.HyperliquidL2Book(value.coin, marketFromWire(value.market), Model.Timestamp.fromNanoseconds(BigInt(value.time)), value.bids.map((item) => hyperliquidBookLevelFromWire(item)), value.asks.map((item) => hyperliquidBookLevelFromWire(item)), value.raw_json);
+}
+
+export function hyperliquidL2BookToWire(value: Model.HyperliquidL2Book): Wire.HyperliquidL2BookWire {
+  for (const key of Object.keys(value)) {
+    if (!["coin", "market", "time", "bids", "asks", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("hyperliquidL2Book." + key, "HyperliquidL2Book does not accept " + key);
+    }
+  }
+  return {
+    coin: value.coin,
+    market: marketToWire(value.market),
+    time: value.time.nanosecondsSinceEpoch.toString(),
+    bids: value.bids.map((item) => hyperliquidBookLevelToWire(item)),
+    asks: value.asks.map((item) => hyperliquidBookLevelToWire(item)),
+    raw_json: value.rawJson,
+  };
+}
+
+export function hyperliquidRecentTradeFromWire(value: Wire.HyperliquidRecentTradeWire): Model.HyperliquidRecentTrade {
+  return new Model.HyperliquidRecentTrade(value.coin, marketFromWire(value.market), value.side, Model.Decimal.parse(value.price), Model.Decimal.parse(value.size), Model.Timestamp.fromNanoseconds(BigInt(value.time)), value.trade_id, value.hash === null ? null : value.hash, value.users.map((item) => item), value.raw_json);
+}
+
+export function hyperliquidRecentTradeToWire(value: Model.HyperliquidRecentTrade): Wire.HyperliquidRecentTradeWire {
+  for (const key of Object.keys(value)) {
+    if (!["coin", "market", "side", "price", "size", "time", "tradeId", "hash", "users", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("hyperliquidRecentTrade." + key, "HyperliquidRecentTrade does not accept " + key);
+    }
+  }
+  return {
+    coin: value.coin,
+    market: marketToWire(value.market),
+    side: value.side,
+    price: value.price.toString(),
+    size: value.size.toString(),
+    time: value.time.nanosecondsSinceEpoch.toString(),
+    trade_id: value.tradeId,
+    hash: value.hash === null ? null : value.hash,
+    users: value.users.map((item) => item),
+    raw_json: value.rawJson,
+  };
+}
+
+export function hyperliquidFundingHistoryEntryFromWire(value: Wire.HyperliquidFundingHistoryEntryWire): Model.HyperliquidFundingHistoryEntry {
+  return new Model.HyperliquidFundingHistoryEntry(value.coin, marketFromWire(value.market), Model.Decimal.parse(value.funding_rate), value.premium === null ? null : Model.Decimal.parse(value.premium), Model.Timestamp.fromNanoseconds(BigInt(value.time)), value.raw_json);
+}
+
+export function hyperliquidFundingHistoryEntryToWire(value: Model.HyperliquidFundingHistoryEntry): Wire.HyperliquidFundingHistoryEntryWire {
+  for (const key of Object.keys(value)) {
+    if (!["coin", "market", "fundingRate", "premium", "time", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("hyperliquidFundingHistoryEntry." + key, "HyperliquidFundingHistoryEntry does not accept " + key);
+    }
+  }
+  return {
+    coin: value.coin,
+    market: marketToWire(value.market),
+    funding_rate: value.fundingRate.toString(),
+    premium: value.premium === null ? null : value.premium.toString(),
+    time: value.time.nanosecondsSinceEpoch.toString(),
+    raw_json: value.rawJson,
+  };
+}
+
+export function hyperliquidUserFundingFromWire(value: Wire.HyperliquidUserFundingWire): Model.HyperliquidUserFunding {
+  return new Model.HyperliquidUserFunding(value.kind === null ? null : value.kind, value.coin, marketFromWire(value.market), Model.Decimal.parse(value.usdc), Model.Decimal.parse(value.funding_rate), value.position_size === null ? null : Model.Decimal.parse(value.position_size), value.sample_count === null ? null : unsignedInteger(value.sample_count, "sample_count"), value.hash, Model.Timestamp.fromNanoseconds(BigInt(value.time)), value.raw_json);
+}
+
+export function hyperliquidUserFundingToWire(value: Model.HyperliquidUserFunding): Wire.HyperliquidUserFundingWire {
+  for (const key of Object.keys(value)) {
+    if (!["kind", "coin", "market", "usdc", "fundingRate", "positionSize", "sampleCount", "hash", "time", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("hyperliquidUserFunding." + key, "HyperliquidUserFunding does not accept " + key);
+    }
+  }
+  return {
+    kind: value.kind === null ? null : value.kind,
+    coin: value.coin,
+    market: marketToWire(value.market),
+    usdc: value.usdc.toString(),
+    funding_rate: value.fundingRate.toString(),
+    position_size: value.positionSize === null ? null : value.positionSize.toString(),
+    sample_count: value.sampleCount === null ? null : value.sampleCount.toString(),
+    hash: value.hash,
+    time: value.time.nanosecondsSinceEpoch.toString(),
+    raw_json: value.rawJson,
+  };
+}
+
+export function hyperliquidSpotBalanceFromWire(value: Wire.HyperliquidSpotBalanceWire): Model.HyperliquidSpotBalance {
+  return new Model.HyperliquidSpotBalance(value.coin, value.token === null ? null : value.token, Model.Decimal.parse(value.total), Model.Decimal.parse(value.hold), value.entry_notional === null ? null : Model.Decimal.parse(value.entry_notional), value.raw_json);
+}
+
+export function hyperliquidSpotBalanceToWire(value: Model.HyperliquidSpotBalance): Wire.HyperliquidSpotBalanceWire {
+  for (const key of Object.keys(value)) {
+    if (!["coin", "token", "total", "hold", "entryNotional", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("hyperliquidSpotBalance." + key, "HyperliquidSpotBalance does not accept " + key);
+    }
+  }
+  return {
+    coin: value.coin,
+    token: value.token === null ? null : value.token,
+    total: value.total.toString(),
+    hold: value.hold.toString(),
+    entry_notional: value.entryNotional === null ? null : value.entryNotional.toString(),
+    raw_json: value.rawJson,
+  };
+}
+
+export function hyperliquidSpotClearinghouseStateFromWire(value: Wire.HyperliquidSpotClearinghouseStateWire): Model.HyperliquidSpotClearinghouseState {
+  return new Model.HyperliquidSpotClearinghouseState(value.balances.map((item) => hyperliquidSpotBalanceFromWire(item)), value.raw_json);
+}
+
+export function hyperliquidSpotClearinghouseStateToWire(value: Model.HyperliquidSpotClearinghouseState): Wire.HyperliquidSpotClearinghouseStateWire {
+  for (const key of Object.keys(value)) {
+    if (!["balances", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("hyperliquidSpotClearinghouseState." + key, "HyperliquidSpotClearinghouseState does not accept " + key);
+    }
+  }
+  return {
+    balances: value.balances.map((item) => hyperliquidSpotBalanceToWire(item)),
+    raw_json: value.rawJson,
+  };
+}
+
+export function hyperliquidEvmContractFromWire(value: Wire.HyperliquidEvmContractWire): Model.HyperliquidEvmContract {
+  return new Model.HyperliquidEvmContract(value.address, value.extra_wei_decimals);
+}
+
+export function hyperliquidEvmContractToWire(value: Model.HyperliquidEvmContract): Wire.HyperliquidEvmContractWire {
+  for (const key of Object.keys(value)) {
+    if (!["address", "extraWeiDecimals"].includes(key)) {
+      throw new InvalidRequestError("hyperliquidEvmContract." + key, "HyperliquidEvmContract does not accept " + key);
+    }
+  }
+  return {
+    address: value.address,
+    extra_wei_decimals: value.extraWeiDecimals,
+  };
+}
+
+export function hyperliquidSpotTokenFromWire(value: Wire.HyperliquidSpotTokenWire): Model.HyperliquidSpotToken {
+  return new Model.HyperliquidSpotToken(value.name, value.size_decimals, value.wei_decimals === null ? null : value.wei_decimals, value.index, value.token_id === null ? null : value.token_id, value.is_canonical === null ? null : value.is_canonical, value.evm_contract === null ? null : hyperliquidEvmContractFromWire(value.evm_contract), value.full_name === null ? null : value.full_name, value.deployer_trading_fee_share === null ? null : Model.Decimal.parse(value.deployer_trading_fee_share), value.raw_json);
+}
+
+export function hyperliquidSpotTokenToWire(value: Model.HyperliquidSpotToken): Wire.HyperliquidSpotTokenWire {
+  for (const key of Object.keys(value)) {
+    if (!["name", "sizeDecimals", "weiDecimals", "index", "tokenId", "isCanonical", "evmContract", "fullName", "deployerTradingFeeShare", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("hyperliquidSpotToken." + key, "HyperliquidSpotToken does not accept " + key);
+    }
+  }
+  return {
+    name: value.name,
+    size_decimals: value.sizeDecimals,
+    wei_decimals: value.weiDecimals === null ? null : value.weiDecimals,
+    index: value.index,
+    token_id: value.tokenId === null ? null : value.tokenId,
+    is_canonical: value.isCanonical === null ? null : value.isCanonical,
+    evm_contract: value.evmContract === null ? null : hyperliquidEvmContractToWire(value.evmContract),
+    full_name: value.fullName === null ? null : value.fullName,
+    deployer_trading_fee_share: value.deployerTradingFeeShare === null ? null : value.deployerTradingFeeShare.toString(),
+    raw_json: value.rawJson,
+  };
+}
+
+export function hyperliquidSpotPairFromWire(value: Wire.HyperliquidSpotPairWire): Model.HyperliquidSpotPair {
+  return new Model.HyperliquidSpotPair(value.name, value.tokens.map((item) => item), value.index, value.is_canonical === null ? null : value.is_canonical, value.raw_json);
+}
+
+export function hyperliquidSpotPairToWire(value: Model.HyperliquidSpotPair): Wire.HyperliquidSpotPairWire {
+  for (const key of Object.keys(value)) {
+    if (!["name", "tokens", "index", "isCanonical", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("hyperliquidSpotPair." + key, "HyperliquidSpotPair does not accept " + key);
+    }
+  }
+  return {
+    name: value.name,
+    tokens: value.tokens.map((item) => item),
+    index: value.index,
+    is_canonical: value.isCanonical === null ? null : value.isCanonical,
+    raw_json: value.rawJson,
+  };
+}
+
+export function hyperliquidSpotMetaFromWire(value: Wire.HyperliquidSpotMetaWire): Model.HyperliquidSpotMeta {
+  return new Model.HyperliquidSpotMeta(value.tokens.map((item) => hyperliquidSpotTokenFromWire(item)), value.universe.map((item) => hyperliquidSpotPairFromWire(item)), value.raw_json);
+}
+
+export function hyperliquidSpotMetaToWire(value: Model.HyperliquidSpotMeta): Wire.HyperliquidSpotMetaWire {
+  for (const key of Object.keys(value)) {
+    if (!["tokens", "universe", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("hyperliquidSpotMeta." + key, "HyperliquidSpotMeta does not accept " + key);
+    }
+  }
+  return {
+    tokens: value.tokens.map((item) => hyperliquidSpotTokenToWire(item)),
+    universe: value.universe.map((item) => hyperliquidSpotPairToWire(item)),
+    raw_json: value.rawJson,
+  };
+}
+
+export function hyperliquidSpotAssetContextFromWire(value: Wire.HyperliquidSpotAssetContextWire): Model.HyperliquidSpotAssetContext {
+  return new Model.HyperliquidSpotAssetContext(value.coin === null ? null : value.coin, value.mid_price === null ? null : Model.Decimal.parse(value.mid_price), value.mark_price === null ? null : Model.Decimal.parse(value.mark_price), value.previous_day_price === null ? null : Model.Decimal.parse(value.previous_day_price), value.day_base_volume === null ? null : Model.Decimal.parse(value.day_base_volume), value.day_notional_volume === null ? null : Model.Decimal.parse(value.day_notional_volume), value.circulating_supply === null ? null : Model.Decimal.parse(value.circulating_supply), value.total_supply === null ? null : Model.Decimal.parse(value.total_supply), value.raw_json);
+}
+
+export function hyperliquidSpotAssetContextToWire(value: Model.HyperliquidSpotAssetContext): Wire.HyperliquidSpotAssetContextWire {
+  for (const key of Object.keys(value)) {
+    if (!["coin", "midPrice", "markPrice", "previousDayPrice", "dayBaseVolume", "dayNotionalVolume", "circulatingSupply", "totalSupply", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("hyperliquidSpotAssetContext." + key, "HyperliquidSpotAssetContext does not accept " + key);
+    }
+  }
+  return {
+    coin: value.coin === null ? null : value.coin,
+    mid_price: value.midPrice === null ? null : value.midPrice.toString(),
+    mark_price: value.markPrice === null ? null : value.markPrice.toString(),
+    previous_day_price: value.previousDayPrice === null ? null : value.previousDayPrice.toString(),
+    day_base_volume: value.dayBaseVolume === null ? null : value.dayBaseVolume.toString(),
+    day_notional_volume: value.dayNotionalVolume === null ? null : value.dayNotionalVolume.toString(),
+    circulating_supply: value.circulatingSupply === null ? null : value.circulatingSupply.toString(),
+    total_supply: value.totalSupply === null ? null : value.totalSupply.toString(),
+    raw_json: value.rawJson,
+  };
+}
+
+export function hyperliquidSpotMetaAndAssetContextsFromWire(value: Wire.HyperliquidSpotMetaAndAssetContextsWire): Model.HyperliquidSpotMetaAndAssetContexts {
+  return new Model.HyperliquidSpotMetaAndAssetContexts(hyperliquidSpotMetaFromWire(value.meta), value.contexts.map((item) => hyperliquidSpotAssetContextFromWire(item)), value.raw_json);
+}
+
+export function hyperliquidSpotMetaAndAssetContextsToWire(value: Model.HyperliquidSpotMetaAndAssetContexts): Wire.HyperliquidSpotMetaAndAssetContextsWire {
+  for (const key of Object.keys(value)) {
+    if (!["meta", "contexts", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("hyperliquidSpotMetaAndAssetContexts." + key, "HyperliquidSpotMetaAndAssetContexts does not accept " + key);
+    }
+  }
+  return {
+    meta: hyperliquidSpotMetaToWire(value.meta),
+    contexts: value.contexts.map((item) => hyperliquidSpotAssetContextToWire(item)),
+    raw_json: value.rawJson,
   };
 }
 

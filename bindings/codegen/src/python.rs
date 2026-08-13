@@ -210,6 +210,8 @@ fn render_python_model_record(
                     | ("BithumbTwapOrdersRequest", "uuids")
                     | ("BithumbKrwWithdrawalsRequest", "uuids" | "txids")
                     | ("BithumbKrwDepositsRequest", "uuids" | "txids")
+                    | ("BinanceWithdrawHistoryRequest", "id_list")
+                    | ("BinanceDepositHistoryRequest", "include_source")
             )
     });
     let values = fields
@@ -225,11 +227,17 @@ fn render_python_model_record(
                     | ("BithumbTwapOrdersRequest", "uuids")
                     | ("BithumbKrwWithdrawalsRequest", "uuids" | "txids")
                     | ("BithumbKrwDepositsRequest", "uuids" | "txids")
+                    | ("BinanceWithdrawHistoryRequest", "id_list")
             );
-            let name = python_name(field.name);
+            let field_name = python_name(field.name);
             let default = if empty_list_default {
                 " = field(default_factory=list)".to_owned()
-            } else if name != field.name {
+            } else if matches!(
+                (name, field.name),
+                ("BinanceDepositHistoryRequest", "include_source")
+            ) {
+                " = False".to_owned()
+            } else if field_name != field.name {
                 if optional_default {
                     format!(
                         " = field(default=None, metadata={{\"wire_name\": \"{}\"}})",
@@ -245,7 +253,7 @@ fn render_python_model_record(
             };
             format!(
                 "    {}: {}{default}\n",
-                name,
+                field_name,
                 python_model_type(field, false)
             )
         })
@@ -982,6 +990,11 @@ pub(crate) fn render_rust_convert(schema: &Schema) -> String {
     }) {
         output.push_str(&render_rust_identifier(identifier));
     }
+    output.push_str(&render_rust_identifier(
+        schema
+            .identifier("BinanceMarket")
+            .expect("BinanceMarket schema"),
+    ));
     const HANDWRITTEN_MODELS: &[&str] = &[
         "CandleRequest",
         "OrderRequest",
@@ -1014,6 +1027,26 @@ pub(crate) fn render_rust_convert(schema: &Schema) -> String {
         "BinanceAccountTrade",
         "BinanceTestOrder",
         "BinanceSpotAveragePrice",
+        "BinanceSpotAccountInformation",
+        "BinanceSpotCommissionRates",
+        "BinanceSpotAccountBalance",
+        "BinanceSpotCancelAllOpenOrders",
+        "BinanceSpotCancelledOrder",
+        "BinanceUsdMAccountInformation",
+        "BinanceUsdMAccountAsset",
+        "BinanceUsdMAccountPosition",
+        "BinanceUsdMPositionInformation",
+        "BinanceExchangeInfo",
+        "BinanceExchangeSymbol",
+        "BinanceCoinInformation",
+        "BinanceCoinNetworkInformation",
+        "BinanceApiKeyPermissions",
+        "BinanceDepositHistory",
+        "BinanceDepositHistoryEntry",
+        "BinanceQuestionnaireRequirements",
+        "BinanceWithdrawalAddress",
+        "BinanceWithdrawHistory",
+        "BinanceWithdrawHistoryEntry",
         "BithumbOrderDetailTrade",
         "BithumbOrderDetail",
         "BithumbClosedOrder",
@@ -1032,6 +1065,19 @@ pub(crate) fn render_rust_convert(schema: &Schema) -> String {
         "HyperliquidOrderDetail",
         "HyperliquidOrderInfo",
         "HyperliquidOrderStatusResponse",
+        "HyperliquidCandleSnapshot",
+        "HyperliquidL2Book",
+        "HyperliquidRecentTrade",
+        "HyperliquidFundingHistoryEntry",
+        "HyperliquidUserFunding",
+        "HyperliquidSpotBalance",
+        "HyperliquidSpotClearinghouseState",
+        "HyperliquidSpotToken",
+        "HyperliquidSpotPair",
+        "HyperliquidSpotMeta",
+        "HyperliquidSpotAssetContext",
+        "HyperliquidSpotMetaAndAssetContexts",
+        "UpbitWithdrawalAddress",
     ];
     for name in schema.models {
         if HANDWRITTEN_MODELS.contains(name) {
@@ -1358,6 +1404,10 @@ fn rust_from_wire_result(ty: &Type, value: &str, field: &str) -> String {
         ),
         Type::List(inner) => match inner.as_ref() {
             Type::String => format!("{value}.extract::<Vec<String>>()"),
+            Type::Boolean | Type::UnsignedInteger => format!("{value}.extract()"),
+            Type::Number => {
+                format!("list_from_wire(&{value}, |item| u32_from_wire(item, \"{field}\"))")
+            }
             Type::Decimal => {
                 format!("list_from_wire(&{value}, |item| decimal_from_wire(item, \"{field}\"))")
             }
@@ -1435,7 +1485,9 @@ fn rust_record_field(schema: &Schema, _record: &str, name: &str, ty: &Type) -> S
             other => panic!("unsupported optional record field: {other:?}"),
         },
         Type::List(inner) => match inner.as_ref() {
-            Type::String => format!("&{field}"),
+            Type::String | Type::Boolean | Type::Number | Type::UnsignedInteger => {
+                format!("&{field}")
+            }
             Type::Decimal => {
                 format!("{field}.iter().map(|item| decimal_to_wire(*item)).collect::<Vec<_>>()")
             }
@@ -2402,6 +2454,9 @@ mod tests {
         ));
         assert!(output.contains(
             "class BithumbClosedOrdersRequest(WireModel):\n    __wire_strict__: ClassVar[bool] = True\n    market: Optional[Market] = None\n    state: Optional[BithumbClosedOrderState] = None\n    states: list[BithumbClosedOrderState] = field(default_factory=list)"
+        ));
+        assert!(output.contains(
+            "class BinanceDepositHistoryRequest(WireModel):\n    __wire_strict__: ClassVar[bool] = True\n    coin: Optional[str] = None\n    status: Optional[int] = None\n    start_time: Optional[Timestamp] = None\n    end_time: Optional[Timestamp] = None\n    offset: Optional[int] = None\n    limit: Optional[int] = None\n    tx_id: Optional[str] = None\n    include_source: bool = False"
         ));
         assert!(output.contains(
             "from_: Optional[Timestamp] = field(default=None, metadata={\"wire_name\": \"from\"})"

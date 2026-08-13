@@ -367,7 +367,7 @@ Portfolio Margin REST	Http	PUT	/papi/v1/listenKey	keepaliveUserDataStream	USER_S
 Portfolio Margin REST	Http	POST	/papi/v1/listenKey	startUserDataStream	USER_STREAM	AccountWrite	documented_active	platform_limited
 Portfolio Margin REST	Http	DELETE	/papi/v1/listenKey	closeUserDataStream	USER_STREAM	AccountWrite	documented_active	platform_limited
 Futures (USD-M) REST	Http	GET	/fapi/v2/account	accountInformationV2	USER_DATA	Read	documented_active	provider_typed
-Futures (USD-M) REST	Http	GET	/fapi/v3/account	accountInformationV3	USER_DATA	Read	documented_active	common_existing
+Futures (USD-M) REST	Http	GET	/fapi/v3/account	accountInformationV3	USER_DATA	Read	documented_active	common_and_provider
 Futures (USD-M) REST	Http	GET	/fapi/v2/balance	futuresAccountBalanceV2	USER_DATA	Read	documented_active	provider_typed
 Futures (USD-M) REST	Http	GET	/fapi/v3/balance	futuresAccountBalanceV3	USER_DATA	Read	documented_active	provider_typed
 Futures (USD-M) REST	Http	GET	/fapi/v1/accountConfig	futuresAccountConfiguration	USER_DATA	Read	documented_active	provider_typed
@@ -414,7 +414,7 @@ Futures (USD-M) REST	Http	GET	/fapi/v1/positionMargin/history	getPositionMarginC
 Futures (USD-M) REST	Http	POST	/fapi/v1/positionMargin	modifyIsolatedPositionMargin	TRADE	FinancialWrite	documented_active	provider_typed
 Futures (USD-M) REST	Http	GET	/fapi/v1/adlQuantile	positionAdlQuantileEstimation	USER_DATA	Read	documented_active	provider_typed
 Futures (USD-M) REST	Http	GET	/fapi/v2/positionRisk	positionInformationV2	USER_DATA	Read	documented_active	provider_typed
-Futures (USD-M) REST	Http	GET	/fapi/v3/positionRisk	positionInformationV3	USER_DATA	Read	documented_active	common_existing
+Futures (USD-M) REST	Http	GET	/fapi/v3/positionRisk	positionInformationV3	USER_DATA	Read	documented_active	common_and_provider
 Futures (USD-M) REST	Http	GET	/fapi/v1/allAlgoOrders	queryAllAlgoOrders	USER_DATA	Read	documented_active	provider_typed
 Futures (USD-M) REST	Http	GET	/fapi/v1/openOrder	queryCurrentOpenOrder	USER_DATA	Read	documented_active	provider_typed
 Futures (USD-M) REST	Http	POST	/fapi/v1/order/test	testOrder	TRADE	FinancialWrite	documented_active	provider_typed
@@ -429,7 +429,7 @@ Futures (USD-M) REST	Http	GET	/fapi/v1/time	checkServerTime	Public	Read	document
 Futures (USD-M) REST	Http	GET	/fapi/v1/indexInfo	compositeIndexSymbolInformation	Public	Read	documented_active	provider_typed
 Futures (USD-M) REST	Http	GET	/fapi/v1/aggTrades	compressedAggregateTradesList	Public	Read	documented_active	provider_typed
 Futures (USD-M) REST	Http	GET	/fapi/v1/continuousKlines	continuousContractKlineCandlestickData	Public	Read	documented_active	provider_typed
-Futures (USD-M) REST	Http	GET	/fapi/v1/exchangeInfo	exchangeInformation	Public	Read	documented_active	common_existing
+Futures (USD-M) REST	Http	GET	/fapi/v1/exchangeInfo	exchangeInformation	Public	Read	documented_active	common_and_provider
 Futures (USD-M) REST	Http	GET	/fapi/v1/fundingRate	getFundingRateHistory	Public	Read	documented_active	common_existing
 Futures (USD-M) REST	Http	GET	/fapi/v1/fundingInfo	getFundingRateInfo	Public	Read	documented_active	provider_typed
 Futures (USD-M) REST	Http	GET	/fapi/v1/indexPriceKlines	indexPriceKlineCandlestickData	Public	Read	documented_active	provider_typed
@@ -741,7 +741,7 @@ Simple Earn REST	Http	GET	/sapi/v1/earn/arena/activities	getYieldArenaActivities
 Spot REST	Http	GET	/api/v3/account/commission	accountCommission	USER_DATA	Read	documented_active	provider_typed
 Spot REST	Http	GET	/api/v3/allOrderList	allOrderList	USER_DATA	Read	documented_active	provider_typed
 Spot REST	Http	GET	/api/v3/allOrders	allOrders	USER_DATA	Read	documented_active	provider_typed
-Spot REST	Http	GET	/api/v3/account	getAccount	USER_DATA	Read	documented_active	common_existing
+Spot REST	Http	GET	/api/v3/account	getAccount	USER_DATA	Read	documented_active	common_and_provider
 Spot REST	Http	GET	/api/v3/openOrders	getOpenOrders	USER_DATA	Read	documented_active	common_existing
 Spot REST	Http	GET	/api/v3/order	getOrder	USER_DATA	Read	documented_active	provider_typed
 Spot REST	Http	GET	/api/v3/orderList	getOrderList	USER_DATA	Read	documented_active	provider_typed
@@ -990,7 +990,7 @@ Wallet REST	Http	GET	/sapi/v1/account/status	accountStatus	USER_DATA	Read	docume
 Wallet REST	Http	GET	/sapi/v1/accountSnapshot	dailyAccountSnapshot	USER_DATA	Read	documented_active	provider_typed
 Wallet REST	Http	POST	/sapi/v1/account/disableFastWithdrawSwitch	disableFastWithdrawSwitch	USER_DATA	Read	documented_active	provider_typed
 Wallet REST	Http	POST	/sapi/v1/account/enableFastWithdrawSwitch	enableFastWithdrawSwitch	USER_DATA	Read	documented_active	provider_typed
-Wallet REST	Http	GET	/sapi/v1/account/apiRestrictions	getApiKeyPermission	USER_DATA	Read	documented_active	common_existing
+Wallet REST	Http	GET	/sapi/v1/account/apiRestrictions	getApiKeyPermission	USER_DATA	Read	documented_active	common_and_provider
 Wallet REST	Http	GET	/sapi/v1/asset/assetDetail	assetDetail	USER_DATA	Read	documented_active	provider_typed
 Wallet REST	Http	GET	/sapi/v1/asset/assetDividend	assetDividendRecord	USER_DATA	Read	documented_active	provider_typed
 Wallet REST	Http	POST	/sapi/v1/asset/dust-convert/convert	dustConvert	USER_DATA	Read	documented_active	provider_typed
@@ -1009,19 +1009,19 @@ Wallet REST	Http	GET	/sapi/v1/asset/wallet/balance	queryUserWalletBalance	USER_D
 Wallet REST	Http	POST	/sapi/v1/bnbBurn	toggleBnbBurnOnSpotTradeAndMarginInterest	USER_DATA	Read	documented_active	provider_typed
 Wallet REST	Http	GET	/sapi/v1/asset/tradeFee	tradeFee	USER_DATA	Read	documented_active	provider_typed
 Wallet REST	Http	POST	/sapi/v3/asset/getUserAsset	userAsset	USER_DATA	Read	documented_active	provider_typed
-Wallet REST	Http	GET	/sapi/v1/capital/config/getall	allCoinsInformation	USER_DATA	Read	documented_active	common_existing
+Wallet REST	Http	GET	/sapi/v1/capital/config/getall	allCoinsInformation	USER_DATA	Read	documented_active	common_and_provider
 Wallet REST	Http	GET	/sapi/v1/capital/deposit/address	depositAddress	USER_DATA	Read	documented_active	common_existing
-Wallet REST	Http	GET	/sapi/v1/capital/deposit/hisrec	depositHistory	USER_DATA	Read	documented_active	common_existing
+Wallet REST	Http	GET	/sapi/v1/capital/deposit/hisrec	depositHistory	USER_DATA	Read	documented_active	common_and_provider
 Wallet REST	Http	GET	/sapi/v1/capital/deposit/address/list	fetchDepositAddressListWithNetwork	USER_DATA	Read	documented_active	provider_typed
-Wallet REST	Http	GET	/sapi/v1/capital/withdraw/address/list	fetchWithdrawAddressList	USER_DATA	Read	documented_active	common_existing
+Wallet REST	Http	GET	/sapi/v1/capital/withdraw/address/list	fetchWithdrawAddressList	USER_DATA	Read	documented_active	common_and_provider
 Wallet REST	Http	GET	/sapi/v1/capital/withdraw/quota	fetchWithdrawQuota	USER_DATA	Read	documented_active	provider_typed
 Wallet REST	Http	POST	/sapi/v1/capital/deposit/credit-apply	oneClickArrivalDepositApply	USER_DATA	Read	documented_active	provider_typed
 Wallet REST	Http	POST	/sapi/v1/capital/withdraw/apply	withdraw	USER_DATA	Read	documented_active	common_existing
-Wallet REST	Http	GET	/sapi/v1/capital/withdraw/history	withdrawHistory	USER_DATA	Read	documented_active	common_existing
+Wallet REST	Http	GET	/sapi/v1/capital/withdraw/history	withdrawHistory	USER_DATA	Read	documented_active	common_and_provider
 Wallet REST	Http	GET	/sapi/v1/spot/delist-schedule	getSymbolsDelistScheduleForSpot	MARKET_DATA	Read	documented_active	provider_typed
 Wallet REST	Http	GET	/sapi/v1/system/status	systemStatus	Public	Read	documented_active	provider_typed
 Wallet REST	Http	POST	/sapi/v1/localentity/broker/withdraw/apply	brokerWithdraw	USER_DATA	Read	documented_active	provider_typed
-Wallet REST	Http	GET	/sapi/v1/localentity/questionnaire-requirements	checkQuestionnaireRequirements	USER_DATA	Read	documented_active	common_existing
+Wallet REST	Http	GET	/sapi/v1/localentity/questionnaire-requirements	checkQuestionnaireRequirements	USER_DATA	Read	documented_active	common_and_provider
 Wallet REST	Http	GET	/sapi/v1/localentity/country/list	getCountryList	USER_DATA	Read	documented_active	provider_typed
 Wallet REST	Http	GET	/sapi/v1/localentity/deposit/history	depositHistoryTravelRule	USER_DATA	Read	documented_active	provider_typed
 Wallet REST	Http	GET	/sapi/v2/localentity/deposit/history	depositHistoryV2	USER_DATA	Read	documented_active	provider_typed

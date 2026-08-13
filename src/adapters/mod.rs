@@ -151,10 +151,17 @@ pub(crate) fn validate_cancel_order_limit(
 
 pub use binance::{
     BinanceAccountTrade, BinanceAdapter, BinanceAggregateTrade, BinanceAggregateTradesRequest,
-    BinanceC2cTrade, BinanceC2cTradeHistoryPage, BinanceC2cTradeHistoryRequest,
-    BinanceC2cTradeType, BinanceListenKey, BinanceMarkPrice, BinanceMarket, BinanceOpenInterest,
-    BinanceSpotAveragePrice, BinanceSpotOrderDetail, BinanceSymbolFilters, BinanceTestOrder,
-    BinanceTestOrderRequest,
+    BinanceApiKeyPermissions, BinanceC2cTrade, BinanceC2cTradeHistoryPage,
+    BinanceC2cTradeHistoryRequest, BinanceC2cTradeType, BinanceCoinInformation,
+    BinanceCoinNetworkInformation, BinanceDepositHistory, BinanceDepositHistoryEntry,
+    BinanceDepositHistoryRequest, BinanceExchangeInfo, BinanceExchangeSymbol, BinanceListenKey,
+    BinanceMarkPrice, BinanceMarket, BinanceOpenInterest, BinanceQuestionnaireRequirements,
+    BinanceSpotAccountBalance, BinanceSpotAccountInformation, BinanceSpotAveragePrice,
+    BinanceSpotCancelAllOpenOrders, BinanceSpotCancelledOrder, BinanceSpotCommissionRates,
+    BinanceSpotOrderDetail, BinanceSymbolFilters, BinanceTestOrder, BinanceTestOrderRequest,
+    BinanceUsdMAccountAsset, BinanceUsdMAccountInformation, BinanceUsdMAccountPosition,
+    BinanceUsdMPositionInformation, BinanceWithdrawHistory, BinanceWithdrawHistoryEntry,
+    BinanceWithdrawHistoryRequest, BinanceWithdrawalAddress,
 };
 pub use bithumb::{
     BithumbAdapter, BithumbAlertStep, BithumbApiKey, BithumbAssetFee, BithumbBatchOrder,
@@ -169,11 +176,15 @@ pub use bithumb::{
     BithumbTwapOrderRequest, BithumbTwapOrdersRequest, BithumbTwapState, BithumbWithdrawalAddress,
 };
 pub use hyperliquid::{
-    HyperliquidAdapter, HyperliquidAssetContext, HyperliquidDailyVolume, HyperliquidLedgerEntry,
-    HyperliquidLedgerKind, HyperliquidMidPrice, HyperliquidOpenOrder, HyperliquidOrderDetail,
-    HyperliquidOrderInfo, HyperliquidOrderReference, HyperliquidOrderStatusResponse,
-    HyperliquidPortfolioPeriod, HyperliquidPortfolioPoint, HyperliquidReferral,
-    HyperliquidReferrer, HyperliquidSubAccount, HyperliquidUserFees, HyperliquidUserFill,
+    HyperliquidAdapter, HyperliquidAssetContext, HyperliquidBookLevel, HyperliquidCandleSnapshot,
+    HyperliquidDailyVolume, HyperliquidEvmContract, HyperliquidFundingHistoryEntry,
+    HyperliquidL2Book, HyperliquidLedgerEntry, HyperliquidLedgerKind, HyperliquidMidPrice,
+    HyperliquidOpenOrder, HyperliquidOrderDetail, HyperliquidOrderInfo, HyperliquidOrderReference,
+    HyperliquidOrderStatusResponse, HyperliquidPortfolioPeriod, HyperliquidPortfolioPoint,
+    HyperliquidRecentTrade, HyperliquidReferral, HyperliquidReferrer, HyperliquidSpotAssetContext,
+    HyperliquidSpotBalance, HyperliquidSpotClearinghouseState, HyperliquidSpotMeta,
+    HyperliquidSpotMetaAndAssetContexts, HyperliquidSpotPair, HyperliquidSpotToken,
+    HyperliquidSubAccount, HyperliquidUserFees, HyperliquidUserFill, HyperliquidUserFunding,
     HyperliquidUserRateLimit, HyperliquidUserRole, HyperliquidVaultEquity,
 };
 pub use upbit::{
@@ -188,5 +199,5 @@ pub use upbit::{
     UpbitPocketTransferDirection, UpbitPocketTransferOrder, UpbitPocketTransferQuery,
     UpbitPocketTransferRequest, UpbitPocketTransferState, UpbitPocketUniversalTransferRequest,
     UpbitRegion, UpbitSmpType, UpbitSubscriptionList, UpbitTravelRuleVasp,
-    UpbitTravelRuleVerification, UpbitYearCandle,
+    UpbitTravelRuleVerification, UpbitWithdrawalAddress, UpbitYearCandle,
 };

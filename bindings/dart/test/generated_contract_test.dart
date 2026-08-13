@@ -140,6 +140,7 @@ void main() {
         'orderDetail': (UpbitAdapter value) => value.orderDetail,
         'closedOrders': (UpbitAdapter value) => value.closedOrders,
         'depositInfo': (UpbitAdapter value) => value.depositInfo,
+        'withdrawalAddresses': (UpbitAdapter value) => value.withdrawalAddresses,
         'travelRuleVasps': (UpbitAdapter value) => value.travelRuleVasps,
         'verifyTravelRuleByUuid': (UpbitAdapter value) =>
             value.verifyTravelRuleByUuid,
@@ -185,6 +186,23 @@ void main() {
         'spotSymbolFilters': (BinanceAdapter value) => value.spotSymbolFilters,
         'spotOrder': (BinanceAdapter value) => value.spotOrder,
         'spotAveragePrice': (BinanceAdapter value) => value.spotAveragePrice,
+        'spotAccountInformation': (BinanceAdapter value) =>
+            value.spotAccountInformation,
+        'spotCancelAllOpenOrders': (BinanceAdapter value) =>
+            value.spotCancelAllOpenOrders,
+        'spotExchangeInfo': (BinanceAdapter value) => value.spotExchangeInfo,
+        'usdMAccountInformation': (BinanceAdapter value) =>
+            value.usdMAccountInformation,
+        'usdMExchangeInfo': (BinanceAdapter value) => value.usdMExchangeInfo,
+        'usdMPositionInformation': (BinanceAdapter value) =>
+            value.usdMPositionInformation,
+        'allCoinsInformation': (BinanceAdapter value) => value.allCoinsInformation,
+        'apiKeyPermissions': (BinanceAdapter value) => value.apiKeyPermissions,
+        'depositHistory': (BinanceAdapter value) => value.depositHistory,
+        'questionnaireRequirements': (BinanceAdapter value) =>
+            value.questionnaireRequirements,
+        'withdrawAddressList': (BinanceAdapter value) => value.withdrawAddressList,
+        'withdrawHistory': (BinanceAdapter value) => value.withdrawHistory,
         'markPrice': (BinanceAdapter value) => value.markPrice,
         'markPrices': (BinanceAdapter value) => value.markPrices,
         'openInterest': (BinanceAdapter value) => value.openInterest,
@@ -212,6 +230,16 @@ void main() {
         'nonFundingLedger': (HyperliquidAdapter value) =>
             value.nonFundingLedger,
         'assetContext': (HyperliquidAdapter value) => value.assetContext,
+        'candleSnapshot': (HyperliquidAdapter value) => value.candleSnapshot,
+        'l2Book': (HyperliquidAdapter value) => value.l2Book,
+        'recentTrades': (HyperliquidAdapter value) => value.recentTrades,
+        'fundingHistory': (HyperliquidAdapter value) => value.fundingHistory,
+        'userFunding': (HyperliquidAdapter value) => value.userFunding,
+        'spotClearinghouseState': (HyperliquidAdapter value) =>
+            value.spotClearinghouseState,
+        'spotMeta': (HyperliquidAdapter value) => value.spotMeta,
+        'spotMetaAndAssetContexts': (HyperliquidAdapter value) =>
+            value.spotMetaAndAssetContexts,
         'userRateLimit': (HyperliquidAdapter value) => value.userRateLimit,
         'userRole': (HyperliquidAdapter value) => value.userRole,
         'referral': (HyperliquidAdapter value) => value.referral,

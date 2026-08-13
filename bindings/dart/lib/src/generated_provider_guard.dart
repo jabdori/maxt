@@ -35,6 +35,7 @@ void _generatedProviderGuard({
     _generatedProviderValue<String>(),
     _generatedProviderValue<Network>(),
   );
+  upbit.withdrawalAddresses();
   upbit.travelRuleVasps();
   upbit.verifyTravelRuleByUuid(
     _generatedProviderValue<String>(),
@@ -96,6 +97,22 @@ void _generatedProviderGuard({
     _generatedProviderValue<String>(),
   );
   binance.spotAveragePrice(_generatedProviderValue<Market>());
+  binance.spotAccountInformation();
+  binance.spotCancelAllOpenOrders(_generatedProviderValue<Market>());
+  binance.spotExchangeInfo();
+  binance.usdMAccountInformation();
+  binance.usdMExchangeInfo();
+  binance.usdMPositionInformation();
+  binance.allCoinsInformation();
+  binance.apiKeyPermissions();
+  binance.depositHistory(
+    _generatedProviderValue<BinanceDepositHistoryRequest>(),
+  );
+  binance.questionnaireRequirements();
+  binance.withdrawAddressList();
+  binance.withdrawHistory(
+    _generatedProviderValue<BinanceWithdrawHistoryRequest>(),
+  );
   binance.markPrice(_generatedProviderValue<Market>());
   binance.markPrices();
   binance.openInterest(_generatedProviderValue<Market>());
@@ -126,6 +143,21 @@ void _generatedProviderGuard({
   hyperliquid.historicalOrders();
   hyperliquid.nonFundingLedger();
   hyperliquid.assetContext(_generatedProviderValue<Market>());
+  hyperliquid.candleSnapshot(
+    _generatedProviderValue<Market>(),
+    _generatedProviderValue<String>(),
+    _generatedProviderValue<Timestamp>(),
+  );
+  hyperliquid.l2Book(_generatedProviderValue<Market>());
+  hyperliquid.recentTrades(_generatedProviderValue<Market>());
+  hyperliquid.fundingHistory(
+    _generatedProviderValue<Market>(),
+    _generatedProviderValue<Timestamp>(),
+  );
+  hyperliquid.userFunding(_generatedProviderValue<Timestamp>());
+  hyperliquid.spotClearinghouseState();
+  hyperliquid.spotMeta();
+  hyperliquid.spotMetaAndAssetContexts();
   hyperliquid.userRateLimit();
   hyperliquid.userRole();
   hyperliquid.referral();

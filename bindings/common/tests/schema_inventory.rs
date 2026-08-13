@@ -557,7 +557,7 @@ fn upbit_closed_orders_schema_matches_the_core_types() {
 #[test]
 fn binance_spot_average_price_schema_matches_the_core_type() {
     let schema = binding_schema();
-    assert_eq!(schema.native_api_version, 28);
+    assert_eq!(schema.native_api_version, 29);
 
     let record = schema
         .records

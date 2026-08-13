@@ -131,13 +131,58 @@ struct Chance {
     supports_withdrawal: bool,
 }
 
-#[derive(Debug, Clone, Deserialize)]
-struct WithdrawalAddress {
+#[derive(Debug, Deserialize)]
+struct RawWithdrawalAddress {
     currency: String,
     net_type: String,
+    network_name: String,
     withdraw_address: String,
     #[serde(default)]
     secondary_address: Option<String>,
+    #[serde(default)]
+    beneficiary_name: Option<String>,
+    #[serde(default)]
+    beneficiary_company_name: Option<String>,
+    #[serde(default)]
+    beneficiary_type: Option<String>,
+    #[serde(default)]
+    exchange_name: Option<String>,
+    #[serde(default)]
+    wallet_type: Option<String>,
+}
+
+/// One registered Upbit withdrawal address and its provider metadata.
+///
+/// `net_type` is Upbit's network identifier for use in withdrawal requests;
+/// `network_name` is display-only. The recipient fields vary by address type.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct UpbitWithdrawalAddress {
+    /// Asset code returned by Upbit.
+    pub currency: String,
+    /// Upbit's exact withdrawal-network identifier.
+    pub net_type: String,
+    /// Human-readable network name displayed by Upbit.
+    pub network_name: String,
+    /// Primary withdrawal address.
+    pub withdraw_address: String,
+    /// Secondary address, memo, or destination tag when registered.
+    pub secondary_address: Option<String>,
+    /// Recipient name when Upbit provides it.
+    pub beneficiary_name: Option<String>,
+    /// Recipient company name for a corporate address, when provided.
+    pub beneficiary_company_name: Option<String>,
+    /// Recipient ownership classification, such as `individual` or `corporate`.
+    pub beneficiary_type: Option<String>,
+    /// Destination exchange name for an exchange wallet, when provided.
+    pub exchange_name: Option<String>,
+    /// Personal wallet product name for a personal wallet, when provided.
+    pub wallet_type: Option<String>,
+    /// Complete provider response object, encoded as JSON.
+    ///
+    /// This preserves provider fields introduced after this release. Typed
+    /// fields above remain the stable contract for documented fields.
+    pub raw_json: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -514,13 +559,17 @@ async fn withdraw_chance(
     parse_chance(&body, asset)
 }
 
-async fn withdrawal_addresses(
+pub(crate) async fn withdrawal_addresses(
     credentials: &UpbitCredentials,
     http: &HttpTransport,
-) -> Result<Vec<WithdrawalAddress>> {
-    let request = signed_get(credentials, WITHDRAWAL_ADDRESSES_PATH, &[])?;
+) -> Result<Vec<UpbitWithdrawalAddress>> {
+    let request = withdrawal_addresses_request(credentials)?;
     let body = rest::send(http, &request).await?;
-    parse::json(&body)
+    parse_withdrawal_addresses(&body)
+}
+
+fn withdrawal_addresses_request(credentials: &UpbitCredentials) -> Result<HttpRequest> {
+    signed_get(credentials, WITHDRAWAL_ADDRESSES_PATH, &[])
 }
 
 fn signed_get(
@@ -845,6 +894,37 @@ fn parse_deposit_addresses(body: &str) -> Result<Vec<DepositAddressEntry>> {
                 provider_network,
                 address: raw.deposit_address,
                 memo: raw.secondary_address,
+            })
+        })
+        .collect()
+}
+
+fn parse_withdrawal_addresses(body: &str) -> Result<Vec<UpbitWithdrawalAddress>> {
+    parse::json::<Vec<Value>>(body)?
+        .into_iter()
+        .map(|value| {
+            let raw: RawWithdrawalAddress =
+                serde_json::from_value(value.clone()).map_err(|err| {
+                    Error::decode(format!("unreadable Upbit withdrawal-address entry: {err}"))
+                })?;
+            let raw_json = serde_json::to_string(&value).map_err(|err| {
+                Error::decode(format!(
+                    "Upbit withdrawal-address JSON cannot be encoded: {err}"
+                ))
+            })?;
+
+            Ok(UpbitWithdrawalAddress {
+                currency: raw.currency,
+                net_type: raw.net_type,
+                network_name: raw.network_name,
+                withdraw_address: raw.withdraw_address,
+                secondary_address: raw.secondary_address,
+                beneficiary_name: raw.beneficiary_name,
+                beneficiary_company_name: raw.beneficiary_company_name,
+                beneficiary_type: raw.beneficiary_type,
+                exchange_name: raw.exchange_name,
+                wallet_type: raw.wallet_type,
+                raw_json,
             })
         })
         .collect()
@@ -1185,7 +1265,7 @@ fn network_matches(requested: &Network, parsed: Option<&Network>, provider: Opti
 }
 
 fn address_matches(
-    allowed: &WithdrawalAddress,
+    allowed: &UpbitWithdrawalAddress,
     request: &WithdrawRequest,
     asset: &str,
     provider_id: &str,
@@ -1377,6 +1457,69 @@ mod tests {
     }
 
     #[test]
+    fn withdrawal_address_list_preserves_official_recipient_and_network_fields() {
+        let entries = parse_withdrawal_addresses(
+            r#"[
+              {
+                "currency":"BTC",
+                "net_type":"BTC",
+                "network_name":"Bitcoin",
+                "withdraw_address":"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
+                "secondary_address":null,
+                "beneficiary_name":"John",
+                "beneficiary_company_name":null,
+                "beneficiary_type":"individual",
+                "exchange_name":"바이낸스",
+                "wallet_type":null,
+                "future_provider_field":"retained"
+              },
+              {
+                "currency":"ETH",
+                "net_type":"ETH",
+                "network_name":"Ethereum",
+                "withdraw_address":"0x1234615148db0926d76bde31d420abcd5439484fd",
+                "secondary_address":"memo-7",
+                "beneficiary_name":"Jane",
+                "beneficiary_company_name":"Example Corp.",
+                "beneficiary_type":"corporate",
+                "exchange_name":null,
+                "wallet_type":"메타마스크"
+              }
+            ]"#,
+        )
+        .expect("official withdrawal-address fixture");
+
+        assert_eq!(entries[0].currency, "BTC");
+        assert_eq!(entries[0].net_type, "BTC");
+        assert_eq!(entries[0].network_name, "Bitcoin");
+        assert_eq!(entries[0].beneficiary_name.as_deref(), Some("John"));
+        assert_eq!(entries[0].beneficiary_type.as_deref(), Some("individual"));
+        assert_eq!(entries[0].exchange_name.as_deref(), Some("바이낸스"));
+        assert_eq!(entries[0].wallet_type, None);
+        let raw: Value = serde_json::from_str(&entries[0].raw_json).expect("raw address JSON");
+        assert_eq!(raw["future_provider_field"], "retained");
+
+        assert_eq!(entries[1].secondary_address.as_deref(), Some("memo-7"));
+        assert_eq!(
+            entries[1].beneficiary_company_name.as_deref(),
+            Some("Example Corp.")
+        );
+        assert_eq!(entries[1].exchange_name, None);
+        assert_eq!(entries[1].wallet_type.as_deref(), Some("메타마스크"));
+    }
+
+    #[test]
+    fn withdrawal_address_list_request_is_a_parameterless_jwt_get() {
+        let request = withdrawal_addresses_request(&credentials()).expect("allowlist request");
+
+        assert_eq!(request.target(), WITHDRAWAL_ADDRESSES_PATH);
+        let token = claims(&request);
+        assert_eq!(token["access_key"], "test-access");
+        assert!(token.get("query_hash").is_none());
+        assert!(token.get("query_hash_alg").is_none());
+    }
+
+    #[test]
     fn deposit_info_preserves_nullable_network_and_provider_policy() {
         let info = parse_deposit_info(
             r#"{"currency":"BTC","net_type":"BTC","is_deposit_possible":true,"deposit_impossible_reason":null,"minimum_deposit_amount":"0.0005","minimum_deposit_confirmations":18446744073709551615,"decimal_precision":18446744073709551615}"#,
@@ -1545,8 +1688,7 @@ mod tests {
         let deposit_chance =
             deposit_chance_request(&credentials, "BTC", "BTC").expect("deposit chance request");
         let chance = withdraw_chance_request(&credentials, "BTC", "BTC").expect("chance request");
-        let allowlist =
-            signed_get(&credentials, WITHDRAWAL_ADDRESSES_PATH, &[]).expect("allowlist request");
+        let allowlist = withdrawal_addresses_request(&credentials).expect("allowlist request");
         let api_keys = signed_get(&credentials, API_KEYS_PATH, &[]).expect("API-key request");
         let history = TransferHistoryRequest::new().asset("BTC").limit(25);
         let deposits = history_request(&credentials, DEPOSITS_PATH, &history, 2, 25)

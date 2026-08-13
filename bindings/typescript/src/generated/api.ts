@@ -7,7 +7,7 @@ import { AccountStream, MarketStream, StreamError } from "../stream.js";
 import * as Codec from "./codec.js";
 import type * as Wire from "./contract.js";
 
-export const NATIVE_API_VERSION = 28 as const;
+export const NATIVE_API_VERSION = 29 as const;
 
 export type NativeOutcome<T> =
   | { readonly ok: true; readonly value: T }
@@ -76,6 +76,7 @@ export interface RawNativeUpbitHandle {
   orderDetail(request: string): Promise<unknown>;
   closedOrders(request: string): Promise<unknown>;
   depositInfo(asset: string, network: string): Promise<unknown>;
+  withdrawalAddresses(): Promise<unknown>;
   travelRuleVasps(): Promise<unknown>;
   verifyTravelRuleByUuid(depositUuid: string, vaspUuid: string): Promise<unknown>;
   verifyTravelRuleByTxid(txid: string, vaspUuid: string, currency: string, netType: string): Promise<unknown>;
@@ -121,6 +122,18 @@ export interface RawNativeBinanceHandle {
   spotSymbolFilters(market: string): Promise<unknown>;
   spotOrder(market: string, orderId: string): Promise<unknown>;
   spotAveragePrice(market: string): Promise<unknown>;
+  spotAccountInformation(): Promise<unknown>;
+  spotCancelAllOpenOrders(market: string): Promise<unknown>;
+  spotExchangeInfo(): Promise<unknown>;
+  usdMAccountInformation(): Promise<unknown>;
+  usdMExchangeInfo(): Promise<unknown>;
+  usdMPositionInformation(market: string): Promise<unknown>;
+  allCoinsInformation(): Promise<unknown>;
+  apiKeyPermissions(): Promise<unknown>;
+  depositHistory(request: string): Promise<unknown>;
+  questionnaireRequirements(): Promise<unknown>;
+  withdrawAddressList(): Promise<unknown>;
+  withdrawHistory(request: string): Promise<unknown>;
   markPrice(market: string): Promise<unknown>;
   markPrices(): Promise<unknown>;
   openInterest(market: string): Promise<unknown>;
@@ -145,6 +158,14 @@ export interface RawNativeHyperliquidHandle {
   historicalOrders(): Promise<unknown>;
   nonFundingLedger(from: string, to: string, cursor: string, limit: string): Promise<unknown>;
   assetContext(market: string): Promise<unknown>;
+  candleSnapshot(market: string, interval: string, from: string, to: string): Promise<unknown>;
+  l2Book(market: string): Promise<unknown>;
+  recentTrades(market: string): Promise<unknown>;
+  fundingHistory(market: string, from: string, to: string): Promise<unknown>;
+  userFunding(from: string, to: string): Promise<unknown>;
+  spotClearinghouseState(): Promise<unknown>;
+  spotMeta(): Promise<unknown>;
+  spotMetaAndAssetContexts(): Promise<unknown>;
   userRateLimit(): Promise<unknown>;
   userRole(): Promise<unknown>;
   referral(): Promise<unknown>;
@@ -248,6 +269,7 @@ export interface NativeUpbitHandle {
   orderDetail(request: Wire.UpbitOrderDetailRequestWire): Promise<NativeOutcome<Wire.UpbitOrderDetailWire>>;
   closedOrders(request: Wire.UpbitClosedOrdersRequestWire): Promise<NativeOutcome<readonly Wire.UpbitClosedOrderWire[]>>;
   depositInfo(asset: string, network: string): Promise<NativeOutcome<Wire.UpbitDepositInfoWire>>;
+  withdrawalAddresses(): Promise<NativeOutcome<readonly Wire.UpbitWithdrawalAddressWire[]>>;
   travelRuleVasps(): Promise<NativeOutcome<readonly Wire.UpbitTravelRuleVaspWire[]>>;
   verifyTravelRuleByUuid(depositUuid: string, vaspUuid: string): Promise<NativeOutcome<Wire.UpbitTravelRuleVerificationWire>>;
   verifyTravelRuleByTxid(txid: string, vaspUuid: string, currency: string, netType: string): Promise<NativeOutcome<Wire.UpbitTravelRuleVerificationWire>>;
@@ -293,6 +315,18 @@ export interface NativeBinanceHandle {
   spotSymbolFilters(market: Wire.MarketWire): Promise<NativeOutcome<Wire.BinanceSymbolFiltersWire>>;
   spotOrder(market: Wire.MarketWire, orderId: string): Promise<NativeOutcome<Wire.BinanceSpotOrderDetailWire>>;
   spotAveragePrice(market: Wire.MarketWire): Promise<NativeOutcome<Wire.BinanceSpotAveragePriceWire>>;
+  spotAccountInformation(): Promise<NativeOutcome<Wire.BinanceSpotAccountInformationWire>>;
+  spotCancelAllOpenOrders(market: Wire.MarketWire): Promise<NativeOutcome<Wire.BinanceSpotCancelAllOpenOrdersWire>>;
+  spotExchangeInfo(): Promise<NativeOutcome<Wire.BinanceExchangeInfoWire>>;
+  usdMAccountInformation(): Promise<NativeOutcome<Wire.BinanceUsdMAccountInformationWire>>;
+  usdMExchangeInfo(): Promise<NativeOutcome<Wire.BinanceExchangeInfoWire>>;
+  usdMPositionInformation(market: Wire.MarketWire | null): Promise<NativeOutcome<readonly Wire.BinanceUsdMPositionInformationWire[]>>;
+  allCoinsInformation(): Promise<NativeOutcome<readonly Wire.BinanceCoinInformationWire[]>>;
+  apiKeyPermissions(): Promise<NativeOutcome<Wire.BinanceApiKeyPermissionsWire>>;
+  depositHistory(request: Wire.BinanceDepositHistoryRequestWire): Promise<NativeOutcome<Wire.BinanceDepositHistoryWire>>;
+  questionnaireRequirements(): Promise<NativeOutcome<Wire.BinanceQuestionnaireRequirementsWire>>;
+  withdrawAddressList(): Promise<NativeOutcome<readonly Wire.BinanceWithdrawalAddressWire[]>>;
+  withdrawHistory(request: Wire.BinanceWithdrawHistoryRequestWire): Promise<NativeOutcome<Wire.BinanceWithdrawHistoryWire>>;
   markPrice(market: Wire.MarketWire): Promise<NativeOutcome<Wire.BinanceMarkPriceWire>>;
   markPrices(): Promise<NativeOutcome<readonly Wire.BinanceMarkPriceWire[]>>;
   openInterest(market: Wire.MarketWire): Promise<NativeOutcome<Wire.BinanceOpenInterestWire>>;
@@ -317,6 +351,14 @@ export interface NativeHyperliquidHandle {
   historicalOrders(): Promise<NativeOutcome<readonly Wire.HyperliquidOrderInfoWire[]>>;
   nonFundingLedger(from: Wire.TimestampWire | null, to: Wire.TimestampWire | null, cursor: string | null, limit: number | null): Promise<NativeOutcome<Wire.PageWire<Wire.HyperliquidLedgerEntryWire>>>;
   assetContext(market: Wire.MarketWire): Promise<NativeOutcome<Wire.HyperliquidAssetContextWire>>;
+  candleSnapshot(market: Wire.MarketWire, interval: string, from: Wire.TimestampWire, to: Wire.TimestampWire | null): Promise<NativeOutcome<readonly Wire.HyperliquidCandleSnapshotWire[]>>;
+  l2Book(market: Wire.MarketWire): Promise<NativeOutcome<Wire.HyperliquidL2BookWire>>;
+  recentTrades(market: Wire.MarketWire): Promise<NativeOutcome<readonly Wire.HyperliquidRecentTradeWire[]>>;
+  fundingHistory(market: Wire.MarketWire, from: Wire.TimestampWire, to: Wire.TimestampWire | null): Promise<NativeOutcome<readonly Wire.HyperliquidFundingHistoryEntryWire[]>>;
+  userFunding(from: Wire.TimestampWire, to: Wire.TimestampWire | null): Promise<NativeOutcome<readonly Wire.HyperliquidUserFundingWire[]>>;
+  spotClearinghouseState(): Promise<NativeOutcome<Wire.HyperliquidSpotClearinghouseStateWire>>;
+  spotMeta(): Promise<NativeOutcome<Wire.HyperliquidSpotMetaWire>>;
+  spotMetaAndAssetContexts(): Promise<NativeOutcome<Wire.HyperliquidSpotMetaAndAssetContextsWire>>;
   userRateLimit(): Promise<NativeOutcome<Wire.HyperliquidUserRateLimitWire>>;
   userRole(): Promise<NativeOutcome<Wire.HyperliquidUserRoleWire>>;
   referral(): Promise<NativeOutcome<Wire.HyperliquidReferralWire>>;
@@ -398,6 +440,7 @@ export function createJsonBackend(raw: RawNativeModule): NativeBackend {
         orderDetail: (request: Wire.UpbitOrderDetailRequestWire) => handle.orderDetail(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.UpbitOrderDetailWire>>,
         closedOrders: (request: Wire.UpbitClosedOrdersRequestWire) => handle.closedOrders(Codec.stringifyWire(request)) as Promise<NativeOutcome<readonly Wire.UpbitClosedOrderWire[]>>,
         depositInfo: (asset: string, network: string) => handle.depositInfo(Codec.stringifyWire(asset), Codec.stringifyWire(network)) as Promise<NativeOutcome<Wire.UpbitDepositInfoWire>>,
+        withdrawalAddresses: () => handle.withdrawalAddresses() as Promise<NativeOutcome<readonly Wire.UpbitWithdrawalAddressWire[]>>,
         travelRuleVasps: () => handle.travelRuleVasps() as Promise<NativeOutcome<readonly Wire.UpbitTravelRuleVaspWire[]>>,
         verifyTravelRuleByUuid: (depositUuid: string, vaspUuid: string) => handle.verifyTravelRuleByUuid(Codec.stringifyWire(depositUuid), Codec.stringifyWire(vaspUuid)) as Promise<NativeOutcome<Wire.UpbitTravelRuleVerificationWire>>,
         verifyTravelRuleByTxid: (txid: string, vaspUuid: string, currency: string, netType: string) => handle.verifyTravelRuleByTxid(Codec.stringifyWire(txid), Codec.stringifyWire(vaspUuid), Codec.stringifyWire(currency), Codec.stringifyWire(netType)) as Promise<NativeOutcome<Wire.UpbitTravelRuleVerificationWire>>,
@@ -447,6 +490,18 @@ export function createJsonBackend(raw: RawNativeModule): NativeBackend {
         spotSymbolFilters: (market: Wire.MarketWire) => handle.spotSymbolFilters(Codec.stringifyWire(market)) as Promise<NativeOutcome<Wire.BinanceSymbolFiltersWire>>,
         spotOrder: (market: Wire.MarketWire, orderId: string) => handle.spotOrder(Codec.stringifyWire(market), Codec.stringifyWire(orderId)) as Promise<NativeOutcome<Wire.BinanceSpotOrderDetailWire>>,
         spotAveragePrice: (market: Wire.MarketWire) => handle.spotAveragePrice(Codec.stringifyWire(market)) as Promise<NativeOutcome<Wire.BinanceSpotAveragePriceWire>>,
+        spotAccountInformation: () => handle.spotAccountInformation() as Promise<NativeOutcome<Wire.BinanceSpotAccountInformationWire>>,
+        spotCancelAllOpenOrders: (market: Wire.MarketWire) => handle.spotCancelAllOpenOrders(Codec.stringifyWire(market)) as Promise<NativeOutcome<Wire.BinanceSpotCancelAllOpenOrdersWire>>,
+        spotExchangeInfo: () => handle.spotExchangeInfo() as Promise<NativeOutcome<Wire.BinanceExchangeInfoWire>>,
+        usdMAccountInformation: () => handle.usdMAccountInformation() as Promise<NativeOutcome<Wire.BinanceUsdMAccountInformationWire>>,
+        usdMExchangeInfo: () => handle.usdMExchangeInfo() as Promise<NativeOutcome<Wire.BinanceExchangeInfoWire>>,
+        usdMPositionInformation: (market: Wire.MarketWire | null) => handle.usdMPositionInformation(Codec.stringifyWire(market)) as Promise<NativeOutcome<readonly Wire.BinanceUsdMPositionInformationWire[]>>,
+        allCoinsInformation: () => handle.allCoinsInformation() as Promise<NativeOutcome<readonly Wire.BinanceCoinInformationWire[]>>,
+        apiKeyPermissions: () => handle.apiKeyPermissions() as Promise<NativeOutcome<Wire.BinanceApiKeyPermissionsWire>>,
+        depositHistory: (request: Wire.BinanceDepositHistoryRequestWire) => handle.depositHistory(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.BinanceDepositHistoryWire>>,
+        questionnaireRequirements: () => handle.questionnaireRequirements() as Promise<NativeOutcome<Wire.BinanceQuestionnaireRequirementsWire>>,
+        withdrawAddressList: () => handle.withdrawAddressList() as Promise<NativeOutcome<readonly Wire.BinanceWithdrawalAddressWire[]>>,
+        withdrawHistory: (request: Wire.BinanceWithdrawHistoryRequestWire) => handle.withdrawHistory(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.BinanceWithdrawHistoryWire>>,
         markPrice: (market: Wire.MarketWire) => handle.markPrice(Codec.stringifyWire(market)) as Promise<NativeOutcome<Wire.BinanceMarkPriceWire>>,
         markPrices: () => handle.markPrices() as Promise<NativeOutcome<readonly Wire.BinanceMarkPriceWire[]>>,
         openInterest: (market: Wire.MarketWire) => handle.openInterest(Codec.stringifyWire(market)) as Promise<NativeOutcome<Wire.BinanceOpenInterestWire>>,
@@ -473,6 +528,14 @@ export function createJsonBackend(raw: RawNativeModule): NativeBackend {
         historicalOrders: () => handle.historicalOrders() as Promise<NativeOutcome<readonly Wire.HyperliquidOrderInfoWire[]>>,
         nonFundingLedger: (from: Wire.TimestampWire | null, to: Wire.TimestampWire | null, cursor: string | null, limit: number | null) => handle.nonFundingLedger(Codec.stringifyWire(from), Codec.stringifyWire(to), Codec.stringifyWire(cursor), Codec.stringifyWire(limit)) as Promise<NativeOutcome<Wire.PageWire<Wire.HyperliquidLedgerEntryWire>>>,
         assetContext: (market: Wire.MarketWire) => handle.assetContext(Codec.stringifyWire(market)) as Promise<NativeOutcome<Wire.HyperliquidAssetContextWire>>,
+        candleSnapshot: (market: Wire.MarketWire, interval: string, from: Wire.TimestampWire, to: Wire.TimestampWire | null) => handle.candleSnapshot(Codec.stringifyWire(market), Codec.stringifyWire(interval), Codec.stringifyWire(from), Codec.stringifyWire(to)) as Promise<NativeOutcome<readonly Wire.HyperliquidCandleSnapshotWire[]>>,
+        l2Book: (market: Wire.MarketWire) => handle.l2Book(Codec.stringifyWire(market)) as Promise<NativeOutcome<Wire.HyperliquidL2BookWire>>,
+        recentTrades: (market: Wire.MarketWire) => handle.recentTrades(Codec.stringifyWire(market)) as Promise<NativeOutcome<readonly Wire.HyperliquidRecentTradeWire[]>>,
+        fundingHistory: (market: Wire.MarketWire, from: Wire.TimestampWire, to: Wire.TimestampWire | null) => handle.fundingHistory(Codec.stringifyWire(market), Codec.stringifyWire(from), Codec.stringifyWire(to)) as Promise<NativeOutcome<readonly Wire.HyperliquidFundingHistoryEntryWire[]>>,
+        userFunding: (from: Wire.TimestampWire, to: Wire.TimestampWire | null) => handle.userFunding(Codec.stringifyWire(from), Codec.stringifyWire(to)) as Promise<NativeOutcome<readonly Wire.HyperliquidUserFundingWire[]>>,
+        spotClearinghouseState: () => handle.spotClearinghouseState() as Promise<NativeOutcome<Wire.HyperliquidSpotClearinghouseStateWire>>,
+        spotMeta: () => handle.spotMeta() as Promise<NativeOutcome<Wire.HyperliquidSpotMetaWire>>,
+        spotMetaAndAssetContexts: () => handle.spotMetaAndAssetContexts() as Promise<NativeOutcome<Wire.HyperliquidSpotMetaAndAssetContextsWire>>,
         userRateLimit: () => handle.userRateLimit() as Promise<NativeOutcome<Wire.HyperliquidUserRateLimitWire>>,
         userRole: () => handle.userRole() as Promise<NativeOutcome<Wire.HyperliquidUserRoleWire>>,
         referral: () => handle.referral() as Promise<NativeOutcome<Wire.HyperliquidReferralWire>>,
@@ -1169,6 +1232,7 @@ export class UpbitAdapter extends NativeAdapter {
   async orderDetail(request: Model.UpbitOrderDetailRequest): Promise<Model.UpbitOrderDetail> { await ensureInitialized(); return Codec.upbitOrderDetailFromWire(Codec.unwrapOutcome(await this.#provider.orderDetail(Codec.upbitOrderDetailRequestToWire(request)))); }
   async closedOrders(request: Model.UpbitClosedOrdersRequest): Promise<readonly Model.UpbitClosedOrder[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.closedOrders(Codec.upbitClosedOrdersRequestToWire(request))).map(Codec.upbitClosedOrderFromWire); }
   async depositInfo(asset: string, network: Model.Network): Promise<Model.UpbitDepositInfo> { await ensureInitialized(); return Codec.upbitDepositInfoFromWire(Codec.unwrapOutcome(await this.#provider.depositInfo(asset, network.id))); }
+  async withdrawalAddresses(): Promise<readonly Model.UpbitWithdrawalAddress[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.withdrawalAddresses()).map(Codec.upbitWithdrawalAddressFromWire); }
   /** Lists VASPs available for Upbit Korea or Singapore Travel Rule verification. */
   async travelRuleVasps(): Promise<readonly Model.UpbitTravelRuleVasp[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.travelRuleVasps()).map(Codec.upbitTravelRuleVaspFromWire); }
   /** Submits an Upbit Korea or Singapore Travel Rule verification request. This is a financial write. */
@@ -1233,6 +1297,18 @@ export class BinanceAdapter extends NativeAdapter {
   async spotSymbolFilters(market: Model.Market): Promise<Model.BinanceSymbolFilters> { await ensureInitialized(); return Codec.binanceSymbolFiltersFromWire(Codec.unwrapOutcome(await this.#provider.spotSymbolFilters(Codec.marketToWire(market)))); }
   async spotOrder(market: Model.Market, orderId: string): Promise<Model.BinanceSpotOrderDetail> { await ensureInitialized(); return Codec.binanceSpotOrderDetailFromWire(Codec.unwrapOutcome(await this.#provider.spotOrder(Codec.marketToWire(market), orderId))); }
   async spotAveragePrice(market: Model.Market): Promise<Model.BinanceSpotAveragePrice> { await ensureInitialized(); return Codec.binanceSpotAveragePriceFromWire(Codec.unwrapOutcome(await this.#provider.spotAveragePrice(Codec.marketToWire(market)))); }
+  async spotAccountInformation(): Promise<Model.BinanceSpotAccountInformation> { await ensureInitialized(); return Codec.binanceSpotAccountInformationFromWire(Codec.unwrapOutcome(await this.#provider.spotAccountInformation())); }
+  async spotCancelAllOpenOrders(market: Model.Market): Promise<Model.BinanceSpotCancelAllOpenOrders> { await ensureInitialized(); return Codec.binanceSpotCancelAllOpenOrdersFromWire(Codec.unwrapOutcome(await this.#provider.spotCancelAllOpenOrders(Codec.marketToWire(market)))); }
+  async spotExchangeInfo(): Promise<Model.BinanceExchangeInfo> { await ensureInitialized(); return Codec.binanceExchangeInfoFromWire(Codec.unwrapOutcome(await this.#provider.spotExchangeInfo())); }
+  async usdMAccountInformation(): Promise<Model.BinanceUsdMAccountInformation> { await ensureInitialized(); return Codec.binanceUsdMAccountInformationFromWire(Codec.unwrapOutcome(await this.#provider.usdMAccountInformation())); }
+  async usdMExchangeInfo(): Promise<Model.BinanceExchangeInfo> { await ensureInitialized(); return Codec.binanceExchangeInfoFromWire(Codec.unwrapOutcome(await this.#provider.usdMExchangeInfo())); }
+  async usdMPositionInformation(market: Model.Market | null = null): Promise<readonly Model.BinanceUsdMPositionInformation[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.usdMPositionInformation(market === null ? null : Codec.marketToWire(market))).map(Codec.binanceUsdMPositionInformationFromWire); }
+  async allCoinsInformation(): Promise<readonly Model.BinanceCoinInformation[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.allCoinsInformation()).map(Codec.binanceCoinInformationFromWire); }
+  async apiKeyPermissions(): Promise<Model.BinanceApiKeyPermissions> { await ensureInitialized(); return Codec.binanceApiKeyPermissionsFromWire(Codec.unwrapOutcome(await this.#provider.apiKeyPermissions())); }
+  async depositHistory(request: Model.BinanceDepositHistoryRequest): Promise<Model.BinanceDepositHistory> { await ensureInitialized(); return Codec.binanceDepositHistoryFromWire(Codec.unwrapOutcome(await this.#provider.depositHistory(Codec.binanceDepositHistoryRequestToWire(request)))); }
+  async questionnaireRequirements(): Promise<Model.BinanceQuestionnaireRequirements> { await ensureInitialized(); return Codec.binanceQuestionnaireRequirementsFromWire(Codec.unwrapOutcome(await this.#provider.questionnaireRequirements())); }
+  async withdrawAddressList(): Promise<readonly Model.BinanceWithdrawalAddress[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.withdrawAddressList()).map(Codec.binanceWithdrawalAddressFromWire); }
+  async withdrawHistory(request: Model.BinanceWithdrawHistoryRequest): Promise<Model.BinanceWithdrawHistory> { await ensureInitialized(); return Codec.binanceWithdrawHistoryFromWire(Codec.unwrapOutcome(await this.#provider.withdrawHistory(Codec.binanceWithdrawHistoryRequestToWire(request)))); }
   async markPrice(market: Model.Market): Promise<Model.BinanceMarkPrice> { await ensureInitialized(); return Codec.binanceMarkPriceFromWire(Codec.unwrapOutcome(await this.#provider.markPrice(Codec.marketToWire(market)))); }
   async markPrices(): Promise<readonly Model.BinanceMarkPrice[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.markPrices()).map(Codec.binanceMarkPriceFromWire); }
   async openInterest(market: Model.Market): Promise<Model.BinanceOpenInterest> { await ensureInitialized(); return Codec.binanceOpenInterestFromWire(Codec.unwrapOutcome(await this.#provider.openInterest(Codec.marketToWire(market)))); }
@@ -1264,6 +1340,14 @@ export class HyperliquidAdapter extends NativeAdapter {
   async historicalOrders(): Promise<readonly Model.HyperliquidOrderInfo[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.historicalOrders()).map(Codec.hyperliquidOrderInfoFromWire); }
   async nonFundingLedger(from: Model.Timestamp | null = null, to: Model.Timestamp | null = null, cursor: Model.Cursor | null = null, limit: number | null = null): Promise<Model.Page<Model.HyperliquidLedgerEntry>> { await ensureInitialized(); return Codec.pageFromWire(Codec.unwrapOutcome(await this.#provider.nonFundingLedger(from?.nanosecondsSinceEpoch.toString() ?? null, to?.nanosecondsSinceEpoch.toString() ?? null, cursor?.value ?? null, Codec.checkedOptionalU32(limit, "limit"))), Codec.hyperliquidLedgerEntryFromWire); }
   async assetContext(market: Model.Market): Promise<Model.HyperliquidAssetContext> { await ensureInitialized(); return Codec.hyperliquidAssetContextFromWire(Codec.unwrapOutcome(await this.#provider.assetContext(Codec.marketToWire(market)))); }
+  async candleSnapshot(market: Model.Market, interval: string, from: Model.Timestamp, to: Model.Timestamp | null = null): Promise<readonly Model.HyperliquidCandleSnapshot[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.candleSnapshot(Codec.marketToWire(market), interval, from.nanosecondsSinceEpoch.toString(), to?.nanosecondsSinceEpoch.toString() ?? null)).map(Codec.hyperliquidCandleSnapshotFromWire); }
+  async l2Book(market: Model.Market): Promise<Model.HyperliquidL2Book> { await ensureInitialized(); return Codec.hyperliquidL2BookFromWire(Codec.unwrapOutcome(await this.#provider.l2Book(Codec.marketToWire(market)))); }
+  async recentTrades(market: Model.Market): Promise<readonly Model.HyperliquidRecentTrade[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.recentTrades(Codec.marketToWire(market))).map(Codec.hyperliquidRecentTradeFromWire); }
+  async fundingHistory(market: Model.Market, from: Model.Timestamp, to: Model.Timestamp | null = null): Promise<readonly Model.HyperliquidFundingHistoryEntry[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.fundingHistory(Codec.marketToWire(market), from.nanosecondsSinceEpoch.toString(), to?.nanosecondsSinceEpoch.toString() ?? null)).map(Codec.hyperliquidFundingHistoryEntryFromWire); }
+  async userFunding(from: Model.Timestamp, to: Model.Timestamp | null = null): Promise<readonly Model.HyperliquidUserFunding[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.userFunding(from.nanosecondsSinceEpoch.toString(), to?.nanosecondsSinceEpoch.toString() ?? null)).map(Codec.hyperliquidUserFundingFromWire); }
+  async spotClearinghouseState(): Promise<Model.HyperliquidSpotClearinghouseState> { await ensureInitialized(); return Codec.hyperliquidSpotClearinghouseStateFromWire(Codec.unwrapOutcome(await this.#provider.spotClearinghouseState())); }
+  async spotMeta(): Promise<Model.HyperliquidSpotMeta> { await ensureInitialized(); return Codec.hyperliquidSpotMetaFromWire(Codec.unwrapOutcome(await this.#provider.spotMeta())); }
+  async spotMetaAndAssetContexts(): Promise<Model.HyperliquidSpotMetaAndAssetContexts> { await ensureInitialized(); return Codec.hyperliquidSpotMetaAndAssetContextsFromWire(Codec.unwrapOutcome(await this.#provider.spotMetaAndAssetContexts())); }
   async userRateLimit(): Promise<Model.HyperliquidUserRateLimit> { await ensureInitialized(); return Codec.hyperliquidUserRateLimitFromWire(Codec.unwrapOutcome(await this.#provider.userRateLimit())); }
   async userRole(): Promise<Model.HyperliquidUserRole> { await ensureInitialized(); return Codec.hyperliquidUserRoleFromWire(Codec.unwrapOutcome(await this.#provider.userRole())); }
   async referral(): Promise<Model.HyperliquidReferral> { await ensureInitialized(); return Codec.hyperliquidReferralFromWire(Codec.unwrapOutcome(await this.#provider.referral())); }

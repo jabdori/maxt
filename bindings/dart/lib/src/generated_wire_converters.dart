@@ -185,6 +185,18 @@ Network _networkFromWire(String value) => switch (value) {
 
 String _networkToWire(Network value) => value.providerName;
 
+BinanceMarket _binanceMarketFromWire(wire.WireBinanceMarket value) =>
+    switch (value) {
+      wire.WireBinanceMarket.spot => BinanceMarket.spot,
+      wire.WireBinanceMarket.usdMFutures => BinanceMarket.usdMFutures,
+    };
+
+wire.WireBinanceMarket _binanceMarketToWire(BinanceMarket value) =>
+    switch (value) {
+      BinanceMarket.spot => wire.WireBinanceMarket.spot,
+      BinanceMarket.usdMFutures => wire.WireBinanceMarket.usdMFutures,
+    };
+
 Market _marketFromWire(wire.WireMarket value) => Market(
   _exchangeFromWire(value.exchange),
   _marketKindFromWire(value.kind),
@@ -1245,6 +1257,37 @@ wire.WireUpbitDepositInfo _upbitDepositInfoToWire(UpbitDepositInfo value) =>
       minimumDepositConfirmations: value.minimumDepositConfirmations,
       decimalPrecision: value.decimalPrecision,
     );
+
+UpbitWithdrawalAddress _upbitWithdrawalAddressFromWire(
+  wire.WireUpbitWithdrawalAddress value,
+) => UpbitWithdrawalAddress(
+  currency: value.currency,
+  netType: value.netType,
+  networkName: value.networkName,
+  withdrawAddress: value.withdrawAddress,
+  secondaryAddress: value.secondaryAddress,
+  beneficiaryName: value.beneficiaryName,
+  beneficiaryCompanyName: value.beneficiaryCompanyName,
+  beneficiaryType: value.beneficiaryType,
+  exchangeName: value.exchangeName,
+  walletType: value.walletType,
+  rawJson: value.rawJson,
+);
+wire.WireUpbitWithdrawalAddress _upbitWithdrawalAddressToWire(
+  UpbitWithdrawalAddress value,
+) => wire.WireUpbitWithdrawalAddress(
+  currency: value.currency,
+  netType: value.netType,
+  networkName: value.networkName,
+  withdrawAddress: value.withdrawAddress,
+  secondaryAddress: value.secondaryAddress,
+  beneficiaryName: value.beneficiaryName,
+  beneficiaryCompanyName: value.beneficiaryCompanyName,
+  beneficiaryType: value.beneficiaryType,
+  exchangeName: value.exchangeName,
+  walletType: value.walletType,
+  rawJson: value.rawJson,
+);
 
 UpbitTravelRuleVasp _upbitTravelRuleVaspFromWire(
   wire.WireUpbitTravelRuleVasp value,
@@ -2422,6 +2465,659 @@ wire.WireBithumbOrderListItem _bithumbOrderListItemToWire(
   timeInForce: value.timeInForce,
 );
 
+BinanceDepositHistoryRequest _binanceDepositHistoryRequestFromWire(
+  wire.WireBinanceDepositHistoryRequest value,
+) => BinanceDepositHistoryRequest(
+  coin: value.coin,
+  status: value.status,
+  startTime: _timestampFromWire(value.startTimeNs),
+  endTime: _timestampFromWire(value.endTimeNs),
+  offset: value.offset,
+  limit: value.limit,
+  txId: value.txId,
+  includeSource: value.includeSource,
+);
+wire.WireBinanceDepositHistoryRequest _binanceDepositHistoryRequestToWire(
+  BinanceDepositHistoryRequest value,
+) => wire.WireBinanceDepositHistoryRequest(
+  coin: value.coin,
+  status: checkedUint32(value.status, field: 'status'),
+  startTimeNs: _optionalTimestampToWire(value.startTime),
+  endTimeNs: _optionalTimestampToWire(value.endTime),
+  offset: value.offset,
+  limit: checkedUint32(value.limit, field: 'limit'),
+  txId: value.txId,
+  includeSource: value.includeSource,
+);
+
+BinanceWithdrawHistoryRequest _binanceWithdrawHistoryRequestFromWire(
+  wire.WireBinanceWithdrawHistoryRequest value,
+) => BinanceWithdrawHistoryRequest(
+  coin: value.coin,
+  withdrawOrderId: value.withdrawOrderId,
+  status: value.status,
+  offset: value.offset,
+  limit: value.limit,
+  idList: value.idList,
+  startTime: _timestampFromWire(value.startTimeNs),
+  endTime: _timestampFromWire(value.endTimeNs),
+);
+wire.WireBinanceWithdrawHistoryRequest _binanceWithdrawHistoryRequestToWire(
+  BinanceWithdrawHistoryRequest value,
+) => wire.WireBinanceWithdrawHistoryRequest(
+  coin: value.coin,
+  withdrawOrderId: value.withdrawOrderId,
+  status: checkedUint32(value.status, field: 'status'),
+  offset: value.offset,
+  limit: checkedUint32(value.limit, field: 'limit'),
+  idList: value.idList.toList(growable: false),
+  startTimeNs: _optionalTimestampToWire(value.startTime),
+  endTimeNs: _optionalTimestampToWire(value.endTime),
+);
+
+BinanceSpotAccountInformation _binanceSpotAccountInformationFromWire(
+  wire.WireBinanceSpotAccountInformation value,
+) => BinanceSpotAccountInformation(
+  makerCommission: value.makerCommission,
+  takerCommission: value.takerCommission,
+  buyerCommission: value.buyerCommission,
+  sellerCommission: value.sellerCommission,
+  commissionRates: _binanceSpotCommissionRatesFromWire(value.commissionRates),
+  canTrade: value.canTrade,
+  canWithdraw: value.canWithdraw,
+  canDeposit: value.canDeposit,
+  updateTime: _timestampFromWire(value.updateTimeNs)!,
+  accountType: value.accountType,
+  balances: value.balances
+      .map(_binanceSpotAccountBalanceFromWire)
+      .toList(growable: false),
+  permissions: value.permissions,
+  uid: value.uid,
+  rawJson: value.rawJson,
+);
+wire.WireBinanceSpotAccountInformation _binanceSpotAccountInformationToWire(
+  BinanceSpotAccountInformation value,
+) => wire.WireBinanceSpotAccountInformation(
+  makerCommission: value.makerCommission,
+  takerCommission: value.takerCommission,
+  buyerCommission: value.buyerCommission,
+  sellerCommission: value.sellerCommission,
+  commissionRates: _binanceSpotCommissionRatesToWire(value.commissionRates),
+  canTrade: value.canTrade,
+  canWithdraw: value.canWithdraw,
+  canDeposit: value.canDeposit,
+  updateTimeNs: _timestampToWire(value.updateTime),
+  accountType: value.accountType,
+  balances: value.balances
+      .map(_binanceSpotAccountBalanceToWire)
+      .toList(growable: false),
+  permissions: value.permissions.toList(growable: false),
+  uid: value.uid,
+  rawJson: value.rawJson,
+);
+
+BinanceSpotCommissionRates _binanceSpotCommissionRatesFromWire(
+  wire.WireBinanceSpotCommissionRates value,
+) => BinanceSpotCommissionRates(
+  maker: Decimal.parse(value.maker),
+  taker: Decimal.parse(value.taker),
+  buyer: Decimal.parse(value.buyer),
+  seller: Decimal.parse(value.seller),
+);
+wire.WireBinanceSpotCommissionRates _binanceSpotCommissionRatesToWire(
+  BinanceSpotCommissionRates value,
+) => wire.WireBinanceSpotCommissionRates(
+  maker: value.maker.toString(),
+  taker: value.taker.toString(),
+  buyer: value.buyer.toString(),
+  seller: value.seller.toString(),
+);
+
+BinanceSpotAccountBalance _binanceSpotAccountBalanceFromWire(
+  wire.WireBinanceSpotAccountBalance value,
+) => BinanceSpotAccountBalance(
+  asset: value.asset,
+  free: Decimal.parse(value.free),
+  locked: Decimal.parse(value.locked),
+);
+wire.WireBinanceSpotAccountBalance _binanceSpotAccountBalanceToWire(
+  BinanceSpotAccountBalance value,
+) => wire.WireBinanceSpotAccountBalance(
+  asset: value.asset,
+  free: value.free.toString(),
+  locked: value.locked.toString(),
+);
+
+BinanceSpotCancelAllOpenOrders _binanceSpotCancelAllOpenOrdersFromWire(
+  wire.WireBinanceSpotCancelAllOpenOrders value,
+) => BinanceSpotCancelAllOpenOrders(
+  reports: value.reports
+      .map(_binanceSpotCancelledOrderFromWire)
+      .toList(growable: false),
+  rawJson: value.rawJson,
+);
+wire.WireBinanceSpotCancelAllOpenOrders _binanceSpotCancelAllOpenOrdersToWire(
+  BinanceSpotCancelAllOpenOrders value,
+) => wire.WireBinanceSpotCancelAllOpenOrders(
+  reports: value.reports
+      .map(_binanceSpotCancelledOrderToWire)
+      .toList(growable: false),
+  rawJson: value.rawJson,
+);
+
+BinanceSpotCancelledOrder _binanceSpotCancelledOrderFromWire(
+  wire.WireBinanceSpotCancelledOrder value,
+) => BinanceSpotCancelledOrder(
+  symbol: value.symbol,
+  originalClientOrderId: value.originalClientOrderId,
+  orderId: value.orderId,
+  clientOrderId: value.clientOrderId,
+  status: value.status,
+  price: _decimalFromWire(value.price),
+  originalQuantity: _decimalFromWire(value.originalQuantity),
+  executedQuantity: _decimalFromWire(value.executedQuantity),
+  cumulativeQuoteQuantity: _decimalFromWire(value.cumulativeQuoteQuantity),
+  transactTime: _timestampFromWire(value.transactTimeNs),
+  orderListId: value.orderListId,
+  contingencyType: value.contingencyType,
+  listStatusType: value.listStatusType,
+  listOrderStatus: value.listOrderStatus,
+  listClientOrderId: value.listClientOrderId,
+  transactionTime: _timestampFromWire(value.transactionTimeNs),
+  rawJson: value.rawJson,
+);
+wire.WireBinanceSpotCancelledOrder _binanceSpotCancelledOrderToWire(
+  BinanceSpotCancelledOrder value,
+) => wire.WireBinanceSpotCancelledOrder(
+  symbol: value.symbol,
+  originalClientOrderId: value.originalClientOrderId,
+  orderId: value.orderId,
+  clientOrderId: value.clientOrderId,
+  status: value.status,
+  price: value.price?.toString(),
+  originalQuantity: value.originalQuantity?.toString(),
+  executedQuantity: value.executedQuantity?.toString(),
+  cumulativeQuoteQuantity: value.cumulativeQuoteQuantity?.toString(),
+  transactTimeNs: _optionalTimestampToWire(value.transactTime),
+  orderListId: value.orderListId,
+  contingencyType: value.contingencyType,
+  listStatusType: value.listStatusType,
+  listOrderStatus: value.listOrderStatus,
+  listClientOrderId: value.listClientOrderId,
+  transactionTimeNs: _optionalTimestampToWire(value.transactionTime),
+  rawJson: value.rawJson,
+);
+
+BinanceUsdMAccountInformation _binanceUsdMAccountInformationFromWire(
+  wire.WireBinanceUsdMAccountInformation value,
+) => BinanceUsdMAccountInformation(
+  totalInitialMargin: Decimal.parse(value.totalInitialMargin),
+  totalMaintenanceMargin: Decimal.parse(value.totalMaintenanceMargin),
+  totalWalletBalance: Decimal.parse(value.totalWalletBalance),
+  totalUnrealizedProfit: Decimal.parse(value.totalUnrealizedProfit),
+  totalMarginBalance: Decimal.parse(value.totalMarginBalance),
+  totalPositionInitialMargin: Decimal.parse(value.totalPositionInitialMargin),
+  totalOpenOrderInitialMargin: Decimal.parse(value.totalOpenOrderInitialMargin),
+  totalCrossWalletBalance: Decimal.parse(value.totalCrossWalletBalance),
+  totalCrossUnrealizedProfit: Decimal.parse(value.totalCrossUnrealizedProfit),
+  availableBalance: Decimal.parse(value.availableBalance),
+  maxWithdrawAmount: Decimal.parse(value.maxWithdrawAmount),
+  assets: value.assets
+      .map(_binanceUsdMAccountAssetFromWire)
+      .toList(growable: false),
+  positions: value.positions
+      .map(_binanceUsdMAccountPositionFromWire)
+      .toList(growable: false),
+  rawJson: value.rawJson,
+);
+wire.WireBinanceUsdMAccountInformation _binanceUsdMAccountInformationToWire(
+  BinanceUsdMAccountInformation value,
+) => wire.WireBinanceUsdMAccountInformation(
+  totalInitialMargin: value.totalInitialMargin.toString(),
+  totalMaintenanceMargin: value.totalMaintenanceMargin.toString(),
+  totalWalletBalance: value.totalWalletBalance.toString(),
+  totalUnrealizedProfit: value.totalUnrealizedProfit.toString(),
+  totalMarginBalance: value.totalMarginBalance.toString(),
+  totalPositionInitialMargin: value.totalPositionInitialMargin.toString(),
+  totalOpenOrderInitialMargin: value.totalOpenOrderInitialMargin.toString(),
+  totalCrossWalletBalance: value.totalCrossWalletBalance.toString(),
+  totalCrossUnrealizedProfit: value.totalCrossUnrealizedProfit.toString(),
+  availableBalance: value.availableBalance.toString(),
+  maxWithdrawAmount: value.maxWithdrawAmount.toString(),
+  assets: value.assets
+      .map(_binanceUsdMAccountAssetToWire)
+      .toList(growable: false),
+  positions: value.positions
+      .map(_binanceUsdMAccountPositionToWire)
+      .toList(growable: false),
+  rawJson: value.rawJson,
+);
+
+BinanceUsdMAccountAsset _binanceUsdMAccountAssetFromWire(
+  wire.WireBinanceUsdMAccountAsset value,
+) => BinanceUsdMAccountAsset(
+  asset: value.asset,
+  walletBalance: Decimal.parse(value.walletBalance),
+  unrealizedProfit: Decimal.parse(value.unrealizedProfit),
+  marginBalance: Decimal.parse(value.marginBalance),
+  maintenanceMargin: Decimal.parse(value.maintenanceMargin),
+  initialMargin: Decimal.parse(value.initialMargin),
+  positionInitialMargin: Decimal.parse(value.positionInitialMargin),
+  openOrderInitialMargin: Decimal.parse(value.openOrderInitialMargin),
+  crossWalletBalance: Decimal.parse(value.crossWalletBalance),
+  crossUnrealizedProfit: Decimal.parse(value.crossUnrealizedProfit),
+  availableBalance: Decimal.parse(value.availableBalance),
+  maxWithdrawAmount: Decimal.parse(value.maxWithdrawAmount),
+  updateTime: _timestampFromWire(value.updateTimeNs)!,
+);
+wire.WireBinanceUsdMAccountAsset _binanceUsdMAccountAssetToWire(
+  BinanceUsdMAccountAsset value,
+) => wire.WireBinanceUsdMAccountAsset(
+  asset: value.asset,
+  walletBalance: value.walletBalance.toString(),
+  unrealizedProfit: value.unrealizedProfit.toString(),
+  marginBalance: value.marginBalance.toString(),
+  maintenanceMargin: value.maintenanceMargin.toString(),
+  initialMargin: value.initialMargin.toString(),
+  positionInitialMargin: value.positionInitialMargin.toString(),
+  openOrderInitialMargin: value.openOrderInitialMargin.toString(),
+  crossWalletBalance: value.crossWalletBalance.toString(),
+  crossUnrealizedProfit: value.crossUnrealizedProfit.toString(),
+  availableBalance: value.availableBalance.toString(),
+  maxWithdrawAmount: value.maxWithdrawAmount.toString(),
+  updateTimeNs: _timestampToWire(value.updateTime),
+);
+
+BinanceUsdMAccountPosition _binanceUsdMAccountPositionFromWire(
+  wire.WireBinanceUsdMAccountPosition value,
+) => BinanceUsdMAccountPosition(
+  symbol: value.symbol,
+  positionSide: value.positionSide,
+  positionAmount: Decimal.parse(value.positionAmount),
+  unrealizedProfit: Decimal.parse(value.unrealizedProfit),
+  isolatedMargin: Decimal.parse(value.isolatedMargin),
+  notional: Decimal.parse(value.notional),
+  isolatedWallet: Decimal.parse(value.isolatedWallet),
+  initialMargin: Decimal.parse(value.initialMargin),
+  maintenanceMargin: Decimal.parse(value.maintenanceMargin),
+  updateTime: _timestampFromWire(value.updateTimeNs)!,
+);
+wire.WireBinanceUsdMAccountPosition _binanceUsdMAccountPositionToWire(
+  BinanceUsdMAccountPosition value,
+) => wire.WireBinanceUsdMAccountPosition(
+  symbol: value.symbol,
+  positionSide: value.positionSide,
+  positionAmount: value.positionAmount.toString(),
+  unrealizedProfit: value.unrealizedProfit.toString(),
+  isolatedMargin: value.isolatedMargin.toString(),
+  notional: value.notional.toString(),
+  isolatedWallet: value.isolatedWallet.toString(),
+  initialMargin: value.initialMargin.toString(),
+  maintenanceMargin: value.maintenanceMargin.toString(),
+  updateTimeNs: _timestampToWire(value.updateTime),
+);
+
+BinanceUsdMPositionInformation _binanceUsdMPositionInformationFromWire(
+  wire.WireBinanceUsdMPositionInformation value,
+) => BinanceUsdMPositionInformation(
+  symbol: value.symbol,
+  positionSide: value.positionSide,
+  positionAmount: Decimal.parse(value.positionAmount),
+  entryPrice: Decimal.parse(value.entryPrice),
+  breakEvenPrice: Decimal.parse(value.breakEvenPrice),
+  markPrice: Decimal.parse(value.markPrice),
+  unrealizedProfit: Decimal.parse(value.unrealizedProfit),
+  liquidationPrice: Decimal.parse(value.liquidationPrice),
+  isolatedMargin: Decimal.parse(value.isolatedMargin),
+  notional: Decimal.parse(value.notional),
+  marginAsset: value.marginAsset,
+  isolatedWallet: Decimal.parse(value.isolatedWallet),
+  initialMargin: Decimal.parse(value.initialMargin),
+  maintenanceMargin: Decimal.parse(value.maintenanceMargin),
+  positionInitialMargin: Decimal.parse(value.positionInitialMargin),
+  openOrderInitialMargin: Decimal.parse(value.openOrderInitialMargin),
+  adl: value.adl,
+  bidNotional: Decimal.parse(value.bidNotional),
+  askNotional: Decimal.parse(value.askNotional),
+  updateTime: _timestampFromWire(value.updateTimeNs)!,
+  rawJson: value.rawJson,
+);
+wire.WireBinanceUsdMPositionInformation _binanceUsdMPositionInformationToWire(
+  BinanceUsdMPositionInformation value,
+) => wire.WireBinanceUsdMPositionInformation(
+  symbol: value.symbol,
+  positionSide: value.positionSide,
+  positionAmount: value.positionAmount.toString(),
+  entryPrice: value.entryPrice.toString(),
+  breakEvenPrice: value.breakEvenPrice.toString(),
+  markPrice: value.markPrice.toString(),
+  unrealizedProfit: value.unrealizedProfit.toString(),
+  liquidationPrice: value.liquidationPrice.toString(),
+  isolatedMargin: value.isolatedMargin.toString(),
+  notional: value.notional.toString(),
+  marginAsset: value.marginAsset,
+  isolatedWallet: value.isolatedWallet.toString(),
+  initialMargin: value.initialMargin.toString(),
+  maintenanceMargin: value.maintenanceMargin.toString(),
+  positionInitialMargin: value.positionInitialMargin.toString(),
+  openOrderInitialMargin: value.openOrderInitialMargin.toString(),
+  adl: value.adl,
+  bidNotional: value.bidNotional.toString(),
+  askNotional: value.askNotional.toString(),
+  updateTimeNs: _timestampToWire(value.updateTime),
+  rawJson: value.rawJson,
+);
+
+BinanceExchangeInfo _binanceExchangeInfoFromWire(
+  wire.WireBinanceExchangeInfo value,
+) => BinanceExchangeInfo(
+  venue: _binanceMarketFromWire(value.venue),
+  timezone: value.timezone,
+  serverTime: _timestampFromWire(value.serverTimeNs),
+  symbols: value.symbols
+      .map(_binanceExchangeSymbolFromWire)
+      .toList(growable: false),
+  rawJson: value.rawJson,
+);
+wire.WireBinanceExchangeInfo _binanceExchangeInfoToWire(
+  BinanceExchangeInfo value,
+) => wire.WireBinanceExchangeInfo(
+  venue: _binanceMarketToWire(value.venue),
+  timezone: value.timezone,
+  serverTimeNs: _optionalTimestampToWire(value.serverTime),
+  symbols: value.symbols
+      .map(_binanceExchangeSymbolToWire)
+      .toList(growable: false),
+  rawJson: value.rawJson,
+);
+
+BinanceExchangeSymbol _binanceExchangeSymbolFromWire(
+  wire.WireBinanceExchangeSymbol value,
+) => BinanceExchangeSymbol(
+  symbol: value.symbol,
+  status: value.status,
+  baseAsset: value.baseAsset,
+  quoteAsset: value.quoteAsset,
+  contractType: value.contractType,
+  marginAsset: value.marginAsset,
+  rawJson: value.rawJson,
+);
+wire.WireBinanceExchangeSymbol _binanceExchangeSymbolToWire(
+  BinanceExchangeSymbol value,
+) => wire.WireBinanceExchangeSymbol(
+  symbol: value.symbol,
+  status: value.status,
+  baseAsset: value.baseAsset,
+  quoteAsset: value.quoteAsset,
+  contractType: value.contractType,
+  marginAsset: value.marginAsset,
+  rawJson: value.rawJson,
+);
+
+BinanceCoinInformation _binanceCoinInformationFromWire(
+  wire.WireBinanceCoinInformation value,
+) => BinanceCoinInformation(
+  coin: value.coin,
+  depositAllEnabled: value.depositAllEnabled,
+  withdrawAllEnabled: value.withdrawAllEnabled,
+  name: value.name,
+  free: _decimalFromWire(value.free),
+  locked: _decimalFromWire(value.locked),
+  freeze: _decimalFromWire(value.freeze),
+  withdrawing: _decimalFromWire(value.withdrawing),
+  isLegalMoney: value.isLegalMoney,
+  trading: value.trading,
+  networks: value.networks
+      .map(_binanceCoinNetworkInformationFromWire)
+      .toList(growable: false),
+  rawJson: value.rawJson,
+);
+wire.WireBinanceCoinInformation _binanceCoinInformationToWire(
+  BinanceCoinInformation value,
+) => wire.WireBinanceCoinInformation(
+  coin: value.coin,
+  depositAllEnabled: value.depositAllEnabled,
+  withdrawAllEnabled: value.withdrawAllEnabled,
+  name: value.name,
+  free: value.free?.toString(),
+  locked: value.locked?.toString(),
+  freeze: value.freeze?.toString(),
+  withdrawing: value.withdrawing?.toString(),
+  isLegalMoney: value.isLegalMoney,
+  trading: value.trading,
+  networks: value.networks
+      .map(_binanceCoinNetworkInformationToWire)
+      .toList(growable: false),
+  rawJson: value.rawJson,
+);
+
+BinanceCoinNetworkInformation _binanceCoinNetworkInformationFromWire(
+  wire.WireBinanceCoinNetworkInformation value,
+) => BinanceCoinNetworkInformation(
+  network: value.network,
+  depositEnabled: value.depositEnabled,
+  withdrawEnabled: value.withdrawEnabled,
+  busy: value.busy,
+  withdrawalIntegerMultiple: _decimalFromWire(value.withdrawalIntegerMultiple),
+  withdrawalFee: _decimalFromWire(value.withdrawalFee),
+  minimumWithdrawal: _decimalFromWire(value.minimumWithdrawal),
+  maximumWithdrawal: _decimalFromWire(value.maximumWithdrawal),
+  withdrawalTag: value.withdrawalTag,
+  isDefault: value.isDefault,
+  minimumConfirmations: value.minimumConfirmations,
+  unlockConfirmations: value.unlockConfirmations,
+  contractAddress: value.contractAddress,
+  rawJson: value.rawJson,
+);
+wire.WireBinanceCoinNetworkInformation _binanceCoinNetworkInformationToWire(
+  BinanceCoinNetworkInformation value,
+) => wire.WireBinanceCoinNetworkInformation(
+  network: value.network,
+  depositEnabled: value.depositEnabled,
+  withdrawEnabled: value.withdrawEnabled,
+  busy: value.busy,
+  withdrawalIntegerMultiple: value.withdrawalIntegerMultiple?.toString(),
+  withdrawalFee: value.withdrawalFee?.toString(),
+  minimumWithdrawal: value.minimumWithdrawal?.toString(),
+  maximumWithdrawal: value.maximumWithdrawal?.toString(),
+  withdrawalTag: value.withdrawalTag,
+  isDefault: value.isDefault,
+  minimumConfirmations: value.minimumConfirmations,
+  unlockConfirmations: value.unlockConfirmations,
+  contractAddress: value.contractAddress,
+  rawJson: value.rawJson,
+);
+
+BinanceApiKeyPermissions _binanceApiKeyPermissionsFromWire(
+  wire.WireBinanceApiKeyPermissions value,
+) => BinanceApiKeyPermissions(
+  ipRestrict: value.ipRestrict,
+  createTime: _timestampFromWire(value.createTimeNs),
+  enableReading: value.enableReading,
+  enableWithdrawals: value.enableWithdrawals,
+  enableInternalTransfer: value.enableInternalTransfer,
+  enableMargin: value.enableMargin,
+  enableSpotAndMarginTrading: value.enableSpotAndMarginTrading,
+  enableFutures: value.enableFutures,
+  permitsUniversalTransfer: value.permitsUniversalTransfer,
+  enableVanillaOptions: value.enableVanillaOptions,
+  enableFixApiTrade: value.enableFixApiTrade,
+  enableFixReadOnly: value.enableFixReadOnly,
+  enablePortfolioMarginTrading: value.enablePortfolioMarginTrading,
+  rawJson: value.rawJson,
+);
+wire.WireBinanceApiKeyPermissions _binanceApiKeyPermissionsToWire(
+  BinanceApiKeyPermissions value,
+) => wire.WireBinanceApiKeyPermissions(
+  ipRestrict: value.ipRestrict,
+  createTimeNs: _optionalTimestampToWire(value.createTime),
+  enableReading: value.enableReading,
+  enableWithdrawals: value.enableWithdrawals,
+  enableInternalTransfer: value.enableInternalTransfer,
+  enableMargin: value.enableMargin,
+  enableSpotAndMarginTrading: value.enableSpotAndMarginTrading,
+  enableFutures: value.enableFutures,
+  permitsUniversalTransfer: value.permitsUniversalTransfer,
+  enableVanillaOptions: value.enableVanillaOptions,
+  enableFixApiTrade: value.enableFixApiTrade,
+  enableFixReadOnly: value.enableFixReadOnly,
+  enablePortfolioMarginTrading: value.enablePortfolioMarginTrading,
+  rawJson: value.rawJson,
+);
+
+BinanceDepositHistory _binanceDepositHistoryFromWire(
+  wire.WireBinanceDepositHistory value,
+) => BinanceDepositHistory(
+  entries: value.entries
+      .map(_binanceDepositHistoryEntryFromWire)
+      .toList(growable: false),
+  rawJson: value.rawJson,
+);
+wire.WireBinanceDepositHistory _binanceDepositHistoryToWire(
+  BinanceDepositHistory value,
+) => wire.WireBinanceDepositHistory(
+  entries: value.entries
+      .map(_binanceDepositHistoryEntryToWire)
+      .toList(growable: false),
+  rawJson: value.rawJson,
+);
+
+BinanceDepositHistoryEntry _binanceDepositHistoryEntryFromWire(
+  wire.WireBinanceDepositHistoryEntry value,
+) => BinanceDepositHistoryEntry(
+  id: value.id,
+  amount: Decimal.parse(value.amount),
+  coin: value.coin,
+  network: value.network,
+  status: value.status,
+  address: value.address,
+  addressTag: value.addressTag,
+  txId: value.txId,
+  insertTime: _timestampFromWire(value.insertTimeNs)!,
+  completeTime: _timestampFromWire(value.completeTimeNs),
+  transferType: value.transferType,
+  sourceAddress: value.sourceAddress,
+  rawJson: value.rawJson,
+);
+wire.WireBinanceDepositHistoryEntry _binanceDepositHistoryEntryToWire(
+  BinanceDepositHistoryEntry value,
+) => wire.WireBinanceDepositHistoryEntry(
+  id: value.id,
+  amount: value.amount.toString(),
+  coin: value.coin,
+  network: value.network,
+  status: checkedRequiredUint32(value.status, field: 'status'),
+  address: value.address,
+  addressTag: value.addressTag,
+  txId: value.txId,
+  insertTimeNs: _timestampToWire(value.insertTime),
+  completeTimeNs: _optionalTimestampToWire(value.completeTime),
+  transferType: checkedUint32(value.transferType, field: 'transfer_type'),
+  sourceAddress: value.sourceAddress,
+  rawJson: value.rawJson,
+);
+
+BinanceQuestionnaireRequirements _binanceQuestionnaireRequirementsFromWire(
+  wire.WireBinanceQuestionnaireRequirements value,
+) => BinanceQuestionnaireRequirements(
+  questionnaireCountryCode: value.questionnaireCountryCode,
+  rawJson: value.rawJson,
+);
+wire.WireBinanceQuestionnaireRequirements
+_binanceQuestionnaireRequirementsToWire(
+  BinanceQuestionnaireRequirements value,
+) => wire.WireBinanceQuestionnaireRequirements(
+  questionnaireCountryCode: value.questionnaireCountryCode,
+  rawJson: value.rawJson,
+);
+
+BinanceWithdrawalAddress _binanceWithdrawalAddressFromWire(
+  wire.WireBinanceWithdrawalAddress value,
+) => BinanceWithdrawalAddress(
+  address: value.address,
+  addressTag: value.addressTag,
+  coin: value.coin,
+  network: value.network,
+  whiteStatus: value.whiteStatus,
+  name: value.name,
+  origin: value.origin,
+  originType: value.originType,
+  rawJson: value.rawJson,
+);
+wire.WireBinanceWithdrawalAddress _binanceWithdrawalAddressToWire(
+  BinanceWithdrawalAddress value,
+) => wire.WireBinanceWithdrawalAddress(
+  address: value.address,
+  addressTag: value.addressTag,
+  coin: value.coin,
+  network: value.network,
+  whiteStatus: value.whiteStatus,
+  name: value.name,
+  origin: value.origin,
+  originType: value.originType,
+  rawJson: value.rawJson,
+);
+
+BinanceWithdrawHistory _binanceWithdrawHistoryFromWire(
+  wire.WireBinanceWithdrawHistory value,
+) => BinanceWithdrawHistory(
+  entries: value.entries
+      .map(_binanceWithdrawHistoryEntryFromWire)
+      .toList(growable: false),
+  rawJson: value.rawJson,
+);
+wire.WireBinanceWithdrawHistory _binanceWithdrawHistoryToWire(
+  BinanceWithdrawHistory value,
+) => wire.WireBinanceWithdrawHistory(
+  entries: value.entries
+      .map(_binanceWithdrawHistoryEntryToWire)
+      .toList(growable: false),
+  rawJson: value.rawJson,
+);
+
+BinanceWithdrawHistoryEntry _binanceWithdrawHistoryEntryFromWire(
+  wire.WireBinanceWithdrawHistoryEntry value,
+) => BinanceWithdrawHistoryEntry(
+  id: value.id,
+  amount: Decimal.parse(value.amount),
+  transactionFee: Decimal.parse(value.transactionFee),
+  coin: value.coin,
+  status: value.status,
+  address: value.address,
+  txId: value.txId,
+  applyTime: value.applyTime,
+  network: value.network,
+  withdrawOrderId: value.withdrawOrderId,
+  info: value.info,
+  transferType: value.transferType,
+  confirmNo: value.confirmNo,
+  walletType: value.walletType,
+  txKey: value.txKey,
+  completeTime: value.completeTime,
+  rawJson: value.rawJson,
+);
+wire.WireBinanceWithdrawHistoryEntry _binanceWithdrawHistoryEntryToWire(
+  BinanceWithdrawHistoryEntry value,
+) => wire.WireBinanceWithdrawHistoryEntry(
+  id: value.id,
+  amount: value.amount.toString(),
+  transactionFee: value.transactionFee.toString(),
+  coin: value.coin,
+  status: checkedRequiredUint32(value.status, field: 'status'),
+  address: value.address,
+  txId: value.txId,
+  applyTime: value.applyTime,
+  network: value.network,
+  withdrawOrderId: value.withdrawOrderId,
+  info: value.info,
+  transferType: checkedUint32(value.transferType, field: 'transfer_type'),
+  confirmNo: checkedUint32(value.confirmNo, field: 'confirm_no'),
+  walletType: checkedUint32(value.walletType, field: 'wallet_type'),
+  txKey: value.txKey,
+  completeTime: value.completeTime,
+  rawJson: value.rawJson,
+);
+
 BinanceSpotAveragePrice _binanceSpotAveragePriceFromWire(
   wire.WireBinanceSpotAveragePrice value,
 ) => BinanceSpotAveragePrice(
@@ -2676,6 +3372,332 @@ wire.WireBinanceC2cTradeHistoryPage _binanceC2cTradeHistoryPageToWire(
       : value.data!.map(_binanceC2cTradeToWire).toList(growable: false),
   total: value.total,
   success: value.success,
+);
+
+HyperliquidCandleSnapshot _hyperliquidCandleSnapshotFromWire(
+  wire.WireHyperliquidCandleSnapshot value,
+) => HyperliquidCandleSnapshot(
+  coin: value.coin,
+  market: _marketFromWire(value.market),
+  interval: value.interval,
+  openTime: _timestampFromWire(value.openTimeNs)!,
+  closeTime: _timestampFromWire(value.closeTimeNs)!,
+  open: Decimal.parse(value.open),
+  high: Decimal.parse(value.high),
+  low: Decimal.parse(value.low),
+  close: Decimal.parse(value.close),
+  volume: Decimal.parse(value.volume),
+  tradeCount: value.tradeCount,
+  rawJson: value.rawJson,
+);
+wire.WireHyperliquidCandleSnapshot _hyperliquidCandleSnapshotToWire(
+  HyperliquidCandleSnapshot value,
+) => wire.WireHyperliquidCandleSnapshot(
+  coin: value.coin,
+  market: _marketToWire(value.market),
+  interval: value.interval,
+  openTimeNs: _timestampToWire(value.openTime),
+  closeTimeNs: _timestampToWire(value.closeTime),
+  open: value.open.toString(),
+  high: value.high.toString(),
+  low: value.low.toString(),
+  close: value.close.toString(),
+  volume: value.volume.toString(),
+  tradeCount: value.tradeCount,
+  rawJson: value.rawJson,
+);
+
+HyperliquidBookLevel _hyperliquidBookLevelFromWire(
+  wire.WireHyperliquidBookLevel value,
+) => HyperliquidBookLevel(
+  price: Decimal.parse(value.price),
+  size: Decimal.parse(value.size),
+  orderCount: value.orderCount,
+);
+wire.WireHyperliquidBookLevel _hyperliquidBookLevelToWire(
+  HyperliquidBookLevel value,
+) => wire.WireHyperliquidBookLevel(
+  price: value.price.toString(),
+  size: value.size.toString(),
+  orderCount: value.orderCount,
+);
+
+HyperliquidL2Book _hyperliquidL2BookFromWire(
+  wire.WireHyperliquidL2Book value,
+) => HyperliquidL2Book(
+  coin: value.coin,
+  market: _marketFromWire(value.market),
+  time: _timestampFromWire(value.timeNs)!,
+  bids: value.bids.map(_hyperliquidBookLevelFromWire).toList(growable: false),
+  asks: value.asks.map(_hyperliquidBookLevelFromWire).toList(growable: false),
+  rawJson: value.rawJson,
+);
+wire.WireHyperliquidL2Book _hyperliquidL2BookToWire(HyperliquidL2Book value) =>
+    wire.WireHyperliquidL2Book(
+      coin: value.coin,
+      market: _marketToWire(value.market),
+      timeNs: _timestampToWire(value.time),
+      bids: value.bids.map(_hyperliquidBookLevelToWire).toList(growable: false),
+      asks: value.asks.map(_hyperliquidBookLevelToWire).toList(growable: false),
+      rawJson: value.rawJson,
+    );
+
+HyperliquidRecentTrade _hyperliquidRecentTradeFromWire(
+  wire.WireHyperliquidRecentTrade value,
+) => HyperliquidRecentTrade(
+  coin: value.coin,
+  market: _marketFromWire(value.market),
+  side: value.side,
+  price: Decimal.parse(value.price),
+  size: Decimal.parse(value.size),
+  time: _timestampFromWire(value.timeNs)!,
+  tradeId: value.tradeId,
+  hash: value.hash,
+  users: value.users,
+  rawJson: value.rawJson,
+);
+wire.WireHyperliquidRecentTrade _hyperliquidRecentTradeToWire(
+  HyperliquidRecentTrade value,
+) => wire.WireHyperliquidRecentTrade(
+  coin: value.coin,
+  market: _marketToWire(value.market),
+  side: value.side,
+  price: value.price.toString(),
+  size: value.size.toString(),
+  timeNs: _timestampToWire(value.time),
+  tradeId: value.tradeId,
+  hash: value.hash,
+  users: value.users.toList(growable: false),
+  rawJson: value.rawJson,
+);
+
+HyperliquidFundingHistoryEntry _hyperliquidFundingHistoryEntryFromWire(
+  wire.WireHyperliquidFundingHistoryEntry value,
+) => HyperliquidFundingHistoryEntry(
+  coin: value.coin,
+  market: _marketFromWire(value.market),
+  fundingRate: Decimal.parse(value.fundingRate),
+  premium: _decimalFromWire(value.premium),
+  time: _timestampFromWire(value.timeNs)!,
+  rawJson: value.rawJson,
+);
+wire.WireHyperliquidFundingHistoryEntry _hyperliquidFundingHistoryEntryToWire(
+  HyperliquidFundingHistoryEntry value,
+) => wire.WireHyperliquidFundingHistoryEntry(
+  coin: value.coin,
+  market: _marketToWire(value.market),
+  fundingRate: value.fundingRate.toString(),
+  premium: value.premium?.toString(),
+  timeNs: _timestampToWire(value.time),
+  rawJson: value.rawJson,
+);
+
+HyperliquidUserFunding _hyperliquidUserFundingFromWire(
+  wire.WireHyperliquidUserFunding value,
+) => HyperliquidUserFunding(
+  kind: value.kind,
+  coin: value.coin,
+  market: _marketFromWire(value.market),
+  usdc: Decimal.parse(value.usdc),
+  fundingRate: Decimal.parse(value.fundingRate),
+  positionSize: _decimalFromWire(value.positionSize),
+  sampleCount: value.sampleCount,
+  hash: value.hash,
+  time: _timestampFromWire(value.timeNs)!,
+  rawJson: value.rawJson,
+);
+wire.WireHyperliquidUserFunding _hyperliquidUserFundingToWire(
+  HyperliquidUserFunding value,
+) => wire.WireHyperliquidUserFunding(
+  kind: value.kind,
+  coin: value.coin,
+  market: _marketToWire(value.market),
+  usdc: value.usdc.toString(),
+  fundingRate: value.fundingRate.toString(),
+  positionSize: value.positionSize?.toString(),
+  sampleCount: value.sampleCount,
+  hash: value.hash,
+  timeNs: _timestampToWire(value.time),
+  rawJson: value.rawJson,
+);
+
+HyperliquidSpotBalance _hyperliquidSpotBalanceFromWire(
+  wire.WireHyperliquidSpotBalance value,
+) => HyperliquidSpotBalance(
+  coin: value.coin,
+  token: value.token,
+  total: Decimal.parse(value.total),
+  hold: Decimal.parse(value.hold),
+  entryNotional: _decimalFromWire(value.entryNotional),
+  rawJson: value.rawJson,
+);
+wire.WireHyperliquidSpotBalance _hyperliquidSpotBalanceToWire(
+  HyperliquidSpotBalance value,
+) => wire.WireHyperliquidSpotBalance(
+  coin: value.coin,
+  token: checkedUint32(value.token, field: 'token'),
+  total: value.total.toString(),
+  hold: value.hold.toString(),
+  entryNotional: value.entryNotional?.toString(),
+  rawJson: value.rawJson,
+);
+
+HyperliquidSpotClearinghouseState _hyperliquidSpotClearinghouseStateFromWire(
+  wire.WireHyperliquidSpotClearinghouseState value,
+) => HyperliquidSpotClearinghouseState(
+  balances: value.balances
+      .map(_hyperliquidSpotBalanceFromWire)
+      .toList(growable: false),
+  rawJson: value.rawJson,
+);
+wire.WireHyperliquidSpotClearinghouseState
+_hyperliquidSpotClearinghouseStateToWire(
+  HyperliquidSpotClearinghouseState value,
+) => wire.WireHyperliquidSpotClearinghouseState(
+  balances: value.balances
+      .map(_hyperliquidSpotBalanceToWire)
+      .toList(growable: false),
+  rawJson: value.rawJson,
+);
+
+HyperliquidEvmContract _hyperliquidEvmContractFromWire(
+  wire.WireHyperliquidEvmContract value,
+) => HyperliquidEvmContract(
+  address: value.address,
+  extraWeiDecimals: value.extraWeiDecimals,
+);
+wire.WireHyperliquidEvmContract _hyperliquidEvmContractToWire(
+  HyperliquidEvmContract value,
+) => wire.WireHyperliquidEvmContract(
+  address: value.address,
+  extraWeiDecimals: checkedRequiredUint32(
+    value.extraWeiDecimals,
+    field: 'extra_wei_decimals',
+  ),
+);
+
+HyperliquidSpotToken _hyperliquidSpotTokenFromWire(
+  wire.WireHyperliquidSpotToken value,
+) => HyperliquidSpotToken(
+  name: value.name,
+  sizeDecimals: value.sizeDecimals,
+  weiDecimals: value.weiDecimals,
+  index: value.index,
+  tokenId: value.tokenId,
+  isCanonical: value.isCanonical,
+  evmContract: value.evmContract == null
+      ? null
+      : _hyperliquidEvmContractFromWire(value.evmContract!),
+  fullName: value.fullName,
+  deployerTradingFeeShare: _decimalFromWire(value.deployerTradingFeeShare),
+  rawJson: value.rawJson,
+);
+wire.WireHyperliquidSpotToken _hyperliquidSpotTokenToWire(
+  HyperliquidSpotToken value,
+) => wire.WireHyperliquidSpotToken(
+  name: value.name,
+  sizeDecimals: checkedRequiredUint32(
+    value.sizeDecimals,
+    field: 'size_decimals',
+  ),
+  weiDecimals: checkedUint32(value.weiDecimals, field: 'wei_decimals'),
+  index: checkedRequiredUint32(value.index, field: 'index'),
+  tokenId: value.tokenId,
+  isCanonical: value.isCanonical,
+  evmContract: value.evmContract == null
+      ? null
+      : _hyperliquidEvmContractToWire(value.evmContract!),
+  fullName: value.fullName,
+  deployerTradingFeeShare: value.deployerTradingFeeShare?.toString(),
+  rawJson: value.rawJson,
+);
+
+HyperliquidSpotPair _hyperliquidSpotPairFromWire(
+  wire.WireHyperliquidSpotPair value,
+) => HyperliquidSpotPair(
+  name: value.name,
+  tokens: value.tokens,
+  index: value.index,
+  isCanonical: value.isCanonical,
+  rawJson: value.rawJson,
+);
+wire.WireHyperliquidSpotPair _hyperliquidSpotPairToWire(
+  HyperliquidSpotPair value,
+) => wire.WireHyperliquidSpotPair(
+  name: value.name,
+  tokens: Uint32List.fromList(value.tokens),
+  index: checkedRequiredUint32(value.index, field: 'index'),
+  isCanonical: value.isCanonical,
+  rawJson: value.rawJson,
+);
+
+HyperliquidSpotMeta _hyperliquidSpotMetaFromWire(
+  wire.WireHyperliquidSpotMeta value,
+) => HyperliquidSpotMeta(
+  tokens: value.tokens
+      .map(_hyperliquidSpotTokenFromWire)
+      .toList(growable: false),
+  universe: value.universe
+      .map(_hyperliquidSpotPairFromWire)
+      .toList(growable: false),
+  rawJson: value.rawJson,
+);
+wire.WireHyperliquidSpotMeta _hyperliquidSpotMetaToWire(
+  HyperliquidSpotMeta value,
+) => wire.WireHyperliquidSpotMeta(
+  tokens: value.tokens.map(_hyperliquidSpotTokenToWire).toList(growable: false),
+  universe: value.universe
+      .map(_hyperliquidSpotPairToWire)
+      .toList(growable: false),
+  rawJson: value.rawJson,
+);
+
+HyperliquidSpotAssetContext _hyperliquidSpotAssetContextFromWire(
+  wire.WireHyperliquidSpotAssetContext value,
+) => HyperliquidSpotAssetContext(
+  coin: value.coin,
+  midPrice: _decimalFromWire(value.midPrice),
+  markPrice: _decimalFromWire(value.markPrice),
+  previousDayPrice: _decimalFromWire(value.previousDayPrice),
+  dayBaseVolume: _decimalFromWire(value.dayBaseVolume),
+  dayNotionalVolume: _decimalFromWire(value.dayNotionalVolume),
+  circulatingSupply: _decimalFromWire(value.circulatingSupply),
+  totalSupply: _decimalFromWire(value.totalSupply),
+  rawJson: value.rawJson,
+);
+wire.WireHyperliquidSpotAssetContext _hyperliquidSpotAssetContextToWire(
+  HyperliquidSpotAssetContext value,
+) => wire.WireHyperliquidSpotAssetContext(
+  coin: value.coin,
+  midPrice: value.midPrice?.toString(),
+  markPrice: value.markPrice?.toString(),
+  previousDayPrice: value.previousDayPrice?.toString(),
+  dayBaseVolume: value.dayBaseVolume?.toString(),
+  dayNotionalVolume: value.dayNotionalVolume?.toString(),
+  circulatingSupply: value.circulatingSupply?.toString(),
+  totalSupply: value.totalSupply?.toString(),
+  rawJson: value.rawJson,
+);
+
+HyperliquidSpotMetaAndAssetContexts
+_hyperliquidSpotMetaAndAssetContextsFromWire(
+  wire.WireHyperliquidSpotMetaAndAssetContexts value,
+) => HyperliquidSpotMetaAndAssetContexts(
+  meta: _hyperliquidSpotMetaFromWire(value.meta),
+  contexts: value.contexts
+      .map(_hyperliquidSpotAssetContextFromWire)
+      .toList(growable: false),
+  rawJson: value.rawJson,
+);
+wire.WireHyperliquidSpotMetaAndAssetContexts
+_hyperliquidSpotMetaAndAssetContextsToWire(
+  HyperliquidSpotMetaAndAssetContexts value,
+) => wire.WireHyperliquidSpotMetaAndAssetContexts(
+  meta: _hyperliquidSpotMetaToWire(value.meta),
+  contexts: value.contexts
+      .map(_hyperliquidSpotAssetContextToWire)
+      .toList(growable: false),
+  rawJson: value.rawJson,
 );
 
 HyperliquidMidPrice _hyperliquidMidPriceFromWire(

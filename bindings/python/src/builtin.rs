@@ -307,6 +307,17 @@ impl NativeUpbitAdapter {
         )
     }
 
+    fn withdrawal_addresses<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.withdrawal_addresses().await },
+            |py, values| {
+                list_to_wire(py, &values, crate::convert::upbit_withdrawal_address_to_wire)
+            },
+        )
+    }
+
     fn travel_rule_vasps<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let adapter = Arc::clone(&self.inner);
         operation(
@@ -858,6 +869,144 @@ impl NativeBinanceAdapter {
         )
     }
 
+    fn spot_account_information<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.spot_account_information().await },
+            |py, value| crate::convert::binance_spot_account_information_to_wire(py, &value),
+        )
+    }
+
+    fn spot_cancel_all_open_orders<'py>(
+        &self,
+        py: Python<'py>,
+        market: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let market = market_from_wire(market)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.spot_cancel_all_open_orders(&market).await },
+            |py, value| crate::convert::binance_spot_cancel_all_open_orders_to_wire(py, &value),
+        )
+    }
+
+    fn spot_exchange_info<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.spot_exchange_info().await },
+            |py, value| crate::convert::binance_exchange_info_to_wire(py, &value),
+        )
+    }
+
+    fn usd_m_account_information<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.usd_m_account_information().await },
+            |py, value| crate::convert::binance_usd_m_account_information_to_wire(py, &value),
+        )
+    }
+
+    fn usd_m_exchange_info<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.usd_m_exchange_info().await },
+            |py, value| crate::convert::binance_exchange_info_to_wire(py, &value),
+        )
+    }
+
+    fn usd_m_position_information<'py>(
+        &self,
+        py: Python<'py>,
+        market: Option<&Bound<'_, PyAny>>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let market = market.map(market_from_wire).transpose()?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.usd_m_position_information(market.as_ref()).await },
+            |py, values| {
+                list_to_wire(
+                    py,
+                    &values,
+                    crate::convert::binance_usd_m_position_information_to_wire,
+                )
+            },
+        )
+    }
+
+    fn all_coins_information<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.all_coins_information().await },
+            |py, values| {
+                list_to_wire(py, &values, crate::convert::binance_coin_information_to_wire)
+            },
+        )
+    }
+
+    fn api_key_permissions<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.api_key_permissions().await },
+            |py, value| crate::convert::binance_api_key_permissions_to_wire(py, &value),
+        )
+    }
+
+    fn deposit_history<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::binance_deposit_history_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.deposit_history(&request).await },
+            |py, value| crate::convert::binance_deposit_history_to_wire(py, &value),
+        )
+    }
+
+    fn questionnaire_requirements<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.questionnaire_requirements().await },
+            |py, value| crate::convert::binance_questionnaire_requirements_to_wire(py, &value),
+        )
+    }
+
+    fn withdraw_address_list<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.withdraw_address_list().await },
+            |py, values| {
+                list_to_wire(py, &values, crate::convert::binance_withdrawal_address_to_wire)
+            },
+        )
+    }
+
+    fn withdraw_history<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::binance_withdraw_history_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.withdraw_history(&request).await },
+            |py, value| crate::convert::binance_withdraw_history_to_wire(py, &value),
+        )
+    }
+
     fn mark_price<'py>(
         &self,
         py: Python<'py>,
@@ -1084,6 +1233,134 @@ impl NativeHyperliquidAdapter {
             py,
             async move { adapter.asset_context(&market).await },
             |py, value| hyperliquid_asset_context_to_wire(py, &value),
+        )
+    }
+
+    #[pyo3(signature = (market, interval, from_ns, to_ns=None))]
+    fn candle_snapshot<'py>(
+        &self,
+        py: Python<'py>,
+        market: &Bound<'_, PyAny>,
+        interval: String,
+        from_ns: i64,
+        to_ns: Option<i64>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let market = market_from_wire(market)?;
+        let from = Timestamp::from_nanos(from_ns);
+        let to = to_ns.map(Timestamp::from_nanos);
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.candle_snapshot(&market, &interval, from, to).await },
+            |py, values| {
+                list_to_wire(py, &values, crate::convert::hyperliquid_candle_snapshot_to_wire)
+            },
+        )
+    }
+
+    fn l2_book<'py>(
+        &self,
+        py: Python<'py>,
+        market: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let market = market_from_wire(market)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.l2_book(&market).await },
+            |py, value| crate::convert::hyperliquid_l2_book_to_wire(py, &value),
+        )
+    }
+
+    fn recent_trades<'py>(
+        &self,
+        py: Python<'py>,
+        market: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let market = market_from_wire(market)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.recent_trades(&market).await },
+            |py, values| {
+                list_to_wire(py, &values, crate::convert::hyperliquid_recent_trade_to_wire)
+            },
+        )
+    }
+
+    #[pyo3(signature = (market, from_ns, to_ns=None))]
+    fn funding_history<'py>(
+        &self,
+        py: Python<'py>,
+        market: &Bound<'_, PyAny>,
+        from_ns: i64,
+        to_ns: Option<i64>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let market = market_from_wire(market)?;
+        let from = Timestamp::from_nanos(from_ns);
+        let to = to_ns.map(Timestamp::from_nanos);
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.funding_history(&market, from, to).await },
+            |py, values| {
+                list_to_wire(
+                    py,
+                    &values,
+                    crate::convert::hyperliquid_funding_history_entry_to_wire,
+                )
+            },
+        )
+    }
+
+    #[pyo3(signature = (from_ns, to_ns=None))]
+    fn user_funding<'py>(
+        &self,
+        py: Python<'py>,
+        from_ns: i64,
+        to_ns: Option<i64>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let from = Timestamp::from_nanos(from_ns);
+        let to = to_ns.map(Timestamp::from_nanos);
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.user_funding(from, to).await },
+            |py, values| {
+                list_to_wire(py, &values, crate::convert::hyperliquid_user_funding_to_wire)
+            },
+        )
+    }
+
+    fn spot_clearinghouse_state<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.spot_clearinghouse_state().await },
+            |py, value| crate::convert::hyperliquid_spot_clearinghouse_state_to_wire(py, &value),
+        )
+    }
+
+    fn spot_meta<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.spot_meta().await },
+            |py, value| crate::convert::hyperliquid_spot_meta_to_wire(py, &value),
+        )
+    }
+
+    fn spot_meta_and_asset_contexts<'py>(
+        &self,
+        py: Python<'py>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.spot_meta_and_asset_contexts().await },
+            |py, value| {
+                crate::convert::hyperliquid_spot_meta_and_asset_contexts_to_wire(py, &value)
+            },
         )
     }
 

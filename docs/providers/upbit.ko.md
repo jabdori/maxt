@@ -118,6 +118,7 @@
 | `order_detail(request)` | 인증 필요 거래소 전용 `GET /v1/order`. 요청에는 예상 `market`과 UUID 및/또는 `identifier`를 지정하며 식별자 하나는 필수이고 둘 다 있으면 Upbit가 UUID를 우선합니다. 공통 `Order`가 담지 않는 상세 체결·수수료·잠금 수량·자전거래 방지(SMP)·유효 조건 원본 필드를 보존합니다. `identifier`의 예약 문자는 안전하게 percent-encoding하고 JWT query hash에는 원래 질의 문자열을 사용합니다. fixture만 검증 | `default` |
 | `closed_orders(request)` | 인증 필요 거래소 전용 `GET /v1/orders/closed` 종료 주문 요약 목록. 선택 `market`, `state`, `states[]`를 받으며 `state`와 `states[]`는 함께 쓸 수 없음. 주문 생성 시각 조회 구간은 최대 7일, `limit: 1..=1_000`, 오래된 순서 또는 최신순 정렬. Timestamp는 밀리초로 직접 전달. 수수료·SMP·`identifier`·유효 조건을 보존하지만 개별 `trades`는 없음. fixture만 검증했고 실제 거래·읽기 요청은 하지 않음 | `default` |
 | `deposit_info(asset, network)` | `View Deposits` 권한 필요; 입금 가능 여부·사유·최소 수량·확인 수·소수 자릿수를 반환. 응답 네트워크는 null일 수 있으며 받은 값을 그대로 보존. 이 메타데이터는 몇 분 지연될 수 있음 | `default` |
+| `withdrawal_addresses()` | 인증 필요 `GET /v1/withdraws/coin_addresses` 거래소 전용 조회. 이 계정에 등록한 주소·네트워크·수취인·지갑 메타데이터를 보존. fixture만 검증 | `default` |
 | `travel_rule_vasps()` | `View Deposits` 권한 필요. 한국 또는 싱가포르에서 계정주 확인이 가능한 VASP 목록을 조회. 인도네시아·태국은 인증이나 네트워크 요청 전에 `Error::Unsupported` 반환 | `default` |
 | `verify_travel_rule_by_uuid(...)`, `verify_travel_rule_by_txid(...)` | 한국 또는 싱가포르 전용 금전성 쓰기. 입금 계정주 확인을 요청하며 동일 입금 건의 재요청 제한은 Upbit가 적용. fixture만 검증했고 maxt가 실제 검증 요청을 보내지는 않음 | `default` |
 | `batch_cancel_open_orders(request)` | 주문 생성 권한 필요. `UpbitBatchCancelScope::All`은 전체 마켓 범위를 명시적으로 선택하며, 무제한 주문 취소를 뜻하지 않음. Upbit가 요청 수량을 적용해 기본 20개·최대 300개의 일치하는 `wait` 주문만 취소. 견적 통화와 시장 쌍 범위 중 하나를 선택하고, 제외 시장은 최대 20개 지정. 성공·실패를 모두 결과에 보존. fixture 검증만 했고 maxt가 실제 취소를 실행하지는 않음 | `order-cancel-all` |
@@ -167,6 +168,7 @@
 - [조건부 일괄 주문 취소](https://global-docs.upbit.com/reference/batch-cancel-orders)
 - [주문 취소 후 재주문](https://global-docs.upbit.com/reference/cancel-and-new-order)
 - [입금 가능 정보](https://global-docs.upbit.com/reference/available-deposit-information)
+- [등록 출금 주소](https://docs.upbit.com/kr/reference/list-withdrawal-addresses)
 - [원화 입금](https://docs.upbit.com/kr/reference/deposit-krw)
 - [원화 출금](https://docs.upbit.com/kr/reference/withdraw-krw)
 - [API Key 목록](https://docs.upbit.com/kr/reference/list-api-keys)

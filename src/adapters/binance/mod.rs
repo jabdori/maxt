@@ -29,11 +29,22 @@ use crate::types::{
     Withdrawal, WithdrawalQuote,
 };
 
+#[allow(unused_imports)]
 pub use private::{
     BinanceAccountTrade, BinanceC2cTrade, BinanceC2cTradeHistoryPage, BinanceListenKey,
-    BinanceSpotOrderDetail, BinanceTestOrder,
+    BinanceSpotAccountBalance, BinanceSpotAccountInformation, BinanceSpotCancelAllOpenOrders,
+    BinanceSpotCancelledOrder, BinanceSpotCommissionRates, BinanceSpotOrderDetail,
+    BinanceTestOrder, BinanceUsdMAccountAsset, BinanceUsdMAccountInformation,
+    BinanceUsdMAccountPosition, BinanceUsdMPositionInformation,
 };
-pub use rest::BinanceSymbolFilters;
+#[allow(unused_imports)]
+pub use rest::{BinanceExchangeInfo, BinanceExchangeSymbol, BinanceSymbolFilters};
+#[allow(unused_imports)]
+pub use wallet::{
+    BinanceApiKeyPermissions, BinanceCoinInformation, BinanceCoinNetworkInformation,
+    BinanceDepositHistory, BinanceDepositHistoryEntry, BinanceQuestionnaireRequirements,
+    BinanceWithdrawHistory, BinanceWithdrawHistoryEntry, BinanceWithdrawalAddress,
+};
 
 /// The C2C side filter Binance accepts.
 ///
@@ -215,6 +226,182 @@ impl BinanceAggregateTradesRequest {
     #[must_use]
     pub fn limit(mut self, limit: u32) -> Self {
         self.limit = Some(limit);
+        self
+    }
+}
+
+/// Filters Binance Wallet SAPI deposit-history records.
+///
+/// All timestamps are sent as Binance millisecond values. Leaving a field
+/// unset leaves Binance's documented default in effect; this provider request
+/// deliberately does not turn the Wallet endpoint into the common cursor API.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct BinanceDepositHistoryRequest {
+    /// Restricts records to one asset code.
+    pub coin: Option<String>,
+    /// Binance's provider-specific deposit status code.
+    pub status: Option<u32>,
+    /// Inclusive lower creation-time bound.
+    pub start_time: Option<Timestamp>,
+    /// Inclusive upper creation-time bound.
+    pub end_time: Option<Timestamp>,
+    /// Zero-based result offset.
+    pub offset: Option<u64>,
+    /// Result count from 1 through 1,000.
+    pub limit: Option<u32>,
+    /// Restricts records to one transaction hash.
+    pub tx_id: Option<String>,
+    /// Requests Binance's source-address field when it is available.
+    pub include_source: bool,
+}
+
+impl BinanceDepositHistoryRequest {
+    /// Starts a request with Binance's default filters.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Restricts the history to one asset.
+    #[must_use]
+    pub fn coin(mut self, coin: impl Into<String>) -> Self {
+        self.coin = Some(coin.into());
+        self
+    }
+
+    /// Restricts the history to a Binance deposit status code.
+    #[must_use]
+    pub fn status(mut self, status: u32) -> Self {
+        self.status = Some(status);
+        self
+    }
+
+    /// Sets the inclusive lower creation-time bound.
+    #[must_use]
+    pub fn start_time(mut self, start_time: Timestamp) -> Self {
+        self.start_time = Some(start_time);
+        self
+    }
+
+    /// Sets the inclusive upper creation-time bound.
+    #[must_use]
+    pub fn end_time(mut self, end_time: Timestamp) -> Self {
+        self.end_time = Some(end_time);
+        self
+    }
+
+    /// Sets Binance's zero-based result offset.
+    #[must_use]
+    pub fn offset(mut self, offset: u64) -> Self {
+        self.offset = Some(offset);
+        self
+    }
+
+    /// Sets the result count from 1 through 1,000.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+
+    /// Restricts the history to one transaction hash.
+    #[must_use]
+    pub fn tx_id(mut self, tx_id: impl Into<String>) -> Self {
+        self.tx_id = Some(tx_id.into());
+        self
+    }
+
+    /// Requests source-address data when Binance provides it.
+    #[must_use]
+    pub fn include_source(mut self) -> Self {
+        self.include_source = true;
+        self
+    }
+}
+
+/// Filters Binance Wallet SAPI withdrawal-history records.
+///
+/// All timestamps are sent as Binance millisecond values. The Wallet endpoint
+/// has provider-specific status and ID-list semantics, so they remain explicit
+/// rather than being collapsed into [`TransferHistoryRequest`].
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct BinanceWithdrawHistoryRequest {
+    /// Restricts records to one asset code.
+    pub coin: Option<String>,
+    /// Restricts records to the caller's withdrawal order identifier.
+    pub withdraw_order_id: Option<String>,
+    /// Binance's provider-specific withdrawal status code.
+    pub status: Option<u32>,
+    /// Zero-based result offset.
+    pub offset: Option<u64>,
+    /// Result count from 1 through 1,000.
+    pub limit: Option<u32>,
+    /// Binance withdrawal identifiers, sent as the endpoint's comma-separated `idList`.
+    pub id_list: Vec<String>,
+    /// Inclusive lower apply-time bound.
+    pub start_time: Option<Timestamp>,
+    /// Inclusive upper apply-time bound.
+    pub end_time: Option<Timestamp>,
+}
+
+impl BinanceWithdrawHistoryRequest {
+    /// Starts a request with Binance's default filters.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Restricts the history to one asset.
+    #[must_use]
+    pub fn coin(mut self, coin: impl Into<String>) -> Self {
+        self.coin = Some(coin.into());
+        self
+    }
+
+    /// Restricts the history to the caller's withdrawal order identifier.
+    #[must_use]
+    pub fn withdraw_order_id(mut self, withdraw_order_id: impl Into<String>) -> Self {
+        self.withdraw_order_id = Some(withdraw_order_id.into());
+        self
+    }
+
+    /// Restricts the history to a Binance withdrawal status code.
+    #[must_use]
+    pub fn status(mut self, status: u32) -> Self {
+        self.status = Some(status);
+        self
+    }
+
+    /// Sets Binance's zero-based result offset.
+    #[must_use]
+    pub fn offset(mut self, offset: u64) -> Self {
+        self.offset = Some(offset);
+        self
+    }
+
+    /// Sets the result count from 1 through 1,000.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+
+    /// Supplies Binance withdrawal identifiers for its `idList` filter.
+    #[must_use]
+    pub fn id_list(mut self, id_list: impl IntoIterator<Item = impl Into<String>>) -> Self {
+        self.id_list = id_list.into_iter().map(Into::into).collect();
+        self
+    }
+
+    /// Sets the inclusive lower apply-time bound.
+    #[must_use]
+    pub fn start_time(mut self, start_time: Timestamp) -> Self {
+        self.start_time = Some(start_time);
+        self
+    }
+
+    /// Sets the inclusive upper apply-time bound.
+    #[must_use]
+    pub fn end_time(mut self, end_time: Timestamp) -> Self {
+        self.end_time = Some(end_time);
         self
     }
 }
@@ -609,6 +796,86 @@ impl BinanceAdapter {
     /// than an incomplete order list.
     pub async fn cancel_all_open_orders(&self, market: &Market) -> Result<()> {
         private::cancel_all_open_orders(self, market).await
+    }
+
+    /// Reads Spot's signed account-information response without discarding
+    /// commissions, permissions, or provider-only account flags.
+    pub async fn spot_account_information(&self) -> Result<BinanceSpotAccountInformation> {
+        private::spot_account_information(self).await
+    }
+
+    /// Cancels every Spot open order for one market and preserves Binance's
+    /// cancellation reports.
+    pub async fn spot_cancel_all_open_orders(
+        &self,
+        market: &Market,
+    ) -> Result<BinanceSpotCancelAllOpenOrders> {
+        private::spot_cancel_all_open_orders(self, market).await
+    }
+
+    /// Reads Spot's complete exchange-information listing, including symbols
+    /// and provider-specific raw filter data.
+    pub async fn spot_exchange_info(&self) -> Result<BinanceExchangeInfo> {
+        rest::exchange_info(self, BinanceMarket::Spot).await
+    }
+
+    /// Reads USD-M account information, including the asset and position
+    /// figures that do not fit the common balance or margin contracts.
+    pub async fn usd_m_account_information(&self) -> Result<BinanceUsdMAccountInformation> {
+        private::usd_m_account_information(self).await
+    }
+
+    /// Reads USD-M's complete exchange-information listing, without dropping
+    /// dated contracts from Binance's provider response.
+    pub async fn usd_m_exchange_info(&self) -> Result<BinanceExchangeInfo> {
+        rest::exchange_info(self, BinanceMarket::UsdMFutures).await
+    }
+
+    /// Reads USD-M position-risk information with Binance's margin and risk
+    /// fields preserved for every returned position.
+    pub async fn usd_m_position_information(
+        &self,
+        market: Option<&Market>,
+    ) -> Result<Vec<BinanceUsdMPositionInformation>> {
+        private::usd_m_position_information(self, market).await
+    }
+
+    /// Reads all Wallet SAPI coin and network configuration entries.
+    pub async fn all_coins_information(&self) -> Result<Vec<BinanceCoinInformation>> {
+        wallet::all_coins_information(self).await
+    }
+
+    /// Reads the configured API key's Wallet SAPI permission flags.
+    pub async fn api_key_permissions(&self) -> Result<BinanceApiKeyPermissions> {
+        wallet::api_key_permissions(self).await
+    }
+
+    /// Reads Wallet SAPI deposit history without reducing provider status,
+    /// pagination, or time fields to the common transfer-history model.
+    pub async fn deposit_history(
+        &self,
+        request: &BinanceDepositHistoryRequest,
+    ) -> Result<BinanceDepositHistory> {
+        wallet::deposit_history(self, request).await
+    }
+
+    /// Reads the Wallet SAPI Travel Rule questionnaire requirement.
+    pub async fn questionnaire_requirements(&self) -> Result<BinanceQuestionnaireRequirements> {
+        wallet::questionnaire_requirements(self).await
+    }
+
+    /// Reads registered Wallet SAPI withdrawal addresses and their whitelist state.
+    pub async fn withdraw_address_list(&self) -> Result<Vec<BinanceWithdrawalAddress>> {
+        wallet::withdraw_address_list(self).await
+    }
+
+    /// Reads Wallet SAPI withdrawal history without reducing provider status,
+    /// pagination, or time fields to the common transfer-history model.
+    pub async fn withdraw_history(
+        &self,
+        request: &BinanceWithdrawHistoryRequest,
+    ) -> Result<BinanceWithdrawHistory> {
+        wallet::withdraw_history(self, request).await
     }
 
     /// Reads Binance Spot's current average price for one market.

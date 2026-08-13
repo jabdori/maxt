@@ -518,6 +518,43 @@ pub(crate) async fn candles(
     .await
 }
 
+/// Reads one raw `candleSnapshot` window with Hyperliquid's trade count intact.
+pub(crate) async fn candle_snapshot(
+    http: &HttpTransport,
+    universe: &Universe,
+    native: &str,
+    interval: &str,
+    start_ms: i64,
+    end_ms: Option<i64>,
+) -> Result<Vec<native::HyperliquidCandleSnapshot>> {
+    let body = post(http, &candles_request(native, interval, start_ms, end_ms)).await?;
+    let raw: Vec<Value> = parse::json(&body)?;
+    native::candle_snapshots(&raw, universe)
+}
+
+/// Reads one raw `l2Book` response with each level's order count intact.
+pub(crate) async fn l2_book(
+    http: &HttpTransport,
+    universe: &Universe,
+    market: &Market,
+) -> Result<native::HyperliquidL2Book> {
+    let native = universe.native_symbol(market)?;
+    let body = post(http, &book_request(native)).await?;
+    native::l2_book(&parse::json(&body)?, universe)
+}
+
+/// Reads `recentTrades` with transaction hashes and participant addresses intact.
+pub(crate) async fn recent_trades(
+    http: &HttpTransport,
+    universe: &Universe,
+    market: &Market,
+) -> Result<Vec<native::HyperliquidRecentTrade>> {
+    let native = universe.native_symbol(market)?;
+    let body = post(http, &trades_request(native, None)?).await?;
+    let raw: Vec<Value> = parse::json(&body)?;
+    native::recent_trades(&raw, universe)
+}
+
 /// Duration used for Hyperliquid `1M` request windows.
 const MONTH_MS: i64 = 30 * 24 * 60 * 60 * 1_000;
 
@@ -570,6 +607,29 @@ pub(crate) async fn balances(http: &HttpTransport, user: &str) -> Result<Vec<Bal
         .iter()
         .map(parse::balance)
         .collect()
+}
+
+/// Reads the raw spot clearinghouse state with token index and entry notional intact.
+pub(crate) async fn spot_clearinghouse_state(
+    http: &HttpTransport,
+    user: &str,
+) -> Result<native::HyperliquidSpotClearinghouseState> {
+    let body = post(http, &spot_state_request(user)).await?;
+    native::spot_clearinghouse_state(&parse::json(&body)?)
+}
+
+/// Reads `spotMeta` without narrowing provider token and pair metadata.
+pub(crate) async fn spot_meta(http: &HttpTransport) -> Result<native::HyperliquidSpotMeta> {
+    let body = post(http, &spot_meta_request()).await?;
+    native::spot_meta(&parse::json(&body)?)
+}
+
+/// Reads `spotMetaAndAssetCtxs` without narrowing provider spot context fields.
+pub(crate) async fn spot_meta_and_asset_contexts(
+    http: &HttpTransport,
+) -> Result<native::HyperliquidSpotMetaAndAssetContexts> {
+    let body = post(http, &asset_contexts_request(MarketKind::Spot)).await?;
+    native::spot_meta_and_asset_contexts(&parse::json(&body)?)
 }
 
 pub(crate) async fn open_orders(
@@ -779,6 +839,28 @@ pub(crate) async fn funding_rates(
     )
 }
 
+/// Reads raw market funding observations with the provider premium intact.
+pub(crate) async fn funding_history(
+    http: &HttpTransport,
+    universe: &Universe,
+    market: &Market,
+    from: Timestamp,
+    to: Option<Timestamp>,
+) -> Result<Vec<native::HyperliquidFundingHistoryEntry>> {
+    let asset = perpetual_asset(universe, market, Feature::FundingRates)?;
+    let body = post(
+        http,
+        &funding_history_request(
+            &asset.native,
+            from.as_millis(),
+            to.map(Timestamp::as_millis),
+        ),
+    )
+    .await?;
+    let raw: Vec<Value> = parse::json(&body)?;
+    native::funding_history(&raw, universe)
+}
+
 /// Reads funding amounts charged or credited to the configured account.
 pub(crate) async fn funding_payments(
     http: &HttpTransport,
@@ -815,6 +897,23 @@ pub(crate) async fn funding_payments(
         newest(raw.iter().map(|entry| entry.time)),
         request.limit,
     )
+}
+
+/// Reads account funding with provider position-size and sample data intact.
+pub(crate) async fn user_funding(
+    http: &HttpTransport,
+    universe: &Universe,
+    user: &str,
+    from: Timestamp,
+    to: Option<Timestamp>,
+) -> Result<Vec<native::HyperliquidUserFunding>> {
+    let body = post(
+        http,
+        &user_funding_request(user, from.as_millis(), to.map(Timestamp::as_millis)),
+    )
+    .await?;
+    let raw: Vec<Value> = parse::json(&body)?;
+    native::user_funding(&raw, universe)
 }
 
 /// Reads account-wide non-funding ledger entries.
@@ -1463,6 +1562,14 @@ mod tests {
                 "orderStatus",
             ),
             (historical_orders_request("0xabc"), "historicalOrders"),
+            (
+                funding_history_request("BTC", 1_681_222_254_710, None),
+                "fundingHistory",
+            ),
+            (
+                user_funding_request("0xabc", 1_681_222_254_710, None),
+                "userFunding",
+            ),
             (user_rate_limit_request("0xabc"), "userRateLimit"),
             (user_role_request("0xabc"), "userRole"),
             (referral_request("0xabc"), "referral"),
@@ -1490,11 +1597,17 @@ mod tests {
         assert_eq!(ledger["user"], "0xabc");
         assert_eq!(ledger["startTime"], 1_681_222_254_710_i64);
         assert!(ledger["endTime"].is_null());
+
+        let funding = body_of(&funding_history_request("BTC", 1_681_222_254_710, None));
+        assert_eq!(funding["coin"], "BTC");
+        assert_eq!(funding["startTime"], 1_681_222_254_710_i64);
+        assert!(funding["endTime"].is_null());
     }
 
     #[test]
     fn every_account_info_read_names_the_configured_user() {
         for request in [
+            user_funding_request("0xabc", 1_681_222_254_710, None),
             user_rate_limit_request("0xabc"),
             user_role_request("0xabc"),
             referral_request("0xabc"),

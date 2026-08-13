@@ -1,33 +1,46 @@
 use maxt::adapters::{
-    BinanceAccountTrade, BinanceAggregateTrade, BinanceAggregateTradesRequest, BinanceC2cTrade,
-    BinanceC2cTradeHistoryPage, BinanceC2cTradeHistoryRequest, BinanceC2cTradeType,
-    BinanceMarkPrice, BinanceOpenInterest, BinanceSpotOrderDetail, BinanceSymbolFilters,
-    BinanceTestOrder, BinanceTestOrderRequest, BithumbAlertStep, BithumbApiKey, BithumbAssetFee,
-    BithumbBatchOrder, BithumbBatchOrderFailure, BithumbBatchOrderOutcome,
-    BithumbBatchOrdersRequest, BithumbBatchOrdersResult, BithumbClosedOrder,
-    BithumbClosedOrderState, BithumbClosedOrdersRequest, BithumbKrwDeposit,
-    BithumbKrwDepositsRequest, BithumbKrwTransferRequest, BithumbKrwWithdrawal,
-    BithumbKrwWithdrawalsRequest, BithumbMarketAlert, BithumbNetworkFee, BithumbNotice,
-    BithumbOrderDetail, BithumbOrderDetailRequest, BithumbOrderDetailTrade, BithumbOrderDirection,
+    BinanceAccountTrade, BinanceAggregateTrade, BinanceAggregateTradesRequest,
+    BinanceApiKeyPermissions, BinanceC2cTrade, BinanceC2cTradeHistoryPage,
+    BinanceC2cTradeHistoryRequest, BinanceC2cTradeType, BinanceCoinInformation,
+    BinanceCoinNetworkInformation, BinanceDepositHistory, BinanceDepositHistoryEntry,
+    BinanceDepositHistoryRequest, BinanceExchangeInfo, BinanceExchangeSymbol, BinanceMarkPrice,
+    BinanceMarket, BinanceOpenInterest, BinanceQuestionnaireRequirements,
+    BinanceSpotAccountBalance, BinanceSpotAccountInformation, BinanceSpotCancelAllOpenOrders,
+    BinanceSpotCancelledOrder, BinanceSpotCommissionRates, BinanceSpotOrderDetail,
+    BinanceSymbolFilters, BinanceTestOrder, BinanceTestOrderRequest, BinanceUsdMAccountAsset,
+    BinanceUsdMAccountInformation, BinanceUsdMAccountPosition, BinanceUsdMPositionInformation,
+    BinanceWithdrawHistory, BinanceWithdrawHistoryEntry, BinanceWithdrawHistoryRequest,
+    BinanceWithdrawalAddress, BithumbAlertStep, BithumbApiKey, BithumbAssetFee, BithumbBatchOrder,
+    BithumbBatchOrderFailure, BithumbBatchOrderOutcome, BithumbBatchOrdersRequest,
+    BithumbBatchOrdersResult, BithumbClosedOrder, BithumbClosedOrderState,
+    BithumbClosedOrdersRequest, BithumbKrwDeposit, BithumbKrwDepositsRequest,
+    BithumbKrwTransferRequest, BithumbKrwWithdrawal, BithumbKrwWithdrawalsRequest,
+    BithumbMarketAlert, BithumbNetworkFee, BithumbNotice, BithumbOrderDetail,
+    BithumbOrderDetailRequest, BithumbOrderDetailTrade, BithumbOrderDirection,
     BithumbOrderListItem, BithumbOrderListRequest, BithumbOrderListState, BithumbPendingOrderState,
     BithumbPendingOrdersRequest, BithumbTwapOrder, BithumbTwapOrderDirection,
     BithumbTwapOrderRequest, BithumbTwapOrdersRequest, BithumbTwapState, BithumbWithdrawalAddress,
-    HyperliquidAssetContext, HyperliquidDailyVolume, HyperliquidLedgerEntry, HyperliquidLedgerKind,
-    HyperliquidMidPrice, HyperliquidOpenOrder, HyperliquidOrderDetail, HyperliquidOrderInfo,
-    HyperliquidOrderReference, HyperliquidOrderStatusResponse, HyperliquidPortfolioPeriod,
-    HyperliquidPortfolioPoint, HyperliquidReferral, HyperliquidReferrer, HyperliquidSubAccount,
-    HyperliquidUserFees, HyperliquidUserFill, HyperliquidUserRateLimit, HyperliquidUserRole,
-    HyperliquidVaultEquity, UpbitApiKey, UpbitBatchCancelRequest, UpbitBatchCancelScope,
-    UpbitCancelAndNewOrder, UpbitCancelAndNewOrderRequest, UpbitCancelAndNewOrderResult,
-    UpbitClosedOrder, UpbitClosedOrderState, UpbitClosedOrdersRequest, UpbitDepositInfo,
-    UpbitKrwDeposit, UpbitKrwTransferRequest, UpbitKrwTwoFactorType, UpbitKrwWithdrawal,
-    UpbitMarketEvent, UpbitOrderBookInstrument, UpbitOrderDetail, UpbitOrderDetailRequest,
-    UpbitOrderDetailTrade, UpbitOrderDirection, UpbitOrderReference, UpbitOrderVolume, UpbitPocket,
-    UpbitPocketApiKey, UpbitPocketApiKeyGroup, UpbitPocketApiKeysRequest, UpbitPocketBalance,
-    UpbitPocketTransfer, UpbitPocketTransferDirection, UpbitPocketTransferOrder,
-    UpbitPocketTransferQuery, UpbitPocketTransferRequest, UpbitPocketTransferState,
-    UpbitPocketUniversalTransferRequest, UpbitSmpType, UpbitTravelRuleVasp,
-    UpbitTravelRuleVerification, UpbitYearCandle,
+    HyperliquidAssetContext, HyperliquidBookLevel, HyperliquidCandleSnapshot,
+    HyperliquidDailyVolume, HyperliquidEvmContract, HyperliquidFundingHistoryEntry,
+    HyperliquidL2Book, HyperliquidLedgerEntry, HyperliquidLedgerKind, HyperliquidMidPrice,
+    HyperliquidOpenOrder, HyperliquidOrderDetail, HyperliquidOrderInfo, HyperliquidOrderReference,
+    HyperliquidOrderStatusResponse, HyperliquidPortfolioPeriod, HyperliquidPortfolioPoint,
+    HyperliquidRecentTrade, HyperliquidReferral, HyperliquidReferrer, HyperliquidSpotAssetContext,
+    HyperliquidSpotBalance, HyperliquidSpotClearinghouseState, HyperliquidSpotMeta,
+    HyperliquidSpotMetaAndAssetContexts, HyperliquidSpotPair, HyperliquidSpotToken,
+    HyperliquidSubAccount, HyperliquidUserFees, HyperliquidUserFill, HyperliquidUserFunding,
+    HyperliquidUserRateLimit, HyperliquidUserRole, HyperliquidVaultEquity, UpbitApiKey,
+    UpbitBatchCancelRequest, UpbitBatchCancelScope, UpbitCancelAndNewOrder,
+    UpbitCancelAndNewOrderRequest, UpbitCancelAndNewOrderResult, UpbitClosedOrder,
+    UpbitClosedOrderState, UpbitClosedOrdersRequest, UpbitDepositInfo, UpbitKrwDeposit,
+    UpbitKrwTransferRequest, UpbitKrwTwoFactorType, UpbitKrwWithdrawal, UpbitMarketEvent,
+    UpbitOrderBookInstrument, UpbitOrderDetail, UpbitOrderDetailRequest, UpbitOrderDetailTrade,
+    UpbitOrderDirection, UpbitOrderReference, UpbitOrderVolume, UpbitPocket, UpbitPocketApiKey,
+    UpbitPocketApiKeyGroup, UpbitPocketApiKeysRequest, UpbitPocketBalance, UpbitPocketTransfer,
+    UpbitPocketTransferDirection, UpbitPocketTransferOrder, UpbitPocketTransferQuery,
+    UpbitPocketTransferRequest, UpbitPocketTransferState, UpbitPocketUniversalTransferRequest,
+    UpbitSmpType, UpbitTravelRuleVasp, UpbitTravelRuleVerification, UpbitWithdrawalAddress,
+    UpbitYearCandle,
 };
 use maxt::{
     AccountEvent, AssetNetwork, Balance, CancelOrdersRequest, CancelOrdersResult, CancelledOrder,
@@ -422,6 +435,29 @@ pub(crate) struct WireUpbitDepositInfo {
     pub(crate) minimum_deposit_amount: String,
     pub(crate) minimum_deposit_confirmations: String,
     pub(crate) decimal_precision: String,
+}
+
+#[allow(dead_code, reason = "provider bridge output DTO")]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitWithdrawalAddress {
+    pub(crate) currency: String,
+    pub(crate) net_type: String,
+    pub(crate) network_name: String,
+    pub(crate) withdraw_address: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) secondary_address: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) beneficiary_name: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) beneficiary_company_name: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) beneficiary_type: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) exchange_name: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) wallet_type: Option<String>,
+    pub(crate) raw_json: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1140,6 +1176,400 @@ pub(crate) struct WireBinanceSpotAveragePrice {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceDepositHistoryRequest {
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) coin: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) status: Option<u32>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) start_time: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) end_time: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) offset: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) limit: Option<u32>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) tx_id: Option<String>,
+    pub(crate) include_source: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceWithdrawHistoryRequest {
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) coin: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) withdraw_order_id: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) status: Option<u32>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) offset: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) limit: Option<u32>,
+    pub(crate) id_list: Vec<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) start_time: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) end_time: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceSpotCommissionRates {
+    pub(crate) maker: String,
+    pub(crate) taker: String,
+    pub(crate) buyer: String,
+    pub(crate) seller: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceSpotAccountBalance {
+    pub(crate) asset: String,
+    pub(crate) free: String,
+    pub(crate) locked: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceSpotAccountInformation {
+    pub(crate) maker_commission: String,
+    pub(crate) taker_commission: String,
+    pub(crate) buyer_commission: String,
+    pub(crate) seller_commission: String,
+    pub(crate) commission_rates: WireBinanceSpotCommissionRates,
+    pub(crate) can_trade: bool,
+    pub(crate) can_withdraw: bool,
+    pub(crate) can_deposit: bool,
+    pub(crate) update_time: String,
+    pub(crate) account_type: String,
+    pub(crate) balances: Vec<WireBinanceSpotAccountBalance>,
+    pub(crate) permissions: Vec<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) uid: Option<String>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceSpotCancelledOrder {
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) symbol: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) original_client_order_id: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) order_id: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) client_order_id: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) status: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) price: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) original_quantity: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) executed_quantity: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) cumulative_quote_quantity: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) transact_time: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) order_list_id: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) contingency_type: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) list_status_type: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) list_order_status: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) list_client_order_id: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) transaction_time: Option<String>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceSpotCancelAllOpenOrders {
+    pub(crate) reports: Vec<WireBinanceSpotCancelledOrder>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceExchangeSymbol {
+    pub(crate) symbol: String,
+    pub(crate) status: String,
+    pub(crate) base_asset: String,
+    pub(crate) quote_asset: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) contract_type: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) margin_asset: Option<String>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceExchangeInfo {
+    pub(crate) venue: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) timezone: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) server_time: Option<String>,
+    pub(crate) symbols: Vec<WireBinanceExchangeSymbol>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceUsdMAccountAsset {
+    pub(crate) asset: String,
+    pub(crate) wallet_balance: String,
+    pub(crate) unrealized_profit: String,
+    pub(crate) margin_balance: String,
+    pub(crate) maintenance_margin: String,
+    pub(crate) initial_margin: String,
+    pub(crate) position_initial_margin: String,
+    pub(crate) open_order_initial_margin: String,
+    pub(crate) cross_wallet_balance: String,
+    pub(crate) cross_unrealized_profit: String,
+    pub(crate) available_balance: String,
+    pub(crate) max_withdraw_amount: String,
+    pub(crate) update_time: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceUsdMAccountPosition {
+    pub(crate) symbol: String,
+    pub(crate) position_side: String,
+    pub(crate) position_amount: String,
+    pub(crate) unrealized_profit: String,
+    pub(crate) isolated_margin: String,
+    pub(crate) notional: String,
+    pub(crate) isolated_wallet: String,
+    pub(crate) initial_margin: String,
+    pub(crate) maintenance_margin: String,
+    pub(crate) update_time: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceUsdMAccountInformation {
+    pub(crate) total_initial_margin: String,
+    pub(crate) total_maintenance_margin: String,
+    pub(crate) total_wallet_balance: String,
+    pub(crate) total_unrealized_profit: String,
+    pub(crate) total_margin_balance: String,
+    pub(crate) total_position_initial_margin: String,
+    pub(crate) total_open_order_initial_margin: String,
+    pub(crate) total_cross_wallet_balance: String,
+    pub(crate) total_cross_unrealized_profit: String,
+    pub(crate) available_balance: String,
+    pub(crate) max_withdraw_amount: String,
+    pub(crate) assets: Vec<WireBinanceUsdMAccountAsset>,
+    pub(crate) positions: Vec<WireBinanceUsdMAccountPosition>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceUsdMPositionInformation {
+    pub(crate) symbol: String,
+    pub(crate) position_side: String,
+    pub(crate) position_amount: String,
+    pub(crate) entry_price: String,
+    pub(crate) break_even_price: String,
+    pub(crate) mark_price: String,
+    pub(crate) unrealized_profit: String,
+    pub(crate) liquidation_price: String,
+    pub(crate) isolated_margin: String,
+    pub(crate) notional: String,
+    pub(crate) margin_asset: String,
+    pub(crate) isolated_wallet: String,
+    pub(crate) initial_margin: String,
+    pub(crate) maintenance_margin: String,
+    pub(crate) position_initial_margin: String,
+    pub(crate) open_order_initial_margin: String,
+    pub(crate) adl: String,
+    pub(crate) bid_notional: String,
+    pub(crate) ask_notional: String,
+    pub(crate) update_time: String,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceCoinNetworkInformation {
+    pub(crate) network: String,
+    pub(crate) deposit_enabled: bool,
+    pub(crate) withdraw_enabled: bool,
+    pub(crate) busy: bool,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) withdrawal_integer_multiple: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) withdrawal_fee: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) minimum_withdrawal: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) maximum_withdrawal: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) withdrawal_tag: Option<bool>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) is_default: Option<bool>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) minimum_confirmations: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) unlock_confirmations: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) contract_address: Option<String>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceCoinInformation {
+    pub(crate) coin: String,
+    pub(crate) deposit_all_enabled: bool,
+    pub(crate) withdraw_all_enabled: bool,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) name: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) free: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) locked: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) freeze: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) withdrawing: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) is_legal_money: Option<bool>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) trading: Option<bool>,
+    pub(crate) networks: Vec<WireBinanceCoinNetworkInformation>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceApiKeyPermissions {
+    pub(crate) ip_restrict: bool,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) create_time: Option<String>,
+    pub(crate) enable_reading: bool,
+    pub(crate) enable_withdrawals: bool,
+    pub(crate) enable_internal_transfer: bool,
+    pub(crate) enable_margin: bool,
+    pub(crate) enable_spot_and_margin_trading: bool,
+    pub(crate) enable_futures: bool,
+    pub(crate) permits_universal_transfer: bool,
+    pub(crate) enable_vanilla_options: bool,
+    pub(crate) enable_fix_api_trade: bool,
+    pub(crate) enable_fix_read_only: bool,
+    pub(crate) enable_portfolio_margin_trading: bool,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceDepositHistoryEntry {
+    pub(crate) id: String,
+    pub(crate) amount: String,
+    pub(crate) coin: String,
+    pub(crate) network: String,
+    pub(crate) status: u32,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) address: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) address_tag: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) tx_id: Option<String>,
+    pub(crate) insert_time: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) complete_time: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) transfer_type: Option<u32>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) source_address: Option<String>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceDepositHistory {
+    pub(crate) entries: Vec<WireBinanceDepositHistoryEntry>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceQuestionnaireRequirements {
+    pub(crate) questionnaire_country_code: String,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceWithdrawalAddress {
+    pub(crate) address: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) address_tag: Option<String>,
+    pub(crate) coin: String,
+    pub(crate) network: String,
+    pub(crate) white_status: bool,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) name: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) origin: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) origin_type: Option<String>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceWithdrawHistoryEntry {
+    pub(crate) id: String,
+    pub(crate) amount: String,
+    pub(crate) transaction_fee: String,
+    pub(crate) coin: String,
+    pub(crate) status: u32,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) address: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) tx_id: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) apply_time: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) network: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) withdraw_order_id: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) info: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) transfer_type: Option<u32>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) confirm_no: Option<u32>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) wallet_type: Option<u32>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) tx_key: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) complete_time: Option<String>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceWithdrawHistory {
+    pub(crate) entries: Vec<WireBinanceWithdrawHistoryEntry>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct WireBinanceMarkPrice {
     pub(crate) market: WireMarket,
     pub(crate) mark_price: String,
@@ -1340,6 +1770,187 @@ pub(crate) struct WireHyperliquidAssetContext {
     pub(crate) open_interest: Option<String>,
     pub(crate) size_decimals: u32,
     pub(crate) price_decimals: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidCandleSnapshot {
+    pub(crate) coin: String,
+    pub(crate) market: WireMarket,
+    pub(crate) interval: String,
+    pub(crate) open_time: String,
+    pub(crate) close_time: String,
+    pub(crate) open: String,
+    pub(crate) high: String,
+    pub(crate) low: String,
+    pub(crate) close: String,
+    pub(crate) volume: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) trade_count: Option<String>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidBookLevel {
+    pub(crate) price: String,
+    pub(crate) size: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) order_count: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidL2Book {
+    pub(crate) coin: String,
+    pub(crate) market: WireMarket,
+    pub(crate) time: String,
+    pub(crate) bids: Vec<WireHyperliquidBookLevel>,
+    pub(crate) asks: Vec<WireHyperliquidBookLevel>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidRecentTrade {
+    pub(crate) coin: String,
+    pub(crate) market: WireMarket,
+    pub(crate) side: String,
+    pub(crate) price: String,
+    pub(crate) size: String,
+    pub(crate) time: String,
+    pub(crate) trade_id: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) hash: Option<String>,
+    pub(crate) users: Vec<String>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidFundingHistoryEntry {
+    pub(crate) coin: String,
+    pub(crate) market: WireMarket,
+    pub(crate) funding_rate: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) premium: Option<String>,
+    pub(crate) time: String,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidUserFunding {
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) kind: Option<String>,
+    pub(crate) coin: String,
+    pub(crate) market: WireMarket,
+    pub(crate) usdc: String,
+    pub(crate) funding_rate: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) position_size: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) sample_count: Option<String>,
+    pub(crate) hash: String,
+    pub(crate) time: String,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidSpotBalance {
+    pub(crate) coin: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) token: Option<u32>,
+    pub(crate) total: String,
+    pub(crate) hold: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) entry_notional: Option<String>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidSpotClearinghouseState {
+    pub(crate) balances: Vec<WireHyperliquidSpotBalance>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidEvmContract {
+    pub(crate) address: String,
+    pub(crate) extra_wei_decimals: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidSpotToken {
+    pub(crate) name: String,
+    pub(crate) size_decimals: u32,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) wei_decimals: Option<u32>,
+    pub(crate) index: u32,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) token_id: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) is_canonical: Option<bool>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) evm_contract: Option<WireHyperliquidEvmContract>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) full_name: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) deployer_trading_fee_share: Option<String>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidSpotPair {
+    pub(crate) name: String,
+    pub(crate) tokens: Vec<u32>,
+    pub(crate) index: u32,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) is_canonical: Option<bool>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidSpotMeta {
+    pub(crate) tokens: Vec<WireHyperliquidSpotToken>,
+    pub(crate) universe: Vec<WireHyperliquidSpotPair>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidSpotAssetContext {
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) coin: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) mid_price: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) mark_price: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) previous_day_price: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) day_base_volume: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) day_notional_volume: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) circulating_supply: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) total_supply: Option<String>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidSpotMetaAndAssetContexts {
+    pub(crate) meta: WireHyperliquidSpotMeta,
+    pub(crate) contexts: Vec<WireHyperliquidSpotAssetContext>,
+    pub(crate) raw_json: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -3567,6 +4178,26 @@ impl TryFrom<UpbitDepositInfo> for WireUpbitDepositInfo {
     }
 }
 
+impl TryFrom<UpbitWithdrawalAddress> for WireUpbitWithdrawalAddress {
+    type Error = Error;
+
+    fn try_from(value: UpbitWithdrawalAddress) -> Result<Self, Self::Error> {
+        Ok(Self {
+            currency: value.currency,
+            net_type: value.net_type,
+            network_name: value.network_name,
+            withdraw_address: value.withdraw_address,
+            secondary_address: value.secondary_address,
+            beneficiary_name: value.beneficiary_name,
+            beneficiary_company_name: value.beneficiary_company_name,
+            beneficiary_type: value.beneficiary_type,
+            exchange_name: value.exchange_name,
+            wallet_type: value.wallet_type,
+            raw_json: value.raw_json,
+        })
+    }
+}
+
 impl TryFrom<UpbitTravelRuleVasp> for WireUpbitTravelRuleVasp {
     type Error = Error;
 
@@ -4138,6 +4769,460 @@ impl TryFrom<maxt::adapters::BinanceSpotAveragePrice> for WireBinanceSpotAverage
     }
 }
 
+impl TryFrom<WireBinanceDepositHistoryRequest> for BinanceDepositHistoryRequest {
+    type Error = Error;
+
+    fn try_from(value: WireBinanceDepositHistoryRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            coin: value.coin,
+            status: value.status,
+            start_time: timestamp_option_from_wire(value.start_time, "start_time")?,
+            end_time: timestamp_option_from_wire(value.end_time, "end_time")?,
+            offset: value
+                .offset
+                .as_deref()
+                .map(|value| u64_from_wire(value, "offset"))
+                .transpose()?,
+            limit: value.limit,
+            tx_id: value.tx_id,
+            include_source: value.include_source,
+        })
+    }
+}
+
+impl TryFrom<WireBinanceWithdrawHistoryRequest> for BinanceWithdrawHistoryRequest {
+    type Error = Error;
+
+    fn try_from(value: WireBinanceWithdrawHistoryRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            coin: value.coin,
+            withdraw_order_id: value.withdraw_order_id,
+            status: value.status,
+            offset: value
+                .offset
+                .as_deref()
+                .map(|value| u64_from_wire(value, "offset"))
+                .transpose()?,
+            limit: value.limit,
+            id_list: value.id_list,
+            start_time: timestamp_option_from_wire(value.start_time, "start_time")?,
+            end_time: timestamp_option_from_wire(value.end_time, "end_time")?,
+        })
+    }
+}
+
+impl TryFrom<BinanceSpotCommissionRates> for WireBinanceSpotCommissionRates {
+    type Error = Error;
+
+    fn try_from(value: BinanceSpotCommissionRates) -> Result<Self, Self::Error> {
+        Ok(Self {
+            maker: decimal_to_wire(value.maker),
+            taker: decimal_to_wire(value.taker),
+            buyer: decimal_to_wire(value.buyer),
+            seller: decimal_to_wire(value.seller),
+        })
+    }
+}
+
+impl TryFrom<BinanceSpotAccountBalance> for WireBinanceSpotAccountBalance {
+    type Error = Error;
+
+    fn try_from(value: BinanceSpotAccountBalance) -> Result<Self, Self::Error> {
+        Ok(Self {
+            asset: value.asset,
+            free: decimal_to_wire(value.free),
+            locked: decimal_to_wire(value.locked),
+        })
+    }
+}
+
+impl TryFrom<BinanceSpotAccountInformation> for WireBinanceSpotAccountInformation {
+    type Error = Error;
+
+    fn try_from(value: BinanceSpotAccountInformation) -> Result<Self, Self::Error> {
+        Ok(Self {
+            maker_commission: value.maker_commission.to_string(),
+            taker_commission: value.taker_commission.to_string(),
+            buyer_commission: value.buyer_commission.to_string(),
+            seller_commission: value.seller_commission.to_string(),
+            commission_rates: value.commission_rates.try_into()?,
+            can_trade: value.can_trade,
+            can_withdraw: value.can_withdraw,
+            can_deposit: value.can_deposit,
+            update_time: timestamp_to_wire(value.update_time),
+            account_type: value.account_type,
+            balances: value
+                .balances
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            permissions: value.permissions,
+            uid: value.uid.map(|value| value.to_string()),
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<BinanceSpotCancelledOrder> for WireBinanceSpotCancelledOrder {
+    type Error = Error;
+
+    fn try_from(value: BinanceSpotCancelledOrder) -> Result<Self, Self::Error> {
+        Ok(Self {
+            symbol: value.symbol,
+            original_client_order_id: value.original_client_order_id,
+            order_id: value.order_id,
+            client_order_id: value.client_order_id,
+            status: value.status,
+            price: decimal_option_to_wire(value.price),
+            original_quantity: decimal_option_to_wire(value.original_quantity),
+            executed_quantity: decimal_option_to_wire(value.executed_quantity),
+            cumulative_quote_quantity: decimal_option_to_wire(value.cumulative_quote_quantity),
+            transact_time: timestamp_option_to_wire(value.transact_time),
+            order_list_id: value.order_list_id,
+            contingency_type: value.contingency_type,
+            list_status_type: value.list_status_type,
+            list_order_status: value.list_order_status,
+            list_client_order_id: value.list_client_order_id,
+            transaction_time: timestamp_option_to_wire(value.transaction_time),
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<BinanceSpotCancelAllOpenOrders> for WireBinanceSpotCancelAllOpenOrders {
+    type Error = Error;
+
+    fn try_from(value: BinanceSpotCancelAllOpenOrders) -> Result<Self, Self::Error> {
+        Ok(Self {
+            reports: value
+                .reports
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<BinanceExchangeSymbol> for WireBinanceExchangeSymbol {
+    type Error = Error;
+
+    fn try_from(value: BinanceExchangeSymbol) -> Result<Self, Self::Error> {
+        Ok(Self {
+            symbol: value.symbol,
+            status: value.status,
+            base_asset: value.base_asset,
+            quote_asset: value.quote_asset,
+            contract_type: value.contract_type,
+            margin_asset: value.margin_asset,
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<BinanceExchangeInfo> for WireBinanceExchangeInfo {
+    type Error = Error;
+
+    fn try_from(value: BinanceExchangeInfo) -> Result<Self, Self::Error> {
+        let venue = match value.venue {
+            BinanceMarket::Spot => "spot",
+            BinanceMarket::UsdMFutures => "usd_m",
+            _ => return Err(Error::adapter("unsupported Binance venue")),
+        };
+        Ok(Self {
+            venue: venue.to_owned(),
+            timezone: value.timezone,
+            server_time: timestamp_option_to_wire(value.server_time),
+            symbols: value
+                .symbols
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<BinanceUsdMAccountAsset> for WireBinanceUsdMAccountAsset {
+    type Error = Error;
+
+    fn try_from(value: BinanceUsdMAccountAsset) -> Result<Self, Self::Error> {
+        Ok(Self {
+            asset: value.asset,
+            wallet_balance: decimal_to_wire(value.wallet_balance),
+            unrealized_profit: decimal_to_wire(value.unrealized_profit),
+            margin_balance: decimal_to_wire(value.margin_balance),
+            maintenance_margin: decimal_to_wire(value.maintenance_margin),
+            initial_margin: decimal_to_wire(value.initial_margin),
+            position_initial_margin: decimal_to_wire(value.position_initial_margin),
+            open_order_initial_margin: decimal_to_wire(value.open_order_initial_margin),
+            cross_wallet_balance: decimal_to_wire(value.cross_wallet_balance),
+            cross_unrealized_profit: decimal_to_wire(value.cross_unrealized_profit),
+            available_balance: decimal_to_wire(value.available_balance),
+            max_withdraw_amount: decimal_to_wire(value.max_withdraw_amount),
+            update_time: timestamp_to_wire(value.update_time),
+        })
+    }
+}
+
+impl TryFrom<BinanceUsdMAccountPosition> for WireBinanceUsdMAccountPosition {
+    type Error = Error;
+
+    fn try_from(value: BinanceUsdMAccountPosition) -> Result<Self, Self::Error> {
+        Ok(Self {
+            symbol: value.symbol,
+            position_side: value.position_side,
+            position_amount: decimal_to_wire(value.position_amount),
+            unrealized_profit: decimal_to_wire(value.unrealized_profit),
+            isolated_margin: decimal_to_wire(value.isolated_margin),
+            notional: decimal_to_wire(value.notional),
+            isolated_wallet: decimal_to_wire(value.isolated_wallet),
+            initial_margin: decimal_to_wire(value.initial_margin),
+            maintenance_margin: decimal_to_wire(value.maintenance_margin),
+            update_time: timestamp_to_wire(value.update_time),
+        })
+    }
+}
+
+impl TryFrom<BinanceUsdMAccountInformation> for WireBinanceUsdMAccountInformation {
+    type Error = Error;
+
+    fn try_from(value: BinanceUsdMAccountInformation) -> Result<Self, Self::Error> {
+        Ok(Self {
+            total_initial_margin: decimal_to_wire(value.total_initial_margin),
+            total_maintenance_margin: decimal_to_wire(value.total_maintenance_margin),
+            total_wallet_balance: decimal_to_wire(value.total_wallet_balance),
+            total_unrealized_profit: decimal_to_wire(value.total_unrealized_profit),
+            total_margin_balance: decimal_to_wire(value.total_margin_balance),
+            total_position_initial_margin: decimal_to_wire(value.total_position_initial_margin),
+            total_open_order_initial_margin: decimal_to_wire(value.total_open_order_initial_margin),
+            total_cross_wallet_balance: decimal_to_wire(value.total_cross_wallet_balance),
+            total_cross_unrealized_profit: decimal_to_wire(value.total_cross_unrealized_profit),
+            available_balance: decimal_to_wire(value.available_balance),
+            max_withdraw_amount: decimal_to_wire(value.max_withdraw_amount),
+            assets: value
+                .assets
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            positions: value
+                .positions
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<BinanceUsdMPositionInformation> for WireBinanceUsdMPositionInformation {
+    type Error = Error;
+
+    fn try_from(value: BinanceUsdMPositionInformation) -> Result<Self, Self::Error> {
+        Ok(Self {
+            symbol: value.symbol,
+            position_side: value.position_side,
+            position_amount: decimal_to_wire(value.position_amount),
+            entry_price: decimal_to_wire(value.entry_price),
+            break_even_price: decimal_to_wire(value.break_even_price),
+            mark_price: decimal_to_wire(value.mark_price),
+            unrealized_profit: decimal_to_wire(value.unrealized_profit),
+            liquidation_price: decimal_to_wire(value.liquidation_price),
+            isolated_margin: decimal_to_wire(value.isolated_margin),
+            notional: decimal_to_wire(value.notional),
+            margin_asset: value.margin_asset,
+            isolated_wallet: decimal_to_wire(value.isolated_wallet),
+            initial_margin: decimal_to_wire(value.initial_margin),
+            maintenance_margin: decimal_to_wire(value.maintenance_margin),
+            position_initial_margin: decimal_to_wire(value.position_initial_margin),
+            open_order_initial_margin: decimal_to_wire(value.open_order_initial_margin),
+            adl: value.adl.to_string(),
+            bid_notional: decimal_to_wire(value.bid_notional),
+            ask_notional: decimal_to_wire(value.ask_notional),
+            update_time: timestamp_to_wire(value.update_time),
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<BinanceCoinNetworkInformation> for WireBinanceCoinNetworkInformation {
+    type Error = Error;
+
+    fn try_from(value: BinanceCoinNetworkInformation) -> Result<Self, Self::Error> {
+        Ok(Self {
+            network: value.network,
+            deposit_enabled: value.deposit_enabled,
+            withdraw_enabled: value.withdraw_enabled,
+            busy: value.busy,
+            withdrawal_integer_multiple: decimal_option_to_wire(value.withdrawal_integer_multiple),
+            withdrawal_fee: decimal_option_to_wire(value.withdrawal_fee),
+            minimum_withdrawal: decimal_option_to_wire(value.minimum_withdrawal),
+            maximum_withdrawal: decimal_option_to_wire(value.maximum_withdrawal),
+            withdrawal_tag: value.withdrawal_tag,
+            is_default: value.is_default,
+            minimum_confirmations: value.minimum_confirmations.map(|value| value.to_string()),
+            unlock_confirmations: value.unlock_confirmations.map(|value| value.to_string()),
+            contract_address: value.contract_address,
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<BinanceCoinInformation> for WireBinanceCoinInformation {
+    type Error = Error;
+
+    fn try_from(value: BinanceCoinInformation) -> Result<Self, Self::Error> {
+        Ok(Self {
+            coin: value.coin,
+            deposit_all_enabled: value.deposit_all_enabled,
+            withdraw_all_enabled: value.withdraw_all_enabled,
+            name: value.name,
+            free: decimal_option_to_wire(value.free),
+            locked: decimal_option_to_wire(value.locked),
+            freeze: decimal_option_to_wire(value.freeze),
+            withdrawing: decimal_option_to_wire(value.withdrawing),
+            is_legal_money: value.is_legal_money,
+            trading: value.trading,
+            networks: value
+                .networks
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<BinanceApiKeyPermissions> for WireBinanceApiKeyPermissions {
+    type Error = Error;
+
+    fn try_from(value: BinanceApiKeyPermissions) -> Result<Self, Self::Error> {
+        Ok(Self {
+            ip_restrict: value.ip_restrict,
+            create_time: timestamp_option_to_wire(value.create_time),
+            enable_reading: value.enable_reading,
+            enable_withdrawals: value.enable_withdrawals,
+            enable_internal_transfer: value.enable_internal_transfer,
+            enable_margin: value.enable_margin,
+            enable_spot_and_margin_trading: value.enable_spot_and_margin_trading,
+            enable_futures: value.enable_futures,
+            permits_universal_transfer: value.permits_universal_transfer,
+            enable_vanilla_options: value.enable_vanilla_options,
+            enable_fix_api_trade: value.enable_fix_api_trade,
+            enable_fix_read_only: value.enable_fix_read_only,
+            enable_portfolio_margin_trading: value.enable_portfolio_margin_trading,
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<BinanceDepositHistoryEntry> for WireBinanceDepositHistoryEntry {
+    type Error = Error;
+
+    fn try_from(value: BinanceDepositHistoryEntry) -> Result<Self, Self::Error> {
+        Ok(Self {
+            id: value.id,
+            amount: decimal_to_wire(value.amount),
+            coin: value.coin,
+            network: value.network,
+            status: value.status,
+            address: value.address,
+            address_tag: value.address_tag,
+            tx_id: value.tx_id,
+            insert_time: timestamp_to_wire(value.insert_time),
+            complete_time: timestamp_option_to_wire(value.complete_time),
+            transfer_type: value.transfer_type,
+            source_address: value.source_address,
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<BinanceDepositHistory> for WireBinanceDepositHistory {
+    type Error = Error;
+
+    fn try_from(value: BinanceDepositHistory) -> Result<Self, Self::Error> {
+        Ok(Self {
+            entries: value
+                .entries
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<BinanceQuestionnaireRequirements> for WireBinanceQuestionnaireRequirements {
+    type Error = Error;
+
+    fn try_from(value: BinanceQuestionnaireRequirements) -> Result<Self, Self::Error> {
+        Ok(Self {
+            questionnaire_country_code: value.questionnaire_country_code,
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<BinanceWithdrawalAddress> for WireBinanceWithdrawalAddress {
+    type Error = Error;
+
+    fn try_from(value: BinanceWithdrawalAddress) -> Result<Self, Self::Error> {
+        Ok(Self {
+            address: value.address,
+            address_tag: value.address_tag,
+            coin: value.coin,
+            network: value.network,
+            white_status: value.white_status,
+            name: value.name,
+            origin: value.origin,
+            origin_type: value.origin_type,
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<BinanceWithdrawHistoryEntry> for WireBinanceWithdrawHistoryEntry {
+    type Error = Error;
+
+    fn try_from(value: BinanceWithdrawHistoryEntry) -> Result<Self, Self::Error> {
+        Ok(Self {
+            id: value.id,
+            amount: decimal_to_wire(value.amount),
+            transaction_fee: decimal_to_wire(value.transaction_fee),
+            coin: value.coin,
+            status: value.status,
+            address: value.address,
+            tx_id: value.tx_id,
+            apply_time: value.apply_time,
+            network: value.network,
+            withdraw_order_id: value.withdraw_order_id,
+            info: value.info,
+            transfer_type: value.transfer_type,
+            confirm_no: value.confirm_no,
+            wallet_type: value.wallet_type,
+            tx_key: value.tx_key,
+            complete_time: value.complete_time,
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<BinanceWithdrawHistory> for WireBinanceWithdrawHistory {
+    type Error = Error;
+
+    fn try_from(value: BinanceWithdrawHistory) -> Result<Self, Self::Error> {
+        Ok(Self {
+            entries: value
+                .entries
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            raw_json: value.raw_json,
+        })
+    }
+}
+
 impl TryFrom<BinanceMarkPrice> for WireBinanceMarkPrice {
     type Error = Error;
 
@@ -4195,6 +5280,243 @@ impl TryFrom<HyperliquidAssetContext> for WireHyperliquidAssetContext {
             open_interest: decimal_option_to_wire(value.open_interest),
             size_decimals: value.size_decimals,
             price_decimals: value.price_decimals,
+        })
+    }
+}
+
+impl TryFrom<HyperliquidCandleSnapshot> for WireHyperliquidCandleSnapshot {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidCandleSnapshot) -> Result<Self, Self::Error> {
+        Ok(Self {
+            coin: value.coin,
+            market: value.market.try_into()?,
+            interval: value.interval,
+            open_time: timestamp_to_wire(value.open_time),
+            close_time: timestamp_to_wire(value.close_time),
+            open: decimal_to_wire(value.open),
+            high: decimal_to_wire(value.high),
+            low: decimal_to_wire(value.low),
+            close: decimal_to_wire(value.close),
+            volume: decimal_to_wire(value.volume),
+            trade_count: value.trade_count.map(|value| value.to_string()),
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<HyperliquidBookLevel> for WireHyperliquidBookLevel {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidBookLevel) -> Result<Self, Self::Error> {
+        Ok(Self {
+            price: decimal_to_wire(value.price),
+            size: decimal_to_wire(value.size),
+            order_count: value.order_count.map(|value| value.to_string()),
+        })
+    }
+}
+
+impl TryFrom<HyperliquidL2Book> for WireHyperliquidL2Book {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidL2Book) -> Result<Self, Self::Error> {
+        Ok(Self {
+            coin: value.coin,
+            market: value.market.try_into()?,
+            time: timestamp_to_wire(value.time),
+            bids: value
+                .bids
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            asks: value
+                .asks
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<HyperliquidRecentTrade> for WireHyperliquidRecentTrade {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidRecentTrade) -> Result<Self, Self::Error> {
+        Ok(Self {
+            coin: value.coin,
+            market: value.market.try_into()?,
+            side: value.side,
+            price: decimal_to_wire(value.price),
+            size: decimal_to_wire(value.size),
+            time: timestamp_to_wire(value.time),
+            trade_id: value.trade_id,
+            hash: value.hash,
+            users: value.users,
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<HyperliquidFundingHistoryEntry> for WireHyperliquidFundingHistoryEntry {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidFundingHistoryEntry) -> Result<Self, Self::Error> {
+        Ok(Self {
+            coin: value.coin,
+            market: value.market.try_into()?,
+            funding_rate: decimal_to_wire(value.funding_rate),
+            premium: decimal_option_to_wire(value.premium),
+            time: timestamp_to_wire(value.time),
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<HyperliquidUserFunding> for WireHyperliquidUserFunding {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidUserFunding) -> Result<Self, Self::Error> {
+        Ok(Self {
+            kind: value.kind,
+            coin: value.coin,
+            market: value.market.try_into()?,
+            usdc: decimal_to_wire(value.usdc),
+            funding_rate: decimal_to_wire(value.funding_rate),
+            position_size: decimal_option_to_wire(value.position_size),
+            sample_count: value.sample_count.map(|value| value.to_string()),
+            hash: value.hash,
+            time: timestamp_to_wire(value.time),
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<HyperliquidSpotBalance> for WireHyperliquidSpotBalance {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidSpotBalance) -> Result<Self, Self::Error> {
+        Ok(Self {
+            coin: value.coin,
+            token: value.token,
+            total: decimal_to_wire(value.total),
+            hold: decimal_to_wire(value.hold),
+            entry_notional: decimal_option_to_wire(value.entry_notional),
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<HyperliquidSpotClearinghouseState> for WireHyperliquidSpotClearinghouseState {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidSpotClearinghouseState) -> Result<Self, Self::Error> {
+        Ok(Self {
+            balances: value
+                .balances
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<HyperliquidEvmContract> for WireHyperliquidEvmContract {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidEvmContract) -> Result<Self, Self::Error> {
+        Ok(Self {
+            address: value.address,
+            extra_wei_decimals: value.extra_wei_decimals,
+        })
+    }
+}
+
+impl TryFrom<HyperliquidSpotToken> for WireHyperliquidSpotToken {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidSpotToken) -> Result<Self, Self::Error> {
+        Ok(Self {
+            name: value.name,
+            size_decimals: value.size_decimals,
+            wei_decimals: value.wei_decimals,
+            index: value.index,
+            token_id: value.token_id,
+            is_canonical: value.is_canonical,
+            evm_contract: value.evm_contract.map(TryInto::try_into).transpose()?,
+            full_name: value.full_name,
+            deployer_trading_fee_share: decimal_option_to_wire(value.deployer_trading_fee_share),
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<HyperliquidSpotPair> for WireHyperliquidSpotPair {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidSpotPair) -> Result<Self, Self::Error> {
+        Ok(Self {
+            name: value.name,
+            tokens: value.tokens,
+            index: value.index,
+            is_canonical: value.is_canonical,
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<HyperliquidSpotMeta> for WireHyperliquidSpotMeta {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidSpotMeta) -> Result<Self, Self::Error> {
+        Ok(Self {
+            tokens: value
+                .tokens
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            universe: value
+                .universe
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<HyperliquidSpotAssetContext> for WireHyperliquidSpotAssetContext {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidSpotAssetContext) -> Result<Self, Self::Error> {
+        Ok(Self {
+            coin: value.coin,
+            mid_price: decimal_option_to_wire(value.mid_price),
+            mark_price: decimal_option_to_wire(value.mark_price),
+            previous_day_price: decimal_option_to_wire(value.previous_day_price),
+            day_base_volume: decimal_option_to_wire(value.day_base_volume),
+            day_notional_volume: decimal_option_to_wire(value.day_notional_volume),
+            circulating_supply: decimal_option_to_wire(value.circulating_supply),
+            total_supply: decimal_option_to_wire(value.total_supply),
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<HyperliquidSpotMetaAndAssetContexts> for WireHyperliquidSpotMetaAndAssetContexts {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidSpotMetaAndAssetContexts) -> Result<Self, Self::Error> {
+        Ok(Self {
+            meta: value.meta.try_into()?,
+            contexts: value
+                .contexts
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            raw_json: value.raw_json,
         })
     }
 }

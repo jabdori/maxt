@@ -148,6 +148,157 @@ struct RawPosition {
     notional: String,
 }
 
+/// The provider-only parts of `GET /api/v3/account`.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawSpotAccountInformation {
+    maker_commission: u64,
+    taker_commission: u64,
+    buyer_commission: u64,
+    seller_commission: u64,
+    commission_rates: RawSpotCommissionRates,
+    can_trade: bool,
+    can_withdraw: bool,
+    can_deposit: bool,
+    update_time: i64,
+    account_type: String,
+    #[serde(default)]
+    permissions: Vec<String>,
+    #[serde(default)]
+    uid: Option<u64>,
+    #[serde(default)]
+    balances: Vec<RawSpotBalance>,
+}
+
+#[derive(Debug, Deserialize)]
+struct RawSpotCommissionRates {
+    maker: String,
+    taker: String,
+    buyer: String,
+    seller: String,
+}
+
+/// A Spot cancellation report. Binance may return a richer order-list shape,
+/// so every ordinary-order field is optional while the raw object is retained.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawSpotCancelledOrder {
+    #[serde(default)]
+    symbol: Option<String>,
+    #[serde(default)]
+    orig_client_order_id: Option<String>,
+    #[serde(default)]
+    order_id: Option<i64>,
+    #[serde(default)]
+    client_order_id: Option<String>,
+    #[serde(default)]
+    status: Option<String>,
+    #[serde(default)]
+    price: Option<String>,
+    #[serde(default)]
+    orig_qty: Option<String>,
+    #[serde(default)]
+    executed_qty: Option<String>,
+    #[serde(default)]
+    cummulative_quote_qty: Option<String>,
+    #[serde(default)]
+    transact_time: Option<i64>,
+    #[serde(default)]
+    order_list_id: Option<i64>,
+    #[serde(default)]
+    contingency_type: Option<String>,
+    #[serde(default)]
+    list_status_type: Option<String>,
+    #[serde(default)]
+    list_order_status: Option<String>,
+    #[serde(default)]
+    list_client_order_id: Option<String>,
+    #[serde(default)]
+    transaction_time: Option<i64>,
+}
+
+/// `GET /fapi/v3/account`, including fields the common balance/margin view
+/// cannot represent.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawUsdMAccountInformation {
+    total_initial_margin: String,
+    total_maint_margin: String,
+    total_wallet_balance: String,
+    total_unrealized_profit: String,
+    total_margin_balance: String,
+    total_position_initial_margin: String,
+    total_open_order_initial_margin: String,
+    total_cross_wallet_balance: String,
+    total_cross_un_pnl: String,
+    available_balance: String,
+    max_withdraw_amount: String,
+    #[serde(default)]
+    assets: Vec<RawUsdMAccountAsset>,
+    #[serde(default)]
+    positions: Vec<RawUsdMAccountPosition>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawUsdMAccountAsset {
+    asset: String,
+    wallet_balance: String,
+    unrealized_profit: String,
+    margin_balance: String,
+    maint_margin: String,
+    initial_margin: String,
+    position_initial_margin: String,
+    open_order_initial_margin: String,
+    cross_wallet_balance: String,
+    cross_un_pnl: String,
+    available_balance: String,
+    max_withdraw_amount: String,
+    update_time: i64,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawUsdMAccountPosition {
+    symbol: String,
+    position_side: String,
+    position_amt: String,
+    unrealized_profit: String,
+    isolated_margin: String,
+    notional: String,
+    isolated_wallet: String,
+    initial_margin: String,
+    maint_margin: String,
+    update_time: i64,
+}
+
+/// `GET /fapi/v3/positionRisk` with its full current public field set.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawUsdMPositionInformation {
+    symbol: String,
+    position_side: String,
+    position_amt: String,
+    entry_price: String,
+    break_even_price: String,
+    mark_price: String,
+    #[serde(rename = "unRealizedProfit")]
+    unrealized_profit: String,
+    liquidation_price: String,
+    isolated_margin: String,
+    notional: String,
+    margin_asset: String,
+    isolated_wallet: String,
+    initial_margin: String,
+    maint_margin: String,
+    position_initial_margin: String,
+    open_order_initial_margin: String,
+    adl: u64,
+    bid_notional: String,
+    ask_notional: String,
+    update_time: i64,
+}
+
 /// `GET /fapi/v1/fundingRate`.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -918,6 +1069,161 @@ pub(super) async fn balances(adapter: &BinanceAdapter) -> Result<Vec<Balance>> {
     }
 }
 
+/// Reads Spot account information without flattening it into balances alone.
+pub(super) async fn spot_account_information(
+    adapter: &BinanceAdapter,
+) -> Result<BinanceSpotAccountInformation> {
+    if adapter.venue() != BinanceMarket::Spot {
+        return Err(Error::unsupported(
+            Feature::Balances,
+            EXCHANGE,
+            "Spot account information requires an adapter built with `spot`",
+        ));
+    }
+    let body = adapter.send(balances_request(adapter)?).await?;
+    spot_account_information_from_body(&body)
+}
+
+fn spot_account_information_from_body(body: &str) -> Result<BinanceSpotAccountInformation> {
+    let response: serde_json::Value = parse::json(body, "account")?;
+    if !response.is_object() {
+        return Err(Error::decode(
+            "Binance Spot account response is not an object",
+        ));
+    }
+    let raw: RawSpotAccountInformation = serde_json::from_value(response.clone())
+        .map_err(|error| Error::decode(format!("unreadable Spot account information: {error}")))?;
+
+    Ok(BinanceSpotAccountInformation {
+        maker_commission: raw.maker_commission,
+        taker_commission: raw.taker_commission,
+        buyer_commission: raw.buyer_commission,
+        seller_commission: raw.seller_commission,
+        commission_rates: BinanceSpotCommissionRates {
+            maker: parse::decimal(&raw.commission_rates.maker, "commissionRates.maker")?,
+            taker: parse::decimal(&raw.commission_rates.taker, "commissionRates.taker")?,
+            buyer: parse::decimal(&raw.commission_rates.buyer, "commissionRates.buyer")?,
+            seller: parse::decimal(&raw.commission_rates.seller, "commissionRates.seller")?,
+        },
+        can_trade: raw.can_trade,
+        can_withdraw: raw.can_withdraw,
+        can_deposit: raw.can_deposit,
+        update_time: parse::millis(raw.update_time),
+        account_type: raw.account_type,
+        balances: raw
+            .balances
+            .iter()
+            .map(|balance| {
+                Ok(BinanceSpotAccountBalance {
+                    asset: balance.asset.clone(),
+                    free: parse::decimal(&balance.free, "free")?,
+                    locked: parse::decimal(&balance.locked, "locked")?,
+                })
+            })
+            .collect::<Result<Vec<_>>>()?,
+        permissions: raw.permissions,
+        uid: raw.uid,
+        raw_json: parse::canonical_json(&response, "Spot account information")?,
+    })
+}
+
+/// Reads the entire USD-M account snapshot, including per-asset and
+/// per-position values omitted by the common balance and margin APIs.
+pub(super) async fn usd_m_account_information(
+    adapter: &BinanceAdapter,
+) -> Result<BinanceUsdMAccountInformation> {
+    check_futures_only(adapter, Feature::Margin)?;
+    let body = adapter.send(balances_request(adapter)?).await?;
+    usd_m_account_information_from_body(&body)
+}
+
+fn usd_m_account_information_from_body(body: &str) -> Result<BinanceUsdMAccountInformation> {
+    let response: serde_json::Value = parse::json(body, "USD-M account")?;
+    if !response.is_object() {
+        return Err(Error::decode(
+            "Binance USD-M account response is not an object",
+        ));
+    }
+    let raw: RawUsdMAccountInformation = serde_json::from_value(response.clone())
+        .map_err(|error| Error::decode(format!("unreadable USD-M account information: {error}")))?;
+
+    Ok(BinanceUsdMAccountInformation {
+        total_initial_margin: parse::decimal(&raw.total_initial_margin, "totalInitialMargin")?,
+        total_maintenance_margin: parse::decimal(&raw.total_maint_margin, "totalMaintMargin")?,
+        total_wallet_balance: parse::decimal(&raw.total_wallet_balance, "totalWalletBalance")?,
+        total_unrealized_profit: parse::decimal(
+            &raw.total_unrealized_profit,
+            "totalUnrealizedProfit",
+        )?,
+        total_margin_balance: parse::decimal(&raw.total_margin_balance, "totalMarginBalance")?,
+        total_position_initial_margin: parse::decimal(
+            &raw.total_position_initial_margin,
+            "totalPositionInitialMargin",
+        )?,
+        total_open_order_initial_margin: parse::decimal(
+            &raw.total_open_order_initial_margin,
+            "totalOpenOrderInitialMargin",
+        )?,
+        total_cross_wallet_balance: parse::decimal(
+            &raw.total_cross_wallet_balance,
+            "totalCrossWalletBalance",
+        )?,
+        total_cross_unrealized_profit: parse::decimal(&raw.total_cross_un_pnl, "totalCrossUnPnl")?,
+        available_balance: parse::decimal(&raw.available_balance, "availableBalance")?,
+        max_withdraw_amount: parse::decimal(&raw.max_withdraw_amount, "maxWithdrawAmount")?,
+        assets: raw
+            .assets
+            .iter()
+            .map(usd_m_account_asset)
+            .collect::<Result<Vec<_>>>()?,
+        positions: raw
+            .positions
+            .iter()
+            .map(usd_m_account_position)
+            .collect::<Result<Vec<_>>>()?,
+        raw_json: parse::canonical_json(&response, "USD-M account information")?,
+    })
+}
+
+fn usd_m_account_asset(raw: &RawUsdMAccountAsset) -> Result<BinanceUsdMAccountAsset> {
+    Ok(BinanceUsdMAccountAsset {
+        asset: raw.asset.clone(),
+        wallet_balance: parse::decimal(&raw.wallet_balance, "walletBalance")?,
+        unrealized_profit: parse::decimal(&raw.unrealized_profit, "unrealizedProfit")?,
+        margin_balance: parse::decimal(&raw.margin_balance, "marginBalance")?,
+        maintenance_margin: parse::decimal(&raw.maint_margin, "maintMargin")?,
+        initial_margin: parse::decimal(&raw.initial_margin, "initialMargin")?,
+        position_initial_margin: parse::decimal(
+            &raw.position_initial_margin,
+            "positionInitialMargin",
+        )?,
+        open_order_initial_margin: parse::decimal(
+            &raw.open_order_initial_margin,
+            "openOrderInitialMargin",
+        )?,
+        cross_wallet_balance: parse::decimal(&raw.cross_wallet_balance, "crossWalletBalance")?,
+        cross_unrealized_profit: parse::decimal(&raw.cross_un_pnl, "crossUnPnl")?,
+        available_balance: parse::decimal(&raw.available_balance, "availableBalance")?,
+        max_withdraw_amount: parse::decimal(&raw.max_withdraw_amount, "maxWithdrawAmount")?,
+        update_time: parse::millis(raw.update_time),
+    })
+}
+
+fn usd_m_account_position(raw: &RawUsdMAccountPosition) -> Result<BinanceUsdMAccountPosition> {
+    Ok(BinanceUsdMAccountPosition {
+        symbol: raw.symbol.clone(),
+        position_side: raw.position_side.clone(),
+        position_amount: parse::decimal(&raw.position_amt, "positionAmt")?,
+        unrealized_profit: parse::decimal(&raw.unrealized_profit, "unrealizedProfit")?,
+        isolated_margin: parse::decimal(&raw.isolated_margin, "isolatedMargin")?,
+        notional: parse::decimal(&raw.notional, "notional")?,
+        isolated_wallet: parse::decimal(&raw.isolated_wallet, "isolatedWallet")?,
+        initial_margin: parse::decimal(&raw.initial_margin, "initialMargin")?,
+        maintenance_margin: parse::decimal(&raw.maint_margin, "maintMargin")?,
+        update_time: parse::millis(raw.update_time),
+    })
+}
+
 /// Maps one margin asset onto the available/locked split `Balance` promises.
 ///
 /// USD-M reports a wallet balance and how much of it is free; what is not free
@@ -1200,6 +1506,262 @@ fn decimal_option(value: Option<&str>, field: &'static str) -> Result<Option<Dec
     value.map(|value| parse::decimal(value, field)).transpose()
 }
 
+/// Binance Spot's signed account-information response.
+///
+/// Use the common balance API for a normalized balance list. This provider
+/// result preserves Spot's commission, permission, and account-state fields.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceSpotAccountInformation {
+    /// Legacy maker commission integer published by Binance.
+    pub maker_commission: u64,
+    /// Legacy taker commission integer published by Binance.
+    pub taker_commission: u64,
+    /// Legacy buyer commission integer published by Binance.
+    pub buyer_commission: u64,
+    /// Legacy seller commission integer published by Binance.
+    pub seller_commission: u64,
+    /// Current Spot commission rates as exact decimal strings converted to decimals.
+    pub commission_rates: BinanceSpotCommissionRates,
+    /// Whether Binance currently permits trading for this account.
+    pub can_trade: bool,
+    /// Whether Binance currently permits withdrawals for this account.
+    pub can_withdraw: bool,
+    /// Whether Binance currently permits deposits for this account.
+    pub can_deposit: bool,
+    /// Binance's account update time.
+    pub update_time: Timestamp,
+    /// Binance's provider-specific account type.
+    pub account_type: String,
+    /// Every asset balance Binance returned, including its exact free and locked amounts.
+    pub balances: Vec<BinanceSpotAccountBalance>,
+    /// Permissions Binance associates with the API key/account.
+    pub permissions: Vec<String>,
+    /// Binance account identifier when the endpoint provides it.
+    pub uid: Option<u64>,
+    /// Complete compact JSON response for forward-compatible provider fields.
+    pub raw_json: String,
+}
+
+/// Spot commission rates returned within account information.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceSpotCommissionRates {
+    /// Maker commission rate.
+    pub maker: Decimal,
+    /// Taker commission rate.
+    pub taker: Decimal,
+    /// Buyer commission rate.
+    pub buyer: Decimal,
+    /// Seller commission rate.
+    pub seller: Decimal,
+}
+
+/// One asset balance returned inside Spot account information.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceSpotAccountBalance {
+    /// Binance asset code.
+    pub asset: String,
+    /// Freely available amount.
+    pub free: Decimal,
+    /// Amount locked by Binance.
+    pub locked: Decimal,
+}
+
+/// All cancellation reports returned by Spot's cancel-all operation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceSpotCancelAllOpenOrders {
+    /// One response entry for each cancellation or order-list cancellation.
+    pub reports: Vec<BinanceSpotCancelledOrder>,
+    /// Complete compact JSON array returned by Binance.
+    pub raw_json: String,
+}
+
+/// A typed ordinary-order subset of one Spot cancellation report.
+///
+/// Binance can also return order-list reports with a different shape. Optional
+/// fields distinguish that shape while `raw_json` retains all fields exactly.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceSpotCancelledOrder {
+    /// Native Binance symbol when this is an ordinary order report.
+    pub symbol: Option<String>,
+    /// Original client-supplied order identifier when Binance provides it.
+    pub original_client_order_id: Option<String>,
+    /// Numeric Binance order identifier when this is an ordinary order report.
+    pub order_id: Option<String>,
+    /// Client-supplied order identifier when Binance provides it.
+    pub client_order_id: Option<String>,
+    /// Provider order status when this is an ordinary order report.
+    pub status: Option<String>,
+    /// Limit price when Binance provides it.
+    pub price: Option<Decimal>,
+    /// Original order quantity when Binance provides it.
+    pub original_quantity: Option<Decimal>,
+    /// Filled quantity when Binance provides it.
+    pub executed_quantity: Option<Decimal>,
+    /// Cumulative filled quote quantity when Binance provides it.
+    pub cumulative_quote_quantity: Option<Decimal>,
+    /// Binance's cancellation transaction time when it provides one.
+    pub transact_time: Option<Timestamp>,
+    /// Binance order-list identifier when this report describes an order list.
+    pub order_list_id: Option<String>,
+    /// Provider order-list contingency type, such as `OCO`.
+    pub contingency_type: Option<String>,
+    /// Provider order-list execution status.
+    pub list_status_type: Option<String>,
+    /// Provider order-list order status.
+    pub list_order_status: Option<String>,
+    /// Provider client order-list identifier.
+    pub list_client_order_id: Option<String>,
+    /// Provider order-list transaction time.
+    pub transaction_time: Option<Timestamp>,
+    /// Complete compact JSON entry for provider-specific order-list fields.
+    pub raw_json: String,
+}
+
+/// Binance USD-M account information beyond the normalized balance view.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceUsdMAccountInformation {
+    /// Total initial margin across the account.
+    pub total_initial_margin: Decimal,
+    /// Total maintenance margin across the account.
+    pub total_maintenance_margin: Decimal,
+    /// Total wallet balance across margin assets.
+    pub total_wallet_balance: Decimal,
+    /// Total unrealized profit and loss across margin assets.
+    pub total_unrealized_profit: Decimal,
+    /// Total margin balance across margin assets.
+    pub total_margin_balance: Decimal,
+    /// Total initial margin allocated to positions.
+    pub total_position_initial_margin: Decimal,
+    /// Total initial margin allocated to open orders.
+    pub total_open_order_initial_margin: Decimal,
+    /// Total cross-wallet balance.
+    pub total_cross_wallet_balance: Decimal,
+    /// Total cross unrealized profit and loss.
+    pub total_cross_unrealized_profit: Decimal,
+    /// Amount Binance reports as available to trade.
+    pub available_balance: Decimal,
+    /// Amount Binance reports as withdrawable.
+    pub max_withdraw_amount: Decimal,
+    /// Per-asset account figures.
+    pub assets: Vec<BinanceUsdMAccountAsset>,
+    /// Per-position account figures.
+    pub positions: Vec<BinanceUsdMAccountPosition>,
+    /// Complete compact JSON response for forward-compatible provider fields.
+    pub raw_json: String,
+}
+
+/// Per-asset USD-M account information.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceUsdMAccountAsset {
+    /// Margin asset code.
+    pub asset: String,
+    /// Wallet balance in this asset.
+    pub wallet_balance: Decimal,
+    /// Unrealized profit and loss in this asset.
+    pub unrealized_profit: Decimal,
+    /// Margin balance in this asset.
+    pub margin_balance: Decimal,
+    /// Maintenance margin in this asset.
+    pub maintenance_margin: Decimal,
+    /// Initial margin in this asset.
+    pub initial_margin: Decimal,
+    /// Initial margin allocated to positions.
+    pub position_initial_margin: Decimal,
+    /// Initial margin allocated to open orders.
+    pub open_order_initial_margin: Decimal,
+    /// Cross-wallet balance in this asset.
+    pub cross_wallet_balance: Decimal,
+    /// Cross unrealized profit and loss in this asset.
+    pub cross_unrealized_profit: Decimal,
+    /// Amount Binance reports as available to trade.
+    pub available_balance: Decimal,
+    /// Amount Binance reports as withdrawable.
+    pub max_withdraw_amount: Decimal,
+    /// Binance's per-asset update time.
+    pub update_time: Timestamp,
+}
+
+/// Per-position information embedded in USD-M account information.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceUsdMAccountPosition {
+    /// Native Binance symbol.
+    pub symbol: String,
+    /// Binance position side, such as `BOTH`, `LONG`, or `SHORT`.
+    pub position_side: String,
+    /// Signed position amount.
+    pub position_amount: Decimal,
+    /// Unrealized profit and loss.
+    pub unrealized_profit: Decimal,
+    /// Isolated margin assigned to this position.
+    pub isolated_margin: Decimal,
+    /// Provider notional value.
+    pub notional: Decimal,
+    /// Isolated wallet balance.
+    pub isolated_wallet: Decimal,
+    /// Initial margin for this position.
+    pub initial_margin: Decimal,
+    /// Maintenance margin for this position.
+    pub maintenance_margin: Decimal,
+    /// Binance's position update time.
+    pub update_time: Timestamp,
+}
+
+/// Binance USD-M `positionRisk` information for one returned symbol and side.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceUsdMPositionInformation {
+    /// Native Binance symbol.
+    pub symbol: String,
+    /// Binance position side, such as `BOTH`, `LONG`, or `SHORT`.
+    pub position_side: String,
+    /// Signed position amount.
+    pub position_amount: Decimal,
+    /// Position entry price.
+    pub entry_price: Decimal,
+    /// Provider break-even price.
+    pub break_even_price: Decimal,
+    /// Current mark price.
+    pub mark_price: Decimal,
+    /// Unrealized profit and loss.
+    pub unrealized_profit: Decimal,
+    /// Provider liquidation price.
+    pub liquidation_price: Decimal,
+    /// Isolated margin assigned to this position.
+    pub isolated_margin: Decimal,
+    /// Provider notional value.
+    pub notional: Decimal,
+    /// Asset used to margin this position.
+    pub margin_asset: String,
+    /// Isolated wallet balance.
+    pub isolated_wallet: Decimal,
+    /// Initial margin for this position.
+    pub initial_margin: Decimal,
+    /// Maintenance margin for this position.
+    pub maintenance_margin: Decimal,
+    /// Initial margin allocated to the position.
+    pub position_initial_margin: Decimal,
+    /// Initial margin allocated to open orders.
+    pub open_order_initial_margin: Decimal,
+    /// Binance's automatic-deleveraging tier.
+    pub adl: u64,
+    /// Bid-side notional published by Binance.
+    pub bid_notional: Decimal,
+    /// Ask-side notional published by Binance.
+    pub ask_notional: Decimal,
+    /// Binance's position update time.
+    pub update_time: Timestamp,
+    /// Complete compact JSON entry for forward-compatible provider fields.
+    pub raw_json: String,
+}
+
 /// The provider JSON Binance returns after a test-order validation.
 ///
 /// Spot normally returns an empty object. USD-M may return a distinct
@@ -1241,6 +1803,68 @@ pub(super) async fn cancel_all_open_orders(
         .send(cancel_all_open_orders_request(adapter, market)?)
         .await?;
     cancel_all_open_orders_response(adapter.venue(), &body)
+}
+
+/// Cancels Spot orders while retaining Binance's cancellation report array.
+pub(super) async fn spot_cancel_all_open_orders(
+    adapter: &BinanceAdapter,
+    market: &Market,
+) -> Result<BinanceSpotCancelAllOpenOrders> {
+    if adapter.venue() != BinanceMarket::Spot {
+        return Err(Error::unsupported(
+            Feature::OpenOrders,
+            EXCHANGE,
+            "Spot cancellation reports require an adapter built with `spot`",
+        ));
+    }
+    let body = adapter
+        .send(cancel_all_open_orders_request(adapter, market)?)
+        .await?;
+    spot_cancel_all_open_orders_from_body(&body)
+}
+
+fn spot_cancel_all_open_orders_from_body(body: &str) -> Result<BinanceSpotCancelAllOpenOrders> {
+    let response: serde_json::Value = parse::json(body, "Spot cancel all open orders")?;
+    let reports = response.as_array().ok_or_else(|| {
+        Error::decode("Binance Spot cancel-all response is not the documented order-report array")
+    })?;
+
+    let reports = reports
+        .iter()
+        .map(|report| {
+            let raw: RawSpotCancelledOrder =
+                serde_json::from_value(report.clone()).map_err(|error| {
+                    Error::decode(format!("unreadable Spot cancellation report: {error}"))
+                })?;
+            Ok(BinanceSpotCancelledOrder {
+                symbol: raw.symbol,
+                original_client_order_id: raw.orig_client_order_id,
+                order_id: raw.order_id.map(|value| value.to_string()),
+                client_order_id: raw.client_order_id,
+                status: raw.status,
+                price: decimal_option(raw.price.as_deref(), "price")?,
+                original_quantity: decimal_option(raw.orig_qty.as_deref(), "origQty")?,
+                executed_quantity: decimal_option(raw.executed_qty.as_deref(), "executedQty")?,
+                cumulative_quote_quantity: decimal_option(
+                    raw.cummulative_quote_qty.as_deref(),
+                    "cummulativeQuoteQty",
+                )?,
+                transact_time: raw.transact_time.map(parse::millis),
+                order_list_id: raw.order_list_id.map(|value| value.to_string()),
+                contingency_type: raw.contingency_type,
+                list_status_type: raw.list_status_type,
+                list_order_status: raw.list_order_status,
+                list_client_order_id: raw.list_client_order_id,
+                transaction_time: raw.transaction_time.map(parse::millis),
+                raw_json: parse::canonical_json(report, "Spot cancellation report")?,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    Ok(BinanceSpotCancelAllOpenOrders {
+        reports,
+        raw_json: parse::canonical_json(&response, "Spot cancel-all response")?,
+    })
 }
 
 fn cancel_all_open_orders_response(venue: BinanceMarket, body: &str) -> Result<()> {
@@ -1305,6 +1929,62 @@ pub(super) async fn positions(
     let body = adapter.send(positions_request(adapter, market)?).await?;
     let raw: Vec<RawPosition> = parse::json(&body, "positionRisk")?;
     raw.iter().map(|raw| position(adapter, raw)).collect()
+}
+
+/// Reads the full provider `positionRisk` contract without collapsing its
+/// margin, liquidation, and side-specific risk fields into common positions.
+pub(super) async fn usd_m_position_information(
+    adapter: &BinanceAdapter,
+    market: Option<&Market>,
+) -> Result<Vec<BinanceUsdMPositionInformation>> {
+    let body = adapter.send(positions_request(adapter, market)?).await?;
+    usd_m_position_information_from_body(&body)
+}
+
+fn usd_m_position_information_from_body(body: &str) -> Result<Vec<BinanceUsdMPositionInformation>> {
+    let response: serde_json::Value = parse::json(body, "positionRisk")?;
+    let entries = response
+        .as_array()
+        .ok_or_else(|| Error::decode("Binance USD-M positionRisk response is not an array"))?;
+
+    entries
+        .iter()
+        .map(|entry| {
+            let raw: RawUsdMPositionInformation =
+                serde_json::from_value(entry.clone()).map_err(|error| {
+                    Error::decode(format!("unreadable USD-M position information: {error}"))
+                })?;
+            Ok(BinanceUsdMPositionInformation {
+                symbol: raw.symbol,
+                position_side: raw.position_side,
+                position_amount: parse::decimal(&raw.position_amt, "positionAmt")?,
+                entry_price: parse::decimal(&raw.entry_price, "entryPrice")?,
+                break_even_price: parse::decimal(&raw.break_even_price, "breakEvenPrice")?,
+                mark_price: parse::decimal(&raw.mark_price, "markPrice")?,
+                unrealized_profit: parse::decimal(&raw.unrealized_profit, "unRealizedProfit")?,
+                liquidation_price: parse::decimal(&raw.liquidation_price, "liquidationPrice")?,
+                isolated_margin: parse::decimal(&raw.isolated_margin, "isolatedMargin")?,
+                notional: parse::decimal(&raw.notional, "notional")?,
+                margin_asset: raw.margin_asset,
+                isolated_wallet: parse::decimal(&raw.isolated_wallet, "isolatedWallet")?,
+                initial_margin: parse::decimal(&raw.initial_margin, "initialMargin")?,
+                maintenance_margin: parse::decimal(&raw.maint_margin, "maintMargin")?,
+                position_initial_margin: parse::decimal(
+                    &raw.position_initial_margin,
+                    "positionInitialMargin",
+                )?,
+                open_order_initial_margin: parse::decimal(
+                    &raw.open_order_initial_margin,
+                    "openOrderInitialMargin",
+                )?,
+                adl: raw.adl,
+                bid_notional: parse::decimal(&raw.bid_notional, "bidNotional")?,
+                ask_notional: parse::decimal(&raw.ask_notional, "askNotional")?,
+                update_time: parse::millis(raw.update_time),
+                raw_json: parse::canonical_json(entry, "USD-M position information")?,
+            })
+        })
+        .collect()
 }
 
 fn position(adapter: &BinanceAdapter, raw: &RawPosition) -> Result<Position> {
@@ -2601,6 +3281,74 @@ mod tests {
         assert_eq!(balance.available.to_string(), "100.12345678");
         assert_eq!(balance.locked.to_string(), "26.60123528");
         assert_eq!(balance.total().to_string(), "126.72469206");
+    }
+
+    #[test]
+    fn provider_account_contracts_preserve_typed_fields_and_raw_json() {
+        let spot = spot_account_information_from_body(
+            r#"{
+              "makerCommission":15,"takerCommission":15,"buyerCommission":0,"sellerCommission":0,
+              "commissionRates":{"maker":"0.0015","taker":"0.0015","buyer":"0","seller":"0"},
+              "canTrade":true,"canWithdraw":true,"canDeposit":true,"updateTime":1700000000000,
+              "accountType":"SPOT","permissions":["SPOT"],"uid":42,
+              "balances":[{"asset":"BTC","free":"1.2","locked":"0.3"}],"futureField":"kept"
+            }"#,
+        )
+        .expect("official-shaped Spot account response");
+        assert_eq!(spot.commission_rates.maker, Decimal::new(15, 4));
+        assert_eq!(spot.permissions, ["SPOT"]);
+        assert_eq!(spot.balances[0].locked, Decimal::new(3, 1));
+        assert!(spot.raw_json.contains("futureField"));
+
+        let usd_m = usd_m_account_information_from_body(
+            r#"{
+              "totalInitialMargin":"1","totalMaintMargin":"2","totalWalletBalance":"3",
+              "totalUnrealizedProfit":"4","totalMarginBalance":"7","totalPositionInitialMargin":"1",
+              "totalOpenOrderInitialMargin":"0","totalCrossWalletBalance":"3","totalCrossUnPnl":"4",
+              "availableBalance":"6","maxWithdrawAmount":"5",
+              "assets":[{"asset":"USDT","walletBalance":"3","unrealizedProfit":"4","marginBalance":"7","maintMargin":"2","initialMargin":"1","positionInitialMargin":"1","openOrderInitialMargin":"0","crossWalletBalance":"3","crossUnPnl":"4","availableBalance":"6","maxWithdrawAmount":"5","updateTime":1700000000000}],
+              "positions":[{"symbol":"BTCUSDT","positionSide":"BOTH","positionAmt":"1","unrealizedProfit":"4","isolatedMargin":"0","notional":"100","isolatedWallet":"0","initialMargin":"1","maintMargin":"2","updateTime":1700000000000}],"futureField":true
+            }"#,
+        )
+        .expect("official-shaped USD-M account response");
+        assert_eq!(usd_m.total_maintenance_margin, Decimal::from(2));
+        assert_eq!(usd_m.assets[0].cross_unrealized_profit, Decimal::from(4));
+        assert_eq!(usd_m.positions[0].position_side, "BOTH");
+        assert!(usd_m.raw_json.contains("futureField"));
+    }
+
+    #[test]
+    fn provider_position_and_spot_cancel_contracts_preserve_reports() {
+        let positions = usd_m_position_information_from_body(
+            r#"[{
+              "symbol":"BTCUSDT","positionSide":"LONG","positionAmt":"1","entryPrice":"100",
+              "breakEvenPrice":"101","markPrice":"102","unRealizedProfit":"2",
+              "liquidationPrice":"50","isolatedMargin":"3","notional":"102","marginAsset":"USDT",
+              "isolatedWallet":"4","initialMargin":"5","maintMargin":"1","positionInitialMargin":"5",
+              "openOrderInitialMargin":"0","adl":2,"bidNotional":"0","askNotional":"1",
+              "updateTime":1700000000000,"futureField":"kept"
+            }]"#,
+        )
+        .expect("official-shaped position response");
+        assert_eq!(positions[0].break_even_price, Decimal::from(101));
+        assert_eq!(positions[0].adl, 2);
+        assert!(positions[0].raw_json.contains("futureField"));
+
+        let cancelled = spot_cancel_all_open_orders_from_body(
+            r#"[{
+              "symbol":"BTCUSDT","origClientOrderId":"original","orderId":10,"clientOrderId":"client","status":"CANCELED",
+              "price":"100","origQty":"2","executedQty":"1","cummulativeQuoteQty":"100",
+              "transactTime":1700000000000,"futureField":"kept"
+            }]"#,
+        )
+        .expect("official-shaped cancel response");
+        assert_eq!(cancelled.reports[0].order_id.as_deref(), Some("10"));
+        assert_eq!(
+            cancelled.reports[0].original_client_order_id.as_deref(),
+            Some("original")
+        );
+        assert_eq!(cancelled.reports[0].executed_quantity, Some(Decimal::ONE));
+        assert!(cancelled.reports[0].raw_json.contains("futureField"));
     }
 
     #[test]

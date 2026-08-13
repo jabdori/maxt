@@ -8,8 +8,9 @@ use std::future::Future;
 #[cfg(test)]
 use maxt::Adapter;
 use maxt::adapters::{
-    BinanceAdapter, BinanceAggregateTradesRequest, BinanceC2cTradeHistoryRequest, BinanceListenKey,
-    BinanceMarket, BinanceTestOrderRequest, BithumbAdapter, BithumbBatchOrdersRequest,
+    BinanceAdapter, BinanceAggregateTradesRequest, BinanceC2cTradeHistoryRequest,
+    BinanceDepositHistoryRequest, BinanceListenKey, BinanceMarket, BinanceTestOrderRequest,
+    BinanceWithdrawHistoryRequest, BithumbAdapter, BithumbBatchOrdersRequest,
     BithumbClosedOrdersRequest, BithumbKrwDepositsRequest, BithumbKrwTransferRequest,
     BithumbKrwWithdrawalsRequest, BithumbOrderDetailRequest, BithumbOrderListRequest,
     BithumbPendingOrdersRequest, BithumbTwapOrderRequest, BithumbTwapOrdersRequest,
@@ -34,9 +35,15 @@ use wasm_bindgen::prelude::*;
 use crate::client::NativeClient;
 use crate::convert::{
     WireBinanceAccountTrade, WireBinanceAggregateTrade, WireBinanceAggregateTradesRequest,
-    WireBinanceC2cTradeHistoryPage, WireBinanceC2cTradeHistoryRequest, WireBinanceMarkPrice,
-    WireBinanceOpenInterest, WireBinanceSpotAveragePrice, WireBinanceSpotOrderDetail,
-    WireBinanceSymbolFilters, WireBinanceTestOrder, WireBinanceTestOrderRequest, WireBithumbApiKey,
+    WireBinanceApiKeyPermissions, WireBinanceC2cTradeHistoryPage,
+    WireBinanceC2cTradeHistoryRequest, WireBinanceCoinInformation, WireBinanceDepositHistory,
+    WireBinanceDepositHistoryRequest, WireBinanceExchangeInfo, WireBinanceMarkPrice,
+    WireBinanceOpenInterest, WireBinanceQuestionnaireRequirements,
+    WireBinanceSpotAccountInformation, WireBinanceSpotAveragePrice,
+    WireBinanceSpotCancelAllOpenOrders, WireBinanceSpotOrderDetail, WireBinanceSymbolFilters,
+    WireBinanceTestOrder, WireBinanceTestOrderRequest, WireBinanceUsdMAccountInformation,
+    WireBinanceUsdMPositionInformation, WireBinanceWithdrawHistory,
+    WireBinanceWithdrawHistoryRequest, WireBinanceWithdrawalAddress, WireBithumbApiKey,
     WireBithumbAssetFee, WireBithumbBatchOrdersRequest, WireBithumbBatchOrdersResult,
     WireBithumbClosedOrder, WireBithumbClosedOrdersRequest, WireBithumbKrwDeposit,
     WireBithumbKrwDepositsRequest, WireBithumbKrwTransferRequest, WireBithumbKrwWithdrawal,
@@ -44,11 +51,14 @@ use crate::convert::{
     WireBithumbOrderDetail, WireBithumbOrderDetailRequest, WireBithumbOrderListItem,
     WireBithumbOrderListRequest, WireBithumbPendingOrdersRequest, WireBithumbTwapOrder,
     WireBithumbTwapOrderRequest, WireBithumbTwapOrdersRequest, WireBithumbWithdrawalAddress,
-    WireCancelOrdersResult, WireHyperliquidAssetContext, WireHyperliquidLedgerEntry,
+    WireCancelOrdersResult, WireHyperliquidAssetContext, WireHyperliquidCandleSnapshot,
+    WireHyperliquidFundingHistoryEntry, WireHyperliquidL2Book, WireHyperliquidLedgerEntry,
     WireHyperliquidMidPrice, WireHyperliquidOpenOrder, WireHyperliquidOrderInfo,
     WireHyperliquidOrderReference, WireHyperliquidOrderStatusResponse,
-    WireHyperliquidPortfolioPeriod, WireHyperliquidReferral, WireHyperliquidSubAccount,
-    WireHyperliquidUserFees, WireHyperliquidUserFill, WireHyperliquidUserRateLimit,
+    WireHyperliquidPortfolioPeriod, WireHyperliquidRecentTrade, WireHyperliquidReferral,
+    WireHyperliquidSpotClearinghouseState, WireHyperliquidSpotMeta,
+    WireHyperliquidSpotMetaAndAssetContexts, WireHyperliquidSubAccount, WireHyperliquidUserFees,
+    WireHyperliquidUserFill, WireHyperliquidUserFunding, WireHyperliquidUserRateLimit,
     WireHyperliquidUserRole, WireHyperliquidVaultEquity, WireMarket, WireOrder, WireOrderBook,
     WireOrderRequest, WirePage, WireTicker, WireUpbitApiKey, WireUpbitBatchCancelRequest,
     WireUpbitCancelAndNewOrderRequest, WireUpbitCancelAndNewOrderResult, WireUpbitClosedOrder,
@@ -59,8 +69,8 @@ use crate::convert::{
     WireUpbitPocketBalance, WireUpbitPocketTransfer, WireUpbitPocketTransferQuery,
     WireUpbitPocketTransferRequest, WireUpbitPocketUniversalTransferRequest,
     WireUpbitSubscriptionList, WireUpbitTravelRuleVasp, WireUpbitTravelRuleVerification,
-    WireUpbitYearCandle, decimal_from_wire, from_wire_text, network_from_wire, outcome,
-    timestamp_from_wire,
+    WireUpbitWithdrawalAddress, WireUpbitYearCandle, decimal_from_wire, from_wire_text,
+    network_from_wire, outcome, timestamp_from_wire,
 };
 
 #[derive(Debug, Deserialize)]
@@ -391,6 +401,12 @@ impl NativeUpbit {
             ),
             (Err(error), _) | (_, Err(error)) => outcome::<Value>(Err(error)),
         }
+    }
+
+    async fn withdrawal_addresses(&self) -> Value {
+        outcome(wire_vec::<_, WireUpbitWithdrawalAddress>(
+            self.adapter.withdrawal_addresses().await,
+        ))
     }
 
     async fn travel_rule_vasps(&self) -> Value {
@@ -759,6 +775,15 @@ impl NativeUpbit {
         let asset = native_json_text(asset, "asset");
         let network = native_json_text(network, "network");
         spawn_native(env, async move { this.deposit_info(asset, network).await })
+    }
+
+    #[napi(js_name = "withdrawalAddresses")]
+    pub fn withdrawal_addresses_native<'env>(
+        &self,
+        env: &'env Env,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.withdrawal_addresses().await })
     }
 
     #[napi(js_name = "travelRuleVasps")]
@@ -1463,6 +1488,129 @@ impl NativeBinance {
         }
     }
 
+    async fn spot_account_information(&self) -> Value {
+        outcome(
+            self.adapter
+                .spot_account_information()
+                .await
+                .and_then(TryInto::<WireBinanceSpotAccountInformation>::try_into),
+        )
+    }
+
+    async fn spot_cancel_all_open_orders(&self, market: maxt::Result<String>) -> Value {
+        match parse_wire::<Market, WireMarket>(market, "market") {
+            Ok(market) => outcome(
+                self.adapter
+                    .spot_cancel_all_open_orders(&market)
+                    .await
+                    .and_then(TryInto::<WireBinanceSpotCancelAllOpenOrders>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn spot_exchange_info(&self) -> Value {
+        outcome(
+            self.adapter
+                .spot_exchange_info()
+                .await
+                .and_then(TryInto::<WireBinanceExchangeInfo>::try_into),
+        )
+    }
+
+    async fn usd_m_account_information(&self) -> Value {
+        outcome(
+            self.adapter
+                .usd_m_account_information()
+                .await
+                .and_then(TryInto::<WireBinanceUsdMAccountInformation>::try_into),
+        )
+    }
+
+    async fn usd_m_exchange_info(&self) -> Value {
+        outcome(
+            self.adapter
+                .usd_m_exchange_info()
+                .await
+                .and_then(TryInto::<WireBinanceExchangeInfo>::try_into),
+        )
+    }
+
+    async fn usd_m_position_information(&self, market: maxt::Result<String>) -> Value {
+        match parse_text::<Option<WireMarket>>(market, "market") {
+            Ok(market) => {
+                let market = market.map(TryInto::try_into).transpose();
+                match market {
+                    Ok(market) => outcome(wire_vec::<_, WireBinanceUsdMPositionInformation>(
+                        self.adapter
+                            .usd_m_position_information(market.as_ref())
+                            .await,
+                    )),
+                    Err(error) => outcome::<Value>(Err(error)),
+                }
+            }
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn all_coins_information(&self) -> Value {
+        outcome(wire_vec::<_, WireBinanceCoinInformation>(
+            self.adapter.all_coins_information().await,
+        ))
+    }
+
+    async fn api_key_permissions(&self) -> Value {
+        outcome(
+            self.adapter
+                .api_key_permissions()
+                .await
+                .and_then(TryInto::<WireBinanceApiKeyPermissions>::try_into),
+        )
+    }
+
+    async fn deposit_history(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<BinanceDepositHistoryRequest, WireBinanceDepositHistoryRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(
+                self.adapter
+                    .deposit_history(&request)
+                    .await
+                    .and_then(TryInto::<WireBinanceDepositHistory>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn questionnaire_requirements(&self) -> Value {
+        outcome(
+            self.adapter
+                .questionnaire_requirements()
+                .await
+                .and_then(TryInto::<WireBinanceQuestionnaireRequirements>::try_into),
+        )
+    }
+
+    async fn withdraw_address_list(&self) -> Value {
+        outcome(wire_vec::<_, WireBinanceWithdrawalAddress>(
+            self.adapter.withdraw_address_list().await,
+        ))
+    }
+
+    async fn withdraw_history(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<BinanceWithdrawHistoryRequest, WireBinanceWithdrawHistoryRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(
+                self.adapter
+                    .withdraw_history(&request)
+                    .await
+                    .and_then(TryInto::<WireBinanceWithdrawHistory>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
     async fn spot_order(
         &self,
         market: maxt::Result<String>,
@@ -1646,6 +1794,127 @@ impl NativeBinance {
         let this = self.clone();
         let market = native_json_text(market, "market");
         spawn_native(env, async move { this.spot_average_price(market).await })
+    }
+
+    #[napi(js_name = "spotAccountInformation")]
+    pub fn spot_account_information_native<'env>(
+        &self,
+        env: &'env Env,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.spot_account_information().await })
+    }
+
+    #[napi(js_name = "spotCancelAllOpenOrders", ts_args_type = "market: string")]
+    pub fn spot_cancel_all_open_orders_native<'env>(
+        &self,
+        env: &'env Env,
+        market: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let market = native_json_text(market, "market");
+        spawn_native(env, async move {
+            this.spot_cancel_all_open_orders(market).await
+        })
+    }
+
+    #[napi(js_name = "spotExchangeInfo")]
+    pub fn spot_exchange_info_native<'env>(
+        &self,
+        env: &'env Env,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.spot_exchange_info().await })
+    }
+
+    #[napi(js_name = "usdMAccountInformation")]
+    pub fn usd_m_account_information_native<'env>(
+        &self,
+        env: &'env Env,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.usd_m_account_information().await })
+    }
+
+    #[napi(js_name = "usdMExchangeInfo")]
+    pub fn usd_m_exchange_info_native<'env>(
+        &self,
+        env: &'env Env,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.usd_m_exchange_info().await })
+    }
+
+    #[napi(js_name = "usdMPositionInformation", ts_args_type = "market: string")]
+    pub fn usd_m_position_information_native<'env>(
+        &self,
+        env: &'env Env,
+        market: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let market = native_json_text(market, "market");
+        spawn_native(
+            env,
+            async move { this.usd_m_position_information(market).await },
+        )
+    }
+
+    #[napi(js_name = "allCoinsInformation")]
+    pub fn all_coins_information_native<'env>(
+        &self,
+        env: &'env Env,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.all_coins_information().await })
+    }
+
+    #[napi(js_name = "apiKeyPermissions")]
+    pub fn api_key_permissions_native<'env>(
+        &self,
+        env: &'env Env,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.api_key_permissions().await })
+    }
+
+    #[napi(js_name = "depositHistory", ts_args_type = "request: string")]
+    pub fn deposit_history_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.deposit_history(request).await })
+    }
+
+    #[napi(js_name = "questionnaireRequirements")]
+    pub fn questionnaire_requirements_native<'env>(
+        &self,
+        env: &'env Env,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.questionnaire_requirements().await })
+    }
+
+    #[napi(js_name = "withdrawAddressList")]
+    pub fn withdraw_address_list_native<'env>(
+        &self,
+        env: &'env Env,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.withdraw_address_list().await })
+    }
+
+    #[napi(js_name = "withdrawHistory", ts_args_type = "request: string")]
+    pub fn withdraw_history_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.withdraw_history(request).await })
     }
 
     #[napi(
@@ -1864,6 +2133,130 @@ impl NativeHyperliquid {
         }
     }
 
+    async fn candle_snapshot(
+        &self,
+        market: maxt::Result<String>,
+        interval: maxt::Result<String>,
+        from: maxt::Result<String>,
+        to: maxt::Result<String>,
+    ) -> Value {
+        let market = parse_wire::<Market, WireMarket>(market, "market");
+        let interval = parse_text::<String>(interval, "interval");
+        let from = parse_text::<String>(from, "from")
+            .and_then(|value| timestamp_from_wire(&value, "from"));
+        let to = parse_text::<Option<String>>(to, "to").and_then(|value| {
+            value
+                .as_deref()
+                .map(|value| timestamp_from_wire(value, "to"))
+                .transpose()
+        });
+        match (market, interval, from, to) {
+            (Ok(market), Ok(interval), Ok(from), Ok(to)) => {
+                outcome(wire_vec::<_, WireHyperliquidCandleSnapshot>(
+                    self.adapter
+                        .candle_snapshot(&market, &interval, from, to)
+                        .await,
+                ))
+            }
+            (Err(error), _, _, _)
+            | (_, Err(error), _, _)
+            | (_, _, Err(error), _)
+            | (_, _, _, Err(error)) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn l2_book(&self, market: maxt::Result<String>) -> Value {
+        match parse_wire::<Market, WireMarket>(market, "market") {
+            Ok(market) => outcome(
+                self.adapter
+                    .l2_book(&market)
+                    .await
+                    .and_then(TryInto::<WireHyperliquidL2Book>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn recent_trades(&self, market: maxt::Result<String>) -> Value {
+        match parse_wire::<Market, WireMarket>(market, "market") {
+            Ok(market) => outcome(wire_vec::<_, WireHyperliquidRecentTrade>(
+                self.adapter.recent_trades(&market).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn funding_history(
+        &self,
+        market: maxt::Result<String>,
+        from: maxt::Result<String>,
+        to: maxt::Result<String>,
+    ) -> Value {
+        let market = parse_wire::<Market, WireMarket>(market, "market");
+        let from = parse_text::<String>(from, "from")
+            .and_then(|value| timestamp_from_wire(&value, "from"));
+        let to = parse_text::<Option<String>>(to, "to").and_then(|value| {
+            value
+                .as_deref()
+                .map(|value| timestamp_from_wire(value, "to"))
+                .transpose()
+        });
+        match (market, from, to) {
+            (Ok(market), Ok(from), Ok(to)) => {
+                outcome(wire_vec::<_, WireHyperliquidFundingHistoryEntry>(
+                    self.adapter.funding_history(&market, from, to).await,
+                ))
+            }
+            (Err(error), _, _) | (_, Err(error), _) | (_, _, Err(error)) => {
+                outcome::<Value>(Err(error))
+            }
+        }
+    }
+
+    async fn user_funding(&self, from: maxt::Result<String>, to: maxt::Result<String>) -> Value {
+        let from = parse_text::<String>(from, "from")
+            .and_then(|value| timestamp_from_wire(&value, "from"));
+        let to = parse_text::<Option<String>>(to, "to").and_then(|value| {
+            value
+                .as_deref()
+                .map(|value| timestamp_from_wire(value, "to"))
+                .transpose()
+        });
+        match (from, to) {
+            (Ok(from), Ok(to)) => outcome(wire_vec::<_, WireHyperliquidUserFunding>(
+                self.adapter.user_funding(from, to).await,
+            )),
+            (Err(error), _) | (_, Err(error)) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn spot_clearinghouse_state(&self) -> Value {
+        outcome(
+            self.adapter
+                .spot_clearinghouse_state()
+                .await
+                .and_then(TryInto::<WireHyperliquidSpotClearinghouseState>::try_into),
+        )
+    }
+
+    async fn spot_meta(&self) -> Value {
+        outcome(
+            self.adapter
+                .spot_meta()
+                .await
+                .and_then(TryInto::<WireHyperliquidSpotMeta>::try_into),
+        )
+    }
+
+    async fn spot_meta_and_asset_contexts(&self) -> Value {
+        outcome(
+            self.adapter
+                .spot_meta_and_asset_contexts()
+                .await
+                .and_then(TryInto::<WireHyperliquidSpotMetaAndAssetContexts>::try_into),
+        )
+    }
+
     async fn all_mids(&self) -> Value {
         outcome(wire_vec::<_, WireHyperliquidMidPrice>(
             self.adapter.all_mids().await,
@@ -2034,6 +2427,111 @@ impl NativeHyperliquid {
         let this = self.clone();
         let market = native_json_text(market, "market");
         spawn_native(env, async move { this.asset_context(market).await })
+    }
+
+    #[napi(
+        js_name = "candleSnapshot",
+        ts_args_type = "market: string, interval: string, from: string, to: string"
+    )]
+    pub fn candle_snapshot_native<'env>(
+        &self,
+        env: &'env Env,
+        market: NativeJsonText<'env>,
+        interval: NativeJsonText<'env>,
+        from: NativeJsonText<'env>,
+        to: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let market = native_json_text(market, "market");
+        let interval = native_json_text(interval, "interval");
+        let from = native_json_text(from, "from");
+        let to = native_json_text(to, "to");
+        spawn_native(env, async move {
+            this.candle_snapshot(market, interval, from, to).await
+        })
+    }
+
+    #[napi(js_name = "l2Book", ts_args_type = "market: string")]
+    pub fn l2_book_native<'env>(
+        &self,
+        env: &'env Env,
+        market: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let market = native_json_text(market, "market");
+        spawn_native(env, async move { this.l2_book(market).await })
+    }
+
+    #[napi(js_name = "recentTrades", ts_args_type = "market: string")]
+    pub fn recent_trades_native<'env>(
+        &self,
+        env: &'env Env,
+        market: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let market = native_json_text(market, "market");
+        spawn_native(env, async move { this.recent_trades(market).await })
+    }
+
+    #[napi(
+        js_name = "fundingHistory",
+        ts_args_type = "market: string, from: string, to: string"
+    )]
+    pub fn funding_history_native<'env>(
+        &self,
+        env: &'env Env,
+        market: NativeJsonText<'env>,
+        from: NativeJsonText<'env>,
+        to: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let market = native_json_text(market, "market");
+        let from = native_json_text(from, "from");
+        let to = native_json_text(to, "to");
+        spawn_native(
+            env,
+            async move { this.funding_history(market, from, to).await },
+        )
+    }
+
+    #[napi(js_name = "userFunding", ts_args_type = "from: string, to: string")]
+    pub fn user_funding_native<'env>(
+        &self,
+        env: &'env Env,
+        from: NativeJsonText<'env>,
+        to: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let from = native_json_text(from, "from");
+        let to = native_json_text(to, "to");
+        spawn_native(env, async move { this.user_funding(from, to).await })
+    }
+
+    #[napi(js_name = "spotClearinghouseState")]
+    pub fn spot_clearinghouse_state_native<'env>(
+        &self,
+        env: &'env Env,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.spot_clearinghouse_state().await })
+    }
+
+    #[napi(js_name = "spotMeta")]
+    pub fn spot_meta_native<'env>(&self, env: &'env Env) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.spot_meta().await })
+    }
+
+    #[napi(js_name = "spotMetaAndAssetContexts")]
+    pub fn spot_meta_and_asset_contexts_native<'env>(
+        &self,
+        env: &'env Env,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(
+            env,
+            async move { this.spot_meta_and_asset_contexts().await },
+        )
     }
 
     #[napi(js_name = "allMids")]
@@ -2297,6 +2795,11 @@ impl NativeUpbit {
         crate::web::value(self.deposit_info(Ok(asset), Ok(network)).await)
     }
 
+    #[wasm_bindgen(js_name = "withdrawalAddresses")]
+    pub async fn withdrawal_addresses_wasm(&self) -> JsValue {
+        crate::web::value(self.withdrawal_addresses().await)
+    }
+
     #[wasm_bindgen(js_name = "travelRuleVasps")]
     pub async fn travel_rule_vasps_wasm(&self) -> JsValue {
         crate::web::value(self.travel_rule_vasps().await)
@@ -2521,6 +3024,66 @@ impl NativeBinance {
         crate::web::value(self.spot_average_price(Ok(market)).await)
     }
 
+    #[wasm_bindgen(js_name = "spotAccountInformation")]
+    pub async fn spot_account_information_wasm(&self) -> JsValue {
+        crate::web::value(self.spot_account_information().await)
+    }
+
+    #[wasm_bindgen(js_name = "spotCancelAllOpenOrders")]
+    pub async fn spot_cancel_all_open_orders_wasm(&self, market: String) -> JsValue {
+        crate::web::value(self.spot_cancel_all_open_orders(Ok(market)).await)
+    }
+
+    #[wasm_bindgen(js_name = "spotExchangeInfo")]
+    pub async fn spot_exchange_info_wasm(&self) -> JsValue {
+        crate::web::value(self.spot_exchange_info().await)
+    }
+
+    #[wasm_bindgen(js_name = "usdMAccountInformation")]
+    pub async fn usd_m_account_information_wasm(&self) -> JsValue {
+        crate::web::value(self.usd_m_account_information().await)
+    }
+
+    #[wasm_bindgen(js_name = "usdMExchangeInfo")]
+    pub async fn usd_m_exchange_info_wasm(&self) -> JsValue {
+        crate::web::value(self.usd_m_exchange_info().await)
+    }
+
+    #[wasm_bindgen(js_name = "usdMPositionInformation")]
+    pub async fn usd_m_position_information_wasm(&self, market: String) -> JsValue {
+        crate::web::value(self.usd_m_position_information(Ok(market)).await)
+    }
+
+    #[wasm_bindgen(js_name = "allCoinsInformation")]
+    pub async fn all_coins_information_wasm(&self) -> JsValue {
+        crate::web::value(self.all_coins_information().await)
+    }
+
+    #[wasm_bindgen(js_name = "apiKeyPermissions")]
+    pub async fn api_key_permissions_wasm(&self) -> JsValue {
+        crate::web::value(self.api_key_permissions().await)
+    }
+
+    #[wasm_bindgen(js_name = "depositHistory")]
+    pub async fn deposit_history_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.deposit_history(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "questionnaireRequirements")]
+    pub async fn questionnaire_requirements_wasm(&self) -> JsValue {
+        crate::web::value(self.questionnaire_requirements().await)
+    }
+
+    #[wasm_bindgen(js_name = "withdrawAddressList")]
+    pub async fn withdraw_address_list_wasm(&self) -> JsValue {
+        crate::web::value(self.withdraw_address_list().await)
+    }
+
+    #[wasm_bindgen(js_name = "withdrawHistory")]
+    pub async fn withdraw_history_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.withdraw_history(Ok(request)).await)
+    }
+
     #[wasm_bindgen(js_name = "spotOrder")]
     pub async fn spot_order_wasm(&self, market: String, order_id: String) -> JsValue {
         crate::web::value(self.spot_order(Ok(market), Ok(order_id)).await)
@@ -2612,6 +3175,55 @@ impl NativeHyperliquid {
     #[wasm_bindgen(js_name = "assetContext")]
     pub async fn asset_context_wasm(&self, market: String) -> JsValue {
         crate::web::value(self.asset_context(Ok(market)).await)
+    }
+
+    #[wasm_bindgen(js_name = "candleSnapshot")]
+    pub async fn candle_snapshot_wasm(
+        &self,
+        market: String,
+        interval: String,
+        from: String,
+        to: String,
+    ) -> JsValue {
+        crate::web::value(
+            self.candle_snapshot(Ok(market), Ok(interval), Ok(from), Ok(to))
+                .await,
+        )
+    }
+
+    #[wasm_bindgen(js_name = "l2Book")]
+    pub async fn l2_book_wasm(&self, market: String) -> JsValue {
+        crate::web::value(self.l2_book(Ok(market)).await)
+    }
+
+    #[wasm_bindgen(js_name = "recentTrades")]
+    pub async fn recent_trades_wasm(&self, market: String) -> JsValue {
+        crate::web::value(self.recent_trades(Ok(market)).await)
+    }
+
+    #[wasm_bindgen(js_name = "fundingHistory")]
+    pub async fn funding_history_wasm(&self, market: String, from: String, to: String) -> JsValue {
+        crate::web::value(self.funding_history(Ok(market), Ok(from), Ok(to)).await)
+    }
+
+    #[wasm_bindgen(js_name = "userFunding")]
+    pub async fn user_funding_wasm(&self, from: String, to: String) -> JsValue {
+        crate::web::value(self.user_funding(Ok(from), Ok(to)).await)
+    }
+
+    #[wasm_bindgen(js_name = "spotClearinghouseState")]
+    pub async fn spot_clearinghouse_state_wasm(&self) -> JsValue {
+        crate::web::value(self.spot_clearinghouse_state().await)
+    }
+
+    #[wasm_bindgen(js_name = "spotMeta")]
+    pub async fn spot_meta_wasm(&self) -> JsValue {
+        crate::web::value(self.spot_meta().await)
+    }
+
+    #[wasm_bindgen(js_name = "spotMetaAndAssetContexts")]
+    pub async fn spot_meta_and_asset_contexts_wasm(&self) -> JsValue {
+        crate::web::value(self.spot_meta_and_asset_contexts().await)
     }
 
     #[wasm_bindgen(js_name = "allMids")]

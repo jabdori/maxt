@@ -1373,7 +1373,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::Read,
-        OperationMapping::Common("prepare_withdrawal"),
+        OperationMapping::CommonAndProvider {
+            common: &["prepare_withdrawal"],
+            provider: &["withdrawal_addresses"],
+        },
         Validation::Fixture,
     ),
     operation(
@@ -2230,7 +2233,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationRisk::Read,
         OperationMapping::CommonAndProvider {
             common: &["markets"],
-            provider: &["spot_symbol_filters"],
+            provider: &["spot_symbol_filters", "spot_exchange_info"],
         },
         Validation::LiveRead,
     ),
@@ -2315,7 +2318,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Hmac,
         OperationRisk::Read,
-        OperationMapping::Common("balances"),
+        OperationMapping::CommonAndProvider {
+            common: &["balances"],
+            provider: &["spot_account_information"],
+        },
         Validation::Fixture,
     ),
     operation(
@@ -2387,7 +2393,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Hmac,
         OperationRisk::FinancialWrite,
-        OperationMapping::Provider("cancel_all_open_orders"),
+        OperationMapping::Provider("spot_cancel_all_open_orders"),
         Validation::Fixture,
     ),
     operation(
@@ -2471,7 +2477,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("markets"),
+        OperationMapping::CommonAndProvider {
+            common: &["markets"],
+            provider: &["usd_m_exchange_info"],
+        },
         Validation::LiveRead,
     ),
     operation(
@@ -2567,7 +2576,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Hmac,
         OperationRisk::Read,
-        OperationMapping::CommonMany(&["balances", "margin_summary"]),
+        OperationMapping::CommonAndProvider {
+            common: &["balances", "margin_summary"],
+            provider: &["usd_m_account_information"],
+        },
         Validation::Fixture,
     ),
     operation(
@@ -2651,7 +2663,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Hmac,
         OperationRisk::Read,
-        OperationMapping::Common("positions"),
+        OperationMapping::CommonAndProvider {
+            common: &["positions"],
+            provider: &["usd_m_position_information"],
+        },
         Validation::Fixture,
     ),
     operation(
@@ -2807,7 +2822,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Hmac,
         OperationRisk::Read,
-        OperationMapping::Common("asset_networks"),
+        OperationMapping::CommonAndProvider {
+            common: &["asset_networks"],
+            provider: &["all_coins_information"],
+        },
         Validation::Fixture,
     ),
     operation(
@@ -2831,7 +2849,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Hmac,
         OperationRisk::Read,
-        OperationMapping::Common("prepare_withdrawal"),
+        OperationMapping::CommonAndProvider {
+            common: &["prepare_withdrawal"],
+            provider: &["api_key_permissions"],
+        },
         Validation::Fixture,
     ),
     operation(
@@ -2843,7 +2864,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Hmac,
         OperationRisk::Read,
-        OperationMapping::Common("prepare_withdrawal"),
+        OperationMapping::CommonAndProvider {
+            common: &["prepare_withdrawal"],
+            provider: &["withdraw_address_list"],
+        },
         Validation::Fixture,
     ),
     restricted(
@@ -2856,7 +2880,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
             ApiInterface::Http,
             Authentication::Hmac,
             OperationRisk::Read,
-            OperationMapping::Common("prepare_withdrawal"),
+            OperationMapping::CommonAndProvider {
+                common: &["prepare_withdrawal"],
+                provider: &["questionnaire_requirements"],
+            },
             Validation::Fixture,
         ),
         Availability::Eligibility("local entity and Travel Rule requirements"),
@@ -2882,7 +2909,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Hmac,
         OperationRisk::Read,
-        OperationMapping::Common("deposits"),
+        OperationMapping::CommonAndProvider {
+            common: &["deposits"],
+            provider: &["deposit_history"],
+        },
         Validation::Fixture,
     ),
     operation(
@@ -2894,7 +2924,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Hmac,
         OperationRisk::Read,
-        OperationMapping::Common("withdrawals"),
+        OperationMapping::CommonAndProvider {
+            common: &["withdrawals"],
+            provider: &["withdraw_history"],
+        },
         Validation::Fixture,
     ),
     operation(
@@ -2930,7 +2963,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("markets"),
+        OperationMapping::CommonAndProvider {
+            common: &["markets"],
+            provider: &["spot_meta"],
+        },
         Validation::LiveRead,
     ),
     partial(operation(
@@ -3031,7 +3067,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationRisk::Read,
         OperationMapping::CommonAndProvider {
             common: &["ticker"],
-            provider: &["asset_context"],
+            provider: &["spot_meta_and_asset_contexts"],
         },
         Validation::LiveRead,
     ),
@@ -3044,7 +3080,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("order_book"),
+        OperationMapping::CommonAndProvider {
+            common: &["order_book"],
+            provider: &["l2_book"],
+        },
         Validation::LiveRead,
     ),
     operation(
@@ -3056,7 +3095,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("trades"),
+        OperationMapping::CommonAndProvider {
+            common: &["trades"],
+            provider: &["recent_trades"],
+        },
         Validation::LiveRead,
     ),
     operation(
@@ -3068,7 +3110,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("candles"),
+        OperationMapping::CommonAndProvider {
+            common: &["candles"],
+            provider: &["candle_snapshot"],
+        },
         Validation::LiveRead,
     ),
     operation(
@@ -3080,7 +3125,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("balances"),
+        OperationMapping::CommonAndProvider {
+            common: &["balances"],
+            provider: &["spot_clearinghouse_state"],
+        },
         Validation::Fixture,
     ),
     operation(
@@ -3200,7 +3248,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("funding_rates"),
+        OperationMapping::CommonAndProvider {
+            common: &["funding_rates"],
+            provider: &["funding_history"],
+        },
         Validation::LiveRead,
     ),
     operation(
@@ -3212,7 +3263,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("funding_payments"),
+        OperationMapping::CommonAndProvider {
+            common: &["funding_payments"],
+            provider: &["user_funding"],
+        },
         Validation::Fixture,
     ),
     operation(

@@ -572,6 +572,22 @@ fn _guard_upbit_deposit_info_wire(value: WireUpbitDepositInfo) {
     } = value;
 }
 
+fn _guard_upbit_withdrawal_address_wire(value: WireUpbitWithdrawalAddress) {
+    let WireUpbitWithdrawalAddress {
+        currency: _,
+        net_type: _,
+        network_name: _,
+        withdraw_address: _,
+        secondary_address: _,
+        beneficiary_name: _,
+        beneficiary_company_name: _,
+        beneficiary_type: _,
+        exchange_name: _,
+        wallet_type: _,
+        raw_json: _,
+    } = value;
+}
+
 fn _guard_upbit_travel_rule_vasp_wire(value: WireUpbitTravelRuleVasp) {
     let WireUpbitTravelRuleVasp {
         vasp_name: _,
@@ -1034,6 +1050,327 @@ fn _guard_binance_spot_average_price_wire(value: WireBinanceSpotAveragePrice) {
     } = value;
 }
 
+fn _guard_binance_deposit_history_request_wire(value: WireBinanceDepositHistoryRequest) {
+    let WireBinanceDepositHistoryRequest {
+        coin: _,
+        status: _,
+        start_time_ns: _,
+        end_time_ns: _,
+        offset: _,
+        limit: _,
+        tx_id: _,
+        include_source: _,
+    } = value;
+}
+
+fn _guard_binance_withdraw_history_request_wire(value: WireBinanceWithdrawHistoryRequest) {
+    let WireBinanceWithdrawHistoryRequest {
+        coin: _,
+        withdraw_order_id: _,
+        status: _,
+        offset: _,
+        limit: _,
+        id_list: _,
+        start_time_ns: _,
+        end_time_ns: _,
+    } = value;
+}
+
+fn _guard_binance_spot_commission_rates_wire(value: WireBinanceSpotCommissionRates) {
+    let WireBinanceSpotCommissionRates {
+        maker: _,
+        taker: _,
+        buyer: _,
+        seller: _,
+    } = value;
+}
+
+fn _guard_binance_spot_account_balance_wire(value: WireBinanceSpotAccountBalance) {
+    let WireBinanceSpotAccountBalance {
+        asset: _,
+        free: _,
+        locked: _,
+    } = value;
+}
+
+fn _guard_binance_spot_account_information_wire(value: WireBinanceSpotAccountInformation) {
+    let WireBinanceSpotAccountInformation {
+        maker_commission: _,
+        taker_commission: _,
+        buyer_commission: _,
+        seller_commission: _,
+        commission_rates: _,
+        can_trade: _,
+        can_withdraw: _,
+        can_deposit: _,
+        update_time_ns: _,
+        account_type: _,
+        balances: _,
+        permissions: _,
+        uid: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_spot_cancelled_order_wire(value: WireBinanceSpotCancelledOrder) {
+    let WireBinanceSpotCancelledOrder {
+        symbol: _,
+        original_client_order_id: _,
+        order_id: _,
+        client_order_id: _,
+        status: _,
+        price: _,
+        original_quantity: _,
+        executed_quantity: _,
+        cumulative_quote_quantity: _,
+        transact_time_ns: _,
+        order_list_id: _,
+        contingency_type: _,
+        list_status_type: _,
+        list_order_status: _,
+        list_client_order_id: _,
+        transaction_time_ns: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_spot_cancel_all_open_orders_wire(value: WireBinanceSpotCancelAllOpenOrders) {
+    let WireBinanceSpotCancelAllOpenOrders {
+        reports: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_exchange_symbol_wire(value: WireBinanceExchangeSymbol) {
+    let WireBinanceExchangeSymbol {
+        symbol: _,
+        status: _,
+        base_asset: _,
+        quote_asset: _,
+        contract_type: _,
+        margin_asset: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_exchange_info_wire(value: WireBinanceExchangeInfo) {
+    let WireBinanceExchangeInfo {
+        venue: _,
+        timezone: _,
+        server_time_ns: _,
+        symbols: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_usd_m_account_asset_wire(value: WireBinanceUsdMAccountAsset) {
+    let WireBinanceUsdMAccountAsset {
+        asset: _,
+        wallet_balance: _,
+        unrealized_profit: _,
+        margin_balance: _,
+        maintenance_margin: _,
+        initial_margin: _,
+        position_initial_margin: _,
+        open_order_initial_margin: _,
+        cross_wallet_balance: _,
+        cross_unrealized_profit: _,
+        available_balance: _,
+        max_withdraw_amount: _,
+        update_time_ns: _,
+    } = value;
+}
+
+fn _guard_binance_usd_m_account_position_wire(value: WireBinanceUsdMAccountPosition) {
+    let WireBinanceUsdMAccountPosition {
+        symbol: _,
+        position_side: _,
+        position_amount: _,
+        unrealized_profit: _,
+        isolated_margin: _,
+        notional: _,
+        isolated_wallet: _,
+        initial_margin: _,
+        maintenance_margin: _,
+        update_time_ns: _,
+    } = value;
+}
+
+fn _guard_binance_usd_m_account_information_wire(value: WireBinanceUsdMAccountInformation) {
+    let WireBinanceUsdMAccountInformation {
+        total_initial_margin: _,
+        total_maintenance_margin: _,
+        total_wallet_balance: _,
+        total_unrealized_profit: _,
+        total_margin_balance: _,
+        total_position_initial_margin: _,
+        total_open_order_initial_margin: _,
+        total_cross_wallet_balance: _,
+        total_cross_unrealized_profit: _,
+        available_balance: _,
+        max_withdraw_amount: _,
+        assets: _,
+        positions: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_usd_m_position_information_wire(value: WireBinanceUsdMPositionInformation) {
+    let WireBinanceUsdMPositionInformation {
+        symbol: _,
+        position_side: _,
+        position_amount: _,
+        entry_price: _,
+        break_even_price: _,
+        mark_price: _,
+        unrealized_profit: _,
+        liquidation_price: _,
+        isolated_margin: _,
+        notional: _,
+        margin_asset: _,
+        isolated_wallet: _,
+        initial_margin: _,
+        maintenance_margin: _,
+        position_initial_margin: _,
+        open_order_initial_margin: _,
+        adl: _,
+        bid_notional: _,
+        ask_notional: _,
+        update_time_ns: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_coin_network_information_wire(value: WireBinanceCoinNetworkInformation) {
+    let WireBinanceCoinNetworkInformation {
+        network: _,
+        deposit_enabled: _,
+        withdraw_enabled: _,
+        busy: _,
+        withdrawal_integer_multiple: _,
+        withdrawal_fee: _,
+        minimum_withdrawal: _,
+        maximum_withdrawal: _,
+        withdrawal_tag: _,
+        is_default: _,
+        minimum_confirmations: _,
+        unlock_confirmations: _,
+        contract_address: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_coin_information_wire(value: WireBinanceCoinInformation) {
+    let WireBinanceCoinInformation {
+        coin: _,
+        deposit_all_enabled: _,
+        withdraw_all_enabled: _,
+        name: _,
+        free: _,
+        locked: _,
+        freeze: _,
+        withdrawing: _,
+        is_legal_money: _,
+        trading: _,
+        networks: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_api_key_permissions_wire(value: WireBinanceApiKeyPermissions) {
+    let WireBinanceApiKeyPermissions {
+        ip_restrict: _,
+        create_time_ns: _,
+        enable_reading: _,
+        enable_withdrawals: _,
+        enable_internal_transfer: _,
+        enable_margin: _,
+        enable_spot_and_margin_trading: _,
+        enable_futures: _,
+        permits_universal_transfer: _,
+        enable_vanilla_options: _,
+        enable_fix_api_trade: _,
+        enable_fix_read_only: _,
+        enable_portfolio_margin_trading: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_deposit_history_entry_wire(value: WireBinanceDepositHistoryEntry) {
+    let WireBinanceDepositHistoryEntry {
+        id: _,
+        amount: _,
+        coin: _,
+        network: _,
+        status: _,
+        address: _,
+        address_tag: _,
+        tx_id: _,
+        insert_time_ns: _,
+        complete_time_ns: _,
+        transfer_type: _,
+        source_address: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_deposit_history_wire(value: WireBinanceDepositHistory) {
+    let WireBinanceDepositHistory {
+        entries: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_questionnaire_requirements_wire(value: WireBinanceQuestionnaireRequirements) {
+    let WireBinanceQuestionnaireRequirements {
+        questionnaire_country_code: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_withdrawal_address_wire(value: WireBinanceWithdrawalAddress) {
+    let WireBinanceWithdrawalAddress {
+        address: _,
+        address_tag: _,
+        coin: _,
+        network: _,
+        white_status: _,
+        name: _,
+        origin: _,
+        origin_type: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_withdraw_history_entry_wire(value: WireBinanceWithdrawHistoryEntry) {
+    let WireBinanceWithdrawHistoryEntry {
+        id: _,
+        amount: _,
+        transaction_fee: _,
+        coin: _,
+        status: _,
+        address: _,
+        tx_id: _,
+        apply_time: _,
+        network: _,
+        withdraw_order_id: _,
+        info: _,
+        transfer_type: _,
+        confirm_no: _,
+        wallet_type: _,
+        tx_key: _,
+        complete_time: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_withdraw_history_wire(value: WireBinanceWithdrawHistory) {
+    let WireBinanceWithdrawHistory {
+        entries: _,
+        raw_json: _,
+    } = value;
+}
+
 fn _guard_binance_mark_price_wire(value: WireBinanceMarkPrice) {
     let WireBinanceMarkPrice {
         market: _,
@@ -1155,6 +1492,165 @@ fn _guard_binance_c2c_trade_history_page_wire(value: WireBinanceC2cTradeHistoryP
         data: _,
         total: _,
         success: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_candle_snapshot_wire(value: WireHyperliquidCandleSnapshot) {
+    let WireHyperliquidCandleSnapshot {
+        coin: _,
+        market: _,
+        interval: _,
+        open_time_ns: _,
+        close_time_ns: _,
+        open: _,
+        high: _,
+        low: _,
+        close: _,
+        volume: _,
+        trade_count: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_book_level_wire(value: WireHyperliquidBookLevel) {
+    let WireHyperliquidBookLevel {
+        price: _,
+        size: _,
+        order_count: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_l2_book_wire(value: WireHyperliquidL2Book) {
+    let WireHyperliquidL2Book {
+        coin: _,
+        market: _,
+        time_ns: _,
+        bids: _,
+        asks: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_recent_trade_wire(value: WireHyperliquidRecentTrade) {
+    let WireHyperliquidRecentTrade {
+        coin: _,
+        market: _,
+        side: _,
+        price: _,
+        size: _,
+        time_ns: _,
+        trade_id: _,
+        hash: _,
+        users: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_funding_history_entry_wire(value: WireHyperliquidFundingHistoryEntry) {
+    let WireHyperliquidFundingHistoryEntry {
+        coin: _,
+        market: _,
+        funding_rate: _,
+        premium: _,
+        time_ns: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_user_funding_wire(value: WireHyperliquidUserFunding) {
+    let WireHyperliquidUserFunding {
+        kind: _,
+        coin: _,
+        market: _,
+        usdc: _,
+        funding_rate: _,
+        position_size: _,
+        sample_count: _,
+        hash: _,
+        time_ns: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_spot_balance_wire(value: WireHyperliquidSpotBalance) {
+    let WireHyperliquidSpotBalance {
+        coin: _,
+        token: _,
+        total: _,
+        hold: _,
+        entry_notional: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_spot_clearinghouse_state_wire(value: WireHyperliquidSpotClearinghouseState) {
+    let WireHyperliquidSpotClearinghouseState {
+        balances: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_evm_contract_wire(value: WireHyperliquidEvmContract) {
+    let WireHyperliquidEvmContract {
+        address: _,
+        extra_wei_decimals: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_spot_token_wire(value: WireHyperliquidSpotToken) {
+    let WireHyperliquidSpotToken {
+        name: _,
+        size_decimals: _,
+        wei_decimals: _,
+        index: _,
+        token_id: _,
+        is_canonical: _,
+        evm_contract: _,
+        full_name: _,
+        deployer_trading_fee_share: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_spot_pair_wire(value: WireHyperliquidSpotPair) {
+    let WireHyperliquidSpotPair {
+        name: _,
+        tokens: _,
+        index: _,
+        is_canonical: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_spot_meta_wire(value: WireHyperliquidSpotMeta) {
+    let WireHyperliquidSpotMeta {
+        tokens: _,
+        universe: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_spot_asset_context_wire(value: WireHyperliquidSpotAssetContext) {
+    let WireHyperliquidSpotAssetContext {
+        coin: _,
+        mid_price: _,
+        mark_price: _,
+        previous_day_price: _,
+        day_base_volume: _,
+        day_notional_volume: _,
+        circulating_supply: _,
+        total_supply: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_spot_meta_and_asset_contexts_wire(
+    value: WireHyperliquidSpotMetaAndAssetContexts,
+) {
+    let WireHyperliquidSpotMetaAndAssetContexts {
+        meta: _,
+        contexts: _,
+        raw_json: _,
     } = value;
 }
 
@@ -1653,6 +2149,13 @@ fn _guard_upbit_pocket_transfer_order(value: WireUpbitPocketTransferOrder) {
     match value {
         WireUpbitPocketTransferOrder::Ascending => {}
         WireUpbitPocketTransferOrder::Descending => {}
+    }
+}
+
+fn _guard_binance_market(value: WireBinanceMarket) {
+    match value {
+        WireBinanceMarket::Spot => {}
+        WireBinanceMarket::UsdMFutures => {}
     }
 }
 

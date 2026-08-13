@@ -1216,6 +1216,57 @@ final class UpbitDepositInfo {
   final BigInt decimalPrecision;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitWithdrawalAddress]입니다.
+final class UpbitWithdrawalAddress {
+  /// [UpbitWithdrawalAddress]의 값을 만듭니다.
+  const UpbitWithdrawalAddress({
+    required this.currency,
+    required this.netType,
+    required this.networkName,
+    required this.withdrawAddress,
+    this.secondaryAddress,
+    this.beneficiaryName,
+    this.beneficiaryCompanyName,
+    this.beneficiaryType,
+    this.exchangeName,
+    this.walletType,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `currency` 값입니다.
+  final String currency;
+
+  /// 거래소 API의 `net_type` 값입니다.
+  final String netType;
+
+  /// 거래소 API의 `network_name` 값입니다.
+  final String networkName;
+
+  /// 거래소 API의 `withdraw_address` 값입니다.
+  final String withdrawAddress;
+
+  /// 거래소 API의 `secondary_address` 값입니다.
+  final String? secondaryAddress;
+
+  /// 거래소 API의 `beneficiary_name` 값입니다.
+  final String? beneficiaryName;
+
+  /// 거래소 API의 `beneficiary_company_name` 값입니다.
+  final String? beneficiaryCompanyName;
+
+  /// 거래소 API의 `beneficiary_type` 값입니다.
+  final String? beneficiaryType;
+
+  /// 거래소 API의 `exchange_name` 값입니다.
+  final String? exchangeName;
+
+  /// 거래소 API의 `wallet_type` 값입니다.
+  final String? walletType;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
 /// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitTravelRuleVasp]입니다.
 final class UpbitTravelRuleVasp {
   /// [UpbitTravelRuleVasp]의 값을 만듭니다.
@@ -2897,6 +2948,998 @@ final class BithumbOrderListItem {
   final String? timeInForce;
 }
 
+/// 거래소 API 요청에 전달하는 입력값 모델인 [BinanceDepositHistoryRequest]입니다.
+final class BinanceDepositHistoryRequest {
+  /// [BinanceDepositHistoryRequest]의 값을 만듭니다.
+  const BinanceDepositHistoryRequest({
+    this.coin,
+    this.status,
+    this.startTime,
+    this.endTime,
+    this.offset,
+    this.limit,
+    this.txId,
+    this.includeSource = false,
+  });
+
+  /// 거래소 API의 `coin` 값입니다.
+  final String? coin;
+
+  /// 거래소 API의 `status` 값입니다.
+  final int? status;
+
+  /// 거래소 API의 `start_time` 값입니다.
+  final Timestamp? startTime;
+
+  /// 거래소 API의 `end_time` 값입니다.
+  final Timestamp? endTime;
+
+  /// 거래소 API의 `offset` 값입니다.
+  final BigInt? offset;
+
+  /// 거래소 API의 `limit` 값입니다.
+  final int? limit;
+
+  /// 거래소 API의 `tx_id` 값입니다.
+  final String? txId;
+
+  /// 거래소 API의 `include_source` 값입니다.
+  final bool includeSource;
+}
+
+/// 거래소 API 요청에 전달하는 입력값 모델인 [BinanceWithdrawHistoryRequest]입니다.
+final class BinanceWithdrawHistoryRequest {
+  /// [BinanceWithdrawHistoryRequest]의 값을 만듭니다.
+  const BinanceWithdrawHistoryRequest({
+    this.coin,
+    this.withdrawOrderId,
+    this.status,
+    this.offset,
+    this.limit,
+    this.idList = const [],
+    this.startTime,
+    this.endTime,
+  });
+
+  /// 거래소 API의 `coin` 값입니다.
+  final String? coin;
+
+  /// 거래소 API의 `withdraw_order_id` 값입니다.
+  final String? withdrawOrderId;
+
+  /// 거래소 API의 `status` 값입니다.
+  final int? status;
+
+  /// 거래소 API의 `offset` 값입니다.
+  final BigInt? offset;
+
+  /// 거래소 API의 `limit` 값입니다.
+  final int? limit;
+
+  /// 거래소 API의 `id_list` 값입니다.
+  final List<String> idList;
+
+  /// 거래소 API의 `start_time` 값입니다.
+  final Timestamp? startTime;
+
+  /// 거래소 API의 `end_time` 값입니다.
+  final Timestamp? endTime;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceSpotAccountInformation]입니다.
+final class BinanceSpotAccountInformation {
+  /// [BinanceSpotAccountInformation]의 값을 만듭니다.
+  const BinanceSpotAccountInformation({
+    required this.makerCommission,
+    required this.takerCommission,
+    required this.buyerCommission,
+    required this.sellerCommission,
+    required this.commissionRates,
+    required this.canTrade,
+    required this.canWithdraw,
+    required this.canDeposit,
+    required this.updateTime,
+    required this.accountType,
+    required this.balances,
+    required this.permissions,
+    this.uid,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `maker_commission` 값입니다.
+  final BigInt makerCommission;
+
+  /// 거래소 API의 `taker_commission` 값입니다.
+  final BigInt takerCommission;
+
+  /// 거래소 API의 `buyer_commission` 값입니다.
+  final BigInt buyerCommission;
+
+  /// 거래소 API의 `seller_commission` 값입니다.
+  final BigInt sellerCommission;
+
+  /// 거래소 API의 `commission_rates` 값입니다.
+  final BinanceSpotCommissionRates commissionRates;
+
+  /// 거래소 API의 `can_trade` 값입니다.
+  final bool canTrade;
+
+  /// 거래소 API의 `can_withdraw` 값입니다.
+  final bool canWithdraw;
+
+  /// 거래소 API의 `can_deposit` 값입니다.
+  final bool canDeposit;
+
+  /// 거래소 API의 `update_time` 값입니다.
+  final Timestamp updateTime;
+
+  /// 거래소 API의 `account_type` 값입니다.
+  final String accountType;
+
+  /// 거래소 API의 `balances` 값입니다.
+  final List<BinanceSpotAccountBalance> balances;
+
+  /// 거래소 API의 `permissions` 값입니다.
+  final List<String> permissions;
+
+  /// 거래소 API의 `uid` 값입니다.
+  final BigInt? uid;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceSpotCommissionRates]입니다.
+final class BinanceSpotCommissionRates {
+  /// [BinanceSpotCommissionRates]의 값을 만듭니다.
+  const BinanceSpotCommissionRates({
+    required this.maker,
+    required this.taker,
+    required this.buyer,
+    required this.seller,
+  });
+
+  /// 거래소 API의 `maker` 값입니다.
+  final Decimal maker;
+
+  /// 거래소 API의 `taker` 값입니다.
+  final Decimal taker;
+
+  /// 거래소 API의 `buyer` 값입니다.
+  final Decimal buyer;
+
+  /// 거래소 API의 `seller` 값입니다.
+  final Decimal seller;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceSpotAccountBalance]입니다.
+final class BinanceSpotAccountBalance {
+  /// [BinanceSpotAccountBalance]의 값을 만듭니다.
+  BinanceSpotAccountBalance({
+    required String asset,
+    required this.free,
+    required this.locked,
+  }) : asset = _asciiUpper(asset);
+
+  /// 거래소 API의 `asset` 값입니다.
+  final String asset;
+
+  /// 거래소 API의 `free` 값입니다.
+  final Decimal free;
+
+  /// 거래소 API의 `locked` 값입니다.
+  final Decimal locked;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceSpotCancelAllOpenOrders]입니다.
+final class BinanceSpotCancelAllOpenOrders {
+  /// [BinanceSpotCancelAllOpenOrders]의 값을 만듭니다.
+  const BinanceSpotCancelAllOpenOrders({
+    required this.reports,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `reports` 값입니다.
+  final List<BinanceSpotCancelledOrder> reports;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceSpotCancelledOrder]입니다.
+final class BinanceSpotCancelledOrder {
+  /// [BinanceSpotCancelledOrder]의 값을 만듭니다.
+  const BinanceSpotCancelledOrder({
+    this.symbol,
+    this.originalClientOrderId,
+    this.orderId,
+    this.clientOrderId,
+    this.status,
+    this.price,
+    this.originalQuantity,
+    this.executedQuantity,
+    this.cumulativeQuoteQuantity,
+    this.transactTime,
+    this.orderListId,
+    this.contingencyType,
+    this.listStatusType,
+    this.listOrderStatus,
+    this.listClientOrderId,
+    this.transactionTime,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `symbol` 값입니다.
+  final String? symbol;
+
+  /// 거래소 API의 `original_client_order_id` 값입니다.
+  final String? originalClientOrderId;
+
+  /// 거래소 API의 `order_id` 값입니다.
+  final String? orderId;
+
+  /// 거래소 API의 `client_order_id` 값입니다.
+  final String? clientOrderId;
+
+  /// 거래소 API의 `status` 값입니다.
+  final String? status;
+
+  /// 거래소 API의 `price` 값입니다.
+  final Decimal? price;
+
+  /// 거래소 API의 `original_quantity` 값입니다.
+  final Decimal? originalQuantity;
+
+  /// 거래소 API의 `executed_quantity` 값입니다.
+  final Decimal? executedQuantity;
+
+  /// 거래소 API의 `cumulative_quote_quantity` 값입니다.
+  final Decimal? cumulativeQuoteQuantity;
+
+  /// 거래소 API의 `transact_time` 값입니다.
+  final Timestamp? transactTime;
+
+  /// 거래소 API의 `order_list_id` 값입니다.
+  final String? orderListId;
+
+  /// 거래소 API의 `contingency_type` 값입니다.
+  final String? contingencyType;
+
+  /// 거래소 API의 `list_status_type` 값입니다.
+  final String? listStatusType;
+
+  /// 거래소 API의 `list_order_status` 값입니다.
+  final String? listOrderStatus;
+
+  /// 거래소 API의 `list_client_order_id` 값입니다.
+  final String? listClientOrderId;
+
+  /// 거래소 API의 `transaction_time` 값입니다.
+  final Timestamp? transactionTime;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceUsdMAccountInformation]입니다.
+final class BinanceUsdMAccountInformation {
+  /// [BinanceUsdMAccountInformation]의 값을 만듭니다.
+  const BinanceUsdMAccountInformation({
+    required this.totalInitialMargin,
+    required this.totalMaintenanceMargin,
+    required this.totalWalletBalance,
+    required this.totalUnrealizedProfit,
+    required this.totalMarginBalance,
+    required this.totalPositionInitialMargin,
+    required this.totalOpenOrderInitialMargin,
+    required this.totalCrossWalletBalance,
+    required this.totalCrossUnrealizedProfit,
+    required this.availableBalance,
+    required this.maxWithdrawAmount,
+    required this.assets,
+    required this.positions,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `total_initial_margin` 값입니다.
+  final Decimal totalInitialMargin;
+
+  /// 거래소 API의 `total_maintenance_margin` 값입니다.
+  final Decimal totalMaintenanceMargin;
+
+  /// 거래소 API의 `total_wallet_balance` 값입니다.
+  final Decimal totalWalletBalance;
+
+  /// 거래소 API의 `total_unrealized_profit` 값입니다.
+  final Decimal totalUnrealizedProfit;
+
+  /// 거래소 API의 `total_margin_balance` 값입니다.
+  final Decimal totalMarginBalance;
+
+  /// 거래소 API의 `total_position_initial_margin` 값입니다.
+  final Decimal totalPositionInitialMargin;
+
+  /// 거래소 API의 `total_open_order_initial_margin` 값입니다.
+  final Decimal totalOpenOrderInitialMargin;
+
+  /// 거래소 API의 `total_cross_wallet_balance` 값입니다.
+  final Decimal totalCrossWalletBalance;
+
+  /// 거래소 API의 `total_cross_unrealized_profit` 값입니다.
+  final Decimal totalCrossUnrealizedProfit;
+
+  /// 거래소 API의 `available_balance` 값입니다.
+  final Decimal availableBalance;
+
+  /// 거래소 API의 `max_withdraw_amount` 값입니다.
+  final Decimal maxWithdrawAmount;
+
+  /// 거래소 API의 `assets` 값입니다.
+  final List<BinanceUsdMAccountAsset> assets;
+
+  /// 거래소 API의 `positions` 값입니다.
+  final List<BinanceUsdMAccountPosition> positions;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceUsdMAccountAsset]입니다.
+final class BinanceUsdMAccountAsset {
+  /// [BinanceUsdMAccountAsset]의 값을 만듭니다.
+  BinanceUsdMAccountAsset({
+    required String asset,
+    required this.walletBalance,
+    required this.unrealizedProfit,
+    required this.marginBalance,
+    required this.maintenanceMargin,
+    required this.initialMargin,
+    required this.positionInitialMargin,
+    required this.openOrderInitialMargin,
+    required this.crossWalletBalance,
+    required this.crossUnrealizedProfit,
+    required this.availableBalance,
+    required this.maxWithdrawAmount,
+    required this.updateTime,
+  }) : asset = _asciiUpper(asset);
+
+  /// 거래소 API의 `asset` 값입니다.
+  final String asset;
+
+  /// 거래소 API의 `wallet_balance` 값입니다.
+  final Decimal walletBalance;
+
+  /// 거래소 API의 `unrealized_profit` 값입니다.
+  final Decimal unrealizedProfit;
+
+  /// 거래소 API의 `margin_balance` 값입니다.
+  final Decimal marginBalance;
+
+  /// 거래소 API의 `maintenance_margin` 값입니다.
+  final Decimal maintenanceMargin;
+
+  /// 거래소 API의 `initial_margin` 값입니다.
+  final Decimal initialMargin;
+
+  /// 거래소 API의 `position_initial_margin` 값입니다.
+  final Decimal positionInitialMargin;
+
+  /// 거래소 API의 `open_order_initial_margin` 값입니다.
+  final Decimal openOrderInitialMargin;
+
+  /// 거래소 API의 `cross_wallet_balance` 값입니다.
+  final Decimal crossWalletBalance;
+
+  /// 거래소 API의 `cross_unrealized_profit` 값입니다.
+  final Decimal crossUnrealizedProfit;
+
+  /// 거래소 API의 `available_balance` 값입니다.
+  final Decimal availableBalance;
+
+  /// 거래소 API의 `max_withdraw_amount` 값입니다.
+  final Decimal maxWithdrawAmount;
+
+  /// 거래소 API의 `update_time` 값입니다.
+  final Timestamp updateTime;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceUsdMAccountPosition]입니다.
+final class BinanceUsdMAccountPosition {
+  /// [BinanceUsdMAccountPosition]의 값을 만듭니다.
+  const BinanceUsdMAccountPosition({
+    required this.symbol,
+    required this.positionSide,
+    required this.positionAmount,
+    required this.unrealizedProfit,
+    required this.isolatedMargin,
+    required this.notional,
+    required this.isolatedWallet,
+    required this.initialMargin,
+    required this.maintenanceMargin,
+    required this.updateTime,
+  });
+
+  /// 거래소 API의 `symbol` 값입니다.
+  final String symbol;
+
+  /// 거래소 API의 `position_side` 값입니다.
+  final String positionSide;
+
+  /// 거래소 API의 `position_amount` 값입니다.
+  final Decimal positionAmount;
+
+  /// 거래소 API의 `unrealized_profit` 값입니다.
+  final Decimal unrealizedProfit;
+
+  /// 거래소 API의 `isolated_margin` 값입니다.
+  final Decimal isolatedMargin;
+
+  /// 거래소 API의 `notional` 값입니다.
+  final Decimal notional;
+
+  /// 거래소 API의 `isolated_wallet` 값입니다.
+  final Decimal isolatedWallet;
+
+  /// 거래소 API의 `initial_margin` 값입니다.
+  final Decimal initialMargin;
+
+  /// 거래소 API의 `maintenance_margin` 값입니다.
+  final Decimal maintenanceMargin;
+
+  /// 거래소 API의 `update_time` 값입니다.
+  final Timestamp updateTime;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceUsdMPositionInformation]입니다.
+final class BinanceUsdMPositionInformation {
+  /// [BinanceUsdMPositionInformation]의 값을 만듭니다.
+  const BinanceUsdMPositionInformation({
+    required this.symbol,
+    required this.positionSide,
+    required this.positionAmount,
+    required this.entryPrice,
+    required this.breakEvenPrice,
+    required this.markPrice,
+    required this.unrealizedProfit,
+    required this.liquidationPrice,
+    required this.isolatedMargin,
+    required this.notional,
+    required this.marginAsset,
+    required this.isolatedWallet,
+    required this.initialMargin,
+    required this.maintenanceMargin,
+    required this.positionInitialMargin,
+    required this.openOrderInitialMargin,
+    required this.adl,
+    required this.bidNotional,
+    required this.askNotional,
+    required this.updateTime,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `symbol` 값입니다.
+  final String symbol;
+
+  /// 거래소 API의 `position_side` 값입니다.
+  final String positionSide;
+
+  /// 거래소 API의 `position_amount` 값입니다.
+  final Decimal positionAmount;
+
+  /// 거래소 API의 `entry_price` 값입니다.
+  final Decimal entryPrice;
+
+  /// 거래소 API의 `break_even_price` 값입니다.
+  final Decimal breakEvenPrice;
+
+  /// 거래소 API의 `mark_price` 값입니다.
+  final Decimal markPrice;
+
+  /// 거래소 API의 `unrealized_profit` 값입니다.
+  final Decimal unrealizedProfit;
+
+  /// 거래소 API의 `liquidation_price` 값입니다.
+  final Decimal liquidationPrice;
+
+  /// 거래소 API의 `isolated_margin` 값입니다.
+  final Decimal isolatedMargin;
+
+  /// 거래소 API의 `notional` 값입니다.
+  final Decimal notional;
+
+  /// 거래소 API의 `margin_asset` 값입니다.
+  final String marginAsset;
+
+  /// 거래소 API의 `isolated_wallet` 값입니다.
+  final Decimal isolatedWallet;
+
+  /// 거래소 API의 `initial_margin` 값입니다.
+  final Decimal initialMargin;
+
+  /// 거래소 API의 `maintenance_margin` 값입니다.
+  final Decimal maintenanceMargin;
+
+  /// 거래소 API의 `position_initial_margin` 값입니다.
+  final Decimal positionInitialMargin;
+
+  /// 거래소 API의 `open_order_initial_margin` 값입니다.
+  final Decimal openOrderInitialMargin;
+
+  /// 거래소 API의 `adl` 값입니다.
+  final BigInt adl;
+
+  /// 거래소 API의 `bid_notional` 값입니다.
+  final Decimal bidNotional;
+
+  /// 거래소 API의 `ask_notional` 값입니다.
+  final Decimal askNotional;
+
+  /// 거래소 API의 `update_time` 값입니다.
+  final Timestamp updateTime;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceExchangeInfo]입니다.
+final class BinanceExchangeInfo {
+  /// [BinanceExchangeInfo]의 값을 만듭니다.
+  const BinanceExchangeInfo({
+    required this.venue,
+    this.timezone,
+    this.serverTime,
+    required this.symbols,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `venue` 값입니다.
+  final BinanceMarket venue;
+
+  /// 거래소 API의 `timezone` 값입니다.
+  final String? timezone;
+
+  /// 거래소 API의 `server_time` 값입니다.
+  final Timestamp? serverTime;
+
+  /// 거래소 API의 `symbols` 값입니다.
+  final List<BinanceExchangeSymbol> symbols;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceExchangeSymbol]입니다.
+final class BinanceExchangeSymbol {
+  /// [BinanceExchangeSymbol]의 값을 만듭니다.
+  const BinanceExchangeSymbol({
+    required this.symbol,
+    required this.status,
+    required this.baseAsset,
+    required this.quoteAsset,
+    this.contractType,
+    this.marginAsset,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `symbol` 값입니다.
+  final String symbol;
+
+  /// 거래소 API의 `status` 값입니다.
+  final String status;
+
+  /// 거래소 API의 `base_asset` 값입니다.
+  final String baseAsset;
+
+  /// 거래소 API의 `quote_asset` 값입니다.
+  final String quoteAsset;
+
+  /// 거래소 API의 `contract_type` 값입니다.
+  final String? contractType;
+
+  /// 거래소 API의 `margin_asset` 값입니다.
+  final String? marginAsset;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceCoinInformation]입니다.
+final class BinanceCoinInformation {
+  /// [BinanceCoinInformation]의 값을 만듭니다.
+  const BinanceCoinInformation({
+    required this.coin,
+    required this.depositAllEnabled,
+    required this.withdrawAllEnabled,
+    this.name,
+    this.free,
+    this.locked,
+    this.freeze,
+    this.withdrawing,
+    this.isLegalMoney,
+    this.trading,
+    required this.networks,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `coin` 값입니다.
+  final String coin;
+
+  /// 거래소 API의 `deposit_all_enabled` 값입니다.
+  final bool depositAllEnabled;
+
+  /// 거래소 API의 `withdraw_all_enabled` 값입니다.
+  final bool withdrawAllEnabled;
+
+  /// 거래소 API의 `name` 값입니다.
+  final String? name;
+
+  /// 거래소 API의 `free` 값입니다.
+  final Decimal? free;
+
+  /// 거래소 API의 `locked` 값입니다.
+  final Decimal? locked;
+
+  /// 거래소 API의 `freeze` 값입니다.
+  final Decimal? freeze;
+
+  /// 거래소 API의 `withdrawing` 값입니다.
+  final Decimal? withdrawing;
+
+  /// 거래소 API의 `is_legal_money` 값입니다.
+  final bool? isLegalMoney;
+
+  /// 거래소 API의 `trading` 값입니다.
+  final bool? trading;
+
+  /// 거래소 API의 `networks` 값입니다.
+  final List<BinanceCoinNetworkInformation> networks;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceCoinNetworkInformation]입니다.
+final class BinanceCoinNetworkInformation {
+  /// [BinanceCoinNetworkInformation]의 값을 만듭니다.
+  const BinanceCoinNetworkInformation({
+    required this.network,
+    required this.depositEnabled,
+    required this.withdrawEnabled,
+    required this.busy,
+    this.withdrawalIntegerMultiple,
+    this.withdrawalFee,
+    this.minimumWithdrawal,
+    this.maximumWithdrawal,
+    this.withdrawalTag,
+    this.isDefault,
+    this.minimumConfirmations,
+    this.unlockConfirmations,
+    this.contractAddress,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `network` 값입니다.
+  final String network;
+
+  /// 거래소 API의 `deposit_enabled` 값입니다.
+  final bool depositEnabled;
+
+  /// 거래소 API의 `withdraw_enabled` 값입니다.
+  final bool withdrawEnabled;
+
+  /// 거래소 API의 `busy` 값입니다.
+  final bool busy;
+
+  /// 거래소 API의 `withdrawal_integer_multiple` 값입니다.
+  final Decimal? withdrawalIntegerMultiple;
+
+  /// 거래소 API의 `withdrawal_fee` 값입니다.
+  final Decimal? withdrawalFee;
+
+  /// 거래소 API의 `minimum_withdrawal` 값입니다.
+  final Decimal? minimumWithdrawal;
+
+  /// 거래소 API의 `maximum_withdrawal` 값입니다.
+  final Decimal? maximumWithdrawal;
+
+  /// 거래소 API의 `withdrawal_tag` 값입니다.
+  final bool? withdrawalTag;
+
+  /// 거래소 API의 `is_default` 값입니다.
+  final bool? isDefault;
+
+  /// 거래소 API의 `minimum_confirmations` 값입니다.
+  final BigInt? minimumConfirmations;
+
+  /// 거래소 API의 `unlock_confirmations` 값입니다.
+  final BigInt? unlockConfirmations;
+
+  /// 거래소 API의 `contract_address` 값입니다.
+  final String? contractAddress;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceApiKeyPermissions]입니다.
+final class BinanceApiKeyPermissions {
+  /// [BinanceApiKeyPermissions]의 값을 만듭니다.
+  const BinanceApiKeyPermissions({
+    required this.ipRestrict,
+    this.createTime,
+    required this.enableReading,
+    required this.enableWithdrawals,
+    required this.enableInternalTransfer,
+    required this.enableMargin,
+    required this.enableSpotAndMarginTrading,
+    required this.enableFutures,
+    required this.permitsUniversalTransfer,
+    required this.enableVanillaOptions,
+    required this.enableFixApiTrade,
+    required this.enableFixReadOnly,
+    required this.enablePortfolioMarginTrading,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `ip_restrict` 값입니다.
+  final bool ipRestrict;
+
+  /// 거래소 API의 `create_time` 값입니다.
+  final Timestamp? createTime;
+
+  /// 거래소 API의 `enable_reading` 값입니다.
+  final bool enableReading;
+
+  /// 거래소 API의 `enable_withdrawals` 값입니다.
+  final bool enableWithdrawals;
+
+  /// 거래소 API의 `enable_internal_transfer` 값입니다.
+  final bool enableInternalTransfer;
+
+  /// 거래소 API의 `enable_margin` 값입니다.
+  final bool enableMargin;
+
+  /// 거래소 API의 `enable_spot_and_margin_trading` 값입니다.
+  final bool enableSpotAndMarginTrading;
+
+  /// 거래소 API의 `enable_futures` 값입니다.
+  final bool enableFutures;
+
+  /// 거래소 API의 `permits_universal_transfer` 값입니다.
+  final bool permitsUniversalTransfer;
+
+  /// 거래소 API의 `enable_vanilla_options` 값입니다.
+  final bool enableVanillaOptions;
+
+  /// 거래소 API의 `enable_fix_api_trade` 값입니다.
+  final bool enableFixApiTrade;
+
+  /// 거래소 API의 `enable_fix_read_only` 값입니다.
+  final bool enableFixReadOnly;
+
+  /// 거래소 API의 `enable_portfolio_margin_trading` 값입니다.
+  final bool enablePortfolioMarginTrading;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceDepositHistory]입니다.
+final class BinanceDepositHistory {
+  /// [BinanceDepositHistory]의 값을 만듭니다.
+  const BinanceDepositHistory({required this.entries, required this.rawJson});
+
+  /// 거래소 API의 `entries` 값입니다.
+  final List<BinanceDepositHistoryEntry> entries;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceDepositHistoryEntry]입니다.
+final class BinanceDepositHistoryEntry {
+  /// [BinanceDepositHistoryEntry]의 값을 만듭니다.
+  const BinanceDepositHistoryEntry({
+    required this.id,
+    required this.amount,
+    required this.coin,
+    required this.network,
+    required this.status,
+    this.address,
+    this.addressTag,
+    this.txId,
+    required this.insertTime,
+    this.completeTime,
+    this.transferType,
+    this.sourceAddress,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `id` 값입니다.
+  final String id;
+
+  /// 거래소 API의 `amount` 값입니다.
+  final Decimal amount;
+
+  /// 거래소 API의 `coin` 값입니다.
+  final String coin;
+
+  /// 거래소 API의 `network` 값입니다.
+  final String network;
+
+  /// 거래소 API의 `status` 값입니다.
+  final int status;
+
+  /// 거래소 API의 `address` 값입니다.
+  final String? address;
+
+  /// 거래소 API의 `address_tag` 값입니다.
+  final String? addressTag;
+
+  /// 거래소 API의 `tx_id` 값입니다.
+  final String? txId;
+
+  /// 거래소 API의 `insert_time` 값입니다.
+  final Timestamp insertTime;
+
+  /// 거래소 API의 `complete_time` 값입니다.
+  final Timestamp? completeTime;
+
+  /// 거래소 API의 `transfer_type` 값입니다.
+  final int? transferType;
+
+  /// 거래소 API의 `source_address` 값입니다.
+  final String? sourceAddress;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceQuestionnaireRequirements]입니다.
+final class BinanceQuestionnaireRequirements {
+  /// [BinanceQuestionnaireRequirements]의 값을 만듭니다.
+  const BinanceQuestionnaireRequirements({
+    required this.questionnaireCountryCode,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `questionnaire_country_code` 값입니다.
+  final String questionnaireCountryCode;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceWithdrawalAddress]입니다.
+final class BinanceWithdrawalAddress {
+  /// [BinanceWithdrawalAddress]의 값을 만듭니다.
+  const BinanceWithdrawalAddress({
+    required this.address,
+    this.addressTag,
+    required this.coin,
+    required this.network,
+    required this.whiteStatus,
+    this.name,
+    this.origin,
+    this.originType,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `address` 값입니다.
+  final String address;
+
+  /// 거래소 API의 `address_tag` 값입니다.
+  final String? addressTag;
+
+  /// 거래소 API의 `coin` 값입니다.
+  final String coin;
+
+  /// 거래소 API의 `network` 값입니다.
+  final String network;
+
+  /// 거래소 API의 `white_status` 값입니다.
+  final bool whiteStatus;
+
+  /// 거래소 API의 `name` 값입니다.
+  final String? name;
+
+  /// 거래소 API의 `origin` 값입니다.
+  final String? origin;
+
+  /// 거래소 API의 `origin_type` 값입니다.
+  final String? originType;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceWithdrawHistory]입니다.
+final class BinanceWithdrawHistory {
+  /// [BinanceWithdrawHistory]의 값을 만듭니다.
+  const BinanceWithdrawHistory({required this.entries, required this.rawJson});
+
+  /// 거래소 API의 `entries` 값입니다.
+  final List<BinanceWithdrawHistoryEntry> entries;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceWithdrawHistoryEntry]입니다.
+final class BinanceWithdrawHistoryEntry {
+  /// [BinanceWithdrawHistoryEntry]의 값을 만듭니다.
+  const BinanceWithdrawHistoryEntry({
+    required this.id,
+    required this.amount,
+    required this.transactionFee,
+    required this.coin,
+    required this.status,
+    this.address,
+    this.txId,
+    this.applyTime,
+    this.network,
+    this.withdrawOrderId,
+    this.info,
+    this.transferType,
+    this.confirmNo,
+    this.walletType,
+    this.txKey,
+    this.completeTime,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `id` 값입니다.
+  final String id;
+
+  /// 거래소 API의 `amount` 값입니다.
+  final Decimal amount;
+
+  /// 거래소 API의 `transaction_fee` 값입니다.
+  final Decimal transactionFee;
+
+  /// 거래소 API의 `coin` 값입니다.
+  final String coin;
+
+  /// 거래소 API의 `status` 값입니다.
+  final int status;
+
+  /// 거래소 API의 `address` 값입니다.
+  final String? address;
+
+  /// 거래소 API의 `tx_id` 값입니다.
+  final String? txId;
+
+  /// 거래소 API의 `apply_time` 값입니다.
+  final String? applyTime;
+
+  /// 거래소 API의 `network` 값입니다.
+  final String? network;
+
+  /// 거래소 API의 `withdraw_order_id` 값입니다.
+  final String? withdrawOrderId;
+
+  /// 거래소 API의 `info` 값입니다.
+  final String? info;
+
+  /// 거래소 API의 `transfer_type` 값입니다.
+  final int? transferType;
+
+  /// 거래소 API의 `confirm_no` 값입니다.
+  final int? confirmNo;
+
+  /// 거래소 API의 `wallet_type` 값입니다.
+  final int? walletType;
+
+  /// 거래소 API의 `tx_key` 값입니다.
+  final String? txKey;
+
+  /// 거래소 API의 `complete_time` 값입니다.
+  final String? completeTime;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
 /// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceSpotAveragePrice]입니다.
 final class BinanceSpotAveragePrice {
   /// [BinanceSpotAveragePrice]의 값을 만듭니다.
@@ -3290,6 +4333,452 @@ final class BinanceC2cTradeHistoryPage {
 
   /// 거래소 API의 `success` 값입니다.
   final bool? success;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidCandleSnapshot]입니다.
+final class HyperliquidCandleSnapshot {
+  /// [HyperliquidCandleSnapshot]의 값을 만듭니다.
+  const HyperliquidCandleSnapshot({
+    required this.coin,
+    required this.market,
+    required this.interval,
+    required this.openTime,
+    required this.closeTime,
+    required this.open,
+    required this.high,
+    required this.low,
+    required this.close,
+    required this.volume,
+    this.tradeCount,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `coin` 값입니다.
+  final String coin;
+
+  /// 거래소 API의 `market` 값입니다.
+  final Market market;
+
+  /// 거래소 API의 `interval` 값입니다.
+  final String interval;
+
+  /// 거래소 API의 `open_time` 값입니다.
+  final Timestamp openTime;
+
+  /// 거래소 API의 `close_time` 값입니다.
+  final Timestamp closeTime;
+
+  /// 거래소 API의 `open` 값입니다.
+  final Decimal open;
+
+  /// 거래소 API의 `high` 값입니다.
+  final Decimal high;
+
+  /// 거래소 API의 `low` 값입니다.
+  final Decimal low;
+
+  /// 거래소 API의 `close` 값입니다.
+  final Decimal close;
+
+  /// 거래소 API의 `volume` 값입니다.
+  final Decimal volume;
+
+  /// 거래소 API의 `trade_count` 값입니다.
+  final BigInt? tradeCount;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidBookLevel]입니다.
+final class HyperliquidBookLevel {
+  /// [HyperliquidBookLevel]의 값을 만듭니다.
+  const HyperliquidBookLevel({
+    required this.price,
+    required this.size,
+    this.orderCount,
+  });
+
+  /// 거래소 API의 `price` 값입니다.
+  final Decimal price;
+
+  /// 거래소 API의 `size` 값입니다.
+  final Decimal size;
+
+  /// 거래소 API의 `order_count` 값입니다.
+  final BigInt? orderCount;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidL2Book]입니다.
+final class HyperliquidL2Book {
+  /// [HyperliquidL2Book]의 값을 만듭니다.
+  const HyperliquidL2Book({
+    required this.coin,
+    required this.market,
+    required this.time,
+    required this.bids,
+    required this.asks,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `coin` 값입니다.
+  final String coin;
+
+  /// 거래소 API의 `market` 값입니다.
+  final Market market;
+
+  /// 거래소 API의 `time` 값입니다.
+  final Timestamp time;
+
+  /// 거래소 API의 `bids` 값입니다.
+  final List<HyperliquidBookLevel> bids;
+
+  /// 거래소 API의 `asks` 값입니다.
+  final List<HyperliquidBookLevel> asks;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidRecentTrade]입니다.
+final class HyperliquidRecentTrade {
+  /// [HyperliquidRecentTrade]의 값을 만듭니다.
+  const HyperliquidRecentTrade({
+    required this.coin,
+    required this.market,
+    required this.side,
+    required this.price,
+    required this.size,
+    required this.time,
+    required this.tradeId,
+    this.hash,
+    required this.users,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `coin` 값입니다.
+  final String coin;
+
+  /// 거래소 API의 `market` 값입니다.
+  final Market market;
+
+  /// 거래소 API의 `side` 값입니다.
+  final String side;
+
+  /// 거래소 API의 `price` 값입니다.
+  final Decimal price;
+
+  /// 거래소 API의 `size` 값입니다.
+  final Decimal size;
+
+  /// 거래소 API의 `time` 값입니다.
+  final Timestamp time;
+
+  /// 거래소 API의 `trade_id` 값입니다.
+  final String tradeId;
+
+  /// 거래소 API의 `hash` 값입니다.
+  final String? hash;
+
+  /// 거래소 API의 `users` 값입니다.
+  final List<String> users;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidFundingHistoryEntry]입니다.
+final class HyperliquidFundingHistoryEntry {
+  /// [HyperliquidFundingHistoryEntry]의 값을 만듭니다.
+  const HyperliquidFundingHistoryEntry({
+    required this.coin,
+    required this.market,
+    required this.fundingRate,
+    this.premium,
+    required this.time,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `coin` 값입니다.
+  final String coin;
+
+  /// 거래소 API의 `market` 값입니다.
+  final Market market;
+
+  /// 거래소 API의 `funding_rate` 값입니다.
+  final Decimal fundingRate;
+
+  /// 거래소 API의 `premium` 값입니다.
+  final Decimal? premium;
+
+  /// 거래소 API의 `time` 값입니다.
+  final Timestamp time;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidUserFunding]입니다.
+final class HyperliquidUserFunding {
+  /// [HyperliquidUserFunding]의 값을 만듭니다.
+  const HyperliquidUserFunding({
+    this.kind,
+    required this.coin,
+    required this.market,
+    required this.usdc,
+    required this.fundingRate,
+    this.positionSize,
+    this.sampleCount,
+    required this.hash,
+    required this.time,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `kind` 값입니다.
+  final String? kind;
+
+  /// 거래소 API의 `coin` 값입니다.
+  final String coin;
+
+  /// 거래소 API의 `market` 값입니다.
+  final Market market;
+
+  /// 거래소 API의 `usdc` 값입니다.
+  final Decimal usdc;
+
+  /// 거래소 API의 `funding_rate` 값입니다.
+  final Decimal fundingRate;
+
+  /// 거래소 API의 `position_size` 값입니다.
+  final Decimal? positionSize;
+
+  /// 거래소 API의 `sample_count` 값입니다.
+  final BigInt? sampleCount;
+
+  /// 거래소 API의 `hash` 값입니다.
+  final String hash;
+
+  /// 거래소 API의 `time` 값입니다.
+  final Timestamp time;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidSpotBalance]입니다.
+final class HyperliquidSpotBalance {
+  /// [HyperliquidSpotBalance]의 값을 만듭니다.
+  const HyperliquidSpotBalance({
+    required this.coin,
+    this.token,
+    required this.total,
+    required this.hold,
+    this.entryNotional,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `coin` 값입니다.
+  final String coin;
+
+  /// 거래소 API의 `token` 값입니다.
+  final int? token;
+
+  /// 거래소 API의 `total` 값입니다.
+  final Decimal total;
+
+  /// 거래소 API의 `hold` 값입니다.
+  final Decimal hold;
+
+  /// 거래소 API의 `entry_notional` 값입니다.
+  final Decimal? entryNotional;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidSpotClearinghouseState]입니다.
+final class HyperliquidSpotClearinghouseState {
+  /// [HyperliquidSpotClearinghouseState]의 값을 만듭니다.
+  const HyperliquidSpotClearinghouseState({
+    required this.balances,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `balances` 값입니다.
+  final List<HyperliquidSpotBalance> balances;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidEvmContract]입니다.
+final class HyperliquidEvmContract {
+  /// [HyperliquidEvmContract]의 값을 만듭니다.
+  const HyperliquidEvmContract({
+    required this.address,
+    required this.extraWeiDecimals,
+  });
+
+  /// 거래소 API의 `address` 값입니다.
+  final String address;
+
+  /// 거래소 API의 `extra_wei_decimals` 값입니다.
+  final int extraWeiDecimals;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidSpotToken]입니다.
+final class HyperliquidSpotToken {
+  /// [HyperliquidSpotToken]의 값을 만듭니다.
+  const HyperliquidSpotToken({
+    required this.name,
+    required this.sizeDecimals,
+    this.weiDecimals,
+    required this.index,
+    this.tokenId,
+    this.isCanonical,
+    this.evmContract,
+    this.fullName,
+    this.deployerTradingFeeShare,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `name` 값입니다.
+  final String name;
+
+  /// 거래소 API의 `size_decimals` 값입니다.
+  final int sizeDecimals;
+
+  /// 거래소 API의 `wei_decimals` 값입니다.
+  final int? weiDecimals;
+
+  /// 거래소 API의 `index` 값입니다.
+  final int index;
+
+  /// 거래소 API의 `token_id` 값입니다.
+  final String? tokenId;
+
+  /// 거래소 API의 `is_canonical` 값입니다.
+  final bool? isCanonical;
+
+  /// 거래소 API의 `evm_contract` 값입니다.
+  final HyperliquidEvmContract? evmContract;
+
+  /// 거래소 API의 `full_name` 값입니다.
+  final String? fullName;
+
+  /// 거래소 API의 `deployer_trading_fee_share` 값입니다.
+  final Decimal? deployerTradingFeeShare;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidSpotPair]입니다.
+final class HyperliquidSpotPair {
+  /// [HyperliquidSpotPair]의 값을 만듭니다.
+  const HyperliquidSpotPair({
+    required this.name,
+    required this.tokens,
+    required this.index,
+    this.isCanonical,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `name` 값입니다.
+  final String name;
+
+  /// 거래소 API의 `tokens` 값입니다.
+  final List<int> tokens;
+
+  /// 거래소 API의 `index` 값입니다.
+  final int index;
+
+  /// 거래소 API의 `is_canonical` 값입니다.
+  final bool? isCanonical;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidSpotMeta]입니다.
+final class HyperliquidSpotMeta {
+  /// [HyperliquidSpotMeta]의 값을 만듭니다.
+  const HyperliquidSpotMeta({
+    required this.tokens,
+    required this.universe,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `tokens` 값입니다.
+  final List<HyperliquidSpotToken> tokens;
+
+  /// 거래소 API의 `universe` 값입니다.
+  final List<HyperliquidSpotPair> universe;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidSpotAssetContext]입니다.
+final class HyperliquidSpotAssetContext {
+  /// [HyperliquidSpotAssetContext]의 값을 만듭니다.
+  const HyperliquidSpotAssetContext({
+    this.coin,
+    this.midPrice,
+    this.markPrice,
+    this.previousDayPrice,
+    this.dayBaseVolume,
+    this.dayNotionalVolume,
+    this.circulatingSupply,
+    this.totalSupply,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `coin` 값입니다.
+  final String? coin;
+
+  /// 거래소 API의 `mid_price` 값입니다.
+  final Decimal? midPrice;
+
+  /// 거래소 API의 `mark_price` 값입니다.
+  final Decimal? markPrice;
+
+  /// 거래소 API의 `previous_day_price` 값입니다.
+  final Decimal? previousDayPrice;
+
+  /// 거래소 API의 `day_base_volume` 값입니다.
+  final Decimal? dayBaseVolume;
+
+  /// 거래소 API의 `day_notional_volume` 값입니다.
+  final Decimal? dayNotionalVolume;
+
+  /// 거래소 API의 `circulating_supply` 값입니다.
+  final Decimal? circulatingSupply;
+
+  /// 거래소 API의 `total_supply` 값입니다.
+  final Decimal? totalSupply;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidSpotMetaAndAssetContexts]입니다.
+final class HyperliquidSpotMetaAndAssetContexts {
+  /// [HyperliquidSpotMetaAndAssetContexts]의 값을 만듭니다.
+  const HyperliquidSpotMetaAndAssetContexts({
+    required this.meta,
+    required this.contexts,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `meta` 값입니다.
+  final HyperliquidSpotMeta meta;
+
+  /// 거래소 API의 `contexts` 값입니다.
+  final List<HyperliquidSpotAssetContext> contexts;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
 }
 
 /// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidMidPrice]입니다.

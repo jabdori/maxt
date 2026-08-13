@@ -78,8 +78,8 @@ fn frozen_active_audit_ledger_and_derived_queues_are_consistent() {
     let reviews = audit_rows(AUDIT_REVIEWS);
     assert_eq!(ledger.len(), 1_374);
     assert_eq!(queue.len(), 937);
-    assert_eq!(work.len(), 28);
-    assert_eq!(execution.len(), 28);
+    assert_eq!(work.len(), 7);
+    assert_eq!(execution.len(), 7);
     assert_eq!(platform.len(), 437);
     assert_eq!(reviews.len(), 185);
     assert!(ledger.iter().all(|row| row.len() == 31));
@@ -1029,8 +1029,8 @@ fn binance_operation_exposure_is_complete_and_matches_current_coverage() {
             counts
         }),
         BTreeMap::from([
-            ("common_existing", 38),
-            ("common_and_provider", 1),
+            ("common_existing", 28),
+            ("common_and_provider", 11),
             ("provider_typed", 674),
             ("platform_limited", 340),
             ("deprecated_excluded", 2),
@@ -1232,8 +1232,8 @@ fn hyperliquid_operation_exposure_is_complete_and_matches_current_coverage() {
             counts
         }),
         BTreeMap::from([
-            ("common_existing", 20),
-            ("common_and_provider", 2),
+            ("common_existing", 13),
+            ("common_and_provider", 9),
             ("provider_typed", 98),
             ("platform_limited", 97),
             ("deprecated_excluded", 2),

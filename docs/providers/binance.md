@@ -94,6 +94,14 @@ Access the following provider-specific methods through `Client::adapter()`:
 | --- | --- |
 | `spot_symbol_filters(&market)` | Spot `PRICE_FILTER`, `LOT_SIZE`, and `NOTIONAL`; unsupported on USD-M. |
 | `spot_order(&market, order_id)` | One Spot order by numeric ID, including completed orders. |
+| `spot_exchange_info()` | Public Spot `GET /api/v3/exchangeInfo`; preserves every listed symbol's metadata and raw filter payload. Fixture-verified only. |
+| `spot_account_information()` | Signed Spot account read that preserves commissions, permissions, balances, and raw provider fields. Fixture-verified only. |
+| `spot_cancel_all_open_orders(&market)` | Signed Spot cancellation that returns Binance's cancellation reports, unlike the common unit-shaped cancellation call. Fixture-verified only. |
+| `usd_m_exchange_info()` | Public USD-M `GET /fapi/v1/exchangeInfo`; preserves contract listings, including dated contracts, and raw filter payload. Fixture-verified only. |
+| `usd_m_account_information()`, `usd_m_position_information(market)` | Signed USD-M account and position-risk reads that preserve asset, margin, leverage, and risk fields not carried by common balances or positions. Fixture-verified only. |
+| `all_coins_information()`, `api_key_permissions()`, `withdraw_address_list()` | Signed Wallet reads for coin/network rules, configured permission flags, and registered withdrawal-address metadata. Fixture-verified only. |
+| `deposit_history(request)`, `withdraw_history(request)` | Signed Wallet history reads that preserve provider status, pagination, and time fields instead of reducing them to the common transfer history. Fixture-verified only. |
+| `questionnaire_requirements()` | Signed Wallet Travel Rule questionnaire requirement read. Eligibility is enforced by Binance. Fixture-verified only. |
 | `account_trades(request)` | Signed account-trade page: Spot `GET /api/v3/myTrades`, USD-M `GET /fapi/v1/userTrades`. A `HistoryRequest` requires one market, accepts a 1–1,000 limit (default 500), and has no safe generic continuation cursor (`next == None`). Fixture-verified only |
 | `c2c_trade_history(request)` | Signed Spot/Funding `GET /sapi/v1/c2c/orderMatch/listUserOrderHistory`. Requires `BUY` or `SELL`; page defaults to 1 and rows to 100, with at most 100 rows and a 30-day query window. It preserves Binance's optional C2C response envelope instead of forcing a generic page cursor. Fixture-verified only |
 | `test_order(request)` | Signed TRADE validation: Spot `POST /api/v3/order/test`, USD-M `POST /fapi/v1/order/test`; it does not submit an order to the matching engine. `BinanceTestOrderRequest::compute_commission_rates` is available only on Spot and is rejected before a USD-M request. Fixture-verified only |
@@ -132,16 +140,19 @@ consume that header. HTTP 429 and 418 satisfy
 
 - [Spot REST market data](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/market)
 - [Spot account trades](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/account)
+- [Spot account and exchange information](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/account)
 - [C2C trade history](https://developers.binance.com/en/docs/catalog/investment-and-services-c2-c/api/rest-api/~#get-c2-ctrade-history)
 - [Spot test and cancel orders](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/trade)
 - [Spot REST limits](https://developers.binance.com/en/docs/products/spot/rest-api)
 - [Spot WebSocket streams](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/ws-streams/~)
 - [USD-M REST market data](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data)
 - [USD-M account trades, test, and cancel orders](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/trade)
+- [USD-M account information](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/account)
 - [USD-M Mark Price](https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Mark-Price)
 - [USD-M Open Interest](https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Open-Interest)
 - [USD-M Compressed/Aggregate Trades](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data#compressed-aggregate-trades-list)
 - [USD-M public streams](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/public)
 - [USD-M market streams](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market)
+- [Wallet account and capital APIs](https://developers.binance.com/en/docs/catalog/core-trading-wallet/api/rest-api/account)
 
 [Common API](../common-api.md) · [Provider support](../providers.md)

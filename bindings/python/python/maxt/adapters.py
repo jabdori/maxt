@@ -19,6 +19,19 @@ from .models import (
     BinanceMarkPrice,
     BinanceOpenInterest,
     BinanceSpotAveragePrice,
+    BinanceDepositHistory,
+    BinanceDepositHistoryRequest,
+    BinanceWithdrawHistory,
+    BinanceWithdrawHistoryRequest,
+    BinanceSpotAccountInformation,
+    BinanceSpotCancelAllOpenOrders,
+    BinanceExchangeInfo,
+    BinanceUsdMAccountInformation,
+    BinanceUsdMPositionInformation,
+    BinanceCoinInformation,
+    BinanceApiKeyPermissions,
+    BinanceQuestionnaireRequirements,
+    BinanceWithdrawalAddress,
     BinanceSpotOrderDetail,
     BinanceSymbolFilters,
     BinanceTestOrder,
@@ -52,6 +65,14 @@ from .models import (
     FundingPayment,
     FundingRate,
     HyperliquidAssetContext,
+    HyperliquidCandleSnapshot,
+    HyperliquidL2Book,
+    HyperliquidRecentTrade,
+    HyperliquidFundingHistoryEntry,
+    HyperliquidUserFunding,
+    HyperliquidSpotClearinghouseState,
+    HyperliquidSpotMeta,
+    HyperliquidSpotMetaAndAssetContexts,
     HyperliquidLedgerEntry,
     HyperliquidMidPrice,
     HyperliquidOpenOrder,
@@ -85,6 +106,7 @@ from .models import (
     Network,
     UpbitApiKey,
     UpbitDepositInfo,
+    UpbitWithdrawalAddress,
     UpbitKrwDeposit,
     UpbitKrwTransferRequest,
     UpbitKrwWithdrawal,
@@ -330,6 +352,10 @@ class UpbitAdapter(_NativeAdapter):
     ) -> UpbitSubscriptionList:
         value = await self._call(self._handle.list_subscriptions, subscription.to_wire())
         return _model_from_wire("UpbitSubscriptionList", value)
+
+    async def withdrawal_addresses(self) -> list[UpbitWithdrawalAddress]:
+        values = await self._call(self._handle.withdrawal_addresses)
+        return [_model_from_wire("UpbitWithdrawalAddress", value) for value in values]
 
     async def test_order(self, request: OrderRequest) -> Order:
         """Validate an Upbit order without creating it.
@@ -720,6 +746,65 @@ class BinanceAdapter(_NativeAdapter):
         value = await self._call(self._handle.spot_average_price, market)
         return BinanceSpotAveragePrice.from_wire(value)
 
+    async def spot_account_information(self) -> BinanceSpotAccountInformation:
+        value = await self._call(self._handle.spot_account_information)
+        return _model_from_wire("BinanceSpotAccountInformation", value)
+
+    async def spot_cancel_all_open_orders(
+        self, market: Market
+    ) -> BinanceSpotCancelAllOpenOrders:
+        value = await self._call(self._handle.spot_cancel_all_open_orders, market)
+        return _model_from_wire("BinanceSpotCancelAllOpenOrders", value)
+
+    async def spot_exchange_info(self) -> BinanceExchangeInfo:
+        value = await self._call(self._handle.spot_exchange_info)
+        return _model_from_wire("BinanceExchangeInfo", value)
+
+    async def usd_m_account_information(self) -> BinanceUsdMAccountInformation:
+        value = await self._call(self._handle.usd_m_account_information)
+        return _model_from_wire("BinanceUsdMAccountInformation", value)
+
+    async def usd_m_exchange_info(self) -> BinanceExchangeInfo:
+        value = await self._call(self._handle.usd_m_exchange_info)
+        return _model_from_wire("BinanceExchangeInfo", value)
+
+    async def usd_m_position_information(
+        self, market: Optional[Market] = None
+    ) -> list[BinanceUsdMPositionInformation]:
+        values = await self._call(self._handle.usd_m_position_information, market)
+        return [
+            _model_from_wire("BinanceUsdMPositionInformation", value)
+            for value in values
+        ]
+
+    async def all_coins_information(self) -> list[BinanceCoinInformation]:
+        values = await self._call(self._handle.all_coins_information)
+        return [_model_from_wire("BinanceCoinInformation", value) for value in values]
+
+    async def api_key_permissions(self) -> BinanceApiKeyPermissions:
+        value = await self._call(self._handle.api_key_permissions)
+        return _model_from_wire("BinanceApiKeyPermissions", value)
+
+    async def deposit_history(
+        self, request: BinanceDepositHistoryRequest
+    ) -> BinanceDepositHistory:
+        value = await self._call(self._handle.deposit_history, request.to_wire())
+        return _model_from_wire("BinanceDepositHistory", value)
+
+    async def questionnaire_requirements(self) -> BinanceQuestionnaireRequirements:
+        value = await self._call(self._handle.questionnaire_requirements)
+        return _model_from_wire("BinanceQuestionnaireRequirements", value)
+
+    async def withdraw_address_list(self) -> list[BinanceWithdrawalAddress]:
+        values = await self._call(self._handle.withdraw_address_list)
+        return [_model_from_wire("BinanceWithdrawalAddress", value) for value in values]
+
+    async def withdraw_history(
+        self, request: BinanceWithdrawHistoryRequest
+    ) -> BinanceWithdrawHistory:
+        value = await self._call(self._handle.withdraw_history, request.to_wire())
+        return _model_from_wire("BinanceWithdrawHistory", value)
+
     async def mark_price(self, market: Market) -> BinanceMarkPrice:
         value = await self._call(self._handle.mark_price, market)
         return BinanceMarkPrice.from_wire(value)
@@ -830,6 +915,57 @@ class HyperliquidAdapter(_NativeAdapter):
     async def asset_context(self, market: Market) -> HyperliquidAssetContext:
         value = await self._call(self._handle.asset_context, market)
         return HyperliquidAssetContext.from_wire(value)
+
+    async def candle_snapshot(
+        self,
+        market: Market,
+        interval: str,
+        from_ns: int,
+        to_ns: Optional[int] = None,
+    ) -> list[HyperliquidCandleSnapshot]:
+        values = await self._call(
+            self._handle.candle_snapshot, market, interval, from_ns, to_ns
+        )
+        return [_model_from_wire("HyperliquidCandleSnapshot", value) for value in values]
+
+    async def l2_book(self, market: Market) -> HyperliquidL2Book:
+        value = await self._call(self._handle.l2_book, market)
+        return _model_from_wire("HyperliquidL2Book", value)
+
+    async def recent_trades(self, market: Market) -> list[HyperliquidRecentTrade]:
+        values = await self._call(self._handle.recent_trades, market)
+        return [_model_from_wire("HyperliquidRecentTrade", value) for value in values]
+
+    async def funding_history(
+        self, market: Market, from_ns: int, to_ns: Optional[int] = None
+    ) -> list[HyperliquidFundingHistoryEntry]:
+        values = await self._call(
+            self._handle.funding_history, market, from_ns, to_ns
+        )
+        return [
+            _model_from_wire("HyperliquidFundingHistoryEntry", value)
+            for value in values
+        ]
+
+    async def user_funding(
+        self, from_ns: int, to_ns: Optional[int] = None
+    ) -> list[HyperliquidUserFunding]:
+        values = await self._call(self._handle.user_funding, from_ns, to_ns)
+        return [_model_from_wire("HyperliquidUserFunding", value) for value in values]
+
+    async def spot_clearinghouse_state(self) -> HyperliquidSpotClearinghouseState:
+        value = await self._call(self._handle.spot_clearinghouse_state)
+        return _model_from_wire("HyperliquidSpotClearinghouseState", value)
+
+    async def spot_meta(self) -> HyperliquidSpotMeta:
+        value = await self._call(self._handle.spot_meta)
+        return _model_from_wire("HyperliquidSpotMeta", value)
+
+    async def spot_meta_and_asset_contexts(
+        self,
+    ) -> HyperliquidSpotMetaAndAssetContexts:
+        value = await self._call(self._handle.spot_meta_and_asset_contexts)
+        return _model_from_wire("HyperliquidSpotMetaAndAssetContexts", value)
 
     async def all_mids(self) -> list[HyperliquidMidPrice]:
         values = await self._call(self._handle.all_mids)

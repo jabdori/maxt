@@ -7,6 +7,7 @@ import {
   BithumbTwapOrderDirection,
   BithumbTwapState,
   BinanceC2cTradeType,
+  BinanceMarket,
   DepositStatus,
   Exchange,
   HyperliquidLedgerKind,
@@ -1043,6 +1044,22 @@ export class UpbitDepositInfo {
   }
 }
 
+export class UpbitWithdrawalAddress {
+  constructor(
+    readonly currency: string,
+    readonly netType: string,
+    readonly networkName: string,
+    readonly withdrawAddress: string,
+    readonly secondaryAddress: string | null,
+    readonly beneficiaryName: string | null,
+    readonly beneficiaryCompanyName: string | null,
+    readonly beneficiaryType: string | null,
+    readonly exchangeName: string | null,
+    readonly walletType: string | null,
+    readonly rawJson: string,
+  ) { freezeRecord(this); }
+}
+
 export class UpbitTravelRuleVasp {
   constructor(
     readonly vaspName: string,
@@ -1765,6 +1782,401 @@ export class BinanceSpotAveragePrice {
   ) { freezeRecord(this); }
 }
 
+export class BinanceDepositHistoryRequest {
+  readonly status: number | null;
+  readonly offset: bigint | null;
+  readonly limit: number | null;
+  constructor(
+    readonly coin: string | null = null,
+    status: number | null = null,
+    readonly startTime: Timestamp | null = null,
+    readonly endTime: Timestamp | null = null,
+    offset: bigint | null = null,
+    limit: number | null = null,
+    readonly txId: string | null = null,
+    readonly includeSource: boolean = false,
+  ) {
+    this.status = checkedOptionalU32(status, "status");
+    this.offset = offset === null ? null : checkedU64(offset, "offset");
+    this.limit = checkedOptionalU32(limit, "limit");
+    freezeRecord(this);
+  }
+}
+
+export class BinanceWithdrawHistoryRequest {
+  readonly status: number | null;
+  readonly offset: bigint | null;
+  readonly limit: number | null;
+  readonly idList: readonly string[];
+  constructor(
+    readonly coin: string | null = null,
+    readonly withdrawOrderId: string | null = null,
+    status: number | null = null,
+    offset: bigint | null = null,
+    limit: number | null = null,
+    idList: readonly string[] = [],
+    readonly startTime: Timestamp | null = null,
+    readonly endTime: Timestamp | null = null,
+  ) {
+    this.status = checkedOptionalU32(status, "status");
+    this.offset = offset === null ? null : checkedU64(offset, "offset");
+    this.limit = checkedOptionalU32(limit, "limit");
+    this.idList = Object.freeze([...idList]);
+    freezeRecord(this);
+  }
+}
+
+export class BinanceSpotCommissionRates {
+  constructor(
+    readonly maker: Decimal, readonly taker: Decimal,
+    readonly buyer: Decimal, readonly seller: Decimal,
+  ) { freezeRecord(this); }
+}
+
+export class BinanceSpotAccountBalance {
+  constructor(readonly asset: string, readonly free: Decimal, readonly locked: Decimal) {
+    freezeRecord(this);
+  }
+}
+
+export class BinanceSpotAccountInformation {
+  readonly makerCommission: bigint;
+  readonly takerCommission: bigint;
+  readonly buyerCommission: bigint;
+  readonly sellerCommission: bigint;
+  readonly balances: readonly BinanceSpotAccountBalance[];
+  readonly permissions: readonly string[];
+  readonly uid: bigint | null;
+  constructor(
+    makerCommission: bigint,
+    takerCommission: bigint,
+    buyerCommission: bigint,
+    sellerCommission: bigint,
+    readonly commissionRates: BinanceSpotCommissionRates,
+    readonly canTrade: boolean,
+    readonly canWithdraw: boolean,
+    readonly canDeposit: boolean,
+    readonly updateTime: Timestamp,
+    readonly accountType: string,
+    balances: readonly BinanceSpotAccountBalance[],
+    permissions: readonly string[],
+    uid: bigint | null,
+    readonly rawJson: string,
+  ) {
+    this.makerCommission = checkedU64(makerCommission, "makerCommission");
+    this.takerCommission = checkedU64(takerCommission, "takerCommission");
+    this.buyerCommission = checkedU64(buyerCommission, "buyerCommission");
+    this.sellerCommission = checkedU64(sellerCommission, "sellerCommission");
+    this.balances = Object.freeze([...balances]);
+    this.permissions = Object.freeze([...permissions]);
+    this.uid = uid === null ? null : checkedU64(uid, "uid");
+    freezeRecord(this);
+  }
+}
+
+export class BinanceSpotCancelledOrder {
+  constructor(
+    readonly symbol: string | null,
+    readonly originalClientOrderId: string | null,
+    readonly orderId: string | null,
+    readonly clientOrderId: string | null,
+    readonly status: string | null,
+    readonly price: Decimal | null,
+    readonly originalQuantity: Decimal | null,
+    readonly executedQuantity: Decimal | null,
+    readonly cumulativeQuoteQuantity: Decimal | null,
+    readonly transactTime: Timestamp | null,
+    readonly orderListId: string | null,
+    readonly contingencyType: string | null,
+    readonly listStatusType: string | null,
+    readonly listOrderStatus: string | null,
+    readonly listClientOrderId: string | null,
+    readonly transactionTime: Timestamp | null,
+    readonly rawJson: string,
+  ) { freezeRecord(this); }
+}
+
+export class BinanceSpotCancelAllOpenOrders {
+  readonly reports: readonly BinanceSpotCancelledOrder[];
+  constructor(reports: readonly BinanceSpotCancelledOrder[], readonly rawJson: string) {
+    this.reports = Object.freeze([...reports]);
+    freezeRecord(this);
+  }
+}
+
+export class BinanceExchangeSymbol {
+  constructor(
+    readonly symbol: string,
+    readonly status: string,
+    readonly baseAsset: string,
+    readonly quoteAsset: string,
+    readonly contractType: string | null,
+    readonly marginAsset: string | null,
+    readonly rawJson: string,
+  ) { freezeRecord(this); }
+}
+
+export class BinanceExchangeInfo {
+  readonly symbols: readonly BinanceExchangeSymbol[];
+  constructor(
+    readonly venue: BinanceMarket,
+    readonly timezone: string | null,
+    readonly serverTime: Timestamp | null,
+    symbols: readonly BinanceExchangeSymbol[],
+    readonly rawJson: string,
+  ) {
+    this.symbols = Object.freeze([...symbols]);
+    freezeRecord(this);
+  }
+}
+
+export class BinanceUsdMAccountAsset {
+  constructor(
+    readonly asset: string,
+    readonly walletBalance: Decimal,
+    readonly unrealizedProfit: Decimal,
+    readonly marginBalance: Decimal,
+    readonly maintenanceMargin: Decimal,
+    readonly initialMargin: Decimal,
+    readonly positionInitialMargin: Decimal,
+    readonly openOrderInitialMargin: Decimal,
+    readonly crossWalletBalance: Decimal,
+    readonly crossUnrealizedProfit: Decimal,
+    readonly availableBalance: Decimal,
+    readonly maxWithdrawAmount: Decimal,
+    readonly updateTime: Timestamp,
+  ) { freezeRecord(this); }
+}
+
+export class BinanceUsdMAccountPosition {
+  constructor(
+    readonly symbol: string,
+    readonly positionSide: string,
+    readonly positionAmount: Decimal,
+    readonly unrealizedProfit: Decimal,
+    readonly isolatedMargin: Decimal,
+    readonly notional: Decimal,
+    readonly isolatedWallet: Decimal,
+    readonly initialMargin: Decimal,
+    readonly maintenanceMargin: Decimal,
+    readonly updateTime: Timestamp,
+  ) { freezeRecord(this); }
+}
+
+export class BinanceUsdMAccountInformation {
+  readonly assets: readonly BinanceUsdMAccountAsset[];
+  readonly positions: readonly BinanceUsdMAccountPosition[];
+  constructor(
+    readonly totalInitialMargin: Decimal,
+    readonly totalMaintenanceMargin: Decimal,
+    readonly totalWalletBalance: Decimal,
+    readonly totalUnrealizedProfit: Decimal,
+    readonly totalMarginBalance: Decimal,
+    readonly totalPositionInitialMargin: Decimal,
+    readonly totalOpenOrderInitialMargin: Decimal,
+    readonly totalCrossWalletBalance: Decimal,
+    readonly totalCrossUnrealizedProfit: Decimal,
+    readonly availableBalance: Decimal,
+    readonly maxWithdrawAmount: Decimal,
+    assets: readonly BinanceUsdMAccountAsset[],
+    positions: readonly BinanceUsdMAccountPosition[],
+    readonly rawJson: string,
+  ) {
+    this.assets = Object.freeze([...assets]);
+    this.positions = Object.freeze([...positions]);
+    freezeRecord(this);
+  }
+}
+
+export class BinanceUsdMPositionInformation {
+  readonly adl: bigint;
+  constructor(
+    readonly symbol: string,
+    readonly positionSide: string,
+    readonly positionAmount: Decimal,
+    readonly entryPrice: Decimal,
+    readonly breakEvenPrice: Decimal,
+    readonly markPrice: Decimal,
+    readonly unrealizedProfit: Decimal,
+    readonly liquidationPrice: Decimal,
+    readonly isolatedMargin: Decimal,
+    readonly notional: Decimal,
+    readonly marginAsset: string,
+    readonly isolatedWallet: Decimal,
+    readonly initialMargin: Decimal,
+    readonly maintenanceMargin: Decimal,
+    readonly positionInitialMargin: Decimal,
+    readonly openOrderInitialMargin: Decimal,
+    adl: bigint,
+    readonly bidNotional: Decimal,
+    readonly askNotional: Decimal,
+    readonly updateTime: Timestamp,
+    readonly rawJson: string,
+  ) {
+    this.adl = checkedU64(adl, "adl");
+    freezeRecord(this);
+  }
+}
+
+export class BinanceCoinNetworkInformation {
+  readonly minimumConfirmations: bigint | null;
+  readonly unlockConfirmations: bigint | null;
+  constructor(
+    readonly network: string,
+    readonly depositEnabled: boolean,
+    readonly withdrawEnabled: boolean,
+    readonly busy: boolean,
+    readonly withdrawalIntegerMultiple: Decimal | null,
+    readonly withdrawalFee: Decimal | null,
+    readonly minimumWithdrawal: Decimal | null,
+    readonly maximumWithdrawal: Decimal | null,
+    readonly withdrawalTag: boolean | null,
+    readonly isDefault: boolean | null,
+    minimumConfirmations: bigint | null,
+    unlockConfirmations: bigint | null,
+    readonly contractAddress: string | null,
+    readonly rawJson: string,
+  ) {
+    this.minimumConfirmations = minimumConfirmations === null
+      ? null : checkedU64(minimumConfirmations, "minimumConfirmations");
+    this.unlockConfirmations = unlockConfirmations === null
+      ? null : checkedU64(unlockConfirmations, "unlockConfirmations");
+    freezeRecord(this);
+  }
+}
+
+export class BinanceCoinInformation {
+  readonly networks: readonly BinanceCoinNetworkInformation[];
+  constructor(
+    readonly coin: string,
+    readonly depositAllEnabled: boolean,
+    readonly withdrawAllEnabled: boolean,
+    readonly name: string | null,
+    readonly free: Decimal | null,
+    readonly locked: Decimal | null,
+    readonly freeze: Decimal | null,
+    readonly withdrawing: Decimal | null,
+    readonly isLegalMoney: boolean | null,
+    readonly trading: boolean | null,
+    networks: readonly BinanceCoinNetworkInformation[],
+    readonly rawJson: string,
+  ) {
+    this.networks = Object.freeze([...networks]);
+    freezeRecord(this);
+  }
+}
+
+export class BinanceApiKeyPermissions {
+  constructor(
+    readonly ipRestrict: boolean,
+    readonly createTime: Timestamp | null,
+    readonly enableReading: boolean,
+    readonly enableWithdrawals: boolean,
+    readonly enableInternalTransfer: boolean,
+    readonly enableMargin: boolean,
+    readonly enableSpotAndMarginTrading: boolean,
+    readonly enableFutures: boolean,
+    readonly permitsUniversalTransfer: boolean,
+    readonly enableVanillaOptions: boolean,
+    readonly enableFixApiTrade: boolean,
+    readonly enableFixReadOnly: boolean,
+    readonly enablePortfolioMarginTrading: boolean,
+    readonly rawJson: string,
+  ) { freezeRecord(this); }
+}
+
+export class BinanceDepositHistoryEntry {
+  readonly status: number;
+  readonly transferType: number | null;
+  constructor(
+    readonly id: string,
+    readonly amount: Decimal,
+    readonly coin: string,
+    readonly network: string,
+    status: number,
+    readonly address: string | null,
+    readonly addressTag: string | null,
+    readonly txId: string | null,
+    readonly insertTime: Timestamp,
+    readonly completeTime: Timestamp | null,
+    transferType: number | null,
+    readonly sourceAddress: string | null,
+    readonly rawJson: string,
+  ) {
+    this.status = checkedUnsigned(status, U32_MAX, "status");
+    this.transferType = checkedOptionalU32(transferType, "transferType");
+    freezeRecord(this);
+  }
+}
+
+export class BinanceDepositHistory {
+  readonly entries: readonly BinanceDepositHistoryEntry[];
+  constructor(entries: readonly BinanceDepositHistoryEntry[], readonly rawJson: string) {
+    this.entries = Object.freeze([...entries]);
+    freezeRecord(this);
+  }
+}
+
+export class BinanceQuestionnaireRequirements {
+  constructor(readonly questionnaireCountryCode: string, readonly rawJson: string) {
+    freezeRecord(this);
+  }
+}
+
+export class BinanceWithdrawalAddress {
+  constructor(
+    readonly address: string,
+    readonly addressTag: string | null,
+    readonly coin: string,
+    readonly network: string,
+    readonly whiteStatus: boolean,
+    readonly name: string | null,
+    readonly origin: string | null,
+    readonly originType: string | null,
+    readonly rawJson: string,
+  ) { freezeRecord(this); }
+}
+
+export class BinanceWithdrawHistoryEntry {
+  readonly status: number;
+  readonly transferType: number | null;
+  readonly confirmNo: number | null;
+  readonly walletType: number | null;
+  constructor(
+    readonly id: string,
+    readonly amount: Decimal,
+    readonly transactionFee: Decimal,
+    readonly coin: string,
+    status: number,
+    readonly address: string | null,
+    readonly txId: string | null,
+    readonly applyTime: string | null,
+    readonly network: string | null,
+    readonly withdrawOrderId: string | null,
+    readonly info: string | null,
+    transferType: number | null,
+    confirmNo: number | null,
+    walletType: number | null,
+    readonly txKey: string | null,
+    readonly completeTime: string | null,
+    readonly rawJson: string,
+  ) {
+    this.status = checkedUnsigned(status, U32_MAX, "status");
+    this.transferType = checkedOptionalU32(transferType, "transferType");
+    this.confirmNo = checkedOptionalU32(confirmNo, "confirmNo");
+    this.walletType = checkedOptionalU32(walletType, "walletType");
+    freezeRecord(this);
+  }
+}
+
+export class BinanceWithdrawHistory {
+  readonly entries: readonly BinanceWithdrawHistoryEntry[];
+  constructor(entries: readonly BinanceWithdrawHistoryEntry[], readonly rawJson: string) {
+    this.entries = Object.freeze([...entries]);
+    freezeRecord(this);
+  }
+}
+
 export class BinanceMarkPrice {
   constructor(
     readonly market: Market, readonly markPrice: Decimal, readonly indexPrice: Decimal,
@@ -1935,6 +2347,211 @@ export class HyperliquidAssetContext {
   ) {
     this.sizeDecimals = checkedUnsigned(sizeDecimals, U32_MAX, "sizeDecimals");
     this.priceDecimals = checkedUnsigned(priceDecimals, U32_MAX, "priceDecimals");
+    freezeRecord(this);
+  }
+}
+
+export class HyperliquidCandleSnapshot {
+  readonly tradeCount: bigint | null;
+  constructor(
+    readonly coin: string,
+    readonly market: Market,
+    readonly interval: string,
+    readonly openTime: Timestamp,
+    readonly closeTime: Timestamp,
+    readonly open: Decimal,
+    readonly high: Decimal,
+    readonly low: Decimal,
+    readonly close: Decimal,
+    readonly volume: Decimal,
+    tradeCount: bigint | null,
+    readonly rawJson: string,
+  ) {
+    this.tradeCount = tradeCount === null ? null : checkedU64(tradeCount, "tradeCount");
+    freezeRecord(this);
+  }
+}
+
+export class HyperliquidBookLevel {
+  readonly orderCount: bigint | null;
+  constructor(readonly price: Decimal, readonly size: Decimal, orderCount: bigint | null) {
+    this.orderCount = orderCount === null ? null : checkedU64(orderCount, "orderCount");
+    freezeRecord(this);
+  }
+}
+
+export class HyperliquidL2Book {
+  readonly bids: readonly HyperliquidBookLevel[];
+  readonly asks: readonly HyperliquidBookLevel[];
+  constructor(
+    readonly coin: string,
+    readonly market: Market,
+    readonly time: Timestamp,
+    bids: readonly HyperliquidBookLevel[],
+    asks: readonly HyperliquidBookLevel[],
+    readonly rawJson: string,
+  ) {
+    this.bids = Object.freeze([...bids]);
+    this.asks = Object.freeze([...asks]);
+    freezeRecord(this);
+  }
+}
+
+export class HyperliquidRecentTrade {
+  readonly users: readonly string[];
+  constructor(
+    readonly coin: string,
+    readonly market: Market,
+    readonly side: string,
+    readonly price: Decimal,
+    readonly size: Decimal,
+    readonly time: Timestamp,
+    readonly tradeId: string,
+    readonly hash: string | null,
+    users: readonly string[],
+    readonly rawJson: string,
+  ) {
+    this.users = Object.freeze([...users]);
+    freezeRecord(this);
+  }
+}
+
+export class HyperliquidFundingHistoryEntry {
+  constructor(
+    readonly coin: string,
+    readonly market: Market,
+    readonly fundingRate: Decimal,
+    readonly premium: Decimal | null,
+    readonly time: Timestamp,
+    readonly rawJson: string,
+  ) { freezeRecord(this); }
+}
+
+export class HyperliquidUserFunding {
+  readonly sampleCount: bigint | null;
+  constructor(
+    readonly kind: string | null,
+    readonly coin: string,
+    readonly market: Market,
+    readonly usdc: Decimal,
+    readonly fundingRate: Decimal,
+    readonly positionSize: Decimal | null,
+    sampleCount: bigint | null,
+    readonly hash: string,
+    readonly time: Timestamp,
+    readonly rawJson: string,
+  ) {
+    this.sampleCount = sampleCount === null ? null : checkedU64(sampleCount, "sampleCount");
+    freezeRecord(this);
+  }
+}
+
+export class HyperliquidSpotBalance {
+  readonly token: number | null;
+  constructor(
+    readonly coin: string,
+    token: number | null,
+    readonly total: Decimal,
+    readonly hold: Decimal,
+    readonly entryNotional: Decimal | null,
+    readonly rawJson: string,
+  ) {
+    this.token = token === null ? null : checkedUnsigned(token, U32_MAX, "token");
+    freezeRecord(this);
+  }
+}
+
+export class HyperliquidSpotClearinghouseState {
+  readonly balances: readonly HyperliquidSpotBalance[];
+  constructor(balances: readonly HyperliquidSpotBalance[], readonly rawJson: string) {
+    this.balances = Object.freeze([...balances]);
+    freezeRecord(this);
+  }
+}
+
+export class HyperliquidEvmContract {
+  readonly extraWeiDecimals: number;
+  constructor(readonly address: string, extraWeiDecimals: number) {
+    this.extraWeiDecimals = checkedUnsigned(extraWeiDecimals, U32_MAX, "extraWeiDecimals");
+    freezeRecord(this);
+  }
+}
+
+export class HyperliquidSpotToken {
+  readonly sizeDecimals: number;
+  readonly weiDecimals: number | null;
+  readonly index: number;
+  constructor(
+    readonly name: string,
+    sizeDecimals: number,
+    weiDecimals: number | null,
+    index: number,
+    readonly tokenId: string | null,
+    readonly isCanonical: boolean | null,
+    readonly evmContract: HyperliquidEvmContract | null,
+    readonly fullName: string | null,
+    readonly deployerTradingFeeShare: Decimal | null,
+    readonly rawJson: string,
+  ) {
+    this.sizeDecimals = checkedUnsigned(sizeDecimals, U32_MAX, "sizeDecimals");
+    this.weiDecimals = weiDecimals === null ? null : checkedUnsigned(weiDecimals, U32_MAX, "weiDecimals");
+    this.index = checkedUnsigned(index, U32_MAX, "index");
+    freezeRecord(this);
+  }
+}
+
+export class HyperliquidSpotPair {
+  readonly tokens: readonly number[];
+  readonly index: number;
+  constructor(
+    readonly name: string,
+    tokens: readonly number[],
+    index: number,
+    readonly isCanonical: boolean | null,
+    readonly rawJson: string,
+  ) {
+    this.tokens = Object.freeze(tokens.map((token) => checkedUnsigned(token, U32_MAX, "tokens")));
+    this.index = checkedUnsigned(index, U32_MAX, "index");
+    freezeRecord(this);
+  }
+}
+
+export class HyperliquidSpotMeta {
+  readonly tokens: readonly HyperliquidSpotToken[];
+  readonly universe: readonly HyperliquidSpotPair[];
+  constructor(
+    tokens: readonly HyperliquidSpotToken[],
+    universe: readonly HyperliquidSpotPair[],
+    readonly rawJson: string,
+  ) {
+    this.tokens = Object.freeze([...tokens]);
+    this.universe = Object.freeze([...universe]);
+    freezeRecord(this);
+  }
+}
+
+export class HyperliquidSpotAssetContext {
+  constructor(
+    readonly coin: string | null,
+    readonly midPrice: Decimal | null,
+    readonly markPrice: Decimal | null,
+    readonly previousDayPrice: Decimal | null,
+    readonly dayBaseVolume: Decimal | null,
+    readonly dayNotionalVolume: Decimal | null,
+    readonly circulatingSupply: Decimal | null,
+    readonly totalSupply: Decimal | null,
+    readonly rawJson: string,
+  ) { freezeRecord(this); }
+}
+
+export class HyperliquidSpotMetaAndAssetContexts {
+  readonly contexts: readonly HyperliquidSpotAssetContext[];
+  constructor(
+    readonly meta: HyperliquidSpotMeta,
+    contexts: readonly HyperliquidSpotAssetContext[],
+    readonly rawJson: string,
+  ) {
+    this.contexts = Object.freeze([...contexts]);
     freezeRecord(this);
   }
 }

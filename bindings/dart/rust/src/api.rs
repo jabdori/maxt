@@ -757,6 +757,21 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
+    /// Upbit 계정에 등록된 출금 허용 주소 목록을 반환합니다.
+    pub async fn upbit_withdrawal_addresses(
+        &self,
+    ) -> Result<Vec<WireUpbitWithdrawalAddress>, NativeError> {
+        let adapter = match self.built_in("upbit_withdrawal_addresses")? {
+            BuiltInAdapter::Upbit(adapter) => adapter,
+            _ => return Err(provider_mismatch("Upbit")),
+        };
+        adapter
+            .withdrawal_addresses()
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
     /// Upbit 주문을 실제 제출 없이 검증합니다.
     ///
     /// 반환된 주문 ID와 상태는 실주문을 뜻하지 않아 조회·취소에 사용할 수 없습니다.
@@ -1462,6 +1477,191 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
+    /// Binance Spot 계정의 권한·수수료·잔고 정보를 반환합니다.
+    pub async fn binance_spot_account_information(
+        &self,
+    ) -> Result<WireBinanceSpotAccountInformation, NativeError> {
+        let adapter = match self.built_in("binance_spot_account_information")? {
+            BuiltInAdapter::Binance(adapter) => adapter,
+            _ => return Err(provider_mismatch("Binance")),
+        };
+        adapter
+            .spot_account_information()
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    /// Binance Spot 시장의 모든 미체결 주문을 취소하고 보고서를 반환합니다.
+    pub async fn binance_spot_cancel_all_open_orders(
+        &self,
+        market: WireMarket,
+    ) -> Result<WireBinanceSpotCancelAllOpenOrders, NativeError> {
+        let adapter = match self.built_in("binance_spot_cancel_all_open_orders")? {
+            BuiltInAdapter::Binance(adapter) => adapter,
+            _ => return Err(provider_mismatch("Binance")),
+        };
+        adapter
+            .spot_cancel_all_open_orders(&market.into())
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    /// Binance Spot 거래소 메타데이터를 반환합니다.
+    pub async fn binance_spot_exchange_info(&self) -> Result<WireBinanceExchangeInfo, NativeError> {
+        let adapter = match self.built_in("binance_spot_exchange_info")? {
+            BuiltInAdapter::Binance(adapter) => adapter,
+            _ => return Err(provider_mismatch("Binance")),
+        };
+        adapter
+            .spot_exchange_info()
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    /// Binance USD-M 계정의 마진·자산·포지션 정보를 반환합니다.
+    pub async fn binance_usd_m_account_information(
+        &self,
+    ) -> Result<WireBinanceUsdMAccountInformation, NativeError> {
+        let adapter = match self.built_in("binance_usd_m_account_information")? {
+            BuiltInAdapter::Binance(adapter) => adapter,
+            _ => return Err(provider_mismatch("Binance")),
+        };
+        adapter
+            .usd_m_account_information()
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    /// Binance USD-M 거래소 메타데이터를 반환합니다.
+    pub async fn binance_usd_m_exchange_info(
+        &self,
+    ) -> Result<WireBinanceExchangeInfo, NativeError> {
+        let adapter = match self.built_in("binance_usd_m_exchange_info")? {
+            BuiltInAdapter::Binance(adapter) => adapter,
+            _ => return Err(provider_mismatch("Binance")),
+        };
+        adapter
+            .usd_m_exchange_info()
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    /// Binance USD-M 포지션 위험 정보를 반환합니다.
+    pub async fn binance_usd_m_position_information(
+        &self,
+        market: Option<WireMarket>,
+    ) -> Result<Vec<WireBinanceUsdMPositionInformation>, NativeError> {
+        let adapter = match self.built_in("binance_usd_m_position_information")? {
+            BuiltInAdapter::Binance(adapter) => adapter,
+            _ => return Err(provider_mismatch("Binance")),
+        };
+        let market = market.map(Into::into);
+        adapter
+            .usd_m_position_information(market.as_ref())
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
+    /// Binance Wallet 코인·네트워크 설정을 반환합니다.
+    pub async fn binance_all_coins_information(
+        &self,
+    ) -> Result<Vec<WireBinanceCoinInformation>, NativeError> {
+        let adapter = match self.built_in("binance_all_coins_information")? {
+            BuiltInAdapter::Binance(adapter) => adapter,
+            _ => return Err(provider_mismatch("Binance")),
+        };
+        adapter
+            .all_coins_information()
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
+    /// Binance API 키의 권한 상태를 반환합니다.
+    pub async fn binance_api_key_permissions(
+        &self,
+    ) -> Result<WireBinanceApiKeyPermissions, NativeError> {
+        let adapter = match self.built_in("binance_api_key_permissions")? {
+            BuiltInAdapter::Binance(adapter) => adapter,
+            _ => return Err(provider_mismatch("Binance")),
+        };
+        adapter
+            .api_key_permissions()
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    /// Binance 입금 이력을 반환합니다.
+    pub async fn binance_deposit_history(
+        &self,
+        request: WireBinanceDepositHistoryRequest,
+    ) -> Result<WireBinanceDepositHistory, NativeError> {
+        let request: maxt::BinanceDepositHistoryRequest = request.try_into()?;
+        let adapter = match self.built_in("binance_deposit_history")? {
+            BuiltInAdapter::Binance(adapter) => adapter,
+            _ => return Err(provider_mismatch("Binance")),
+        };
+        adapter
+            .deposit_history(&request)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    /// Binance Travel Rule 설문 국가 요구사항을 반환합니다.
+    pub async fn binance_questionnaire_requirements(
+        &self,
+    ) -> Result<WireBinanceQuestionnaireRequirements, NativeError> {
+        let adapter = match self.built_in("binance_questionnaire_requirements")? {
+            BuiltInAdapter::Binance(adapter) => adapter,
+            _ => return Err(provider_mismatch("Binance")),
+        };
+        adapter
+            .questionnaire_requirements()
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    /// Binance에 등록된 출금 주소 목록을 반환합니다.
+    pub async fn binance_withdraw_address_list(
+        &self,
+    ) -> Result<Vec<WireBinanceWithdrawalAddress>, NativeError> {
+        let adapter = match self.built_in("binance_withdraw_address_list")? {
+            BuiltInAdapter::Binance(adapter) => adapter,
+            _ => return Err(provider_mismatch("Binance")),
+        };
+        adapter
+            .withdraw_address_list()
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
+    /// Binance 출금 이력을 반환합니다.
+    pub async fn binance_withdraw_history(
+        &self,
+        request: WireBinanceWithdrawHistoryRequest,
+    ) -> Result<WireBinanceWithdrawHistory, NativeError> {
+        let request: maxt::BinanceWithdrawHistoryRequest = request.try_into()?;
+        let adapter = match self.built_in("binance_withdraw_history")? {
+            BuiltInAdapter::Binance(adapter) => adapter,
+            _ => return Err(provider_mismatch("Binance")),
+        };
+        adapter
+            .withdraw_history(&request)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
     /// 한 Binance USD-M 시장의 현재 mark price와 펀딩 정보를 반환합니다.
     pub async fn binance_mark_price(
         &self,
@@ -1765,6 +1965,147 @@ impl NativeClient {
         };
         adapter
             .asset_context(&market.into())
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    /// Hyperliquid 캔들 snapshot과 거래 건수를 반환합니다.
+    pub async fn hyperliquid_candle_snapshot(
+        &self,
+        market: WireMarket,
+        interval: String,
+        from_ns: i64,
+        to_ns: Option<i64>,
+    ) -> Result<Vec<WireHyperliquidCandleSnapshot>, NativeError> {
+        let adapter = match self.built_in("hyperliquid_candle_snapshot")? {
+            BuiltInAdapter::Hyperliquid(adapter) => adapter,
+            _ => return Err(provider_mismatch("Hyperliquid")),
+        };
+        adapter
+            .candle_snapshot(
+                &market.into(),
+                &interval,
+                maxt::Timestamp::from_nanos(from_ns),
+                to_ns.map(maxt::Timestamp::from_nanos),
+            )
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
+    /// Hyperliquid L2 호가와 레벨별 주문 수를 반환합니다.
+    pub async fn hyperliquid_l2_book(
+        &self,
+        market: WireMarket,
+    ) -> Result<WireHyperliquidL2Book, NativeError> {
+        let adapter = match self.built_in("hyperliquid_l2_book")? {
+            BuiltInAdapter::Hyperliquid(adapter) => adapter,
+            _ => return Err(provider_mismatch("Hyperliquid")),
+        };
+        adapter
+            .l2_book(&market.into())
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    /// Hyperliquid 최근 체결과 hash·참여자 정보를 반환합니다.
+    pub async fn hyperliquid_recent_trades(
+        &self,
+        market: WireMarket,
+    ) -> Result<Vec<WireHyperliquidRecentTrade>, NativeError> {
+        let adapter = match self.built_in("hyperliquid_recent_trades")? {
+            BuiltInAdapter::Hyperliquid(adapter) => adapter,
+            _ => return Err(provider_mismatch("Hyperliquid")),
+        };
+        adapter
+            .recent_trades(&market.into())
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
+    /// Hyperliquid 펀딩 이력과 premium 값을 반환합니다.
+    pub async fn hyperliquid_funding_history(
+        &self,
+        market: WireMarket,
+        from_ns: i64,
+        to_ns: Option<i64>,
+    ) -> Result<Vec<WireHyperliquidFundingHistoryEntry>, NativeError> {
+        let adapter = match self.built_in("hyperliquid_funding_history")? {
+            BuiltInAdapter::Hyperliquid(adapter) => adapter,
+            _ => return Err(provider_mismatch("Hyperliquid")),
+        };
+        adapter
+            .funding_history(
+                &market.into(),
+                maxt::Timestamp::from_nanos(from_ns),
+                to_ns.map(maxt::Timestamp::from_nanos),
+            )
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
+    /// Hyperliquid 계정 펀딩 항목을 반환합니다.
+    pub async fn hyperliquid_user_funding(
+        &self,
+        from_ns: i64,
+        to_ns: Option<i64>,
+    ) -> Result<Vec<WireHyperliquidUserFunding>, NativeError> {
+        let adapter = match self.built_in("hyperliquid_user_funding")? {
+            BuiltInAdapter::Hyperliquid(adapter) => adapter,
+            _ => return Err(provider_mismatch("Hyperliquid")),
+        };
+        adapter
+            .user_funding(
+                maxt::Timestamp::from_nanos(from_ns),
+                to_ns.map(maxt::Timestamp::from_nanos),
+            )
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
+    /// Hyperliquid Spot 계정 잔고 상태를 반환합니다.
+    pub async fn hyperliquid_spot_clearinghouse_state(
+        &self,
+    ) -> Result<WireHyperliquidSpotClearinghouseState, NativeError> {
+        let adapter = match self.built_in("hyperliquid_spot_clearinghouse_state")? {
+            BuiltInAdapter::Hyperliquid(adapter) => adapter,
+            _ => return Err(provider_mismatch("Hyperliquid")),
+        };
+        adapter
+            .spot_clearinghouse_state()
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    /// Hyperliquid Spot 토큰·페어 메타데이터를 반환합니다.
+    pub async fn hyperliquid_spot_meta(&self) -> Result<WireHyperliquidSpotMeta, NativeError> {
+        let adapter = match self.built_in("hyperliquid_spot_meta")? {
+            BuiltInAdapter::Hyperliquid(adapter) => adapter,
+            _ => return Err(provider_mismatch("Hyperliquid")),
+        };
+        adapter
+            .spot_meta()
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    /// Hyperliquid Spot 메타데이터와 asset context를 함께 반환합니다.
+    pub async fn hyperliquid_spot_meta_and_asset_contexts(
+        &self,
+    ) -> Result<WireHyperliquidSpotMetaAndAssetContexts, NativeError> {
+        let adapter = match self.built_in("hyperliquid_spot_meta_and_asset_contexts")? {
+            BuiltInAdapter::Hyperliquid(adapter) => adapter,
+            _ => return Err(provider_mismatch("Hyperliquid")),
+        };
+        adapter
+            .spot_meta_and_asset_contexts()
             .await
             .map(Into::into)
             .map_err(Into::into)

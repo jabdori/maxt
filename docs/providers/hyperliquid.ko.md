@@ -133,6 +133,11 @@
 | 메서드 | 계약 |
 | --- | --- |
 | `asset_context(&market)` | mid, mark, oracle 가격, funding, open interest, 주문 정밀도 |
+| `candle_snapshot(&market, interval, from, to)` | 거래소 체결 건수와 원본 필드를 보존하는 공개 `POST /info` `candleSnapshot` 조회. fixture만 검증 |
+| `l2_book(&market)`, `recent_trades(&market)` | 단계별 주문 수, 체결 hash, 참여자 데이터를 보존하는 공개 `l2Book`·`recentTrades` 조회. fixture만 검증 |
+| `funding_history(&market, from, to)` | 거래소 premium index를 보존하는 공개 `fundingHistory` 조회. fixture만 검증 |
+| `user_funding(from, to)`, `spot_clearinghouse_state()` | funding 포지션·sample 필드와 Spot 진입 명목 잔고를 보존하는 설정 주소 기반 서명 없는 조회. fixture만 검증 |
+| `spot_meta()`, `spot_meta_and_asset_contexts()` | token·pair·EVM·공급량/context 필드를 보존하는 공개 Spot 메타데이터 조회. fixture만 검증 |
 | `basic_open_orders()` | 설정한 공개 주소에 묶인 서명 없는 `POST /info` `openOrders` 조회입니다. 간결한 이 거래소 전용 응답은 더 상세한 `frontendOpenOrders` 응답을 사용하는 공통 미체결 주문 조회와 의도적으로 구분합니다. fixture만 검증 |
 | `order_status(reference)` | 설정한 공개 주소에 묶인 서명 없는 `POST /info` `orderStatus` 조회입니다. `reference`에는 숫자 서버 주문 ID(`oid`) 또는 `0x` 접두사가 있는 32자리 16진수 클라이언트 주문 ID를 지정합니다. `unknownOid`는 오류가 아닌 일반 `HyperliquidOrderStatusResponse::UnknownOrder` 결과이며, 이후 추가되는 최상위 상태는 상태 문자열과 원본 JSON을 보존합니다. fixture만 검증 |
 | `historical_orders()` | 설정한 공개 주소에 묶인 서명 없는 `POST /info` `historicalOrders` 조회로 최근 주문 최대 2,000건을 반환합니다. 상세 주문에는 Hyperliquid의 trigger, 시간 유효 조건(time in force), reduce-only, client ID, 상태, 원본 JSON 필드를 보존합니다. fixture만 검증 |

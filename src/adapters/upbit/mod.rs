@@ -33,6 +33,7 @@ pub use stream::{
     ListedSubscription as UpbitListedSubscription, SubscriptionList as UpbitSubscriptionList,
 };
 pub use travel_rule::{UpbitTravelRuleVasp, UpbitTravelRuleVerification};
+pub use wallet::UpbitWithdrawalAddress;
 
 /// Selects an Upbit regional deployment.
 ///
@@ -1362,6 +1363,16 @@ impl UpbitAdapter {
         wallet::deposit_info(self.credentials()?, self.http()?, asset, network).await
     }
 
+    /// Returns every withdrawal address registered on this Upbit account.
+    ///
+    /// This provider-specific list preserves Upbit's network, recipient, and
+    /// wallet metadata. It does not validate a prospective withdrawal or
+    /// calculate a common withdrawal quote; use
+    /// [`Adapter::prepare_withdrawal`] for that purpose.
+    pub async fn withdrawal_addresses(&self) -> Result<Vec<UpbitWithdrawalAddress>> {
+        wallet::withdrawal_addresses(self.credentials()?, self.http()?).await
+    }
+
     /// Deposits KRW from the registered account using Upbit Korea's required
     /// second-factor confirmation.
     ///
@@ -2165,6 +2176,10 @@ mod tests {
             public
                 .deposit_info("BTC", &crate::types::Network::Bitcoin)
                 .await,
+            Err(Error::Auth { .. })
+        ));
+        assert!(matches!(
+            public.withdrawal_addresses().await,
             Err(Error::Auth { .. })
         ));
         assert!(matches!(

@@ -4,9 +4,272 @@ use rust_decimal::Decimal;
 use serde_json::Value;
 
 use crate::error::{Error, Result};
-use crate::types::{Deposit, DepositStatus, Timestamp, Withdrawal, WithdrawalStatus};
+use crate::types::{
+    Deposit, DepositStatus, Market, MarketKind, Timestamp, Withdrawal, WithdrawalStatus,
+};
 
-use super::parse::{self, RawAssetCtx, RawLedgerUpdate};
+use super::parse::{
+    self, Asset, RawAssetCtx, RawBook, RawCandle, RawFundingHistory, RawLedgerUpdate, RawSpotMeta,
+    RawSpotState, RawTrade, RawUserFunding, Universe,
+};
+
+/// One Hyperliquid candle snapshot entry, including its official trade count.
+///
+/// The normalized [`Candle`](crate::Candle) intentionally omits `trade_count`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct HyperliquidCandleSnapshot {
+    /// Hyperliquid's native market name.
+    pub coin: String,
+    /// Resolved default-universe market.
+    pub market: Market,
+    /// Hyperliquid's interval spelling.
+    pub interval: String,
+    /// Opening timestamp.
+    pub open_time: Timestamp,
+    /// Inclusive closing timestamp.
+    pub close_time: Timestamp,
+    /// Opening price.
+    pub open: Decimal,
+    /// Highest price.
+    pub high: Decimal,
+    /// Lowest price.
+    pub low: Decimal,
+    /// Closing price.
+    pub close: Decimal,
+    /// Base-asset volume.
+    pub volume: Decimal,
+    /// Number of trades Hyperliquid aggregated into the candle, when supplied.
+    pub trade_count: Option<u64>,
+    /// Complete provider response object, encoded as JSON.
+    pub raw_json: String,
+}
+
+/// One price level in a Hyperliquid L2 book snapshot.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HyperliquidBookLevel {
+    /// Level price.
+    pub price: Decimal,
+    /// Aggregate resting size.
+    pub size: Decimal,
+    /// Number of orders aggregated at this level, when supplied.
+    pub order_count: Option<u64>,
+}
+
+/// A Hyperliquid L2 book snapshot, retaining each level's order count.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct HyperliquidL2Book {
+    /// Hyperliquid's native market name.
+    pub coin: String,
+    /// Resolved default-universe market.
+    pub market: Market,
+    /// Snapshot timestamp.
+    pub time: Timestamp,
+    /// Bids in provider response order.
+    pub bids: Vec<HyperliquidBookLevel>,
+    /// Asks in provider response order.
+    pub asks: Vec<HyperliquidBookLevel>,
+    /// Complete provider response object, encoded as JSON.
+    pub raw_json: String,
+}
+
+/// One execution from Hyperliquid's `recentTrades` Info response.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct HyperliquidRecentTrade {
+    /// Hyperliquid's native market name.
+    pub coin: String,
+    /// Resolved default-universe market.
+    pub market: Market,
+    /// Provider taker-side string, currently `B` or `A`.
+    pub side: String,
+    /// Execution price.
+    pub price: Decimal,
+    /// Executed base quantity.
+    pub size: Decimal,
+    /// Execution timestamp.
+    pub time: Timestamp,
+    /// Hyperliquid trade identifier.
+    pub trade_id: String,
+    /// Transaction hash, when supplied.
+    pub hash: Option<String>,
+    /// Accounts involved in the execution in provider order.
+    pub users: Vec<String>,
+    /// Complete provider response object, encoded as JSON.
+    pub raw_json: String,
+}
+
+/// One historical Hyperliquid funding-rate observation with its premium.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct HyperliquidFundingHistoryEntry {
+    /// Hyperliquid's native perpetual market name.
+    pub coin: String,
+    /// Resolved default-universe perpetual market.
+    pub market: Market,
+    /// Funding rate.
+    pub funding_rate: Decimal,
+    /// Premium index used by Hyperliquid's funding calculation, when supplied.
+    pub premium: Option<Decimal>,
+    /// Observation timestamp.
+    pub time: Timestamp,
+    /// Complete provider response object, encoded as JSON.
+    pub raw_json: String,
+}
+
+/// One account funding payment with the provider's position-size and sample data.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct HyperliquidUserFunding {
+    /// Provider event kind, normally `funding`.
+    pub kind: Option<String>,
+    /// Hyperliquid's native perpetual market name.
+    pub coin: String,
+    /// Resolved default-universe perpetual market.
+    pub market: Market,
+    /// Signed USDC amount. Negative means the account paid funding.
+    pub usdc: Decimal,
+    /// Funding rate applied to this payment.
+    pub funding_rate: Decimal,
+    /// Signed position size at the funding event, when supplied.
+    pub position_size: Option<Decimal>,
+    /// Number of samples used for the funding calculation, when supplied.
+    pub sample_count: Option<u64>,
+    /// Transaction hash.
+    pub hash: String,
+    /// Event timestamp.
+    pub time: Timestamp,
+    /// Complete provider response object, encoded as JSON.
+    pub raw_json: String,
+}
+
+/// One balance in Hyperliquid's spot clearinghouse state.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct HyperliquidSpotBalance {
+    /// Provider coin name.
+    pub coin: String,
+    /// Hyperliquid token index, when supplied.
+    pub token: Option<u32>,
+    /// Total balance including held funds.
+    pub total: Decimal,
+    /// Amount held for orders.
+    pub hold: Decimal,
+    /// Provider spot entry notional, when supplied.
+    pub entry_notional: Option<Decimal>,
+    /// Complete provider response object, encoded as JSON.
+    pub raw_json: String,
+}
+
+/// The spot clearinghouse state for one configured account.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct HyperliquidSpotClearinghouseState {
+    /// Spot balances in provider response order.
+    pub balances: Vec<HyperliquidSpotBalance>,
+    /// Complete provider response object, encoded as JSON.
+    pub raw_json: String,
+}
+
+/// EVM contract metadata associated with a Hyperliquid spot token.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HyperliquidEvmContract {
+    /// EVM contract address.
+    pub address: String,
+    /// Extra decimal adjustment Hyperliquid supplies for the EVM representation.
+    pub extra_wei_decimals: u32,
+}
+
+/// One token from Hyperliquid's spot metadata response.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct HyperliquidSpotToken {
+    /// Provider token name.
+    pub name: String,
+    /// Trading-size decimal precision.
+    pub size_decimals: u32,
+    /// EVM wei decimal precision, when supplied.
+    pub wei_decimals: Option<u32>,
+    /// Hyperliquid token index.
+    pub index: u32,
+    /// Provider token identifier, when supplied.
+    pub token_id: Option<String>,
+    /// Whether Hyperliquid marks the token canonical.
+    pub is_canonical: Option<bool>,
+    /// EVM contract details, when Hyperliquid supplies a complete contract object.
+    pub evm_contract: Option<HyperliquidEvmContract>,
+    /// Full token name, when supplied.
+    pub full_name: Option<String>,
+    /// Deployer trading fee share, when supplied.
+    pub deployer_trading_fee_share: Option<Decimal>,
+    /// Complete provider response object, encoded as JSON.
+    pub raw_json: String,
+}
+
+/// One pair from Hyperliquid's spot metadata response.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct HyperliquidSpotPair {
+    /// Provider pair name.
+    pub name: String,
+    /// Base and quote token indices, in provider order.
+    pub tokens: Vec<u32>,
+    /// Hyperliquid spot pair index.
+    pub index: u32,
+    /// Whether Hyperliquid marks the pair canonical.
+    pub is_canonical: Option<bool>,
+    /// Complete provider response object, encoded as JSON.
+    pub raw_json: String,
+}
+
+/// The complete provider-specific `spotMeta` response.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct HyperliquidSpotMeta {
+    /// Tokens in provider response order.
+    pub tokens: Vec<HyperliquidSpotToken>,
+    /// Spot pairs in provider response order.
+    pub universe: Vec<HyperliquidSpotPair>,
+    /// Complete provider response object, encoded as JSON.
+    pub raw_json: String,
+}
+
+/// One spot market context from `spotMetaAndAssetCtxs`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct HyperliquidSpotAssetContext {
+    /// Provider spot market name.
+    pub coin: Option<String>,
+    /// Mid price, when supplied.
+    pub mid_price: Option<Decimal>,
+    /// Mark price, when supplied.
+    pub mark_price: Option<Decimal>,
+    /// Previous-day price, when supplied.
+    pub previous_day_price: Option<Decimal>,
+    /// Day base volume, when supplied.
+    pub day_base_volume: Option<Decimal>,
+    /// Day notional volume, when supplied.
+    pub day_notional_volume: Option<Decimal>,
+    /// Circulating supply, when supplied.
+    pub circulating_supply: Option<Decimal>,
+    /// Total supply, when supplied.
+    pub total_supply: Option<Decimal>,
+    /// Complete provider response object, encoded as JSON.
+    pub raw_json: String,
+}
+
+/// The complete provider-specific `spotMetaAndAssetCtxs` response.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct HyperliquidSpotMetaAndAssetContexts {
+    /// Provider spot metadata.
+    pub meta: HyperliquidSpotMeta,
+    /// Spot contexts in provider response order.
+    pub contexts: Vec<HyperliquidSpotAssetContext>,
+    /// Complete provider response object, encoded as JSON.
+    pub raw_json: String,
+}
 
 /// One account-wide entry from Hyperliquid's non-funding ledger.
 ///
@@ -571,6 +834,315 @@ fn decimal_field(delta: &Value, field: &'static str) -> Result<Option<Decimal>> 
             "Hyperliquid ledger `{field}` is not a number: {other}"
         ))),
     }
+}
+
+/// Maps candle snapshots without narrowing away Hyperliquid's trade count.
+pub(crate) fn candle_snapshots(
+    raw: &[Value],
+    universe: &Universe,
+) -> Result<Vec<HyperliquidCandleSnapshot>> {
+    raw.iter()
+        .map(|value| candle_snapshot(&parse::value(value)?, universe, value))
+        .collect()
+}
+
+fn candle_snapshot(
+    raw: &RawCandle,
+    universe: &Universe,
+    value: &Value,
+) -> Result<HyperliquidCandleSnapshot> {
+    Ok(HyperliquidCandleSnapshot {
+        coin: raw.coin.clone(),
+        market: universe.market_from_native_symbol(&raw.coin)?.clone(),
+        interval: raw.interval.clone(),
+        open_time: parse::millis(raw.open_time, "t")?,
+        close_time: parse::millis(raw.close_time, "T")?,
+        open: parse::decimal(&raw.open, "o")?,
+        high: parse::decimal(&raw.high, "h")?,
+        low: parse::decimal(&raw.low, "l")?,
+        close: parse::decimal(&raw.close, "c")?,
+        volume: parse::decimal(&raw.volume, "v")?,
+        trade_count: raw.trade_count,
+        raw_json: json_text(value)?,
+    })
+}
+
+/// Maps an L2 snapshot without dropping each level's provider order count.
+pub(crate) fn l2_book(raw: &Value, universe: &Universe) -> Result<HyperliquidL2Book> {
+    let book: RawBook = parse::value(raw)?;
+    let levels = |levels: &[parse::RawLevel]| {
+        levels
+            .iter()
+            .map(|level| {
+                Ok(HyperliquidBookLevel {
+                    price: parse::decimal(&level.px, "px")?,
+                    size: parse::decimal(&level.sz, "sz")?,
+                    order_count: level.n,
+                })
+            })
+            .collect::<Result<Vec<_>>>()
+    };
+
+    Ok(HyperliquidL2Book {
+        coin: book.coin.clone(),
+        market: universe.market_from_native_symbol(&book.coin)?.clone(),
+        time: parse::millis(book.time, "time")?,
+        bids: levels(&book.levels[0])?,
+        asks: levels(&book.levels[1])?,
+        raw_json: json_text(raw)?,
+    })
+}
+
+/// Maps recent trades without dropping their transaction hash or account list.
+pub(crate) fn recent_trades(
+    raw: &[Value],
+    universe: &Universe,
+) -> Result<Vec<HyperliquidRecentTrade>> {
+    raw.iter()
+        .map(|value| recent_trade(&parse::value(value)?, universe, value))
+        .collect()
+}
+
+fn recent_trade(
+    raw: &RawTrade,
+    universe: &Universe,
+    value: &Value,
+) -> Result<HyperliquidRecentTrade> {
+    Ok(HyperliquidRecentTrade {
+        coin: raw.coin.clone(),
+        market: universe.market_from_native_symbol(&raw.coin)?.clone(),
+        side: raw.side.clone(),
+        price: parse::decimal(&raw.px, "px")?,
+        size: parse::decimal(&raw.sz, "sz")?,
+        time: parse::millis(raw.time, "time")?,
+        trade_id: raw.tid.to_string(),
+        hash: raw.hash.clone(),
+        users: raw.users.clone(),
+        raw_json: json_text(value)?,
+    })
+}
+
+/// Maps historical funding rates without dropping Hyperliquid's premium index.
+pub(crate) fn funding_history(
+    raw: &[Value],
+    universe: &Universe,
+) -> Result<Vec<HyperliquidFundingHistoryEntry>> {
+    raw.iter()
+        .map(|value| funding_history_entry(&parse::value(value)?, universe, value))
+        .collect()
+}
+
+fn funding_history_entry(
+    raw: &RawFundingHistory,
+    universe: &Universe,
+    value: &Value,
+) -> Result<HyperliquidFundingHistoryEntry> {
+    let native = raw
+        .coin
+        .as_deref()
+        .ok_or_else(|| Error::decode("Hyperliquid fundingHistory entry has no `coin`"))?;
+    let asset = perpetual_asset(universe, native)?;
+    Ok(HyperliquidFundingHistoryEntry {
+        coin: native.to_owned(),
+        market: asset.market.clone(),
+        funding_rate: parse::decimal(&raw.funding_rate, "fundingRate")?,
+        premium: raw
+            .premium
+            .as_deref()
+            .map(|value| parse::decimal(value, "premium"))
+            .transpose()?,
+        time: parse::millis(raw.time, "time")?,
+        raw_json: json_text(value)?,
+    })
+}
+
+/// Maps user funding without dropping signed position size or sample count.
+pub(crate) fn user_funding(
+    raw: &[Value],
+    universe: &Universe,
+) -> Result<Vec<HyperliquidUserFunding>> {
+    raw.iter()
+        .map(|value| user_funding_entry(&parse::value(value)?, universe, value))
+        .collect()
+}
+
+fn user_funding_entry(
+    raw: &RawUserFunding,
+    universe: &Universe,
+    value: &Value,
+) -> Result<HyperliquidUserFunding> {
+    let asset = perpetual_asset(universe, &raw.delta.coin)?;
+    Ok(HyperliquidUserFunding {
+        kind: raw.delta.kind.clone(),
+        coin: raw.delta.coin.clone(),
+        market: asset.market.clone(),
+        usdc: parse::decimal(&raw.delta.usdc, "usdc")?,
+        funding_rate: parse::decimal(&raw.delta.funding_rate, "fundingRate")?,
+        position_size: raw
+            .delta
+            .szi
+            .as_deref()
+            .map(|value| parse::decimal(value, "szi"))
+            .transpose()?,
+        sample_count: raw.delta.sample_count,
+        hash: raw.hash.clone(),
+        time: parse::millis(raw.time, "time")?,
+        raw_json: json_text(value)?,
+    })
+}
+
+fn perpetual_asset<'a>(universe: &'a Universe, native: &str) -> Result<&'a Asset> {
+    let market = universe.market_from_native_symbol(native)?;
+    let asset = universe.asset(market)?;
+    if asset.market.kind != MarketKind::Perpetual {
+        return Err(Error::decode(format!(
+            "Hyperliquid funding entry names spot market `{native}`"
+        )));
+    }
+    Ok(asset)
+}
+
+/// Maps the spot state without dropping each balance's token index or entry notional.
+pub(crate) fn spot_clearinghouse_state(raw: &Value) -> Result<HyperliquidSpotClearinghouseState> {
+    let state: RawSpotState = parse::value(raw)?;
+    let values = raw
+        .get("balances")
+        .and_then(Value::as_array)
+        .ok_or_else(|| {
+            Error::decode("Hyperliquid spotClearinghouseState has no `balances` array")
+        })?;
+    let balances = state
+        .balances
+        .iter()
+        .zip(values)
+        .map(|(balance, value)| {
+            Ok(HyperliquidSpotBalance {
+                coin: balance.coin.clone(),
+                token: balance.token,
+                total: parse::decimal(&balance.total, "total")?,
+                hold: parse::decimal(&balance.hold, "hold")?,
+                entry_notional: balance
+                    .entry_notional
+                    .as_deref()
+                    .map(|value| parse::decimal(value, "entryNtl"))
+                    .transpose()?,
+                raw_json: json_text(value)?,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    Ok(HyperliquidSpotClearinghouseState {
+        balances,
+        raw_json: json_text(raw)?,
+    })
+}
+
+/// Maps the complete `spotMeta` response without dropping provider token fields.
+pub(crate) fn spot_meta(raw: &Value) -> Result<HyperliquidSpotMeta> {
+    let meta: RawSpotMeta = parse::value(raw)?;
+    spot_meta_from_raw(&meta, raw)
+}
+
+fn spot_meta_from_raw(raw: &RawSpotMeta, value: &Value) -> Result<HyperliquidSpotMeta> {
+    let tokens_value = value
+        .get("tokens")
+        .and_then(Value::as_array)
+        .ok_or_else(|| Error::decode("Hyperliquid spotMeta has no `tokens` array"))?;
+    let tokens = raw
+        .tokens
+        .iter()
+        .zip(tokens_value)
+        .map(|(token, value)| {
+            Ok(HyperliquidSpotToken {
+                name: token.name.clone(),
+                size_decimals: token.sz_decimals,
+                wei_decimals: token.wei_decimals,
+                index: token.index,
+                token_id: token.token_id.clone(),
+                is_canonical: token.is_canonical,
+                evm_contract: token.evm_contract.as_ref().and_then(|contract| {
+                    Some(HyperliquidEvmContract {
+                        address: contract.address.clone()?,
+                        extra_wei_decimals: contract.extra_wei_decimals?,
+                    })
+                }),
+                full_name: token.full_name.clone(),
+                deployer_trading_fee_share: token
+                    .deployer_trading_fee_share
+                    .as_deref()
+                    .map(|value| parse::decimal(value, "deployerTradingFeeShare"))
+                    .transpose()?,
+                raw_json: json_text(value)?,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+    let universe_value = value
+        .get("universe")
+        .and_then(Value::as_array)
+        .ok_or_else(|| Error::decode("Hyperliquid spotMeta has no `universe` array"))?;
+    let universe = raw
+        .universe
+        .iter()
+        .zip(universe_value)
+        .map(|(pair, value)| {
+            Ok(HyperliquidSpotPair {
+                name: pair.name.clone(),
+                tokens: pair.tokens.to_vec(),
+                index: pair.index,
+                is_canonical: pair.is_canonical,
+                raw_json: json_text(value)?,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    Ok(HyperliquidSpotMeta {
+        tokens,
+        universe,
+        raw_json: json_text(value)?,
+    })
+}
+
+/// Maps `spotMetaAndAssetCtxs` without dropping supply-related spot context fields.
+pub(crate) fn spot_meta_and_asset_contexts(
+    raw: &Value,
+) -> Result<HyperliquidSpotMetaAndAssetContexts> {
+    let values = raw.as_array().ok_or_else(|| {
+        Error::decode("Hyperliquid spotMetaAndAssetCtxs response is not an array")
+    })?;
+    let [meta, contexts] = values.as_slice() else {
+        return Err(Error::decode(
+            "Hyperliquid spotMetaAndAssetCtxs response is not a [meta, contexts] pair",
+        ));
+    };
+    let meta_raw: RawSpotMeta = parse::value(meta)?;
+    let contexts = contexts
+        .as_array()
+        .ok_or_else(|| Error::decode("Hyperliquid spot asset contexts are not an array"))?
+        .iter()
+        .map(|value| spot_asset_context(&parse::value(value)?, value))
+        .collect::<Result<Vec<_>>>()?;
+
+    Ok(HyperliquidSpotMetaAndAssetContexts {
+        meta: spot_meta_from_raw(&meta_raw, meta)?,
+        contexts,
+        raw_json: json_text(raw)?,
+    })
+}
+
+fn spot_asset_context(raw: &RawAssetCtx, value: &Value) -> Result<HyperliquidSpotAssetContext> {
+    let decimal =
+        |value: Option<&str>, field| value.map(|value| parse::decimal(value, field)).transpose();
+    Ok(HyperliquidSpotAssetContext {
+        coin: raw.coin.clone(),
+        mid_price: decimal(raw.mid_px.as_deref(), "midPx")?,
+        mark_price: decimal(raw.mark_px.as_deref(), "markPx")?,
+        previous_day_price: decimal(raw.prev_day_px.as_deref(), "prevDayPx")?,
+        day_base_volume: decimal(raw.day_base_volume.as_deref(), "dayBaseVlm")?,
+        day_notional_volume: decimal(raw.day_notional_volume.as_deref(), "dayNtlVlm")?,
+        circulating_supply: decimal(raw.circulating_supply.as_deref(), "circulatingSupply")?,
+        total_supply: decimal(raw.total_supply.as_deref(), "totalSupply")?,
+        raw_json: json_text(value)?,
+    })
 }
 
 /// Reads the current context of one market.
@@ -1222,6 +1794,114 @@ mod tests {
         assert_eq!(context.oracle_price, Some(Decimal::new(14_325, 3)));
         assert_eq!(context.mark_price, Some(Decimal::new(143_161, 4)));
         assert_eq!(context.mid_price, Some(Decimal::new(14_314, 3)));
+    }
+
+    #[test]
+    fn provider_snapshots_preserve_fields_the_common_contract_omits() {
+        let universe = parse::tests::universe();
+
+        let candles: Vec<Value> = parse::json(parse::tests::CANDLE_SNAPSHOT).expect("candles");
+        let candle = candle_snapshots(&candles, &universe).expect("provider candles");
+        assert_eq!(candle[0].coin, "BTC");
+        assert_eq!(candle[0].trade_count, Some(189));
+        assert!(candle[0].raw_json.contains("\"n\":189"));
+
+        let book: Value = parse::json(parse::tests::L2_BOOK).expect("book");
+        let book = l2_book(&book, &universe).expect("provider book");
+        assert_eq!(book.coin, "BTC");
+        assert_eq!(book.bids[0].order_count, Some(8));
+        assert_eq!(book.asks[1].order_count, Some(3));
+
+        let trades: Vec<Value> = parse::json(
+            r#"[{"coin":"BTC","side":"B","px":"1.2","sz":"3.4","time":1681923600000,"tid":7,"hash":"0xhash","users":["0xmaker","0xtaker"]}]"#,
+        )
+        .expect("trades");
+        let trades = recent_trades(&trades, &universe).expect("provider trades");
+        assert_eq!(trades[0].coin, "BTC");
+        assert_eq!(trades[0].hash.as_deref(), Some("0xhash"));
+        assert_eq!(trades[0].users, ["0xmaker", "0xtaker"]);
+
+        let funding: Vec<Value> = parse::json(parse::tests::FUNDING_HISTORY).expect("funding");
+        let funding = funding_history(&funding, &universe).expect("provider funding");
+        assert_eq!(funding[0].coin, "BTC");
+        assert_eq!(funding[0].premium, Some(Decimal::new(-52_196, 8)));
+
+        let user_funding_values: Vec<Value> =
+            parse::json(parse::tests::USER_FUNDING).expect("user funding");
+        let user_funding =
+            user_funding(&user_funding_values, &universe).expect("provider user funding");
+        assert_eq!(user_funding[0].coin, "ETH");
+        assert_eq!(
+            user_funding[0].position_size,
+            Some(Decimal::new(491_477, 4))
+        );
+        assert_eq!(user_funding[0].sample_count, Some(24));
+
+        let state: Value = parse::json(
+            r#"{"balances":[{"coin":"PURR","token":1,"total":"2000","hold":"3","entryNtl":"1234.56"}]}"#,
+        )
+        .expect("spot state");
+        let state = spot_clearinghouse_state(&state).expect("provider spot state");
+        assert_eq!(state.balances[0].token, Some(1));
+        assert_eq!(
+            state.balances[0].entry_notional,
+            Some(Decimal::new(123_456, 2))
+        );
+    }
+
+    #[test]
+    fn spot_metadata_and_contexts_keep_provider_token_and_supply_fields() {
+        let meta: Value = parse::json(
+            r#"{
+              "tokens":[{
+                "name":"PURR","szDecimals":0,"weiDecimals":5,"index":1,
+                "tokenId":"0xtoken","isCanonical":true,
+                "evmContract":{"address":"0xcontract","evm_extra_wei_decimals":13},
+                "fullName":"Purr","deployerTradingFeeShare":"0.01"
+              }],
+              "universe":[{"name":"PURR/USDC","tokens":[1,0],"index":0,"isCanonical":true}]
+            }"#,
+        )
+        .expect("spot metadata");
+        let meta = spot_meta(&meta).expect("provider spot metadata");
+        assert_eq!(meta.tokens[0].token_id.as_deref(), Some("0xtoken"));
+        assert_eq!(
+            meta.tokens[0]
+                .evm_contract
+                .as_ref()
+                .map(|value| value.extra_wei_decimals),
+            Some(13)
+        );
+        assert_eq!(
+            meta.tokens[0].deployer_trading_fee_share,
+            Some(Decimal::new(1, 2))
+        );
+        assert_eq!(meta.universe[0].is_canonical, Some(true));
+
+        let contexts: Value = parse::json(
+            r#"[
+              {
+                "tokens":[{"name":"PURR","szDecimals":0,"index":1}],
+                "universe":[{"name":"PURR/USDC","tokens":[1,0],"index":0}]
+              },
+              [{
+                "coin":"PURR/USDC","midPx":"0.061726","markPx":"0.061848",
+                "prevDayPx":"0.063091","dayBaseVlm":"6100365.0","dayNtlVlm":"380143.3363749998",
+                "circulatingSupply":"595169798.8345600367","totalSupply":"595169805.3573399782"
+              }]
+            ]"#,
+        )
+        .expect("spot contexts");
+        let contexts = spot_meta_and_asset_contexts(&contexts).expect("provider spot contexts");
+        assert_eq!(contexts.contexts[0].coin.as_deref(), Some("PURR/USDC"));
+        assert_eq!(
+            contexts.contexts[0].circulating_supply,
+            Some(Decimal::new(5_951_697_988_345_600_367, 10))
+        );
+        assert_eq!(
+            contexts.contexts[0].total_supply,
+            Some(Decimal::new(5_951_698_053_573_399_782, 10))
+        );
     }
 
     // https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint.md

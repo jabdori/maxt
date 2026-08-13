@@ -41,7 +41,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 68203221;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1245704565;
 
 // Section: executor
 
@@ -286,6 +286,121 @@ fn wire__crate__api__NativeClient_binance_aggregate_trades_impl(
         },
     )
 }
+fn wire__crate__api__NativeClient_binance_all_coins_information_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_binance_all_coins_information",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::NativeClient::binance_all_coins_information(
+                            &*api_that_guard,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__NativeClient_binance_api_key_permissions_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_binance_api_key_permissions",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok =
+                            crate::api::NativeClient::binance_api_key_permissions(&*api_that_guard)
+                                .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__NativeClient_binance_c_2_c_trade_history_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -399,6 +514,69 @@ fn wire__crate__api__NativeClient_binance_cancel_all_open_orders_impl(
                         let output_ok = crate::api::NativeClient::binance_cancel_all_open_orders(
                             &*api_that_guard,
                             api_market,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__NativeClient_binance_deposit_history_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_binance_deposit_history",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_request =
+                <crate::convert::generated_models::WireBinanceDepositHistoryRequest>::sse_decode(
+                    &mut deserializer,
+                );
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::NativeClient::binance_deposit_history(
+                            &*api_that_guard,
+                            api_request,
                         )
                         .await?;
                         Ok(output_ok)
@@ -585,6 +763,65 @@ fn wire__crate__api__NativeClient_binance_open_interest_impl(
         },
     )
 }
+fn wire__crate__api__NativeClient_binance_questionnaire_requirements_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_binance_questionnaire_requirements",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok =
+                            crate::api::NativeClient::binance_questionnaire_requirements(
+                                &*api_that_guard,
+                            )
+                            .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__NativeClient_binance_spot_impl(
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -614,6 +851,64 @@ fn wire__crate__api__NativeClient_binance_spot_impl(
                     crate::api::NativeClient::binance_spot(api_api_key, api_secret_key)?;
                 Ok(output_ok)
             })())
+        },
+    )
+}
+fn wire__crate__api__NativeClient_binance_spot_account_information_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_binance_spot_account_information",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::NativeClient::binance_spot_account_information(
+                            &*api_that_guard,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
         },
     )
 }
@@ -669,6 +964,124 @@ fn wire__crate__api__NativeClient_binance_spot_average_price_impl(
                             api_market,
                         )
                         .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__NativeClient_binance_spot_cancel_all_open_orders_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_binance_spot_cancel_all_open_orders",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_market = <crate::convert::WireMarket>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok =
+                            crate::api::NativeClient::binance_spot_cancel_all_open_orders(
+                                &*api_that_guard,
+                                api_market,
+                            )
+                            .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__NativeClient_binance_spot_exchange_info_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_binance_spot_exchange_info",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok =
+                            crate::api::NativeClient::binance_spot_exchange_info(&*api_that_guard)
+                                .await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -862,6 +1275,65 @@ fn wire__crate__api__NativeClient_binance_test_order_impl(
         },
     )
 }
+fn wire__crate__api__NativeClient_binance_usd_m_account_information_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_binance_usd_m_account_information",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok =
+                            crate::api::NativeClient::binance_usd_m_account_information(
+                                &*api_that_guard,
+                            )
+                            .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__NativeClient_binance_usd_m_close_listen_key_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -978,6 +1450,63 @@ fn wire__crate__api__NativeClient_binance_usd_m_create_listen_key_impl(
         },
     )
 }
+fn wire__crate__api__NativeClient_binance_usd_m_exchange_info_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_binance_usd_m_exchange_info",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok =
+                            crate::api::NativeClient::binance_usd_m_exchange_info(&*api_that_guard)
+                                .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__NativeClient_binance_usd_m_futures_impl(
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1069,6 +1598,67 @@ fn wire__crate__api__NativeClient_binance_usd_m_keepalive_listen_key_impl(
         },
     )
 }
+fn wire__crate__api__NativeClient_binance_usd_m_position_information_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_binance_usd_m_position_information",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_market = <Option<crate::convert::WireMarket>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok =
+                            crate::api::NativeClient::binance_usd_m_position_information(
+                                &*api_that_guard,
+                                api_market,
+                            )
+                            .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__NativeClient_binance_venue_impl(
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1113,6 +1703,127 @@ fn wire__crate__api__NativeClient_binance_venue_impl(
                     Result::<_, ()>::Ok(crate::api::NativeClient::binance_venue(&*api_that_guard))?;
                 Ok(output_ok)
             })())
+        },
+    )
+}
+fn wire__crate__api__NativeClient_binance_withdraw_address_list_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_binance_withdraw_address_list",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::NativeClient::binance_withdraw_address_list(
+                            &*api_that_guard,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__NativeClient_binance_withdraw_history_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_binance_withdraw_history",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_request =
+                <crate::convert::generated_models::WireBinanceWithdrawHistoryRequest>::sse_decode(
+                    &mut deserializer,
+                );
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::NativeClient::binance_withdraw_history(
+                            &*api_that_guard,
+                            api_request,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
         },
     )
 }
@@ -3319,6 +4030,136 @@ fn wire__crate__api__NativeClient_hyperliquid_basic_open_orders_impl(
         },
     )
 }
+fn wire__crate__api__NativeClient_hyperliquid_candle_snapshot_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_hyperliquid_candle_snapshot",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_market = <crate::convert::WireMarket>::sse_decode(&mut deserializer);
+            let api_interval = <String>::sse_decode(&mut deserializer);
+            let api_from_ns = <i64>::sse_decode(&mut deserializer);
+            let api_to_ns = <Option<i64>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::NativeClient::hyperliquid_candle_snapshot(
+                            &*api_that_guard,
+                            api_market,
+                            api_interval,
+                            api_from_ns,
+                            api_to_ns,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__NativeClient_hyperliquid_funding_history_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_hyperliquid_funding_history",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_market = <crate::convert::WireMarket>::sse_decode(&mut deserializer);
+            let api_from_ns = <i64>::sse_decode(&mut deserializer);
+            let api_to_ns = <Option<i64>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::NativeClient::hyperliquid_funding_history(
+                            &*api_that_guard,
+                            api_market,
+                            api_from_ns,
+                            api_to_ns,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__NativeClient_hyperliquid_historical_orders_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -3367,6 +4208,66 @@ fn wire__crate__api__NativeClient_hyperliquid_historical_orders_impl(
                         let api_that_guard = api_that_guard.unwrap();
                         let output_ok = crate::api::NativeClient::hyperliquid_historical_orders(
                             &*api_that_guard,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__NativeClient_hyperliquid_l2_book_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_hyperliquid_l2_book",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_market = <crate::convert::WireMarket>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::NativeClient::hyperliquid_l2_book(
+                            &*api_that_guard,
+                            api_market,
                         )
                         .await?;
                         Ok(output_ok)
@@ -3563,6 +4464,66 @@ fn wire__crate__api__NativeClient_hyperliquid_portfolio_impl(
         },
     )
 }
+fn wire__crate__api__NativeClient_hyperliquid_recent_trades_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_hyperliquid_recent_trades",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_market = <crate::convert::WireMarket>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::NativeClient::hyperliquid_recent_trades(
+                            &*api_that_guard,
+                            api_market,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__NativeClient_hyperliquid_referral_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -3612,6 +4573,181 @@ fn wire__crate__api__NativeClient_hyperliquid_referral_impl(
                         let output_ok =
                             crate::api::NativeClient::hyperliquid_referral(&*api_that_guard)
                                 .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__NativeClient_hyperliquid_spot_clearinghouse_state_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_hyperliquid_spot_clearinghouse_state",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok =
+                            crate::api::NativeClient::hyperliquid_spot_clearinghouse_state(
+                                &*api_that_guard,
+                            )
+                            .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__NativeClient_hyperliquid_spot_meta_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_hyperliquid_spot_meta",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok =
+                            crate::api::NativeClient::hyperliquid_spot_meta(&*api_that_guard)
+                                .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__NativeClient_hyperliquid_spot_meta_and_asset_contexts_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_hyperliquid_spot_meta_and_asset_contexts",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok =
+                            crate::api::NativeClient::hyperliquid_spot_meta_and_asset_contexts(
+                                &*api_that_guard,
+                            )
+                            .await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3848,6 +4984,68 @@ fn wire__crate__api__NativeClient_hyperliquid_user_fills_by_time_impl(
                             api_from_ns,
                             api_to_ns,
                             api_aggregate_by_time,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__NativeClient_hyperliquid_user_funding_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_hyperliquid_user_funding",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            let api_from_ns = <i64>::sse_decode(&mut deserializer);
+            let api_to_ns = <Option<i64>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::NativeClient::hyperliquid_user_funding(
+                            &*api_that_guard,
+                            api_from_ns,
+                            api_to_ns,
                         )
                         .await?;
                         Ok(output_ok)
@@ -6920,6 +8118,63 @@ fn wire__crate__api__NativeClient_upbit_withdraw_krw_impl(
         },
     )
 }
+fn wire__crate__api__NativeClient_upbit_withdrawal_addresses_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "NativeClient_upbit_withdrawal_addresses",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::convert::NativeError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok =
+                            crate::api::NativeClient::upbit_withdrawal_addresses(&*api_that_guard)
+                                .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__NativeClient_upbit_year_candles_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -8434,6 +9689,18 @@ impl SseDecode for Vec<String> {
     }
 }
 
+impl SseDecode for Vec<u32> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<u32>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<u8> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -8518,6 +9785,70 @@ impl SseDecode for Vec<crate::convert::generated_models::WireBinanceC2cTrade> {
     }
 }
 
+impl SseDecode for Vec<crate::convert::generated_models::WireBinanceCoinInformation> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireBinanceCoinInformation>::sse_decode(
+                    deserializer,
+                ),
+            );
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::convert::generated_models::WireBinanceCoinNetworkInformation> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireBinanceCoinNetworkInformation>::sse_decode(
+                    deserializer,
+                ),
+            );
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::convert::generated_models::WireBinanceDepositHistoryEntry> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireBinanceDepositHistoryEntry>::sse_decode(
+                    deserializer,
+                ),
+            );
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::convert::generated_models::WireBinanceExchangeSymbol> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireBinanceExchangeSymbol>::sse_decode(
+                    deserializer,
+                ),
+            );
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<crate::convert::generated_models::WireBinanceMarkPrice> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -8526,6 +9857,118 @@ impl SseDecode for Vec<crate::convert::generated_models::WireBinanceMarkPrice> {
         for idx_ in 0..len_ {
             ans_.push(
                 <crate::convert::generated_models::WireBinanceMarkPrice>::sse_decode(deserializer),
+            );
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::convert::generated_models::WireBinanceSpotAccountBalance> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireBinanceSpotAccountBalance>::sse_decode(
+                    deserializer,
+                ),
+            );
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::convert::generated_models::WireBinanceSpotCancelledOrder> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireBinanceSpotCancelledOrder>::sse_decode(
+                    deserializer,
+                ),
+            );
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::convert::generated_models::WireBinanceUsdMAccountAsset> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireBinanceUsdMAccountAsset>::sse_decode(
+                    deserializer,
+                ),
+            );
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::convert::generated_models::WireBinanceUsdMAccountPosition> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireBinanceUsdMAccountPosition>::sse_decode(
+                    deserializer,
+                ),
+            );
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::convert::generated_models::WireBinanceUsdMPositionInformation> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireBinanceUsdMPositionInformation>::sse_decode(
+                    deserializer,
+                ),
+            );
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::convert::generated_models::WireBinanceWithdrawHistoryEntry> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireBinanceWithdrawHistoryEntry>::sse_decode(
+                    deserializer,
+                ),
+            );
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::convert::generated_models::WireBinanceWithdrawalAddress> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireBinanceWithdrawalAddress>::sse_decode(
+                    deserializer,
+                ),
             );
         }
         return ans_;
@@ -8874,6 +10317,38 @@ impl SseDecode for Vec<crate::convert::WireFundingRate> {
     }
 }
 
+impl SseDecode for Vec<crate::convert::generated_models::WireHyperliquidBookLevel> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireHyperliquidBookLevel>::sse_decode(
+                    deserializer,
+                ),
+            );
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::convert::generated_models::WireHyperliquidCandleSnapshot> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireHyperliquidCandleSnapshot>::sse_decode(
+                    deserializer,
+                ),
+            );
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<crate::convert::generated_models::WireHyperliquidDailyVolume> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -8882,6 +10357,22 @@ impl SseDecode for Vec<crate::convert::generated_models::WireHyperliquidDailyVol
         for idx_ in 0..len_ {
             ans_.push(
                 <crate::convert::generated_models::WireHyperliquidDailyVolume>::sse_decode(
+                    deserializer,
+                ),
+            );
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::convert::generated_models::WireHyperliquidFundingHistoryEntry> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireHyperliquidFundingHistoryEntry>::sse_decode(
                     deserializer,
                 ),
             );
@@ -8984,6 +10475,86 @@ impl SseDecode for Vec<crate::convert::generated_models::WireHyperliquidPortfoli
     }
 }
 
+impl SseDecode for Vec<crate::convert::generated_models::WireHyperliquidRecentTrade> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireHyperliquidRecentTrade>::sse_decode(
+                    deserializer,
+                ),
+            );
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::convert::generated_models::WireHyperliquidSpotAssetContext> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireHyperliquidSpotAssetContext>::sse_decode(
+                    deserializer,
+                ),
+            );
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::convert::generated_models::WireHyperliquidSpotBalance> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireHyperliquidSpotBalance>::sse_decode(
+                    deserializer,
+                ),
+            );
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::convert::generated_models::WireHyperliquidSpotPair> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireHyperliquidSpotPair>::sse_decode(
+                    deserializer,
+                ),
+            );
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::convert::generated_models::WireHyperliquidSpotToken> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireHyperliquidSpotToken>::sse_decode(
+                    deserializer,
+                ),
+            );
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<crate::convert::generated_models::WireHyperliquidSubAccount> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -9008,6 +10579,22 @@ impl SseDecode for Vec<crate::convert::generated_models::WireHyperliquidUserFill
         for idx_ in 0..len_ {
             ans_.push(
                 <crate::convert::generated_models::WireHyperliquidUserFill>::sse_decode(
+                    deserializer,
+                ),
+            );
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::convert::generated_models::WireHyperliquidUserFunding> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireHyperliquidUserFunding>::sse_decode(
                     deserializer,
                 ),
             );
@@ -9406,6 +10993,22 @@ impl SseDecode for Vec<crate::convert::generated_models::WireUpbitTravelRuleVasp
     }
 }
 
+impl SseDecode for Vec<crate::convert::generated_models::WireUpbitWithdrawalAddress> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(
+                <crate::convert::generated_models::WireUpbitWithdrawalAddress>::sse_decode(
+                    deserializer,
+                ),
+            );
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<crate::convert::generated_models::WireUpbitYearCandle> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -9691,6 +11294,21 @@ impl SseDecode for Option<crate::convert::WireFeature> {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
             return Some(<crate::convert::WireFeature>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<crate::convert::generated_models::WireHyperliquidEvmContract> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(
+                <crate::convert::generated_models::WireHyperliquidEvmContract>::sse_decode(
+                    deserializer,
+                ),
+            );
         } else {
             return None;
         }
@@ -10142,6 +11760,42 @@ impl SseDecode for crate::convert::generated_models::WireBinanceAggregateTradesR
     }
 }
 
+impl SseDecode for crate::convert::generated_models::WireBinanceApiKeyPermissions {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_ipRestrict = <bool>::sse_decode(deserializer);
+        let mut var_createTimeNs = <Option<i64>>::sse_decode(deserializer);
+        let mut var_enableReading = <bool>::sse_decode(deserializer);
+        let mut var_enableWithdrawals = <bool>::sse_decode(deserializer);
+        let mut var_enableInternalTransfer = <bool>::sse_decode(deserializer);
+        let mut var_enableMargin = <bool>::sse_decode(deserializer);
+        let mut var_enableSpotAndMarginTrading = <bool>::sse_decode(deserializer);
+        let mut var_enableFutures = <bool>::sse_decode(deserializer);
+        let mut var_permitsUniversalTransfer = <bool>::sse_decode(deserializer);
+        let mut var_enableVanillaOptions = <bool>::sse_decode(deserializer);
+        let mut var_enableFixApiTrade = <bool>::sse_decode(deserializer);
+        let mut var_enableFixReadOnly = <bool>::sse_decode(deserializer);
+        let mut var_enablePortfolioMarginTrading = <bool>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceApiKeyPermissions {
+            ip_restrict: var_ipRestrict,
+            create_time_ns: var_createTimeNs,
+            enable_reading: var_enableReading,
+            enable_withdrawals: var_enableWithdrawals,
+            enable_internal_transfer: var_enableInternalTransfer,
+            enable_margin: var_enableMargin,
+            enable_spot_and_margin_trading: var_enableSpotAndMarginTrading,
+            enable_futures: var_enableFutures,
+            permits_universal_transfer: var_permitsUniversalTransfer,
+            enable_vanilla_options: var_enableVanillaOptions,
+            enable_fix_api_trade: var_enableFixApiTrade,
+            enable_fix_read_only: var_enableFixReadOnly,
+            enable_portfolio_margin_trading: var_enablePortfolioMarginTrading,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
 impl SseDecode for crate::convert::generated_models::WireBinanceC2cTrade {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -10241,6 +11895,193 @@ impl SseDecode for crate::convert::WireBinanceC2cTradeType {
     }
 }
 
+impl SseDecode for crate::convert::generated_models::WireBinanceCoinInformation {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_coin = <String>::sse_decode(deserializer);
+        let mut var_depositAllEnabled = <bool>::sse_decode(deserializer);
+        let mut var_withdrawAllEnabled = <bool>::sse_decode(deserializer);
+        let mut var_name = <Option<String>>::sse_decode(deserializer);
+        let mut var_free = <Option<String>>::sse_decode(deserializer);
+        let mut var_locked = <Option<String>>::sse_decode(deserializer);
+        let mut var_freeze = <Option<String>>::sse_decode(deserializer);
+        let mut var_withdrawing = <Option<String>>::sse_decode(deserializer);
+        let mut var_isLegalMoney = <Option<bool>>::sse_decode(deserializer);
+        let mut var_trading = <Option<bool>>::sse_decode(deserializer);
+        let mut var_networks = <Vec<
+            crate::convert::generated_models::WireBinanceCoinNetworkInformation,
+        >>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceCoinInformation {
+            coin: var_coin,
+            deposit_all_enabled: var_depositAllEnabled,
+            withdraw_all_enabled: var_withdrawAllEnabled,
+            name: var_name,
+            free: var_free,
+            locked: var_locked,
+            freeze: var_freeze,
+            withdrawing: var_withdrawing,
+            is_legal_money: var_isLegalMoney,
+            trading: var_trading,
+            networks: var_networks,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBinanceCoinNetworkInformation {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_network = <String>::sse_decode(deserializer);
+        let mut var_depositEnabled = <bool>::sse_decode(deserializer);
+        let mut var_withdrawEnabled = <bool>::sse_decode(deserializer);
+        let mut var_busy = <bool>::sse_decode(deserializer);
+        let mut var_withdrawalIntegerMultiple = <Option<String>>::sse_decode(deserializer);
+        let mut var_withdrawalFee = <Option<String>>::sse_decode(deserializer);
+        let mut var_minimumWithdrawal = <Option<String>>::sse_decode(deserializer);
+        let mut var_maximumWithdrawal = <Option<String>>::sse_decode(deserializer);
+        let mut var_withdrawalTag = <Option<bool>>::sse_decode(deserializer);
+        let mut var_isDefault = <Option<bool>>::sse_decode(deserializer);
+        let mut var_minimumConfirmations = <Option<u64>>::sse_decode(deserializer);
+        let mut var_unlockConfirmations = <Option<u64>>::sse_decode(deserializer);
+        let mut var_contractAddress = <Option<String>>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceCoinNetworkInformation {
+            network: var_network,
+            deposit_enabled: var_depositEnabled,
+            withdraw_enabled: var_withdrawEnabled,
+            busy: var_busy,
+            withdrawal_integer_multiple: var_withdrawalIntegerMultiple,
+            withdrawal_fee: var_withdrawalFee,
+            minimum_withdrawal: var_minimumWithdrawal,
+            maximum_withdrawal: var_maximumWithdrawal,
+            withdrawal_tag: var_withdrawalTag,
+            is_default: var_isDefault,
+            minimum_confirmations: var_minimumConfirmations,
+            unlock_confirmations: var_unlockConfirmations,
+            contract_address: var_contractAddress,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBinanceDepositHistory {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_entries =
+            <Vec<crate::convert::generated_models::WireBinanceDepositHistoryEntry>>::sse_decode(
+                deserializer,
+            );
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceDepositHistory {
+            entries: var_entries,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBinanceDepositHistoryEntry {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_id = <String>::sse_decode(deserializer);
+        let mut var_amount = <String>::sse_decode(deserializer);
+        let mut var_coin = <String>::sse_decode(deserializer);
+        let mut var_network = <String>::sse_decode(deserializer);
+        let mut var_status = <u32>::sse_decode(deserializer);
+        let mut var_address = <Option<String>>::sse_decode(deserializer);
+        let mut var_addressTag = <Option<String>>::sse_decode(deserializer);
+        let mut var_txId = <Option<String>>::sse_decode(deserializer);
+        let mut var_insertTimeNs = <i64>::sse_decode(deserializer);
+        let mut var_completeTimeNs = <Option<i64>>::sse_decode(deserializer);
+        let mut var_transferType = <Option<u32>>::sse_decode(deserializer);
+        let mut var_sourceAddress = <Option<String>>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceDepositHistoryEntry {
+            id: var_id,
+            amount: var_amount,
+            coin: var_coin,
+            network: var_network,
+            status: var_status,
+            address: var_address,
+            address_tag: var_addressTag,
+            tx_id: var_txId,
+            insert_time_ns: var_insertTimeNs,
+            complete_time_ns: var_completeTimeNs,
+            transfer_type: var_transferType,
+            source_address: var_sourceAddress,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBinanceDepositHistoryRequest {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_coin = <Option<String>>::sse_decode(deserializer);
+        let mut var_status = <Option<u32>>::sse_decode(deserializer);
+        let mut var_startTimeNs = <Option<i64>>::sse_decode(deserializer);
+        let mut var_endTimeNs = <Option<i64>>::sse_decode(deserializer);
+        let mut var_offset = <Option<u64>>::sse_decode(deserializer);
+        let mut var_limit = <Option<u32>>::sse_decode(deserializer);
+        let mut var_txId = <Option<String>>::sse_decode(deserializer);
+        let mut var_includeSource = <bool>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceDepositHistoryRequest {
+            coin: var_coin,
+            status: var_status,
+            start_time_ns: var_startTimeNs,
+            end_time_ns: var_endTimeNs,
+            offset: var_offset,
+            limit: var_limit,
+            tx_id: var_txId,
+            include_source: var_includeSource,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBinanceExchangeInfo {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_venue =
+            <crate::convert::generated_models::WireBinanceMarket>::sse_decode(deserializer);
+        let mut var_timezone = <Option<String>>::sse_decode(deserializer);
+        let mut var_serverTimeNs = <Option<i64>>::sse_decode(deserializer);
+        let mut var_symbols =
+            <Vec<crate::convert::generated_models::WireBinanceExchangeSymbol>>::sse_decode(
+                deserializer,
+            );
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceExchangeInfo {
+            venue: var_venue,
+            timezone: var_timezone,
+            server_time_ns: var_serverTimeNs,
+            symbols: var_symbols,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBinanceExchangeSymbol {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_symbol = <String>::sse_decode(deserializer);
+        let mut var_status = <String>::sse_decode(deserializer);
+        let mut var_baseAsset = <String>::sse_decode(deserializer);
+        let mut var_quoteAsset = <String>::sse_decode(deserializer);
+        let mut var_contractType = <Option<String>>::sse_decode(deserializer);
+        let mut var_marginAsset = <Option<String>>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceExchangeSymbol {
+            symbol: var_symbol,
+            status: var_status,
+            base_asset: var_baseAsset,
+            quote_asset: var_quoteAsset,
+            contract_type: var_contractType,
+            margin_asset: var_marginAsset,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
 impl SseDecode for crate::convert::generated_models::WireBinanceMarkPrice {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -10265,6 +12106,18 @@ impl SseDecode for crate::convert::generated_models::WireBinanceMarkPrice {
     }
 }
 
+impl SseDecode for crate::convert::generated_models::WireBinanceMarket {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::convert::generated_models::WireBinanceMarket::Spot,
+            1 => crate::convert::generated_models::WireBinanceMarket::UsdMFutures,
+            _ => unreachable!("Invalid variant for WireBinanceMarket: {}", inner),
+        };
+    }
+}
+
 impl SseDecode for crate::convert::generated_models::WireBinanceOpenInterest {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -10275,6 +12128,74 @@ impl SseDecode for crate::convert::generated_models::WireBinanceOpenInterest {
             market: var_market,
             open_interest: var_openInterest,
             time_ns: var_timeNs,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBinanceQuestionnaireRequirements {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_questionnaireCountryCode = <String>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceQuestionnaireRequirements {
+            questionnaire_country_code: var_questionnaireCountryCode,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBinanceSpotAccountBalance {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_asset = <String>::sse_decode(deserializer);
+        let mut var_free = <String>::sse_decode(deserializer);
+        let mut var_locked = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceSpotAccountBalance {
+            asset: var_asset,
+            free: var_free,
+            locked: var_locked,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBinanceSpotAccountInformation {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_makerCommission = <u64>::sse_decode(deserializer);
+        let mut var_takerCommission = <u64>::sse_decode(deserializer);
+        let mut var_buyerCommission = <u64>::sse_decode(deserializer);
+        let mut var_sellerCommission = <u64>::sse_decode(deserializer);
+        let mut var_commissionRates =
+            <crate::convert::generated_models::WireBinanceSpotCommissionRates>::sse_decode(
+                deserializer,
+            );
+        let mut var_canTrade = <bool>::sse_decode(deserializer);
+        let mut var_canWithdraw = <bool>::sse_decode(deserializer);
+        let mut var_canDeposit = <bool>::sse_decode(deserializer);
+        let mut var_updateTimeNs = <i64>::sse_decode(deserializer);
+        let mut var_accountType = <String>::sse_decode(deserializer);
+        let mut var_balances =
+            <Vec<crate::convert::generated_models::WireBinanceSpotAccountBalance>>::sse_decode(
+                deserializer,
+            );
+        let mut var_permissions = <Vec<String>>::sse_decode(deserializer);
+        let mut var_uid = <Option<u64>>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceSpotAccountInformation {
+            maker_commission: var_makerCommission,
+            taker_commission: var_takerCommission,
+            buyer_commission: var_buyerCommission,
+            seller_commission: var_sellerCommission,
+            commission_rates: var_commissionRates,
+            can_trade: var_canTrade,
+            can_withdraw: var_canWithdraw,
+            can_deposit: var_canDeposit,
+            update_time_ns: var_updateTimeNs,
+            account_type: var_accountType,
+            balances: var_balances,
+            permissions: var_permissions,
+            uid: var_uid,
+            raw_json: var_rawJson,
         };
     }
 }
@@ -10291,6 +12212,79 @@ impl SseDecode for crate::convert::generated_models::WireBinanceSpotAveragePrice
             minutes: var_minutes,
             price: var_price,
             close_time_ns: var_closeTimeNs,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBinanceSpotCancelAllOpenOrders {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_reports =
+            <Vec<crate::convert::generated_models::WireBinanceSpotCancelledOrder>>::sse_decode(
+                deserializer,
+            );
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceSpotCancelAllOpenOrders {
+            reports: var_reports,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBinanceSpotCancelledOrder {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_symbol = <Option<String>>::sse_decode(deserializer);
+        let mut var_originalClientOrderId = <Option<String>>::sse_decode(deserializer);
+        let mut var_orderId = <Option<String>>::sse_decode(deserializer);
+        let mut var_clientOrderId = <Option<String>>::sse_decode(deserializer);
+        let mut var_status = <Option<String>>::sse_decode(deserializer);
+        let mut var_price = <Option<String>>::sse_decode(deserializer);
+        let mut var_originalQuantity = <Option<String>>::sse_decode(deserializer);
+        let mut var_executedQuantity = <Option<String>>::sse_decode(deserializer);
+        let mut var_cumulativeQuoteQuantity = <Option<String>>::sse_decode(deserializer);
+        let mut var_transactTimeNs = <Option<i64>>::sse_decode(deserializer);
+        let mut var_orderListId = <Option<String>>::sse_decode(deserializer);
+        let mut var_contingencyType = <Option<String>>::sse_decode(deserializer);
+        let mut var_listStatusType = <Option<String>>::sse_decode(deserializer);
+        let mut var_listOrderStatus = <Option<String>>::sse_decode(deserializer);
+        let mut var_listClientOrderId = <Option<String>>::sse_decode(deserializer);
+        let mut var_transactionTimeNs = <Option<i64>>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceSpotCancelledOrder {
+            symbol: var_symbol,
+            original_client_order_id: var_originalClientOrderId,
+            order_id: var_orderId,
+            client_order_id: var_clientOrderId,
+            status: var_status,
+            price: var_price,
+            original_quantity: var_originalQuantity,
+            executed_quantity: var_executedQuantity,
+            cumulative_quote_quantity: var_cumulativeQuoteQuantity,
+            transact_time_ns: var_transactTimeNs,
+            order_list_id: var_orderListId,
+            contingency_type: var_contingencyType,
+            list_status_type: var_listStatusType,
+            list_order_status: var_listOrderStatus,
+            list_client_order_id: var_listClientOrderId,
+            transaction_time_ns: var_transactionTimeNs,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBinanceSpotCommissionRates {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_maker = <String>::sse_decode(deserializer);
+        let mut var_taker = <String>::sse_decode(deserializer);
+        let mut var_buyer = <String>::sse_decode(deserializer);
+        let mut var_seller = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceSpotCommissionRates {
+            maker: var_maker,
+            taker: var_taker,
+            buyer: var_buyer,
+            seller: var_seller,
         };
     }
 }
@@ -10361,6 +12355,159 @@ impl SseDecode for crate::convert::generated_models::WireBinanceTestOrderRequest
     }
 }
 
+impl SseDecode for crate::convert::generated_models::WireBinanceUsdMAccountAsset {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_asset = <String>::sse_decode(deserializer);
+        let mut var_walletBalance = <String>::sse_decode(deserializer);
+        let mut var_unrealizedProfit = <String>::sse_decode(deserializer);
+        let mut var_marginBalance = <String>::sse_decode(deserializer);
+        let mut var_maintenanceMargin = <String>::sse_decode(deserializer);
+        let mut var_initialMargin = <String>::sse_decode(deserializer);
+        let mut var_positionInitialMargin = <String>::sse_decode(deserializer);
+        let mut var_openOrderInitialMargin = <String>::sse_decode(deserializer);
+        let mut var_crossWalletBalance = <String>::sse_decode(deserializer);
+        let mut var_crossUnrealizedProfit = <String>::sse_decode(deserializer);
+        let mut var_availableBalance = <String>::sse_decode(deserializer);
+        let mut var_maxWithdrawAmount = <String>::sse_decode(deserializer);
+        let mut var_updateTimeNs = <i64>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceUsdMAccountAsset {
+            asset: var_asset,
+            wallet_balance: var_walletBalance,
+            unrealized_profit: var_unrealizedProfit,
+            margin_balance: var_marginBalance,
+            maintenance_margin: var_maintenanceMargin,
+            initial_margin: var_initialMargin,
+            position_initial_margin: var_positionInitialMargin,
+            open_order_initial_margin: var_openOrderInitialMargin,
+            cross_wallet_balance: var_crossWalletBalance,
+            cross_unrealized_profit: var_crossUnrealizedProfit,
+            available_balance: var_availableBalance,
+            max_withdraw_amount: var_maxWithdrawAmount,
+            update_time_ns: var_updateTimeNs,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBinanceUsdMAccountInformation {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_totalInitialMargin = <String>::sse_decode(deserializer);
+        let mut var_totalMaintenanceMargin = <String>::sse_decode(deserializer);
+        let mut var_totalWalletBalance = <String>::sse_decode(deserializer);
+        let mut var_totalUnrealizedProfit = <String>::sse_decode(deserializer);
+        let mut var_totalMarginBalance = <String>::sse_decode(deserializer);
+        let mut var_totalPositionInitialMargin = <String>::sse_decode(deserializer);
+        let mut var_totalOpenOrderInitialMargin = <String>::sse_decode(deserializer);
+        let mut var_totalCrossWalletBalance = <String>::sse_decode(deserializer);
+        let mut var_totalCrossUnrealizedProfit = <String>::sse_decode(deserializer);
+        let mut var_availableBalance = <String>::sse_decode(deserializer);
+        let mut var_maxWithdrawAmount = <String>::sse_decode(deserializer);
+        let mut var_assets =
+            <Vec<crate::convert::generated_models::WireBinanceUsdMAccountAsset>>::sse_decode(
+                deserializer,
+            );
+        let mut var_positions = <Vec<
+            crate::convert::generated_models::WireBinanceUsdMAccountPosition,
+        >>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceUsdMAccountInformation {
+            total_initial_margin: var_totalInitialMargin,
+            total_maintenance_margin: var_totalMaintenanceMargin,
+            total_wallet_balance: var_totalWalletBalance,
+            total_unrealized_profit: var_totalUnrealizedProfit,
+            total_margin_balance: var_totalMarginBalance,
+            total_position_initial_margin: var_totalPositionInitialMargin,
+            total_open_order_initial_margin: var_totalOpenOrderInitialMargin,
+            total_cross_wallet_balance: var_totalCrossWalletBalance,
+            total_cross_unrealized_profit: var_totalCrossUnrealizedProfit,
+            available_balance: var_availableBalance,
+            max_withdraw_amount: var_maxWithdrawAmount,
+            assets: var_assets,
+            positions: var_positions,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBinanceUsdMAccountPosition {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_symbol = <String>::sse_decode(deserializer);
+        let mut var_positionSide = <String>::sse_decode(deserializer);
+        let mut var_positionAmount = <String>::sse_decode(deserializer);
+        let mut var_unrealizedProfit = <String>::sse_decode(deserializer);
+        let mut var_isolatedMargin = <String>::sse_decode(deserializer);
+        let mut var_notional = <String>::sse_decode(deserializer);
+        let mut var_isolatedWallet = <String>::sse_decode(deserializer);
+        let mut var_initialMargin = <String>::sse_decode(deserializer);
+        let mut var_maintenanceMargin = <String>::sse_decode(deserializer);
+        let mut var_updateTimeNs = <i64>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceUsdMAccountPosition {
+            symbol: var_symbol,
+            position_side: var_positionSide,
+            position_amount: var_positionAmount,
+            unrealized_profit: var_unrealizedProfit,
+            isolated_margin: var_isolatedMargin,
+            notional: var_notional,
+            isolated_wallet: var_isolatedWallet,
+            initial_margin: var_initialMargin,
+            maintenance_margin: var_maintenanceMargin,
+            update_time_ns: var_updateTimeNs,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBinanceUsdMPositionInformation {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_symbol = <String>::sse_decode(deserializer);
+        let mut var_positionSide = <String>::sse_decode(deserializer);
+        let mut var_positionAmount = <String>::sse_decode(deserializer);
+        let mut var_entryPrice = <String>::sse_decode(deserializer);
+        let mut var_breakEvenPrice = <String>::sse_decode(deserializer);
+        let mut var_markPrice = <String>::sse_decode(deserializer);
+        let mut var_unrealizedProfit = <String>::sse_decode(deserializer);
+        let mut var_liquidationPrice = <String>::sse_decode(deserializer);
+        let mut var_isolatedMargin = <String>::sse_decode(deserializer);
+        let mut var_notional = <String>::sse_decode(deserializer);
+        let mut var_marginAsset = <String>::sse_decode(deserializer);
+        let mut var_isolatedWallet = <String>::sse_decode(deserializer);
+        let mut var_initialMargin = <String>::sse_decode(deserializer);
+        let mut var_maintenanceMargin = <String>::sse_decode(deserializer);
+        let mut var_positionInitialMargin = <String>::sse_decode(deserializer);
+        let mut var_openOrderInitialMargin = <String>::sse_decode(deserializer);
+        let mut var_adl = <u64>::sse_decode(deserializer);
+        let mut var_bidNotional = <String>::sse_decode(deserializer);
+        let mut var_askNotional = <String>::sse_decode(deserializer);
+        let mut var_updateTimeNs = <i64>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceUsdMPositionInformation {
+            symbol: var_symbol,
+            position_side: var_positionSide,
+            position_amount: var_positionAmount,
+            entry_price: var_entryPrice,
+            break_even_price: var_breakEvenPrice,
+            mark_price: var_markPrice,
+            unrealized_profit: var_unrealizedProfit,
+            liquidation_price: var_liquidationPrice,
+            isolated_margin: var_isolatedMargin,
+            notional: var_notional,
+            margin_asset: var_marginAsset,
+            isolated_wallet: var_isolatedWallet,
+            initial_margin: var_initialMargin,
+            maintenance_margin: var_maintenanceMargin,
+            position_initial_margin: var_positionInitialMargin,
+            open_order_initial_margin: var_openOrderInitialMargin,
+            adl: var_adl,
+            bid_notional: var_bidNotional,
+            ask_notional: var_askNotional,
+            update_time_ns: var_updateTimeNs,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
 impl SseDecode for crate::api::WireBinanceVenue {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -10369,6 +12516,112 @@ impl SseDecode for crate::api::WireBinanceVenue {
             0 => crate::api::WireBinanceVenue::Spot,
             1 => crate::api::WireBinanceVenue::UsdMFutures,
             _ => unreachable!("Invalid variant for WireBinanceVenue: {}", inner),
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBinanceWithdrawHistory {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_entries = <Vec<
+            crate::convert::generated_models::WireBinanceWithdrawHistoryEntry,
+        >>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceWithdrawHistory {
+            entries: var_entries,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBinanceWithdrawHistoryEntry {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_id = <String>::sse_decode(deserializer);
+        let mut var_amount = <String>::sse_decode(deserializer);
+        let mut var_transactionFee = <String>::sse_decode(deserializer);
+        let mut var_coin = <String>::sse_decode(deserializer);
+        let mut var_status = <u32>::sse_decode(deserializer);
+        let mut var_address = <Option<String>>::sse_decode(deserializer);
+        let mut var_txId = <Option<String>>::sse_decode(deserializer);
+        let mut var_applyTime = <Option<String>>::sse_decode(deserializer);
+        let mut var_network = <Option<String>>::sse_decode(deserializer);
+        let mut var_withdrawOrderId = <Option<String>>::sse_decode(deserializer);
+        let mut var_info = <Option<String>>::sse_decode(deserializer);
+        let mut var_transferType = <Option<u32>>::sse_decode(deserializer);
+        let mut var_confirmNo = <Option<u32>>::sse_decode(deserializer);
+        let mut var_walletType = <Option<u32>>::sse_decode(deserializer);
+        let mut var_txKey = <Option<String>>::sse_decode(deserializer);
+        let mut var_completeTime = <Option<String>>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceWithdrawHistoryEntry {
+            id: var_id,
+            amount: var_amount,
+            transaction_fee: var_transactionFee,
+            coin: var_coin,
+            status: var_status,
+            address: var_address,
+            tx_id: var_txId,
+            apply_time: var_applyTime,
+            network: var_network,
+            withdraw_order_id: var_withdrawOrderId,
+            info: var_info,
+            transfer_type: var_transferType,
+            confirm_no: var_confirmNo,
+            wallet_type: var_walletType,
+            tx_key: var_txKey,
+            complete_time: var_completeTime,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBinanceWithdrawHistoryRequest {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_coin = <Option<String>>::sse_decode(deserializer);
+        let mut var_withdrawOrderId = <Option<String>>::sse_decode(deserializer);
+        let mut var_status = <Option<u32>>::sse_decode(deserializer);
+        let mut var_offset = <Option<u64>>::sse_decode(deserializer);
+        let mut var_limit = <Option<u32>>::sse_decode(deserializer);
+        let mut var_idList = <Vec<String>>::sse_decode(deserializer);
+        let mut var_startTimeNs = <Option<i64>>::sse_decode(deserializer);
+        let mut var_endTimeNs = <Option<i64>>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceWithdrawHistoryRequest {
+            coin: var_coin,
+            withdraw_order_id: var_withdrawOrderId,
+            status: var_status,
+            offset: var_offset,
+            limit: var_limit,
+            id_list: var_idList,
+            start_time_ns: var_startTimeNs,
+            end_time_ns: var_endTimeNs,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireBinanceWithdrawalAddress {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_address = <String>::sse_decode(deserializer);
+        let mut var_addressTag = <Option<String>>::sse_decode(deserializer);
+        let mut var_coin = <String>::sse_decode(deserializer);
+        let mut var_network = <String>::sse_decode(deserializer);
+        let mut var_whiteStatus = <bool>::sse_decode(deserializer);
+        let mut var_name = <Option<String>>::sse_decode(deserializer);
+        let mut var_origin = <Option<String>>::sse_decode(deserializer);
+        let mut var_originType = <Option<String>>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireBinanceWithdrawalAddress {
+            address: var_address,
+            address_tag: var_addressTag,
+            coin: var_coin,
+            network: var_network,
+            white_status: var_whiteStatus,
+            name: var_name,
+            origin: var_origin,
+            origin_type: var_originType,
+            raw_json: var_rawJson,
         };
     }
 }
@@ -11630,6 +13883,52 @@ impl SseDecode for crate::convert::WireHyperliquidAssetContext {
     }
 }
 
+impl SseDecode for crate::convert::generated_models::WireHyperliquidBookLevel {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_price = <String>::sse_decode(deserializer);
+        let mut var_size = <String>::sse_decode(deserializer);
+        let mut var_orderCount = <Option<u64>>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireHyperliquidBookLevel {
+            price: var_price,
+            size: var_size,
+            order_count: var_orderCount,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireHyperliquidCandleSnapshot {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_coin = <String>::sse_decode(deserializer);
+        let mut var_market = <crate::convert::WireMarket>::sse_decode(deserializer);
+        let mut var_interval = <String>::sse_decode(deserializer);
+        let mut var_openTimeNs = <i64>::sse_decode(deserializer);
+        let mut var_closeTimeNs = <i64>::sse_decode(deserializer);
+        let mut var_open = <String>::sse_decode(deserializer);
+        let mut var_high = <String>::sse_decode(deserializer);
+        let mut var_low = <String>::sse_decode(deserializer);
+        let mut var_close = <String>::sse_decode(deserializer);
+        let mut var_volume = <String>::sse_decode(deserializer);
+        let mut var_tradeCount = <Option<u64>>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireHyperliquidCandleSnapshot {
+            coin: var_coin,
+            market: var_market,
+            interval: var_interval,
+            open_time_ns: var_openTimeNs,
+            close_time_ns: var_closeTimeNs,
+            open: var_open,
+            high: var_high,
+            low: var_low,
+            close: var_close,
+            volume: var_volume,
+            trade_count: var_tradeCount,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
 impl SseDecode for crate::convert::generated_models::WireHyperliquidDailyVolume {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -11642,6 +13941,64 @@ impl SseDecode for crate::convert::generated_models::WireHyperliquidDailyVolume 
             user_cross: var_userCross,
             user_add: var_userAdd,
             exchange: var_exchange,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireHyperliquidEvmContract {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_address = <String>::sse_decode(deserializer);
+        let mut var_extraWeiDecimals = <u32>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireHyperliquidEvmContract {
+            address: var_address,
+            extra_wei_decimals: var_extraWeiDecimals,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireHyperliquidFundingHistoryEntry {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_coin = <String>::sse_decode(deserializer);
+        let mut var_market = <crate::convert::WireMarket>::sse_decode(deserializer);
+        let mut var_fundingRate = <String>::sse_decode(deserializer);
+        let mut var_premium = <Option<String>>::sse_decode(deserializer);
+        let mut var_timeNs = <i64>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireHyperliquidFundingHistoryEntry {
+            coin: var_coin,
+            market: var_market,
+            funding_rate: var_fundingRate,
+            premium: var_premium,
+            time_ns: var_timeNs,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireHyperliquidL2Book {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_coin = <String>::sse_decode(deserializer);
+        let mut var_market = <crate::convert::WireMarket>::sse_decode(deserializer);
+        let mut var_timeNs = <i64>::sse_decode(deserializer);
+        let mut var_bids =
+            <Vec<crate::convert::generated_models::WireHyperliquidBookLevel>>::sse_decode(
+                deserializer,
+            );
+        let mut var_asks =
+            <Vec<crate::convert::generated_models::WireHyperliquidBookLevel>>::sse_decode(
+                deserializer,
+            );
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireHyperliquidL2Book {
+            coin: var_coin,
+            market: var_market,
+            time_ns: var_timeNs,
+            bids: var_bids,
+            asks: var_asks,
+            raw_json: var_rawJson,
         };
     }
 }
@@ -11882,6 +14239,34 @@ impl SseDecode for crate::convert::generated_models::WireHyperliquidPortfolioPoi
     }
 }
 
+impl SseDecode for crate::convert::generated_models::WireHyperliquidRecentTrade {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_coin = <String>::sse_decode(deserializer);
+        let mut var_market = <crate::convert::WireMarket>::sse_decode(deserializer);
+        let mut var_side = <String>::sse_decode(deserializer);
+        let mut var_price = <String>::sse_decode(deserializer);
+        let mut var_size = <String>::sse_decode(deserializer);
+        let mut var_timeNs = <i64>::sse_decode(deserializer);
+        let mut var_tradeId = <String>::sse_decode(deserializer);
+        let mut var_hash = <Option<String>>::sse_decode(deserializer);
+        let mut var_users = <Vec<String>>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireHyperliquidRecentTrade {
+            coin: var_coin,
+            market: var_market,
+            side: var_side,
+            price: var_price,
+            size: var_size,
+            time_ns: var_timeNs,
+            trade_id: var_tradeId,
+            hash: var_hash,
+            users: var_users,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
 impl SseDecode for crate::convert::generated_models::WireHyperliquidReferral {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -11917,6 +14302,152 @@ impl SseDecode for crate::convert::generated_models::WireHyperliquidReferrer {
         return crate::convert::generated_models::WireHyperliquidReferrer {
             address: var_address,
             code: var_code,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireHyperliquidSpotAssetContext {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_coin = <Option<String>>::sse_decode(deserializer);
+        let mut var_midPrice = <Option<String>>::sse_decode(deserializer);
+        let mut var_markPrice = <Option<String>>::sse_decode(deserializer);
+        let mut var_previousDayPrice = <Option<String>>::sse_decode(deserializer);
+        let mut var_dayBaseVolume = <Option<String>>::sse_decode(deserializer);
+        let mut var_dayNotionalVolume = <Option<String>>::sse_decode(deserializer);
+        let mut var_circulatingSupply = <Option<String>>::sse_decode(deserializer);
+        let mut var_totalSupply = <Option<String>>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireHyperliquidSpotAssetContext {
+            coin: var_coin,
+            mid_price: var_midPrice,
+            mark_price: var_markPrice,
+            previous_day_price: var_previousDayPrice,
+            day_base_volume: var_dayBaseVolume,
+            day_notional_volume: var_dayNotionalVolume,
+            circulating_supply: var_circulatingSupply,
+            total_supply: var_totalSupply,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireHyperliquidSpotBalance {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_coin = <String>::sse_decode(deserializer);
+        let mut var_token = <Option<u32>>::sse_decode(deserializer);
+        let mut var_total = <String>::sse_decode(deserializer);
+        let mut var_hold = <String>::sse_decode(deserializer);
+        let mut var_entryNotional = <Option<String>>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireHyperliquidSpotBalance {
+            coin: var_coin,
+            token: var_token,
+            total: var_total,
+            hold: var_hold,
+            entry_notional: var_entryNotional,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireHyperliquidSpotClearinghouseState {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_balances =
+            <Vec<crate::convert::generated_models::WireHyperliquidSpotBalance>>::sse_decode(
+                deserializer,
+            );
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireHyperliquidSpotClearinghouseState {
+            balances: var_balances,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireHyperliquidSpotMeta {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_tokens =
+            <Vec<crate::convert::generated_models::WireHyperliquidSpotToken>>::sse_decode(
+                deserializer,
+            );
+        let mut var_universe =
+            <Vec<crate::convert::generated_models::WireHyperliquidSpotPair>>::sse_decode(
+                deserializer,
+            );
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireHyperliquidSpotMeta {
+            tokens: var_tokens,
+            universe: var_universe,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireHyperliquidSpotMetaAndAssetContexts {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_meta =
+            <crate::convert::generated_models::WireHyperliquidSpotMeta>::sse_decode(deserializer);
+        let mut var_contexts = <Vec<
+            crate::convert::generated_models::WireHyperliquidSpotAssetContext,
+        >>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireHyperliquidSpotMetaAndAssetContexts {
+            meta: var_meta,
+            contexts: var_contexts,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireHyperliquidSpotPair {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_name = <String>::sse_decode(deserializer);
+        let mut var_tokens = <Vec<u32>>::sse_decode(deserializer);
+        let mut var_index = <u32>::sse_decode(deserializer);
+        let mut var_isCanonical = <Option<bool>>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireHyperliquidSpotPair {
+            name: var_name,
+            tokens: var_tokens,
+            index: var_index,
+            is_canonical: var_isCanonical,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireHyperliquidSpotToken {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_name = <String>::sse_decode(deserializer);
+        let mut var_sizeDecimals = <u32>::sse_decode(deserializer);
+        let mut var_weiDecimals = <Option<u32>>::sse_decode(deserializer);
+        let mut var_index = <u32>::sse_decode(deserializer);
+        let mut var_tokenId = <Option<String>>::sse_decode(deserializer);
+        let mut var_isCanonical = <Option<bool>>::sse_decode(deserializer);
+        let mut var_evmContract = <Option<
+            crate::convert::generated_models::WireHyperliquidEvmContract,
+        >>::sse_decode(deserializer);
+        let mut var_fullName = <Option<String>>::sse_decode(deserializer);
+        let mut var_deployerTradingFeeShare = <Option<String>>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireHyperliquidSpotToken {
+            name: var_name,
+            size_decimals: var_sizeDecimals,
+            wei_decimals: var_weiDecimals,
+            index: var_index,
+            token_id: var_tokenId,
+            is_canonical: var_isCanonical,
+            evm_contract: var_evmContract,
+            full_name: var_fullName,
+            deployer_trading_fee_share: var_deployerTradingFeeShare,
+            raw_json: var_rawJson,
         };
     }
 }
@@ -12002,6 +14533,34 @@ impl SseDecode for crate::convert::generated_models::WireHyperliquidUserFill {
             trade_id: var_tradeId,
             fee_token: var_feeToken,
             twap_id: var_twapId,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
+impl SseDecode for crate::convert::generated_models::WireHyperliquidUserFunding {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_kind = <Option<String>>::sse_decode(deserializer);
+        let mut var_coin = <String>::sse_decode(deserializer);
+        let mut var_market = <crate::convert::WireMarket>::sse_decode(deserializer);
+        let mut var_usdc = <String>::sse_decode(deserializer);
+        let mut var_fundingRate = <String>::sse_decode(deserializer);
+        let mut var_positionSize = <Option<String>>::sse_decode(deserializer);
+        let mut var_sampleCount = <Option<u64>>::sse_decode(deserializer);
+        let mut var_hash = <String>::sse_decode(deserializer);
+        let mut var_timeNs = <i64>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireHyperliquidUserFunding {
+            kind: var_kind,
+            coin: var_coin,
+            market: var_market,
+            usdc: var_usdc,
+            funding_rate: var_fundingRate,
+            position_size: var_positionSize,
+            sample_count: var_sampleCount,
+            hash: var_hash,
+            time_ns: var_timeNs,
             raw_json: var_rawJson,
         };
     }
@@ -13647,6 +16206,36 @@ impl SseDecode for crate::convert::generated_models::WireUpbitTravelRuleVerifica
     }
 }
 
+impl SseDecode for crate::convert::generated_models::WireUpbitWithdrawalAddress {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_currency = <String>::sse_decode(deserializer);
+        let mut var_netType = <String>::sse_decode(deserializer);
+        let mut var_networkName = <String>::sse_decode(deserializer);
+        let mut var_withdrawAddress = <String>::sse_decode(deserializer);
+        let mut var_secondaryAddress = <Option<String>>::sse_decode(deserializer);
+        let mut var_beneficiaryName = <Option<String>>::sse_decode(deserializer);
+        let mut var_beneficiaryCompanyName = <Option<String>>::sse_decode(deserializer);
+        let mut var_beneficiaryType = <Option<String>>::sse_decode(deserializer);
+        let mut var_exchangeName = <Option<String>>::sse_decode(deserializer);
+        let mut var_walletType = <Option<String>>::sse_decode(deserializer);
+        let mut var_rawJson = <String>::sse_decode(deserializer);
+        return crate::convert::generated_models::WireUpbitWithdrawalAddress {
+            currency: var_currency,
+            net_type: var_netType,
+            network_name: var_networkName,
+            withdraw_address: var_withdrawAddress,
+            secondary_address: var_secondaryAddress,
+            beneficiary_name: var_beneficiaryName,
+            beneficiary_company_name: var_beneficiaryCompanyName,
+            beneficiary_type: var_beneficiaryType,
+            exchange_name: var_exchangeName,
+            wallet_type: var_walletType,
+            raw_json: var_rawJson,
+        };
+    }
+}
+
 impl SseDecode for crate::convert::generated_models::WireUpbitYearCandle {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -13831,517 +16420,645 @@ fn pde_ffi_dispatcher_primary_impl(
             rust_vec_len,
             data_len,
         ),
-        5 => wire__crate__api__NativeClient_binance_c_2_c_trade_history_impl(
+        5 => wire__crate__api__NativeClient_binance_all_coins_information_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        6 => wire__crate__api__NativeClient_binance_cancel_all_open_orders_impl(
+        6 => wire__crate__api__NativeClient_binance_api_key_permissions_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        7 => wire__crate__api__NativeClient_binance_mark_price_impl(
+        7 => wire__crate__api__NativeClient_binance_c_2_c_trade_history_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        8 => wire__crate__api__NativeClient_binance_mark_prices_impl(
+        8 => wire__crate__api__NativeClient_binance_cancel_all_open_orders_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        9 => wire__crate__api__NativeClient_binance_open_interest_impl(
+        9 => wire__crate__api__NativeClient_binance_deposit_history_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        11 => wire__crate__api__NativeClient_binance_spot_average_price_impl(
+        10 => wire__crate__api__NativeClient_binance_mark_price_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        12 => wire__crate__api__NativeClient_binance_spot_order_impl(
+        11 => wire__crate__api__NativeClient_binance_mark_prices_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        13 => wire__crate__api__NativeClient_binance_spot_symbol_filters_impl(
+        12 => wire__crate__api__NativeClient_binance_open_interest_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        14 => wire__crate__api__NativeClient_binance_test_order_impl(
+        13 => wire__crate__api__NativeClient_binance_questionnaire_requirements_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        15 => wire__crate__api__NativeClient_binance_usd_m_close_listen_key_impl(
+        15 => wire__crate__api__NativeClient_binance_spot_account_information_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        16 => wire__crate__api__NativeClient_binance_usd_m_create_listen_key_impl(
+        16 => wire__crate__api__NativeClient_binance_spot_average_price_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        18 => wire__crate__api__NativeClient_binance_usd_m_keepalive_listen_key_impl(
+        17 => wire__crate__api__NativeClient_binance_spot_cancel_all_open_orders_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        21 => {
+        18 => wire__crate__api__NativeClient_binance_spot_exchange_info_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        19 => wire__crate__api__NativeClient_binance_spot_order_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        20 => wire__crate__api__NativeClient_binance_spot_symbol_filters_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        21 => wire__crate__api__NativeClient_binance_test_order_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        22 => wire__crate__api__NativeClient_binance_usd_m_account_information_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        23 => wire__crate__api__NativeClient_binance_usd_m_close_listen_key_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        24 => wire__crate__api__NativeClient_binance_usd_m_create_listen_key_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        25 => wire__crate__api__NativeClient_binance_usd_m_exchange_info_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        27 => wire__crate__api__NativeClient_binance_usd_m_keepalive_listen_key_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        28 => wire__crate__api__NativeClient_binance_usd_m_position_information_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        30 => wire__crate__api__NativeClient_binance_withdraw_address_list_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        31 => wire__crate__api__NativeClient_binance_withdraw_history_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        33 => {
             wire__crate__api__NativeClient_bithumb_api_keys_impl(port, ptr, rust_vec_len, data_len)
         }
-        22 => wire__crate__api__NativeClient_bithumb_batch_orders_impl(
+        34 => wire__crate__api__NativeClient_bithumb_batch_orders_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        23 => wire__crate__api__NativeClient_bithumb_cancel_twap_order_impl(
+        35 => wire__crate__api__NativeClient_bithumb_cancel_twap_order_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        24 => wire__crate__api__NativeClient_bithumb_closed_orders_impl(
+        36 => wire__crate__api__NativeClient_bithumb_closed_orders_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        25 => wire__crate__api__NativeClient_bithumb_create_twap_order_impl(
+        37 => wire__crate__api__NativeClient_bithumb_create_twap_order_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        26 => wire__crate__api__NativeClient_bithumb_deposit_krw_impl(
+        38 => wire__crate__api__NativeClient_bithumb_deposit_krw_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        27 => wire__crate__api__NativeClient_bithumb_krw_deposits_impl(
+        39 => wire__crate__api__NativeClient_bithumb_krw_deposits_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        28 => wire__crate__api__NativeClient_bithumb_krw_withdrawals_impl(
+        40 => wire__crate__api__NativeClient_bithumb_krw_withdrawals_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        29 => wire__crate__api__NativeClient_bithumb_market_alerts_impl(
+        41 => wire__crate__api__NativeClient_bithumb_market_alerts_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        30 => wire__crate__api__NativeClient_bithumb_market_warnings_impl(
+        42 => wire__crate__api__NativeClient_bithumb_market_warnings_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        31 => {
+        43 => {
             wire__crate__api__NativeClient_bithumb_notices_impl(port, ptr, rust_vec_len, data_len)
         }
-        32 => wire__crate__api__NativeClient_bithumb_order_detail_impl(
+        44 => wire__crate__api__NativeClient_bithumb_order_detail_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        33 => wire__crate__api__NativeClient_bithumb_order_list_impl(
+        45 => wire__crate__api__NativeClient_bithumb_order_list_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        34 => wire__crate__api__NativeClient_bithumb_pending_orders_impl(
+        46 => wire__crate__api__NativeClient_bithumb_pending_orders_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        35 => wire__crate__api__NativeClient_bithumb_transfer_fees_impl(
+        47 => wire__crate__api__NativeClient_bithumb_transfer_fees_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        36 => wire__crate__api__NativeClient_bithumb_twap_orders_impl(
+        48 => wire__crate__api__NativeClient_bithumb_twap_orders_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        37 => wire__crate__api__NativeClient_bithumb_withdraw_krw_impl(
+        49 => wire__crate__api__NativeClient_bithumb_withdraw_krw_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        38 => wire__crate__api__NativeClient_bithumb_withdrawal_addresses_impl(
+        50 => wire__crate__api__NativeClient_bithumb_withdrawal_addresses_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        39 => wire__crate__api__NativeClient_cancel_order_impl(port, ptr, rust_vec_len, data_len),
-        40 => wire__crate__api__NativeClient_cancel_order_by_client_id_impl(
+        51 => wire__crate__api__NativeClient_cancel_order_impl(port, ptr, rust_vec_len, data_len),
+        52 => wire__crate__api__NativeClient_cancel_order_by_client_id_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        41 => wire__crate__api__NativeClient_cancel_orders_impl(port, ptr, rust_vec_len, data_len),
-        42 => {
+        53 => wire__crate__api__NativeClient_cancel_orders_impl(port, ptr, rust_vec_len, data_len),
+        54 => {
             wire__crate__api__NativeClient_cancel_withdrawal_impl(port, ptr, rust_vec_len, data_len)
         }
-        43 => wire__crate__api__NativeClient_candles_impl(port, ptr, rust_vec_len, data_len),
-        44 => wire__crate__api__NativeClient_create_deposit_address_impl(
+        55 => wire__crate__api__NativeClient_candles_impl(port, ptr, rust_vec_len, data_len),
+        56 => wire__crate__api__NativeClient_create_deposit_address_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        45 => wire__crate__api__NativeClient_deposit_impl(port, ptr, rust_vec_len, data_len),
-        46 => {
+        57 => wire__crate__api__NativeClient_deposit_impl(port, ptr, rust_vec_len, data_len),
+        58 => {
             wire__crate__api__NativeClient_deposit_address_impl(port, ptr, rust_vec_len, data_len)
         }
-        47 => {
+        59 => {
             wire__crate__api__NativeClient_deposit_addresses_impl(port, ptr, rust_vec_len, data_len)
         }
-        48 => wire__crate__api__NativeClient_deposits_impl(port, ptr, rust_vec_len, data_len),
-        50 => {
+        60 => wire__crate__api__NativeClient_deposits_impl(port, ptr, rust_vec_len, data_len),
+        62 => {
             wire__crate__api__NativeClient_execute_transfer_impl(port, ptr, rust_vec_len, data_len)
         }
-        52 => {
+        64 => {
             wire__crate__api__NativeClient_funding_payments_impl(port, ptr, rust_vec_len, data_len)
         }
-        53 => wire__crate__api__NativeClient_funding_rates_impl(port, ptr, rust_vec_len, data_len),
-        55 => wire__crate__api__NativeClient_hyperliquid_all_mids_impl(
+        65 => wire__crate__api__NativeClient_funding_rates_impl(port, ptr, rust_vec_len, data_len),
+        67 => wire__crate__api__NativeClient_hyperliquid_all_mids_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        56 => wire__crate__api__NativeClient_hyperliquid_asset_context_impl(
+        68 => wire__crate__api__NativeClient_hyperliquid_asset_context_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        57 => wire__crate__api__NativeClient_hyperliquid_basic_open_orders_impl(
+        69 => wire__crate__api__NativeClient_hyperliquid_basic_open_orders_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        58 => wire__crate__api__NativeClient_hyperliquid_historical_orders_impl(
+        70 => wire__crate__api__NativeClient_hyperliquid_candle_snapshot_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        59 => wire__crate__api__NativeClient_hyperliquid_non_funding_ledger_impl(
+        71 => wire__crate__api__NativeClient_hyperliquid_funding_history_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        60 => wire__crate__api__NativeClient_hyperliquid_order_status_impl(
+        72 => wire__crate__api__NativeClient_hyperliquid_historical_orders_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        61 => wire__crate__api__NativeClient_hyperliquid_portfolio_impl(
+        73 => wire__crate__api__NativeClient_hyperliquid_l2_book_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        62 => wire__crate__api__NativeClient_hyperliquid_referral_impl(
+        74 => wire__crate__api__NativeClient_hyperliquid_non_funding_ledger_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        63 => wire__crate__api__NativeClient_hyperliquid_sub_accounts_impl(
+        75 => wire__crate__api__NativeClient_hyperliquid_order_status_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        64 => wire__crate__api__NativeClient_hyperliquid_user_fees_impl(
+        76 => wire__crate__api__NativeClient_hyperliquid_portfolio_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        65 => wire__crate__api__NativeClient_hyperliquid_user_fills_impl(
+        77 => wire__crate__api__NativeClient_hyperliquid_recent_trades_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        66 => wire__crate__api__NativeClient_hyperliquid_user_fills_by_time_impl(
+        78 => wire__crate__api__NativeClient_hyperliquid_referral_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        67 => wire__crate__api__NativeClient_hyperliquid_user_rate_limit_impl(
+        79 => wire__crate__api__NativeClient_hyperliquid_spot_clearinghouse_state_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        68 => wire__crate__api__NativeClient_hyperliquid_user_role_impl(
+        80 => wire__crate__api__NativeClient_hyperliquid_spot_meta_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        69 => wire__crate__api__NativeClient_hyperliquid_user_vault_equities_impl(
+        81 => wire__crate__api__NativeClient_hyperliquid_spot_meta_and_asset_contexts_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        71 => wire__crate__api__NativeClient_margin_summary_impl(port, ptr, rust_vec_len, data_len),
-        72 => wire__crate__api__NativeClient_markets_impl(port, ptr, rust_vec_len, data_len),
-        73 => wire__crate__api__NativeClient_open_orders_impl(port, ptr, rust_vec_len, data_len),
-        74 => wire__crate__api__NativeClient_order_impl(port, ptr, rust_vec_len, data_len),
-        75 => wire__crate__api__NativeClient_order_book_impl(port, ptr, rust_vec_len, data_len),
-        76 => wire__crate__api__NativeClient_order_by_client_id_impl(
+        82 => wire__crate__api__NativeClient_hyperliquid_sub_accounts_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        77 => wire__crate__api__NativeClient_order_history_impl(port, ptr, rust_vec_len, data_len),
-        78 => wire__crate__api__NativeClient_order_rules_impl(port, ptr, rust_vec_len, data_len),
-        79 => wire__crate__api__NativeClient_orders_by_ids_impl(port, ptr, rust_vec_len, data_len),
-        80 => wire__crate__api__NativeClient_place_order_impl(port, ptr, rust_vec_len, data_len),
-        81 => wire__crate__api__NativeClient_positions_impl(port, ptr, rust_vec_len, data_len),
-        82 => wire__crate__api__NativeClient_prepare_transfer_to_impl(
+        83 => wire__crate__api__NativeClient_hyperliquid_user_fees_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        83 => wire__crate__api__NativeClient_prepare_transfer_to_chain_impl(
+        84 => wire__crate__api__NativeClient_hyperliquid_user_fills_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        84 => wire__crate__api__NativeClient_prepare_withdrawal_impl(
+        85 => wire__crate__api__NativeClient_hyperliquid_user_fills_by_time_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        85 => wire__crate__api__NativeClient_set_margin_impl(port, ptr, rust_vec_len, data_len),
-        86 => wire__crate__api__NativeClient_subscribe_impl(port, ptr, rust_vec_len, data_len),
-        87 => {
+        86 => wire__crate__api__NativeClient_hyperliquid_user_funding_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        87 => wire__crate__api__NativeClient_hyperliquid_user_rate_limit_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        88 => wire__crate__api__NativeClient_hyperliquid_user_role_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        89 => wire__crate__api__NativeClient_hyperliquid_user_vault_equities_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        91 => wire__crate__api__NativeClient_margin_summary_impl(port, ptr, rust_vec_len, data_len),
+        92 => wire__crate__api__NativeClient_markets_impl(port, ptr, rust_vec_len, data_len),
+        93 => wire__crate__api__NativeClient_open_orders_impl(port, ptr, rust_vec_len, data_len),
+        94 => wire__crate__api__NativeClient_order_impl(port, ptr, rust_vec_len, data_len),
+        95 => wire__crate__api__NativeClient_order_book_impl(port, ptr, rust_vec_len, data_len),
+        96 => wire__crate__api__NativeClient_order_by_client_id_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        97 => wire__crate__api__NativeClient_order_history_impl(port, ptr, rust_vec_len, data_len),
+        98 => wire__crate__api__NativeClient_order_rules_impl(port, ptr, rust_vec_len, data_len),
+        99 => wire__crate__api__NativeClient_orders_by_ids_impl(port, ptr, rust_vec_len, data_len),
+        100 => wire__crate__api__NativeClient_place_order_impl(port, ptr, rust_vec_len, data_len),
+        101 => wire__crate__api__NativeClient_positions_impl(port, ptr, rust_vec_len, data_len),
+        102 => wire__crate__api__NativeClient_prepare_transfer_to_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        103 => wire__crate__api__NativeClient_prepare_transfer_to_chain_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        104 => wire__crate__api__NativeClient_prepare_withdrawal_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        105 => wire__crate__api__NativeClient_set_margin_impl(port, ptr, rust_vec_len, data_len),
+        106 => wire__crate__api__NativeClient_subscribe_impl(port, ptr, rust_vec_len, data_len),
+        107 => {
             wire__crate__api__NativeClient_subscribe_account_impl(port, ptr, rust_vec_len, data_len)
         }
-        89 => wire__crate__api__NativeClient_ticker_impl(port, ptr, rust_vec_len, data_len),
-        90 => wire__crate__api__NativeClient_trades_impl(port, ptr, rust_vec_len, data_len),
-        92 => wire__crate__api__NativeClient_upbit_api_keys_impl(port, ptr, rust_vec_len, data_len),
-        93 => wire__crate__api__NativeClient_upbit_batch_cancel_open_orders_impl(
+        109 => wire__crate__api__NativeClient_ticker_impl(port, ptr, rust_vec_len, data_len),
+        110 => wire__crate__api__NativeClient_trades_impl(port, ptr, rust_vec_len, data_len),
+        112 => {
+            wire__crate__api__NativeClient_upbit_api_keys_impl(port, ptr, rust_vec_len, data_len)
+        }
+        113 => wire__crate__api__NativeClient_upbit_batch_cancel_open_orders_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        94 => wire__crate__api__NativeClient_upbit_cancel_and_new_order_impl(
+        114 => wire__crate__api__NativeClient_upbit_cancel_and_new_order_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        95 => wire__crate__api__NativeClient_upbit_closed_orders_impl(
+        115 => wire__crate__api__NativeClient_upbit_closed_orders_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        96 => wire__crate__api__NativeClient_upbit_deposit_info_impl(
+        116 => wire__crate__api__NativeClient_upbit_deposit_info_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        97 => {
+        117 => {
             wire__crate__api__NativeClient_upbit_deposit_krw_impl(port, ptr, rust_vec_len, data_len)
         }
-        98 => wire__crate__api__NativeClient_upbit_list_pocket_api_keys_impl(
+        118 => wire__crate__api__NativeClient_upbit_list_pocket_api_keys_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        99 => wire__crate__api__NativeClient_upbit_list_pockets_impl(
+        119 => wire__crate__api__NativeClient_upbit_list_pockets_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        100 => wire__crate__api__NativeClient_upbit_list_subscriptions_impl(
+        120 => wire__crate__api__NativeClient_upbit_list_subscriptions_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        101 => wire__crate__api__NativeClient_upbit_market_events_impl(
+        121 => wire__crate__api__NativeClient_upbit_market_events_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        102 => {
+        122 => {
             wire__crate__api__NativeClient_upbit_order_books_impl(port, ptr, rust_vec_len, data_len)
         }
-        103 => wire__crate__api__NativeClient_upbit_order_books_at_level_impl(
+        123 => wire__crate__api__NativeClient_upbit_order_books_at_level_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        104 => wire__crate__api__NativeClient_upbit_order_detail_impl(
+        124 => wire__crate__api__NativeClient_upbit_order_detail_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        105 => wire__crate__api__NativeClient_upbit_orderbook_instruments_impl(
+        125 => wire__crate__api__NativeClient_upbit_orderbook_instruments_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        107 => wire__crate__api__NativeClient_upbit_sub_pocket_balances_impl(
+        127 => wire__crate__api__NativeClient_upbit_sub_pocket_balances_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        108 => wire__crate__api__NativeClient_upbit_sub_pocket_transfer_impl(
+        128 => wire__crate__api__NativeClient_upbit_sub_pocket_transfer_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        109 => wire__crate__api__NativeClient_upbit_sub_pocket_transfers_impl(
+        129 => wire__crate__api__NativeClient_upbit_sub_pocket_transfers_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        110 => {
+        130 => {
             wire__crate__api__NativeClient_upbit_test_order_impl(port, ptr, rust_vec_len, data_len)
         }
-        111 => wire__crate__api__NativeClient_upbit_tickers_impl(port, ptr, rust_vec_len, data_len),
-        112 => wire__crate__api__NativeClient_upbit_tickers_by_quote_impl(
+        131 => wire__crate__api__NativeClient_upbit_tickers_impl(port, ptr, rust_vec_len, data_len),
+        132 => wire__crate__api__NativeClient_upbit_tickers_by_quote_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        113 => wire__crate__api__NativeClient_upbit_travel_rule_vasps_impl(
+        133 => wire__crate__api__NativeClient_upbit_travel_rule_vasps_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        114 => wire__crate__api__NativeClient_upbit_universal_transfer_impl(
+        134 => wire__crate__api__NativeClient_upbit_universal_transfer_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        115 => wire__crate__api__NativeClient_upbit_universal_transfers_impl(
+        135 => wire__crate__api__NativeClient_upbit_universal_transfers_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        116 => wire__crate__api__NativeClient_upbit_verify_travel_rule_by_txid_impl(
+        136 => wire__crate__api__NativeClient_upbit_verify_travel_rule_by_txid_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        117 => wire__crate__api__NativeClient_upbit_verify_travel_rule_by_uuid_impl(
+        137 => wire__crate__api__NativeClient_upbit_verify_travel_rule_by_uuid_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        118 => wire__crate__api__NativeClient_upbit_withdraw_krw_impl(
+        138 => wire__crate__api__NativeClient_upbit_withdraw_krw_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        119 => wire__crate__api__NativeClient_upbit_year_candles_impl(
+        139 => wire__crate__api__NativeClient_upbit_withdrawal_addresses_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        120 => wire__crate__api__NativeClient_withdraw_impl(port, ptr, rust_vec_len, data_len),
-        121 => wire__crate__api__NativeClient_withdrawal_impl(port, ptr, rust_vec_len, data_len),
-        122 => wire__crate__api__NativeClient_withdrawals_impl(port, ptr, rust_vec_len, data_len),
-        124 => wire__crate__api__account_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
-        127 => wire__crate__api__market_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
-        128 => wire__crate__api__native_account_subscription_close_impl(
+        140 => wire__crate__api__NativeClient_upbit_year_candles_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        129 => wire__crate__api__native_account_subscription_next_impl(
+        141 => wire__crate__api__NativeClient_withdraw_impl(port, ptr, rust_vec_len, data_len),
+        142 => wire__crate__api__NativeClient_withdrawal_impl(port, ptr, rust_vec_len, data_len),
+        143 => wire__crate__api__NativeClient_withdrawals_impl(port, ptr, rust_vec_len, data_len),
+        145 => wire__crate__api__account_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
+        148 => wire__crate__api__market_stream_sink_add_impl(port, ptr, rust_vec_len, data_len),
+        149 => wire__crate__api__native_account_subscription_close_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        130 => wire__crate__api__native_market_subscription_close_impl(
+        150 => wire__crate__api__native_account_subscription_next_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        131 => wire__crate__api__native_market_subscription_next_impl(
+        151 => wire__crate__api__native_market_subscription_close_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        133 => wire__crate__api__register_dart_adapter_impl(port, ptr, rust_vec_len, data_len),
+        152 => wire__crate__api__native_market_subscription_next_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        154 => wire__crate__api__register_dart_adapter_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -14354,23 +17071,23 @@ fn pde_ffi_dispatcher_sync_impl(
 ) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        10 => wire__crate__api__NativeClient_binance_spot_impl(ptr, rust_vec_len, data_len),
-        17 => {
+        14 => wire__crate__api__NativeClient_binance_spot_impl(ptr, rust_vec_len, data_len),
+        26 => {
             wire__crate__api__NativeClient_binance_usd_m_futures_impl(ptr, rust_vec_len, data_len)
         }
-        19 => wire__crate__api__NativeClient_binance_venue_impl(ptr, rust_vec_len, data_len),
-        20 => wire__crate__api__NativeClient_bithumb_impl(ptr, rust_vec_len, data_len),
-        49 => wire__crate__api__NativeClient_exchange_impl(ptr, rust_vec_len, data_len),
-        51 => wire__crate__api__NativeClient_from_dart_adapter_impl(ptr, rust_vec_len, data_len),
-        54 => wire__crate__api__NativeClient_hyperliquid_impl(ptr, rust_vec_len, data_len),
-        70 => wire__crate__api__NativeClient_is_testnet_impl(ptr, rust_vec_len, data_len),
-        88 => wire__crate__api__NativeClient_supports_impl(ptr, rust_vec_len, data_len),
-        91 => wire__crate__api__NativeClient_upbit_impl(ptr, rust_vec_len, data_len),
-        106 => wire__crate__api__NativeClient_upbit_region_impl(ptr, rust_vec_len, data_len),
-        123 => wire__crate__api__WireBinanceListenKey_value_impl(ptr, rust_vec_len, data_len),
-        125 => wire__crate__api__bridge_version_impl(ptr, rust_vec_len, data_len),
-        126 => wire__crate__api__configure_browser_relay_impl(ptr, rust_vec_len, data_len),
-        132 => {
+        29 => wire__crate__api__NativeClient_binance_venue_impl(ptr, rust_vec_len, data_len),
+        32 => wire__crate__api__NativeClient_bithumb_impl(ptr, rust_vec_len, data_len),
+        61 => wire__crate__api__NativeClient_exchange_impl(ptr, rust_vec_len, data_len),
+        63 => wire__crate__api__NativeClient_from_dart_adapter_impl(ptr, rust_vec_len, data_len),
+        66 => wire__crate__api__NativeClient_hyperliquid_impl(ptr, rust_vec_len, data_len),
+        90 => wire__crate__api__NativeClient_is_testnet_impl(ptr, rust_vec_len, data_len),
+        108 => wire__crate__api__NativeClient_supports_impl(ptr, rust_vec_len, data_len),
+        111 => wire__crate__api__NativeClient_upbit_impl(ptr, rust_vec_len, data_len),
+        126 => wire__crate__api__NativeClient_upbit_region_impl(ptr, rust_vec_len, data_len),
+        144 => wire__crate__api__WireBinanceListenKey_value_impl(ptr, rust_vec_len, data_len),
+        146 => wire__crate__api__bridge_version_impl(ptr, rust_vec_len, data_len),
+        147 => wire__crate__api__configure_browser_relay_impl(ptr, rust_vec_len, data_len),
+        153 => {
             wire__crate__api__pending_market_subscription_for_test_impl(ptr, rust_vec_len, data_len)
         }
         _ => unreachable!(),
@@ -15107,6 +17824,47 @@ impl
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireBinanceApiKeyPermissions
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.ip_restrict.into_into_dart().into_dart(),
+            self.create_time_ns.into_into_dart().into_dart(),
+            self.enable_reading.into_into_dart().into_dart(),
+            self.enable_withdrawals.into_into_dart().into_dart(),
+            self.enable_internal_transfer.into_into_dart().into_dart(),
+            self.enable_margin.into_into_dart().into_dart(),
+            self.enable_spot_and_margin_trading
+                .into_into_dart()
+                .into_dart(),
+            self.enable_futures.into_into_dart().into_dart(),
+            self.permits_universal_transfer.into_into_dart().into_dart(),
+            self.enable_vanilla_options.into_into_dart().into_dart(),
+            self.enable_fix_api_trade.into_into_dart().into_dart(),
+            self.enable_fix_read_only.into_into_dart().into_dart(),
+            self.enable_portfolio_margin_trading
+                .into_into_dart()
+                .into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceApiKeyPermissions
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::convert::generated_models::WireBinanceApiKeyPermissions,
+    > for crate::convert::generated_models::WireBinanceApiKeyPermissions
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceApiKeyPermissions {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireBinanceC2cTrade {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -15223,6 +17981,216 @@ impl flutter_rust_bridge::IntoIntoDart<crate::convert::WireBinanceC2cTradeType>
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireBinanceCoinInformation
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.coin.into_into_dart().into_dart(),
+            self.deposit_all_enabled.into_into_dart().into_dart(),
+            self.withdraw_all_enabled.into_into_dart().into_dart(),
+            self.name.into_into_dart().into_dart(),
+            self.free.into_into_dart().into_dart(),
+            self.locked.into_into_dart().into_dart(),
+            self.freeze.into_into_dart().into_dart(),
+            self.withdrawing.into_into_dart().into_dart(),
+            self.is_legal_money.into_into_dart().into_dart(),
+            self.trading.into_into_dart().into_dart(),
+            self.networks.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceCoinInformation
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireBinanceCoinInformation>
+    for crate::convert::generated_models::WireBinanceCoinInformation
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceCoinInformation {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireBinanceCoinNetworkInformation
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.network.into_into_dart().into_dart(),
+            self.deposit_enabled.into_into_dart().into_dart(),
+            self.withdraw_enabled.into_into_dart().into_dart(),
+            self.busy.into_into_dart().into_dart(),
+            self.withdrawal_integer_multiple
+                .into_into_dart()
+                .into_dart(),
+            self.withdrawal_fee.into_into_dart().into_dart(),
+            self.minimum_withdrawal.into_into_dart().into_dart(),
+            self.maximum_withdrawal.into_into_dart().into_dart(),
+            self.withdrawal_tag.into_into_dart().into_dart(),
+            self.is_default.into_into_dart().into_dart(),
+            self.minimum_confirmations.into_into_dart().into_dart(),
+            self.unlock_confirmations.into_into_dart().into_dart(),
+            self.contract_address.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceCoinNetworkInformation
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::convert::generated_models::WireBinanceCoinNetworkInformation,
+    > for crate::convert::generated_models::WireBinanceCoinNetworkInformation
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceCoinNetworkInformation {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireBinanceDepositHistory {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.entries.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceDepositHistory
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireBinanceDepositHistory>
+    for crate::convert::generated_models::WireBinanceDepositHistory
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceDepositHistory {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireBinanceDepositHistoryEntry
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.id.into_into_dart().into_dart(),
+            self.amount.into_into_dart().into_dart(),
+            self.coin.into_into_dart().into_dart(),
+            self.network.into_into_dart().into_dart(),
+            self.status.into_into_dart().into_dart(),
+            self.address.into_into_dart().into_dart(),
+            self.address_tag.into_into_dart().into_dart(),
+            self.tx_id.into_into_dart().into_dart(),
+            self.insert_time_ns.into_into_dart().into_dart(),
+            self.complete_time_ns.into_into_dart().into_dart(),
+            self.transfer_type.into_into_dart().into_dart(),
+            self.source_address.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceDepositHistoryEntry
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::convert::generated_models::WireBinanceDepositHistoryEntry,
+    > for crate::convert::generated_models::WireBinanceDepositHistoryEntry
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceDepositHistoryEntry {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireBinanceDepositHistoryRequest
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.coin.into_into_dart().into_dart(),
+            self.status.into_into_dart().into_dart(),
+            self.start_time_ns.into_into_dart().into_dart(),
+            self.end_time_ns.into_into_dart().into_dart(),
+            self.offset.into_into_dart().into_dart(),
+            self.limit.into_into_dart().into_dart(),
+            self.tx_id.into_into_dart().into_dart(),
+            self.include_source.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceDepositHistoryRequest
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::convert::generated_models::WireBinanceDepositHistoryRequest,
+    > for crate::convert::generated_models::WireBinanceDepositHistoryRequest
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceDepositHistoryRequest {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireBinanceExchangeInfo {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.venue.into_into_dart().into_dart(),
+            self.timezone.into_into_dart().into_dart(),
+            self.server_time_ns.into_into_dart().into_dart(),
+            self.symbols.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceExchangeInfo
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireBinanceExchangeInfo>
+    for crate::convert::generated_models::WireBinanceExchangeInfo
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceExchangeInfo {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireBinanceExchangeSymbol {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.symbol.into_into_dart().into_dart(),
+            self.status.into_into_dart().into_dart(),
+            self.base_asset.into_into_dart().into_dart(),
+            self.quote_asset.into_into_dart().into_dart(),
+            self.contract_type.into_into_dart().into_dart(),
+            self.margin_asset.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceExchangeSymbol
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireBinanceExchangeSymbol>
+    for crate::convert::generated_models::WireBinanceExchangeSymbol
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceExchangeSymbol {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireBinanceMarkPrice {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -15250,6 +18218,27 @@ impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireBin
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireBinanceMarket {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::Spot => 0.into_dart(),
+            Self::UsdMFutures => 1.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceMarket
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireBinanceMarket>
+    for crate::convert::generated_models::WireBinanceMarket
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceMarket {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireBinanceOpenInterest {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -15268,6 +18257,96 @@ impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireBin
     for crate::convert::generated_models::WireBinanceOpenInterest
 {
     fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceOpenInterest {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireBinanceQuestionnaireRequirements
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.questionnaire_country_code.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceQuestionnaireRequirements
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::convert::generated_models::WireBinanceQuestionnaireRequirements,
+    > for crate::convert::generated_models::WireBinanceQuestionnaireRequirements
+{
+    fn into_into_dart(
+        self,
+    ) -> crate::convert::generated_models::WireBinanceQuestionnaireRequirements {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireBinanceSpotAccountBalance
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.asset.into_into_dart().into_dart(),
+            self.free.into_into_dart().into_dart(),
+            self.locked.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceSpotAccountBalance
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::convert::generated_models::WireBinanceSpotAccountBalance,
+    > for crate::convert::generated_models::WireBinanceSpotAccountBalance
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceSpotAccountBalance {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireBinanceSpotAccountInformation
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.maker_commission.into_into_dart().into_dart(),
+            self.taker_commission.into_into_dart().into_dart(),
+            self.buyer_commission.into_into_dart().into_dart(),
+            self.seller_commission.into_into_dart().into_dart(),
+            self.commission_rates.into_into_dart().into_dart(),
+            self.can_trade.into_into_dart().into_dart(),
+            self.can_withdraw.into_into_dart().into_dart(),
+            self.can_deposit.into_into_dart().into_dart(),
+            self.update_time_ns.into_into_dart().into_dart(),
+            self.account_type.into_into_dart().into_dart(),
+            self.balances.into_into_dart().into_dart(),
+            self.permissions.into_into_dart().into_dart(),
+            self.uid.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceSpotAccountInformation
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::convert::generated_models::WireBinanceSpotAccountInformation,
+    > for crate::convert::generated_models::WireBinanceSpotAccountInformation
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceSpotAccountInformation {
         self
     }
 }
@@ -15294,6 +18373,100 @@ impl
     for crate::convert::generated_models::WireBinanceSpotAveragePrice
 {
     fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceSpotAveragePrice {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireBinanceSpotCancelAllOpenOrders
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.reports.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceSpotCancelAllOpenOrders
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::convert::generated_models::WireBinanceSpotCancelAllOpenOrders,
+    > for crate::convert::generated_models::WireBinanceSpotCancelAllOpenOrders
+{
+    fn into_into_dart(
+        self,
+    ) -> crate::convert::generated_models::WireBinanceSpotCancelAllOpenOrders {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireBinanceSpotCancelledOrder
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.symbol.into_into_dart().into_dart(),
+            self.original_client_order_id.into_into_dart().into_dart(),
+            self.order_id.into_into_dart().into_dart(),
+            self.client_order_id.into_into_dart().into_dart(),
+            self.status.into_into_dart().into_dart(),
+            self.price.into_into_dart().into_dart(),
+            self.original_quantity.into_into_dart().into_dart(),
+            self.executed_quantity.into_into_dart().into_dart(),
+            self.cumulative_quote_quantity.into_into_dart().into_dart(),
+            self.transact_time_ns.into_into_dart().into_dart(),
+            self.order_list_id.into_into_dart().into_dart(),
+            self.contingency_type.into_into_dart().into_dart(),
+            self.list_status_type.into_into_dart().into_dart(),
+            self.list_order_status.into_into_dart().into_dart(),
+            self.list_client_order_id.into_into_dart().into_dart(),
+            self.transaction_time_ns.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceSpotCancelledOrder
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::convert::generated_models::WireBinanceSpotCancelledOrder,
+    > for crate::convert::generated_models::WireBinanceSpotCancelledOrder
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceSpotCancelledOrder {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireBinanceSpotCommissionRates
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.maker.into_into_dart().into_dart(),
+            self.taker.into_into_dart().into_dart(),
+            self.buyer.into_into_dart().into_dart(),
+            self.seller.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceSpotCommissionRates
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::convert::generated_models::WireBinanceSpotCommissionRates,
+    > for crate::convert::generated_models::WireBinanceSpotCommissionRates
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceSpotCommissionRates {
         self
     }
 }
@@ -15391,6 +18564,163 @@ impl
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireBinanceUsdMAccountAsset
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.asset.into_into_dart().into_dart(),
+            self.wallet_balance.into_into_dart().into_dart(),
+            self.unrealized_profit.into_into_dart().into_dart(),
+            self.margin_balance.into_into_dart().into_dart(),
+            self.maintenance_margin.into_into_dart().into_dart(),
+            self.initial_margin.into_into_dart().into_dart(),
+            self.position_initial_margin.into_into_dart().into_dart(),
+            self.open_order_initial_margin.into_into_dart().into_dart(),
+            self.cross_wallet_balance.into_into_dart().into_dart(),
+            self.cross_unrealized_profit.into_into_dart().into_dart(),
+            self.available_balance.into_into_dart().into_dart(),
+            self.max_withdraw_amount.into_into_dart().into_dart(),
+            self.update_time_ns.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceUsdMAccountAsset
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireBinanceUsdMAccountAsset>
+    for crate::convert::generated_models::WireBinanceUsdMAccountAsset
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceUsdMAccountAsset {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireBinanceUsdMAccountInformation
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.total_initial_margin.into_into_dart().into_dart(),
+            self.total_maintenance_margin.into_into_dart().into_dart(),
+            self.total_wallet_balance.into_into_dart().into_dart(),
+            self.total_unrealized_profit.into_into_dart().into_dart(),
+            self.total_margin_balance.into_into_dart().into_dart(),
+            self.total_position_initial_margin
+                .into_into_dart()
+                .into_dart(),
+            self.total_open_order_initial_margin
+                .into_into_dart()
+                .into_dart(),
+            self.total_cross_wallet_balance.into_into_dart().into_dart(),
+            self.total_cross_unrealized_profit
+                .into_into_dart()
+                .into_dart(),
+            self.available_balance.into_into_dart().into_dart(),
+            self.max_withdraw_amount.into_into_dart().into_dart(),
+            self.assets.into_into_dart().into_dart(),
+            self.positions.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceUsdMAccountInformation
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::convert::generated_models::WireBinanceUsdMAccountInformation,
+    > for crate::convert::generated_models::WireBinanceUsdMAccountInformation
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceUsdMAccountInformation {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireBinanceUsdMAccountPosition
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.symbol.into_into_dart().into_dart(),
+            self.position_side.into_into_dart().into_dart(),
+            self.position_amount.into_into_dart().into_dart(),
+            self.unrealized_profit.into_into_dart().into_dart(),
+            self.isolated_margin.into_into_dart().into_dart(),
+            self.notional.into_into_dart().into_dart(),
+            self.isolated_wallet.into_into_dart().into_dart(),
+            self.initial_margin.into_into_dart().into_dart(),
+            self.maintenance_margin.into_into_dart().into_dart(),
+            self.update_time_ns.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceUsdMAccountPosition
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::convert::generated_models::WireBinanceUsdMAccountPosition,
+    > for crate::convert::generated_models::WireBinanceUsdMAccountPosition
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceUsdMAccountPosition {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireBinanceUsdMPositionInformation
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.symbol.into_into_dart().into_dart(),
+            self.position_side.into_into_dart().into_dart(),
+            self.position_amount.into_into_dart().into_dart(),
+            self.entry_price.into_into_dart().into_dart(),
+            self.break_even_price.into_into_dart().into_dart(),
+            self.mark_price.into_into_dart().into_dart(),
+            self.unrealized_profit.into_into_dart().into_dart(),
+            self.liquidation_price.into_into_dart().into_dart(),
+            self.isolated_margin.into_into_dart().into_dart(),
+            self.notional.into_into_dart().into_dart(),
+            self.margin_asset.into_into_dart().into_dart(),
+            self.isolated_wallet.into_into_dart().into_dart(),
+            self.initial_margin.into_into_dart().into_dart(),
+            self.maintenance_margin.into_into_dart().into_dart(),
+            self.position_initial_margin.into_into_dart().into_dart(),
+            self.open_order_initial_margin.into_into_dart().into_dart(),
+            self.adl.into_into_dart().into_dart(),
+            self.bid_notional.into_into_dart().into_dart(),
+            self.ask_notional.into_into_dart().into_dart(),
+            self.update_time_ns.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceUsdMPositionInformation
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::convert::generated_models::WireBinanceUsdMPositionInformation,
+    > for crate::convert::generated_models::WireBinanceUsdMPositionInformation
+{
+    fn into_into_dart(
+        self,
+    ) -> crate::convert::generated_models::WireBinanceUsdMPositionInformation {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::WireBinanceVenue {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         match self {
@@ -15405,6 +18735,132 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::WireBinanceVenue>
     for crate::api::WireBinanceVenue
 {
     fn into_into_dart(self) -> crate::api::WireBinanceVenue {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireBinanceWithdrawHistory
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.entries.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceWithdrawHistory
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireBinanceWithdrawHistory>
+    for crate::convert::generated_models::WireBinanceWithdrawHistory
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceWithdrawHistory {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireBinanceWithdrawHistoryEntry
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.id.into_into_dart().into_dart(),
+            self.amount.into_into_dart().into_dart(),
+            self.transaction_fee.into_into_dart().into_dart(),
+            self.coin.into_into_dart().into_dart(),
+            self.status.into_into_dart().into_dart(),
+            self.address.into_into_dart().into_dart(),
+            self.tx_id.into_into_dart().into_dart(),
+            self.apply_time.into_into_dart().into_dart(),
+            self.network.into_into_dart().into_dart(),
+            self.withdraw_order_id.into_into_dart().into_dart(),
+            self.info.into_into_dart().into_dart(),
+            self.transfer_type.into_into_dart().into_dart(),
+            self.confirm_no.into_into_dart().into_dart(),
+            self.wallet_type.into_into_dart().into_dart(),
+            self.tx_key.into_into_dart().into_dart(),
+            self.complete_time.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceWithdrawHistoryEntry
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::convert::generated_models::WireBinanceWithdrawHistoryEntry,
+    > for crate::convert::generated_models::WireBinanceWithdrawHistoryEntry
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceWithdrawHistoryEntry {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireBinanceWithdrawHistoryRequest
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.coin.into_into_dart().into_dart(),
+            self.withdraw_order_id.into_into_dart().into_dart(),
+            self.status.into_into_dart().into_dart(),
+            self.offset.into_into_dart().into_dart(),
+            self.limit.into_into_dart().into_dart(),
+            self.id_list.into_into_dart().into_dart(),
+            self.start_time_ns.into_into_dart().into_dart(),
+            self.end_time_ns.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceWithdrawHistoryRequest
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::convert::generated_models::WireBinanceWithdrawHistoryRequest,
+    > for crate::convert::generated_models::WireBinanceWithdrawHistoryRequest
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceWithdrawHistoryRequest {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireBinanceWithdrawalAddress
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.address.into_into_dart().into_dart(),
+            self.address_tag.into_into_dart().into_dart(),
+            self.coin.into_into_dart().into_dart(),
+            self.network.into_into_dart().into_dart(),
+            self.white_status.into_into_dart().into_dart(),
+            self.name.into_into_dart().into_dart(),
+            self.origin.into_into_dart().into_dart(),
+            self.origin_type.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireBinanceWithdrawalAddress
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::convert::generated_models::WireBinanceWithdrawalAddress,
+    > for crate::convert::generated_models::WireBinanceWithdrawalAddress
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireBinanceWithdrawalAddress {
         self
     }
 }
@@ -17001,6 +20457,63 @@ impl flutter_rust_bridge::IntoIntoDart<crate::convert::WireHyperliquidAssetConte
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireHyperliquidBookLevel {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.price.into_into_dart().into_dart(),
+            self.size.into_into_dart().into_dart(),
+            self.order_count.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireHyperliquidBookLevel
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireHyperliquidBookLevel>
+    for crate::convert::generated_models::WireHyperliquidBookLevel
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireHyperliquidBookLevel {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireHyperliquidCandleSnapshot
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.coin.into_into_dart().into_dart(),
+            self.market.into_into_dart().into_dart(),
+            self.interval.into_into_dart().into_dart(),
+            self.open_time_ns.into_into_dart().into_dart(),
+            self.close_time_ns.into_into_dart().into_dart(),
+            self.open.into_into_dart().into_dart(),
+            self.high.into_into_dart().into_dart(),
+            self.low.into_into_dart().into_dart(),
+            self.close.into_into_dart().into_dart(),
+            self.volume.into_into_dart().into_dart(),
+            self.trade_count.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireHyperliquidCandleSnapshot
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::convert::generated_models::WireHyperliquidCandleSnapshot,
+    > for crate::convert::generated_models::WireHyperliquidCandleSnapshot
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireHyperliquidCandleSnapshot {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart
     for crate::convert::generated_models::WireHyperliquidDailyVolume
 {
@@ -17022,6 +20535,85 @@ impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireHyp
     for crate::convert::generated_models::WireHyperliquidDailyVolume
 {
     fn into_into_dart(self) -> crate::convert::generated_models::WireHyperliquidDailyVolume {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireHyperliquidEvmContract
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.address.into_into_dart().into_dart(),
+            self.extra_wei_decimals.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireHyperliquidEvmContract
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireHyperliquidEvmContract>
+    for crate::convert::generated_models::WireHyperliquidEvmContract
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireHyperliquidEvmContract {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireHyperliquidFundingHistoryEntry
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.coin.into_into_dart().into_dart(),
+            self.market.into_into_dart().into_dart(),
+            self.funding_rate.into_into_dart().into_dart(),
+            self.premium.into_into_dart().into_dart(),
+            self.time_ns.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireHyperliquidFundingHistoryEntry
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::convert::generated_models::WireHyperliquidFundingHistoryEntry,
+    > for crate::convert::generated_models::WireHyperliquidFundingHistoryEntry
+{
+    fn into_into_dart(
+        self,
+    ) -> crate::convert::generated_models::WireHyperliquidFundingHistoryEntry {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireHyperliquidL2Book {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.coin.into_into_dart().into_dart(),
+            self.market.into_into_dart().into_dart(),
+            self.time_ns.into_into_dart().into_dart(),
+            self.bids.into_into_dart().into_dart(),
+            self.asks.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireHyperliquidL2Book
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireHyperliquidL2Book>
+    for crate::convert::generated_models::WireHyperliquidL2Book
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireHyperliquidL2Book {
         self
     }
 }
@@ -17337,6 +20929,37 @@ impl
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireHyperliquidRecentTrade
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.coin.into_into_dart().into_dart(),
+            self.market.into_into_dart().into_dart(),
+            self.side.into_into_dart().into_dart(),
+            self.price.into_into_dart().into_dart(),
+            self.size.into_into_dart().into_dart(),
+            self.time_ns.into_into_dart().into_dart(),
+            self.trade_id.into_into_dart().into_dart(),
+            self.hash.into_into_dart().into_dart(),
+            self.users.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireHyperliquidRecentTrade
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireHyperliquidRecentTrade>
+    for crate::convert::generated_models::WireHyperliquidRecentTrade
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireHyperliquidRecentTrade {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireHyperliquidReferral {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -17381,6 +21004,195 @@ impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireHyp
     for crate::convert::generated_models::WireHyperliquidReferrer
 {
     fn into_into_dart(self) -> crate::convert::generated_models::WireHyperliquidReferrer {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireHyperliquidSpotAssetContext
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.coin.into_into_dart().into_dart(),
+            self.mid_price.into_into_dart().into_dart(),
+            self.mark_price.into_into_dart().into_dart(),
+            self.previous_day_price.into_into_dart().into_dart(),
+            self.day_base_volume.into_into_dart().into_dart(),
+            self.day_notional_volume.into_into_dart().into_dart(),
+            self.circulating_supply.into_into_dart().into_dart(),
+            self.total_supply.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireHyperliquidSpotAssetContext
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::convert::generated_models::WireHyperliquidSpotAssetContext,
+    > for crate::convert::generated_models::WireHyperliquidSpotAssetContext
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireHyperliquidSpotAssetContext {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireHyperliquidSpotBalance
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.coin.into_into_dart().into_dart(),
+            self.token.into_into_dart().into_dart(),
+            self.total.into_into_dart().into_dart(),
+            self.hold.into_into_dart().into_dart(),
+            self.entry_notional.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireHyperliquidSpotBalance
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireHyperliquidSpotBalance>
+    for crate::convert::generated_models::WireHyperliquidSpotBalance
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireHyperliquidSpotBalance {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireHyperliquidSpotClearinghouseState
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.balances.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireHyperliquidSpotClearinghouseState
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::convert::generated_models::WireHyperliquidSpotClearinghouseState,
+    > for crate::convert::generated_models::WireHyperliquidSpotClearinghouseState
+{
+    fn into_into_dart(
+        self,
+    ) -> crate::convert::generated_models::WireHyperliquidSpotClearinghouseState {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireHyperliquidSpotMeta {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.tokens.into_into_dart().into_dart(),
+            self.universe.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireHyperliquidSpotMeta
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireHyperliquidSpotMeta>
+    for crate::convert::generated_models::WireHyperliquidSpotMeta
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireHyperliquidSpotMeta {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireHyperliquidSpotMetaAndAssetContexts
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.meta.into_into_dart().into_dart(),
+            self.contexts.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireHyperliquidSpotMetaAndAssetContexts
+{
+}
+impl
+    flutter_rust_bridge::IntoIntoDart<
+        crate::convert::generated_models::WireHyperliquidSpotMetaAndAssetContexts,
+    > for crate::convert::generated_models::WireHyperliquidSpotMetaAndAssetContexts
+{
+    fn into_into_dart(
+        self,
+    ) -> crate::convert::generated_models::WireHyperliquidSpotMetaAndAssetContexts {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireHyperliquidSpotPair {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.name.into_into_dart().into_dart(),
+            self.tokens.into_into_dart().into_dart(),
+            self.index.into_into_dart().into_dart(),
+            self.is_canonical.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireHyperliquidSpotPair
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireHyperliquidSpotPair>
+    for crate::convert::generated_models::WireHyperliquidSpotPair
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireHyperliquidSpotPair {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireHyperliquidSpotToken {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.name.into_into_dart().into_dart(),
+            self.size_decimals.into_into_dart().into_dart(),
+            self.wei_decimals.into_into_dart().into_dart(),
+            self.index.into_into_dart().into_dart(),
+            self.token_id.into_into_dart().into_dart(),
+            self.is_canonical.into_into_dart().into_dart(),
+            self.evm_contract.into_into_dart().into_dart(),
+            self.full_name.into_into_dart().into_dart(),
+            self.deployer_trading_fee_share.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireHyperliquidSpotToken
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireHyperliquidSpotToken>
+    for crate::convert::generated_models::WireHyperliquidSpotToken
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireHyperliquidSpotToken {
         self
     }
 }
@@ -17468,6 +21280,37 @@ impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireHyp
     for crate::convert::generated_models::WireHyperliquidUserFill
 {
     fn into_into_dart(self) -> crate::convert::generated_models::WireHyperliquidUserFill {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireHyperliquidUserFunding
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.kind.into_into_dart().into_dart(),
+            self.coin.into_into_dart().into_dart(),
+            self.market.into_into_dart().into_dart(),
+            self.usdc.into_into_dart().into_dart(),
+            self.funding_rate.into_into_dart().into_dart(),
+            self.position_size.into_into_dart().into_dart(),
+            self.sample_count.into_into_dart().into_dart(),
+            self.hash.into_into_dart().into_dart(),
+            self.time_ns.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireHyperliquidUserFunding
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireHyperliquidUserFunding>
+    for crate::convert::generated_models::WireHyperliquidUserFunding
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireHyperliquidUserFunding {
         self
     }
 }
@@ -19572,6 +23415,38 @@ impl
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart
+    for crate::convert::generated_models::WireUpbitWithdrawalAddress
+{
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.currency.into_into_dart().into_dart(),
+            self.net_type.into_into_dart().into_dart(),
+            self.network_name.into_into_dart().into_dart(),
+            self.withdraw_address.into_into_dart().into_dart(),
+            self.secondary_address.into_into_dart().into_dart(),
+            self.beneficiary_name.into_into_dart().into_dart(),
+            self.beneficiary_company_name.into_into_dart().into_dart(),
+            self.beneficiary_type.into_into_dart().into_dart(),
+            self.exchange_name.into_into_dart().into_dart(),
+            self.wallet_type.into_into_dart().into_dart(),
+            self.raw_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::convert::generated_models::WireUpbitWithdrawalAddress
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::convert::generated_models::WireUpbitWithdrawalAddress>
+    for crate::convert::generated_models::WireUpbitWithdrawalAddress
+{
+    fn into_into_dart(self) -> crate::convert::generated_models::WireUpbitWithdrawalAddress {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::convert::generated_models::WireUpbitYearCandle {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -20337,6 +24212,16 @@ impl SseEncode for Vec<String> {
     }
 }
 
+impl SseEncode for Vec<u32> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <u32>::sse_encode(item, serializer);
+        }
+    }
+}
+
 impl SseEncode for Vec<u8> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -20401,12 +24286,144 @@ impl SseEncode for Vec<crate::convert::generated_models::WireBinanceC2cTrade> {
     }
 }
 
+impl SseEncode for Vec<crate::convert::generated_models::WireBinanceCoinInformation> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireBinanceCoinInformation>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::convert::generated_models::WireBinanceCoinNetworkInformation> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireBinanceCoinNetworkInformation>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::convert::generated_models::WireBinanceDepositHistoryEntry> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireBinanceDepositHistoryEntry>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::convert::generated_models::WireBinanceExchangeSymbol> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireBinanceExchangeSymbol>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
 impl SseEncode for Vec<crate::convert::generated_models::WireBinanceMarkPrice> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
             <crate::convert::generated_models::WireBinanceMarkPrice>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::convert::generated_models::WireBinanceSpotAccountBalance> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireBinanceSpotAccountBalance>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::convert::generated_models::WireBinanceSpotCancelledOrder> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireBinanceSpotCancelledOrder>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::convert::generated_models::WireBinanceUsdMAccountAsset> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireBinanceUsdMAccountAsset>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::convert::generated_models::WireBinanceUsdMAccountPosition> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireBinanceUsdMAccountPosition>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::convert::generated_models::WireBinanceUsdMPositionInformation> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireBinanceUsdMPositionInformation>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::convert::generated_models::WireBinanceWithdrawHistoryEntry> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireBinanceWithdrawHistoryEntry>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::convert::generated_models::WireBinanceWithdrawalAddress> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireBinanceWithdrawalAddress>::sse_encode(
+                item, serializer,
+            );
         }
     }
 }
@@ -20665,12 +24682,48 @@ impl SseEncode for Vec<crate::convert::WireFundingRate> {
     }
 }
 
+impl SseEncode for Vec<crate::convert::generated_models::WireHyperliquidBookLevel> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireHyperliquidBookLevel>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::convert::generated_models::WireHyperliquidCandleSnapshot> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireHyperliquidCandleSnapshot>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
 impl SseEncode for Vec<crate::convert::generated_models::WireHyperliquidDailyVolume> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
             <crate::convert::generated_models::WireHyperliquidDailyVolume>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::convert::generated_models::WireHyperliquidFundingHistoryEntry> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireHyperliquidFundingHistoryEntry>::sse_encode(
                 item, serializer,
             );
         }
@@ -20747,6 +24800,66 @@ impl SseEncode for Vec<crate::convert::generated_models::WireHyperliquidPortfoli
     }
 }
 
+impl SseEncode for Vec<crate::convert::generated_models::WireHyperliquidRecentTrade> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireHyperliquidRecentTrade>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::convert::generated_models::WireHyperliquidSpotAssetContext> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireHyperliquidSpotAssetContext>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::convert::generated_models::WireHyperliquidSpotBalance> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireHyperliquidSpotBalance>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::convert::generated_models::WireHyperliquidSpotPair> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireHyperliquidSpotPair>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::convert::generated_models::WireHyperliquidSpotToken> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireHyperliquidSpotToken>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
 impl SseEncode for Vec<crate::convert::generated_models::WireHyperliquidSubAccount> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -20765,6 +24878,18 @@ impl SseEncode for Vec<crate::convert::generated_models::WireHyperliquidUserFill
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
             <crate::convert::generated_models::WireHyperliquidUserFill>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::convert::generated_models::WireHyperliquidUserFunding> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireHyperliquidUserFunding>::sse_encode(
                 item, serializer,
             );
         }
@@ -21071,6 +25196,18 @@ impl SseEncode for Vec<crate::convert::generated_models::WireUpbitTravelRuleVasp
     }
 }
 
+impl SseEncode for Vec<crate::convert::generated_models::WireUpbitWithdrawalAddress> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::convert::generated_models::WireUpbitWithdrawalAddress>::sse_encode(
+                item, serializer,
+            );
+        }
+    }
+}
+
 impl SseEncode for Vec<crate::convert::generated_models::WireUpbitYearCandle> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -21309,6 +25446,18 @@ impl SseEncode for Option<crate::convert::WireFeature> {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <crate::convert::WireFeature>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<crate::convert::generated_models::WireHyperliquidEvmContract> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <crate::convert::generated_models::WireHyperliquidEvmContract>::sse_encode(
+                value, serializer,
+            );
         }
     }
 }
@@ -21666,6 +25815,26 @@ impl SseEncode for crate::convert::generated_models::WireBinanceAggregateTradesR
     }
 }
 
+impl SseEncode for crate::convert::generated_models::WireBinanceApiKeyPermissions {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.ip_restrict, serializer);
+        <Option<i64>>::sse_encode(self.create_time_ns, serializer);
+        <bool>::sse_encode(self.enable_reading, serializer);
+        <bool>::sse_encode(self.enable_withdrawals, serializer);
+        <bool>::sse_encode(self.enable_internal_transfer, serializer);
+        <bool>::sse_encode(self.enable_margin, serializer);
+        <bool>::sse_encode(self.enable_spot_and_margin_trading, serializer);
+        <bool>::sse_encode(self.enable_futures, serializer);
+        <bool>::sse_encode(self.permits_universal_transfer, serializer);
+        <bool>::sse_encode(self.enable_vanilla_options, serializer);
+        <bool>::sse_encode(self.enable_fix_api_trade, serializer);
+        <bool>::sse_encode(self.enable_fix_read_only, serializer);
+        <bool>::sse_encode(self.enable_portfolio_margin_trading, serializer);
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
 impl SseEncode for crate::convert::generated_models::WireBinanceC2cTrade {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -21732,6 +25901,118 @@ impl SseEncode for crate::convert::WireBinanceC2cTradeType {
     }
 }
 
+impl SseEncode for crate::convert::generated_models::WireBinanceCoinInformation {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.coin, serializer);
+        <bool>::sse_encode(self.deposit_all_enabled, serializer);
+        <bool>::sse_encode(self.withdraw_all_enabled, serializer);
+        <Option<String>>::sse_encode(self.name, serializer);
+        <Option<String>>::sse_encode(self.free, serializer);
+        <Option<String>>::sse_encode(self.locked, serializer);
+        <Option<String>>::sse_encode(self.freeze, serializer);
+        <Option<String>>::sse_encode(self.withdrawing, serializer);
+        <Option<bool>>::sse_encode(self.is_legal_money, serializer);
+        <Option<bool>>::sse_encode(self.trading, serializer);
+        <Vec<crate::convert::generated_models::WireBinanceCoinNetworkInformation>>::sse_encode(
+            self.networks,
+            serializer,
+        );
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBinanceCoinNetworkInformation {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.network, serializer);
+        <bool>::sse_encode(self.deposit_enabled, serializer);
+        <bool>::sse_encode(self.withdraw_enabled, serializer);
+        <bool>::sse_encode(self.busy, serializer);
+        <Option<String>>::sse_encode(self.withdrawal_integer_multiple, serializer);
+        <Option<String>>::sse_encode(self.withdrawal_fee, serializer);
+        <Option<String>>::sse_encode(self.minimum_withdrawal, serializer);
+        <Option<String>>::sse_encode(self.maximum_withdrawal, serializer);
+        <Option<bool>>::sse_encode(self.withdrawal_tag, serializer);
+        <Option<bool>>::sse_encode(self.is_default, serializer);
+        <Option<u64>>::sse_encode(self.minimum_confirmations, serializer);
+        <Option<u64>>::sse_encode(self.unlock_confirmations, serializer);
+        <Option<String>>::sse_encode(self.contract_address, serializer);
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBinanceDepositHistory {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<crate::convert::generated_models::WireBinanceDepositHistoryEntry>>::sse_encode(
+            self.entries,
+            serializer,
+        );
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBinanceDepositHistoryEntry {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.id, serializer);
+        <String>::sse_encode(self.amount, serializer);
+        <String>::sse_encode(self.coin, serializer);
+        <String>::sse_encode(self.network, serializer);
+        <u32>::sse_encode(self.status, serializer);
+        <Option<String>>::sse_encode(self.address, serializer);
+        <Option<String>>::sse_encode(self.address_tag, serializer);
+        <Option<String>>::sse_encode(self.tx_id, serializer);
+        <i64>::sse_encode(self.insert_time_ns, serializer);
+        <Option<i64>>::sse_encode(self.complete_time_ns, serializer);
+        <Option<u32>>::sse_encode(self.transfer_type, serializer);
+        <Option<String>>::sse_encode(self.source_address, serializer);
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBinanceDepositHistoryRequest {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Option<String>>::sse_encode(self.coin, serializer);
+        <Option<u32>>::sse_encode(self.status, serializer);
+        <Option<i64>>::sse_encode(self.start_time_ns, serializer);
+        <Option<i64>>::sse_encode(self.end_time_ns, serializer);
+        <Option<u64>>::sse_encode(self.offset, serializer);
+        <Option<u32>>::sse_encode(self.limit, serializer);
+        <Option<String>>::sse_encode(self.tx_id, serializer);
+        <bool>::sse_encode(self.include_source, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBinanceExchangeInfo {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <crate::convert::generated_models::WireBinanceMarket>::sse_encode(self.venue, serializer);
+        <Option<String>>::sse_encode(self.timezone, serializer);
+        <Option<i64>>::sse_encode(self.server_time_ns, serializer);
+        <Vec<crate::convert::generated_models::WireBinanceExchangeSymbol>>::sse_encode(
+            self.symbols,
+            serializer,
+        );
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBinanceExchangeSymbol {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.symbol, serializer);
+        <String>::sse_encode(self.status, serializer);
+        <String>::sse_encode(self.base_asset, serializer);
+        <String>::sse_encode(self.quote_asset, serializer);
+        <Option<String>>::sse_encode(self.contract_type, serializer);
+        <Option<String>>::sse_encode(self.margin_asset, serializer);
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
 impl SseEncode for crate::convert::generated_models::WireBinanceMarkPrice {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -21746,12 +26027,71 @@ impl SseEncode for crate::convert::generated_models::WireBinanceMarkPrice {
     }
 }
 
+impl SseEncode for crate::convert::generated_models::WireBinanceMarket {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::convert::generated_models::WireBinanceMarket::Spot => 0,
+                crate::convert::generated_models::WireBinanceMarket::UsdMFutures => 1,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
+    }
+}
+
 impl SseEncode for crate::convert::generated_models::WireBinanceOpenInterest {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <crate::convert::WireMarket>::sse_encode(self.market, serializer);
         <String>::sse_encode(self.open_interest, serializer);
         <i64>::sse_encode(self.time_ns, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBinanceQuestionnaireRequirements {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.questionnaire_country_code, serializer);
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBinanceSpotAccountBalance {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.asset, serializer);
+        <String>::sse_encode(self.free, serializer);
+        <String>::sse_encode(self.locked, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBinanceSpotAccountInformation {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <u64>::sse_encode(self.maker_commission, serializer);
+        <u64>::sse_encode(self.taker_commission, serializer);
+        <u64>::sse_encode(self.buyer_commission, serializer);
+        <u64>::sse_encode(self.seller_commission, serializer);
+        <crate::convert::generated_models::WireBinanceSpotCommissionRates>::sse_encode(
+            self.commission_rates,
+            serializer,
+        );
+        <bool>::sse_encode(self.can_trade, serializer);
+        <bool>::sse_encode(self.can_withdraw, serializer);
+        <bool>::sse_encode(self.can_deposit, serializer);
+        <i64>::sse_encode(self.update_time_ns, serializer);
+        <String>::sse_encode(self.account_type, serializer);
+        <Vec<crate::convert::generated_models::WireBinanceSpotAccountBalance>>::sse_encode(
+            self.balances,
+            serializer,
+        );
+        <Vec<String>>::sse_encode(self.permissions, serializer);
+        <Option<u64>>::sse_encode(self.uid, serializer);
+        <String>::sse_encode(self.raw_json, serializer);
     }
 }
 
@@ -21762,6 +26102,50 @@ impl SseEncode for crate::convert::generated_models::WireBinanceSpotAveragePrice
         <u32>::sse_encode(self.minutes, serializer);
         <String>::sse_encode(self.price, serializer);
         <i64>::sse_encode(self.close_time_ns, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBinanceSpotCancelAllOpenOrders {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<crate::convert::generated_models::WireBinanceSpotCancelledOrder>>::sse_encode(
+            self.reports,
+            serializer,
+        );
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBinanceSpotCancelledOrder {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Option<String>>::sse_encode(self.symbol, serializer);
+        <Option<String>>::sse_encode(self.original_client_order_id, serializer);
+        <Option<String>>::sse_encode(self.order_id, serializer);
+        <Option<String>>::sse_encode(self.client_order_id, serializer);
+        <Option<String>>::sse_encode(self.status, serializer);
+        <Option<String>>::sse_encode(self.price, serializer);
+        <Option<String>>::sse_encode(self.original_quantity, serializer);
+        <Option<String>>::sse_encode(self.executed_quantity, serializer);
+        <Option<String>>::sse_encode(self.cumulative_quote_quantity, serializer);
+        <Option<i64>>::sse_encode(self.transact_time_ns, serializer);
+        <Option<String>>::sse_encode(self.order_list_id, serializer);
+        <Option<String>>::sse_encode(self.contingency_type, serializer);
+        <Option<String>>::sse_encode(self.list_status_type, serializer);
+        <Option<String>>::sse_encode(self.list_order_status, serializer);
+        <Option<String>>::sse_encode(self.list_client_order_id, serializer);
+        <Option<i64>>::sse_encode(self.transaction_time_ns, serializer);
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBinanceSpotCommissionRates {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.maker, serializer);
+        <String>::sse_encode(self.taker, serializer);
+        <String>::sse_encode(self.buyer, serializer);
+        <String>::sse_encode(self.seller, serializer);
     }
 }
 
@@ -21806,6 +26190,94 @@ impl SseEncode for crate::convert::generated_models::WireBinanceTestOrderRequest
     }
 }
 
+impl SseEncode for crate::convert::generated_models::WireBinanceUsdMAccountAsset {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.asset, serializer);
+        <String>::sse_encode(self.wallet_balance, serializer);
+        <String>::sse_encode(self.unrealized_profit, serializer);
+        <String>::sse_encode(self.margin_balance, serializer);
+        <String>::sse_encode(self.maintenance_margin, serializer);
+        <String>::sse_encode(self.initial_margin, serializer);
+        <String>::sse_encode(self.position_initial_margin, serializer);
+        <String>::sse_encode(self.open_order_initial_margin, serializer);
+        <String>::sse_encode(self.cross_wallet_balance, serializer);
+        <String>::sse_encode(self.cross_unrealized_profit, serializer);
+        <String>::sse_encode(self.available_balance, serializer);
+        <String>::sse_encode(self.max_withdraw_amount, serializer);
+        <i64>::sse_encode(self.update_time_ns, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBinanceUsdMAccountInformation {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.total_initial_margin, serializer);
+        <String>::sse_encode(self.total_maintenance_margin, serializer);
+        <String>::sse_encode(self.total_wallet_balance, serializer);
+        <String>::sse_encode(self.total_unrealized_profit, serializer);
+        <String>::sse_encode(self.total_margin_balance, serializer);
+        <String>::sse_encode(self.total_position_initial_margin, serializer);
+        <String>::sse_encode(self.total_open_order_initial_margin, serializer);
+        <String>::sse_encode(self.total_cross_wallet_balance, serializer);
+        <String>::sse_encode(self.total_cross_unrealized_profit, serializer);
+        <String>::sse_encode(self.available_balance, serializer);
+        <String>::sse_encode(self.max_withdraw_amount, serializer);
+        <Vec<crate::convert::generated_models::WireBinanceUsdMAccountAsset>>::sse_encode(
+            self.assets,
+            serializer,
+        );
+        <Vec<crate::convert::generated_models::WireBinanceUsdMAccountPosition>>::sse_encode(
+            self.positions,
+            serializer,
+        );
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBinanceUsdMAccountPosition {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.symbol, serializer);
+        <String>::sse_encode(self.position_side, serializer);
+        <String>::sse_encode(self.position_amount, serializer);
+        <String>::sse_encode(self.unrealized_profit, serializer);
+        <String>::sse_encode(self.isolated_margin, serializer);
+        <String>::sse_encode(self.notional, serializer);
+        <String>::sse_encode(self.isolated_wallet, serializer);
+        <String>::sse_encode(self.initial_margin, serializer);
+        <String>::sse_encode(self.maintenance_margin, serializer);
+        <i64>::sse_encode(self.update_time_ns, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBinanceUsdMPositionInformation {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.symbol, serializer);
+        <String>::sse_encode(self.position_side, serializer);
+        <String>::sse_encode(self.position_amount, serializer);
+        <String>::sse_encode(self.entry_price, serializer);
+        <String>::sse_encode(self.break_even_price, serializer);
+        <String>::sse_encode(self.mark_price, serializer);
+        <String>::sse_encode(self.unrealized_profit, serializer);
+        <String>::sse_encode(self.liquidation_price, serializer);
+        <String>::sse_encode(self.isolated_margin, serializer);
+        <String>::sse_encode(self.notional, serializer);
+        <String>::sse_encode(self.margin_asset, serializer);
+        <String>::sse_encode(self.isolated_wallet, serializer);
+        <String>::sse_encode(self.initial_margin, serializer);
+        <String>::sse_encode(self.maintenance_margin, serializer);
+        <String>::sse_encode(self.position_initial_margin, serializer);
+        <String>::sse_encode(self.open_order_initial_margin, serializer);
+        <u64>::sse_encode(self.adl, serializer);
+        <String>::sse_encode(self.bid_notional, serializer);
+        <String>::sse_encode(self.ask_notional, serializer);
+        <i64>::sse_encode(self.update_time_ns, serializer);
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
 impl SseEncode for crate::api::WireBinanceVenue {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -21819,6 +26291,69 @@ impl SseEncode for crate::api::WireBinanceVenue {
             },
             serializer,
         );
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBinanceWithdrawHistory {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<crate::convert::generated_models::WireBinanceWithdrawHistoryEntry>>::sse_encode(
+            self.entries,
+            serializer,
+        );
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBinanceWithdrawHistoryEntry {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.id, serializer);
+        <String>::sse_encode(self.amount, serializer);
+        <String>::sse_encode(self.transaction_fee, serializer);
+        <String>::sse_encode(self.coin, serializer);
+        <u32>::sse_encode(self.status, serializer);
+        <Option<String>>::sse_encode(self.address, serializer);
+        <Option<String>>::sse_encode(self.tx_id, serializer);
+        <Option<String>>::sse_encode(self.apply_time, serializer);
+        <Option<String>>::sse_encode(self.network, serializer);
+        <Option<String>>::sse_encode(self.withdraw_order_id, serializer);
+        <Option<String>>::sse_encode(self.info, serializer);
+        <Option<u32>>::sse_encode(self.transfer_type, serializer);
+        <Option<u32>>::sse_encode(self.confirm_no, serializer);
+        <Option<u32>>::sse_encode(self.wallet_type, serializer);
+        <Option<String>>::sse_encode(self.tx_key, serializer);
+        <Option<String>>::sse_encode(self.complete_time, serializer);
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBinanceWithdrawHistoryRequest {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Option<String>>::sse_encode(self.coin, serializer);
+        <Option<String>>::sse_encode(self.withdraw_order_id, serializer);
+        <Option<u32>>::sse_encode(self.status, serializer);
+        <Option<u64>>::sse_encode(self.offset, serializer);
+        <Option<u32>>::sse_encode(self.limit, serializer);
+        <Vec<String>>::sse_encode(self.id_list, serializer);
+        <Option<i64>>::sse_encode(self.start_time_ns, serializer);
+        <Option<i64>>::sse_encode(self.end_time_ns, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireBinanceWithdrawalAddress {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.address, serializer);
+        <Option<String>>::sse_encode(self.address_tag, serializer);
+        <String>::sse_encode(self.coin, serializer);
+        <String>::sse_encode(self.network, serializer);
+        <bool>::sse_encode(self.white_status, serializer);
+        <Option<String>>::sse_encode(self.name, serializer);
+        <Option<String>>::sse_encode(self.origin, serializer);
+        <Option<String>>::sse_encode(self.origin_type, serializer);
+        <String>::sse_encode(self.raw_json, serializer);
     }
 }
 
@@ -22706,6 +27241,33 @@ impl SseEncode for crate::convert::WireHyperliquidAssetContext {
     }
 }
 
+impl SseEncode for crate::convert::generated_models::WireHyperliquidBookLevel {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.price, serializer);
+        <String>::sse_encode(self.size, serializer);
+        <Option<u64>>::sse_encode(self.order_count, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireHyperliquidCandleSnapshot {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.coin, serializer);
+        <crate::convert::WireMarket>::sse_encode(self.market, serializer);
+        <String>::sse_encode(self.interval, serializer);
+        <i64>::sse_encode(self.open_time_ns, serializer);
+        <i64>::sse_encode(self.close_time_ns, serializer);
+        <String>::sse_encode(self.open, serializer);
+        <String>::sse_encode(self.high, serializer);
+        <String>::sse_encode(self.low, serializer);
+        <String>::sse_encode(self.close, serializer);
+        <String>::sse_encode(self.volume, serializer);
+        <Option<u64>>::sse_encode(self.trade_count, serializer);
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
 impl SseEncode for crate::convert::generated_models::WireHyperliquidDailyVolume {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -22713,6 +27275,42 @@ impl SseEncode for crate::convert::generated_models::WireHyperliquidDailyVolume 
         <String>::sse_encode(self.user_cross, serializer);
         <String>::sse_encode(self.user_add, serializer);
         <String>::sse_encode(self.exchange, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireHyperliquidEvmContract {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.address, serializer);
+        <u32>::sse_encode(self.extra_wei_decimals, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireHyperliquidFundingHistoryEntry {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.coin, serializer);
+        <crate::convert::WireMarket>::sse_encode(self.market, serializer);
+        <String>::sse_encode(self.funding_rate, serializer);
+        <Option<String>>::sse_encode(self.premium, serializer);
+        <i64>::sse_encode(self.time_ns, serializer);
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireHyperliquidL2Book {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.coin, serializer);
+        <crate::convert::WireMarket>::sse_encode(self.market, serializer);
+        <i64>::sse_encode(self.time_ns, serializer);
+        <Vec<crate::convert::generated_models::WireHyperliquidBookLevel>>::sse_encode(
+            self.bids, serializer,
+        );
+        <Vec<crate::convert::generated_models::WireHyperliquidBookLevel>>::sse_encode(
+            self.asks, serializer,
+        );
+        <String>::sse_encode(self.raw_json, serializer);
     }
 }
 
@@ -22892,6 +27490,22 @@ impl SseEncode for crate::convert::generated_models::WireHyperliquidPortfolioPoi
     }
 }
 
+impl SseEncode for crate::convert::generated_models::WireHyperliquidRecentTrade {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.coin, serializer);
+        <crate::convert::WireMarket>::sse_encode(self.market, serializer);
+        <String>::sse_encode(self.side, serializer);
+        <String>::sse_encode(self.price, serializer);
+        <String>::sse_encode(self.size, serializer);
+        <i64>::sse_encode(self.time_ns, serializer);
+        <String>::sse_encode(self.trade_id, serializer);
+        <Option<String>>::sse_encode(self.hash, serializer);
+        <Vec<String>>::sse_encode(self.users, serializer);
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
 impl SseEncode for crate::convert::generated_models::WireHyperliquidReferral {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -22914,6 +27528,103 @@ impl SseEncode for crate::convert::generated_models::WireHyperliquidReferrer {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.address, serializer);
         <String>::sse_encode(self.code, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireHyperliquidSpotAssetContext {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Option<String>>::sse_encode(self.coin, serializer);
+        <Option<String>>::sse_encode(self.mid_price, serializer);
+        <Option<String>>::sse_encode(self.mark_price, serializer);
+        <Option<String>>::sse_encode(self.previous_day_price, serializer);
+        <Option<String>>::sse_encode(self.day_base_volume, serializer);
+        <Option<String>>::sse_encode(self.day_notional_volume, serializer);
+        <Option<String>>::sse_encode(self.circulating_supply, serializer);
+        <Option<String>>::sse_encode(self.total_supply, serializer);
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireHyperliquidSpotBalance {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.coin, serializer);
+        <Option<u32>>::sse_encode(self.token, serializer);
+        <String>::sse_encode(self.total, serializer);
+        <String>::sse_encode(self.hold, serializer);
+        <Option<String>>::sse_encode(self.entry_notional, serializer);
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireHyperliquidSpotClearinghouseState {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<crate::convert::generated_models::WireHyperliquidSpotBalance>>::sse_encode(
+            self.balances,
+            serializer,
+        );
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireHyperliquidSpotMeta {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<crate::convert::generated_models::WireHyperliquidSpotToken>>::sse_encode(
+            self.tokens,
+            serializer,
+        );
+        <Vec<crate::convert::generated_models::WireHyperliquidSpotPair>>::sse_encode(
+            self.universe,
+            serializer,
+        );
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireHyperliquidSpotMetaAndAssetContexts {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <crate::convert::generated_models::WireHyperliquidSpotMeta>::sse_encode(
+            self.meta, serializer,
+        );
+        <Vec<crate::convert::generated_models::WireHyperliquidSpotAssetContext>>::sse_encode(
+            self.contexts,
+            serializer,
+        );
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireHyperliquidSpotPair {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.name, serializer);
+        <Vec<u32>>::sse_encode(self.tokens, serializer);
+        <u32>::sse_encode(self.index, serializer);
+        <Option<bool>>::sse_encode(self.is_canonical, serializer);
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireHyperliquidSpotToken {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.name, serializer);
+        <u32>::sse_encode(self.size_decimals, serializer);
+        <Option<u32>>::sse_encode(self.wei_decimals, serializer);
+        <u32>::sse_encode(self.index, serializer);
+        <Option<String>>::sse_encode(self.token_id, serializer);
+        <Option<bool>>::sse_encode(self.is_canonical, serializer);
+        <Option<crate::convert::generated_models::WireHyperliquidEvmContract>>::sse_encode(
+            self.evm_contract,
+            serializer,
+        );
+        <Option<String>>::sse_encode(self.full_name, serializer);
+        <Option<String>>::sse_encode(self.deployer_trading_fee_share, serializer);
+        <String>::sse_encode(self.raw_json, serializer);
     }
 }
 
@@ -22964,6 +27675,22 @@ impl SseEncode for crate::convert::generated_models::WireHyperliquidUserFill {
         <u64>::sse_encode(self.trade_id, serializer);
         <String>::sse_encode(self.fee_token, serializer);
         <Option<u64>>::sse_encode(self.twap_id, serializer);
+        <String>::sse_encode(self.raw_json, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireHyperliquidUserFunding {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Option<String>>::sse_encode(self.kind, serializer);
+        <String>::sse_encode(self.coin, serializer);
+        <crate::convert::WireMarket>::sse_encode(self.market, serializer);
+        <String>::sse_encode(self.usdc, serializer);
+        <String>::sse_encode(self.funding_rate, serializer);
+        <Option<String>>::sse_encode(self.position_size, serializer);
+        <Option<u64>>::sse_encode(self.sample_count, serializer);
+        <String>::sse_encode(self.hash, serializer);
+        <i64>::sse_encode(self.time_ns, serializer);
         <String>::sse_encode(self.raw_json, serializer);
     }
 }
@@ -24239,6 +28966,23 @@ impl SseEncode for crate::convert::generated_models::WireUpbitTravelRuleVerifica
         <String>::sse_encode(self.deposit_uuid, serializer);
         <String>::sse_encode(self.deposit_state, serializer);
         <String>::sse_encode(self.verification_result, serializer);
+    }
+}
+
+impl SseEncode for crate::convert::generated_models::WireUpbitWithdrawalAddress {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.currency, serializer);
+        <String>::sse_encode(self.net_type, serializer);
+        <String>::sse_encode(self.network_name, serializer);
+        <String>::sse_encode(self.withdraw_address, serializer);
+        <Option<String>>::sse_encode(self.secondary_address, serializer);
+        <Option<String>>::sse_encode(self.beneficiary_name, serializer);
+        <Option<String>>::sse_encode(self.beneficiary_company_name, serializer);
+        <Option<String>>::sse_encode(self.beneficiary_type, serializer);
+        <Option<String>>::sse_encode(self.exchange_name, serializer);
+        <Option<String>>::sse_encode(self.wallet_type, serializer);
+        <String>::sse_encode(self.raw_json, serializer);
     }
 }
 

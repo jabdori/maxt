@@ -17,12 +17,244 @@ use crate::types::{
 };
 
 use super::private::signed;
-use super::{BinanceAdapter, BinanceMarket, EXCHANGE, check_asset, now_millis, parse};
+use super::{
+    BinanceAdapter, BinanceDepositHistoryRequest, BinanceMarket, BinanceWithdrawHistoryRequest,
+    EXCHANGE, check_asset, now_millis, parse,
+};
 
 const MAX_HISTORY_LIMIT: u32 = 1_000;
 const DEFAULT_HISTORY_LIMIT: u32 = 100;
 // Binance requires the requested interval to be less than 90 days.
 const HISTORY_WINDOW_MS: i64 = 90 * 24 * 60 * 60 * 1_000 - 1;
+const WITHDRAW_ORDER_ID_HISTORY_WINDOW_MS: i64 = 7 * 24 * 60 * 60 * 1_000 - 1;
+
+/// One Wallet SAPI coin configuration entry.
+///
+/// The normalized asset-network API selects only transferable networks. This
+/// provider contract preserves Binance's coin-wide flags and each network's
+/// raw configuration for callers that need Wallet-specific decisions.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceCoinInformation {
+    /// Binance asset code.
+    pub coin: String,
+    /// Whether Binance enables deposits for the coin overall.
+    pub deposit_all_enabled: bool,
+    /// Whether Binance enables withdrawals for the coin overall.
+    pub withdraw_all_enabled: bool,
+    /// Provider display name when Binance provides it.
+    pub name: Option<String>,
+    /// Available Wallet balance when Binance provides it.
+    pub free: Option<Decimal>,
+    /// Wallet balance locked by Binance when Binance provides it.
+    pub locked: Option<Decimal>,
+    /// Wallet balance frozen by Binance when Binance provides it.
+    pub freeze: Option<Decimal>,
+    /// Wallet balance currently withdrawing when Binance provides it.
+    pub withdrawing: Option<Decimal>,
+    /// Whether Binance regards the asset as legal money.
+    pub is_legal_money: Option<bool>,
+    /// Whether Binance allows trading this asset.
+    pub trading: Option<bool>,
+    /// Per-network deposit and withdrawal configuration.
+    pub networks: Vec<BinanceCoinNetworkInformation>,
+    /// Complete compact JSON entry for forward-compatible provider fields.
+    pub raw_json: String,
+}
+
+/// One network configuration within a Wallet SAPI coin entry.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceCoinNetworkInformation {
+    /// Binance's network identifier.
+    pub network: String,
+    /// Whether Binance enables deposits on this network.
+    pub deposit_enabled: bool,
+    /// Whether Binance enables withdrawals on this network.
+    pub withdraw_enabled: bool,
+    /// Whether the network is currently unavailable for Wallet transfers.
+    pub busy: bool,
+    /// Required whole multiple for withdrawal amounts, when Binance provides it.
+    pub withdrawal_integer_multiple: Option<Decimal>,
+    /// Fixed withdrawal fee, when Binance provides it.
+    pub withdrawal_fee: Option<Decimal>,
+    /// Minimum withdrawal amount, when Binance provides it.
+    pub minimum_withdrawal: Option<Decimal>,
+    /// Maximum withdrawal amount, when Binance provides it.
+    pub maximum_withdrawal: Option<Decimal>,
+    /// Whether this network requires an address tag or memo.
+    pub withdrawal_tag: Option<bool>,
+    /// Whether this is Binance's default network for the asset.
+    pub is_default: Option<bool>,
+    /// Minimum on-chain confirmations Binance requires for deposit credit.
+    pub minimum_confirmations: Option<u64>,
+    /// Confirmations Binance requires before funds are unlocked.
+    pub unlock_confirmations: Option<u64>,
+    /// Provider contract address when Binance provides it.
+    pub contract_address: Option<String>,
+    /// Complete compact JSON entry for forward-compatible provider fields.
+    pub raw_json: String,
+}
+
+/// Wallet SAPI API-key permissions.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceApiKeyPermissions {
+    /// Whether Binance restricts the key to configured IP addresses.
+    pub ip_restrict: bool,
+    /// Binance's key creation timestamp when it provides one.
+    pub create_time: Option<Timestamp>,
+    /// Whether the key may read account data.
+    pub enable_reading: bool,
+    /// Whether the key may withdraw assets.
+    pub enable_withdrawals: bool,
+    /// Whether the key may perform internal transfers.
+    pub enable_internal_transfer: bool,
+    /// Whether the key may use margin operations.
+    pub enable_margin: bool,
+    /// Whether the key may trade Spot and margin products.
+    pub enable_spot_and_margin_trading: bool,
+    /// Whether the key may trade USD-M/COIN-M futures.
+    pub enable_futures: bool,
+    /// Whether the key may use universal transfers.
+    pub permits_universal_transfer: bool,
+    /// Whether the key may trade vanilla options.
+    pub enable_vanilla_options: bool,
+    /// Whether the key may submit FIX API trades.
+    pub enable_fix_api_trade: bool,
+    /// Whether the key may use FIX API read-only access.
+    pub enable_fix_read_only: bool,
+    /// Whether the key may use portfolio-margin trading.
+    pub enable_portfolio_margin_trading: bool,
+    /// Complete compact JSON response for forward-compatible permission flags.
+    pub raw_json: String,
+}
+
+/// Wallet SAPI deposit-history response.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceDepositHistory {
+    /// Deposit records returned in this provider page.
+    pub entries: Vec<BinanceDepositHistoryEntry>,
+    /// Complete compact JSON response array.
+    pub raw_json: String,
+}
+
+/// One Wallet SAPI deposit-history record.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceDepositHistoryEntry {
+    /// Binance deposit identifier.
+    pub id: String,
+    /// Deposited amount.
+    pub amount: Decimal,
+    /// Asset code.
+    pub coin: String,
+    /// Binance network identifier.
+    pub network: String,
+    /// Provider-specific deposit status code.
+    pub status: u32,
+    /// Destination address when Binance provides it.
+    pub address: Option<String>,
+    /// Destination address tag when Binance provides it.
+    pub address_tag: Option<String>,
+    /// On-chain transaction identifier when Binance provides it.
+    pub tx_id: Option<String>,
+    /// Binance deposit insertion time.
+    pub insert_time: Timestamp,
+    /// Binance completion time when it provides one.
+    pub complete_time: Option<Timestamp>,
+    /// Provider transfer type when it provides one.
+    pub transfer_type: Option<u32>,
+    /// Source address when requested and supplied by Binance.
+    pub source_address: Option<String>,
+    /// Complete compact JSON entry for forward-compatible provider fields.
+    pub raw_json: String,
+}
+
+/// Wallet SAPI Travel Rule questionnaire requirement.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceQuestionnaireRequirements {
+    /// Country code Binance uses to determine the questionnaire requirement.
+    pub questionnaire_country_code: String,
+    /// Complete compact JSON response for forward-compatible provider fields.
+    pub raw_json: String,
+}
+
+/// A registered Wallet SAPI withdrawal address.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceWithdrawalAddress {
+    /// Registered destination address.
+    pub address: String,
+    /// Optional registered address tag or memo.
+    pub address_tag: Option<String>,
+    /// Asset code.
+    pub coin: String,
+    /// Binance network identifier.
+    pub network: String,
+    /// Whether Binance marked this address as whitelisted.
+    pub white_status: bool,
+    /// User-facing address-book name when Binance provides it.
+    pub name: Option<String>,
+    /// Provider address origin when Binance provides it.
+    pub origin: Option<String>,
+    /// Provider address origin type when Binance provides it.
+    pub origin_type: Option<String>,
+    /// Complete compact JSON entry for forward-compatible provider fields.
+    pub raw_json: String,
+}
+
+/// Wallet SAPI withdrawal-history response.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceWithdrawHistory {
+    /// Withdrawal records returned in this provider page.
+    pub entries: Vec<BinanceWithdrawHistoryEntry>,
+    /// Complete compact JSON response array.
+    pub raw_json: String,
+}
+
+/// One Wallet SAPI withdrawal-history record.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceWithdrawHistoryEntry {
+    /// Binance withdrawal identifier.
+    pub id: String,
+    /// Withdrawn amount.
+    pub amount: Decimal,
+    /// Binance withdrawal fee.
+    pub transaction_fee: Decimal,
+    /// Asset code.
+    pub coin: String,
+    /// Provider-specific withdrawal status code.
+    pub status: u32,
+    /// Destination address when Binance provides it.
+    pub address: Option<String>,
+    /// On-chain transaction identifier when Binance provides it.
+    pub tx_id: Option<String>,
+    /// Exact provider apply-time text when Binance provides it.
+    pub apply_time: Option<String>,
+    /// Binance network identifier when it provides one.
+    pub network: Option<String>,
+    /// Caller-supplied withdrawal order identifier when Binance provides it.
+    pub withdraw_order_id: Option<String>,
+    /// Provider status detail when Binance provides it.
+    pub info: Option<String>,
+    /// Provider transfer type when Binance provides it.
+    pub transfer_type: Option<u32>,
+    /// Binance confirmation count when it provides one.
+    pub confirm_no: Option<u32>,
+    /// Provider wallet type when Binance provides it.
+    pub wallet_type: Option<u32>,
+    /// Provider transaction key when Binance provides it.
+    pub tx_key: Option<String>,
+    /// Exact provider complete-time text when Binance provides it.
+    pub complete_time: Option<String>,
+    /// Complete compact JSON entry for forward-compatible provider fields.
+    pub raw_json: String,
+}
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -32,6 +264,20 @@ struct RawCoinConfig {
     deposit_all_enable: bool,
     #[serde(default)]
     withdraw_all_enable: bool,
+    #[serde(default)]
+    name: Option<String>,
+    #[serde(default)]
+    free: Option<String>,
+    #[serde(default)]
+    locked: Option<String>,
+    #[serde(default)]
+    freeze: Option<String>,
+    #[serde(default)]
+    withdrawing: Option<String>,
+    #[serde(default)]
+    is_legal_money: Option<bool>,
+    #[serde(default)]
+    trading: Option<bool>,
     #[serde(default)]
     network_list: Vec<RawNetworkConfig>,
 }
@@ -53,6 +299,14 @@ struct RawNetworkConfig {
     #[serde(default)]
     withdraw_tag: Option<bool>,
     #[serde(default)]
+    is_default: Option<bool>,
+    #[serde(default)]
+    min_confirm: Option<u64>,
+    #[serde(default)]
+    un_lock_confirm: Option<u64>,
+    #[serde(default)]
+    contract_address: Option<String>,
+    #[serde(default)]
     busy: bool,
 }
 
@@ -73,7 +327,31 @@ struct RawDepositAddress {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RawApiPermissions {
+    #[serde(default)]
+    ip_restrict: bool,
+    #[serde(default)]
+    create_time: Option<i64>,
+    #[serde(default)]
+    enable_reading: bool,
     enable_withdrawals: bool,
+    #[serde(default)]
+    enable_internal_transfer: bool,
+    #[serde(default)]
+    enable_margin: bool,
+    #[serde(default)]
+    enable_spot_and_margin_trading: bool,
+    #[serde(default)]
+    enable_futures: bool,
+    #[serde(default)]
+    permits_universal_transfer: bool,
+    #[serde(default)]
+    enable_vanilla_options: bool,
+    #[serde(default)]
+    enable_fix_api_trade: bool,
+    #[serde(default)]
+    enable_fix_read_only: bool,
+    #[serde(default)]
+    enable_portfolio_margin_trading: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -85,6 +363,12 @@ struct RawWithdrawAddress {
     coin: String,
     network: String,
     white_status: bool,
+    #[serde(default)]
+    name: Option<String>,
+    #[serde(default)]
+    origin: Option<String>,
+    #[serde(default)]
+    origin_type: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -113,6 +397,12 @@ struct RawDeposit {
     #[serde(default)]
     tx_id: String,
     insert_time: i64,
+    #[serde(default)]
+    complete_time: Option<i64>,
+    #[serde(default)]
+    transfer_type: Option<i64>,
+    #[serde(default)]
+    source_address: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -131,6 +421,20 @@ struct RawWithdrawal {
     apply_time: Option<String>,
     #[serde(default)]
     network: Option<String>,
+    #[serde(default)]
+    withdraw_order_id: Option<String>,
+    #[serde(default)]
+    info: Option<String>,
+    #[serde(default)]
+    transfer_type: Option<i64>,
+    #[serde(default)]
+    confirm_no: Option<i64>,
+    #[serde(default)]
+    wallet_type: Option<i64>,
+    #[serde(default)]
+    tx_key: Option<String>,
+    #[serde(default)]
+    complete_time: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -276,6 +580,86 @@ pub(super) async fn asset_networks(
     check_wallet_venue(adapter, Feature::AssetNetworks)?;
     let coin = coin_config(adapter, asset).await?;
     asset_networks_of(&coin)
+}
+
+/// Reads all Wallet SAPI coin configuration entries without selecting one
+/// asset or discarding network fields that the common transfer API cannot use.
+pub(super) async fn all_coins_information(
+    adapter: &BinanceAdapter,
+) -> Result<Vec<BinanceCoinInformation>> {
+    check_wallet_venue(adapter, Feature::AssetNetworks)?;
+    let body = adapter.send_wallet(all_coins_request(adapter)?).await?;
+    let response: serde_json::Value = parse::json(&body, "capital/config/getall")?;
+    let coins = response
+        .as_array()
+        .ok_or_else(|| Error::decode("Binance capital/config/getall response is not an array"))?;
+    coins.iter().map(coin_information_from_value).collect()
+}
+
+fn coin_information_from_value(value: &serde_json::Value) -> Result<BinanceCoinInformation> {
+    let raw: RawCoinConfig = serde_json::from_value(value.clone())
+        .map_err(|error| Error::decode(format!("unreadable coin information: {error}")))?;
+    let network_values = value
+        .get("networkList")
+        .and_then(serde_json::Value::as_array)
+        .ok_or_else(|| Error::decode("Binance coin information has no networkList array"))?;
+    if raw.network_list.len() != network_values.len() {
+        return Err(Error::decode(
+            "Binance coin networks could not be paired with raw entries",
+        ));
+    }
+
+    let networks = raw
+        .network_list
+        .iter()
+        .zip(network_values)
+        .map(|(network, raw_json)| {
+            Ok(BinanceCoinNetworkInformation {
+                network: network.network.clone(),
+                deposit_enabled: network.deposit_enable,
+                withdraw_enabled: network.withdraw_enable,
+                busy: network.busy,
+                withdrawal_integer_multiple: decimal_nonempty(
+                    &network.withdraw_integer_multiple,
+                    "withdrawIntegerMultiple",
+                )?,
+                withdrawal_fee: decimal_nonempty(&network.withdraw_fee, "withdrawFee")?,
+                minimum_withdrawal: decimal_nonempty(&network.withdraw_min, "withdrawMin")?,
+                maximum_withdrawal: decimal_nonempty(&network.withdraw_max, "withdrawMax")?,
+                withdrawal_tag: network.withdraw_tag,
+                is_default: network.is_default,
+                minimum_confirmations: network.min_confirm,
+                unlock_confirmations: network.un_lock_confirm,
+                contract_address: network.contract_address.clone(),
+                raw_json: parse::canonical_json(raw_json, "coin network information")?,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    Ok(BinanceCoinInformation {
+        coin: raw.coin,
+        deposit_all_enabled: raw.deposit_all_enable,
+        withdraw_all_enabled: raw.withdraw_all_enable,
+        name: raw.name,
+        free: decimal_option(raw.free.as_deref(), "free")?,
+        locked: decimal_option(raw.locked.as_deref(), "locked")?,
+        freeze: decimal_option(raw.freeze.as_deref(), "freeze")?,
+        withdrawing: decimal_option(raw.withdrawing.as_deref(), "withdrawing")?,
+        is_legal_money: raw.is_legal_money,
+        trading: raw.trading,
+        networks,
+        raw_json: parse::canonical_json(value, "coin information")?,
+    })
+}
+
+fn decimal_nonempty(value: &str, field: &'static str) -> Result<Option<Decimal>> {
+    (!value.is_empty())
+        .then(|| parse::decimal(value, field))
+        .transpose()
+}
+
+fn decimal_option(value: Option<&str>, field: &'static str) -> Result<Option<Decimal>> {
+    value.map(|value| parse::decimal(value, field)).transpose()
 }
 
 fn deposit_address_request(
@@ -446,6 +830,109 @@ fn questionnaire_request(adapter: &BinanceAdapter) -> Result<HttpRequest> {
         "/sapi/v1/localentity/questionnaire-requirements",
         Vec::new(),
     )
+}
+
+/// Reads the complete Wallet SAPI API-key permission response.
+pub(super) async fn api_key_permissions(
+    adapter: &BinanceAdapter,
+) -> Result<BinanceApiKeyPermissions> {
+    check_wallet_venue(adapter, Feature::WithdrawalQuotes)?;
+    let body = adapter
+        .send_wallet(api_permissions_request(adapter)?)
+        .await?;
+    let response: serde_json::Value = parse::json(&body, "account/apiRestrictions")?;
+    if !response.is_object() {
+        return Err(Error::decode(
+            "Binance account/apiRestrictions response is not an object",
+        ));
+    }
+    let raw: RawApiPermissions = serde_json::from_value(response.clone())
+        .map_err(|error| Error::decode(format!("unreadable API key permissions: {error}")))?;
+
+    Ok(BinanceApiKeyPermissions {
+        ip_restrict: raw.ip_restrict,
+        create_time: raw.create_time.map(parse::millis),
+        enable_reading: raw.enable_reading,
+        enable_withdrawals: raw.enable_withdrawals,
+        enable_internal_transfer: raw.enable_internal_transfer,
+        enable_margin: raw.enable_margin,
+        enable_spot_and_margin_trading: raw.enable_spot_and_margin_trading,
+        enable_futures: raw.enable_futures,
+        permits_universal_transfer: raw.permits_universal_transfer,
+        enable_vanilla_options: raw.enable_vanilla_options,
+        enable_fix_api_trade: raw.enable_fix_api_trade,
+        enable_fix_read_only: raw.enable_fix_read_only,
+        enable_portfolio_margin_trading: raw.enable_portfolio_margin_trading,
+        raw_json: parse::canonical_json(&response, "API key permissions")?,
+    })
+}
+
+/// Reads registered withdrawal addresses without reducing them to a boolean
+/// preflight check.
+pub(super) async fn withdraw_address_list(
+    adapter: &BinanceAdapter,
+) -> Result<Vec<BinanceWithdrawalAddress>> {
+    check_wallet_venue(adapter, Feature::WithdrawalQuotes)?;
+    let body = adapter
+        .send_wallet(withdraw_addresses_request(adapter)?)
+        .await?;
+    withdraw_address_list_from_body(&body)
+}
+
+fn withdraw_address_list_from_body(body: &str) -> Result<Vec<BinanceWithdrawalAddress>> {
+    let response: serde_json::Value = parse::json(&body, "capital/withdraw/address/list")?;
+    let entries = response.as_array().ok_or_else(|| {
+        Error::decode("Binance capital/withdraw/address/list response is not an array")
+    })?;
+
+    entries
+        .iter()
+        .map(|entry| {
+            let raw: RawWithdrawAddress =
+                serde_json::from_value(entry.clone()).map_err(|error| {
+                    Error::decode(format!("unreadable withdrawal address entry: {error}"))
+                })?;
+            Ok(BinanceWithdrawalAddress {
+                address: raw.address,
+                address_tag: nonempty(raw.address_tag),
+                coin: raw.coin,
+                network: raw.network,
+                white_status: raw.white_status,
+                name: raw.name,
+                origin: raw.origin,
+                origin_type: raw.origin_type,
+                raw_json: parse::canonical_json(entry, "withdrawal address entry")?,
+            })
+        })
+        .collect()
+}
+
+/// Reads the Travel Rule questionnaire requirement without reducing its country
+/// code to the common required/not-required preflight enum.
+pub(super) async fn questionnaire_requirements(
+    adapter: &BinanceAdapter,
+) -> Result<BinanceQuestionnaireRequirements> {
+    check_wallet_venue(adapter, Feature::WithdrawalQuotes)?;
+    let body = adapter.send_wallet(questionnaire_request(adapter)?).await?;
+    questionnaire_requirements_from_body(&body)
+}
+
+fn questionnaire_requirements_from_body(body: &str) -> Result<BinanceQuestionnaireRequirements> {
+    let response: serde_json::Value = parse::json(&body, "localentity/questionnaire-requirements")?;
+    if !response.is_object() {
+        return Err(Error::decode(
+            "Binance questionnaire-requirements response is not an object",
+        ));
+    }
+    let raw: RawQuestionnaireRequirements =
+        serde_json::from_value(response.clone()).map_err(|error| {
+            Error::decode(format!("unreadable questionnaire requirements: {error}"))
+        })?;
+
+    Ok(BinanceQuestionnaireRequirements {
+        questionnaire_country_code: raw.questionnaire_country_code,
+        raw_json: parse::canonical_json(&response, "questionnaire requirements")?,
+    })
 }
 
 fn allowlist_status(
@@ -752,6 +1239,276 @@ fn history_request(
 fn next_history_cursor(kind: HistoryKind, window: HistoryWindow, raw_len: usize) -> Option<Cursor> {
     (raw_len >= window.limit as usize)
         .then(|| encode_history_cursor(kind, window, window.offset.saturating_add(raw_len as u64)))
+}
+
+/// Builds the provider-specific deposit-history request without manufacturing a
+/// common cursor or silently replacing Binance's status/time filters.
+fn provider_deposit_history_request(
+    adapter: &BinanceAdapter,
+    request: &BinanceDepositHistoryRequest,
+) -> Result<HttpRequest> {
+    let mut params = provider_history_params(
+        request.coin.as_deref(),
+        request.start_time,
+        request.end_time,
+        request.offset,
+        request.limit,
+    )?;
+    if let Some(status) = request.status {
+        params.push(("status", status.to_string()));
+    }
+    if let Some(tx_id) = request.tx_id.as_ref() {
+        if tx_id.is_empty() {
+            return Err(Error::invalid_request(
+                "tx_id",
+                "must not be empty when provided",
+            ));
+        }
+        params.push(("txId", tx_id.clone()));
+    }
+    if request.include_source {
+        params.push(("includeSource", "true".to_string()));
+    }
+    signed(
+        adapter,
+        HttpMethod::Get,
+        "/sapi/v1/capital/deposit/hisrec",
+        params,
+    )
+}
+
+/// Builds the provider-specific withdrawal-history request without
+/// manufacturing a common cursor or silently replacing Binance's filters.
+fn provider_withdraw_history_request(
+    adapter: &BinanceAdapter,
+    request: &BinanceWithdrawHistoryRequest,
+) -> Result<HttpRequest> {
+    if request.id_list.len() > 45 {
+        return Err(Error::invalid_request(
+            "id_list",
+            "Binance accepts at most 45 withdrawal identifiers per request",
+        ));
+    }
+    if request.id_list.iter().any(String::is_empty) {
+        return Err(Error::invalid_request(
+            "id_list",
+            "must not contain an empty withdrawal identifier",
+        ));
+    }
+    let mut params = provider_history_params(
+        request.coin.as_deref(),
+        request.start_time,
+        request.end_time,
+        request.offset,
+        request.limit,
+    )?;
+    if let Some(withdraw_order_id) = request.withdraw_order_id.as_ref() {
+        if withdraw_order_id.is_empty() {
+            return Err(Error::invalid_request(
+                "withdraw_order_id",
+                "must not be empty when provided",
+            ));
+        }
+        if let (Some(start), Some(end)) = (request.start_time, request.end_time) {
+            let width = end.as_millis().saturating_sub(start.as_millis());
+            if width > WITHDRAW_ORDER_ID_HISTORY_WINDOW_MS {
+                return Err(Error::invalid_request(
+                    "end_time",
+                    "Binance withdrawal history is limited to fewer than 7 days when withdraw_order_id is set",
+                ));
+            }
+        }
+        params.push(("withdrawOrderId", withdraw_order_id.clone()));
+    }
+    if let Some(status) = request.status {
+        params.push(("status", status.to_string()));
+    }
+    if !request.id_list.is_empty() {
+        params.push(("idList", request.id_list.join(",")));
+    }
+    signed(
+        adapter,
+        HttpMethod::Get,
+        "/sapi/v1/capital/withdraw/history",
+        params,
+    )
+}
+
+fn provider_history_params(
+    coin: Option<&str>,
+    start_time: Option<Timestamp>,
+    end_time: Option<Timestamp>,
+    offset: Option<u64>,
+    limit: Option<u32>,
+) -> Result<Vec<(&'static str, String)>> {
+    if let Some(coin) = coin {
+        check_asset("coin", coin)?;
+    }
+    if let Some(limit) = limit {
+        if !(1..=MAX_HISTORY_LIMIT).contains(&limit) {
+            return Err(Error::invalid_request(
+                "limit",
+                format!(
+                    "Binance serves 1 to {MAX_HISTORY_LIMIT} history entries per call, not {limit}"
+                ),
+            ));
+        }
+    }
+    let start = start_time.map(Timestamp::as_millis);
+    let end = end_time.map(Timestamp::as_millis);
+    if let (Some(start), Some(end)) = (start, end) {
+        if end < start {
+            return Err(Error::invalid_request(
+                "end_time",
+                "must not precede start_time at Binance millisecond precision",
+            ));
+        }
+        if end.saturating_sub(start) > HISTORY_WINDOW_MS {
+            return Err(Error::invalid_request(
+                "end_time",
+                "Binance Wallet history time windows must span fewer than 90 days",
+            ));
+        }
+    }
+
+    let mut params = Vec::new();
+    if let Some(coin) = coin {
+        params.push(("coin", coin.to_string()));
+    }
+    if let Some(start) = start {
+        params.push(("startTime", start.to_string()));
+    }
+    if let Some(end) = end {
+        params.push(("endTime", end.to_string()));
+    }
+    if let Some(offset) = offset {
+        params.push(("offset", offset.to_string()));
+    }
+    if let Some(limit) = limit {
+        params.push(("limit", limit.to_string()));
+    }
+    Ok(params)
+}
+
+/// Reads Wallet SAPI deposit history with Binance's native response fields.
+pub(super) async fn deposit_history(
+    adapter: &BinanceAdapter,
+    request: &BinanceDepositHistoryRequest,
+) -> Result<BinanceDepositHistory> {
+    check_wallet_venue(adapter, Feature::DepositHistory)?;
+    let body = adapter
+        .send_wallet(provider_deposit_history_request(adapter, request)?)
+        .await?;
+    deposit_history_from_body(&body)
+}
+
+fn deposit_history_from_body(body: &str) -> Result<BinanceDepositHistory> {
+    let response: serde_json::Value = parse::json(body, "capital/deposit/hisrec")?;
+    let entries = response
+        .as_array()
+        .ok_or_else(|| Error::decode("Binance deposit-history response is not an array"))?;
+    let entries = entries
+        .iter()
+        .map(|entry| {
+            let raw: RawDeposit = serde_json::from_value(entry.clone()).map_err(|error| {
+                Error::decode(format!("unreadable deposit history entry: {error}"))
+            })?;
+            Ok(BinanceDepositHistoryEntry {
+                id: raw.id,
+                amount: parse::decimal(&raw.amount, "amount")?,
+                coin: raw.coin,
+                network: raw.network,
+                status: u32::try_from(raw.status).map_err(|_| {
+                    Error::decode(format!(
+                        "Binance deposit status must be non-negative, got {}",
+                        raw.status
+                    ))
+                })?,
+                address: nonempty(raw.address),
+                address_tag: nonempty(raw.address_tag),
+                tx_id: nonempty(raw.tx_id),
+                insert_time: parse::millis(raw.insert_time),
+                complete_time: raw.complete_time.map(parse::millis),
+                transfer_type: raw
+                    .transfer_type
+                    .map(|value| {
+                        u32::try_from(value).map_err(|_| {
+                            Error::decode(format!(
+                                "Binance deposit transfer type must be non-negative, got {value}"
+                            ))
+                        })
+                    })
+                    .transpose()?,
+                source_address: raw.source_address.and_then(nonempty),
+                raw_json: parse::canonical_json(entry, "deposit history entry")?,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+    Ok(BinanceDepositHistory {
+        entries,
+        raw_json: parse::canonical_json(&response, "deposit history")?,
+    })
+}
+
+/// Reads Wallet SAPI withdrawal history with Binance's native response fields.
+pub(super) async fn withdraw_history(
+    adapter: &BinanceAdapter,
+    request: &BinanceWithdrawHistoryRequest,
+) -> Result<BinanceWithdrawHistory> {
+    check_wallet_venue(adapter, Feature::WithdrawalHistory)?;
+    let body = adapter
+        .send_wallet(provider_withdraw_history_request(adapter, request)?)
+        .await?;
+    withdraw_history_from_body(&body)
+}
+
+fn withdraw_history_from_body(body: &str) -> Result<BinanceWithdrawHistory> {
+    let response: serde_json::Value = parse::json(body, "capital/withdraw/history")?;
+    let entries = response
+        .as_array()
+        .ok_or_else(|| Error::decode("Binance withdrawal-history response is not an array"))?;
+    let entries = entries
+        .iter()
+        .map(|entry| {
+            let raw: RawWithdrawal = serde_json::from_value(entry.clone()).map_err(|error| {
+                Error::decode(format!("unreadable withdrawal history entry: {error}"))
+            })?;
+            Ok(BinanceWithdrawHistoryEntry {
+                id: raw.id,
+                amount: parse::decimal(&raw.amount, "amount")?,
+                transaction_fee: parse::decimal(&raw.transaction_fee, "transactionFee")?,
+                coin: raw.coin,
+                status: u32::try_from(raw.status).map_err(|_| {
+                    Error::decode(format!("Binance withdrawal status must be non-negative, got {}", raw.status))
+                })?,
+                address: nonempty(raw.address),
+                tx_id: nonempty(raw.tx_id),
+                apply_time: raw.apply_time,
+                network: raw.network.and_then(nonempty),
+                withdraw_order_id: raw.withdraw_order_id,
+                info: raw.info,
+                transfer_type: raw
+                    .transfer_type
+                    .map(|value| u32::try_from(value).map_err(|_| Error::decode(format!("Binance withdrawal transfer type must be non-negative, got {value}"))))
+                    .transpose()?,
+                confirm_no: raw
+                    .confirm_no
+                    .map(|value| u32::try_from(value).map_err(|_| Error::decode(format!("Binance withdrawal confirmation count must be non-negative, got {value}"))))
+                    .transpose()?,
+                wallet_type: raw
+                    .wallet_type
+                    .map(|value| u32::try_from(value).map_err(|_| Error::decode(format!("Binance wallet type must be non-negative, got {value}"))))
+                    .transpose()?,
+                tx_key: raw.tx_key,
+                complete_time: raw.complete_time,
+                raw_json: parse::canonical_json(entry, "withdrawal history entry")?,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+    Ok(BinanceWithdrawHistory {
+        entries,
+        raw_json: parse::canonical_json(&response, "withdrawal history")?,
+    })
 }
 
 pub(super) async fn deposits(
@@ -1168,6 +1925,112 @@ mod tests {
             ),
             "/sapi/v1/capital/withdraw/history?coin=ETH&startTime=1700000000000&endTime=1700001000000&offset=50&limit=25"
         );
+
+        let deposit = BinanceDepositHistoryRequest::new()
+            .coin("ETH")
+            .status(1)
+            .start_time(Timestamp::from_millis(1_700_000_000_000))
+            .end_time(Timestamp::from_millis(1_700_001_000_000))
+            .offset(50)
+            .limit(25)
+            .tx_id("tx-1")
+            .include_source();
+        assert_eq!(
+            signed_params(
+                &provider_deposit_history_request(&adapter, &deposit)
+                    .expect("provider deposit history request")
+            ),
+            "/sapi/v1/capital/deposit/hisrec?coin=ETH&startTime=1700000000000&endTime=1700001000000&offset=50&limit=25&status=1&txId=tx-1&includeSource=true"
+        );
+
+        let withdrawal = BinanceWithdrawHistoryRequest::new()
+            .coin("ETH")
+            .withdraw_order_id("withdraw-1")
+            .status(6)
+            .id_list(["id-1", "id-2"])
+            .start_time(Timestamp::from_millis(1_700_000_000_000))
+            .end_time(Timestamp::from_millis(1_700_001_000_000));
+        assert_eq!(
+            signed_params(
+                &provider_withdraw_history_request(&adapter, &withdrawal)
+                    .expect("provider withdrawal history request")
+            ),
+            "/sapi/v1/capital/withdraw/history?coin=ETH&startTime=1700000000000&endTime=1700001000000&withdrawOrderId=withdraw-1&status=6&idList=id-1%2Cid-2"
+        );
+    }
+
+    #[test]
+    fn provider_wallet_contracts_preserve_typed_fields_and_raw_json() {
+        let coins: serde_json::Value = parse::json(
+            r#"[{
+              "coin":"ETH","depositAllEnable":true,"withdrawAllEnable":true,"name":"Ethereum",
+              "free":"1.2","locked":"0.3","freeze":"0","withdrawing":"0","isLegalMoney":false,"trading":true,
+              "networkList":[{"network":"ETH","depositEnable":true,"withdrawEnable":true,"withdrawIntegerMultiple":"0.0001","withdrawFee":"0.001","withdrawMin":"0.01","withdrawMax":"10","withdrawTag":false,"isDefault":true,"minConfirm":12,"unLockConfirm":64,"contractAddress":"0xabc","busy":false,"futureField":"kept"}],"futureField":true
+            }]"#,
+            "coin information fixture",
+        )
+        .expect("valid coin information fixture");
+        let coin = coin_information_from_value(&coins[0]).expect("typed coin information");
+        assert_eq!(coin.free, Some(Decimal::new(12, 1)));
+        assert_eq!(coin.networks[0].minimum_confirmations, Some(12));
+        assert!(coin.raw_json.contains("futureField"));
+
+        let permissions = {
+            let response: serde_json::Value = parse::json(
+                r#"{"ipRestrict":true,"createTime":1700000000000,"enableReading":true,"enableWithdrawals":false,"enableInternalTransfer":true,"enableMargin":true,"enableFutures":true,"permitsUniversalTransfer":true,"enableVanillaOptions":true,"enableFixApiTrade":true,"enableFixReadOnly":true,"enableSpotAndMarginTrading":true,"enablePortfolioMarginTrading":true,"futureField":true}"#,
+                "permission fixture",
+            )
+            .expect("valid permission fixture");
+            let raw: RawApiPermissions =
+                serde_json::from_value(response.clone()).expect("typed permission fixture");
+            BinanceApiKeyPermissions {
+                ip_restrict: raw.ip_restrict,
+                create_time: raw.create_time.map(parse::millis),
+                enable_reading: raw.enable_reading,
+                enable_withdrawals: raw.enable_withdrawals,
+                enable_internal_transfer: raw.enable_internal_transfer,
+                enable_margin: raw.enable_margin,
+                enable_spot_and_margin_trading: raw.enable_spot_and_margin_trading,
+                enable_futures: raw.enable_futures,
+                permits_universal_transfer: raw.permits_universal_transfer,
+                enable_vanilla_options: raw.enable_vanilla_options,
+                enable_fix_api_trade: raw.enable_fix_api_trade,
+                enable_fix_read_only: raw.enable_fix_read_only,
+                enable_portfolio_margin_trading: raw.enable_portfolio_margin_trading,
+                raw_json: parse::canonical_json(&response, "permission fixture")
+                    .expect("raw permissions"),
+            }
+        };
+        assert!(permissions.enable_fix_read_only);
+        assert!(permissions.raw_json.contains("futureField"));
+
+        let deposits = deposit_history_from_body(
+            r#"[{"id":"dep-1","amount":"1.2","coin":"ETH","network":"ETH","status":1,"address":"address","addressTag":"memo","txId":"tx","insertTime":1700000000000,"completeTime":1700000100000,"transferType":0,"sourceAddress":"source","futureField":true}]"#,
+        )
+        .expect("typed deposit history");
+        assert_eq!(deposits.entries[0].transfer_type, Some(0));
+        assert!(deposits.entries[0].raw_json.contains("futureField"));
+
+        let withdrawals = withdraw_history_from_body(
+            r#"[{"id":"wd-1","amount":"1.2","transactionFee":"0.01","coin":"ETH","status":6,"address":"address","txId":"tx","applyTime":"2026-08-10 12:34:56","network":"ETH","withdrawOrderId":"client","info":"ok","transferType":0,"confirmNo":12,"walletType":1,"txKey":"key","completeTime":"2026-08-10 12:35:56","futureField":true}]"#,
+        )
+        .expect("typed withdrawal history");
+        assert_eq!(withdrawals.entries[0].confirm_no, Some(12));
+        assert!(withdrawals.entries[0].raw_json.contains("futureField"));
+
+        let address = withdraw_address_list_from_body(
+            r#"[{"address":"address","addressTag":"memo","coin":"ETH","network":"ETH","whiteStatus":true,"name":"cold","origin":"user","originType":"others","futureField":true}]"#,
+        )
+        .expect("typed withdrawal address list");
+        assert_eq!(address[0].name.as_deref(), Some("cold"));
+        assert!(address[0].raw_json.contains("futureField"));
+
+        let questionnaire = questionnaire_requirements_from_body(
+            r#"{"questionnaireCountryCode":"KR","futureField":true}"#,
+        )
+        .expect("typed questionnaire requirement");
+        assert_eq!(questionnaire.questionnaire_country_code, "KR");
+        assert!(questionnaire.raw_json.contains("futureField"));
     }
 
     #[test]
@@ -1347,6 +2210,9 @@ mod tests {
             address: "0x2222222222222222222222222222222222222222".to_string(),
             address_tag: String::new(),
             white_status: true,
+            name: None,
+            origin: None,
+            origin_type: None,
         };
 
         assert!(!allowlist_status(&[registered], &request, "ETH"));

@@ -8,6 +8,7 @@
 use std::cmp::Reverse;
 
 use rust_decimal::Decimal;
+use serde::Deserialize;
 
 use crate::adapters::{
     candles as candle_pages, inclusive_millis_at_or_after, inclusive_millis_before,
@@ -39,6 +40,70 @@ const USD_M_DEPTHS: &[u32] = &[5, 10, 20, 50, 100, 500, 1_000];
 /// The candles each venue will return in one call. USD-M serves more.
 const MAX_SPOT_CANDLES: u32 = 1_000;
 const MAX_USD_M_CANDLES: u32 = 1_500;
+
+/// Binance's full `exchangeInfo` response for one selected trading venue.
+///
+/// The common market list intentionally normalizes perpetual contracts only.
+/// This provider contract retains every listed symbol and its original JSON so
+/// callers can use Binance-only filters and contract metadata.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceExchangeInfo {
+    /// The Binance venue that produced this listing.
+    pub venue: BinanceMarket,
+    /// Binance's declared exchange time zone when the endpoint provides one.
+    pub timezone: Option<String>,
+    /// Server timestamp published by Binance when the endpoint provides one.
+    pub server_time: Option<Timestamp>,
+    /// Every symbol in Binance's response, including USD-M dated contracts.
+    pub symbols: Vec<BinanceExchangeSymbol>,
+    /// Complete compact JSON response for forward-compatible provider fields.
+    pub raw_json: String,
+}
+
+/// One symbol entry from Binance's `exchangeInfo` response.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceExchangeSymbol {
+    /// Binance's native symbol, for example `BTCUSDT`.
+    pub symbol: String,
+    /// Binance's provider-specific trading status.
+    pub status: String,
+    /// Base asset code published by Binance.
+    pub base_asset: String,
+    /// Quote asset code published by Binance.
+    pub quote_asset: String,
+    /// USD-M contract type, such as `PERPETUAL`, when Binance provides it.
+    pub contract_type: Option<String>,
+    /// USD-M margin asset when Binance provides it.
+    pub margin_asset: Option<String>,
+    /// Complete compact JSON entry, including provider-specific filters.
+    pub raw_json: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawProviderExchangeInfo {
+    #[serde(default)]
+    timezone: Option<String>,
+    #[serde(default)]
+    server_time: Option<i64>,
+    #[serde(default)]
+    symbols: Vec<RawProviderExchangeSymbol>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawProviderExchangeSymbol {
+    symbol: String,
+    status: String,
+    base_asset: String,
+    quote_asset: String,
+    #[serde(default)]
+    contract_type: Option<String>,
+    #[serde(default)]
+    margin_asset: Option<String>,
+}
 
 impl BinanceMarket {
     /// The prefix this venue's public endpoints hang off.
@@ -325,6 +390,75 @@ pub(super) async fn markets(adapter: &BinanceAdapter, kind: MarketKind) -> Resul
         .iter()
         .filter_map(|symbol| parse::market_info(adapter.venue(), symbol))
         .collect())
+}
+
+/// Reads the complete provider listing for one explicitly selected venue.
+pub(super) async fn exchange_info(
+    adapter: &BinanceAdapter,
+    expected_venue: BinanceMarket,
+) -> Result<BinanceExchangeInfo> {
+    if adapter.venue() != expected_venue {
+        return Err(Error::unsupported(
+            Feature::Markets,
+            EXCHANGE,
+            match expected_venue {
+                BinanceMarket::Spot => {
+                    "Spot exchange information requires an adapter built with `spot`"
+                }
+                BinanceMarket::UsdMFutures => {
+                    "USD-M exchange information requires an adapter built with `usd_m_futures`"
+                }
+            },
+        ));
+    }
+
+    let body = adapter.send(markets_request(expected_venue)).await?;
+    exchange_info_from_body(expected_venue, &body)
+}
+
+fn exchange_info_from_body(venue: BinanceMarket, body: &str) -> Result<BinanceExchangeInfo> {
+    let response: serde_json::Value = parse::json(body, "exchangeInfo")?;
+    if !response.is_object() {
+        return Err(Error::decode(
+            "Binance exchangeInfo response is not an object",
+        ));
+    }
+    let raw: RawProviderExchangeInfo = serde_json::from_value(response.clone())
+        .map_err(|error| Error::decode(format!("unreadable exchangeInfo: {error}")))?;
+    let symbols = response
+        .get("symbols")
+        .and_then(serde_json::Value::as_array)
+        .ok_or_else(|| Error::decode("Binance exchangeInfo response has no symbol array"))?;
+    if raw.symbols.len() != symbols.len() {
+        return Err(Error::decode(
+            "Binance exchangeInfo symbols could not be paired with raw entries",
+        ));
+    }
+
+    let symbols = raw
+        .symbols
+        .into_iter()
+        .zip(symbols)
+        .map(|(symbol, raw_json)| {
+            Ok(BinanceExchangeSymbol {
+                symbol: symbol.symbol,
+                status: symbol.status,
+                base_asset: symbol.base_asset,
+                quote_asset: symbol.quote_asset,
+                contract_type: symbol.contract_type,
+                margin_asset: symbol.margin_asset,
+                raw_json: parse::canonical_json(raw_json, "exchangeInfo symbol")?,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    Ok(BinanceExchangeInfo {
+        venue,
+        timezone: raw.timezone,
+        server_time: raw.server_time.map(parse::millis),
+        symbols,
+        raw_json: parse::canonical_json(&response, "exchangeInfo")?,
+    })
 }
 
 pub(super) async fn trades(
@@ -641,6 +775,29 @@ mod tests {
                 .target(),
             "/fapi/v1/openInterest?symbol=BTCUSDT"
         );
+    }
+
+    #[test]
+    fn provider_exchange_info_keeps_every_symbol_and_raw_filter_data() {
+        let listing = exchange_info_from_body(
+            BinanceMarket::UsdMFutures,
+            r#"{
+              "timezone":"UTC","serverTime":1700000000000,
+              "symbols":[
+                {"symbol":"BTCUSDT","status":"TRADING","baseAsset":"BTC","quoteAsset":"USDT","contractType":"PERPETUAL","marginAsset":"USDT","filters":[{"filterType":"PRICE_FILTER"}]},
+                {"symbol":"BTCUSDT_240628","status":"TRADING","baseAsset":"BTC","quoteAsset":"USDT","contractType":"CURRENT_QUARTER","marginAsset":"USDT","filters":[{"filterType":"PRICE_FILTER"}]}
+              ],"exchangeFilters":[{"futureField":true}]
+            }"#,
+        )
+        .expect("official-shaped exchangeInfo response");
+
+        assert_eq!(listing.symbols.len(), 2);
+        assert_eq!(
+            listing.symbols[1].contract_type.as_deref(),
+            Some("CURRENT_QUARTER")
+        );
+        assert!(listing.symbols[0].raw_json.contains("filters"));
+        assert!(listing.raw_json.contains("exchangeFilters"));
     }
 
     #[test]

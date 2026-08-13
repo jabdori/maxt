@@ -4,28 +4,42 @@
 //! operations remain on the concrete types in [`adapters`], and unavailable
 //! operations return [`Error::Unsupported`].
 //!
-//! # Getting started
+//! # Quick start: Binance Spot
 //!
-//! Pick an adapter, wrap it in a [`Client`], and call the common API.
+//! Pick an adapter, wrap it in a [`Client`], and call the common API. This
+//! credential-free example reads Binance Spot `BTC/USDT`; it does not submit
+//! an order.
 //!
 //! ```no_run
-//! use maxt::{Client, Exchange, Market, adapters::UpbitAdapter};
+//! use maxt::{Client, Exchange, Market, adapters::BinanceAdapter};
 //!
 //! # async fn run() -> maxt::Result<()> {
-//! let client = Client::new(UpbitAdapter::new());
-//! let book = client
-//!     .order_book(&Market::spot(Exchange::Upbit, "BTC", "KRW"), Some(5))
-//!     .await?;
+//! let client = Client::new(BinanceAdapter::spot());
+//! let market = Market::spot(Exchange::Binance, "BTC", "USDT");
+//! let ticker = client.ticker(&market).await?;
+//! let average = client.adapter().spot_average_price(&market).await?;
 //!
-//! if let Some(spread) = book.spread() {
-//!     println!("spread: {spread}");
-//! }
+//! println!("last price: {}", ticker.last_price);
+//! println!("{}-minute average: {}", average.minutes, average.price);
 //! # Ok(())
 //! # }
 //! ```
 //!
+//! [`Client::ticker`] is a common operation. [`BinanceAdapter::spot_average_price`]
+//! is a provider-specific operation, so it remains on [`Client::adapter`].
 //! Public market data needs no credentials. Account and order operations do;
 //! each adapter documents the credential form it accepts.
+//!
+//! # Supported adapter boundaries
+//!
+//! - [`BinanceAdapter`](adapters::BinanceAdapter): Spot and USD-M perpetual futures.
+//! - [`UpbitAdapter`](adapters::UpbitAdapter): Spot across its supported regions.
+//! - [`BithumbAdapter`](adapters::BithumbAdapter): Spot and KRW account APIs.
+//! - [`HyperliquidAdapter`](adapters::HyperliquidAdapter): Spot and perpetual futures.
+//!
+//! Provider-only fields and endpoints remain on the concrete adapter. Check
+//! [`Client::supports`] before an optional common operation when the configured
+//! adapter or its credentials can vary at runtime.
 //!
 //! # Main types
 //!
@@ -51,17 +65,34 @@ pub mod adapters;
 
 pub use adapter::{Adapter, BoxFuture};
 pub use adapters::{
-    BinanceAggregateTrade, BinanceAggregateTradesRequest, BinanceMarkPrice, BinanceOpenInterest,
-    BithumbApiKey, BithumbAssetFee, BithumbBatchOrder, BithumbBatchOrderFailure,
-    BithumbBatchOrderOutcome, BithumbBatchOrdersRequest, BithumbBatchOrdersResult,
-    BithumbKrwDeposit, BithumbKrwDepositsRequest, BithumbKrwTransferRequest, BithumbKrwWithdrawal,
-    BithumbKrwWithdrawalsRequest, BithumbNetworkFee, BithumbNotice, BithumbOrderDirection,
-    BithumbPendingOrderState, BithumbPendingOrdersRequest, BithumbTwapOrder,
+    BinanceAccountTrade, BinanceAggregateTrade, BinanceAggregateTradesRequest, BinanceC2cTrade,
+    BinanceC2cTradeHistoryPage, BinanceC2cTradeHistoryRequest, BinanceC2cTradeType,
+    BinanceMarkPrice, BinanceOpenInterest, BinanceSpotAveragePrice, BinanceTestOrder,
+    BinanceTestOrderRequest, BithumbApiKey, BithumbAssetFee, BithumbBatchOrder,
+    BithumbBatchOrderFailure, BithumbBatchOrderOutcome, BithumbBatchOrdersRequest,
+    BithumbBatchOrdersResult, BithumbClosedOrder, BithumbClosedOrderState,
+    BithumbClosedOrdersRequest, BithumbKrwDeposit, BithumbKrwDepositsRequest,
+    BithumbKrwTransferRequest, BithumbKrwWithdrawal, BithumbKrwWithdrawalsRequest,
+    BithumbNetworkFee, BithumbNotice, BithumbOrderDetail, BithumbOrderDetailRequest,
+    BithumbOrderDetailTrade, BithumbOrderDirection, BithumbOrderListItem, BithumbOrderListRequest,
+    BithumbOrderListState, BithumbPendingOrderState, BithumbPendingOrdersRequest, BithumbTwapOrder,
     BithumbTwapOrderDirection, BithumbTwapOrderRequest, BithumbTwapOrdersRequest, BithumbTwapState,
-    HyperliquidMidPrice, UpbitBatchCancelRequest, UpbitBatchCancelScope, UpbitCancelAndNewOrder,
-    UpbitCancelAndNewOrderRequest, UpbitCancelAndNewOrderResult, UpbitDepositInfo,
-    UpbitOrderBookInstrument, UpbitOrderDirection, UpbitOrderReference, UpbitOrderVolume,
-    UpbitSmpType, UpbitTravelRuleVasp, UpbitTravelRuleVerification, UpbitYearCandle,
+    BithumbWithdrawalAddress, HyperliquidDailyVolume, HyperliquidMidPrice, HyperliquidOpenOrder,
+    HyperliquidOrderDetail, HyperliquidOrderInfo, HyperliquidOrderReference,
+    HyperliquidOrderStatusResponse, HyperliquidPortfolioPeriod, HyperliquidPortfolioPoint,
+    HyperliquidReferral, HyperliquidReferrer, HyperliquidSubAccount, HyperliquidUserFees,
+    HyperliquidUserFill, HyperliquidUserRateLimit, HyperliquidUserRole, HyperliquidVaultEquity,
+    UpbitApiKey, UpbitBatchCancelRequest, UpbitBatchCancelScope, UpbitCancelAndNewOrder,
+    UpbitCancelAndNewOrderRequest, UpbitCancelAndNewOrderResult, UpbitClosedOrder,
+    UpbitClosedOrderState, UpbitClosedOrdersRequest, UpbitDepositInfo, UpbitKrwDeposit,
+    UpbitKrwTransferRequest, UpbitKrwTwoFactorType, UpbitKrwWithdrawal, UpbitListedSubscription,
+    UpbitOrderBookInstrument, UpbitOrderDetail, UpbitOrderDetailRequest, UpbitOrderDetailTrade,
+    UpbitOrderDirection, UpbitOrderReference, UpbitOrderVolume, UpbitPocket, UpbitPocketApiKey,
+    UpbitPocketApiKeyGroup, UpbitPocketApiKeysRequest, UpbitPocketBalance, UpbitPocketTransfer,
+    UpbitPocketTransferDirection, UpbitPocketTransferOrder, UpbitPocketTransferQuery,
+    UpbitPocketTransferRequest, UpbitPocketTransferState, UpbitPocketUniversalTransferRequest,
+    UpbitSmpType, UpbitSubscriptionList, UpbitTravelRuleVasp, UpbitTravelRuleVerification,
+    UpbitYearCandle,
 };
 pub use client::Client;
 pub use error::{Error, ExchangeErrorKind, Result, TransferErrorKind};

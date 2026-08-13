@@ -1,9 +1,12 @@
 import {
   BithumbAlertStep,
+  BithumbClosedOrderState,
   BithumbOrderDirection,
+  BithumbOrderListState,
   BithumbPendingOrderState,
   BithumbTwapOrderDirection,
   BithumbTwapState,
+  BinanceC2cTradeType,
   DepositStatus,
   Exchange,
   HyperliquidLedgerKind,
@@ -21,6 +24,11 @@ import {
   TimeInForce,
   TransferErrorKind,
   UpbitOrderDirection,
+  UpbitClosedOrderState,
+  UpbitKrwTwoFactorType,
+  UpbitPocketTransferDirection,
+  UpbitPocketTransferOrder,
+  UpbitPocketTransferState,
   UpbitSmpType,
   WithdrawalStatus,
 } from "./generated/identifiers.js";
@@ -28,10 +36,13 @@ import {
 export {
   BinanceMarket,
   BithumbAlertStep,
+  BithumbClosedOrderState,
   BithumbOrderDirection,
+  BithumbOrderListState,
   BithumbPendingOrderState,
   BithumbTwapOrderDirection,
   BithumbTwapState,
+  BinanceC2cTradeType,
   DepositStatus,
   Exchange,
   Feature,
@@ -50,7 +61,12 @@ export {
   TimeInForce,
   TransferErrorKind,
   UpbitOrderDirection,
+  UpbitClosedOrderState,
   UpbitRegion,
+  UpbitKrwTwoFactorType,
+  UpbitPocketTransferDirection,
+  UpbitPocketTransferOrder,
+  UpbitPocketTransferState,
   UpbitSmpType,
   WithdrawalStatus,
 } from "./generated/identifiers.js";
@@ -864,6 +880,24 @@ export class UpbitMarketEvent {
     }
 }
 
+export class UpbitListedSubscription {
+  readonly markets: readonly Market[];
+  constructor(
+    readonly feedType: string,
+    markets: readonly Market[],
+    readonly level: Decimal | null,
+  ) {
+    this.markets = Object.freeze([...markets]); freezeRecord(this);
+  }
+}
+
+export class UpbitSubscriptionList {
+  readonly subscriptions: readonly UpbitListedSubscription[];
+  constructor(readonly ticket: string, subscriptions: readonly UpbitListedSubscription[]) {
+    this.subscriptions = Object.freeze([...subscriptions]); freezeRecord(this);
+  }
+}
+
 export class UpbitYearCandle {
   constructor(
     readonly market: Market, readonly openTime: Timestamp,
@@ -881,6 +915,107 @@ export class UpbitOrderBookInstrument {
     supportedLevels: readonly Decimal[],
   ) {
     this.supportedLevels = Object.freeze([...supportedLevels]); freezeRecord(this);
+  }
+}
+
+export class UpbitOrderDetailRequest {
+  constructor(
+    readonly market: Market,
+    readonly uuid: string | null = null,
+    readonly identifier: string | null = null,
+  ) { freezeRecord(this); }
+}
+
+export class UpbitOrderDetailTrade {
+  constructor(
+    readonly market: Market,
+    readonly uuid: string,
+    readonly price: Decimal,
+    readonly volume: Decimal,
+    readonly funds: Decimal,
+    readonly trend: string,
+    readonly createdAt: Timestamp,
+    readonly side: string,
+  ) { freezeRecord(this); }
+}
+
+export class UpbitOrderDetail {
+  readonly tradesCount: number;
+  readonly trades: readonly UpbitOrderDetailTrade[];
+  constructor(
+    readonly market: Market,
+    readonly uuid: string,
+    readonly side: string,
+    readonly orderType: string,
+    readonly price: Decimal | null,
+    readonly state: string,
+    readonly createdAt: Timestamp,
+    readonly volume: Decimal | null,
+    readonly remainingVolume: Decimal,
+    readonly executedVolume: Decimal,
+    readonly reservedFee: Decimal,
+    readonly remainingFee: Decimal,
+    readonly paidFee: Decimal,
+    readonly locked: Decimal,
+    tradesCount: number,
+    readonly preventedVolume: Decimal,
+    readonly preventedLocked: Decimal,
+    readonly timeInForce: string | null,
+    readonly identifier: string | null,
+    readonly smpType: string | null,
+    trades: readonly UpbitOrderDetailTrade[],
+  ) {
+    this.tradesCount = checkedUnsigned(tradesCount, U32_MAX, "tradesCount");
+    this.trades = Object.freeze([...trades]);
+    freezeRecord(this);
+  }
+}
+
+export class UpbitClosedOrdersRequest {
+  readonly states: readonly UpbitClosedOrderState[];
+  readonly limit: number | null;
+  constructor(
+    readonly market: Market | null = null,
+    readonly state: UpbitClosedOrderState | null = null,
+    states: readonly UpbitClosedOrderState[] = [],
+    readonly startTime: Timestamp | null = null,
+    readonly endTime: Timestamp | null = null,
+    limit: number | null = null,
+    readonly orderBy: UpbitOrderDirection | null = null,
+  ) {
+    this.states = Object.freeze([...states]);
+    this.limit = checkedOptionalU32(limit, "limit");
+    freezeRecord(this);
+  }
+}
+
+export class UpbitClosedOrder {
+  readonly tradesCount: number;
+  constructor(
+    readonly market: Market,
+    readonly uuid: string,
+    readonly side: string,
+    readonly ordType: string,
+    readonly state: string,
+    readonly createdAt: Timestamp,
+    readonly volume: Decimal | null,
+    readonly price: Decimal | null,
+    readonly remainingVolume: Decimal,
+    readonly executedVolume: Decimal,
+    readonly executedFunds: Decimal | null,
+    readonly reservedFee: Decimal,
+    readonly remainingFee: Decimal,
+    readonly paidFee: Decimal,
+    readonly locked: Decimal,
+    tradesCount: number,
+    readonly preventedVolume: Decimal,
+    readonly preventedLocked: Decimal,
+    readonly timeInForce: string | null,
+    readonly identifier: string | null,
+    readonly smpType: string | null,
+  ) {
+    this.tradesCount = checkedUnsigned(tradesCount, U32_MAX, "tradesCount");
+    freezeRecord(this);
   }
 }
 
@@ -1037,6 +1172,154 @@ export class UpbitCancelAndNewOrderResult {
   get replacementCreated(): boolean { return this.newOrderUuid !== null; }
 }
 
+export class UpbitKrwTransferRequest {
+  constructor(readonly amount: Decimal, readonly twoFactorType: UpbitKrwTwoFactorType) {
+    freezeRecord(this);
+  }
+}
+
+export class UpbitKrwDeposit {
+  constructor(
+    readonly transferType: string,
+    readonly uuid: string,
+    readonly currency: string,
+    readonly netType: string | null,
+    readonly txid: string,
+    readonly state: string,
+    readonly createdAt: Timestamp,
+    readonly doneAt: Timestamp | null,
+    readonly amount: Decimal,
+    readonly fee: Decimal,
+    readonly transactionType: string,
+  ) { freezeRecord(this); }
+}
+
+export class UpbitKrwWithdrawal {
+  constructor(
+    readonly transferType: string,
+    readonly uuid: string,
+    readonly currency: string,
+    readonly netType: string | null,
+    readonly txid: string | null,
+    readonly state: string,
+    readonly createdAt: Timestamp,
+    readonly doneAt: Timestamp | null,
+    readonly amount: Decimal,
+    readonly fee: Decimal,
+    readonly transactionType: string,
+    readonly isCancelable: boolean | null,
+  ) { freezeRecord(this); }
+}
+
+export class UpbitApiKey {
+  constructor(readonly accessKey: string, readonly expiresAt: Timestamp) { freezeRecord(this); }
+}
+
+export class UpbitPocket {
+  constructor(readonly uuid: string, readonly name: string, readonly kind: string) { freezeRecord(this); }
+}
+
+export class UpbitPocketApiKey {
+  readonly permissions: readonly string[];
+  readonly allowedIps: readonly string[];
+  constructor(
+    readonly accessKey: string,
+    permissions: readonly string[],
+    allowedIps: readonly string[],
+    readonly createdAt: Timestamp,
+    readonly expiredAt: Timestamp,
+  ) {
+    this.permissions = Object.freeze([...permissions]);
+    this.allowedIps = Object.freeze([...allowedIps]);
+    freezeRecord(this);
+  }
+}
+
+export class UpbitPocketApiKeyGroup {
+  readonly keys: readonly UpbitPocketApiKey[];
+  constructor(readonly uuid: string, keys: readonly UpbitPocketApiKey[]) {
+    this.keys = Object.freeze([...keys]);
+    freezeRecord(this);
+  }
+}
+
+export class UpbitPocketApiKeysRequest {
+  readonly uuids: readonly string[];
+  constructor(uuids: readonly string[] = [], readonly includeExpired: boolean = false) {
+    this.uuids = Object.freeze([...uuids]);
+    freezeRecord(this);
+  }
+}
+
+export class UpbitPocketBalance {
+  constructor(
+    readonly currency: string,
+    readonly balance: Decimal,
+    readonly locked: Decimal,
+    readonly avgBuyPrice: Decimal,
+    readonly avgBuyPriceModified: boolean,
+    readonly unitCurrency: string,
+  ) { freezeRecord(this); }
+}
+
+export class UpbitPocketTransferQuery {
+  readonly states: readonly UpbitPocketTransferState[];
+  readonly uuids: readonly string[];
+  readonly identifiers: readonly string[];
+  readonly limit: number | null;
+  constructor(
+    readonly from: string | null = null,
+    readonly to: string | null = null,
+    readonly direction: UpbitPocketTransferDirection | null = null,
+    states: readonly UpbitPocketTransferState[] = [],
+    uuids: readonly string[] = [],
+    identifiers: readonly string[] = [],
+    readonly startTime: Timestamp | null = null,
+    readonly endTime: Timestamp | null = null,
+    readonly currency: string | null = null,
+    limit: number | null = null,
+    readonly orderBy: UpbitPocketTransferOrder | null = null,
+  ) {
+    this.states = Object.freeze([...states]);
+    this.uuids = Object.freeze([...uuids]);
+    this.identifiers = Object.freeze([...identifiers]);
+    this.limit = checkedOptionalU32(limit, "limit");
+    freezeRecord(this);
+  }
+}
+
+export class UpbitPocketUniversalTransferRequest {
+  constructor(
+    readonly from: string | null,
+    readonly to: string,
+    readonly currency: string,
+    readonly amount: Decimal,
+    readonly identifier: string | null = null,
+  ) { freezeRecord(this); }
+}
+
+export class UpbitPocketTransferRequest {
+  constructor(
+    readonly to: string,
+    readonly currency: string,
+    readonly amount: Decimal,
+    readonly identifier: string | null = null,
+  ) { freezeRecord(this); }
+}
+
+export class UpbitPocketTransfer {
+  constructor(
+    readonly uuid: string,
+    readonly identifier: string | null,
+    readonly from: string,
+    readonly to: string,
+    readonly state: string,
+    readonly currency: string,
+    readonly amount: Decimal,
+    readonly createdAt: Timestamp,
+  ) { freezeRecord(this); }
+}
+
 export class BithumbMarketAlert {
   constructor(readonly kind: string, readonly step: BithumbAlertStep, readonly endsAt: Timestamp) {
     freezeRecord(this);
@@ -1145,6 +1428,55 @@ export class BithumbPendingOrdersRequest {
     readonly cursor: Cursor | null = null,
   ) {
     this.limit = checkedOptionalU32(limit, "limit");
+    freezeRecord(this);
+  }
+}
+
+export class BithumbClosedOrdersRequest {
+  readonly states: readonly BithumbClosedOrderState[];
+  readonly limit: number | null;
+  constructor(
+    readonly market: Market | null = null,
+    readonly state: BithumbClosedOrderState | null = null,
+    states: readonly BithumbClosedOrderState[] = [],
+    readonly startTime: Timestamp | null = null,
+    readonly endTime: Timestamp | null = null,
+    limit: number | null = null,
+    readonly orderBy: BithumbOrderDirection | null = null,
+    readonly cursor: Cursor | null = null,
+  ) {
+    this.states = Object.freeze([...states]);
+    this.limit = checkedOptionalU32(limit, "limit");
+    freezeRecord(this);
+  }
+}
+
+export class BithumbClosedOrder {
+  readonly tradesCount: number;
+  constructor(
+    readonly orderId: string,
+    readonly side: string,
+    readonly orderType: string,
+    readonly price: Decimal | null,
+    readonly state: string,
+    readonly market: Market,
+    readonly createdAt: Timestamp | null,
+    readonly volume: Decimal,
+    readonly remainingVolume: Decimal,
+    readonly reservedFee: Decimal,
+    readonly remainingFee: Decimal,
+    readonly paidFee: Decimal,
+    readonly locked: Decimal,
+    readonly executedVolume: Decimal,
+    readonly executedFunds: Decimal,
+    tradesCount: number,
+    readonly clientOrderId: string | null,
+    readonly stpType: string | null,
+    readonly timeInForce: string | null,
+    readonly cancelType: string | null,
+    readonly cancelingOrderId: string | null,
+  ) {
+    this.tradesCount = checkedUnsigned(tradesCount, U32_MAX, "tradesCount");
     freezeRecord(this);
   }
 }
@@ -1287,6 +1619,128 @@ export class BithumbNetworkFee {
   ) { freezeRecord(this); }
 }
 
+export class BithumbWithdrawalAddress {
+  constructor(
+    readonly currency: string,
+    readonly netType: string,
+    readonly networkName: string | null,
+    readonly withdrawAddress: string,
+    readonly secondaryAddress: string | null,
+    readonly exchangeName: string | null,
+    readonly ownerType: string | null,
+    readonly ownerKoName: string | null,
+    readonly ownerEnName: string | null,
+    readonly ownerCorpKoName: string | null,
+    readonly ownerCorpEnName: string | null,
+  ) { freezeRecord(this); }
+}
+
+export class BithumbOrderDetailRequest {
+  constructor(
+    readonly market: Market,
+    readonly uuid: string | null = null,
+    readonly clientOrderId: string | null = null,
+  ) { freezeRecord(this); }
+}
+
+export class BithumbOrderDetailTrade {
+  constructor(
+    readonly market: Market,
+    readonly uuid: string,
+    readonly price: Decimal,
+    readonly volume: Decimal,
+    readonly funds: Decimal,
+    readonly side: string,
+    readonly createdAt: Timestamp,
+  ) { freezeRecord(this); }
+}
+
+export class BithumbOrderDetail {
+  readonly trades: readonly BithumbOrderDetailTrade[];
+  readonly tradesCount: number;
+  constructor(
+    readonly uuid: string,
+    readonly clientOrderId: string | null,
+    readonly side: string,
+    readonly orderType: string,
+    readonly price: Decimal,
+    readonly state: string,
+    readonly market: Market,
+    readonly createdAt: Timestamp,
+    readonly volume: Decimal,
+    readonly remainingVolume: Decimal,
+    readonly reservedFee: Decimal,
+    readonly remainingFee: Decimal,
+    readonly paidFee: Decimal,
+    readonly locked: Decimal,
+    readonly executedVolume: Decimal,
+    readonly executedFunds: Decimal,
+    tradesCount: number,
+    trades: readonly BithumbOrderDetailTrade[],
+    readonly stpType: string | null,
+    readonly cancelType: string | null,
+    readonly cancelingUuid: string | null,
+    readonly timeInForce: string | null,
+  ) {
+    this.tradesCount = checkedUnsigned(tradesCount, U32_MAX, "tradesCount");
+    this.trades = Object.freeze([...trades]);
+    freezeRecord(this);
+  }
+}
+
+export class BithumbOrderListRequest {
+  readonly states: readonly BithumbOrderListState[];
+  readonly uuids: readonly string[];
+  readonly clientOrderIds: readonly string[];
+  readonly page: number | null;
+  readonly limit: number | null;
+  constructor(
+    readonly market: Market | null = null,
+    readonly state: BithumbOrderListState | null = null,
+    states: readonly BithumbOrderListState[] = [],
+    uuids: readonly string[] = [],
+    clientOrderIds: readonly string[] = [],
+    page: number | null = null,
+    limit: number | null = null,
+    readonly orderBy: BithumbOrderDirection | null = null,
+  ) {
+    this.states = Object.freeze([...states]);
+    this.uuids = Object.freeze([...uuids]);
+    this.clientOrderIds = Object.freeze([...clientOrderIds]);
+    this.page = checkedOptionalU32(page, "page");
+    this.limit = checkedOptionalU32(limit, "limit");
+    freezeRecord(this);
+  }
+}
+
+export class BithumbOrderListItem {
+  readonly tradesCount: number;
+  constructor(
+    readonly uuid: string,
+    readonly clientOrderId: string | null,
+    readonly side: string,
+    readonly orderType: string,
+    readonly price: Decimal,
+    readonly state: string,
+    readonly market: Market,
+    readonly createdAt: Timestamp,
+    readonly volume: Decimal,
+    readonly remainingVolume: Decimal,
+    readonly reservedFee: Decimal,
+    readonly remainingFee: Decimal,
+    readonly paidFee: Decimal,
+    readonly locked: Decimal,
+    readonly executedVolume: Decimal,
+    readonly executedFunds: Decimal,
+    tradesCount: number,
+    readonly stpType: string | null,
+    readonly timeInForce: string | null,
+  ) {
+    this.tradesCount = checkedUnsigned(tradesCount, U32_MAX, "tradesCount");
+    freezeRecord(this);
+  }
+}
+
 export class BinanceSymbolFilters {
   constructor(
     readonly symbol: string, readonly tickSize: Decimal | null, readonly minPrice: Decimal | null,
@@ -1301,6 +1755,13 @@ export class BinanceSpotOrderDetail {
     readonly order: Order, readonly clientOrderId: string, readonly orderType: string,
     readonly timeInForce: string, readonly filledQuoteQuantity: Decimal,
     readonly updatedAt: Timestamp | null,
+  ) { freezeRecord(this); }
+}
+
+export class BinanceSpotAveragePrice {
+  constructor(
+    readonly market: Market, readonly minutes: number, readonly price: Decimal,
+    readonly closeTime: Timestamp,
   ) { freezeRecord(this); }
 }
 
@@ -1356,6 +1817,102 @@ export class BinanceAggregateTrade {
   }
 }
 
+export class BinanceAccountTrade {
+  constructor(
+    readonly market: Market,
+    readonly id: string,
+    readonly orderId: string,
+    readonly timestamp: Timestamp,
+    readonly side: Side,
+    readonly maker: boolean,
+    readonly bestMatch: boolean | null,
+    readonly orderListId: string | null,
+    readonly price: Decimal,
+    readonly quantity: Decimal,
+    readonly quoteQuantity: Decimal | null,
+    readonly commission: Decimal,
+    readonly commissionAsset: string,
+    readonly realizedPnl: Decimal | null,
+    readonly positionSide: string | null,
+    readonly pair: string | null,
+    readonly baseQuantity: Decimal | null,
+    readonly marginAsset: string | null,
+  ) { freezeRecord(this); }
+}
+
+export class BinanceTestOrderRequest {
+  constructor(readonly order: OrderRequest, readonly computeCommissionRates: boolean = false) {
+    freezeRecord(this);
+  }
+}
+
+export class BinanceTestOrder {
+  constructor(readonly responseJson: string) { freezeRecord(this); }
+}
+
+export class BinanceC2cTradeHistoryRequest {
+  readonly page: number | null;
+  readonly rows: number | null;
+  readonly recvWindow: bigint | null;
+  constructor(
+    readonly tradeType: BinanceC2cTradeType,
+    readonly startTimestamp: Timestamp | null = null,
+    readonly endTimestamp: Timestamp | null = null,
+    page: number | null = null,
+    rows: number | null = null,
+    recvWindow: bigint | null = null,
+  ) {
+    this.page = checkedOptionalU32(page, "page");
+    this.rows = checkedOptionalU32(rows, "rows");
+    this.recvWindow = recvWindow === null ? null : checkedU64(recvWindow, "recvWindow");
+    freezeRecord(this);
+  }
+}
+
+export class BinanceC2cTrade {
+  readonly additionalKycVerify: number | null;
+  constructor(
+    readonly orderNumber: string | null,
+    readonly advNo: string | null,
+    readonly tradeType: string | null,
+    readonly asset: string | null,
+    readonly fiat: string | null,
+    readonly fiatSymbol: string | null,
+    readonly amount: Decimal | null,
+    readonly totalPrice: Decimal | null,
+    readonly unitPrice: Decimal | null,
+    readonly orderStatus: string | null,
+    readonly createdAt: Timestamp | null,
+    readonly commission: Decimal | null,
+    readonly counterpartyNickname: string | null,
+    readonly payMethodName: string | null,
+    additionalKycVerify: number | null,
+    readonly takerCommissionRate: Decimal | null,
+    readonly takerCommission: Decimal | null,
+    readonly takerAmount: Decimal | null,
+    readonly advertisementRole: string | null,
+  ) {
+    this.additionalKycVerify = checkedOptionalU32(additionalKycVerify, "additionalKycVerify");
+    freezeRecord(this);
+  }
+}
+
+export class BinanceC2cTradeHistoryPage {
+  readonly data: readonly BinanceC2cTrade[] | null;
+  readonly total: bigint | null;
+  constructor(
+    readonly code: string | null,
+    readonly message: string | null,
+    data: readonly BinanceC2cTrade[] | null,
+    total: bigint | null,
+    readonly success: boolean | null,
+  ) {
+    this.data = data === null ? null : Object.freeze([...data]);
+    this.total = total === null ? null : checkedU64(total, "total");
+    freezeRecord(this);
+  }
+}
+
 export class HyperliquidLedgerEntry {
   constructor(
     readonly kind: HyperliquidLedgerKind, readonly time: Timestamp, readonly hash: string,
@@ -1380,6 +1937,201 @@ export class HyperliquidAssetContext {
     this.priceDecimals = checkedUnsigned(priceDecimals, U32_MAX, "priceDecimals");
     freezeRecord(this);
   }
+}
+
+export class HyperliquidUserRateLimit {
+  readonly requestsUsed: bigint;
+  readonly requestsCap: bigint;
+  readonly requestsSurplus: bigint;
+  constructor(
+    readonly cumulativeVolume: Decimal,
+    requestsUsed: bigint,
+    requestsCap: bigint,
+    requestsSurplus: bigint,
+  ) {
+    this.requestsUsed = checkedU64(requestsUsed, "requestsUsed");
+    this.requestsCap = checkedU64(requestsCap, "requestsCap");
+    this.requestsSurplus = checkedU64(requestsSurplus, "requestsSurplus");
+    freezeRecord(this);
+  }
+}
+
+export type HyperliquidUserRole =
+  | { readonly kind: "user" }
+  | { readonly kind: "agent"; readonly user: string | null }
+  | { readonly kind: "vault" }
+  | { readonly kind: "sub_account"; readonly master: string | null }
+  | { readonly kind: "missing" }
+  | { readonly kind: "other"; readonly role: string; readonly dataJson: string | null };
+
+export class HyperliquidReferrer {
+  constructor(readonly address: string, readonly code: string) { freezeRecord(this); }
+}
+
+export class HyperliquidReferral {
+  constructor(
+    readonly referredBy: HyperliquidReferrer | null,
+    readonly cumulativeVolume: Decimal,
+    readonly unclaimedRewards: Decimal,
+    readonly claimedRewards: Decimal,
+    readonly builderRewards: Decimal,
+    readonly referrerStateJson: string,
+    readonly rewardHistoryJson: string,
+    readonly tokenToStateJson: string,
+  ) { freezeRecord(this); }
+}
+
+export class HyperliquidDailyVolume {
+  constructor(
+    readonly date: string,
+    readonly userCross: Decimal,
+    readonly userAdd: Decimal,
+    readonly exchange: Decimal,
+  ) { freezeRecord(this); }
+}
+
+export class HyperliquidUserFees {
+  readonly dailyVolumes: readonly HyperliquidDailyVolume[];
+  constructor(
+    dailyVolumes: readonly HyperliquidDailyVolume[],
+    readonly feeScheduleJson: string,
+    readonly userCrossRate: Decimal,
+    readonly userAddRate: Decimal,
+    readonly userSpotCrossRate: Decimal | null,
+    readonly userSpotAddRate: Decimal | null,
+    readonly activeReferralDiscount: Decimal | null,
+    readonly detailsJson: string,
+  ) {
+    this.dailyVolumes = Object.freeze([...dailyVolumes]);
+    freezeRecord(this);
+  }
+}
+
+export class HyperliquidUserFill {
+  readonly orderId: bigint;
+  readonly tradeId: bigint;
+  readonly twapId: bigint | null;
+  constructor(
+    readonly coin: string,
+    readonly price: Decimal,
+    readonly size: Decimal,
+    readonly side: string,
+    readonly time: Timestamp,
+    readonly startPosition: Decimal,
+    readonly direction: string,
+    readonly closedPnl: Decimal,
+    readonly hash: string,
+    orderId: bigint,
+    readonly crossed: boolean,
+    readonly fee: Decimal,
+    readonly builderFee: Decimal | null,
+    tradeId: bigint,
+    readonly feeToken: string,
+    twapId: bigint | null,
+    readonly rawJson: string,
+  ) {
+    this.orderId = checkedU64(orderId, "orderId");
+    this.tradeId = checkedU64(tradeId, "tradeId");
+    this.twapId = twapId === null ? null : checkedU64(twapId, "twapId");
+    freezeRecord(this);
+  }
+}
+
+export type HyperliquidOrderReference =
+  | { readonly kind: "order_id"; readonly value: bigint }
+  | { readonly kind: "client_order_id"; readonly value: string };
+
+export class HyperliquidOpenOrder {
+  readonly orderId: bigint;
+  constructor(
+    readonly coin: string,
+    readonly limitPrice: Decimal,
+    orderId: bigint,
+    readonly side: string,
+    readonly size: Decimal,
+    readonly timestamp: Timestamp,
+    readonly rawJson: string,
+  ) {
+    this.orderId = checkedU64(orderId, "orderId");
+    freezeRecord(this);
+  }
+}
+
+export class HyperliquidOrderDetail {
+  readonly orderId: bigint;
+  constructor(
+    readonly coin: string,
+    readonly side: string,
+    readonly limitPrice: Decimal,
+    readonly size: Decimal,
+    orderId: bigint,
+    readonly timestamp: Timestamp,
+    readonly triggerCondition: string,
+    readonly isTrigger: boolean,
+    readonly triggerPrice: Decimal,
+    readonly childrenJson: string,
+    readonly isPositionTpsl: boolean,
+    readonly reduceOnly: boolean,
+    readonly orderType: string,
+    readonly originalSize: Decimal,
+    readonly timeInForce: string | null,
+    readonly clientOrderId: string | null,
+    readonly rawJson: string,
+  ) {
+    this.orderId = checkedU64(orderId, "orderId");
+    freezeRecord(this);
+  }
+}
+
+export class HyperliquidOrderInfo {
+  constructor(
+    readonly order: HyperliquidOrderDetail,
+    readonly status: string,
+    readonly statusTimestamp: Timestamp,
+    readonly rawJson: string,
+  ) { freezeRecord(this); }
+}
+
+export type HyperliquidOrderStatusResponse =
+  | { readonly kind: "order"; readonly value: HyperliquidOrderInfo }
+  | { readonly kind: "unknown_order" }
+  | { readonly kind: "other"; readonly status: string; readonly rawJson: string };
+
+export class HyperliquidPortfolioPoint {
+  constructor(readonly time: Timestamp, readonly value: Decimal) { freezeRecord(this); }
+}
+
+export class HyperliquidPortfolioPeriod {
+  readonly accountValueHistory: readonly HyperliquidPortfolioPoint[];
+  readonly pnlHistory: readonly HyperliquidPortfolioPoint[];
+  constructor(
+    readonly period: string,
+    accountValueHistory: readonly HyperliquidPortfolioPoint[],
+    pnlHistory: readonly HyperliquidPortfolioPoint[],
+    readonly volume: Decimal,
+  ) {
+    this.accountValueHistory = Object.freeze([...accountValueHistory]);
+    this.pnlHistory = Object.freeze([...pnlHistory]);
+    freezeRecord(this);
+  }
+}
+
+export class HyperliquidSubAccount {
+  constructor(
+    readonly name: string,
+    readonly user: string,
+    readonly master: string,
+    readonly perpetualStateJson: string,
+    readonly spotStateJson: string,
+  ) { freezeRecord(this); }
+}
+
+export class HyperliquidVaultEquity {
+  constructor(
+    readonly vaultAddress: string,
+    readonly equity: Decimal,
+    readonly lockedUntil: Timestamp | null,
+  ) { freezeRecord(this); }
 }
 
 export class CandleRequest {

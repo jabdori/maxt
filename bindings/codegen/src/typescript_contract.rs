@@ -329,9 +329,8 @@ mod tests {
 
         assert!(output.contains("export class Feature extends StringValue"));
         assert!(output.contains("static readonly Markets = new Feature(\"markets\")"));
-        assert!(output.contains(
-            "\"withdrawal_history\", \"deposit_lookup\", \"withdrawal_lookup\", \"withdrawal_cancellation\","
-        ));
+        assert!(output.contains("\"deposit_lookup\", \"travel_rule\""));
+        assert!(output.contains("\"withdrawal_history\", \"withdrawal_lookup\""));
         assert!(output.contains("static readonly values: readonly Feature[]"));
         assert!(output.contains("get flipped(): Side"));
         assert!(output.contains("readonly seconds: number | null"));

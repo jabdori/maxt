@@ -35,7 +35,7 @@ fn encode(raw: &str) -> String {
         .collect()
 }
 
-fn query(params: &[(&str, String)]) -> String {
+pub(super) fn query(params: &[(&str, String)]) -> String {
     params
         .iter()
         .map(|(key, value)| format!("{key}={}", encode(value)))

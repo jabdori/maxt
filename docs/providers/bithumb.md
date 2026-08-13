@@ -87,9 +87,9 @@ account streams.
 | `OrderRequest::reduce_only == true` | `Error::Unsupported` |
 | `cancel_order(...)`, `cancel_order_by_client_id(...)` | Return `()` after validating the cancellation acknowledgement |
 
-The common `Order` keeps normalized fields only. Bithumb-specific cancellation
-and self-trade prevention fields and the detailed `trades` array are not exposed
-yet.
+The common `Order` keeps normalized fields only. Use `order_detail(request)`
+when Bithumb-specific cancellation, self-trade-prevention, fee, and detailed
+trade fields are needed.
 
 Access the following provider-specific methods through `Client::adapter()`.
 
@@ -100,6 +100,10 @@ Access the following provider-specific methods through `Client::adapter()`.
 | `notices(count)` | `GET /v1/notices`; `count: 1..=20`; `None -> provider default 5`; newest-first; `published_at` and `modified_at` converted from KST to UTC |
 | `transfer_fees(currency)` | `GET /v2/fee/inout/{currency}`; an asset symbol or `ALL`; per-network deposit fee/minimum and a fixed or rate-based withdrawal fee rule; not account-specific availability |
 | `api_keys()` | Authenticated `GET /v1/api_keys`; each registered access-key identifier and its expiration time |
+| `withdrawal_addresses()` | Authenticated, read-only `GET /v1/withdraws/coin_addresses`; registered withdrawal allowlist-address metadata. This is distinct from `prepare_withdrawal(...)`: it neither validates a prospective withdrawal nor returns a common withdrawal quote. Fixture-verified only |
+| `order_detail(request)` | Authenticated `GET /v1/order`; accepts an expected market and UUID and/or client order ID (UUID takes precedence). Preserves Bithumb's detailed fills, fees, cancellation, self-trade-prevention, and time-in-force fields. Fixture-verified only |
+| `order_list(request)` | Authenticated provider-specific `GET /v1/orders`, distinct from common `open_orders*`; retains every field returned by Bithumb's legacy list rather than reducing rows to common `Order`. Supports an optional market, either `state` or `states` (not both), UUID and client-order-ID lists of up to 100 each (UUIDs take precedence), and `page`/`limit`/`order_by` (`page >= 1`; `limit: 1..=100`; default order is newest first). Fixture-verified only |
+| `closed_orders(request)` | Authenticated provider-specific `GET /v2/orders/history`, complementary to common `order_history(request)`. It retains the official v2 fee, cancellation, self-trade-prevention, and time-in-force metadata rather than reducing rows to common `Order`. An optional market, mutually exclusive `state` or `states[]`, start/end times no more than seven days apart, `limit: 1..=1_000`, `order_by`, and opaque `next_key` cursor are supported. Provider times are sent directly as milliseconds; unlike common history's exclusive-end adaptation, no boundary inclusion is claimed. The page preserves `data`, `has_next`, and `next_key`; rows retain raw status/type strings and optional price, creation time, client-order, and cancellation fields. Fixture-verified only; no live account read or trade has run |
 | `krw_withdrawals(request)`, `krw_deposits(request)` | Authenticated KRW transfer history. Optional state, UUID, transaction-ID, page, limit, and ordering filters are preserved; provider status stays a string for forward compatibility |
 | `withdraw_krw(request)`, `deposit_krw(request)` | Financial writes using `amount`. Bithumb requires its registered account and Kakao second-factor flow; maxt neither accepts nor stores bank or second-factor credentials. Fixture-verified only; no live KRW transfer is submitted |
 | `pending_orders(request)` | Authenticated `GET /v2/orders/pending`; optional market, `wait` or `watch` state, `1..=100` limit, ascending or descending order, and an opaque `next_key` cursor in `Page::next` |
@@ -112,7 +116,7 @@ credentials. `twap_orders(request)` is a read-only history query; it supports
 the `progress`, `done`, and `cancel` states, optional TWAP IDs, a cursor, a
 `1..=100` page size, and ascending or descending order.
 
-```rust
+```rust,ignore
 let page = adapter
     .twap_orders(
         &BithumbTwapOrdersRequest::new()
@@ -151,11 +155,14 @@ public candle streams are not supported.
 - [Notices](https://apidocs.bithumb.com/reference/%EA%B3%B5%EC%A7%80%EC%82%AC%ED%95%AD-%EC%A1%B0%ED%9A%8C.md)
 - [Transfer fees](https://apidocs.bithumb.com/reference/%EC%9E%85%EC%B6%9C%EA%B8%88-%EC%88%98%EC%88%98%EB%A3%8C-%EC%A1%B0%ED%9A%8C.md)
 - [API keys](https://apidocs.bithumb.com/reference/api-%ED%82%A4-%EB%A6%AC%EC%8A%A4%ED%8A%B8-%EC%A1%B0%ED%9A%8C.md)
+- [Withdrawal allowlist addresses](https://apidocs.bithumb.com/reference/%EC%B6%9C%EA%B8%88-%ED%97%88%EC%9A%A9-%EC%A3%BC%EC%86%8C-%EB%A6%AC%EC%8A%A4%ED%8A%B8-%EC%A1%B0%ED%9A%8C)
 - [KRW withdrawal history](https://apidocs.bithumb.com/reference/%EC%9B%90%ED%99%94-%EC%B6%9C%EA%B8%88-%EB%A6%AC%EC%8A%A4%ED%8A%B8-%EC%A1%B0%ED%9A%8C)
 - [KRW deposit history](https://apidocs.bithumb.com/reference/%EC%9B%90%ED%99%94-%EC%9E%85%EA%B8%88-%EB%A6%AC%EC%8A%A4%ED%8A%B8-%EC%A1%B0%ED%9A%8C)
 - [Pending orders](https://apidocs.bithumb.com/reference/%EB%8C%80%EA%B8%B0-%EC%A3%BC%EB%AC%B8-%EB%AA%A9%EB%A1%9D-%EC%A1%B0%ED%9A%8C.md)
 - [Batch order](https://apidocs.bithumb.com/reference/%EB%8B%A4%EA%B1%B4-%EC%A3%BC%EB%AC%B8-%EC%9A%94%EC%B2%AD)
 - [Batch order cancellation](https://apidocs.bithumb.com/reference/%EB%8B%A4%EA%B1%B4-%EC%A3%BC%EB%AC%B8-%EC%B7%A8%EC%86%8C-%EC%A0%91%EC%88%98)
+- [Get order detail](https://apidocs.bithumb.com/reference/%EA%B0%9C%EB%B3%84-%EC%A3%BC%EB%AC%B8-%EC%A1%B0%ED%9A%8C)
+- [Order list](https://apidocs.bithumb.com/reference/%EC%A3%BC%EB%AC%B8-%EB%A6%AC%EC%8A%A4%ED%8A%B8-%EC%A1%B0%ED%9A%8C)
 - [TWAP order history](https://apidocs.bithumb.com/reference/twap-%EC%A3%BC%EB%AC%B8%EB%82%B4%EC%97%AD-%EC%A1%B0%ED%9A%8C)
 - [TWAP order request](https://apidocs.bithumb.com/reference/twap-%EC%A3%BC%EB%AC%B8-%EC%9A%94%EC%B2%AD)
 - [TWAP order cancellation](https://apidocs.bithumb.com/reference/twap-%EC%A3%BC%EB%AC%B8-%EC%B7%A8%EC%86%8C)
@@ -163,6 +170,7 @@ public candle streams are not supported.
 - [WebSocket](https://apidocs.bithumb.com/reference/%EA%B8%B0%EB%B3%B8-%EC%A0%95%EB%B3%B4.md)
 - [Orders](https://apidocs.bithumb.com/reference/%EC%A3%BC%EB%AC%B8-%EC%9A%94%EC%B2%AD.md)
 - [Get order](https://apidocs.bithumb.com/reference/%EA%B0%9C%EB%B3%84-%EC%A3%BC%EB%AC%B8-%EC%A1%B0%ED%9A%8C)
-- [Closed orders](https://apidocs.bithumb.com/reference/%EC%A2%85%EB%A3%8C-%EC%A3%BC%EB%AC%B8-%EB%AA%A9%EB%A1%9D-%EC%A1%B0%ED%9A%8C)
+- [Closed orders](https://apidocs.bithumb.com/reference/%EC%A2%85%EB%A3%8C-%EC%A3%BC%EB%AC%B8-%EB%AA%A9%EB%A1%9D-%EC%A1%B0%ED%9A%8C.md)
+- [Authentication token](https://apidocs.bithumb.com/docs/%EC%9D%B8%EC%A6%9D-%ED%86%A0%ED%81%B0-%EC%83%9D%EC%84%B1%ED%95%98%EA%B8%B0)
 
 [Common API](../common-api.md) · [Provider support](../providers.md)

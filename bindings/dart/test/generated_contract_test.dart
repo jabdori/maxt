@@ -24,6 +24,14 @@ void main() {
     expect(request.statuses, isEmpty);
   });
 
+  test('Bithumb closed orders defaults to every final state', () {
+    const request = BithumbClosedOrdersRequest();
+
+    expect(request.market, isNull);
+    expect(request.state, isNull);
+    expect(request.states, isEmpty);
+  });
+
   test('generated public API inventories stay explicit', () {
     final adapter = InventoryAdapter();
     final actualAdapter = <String, Object>{
@@ -127,7 +135,10 @@ void main() {
         'orderbookInstruments': (UpbitAdapter value) =>
             value.orderbookInstruments,
         'marketEvents': (UpbitAdapter value) => value.marketEvents,
+        'listSubscriptions': (UpbitAdapter value) => value.listSubscriptions,
         'testOrder': (UpbitAdapter value) => value.testOrder,
+        'orderDetail': (UpbitAdapter value) => value.orderDetail,
+        'closedOrders': (UpbitAdapter value) => value.closedOrders,
         'depositInfo': (UpbitAdapter value) => value.depositInfo,
         'travelRuleVasps': (UpbitAdapter value) => value.travelRuleVasps,
         'verifyTravelRuleByUuid': (UpbitAdapter value) =>
@@ -137,6 +148,16 @@ void main() {
         'batchCancelOpenOrders': (UpbitAdapter value) =>
             value.batchCancelOpenOrders,
         'cancelAndNewOrder': (UpbitAdapter value) => value.cancelAndNewOrder,
+        'depositKrw': (UpbitAdapter value) => value.depositKrw,
+        'withdrawKrw': (UpbitAdapter value) => value.withdrawKrw,
+        'apiKeys': (UpbitAdapter value) => value.apiKeys,
+        'listPockets': (UpbitAdapter value) => value.listPockets,
+        'listPocketApiKeys': (UpbitAdapter value) => value.listPocketApiKeys,
+        'subPocketBalances': (UpbitAdapter value) => value.subPocketBalances,
+        'universalTransfer': (UpbitAdapter value) => value.universalTransfer,
+        'universalTransfers': (UpbitAdapter value) => value.universalTransfers,
+        'subPocketTransfer': (UpbitAdapter value) => value.subPocketTransfer,
+        'subPocketTransfers': (UpbitAdapter value) => value.subPocketTransfers,
       },
       'bithumb': {
         'marketWarnings': (BithumbAdapter value) => value.marketWarnings,
@@ -149,19 +170,30 @@ void main() {
         'krwDeposits': (BithumbAdapter value) => value.krwDeposits,
         'depositKrw': (BithumbAdapter value) => value.depositKrw,
         'pendingOrders': (BithumbAdapter value) => value.pendingOrders,
+        'closedOrders': (BithumbAdapter value) => value.closedOrders,
         'batchOrders': (BithumbAdapter value) => value.batchOrders,
         'twapOrders': (BithumbAdapter value) => value.twapOrders,
         'createTwapOrder': (BithumbAdapter value) => value.createTwapOrder,
         'cancelTwapOrder': (BithumbAdapter value) => value.cancelTwapOrder,
+        'withdrawalAddresses': (BithumbAdapter value) =>
+            value.withdrawalAddresses,
+        'orderDetail': (BithumbAdapter value) => value.orderDetail,
+        'orderList': (BithumbAdapter value) => value.orderList,
       },
       'binance': {
         'venue': (BinanceAdapter value) => value.venue,
         'spotSymbolFilters': (BinanceAdapter value) => value.spotSymbolFilters,
         'spotOrder': (BinanceAdapter value) => value.spotOrder,
+        'spotAveragePrice': (BinanceAdapter value) => value.spotAveragePrice,
         'markPrice': (BinanceAdapter value) => value.markPrice,
         'markPrices': (BinanceAdapter value) => value.markPrices,
         'openInterest': (BinanceAdapter value) => value.openInterest,
         'aggregateTrades': (BinanceAdapter value) => value.aggregateTrades,
+        'accountTrades': (BinanceAdapter value) => value.accountTrades,
+        'c2cTradeHistory': (BinanceAdapter value) => value.c2cTradeHistory,
+        'testOrder': (BinanceAdapter value) => value.testOrder,
+        'cancelAllOpenOrders': (BinanceAdapter value) =>
+            value.cancelAllOpenOrders,
         'usdMCreateListenKey': (BinanceAdapter value) =>
             value.usdMCreateListenKey,
         'usdMKeepaliveListenKey': (BinanceAdapter value) =>
@@ -172,9 +204,22 @@ void main() {
       'hyperliquid': {
         'isTestnet': (HyperliquidAdapter value) => value.isTestnet,
         'allMids': (HyperliquidAdapter value) => value.allMids,
+        'userFills': (HyperliquidAdapter value) => value.userFills,
+        'userFillsByTime': (HyperliquidAdapter value) => value.userFillsByTime,
+        'basicOpenOrders': (HyperliquidAdapter value) => value.basicOpenOrders,
+        'orderStatus': (HyperliquidAdapter value) => value.orderStatus,
+        'historicalOrders': (HyperliquidAdapter value) => value.historicalOrders,
         'nonFundingLedger': (HyperliquidAdapter value) =>
             value.nonFundingLedger,
         'assetContext': (HyperliquidAdapter value) => value.assetContext,
+        'userRateLimit': (HyperliquidAdapter value) => value.userRateLimit,
+        'userRole': (HyperliquidAdapter value) => value.userRole,
+        'referral': (HyperliquidAdapter value) => value.referral,
+        'userFees': (HyperliquidAdapter value) => value.userFees,
+        'portfolio': (HyperliquidAdapter value) => value.portfolio,
+        'subAccounts': (HyperliquidAdapter value) => value.subAccounts,
+        'userVaultEquities': (HyperliquidAdapter value) =>
+            value.userVaultEquities,
       },
     };
     expect(

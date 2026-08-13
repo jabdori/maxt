@@ -6,9 +6,23 @@
 methods remain on `A` and are available through `Client::adapter()`.
 `Client<Box<dyn Adapter>>` supports runtime provider selection.
 
-## API surface
+## Access configuration
 
-Configure credentials on the adapter before `Client::new(adapter)`.
+Public REST, market streams, and supported public funding-history calls work
+with a bare built-in adapter. The private rows below are account-scoped or
+write operations; their configuration is provider-specific:
+
+- Binance, Upbit, and Bithumb use their documented credential pairs.
+- Hyperliquid uses a public query address for account reads and a local signer
+  for signed actions. `with_wallet(address, private_key)` configures both.
+
+Configure the adapter before `Client::new(adapter)`. `supports(feature)` tells
+whether the configured adapter exposes a feature, but request validation,
+market/region selection, and provider permissions still apply. See
+[provider support](providers.md) for constructors and each provider reference
+for exact requirements.
+
+## API surface
 
 | Surface | Methods |
 | --- | --- |
@@ -144,7 +158,9 @@ healthy traffic. After `AccountEvent::Reconnected`, reload state with
 
 ## Capability checks
 
-`Client::supports(feature)` performs no network I/O.
+`Client::supports(feature)` performs no network I/O. A `false` result means
+either required adapter configuration is absent or the operation is
+structurally unsupported.
 
 | State | Contract |
 | --- | --- |
@@ -257,6 +273,9 @@ rejects an input cursor.
 
 `Client::adapter(&self) -> &A` exposes non-portable batching, native context,
 alert, and ledger methods. See each provider reference.
+
+For recorded endpoint mapping and its implementation/validation status, see
+the generated [endpoint coverage reference](../bindings/common/generated/api.md).
 
 ## External adapters
 

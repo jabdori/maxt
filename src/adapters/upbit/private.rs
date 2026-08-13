@@ -26,7 +26,8 @@ use crate::types::{
 use super::parse::{self, EXCHANGE};
 use super::{
     UpbitBatchCancelRequest, UpbitBatchCancelScope, UpbitCancelAndNewOrder,
-    UpbitCancelAndNewOrderRequest, UpbitCredentials, UpbitOrderDirection, UpbitOrderReference,
+    UpbitCancelAndNewOrderRequest, UpbitClosedOrder, UpbitClosedOrdersRequest, UpbitCredentials,
+    UpbitOrderDetail, UpbitOrderDetailRequest, UpbitOrderDirection, UpbitOrderReference,
     UpbitOrderVolume, UpbitSmpType, rest, stream,
 };
 
@@ -102,6 +103,7 @@ struct Claims<'a> {
 /// `query` is the exact `a=1&b=2` parameter string. An empty query omits both
 /// query-hash claims.
 fn token(credentials: &UpbitCredentials, nonce: &str, query: &str) -> Result<String> {
+    credentials.validate()?;
     if nonce.trim().is_empty() {
         return Err(Error::auth("an Upbit token needs a nonce"));
     }
@@ -158,11 +160,15 @@ pub(crate) fn query(params: &[(&'static str, String)]) -> Result<String> {
         }
     }
 
-    Ok(params
+    Ok(unencoded_query(params))
+}
+
+fn unencoded_query(params: &[(&str, String)]) -> String {
+    params
         .iter()
         .map(|(name, value)| format!("{name}={value}"))
         .collect::<Vec<_>>()
-        .join("&"))
+        .join("&")
 }
 
 /// Builds the string hashed for a JSON request body.
@@ -267,6 +273,37 @@ pub(crate) fn order_by_client_id_request(
     order_request_by(credentials, market, "identifier", "client_id", client_id)
 }
 
+/// Builds the documented `/v1/order` lookup, including both identifiers when
+/// present. Upbit resolves `uuid` when both identifiers are supplied.
+pub(crate) fn order_detail_request(
+    credentials: &UpbitCredentials,
+    request: &UpbitOrderDetailRequest,
+) -> Result<HttpRequest> {
+    parse::native_symbol(&request.market)?;
+
+    let mut params = Vec::with_capacity(2);
+    if let Some(uuid) = &request.uuid {
+        validate_order_reference(uuid, "uuid")?;
+        params.push(("uuid", uuid.clone()));
+    }
+    if let Some(identifier) = &request.identifier {
+        validate_lookup_identifier(identifier)?;
+        params.push(("identifier", identifier.clone()));
+    }
+    if params.is_empty() {
+        return Err(Error::invalid_request(
+            "identifier",
+            "set an Upbit UUID or client order identifier",
+        ));
+    }
+
+    let signed_query = unencoded_query(&params);
+    let request_query = rest::query(&params);
+    Ok(HttpRequest::get(ORDER_PATH)
+        .query(request_query)
+        .header(AUTHORIZATION, authorization(credentials, &signed_query)?))
+}
+
 pub(crate) fn orders_by_ids_request(
     credentials: &UpbitCredentials,
     request: &OrderLookupRequest,
@@ -329,6 +366,87 @@ pub(crate) fn order_history_request(
     }
     params.push(("limit", limit.to_string()));
     params.push(("order_by", "desc".to_string()));
+
+    let query = query(&params)?;
+    Ok(HttpRequest::get(ORDER_HISTORY_PATH)
+        .query(query.clone())
+        .header(AUTHORIZATION, authorization(credentials, &query)?))
+}
+
+pub(crate) fn closed_orders_request(
+    credentials: &UpbitCredentials,
+    request: &UpbitClosedOrdersRequest,
+) -> Result<HttpRequest> {
+    if request.state.is_some() && !request.states.is_empty() {
+        return Err(Error::invalid_request(
+            "states",
+            "set either `state` or `states`, not both",
+        ));
+    }
+    if matches!(request.limit, Some(limit) if !(1..=1_000).contains(&limit)) {
+        return Err(Error::invalid_request(
+            "limit",
+            format!(
+                "upbit serves 1 to 1000 closed orders per request, not {}",
+                request.limit.unwrap_or_default()
+            ),
+        ));
+    }
+    let start_time = request.start_time.map(|time| time.as_millis());
+    let end_time = request.end_time.map(|time| time.as_millis());
+    if let (Some(start), Some(end)) = (request.start_time, request.end_time) {
+        if end.as_nanos() <= start.as_nanos() {
+            return Err(Error::invalid_request(
+                "end_time",
+                "must be later than `start_time`",
+            ));
+        }
+    }
+    if let (Some(start), Some(end)) = (start_time, end_time) {
+        const SEVEN_DAYS_MILLIS: i64 = 7 * 24 * 60 * 60 * 1_000;
+        let width = end
+            .checked_sub(start)
+            .ok_or_else(|| Error::invalid_request("end_time", "must be later than `start_time`"))?;
+        if width > SEVEN_DAYS_MILLIS {
+            return Err(Error::invalid_request(
+                "end_time",
+                "upbit closed-order windows cannot exceed seven days",
+            ));
+        }
+    }
+
+    let mut params = Vec::new();
+    if let Some(market) = &request.market {
+        params.push(("market", parse::native_symbol(market)?));
+    }
+    if let Some(state) = request.state {
+        params.push(("state", state.wire_name().to_string()));
+    }
+    params.extend(
+        request
+            .states
+            .iter()
+            .map(|state| ("states[]", state.wire_name().to_string())),
+    );
+    if let Some(start) = start_time {
+        params.push(("start_time", start.to_string()));
+    }
+    if let Some(end) = end_time {
+        params.push(("end_time", end.to_string()));
+    }
+    if let Some(limit) = request.limit {
+        params.push(("limit", limit.to_string()));
+    }
+    if let Some(order_by) = request.order_by {
+        params.push((
+            "order_by",
+            match order_by {
+                UpbitOrderDirection::Ascending => "asc",
+                UpbitOrderDirection::Descending => "desc",
+            }
+            .to_string(),
+        ));
+    }
 
     let query = query(&params)?;
     Ok(HttpRequest::get(ORDER_HISTORY_PATH)
@@ -819,13 +937,33 @@ fn order_params(request: &OrderRequest) -> Result<Vec<(&'static str, String)>> {
 }
 
 fn validate_client_order_id(value: &str) -> Result<()> {
+    validate_order_identifier(value).map_err(|error| match error {
+        Error::InvalidRequest { detail, .. } => Error::InvalidRequest {
+            field: "client_id".to_string(),
+            detail,
+        },
+        other => other,
+    })
+}
+
+fn validate_order_identifier(value: &str) -> Result<()> {
     if (1..=64).contains(&value.len()) && value.bytes().all(is_url_safe) {
         return Ok(());
     }
     Err(Error::invalid_request(
-        "client_id",
+        "identifier",
         "an Upbit client order id must contain 1-64 RFC 3986 unreserved ASCII bytes",
     ))
+}
+
+fn validate_lookup_identifier(value: &str) -> Result<()> {
+    if value.is_empty() || value.bytes().any(|byte| byte.is_ascii_control()) {
+        return Err(Error::invalid_request(
+            "identifier",
+            "must be non-empty and contain no ASCII control bytes",
+        ));
+    }
+    Ok(())
 }
 
 /// Maps time in force, omitting values implicit in the order type.
@@ -932,6 +1070,27 @@ pub(crate) async fn order_by_client_id(
     )
 }
 
+/// Reads a single Upbit order without collapsing provider-specific fields.
+pub(crate) async fn order_detail(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    request: &UpbitOrderDetailRequest,
+) -> Result<UpbitOrderDetail> {
+    let body = rest::send(http, &order_detail_request(credentials, request)?).await?;
+    let detail = parse::order_detail(parse::json::<parse::RawOrderDetail>(&body)?)?;
+    if detail.market == request.market {
+        Ok(detail)
+    } else {
+        Err(Error::invalid_request(
+            "market",
+            format!(
+                "the requested identifier belongs to {}, not {}",
+                detail.market, request.market
+            ),
+        ))
+    }
+}
+
 pub(crate) async fn orders_by_ids(
     credentials: &UpbitCredentials,
     http: &HttpTransport,
@@ -955,6 +1114,18 @@ pub(crate) async fn order_history(
         .map(parse::order)
         .collect::<Result<_>>()?;
     Ok(Page { items, next: None })
+}
+
+pub(crate) async fn closed_orders(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    request: &UpbitClosedOrdersRequest,
+) -> Result<Vec<UpbitClosedOrder>> {
+    let body = rest::send(http, &closed_orders_request(credentials, request)?).await?;
+    parse::json::<Vec<parse::RawClosedOrder>>(&body)?
+        .into_iter()
+        .map(parse::closed_order)
+        .collect()
 }
 
 fn checked_market(order: Order, expected: &Market) -> Result<Order> {
@@ -1211,6 +1382,9 @@ mod tests {
     // sha512("market=KRW-BTC&side=bid&volume=0.01&price=100000000&ord_type=limit")
     const LIMIT_ORDER_HASH: &str = "04f10e7f849051645e088a4217a3e1f938268054df0e99b93ac74627b11f6931\
                                     e501657d777720f9d19fc2a6649e3afc4a6e4e83ccf3d0569be6bde4633750dc";
+    // sha512("market=KRW-BTC&states[]=done&states[]=cancel&start_time=1700000000123&end_time=1700001000000&limit=1000&order_by=asc")
+    const CLOSED_ORDERS_HASH: &str = "b6d2f7ec78612f6b4a95466f29493f0c0ee37acc4f640093dcb5919f9c277eeb\
+                                      a5749324e6d1c0b0e287b6a6bc92efb85f51ee09d506e43c44c864d8559576bc";
 
     const ORDER_ID: &str = "ac2dc2a3-fce9-40a2-a4f6-5987c25c438f";
 
@@ -1467,6 +1641,132 @@ mod tests {
 
         assert_eq!(by_exchange.target(), format!("/v1/order?uuid={ORDER_ID}"));
         assert_eq!(by_client.target(), "/v1/order?identifier=client-1");
+    }
+
+    #[test]
+    fn order_detail_sends_both_identifiers_and_hashes_the_unencoded_query() {
+        // Shape reference: https://docs.upbit.com/kr/reference/get-order.md
+        let detail = UpbitOrderDetailRequest::by_uuid(btc_krw(), ORDER_ID).identifier("client-1");
+        let request =
+            order_detail_request(&credentials(), &detail).expect("a signable detail request");
+
+        let expected = format!("uuid={ORDER_ID}&identifier=client-1");
+        assert_eq!(request.target(), format!("/v1/order?{expected}"));
+        assert_eq!(
+            claims_of(&authorization_of(&request)).query_hash.as_deref(),
+            Some(hex::encode(Sha512::digest(expected.as_bytes())).as_str())
+        );
+    }
+
+    #[test]
+    fn order_detail_percent_encodes_a_reserved_identifier_but_hashes_its_original_text() {
+        // `identifier` is `allowReserved` in the official OpenAPI contract.
+        let detail = UpbitOrderDetailRequest::by_identifier(btc_krw(), "client:42+ready/now");
+        let request =
+            order_detail_request(&credentials(), &detail).expect("a signable detail request");
+
+        assert_eq!(
+            request.target(),
+            "/v1/order?identifier=client%3A42%2Bready%2Fnow"
+        );
+        assert_eq!(
+            claims_of(&authorization_of(&request)).query_hash.as_deref(),
+            Some(hex::encode(Sha512::digest(b"identifier=client:42+ready/now")).as_str())
+        );
+    }
+
+    #[test]
+    fn order_detail_rejects_missing_or_unsafe_identifiers_before_signing() {
+        for detail in [
+            UpbitOrderDetailRequest::new(btc_krw()),
+            UpbitOrderDetailRequest::by_uuid(btc_krw(), "bad&uuid"),
+            UpbitOrderDetailRequest::by_identifier(btc_krw(), "bad\nidentifier"),
+            UpbitOrderDetailRequest::by_uuid(
+                Market::spot(Exchange::Binance, "BTC", "USDT"),
+                ORDER_ID,
+            ),
+        ] {
+            assert!(order_detail_request(&credentials(), &detail).is_err());
+        }
+
+        assert!(matches!(
+            order_detail_request(
+                &credentials(),
+                &UpbitOrderDetailRequest::by_identifier(btc_krw(), "bad\nidentifier"),
+            ),
+            Err(Error::InvalidRequest { field, .. }) if field == "identifier"
+        ));
+    }
+
+    #[test]
+    fn order_detail_fixture_preserves_provider_only_fields_and_every_fill() {
+        // Successful Example(market): https://docs.upbit.com/kr/reference/get-order.md
+        let detail = parse::order_detail(
+            parse::json::<parse::RawOrderDetail>(
+                r#"{
+                    "market":"KRW-USDT",
+                    "uuid":"3b67e543-8ad3-48d0-8451-0dad315cae73",
+                    "side":"ask",
+                    "ord_type":"market",
+                    "state":"done",
+                    "created_at":"2025-08-09T16:44:00+09:00",
+                    "volume":"5.377594",
+                    "remaining_volume":"0",
+                    "executed_volume":"5.377594",
+                    "reserved_fee":"0",
+                    "remaining_fee":"0",
+                    "paid_fee":"3.697095875",
+                    "locked":"0",
+                    "prevented_volume":"0",
+                    "prevented_locked":"0",
+                    "trades_count":1,
+                    "identifier":"strategy-42",
+                    "smp_type":"provider_future_smp",
+                    "trades":[{
+                        "market":"KRW-USDT",
+                        "uuid":"795dff29-bba6-49b2-baab-63473ab7931c",
+                        "price":"1375",
+                        "volume":"5.377594",
+                        "funds":"7394.19175",
+                        "trend":"provider_future_trend",
+                        "created_at":"2025-08-09T16:44:00.597751+09:00",
+                        "side":"ask"
+                    }]
+                }"#,
+            )
+            .expect("official-shaped detail payload"),
+        )
+        .expect("a complete Upbit order");
+
+        assert_eq!(detail.market, Market::spot(Exchange::Upbit, "USDT", "KRW"));
+        assert_eq!(detail.uuid, "3b67e543-8ad3-48d0-8451-0dad315cae73");
+        assert_eq!(detail.price, None);
+        assert_eq!(detail.volume, Some(Decimal::new(5_377_594, 6)));
+        assert_eq!(detail.paid_fee, Decimal::new(3_697_095_875, 9));
+        assert_eq!(detail.identifier.as_deref(), Some("strategy-42"));
+        assert_eq!(detail.smp_type.as_deref(), Some("provider_future_smp"));
+        assert_eq!(detail.trades_count, 1);
+        assert_eq!(detail.trades[0].funds, Decimal::new(739_419_175, 5));
+        assert_eq!(detail.trades[0].trend, "provider_future_trend");
+    }
+
+    #[test]
+    fn order_detail_rejects_a_fill_count_that_disagrees_with_the_payload() {
+        let error = parse::order_detail(
+            parse::json::<parse::RawOrderDetail>(
+                r#"{
+                    "market":"KRW-BTC","uuid":"order-1","side":"bid","ord_type":"limit",
+                    "price":"1","state":"done","created_at":"2025-08-09T16:44:00+09:00",
+                    "volume":"1","remaining_volume":"0","executed_volume":"1",
+                    "reserved_fee":"0","remaining_fee":"0","paid_fee":"0","locked":"0",
+                    "prevented_volume":"0","prevented_locked":"0","trades_count":1,"trades":[]
+                }"#,
+            )
+            .expect("response shape"),
+        )
+        .expect_err("inconsistent fill count");
+
+        assert!(matches!(error, Error::Decode { .. }));
     }
 
     #[test]
@@ -1768,6 +2068,138 @@ mod tests {
             claims_of(&authorization_of(&request)).query_hash.as_deref(),
             Some(hex::encode(Sha512::digest(request.query.as_bytes())).as_str())
         );
+    }
+
+    #[test]
+    fn closed_orders_repeats_array_keys_and_hashes_the_exact_query() {
+        let request = UpbitClosedOrdersRequest::new()
+            .market(btc_krw())
+            .states(vec![
+                super::super::UpbitClosedOrderState::Done,
+                super::super::UpbitClosedOrderState::Cancel,
+            ])
+            .start_time(Timestamp::from_nanos(1_700_000_000_123_999_999))
+            .end_time(Timestamp::from_millis(1_700_001_000_000))
+            .limit(1_000)
+            .order_by(UpbitOrderDirection::Ascending);
+        let request = closed_orders_request(&credentials(), &request).expect("closed orders");
+
+        assert_eq!(
+            request.target(),
+            "/v1/orders/closed?market=KRW-BTC&states[]=done&states[]=cancel&start_time=1700000000123&end_time=1700001000000&limit=1000&order_by=asc"
+        );
+        assert_eq!(
+            claims_of(&authorization_of(&request)).query_hash.as_deref(),
+            Some(CLOSED_ORDERS_HASH)
+        );
+    }
+
+    #[test]
+    fn closed_orders_validates_state_limit_and_seven_day_window() {
+        use super::super::UpbitClosedOrderState::{Cancel, Done};
+
+        let conflict = UpbitClosedOrdersRequest::new()
+            .state(Done)
+            .states(vec![Cancel]);
+        assert!(matches!(
+            closed_orders_request(&credentials(), &conflict),
+            Err(Error::InvalidRequest { field, .. }) if field == "states"
+        ));
+
+        for limit in [0, 1_001] {
+            assert!(matches!(
+                closed_orders_request(
+                    &credentials(),
+                    &UpbitClosedOrdersRequest::new().limit(limit)
+                ),
+                Err(Error::InvalidRequest { field, .. }) if field == "limit"
+            ));
+        }
+
+        for end in [0, 7 * 24 * 60 * 60 * 1_000 + 2] {
+            let invalid = UpbitClosedOrdersRequest::new()
+                .start_time(Timestamp::from_millis(1))
+                .end_time(Timestamp::from_millis(end));
+            assert!(matches!(
+                closed_orders_request(&credentials(), &invalid),
+                Err(Error::InvalidRequest { field, .. }) if field == "end_time"
+            ));
+        }
+
+        let exact_limit = UpbitClosedOrdersRequest::new()
+            .start_time(Timestamp::from_millis(1))
+            .end_time(Timestamp::from_millis(1 + 7 * 24 * 60 * 60 * 1_000));
+        assert!(closed_orders_request(&credentials(), &exact_limit).is_ok());
+
+        let rounded_to_exact_limit = UpbitClosedOrdersRequest::new()
+            .start_time(Timestamp::from_nanos(100_000))
+            .end_time(Timestamp::from_nanos(604_800_000_200_000));
+        let rounded = closed_orders_request(&credentials(), &rounded_to_exact_limit)
+            .expect("the emitted millisecond range is exactly seven days");
+        assert!(rounded.target().contains("start_time=0&end_time=604800000"));
+
+        let emitted_over_limit = UpbitClosedOrdersRequest::new()
+            .start_time(Timestamp::from_nanos(100_000))
+            .end_time(Timestamp::from_nanos(604_800_001_000_000));
+        assert!(matches!(
+            closed_orders_request(&credentials(), &emitted_over_limit),
+            Err(Error::InvalidRequest { field, .. }) if field == "end_time"
+        ));
+    }
+
+    #[test]
+    fn closed_order_fixture_preserves_every_summary_field() {
+        let order = parse::closed_order(
+            parse::json::<parse::RawClosedOrder>(
+                r#"{
+                    "market":"SGD-BTC",
+                    "uuid":"closed-1",
+                    "side":"bid",
+                    "ord_type":"best",
+                    "state":"cancel",
+                    "created_at":"2026-08-12T01:02:03",
+                    "volume":"0.25",
+                    "price":"123.45",
+                    "remaining_volume":"0.05",
+                    "executed_volume":"0.20",
+                    "executed_funds":"24.69",
+                    "reserved_fee":"0.012345",
+                    "remaining_fee":"0.002345",
+                    "paid_fee":"0.01",
+                    "locked":"6.174845",
+                    "trades_count":2,
+                    "prevented_volume":"0.01",
+                    "prevented_locked":"1.2345",
+                    "time_in_force":"ioc",
+                    "identifier":"client-closed-1",
+                    "smp_type":"reduce"
+                }"#,
+            )
+            .expect("official closed-order shape"),
+        )
+        .expect("a valid closed order");
+
+        assert_eq!(order.market, Market::spot(Exchange::Upbit, "BTC", "SGD"));
+        assert_eq!(order.uuid, "closed-1");
+        assert_eq!(order.side, "bid");
+        assert_eq!(order.ord_type, "best");
+        assert_eq!(order.state, "cancel");
+        assert_eq!(order.created_at, Timestamp::from_secs(1_786_496_523));
+        assert_eq!(order.volume, Some(Decimal::new(25, 2)));
+        assert_eq!(order.price, Some(Decimal::new(12_345, 2)));
+        assert_eq!(order.remaining_volume, Decimal::new(5, 2));
+        assert_eq!(order.executed_volume, Decimal::new(20, 2));
+        assert_eq!(order.executed_funds, Some(Decimal::new(2_469, 2)));
+        assert_eq!(order.reserved_fee, Decimal::new(12_345, 6));
+        assert_eq!(order.remaining_fee, Decimal::new(2_345, 6));
+        assert_eq!(order.paid_fee, Decimal::new(1, 2));
+        assert_eq!(order.locked, Decimal::new(6_174_845, 6));
+        assert_eq!(order.trades_count, 2);
+        assert_eq!(order.prevented_volume, Decimal::new(1, 2));
+        assert_eq!(order.prevented_locked, Decimal::new(12_345, 4));
+        assert_eq!(order.time_in_force.as_deref(), Some("ioc"));
+        assert_eq!(order.identifier.as_deref(), Some("client-closed-1"));
+        assert_eq!(order.smp_type.as_deref(), Some("reduce"));
     }
 
     #[test]

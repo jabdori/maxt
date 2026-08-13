@@ -17,7 +17,8 @@ use crate::types::{
 };
 
 use super::{
-    BinanceAggregateTrade, BinanceMarkPrice, BinanceMarket, BinanceOpenInterest, market_status,
+    BinanceAggregateTrade, BinanceMarkPrice, BinanceMarket, BinanceOpenInterest,
+    BinanceSpotAveragePrice, market_status,
 };
 
 /// Reads a decimal out of the raw text Binance sent.
@@ -104,7 +105,7 @@ pub(super) struct RawTrade {
     pub(super) is_buyer_maker: bool,
 }
 
-/// One compressed aggregate trade from USD-M `/fapi/v1/aggTrades`.
+/// One compressed aggregate trade from Spot or USD-M.
 #[derive(Debug, Clone, Deserialize)]
 pub(super) struct RawAggregateTrade {
     /// Aggregate trade ID.
@@ -131,6 +132,9 @@ pub(super) struct RawAggregateTrade {
     /// Whether the buyer was the maker.
     #[serde(rename = "m")]
     pub(super) is_buyer_maker: bool,
+    /// Spot's best-price-match marker. USD-M does not include this field.
+    #[serde(rename = "M", default)]
+    pub(super) _is_best_price_match: Option<bool>,
 }
 
 /// A rolling 24-hour summary, from REST or from a ticker stream.
@@ -157,6 +161,15 @@ pub(super) struct RawTicker {
     /// figures. It is not the time of the last fill; Binance publishes no such
     /// field on either transport.
     #[serde(rename = "closeTime", alias = "C")]
+    pub(super) close_time: i64,
+}
+
+/// A Spot `/api/v3/avgPrice` response.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct RawSpotAveragePrice {
+    pub(super) mins: u32,
+    pub(super) price: String,
     pub(super) close_time: i64,
 }
 
@@ -402,6 +415,19 @@ pub(super) fn ticker(market: &Market, raw: &RawTicker) -> Result<Ticker> {
         low: Some(decimal(&raw.low_price, "lowPrice")?),
         volume: Some(decimal(&raw.volume, "volume")?),
         quote_volume: Some(decimal(&raw.quote_volume, "quoteVolume")?),
+    })
+}
+
+/// Converts a current Spot average price without rounding its decimal string.
+pub(super) fn spot_average_price(
+    market: &Market,
+    raw: &RawSpotAveragePrice,
+) -> Result<BinanceSpotAveragePrice> {
+    Ok(BinanceSpotAveragePrice {
+        market: market.clone(),
+        minutes: raw.mins,
+        price: decimal(&raw.price, "price")?,
+        close_time: millis(raw.close_time),
     })
 }
 

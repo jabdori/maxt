@@ -87,8 +87,8 @@ code로 보존합니다.
 | `OrderRequest::reduce_only == true` | `Error::Unsupported` |
 | `cancel_order(...)`, `cancel_order_by_client_id(...)` | 취소 응답을 검증한 뒤 `()` 반환 |
 
-공통 `Order`는 정규화한 필드만 제공합니다. Bithumb 전용 취소·자전거래 방지 필드와
-상세 `trades` 배열은 아직 노출하지 않습니다.
+공통 `Order`는 정규화한 필드만 제공합니다. Bithumb 전용 취소·자전거래 방지·수수료와
+상세 `trades` 필드가 필요하면 `order_detail(request)`를 사용하세요.
 
 다음 메서드는 `Client::adapter()`가 반환한 어댑터에서 호출합니다.
 
@@ -99,6 +99,10 @@ code로 보존합니다.
 | `notices(count)` | `GET /v1/notices`; `count: 1..=20`; `None → 거래소 기본값 5`; 최신순; `published_at`, `modified_at`을 KST에서 UTC로 변환 |
 | `transfer_fees(currency)` | `GET /v2/fee/inout/{currency}`; 자산 코드 또는 `ALL`; 네트워크별 입금 수수료·최소 입금액과 고정 또는 정률 출금 수수료 규칙; 계정별 입출금 가능 상태는 포함하지 않음 |
 | `api_keys()` | 인증 필요 `GET /v1/api_keys`; 등록된 각 access key 식별자와 만료 시각 |
+| `withdrawal_addresses()` | 인증 필요 읽기 전용 `GET /v1/withdraws/coin_addresses`; 등록된 출금 허용 주소 메타데이터를 반환. `prepare_withdrawal(...)`와 다르며, 예정 출금의 가능 여부를 검증하거나 공통 출금 견적을 반환하지 않음. fixture만 검증 |
+| `order_detail(request)` | 인증 필요 `GET /v1/order`; 예상 시장과 UUID 및/또는 client order ID를 받으며 둘 다 있으면 UUID가 우선. Bithumb의 상세 체결·수수료·취소·자전거래 방지·유효 조건 필드를 보존. fixture만 검증 |
+| `order_list(request)` | 인증 필요 거래소 전용 `GET /v1/orders`; 공통 `open_orders*`와 별개이며 Bithumb 기존 목록 응답의 모든 필드를 공통 `Order`로 축소하지 않고 보존합니다. 시장은 선택이고 `state` 또는 `states` 중 하나만 지정할 수 있습니다. UUID·client order ID 목록은 각각 최대 100개이며 둘 다 있으면 UUID가 우선합니다. `page`·`limit`·`order_by`를 지원하고 `page >= 1`, `limit`은 `1..=100`, 기본 정렬은 최신순입니다. fixture만 검증 |
+| `closed_orders(request)` | 인증 필요 거래소 전용 `GET /v2/orders/history`; 정규화한 공통 `order_history(request)`를 보완하며 공식 v2 수수료·취소·자전거래 방지·시간 유효 조건 메타데이터를 공통 `Order`로 축소하지 않고 보존합니다. 시장은 선택이고 `state` 또는 `states[]` 중 하나만, 시작·종료 시각 간격은 최대 7일, `limit`은 `1..=1_000`, `order_by`와 불투명 `next_key` 커서를 지원합니다. 거래소 시각은 밀리초로 직접 전달하므로 공통 이력의 종료 시각 배타(exclusive end) 적응과 다르며, 경계 포함성은 단정하지 않습니다. 페이지의 `data`·`has_next`·`next_key`와 원본 상태·유형 문자열, 선택 가격·생성 시각·client 주문·취소 필드를 보존합니다. fixture만 검증했고 실제 계좌 조회나 주문은 실행하지 않음 |
 | `krw_withdrawals(request)`, `krw_deposits(request)` | 인증 필요 원화 입출금 이력. 상태, UUID, 거래 ID, 페이지, 개수, 정렬 필터를 지원하며 거래소 상태 값은 새 값도 잃지 않도록 문자열로 보존 |
 | `withdraw_krw(request)`, `deposit_krw(request)` | `amount`를 사용하는 금전성 쓰기. Bithumb의 등록 계좌와 카카오 2차 인증 절차가 필요하며, maxt는 계좌나 인증 수단을 받거나 저장하지 않음. fixture만 검증했고 실제 원화 입출금은 실행하지 않음 |
 | `pending_orders(request)` | 인증 필요 `GET /v2/orders/pending`; 선택 시장, `wait` 또는 `watch` 상태, `1..=100` 개수, 오름·내림차순, 불투명 `next_key`를 `Page::next` 커서로 반환 |
@@ -111,7 +115,7 @@ Bithumb의 TWAP API는 **KRW 마켓만** 지원하며 JWT 인증 정보가 필�
 `cancel` 상태, TWAP ID 목록, 커서, `1..=100` 페이지 크기, 오름차순·내림차순을
 지원합니다.
 
-```rust
+```rust,ignore
 let page = adapter
     .twap_orders(
         &BithumbTwapOrdersRequest::new()
@@ -150,11 +154,14 @@ let page = adapter
 - [공지사항](https://apidocs.bithumb.com/reference/%EA%B3%B5%EC%A7%80%EC%82%AC%ED%95%AD-%EC%A1%B0%ED%9A%8C.md)
 - [입출금 수수료](https://apidocs.bithumb.com/reference/%EC%9E%85%EC%B6%9C%EA%B8%88-%EC%88%98%EC%88%98%EB%A3%8C-%EC%A1%B0%ED%9A%8C.md)
 - [API 키](https://apidocs.bithumb.com/reference/api-%ED%82%A4-%EB%A6%AC%EC%8A%A4%ED%8A%B8-%EC%A1%B0%ED%9A%8C.md)
+- [출금 허용 주소 목록](https://apidocs.bithumb.com/reference/%EC%B6%9C%EA%B8%88-%ED%97%88%EC%9A%A9-%EC%A3%BC%EC%86%8C-%EB%A6%AC%EC%8A%A4%ED%8A%B8-%EC%A1%B0%ED%9A%8C)
 - [원화 출금 이력](https://apidocs.bithumb.com/reference/%EC%9B%90%ED%99%94-%EC%B6%9C%EA%B8%88-%EB%A6%AC%EC%8A%A4%ED%8A%B8-%EC%A1%B0%ED%9A%8C)
 - [원화 입금 이력](https://apidocs.bithumb.com/reference/%EC%9B%90%ED%99%94-%EC%9E%85%EA%B8%88-%EB%A6%AC%EC%8A%A4%ED%8A%B8-%EC%A1%B0%ED%9A%8C)
 - [대기 주문 목록](https://apidocs.bithumb.com/reference/%EB%8C%80%EA%B8%B0-%EC%A3%BC%EB%AC%B8-%EB%AA%A9%EB%A1%9D-%EC%A1%B0%ED%9A%8C.md)
 - [다건 주문 요청](https://apidocs.bithumb.com/reference/%EB%8B%A4%EA%B1%B4-%EC%A3%BC%EB%AC%B8-%EC%9A%94%EC%B2%AD)
 - [다건 주문 취소 접수](https://apidocs.bithumb.com/reference/%EB%8B%A4%EA%B1%B4-%EC%A3%BC%EB%AC%B8-%EC%B7%A8%EC%86%8C-%EC%A0%91%EC%88%98)
+- [주문 단건 상세](https://apidocs.bithumb.com/reference/%EA%B0%9C%EB%B3%84-%EC%A3%BC%EB%AC%B8-%EC%A1%B0%ED%9A%8C)
+- [주문 목록](https://apidocs.bithumb.com/reference/%EC%A3%BC%EB%AC%B8-%EB%A6%AC%EC%8A%A4%ED%8A%B8-%EC%A1%B0%ED%9A%8C)
 - [TWAP 주문 내역](https://apidocs.bithumb.com/reference/twap-%EC%A3%BC%EB%AC%B8%EB%82%B4%EC%97%AD-%EC%A1%B0%ED%9A%8C)
 - [TWAP 주문 요청](https://apidocs.bithumb.com/reference/twap-%EC%A3%BC%EB%AC%B8-%EC%9A%94%EC%B2%AD)
 - [TWAP 주문 취소](https://apidocs.bithumb.com/reference/twap-%EC%A3%BC%EB%AC%B8-%EC%B7%A8%EC%86%8C)
@@ -162,6 +169,7 @@ let page = adapter
 - [WebSocket](https://apidocs.bithumb.com/reference/%EA%B8%B0%EB%B3%B8-%EC%A0%95%EB%B3%B4.md)
 - [주문](https://apidocs.bithumb.com/reference/%EC%A3%BC%EB%AC%B8-%EC%9A%94%EC%B2%AD.md)
 - [주문 단건 조회](https://apidocs.bithumb.com/reference/%EA%B0%9C%EB%B3%84-%EC%A3%BC%EB%AC%B8-%EC%A1%B0%ED%9A%8C)
-- [종료 주문 목록](https://apidocs.bithumb.com/reference/%EC%A2%85%EB%A3%8C-%EC%A3%BC%EB%AC%B8-%EB%AA%A9%EB%A1%9D-%EC%A1%B0%ED%9A%8C)
+- [종료 주문 목록](https://apidocs.bithumb.com/reference/%EC%A2%85%EB%A3%8C-%EC%A3%BC%EB%AC%B8-%EB%AA%A9%EB%A1%9D-%EC%A1%B0%ED%9A%8C.md)
+- [인증 토큰 생성](https://apidocs.bithumb.com/docs/%EC%9D%B8%EC%A6%9D-%ED%86%A0%ED%81%B0-%EC%83%9D%EC%84%B1%ED%95%98%EA%B8%B0)
 
 [공통 API](../common-api.ko.md) · [거래소 지원](../providers.ko.md)

@@ -38,6 +38,7 @@
     "wasm/",
     "native.cjs",
     "native.d.ts",
+    "examples/",
     "README.md",
     "README.ko.md",
     "CHANGELOG.md",

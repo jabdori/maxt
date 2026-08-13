@@ -229,6 +229,11 @@ const SUBSCRIPTION_CONFIG: &[Argument] = &[
     argument("subscription", ApiType::Named("Subscription"), None),
     argument("config", ApiType::Named("StreamConfig"), None),
 ];
+const UPBIT_SUBSCRIPTION: &[Argument] = &[argument(
+    "subscription",
+    ApiType::Named("Subscription"),
+    None,
+)];
 const CONFIG: &[Argument] = &[argument("config", ApiType::Named("StreamConfig"), None)];
 const ORDER_REQUEST: &[Argument] = &[argument("request", ApiType::Named("OrderRequest"), None)];
 const ORDER_HISTORY_REQUEST: &[Argument] = &[argument(
@@ -254,6 +259,16 @@ const UPBIT_BATCH_CANCEL_REQUEST: &[Argument] = &[argument(
 const UPBIT_CANCEL_AND_NEW_ORDER_REQUEST: &[Argument] = &[argument(
     "request",
     ApiType::Named("UpbitCancelAndNewOrderRequest"),
+    None,
+)];
+const UPBIT_ORDER_DETAIL_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("UpbitOrderDetailRequest"),
+    None,
+)];
+const UPBIT_CLOSED_ORDERS_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("UpbitClosedOrdersRequest"),
     None,
 )];
 const UPBIT_TRAVEL_RULE_UUID: &[Argument] = &[
@@ -1007,10 +1022,34 @@ const UPBIT_ORDER_DIRECTION_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("Ascending", "asc"),
     identifier_variant("Descending", "desc"),
 ];
+const UPBIT_CLOSED_ORDER_STATE_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Done", "done"),
+    identifier_variant("Cancel", "cancel"),
+];
 const UPBIT_SMP_TYPE_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("CancelMaker", "cancel_maker"),
     identifier_variant("CancelTaker", "cancel_taker"),
     identifier_variant("Reduce", "reduce"),
+];
+const UPBIT_KRW_TWO_FACTOR_TYPE_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Kakao", "kakao"),
+    identifier_variant("Naver", "naver"),
+    identifier_variant("Hana", "hana"),
+];
+const UPBIT_POCKET_TRANSFER_STATE_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Submitted", "submitted"),
+    identifier_variant("Processing", "processing"),
+    identifier_variant("Done", "done"),
+    identifier_variant("Failed", "failed"),
+];
+const UPBIT_POCKET_TRANSFER_DIRECTION_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Incoming", "in"),
+    identifier_variant("Outgoing", "out"),
+    identifier_variant("All", "all"),
+];
+const UPBIT_POCKET_TRANSFER_ORDER_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Ascending", "asc"),
+    identifier_variant("Descending", "desc"),
 ];
 const BITHUMB_ALERT_STEP_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("Caution", "caution"),
@@ -1022,9 +1061,19 @@ const BITHUMB_PENDING_ORDER_STATE_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("Wait", "wait"),
     identifier_variant("Watch", "watch"),
 ];
+const BITHUMB_CLOSED_ORDER_STATE_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Done", "done"),
+    identifier_variant("Cancel", "cancel"),
+];
 const BITHUMB_ORDER_DIRECTION_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("Ascending", "asc"),
     identifier_variant("Descending", "desc"),
+];
+const BITHUMB_ORDER_LIST_STATE_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Wait", "wait"),
+    identifier_variant("Watch", "watch"),
+    identifier_variant("Done", "done"),
+    identifier_variant("Cancel", "cancel"),
 ];
 const BITHUMB_TWAP_STATE_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("Progress", "progress"),
@@ -1038,6 +1087,10 @@ const BITHUMB_TWAP_ORDER_DIRECTION_VARIANTS: &[IdentifierVariant] = &[
 const BINANCE_MARKET_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("Spot", "spot"),
     identifier_variant("UsdMFutures", "usd_m"),
+];
+const BINANCE_C2C_TRADE_TYPE_VARIANTS: &[IdentifierVariant] = &[
+    identifier_variant("Buy", "BUY"),
+    identifier_variant("Sell", "SELL"),
 ];
 const HYPERLIQUID_LEDGER_KIND_VARIANTS: &[IdentifierVariant] = &[
     identifier_variant("Deposit", "deposit"),
@@ -1120,7 +1173,32 @@ const IDENTIFIERS: &[Identifier] = &[
     identifier("SizeKind", SIZE_KIND_VARIANTS, false),
     identifier("UpbitRegion", UPBIT_REGION_VARIANTS, false),
     identifier("UpbitOrderDirection", UPBIT_ORDER_DIRECTION_VARIANTS, false),
+    identifier(
+        "UpbitClosedOrderState",
+        UPBIT_CLOSED_ORDER_STATE_VARIANTS,
+        false,
+    ),
     identifier("UpbitSmpType", UPBIT_SMP_TYPE_VARIANTS, false),
+    identifier(
+        "UpbitKrwTwoFactorType",
+        UPBIT_KRW_TWO_FACTOR_TYPE_VARIANTS,
+        false,
+    ),
+    identifier(
+        "UpbitPocketTransferState",
+        UPBIT_POCKET_TRANSFER_STATE_VARIANTS,
+        false,
+    ),
+    identifier(
+        "UpbitPocketTransferDirection",
+        UPBIT_POCKET_TRANSFER_DIRECTION_VARIANTS,
+        false,
+    ),
+    identifier(
+        "UpbitPocketTransferOrder",
+        UPBIT_POCKET_TRANSFER_ORDER_VARIANTS,
+        false,
+    ),
     identifier("BithumbAlertStep", BITHUMB_ALERT_STEP_VARIANTS, false),
     identifier(
         "BithumbPendingOrderState",
@@ -1128,8 +1206,18 @@ const IDENTIFIERS: &[Identifier] = &[
         false,
     ),
     identifier(
+        "BithumbClosedOrderState",
+        BITHUMB_CLOSED_ORDER_STATE_VARIANTS,
+        false,
+    ),
+    identifier(
         "BithumbOrderDirection",
         BITHUMB_ORDER_DIRECTION_VARIANTS,
+        false,
+    ),
+    identifier(
+        "BithumbOrderListState",
+        BITHUMB_ORDER_LIST_STATE_VARIANTS,
         false,
     ),
     identifier("BithumbTwapState", BITHUMB_TWAP_STATE_VARIANTS, false),
@@ -1139,6 +1227,11 @@ const IDENTIFIERS: &[Identifier] = &[
         false,
     ),
     identifier("BinanceMarket", BINANCE_MARKET_VARIANTS, false),
+    identifier(
+        "BinanceC2cTradeType",
+        BINANCE_C2C_TRADE_TYPE_VARIANTS,
+        false,
+    ),
     identifier(
         "HyperliquidLedgerKind",
         HYPERLIQUID_LEDGER_KIND_VARIANTS,
@@ -1199,8 +1292,15 @@ const MODELS: &[&str] = &[
     "HistoryRequest",
     "MarginRequest",
     "UpbitMarketEvent",
+    "UpbitListedSubscription",
+    "UpbitSubscriptionList",
     "UpbitYearCandle",
     "UpbitOrderBookInstrument",
+    "UpbitOrderDetailRequest",
+    "UpbitOrderDetailTrade",
+    "UpbitOrderDetail",
+    "UpbitClosedOrdersRequest",
+    "UpbitClosedOrder",
     "UpbitDepositInfo",
     "UpbitTravelRuleVasp",
     "UpbitTravelRuleVerification",
@@ -1211,6 +1311,19 @@ const MODELS: &[&str] = &[
     "UpbitCancelAndNewOrder",
     "UpbitCancelAndNewOrderRequest",
     "UpbitCancelAndNewOrderResult",
+    "UpbitKrwTransferRequest",
+    "UpbitKrwDeposit",
+    "UpbitKrwWithdrawal",
+    "UpbitApiKey",
+    "UpbitPocket",
+    "UpbitPocketApiKey",
+    "UpbitPocketApiKeyGroup",
+    "UpbitPocketApiKeysRequest",
+    "UpbitPocketBalance",
+    "UpbitPocketTransferQuery",
+    "UpbitPocketUniversalTransferRequest",
+    "UpbitPocketTransferRequest",
+    "UpbitPocketTransfer",
     "BithumbMarketAlert",
     "BithumbNotice",
     "BithumbApiKey",
@@ -1220,6 +1333,8 @@ const MODELS: &[&str] = &[
     "BithumbKrwWithdrawal",
     "BithumbKrwDeposit",
     "BithumbPendingOrdersRequest",
+    "BithumbClosedOrdersRequest",
+    "BithumbClosedOrder",
     "BithumbBatchOrdersRequest",
     "BithumbBatchOrder",
     "BithumbBatchOrderFailure",
@@ -1230,15 +1345,44 @@ const MODELS: &[&str] = &[
     "BithumbTwapOrder",
     "BithumbAssetFee",
     "BithumbNetworkFee",
+    "BithumbWithdrawalAddress",
+    "BithumbOrderDetailRequest",
+    "BithumbOrderDetailTrade",
+    "BithumbOrderDetail",
+    "BithumbOrderListRequest",
+    "BithumbOrderListItem",
     "BinanceSymbolFilters",
     "BinanceSpotOrderDetail",
+    "BinanceSpotAveragePrice",
     "BinanceMarkPrice",
     "BinanceOpenInterest",
     "BinanceAggregateTradesRequest",
     "BinanceAggregateTrade",
+    "BinanceAccountTrade",
+    "BinanceTestOrderRequest",
+    "BinanceTestOrder",
+    "BinanceC2cTradeHistoryRequest",
+    "BinanceC2cTrade",
+    "BinanceC2cTradeHistoryPage",
     "HyperliquidLedgerEntry",
     "HyperliquidMidPrice",
     "HyperliquidAssetContext",
+    "HyperliquidUserRateLimit",
+    "HyperliquidUserRole",
+    "HyperliquidReferral",
+    "HyperliquidReferrer",
+    "HyperliquidUserFees",
+    "HyperliquidUserFill",
+    "HyperliquidOrderReference",
+    "HyperliquidOpenOrder",
+    "HyperliquidOrderDetail",
+    "HyperliquidOrderInfo",
+    "HyperliquidOrderStatusResponse",
+    "HyperliquidDailyVolume",
+    "HyperliquidPortfolioPeriod",
+    "HyperliquidPortfolioPoint",
+    "HyperliquidSubAccount",
+    "HyperliquidVaultEquity",
 ];
 
 const MARKETS_DEPTH: &[Argument] = &[
@@ -1254,7 +1398,7 @@ const MARKETS: &[Argument] = &[argument("markets", ApiType::List("Market"), None
 const QUOTE_CURRENCIES: &[Argument] = &[argument("quoteCurrencies", ApiType::List("String"), None)];
 const YEAR_CANDLE_QUERY: &[Argument] = &[
     argument("market", ApiType::Named("Market"), None),
-    argument("to", ApiType::OptionalNamed("Timestamp"), Some("null")),
+    argument("to", ApiType::OptionalNamed("Timestamp"), None),
     argument("count", ApiType::OptionalNumber, Some("null")),
 ];
 const NOTICE_COUNT: &[Argument] = &[argument("count", ApiType::OptionalNumber, Some("null"))];
@@ -1262,6 +1406,11 @@ const FEE_CURRENCY: &[Argument] = &[argument("currency", ApiType::String, None)]
 const BITHUMB_PENDING_ORDERS_REQUEST: &[Argument] = &[argument(
     "request",
     ApiType::Named("BithumbPendingOrdersRequest"),
+    None,
+)];
+const BITHUMB_CLOSED_ORDERS_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("BithumbClosedOrdersRequest"),
     None,
 )];
 const BITHUMB_BATCH_ORDERS_REQUEST: &[Argument] = &[argument(
@@ -1284,6 +1433,42 @@ const BITHUMB_KRW_TRANSFER_REQUEST: &[Argument] = &[argument(
     ApiType::Named("BithumbKrwTransferRequest"),
     None,
 )];
+const UPBIT_KRW_TRANSFER_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("UpbitKrwTransferRequest"),
+    None,
+)];
+const UPBIT_POCKET_API_KEYS_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("UpbitPocketApiKeysRequest"),
+    None,
+)];
+const UPBIT_POCKET_UUID: &[Argument] = &[argument("pocketUuid", ApiType::String, None)];
+const UPBIT_POCKET_UNIVERSAL_TRANSFER_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("UpbitPocketUniversalTransferRequest"),
+    None,
+)];
+const UPBIT_POCKET_TRANSFER_QUERY: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("UpbitPocketTransferQuery"),
+    None,
+)];
+const UPBIT_POCKET_TRANSFER_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("UpbitPocketTransferRequest"),
+    None,
+)];
+const BITHUMB_ORDER_DETAIL_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("BithumbOrderDetailRequest"),
+    None,
+)];
+const BITHUMB_ORDER_LIST_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("BithumbOrderListRequest"),
+    None,
+)];
 const BITHUMB_TWAP_ORDERS_REQUEST: &[Argument] = &[argument(
     "request",
     ApiType::Named("BithumbTwapOrdersRequest"),
@@ -1300,12 +1485,33 @@ const BINANCE_AGGREGATE_TRADES_REQUEST: &[Argument] = &[argument(
     ApiType::Named("BinanceAggregateTradesRequest"),
     None,
 )];
+const BINANCE_TEST_ORDER_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("BinanceTestOrderRequest"),
+    None,
+)];
+const BINANCE_C2C_TRADE_HISTORY_REQUEST: &[Argument] = &[argument(
+    "request",
+    ApiType::Named("BinanceC2cTradeHistoryRequest"),
+    None,
+)];
 const LEDGER_RANGE: &[Argument] = &[
     argument("from", ApiType::OptionalNamed("Timestamp"), Some("null")),
     argument("to", ApiType::OptionalNamed("Timestamp"), Some("null")),
     argument("cursor", ApiType::OptionalNamed("Cursor"), Some("null")),
     argument("limit", ApiType::OptionalNumber, Some("null")),
 ];
+const HYPERLIQUID_USER_FILLS: &[Argument] = &[argument("aggregateByTime", ApiType::Boolean, None)];
+const HYPERLIQUID_USER_FILLS_BY_TIME: &[Argument] = &[
+    argument("from", ApiType::Named("Timestamp"), None),
+    argument("to", ApiType::OptionalNamed("Timestamp"), None),
+    argument("aggregateByTime", ApiType::Boolean, None),
+];
+const HYPERLIQUID_ORDER_REFERENCE: &[Argument] = &[argument(
+    "reference",
+    ApiType::Named("HyperliquidOrderReference"),
+    None,
+)];
 const ACCESS_KEY_CREDENTIALS: &[Argument] = &[
     argument("accessKey", ApiType::OptionalString, Some("null")),
     argument("secretKey", ApiType::OptionalString, Some("null")),
@@ -1480,11 +1686,32 @@ const UPBIT_METHODS: &[ProviderMethod] = &[
         result: ApiType::PairList("Market", "UpbitMarketEvent"),
     },
     ProviderMethod {
+        rust_name: "list_subscriptions",
+        name: "listSubscriptions",
+        kind: ProviderMethodKind::Async,
+        arguments: UPBIT_SUBSCRIPTION,
+        result: ApiType::Named("UpbitSubscriptionList"),
+    },
+    ProviderMethod {
         rust_name: "test_order",
         name: "testOrder",
         kind: ProviderMethodKind::Async,
         arguments: ORDER_REQUEST,
         result: ApiType::Named("Order"),
+    },
+    ProviderMethod {
+        rust_name: "order_detail",
+        name: "orderDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: UPBIT_ORDER_DETAIL_REQUEST,
+        result: ApiType::Named("UpbitOrderDetail"),
+    },
+    ProviderMethod {
+        rust_name: "closed_orders",
+        name: "closedOrders",
+        kind: ProviderMethodKind::Async,
+        arguments: UPBIT_CLOSED_ORDERS_REQUEST,
+        result: ApiType::List("UpbitClosedOrder"),
     },
     ProviderMethod {
         rust_name: "deposit_info",
@@ -1527,6 +1754,76 @@ const UPBIT_METHODS: &[ProviderMethod] = &[
         kind: ProviderMethodKind::Async,
         arguments: UPBIT_CANCEL_AND_NEW_ORDER_REQUEST,
         result: ApiType::Named("UpbitCancelAndNewOrderResult"),
+    },
+    ProviderMethod {
+        rust_name: "deposit_krw",
+        name: "depositKrw",
+        kind: ProviderMethodKind::Async,
+        arguments: UPBIT_KRW_TRANSFER_REQUEST,
+        result: ApiType::Named("UpbitKrwDeposit"),
+    },
+    ProviderMethod {
+        rust_name: "withdraw_krw",
+        name: "withdrawKrw",
+        kind: ProviderMethodKind::Async,
+        arguments: UPBIT_KRW_TRANSFER_REQUEST,
+        result: ApiType::Named("UpbitKrwWithdrawal"),
+    },
+    ProviderMethod {
+        rust_name: "api_keys",
+        name: "apiKeys",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::List("UpbitApiKey"),
+    },
+    ProviderMethod {
+        rust_name: "list_pockets",
+        name: "listPockets",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::List("UpbitPocket"),
+    },
+    ProviderMethod {
+        rust_name: "list_pocket_api_keys",
+        name: "listPocketApiKeys",
+        kind: ProviderMethodKind::Async,
+        arguments: UPBIT_POCKET_API_KEYS_REQUEST,
+        result: ApiType::List("UpbitPocketApiKeyGroup"),
+    },
+    ProviderMethod {
+        rust_name: "sub_pocket_balances",
+        name: "subPocketBalances",
+        kind: ProviderMethodKind::Async,
+        arguments: UPBIT_POCKET_UUID,
+        result: ApiType::List("UpbitPocketBalance"),
+    },
+    ProviderMethod {
+        rust_name: "universal_transfer",
+        name: "universalTransfer",
+        kind: ProviderMethodKind::Async,
+        arguments: UPBIT_POCKET_UNIVERSAL_TRANSFER_REQUEST,
+        result: ApiType::Named("UpbitPocketTransfer"),
+    },
+    ProviderMethod {
+        rust_name: "universal_transfers",
+        name: "universalTransfers",
+        kind: ProviderMethodKind::Async,
+        arguments: UPBIT_POCKET_TRANSFER_QUERY,
+        result: ApiType::List("UpbitPocketTransfer"),
+    },
+    ProviderMethod {
+        rust_name: "sub_pocket_transfer",
+        name: "subPocketTransfer",
+        kind: ProviderMethodKind::Async,
+        arguments: UPBIT_POCKET_TRANSFER_REQUEST,
+        result: ApiType::Named("UpbitPocketTransfer"),
+    },
+    ProviderMethod {
+        rust_name: "sub_pocket_transfers",
+        name: "subPocketTransfers",
+        kind: ProviderMethodKind::Async,
+        arguments: UPBIT_POCKET_TRANSFER_QUERY,
+        result: ApiType::List("UpbitPocketTransfer"),
     },
 ];
 const BITHUMB_METHODS: &[ProviderMethod] = &[
@@ -1601,6 +1898,13 @@ const BITHUMB_METHODS: &[ProviderMethod] = &[
         result: ApiType::Page("Order"),
     },
     ProviderMethod {
+        rust_name: "closed_orders",
+        name: "closedOrders",
+        kind: ProviderMethodKind::Async,
+        arguments: BITHUMB_CLOSED_ORDERS_REQUEST,
+        result: ApiType::Page("BithumbClosedOrder"),
+    },
+    ProviderMethod {
         rust_name: "batch_orders",
         name: "batchOrders",
         kind: ProviderMethodKind::Async,
@@ -1628,6 +1932,27 @@ const BITHUMB_METHODS: &[ProviderMethod] = &[
         arguments: BITHUMB_TWAP_ORDER_ID,
         result: ApiType::String,
     },
+    ProviderMethod {
+        rust_name: "withdrawal_addresses",
+        name: "withdrawalAddresses",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::List("BithumbWithdrawalAddress"),
+    },
+    ProviderMethod {
+        rust_name: "order_detail",
+        name: "orderDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: BITHUMB_ORDER_DETAIL_REQUEST,
+        result: ApiType::Named("BithumbOrderDetail"),
+    },
+    ProviderMethod {
+        rust_name: "order_list",
+        name: "orderList",
+        kind: ProviderMethodKind::Async,
+        arguments: BITHUMB_ORDER_LIST_REQUEST,
+        result: ApiType::List("BithumbOrderListItem"),
+    },
 ];
 const BINANCE_METHODS: &[ProviderMethod] = &[
     ProviderMethod {
@@ -1650,6 +1975,13 @@ const BINANCE_METHODS: &[ProviderMethod] = &[
         kind: ProviderMethodKind::Async,
         arguments: CANCEL_ORDER,
         result: ApiType::Named("BinanceSpotOrderDetail"),
+    },
+    ProviderMethod {
+        rust_name: "spot_average_price",
+        name: "spotAveragePrice",
+        kind: ProviderMethodKind::Async,
+        arguments: MARKET,
+        result: ApiType::Named("BinanceSpotAveragePrice"),
     },
     ProviderMethod {
         rust_name: "mark_price",
@@ -1678,6 +2010,34 @@ const BINANCE_METHODS: &[ProviderMethod] = &[
         kind: ProviderMethodKind::Async,
         arguments: BINANCE_AGGREGATE_TRADES_REQUEST,
         result: ApiType::List("BinanceAggregateTrade"),
+    },
+    ProviderMethod {
+        rust_name: "account_trades",
+        name: "accountTrades",
+        kind: ProviderMethodKind::Async,
+        arguments: HISTORY_REQUEST,
+        result: ApiType::Page("BinanceAccountTrade"),
+    },
+    ProviderMethod {
+        rust_name: "c2c_trade_history",
+        name: "c2cTradeHistory",
+        kind: ProviderMethodKind::Async,
+        arguments: BINANCE_C2C_TRADE_HISTORY_REQUEST,
+        result: ApiType::Named("BinanceC2cTradeHistoryPage"),
+    },
+    ProviderMethod {
+        rust_name: "test_order",
+        name: "testOrder",
+        kind: ProviderMethodKind::Async,
+        arguments: BINANCE_TEST_ORDER_REQUEST,
+        result: ApiType::Named("BinanceTestOrder"),
+    },
+    ProviderMethod {
+        rust_name: "cancel_all_open_orders",
+        name: "cancelAllOpenOrders",
+        kind: ProviderMethodKind::Async,
+        arguments: MARKET,
+        result: ApiType::Unit,
     },
     ProviderMethod {
         rust_name: "usd_m_create_listen_key",
@@ -1717,6 +2077,41 @@ const HYPERLIQUID_METHODS: &[ProviderMethod] = &[
         result: ApiType::List("HyperliquidMidPrice"),
     },
     ProviderMethod {
+        rust_name: "user_fills",
+        name: "userFills",
+        kind: ProviderMethodKind::Async,
+        arguments: HYPERLIQUID_USER_FILLS,
+        result: ApiType::List("HyperliquidUserFill"),
+    },
+    ProviderMethod {
+        rust_name: "user_fills_by_time",
+        name: "userFillsByTime",
+        kind: ProviderMethodKind::Async,
+        arguments: HYPERLIQUID_USER_FILLS_BY_TIME,
+        result: ApiType::List("HyperliquidUserFill"),
+    },
+    ProviderMethod {
+        rust_name: "basic_open_orders",
+        name: "basicOpenOrders",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::List("HyperliquidOpenOrder"),
+    },
+    ProviderMethod {
+        rust_name: "order_status",
+        name: "orderStatus",
+        kind: ProviderMethodKind::Async,
+        arguments: HYPERLIQUID_ORDER_REFERENCE,
+        result: ApiType::Named("HyperliquidOrderStatusResponse"),
+    },
+    ProviderMethod {
+        rust_name: "historical_orders",
+        name: "historicalOrders",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::List("HyperliquidOrderInfo"),
+    },
+    ProviderMethod {
         rust_name: "non_funding_ledger",
         name: "nonFundingLedger",
         kind: ProviderMethodKind::Async,
@@ -1729,6 +2124,55 @@ const HYPERLIQUID_METHODS: &[ProviderMethod] = &[
         kind: ProviderMethodKind::Async,
         arguments: MARKET,
         result: ApiType::Named("HyperliquidAssetContext"),
+    },
+    ProviderMethod {
+        rust_name: "user_rate_limit",
+        name: "userRateLimit",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::Named("HyperliquidUserRateLimit"),
+    },
+    ProviderMethod {
+        rust_name: "user_role",
+        name: "userRole",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::Named("HyperliquidUserRole"),
+    },
+    ProviderMethod {
+        rust_name: "referral",
+        name: "referral",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::Named("HyperliquidReferral"),
+    },
+    ProviderMethod {
+        rust_name: "user_fees",
+        name: "userFees",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::Named("HyperliquidUserFees"),
+    },
+    ProviderMethod {
+        rust_name: "portfolio",
+        name: "portfolio",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::List("HyperliquidPortfolioPeriod"),
+    },
+    ProviderMethod {
+        rust_name: "sub_accounts",
+        name: "subAccounts",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::List("HyperliquidSubAccount"),
+    },
+    ProviderMethod {
+        rust_name: "user_vault_equities",
+        name: "userVaultEquities",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::List("HyperliquidVaultEquity"),
     },
 ];
 
@@ -2301,6 +2745,24 @@ pub fn binding_schema() -> Schema {
             ],
         ),
         record(
+            "UpbitListedSubscriptionWire",
+            vec![
+                field("feed_type", Type::String),
+                field("markets", Type::list(market.clone())),
+                field("level", Type::optional(decimal.clone())),
+            ],
+        ),
+        record(
+            "UpbitSubscriptionListWire",
+            vec![
+                field("ticket", Type::String),
+                field(
+                    "subscriptions",
+                    Type::list(Type::named("UpbitListedSubscriptionWire")),
+                ),
+            ],
+        ),
+        record(
             "UpbitYearCandleWire",
             vec![
                 field("market", market.clone()),
@@ -2323,6 +2785,103 @@ pub fn binding_schema() -> Schema {
                 field("quote_currency", Type::String),
                 field("tick_size", decimal.clone()),
                 field("supported_levels", Type::list(decimal.clone())),
+            ],
+        ),
+        record(
+            "UpbitOrderDetailRequestWire",
+            vec![
+                field("market", market.clone()),
+                field("uuid", Type::optional(Type::String)),
+                field("identifier", Type::optional(Type::String)),
+            ],
+        ),
+        record(
+            "UpbitOrderDetailTradeWire",
+            vec![
+                field("market", market.clone()),
+                field("uuid", Type::String),
+                field("price", decimal.clone()),
+                field("volume", decimal.clone()),
+                field("funds", decimal.clone()),
+                field("trend", Type::String),
+                field("created_at", timestamp.clone()),
+                field("side", Type::String),
+            ],
+        ),
+        record(
+            "UpbitOrderDetailWire",
+            vec![
+                field("market", market.clone()),
+                field("uuid", Type::String),
+                field("side", Type::String),
+                field("order_type", Type::String),
+                field("price", Type::optional(decimal.clone())),
+                field("state", Type::String),
+                field("created_at", timestamp.clone()),
+                field("volume", Type::optional(decimal.clone())),
+                field("remaining_volume", decimal.clone()),
+                field("executed_volume", decimal.clone()),
+                field("reserved_fee", decimal.clone()),
+                field("remaining_fee", decimal.clone()),
+                field("paid_fee", decimal.clone()),
+                field("locked", decimal.clone()),
+                field("trades_count", Number),
+                field("prevented_volume", decimal.clone()),
+                field("prevented_locked", decimal.clone()),
+                field("time_in_force", Type::optional(Type::String)),
+                field("identifier", Type::optional(Type::String)),
+                field("smp_type", Type::optional(Type::String)),
+                field(
+                    "trades",
+                    Type::list(Type::named("UpbitOrderDetailTradeWire")),
+                ),
+            ],
+        ),
+        record(
+            "UpbitClosedOrdersRequestWire",
+            vec![
+                field("market", Type::optional(market.clone())),
+                field(
+                    "state",
+                    Type::optional(Type::Identifier("UpbitClosedOrderState")),
+                ),
+                field(
+                    "states",
+                    Type::list(Type::Identifier("UpbitClosedOrderState")),
+                ),
+                field("start_time", Type::optional(timestamp.clone())),
+                field("end_time", Type::optional(timestamp.clone())),
+                field("limit", Type::optional(Number)),
+                field(
+                    "order_by",
+                    Type::optional(Type::Identifier("UpbitOrderDirection")),
+                ),
+            ],
+        ),
+        record(
+            "UpbitClosedOrderWire",
+            vec![
+                field("market", market.clone()),
+                field("uuid", Type::String),
+                field("side", Type::String),
+                field("ord_type", Type::String),
+                field("state", Type::String),
+                field("created_at", timestamp.clone()),
+                field("volume", Type::optional(decimal.clone())),
+                field("price", Type::optional(decimal.clone())),
+                field("remaining_volume", decimal.clone()),
+                field("executed_volume", decimal.clone()),
+                field("executed_funds", Type::optional(decimal.clone())),
+                field("reserved_fee", decimal.clone()),
+                field("remaining_fee", decimal.clone()),
+                field("paid_fee", decimal.clone()),
+                field("locked", decimal.clone()),
+                field("trades_count", Number),
+                field("prevented_volume", decimal.clone()),
+                field("prevented_locked", decimal.clone()),
+                field("time_in_force", Type::optional(Type::String)),
+                field("identifier", Type::optional(Type::String)),
+                field("smp_type", Type::optional(Type::String)),
             ],
         ),
         record(
@@ -2386,6 +2945,153 @@ pub fn binding_schema() -> Schema {
                 field("previous_order", Type::named("OrderWire")),
                 field("new_order_uuid", Type::optional(Type::String)),
                 field("new_order_identifier", Type::optional(Type::String)),
+            ],
+        ),
+        record(
+            "UpbitKrwTransferRequestWire",
+            vec![
+                field("amount", decimal.clone()),
+                field("two_factor_type", Type::Identifier("UpbitKrwTwoFactorType")),
+            ],
+        ),
+        record(
+            "UpbitKrwDepositWire",
+            vec![
+                field("transfer_type", Type::String),
+                field("uuid", Type::String),
+                field("currency", Type::String),
+                field("net_type", Type::optional(Type::String)),
+                field("txid", Type::String),
+                field("state", Type::String),
+                field("created_at", timestamp.clone()),
+                field("done_at", Type::optional(timestamp.clone())),
+                field("amount", decimal.clone()),
+                field("fee", decimal.clone()),
+                field("transaction_type", Type::String),
+            ],
+        ),
+        record(
+            "UpbitKrwWithdrawalWire",
+            vec![
+                field("transfer_type", Type::String),
+                field("uuid", Type::String),
+                field("currency", Type::String),
+                field("net_type", Type::optional(Type::String)),
+                field("txid", Type::optional(Type::String)),
+                field("state", Type::String),
+                field("created_at", timestamp.clone()),
+                field("done_at", Type::optional(timestamp.clone())),
+                field("amount", decimal.clone()),
+                field("fee", decimal.clone()),
+                field("transaction_type", Type::String),
+                field("is_cancelable", Type::optional(Boolean)),
+            ],
+        ),
+        record(
+            "UpbitApiKeyWire",
+            vec![
+                field("access_key", Type::String),
+                field("expires_at", timestamp.clone()),
+            ],
+        ),
+        record(
+            "UpbitPocketWire",
+            vec![
+                field("uuid", Type::String),
+                field("name", Type::String),
+                field("kind", Type::String),
+            ],
+        ),
+        record(
+            "UpbitPocketApiKeyWire",
+            vec![
+                field("access_key", Type::String),
+                field("permissions", Type::list(Type::String)),
+                field("allowed_ips", Type::list(Type::String)),
+                field("created_at", timestamp.clone()),
+                field("expired_at", timestamp.clone()),
+            ],
+        ),
+        record(
+            "UpbitPocketApiKeyGroupWire",
+            vec![
+                field("uuid", Type::String),
+                field("keys", Type::list(Type::named("UpbitPocketApiKeyWire"))),
+            ],
+        ),
+        record(
+            "UpbitPocketApiKeysRequestWire",
+            vec![
+                field("uuids", Type::list(Type::String)),
+                field("include_expired", Boolean),
+            ],
+        ),
+        record(
+            "UpbitPocketBalanceWire",
+            vec![
+                field("currency", Type::String),
+                field("balance", decimal.clone()),
+                field("locked", decimal.clone()),
+                field("avg_buy_price", decimal.clone()),
+                field("avg_buy_price_modified", Boolean),
+                field("unit_currency", Type::String),
+            ],
+        ),
+        record(
+            "UpbitPocketTransferQueryWire",
+            vec![
+                field("from", Type::optional(Type::String)),
+                field("to", Type::optional(Type::String)),
+                field(
+                    "direction",
+                    Type::optional(Type::Identifier("UpbitPocketTransferDirection")),
+                ),
+                field(
+                    "states",
+                    Type::list(Type::Identifier("UpbitPocketTransferState")),
+                ),
+                field("uuids", Type::list(Type::String)),
+                field("identifiers", Type::list(Type::String)),
+                field("start_time", Type::optional(timestamp.clone())),
+                field("end_time", Type::optional(timestamp.clone())),
+                field("currency", Type::optional(Type::String)),
+                field("limit", Type::optional(Number)),
+                field(
+                    "order_by",
+                    Type::optional(Type::Identifier("UpbitPocketTransferOrder")),
+                ),
+            ],
+        ),
+        record(
+            "UpbitPocketUniversalTransferRequestWire",
+            vec![
+                field("from", Type::optional(Type::String)),
+                field("to", Type::String),
+                field("currency", Type::String),
+                field("amount", decimal.clone()),
+                field("identifier", Type::optional(Type::String)),
+            ],
+        ),
+        record(
+            "UpbitPocketTransferRequestWire",
+            vec![
+                field("to", Type::String),
+                field("currency", Type::String),
+                field("amount", decimal.clone()),
+                field("identifier", Type::optional(Type::String)),
+            ],
+        ),
+        record(
+            "UpbitPocketTransferWire",
+            vec![
+                field("uuid", Type::String),
+                field("identifier", Type::optional(Type::String)),
+                field("from", Type::String),
+                field("to", Type::String),
+                field("state", Type::String),
+                field("currency", Type::String),
+                field("amount", decimal.clone()),
+                field("created_at", timestamp.clone()),
             ],
         ),
         record(
@@ -2502,6 +3208,54 @@ pub fn binding_schema() -> Schema {
             ],
         ),
         record(
+            "BithumbClosedOrdersRequestWire",
+            vec![
+                field("market", Type::optional(market.clone())),
+                field(
+                    "state",
+                    Type::optional(Type::Identifier("BithumbClosedOrderState")),
+                ),
+                field(
+                    "states",
+                    Type::list(Type::Identifier("BithumbClosedOrderState")),
+                ),
+                field("start_time", Type::optional(timestamp.clone())),
+                field("end_time", Type::optional(timestamp.clone())),
+                field("limit", Type::optional(Number)),
+                field(
+                    "order_by",
+                    Type::optional(Type::Identifier("BithumbOrderDirection")),
+                ),
+                field("cursor", Type::optional(Type::String)),
+            ],
+        ),
+        record(
+            "BithumbClosedOrderWire",
+            vec![
+                field("order_id", Type::String),
+                field("side", Type::String),
+                field("order_type", Type::String),
+                field("price", Type::optional(decimal.clone())),
+                field("state", Type::String),
+                field("market", market.clone()),
+                field("created_at", Type::optional(timestamp.clone())),
+                field("volume", decimal.clone()),
+                field("remaining_volume", decimal.clone()),
+                field("reserved_fee", decimal.clone()),
+                field("remaining_fee", decimal.clone()),
+                field("paid_fee", decimal.clone()),
+                field("locked", decimal.clone()),
+                field("executed_volume", decimal.clone()),
+                field("executed_funds", decimal.clone()),
+                field("trades_count", Number),
+                field("client_order_id", Type::optional(Type::String)),
+                field("stp_type", Type::optional(Type::String)),
+                field("time_in_force", Type::optional(Type::String)),
+                field("cancel_type", Type::optional(Type::String)),
+                field("canceling_order_id", Type::optional(Type::String)),
+            ],
+        ),
+        record(
             "BithumbTwapOrdersRequestWire",
             vec![
                 field("market", Type::optional(market.clone())),
@@ -2596,6 +3350,118 @@ pub fn binding_schema() -> Schema {
             ],
         ),
         record(
+            "BithumbWithdrawalAddressWire",
+            vec![
+                field("currency", Type::String),
+                field("net_type", Type::String),
+                field("network_name", Type::optional(Type::String)),
+                field("withdraw_address", Type::String),
+                field("secondary_address", Type::optional(Type::String)),
+                field("exchange_name", Type::optional(Type::String)),
+                field("owner_type", Type::optional(Type::String)),
+                field("owner_ko_name", Type::optional(Type::String)),
+                field("owner_en_name", Type::optional(Type::String)),
+                field("owner_corp_ko_name", Type::optional(Type::String)),
+                field("owner_corp_en_name", Type::optional(Type::String)),
+            ],
+        ),
+        record(
+            "BithumbOrderDetailRequestWire",
+            vec![
+                field("market", market.clone()),
+                field("uuid", Type::optional(Type::String)),
+                field("client_order_id", Type::optional(Type::String)),
+            ],
+        ),
+        record(
+            "BithumbOrderDetailTradeWire",
+            vec![
+                field("market", market.clone()),
+                field("uuid", Type::String),
+                field("price", decimal.clone()),
+                field("volume", decimal.clone()),
+                field("funds", decimal.clone()),
+                field("side", Type::String),
+                field("created_at", timestamp.clone()),
+            ],
+        ),
+        record(
+            "BithumbOrderDetailWire",
+            vec![
+                field("uuid", Type::String),
+                field("client_order_id", Type::optional(Type::String)),
+                field("side", Type::String),
+                field("order_type", Type::String),
+                field("price", decimal.clone()),
+                field("state", Type::String),
+                field("market", market.clone()),
+                field("created_at", timestamp.clone()),
+                field("volume", decimal.clone()),
+                field("remaining_volume", decimal.clone()),
+                field("reserved_fee", decimal.clone()),
+                field("remaining_fee", decimal.clone()),
+                field("paid_fee", decimal.clone()),
+                field("locked", decimal.clone()),
+                field("executed_volume", decimal.clone()),
+                field("executed_funds", decimal.clone()),
+                field("trades_count", Number),
+                field(
+                    "trades",
+                    Type::list(Type::named("BithumbOrderDetailTradeWire")),
+                ),
+                field("stp_type", Type::optional(Type::String)),
+                field("cancel_type", Type::optional(Type::String)),
+                field("canceling_uuid", Type::optional(Type::String)),
+                field("time_in_force", Type::optional(Type::String)),
+            ],
+        ),
+        record(
+            "BithumbOrderListRequestWire",
+            vec![
+                field("market", Type::optional(market.clone())),
+                field(
+                    "state",
+                    Type::optional(Type::Identifier("BithumbOrderListState")),
+                ),
+                field(
+                    "states",
+                    Type::list(Type::Identifier("BithumbOrderListState")),
+                ),
+                field("uuids", Type::list(Type::String)),
+                field("client_order_ids", Type::list(Type::String)),
+                field("page", Type::optional(Number)),
+                field("limit", Type::optional(Number)),
+                field(
+                    "order_by",
+                    Type::optional(Type::Identifier("BithumbOrderDirection")),
+                ),
+            ],
+        ),
+        record(
+            "BithumbOrderListItemWire",
+            vec![
+                field("uuid", Type::String),
+                field("client_order_id", Type::optional(Type::String)),
+                field("side", Type::String),
+                field("order_type", Type::String),
+                field("price", decimal.clone()),
+                field("state", Type::String),
+                field("market", market.clone()),
+                field("created_at", timestamp.clone()),
+                field("volume", decimal.clone()),
+                field("remaining_volume", decimal.clone()),
+                field("reserved_fee", decimal.clone()),
+                field("remaining_fee", decimal.clone()),
+                field("paid_fee", decimal.clone()),
+                field("locked", decimal.clone()),
+                field("executed_volume", decimal.clone()),
+                field("executed_funds", decimal.clone()),
+                field("trades_count", Number),
+                field("stp_type", Type::optional(Type::String)),
+                field("time_in_force", Type::optional(Type::String)),
+            ],
+        ),
+        record(
             "BinanceSymbolFiltersWire",
             vec![
                 field("symbol", Type::String),
@@ -2617,6 +3483,15 @@ pub fn binding_schema() -> Schema {
                 field("time_in_force", Type::String),
                 field("filled_quote_quantity", decimal.clone()),
                 field("updated_at", Type::optional(timestamp.clone())),
+            ],
+        ),
+        record(
+            "BinanceSpotAveragePriceWire",
+            vec![
+                field("market", market.clone()),
+                field("minutes", Number),
+                field("price", decimal.clone()),
+                field("close_time", timestamp.clone()),
             ],
         ),
         record(
@@ -2665,6 +3540,88 @@ pub fn binding_schema() -> Schema {
             ],
         ),
         record(
+            "BinanceAccountTradeWire",
+            vec![
+                field("market", market.clone()),
+                field("id", Type::String),
+                field("order_id", Type::String),
+                field("timestamp", timestamp.clone()),
+                field("side", Type::Identifier("Side")),
+                field("maker", Boolean),
+                field("best_match", Type::optional(Boolean)),
+                field("order_list_id", Type::optional(Type::String)),
+                field("price", decimal.clone()),
+                field("quantity", decimal.clone()),
+                field("quote_quantity", Type::optional(decimal.clone())),
+                field("commission", decimal.clone()),
+                field("commission_asset", Type::String),
+                field("realized_pnl", Type::optional(decimal.clone())),
+                field("position_side", Type::optional(Type::String)),
+                field("pair", Type::optional(Type::String)),
+                field("base_quantity", Type::optional(decimal.clone())),
+                field("margin_asset", Type::optional(Type::String)),
+            ],
+        ),
+        record(
+            "BinanceTestOrderRequestWire",
+            vec![
+                field("order", Type::named("OrderRequestWire")),
+                field("compute_commission_rates", Boolean),
+            ],
+        ),
+        record(
+            "BinanceTestOrderWire",
+            vec![field("response_json", Type::String)],
+        ),
+        record(
+            "BinanceC2cTradeHistoryRequestWire",
+            vec![
+                field("trade_type", Type::Identifier("BinanceC2cTradeType")),
+                field("start_timestamp", Type::optional(timestamp.clone())),
+                field("end_timestamp", Type::optional(timestamp.clone())),
+                field("page", Type::optional(Number)),
+                field("rows", Type::optional(Number)),
+                field("recv_window", Type::optional(Type::UnsignedInteger)),
+            ],
+        ),
+        record(
+            "BinanceC2cTradeWire",
+            vec![
+                field("order_number", Type::optional(Type::String)),
+                field("adv_no", Type::optional(Type::String)),
+                field("trade_type", Type::optional(Type::String)),
+                field("asset", Type::optional(Type::String)),
+                field("fiat", Type::optional(Type::String)),
+                field("fiat_symbol", Type::optional(Type::String)),
+                field("amount", Type::optional(decimal.clone())),
+                field("total_price", Type::optional(decimal.clone())),
+                field("unit_price", Type::optional(decimal.clone())),
+                field("order_status", Type::optional(Type::String)),
+                field("created_at", Type::optional(timestamp.clone())),
+                field("commission", Type::optional(decimal.clone())),
+                field("counterparty_nickname", Type::optional(Type::String)),
+                field("pay_method_name", Type::optional(Type::String)),
+                field("additional_kyc_verify", Type::optional(Number)),
+                field("taker_commission_rate", Type::optional(decimal.clone())),
+                field("taker_commission", Type::optional(decimal.clone())),
+                field("taker_amount", Type::optional(decimal.clone())),
+                field("advertisement_role", Type::optional(Type::String)),
+            ],
+        ),
+        record(
+            "BinanceC2cTradeHistoryPageWire",
+            vec![
+                field("code", Type::optional(Type::String)),
+                field("message", Type::optional(Type::String)),
+                field(
+                    "data",
+                    Type::optional(Type::list(Type::named("BinanceC2cTradeWire"))),
+                ),
+                field("total", Type::optional(Type::UnsignedInteger)),
+                field("success", Type::optional(Boolean)),
+            ],
+        ),
+        record(
             "BinanceListenKeyWire",
             vec![field("id", Type::String), field("value", Type::String)],
         ),
@@ -2672,7 +3629,7 @@ pub fn binding_schema() -> Schema {
             "HyperliquidLedgerEntryWire",
             vec![
                 field("kind", Type::Identifier("HyperliquidLedgerKind")),
-                field("time", timestamp),
+                field("time", timestamp.clone()),
                 field("hash", Type::String),
                 field("asset", Type::optional(Type::String)),
                 field("amount", Type::optional(decimal.clone())),
@@ -2694,9 +3651,168 @@ pub fn binding_schema() -> Schema {
                 field("mark_price", Type::optional(decimal.clone())),
                 field("oracle_price", Type::optional(decimal.clone())),
                 field("funding_rate", Type::optional(decimal.clone())),
-                field("open_interest", Type::optional(decimal)),
+                field("open_interest", Type::optional(decimal.clone())),
                 field("size_decimals", Number),
                 field("price_decimals", Number),
+            ],
+        ),
+        record(
+            "HyperliquidUserRateLimitWire",
+            vec![
+                field("cumulative_volume", decimal.clone()),
+                field("requests_used", Type::UnsignedInteger),
+                field("requests_cap", Type::UnsignedInteger),
+                field("requests_surplus", Type::UnsignedInteger),
+            ],
+        ),
+        record(
+            "HyperliquidReferrerWire",
+            vec![field("address", Type::String), field("code", Type::String)],
+        ),
+        record(
+            "HyperliquidReferralWire",
+            vec![
+                field(
+                    "referred_by",
+                    Type::optional(Type::named("HyperliquidReferrerWire")),
+                ),
+                field("cumulative_volume", decimal.clone()),
+                field("unclaimed_rewards", decimal.clone()),
+                field("claimed_rewards", decimal.clone()),
+                field("builder_rewards", decimal.clone()),
+                field("referrer_state_json", Type::String),
+                field("reward_history_json", Type::String),
+                field("token_to_state_json", Type::String),
+            ],
+        ),
+        record(
+            "HyperliquidDailyVolumeWire",
+            vec![
+                field("date", Type::String),
+                field("user_cross", decimal.clone()),
+                field("user_add", decimal.clone()),
+                field("exchange", decimal.clone()),
+            ],
+        ),
+        record(
+            "HyperliquidUserFeesWire",
+            vec![
+                field(
+                    "daily_volumes",
+                    Type::list(Type::named("HyperliquidDailyVolumeWire")),
+                ),
+                field("fee_schedule_json", Type::String),
+                field("user_cross_rate", decimal.clone()),
+                field("user_add_rate", decimal.clone()),
+                field("user_spot_cross_rate", Type::optional(decimal.clone())),
+                field("user_spot_add_rate", Type::optional(decimal.clone())),
+                field("active_referral_discount", Type::optional(decimal.clone())),
+                field("details_json", Type::String),
+            ],
+        ),
+        record(
+            "HyperliquidUserFillWire",
+            vec![
+                field("coin", Type::String),
+                field("price", decimal.clone()),
+                field("size", decimal.clone()),
+                field("side", Type::String),
+                field("time", timestamp.clone()),
+                field("start_position", decimal.clone()),
+                field("direction", Type::String),
+                field("closed_pnl", decimal.clone()),
+                field("hash", Type::String),
+                field("order_id", Type::UnsignedInteger),
+                field("crossed", Boolean),
+                field("fee", decimal.clone()),
+                field("builder_fee", Type::optional(decimal.clone())),
+                field("trade_id", Type::UnsignedInteger),
+                field("fee_token", Type::String),
+                field("twap_id", Type::optional(Type::UnsignedInteger)),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "HyperliquidOpenOrderWire",
+            vec![
+                field("coin", Type::String),
+                field("limit_price", decimal.clone()),
+                field("order_id", Type::UnsignedInteger),
+                field("side", Type::String),
+                field("size", decimal.clone()),
+                field("timestamp", timestamp.clone()),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "HyperliquidOrderDetailWire",
+            vec![
+                field("coin", Type::String),
+                field("side", Type::String),
+                field("limit_price", decimal.clone()),
+                field("size", decimal.clone()),
+                field("order_id", Type::UnsignedInteger),
+                field("timestamp", timestamp.clone()),
+                field("trigger_condition", Type::String),
+                field("is_trigger", Boolean),
+                field("trigger_price", decimal.clone()),
+                field("children_json", Type::String),
+                field("is_position_tpsl", Boolean),
+                field("reduce_only", Boolean),
+                field("order_type", Type::String),
+                field("original_size", decimal.clone()),
+                field("time_in_force", Type::optional(Type::String)),
+                field("client_order_id", Type::optional(Type::String)),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "HyperliquidOrderInfoWire",
+            vec![
+                field("order", Type::named("HyperliquidOrderDetailWire")),
+                field("status", Type::String),
+                field("status_timestamp", timestamp.clone()),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "HyperliquidPortfolioPointWire",
+            vec![
+                field("time", timestamp.clone()),
+                field("value", decimal.clone()),
+            ],
+        ),
+        record(
+            "HyperliquidPortfolioPeriodWire",
+            vec![
+                field("period", Type::String),
+                field(
+                    "account_value_history",
+                    Type::list(Type::named("HyperliquidPortfolioPointWire")),
+                ),
+                field(
+                    "pnl_history",
+                    Type::list(Type::named("HyperliquidPortfolioPointWire")),
+                ),
+                field("volume", decimal.clone()),
+            ],
+        ),
+        record(
+            "HyperliquidSubAccountWire",
+            vec![
+                field("name", Type::String),
+                field("user", Type::String),
+                field("master", Type::String),
+                field("perpetual_state_json", Type::String),
+                field("spot_state_json", Type::String),
+            ],
+        ),
+        record(
+            "HyperliquidVaultEquityWire",
+            vec![
+                field("vault_address", Type::String),
+                field("equity", decimal.clone()),
+                field("locked_until", Type::optional(timestamp.clone())),
             ],
         ),
         record(
@@ -2796,6 +3912,53 @@ pub fn binding_schema() -> Schema {
                     vec![
                         field("volume", Type::named("UpbitOrderVolumeWire")),
                         field("time_in_force", Type::Identifier("TimeInForce")),
+                    ],
+                ),
+            ],
+        },
+        TaggedUnion {
+            name: "HyperliquidUserRoleWire",
+            type_parameters: &[],
+            variants: vec![
+                variant("user", vec![]),
+                variant("agent", vec![field("user", Type::optional(Type::String))]),
+                variant("vault", vec![]),
+                variant(
+                    "sub_account",
+                    vec![field("master", Type::optional(Type::String))],
+                ),
+                variant("missing", vec![]),
+                variant(
+                    "other",
+                    vec![
+                        field("role", Type::String),
+                        field("data_json", Type::optional(Type::String)),
+                    ],
+                ),
+            ],
+        },
+        TaggedUnion {
+            name: "HyperliquidOrderReferenceWire",
+            type_parameters: &[],
+            variants: vec![
+                variant("order_id", vec![field("value", Type::UnsignedInteger)]),
+                variant("client_order_id", vec![field("value", Type::String)]),
+            ],
+        },
+        TaggedUnion {
+            name: "HyperliquidOrderStatusResponseWire",
+            type_parameters: &[],
+            variants: vec![
+                variant(
+                    "order",
+                    vec![field("value", Type::named("HyperliquidOrderInfoWire"))],
+                ),
+                variant("unknown_order", vec![]),
+                variant(
+                    "other",
+                    vec![
+                        field("status", Type::String),
+                        field("raw_json", Type::String),
                     ],
                 ),
             ],
@@ -3228,7 +4391,7 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
-        native_api_version: 21,
+        native_api_version: 28,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
         identifiers: IDENTIFIERS,

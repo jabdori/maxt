@@ -6,7 +6,8 @@ use std::process::Command;
 
 #[cfg(feature = "rust")]
 use maxt_bindings_common::coverage::{
-    Authentication, Availability, BASELINE_DATE, OPERATIONS, OperationMapping, OperationRisk,
+    Authentication, Availability, BASELINE_DATE, CatalogScope, OPERATIONS, OperationMapping,
+    OperationRisk, REGIONAL_PRODUCT_COUNTS,
 };
 #[cfg(feature = "rust")]
 use maxt_bindings_common::schema::Schema;
@@ -364,6 +365,31 @@ fn render_markdown(schema: &Schema) -> String {
             product.stage().label(),
         ));
     }
+    if !REGIONAL_PRODUCT_COUNTS.is_empty() {
+        output.push_str(
+            "\n## Regional catalog counts\n\nThe product table above uses the Global catalog. Regional counts include active operations published only for that region.\n\n| Exchange | Scope | Product | Mapped / official | Status |\n| --- | --- | --- | ---: | --- |\n",
+        );
+        for count in REGIONAL_PRODUCT_COUNTS {
+            let product = schema
+                .products
+                .iter()
+                .find(|product| product.exchange == count.exchange && product.id == count.product)
+                .expect("regional catalog count must name a product");
+            let scope = match count.scope {
+                CatalogScope::Global => "Global",
+                CatalogScope::Korea => "Korea",
+            };
+            output.push_str(&format!(
+                "| {} | {} | {} | {} / {} | {} |\n",
+                count.exchange.id(),
+                scope,
+                product.name,
+                product.mapped_operations_for(count.scope),
+                count.endpoint_count,
+                product.stage_for(count.scope).label(),
+            ));
+        }
+    }
     output.push_str("\n## Recorded operations\n\n| Exchange | Product | Operation | Method | Path / message | Interface | Authentication | Risk | Availability | Mapping | Implementation | Validation |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
     for operation in OPERATIONS {
         let mapping = match operation.mapping {
@@ -452,6 +478,9 @@ mod tests {
         assert!(output.contains(
             "| upbit | travel_rule | `travel_rule_vasps` | `GET` | `/v1/travel_rule/vasps` | `http` | JWT | read | Korea or Singapore only |"
         ));
+        assert!(
+            output.contains("| upbit | Korea | Deposits and withdrawals | 16 / 16 | Partial |")
+        );
     }
 
     #[cfg(feature = "typescript")]

@@ -1,0 +1,17 @@
+# Upbit Korea-only official API catalog additions
+# baseline_date: 2026-08-10
+# scope: Korea-only additions; combine with upbit-2026-08-10.tsv for the 57-operation Korea catalog
+# source_catalog: https://docs.upbit.com/kr/llms.txt
+# source_detail: https://docs.upbit.com/kr/reference/*.md
+# Deprecated /v1/orderbook/supported_levels is intentionally excluded; /v1/orderbook/instruments is the active replacement in the Global catalog.
+# columns: official_product	interface	method	path_or_message	operation_id	lifecycle
+Korea pockets	Http	GET	/v1/pockets	list-pockets	documented_active_korea_only
+Korea pockets	Http	GET	/v1/pockets/api_keys	list-pocket-api-keys	documented_active_korea_only
+Korea pockets	Http	GET	/v1/pockets/assets	get-sub-pocket-balance	documented_active_korea_only
+Korea pockets	Http	POST	/v1/pockets/universal_transfers	universal-transfer	documented_active_korea_only
+Korea pockets	Http	GET	/v1/pockets/universal_transfers	list-universal-transfers	documented_active_korea_only
+Korea pockets	Http	POST	/v1/pockets/transfers	transfer	documented_active_korea_only
+Korea pockets	Http	GET	/v1/pockets/transfers	list-transfers	documented_active_korea_only
+Korea deposits and withdrawals	Http	POST	/v1/deposits/krw	deposit-krw	documented_active_korea_only
+Korea deposits and withdrawals	Http	POST	/v1/withdraws/krw	withdraw-krw	documented_active_korea_only
+Korea deposits and withdrawals	Http	GET	/v1/api_keys	list-api-keys	documented_active_korea_only

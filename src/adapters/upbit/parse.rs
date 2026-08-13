@@ -11,7 +11,10 @@ use rust_decimal::Decimal;
 use serde::Deserialize;
 use serde_json::Number;
 
-use super::{UpbitMarketEvent, UpbitOrderBookInstrument, UpbitYearCandle};
+use super::{
+    UpbitClosedOrder, UpbitMarketEvent, UpbitOrderBookInstrument, UpbitOrderDetail,
+    UpbitOrderDetailTrade, UpbitYearCandle,
+};
 use crate::error::{Error, Result};
 use crate::types::{
     Balance, Candle, Exchange, Interval, Level, Market, MarketInfo, MarketKind, MarketStatus,
@@ -166,6 +169,84 @@ pub(crate) struct RawOrder {
     pub(crate) executed_volume: String,
     #[serde(default)]
     pub(crate) created_at: Option<String>,
+}
+
+/// Full `GET /v1/order` payload. The common order parser intentionally reads
+/// only its normalized subset; this shape retains provider-only detail.
+#[derive(Debug, Deserialize)]
+pub(crate) struct RawOrderDetail {
+    pub(crate) market: String,
+    pub(crate) uuid: String,
+    pub(crate) side: String,
+    pub(crate) ord_type: String,
+    #[serde(default)]
+    pub(crate) price: Option<String>,
+    pub(crate) state: String,
+    pub(crate) created_at: String,
+    #[serde(default)]
+    pub(crate) volume: Option<String>,
+    pub(crate) remaining_volume: String,
+    pub(crate) executed_volume: String,
+    pub(crate) reserved_fee: String,
+    pub(crate) remaining_fee: String,
+    pub(crate) paid_fee: String,
+    pub(crate) locked: String,
+    pub(crate) trades_count: u32,
+    pub(crate) prevented_volume: String,
+    pub(crate) prevented_locked: String,
+    #[serde(default)]
+    pub(crate) time_in_force: Option<String>,
+    #[serde(default)]
+    pub(crate) identifier: Option<String>,
+    #[serde(default)]
+    pub(crate) smp_type: Option<String>,
+    #[serde(default)]
+    pub(crate) trades: Vec<RawOrderDetailTrade>,
+}
+
+/// One summary returned by `GET /v1/orders/closed`.
+#[derive(Debug, Deserialize)]
+pub(crate) struct RawClosedOrder {
+    pub(crate) market: String,
+    pub(crate) uuid: String,
+    pub(crate) side: String,
+    pub(crate) ord_type: String,
+    pub(crate) state: String,
+    pub(crate) created_at: String,
+    #[serde(default)]
+    pub(crate) volume: Option<String>,
+    #[serde(default)]
+    pub(crate) price: Option<String>,
+    pub(crate) remaining_volume: String,
+    pub(crate) executed_volume: String,
+    #[serde(default)]
+    pub(crate) executed_funds: Option<String>,
+    pub(crate) reserved_fee: String,
+    pub(crate) remaining_fee: String,
+    pub(crate) paid_fee: String,
+    pub(crate) locked: String,
+    pub(crate) trades_count: u32,
+    pub(crate) prevented_volume: String,
+    pub(crate) prevented_locked: String,
+    #[serde(default)]
+    pub(crate) time_in_force: Option<String>,
+    #[serde(default)]
+    pub(crate) identifier: Option<String>,
+    #[serde(default)]
+    pub(crate) smp_type: Option<String>,
+}
+
+/// One provider fill returned by `GET /v1/order`.
+#[derive(Debug, Deserialize)]
+pub(crate) struct RawOrderDetailTrade {
+    pub(crate) market: String,
+    pub(crate) uuid: String,
+    pub(crate) price: String,
+    pub(crate) volume: String,
+    pub(crate) funds: String,
+    pub(crate) trend: String,
+    pub(crate) created_at: String,
+    pub(crate) side: String,
 }
 
 /// Upbit's error body. Every REST failure uses this shape.
@@ -810,6 +891,107 @@ pub(crate) fn order(raw: &RawOrder) -> Result<Order> {
             .transpose()?,
         created_at: raw.created_at.as_deref().map(created_at).transpose()?,
     })
+}
+
+/// Converts the complete single-order payload without discarding Upbit-only
+/// fee, self-match-prevention, and fill information.
+pub(crate) fn order_detail(raw: RawOrderDetail) -> Result<UpbitOrderDetail> {
+    let trades = raw
+        .trades
+        .into_iter()
+        .map(order_detail_trade)
+        .collect::<Result<Vec<_>>>()?;
+    if trades.len() != usize::try_from(raw.trades_count).unwrap_or(usize::MAX) {
+        return Err(Error::decode(
+            "Upbit order detail disagrees about `trades_count` and the `trades` array",
+        ));
+    }
+
+    Ok(UpbitOrderDetail {
+        market: market_from_native_symbol(&raw.market)?,
+        uuid: required_text(raw.uuid, "uuid")?,
+        side: required_text(raw.side, "side")?,
+        order_type: required_text(raw.ord_type, "ord_type")?,
+        price: optional_decimal(raw.price, "price")?,
+        state: required_text(raw.state, "state")?,
+        created_at: created_at(&raw.created_at)?,
+        volume: optional_decimal(raw.volume, "volume")?,
+        remaining_volume: decimal_text(&raw.remaining_volume, "remaining_volume")?,
+        executed_volume: decimal_text(&raw.executed_volume, "executed_volume")?,
+        reserved_fee: decimal_text(&raw.reserved_fee, "reserved_fee")?,
+        remaining_fee: decimal_text(&raw.remaining_fee, "remaining_fee")?,
+        paid_fee: decimal_text(&raw.paid_fee, "paid_fee")?,
+        locked: decimal_text(&raw.locked, "locked")?,
+        trades_count: raw.trades_count,
+        prevented_volume: decimal_text(&raw.prevented_volume, "prevented_volume")?,
+        prevented_locked: decimal_text(&raw.prevented_locked, "prevented_locked")?,
+        time_in_force: optional_text(raw.time_in_force, "time_in_force")?,
+        identifier: optional_text(raw.identifier, "identifier")?,
+        smp_type: optional_text(raw.smp_type, "smp_type")?,
+        trades,
+    })
+}
+
+/// Converts one closed-order summary without requiring a detail-only trades list.
+pub(crate) fn closed_order(raw: RawClosedOrder) -> Result<UpbitClosedOrder> {
+    Ok(UpbitClosedOrder {
+        market: market_from_native_symbol(&raw.market)?,
+        uuid: required_text(raw.uuid, "uuid")?,
+        side: required_text(raw.side, "side")?,
+        ord_type: required_text(raw.ord_type, "ord_type")?,
+        state: required_text(raw.state, "state")?,
+        created_at: created_at(&raw.created_at)?,
+        volume: optional_decimal(raw.volume, "volume")?,
+        price: optional_decimal(raw.price, "price")?,
+        remaining_volume: decimal_text(&raw.remaining_volume, "remaining_volume")?,
+        executed_volume: decimal_text(&raw.executed_volume, "executed_volume")?,
+        executed_funds: optional_decimal(raw.executed_funds, "executed_funds")?,
+        reserved_fee: decimal_text(&raw.reserved_fee, "reserved_fee")?,
+        remaining_fee: decimal_text(&raw.remaining_fee, "remaining_fee")?,
+        paid_fee: decimal_text(&raw.paid_fee, "paid_fee")?,
+        locked: decimal_text(&raw.locked, "locked")?,
+        trades_count: raw.trades_count,
+        prevented_volume: decimal_text(&raw.prevented_volume, "prevented_volume")?,
+        prevented_locked: decimal_text(&raw.prevented_locked, "prevented_locked")?,
+        time_in_force: optional_text(raw.time_in_force, "time_in_force")?,
+        identifier: optional_text(raw.identifier, "identifier")?,
+        smp_type: optional_text(raw.smp_type, "smp_type")?,
+    })
+}
+
+fn order_detail_trade(raw: RawOrderDetailTrade) -> Result<UpbitOrderDetailTrade> {
+    Ok(UpbitOrderDetailTrade {
+        market: market_from_native_symbol(&raw.market)?,
+        uuid: required_text(raw.uuid, "trade.uuid")?,
+        price: decimal_text(&raw.price, "trade.price")?,
+        volume: decimal_text(&raw.volume, "trade.volume")?,
+        funds: decimal_text(&raw.funds, "trade.funds")?,
+        trend: required_text(raw.trend, "trade.trend")?,
+        created_at: created_at(&raw.created_at)?,
+        side: required_text(raw.side, "trade.side")?,
+    })
+}
+
+fn required_text(value: String, field: &'static str) -> Result<String> {
+    if value.trim().is_empty() {
+        Err(Error::decode(format!("`{field}` is missing or empty")))
+    } else {
+        Ok(value)
+    }
+}
+
+fn optional_text(value: Option<String>, field: &'static str) -> Result<Option<String>> {
+    match value {
+        None => Ok(None),
+        Some(value) if value.trim().is_empty() => Err(Error::decode(format!(
+            "`{field}` must not be empty when present"
+        ))),
+        Some(value) => Ok(Some(value)),
+    }
+}
+
+fn optional_decimal(value: Option<String>, field: &'static str) -> Result<Option<Decimal>> {
+    value.map(|value| decimal_text(&value, field)).transpose()
 }
 
 pub(crate) fn stream_order(raw: &RawStreamOrder) -> Result<Order> {

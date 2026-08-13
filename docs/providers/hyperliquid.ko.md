@@ -94,16 +94,21 @@
 어댑터는 15초마다 `{"method":"ping"}`을 전송합니다. `l2Book.nSigFigs`,
 `l2Book.mantissa`는 노출하지 않습니다.
 
-## 비공개 API와 거래소 전용 API
+## 계정 설정과 거래소 전용 API
 
-`.with_wallet(address, private_key)`로 지갑을 설정합니다. 지갑 값은 첫 비공개
-호출에서 검증합니다. `Client::supports`는 지갑 설정 여부만 확인합니다. 개인 키
-(private key)는 로컬 서명에만 사용하며 `Debug` 출력에서 숨깁니다.
+공개 시장 데이터와 시장 스트림에는 계정 설정이 필요하지 않습니다. Hyperliquid는
+공개 계좌 조회 주소와 로컬 signer를 분리합니다.
 
-| 시장 | 비공개 기능 |
-| --- | --- |
-| Spot | 잔고, 미체결 주문, 주문 생성·취소, 계좌 스트림 |
-| Perpetual | Spot 기능, 포지션, 증거금 요약·설정, funding 지급 이력, reduce-only 주문 |
+| 설정 | Spot | Perpetual |
+| --- | --- | --- |
+| `.with_query_address(address)` | 잔고, 미체결 주문, 계좌 스트림 | Spot 조회와 포지션, 증거금 요약, funding 지급 이력 |
+| `.with_signer(private_key)` | 주문 생성·취소 | Spot 작업과 증거금 설정, reduce-only 주문 |
+| `.with_wallet(address, private_key)` | 두 설정을 함께 적용 | 두 설정을 함께 적용 |
+
+주소는 로컬 서명 없이 Hyperliquid의 계좌 조회 API에 전달합니다. 개인 키(private key)는
+로컬 서명에만 사용하며 `Debug` 출력에서 숨깁니다. 값은 처음 사용하는 호출에서
+검증합니다. `Client::supports`는 거래소가 요청을 수락할지까지 확인하지 않고 필요한
+주소 또는 signer가 설정됐는지만 확인합니다.
 
 `positions()`는 모든 미결 무기한 선물 포지션(position)을 반환합니다.
 `positions_on(spot) == Ok(vec![])`입니다.
@@ -128,12 +133,30 @@
 | 메서드 | 계약 |
 | --- | --- |
 | `asset_context(&market)` | mid, mark, oracle 가격, funding, open interest, 주문 정밀도 |
-| `non_funding_ledger(from, to, cursor, limit)` | 입금, 출금, 이체, 청산; funding 제외; 지갑 필요; 거래소 페이지 `<= 500` |
+| `basic_open_orders()` | 설정한 공개 주소에 묶인 서명 없는 `POST /info` `openOrders` 조회입니다. 간결한 이 거래소 전용 응답은 더 상세한 `frontendOpenOrders` 응답을 사용하는 공통 미체결 주문 조회와 의도적으로 구분합니다. fixture만 검증 |
+| `order_status(reference)` | 설정한 공개 주소에 묶인 서명 없는 `POST /info` `orderStatus` 조회입니다. `reference`에는 숫자 서버 주문 ID(`oid`) 또는 `0x` 접두사가 있는 32자리 16진수 클라이언트 주문 ID를 지정합니다. `unknownOid`는 오류가 아닌 일반 `HyperliquidOrderStatusResponse::UnknownOrder` 결과이며, 이후 추가되는 최상위 상태는 상태 문자열과 원본 JSON을 보존합니다. fixture만 검증 |
+| `historical_orders()` | 설정한 공개 주소에 묶인 서명 없는 `POST /info` `historicalOrders` 조회로 최근 주문 최대 2,000건을 반환합니다. 상세 주문에는 Hyperliquid의 trigger, 시간 유효 조건(time in force), reduce-only, client ID, 상태, 원본 JSON 필드를 보존합니다. fixture만 검증 |
+| `user_fills(aggregate_by_time)` | 설정한 공개 주소에 묶인 서명 없는 `POST /info` `userFills` 조회입니다. 공개 조회 주소가 필요하고 `aggregate_by_time`은 Hyperliquid의 부분 체결 합산을 선택합니다. 공통 `Trade`를 넓히지 않고 체결·계정 포지션·수수료·주문·방향·원본 거래소 데이터를 보존합니다. fixture만 검증 |
+| `user_fills_by_time(from, to, aggregate_by_time)` | 설정한 공개 주소에 묶인 서명 없는 `POST /info` `userFillsByTime` 조회입니다. `from`은 필수이고 `to`는 선택입니다. 거래소 밀리초 경계는 양쪽 모두 포함하며, 호출자 nanosecond 경계를 올림·내림 처리해 반환 범위가 요청 범위 안에 머물게 합니다. `aggregate_by_time`과 원본 필드 보존은 `user_fills`와 같습니다. fixture만 검증 |
+| `non_funding_ledger(from, to, cursor, limit)` | 입금, 출금, 이체, 청산; funding 제외; 설정한 공개 조회 주소 필요, 서명 없음; 거래소 페이지 `<= 500` |
+| `user_rate_limit()` | 설정한 주소의 공개 `POST /info` `userRateLimit` 조회; 누적 거래량과 현재 요청 사용량·상한·여유량 |
+| `user_role()` | 공개 `userRole` 조회; 알려진 역할은 typed 값으로, 알 수 없는 거래소 역할은 원문을 보존 |
+| `referral()` | 공개 `referral` 조회; 안정적인 잔액은 typed 값으로, 거래소 소유 referral 상태는 JSON 문자열로 보존 |
+| `user_fees()` | 공개 `userFees` 조회; 현재 계정 수수료율·일별 거래량은 typed 값으로, 거래소 수수료표는 JSON 문자열로 보존 |
+| `portfolio()` | 공개 `portfolio` 조회; 거래소 기간별 계정 가치·손익 이력 |
+| `sub_accounts()` | 공개 `subAccounts` 조회; 거래소 `null` 응답은 빈 목록으로 반환 |
+| `user_vault_equities()` | 공개 `userVaultEquities` 조회; 현재 vault equity 포지션 |
 
 `all_mids()`는 공개 읽기 전용 스냅샷이며 fixture로 검증했습니다. 실제 읽기
 요청(live read)은 아직 검증하지 않았습니다. provider의 기본 빈 `dex`는 첫 번째
 무기한 선물 DEX를 선택하고, Spot mid 가격은 해당 DEX에서만 포함됩니다. 호가가
 비어 있으면 Hyperliquid가 마지막 체결 가격을 사용합니다.
+
+위 주소 단위 Info 조회는 새 주문 조회 메서드 3개를 포함해
+`with_query_address(...)` 또는 `with_wallet(...)`로 유효한 공개 주소를 설정해야 합니다.
+API 키(API key), 개인 키(private key), 로컬 서명은 사용하지 않으며, 주소가 없거나
+유효하지 않으면 네트워크 요청 전에 실패합니다. fixture만 검증했으며 실제 읽기 요청은
+아직 검증하지 않았습니다. Hyperliquid의 [공식 Info endpoint](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)를 참조하세요.
 
 | `non_funding_ledger` 필드·상태 | 계약 |
 | --- | --- |
@@ -164,6 +187,8 @@ HIP-3, outcome asset, `Sec1`, 시장가 주문, `FOK`, `l2Book.nSigFigs`,
 
 - [API 개요](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api)
 - [Info endpoint](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)
+- [주소 단위 Info 조회](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)
+- [사용자 체결 (`userFills`, `userFillsByTime`)](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)
 - [All mids (`allMids`)](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)
 - [Perpetual 정보](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals)
 - [Spot 정보](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/spot)

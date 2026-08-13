@@ -27,50 +27,70 @@ pub(crate) type CancelCallback = Arc<dyn Fn(String) -> CancelFuture + Send + Syn
 /// Dart에서 전달할 수 있는 시장 stream event입니다.
 #[derive(Debug)]
 pub enum WireMarketEvent {
+    /// 시장 체결 이벤트입니다.
     Trade(WireTrade),
+    /// 시장 호가 스냅샷 이벤트입니다.
     OrderBook(WireOrderBook),
+    /// 시장 ticker 이벤트입니다.
     Ticker(WireTicker),
+    /// 시장 캔들 이벤트입니다.
     Candle(WireCandle),
+    /// 재연결 뒤 수신이 재개됐음을 알립니다.
     Reconnected,
 }
 
 /// Dart에서 전달할 수 있는 계정 stream event입니다.
 #[derive(Debug)]
 pub enum WireAccountEvent {
+    /// 계정 잔고 이벤트입니다.
     Balance(WireBalance),
+    /// 계정 주문 이벤트입니다.
     Order(WireOrder),
+    /// 재연결 뒤 수신이 재개됐음을 알립니다.
     Reconnected,
 }
 
 /// 시장 stream sink에 넣는 tagged item입니다.
 #[derive(Debug)]
 pub enum MarketStreamItem {
+    /// 정상 시장 이벤트입니다.
     Event(WireMarketEvent),
+    /// 스트림을 끝내지 않는 오류입니다.
     Error(NativeError),
+    /// 시장 스트림의 자연 종료를 나타냅니다.
     End,
 }
 
 /// 계정 stream sink에 넣는 tagged item입니다.
 #[derive(Debug)]
 pub enum AccountStreamItem {
+    /// 정상 계정 이벤트입니다.
     Event(WireAccountEvent),
+    /// 스트림을 끝내지 않는 오류입니다.
     Error(NativeError),
+    /// 계정 스트림의 자연 종료를 나타냅니다.
     End,
 }
 
 /// Rust market subscription에서 Dart가 한 항목씩 읽는 tagged item입니다.
 #[derive(Debug)]
 pub enum WireMarketStreamItem {
+    /// 정상 시장 이벤트입니다.
     Event(WireMarketEvent),
+    /// 스트림을 끝내지 않는 오류입니다.
     Error(NativeError),
+    /// 시장 스트림의 자연 종료 또는 명시적 close를 나타냅니다.
     End,
 }
 
 /// Rust account subscription에서 Dart가 한 항목씩 읽는 tagged item입니다.
 #[derive(Debug)]
 pub enum WireAccountStreamItem {
+    /// 정상 계정 이벤트입니다.
     Event(WireAccountEvent),
+    /// 스트림을 끝내지 않는 오류입니다.
     Error(NativeError),
+    /// 계정 스트림의 자연 종료 또는 명시적 close를 나타냅니다.
     End,
 }
 

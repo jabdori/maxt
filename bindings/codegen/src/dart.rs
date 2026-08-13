@@ -132,6 +132,7 @@ fn render_dart_model_record(name: &str, fields: &[Field]) -> String {
         if matches!(
             (name, field.name),
             ("OrderHistoryRequest", "statuses")
+                | ("BithumbClosedOrdersRequest", "states")
                 | ("BithumbTwapOrdersRequest", "uuids")
                 | ("BithumbKrwWithdrawalsRequest", "uuids" | "txids")
                 | ("BithumbKrwDepositsRequest", "uuids" | "txids")
@@ -160,7 +161,8 @@ fn render_dart_model_record(name: &str, fields: &[Field]) -> String {
         .iter()
         .map(|field| {
             format!(
-                "  final {} {};\n",
+                "{}  final {} {};\n",
+                dart_field_doc(name, field),
                 dart_schema_type(field),
                 snake_to_lower_camel(field.name)
             )
@@ -179,7 +181,12 @@ fn render_dart_model_record(name: &str, fields: &[Field]) -> String {
     } else {
         format!("  {const_keyword}{name}({{\n{arguments}  }}){initializer};\n")
     };
-    format!("\nfinal class {name} {{\n{constructor}\n{declarations}}}\n")
+    format!(
+        "\n{}final class {name} {{\n{}{}\n{declarations}}}\n",
+        dart_model_doc(name),
+        dart_constructor_doc(name),
+        constructor,
+    )
 }
 
 fn render_dart_model_union(
@@ -232,10 +239,11 @@ fn render_dart_model_union(
                 }
             };
             let declaration = format!("{signature} = {result};");
+            let doc = format!("  /// [{name}]의 `{constructor}` 변형을 만듭니다.\n");
             if declaration.lines().count() > 1 || declaration.chars().count() <= 80 {
-                format!("{declaration}\n")
+                format!("{doc}{declaration}\n")
             } else {
-                format!("{signature} =\n      {result};\n")
+                format!("{doc}{signature} =\n      {result};\n")
             }
         })
         .collect::<String>();
@@ -243,13 +251,15 @@ fn render_dart_model_union(
         .iter()
         .map(|variant| {
             let suffix = pascal_case(variant.name);
+            let constructor = dart_name(&suffix);
             match variant.fields.as_slice() {
                 [] => format!(
-                    "\nfinal class {name}{suffix} extends {name} {{\n  const {name}{suffix}();\n}}\n"
+                    "\n/// [{name}]의 `{constructor}` 변형입니다.\nfinal class {name}{suffix} extends {name} {{\n  /// `{constructor}` 변형을 만듭니다.\n  const {name}{suffix}();\n}}\n"
                 ),
                 [field] if field.name == "value" => format!(
-                    "\nfinal class {name}{suffix} extends {name} {{\n  const {name}{suffix}(this.value);\n\n  final {} value;\n}}\n",
-                    dart_schema_type(field)
+                    "\n/// [{name}]의 `{constructor}` 변형입니다.\nfinal class {name}{suffix} extends {name} {{\n  /// [value]를 담은 `{constructor}` 변형을 만듭니다.\n  const {name}{suffix}(this.value);\n\n{}  final {} value;\n}}\n",
+                    dart_field_doc(name, field),
+                    dart_schema_type(field),
                 ),
                 fields => {
                     let flat_arguments = fields
@@ -262,7 +272,7 @@ fn render_dart_model_union(
                         .join(", ");
                     let flat_constructor =
                         format!("  const {name}{suffix}({{{flat_arguments}}});");
-                    let constructor = if flat_constructor.chars().count() <= 80 {
+                    let class_constructor = if flat_constructor.chars().count() <= 80 {
                         format!("{flat_constructor}\n")
                     } else {
                         let arguments = fields
@@ -281,20 +291,45 @@ fn render_dart_model_union(
                         .iter()
                         .map(|field| {
                             format!(
-                                "  final {} {};\n",
+                                "{}  final {} {};\n",
+                                dart_field_doc(name, field),
                                 dart_schema_type(field),
                                 snake_to_lower_camel(field.name)
                             )
                         })
                         .collect::<String>();
                     format!(
-                        "\nfinal class {name}{suffix} extends {name} {{\n{constructor}\n{declarations}}}\n"
+                        "\n/// [{name}]의 `{constructor}` 변형입니다.\nfinal class {name}{suffix} extends {name} {{\n  /// `{constructor}` 변형의 값을 만듭니다.\n{class_constructor}\n{declarations}}}\n"
                     )
                 }
             }
         })
         .collect::<String>();
-    format!("\nsealed class {name} {{\n  const {name}();\n\n{factories}}}\n{classes}")
+    format!(
+        "\n{}sealed class {name} {{\n  /// 변형 클래스가 공통으로 사용하는 기본 생성자입니다.\n  const {name}();\n\n{factories}}}\n{classes}",
+        dart_model_doc(name),
+    )
+}
+
+fn dart_model_doc(name: &str) -> String {
+    let description = if name.ends_with("Request") {
+        "거래소 API 요청에 전달하는 입력값"
+    } else if name.ends_with("Result") {
+        "거래소 API 작업의 결과"
+    } else if name.ends_with("Page") {
+        "거래소 API가 반환한 페이지 응답"
+    } else {
+        "거래소 API와 주고받는 구조화된 데이터"
+    };
+    format!("/// {description} 모델인 [{name}]입니다.\n")
+}
+
+fn dart_constructor_doc(name: &str) -> String {
+    format!("  /// [{name}]의 값을 만듭니다.\n")
+}
+
+fn dart_field_doc(_model: &str, field: &Field) -> String {
+    format!("  /// 거래소 API의 `{}` 값입니다.\n", field.name)
 }
 
 fn dart_schema_type(field: &Field) -> String {
@@ -363,6 +398,31 @@ pub(crate) fn render_rust_models(schema: &Schema) -> String {
         "HyperliquidLedgerEntry",
         "HyperliquidAssetContext",
     ];
+    const OUTPUT_ONLY: &[&str] = &[
+        "UpbitListedSubscription",
+        "UpbitSubscriptionList",
+        "BinanceAccountTrade",
+        "BinanceTestOrder",
+        "BinanceSpotAveragePrice",
+        "BithumbOrderDetailTrade",
+        "BithumbOrderDetail",
+        "BithumbClosedOrder",
+        "UpbitOrderDetailTrade",
+        "UpbitOrderDetail",
+        "UpbitClosedOrder",
+        "BithumbOrderListItem",
+        "BinanceC2cTrade",
+        "BinanceC2cTradeHistoryPage",
+        "HyperliquidUserRateLimit",
+        "HyperliquidUserRole",
+        "HyperliquidReferral",
+        "HyperliquidUserFees",
+        "HyperliquidUserFill",
+        "HyperliquidOpenOrder",
+        "HyperliquidOrderDetail",
+        "HyperliquidOrderInfo",
+        "HyperliquidOrderStatusResponse",
+    ];
     let generated = schema
         .models
         .iter()
@@ -390,19 +450,34 @@ pub(crate) fn render_rust_models(schema: &Schema) -> String {
             schema.identifier(name).expect("wallet status schema"),
         ));
     }
+    output.push_str(&render_rust_wire_provider_identifier(
+        schema
+            .identifier("UpbitClosedOrderState")
+            .expect("Upbit closed-order state schema"),
+    ));
     for name in &generated {
         if let Some(record) = schema
             .records
             .iter()
             .find(|record| record.name == format!("{name}Wire"))
         {
-            output.push_str(&render_rust_wire_record(schema, name, &record.fields));
+            output.push_str(&render_rust_wire_record(
+                schema,
+                name,
+                &record.fields,
+                !OUTPUT_ONLY.contains(name),
+            ));
         } else if let Some(union) = schema
             .unions
             .iter()
             .find(|union| union.name == format!("{name}Wire"))
         {
-            output.push_str(&render_rust_wire_union(schema, name, &union.variants));
+            output.push_str(&render_rust_wire_union(
+                schema,
+                name,
+                &union.variants,
+                !OUTPUT_ONLY.contains(name),
+            ));
         }
     }
     let mut pages = Vec::new();
@@ -411,7 +486,7 @@ pub(crate) fn render_rust_models(schema: &Schema) -> String {
             continue;
         };
         if !matches!(name, "FundingRate" | "FundingPayment") && !pages.contains(&name) {
-            output.push_str(&render_rust_wire_page(name));
+            output.push_str(&render_rust_wire_page(name, true));
             pages.push(name);
         }
     }
@@ -425,7 +500,7 @@ pub(crate) fn render_rust_models(schema: &Schema) -> String {
                 "FundingRate" | "FundingPayment" | "HyperliquidLedgerEntry"
             ) && !pages.contains(&name)
             {
-                output.push_str(&render_rust_wire_page(name));
+                output.push_str(&render_rust_wire_page(name, !OUTPUT_ONLY.contains(&name)));
                 pages.push(name);
             }
         }
@@ -471,7 +546,46 @@ fn render_rust_wire_identifier(identifier: &maxt_bindings_common::schema::Identi
     )
 }
 
-fn render_rust_wire_record(schema: &Schema, name: &str, fields: &[Field]) -> String {
+fn render_rust_wire_provider_identifier(
+    identifier: &maxt_bindings_common::schema::Identifier,
+) -> String {
+    let name = identifier.name;
+    let variants = identifier
+        .variants
+        .iter()
+        .map(|variant| format!("    {},\n", variant.rust_name))
+        .collect::<String>();
+    let to_arms = identifier
+        .variants
+        .iter()
+        .map(|variant| {
+            format!(
+                "            maxt::adapters::{name}::{} => Self::{},\n",
+                variant.rust_name, variant.rust_name
+            )
+        })
+        .collect::<String>();
+    let from_arms = identifier
+        .variants
+        .iter()
+        .map(|variant| {
+            format!(
+                "            Wire{name}::{} => Self::{},\n",
+                variant.rust_name, variant.rust_name
+            )
+        })
+        .collect::<String>();
+    format!(
+        "\n#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum Wire{name} {{\n{variants}}}\n\nimpl From<maxt::adapters::{name}> for Wire{name} {{\n    fn from(value: maxt::adapters::{name}) -> Self {{\n        match value {{\n{to_arms}        }}\n    }}\n}}\n\nimpl From<Wire{name}> for maxt::adapters::{name} {{\n    fn from(value: Wire{name}) -> Self {{\n        match value {{\n{from_arms}        }}\n    }}\n}}\n"
+    )
+}
+
+fn render_rust_wire_record(
+    schema: &Schema,
+    name: &str,
+    fields: &[Field],
+    include_from_wire: bool,
+) -> String {
     let declarations = fields
         .iter()
         .map(|field| {
@@ -513,8 +627,15 @@ fn render_rust_wire_record(schema: &Schema, name: &str, fields: &[Field]) -> Str
     } else {
         format!("        Ok(Self {{\n{from_fields}        }})")
     };
+    let from_wire = if include_from_wire {
+        format!(
+            "\nimpl TryFrom<Wire{name}> for maxt::{name} {{\n    type Error = NativeError;\n\n    fn try_from(value: Wire{name}) -> Result<Self, Self::Error> {{\n{from_body}\n    }}\n}}\n"
+        )
+    } else {
+        String::new()
+    };
     format!(
-        "\n#[derive(Debug, Clone, PartialEq, Eq)]\npub struct Wire{name} {{\n{declarations}}}\n\nimpl From<maxt::{name}> for Wire{name} {{\n    fn from(value: maxt::{name}) -> Self {{\n        Self {{\n{to_fields}        }}\n    }}\n}}\n\nimpl TryFrom<Wire{name}> for maxt::{name} {{\n    type Error = NativeError;\n\n    fn try_from(value: Wire{name}) -> Result<Self, Self::Error> {{\n{from_body}\n    }}\n}}\n"
+        "\n#[derive(Debug, Clone, PartialEq, Eq)]\npub struct Wire{name} {{\n{declarations}}}\n\nimpl From<maxt::{name}> for Wire{name} {{\n    fn from(value: maxt::{name}) -> Self {{\n        Self {{\n{to_fields}        }}\n    }}\n}}\n{from_wire}"
     )
 }
 
@@ -522,6 +643,7 @@ fn render_rust_wire_union(
     schema: &Schema,
     name: &str,
     variants: &[maxt_bindings_common::schema::Variant],
+    include_from_wire: bool,
 ) -> String {
     let declarations = variants
         .iter()
@@ -554,10 +676,17 @@ fn render_rust_wire_union(
             let rust = pascal_case(variant.name);
             match variant.fields.as_slice() {
                 [] => format!("            maxt::{name}::{rust} => Self::{rust},\n"),
-                [field] if field.name == "value" => format!(
-                    "            maxt::{name}::{rust}(value) => Self::{rust}({}),\n",
-                    rust_core_to_wire(schema, field, "value")
-                ),
+                [field] if field.name == "value" => {
+                    let value = if name == "HyperliquidOrderStatusResponse" {
+                        "(*value)"
+                    } else {
+                        "value"
+                    };
+                    format!(
+                        "            maxt::{name}::{rust}(value) => Self::{rust}({}),\n",
+                        rust_core_to_wire(schema, field, value)
+                    )
+                }
                 fields => {
                     let pattern = fields
                         .iter()
@@ -613,15 +742,28 @@ fn render_rust_wire_union(
         })
         .collect::<String>();
     let fallback = match name {
-        "TransferDestination" | "WithdrawalFee" | "TravelRuleRequirement" => {
+        "TransferDestination"
+        | "WithdrawalFee"
+        | "TravelRuleRequirement"
+        | "HyperliquidOrderReference" => {
             format!(
                 "            _ => unreachable!(\"new {name} variant requires a Dart wire variant\"),\n"
             )
         }
+        "HyperliquidUserRole" | "HyperliquidOrderStatusResponse" if !include_from_wire => format!(
+            "            _ => unreachable!(\"new {name} variant requires a Dart wire variant\"),\n"
+        ),
         _ => String::new(),
     };
+    let from_wire = if include_from_wire {
+        format!(
+            "\nimpl TryFrom<Wire{name}> for maxt::{name} {{\n    type Error = NativeError;\n\n    fn try_from(value: Wire{name}) -> Result<Self, Self::Error> {{\n        Ok(match value {{\n{from_arms}        }})\n    }}\n}}\n"
+        )
+    } else {
+        String::new()
+    };
     format!(
-        "\n#[derive(Debug, Clone, PartialEq, Eq)]\npub enum Wire{name} {{\n{declarations}}}\n\nimpl From<maxt::{name}> for Wire{name} {{\n    fn from(value: maxt::{name}) -> Self {{\n        match value {{\n{to_arms}{fallback}        }}\n    }}\n}}\n\nimpl TryFrom<Wire{name}> for maxt::{name} {{\n    type Error = NativeError;\n\n    fn try_from(value: Wire{name}) -> Result<Self, Self::Error> {{\n        Ok(match value {{\n{from_arms}        }})\n    }}\n}}\n"
+        "\n#[derive(Debug, Clone, PartialEq, Eq)]\npub enum Wire{name} {{\n{declarations}}}\n\nimpl From<maxt::{name}> for Wire{name} {{\n    fn from(value: maxt::{name}) -> Self {{\n        match value {{\n{to_arms}{fallback}        }}\n    }}\n}}\n{from_wire}"
     )
 }
 
@@ -633,9 +775,16 @@ fn rust_field_initializer(name: &str, value: String) -> String {
     }
 }
 
-fn render_rust_wire_page(name: &str) -> String {
+fn render_rust_wire_page(name: &str, include_from_wire: bool) -> String {
+    let from_wire = if include_from_wire {
+        format!(
+            "\nimpl TryFrom<Wire{name}Page> for maxt::Page<maxt::{name}> {{\n    type Error = NativeError;\n\n    fn try_from(value: Wire{name}Page) -> Result<Self, Self::Error> {{\n        Ok(Self {{\n            items: value.items.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,\n            next: value.next.map(maxt::Cursor::new),\n        }})\n    }}\n}}\n"
+        )
+    } else {
+        String::new()
+    };
     format!(
-        "\n#[derive(Debug, Clone, PartialEq, Eq)]\npub struct Wire{name}Page {{\n    pub items: Vec<Wire{name}>,\n    pub next: Option<String>,\n}}\n\nimpl From<maxt::Page<maxt::{name}>> for Wire{name}Page {{\n    fn from(value: maxt::Page<maxt::{name}>) -> Self {{\n        Self {{\n            items: value.items.into_iter().map(Into::into).collect(),\n            next: value.next.map(|cursor| cursor.as_str().to_owned()),\n        }}\n    }}\n}}\n\nimpl TryFrom<Wire{name}Page> for maxt::Page<maxt::{name}> {{\n    type Error = NativeError;\n\n    fn try_from(value: Wire{name}Page) -> Result<Self, Self::Error> {{\n        Ok(Self {{\n            items: value.items.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,\n            next: value.next.map(maxt::Cursor::new),\n        }})\n    }}\n}}\n"
+        "\n#[derive(Debug, Clone, PartialEq, Eq)]\npub struct Wire{name}Page {{\n    pub items: Vec<Wire{name}>,\n    pub next: Option<String>,\n}}\n\nimpl From<maxt::Page<maxt::{name}>> for Wire{name}Page {{\n    fn from(value: maxt::Page<maxt::{name}>) -> Self {{\n        Self {{\n            items: value.items.into_iter().map(Into::into).collect(),\n            next: value.next.map(|cursor| cursor.as_str().to_owned()),\n        }}\n    }}\n}}\n{from_wire}"
     )
 }
 
@@ -787,11 +936,19 @@ pub(crate) fn render_wire_converters(schema: &Schema) -> String {
         "TimeInForce",
         "MarginMode",
         "UpbitOrderDirection",
+        "UpbitClosedOrderState",
         "UpbitSmpType",
+        "UpbitKrwTwoFactorType",
+        "UpbitPocketTransferState",
+        "UpbitPocketTransferDirection",
+        "UpbitPocketTransferOrder",
         "BithumbPendingOrderState",
+        "BithumbClosedOrderState",
         "BithumbOrderDirection",
+        "BithumbOrderListState",
         "BithumbTwapState",
         "BithumbTwapOrderDirection",
+        "BinanceC2cTradeType",
         "WithdrawalStatus",
         "DepositStatus",
     ] {
@@ -917,16 +1074,20 @@ pub(crate) fn render_adapter_api(schema: &Schema) -> String {
          import 'errors.dart';\n\
          import 'models.dart';\n\
          import 'stream.dart';\n\n\
+         /// 거래소 구현이 제공하는 공통 시장·계정 API입니다.\n\
          abstract interface class GeneratedAdapterContract {\n\
+         \x20 /// 이 어댑터가 연결된 거래소입니다.\n\
          \x20 Exchange get exchange;\n\n\
+         \x20 /// 이 어댑터에서 사용할 수 있는 공통 기능 집합입니다.\n\
          \x20 Set<Feature> get features;\n\n\
+         \x20 /// [feature]를 이 거래소에서 호출할 수 있는지 확인합니다.\n\
          \x20 bool supports(Feature feature);\n",
     );
     for operation in schema.adapter_operations {
         output.push('\n');
         render_method_declaration(&mut output, operation);
     }
-    output.push_str("}\n\nabstract base class GeneratedAdapterDefaults\n    implements GeneratedAdapterContract {\n  Future<T> _unsupported<T>(Feature feature) => Future<T>.error(\n    UnsupportedError(\n      feature: feature,\n      exchange: exchange,\n      detail: '${exchange.id} has no endpoint for ${feature.wireName}',\n    ),\n  );\n\n  @override\n  bool supports(Feature feature) => features.contains(feature);\n");
+    output.push_str("}\n\n/// 지원하지 않는 공통 기능을 [UnsupportedError]로 처리하는 기본 구현입니다.\nabstract base class GeneratedAdapterDefaults\n    implements GeneratedAdapterContract {\n  Future<T> _unsupported<T>(Feature feature) => Future<T>.error(\n    UnsupportedError(\n      feature: feature,\n      exchange: exchange,\n      detail: '${exchange.id} has no endpoint for ${feature.wireName}',\n    ),\n  );\n\n  @override\n  bool supports(Feature feature) => features.contains(feature);\n");
     for operation in schema
         .adapter_operations
         .iter()
@@ -949,12 +1110,17 @@ pub(crate) fn render_client_api(schema: &Schema) -> String {
          import 'models.dart';\n\
          import 'runtime.dart';\n\
          import 'stream.dart';\n\n\
+         /// 공통 API를 하나의 거래소 어댑터에 연결하는 클라이언트입니다.\n\
          abstract base class GeneratedClient<A extends Adapter> {\n\
+         \x20 /// [adapter]를 사용하는 클라이언트를 만듭니다.\n\
          \x20 GeneratedClient(this.adapter)\n\
          \x20   : _native = NativeClientDelegate.fromAdapter(adapter);\n\n\
+         \x20 /// 이 클라이언트가 호출할 거래소 어댑터입니다.\n\
          \x20 final A adapter;\n\
          \x20 final NativeClientDelegate _native;\n\n\
+         \x20 /// 연결된 거래소입니다.\n\
          \x20 Exchange get exchange => _native.exchange;\n\n\
+         \x20 /// [feature]를 연결된 거래소에서 지원하는지 확인합니다.\n\
          \x20 bool supports(Feature feature) => _native.supports(feature);\n",
     );
     for operation in schema.adapter_operations {
@@ -1170,8 +1336,10 @@ pub(crate) fn render_provider_methods(schema: &Schema) -> String {
     );
     for provider in schema.providers {
         output.push_str(&format!(
-            "\nextension {}GeneratedMethods on {} {{\n",
-            provider.adapter, provider.adapter
+            "\n/// {} 전용 API 확장입니다.\nextension {}GeneratedMethods on {} {{\n",
+            provider_display_name(provider.exchange),
+            provider.adapter,
+            provider.adapter
         ));
         for (index, method) in provider
             .methods
@@ -1182,7 +1350,7 @@ pub(crate) fn render_provider_methods(schema: &Schema) -> String {
             if index > 0 {
                 output.push('\n');
             }
-            output.push_str(provider_method_source(provider.exchange, method.rust_name));
+            output.push_str(&provider_method_source(provider.exchange, method.rust_name));
         }
         output.push_str("}\n");
     }
@@ -1191,7 +1359,7 @@ pub(crate) fn render_provider_methods(schema: &Schema) -> String {
 
 pub(crate) fn render_delegate_methods(schema: &Schema) -> String {
     let mut output = String::from(
-        "// Generated by `cargo run -p maxt-bindings-codegen`. Do not edit.\n\npart of 'adapters.dart';\n\nabstract base class GeneratedNativeDelegate extends AdapterBase {\n  Future<Adapter> get delegateAdapter;\n",
+        "// Generated by `cargo run -p maxt-bindings-codegen`. Do not edit.\n\npart of 'adapters.dart';\n\n/// 다른 [Adapter] 구현에 공통 호출을 위임하는 기본 클래스입니다.\nabstract base class GeneratedNativeDelegate extends AdapterBase {\n  /// 실제 호출을 처리할 어댑터입니다.\n  Future<Adapter> get delegateAdapter;\n",
     );
     for operation in schema.adapter_operations.iter().filter(|operation| {
         !matches!(
@@ -1215,7 +1383,11 @@ pub(crate) fn render_delegate_methods(schema: &Schema) -> String {
             "(await delegateAdapter).{}({arguments});",
             operation.language_name
         );
-        output.push_str("\n  @override\n");
+        output.push('\n');
+        if let Some(doc) = adapter_doc(operation.language_name) {
+            output.push_str(doc);
+        }
+        output.push_str("  @override\n");
         if signature.chars().count() + call.chars().count() < 80 {
             output.push_str(&format!("{signature} {call}\n"));
         } else {
@@ -1237,6 +1409,7 @@ pub(crate) fn render_wire_shape_guard(schema: &Schema) -> String {
         "BithumbNoticeWire",
         "BithumbApiKeyWire",
         "BithumbPendingOrdersRequestWire",
+        "BithumbClosedOrdersRequestWire",
         "BithumbAssetFeeWire",
         "BithumbNetworkFeeWire",
         "BinanceListenKeyWire",
@@ -1272,12 +1445,23 @@ pub(crate) fn render_wire_shape_guard(schema: &Schema) -> String {
         ("TimeInForce", "WireTimeInForce"),
         ("SizeKind", "WireSizeKind"),
         ("UpbitOrderDirection", "WireUpbitOrderDirection"),
+        ("UpbitClosedOrderState", "WireUpbitClosedOrderState"),
         ("UpbitSmpType", "WireUpbitSmpType"),
+        ("UpbitKrwTwoFactorType", "WireUpbitKrwTwoFactorType"),
+        ("UpbitPocketTransferState", "WireUpbitPocketTransferState"),
+        (
+            "UpbitPocketTransferDirection",
+            "WireUpbitPocketTransferDirection",
+        ),
+        ("UpbitPocketTransferOrder", "WireUpbitPocketTransferOrder"),
         ("BithumbAlertStep", "WireBithumbAlertStep"),
         ("BithumbPendingOrderState", "WireBithumbPendingOrderState"),
+        ("BithumbClosedOrderState", "WireBithumbClosedOrderState"),
         ("BithumbOrderDirection", "WireBithumbOrderDirection"),
+        ("BithumbOrderListState", "WireBithumbOrderListState"),
         ("BithumbTwapState", "WireBithumbTwapState"),
         ("BithumbTwapOrderDirection", "WireBithumbTwapOrderDirection"),
+        ("BinanceC2cTradeType", "WireBinanceC2cTradeType"),
         ("ExchangeErrorKind", "WireExchangeErrorKind"),
         ("WithdrawalStatus", "WireWithdrawalStatus"),
         ("DepositStatus", "WireDepositStatus"),
@@ -1397,8 +1581,8 @@ fn rust_wire_field(name: &str, ty: &Type) -> String {
     }
 }
 
-fn provider_method_source(exchange: &str, method: &str) -> &'static str {
-    match (exchange, method) {
+fn provider_method_source(exchange: &str, method: &str) -> String {
+    let source = match (exchange, method) {
         ("upbit", "order_books") => {
             "  Future<List<OrderBook>> orderBooks(List<Market> markets, [int? depth]) =>\n      _nativeFuture(\n        () => _handle.upbitOrderBooks(\n          markets: markets.map(_marketToWire).toList(growable: false),\n          depth: checkedUint32(depth, field: 'depth'),\n        ),\n      ).then(\n        (values) => values.map(_orderBookFromWire).toList(growable: false),\n      );\n"
         }
@@ -1420,8 +1604,17 @@ fn provider_method_source(exchange: &str, method: &str) -> &'static str {
         ("upbit", "market_events") => {
             "  Future<List<UpbitMarketEvent>> marketEvents() =>\n      _nativeFuture(_handle.upbitMarketEvents).then(\n        (values) =>\n            values.map(_upbitMarketEventFromWire).toList(growable: false),\n      );\n"
         }
+        ("upbit", "list_subscriptions") => {
+            "  Future<UpbitSubscriptionList> listSubscriptions(\n    Subscription subscription,\n  ) => _nativeFuture(\n    () => _handle.upbitListSubscriptions(\n      subscription: _subscriptionToWire(subscription),\n    ),\n  ).then(_upbitSubscriptionListFromWire);\n"
+        }
         ("upbit", "test_order") => {
             "  /// Validates an Upbit order without creating it.\n  ///\n  /// The returned [Order] is a dry-run result. Do not query or cancel its ID,\n  /// and do not treat its status as a live order.\n  Future<Order> testOrder(OrderRequest request) => _nativeFuture(\n    () => _handle.upbitTestOrder(request: _orderRequestToWire(request)),\n  ).then(_orderFromWire);\n"
+        }
+        ("upbit", "order_detail") => {
+            "  Future<UpbitOrderDetail> orderDetail(\n    UpbitOrderDetailRequest request,\n  ) => _nativeFuture(\n    () => _handle.upbitOrderDetail(\n      request: _upbitOrderDetailRequestToWire(request),\n    ),\n  ).then(_upbitOrderDetailFromWire);\n"
+        }
+        ("upbit", "closed_orders") => {
+            "  Future<List<UpbitClosedOrder>> closedOrders(\n    UpbitClosedOrdersRequest request,\n  ) => _nativeFuture(\n    () => _handle.upbitClosedOrders(\n      request: _upbitClosedOrdersRequestToWire(request),\n    ),\n  ).then(\n    (values) => values\n        .map(_upbitClosedOrderFromWire)\n        .toList(growable: false),\n  );\n"
         }
         ("upbit", "deposit_info") => {
             "  /// Fetches Upbit deposit availability for one asset and network.\n  ///\n  /// Upbit may delay this metadata by several minutes, so it is not a\n  /// real-time service-status signal.\n  Future<UpbitDepositInfo> depositInfo(String asset, Network network) =>\n      _nativeFuture(\n        () => _handle.upbitDepositInfo(\n          asset: asset,\n          network: _networkToWire(network),\n        ),\n      ).then(_upbitDepositInfoFromWire);\n"
@@ -1440,6 +1633,36 @@ fn provider_method_source(exchange: &str, method: &str) -> &'static str {
         }
         ("upbit", "cancel_and_new_order") => {
             "  /// Cancels an Upbit order and requests its replacement.\n  ///\n  /// A successful response can still contain a filled previous order and no\n  /// replacement. Inspect [UpbitCancelAndNewOrderResult.newOrderUuid].\n  Future<UpbitCancelAndNewOrderResult> cancelAndNewOrder(\n    UpbitCancelAndNewOrderRequest request,\n  ) => _nativeFuture(\n    () => _handle.upbitCancelAndNewOrder(\n      request: _upbitCancelAndNewOrderRequestToWire(request),\n    ),\n  ).then(_upbitCancelAndNewOrderResultFromWire);\n"
+        }
+        ("upbit", "deposit_krw") => {
+            "  /// Requests an Upbit Korea KRW deposit. This is a financial write.\n  Future<UpbitKrwDeposit> depositKrw(\n    UpbitKrwTransferRequest request,\n  ) => _nativeFuture(\n    () => _handle.upbitDepositKrw(\n      request: _upbitKrwTransferRequestToWire(request),\n    ),\n  ).then(_upbitKrwDepositFromWire);\n"
+        }
+        ("upbit", "withdraw_krw") => {
+            "  /// Requests an Upbit Korea KRW withdrawal. This is a financial write.\n  Future<UpbitKrwWithdrawal> withdrawKrw(\n    UpbitKrwTransferRequest request,\n  ) => _nativeFuture(\n    () => _handle.upbitWithdrawKrw(\n      request: _upbitKrwTransferRequestToWire(request),\n    ),\n  ).then(_upbitKrwWithdrawalFromWire);\n"
+        }
+        ("upbit", "api_keys") => {
+            "  Future<List<UpbitApiKey>> apiKeys() => _nativeFuture(\n    _handle.upbitApiKeys,\n  ).then(\n    (values) => values.map(_upbitApiKeyFromWire).toList(growable: false),\n  );\n"
+        }
+        ("upbit", "list_pockets") => {
+            "  Future<List<UpbitPocket>> listPockets() => _nativeFuture(\n    _handle.upbitListPockets,\n  ).then(\n    (values) => values.map(_upbitPocketFromWire).toList(growable: false),\n  );\n"
+        }
+        ("upbit", "list_pocket_api_keys") => {
+            "  Future<List<UpbitPocketApiKeyGroup>> listPocketApiKeys(\n    UpbitPocketApiKeysRequest request,\n  ) => _nativeFuture(\n    () => _handle.upbitListPocketApiKeys(\n      request: _upbitPocketApiKeysRequestToWire(request),\n    ),\n  ).then(\n    (values) => values\n        .map(_upbitPocketApiKeyGroupFromWire)\n        .toList(growable: false),\n  );\n"
+        }
+        ("upbit", "sub_pocket_balances") => {
+            "  Future<List<UpbitPocketBalance>> subPocketBalances(\n    String pocketUuid,\n  ) => _nativeFuture(\n    () => _handle.upbitSubPocketBalances(pocketUuid: pocketUuid),\n  ).then(\n    (values) => values\n        .map(_upbitPocketBalanceFromWire)\n        .toList(growable: false),\n  );\n"
+        }
+        ("upbit", "universal_transfer") => {
+            "  Future<UpbitPocketTransfer> universalTransfer(\n    UpbitPocketUniversalTransferRequest request,\n  ) => _nativeFuture(\n    () => _handle.upbitUniversalTransfer(\n      request: _upbitPocketUniversalTransferRequestToWire(request),\n    ),\n  ).then(_upbitPocketTransferFromWire);\n"
+        }
+        ("upbit", "universal_transfers") => {
+            "  Future<List<UpbitPocketTransfer>> universalTransfers(\n    UpbitPocketTransferQuery request,\n  ) => _nativeFuture(\n    () => _handle.upbitUniversalTransfers(\n      request: _upbitPocketTransferQueryToWire(request),\n    ),\n  ).then(\n    (values) => values\n        .map(_upbitPocketTransferFromWire)\n        .toList(growable: false),\n  );\n"
+        }
+        ("upbit", "sub_pocket_transfer") => {
+            "  Future<UpbitPocketTransfer> subPocketTransfer(\n    UpbitPocketTransferRequest request,\n  ) => _nativeFuture(\n    () => _handle.upbitSubPocketTransfer(\n      request: _upbitPocketTransferRequestToWire(request),\n    ),\n  ).then(_upbitPocketTransferFromWire);\n"
+        }
+        ("upbit", "sub_pocket_transfers") => {
+            "  Future<List<UpbitPocketTransfer>> subPocketTransfers(\n    UpbitPocketTransferQuery request,\n  ) => _nativeFuture(\n    () => _handle.upbitSubPocketTransfers(\n      request: _upbitPocketTransferQueryToWire(request),\n    ),\n  ).then(\n    (values) => values\n        .map(_upbitPocketTransferFromWire)\n        .toList(growable: false),\n  );\n"
         }
         ("bithumb", "market_warnings") => {
             "  Future<List<BithumbMarketWarning>> marketWarnings() =>\n      _nativeFuture(_handle.bithumbMarketWarnings).then(\n        (values) =>\n            values.map(_bithumbMarketWarningFromWire).toList(growable: false),\n      );\n"
@@ -1471,6 +1694,9 @@ fn provider_method_source(exchange: &str, method: &str) -> &'static str {
         ("bithumb", "pending_orders") => {
             "  Future<Page<Order>> pendingOrders(BithumbPendingOrdersRequest request) =>\n      _nativeFuture(\n        () => _handle.bithumbPendingOrders(\n          request: _bithumbPendingOrdersRequestToWire(request),\n        ),\n      ).then(_orderPageFromWire);\n"
         }
+        ("bithumb", "closed_orders") => {
+            "  Future<Page<BithumbClosedOrder>> closedOrders(\n    BithumbClosedOrdersRequest request,\n  ) => _nativeFuture(\n    () => _handle.bithumbClosedOrders(\n      request: _bithumbClosedOrdersRequestToWire(request),\n    ),\n  ).then(_bithumbClosedOrderPageFromWire);\n"
+        }
         ("bithumb", "batch_orders") => {
             "  /// Submits Bithumb orders together; each outcome is independent.\n  Future<BithumbBatchOrdersResult> batchOrders(\n    BithumbBatchOrdersRequest request,\n  ) => _nativeFuture(\n    () => _handle.bithumbBatchOrders(\n      request: _bithumbBatchOrdersRequestToWire(request),\n    ),\n  ).then(_bithumbBatchOrdersResultFromWire);\n"
         }
@@ -1483,11 +1709,23 @@ fn provider_method_source(exchange: &str, method: &str) -> &'static str {
         ("bithumb", "cancel_twap_order") => {
             "  /// Cancels a Bithumb TWAP order. This submits a financial request.\n  Future<String> cancelTwapOrder(String algoOrderId) => _nativeFuture(\n    () => _handle.bithumbCancelTwapOrder(algoOrderId: algoOrderId),\n  );\n"
         }
+        ("bithumb", "withdrawal_addresses") => {
+            "  Future<List<BithumbWithdrawalAddress>> withdrawalAddresses() =>\n      _nativeFuture(_handle.bithumbWithdrawalAddresses).then(\n        (values) => values\n            .map(_bithumbWithdrawalAddressFromWire)\n            .toList(growable: false),\n      );\n"
+        }
+        ("bithumb", "order_detail") => {
+            "  Future<BithumbOrderDetail> orderDetail(\n    BithumbOrderDetailRequest request,\n  ) => _nativeFuture(\n    () => _handle.bithumbOrderDetail(\n      request: _bithumbOrderDetailRequestToWire(request),\n    ),\n  ).then(_bithumbOrderDetailFromWire);\n"
+        }
+        ("bithumb", "order_list") => {
+            "  Future<List<BithumbOrderListItem>> orderList(\n    BithumbOrderListRequest request,\n  ) => _nativeFuture(\n    () => _handle.bithumbOrderList(\n      request: _bithumbOrderListRequestToWire(request),\n    ),\n  ).then(\n    (values) => values\n        .map(_bithumbOrderListItemFromWire)\n        .toList(growable: false),\n  );\n"
+        }
         ("binance", "spot_symbol_filters") => {
             "  Future<BinanceSymbolFilters> spotSymbolFilters(Market market) =>\n      _nativeFuture(\n        () => _handle.binanceSpotSymbolFilters(market: _marketToWire(market)),\n      ).then(_binanceSymbolFiltersFromWire);\n"
         }
         ("binance", "spot_order") => {
             "  Future<BinanceSpotOrderDetail> spotOrder(Market market, String orderId) =>\n      _nativeFuture(\n        () => _handle.binanceSpotOrder(\n          market: _marketToWire(market),\n          orderId: orderId,\n        ),\n      ).then(_binanceSpotOrderFromWire);\n"
+        }
+        ("binance", "spot_average_price") => {
+            "  Future<BinanceSpotAveragePrice> spotAveragePrice(Market market) =>\n      _nativeFuture(\n        () => _handle.binanceSpotAveragePrice(market: _marketToWire(market)),\n      ).then(_binanceSpotAveragePriceFromWire);\n"
         }
         ("binance", "mark_price") => {
             "  Future<BinanceMarkPrice> markPrice(Market market) => _nativeFuture(\n    () => _handle.binanceMarkPrice(market: _marketToWire(market)),\n  ).then(_binanceMarkPriceFromWire);\n"
@@ -1500,6 +1738,18 @@ fn provider_method_source(exchange: &str, method: &str) -> &'static str {
         }
         ("binance", "aggregate_trades") => {
             "  Future<List<BinanceAggregateTrade>> aggregateTrades(\n    BinanceAggregateTradesRequest request,\n  ) => _nativeFuture(\n    () => _handle.binanceAggregateTrades(\n      request: _binanceAggregateTradesRequestToWire(request),\n    ),\n  ).then(\n    (values) => values\n        .map(_binanceAggregateTradeFromWire)\n        .toList(growable: false),\n  );\n"
+        }
+        ("binance", "account_trades") => {
+            "  Future<Page<BinanceAccountTrade>> accountTrades(\n    HistoryRequest request,\n  ) => _nativeFuture(\n    () => _handle.binanceAccountTrades(\n      request: _historyRequestToWire(request),\n    ),\n  ).then(_binanceAccountTradePageFromWire);\n"
+        }
+        ("binance", "c2c_trade_history") => {
+            "  Future<BinanceC2cTradeHistoryPage> c2cTradeHistory(\n    BinanceC2cTradeHistoryRequest request,\n  ) => _nativeFuture(\n    () => _handle.binanceC2CTradeHistory(\n      request: _binanceC2cTradeHistoryRequestToWire(request),\n    ),\n  ).then(_binanceC2cTradeHistoryPageFromWire);\n"
+        }
+        ("binance", "test_order") => {
+            "  /// Validates a Binance order without creating it.\n  Future<BinanceTestOrder> testOrder(BinanceTestOrderRequest request) =>\n      _nativeFuture(\n        () => _handle.binanceTestOrder(\n          request: _binanceTestOrderRequestToWire(request),\n        ),\n      ).then(_binanceTestOrderFromWire);\n"
+        }
+        ("binance", "cancel_all_open_orders") => {
+            "  /// Cancels every open order for one Binance market.\n  Future<void> cancelAllOpenOrders(Market market) => _nativeFuture(\n    () => _handle.binanceCancelAllOpenOrders(market: _marketToWire(market)),\n  );\n"
         }
         ("binance", "usd_m_create_listen_key") => {
             "  Future<BinanceListenKey> usdMCreateListenKey() => _nativeFuture(\n    _handle.binanceUsdMCreateListenKey,\n  ).then(BinanceListenKey._);\n"
@@ -1519,7 +1769,51 @@ fn provider_method_source(exchange: &str, method: &str) -> &'static str {
         ("hyperliquid", "all_mids") => {
             "  Future<List<HyperliquidMidPrice>> allMids() =>\n      _nativeFuture(_handle.hyperliquidAllMids).then(\n        (values) => values\n            .map(_hyperliquidMidPriceFromWire)\n            .toList(growable: false),\n      );\n"
         }
+        ("hyperliquid", "user_fills") => {
+            "  Future<List<HyperliquidUserFill>> userFills(\n    bool aggregateByTime,\n  ) => _nativeFuture(\n    () => _handle.hyperliquidUserFills(\n      aggregateByTime: aggregateByTime,\n    ),\n  ).then(\n    (values) => values\n        .map(_hyperliquidUserFillFromWire)\n        .toList(growable: false),\n  );\n"
+        }
+        ("hyperliquid", "user_fills_by_time") => {
+            "  Future<List<HyperliquidUserFill>> userFillsByTime(\n    Timestamp from,\n    Timestamp? to,\n    bool aggregateByTime,\n  ) => _nativeFuture(\n    () => _handle.hyperliquidUserFillsByTime(\n      fromNs: platformInt64FromBigInt(from.nanosecondsSinceEpoch),\n      toNs: to == null\n          ? null\n          : platformInt64FromBigInt(to.nanosecondsSinceEpoch),\n      aggregateByTime: aggregateByTime,\n    ),\n  ).then(\n    (values) => values\n        .map(_hyperliquidUserFillFromWire)\n        .toList(growable: false),\n  );\n"
+        }
+        ("hyperliquid", "basic_open_orders") => {
+            "  Future<List<HyperliquidOpenOrder>> basicOpenOrders() => _nativeFuture(\n    _handle.hyperliquidBasicOpenOrders,\n  ).then(\n    (values) => values\n        .map(_hyperliquidOpenOrderFromWire)\n        .toList(growable: false),\n  );\n"
+        }
+        ("hyperliquid", "order_status") => {
+            "  Future<HyperliquidOrderStatusResponse> orderStatus(\n    HyperliquidOrderReference reference,\n  ) => _nativeFuture(\n    () => _handle.hyperliquidOrderStatus(\n      reference: _hyperliquidOrderReferenceToWire(reference),\n    ),\n  ).then(_hyperliquidOrderStatusResponseFromWire);\n"
+        }
+        ("hyperliquid", "historical_orders") => {
+            "  Future<List<HyperliquidOrderInfo>> historicalOrders() => _nativeFuture(\n    _handle.hyperliquidHistoricalOrders,\n  ).then(\n    (values) => values\n        .map(_hyperliquidOrderInfoFromWire)\n        .toList(growable: false),\n  );\n"
+        }
+        ("hyperliquid", "user_rate_limit") => {
+            "  Future<HyperliquidUserRateLimit> userRateLimit() => _nativeFuture(\n    _handle.hyperliquidUserRateLimit,\n  ).then(_hyperliquidUserRateLimitFromWire);\n"
+        }
+        ("hyperliquid", "user_role") => {
+            "  Future<HyperliquidUserRole> userRole() => _nativeFuture(\n    _handle.hyperliquidUserRole,\n  ).then(_hyperliquidUserRoleFromWire);\n"
+        }
+        ("hyperliquid", "referral") => {
+            "  Future<HyperliquidReferral> referral() => _nativeFuture(\n    _handle.hyperliquidReferral,\n  ).then(_hyperliquidReferralFromWire);\n"
+        }
+        ("hyperliquid", "user_fees") => {
+            "  Future<HyperliquidUserFees> userFees() => _nativeFuture(\n    _handle.hyperliquidUserFees,\n  ).then(_hyperliquidUserFeesFromWire);\n"
+        }
+        ("hyperliquid", "portfolio") => {
+            "  Future<List<HyperliquidPortfolioPeriod>> portfolio() => _nativeFuture(\n    _handle.hyperliquidPortfolio,\n  ).then(\n    (values) => values\n        .map(_hyperliquidPortfolioPeriodFromWire)\n        .toList(growable: false),\n  );\n"
+        }
+        ("hyperliquid", "sub_accounts") => {
+            "  Future<List<HyperliquidSubAccount>> subAccounts() => _nativeFuture(\n    _handle.hyperliquidSubAccounts,\n  ).then(\n    (values) => values\n        .map(_hyperliquidSubAccountFromWire)\n        .toList(growable: false),\n  );\n"
+        }
+        ("hyperliquid", "user_vault_equities") => {
+            "  Future<List<HyperliquidVaultEquity>> userVaultEquities() =>\n      _nativeFuture(_handle.hyperliquidUserVaultEquities).then(\n        (values) => values\n            .map(_hyperliquidVaultEquityFromWire)\n            .toList(growable: false),\n      );\n"
+        }
         _ => panic!("unsupported Dart provider method: {exchange}.{method}"),
+    };
+    if source.starts_with("  ///") {
+        source.to_owned()
+    } else {
+        format!(
+            "  /// {} 전용 API인 `{method}`를 호출합니다.\n{source}",
+            provider_display_name(exchange)
+        )
     }
 }
 
@@ -2407,6 +2701,7 @@ fn render_composed_client_method(method: &ClientComposition) -> String {
 
 fn adapter_doc(name: &str) -> Option<&'static str> {
     match name {
+        "markets" => Some("  /// 거래소가 제공하는 시장 목록을 반환합니다.\n"),
         "trades" => {
             Some("  /// 최근 체결을 최신순으로 반환하며, `limit`은 요청할 최대 개수입니다.\n")
         }
@@ -2414,19 +2709,98 @@ fn adapter_doc(name: &str) -> Option<&'static str> {
             "  /// 호가창 스냅샷을 반환하며, `depth`는 매수·매도 각 측의 최대 단계 수입니다.\n",
         ),
         "candles" => Some("  /// [CandleRequest] 조건에 맞는 캔들을 오래된 순서로 반환합니다.\n"),
+        "ticker" => Some("  /// 한 시장의 최신 가격 요약을 반환합니다.\n"),
         "subscribe" => Some(
             "  /// 시장 데이터를 구독합니다. 사용 후 [CloseableStream.close]를 호출해야 합니다.\n",
         ),
+        "balances" => Some("  /// 인증된 계정의 자산 잔고를 반환합니다.\n"),
+        "orderRules" => Some("  /// 한 시장에서 현재 적용되는 주문 규칙을 반환합니다.\n"),
+        "assetNetworks" => Some("  /// 자산의 거래소별 입출금 네트워크를 반환합니다.\n"),
+        "depositAddresses" => Some("  /// 계정에 등록된 입금 주소 목록을 반환합니다.\n"),
+        "depositAddress" => Some("  /// 자산과 네트워크의 입금 주소를 조회합니다.\n"),
+        "createDepositAddress" => Some("  /// 자산과 네트워크의 입금 주소 발급을 요청합니다.\n"),
+        "prepareWithdrawal" => Some("  /// 출금 전에 수수료와 제약을 조회합니다.\n"),
+        "withdraw" => Some("  /// 출금 요청을 제출합니다. 이 메서드는 금융 쓰기 작업입니다.\n"),
+        "deposit" => Some("  /// 거래소 전송 식별자로 입금 상태를 조회합니다.\n"),
+        "withdrawal" => Some("  /// 거래소 전송 식별자로 출금 상태를 조회합니다.\n"),
+        "cancelWithdrawal" => Some("  /// 아직 취소 가능한 출금 요청을 취소합니다.\n"),
+        "deposits" => Some("  /// 페이지 단위의 입금 이력을 반환합니다.\n"),
+        "withdrawals" => Some("  /// 페이지 단위의 출금 이력을 반환합니다.\n"),
+        "openOrders" => Some("  /// 열려 있는 주문을 반환합니다.\n"),
+        "order" => Some("  /// 거래소 주문 식별자로 한 주문을 조회합니다.\n"),
+        "orderByClientId" => Some("  /// 클라이언트 주문 식별자로 한 주문을 조회합니다.\n"),
+        "ordersByIds" => Some("  /// 여러 주문 식별자로 주문을 조회합니다.\n"),
+        "orderHistory" => Some("  /// 페이지 단위의 주문 이력을 반환합니다.\n"),
+        "subscribeAccount" => Some(
+            "  /// 비공개 계정 이벤트를 구독합니다. 사용 후 [CloseableStream.close]를 호출해야 합니다.\n",
+        ),
+        "placeOrder" => Some("  /// 주문을 제출합니다. 이 메서드는 금융 쓰기 작업입니다.\n"),
+        "cancelOrder" => Some("  /// 거래소 주문 식별자로 주문을 취소합니다.\n"),
+        "cancelOrderByClientId" => Some("  /// 클라이언트 주문 식별자로 주문을 취소합니다.\n"),
+        "cancelOrders" => Some("  /// 여러 주문 취소를 요청하고 항목별 결과를 반환합니다.\n"),
+        "positions" => Some("  /// 열려 있는 파생상품 포지션을 반환합니다.\n"),
+        "marginSummary" => Some("  /// 계정의 증거금 상태를 반환합니다.\n"),
+        "fundingRates" => Some("  /// 페이지 단위의 펀딩비율 이력을 반환합니다.\n"),
+        "fundingPayments" => Some("  /// 페이지 단위의 실제 펀딩 지급 이력을 반환합니다.\n"),
+        "setMargin" => {
+            Some("  /// 포지션의 증거금 설정을 변경합니다. 이 메서드는 금융 쓰기 작업입니다.\n")
+        }
         _ => None,
     }
 }
 
 fn client_doc(name: &str) -> Option<&'static str> {
     match name {
-        "trades" | "orderBook" | "candles" => adapter_doc(name),
+        "markets"
+        | "trades"
+        | "orderBook"
+        | "ticker"
+        | "candles"
+        | "balances"
+        | "orderRules"
+        | "assetNetworks"
+        | "depositAddresses"
+        | "depositAddress"
+        | "createDepositAddress"
+        | "prepareWithdrawal"
+        | "withdraw"
+        | "deposit"
+        | "withdrawal"
+        | "cancelWithdrawal"
+        | "deposits"
+        | "withdrawals"
+        | "order"
+        | "orderByClientId"
+        | "ordersByIds"
+        | "orderHistory"
+        | "placeOrder"
+        | "cancelOrder"
+        | "cancelOrderByClientId"
+        | "cancelOrders"
+        | "positions"
+        | "marginSummary"
+        | "fundingRates"
+        | "fundingPayments"
+        | "setMargin" => adapter_doc(name),
+        "openOrders" => Some("  /// 모든 시장의 열려 있는 주문을 반환합니다.\n"),
+        "openOrdersOn" => Some("  /// 지정한 시장의 열려 있는 주문을 반환합니다.\n"),
         "subscribe" => Some("  /// 기본 연결 설정으로 시장 데이터를 구독합니다.\n"),
         "subscribeWith" => Some("  /// 지정한 연결 설정으로 시장 데이터를 구독합니다.\n"),
+        "subscribeAccount" => Some("  /// 기본 연결 설정으로 비공개 계정 이벤트를 구독합니다.\n"),
+        "subscribeAccountWith" => {
+            Some("  /// 지정한 연결 설정으로 비공개 계정 이벤트를 구독합니다.\n")
+        }
         _ => None,
+    }
+}
+
+fn provider_display_name(exchange: &str) -> &'static str {
+    match exchange {
+        "upbit" => "Upbit",
+        "bithumb" => "Bithumb",
+        "binance" => "Binance",
+        "hyperliquid" => "Hyperliquid",
+        _ => panic!("unknown Dart provider {exchange}"),
     }
 }
 
@@ -2482,18 +2856,26 @@ fn render_closed_identifier(
         .map(|variant| dart_name(variant.rust_name))
         .collect::<Vec<_>>()
         .join(", ");
+    output.push_str(&format!(
+        "/// 거래소 API가 사용하는 `{}` 식별자입니다.\n",
+        identifier.name
+    ));
     let declaration = format!("enum {} {{ {variants} }}", identifier.name);
     if declaration.chars().count() <= 80 {
-        output.push_str(&format!("{declaration}\n\n"));
+        output.push_str(&format!("{declaration}\n"));
     } else {
         output.push_str(&format!("enum {} {{\n", identifier.name));
         for variant in identifier.variants {
+            output.push_str(&format!(
+                "  /// 거래소 wire 값 `{}`입니다.\n",
+                variant.wire_name
+            ));
             output.push_str(&format!("  {},\n", dart_name(variant.rust_name)));
         }
-        output.push_str("}\n\n");
+        output.push_str("}\n");
     }
     output.push_str(&format!(
-        "extension {}WireName on {} {{\n  String get wireName => switch (this) {{\n",
+        "\n/// 이 식별자를 거래소 wire 이름으로 변환합니다.\nextension {}WireName on {} {{\n  /// 거래소 API에 전달하는 wire 이름입니다.\n  String get wireName => switch (this) {{\n",
         identifier.name, identifier.name
     ));
     for variant in identifier.variants {
@@ -2512,7 +2894,8 @@ fn render_open_identifier(
     identifier: &maxt_bindings_common::schema::Identifier,
 ) {
     output.push_str(&format!(
-        "final class {} {{\n  const {}._(this.providerName, [this._isOther = false]);\n\n",
+        "/// 거래소가 확장할 수 있는 `{}` 식별자입니다.\nfinal class {} {{\n  const {}._(this.providerName, [this._isOther = false]);\n\n",
+        identifier.name,
         identifier.name, identifier.name
     ));
     for variant in identifier.variants {
@@ -2521,6 +2904,10 @@ fn render_open_identifier(
             "  static const {name} = {}._('{}');",
             identifier.name, variant.wire_name
         );
+        output.push_str(&format!(
+            "  /// 거래소 wire 값 `{}`입니다.\n",
+            variant.wire_name
+        ));
         if declaration.chars().count() <= 80 {
             output.push_str(&format!("{declaration}\n"));
         } else {
@@ -2534,16 +2921,17 @@ fn render_open_identifier(
         "  factory {}.other(String providerName) => {}._(providerName, true);",
         identifier.name, identifier.name
     );
+    output.push_str("\n  /// 알려지지 않은 거래소 wire 값을 보존합니다.\n");
     if factory.chars().count() <= 80 {
-        output.push_str(&format!("\n{factory}\n"));
+        output.push_str(&format!("{factory}\n"));
     } else {
         output.push_str(&format!(
-            "\n  factory {}.other(String providerName) =>\n      {}._(providerName, true);\n",
+            "  factory {}.other(String providerName) =>\n      {}._(providerName, true);\n",
             identifier.name, identifier.name
         ));
     }
     output.push_str(&format!(
-        "\n  final String providerName;\n  final bool _isOther;\n\n  bool get isOther => _isOther;\n\n  @override\n  bool operator ==(Object other) =>\n      other is {} &&\n      _isOther == other._isOther &&\n      providerName == other.providerName;\n\n  @override\n  int get hashCode => Object.hash(_isOther, providerName);\n\n  @override\n  String toString() => providerName;\n}}\n",
+        "\n  /// 거래소가 보낸 원래 이름입니다.\n  final String providerName;\n  final bool _isOther;\n\n  /// 미리 정의되지 않은 거래소 값인지 여부입니다.\n  bool get isOther => _isOther;\n\n  @override\n  bool operator ==(Object other) =>\n      other is {} &&\n      _isOther == other._isOther &&\n      providerName == other.providerName;\n\n  @override\n  int get hashCode => Object.hash(_isOther, providerName);\n\n  @override\n  String toString() => providerName;\n}}\n",
         identifier.name
     ));
 }
@@ -2591,8 +2979,13 @@ mod tests {
     fn identifiers_are_rendered_from_the_schema() {
         let output = render_identifiers(&binding_schema());
 
+        assert!(output.contains("/// 거래소 API가 사용하는 `BinanceMarket` 식별자입니다."));
         assert!(output.contains("enum BinanceMarket { spot, usdMFutures }"));
+        assert!(output.contains("/// 이 식별자를 거래소 wire 이름으로 변환합니다."));
         assert!(output.contains("BinanceMarket.usdMFutures => 'usd_m'"));
+        assert!(
+            output.contains("/// 거래소가 확장할 수 있는 `HyperliquidLedgerKind` 식별자입니다.")
+        );
         assert!(output.contains("final class HyperliquidLedgerKind"));
         assert!(output.contains("static const vaultDistribution"));
         assert!(output.contains("'vault_distribution'"));
@@ -2603,11 +2996,21 @@ mod tests {
     fn order_history_model_defaults_to_all_final_orders() {
         let output = render_models(&binding_schema());
 
+        assert!(
+            output.contains(
+                "/// 거래소 API 요청에 전달하는 입력값 모델인 [OrderHistoryRequest]입니다."
+            )
+        );
+        assert!(output.contains("/// [OrderHistoryRequest]의 값을 만듭니다."));
+        assert!(output.contains("/// 거래소 API의 `statuses` 값입니다."));
         assert!(output.contains(
             "const OrderHistoryRequest({\n    this.market,\n    this.statuses = const [],"
         ));
         assert!(output.contains(
             "const BithumbTwapOrdersRequest({\n    this.market,\n    this.uuids = const [],"
+        ));
+        assert!(output.contains(
+            "const BithumbClosedOrdersRequest({\n    this.market,\n    this.state,\n    this.states = const [],"
         ));
     }
 
@@ -2622,6 +3025,55 @@ mod tests {
             converters.contains("minimumDepositConfirmations: value.minimumDepositConfirmations,")
         );
         assert!(!converters.contains("minimumDepositConfirmations.toInt()"));
+    }
+
+    #[test]
+    fn hyperliquid_order_outputs_are_one_way_and_non_exhaustive() {
+        let output = render_rust_models(&binding_schema());
+
+        for name in [
+            "HyperliquidOpenOrder",
+            "HyperliquidOrderDetail",
+            "HyperliquidOrderInfo",
+            "HyperliquidOrderStatusResponse",
+        ] {
+            assert!(output.contains(&format!("impl From<maxt::{name}>")));
+            assert!(!output.contains(&format!("impl TryFrom<Wire{name}> for maxt::{name}")));
+        }
+        assert!(
+            output.contains(
+                "new HyperliquidOrderStatusResponse variant requires a Dart wire variant"
+            )
+        );
+        assert!(output.contains("Self::Order((*value).into())"));
+    }
+
+    #[test]
+    fn binance_spot_average_price_is_output_only() {
+        let output = render_rust_models(&binding_schema());
+
+        assert!(
+            output.contains(
+                "impl From<maxt::BinanceSpotAveragePrice> for WireBinanceSpotAveragePrice"
+            )
+        );
+        assert!(!output.contains(
+            "impl TryFrom<WireBinanceSpotAveragePrice> for maxt::BinanceSpotAveragePrice"
+        ));
+    }
+
+    #[test]
+    fn bithumb_closed_order_output_is_one_way() {
+        let output = render_rust_models(&binding_schema());
+
+        assert!(output.contains("impl From<maxt::BithumbClosedOrder> for WireBithumbClosedOrder"));
+        assert!(
+            !output.contains("impl TryFrom<WireBithumbClosedOrder> for maxt::BithumbClosedOrder")
+        );
+        assert!(output.contains("impl From<maxt::Page<maxt::BithumbClosedOrder>>"));
+        assert!(!output.contains(
+            "impl TryFrom<WireBithumbClosedOrderPage> for maxt::Page<maxt::BithumbClosedOrder>"
+        ));
     }
 
     #[test]
@@ -2649,6 +3101,10 @@ mod tests {
         assert!(client.contains("set exactly one of the exchange transfer ID or transaction ID"));
         assert!(client.contains("field: 'tx_id'"));
         assert!(converters.contains("checkedUint32(value.limit, field: 'limit')"));
+        assert!(adapter.contains("/// 거래소가 제공하는 시장 목록을 반환합니다."));
+        assert!(
+            client.contains("/// 공통 API를 하나의 거래소 어댑터에 연결하는 클라이언트입니다.")
+        );
     }
 
     #[test]
@@ -2730,6 +3186,8 @@ mod tests {
                 assert!(output.contains(method.name));
             }
         }
+        assert!(output.contains("/// Binance 전용 API 확장입니다."));
+        assert!(output.contains("/// Binance 전용 API인 `c2c_trade_history`를 호출합니다."));
     }
 
     #[test]

@@ -10,17 +10,29 @@ from .models import (
     AccountEvent,
     Balance,
     CancelOrdersResult,
+    BinanceAccountTrade,
     BinanceMarket,
     BinanceAggregateTrade,
     BinanceAggregateTradesRequest,
+    BinanceC2cTradeHistoryPage,
+    BinanceC2cTradeHistoryRequest,
     BinanceMarkPrice,
     BinanceOpenInterest,
+    BinanceSpotAveragePrice,
     BinanceSpotOrderDetail,
     BinanceSymbolFilters,
+    BinanceTestOrder,
+    BinanceTestOrderRequest,
     BithumbApiKey,
     BithumbAssetFee,
     BithumbBatchOrdersRequest,
     BithumbBatchOrdersResult,
+    BithumbClosedOrder,
+    BithumbClosedOrdersRequest,
+    BithumbOrderDetail,
+    BithumbOrderDetailRequest,
+    BithumbOrderListItem,
+    BithumbOrderListRequest,
     BithumbKrwDeposit,
     BithumbKrwDepositsRequest,
     BithumbKrwTransferRequest,
@@ -32,6 +44,7 @@ from .models import (
     BithumbTwapOrder,
     BithumbTwapOrderRequest,
     BithumbTwapOrdersRequest,
+    BithumbWithdrawalAddress,
     Candle,
     CandleRequest,
     Exchange,
@@ -41,6 +54,18 @@ from .models import (
     HyperliquidAssetContext,
     HyperliquidLedgerEntry,
     HyperliquidMidPrice,
+    HyperliquidOpenOrder,
+    HyperliquidOrderInfo,
+    HyperliquidOrderReference,
+    HyperliquidOrderStatusResponse,
+    HyperliquidPortfolioPeriod,
+    HyperliquidReferral,
+    HyperliquidSubAccount,
+    HyperliquidUserFees,
+    HyperliquidUserFill,
+    HyperliquidUserRateLimit,
+    HyperliquidUserRole,
+    HyperliquidVaultEquity,
     HistoryRequest,
     Cursor,
     MarginRequest,
@@ -58,7 +83,11 @@ from .models import (
     Subscription,
     Ticker,
     Network,
+    UpbitApiKey,
     UpbitDepositInfo,
+    UpbitKrwDeposit,
+    UpbitKrwTransferRequest,
+    UpbitKrwWithdrawal,
     UpbitTravelRuleVasp,
     UpbitTravelRuleVerification,
     UpbitBatchCancelRequest,
@@ -66,7 +95,20 @@ from .models import (
     UpbitCancelAndNewOrderResult,
     Trade,
     UpbitMarketEvent,
+    UpbitSubscriptionList,
     UpbitOrderBookInstrument,
+    UpbitClosedOrder,
+    UpbitClosedOrdersRequest,
+    UpbitOrderDetail,
+    UpbitOrderDetailRequest,
+    UpbitPocket,
+    UpbitPocketApiKeyGroup,
+    UpbitPocketApiKeysRequest,
+    UpbitPocketBalance,
+    UpbitPocketTransfer,
+    UpbitPocketTransferQuery,
+    UpbitPocketTransferRequest,
+    UpbitPocketUniversalTransferRequest,
     UpbitRegion,
     UpbitYearCandle,
     _decimal_to_wire,
@@ -282,6 +324,13 @@ class UpbitAdapter(_NativeAdapter):
             for value in values
         ]
 
+    async def list_subscriptions(
+        self,
+        subscription: Subscription,
+    ) -> UpbitSubscriptionList:
+        value = await self._call(self._handle.list_subscriptions, subscription.to_wire())
+        return _model_from_wire("UpbitSubscriptionList", value)
+
     async def test_order(self, request: OrderRequest) -> Order:
         """Validate an Upbit order without creating it.
 
@@ -290,6 +339,18 @@ class UpbitAdapter(_NativeAdapter):
         """
         value = await self._call(self._handle.test_order, request.to_wire())
         return _model_from_wire("Order", value)
+
+    async def order_detail(self, request: UpbitOrderDetailRequest) -> UpbitOrderDetail:
+        value = await self._call(self._handle.order_detail, request.to_wire())
+        return _model_from_wire("UpbitOrderDetail", value)
+
+    async def closed_orders(
+        self,
+        request: UpbitClosedOrdersRequest,
+    ) -> list[UpbitClosedOrder]:
+        """Return closed-order summary rows without individual trades."""
+        values = await self._call(self._handle.closed_orders, request.to_wire())
+        return [_model_from_wire("UpbitClosedOrder", value) for value in values]
 
     async def deposit_info(
         self,
@@ -367,6 +428,74 @@ class UpbitAdapter(_NativeAdapter):
         )
         return _model_from_wire("UpbitCancelAndNewOrderResult", value)
 
+    async def deposit_krw(
+        self,
+        request: UpbitKrwTransferRequest,
+    ) -> UpbitKrwDeposit:
+        """Request an Upbit Korea KRW deposit; this is a financial write."""
+        value = await self._call(self._handle.deposit_krw, request.to_wire())
+        return _model_from_wire("UpbitKrwDeposit", value)
+
+    async def withdraw_krw(
+        self,
+        request: UpbitKrwTransferRequest,
+    ) -> UpbitKrwWithdrawal:
+        """Request an Upbit Korea KRW withdrawal; this is a financial write."""
+        value = await self._call(self._handle.withdraw_krw, request.to_wire())
+        return _model_from_wire("UpbitKrwWithdrawal", value)
+
+    async def api_keys(self) -> list[UpbitApiKey]:
+        values = await self._call(self._handle.api_keys)
+        return [_model_from_wire("UpbitApiKey", value) for value in values]
+
+    async def list_pockets(self) -> list[UpbitPocket]:
+        values = await self._call(self._handle.list_pockets)
+        return [_model_from_wire("UpbitPocket", value) for value in values]
+
+    async def list_pocket_api_keys(
+        self,
+        request: UpbitPocketApiKeysRequest,
+    ) -> list[UpbitPocketApiKeyGroup]:
+        values = await self._call(
+            self._handle.list_pocket_api_keys,
+            request.to_wire(),
+        )
+        return [_model_from_wire("UpbitPocketApiKeyGroup", value) for value in values]
+
+    async def sub_pocket_balances(self, pocket_uuid: str) -> list[UpbitPocketBalance]:
+        values = await self._call(self._handle.sub_pocket_balances, pocket_uuid)
+        return [_model_from_wire("UpbitPocketBalance", value) for value in values]
+
+    async def universal_transfer(
+        self,
+        request: UpbitPocketUniversalTransferRequest,
+    ) -> UpbitPocketTransfer:
+        """Move assets between Upbit pockets; this is a financial write."""
+        value = await self._call(self._handle.universal_transfer, request.to_wire())
+        return _model_from_wire("UpbitPocketTransfer", value)
+
+    async def universal_transfers(
+        self,
+        request: UpbitPocketTransferQuery,
+    ) -> list[UpbitPocketTransfer]:
+        values = await self._call(self._handle.universal_transfers, request.to_wire())
+        return [_model_from_wire("UpbitPocketTransfer", value) for value in values]
+
+    async def sub_pocket_transfer(
+        self,
+        request: UpbitPocketTransferRequest,
+    ) -> UpbitPocketTransfer:
+        """Move assets from an Upbit sub-pocket; this is a financial write."""
+        value = await self._call(self._handle.sub_pocket_transfer, request.to_wire())
+        return _model_from_wire("UpbitPocketTransfer", value)
+
+    async def sub_pocket_transfers(
+        self,
+        request: UpbitPocketTransferQuery,
+    ) -> list[UpbitPocketTransfer]:
+        values = await self._call(self._handle.sub_pocket_transfers, request.to_wire())
+        return [_model_from_wire("UpbitPocketTransfer", value) for value in values]
+
 
 class BithumbAdapter(_NativeAdapter):
     def __init__(
@@ -408,6 +537,26 @@ class BithumbAdapter(_NativeAdapter):
         values = await self._call(self._handle.api_keys)
         return [_model_from_wire("BithumbApiKey", value) for value in values]
 
+    async def withdrawal_addresses(self) -> list[BithumbWithdrawalAddress]:
+        values = await self._call(self._handle.withdrawal_addresses)
+        return [
+            _model_from_wire("BithumbWithdrawalAddress", value) for value in values
+        ]
+
+    async def order_detail(
+        self,
+        request: BithumbOrderDetailRequest,
+    ) -> BithumbOrderDetail:
+        value = await self._call(self._handle.order_detail, request.to_wire())
+        return _model_from_wire("BithumbOrderDetail", value)
+
+    async def order_list(
+        self,
+        request: BithumbOrderListRequest,
+    ) -> list[BithumbOrderListItem]:
+        values = await self._call(self._handle.order_list, request.to_wire())
+        return [_model_from_wire("BithumbOrderListItem", value) for value in values]
+
     async def krw_withdrawals(
         self,
         request: BithumbKrwWithdrawalsRequest,
@@ -444,6 +593,15 @@ class BithumbAdapter(_NativeAdapter):
         value = await self._call(self._handle.pending_orders, request.to_wire())
         return Page(
             [_model_from_wire("Order", item) for item in value["items"]],
+            Cursor(value["next"]) if value.get("next") is not None else None,
+        )
+
+    async def closed_orders(
+        self, request: BithumbClosedOrdersRequest
+    ) -> Page[BithumbClosedOrder]:
+        value = await self._call(self._handle.closed_orders, request.to_wire())
+        return Page(
+            [_model_from_wire("BithumbClosedOrder", item) for item in value["items"]],
             Cursor(value["next"]) if value.get("next") is not None else None,
         )
 
@@ -558,6 +716,10 @@ class BinanceAdapter(_NativeAdapter):
         value = await self._call(self._handle.spot_order, market, order_id)
         return BinanceSpotOrderDetail.from_wire(value)
 
+    async def spot_average_price(self, market: Market) -> BinanceSpotAveragePrice:
+        value = await self._call(self._handle.spot_average_price, market)
+        return BinanceSpotAveragePrice.from_wire(value)
+
     async def mark_price(self, market: Market) -> BinanceMarkPrice:
         value = await self._call(self._handle.mark_price, market)
         return BinanceMarkPrice.from_wire(value)
@@ -579,6 +741,32 @@ class BinanceAdapter(_NativeAdapter):
             request.to_wire(),
         )
         return [BinanceAggregateTrade.from_wire(value) for value in values]
+
+    async def account_trades(
+        self,
+        request: HistoryRequest,
+    ) -> Page[BinanceAccountTrade]:
+        value = await self._call(self._handle.account_trades, request.to_wire())
+        return Page(
+            [_model_from_wire("BinanceAccountTrade", item) for item in value["items"]],
+            Cursor(value["next"]) if value.get("next") is not None else None,
+        )
+
+    async def c2c_trade_history(
+        self,
+        request: BinanceC2cTradeHistoryRequest,
+    ) -> BinanceC2cTradeHistoryPage:
+        value = await self._call(self._handle.c2c_trade_history, request.to_wire())
+        return _model_from_wire("BinanceC2cTradeHistoryPage", value)
+
+    async def test_order(self, request: BinanceTestOrderRequest) -> BinanceTestOrder:
+        """Validate a Binance order without creating it."""
+        value = await self._call(self._handle.test_order, request.to_wire())
+        return _model_from_wire("BinanceTestOrder", value)
+
+    async def cancel_all_open_orders(self, market: Market) -> None:
+        """Cancel all open orders for one Binance market; this is a financial write."""
+        await self._call(self._handle.cancel_all_open_orders, market)
 
     async def usd_m_create_listen_key(self) -> BinanceListenKey:
         handle = await self._call(self._handle.usd_m_create_listen_key)
@@ -646,6 +834,73 @@ class HyperliquidAdapter(_NativeAdapter):
     async def all_mids(self) -> list[HyperliquidMidPrice]:
         values = await self._call(self._handle.all_mids)
         return [HyperliquidMidPrice.from_wire(value) for value in values]
+
+    async def basic_open_orders(self) -> list[HyperliquidOpenOrder]:
+        values = await self._call(self._handle.basic_open_orders)
+        return [_model_from_wire("HyperliquidOpenOrder", value) for value in values]
+
+    async def order_status(
+        self,
+        reference: HyperliquidOrderReference,
+    ) -> HyperliquidOrderStatusResponse:
+        value = await self._call(self._handle.order_status, reference.to_wire())
+        return HyperliquidOrderStatusResponse.from_wire(value)
+
+    async def historical_orders(self) -> list[HyperliquidOrderInfo]:
+        values = await self._call(self._handle.historical_orders)
+        return [_model_from_wire("HyperliquidOrderInfo", value) for value in values]
+
+    async def user_fills(
+        self, aggregate_by_time: bool
+    ) -> list[HyperliquidUserFill]:
+        values = await self._call(self._handle.user_fills, aggregate_by_time)
+        return [_model_from_wire("HyperliquidUserFill", value) for value in values]
+
+    async def user_fills_by_time(
+        self,
+        from_ns: int,
+        to_ns: Optional[int] = None,
+        aggregate_by_time: bool = False,
+    ) -> list[HyperliquidUserFill]:
+        values = await self._call(
+            self._handle.user_fills_by_time,
+            from_ns,
+            to_ns,
+            aggregate_by_time,
+        )
+        return [_model_from_wire("HyperliquidUserFill", value) for value in values]
+
+    async def user_rate_limit(self) -> HyperliquidUserRateLimit:
+        value = await self._call(self._handle.user_rate_limit)
+        return _model_from_wire("HyperliquidUserRateLimit", value)
+
+    async def user_role(self) -> HyperliquidUserRole:
+        value = await self._call(self._handle.user_role)
+        return HyperliquidUserRole.from_wire(value)
+
+    async def referral(self) -> HyperliquidReferral:
+        value = await self._call(self._handle.referral)
+        return _model_from_wire("HyperliquidReferral", value)
+
+    async def user_fees(self) -> HyperliquidUserFees:
+        value = await self._call(self._handle.user_fees)
+        return _model_from_wire("HyperliquidUserFees", value)
+
+    async def portfolio(self) -> list[HyperliquidPortfolioPeriod]:
+        values = await self._call(self._handle.portfolio)
+        return [
+            _model_from_wire("HyperliquidPortfolioPeriod", value) for value in values
+        ]
+
+    async def sub_accounts(self) -> list[HyperliquidSubAccount]:
+        values = await self._call(self._handle.sub_accounts)
+        return [_model_from_wire("HyperliquidSubAccount", value) for value in values]
+
+    async def user_vault_equities(self) -> list[HyperliquidVaultEquity]:
+        values = await self._call(self._handle.user_vault_equities)
+        return [
+            _model_from_wire("HyperliquidVaultEquity", value) for value in values
+        ]
 
 
 __all__ = [

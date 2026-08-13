@@ -315,22 +315,46 @@ sealed class AdapterResult with _$AdapterResult {
 sealed class WireFeed with _$WireFeed {
   const WireFeed._();
 
+  /// 최근 체결 feed입니다.
   const factory WireFeed.trades() = WireFeed_Trades;
+
+  /// 호가 스냅샷 feed입니다.
   const factory WireFeed.orderBook() = WireFeed_OrderBook;
+
+  /// ticker 요약 feed입니다.
   const factory WireFeed.ticker() = WireFeed_Ticker;
+
+  /// 지정 간격의 캔들 feed입니다.
   const factory WireFeed.candles(WireInterval field0) = WireFeed_Candles;
 }
 
 /// Dart Adapter가 받을 overflow 정책입니다.
-enum WireOverflow { backpressure, dropNewest }
+enum WireOverflow {
+  /// 소비자가 따라올 때까지 producer를 대기시킵니다.
+  backpressure,
+
+  /// 버퍼가 차면 새 이벤트를 버립니다.
+  dropNewest,
+}
 
 /// Dart Adapter가 받을 owned stream 설정입니다.
 class WireStreamConfig {
+  /// 재연결 시도 횟수 제한입니다. null이면 제한하지 않습니다.
   final int? maxReconnectAttempts;
+
+  /// 첫 재연결 전 대기 시간(밀리초)입니다.
   final BigInt initialReconnectDelayMs;
+
+  /// 재연결 대기 시간의 최대값(밀리초)입니다.
   final BigInt maxReconnectDelayMs;
+
+  /// 연결이 유휴 상태로 허용되는 최대 시간(밀리초)입니다.
   final BigInt idleTimeoutMs;
+
+  /// 이벤트 버퍼 크기입니다.
   final BigInt bufferSize;
+
+  /// 버퍼가 찼을 때의 동작입니다.
   final WireOverflow overflow;
 
   const WireStreamConfig({
@@ -366,7 +390,10 @@ class WireStreamConfig {
 
 /// Dart Adapter가 받을 owned subscription입니다.
 class WireSubscription {
+  /// 하나 이상이어야 하는 대상 시장입니다.
   final List<WireMarket> markets;
+
+  /// 하나 이상이어야 하는 구독 feed입니다.
   final List<WireFeed> feeds;
 
   const WireSubscription({required this.markets, required this.feeds});

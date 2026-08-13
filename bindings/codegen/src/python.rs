@@ -103,6 +103,8 @@ def _is_i64(value: int) -> bool:
         output.push_str(&format!("    \"{}\",\n", identifier.name));
     }
     output.push_str("]\n");
+    output.truncate(output.trim_end().len());
+    output.push('\n');
     output
 }
 
@@ -204,6 +206,7 @@ fn render_python_model_record(
             && !matches!(
                 (name, field.name),
                 ("OrderHistoryRequest", "statuses")
+                    | ("BithumbClosedOrdersRequest", "states")
                     | ("BithumbTwapOrdersRequest", "uuids")
                     | ("BithumbKrwWithdrawalsRequest", "uuids" | "txids")
                     | ("BithumbKrwDepositsRequest", "uuids" | "txids")
@@ -218,6 +221,7 @@ fn render_python_model_record(
             let empty_list_default = matches!(
                 (name, field.name),
                 ("OrderHistoryRequest", "statuses")
+                    | ("BithumbClosedOrdersRequest", "states")
                     | ("BithumbTwapOrdersRequest", "uuids")
                     | ("BithumbKrwWithdrawalsRequest", "uuids" | "txids")
                     | ("BithumbKrwDepositsRequest", "uuids" | "txids")
@@ -1007,6 +1011,27 @@ pub(crate) fn render_rust_convert(schema: &Schema) -> String {
         "MarginSummary",
         "FundingRate",
         "FundingPayment",
+        "BinanceAccountTrade",
+        "BinanceTestOrder",
+        "BinanceSpotAveragePrice",
+        "BithumbOrderDetailTrade",
+        "BithumbOrderDetail",
+        "BithumbClosedOrder",
+        "UpbitOrderDetailTrade",
+        "UpbitOrderDetail",
+        "UpbitClosedOrder",
+        "BithumbOrderListItem",
+        "BinanceC2cTrade",
+        "BinanceC2cTradeHistoryPage",
+        "HyperliquidUserRateLimit",
+        "HyperliquidUserRole",
+        "HyperliquidReferral",
+        "HyperliquidUserFees",
+        "HyperliquidUserFill",
+        "HyperliquidOpenOrder",
+        "HyperliquidOrderDetail",
+        "HyperliquidOrderInfo",
+        "HyperliquidOrderStatusResponse",
     ];
     for name in schema.models {
         if HANDWRITTEN_MODELS.contains(name) {
@@ -1028,16 +1053,31 @@ pub(crate) fn render_rust_convert(schema: &Schema) -> String {
             .iter()
             .find(|union| union.name == format!("{name}Wire"))
         {
-            output.push_str(&render_rust_union(schema, name, &union.variants));
+            output.push_str(&render_rust_union(
+                schema,
+                name,
+                &union.variants,
+                !HANDWRITTEN_FROM_WIRE.contains(name),
+            ));
         }
     }
+    let mut pages = Vec::new();
     for operation in schema.adapter_operations {
         if let ApiType::Page(name) = operation.result {
-            output.push_str(&format!(
-                "pub(crate) fn {}_page_to_wire(\n    py: Python<'_>,\n    value: &Page<maxt::{name}>,\n) -> PyResult<Py<PyAny>> {{\n    wire_dict!(\n        py,\n        \"items\" => list_to_wire(py, &value.items, {}_to_wire)?,\n        \"next\" => value.next.as_ref().map(Cursor::as_str),\n    )\n}}\n\n",
-                operation.rust_name,
-                snake_case(name)
-            ));
+            output.push_str(&render_rust_page_to_wire(operation.rust_name, name));
+            pages.push(name);
+        }
+    }
+    for provider in schema.providers {
+        for method in provider.methods {
+            let ApiType::Page(name) = method.result else {
+                continue;
+            };
+            if pages.contains(&name) || name == "HyperliquidLedgerEntry" {
+                continue;
+            }
+            output.push_str(&render_rust_page_to_wire(method.rust_name, name));
+            pages.push(name);
         }
     }
     output.push_str(&render_rust_errors(schema));
@@ -1062,6 +1102,7 @@ pub(crate) fn render_rust_provider_convert(schema: &Schema) -> String {
     for name in [
         "BinanceSymbolFilters",
         "BinanceSpotOrderDetail",
+        "BinanceSpotAveragePrice",
         "HyperliquidLedgerEntry",
         "HyperliquidAssetContext",
         "UpbitTravelRuleVasp",
@@ -1082,7 +1123,21 @@ pub(crate) fn render_rust_provider_convert(schema: &Schema) -> String {
          fn bithumb_market_alert_to_wire(\n    py: Python<'_>,\n    value: &(Market, BithumbMarketAlert),\n) -> PyResult<Py<PyAny>> {\n    provider_dict!(\n        py,\n        \"market\" => market_to_wire(py, &value.0)?,\n        \"kind\" => &value.1.kind,\n        \"step\" => bithumb_alert_step_to_wire(value.1.step)?,\n        \"ends_at\" => timestamp_to_wire(value.1.ends_at),\n    )\n}\n\n\
          fn hyperliquid_ledger_page_to_wire(\n    py: Python<'_>,\n    value: &Page<HyperliquidLedgerEntry>,\n) -> PyResult<Py<PyAny>> {\n    provider_dict!(\n        py,\n        \"items\" => list_to_wire(py, &value.items, hyperliquid_ledger_entry_to_wire)?,\n        \"next\" => value.next.as_ref().map(Cursor::as_str),\n    )\n}\n",
     );
+    output.push_str(
+        "fn upbit_subscription_list_to_wire(\n    py: Python<'_>,\n    value: &maxt::adapters::UpbitSubscriptionList,\n) -> PyResult<Py<PyAny>> {\n    provider_dict!(\n        py,\n        \"ticket\" => &value.ticket,\n        \"subscriptions\" => list_to_wire(py, &value.subscriptions, upbit_listed_subscription_to_wire)?,\n    )\n}\n\n\
+         fn upbit_listed_subscription_to_wire(\n    py: Python<'_>,\n    value: &maxt::adapters::UpbitListedSubscription,\n) -> PyResult<Py<PyAny>> {\n    provider_dict!(\n        py,\n        \"feed_type\" => &value.feed_type,\n        \"markets\" => list_to_wire(py, &value.markets, market_to_wire)?,\n        \"level\" => value.level.map(decimal_to_wire),\n    )\n}\n\n",
+    );
+    output.truncate(output.trim_end().len());
+    output.push('\n');
     output
+}
+
+fn render_rust_page_to_wire(operation: &str, name: &str) -> String {
+    format!(
+        "pub(crate) fn {}_page_to_wire(\n    py: Python<'_>,\n    value: &Page<maxt::{name}>,\n) -> PyResult<Py<PyAny>> {{\n    wire_dict!(\n        py,\n        \"items\" => list_to_wire(py, &value.items, {}_to_wire)?,\n        \"next\" => value.next.as_ref().map(Cursor::as_str),\n    )\n}}\n\n",
+        operation,
+        snake_case(name)
+    )
 }
 
 fn render_rust_provider_record(
@@ -1148,10 +1203,16 @@ fn render_rust_identifier(identifier: &maxt_bindings_common::schema::Identifier)
         identifier.name,
         "UpbitRegion"
             | "UpbitOrderDirection"
+            | "UpbitClosedOrderState"
+            | "UpbitPocketTransferState"
+            | "UpbitPocketTransferDirection"
+            | "UpbitPocketTransferOrder"
             | "BithumbAlertStep"
             | "BithumbPendingOrderState"
+            | "BithumbClosedOrderState"
             | "BithumbOrderDirection"
             | "BinanceMarket"
+            | "BinanceC2cTradeType"
             | "HyperliquidLedgerKind"
     ) {
         format!("maxt::adapters::{}", identifier.name)
@@ -1420,6 +1481,7 @@ fn render_rust_union(
     schema: &Schema,
     name: &str,
     variants: &[maxt_bindings_common::schema::Variant],
+    include_from_wire: bool,
 ) -> String {
     let function = snake_case(name);
     let from_arms = variants
@@ -1495,8 +1557,15 @@ fn render_rust_union(
             }
         })
         .collect::<String>();
+    let from_wire = if include_from_wire {
+        format!(
+            "pub(crate) fn {function}_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::{name}> {{\n    let value = wire_object(value)?;\n    let dict = value.cast::<PyDict>()?;\n    let kind = text(&required(dict, \"kind\")?)?;\n    match kind.as_str() {{\n{from_arms}        _ => Err(invalid(\"{function}\", &kind)),\n    }}\n}}\n\n"
+        )
+    } else {
+        String::new()
+    };
     format!(
-        "pub(crate) fn {function}_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::{name}> {{\n    let value = wire_object(value)?;\n    let dict = value.cast::<PyDict>()?;\n    let kind = text(&required(dict, \"kind\")?)?;\n    match kind.as_str() {{\n{from_arms}        _ => Err(invalid(\"{function}\", &kind)),\n    }}\n}}\n\npub(crate) fn {function}_to_wire(\n    py: Python<'_>,\n    value: &maxt::{name},\n) -> PyResult<Py<PyAny>> {{\n    match value {{\n{to_arms}        _ => Err(binding_contract(\"{name}\")),\n    }}\n}}\n\n"
+        "{from_wire}pub(crate) fn {function}_to_wire(\n    py: Python<'_>,\n    value: &maxt::{name},\n) -> PyResult<Py<PyAny>> {{\n    match value {{\n{to_arms}        _ => Err(binding_contract(\"{name}\")),\n    }}\n}}\n\n"
     )
 }
 
@@ -1900,17 +1969,21 @@ fn native_client_arguments(
 }
 
 fn native_provider_arguments(exchange: &str, method: &str, arguments: &[Argument]) -> String {
-    if exchange == "hyperliquid" && method == "non_funding_ledger" {
+    if exchange == "hyperliquid" && matches!(method, "non_funding_ledger" | "user_fills_by_time") {
         return arguments
             .iter()
             .map(|argument| {
-                let name = match argument.name {
-                    "from" => "from_ns",
-                    "to" => "to_ns",
-                    name => name,
+                let (name, ty) = match (method, argument.name) {
+                    ("user_fills_by_time", "from") => ("from_ns".to_owned(), "int".to_owned()),
+                    ("user_fills_by_time", "to") => {
+                        ("to_ns".to_owned(), "Optional[int]".to_owned())
+                    }
+                    (_, "from") => ("from_ns".to_owned(), native_argument_type(argument.ty)),
+                    (_, "to") => ("to_ns".to_owned(), native_argument_type(argument.ty)),
+                    (_, name) => (python_name(name), native_argument_type(argument.ty)),
                 };
                 let default = argument.default.map(|_| " = ...").unwrap_or("");
-                format!(", {name}: {}{default}", native_argument_type(argument.ty))
+                format!(", {name}: {ty}{default}")
             })
             .collect();
     }
@@ -2276,9 +2349,16 @@ mod tests {
 
         assert!(output.contains("class Exchange(str, Enum):\n    UPBIT = \"upbit\""));
         assert!(output.contains("\"order_history\","));
-        assert!(output.contains(
-            "\"deposit_lookup\",\n            \"withdrawal_quotes\",\n            \"withdrawals\",\n            \"withdrawal_history\",\n            \"withdrawal_lookup\",\n            \"withdrawal_cancellation\","
-        ));
+        for name in [
+            "deposit_lookup",
+            "withdrawal_quotes",
+            "withdrawals",
+            "withdrawal_history",
+            "withdrawal_lookup",
+            "withdrawal_cancellation",
+        ] {
+            assert!(output.contains(&format!("\"{name}\",")));
+        }
         assert!(output.contains("class OrderStatus(str, Enum):"));
         assert!(output.contains("class HyperliquidLedgerKind(str, Enum):"));
         assert!(output.contains("def other(cls, value: str) -> HyperliquidLedgerKind:"));
@@ -2319,6 +2399,9 @@ mod tests {
         ));
         assert!(output.contains(
             "class BithumbTwapOrdersRequest(WireModel):\n    __wire_strict__: ClassVar[bool] = True\n    market: Optional[Market] = None\n    uuids: list[str] = field(default_factory=list)"
+        ));
+        assert!(output.contains(
+            "class BithumbClosedOrdersRequest(WireModel):\n    __wire_strict__: ClassVar[bool] = True\n    market: Optional[Market] = None\n    state: Optional[BithumbClosedOrderState] = None\n    states: list[BithumbClosedOrderState] = field(default_factory=list)"
         ));
         assert!(output.contains(
             "from_: Optional[Timestamp] = field(default=None, metadata={\"wire_name\": \"from\"})"
@@ -2405,6 +2488,40 @@ mod tests {
         ));
         assert!(output.contains("maxt::Error::Exchange"));
         assert!(output.contains("\"provider_message\" => provider_message"));
+    }
+
+    #[test]
+    fn hyperliquid_order_outputs_are_one_way_and_non_exhaustive() {
+        let output = render_rust_convert(&binding_schema());
+
+        for name in [
+            "HyperliquidOpenOrder",
+            "HyperliquidOrderDetail",
+            "HyperliquidOrderInfo",
+            "HyperliquidOrderStatusResponse",
+        ] {
+            let function = snake_case(name);
+            assert!(output.contains(&format!("fn {function}_to_wire")));
+            assert!(!output.contains(&format!("fn {function}_from_wire")));
+        }
+        assert!(output.contains("_ => Err(binding_contract(\"HyperliquidOrderStatusResponse\"))"));
+    }
+
+    #[test]
+    fn binance_spot_average_price_is_output_only() {
+        let output = render_rust_convert(&binding_schema());
+
+        assert!(output.contains("fn binance_spot_average_price_to_wire"));
+        assert!(!output.contains("fn binance_spot_average_price_from_wire"));
+    }
+
+    #[test]
+    fn bithumb_closed_order_output_is_one_way() {
+        let output = render_rust_convert(&binding_schema());
+
+        assert!(output.contains("fn bithumb_closed_order_to_wire"));
+        assert!(!output.contains("fn bithumb_closed_order_from_wire"));
+        assert!(output.contains("fn closed_orders_page_to_wire"));
     }
 
     #[test]

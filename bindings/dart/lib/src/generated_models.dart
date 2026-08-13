@@ -2,7 +2,9 @@
 
 part of 'models.dart';
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [OrderAccount]입니다.
 final class OrderAccount {
+  /// [OrderAccount]의 값을 만듭니다.
   const OrderAccount({
     required this.balance,
     required this.averageBuyPrice,
@@ -10,25 +12,41 @@ final class OrderAccount {
     this.averageBuyPriceUnit,
   });
 
+  /// 거래소 API의 `balance` 값입니다.
   final Balance balance;
+
+  /// 거래소 API의 `average_buy_price` 값입니다.
   final Decimal averageBuyPrice;
+
+  /// 거래소 API의 `average_buy_price_modified` 값입니다.
   final bool averageBuyPriceModified;
+
+  /// 거래소 API의 `average_buy_price_unit` 값입니다.
   final String? averageBuyPriceUnit;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [OrderOption]입니다.
 final class OrderOption {
+  /// [OrderOption]의 값을 만듭니다.
   const OrderOption({
     required this.providerId,
     this.orderType,
     this.timeInForce,
   });
 
+  /// 거래소 API의 `provider_id` 값입니다.
   final String providerId;
+
+  /// 거래소 API의 `order_type` 값입니다.
   final OrderType? orderType;
+
+  /// 거래소 API의 `time_in_force` 값입니다.
   final TimeInForce? timeInForce;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [OrderRules]입니다.
 final class OrderRules {
+  /// [OrderRules]의 값을 만듭니다.
   const OrderRules({
     required this.market,
     required this.marketName,
@@ -49,26 +67,61 @@ final class OrderRules {
     required this.baseAccount,
   });
 
+  /// 거래소 API의 `market` 값입니다.
   final Market market;
+
+  /// 거래소 API의 `market_name` 값입니다.
   final String marketName;
+
+  /// 거래소 API의 `status` 값입니다.
   final MarketStatus status;
+
+  /// 거래소 API의 `buy_fee_rate` 값입니다.
   final Decimal buyFeeRate;
+
+  /// 거래소 API의 `sell_fee_rate` 값입니다.
   final Decimal sellFeeRate;
+
+  /// 거래소 API의 `maker_buy_fee_rate` 값입니다.
   final Decimal makerBuyFeeRate;
+
+  /// 거래소 API의 `maker_sell_fee_rate` 값입니다.
   final Decimal makerSellFeeRate;
+
+  /// 거래소 API의 `sides` 값입니다.
   final List<Side> sides;
+
+  /// 거래소 API의 `buy_options` 값입니다.
   final List<OrderOption> buyOptions;
+
+  /// 거래소 API의 `sell_options` 값입니다.
   final List<OrderOption> sellOptions;
+
+  /// 거래소 API의 `buy_price_unit` 값입니다.
   final Decimal? buyPriceUnit;
+
+  /// 거래소 API의 `sell_price_unit` 값입니다.
   final Decimal? sellPriceUnit;
+
+  /// 거래소 API의 `minimum_buy_total` 값입니다.
   final Decimal minimumBuyTotal;
+
+  /// 거래소 API의 `minimum_sell_total` 값입니다.
   final Decimal minimumSellTotal;
+
+  /// 거래소 API의 `maximum_total` 값입니다.
   final Decimal maximumTotal;
+
+  /// 거래소 API의 `quote_account` 값입니다.
   final OrderAccount quoteAccount;
+
+  /// 거래소 API의 `base_account` 값입니다.
   final OrderAccount baseAccount;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [AssetNetwork]입니다.
 final class AssetNetwork {
+  /// [AssetNetwork]의 값을 만듭니다.
   AssetNetwork({
     required this.exchange,
     required String asset,
@@ -82,19 +135,40 @@ final class AssetNetwork {
     required this.memoRequired,
   }) : asset = _asciiUpper(asset);
 
+  /// 거래소 API의 `exchange` 값입니다.
   final Exchange exchange;
+
+  /// 거래소 API의 `asset` 값입니다.
   final String asset;
+
+  /// 거래소 API의 `network` 값입니다.
   final Network network;
+
+  /// 거래소 API의 `provider_id` 값입니다.
   final String providerId;
+
+  /// 거래소 API의 `deposit_enabled` 값입니다.
   final bool depositEnabled;
+
+  /// 거래소 API의 `withdrawal_enabled` 값입니다.
   final bool withdrawalEnabled;
+
+  /// 거래소 API의 `withdrawal_fee` 값입니다.
   final WithdrawalFee? withdrawalFee;
+
+  /// 거래소 API의 `minimum_withdrawal` 값입니다.
   final Decimal? minimumWithdrawal;
+
+  /// 거래소 API의 `maximum_withdrawal` 값입니다.
   final Decimal? maximumWithdrawal;
+
+  /// 거래소 API의 `memo_required` 값입니다.
   final bool memoRequired;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [DepositAddress]입니다.
 final class DepositAddress {
+  /// [DepositAddress]의 값을 만듭니다.
   DepositAddress({
     required this.exchange,
     required String asset,
@@ -103,14 +177,25 @@ final class DepositAddress {
     this.memo,
   }) : asset = _asciiUpper(asset);
 
+  /// 거래소 API의 `exchange` 값입니다.
   final Exchange exchange;
+
+  /// 거래소 API의 `asset` 값입니다.
   final String asset;
+
+  /// 거래소 API의 `network` 값입니다.
   final Network network;
+
+  /// 거래소 API의 `address` 값입니다.
   final String? address;
+
+  /// 거래소 API의 `memo` 값입니다.
   final String? memo;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [DepositAddressEntry]입니다.
 final class DepositAddressEntry {
+  /// [DepositAddressEntry]의 값을 만듭니다.
   DepositAddressEntry({
     required this.exchange,
     required String asset,
@@ -120,15 +205,28 @@ final class DepositAddressEntry {
     this.memo,
   }) : asset = _asciiUpper(asset);
 
+  /// 거래소 API의 `exchange` 값입니다.
   final Exchange exchange;
+
+  /// 거래소 API의 `asset` 값입니다.
   final String asset;
+
+  /// 거래소 API의 `network` 값입니다.
   final Network? network;
+
+  /// 거래소 API의 `provider_network` 값입니다.
   final String? providerNetwork;
+
+  /// 거래소 API의 `address` 값입니다.
   final String? address;
+
+  /// 거래소 API의 `memo` 값입니다.
   final String? memo;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [ExchangeDestination]입니다.
 final class ExchangeDestination {
+  /// [ExchangeDestination]의 값을 만듭니다.
   ExchangeDestination({
     required this.exchange,
     required String asset,
@@ -137,14 +235,25 @@ final class ExchangeDestination {
     this.memo,
   }) : asset = _asciiUpper(asset);
 
+  /// 거래소 API의 `exchange` 값입니다.
   final Exchange exchange;
+
+  /// 거래소 API의 `asset` 값입니다.
   final String asset;
+
+  /// 거래소 API의 `network` 값입니다.
   final Network network;
+
+  /// 거래소 API의 `address` 값입니다.
   final String address;
+
+  /// 거래소 API의 `memo` 값입니다.
   final String? memo;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [ChainDestination]입니다.
 final class ChainDestination {
+  /// [ChainDestination]의 값을 만듭니다.
   ChainDestination({
     required String asset,
     required this.network,
@@ -152,13 +261,22 @@ final class ChainDestination {
     this.memo,
   }) : asset = _asciiUpper(asset);
 
+  /// 거래소 API의 `asset` 값입니다.
   final String asset;
+
+  /// 거래소 API의 `network` 값입니다.
   final Network network;
+
+  /// 거래소 API의 `address` 값입니다.
   final String address;
+
+  /// 거래소 API의 `memo` 값입니다.
   final String? memo;
 }
 
+/// 거래소 API 요청에 전달하는 입력값 모델인 [ExchangeTransferRequest]입니다.
 final class ExchangeTransferRequest {
+  /// [ExchangeTransferRequest]의 값을 만듭니다.
   ExchangeTransferRequest({
     required String asset,
     this.sourceNetwork,
@@ -166,13 +284,22 @@ final class ExchangeTransferRequest {
     required this.amount,
   }) : asset = _asciiUpper(asset);
 
+  /// 거래소 API의 `asset` 값입니다.
   final String asset;
+
+  /// 거래소 API의 `source_network` 값입니다.
   final Network? sourceNetwork;
+
+  /// 거래소 API의 `destination_network` 값입니다.
   final Network? destinationNetwork;
+
+  /// 거래소 API의 `amount` 값입니다.
   final Decimal amount;
 }
 
+/// 거래소 API 요청에 전달하는 입력값 모델인 [ChainTransferRequest]입니다.
 final class ChainTransferRequest {
+  /// [ChainTransferRequest]의 값을 만듭니다.
   ChainTransferRequest({
     required String asset,
     this.sourceNetwork,
@@ -180,37 +307,60 @@ final class ChainTransferRequest {
     required this.amount,
   }) : asset = _asciiUpper(asset);
 
+  /// 거래소 API의 `asset` 값입니다.
   final String asset;
+
+  /// 거래소 API의 `source_network` 값입니다.
   final Network? sourceNetwork;
+
+  /// 거래소 API의 `destination` 값입니다.
   final ChainDestination destination;
+
+  /// 거래소 API의 `amount` 값입니다.
   final Decimal amount;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [TransferDestination]입니다.
 sealed class TransferDestination {
+  /// 변형 클래스가 공통으로 사용하는 기본 생성자입니다.
   const TransferDestination();
 
+  /// [TransferDestination]의 `exchange` 변형을 만듭니다.
   const factory TransferDestination.exchange(ExchangeDestination value) =
       TransferDestinationExchange;
+
+  /// [TransferDestination]의 `chain` 변형을 만듭니다.
   const factory TransferDestination.chain(ChainDestination value) =
       TransferDestinationChain;
 }
 
+/// [TransferDestination]의 `exchange` 변형입니다.
 final class TransferDestinationExchange extends TransferDestination {
+  /// [value]를 담은 `exchange` 변형을 만듭니다.
   const TransferDestinationExchange(this.value);
 
+  /// 거래소 API의 `value` 값입니다.
   final ExchangeDestination value;
 }
 
+/// [TransferDestination]의 `chain` 변형입니다.
 final class TransferDestinationChain extends TransferDestination {
+  /// [value]를 담은 `chain` 변형을 만듭니다.
   const TransferDestinationChain(this.value);
 
+  /// 거래소 API의 `value` 값입니다.
   final ChainDestination value;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [WithdrawalFee]입니다.
 sealed class WithdrawalFee {
+  /// 변형 클래스가 공통으로 사용하는 기본 생성자입니다.
   const WithdrawalFee();
 
+  /// [WithdrawalFee]의 `fixed` 변형을 만듭니다.
   const factory WithdrawalFee.fixed(Decimal value) = WithdrawalFeeFixed;
+
+  /// [WithdrawalFee]의 `rate` 변형을 만듭니다.
   const factory WithdrawalFee.rate({
     required Decimal rate,
     Decimal? minimum,
@@ -218,40 +368,62 @@ sealed class WithdrawalFee {
   }) = WithdrawalFeeRate;
 }
 
+/// [WithdrawalFee]의 `fixed` 변형입니다.
 final class WithdrawalFeeFixed extends WithdrawalFee {
+  /// [value]를 담은 `fixed` 변형을 만듭니다.
   const WithdrawalFeeFixed(this.value);
 
+  /// 거래소 API의 `value` 값입니다.
   final Decimal value;
 }
 
+/// [WithdrawalFee]의 `rate` 변형입니다.
 final class WithdrawalFeeRate extends WithdrawalFee {
+  /// `rate` 변형의 값을 만듭니다.
   const WithdrawalFeeRate({required this.rate, this.minimum, this.maximum});
 
+  /// 거래소 API의 `rate` 값입니다.
   final Decimal rate;
+
+  /// 거래소 API의 `minimum` 값입니다.
   final Decimal? minimum;
+
+  /// 거래소 API의 `maximum` 값입니다.
   final Decimal? maximum;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [TravelRuleRequirement]입니다.
 sealed class TravelRuleRequirement {
+  /// 변형 클래스가 공통으로 사용하는 기본 생성자입니다.
   const TravelRuleRequirement();
 
+  /// [TravelRuleRequirement]의 `notRequired` 변형을 만듭니다.
   const factory TravelRuleRequirement.notRequired() =
       TravelRuleRequirementNotRequired;
+
+  /// [TravelRuleRequirement]의 `required` 변형을 만듭니다.
   const factory TravelRuleRequirement.required({String? consentUrl}) =
       TravelRuleRequirementRequired;
 }
 
+/// [TravelRuleRequirement]의 `notRequired` 변형입니다.
 final class TravelRuleRequirementNotRequired extends TravelRuleRequirement {
+  /// `notRequired` 변형을 만듭니다.
   const TravelRuleRequirementNotRequired();
 }
 
+/// [TravelRuleRequirement]의 `required` 변형입니다.
 final class TravelRuleRequirementRequired extends TravelRuleRequirement {
+  /// `required` 변형의 값을 만듭니다.
   const TravelRuleRequirementRequired({this.consentUrl});
 
+  /// 거래소 API의 `consent_url` 값입니다.
   final String? consentUrl;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [WithdrawalQuote]입니다.
 final class WithdrawalQuote {
+  /// [WithdrawalQuote]의 값을 만듭니다.
   const WithdrawalQuote({
     this.fee,
     this.expectedReceive,
@@ -262,16 +434,31 @@ final class WithdrawalQuote {
     this.expiresAt,
   });
 
+  /// 거래소 API의 `fee` 값입니다.
   final Decimal? fee;
+
+  /// 거래소 API의 `expected_receive` 값입니다.
   final Decimal? expectedReceive;
+
+  /// 거래소 API의 `minimum_amount` 값입니다.
   final Decimal? minimumAmount;
+
+  /// 거래소 API의 `maximum_amount` 값입니다.
   final Decimal? maximumAmount;
+
+  /// 거래소 API의 `address_allowed` 값입니다.
   final bool? addressAllowed;
+
+  /// 거래소 API의 `travel_rule` 값입니다.
   final TravelRuleRequirement travelRule;
+
+  /// 거래소 API의 `expires_at` 값입니다.
   final Timestamp? expiresAt;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [TransferPlan]입니다.
 final class TransferPlan {
+  /// [TransferPlan]의 값을 만듭니다.
   const TransferPlan({
     required this.source,
     this.destination,
@@ -281,15 +468,28 @@ final class TransferPlan {
     required this.expiresAt,
   });
 
+  /// 거래소 API의 `source` 값입니다.
   final Exchange source;
+
+  /// 거래소 API의 `destination` 값입니다.
   final Exchange? destination;
+
+  /// 거래소 API의 `request` 값입니다.
   final WithdrawRequest request;
+
+  /// 거래소 API의 `quote` 값입니다.
   final WithdrawalQuote quote;
+
+  /// 거래소 API의 `created_at` 값입니다.
   final Timestamp createdAt;
+
+  /// 거래소 API의 `expires_at` 값입니다.
   final Timestamp expiresAt;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [Withdrawal]입니다.
 final class Withdrawal {
+  /// [Withdrawal]의 값을 만듭니다.
   Withdrawal({
     required this.id,
     required String asset,
@@ -304,20 +504,43 @@ final class Withdrawal {
     this.createdAt,
   }) : asset = _asciiUpper(asset);
 
+  /// 거래소 API의 `id` 값입니다.
   final String id;
+
+  /// 거래소 API의 `asset` 값입니다.
   final String asset;
+
+  /// 거래소 API의 `network` 값입니다.
   final Network? network;
+
+  /// 거래소 API의 `provider_network` 값입니다.
   final String? providerNetwork;
+
+  /// 거래소 API의 `amount` 값입니다.
   final Decimal amount;
+
+  /// 거래소 API의 `fee` 값입니다.
   final Decimal? fee;
+
+  /// 거래소 API의 `destination` 값입니다.
   final TransferDestination? destination;
+
+  /// 거래소 API의 `status` 값입니다.
   final WithdrawalStatus status;
+
+  /// 거래소 API의 `provider_status` 값입니다.
   final String providerStatus;
+
+  /// 거래소 API의 `tx_id` 값입니다.
   final String? txId;
+
+  /// 거래소 API의 `created_at` 값입니다.
   final Timestamp? createdAt;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [Deposit]입니다.
 final class Deposit {
+  /// [Deposit]의 값을 만듭니다.
   Deposit({
     required this.id,
     required String asset,
@@ -332,20 +555,43 @@ final class Deposit {
     this.createdAt,
   }) : asset = _asciiUpper(asset);
 
+  /// 거래소 API의 `id` 값입니다.
   final String id;
+
+  /// 거래소 API의 `asset` 값입니다.
   final String asset;
+
+  /// 거래소 API의 `network` 값입니다.
   final Network? network;
+
+  /// 거래소 API의 `provider_network` 값입니다.
   final String? providerNetwork;
+
+  /// 거래소 API의 `amount` 값입니다.
   final Decimal amount;
+
+  /// 거래소 API의 `address` 값입니다.
   final String? address;
+
+  /// 거래소 API의 `memo` 값입니다.
   final String? memo;
+
+  /// 거래소 API의 `status` 값입니다.
   final DepositStatus status;
+
+  /// 거래소 API의 `provider_status` 값입니다.
   final String providerStatus;
+
+  /// 거래소 API의 `tx_id` 값입니다.
   final String? txId;
+
+  /// 거래소 API의 `created_at` 값입니다.
   final Timestamp? createdAt;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [CancelledOrder]입니다.
 final class CancelledOrder {
+  /// [CancelledOrder]의 값을 만듭니다.
   const CancelledOrder({
     required this.orderId,
     this.clientId,
@@ -353,13 +599,22 @@ final class CancelledOrder {
     this.cancelledAt,
   });
 
+  /// 거래소 API의 `order_id` 값입니다.
   final String orderId;
+
+  /// 거래소 API의 `client_id` 값입니다.
   final String? clientId;
+
+  /// 거래소 API의 `market` 값입니다.
   final Market? market;
+
+  /// 거래소 API의 `cancelled_at` 값입니다.
   final Timestamp? cancelledAt;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [OrderCancelFailure]입니다.
 final class OrderCancelFailure {
+  /// [OrderCancelFailure]의 값을 만듭니다.
   const OrderCancelFailure({
     this.orderId,
     this.clientId,
@@ -368,40 +623,68 @@ final class OrderCancelFailure {
     this.message,
   });
 
+  /// 거래소 API의 `order_id` 값입니다.
   final String? orderId;
+
+  /// 거래소 API의 `client_id` 값입니다.
   final String? clientId;
+
+  /// 거래소 API의 `market` 값입니다.
   final Market? market;
+
+  /// 거래소 API의 `code` 값입니다.
   final String? code;
+
+  /// 거래소 API의 `message` 값입니다.
   final String? message;
 }
 
+/// 거래소 API 작업의 결과 모델인 [CancelOrdersResult]입니다.
 final class CancelOrdersResult {
+  /// [CancelOrdersResult]의 값을 만듭니다.
   const CancelOrdersResult({required this.cancelled, required this.failed});
 
+  /// 거래소 API의 `cancelled` 값입니다.
   final List<CancelledOrder> cancelled;
+
+  /// 거래소 API의 `failed` 값입니다.
   final List<OrderCancelFailure> failed;
 }
 
+/// 거래소 API 요청에 전달하는 입력값 모델인 [OrderLookupRequest]입니다.
 final class OrderLookupRequest {
+  /// [OrderLookupRequest]의 값을 만듭니다.
   const OrderLookupRequest({
     required this.kind,
     required this.ids,
     this.market,
   });
 
+  /// 거래소 API의 `kind` 값입니다.
   final OrderIdKind kind;
+
+  /// 거래소 API의 `ids` 값입니다.
   final List<String> ids;
+
+  /// 거래소 API의 `market` 값입니다.
   final Market? market;
 }
 
+/// 거래소 API 요청에 전달하는 입력값 모델인 [CancelOrdersRequest]입니다.
 final class CancelOrdersRequest {
+  /// [CancelOrdersRequest]의 값을 만듭니다.
   const CancelOrdersRequest({required this.kind, required this.ids});
 
+  /// 거래소 API의 `kind` 값입니다.
   final OrderIdKind kind;
+
+  /// 거래소 API의 `ids` 값입니다.
   final List<String> ids;
 }
 
+/// 거래소 API 요청에 전달하는 입력값 모델인 [OrderHistoryRequest]입니다.
 final class OrderHistoryRequest {
+  /// [OrderHistoryRequest]의 값을 만듭니다.
   const OrderHistoryRequest({
     this.market,
     this.statuses = const [],
@@ -411,27 +694,47 @@ final class OrderHistoryRequest {
     this.limit,
   });
 
+  /// 거래소 API의 `market` 값입니다.
   final Market? market;
+
+  /// 거래소 API의 `statuses` 값입니다.
   final List<OrderStatus> statuses;
+
+  /// 거래소 API의 `from` 값입니다.
   final Timestamp? from;
+
+  /// 거래소 API의 `to` 값입니다.
   final Timestamp? to;
+
+  /// 거래소 API의 `cursor` 값입니다.
   final Cursor? cursor;
+
+  /// 거래소 API의 `limit` 값입니다.
   final int? limit;
 }
 
+/// 거래소 API 요청에 전달하는 입력값 모델인 [DepositAddressRequest]입니다.
 final class DepositAddressRequest {
+  /// [DepositAddressRequest]의 값을 만듭니다.
   DepositAddressRequest({
     required String asset,
     required this.network,
     this.amount,
   }) : asset = _asciiUpper(asset);
 
+  /// 거래소 API의 `asset` 값입니다.
   final String asset;
+
+  /// 거래소 API의 `network` 값입니다.
   final Network network;
+
+  /// 거래소 API의 `amount` 값입니다.
   final Decimal? amount;
 }
 
+/// 거래소 API 요청에 전달하는 입력값 모델인 [WithdrawRequest]입니다.
 final class WithdrawRequest {
+  /// [WithdrawRequest]의 값을 만듭니다.
   WithdrawRequest({
     required String asset,
     required this.network,
@@ -440,33 +743,94 @@ final class WithdrawRequest {
     this.clientId,
   }) : asset = _asciiUpper(asset);
 
+  /// 거래소 API의 `asset` 값입니다.
   final String asset;
+
+  /// 거래소 API의 `network` 값입니다.
   final Network network;
+
+  /// 거래소 API의 `amount` 값입니다.
   final Decimal amount;
+
+  /// 거래소 API의 `destination` 값입니다.
   final TransferDestination destination;
+
+  /// 거래소 API의 `client_id` 값입니다.
   final String? clientId;
 }
 
+/// 거래소 API 요청에 전달하는 입력값 모델인 [TransferLookupRequest]입니다.
 final class TransferLookupRequest {
+  /// [TransferLookupRequest]의 값을 만듭니다.
   TransferLookupRequest({required String asset, this.id, this.txId})
     : asset = _asciiUpper(asset);
 
+  /// 거래소 API의 `asset` 값입니다.
   final String asset;
+
+  /// 거래소 API의 `id` 값입니다.
   final String? id;
+
+  /// 거래소 API의 `tx_id` 값입니다.
   final String? txId;
 }
 
+/// 거래소 API 요청에 전달하는 입력값 모델인 [TransferHistoryRequest]입니다.
 final class TransferHistoryRequest {
+  /// [TransferHistoryRequest]의 값을 만듭니다.
   TransferHistoryRequest({String? asset, this.network, this.cursor, this.limit})
     : asset = asset == null ? null : _asciiUpper(asset);
 
+  /// 거래소 API의 `asset` 값입니다.
   final String? asset;
+
+  /// 거래소 API의 `network` 값입니다.
   final Network? network;
+
+  /// 거래소 API의 `cursor` 값입니다.
   final Cursor? cursor;
+
+  /// 거래소 API의 `limit` 값입니다.
   final int? limit;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitListedSubscription]입니다.
+final class UpbitListedSubscription {
+  /// [UpbitListedSubscription]의 값을 만듭니다.
+  const UpbitListedSubscription({
+    required this.feedType,
+    required this.markets,
+    this.level,
+  });
+
+  /// 거래소 API의 `feed_type` 값입니다.
+  final String feedType;
+
+  /// 거래소 API의 `markets` 값입니다.
+  final List<Market> markets;
+
+  /// 거래소 API의 `level` 값입니다.
+  final Decimal? level;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitSubscriptionList]입니다.
+final class UpbitSubscriptionList {
+  /// [UpbitSubscriptionList]의 값을 만듭니다.
+  const UpbitSubscriptionList({
+    required this.ticket,
+    required this.subscriptions,
+  });
+
+  /// 거래소 API의 `ticket` 값입니다.
+  final String ticket;
+
+  /// 거래소 API의 `subscriptions` 값입니다.
+  final List<UpbitListedSubscription> subscriptions;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitYearCandle]입니다.
 final class UpbitYearCandle {
+  /// [UpbitYearCandle]의 값을 만듭니다.
   const UpbitYearCandle({
     required this.market,
     required this.openTime,
@@ -481,20 +845,43 @@ final class UpbitYearCandle {
     required this.firstDayOfPeriod,
   });
 
+  /// 거래소 API의 `market` 값입니다.
   final Market market;
+
+  /// 거래소 API의 `open_time` 값입니다.
   final Timestamp openTime;
+
+  /// 거래소 API의 `korea_open_time` 값입니다.
   final Timestamp? koreaOpenTime;
+
+  /// 거래소 API의 `timestamp` 값입니다.
   final Timestamp timestamp;
+
+  /// 거래소 API의 `open` 값입니다.
   final Decimal open;
+
+  /// 거래소 API의 `high` 값입니다.
   final Decimal high;
+
+  /// 거래소 API의 `low` 값입니다.
   final Decimal low;
+
+  /// 거래소 API의 `close` 값입니다.
   final Decimal close;
+
+  /// 거래소 API의 `volume` 값입니다.
   final Decimal volume;
+
+  /// 거래소 API의 `quote_volume` 값입니다.
   final Decimal quoteVolume;
+
+  /// 거래소 API의 `first_day_of_period` 값입니다.
   final String firstDayOfPeriod;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitOrderBookInstrument]입니다.
 final class UpbitOrderBookInstrument {
+  /// [UpbitOrderBookInstrument]의 값을 만듭니다.
   const UpbitOrderBookInstrument({
     required this.market,
     required this.quoteCurrency,
@@ -502,13 +889,297 @@ final class UpbitOrderBookInstrument {
     required this.supportedLevels,
   });
 
+  /// 거래소 API의 `market` 값입니다.
   final Market market;
+
+  /// 거래소 API의 `quote_currency` 값입니다.
   final String quoteCurrency;
+
+  /// 거래소 API의 `tick_size` 값입니다.
   final Decimal tickSize;
+
+  /// 거래소 API의 `supported_levels` 값입니다.
   final List<Decimal> supportedLevels;
 }
 
+/// 거래소 API 요청에 전달하는 입력값 모델인 [UpbitOrderDetailRequest]입니다.
+final class UpbitOrderDetailRequest {
+  /// [UpbitOrderDetailRequest]의 값을 만듭니다.
+  const UpbitOrderDetailRequest({
+    required this.market,
+    this.uuid,
+    this.identifier,
+  });
+
+  /// 거래소 API의 `market` 값입니다.
+  final Market market;
+
+  /// 거래소 API의 `uuid` 값입니다.
+  final String? uuid;
+
+  /// 거래소 API의 `identifier` 값입니다.
+  final String? identifier;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitOrderDetailTrade]입니다.
+final class UpbitOrderDetailTrade {
+  /// [UpbitOrderDetailTrade]의 값을 만듭니다.
+  const UpbitOrderDetailTrade({
+    required this.market,
+    required this.uuid,
+    required this.price,
+    required this.volume,
+    required this.funds,
+    required this.trend,
+    required this.createdAt,
+    required this.side,
+  });
+
+  /// 거래소 API의 `market` 값입니다.
+  final Market market;
+
+  /// 거래소 API의 `uuid` 값입니다.
+  final String uuid;
+
+  /// 거래소 API의 `price` 값입니다.
+  final Decimal price;
+
+  /// 거래소 API의 `volume` 값입니다.
+  final Decimal volume;
+
+  /// 거래소 API의 `funds` 값입니다.
+  final Decimal funds;
+
+  /// 거래소 API의 `trend` 값입니다.
+  final String trend;
+
+  /// 거래소 API의 `created_at` 값입니다.
+  final Timestamp createdAt;
+
+  /// 거래소 API의 `side` 값입니다.
+  final String side;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitOrderDetail]입니다.
+final class UpbitOrderDetail {
+  /// [UpbitOrderDetail]의 값을 만듭니다.
+  const UpbitOrderDetail({
+    required this.market,
+    required this.uuid,
+    required this.side,
+    required this.orderType,
+    this.price,
+    required this.state,
+    required this.createdAt,
+    this.volume,
+    required this.remainingVolume,
+    required this.executedVolume,
+    required this.reservedFee,
+    required this.remainingFee,
+    required this.paidFee,
+    required this.locked,
+    required this.tradesCount,
+    required this.preventedVolume,
+    required this.preventedLocked,
+    this.timeInForce,
+    this.identifier,
+    this.smpType,
+    required this.trades,
+  });
+
+  /// 거래소 API의 `market` 값입니다.
+  final Market market;
+
+  /// 거래소 API의 `uuid` 값입니다.
+  final String uuid;
+
+  /// 거래소 API의 `side` 값입니다.
+  final String side;
+
+  /// 거래소 API의 `order_type` 값입니다.
+  final String orderType;
+
+  /// 거래소 API의 `price` 값입니다.
+  final Decimal? price;
+
+  /// 거래소 API의 `state` 값입니다.
+  final String state;
+
+  /// 거래소 API의 `created_at` 값입니다.
+  final Timestamp createdAt;
+
+  /// 거래소 API의 `volume` 값입니다.
+  final Decimal? volume;
+
+  /// 거래소 API의 `remaining_volume` 값입니다.
+  final Decimal remainingVolume;
+
+  /// 거래소 API의 `executed_volume` 값입니다.
+  final Decimal executedVolume;
+
+  /// 거래소 API의 `reserved_fee` 값입니다.
+  final Decimal reservedFee;
+
+  /// 거래소 API의 `remaining_fee` 값입니다.
+  final Decimal remainingFee;
+
+  /// 거래소 API의 `paid_fee` 값입니다.
+  final Decimal paidFee;
+
+  /// 거래소 API의 `locked` 값입니다.
+  final Decimal locked;
+
+  /// 거래소 API의 `trades_count` 값입니다.
+  final int tradesCount;
+
+  /// 거래소 API의 `prevented_volume` 값입니다.
+  final Decimal preventedVolume;
+
+  /// 거래소 API의 `prevented_locked` 값입니다.
+  final Decimal preventedLocked;
+
+  /// 거래소 API의 `time_in_force` 값입니다.
+  final String? timeInForce;
+
+  /// 거래소 API의 `identifier` 값입니다.
+  final String? identifier;
+
+  /// 거래소 API의 `smp_type` 값입니다.
+  final String? smpType;
+
+  /// 거래소 API의 `trades` 값입니다.
+  final List<UpbitOrderDetailTrade> trades;
+}
+
+/// 거래소 API 요청에 전달하는 입력값 모델인 [UpbitClosedOrdersRequest]입니다.
+final class UpbitClosedOrdersRequest {
+  /// [UpbitClosedOrdersRequest]의 값을 만듭니다.
+  const UpbitClosedOrdersRequest({
+    this.market,
+    this.state,
+    required this.states,
+    this.startTime,
+    this.endTime,
+    this.limit,
+    this.orderBy,
+  });
+
+  /// 거래소 API의 `market` 값입니다.
+  final Market? market;
+
+  /// 거래소 API의 `state` 값입니다.
+  final UpbitClosedOrderState? state;
+
+  /// 거래소 API의 `states` 값입니다.
+  final List<UpbitClosedOrderState> states;
+
+  /// 거래소 API의 `start_time` 값입니다.
+  final Timestamp? startTime;
+
+  /// 거래소 API의 `end_time` 값입니다.
+  final Timestamp? endTime;
+
+  /// 거래소 API의 `limit` 값입니다.
+  final int? limit;
+
+  /// 거래소 API의 `order_by` 값입니다.
+  final UpbitOrderDirection? orderBy;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitClosedOrder]입니다.
+final class UpbitClosedOrder {
+  /// [UpbitClosedOrder]의 값을 만듭니다.
+  const UpbitClosedOrder({
+    required this.market,
+    required this.uuid,
+    required this.side,
+    required this.ordType,
+    required this.state,
+    required this.createdAt,
+    this.volume,
+    this.price,
+    required this.remainingVolume,
+    required this.executedVolume,
+    this.executedFunds,
+    required this.reservedFee,
+    required this.remainingFee,
+    required this.paidFee,
+    required this.locked,
+    required this.tradesCount,
+    required this.preventedVolume,
+    required this.preventedLocked,
+    this.timeInForce,
+    this.identifier,
+    this.smpType,
+  });
+
+  /// 거래소 API의 `market` 값입니다.
+  final Market market;
+
+  /// 거래소 API의 `uuid` 값입니다.
+  final String uuid;
+
+  /// 거래소 API의 `side` 값입니다.
+  final String side;
+
+  /// 거래소 API의 `ord_type` 값입니다.
+  final String ordType;
+
+  /// 거래소 API의 `state` 값입니다.
+  final String state;
+
+  /// 거래소 API의 `created_at` 값입니다.
+  final Timestamp createdAt;
+
+  /// 거래소 API의 `volume` 값입니다.
+  final Decimal? volume;
+
+  /// 거래소 API의 `price` 값입니다.
+  final Decimal? price;
+
+  /// 거래소 API의 `remaining_volume` 값입니다.
+  final Decimal remainingVolume;
+
+  /// 거래소 API의 `executed_volume` 값입니다.
+  final Decimal executedVolume;
+
+  /// 거래소 API의 `executed_funds` 값입니다.
+  final Decimal? executedFunds;
+
+  /// 거래소 API의 `reserved_fee` 값입니다.
+  final Decimal reservedFee;
+
+  /// 거래소 API의 `remaining_fee` 값입니다.
+  final Decimal remainingFee;
+
+  /// 거래소 API의 `paid_fee` 값입니다.
+  final Decimal paidFee;
+
+  /// 거래소 API의 `locked` 값입니다.
+  final Decimal locked;
+
+  /// 거래소 API의 `trades_count` 값입니다.
+  final int tradesCount;
+
+  /// 거래소 API의 `prevented_volume` 값입니다.
+  final Decimal preventedVolume;
+
+  /// 거래소 API의 `prevented_locked` 값입니다.
+  final Decimal preventedLocked;
+
+  /// 거래소 API의 `time_in_force` 값입니다.
+  final String? timeInForce;
+
+  /// 거래소 API의 `identifier` 값입니다.
+  final String? identifier;
+
+  /// 거래소 API의 `smp_type` 값입니다.
+  final String? smpType;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitDepositInfo]입니다.
 final class UpbitDepositInfo {
+  /// [UpbitDepositInfo]의 값을 만듭니다.
   UpbitDepositInfo({
     required String asset,
     this.network,
@@ -520,17 +1191,34 @@ final class UpbitDepositInfo {
     required this.decimalPrecision,
   }) : asset = _asciiUpper(asset);
 
+  /// 거래소 API의 `asset` 값입니다.
   final String asset;
+
+  /// 거래소 API의 `network` 값입니다.
   final Network? network;
+
+  /// 거래소 API의 `provider_network` 값입니다.
   final String? providerNetwork;
+
+  /// 거래소 API의 `is_deposit_possible` 값입니다.
   final bool isDepositPossible;
+
+  /// 거래소 API의 `deposit_impossible_reason` 값입니다.
   final String? depositImpossibleReason;
+
+  /// 거래소 API의 `minimum_deposit_amount` 값입니다.
   final Decimal minimumDepositAmount;
+
+  /// 거래소 API의 `minimum_deposit_confirmations` 값입니다.
   final BigInt minimumDepositConfirmations;
+
+  /// 거래소 API의 `decimal_precision` 값입니다.
   final BigInt decimalPrecision;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitTravelRuleVasp]입니다.
 final class UpbitTravelRuleVasp {
+  /// [UpbitTravelRuleVasp]의 값을 만듭니다.
   const UpbitTravelRuleVasp({
     required this.vaspName,
     required this.vaspUuid,
@@ -538,52 +1226,83 @@ final class UpbitTravelRuleVasp {
     required this.withdrawable,
   });
 
+  /// 거래소 API의 `vasp_name` 값입니다.
   final String vaspName;
+
+  /// 거래소 API의 `vasp_uuid` 값입니다.
   final String vaspUuid;
+
+  /// 거래소 API의 `depositable` 값입니다.
   final bool depositable;
+
+  /// 거래소 API의 `withdrawable` 값입니다.
   final bool withdrawable;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitTravelRuleVerification]입니다.
 final class UpbitTravelRuleVerification {
+  /// [UpbitTravelRuleVerification]의 값을 만듭니다.
   const UpbitTravelRuleVerification({
     required this.depositUuid,
     required this.depositState,
     required this.verificationResult,
   });
 
+  /// 거래소 API의 `deposit_uuid` 값입니다.
   final String depositUuid;
+
+  /// 거래소 API의 `deposit_state` 값입니다.
   final String depositState;
+
+  /// 거래소 API의 `verification_result` 값입니다.
   final String verificationResult;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitBatchCancelScope]입니다.
 sealed class UpbitBatchCancelScope {
+  /// 변형 클래스가 공통으로 사용하는 기본 생성자입니다.
   const UpbitBatchCancelScope();
 
+  /// [UpbitBatchCancelScope]의 `all` 변형을 만듭니다.
   const factory UpbitBatchCancelScope.all() = UpbitBatchCancelScopeAll;
+
+  /// [UpbitBatchCancelScope]의 `quoteCurrencies` 변형을 만듭니다.
   const factory UpbitBatchCancelScope.quoteCurrencies({
     required List<String> values,
   }) = UpbitBatchCancelScopeQuoteCurrencies;
+
+  /// [UpbitBatchCancelScope]의 `pairs` 변형을 만듭니다.
   const factory UpbitBatchCancelScope.pairs({required List<Market> values}) =
       UpbitBatchCancelScopePairs;
 }
 
+/// [UpbitBatchCancelScope]의 `all` 변형입니다.
 final class UpbitBatchCancelScopeAll extends UpbitBatchCancelScope {
+  /// `all` 변형을 만듭니다.
   const UpbitBatchCancelScopeAll();
 }
 
+/// [UpbitBatchCancelScope]의 `quoteCurrencies` 변형입니다.
 final class UpbitBatchCancelScopeQuoteCurrencies extends UpbitBatchCancelScope {
+  /// `quoteCurrencies` 변형의 값을 만듭니다.
   const UpbitBatchCancelScopeQuoteCurrencies({required this.values});
 
+  /// 거래소 API의 `values` 값입니다.
   final List<String> values;
 }
 
+/// [UpbitBatchCancelScope]의 `pairs` 변형입니다.
 final class UpbitBatchCancelScopePairs extends UpbitBatchCancelScope {
+  /// `pairs` 변형의 값을 만듭니다.
   const UpbitBatchCancelScopePairs({required this.values});
 
+  /// 거래소 API의 `values` 값입니다.
   final List<Market> values;
 }
 
+/// 거래소 API 요청에 전달하는 입력값 모델인 [UpbitBatchCancelRequest]입니다.
 final class UpbitBatchCancelRequest {
+  /// [UpbitBatchCancelRequest]의 값을 만듭니다.
   const UpbitBatchCancelRequest({
     required this.scope,
     this.excludedPairs,
@@ -592,119 +1311,185 @@ final class UpbitBatchCancelRequest {
     this.orderBy,
   });
 
+  /// 거래소 API의 `scope` 값입니다.
   final UpbitBatchCancelScope scope;
+
+  /// 거래소 API의 `excluded_pairs` 값입니다.
   final List<Market>? excludedPairs;
+
+  /// 거래소 API의 `side` 값입니다.
   final Side? side;
+
+  /// 거래소 API의 `count` 값입니다.
   final int? count;
+
+  /// 거래소 API의 `order_by` 값입니다.
   final UpbitOrderDirection? orderBy;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitOrderReference]입니다.
 sealed class UpbitOrderReference {
+  /// 변형 클래스가 공통으로 사용하는 기본 생성자입니다.
   const UpbitOrderReference();
 
+  /// [UpbitOrderReference]의 `uuid` 변형을 만듭니다.
   const factory UpbitOrderReference.uuid(String value) =
       UpbitOrderReferenceUuid;
+
+  /// [UpbitOrderReference]의 `identifier` 변형을 만듭니다.
   const factory UpbitOrderReference.identifier(String value) =
       UpbitOrderReferenceIdentifier;
 }
 
+/// [UpbitOrderReference]의 `uuid` 변형입니다.
 final class UpbitOrderReferenceUuid extends UpbitOrderReference {
+  /// [value]를 담은 `uuid` 변형을 만듭니다.
   const UpbitOrderReferenceUuid(this.value);
 
+  /// 거래소 API의 `value` 값입니다.
   final String value;
 }
 
+/// [UpbitOrderReference]의 `identifier` 변형입니다.
 final class UpbitOrderReferenceIdentifier extends UpbitOrderReference {
+  /// [value]를 담은 `identifier` 변형을 만듭니다.
   const UpbitOrderReferenceIdentifier(this.value);
 
+  /// 거래소 API의 `value` 값입니다.
   final String value;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitOrderVolume]입니다.
 sealed class UpbitOrderVolume {
+  /// 변형 클래스가 공통으로 사용하는 기본 생성자입니다.
   const UpbitOrderVolume();
 
+  /// [UpbitOrderVolume]의 `amount` 변형을 만듭니다.
   const factory UpbitOrderVolume.amount(Decimal value) = UpbitOrderVolumeAmount;
+
+  /// [UpbitOrderVolume]의 `remainOnly` 변형을 만듭니다.
   const factory UpbitOrderVolume.remainOnly() = UpbitOrderVolumeRemainOnly;
 }
 
+/// [UpbitOrderVolume]의 `amount` 변형입니다.
 final class UpbitOrderVolumeAmount extends UpbitOrderVolume {
+  /// [value]를 담은 `amount` 변형을 만듭니다.
   const UpbitOrderVolumeAmount(this.value);
 
+  /// 거래소 API의 `value` 값입니다.
   final Decimal value;
 }
 
+/// [UpbitOrderVolume]의 `remainOnly` 변형입니다.
 final class UpbitOrderVolumeRemainOnly extends UpbitOrderVolume {
+  /// `remainOnly` 변형을 만듭니다.
   const UpbitOrderVolumeRemainOnly();
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitCancelAndNewOrder]입니다.
 sealed class UpbitCancelAndNewOrder {
+  /// 변형 클래스가 공통으로 사용하는 기본 생성자입니다.
   const UpbitCancelAndNewOrder();
 
+  /// [UpbitCancelAndNewOrder]의 `limit` 변형을 만듭니다.
   const factory UpbitCancelAndNewOrder.limit({
     required UpbitOrderVolume volume,
     required Decimal price,
     TimeInForce? timeInForce,
   }) = UpbitCancelAndNewOrderLimit;
+
+  /// [UpbitCancelAndNewOrder]의 `marketBuy` 변형을 만듭니다.
   const factory UpbitCancelAndNewOrder.marketBuy({required Decimal price}) =
       UpbitCancelAndNewOrderMarketBuy;
+
+  /// [UpbitCancelAndNewOrder]의 `marketSell` 변형을 만듭니다.
   const factory UpbitCancelAndNewOrder.marketSell({
     required UpbitOrderVolume volume,
   }) = UpbitCancelAndNewOrderMarketSell;
+
+  /// [UpbitCancelAndNewOrder]의 `bestBuy` 변형을 만듭니다.
   const factory UpbitCancelAndNewOrder.bestBuy({
     required Decimal price,
     required TimeInForce timeInForce,
   }) = UpbitCancelAndNewOrderBestBuy;
+
+  /// [UpbitCancelAndNewOrder]의 `bestSell` 변형을 만듭니다.
   const factory UpbitCancelAndNewOrder.bestSell({
     required UpbitOrderVolume volume,
     required TimeInForce timeInForce,
   }) = UpbitCancelAndNewOrderBestSell;
 }
 
+/// [UpbitCancelAndNewOrder]의 `limit` 변형입니다.
 final class UpbitCancelAndNewOrderLimit extends UpbitCancelAndNewOrder {
+  /// `limit` 변형의 값을 만듭니다.
   const UpbitCancelAndNewOrderLimit({
     required this.volume,
     required this.price,
     this.timeInForce,
   });
 
+  /// 거래소 API의 `volume` 값입니다.
   final UpbitOrderVolume volume;
+
+  /// 거래소 API의 `price` 값입니다.
   final Decimal price;
+
+  /// 거래소 API의 `time_in_force` 값입니다.
   final TimeInForce? timeInForce;
 }
 
+/// [UpbitCancelAndNewOrder]의 `marketBuy` 변형입니다.
 final class UpbitCancelAndNewOrderMarketBuy extends UpbitCancelAndNewOrder {
+  /// `marketBuy` 변형의 값을 만듭니다.
   const UpbitCancelAndNewOrderMarketBuy({required this.price});
 
+  /// 거래소 API의 `price` 값입니다.
   final Decimal price;
 }
 
+/// [UpbitCancelAndNewOrder]의 `marketSell` 변형입니다.
 final class UpbitCancelAndNewOrderMarketSell extends UpbitCancelAndNewOrder {
+  /// `marketSell` 변형의 값을 만듭니다.
   const UpbitCancelAndNewOrderMarketSell({required this.volume});
 
+  /// 거래소 API의 `volume` 값입니다.
   final UpbitOrderVolume volume;
 }
 
+/// [UpbitCancelAndNewOrder]의 `bestBuy` 변형입니다.
 final class UpbitCancelAndNewOrderBestBuy extends UpbitCancelAndNewOrder {
+  /// `bestBuy` 변형의 값을 만듭니다.
   const UpbitCancelAndNewOrderBestBuy({
     required this.price,
     required this.timeInForce,
   });
 
+  /// 거래소 API의 `price` 값입니다.
   final Decimal price;
+
+  /// 거래소 API의 `time_in_force` 값입니다.
   final TimeInForce timeInForce;
 }
 
+/// [UpbitCancelAndNewOrder]의 `bestSell` 변형입니다.
 final class UpbitCancelAndNewOrderBestSell extends UpbitCancelAndNewOrder {
+  /// `bestSell` 변형의 값을 만듭니다.
   const UpbitCancelAndNewOrderBestSell({
     required this.volume,
     required this.timeInForce,
   });
 
+  /// 거래소 API의 `volume` 값입니다.
   final UpbitOrderVolume volume;
+
+  /// 거래소 API의 `time_in_force` 값입니다.
   final TimeInForce timeInForce;
 }
 
+/// 거래소 API 요청에 전달하는 입력값 모델인 [UpbitCancelAndNewOrderRequest]입니다.
 final class UpbitCancelAndNewOrderRequest {
+  /// [UpbitCancelAndNewOrderRequest]의 값을 만듭니다.
   const UpbitCancelAndNewOrderRequest({
     required this.previousOrder,
     required this.newOrder,
@@ -712,25 +1497,418 @@ final class UpbitCancelAndNewOrderRequest {
     this.newSmpType,
   });
 
+  /// 거래소 API의 `previous_order` 값입니다.
   final UpbitOrderReference previousOrder;
+
+  /// 거래소 API의 `new_order` 값입니다.
   final UpbitCancelAndNewOrder newOrder;
+
+  /// 거래소 API의 `new_identifier` 값입니다.
   final String? newIdentifier;
+
+  /// 거래소 API의 `new_smp_type` 값입니다.
   final UpbitSmpType? newSmpType;
 }
 
+/// 거래소 API 작업의 결과 모델인 [UpbitCancelAndNewOrderResult]입니다.
 final class UpbitCancelAndNewOrderResult {
+  /// [UpbitCancelAndNewOrderResult]의 값을 만듭니다.
   const UpbitCancelAndNewOrderResult({
     required this.previousOrder,
     this.newOrderUuid,
     this.newOrderIdentifier,
   });
 
+  /// 거래소 API의 `previous_order` 값입니다.
   final Order previousOrder;
+
+  /// 거래소 API의 `new_order_uuid` 값입니다.
   final String? newOrderUuid;
+
+  /// 거래소 API의 `new_order_identifier` 값입니다.
   final String? newOrderIdentifier;
 }
 
+/// 거래소 API 요청에 전달하는 입력값 모델인 [UpbitKrwTransferRequest]입니다.
+final class UpbitKrwTransferRequest {
+  /// [UpbitKrwTransferRequest]의 값을 만듭니다.
+  const UpbitKrwTransferRequest({
+    required this.amount,
+    required this.twoFactorType,
+  });
+
+  /// 거래소 API의 `amount` 값입니다.
+  final Decimal amount;
+
+  /// 거래소 API의 `two_factor_type` 값입니다.
+  final UpbitKrwTwoFactorType twoFactorType;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitKrwDeposit]입니다.
+final class UpbitKrwDeposit {
+  /// [UpbitKrwDeposit]의 값을 만듭니다.
+  const UpbitKrwDeposit({
+    required this.transferType,
+    required this.uuid,
+    required this.currency,
+    this.netType,
+    required this.txid,
+    required this.state,
+    required this.createdAt,
+    this.doneAt,
+    required this.amount,
+    required this.fee,
+    required this.transactionType,
+  });
+
+  /// 거래소 API의 `transfer_type` 값입니다.
+  final String transferType;
+
+  /// 거래소 API의 `uuid` 값입니다.
+  final String uuid;
+
+  /// 거래소 API의 `currency` 값입니다.
+  final String currency;
+
+  /// 거래소 API의 `net_type` 값입니다.
+  final String? netType;
+
+  /// 거래소 API의 `txid` 값입니다.
+  final String txid;
+
+  /// 거래소 API의 `state` 값입니다.
+  final String state;
+
+  /// 거래소 API의 `created_at` 값입니다.
+  final Timestamp createdAt;
+
+  /// 거래소 API의 `done_at` 값입니다.
+  final Timestamp? doneAt;
+
+  /// 거래소 API의 `amount` 값입니다.
+  final Decimal amount;
+
+  /// 거래소 API의 `fee` 값입니다.
+  final Decimal fee;
+
+  /// 거래소 API의 `transaction_type` 값입니다.
+  final String transactionType;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitKrwWithdrawal]입니다.
+final class UpbitKrwWithdrawal {
+  /// [UpbitKrwWithdrawal]의 값을 만듭니다.
+  const UpbitKrwWithdrawal({
+    required this.transferType,
+    required this.uuid,
+    required this.currency,
+    this.netType,
+    this.txid,
+    required this.state,
+    required this.createdAt,
+    this.doneAt,
+    required this.amount,
+    required this.fee,
+    required this.transactionType,
+    this.isCancelable,
+  });
+
+  /// 거래소 API의 `transfer_type` 값입니다.
+  final String transferType;
+
+  /// 거래소 API의 `uuid` 값입니다.
+  final String uuid;
+
+  /// 거래소 API의 `currency` 값입니다.
+  final String currency;
+
+  /// 거래소 API의 `net_type` 값입니다.
+  final String? netType;
+
+  /// 거래소 API의 `txid` 값입니다.
+  final String? txid;
+
+  /// 거래소 API의 `state` 값입니다.
+  final String state;
+
+  /// 거래소 API의 `created_at` 값입니다.
+  final Timestamp createdAt;
+
+  /// 거래소 API의 `done_at` 값입니다.
+  final Timestamp? doneAt;
+
+  /// 거래소 API의 `amount` 값입니다.
+  final Decimal amount;
+
+  /// 거래소 API의 `fee` 값입니다.
+  final Decimal fee;
+
+  /// 거래소 API의 `transaction_type` 값입니다.
+  final String transactionType;
+
+  /// 거래소 API의 `is_cancelable` 값입니다.
+  final bool? isCancelable;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitApiKey]입니다.
+final class UpbitApiKey {
+  /// [UpbitApiKey]의 값을 만듭니다.
+  const UpbitApiKey({required this.accessKey, required this.expiresAt});
+
+  /// 거래소 API의 `access_key` 값입니다.
+  final String accessKey;
+
+  /// 거래소 API의 `expires_at` 값입니다.
+  final Timestamp expiresAt;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitPocket]입니다.
+final class UpbitPocket {
+  /// [UpbitPocket]의 값을 만듭니다.
+  const UpbitPocket({
+    required this.uuid,
+    required this.name,
+    required this.kind,
+  });
+
+  /// 거래소 API의 `uuid` 값입니다.
+  final String uuid;
+
+  /// 거래소 API의 `name` 값입니다.
+  final String name;
+
+  /// 거래소 API의 `kind` 값입니다.
+  final String kind;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitPocketApiKey]입니다.
+final class UpbitPocketApiKey {
+  /// [UpbitPocketApiKey]의 값을 만듭니다.
+  const UpbitPocketApiKey({
+    required this.accessKey,
+    required this.permissions,
+    required this.allowedIps,
+    required this.createdAt,
+    required this.expiredAt,
+  });
+
+  /// 거래소 API의 `access_key` 값입니다.
+  final String accessKey;
+
+  /// 거래소 API의 `permissions` 값입니다.
+  final List<String> permissions;
+
+  /// 거래소 API의 `allowed_ips` 값입니다.
+  final List<String> allowedIps;
+
+  /// 거래소 API의 `created_at` 값입니다.
+  final Timestamp createdAt;
+
+  /// 거래소 API의 `expired_at` 값입니다.
+  final Timestamp expiredAt;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitPocketApiKeyGroup]입니다.
+final class UpbitPocketApiKeyGroup {
+  /// [UpbitPocketApiKeyGroup]의 값을 만듭니다.
+  const UpbitPocketApiKeyGroup({required this.uuid, required this.keys});
+
+  /// 거래소 API의 `uuid` 값입니다.
+  final String uuid;
+
+  /// 거래소 API의 `keys` 값입니다.
+  final List<UpbitPocketApiKey> keys;
+}
+
+/// 거래소 API 요청에 전달하는 입력값 모델인 [UpbitPocketApiKeysRequest]입니다.
+final class UpbitPocketApiKeysRequest {
+  /// [UpbitPocketApiKeysRequest]의 값을 만듭니다.
+  const UpbitPocketApiKeysRequest({
+    required this.uuids,
+    required this.includeExpired,
+  });
+
+  /// 거래소 API의 `uuids` 값입니다.
+  final List<String> uuids;
+
+  /// 거래소 API의 `include_expired` 값입니다.
+  final bool includeExpired;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitPocketBalance]입니다.
+final class UpbitPocketBalance {
+  /// [UpbitPocketBalance]의 값을 만듭니다.
+  const UpbitPocketBalance({
+    required this.currency,
+    required this.balance,
+    required this.locked,
+    required this.avgBuyPrice,
+    required this.avgBuyPriceModified,
+    required this.unitCurrency,
+  });
+
+  /// 거래소 API의 `currency` 값입니다.
+  final String currency;
+
+  /// 거래소 API의 `balance` 값입니다.
+  final Decimal balance;
+
+  /// 거래소 API의 `locked` 값입니다.
+  final Decimal locked;
+
+  /// 거래소 API의 `avg_buy_price` 값입니다.
+  final Decimal avgBuyPrice;
+
+  /// 거래소 API의 `avg_buy_price_modified` 값입니다.
+  final bool avgBuyPriceModified;
+
+  /// 거래소 API의 `unit_currency` 값입니다.
+  final String unitCurrency;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitPocketTransferQuery]입니다.
+final class UpbitPocketTransferQuery {
+  /// [UpbitPocketTransferQuery]의 값을 만듭니다.
+  const UpbitPocketTransferQuery({
+    this.from,
+    this.to,
+    this.direction,
+    required this.states,
+    required this.uuids,
+    required this.identifiers,
+    this.startTime,
+    this.endTime,
+    this.currency,
+    this.limit,
+    this.orderBy,
+  });
+
+  /// 거래소 API의 `from` 값입니다.
+  final String? from;
+
+  /// 거래소 API의 `to` 값입니다.
+  final String? to;
+
+  /// 거래소 API의 `direction` 값입니다.
+  final UpbitPocketTransferDirection? direction;
+
+  /// 거래소 API의 `states` 값입니다.
+  final List<UpbitPocketTransferState> states;
+
+  /// 거래소 API의 `uuids` 값입니다.
+  final List<String> uuids;
+
+  /// 거래소 API의 `identifiers` 값입니다.
+  final List<String> identifiers;
+
+  /// 거래소 API의 `start_time` 값입니다.
+  final Timestamp? startTime;
+
+  /// 거래소 API의 `end_time` 값입니다.
+  final Timestamp? endTime;
+
+  /// 거래소 API의 `currency` 값입니다.
+  final String? currency;
+
+  /// 거래소 API의 `limit` 값입니다.
+  final int? limit;
+
+  /// 거래소 API의 `order_by` 값입니다.
+  final UpbitPocketTransferOrder? orderBy;
+}
+
+/// 거래소 API 요청에 전달하는 입력값 모델인 [UpbitPocketUniversalTransferRequest]입니다.
+final class UpbitPocketUniversalTransferRequest {
+  /// [UpbitPocketUniversalTransferRequest]의 값을 만듭니다.
+  const UpbitPocketUniversalTransferRequest({
+    this.from,
+    required this.to,
+    required this.currency,
+    required this.amount,
+    this.identifier,
+  });
+
+  /// 거래소 API의 `from` 값입니다.
+  final String? from;
+
+  /// 거래소 API의 `to` 값입니다.
+  final String to;
+
+  /// 거래소 API의 `currency` 값입니다.
+  final String currency;
+
+  /// 거래소 API의 `amount` 값입니다.
+  final Decimal amount;
+
+  /// 거래소 API의 `identifier` 값입니다.
+  final String? identifier;
+}
+
+/// 거래소 API 요청에 전달하는 입력값 모델인 [UpbitPocketTransferRequest]입니다.
+final class UpbitPocketTransferRequest {
+  /// [UpbitPocketTransferRequest]의 값을 만듭니다.
+  const UpbitPocketTransferRequest({
+    required this.to,
+    required this.currency,
+    required this.amount,
+    this.identifier,
+  });
+
+  /// 거래소 API의 `to` 값입니다.
+  final String to;
+
+  /// 거래소 API의 `currency` 값입니다.
+  final String currency;
+
+  /// 거래소 API의 `amount` 값입니다.
+  final Decimal amount;
+
+  /// 거래소 API의 `identifier` 값입니다.
+  final String? identifier;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [UpbitPocketTransfer]입니다.
+final class UpbitPocketTransfer {
+  /// [UpbitPocketTransfer]의 값을 만듭니다.
+  const UpbitPocketTransfer({
+    required this.uuid,
+    this.identifier,
+    required this.from,
+    required this.to,
+    required this.state,
+    required this.currency,
+    required this.amount,
+    required this.createdAt,
+  });
+
+  /// 거래소 API의 `uuid` 값입니다.
+  final String uuid;
+
+  /// 거래소 API의 `identifier` 값입니다.
+  final String? identifier;
+
+  /// 거래소 API의 `from` 값입니다.
+  final String from;
+
+  /// 거래소 API의 `to` 값입니다.
+  final String to;
+
+  /// 거래소 API의 `state` 값입니다.
+  final String state;
+
+  /// 거래소 API의 `currency` 값입니다.
+  final String currency;
+
+  /// 거래소 API의 `amount` 값입니다.
+  final Decimal amount;
+
+  /// 거래소 API의 `created_at` 값입니다.
+  final Timestamp createdAt;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BithumbNotice]입니다.
 final class BithumbNotice {
+  /// [BithumbNotice]의 값을 만듭니다.
   const BithumbNotice({
     required this.categories,
     required this.title,
@@ -739,21 +1917,37 @@ final class BithumbNotice {
     required this.modifiedAt,
   });
 
+  /// 거래소 API의 `categories` 값입니다.
   final List<String> categories;
+
+  /// 거래소 API의 `title` 값입니다.
   final String title;
+
+  /// 거래소 API의 `url` 값입니다.
   final String url;
+
+  /// 거래소 API의 `published_at` 값입니다.
   final Timestamp publishedAt;
+
+  /// 거래소 API의 `modified_at` 값입니다.
   final Timestamp modifiedAt;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BithumbApiKey]입니다.
 final class BithumbApiKey {
+  /// [BithumbApiKey]의 값을 만듭니다.
   const BithumbApiKey({required this.accessKey, required this.expiresAt});
 
+  /// 거래소 API의 `access_key` 값입니다.
   final String accessKey;
+
+  /// 거래소 API의 `expires_at` 값입니다.
   final Timestamp expiresAt;
 }
 
+/// 거래소 API 요청에 전달하는 입력값 모델인 [BithumbKrwWithdrawalsRequest]입니다.
 final class BithumbKrwWithdrawalsRequest {
+  /// [BithumbKrwWithdrawalsRequest]의 값을 만듭니다.
   const BithumbKrwWithdrawalsRequest({
     this.state,
     this.uuids = const [],
@@ -763,15 +1957,28 @@ final class BithumbKrwWithdrawalsRequest {
     this.orderBy,
   });
 
+  /// 거래소 API의 `state` 값입니다.
   final String? state;
+
+  /// 거래소 API의 `uuids` 값입니다.
   final List<String> uuids;
+
+  /// 거래소 API의 `txids` 값입니다.
   final List<String> txids;
+
+  /// 거래소 API의 `page` 값입니다.
   final int? page;
+
+  /// 거래소 API의 `limit` 값입니다.
   final int? limit;
+
+  /// 거래소 API의 `order_by` 값입니다.
   final BithumbOrderDirection? orderBy;
 }
 
+/// 거래소 API 요청에 전달하는 입력값 모델인 [BithumbKrwDepositsRequest]입니다.
 final class BithumbKrwDepositsRequest {
+  /// [BithumbKrwDepositsRequest]의 값을 만듭니다.
   const BithumbKrwDepositsRequest({
     this.state,
     this.uuids = const [],
@@ -781,21 +1988,37 @@ final class BithumbKrwDepositsRequest {
     this.orderBy,
   });
 
+  /// 거래소 API의 `state` 값입니다.
   final String? state;
+
+  /// 거래소 API의 `uuids` 값입니다.
   final List<String> uuids;
+
+  /// 거래소 API의 `txids` 값입니다.
   final List<String> txids;
+
+  /// 거래소 API의 `page` 값입니다.
   final int? page;
+
+  /// 거래소 API의 `limit` 값입니다.
   final int? limit;
+
+  /// 거래소 API의 `order_by` 값입니다.
   final BithumbOrderDirection? orderBy;
 }
 
+/// 거래소 API 요청에 전달하는 입력값 모델인 [BithumbKrwTransferRequest]입니다.
 final class BithumbKrwTransferRequest {
+  /// [BithumbKrwTransferRequest]의 값을 만듭니다.
   const BithumbKrwTransferRequest({required this.amount});
 
+  /// 거래소 API의 `amount` 값입니다.
   final Decimal amount;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BithumbKrwWithdrawal]입니다.
 final class BithumbKrwWithdrawal {
+  /// [BithumbKrwWithdrawal]의 값을 만듭니다.
   const BithumbKrwWithdrawal({
     required this.transferType,
     required this.uuid,
@@ -810,20 +2033,43 @@ final class BithumbKrwWithdrawal {
     this.transactionType,
   });
 
+  /// 거래소 API의 `transfer_type` 값입니다.
   final String transferType;
+
+  /// 거래소 API의 `uuid` 값입니다.
   final String uuid;
+
+  /// 거래소 API의 `currency` 값입니다.
   final String currency;
+
+  /// 거래소 API의 `net_type` 값입니다.
   final String? netType;
+
+  /// 거래소 API의 `txid` 값입니다.
   final String? txid;
+
+  /// 거래소 API의 `state` 값입니다.
   final String state;
+
+  /// 거래소 API의 `created_at` 값입니다.
   final Timestamp? createdAt;
+
+  /// 거래소 API의 `done_at` 값입니다.
   final Timestamp? doneAt;
+
+  /// 거래소 API의 `amount` 값입니다.
   final Decimal amount;
+
+  /// 거래소 API의 `fee` 값입니다.
   final Decimal fee;
+
+  /// 거래소 API의 `transaction_type` 값입니다.
   final String? transactionType;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BithumbKrwDeposit]입니다.
 final class BithumbKrwDeposit {
+  /// [BithumbKrwDeposit]의 값을 만듭니다.
   const BithumbKrwDeposit({
     required this.transferType,
     required this.uuid,
@@ -838,20 +2084,43 @@ final class BithumbKrwDeposit {
     this.transactionType,
   });
 
+  /// 거래소 API의 `transfer_type` 값입니다.
   final String transferType;
+
+  /// 거래소 API의 `uuid` 값입니다.
   final String uuid;
+
+  /// 거래소 API의 `currency` 값입니다.
   final String currency;
+
+  /// 거래소 API의 `net_type` 값입니다.
   final String? netType;
+
+  /// 거래소 API의 `txid` 값입니다.
   final String? txid;
+
+  /// 거래소 API의 `state` 값입니다.
   final String state;
+
+  /// 거래소 API의 `created_at` 값입니다.
   final Timestamp? createdAt;
+
+  /// 거래소 API의 `done_at` 값입니다.
   final Timestamp? doneAt;
+
+  /// 거래소 API의 `amount` 값입니다.
   final Decimal amount;
+
+  /// 거래소 API의 `fee` 값입니다.
   final Decimal fee;
+
+  /// 거래소 API의 `transaction_type` 값입니다.
   final String? transactionType;
 }
 
+/// 거래소 API 요청에 전달하는 입력값 모델인 [BithumbPendingOrdersRequest]입니다.
 final class BithumbPendingOrdersRequest {
+  /// [BithumbPendingOrdersRequest]의 값을 만듭니다.
   const BithumbPendingOrdersRequest({
     this.market,
     this.state,
@@ -860,20 +2129,164 @@ final class BithumbPendingOrdersRequest {
     this.cursor,
   });
 
+  /// 거래소 API의 `market` 값입니다.
   final Market? market;
+
+  /// 거래소 API의 `state` 값입니다.
   final BithumbPendingOrderState? state;
+
+  /// 거래소 API의 `limit` 값입니다.
   final int? limit;
+
+  /// 거래소 API의 `order_by` 값입니다.
   final BithumbOrderDirection? orderBy;
+
+  /// 거래소 API의 `cursor` 값입니다.
   final Cursor? cursor;
 }
 
+/// 거래소 API 요청에 전달하는 입력값 모델인 [BithumbClosedOrdersRequest]입니다.
+final class BithumbClosedOrdersRequest {
+  /// [BithumbClosedOrdersRequest]의 값을 만듭니다.
+  const BithumbClosedOrdersRequest({
+    this.market,
+    this.state,
+    this.states = const [],
+    this.startTime,
+    this.endTime,
+    this.limit,
+    this.orderBy,
+    this.cursor,
+  });
+
+  /// 거래소 API의 `market` 값입니다.
+  final Market? market;
+
+  /// 거래소 API의 `state` 값입니다.
+  final BithumbClosedOrderState? state;
+
+  /// 거래소 API의 `states` 값입니다.
+  final List<BithumbClosedOrderState> states;
+
+  /// 거래소 API의 `start_time` 값입니다.
+  final Timestamp? startTime;
+
+  /// 거래소 API의 `end_time` 값입니다.
+  final Timestamp? endTime;
+
+  /// 거래소 API의 `limit` 값입니다.
+  final int? limit;
+
+  /// 거래소 API의 `order_by` 값입니다.
+  final BithumbOrderDirection? orderBy;
+
+  /// 거래소 API의 `cursor` 값입니다.
+  final Cursor? cursor;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BithumbClosedOrder]입니다.
+final class BithumbClosedOrder {
+  /// [BithumbClosedOrder]의 값을 만듭니다.
+  const BithumbClosedOrder({
+    required this.orderId,
+    required this.side,
+    required this.orderType,
+    this.price,
+    required this.state,
+    required this.market,
+    this.createdAt,
+    required this.volume,
+    required this.remainingVolume,
+    required this.reservedFee,
+    required this.remainingFee,
+    required this.paidFee,
+    required this.locked,
+    required this.executedVolume,
+    required this.executedFunds,
+    required this.tradesCount,
+    this.clientOrderId,
+    this.stpType,
+    this.timeInForce,
+    this.cancelType,
+    this.cancelingOrderId,
+  });
+
+  /// 거래소 API의 `order_id` 값입니다.
+  final String orderId;
+
+  /// 거래소 API의 `side` 값입니다.
+  final String side;
+
+  /// 거래소 API의 `order_type` 값입니다.
+  final String orderType;
+
+  /// 거래소 API의 `price` 값입니다.
+  final Decimal? price;
+
+  /// 거래소 API의 `state` 값입니다.
+  final String state;
+
+  /// 거래소 API의 `market` 값입니다.
+  final Market market;
+
+  /// 거래소 API의 `created_at` 값입니다.
+  final Timestamp? createdAt;
+
+  /// 거래소 API의 `volume` 값입니다.
+  final Decimal volume;
+
+  /// 거래소 API의 `remaining_volume` 값입니다.
+  final Decimal remainingVolume;
+
+  /// 거래소 API의 `reserved_fee` 값입니다.
+  final Decimal reservedFee;
+
+  /// 거래소 API의 `remaining_fee` 값입니다.
+  final Decimal remainingFee;
+
+  /// 거래소 API의 `paid_fee` 값입니다.
+  final Decimal paidFee;
+
+  /// 거래소 API의 `locked` 값입니다.
+  final Decimal locked;
+
+  /// 거래소 API의 `executed_volume` 값입니다.
+  final Decimal executedVolume;
+
+  /// 거래소 API의 `executed_funds` 값입니다.
+  final Decimal executedFunds;
+
+  /// 거래소 API의 `trades_count` 값입니다.
+  final int tradesCount;
+
+  /// 거래소 API의 `client_order_id` 값입니다.
+  final String? clientOrderId;
+
+  /// 거래소 API의 `stp_type` 값입니다.
+  final String? stpType;
+
+  /// 거래소 API의 `time_in_force` 값입니다.
+  final String? timeInForce;
+
+  /// 거래소 API의 `cancel_type` 값입니다.
+  final String? cancelType;
+
+  /// 거래소 API의 `canceling_order_id` 값입니다.
+  final String? cancelingOrderId;
+}
+
+/// 거래소 API 요청에 전달하는 입력값 모델인 [BithumbBatchOrdersRequest]입니다.
 final class BithumbBatchOrdersRequest {
+  /// [BithumbBatchOrdersRequest]의 값을 만듭니다.
   const BithumbBatchOrdersRequest({required this.orders});
 
+  /// 거래소 API의 `orders` 값입니다.
   final List<OrderRequest> orders;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BithumbBatchOrder]입니다.
 final class BithumbBatchOrder {
+  /// [BithumbBatchOrder]의 값을 만듭니다.
   const BithumbBatchOrder({
     required this.orderId,
     this.clientOrderId,
@@ -885,17 +2298,34 @@ final class BithumbBatchOrder {
     this.createdAt,
   });
 
+  /// 거래소 API의 `order_id` 값입니다.
   final String orderId;
+
+  /// 거래소 API의 `client_order_id` 값입니다.
   final String? clientOrderId;
+
+  /// 거래소 API의 `market` 값입니다.
   final Market market;
+
+  /// 거래소 API의 `side` 값입니다.
   final Side side;
+
+  /// 거래소 API의 `order_type` 값입니다.
   final OrderType orderType;
+
+  /// 거래소 API의 `time_in_force` 값입니다.
   final String? timeInForce;
+
+  /// 거래소 API의 `stp_type` 값입니다.
   final String? stpType;
+
+  /// 거래소 API의 `created_at` 값입니다.
   final Timestamp? createdAt;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BithumbBatchOrderFailure]입니다.
 final class BithumbBatchOrderFailure {
+  /// [BithumbBatchOrderFailure]의 값을 만듭니다.
   const BithumbBatchOrderFailure({
     this.clientOrderId,
     this.timeInForce,
@@ -903,41 +2333,64 @@ final class BithumbBatchOrderFailure {
     required this.message,
   });
 
+  /// 거래소 API의 `client_order_id` 값입니다.
   final String? clientOrderId;
+
+  /// 거래소 API의 `time_in_force` 값입니다.
   final String? timeInForce;
+
+  /// 거래소 API의 `code` 값입니다.
   final String code;
+
+  /// 거래소 API의 `message` 값입니다.
   final String message;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BithumbBatchOrderOutcome]입니다.
 sealed class BithumbBatchOrderOutcome {
+  /// 변형 클래스가 공통으로 사용하는 기본 생성자입니다.
   const BithumbBatchOrderOutcome();
 
+  /// [BithumbBatchOrderOutcome]의 `accepted` 변형을 만듭니다.
   const factory BithumbBatchOrderOutcome.accepted(BithumbBatchOrder value) =
       BithumbBatchOrderOutcomeAccepted;
+
+  /// [BithumbBatchOrderOutcome]의 `rejected` 변형을 만듭니다.
   const factory BithumbBatchOrderOutcome.rejected(
     BithumbBatchOrderFailure value,
   ) = BithumbBatchOrderOutcomeRejected;
 }
 
+/// [BithumbBatchOrderOutcome]의 `accepted` 변형입니다.
 final class BithumbBatchOrderOutcomeAccepted extends BithumbBatchOrderOutcome {
+  /// [value]를 담은 `accepted` 변형을 만듭니다.
   const BithumbBatchOrderOutcomeAccepted(this.value);
 
+  /// 거래소 API의 `value` 값입니다.
   final BithumbBatchOrder value;
 }
 
+/// [BithumbBatchOrderOutcome]의 `rejected` 변형입니다.
 final class BithumbBatchOrderOutcomeRejected extends BithumbBatchOrderOutcome {
+  /// [value]를 담은 `rejected` 변형을 만듭니다.
   const BithumbBatchOrderOutcomeRejected(this.value);
 
+  /// 거래소 API의 `value` 값입니다.
   final BithumbBatchOrderFailure value;
 }
 
+/// 거래소 API 작업의 결과 모델인 [BithumbBatchOrdersResult]입니다.
 final class BithumbBatchOrdersResult {
+  /// [BithumbBatchOrdersResult]의 값을 만듭니다.
   const BithumbBatchOrdersResult({required this.outcomes});
 
+  /// 거래소 API의 `outcomes` 값입니다.
   final List<BithumbBatchOrderOutcome> outcomes;
 }
 
+/// 거래소 API 요청에 전달하는 입력값 모델인 [BithumbTwapOrdersRequest]입니다.
 final class BithumbTwapOrdersRequest {
+  /// [BithumbTwapOrdersRequest]의 값을 만듭니다.
   const BithumbTwapOrdersRequest({
     this.market,
     this.uuids = const [],
@@ -947,15 +2400,28 @@ final class BithumbTwapOrdersRequest {
     this.orderBy,
   });
 
+  /// 거래소 API의 `market` 값입니다.
   final Market? market;
+
+  /// 거래소 API의 `uuids` 값입니다.
   final List<String> uuids;
+
+  /// 거래소 API의 `state` 값입니다.
   final BithumbTwapState? state;
+
+  /// 거래소 API의 `cursor` 값입니다.
   final Cursor? cursor;
+
+  /// 거래소 API의 `limit` 값입니다.
   final int? limit;
+
+  /// 거래소 API의 `order_by` 값입니다.
   final BithumbTwapOrderDirection? orderBy;
 }
 
+/// 거래소 API 요청에 전달하는 입력값 모델인 [BithumbTwapOrderRequest]입니다.
 final class BithumbTwapOrderRequest {
+  /// [BithumbTwapOrderRequest]의 값을 만듭니다.
   const BithumbTwapOrderRequest({
     required this.market,
     required this.side,
@@ -965,15 +2431,28 @@ final class BithumbTwapOrderRequest {
     required this.frequency,
   });
 
+  /// 거래소 API의 `market` 값입니다.
   final Market market;
+
+  /// 거래소 API의 `side` 값입니다.
   final Side side;
+
+  /// 거래소 API의 `volume` 값입니다.
   final Decimal? volume;
+
+  /// 거래소 API의 `price` 값입니다.
   final Decimal? price;
+
+  /// 거래소 API의 `duration` 값입니다.
   final int duration;
+
+  /// 거래소 API의 `frequency` 값입니다.
   final int frequency;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BithumbTwapOrder]입니다.
 final class BithumbTwapOrder {
+  /// [BithumbTwapOrder]의 값을 만듭니다.
   const BithumbTwapOrder({
     required this.id,
     required this.side,
@@ -994,38 +2473,80 @@ final class BithumbTwapOrder {
     this.cancelType,
   });
 
+  /// 거래소 API의 `id` 값입니다.
   final String id;
+
+  /// 거래소 API의 `side` 값입니다.
   final Side side;
+
+  /// 거래소 API의 `price` 값입니다.
   final Decimal price;
+
+  /// 거래소 API의 `state` 값입니다.
   final BithumbTwapState state;
+
+  /// 거래소 API의 `market` 값입니다.
   final Market market;
+
+  /// 거래소 API의 `created_at` 값입니다.
   final Timestamp createdAt;
+
+  /// 거래소 API의 `volume` 값입니다.
   final Decimal volume;
+
+  /// 거래소 API의 `finished_at` 값입니다.
   final Timestamp? finishedAt;
+
+  /// 거래소 API의 `total_order_count` 값입니다.
   final int totalOrderCount;
+
+  /// 거래소 API의 `total_trades_count` 값입니다.
   final int totalTradesCount;
+
+  /// 거래소 API의 `progress_count` 값입니다.
   final int progressCount;
+
+  /// 거래소 API의 `total_executed_amount` 값입니다.
   final Decimal totalExecutedAmount;
+
+  /// 거래소 API의 `total_executed_volume` 값입니다.
   final Decimal totalExecutedVolume;
+
+  /// 거래소 API의 `avg_trade_price` 값입니다.
   final Decimal avgTradePrice;
+
+  /// 거래소 API의 `wallet_id` 값입니다.
   final String? walletId;
+
+  /// 거래소 API의 `canceled_at` 값입니다.
   final Timestamp? canceledAt;
+
+  /// 거래소 API의 `cancel_type` 값입니다.
   final String? cancelType;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BithumbAssetFee]입니다.
 final class BithumbAssetFee {
+  /// [BithumbAssetFee]의 값을 만듭니다.
   BithumbAssetFee({
     required this.displayName,
     required String asset,
     required this.networks,
   }) : asset = _asciiUpper(asset);
 
+  /// 거래소 API의 `display_name` 값입니다.
   final String displayName;
+
+  /// 거래소 API의 `asset` 값입니다.
   final String asset;
+
+  /// 거래소 API의 `networks` 값입니다.
   final List<BithumbNetworkFee> networks;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BithumbNetworkFee]입니다.
 final class BithumbNetworkFee {
+  /// [BithumbNetworkFee]의 값을 만듭니다.
   const BithumbNetworkFee({
     required this.network,
     required this.providerName,
@@ -1035,15 +2556,373 @@ final class BithumbNetworkFee {
     required this.minimumWithdrawal,
   });
 
+  /// 거래소 API의 `network` 값입니다.
   final Network network;
+
+  /// 거래소 API의 `provider_name` 값입니다.
   final String providerName;
+
+  /// 거래소 API의 `deposit_fee` 값입니다.
   final Decimal depositFee;
+
+  /// 거래소 API의 `minimum_deposit` 값입니다.
   final Decimal minimumDeposit;
+
+  /// 거래소 API의 `withdrawal_fee` 값입니다.
   final WithdrawalFee withdrawalFee;
+
+  /// 거래소 API의 `minimum_withdrawal` 값입니다.
   final Decimal minimumWithdrawal;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BithumbWithdrawalAddress]입니다.
+final class BithumbWithdrawalAddress {
+  /// [BithumbWithdrawalAddress]의 값을 만듭니다.
+  const BithumbWithdrawalAddress({
+    required this.currency,
+    required this.netType,
+    this.networkName,
+    required this.withdrawAddress,
+    this.secondaryAddress,
+    this.exchangeName,
+    this.ownerType,
+    this.ownerKoName,
+    this.ownerEnName,
+    this.ownerCorpKoName,
+    this.ownerCorpEnName,
+  });
+
+  /// 거래소 API의 `currency` 값입니다.
+  final String currency;
+
+  /// 거래소 API의 `net_type` 값입니다.
+  final String netType;
+
+  /// 거래소 API의 `network_name` 값입니다.
+  final String? networkName;
+
+  /// 거래소 API의 `withdraw_address` 값입니다.
+  final String withdrawAddress;
+
+  /// 거래소 API의 `secondary_address` 값입니다.
+  final String? secondaryAddress;
+
+  /// 거래소 API의 `exchange_name` 값입니다.
+  final String? exchangeName;
+
+  /// 거래소 API의 `owner_type` 값입니다.
+  final String? ownerType;
+
+  /// 거래소 API의 `owner_ko_name` 값입니다.
+  final String? ownerKoName;
+
+  /// 거래소 API의 `owner_en_name` 값입니다.
+  final String? ownerEnName;
+
+  /// 거래소 API의 `owner_corp_ko_name` 값입니다.
+  final String? ownerCorpKoName;
+
+  /// 거래소 API의 `owner_corp_en_name` 값입니다.
+  final String? ownerCorpEnName;
+}
+
+/// 거래소 API 요청에 전달하는 입력값 모델인 [BithumbOrderDetailRequest]입니다.
+final class BithumbOrderDetailRequest {
+  /// [BithumbOrderDetailRequest]의 값을 만듭니다.
+  const BithumbOrderDetailRequest({
+    required this.market,
+    this.uuid,
+    this.clientOrderId,
+  });
+
+  /// 거래소 API의 `market` 값입니다.
+  final Market market;
+
+  /// 거래소 API의 `uuid` 값입니다.
+  final String? uuid;
+
+  /// 거래소 API의 `client_order_id` 값입니다.
+  final String? clientOrderId;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BithumbOrderDetailTrade]입니다.
+final class BithumbOrderDetailTrade {
+  /// [BithumbOrderDetailTrade]의 값을 만듭니다.
+  const BithumbOrderDetailTrade({
+    required this.market,
+    required this.uuid,
+    required this.price,
+    required this.volume,
+    required this.funds,
+    required this.side,
+    required this.createdAt,
+  });
+
+  /// 거래소 API의 `market` 값입니다.
+  final Market market;
+
+  /// 거래소 API의 `uuid` 값입니다.
+  final String uuid;
+
+  /// 거래소 API의 `price` 값입니다.
+  final Decimal price;
+
+  /// 거래소 API의 `volume` 값입니다.
+  final Decimal volume;
+
+  /// 거래소 API의 `funds` 값입니다.
+  final Decimal funds;
+
+  /// 거래소 API의 `side` 값입니다.
+  final String side;
+
+  /// 거래소 API의 `created_at` 값입니다.
+  final Timestamp createdAt;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BithumbOrderDetail]입니다.
+final class BithumbOrderDetail {
+  /// [BithumbOrderDetail]의 값을 만듭니다.
+  const BithumbOrderDetail({
+    required this.uuid,
+    this.clientOrderId,
+    required this.side,
+    required this.orderType,
+    required this.price,
+    required this.state,
+    required this.market,
+    required this.createdAt,
+    required this.volume,
+    required this.remainingVolume,
+    required this.reservedFee,
+    required this.remainingFee,
+    required this.paidFee,
+    required this.locked,
+    required this.executedVolume,
+    required this.executedFunds,
+    required this.tradesCount,
+    required this.trades,
+    this.stpType,
+    this.cancelType,
+    this.cancelingUuid,
+    this.timeInForce,
+  });
+
+  /// 거래소 API의 `uuid` 값입니다.
+  final String uuid;
+
+  /// 거래소 API의 `client_order_id` 값입니다.
+  final String? clientOrderId;
+
+  /// 거래소 API의 `side` 값입니다.
+  final String side;
+
+  /// 거래소 API의 `order_type` 값입니다.
+  final String orderType;
+
+  /// 거래소 API의 `price` 값입니다.
+  final Decimal price;
+
+  /// 거래소 API의 `state` 값입니다.
+  final String state;
+
+  /// 거래소 API의 `market` 값입니다.
+  final Market market;
+
+  /// 거래소 API의 `created_at` 값입니다.
+  final Timestamp createdAt;
+
+  /// 거래소 API의 `volume` 값입니다.
+  final Decimal volume;
+
+  /// 거래소 API의 `remaining_volume` 값입니다.
+  final Decimal remainingVolume;
+
+  /// 거래소 API의 `reserved_fee` 값입니다.
+  final Decimal reservedFee;
+
+  /// 거래소 API의 `remaining_fee` 값입니다.
+  final Decimal remainingFee;
+
+  /// 거래소 API의 `paid_fee` 값입니다.
+  final Decimal paidFee;
+
+  /// 거래소 API의 `locked` 값입니다.
+  final Decimal locked;
+
+  /// 거래소 API의 `executed_volume` 값입니다.
+  final Decimal executedVolume;
+
+  /// 거래소 API의 `executed_funds` 값입니다.
+  final Decimal executedFunds;
+
+  /// 거래소 API의 `trades_count` 값입니다.
+  final int tradesCount;
+
+  /// 거래소 API의 `trades` 값입니다.
+  final List<BithumbOrderDetailTrade> trades;
+
+  /// 거래소 API의 `stp_type` 값입니다.
+  final String? stpType;
+
+  /// 거래소 API의 `cancel_type` 값입니다.
+  final String? cancelType;
+
+  /// 거래소 API의 `canceling_uuid` 값입니다.
+  final String? cancelingUuid;
+
+  /// 거래소 API의 `time_in_force` 값입니다.
+  final String? timeInForce;
+}
+
+/// 거래소 API 요청에 전달하는 입력값 모델인 [BithumbOrderListRequest]입니다.
+final class BithumbOrderListRequest {
+  /// [BithumbOrderListRequest]의 값을 만듭니다.
+  const BithumbOrderListRequest({
+    this.market,
+    this.state,
+    required this.states,
+    required this.uuids,
+    required this.clientOrderIds,
+    this.page,
+    this.limit,
+    this.orderBy,
+  });
+
+  /// 거래소 API의 `market` 값입니다.
+  final Market? market;
+
+  /// 거래소 API의 `state` 값입니다.
+  final BithumbOrderListState? state;
+
+  /// 거래소 API의 `states` 값입니다.
+  final List<BithumbOrderListState> states;
+
+  /// 거래소 API의 `uuids` 값입니다.
+  final List<String> uuids;
+
+  /// 거래소 API의 `client_order_ids` 값입니다.
+  final List<String> clientOrderIds;
+
+  /// 거래소 API의 `page` 값입니다.
+  final int? page;
+
+  /// 거래소 API의 `limit` 값입니다.
+  final int? limit;
+
+  /// 거래소 API의 `order_by` 값입니다.
+  final BithumbOrderDirection? orderBy;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BithumbOrderListItem]입니다.
+final class BithumbOrderListItem {
+  /// [BithumbOrderListItem]의 값을 만듭니다.
+  const BithumbOrderListItem({
+    required this.uuid,
+    this.clientOrderId,
+    required this.side,
+    required this.orderType,
+    required this.price,
+    required this.state,
+    required this.market,
+    required this.createdAt,
+    required this.volume,
+    required this.remainingVolume,
+    required this.reservedFee,
+    required this.remainingFee,
+    required this.paidFee,
+    required this.locked,
+    required this.executedVolume,
+    required this.executedFunds,
+    required this.tradesCount,
+    this.stpType,
+    this.timeInForce,
+  });
+
+  /// 거래소 API의 `uuid` 값입니다.
+  final String uuid;
+
+  /// 거래소 API의 `client_order_id` 값입니다.
+  final String? clientOrderId;
+
+  /// 거래소 API의 `side` 값입니다.
+  final String side;
+
+  /// 거래소 API의 `order_type` 값입니다.
+  final String orderType;
+
+  /// 거래소 API의 `price` 값입니다.
+  final Decimal price;
+
+  /// 거래소 API의 `state` 값입니다.
+  final String state;
+
+  /// 거래소 API의 `market` 값입니다.
+  final Market market;
+
+  /// 거래소 API의 `created_at` 값입니다.
+  final Timestamp createdAt;
+
+  /// 거래소 API의 `volume` 값입니다.
+  final Decimal volume;
+
+  /// 거래소 API의 `remaining_volume` 값입니다.
+  final Decimal remainingVolume;
+
+  /// 거래소 API의 `reserved_fee` 값입니다.
+  final Decimal reservedFee;
+
+  /// 거래소 API의 `remaining_fee` 값입니다.
+  final Decimal remainingFee;
+
+  /// 거래소 API의 `paid_fee` 값입니다.
+  final Decimal paidFee;
+
+  /// 거래소 API의 `locked` 값입니다.
+  final Decimal locked;
+
+  /// 거래소 API의 `executed_volume` 값입니다.
+  final Decimal executedVolume;
+
+  /// 거래소 API의 `executed_funds` 값입니다.
+  final Decimal executedFunds;
+
+  /// 거래소 API의 `trades_count` 값입니다.
+  final int tradesCount;
+
+  /// 거래소 API의 `stp_type` 값입니다.
+  final String? stpType;
+
+  /// 거래소 API의 `time_in_force` 값입니다.
+  final String? timeInForce;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceSpotAveragePrice]입니다.
+final class BinanceSpotAveragePrice {
+  /// [BinanceSpotAveragePrice]의 값을 만듭니다.
+  const BinanceSpotAveragePrice({
+    required this.market,
+    required this.minutes,
+    required this.price,
+    required this.closeTime,
+  });
+
+  /// 거래소 API의 `market` 값입니다.
+  final Market market;
+
+  /// 거래소 API의 `minutes` 값입니다.
+  final int minutes;
+
+  /// 거래소 API의 `price` 값입니다.
+  final Decimal price;
+
+  /// 거래소 API의 `close_time` 값입니다.
+  final Timestamp closeTime;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceMarkPrice]입니다.
 final class BinanceMarkPrice {
+  /// [BinanceMarkPrice]의 값을 만듭니다.
   const BinanceMarkPrice({
     required this.market,
     required this.markPrice,
@@ -1055,29 +2934,53 @@ final class BinanceMarkPrice {
     required this.time,
   });
 
+  /// 거래소 API의 `market` 값입니다.
   final Market market;
+
+  /// 거래소 API의 `mark_price` 값입니다.
   final Decimal markPrice;
+
+  /// 거래소 API의 `index_price` 값입니다.
   final Decimal indexPrice;
+
+  /// 거래소 API의 `estimated_settle_price` 값입니다.
   final Decimal? estimatedSettlePrice;
+
+  /// 거래소 API의 `last_funding_rate` 값입니다.
   final Decimal lastFundingRate;
+
+  /// 거래소 API의 `interest_rate` 값입니다.
   final Decimal interestRate;
+
+  /// 거래소 API의 `next_funding_time` 값입니다.
   final Timestamp nextFundingTime;
+
+  /// 거래소 API의 `time` 값입니다.
   final Timestamp time;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceOpenInterest]입니다.
 final class BinanceOpenInterest {
+  /// [BinanceOpenInterest]의 값을 만듭니다.
   const BinanceOpenInterest({
     required this.market,
     required this.openInterest,
     required this.time,
   });
 
+  /// 거래소 API의 `market` 값입니다.
   final Market market;
+
+  /// 거래소 API의 `open_interest` 값입니다.
   final Decimal openInterest;
+
+  /// 거래소 API의 `time` 값입니다.
   final Timestamp time;
 }
 
+/// 거래소 API 요청에 전달하는 입력값 모델인 [BinanceAggregateTradesRequest]입니다.
 final class BinanceAggregateTradesRequest {
+  /// [BinanceAggregateTradesRequest]의 값을 만듭니다.
   const BinanceAggregateTradesRequest({
     required this.market,
     this.fromId,
@@ -1086,14 +2989,25 @@ final class BinanceAggregateTradesRequest {
     this.limit,
   });
 
+  /// 거래소 API의 `market` 값입니다.
   final Market market;
+
+  /// 거래소 API의 `from_id` 값입니다.
   final BigInt? fromId;
+
+  /// 거래소 API의 `start_time` 값입니다.
   final Timestamp? startTime;
+
+  /// 거래소 API의 `end_time` 값입니다.
   final Timestamp? endTime;
+
+  /// 거래소 API의 `limit` 값입니다.
   final int? limit;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceAggregateTrade]입니다.
 final class BinanceAggregateTrade {
+  /// [BinanceAggregateTrade]의 값을 만듭니다.
   const BinanceAggregateTrade({
     required this.market,
     required this.aggregateId,
@@ -1106,20 +3020,875 @@ final class BinanceAggregateTrade {
     required this.takerSide,
   });
 
+  /// 거래소 API의 `market` 값입니다.
   final Market market;
+
+  /// 거래소 API의 `aggregate_id` 값입니다.
   final BigInt aggregateId;
+
+  /// 거래소 API의 `first_trade_id` 값입니다.
   final BigInt firstTradeId;
+
+  /// 거래소 API의 `last_trade_id` 값입니다.
   final BigInt lastTradeId;
+
+  /// 거래소 API의 `timestamp` 값입니다.
   final Timestamp timestamp;
+
+  /// 거래소 API의 `price` 값입니다.
   final Decimal price;
+
+  /// 거래소 API의 `quantity` 값입니다.
   final Decimal quantity;
+
+  /// 거래소 API의 `normal_quantity` 값입니다.
   final Decimal? normalQuantity;
+
+  /// 거래소 API의 `taker_side` 값입니다.
   final Side takerSide;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceAccountTrade]입니다.
+final class BinanceAccountTrade {
+  /// [BinanceAccountTrade]의 값을 만듭니다.
+  const BinanceAccountTrade({
+    required this.market,
+    required this.id,
+    required this.orderId,
+    required this.timestamp,
+    required this.side,
+    required this.maker,
+    this.bestMatch,
+    this.orderListId,
+    required this.price,
+    required this.quantity,
+    this.quoteQuantity,
+    required this.commission,
+    required this.commissionAsset,
+    this.realizedPnl,
+    this.positionSide,
+    this.pair,
+    this.baseQuantity,
+    this.marginAsset,
+  });
+
+  /// 거래소 API의 `market` 값입니다.
+  final Market market;
+
+  /// 거래소 API의 `id` 값입니다.
+  final String id;
+
+  /// 거래소 API의 `order_id` 값입니다.
+  final String orderId;
+
+  /// 거래소 API의 `timestamp` 값입니다.
+  final Timestamp timestamp;
+
+  /// 거래소 API의 `side` 값입니다.
+  final Side side;
+
+  /// 거래소 API의 `maker` 값입니다.
+  final bool maker;
+
+  /// 거래소 API의 `best_match` 값입니다.
+  final bool? bestMatch;
+
+  /// 거래소 API의 `order_list_id` 값입니다.
+  final String? orderListId;
+
+  /// 거래소 API의 `price` 값입니다.
+  final Decimal price;
+
+  /// 거래소 API의 `quantity` 값입니다.
+  final Decimal quantity;
+
+  /// 거래소 API의 `quote_quantity` 값입니다.
+  final Decimal? quoteQuantity;
+
+  /// 거래소 API의 `commission` 값입니다.
+  final Decimal commission;
+
+  /// 거래소 API의 `commission_asset` 값입니다.
+  final String commissionAsset;
+
+  /// 거래소 API의 `realized_pnl` 값입니다.
+  final Decimal? realizedPnl;
+
+  /// 거래소 API의 `position_side` 값입니다.
+  final String? positionSide;
+
+  /// 거래소 API의 `pair` 값입니다.
+  final String? pair;
+
+  /// 거래소 API의 `base_quantity` 값입니다.
+  final Decimal? baseQuantity;
+
+  /// 거래소 API의 `margin_asset` 값입니다.
+  final String? marginAsset;
+}
+
+/// 거래소 API 요청에 전달하는 입력값 모델인 [BinanceTestOrderRequest]입니다.
+final class BinanceTestOrderRequest {
+  /// [BinanceTestOrderRequest]의 값을 만듭니다.
+  const BinanceTestOrderRequest({
+    required this.order,
+    required this.computeCommissionRates,
+  });
+
+  /// 거래소 API의 `order` 값입니다.
+  final OrderRequest order;
+
+  /// 거래소 API의 `compute_commission_rates` 값입니다.
+  final bool computeCommissionRates;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceTestOrder]입니다.
+final class BinanceTestOrder {
+  /// [BinanceTestOrder]의 값을 만듭니다.
+  const BinanceTestOrder({required this.responseJson});
+
+  /// 거래소 API의 `response_json` 값입니다.
+  final String responseJson;
+}
+
+/// 거래소 API 요청에 전달하는 입력값 모델인 [BinanceC2cTradeHistoryRequest]입니다.
+final class BinanceC2cTradeHistoryRequest {
+  /// [BinanceC2cTradeHistoryRequest]의 값을 만듭니다.
+  const BinanceC2cTradeHistoryRequest({
+    required this.tradeType,
+    this.startTimestamp,
+    this.endTimestamp,
+    this.page,
+    this.rows,
+    this.recvWindow,
+  });
+
+  /// 거래소 API의 `trade_type` 값입니다.
+  final BinanceC2cTradeType tradeType;
+
+  /// 거래소 API의 `start_timestamp` 값입니다.
+  final Timestamp? startTimestamp;
+
+  /// 거래소 API의 `end_timestamp` 값입니다.
+  final Timestamp? endTimestamp;
+
+  /// 거래소 API의 `page` 값입니다.
+  final int? page;
+
+  /// 거래소 API의 `rows` 값입니다.
+  final int? rows;
+
+  /// 거래소 API의 `recv_window` 값입니다.
+  final BigInt? recvWindow;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [BinanceC2cTrade]입니다.
+final class BinanceC2cTrade {
+  /// [BinanceC2cTrade]의 값을 만듭니다.
+  BinanceC2cTrade({
+    this.orderNumber,
+    this.advNo,
+    this.tradeType,
+    String? asset,
+    this.fiat,
+    this.fiatSymbol,
+    this.amount,
+    this.totalPrice,
+    this.unitPrice,
+    this.orderStatus,
+    this.createdAt,
+    this.commission,
+    this.counterpartyNickname,
+    this.payMethodName,
+    this.additionalKycVerify,
+    this.takerCommissionRate,
+    this.takerCommission,
+    this.takerAmount,
+    this.advertisementRole,
+  }) : asset = asset == null ? null : _asciiUpper(asset);
+
+  /// 거래소 API의 `order_number` 값입니다.
+  final String? orderNumber;
+
+  /// 거래소 API의 `adv_no` 값입니다.
+  final String? advNo;
+
+  /// 거래소 API의 `trade_type` 값입니다.
+  final String? tradeType;
+
+  /// 거래소 API의 `asset` 값입니다.
+  final String? asset;
+
+  /// 거래소 API의 `fiat` 값입니다.
+  final String? fiat;
+
+  /// 거래소 API의 `fiat_symbol` 값입니다.
+  final String? fiatSymbol;
+
+  /// 거래소 API의 `amount` 값입니다.
+  final Decimal? amount;
+
+  /// 거래소 API의 `total_price` 값입니다.
+  final Decimal? totalPrice;
+
+  /// 거래소 API의 `unit_price` 값입니다.
+  final Decimal? unitPrice;
+
+  /// 거래소 API의 `order_status` 값입니다.
+  final String? orderStatus;
+
+  /// 거래소 API의 `created_at` 값입니다.
+  final Timestamp? createdAt;
+
+  /// 거래소 API의 `commission` 값입니다.
+  final Decimal? commission;
+
+  /// 거래소 API의 `counterparty_nickname` 값입니다.
+  final String? counterpartyNickname;
+
+  /// 거래소 API의 `pay_method_name` 값입니다.
+  final String? payMethodName;
+
+  /// 거래소 API의 `additional_kyc_verify` 값입니다.
+  final int? additionalKycVerify;
+
+  /// 거래소 API의 `taker_commission_rate` 값입니다.
+  final Decimal? takerCommissionRate;
+
+  /// 거래소 API의 `taker_commission` 값입니다.
+  final Decimal? takerCommission;
+
+  /// 거래소 API의 `taker_amount` 값입니다.
+  final Decimal? takerAmount;
+
+  /// 거래소 API의 `advertisement_role` 값입니다.
+  final String? advertisementRole;
+}
+
+/// 거래소 API가 반환한 페이지 응답 모델인 [BinanceC2cTradeHistoryPage]입니다.
+final class BinanceC2cTradeHistoryPage {
+  /// [BinanceC2cTradeHistoryPage]의 값을 만듭니다.
+  const BinanceC2cTradeHistoryPage({
+    this.code,
+    this.message,
+    this.data,
+    this.total,
+    this.success,
+  });
+
+  /// 거래소 API의 `code` 값입니다.
+  final String? code;
+
+  /// 거래소 API의 `message` 값입니다.
+  final String? message;
+
+  /// 거래소 API의 `data` 값입니다.
+  final List<BinanceC2cTrade>? data;
+
+  /// 거래소 API의 `total` 값입니다.
+  final BigInt? total;
+
+  /// 거래소 API의 `success` 값입니다.
+  final bool? success;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidMidPrice]입니다.
 final class HyperliquidMidPrice {
+  /// [HyperliquidMidPrice]의 값을 만듭니다.
   const HyperliquidMidPrice({required this.market, required this.price});
 
+  /// 거래소 API의 `market` 값입니다.
   final Market market;
+
+  /// 거래소 API의 `price` 값입니다.
   final Decimal price;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidUserRateLimit]입니다.
+final class HyperliquidUserRateLimit {
+  /// [HyperliquidUserRateLimit]의 값을 만듭니다.
+  const HyperliquidUserRateLimit({
+    required this.cumulativeVolume,
+    required this.requestsUsed,
+    required this.requestsCap,
+    required this.requestsSurplus,
+  });
+
+  /// 거래소 API의 `cumulative_volume` 값입니다.
+  final Decimal cumulativeVolume;
+
+  /// 거래소 API의 `requests_used` 값입니다.
+  final BigInt requestsUsed;
+
+  /// 거래소 API의 `requests_cap` 값입니다.
+  final BigInt requestsCap;
+
+  /// 거래소 API의 `requests_surplus` 값입니다.
+  final BigInt requestsSurplus;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidUserRole]입니다.
+sealed class HyperliquidUserRole {
+  /// 변형 클래스가 공통으로 사용하는 기본 생성자입니다.
+  const HyperliquidUserRole();
+
+  /// [HyperliquidUserRole]의 `user` 변형을 만듭니다.
+  const factory HyperliquidUserRole.user() = HyperliquidUserRoleUser;
+
+  /// [HyperliquidUserRole]의 `agent` 변형을 만듭니다.
+  const factory HyperliquidUserRole.agent({String? user}) =
+      HyperliquidUserRoleAgent;
+
+  /// [HyperliquidUserRole]의 `vault` 변형을 만듭니다.
+  const factory HyperliquidUserRole.vault() = HyperliquidUserRoleVault;
+
+  /// [HyperliquidUserRole]의 `subAccount` 변형을 만듭니다.
+  const factory HyperliquidUserRole.subAccount({String? master}) =
+      HyperliquidUserRoleSubAccount;
+
+  /// [HyperliquidUserRole]의 `missing` 변형을 만듭니다.
+  const factory HyperliquidUserRole.missing() = HyperliquidUserRoleMissing;
+
+  /// [HyperliquidUserRole]의 `other` 변형을 만듭니다.
+  const factory HyperliquidUserRole.other({
+    required String role,
+    String? dataJson,
+  }) = HyperliquidUserRoleOther;
+}
+
+/// [HyperliquidUserRole]의 `user` 변형입니다.
+final class HyperliquidUserRoleUser extends HyperliquidUserRole {
+  /// `user` 변형을 만듭니다.
+  const HyperliquidUserRoleUser();
+}
+
+/// [HyperliquidUserRole]의 `agent` 변형입니다.
+final class HyperliquidUserRoleAgent extends HyperliquidUserRole {
+  /// `agent` 변형의 값을 만듭니다.
+  const HyperliquidUserRoleAgent({this.user});
+
+  /// 거래소 API의 `user` 값입니다.
+  final String? user;
+}
+
+/// [HyperliquidUserRole]의 `vault` 변형입니다.
+final class HyperliquidUserRoleVault extends HyperliquidUserRole {
+  /// `vault` 변형을 만듭니다.
+  const HyperliquidUserRoleVault();
+}
+
+/// [HyperliquidUserRole]의 `subAccount` 변형입니다.
+final class HyperliquidUserRoleSubAccount extends HyperliquidUserRole {
+  /// `subAccount` 변형의 값을 만듭니다.
+  const HyperliquidUserRoleSubAccount({this.master});
+
+  /// 거래소 API의 `master` 값입니다.
+  final String? master;
+}
+
+/// [HyperliquidUserRole]의 `missing` 변형입니다.
+final class HyperliquidUserRoleMissing extends HyperliquidUserRole {
+  /// `missing` 변형을 만듭니다.
+  const HyperliquidUserRoleMissing();
+}
+
+/// [HyperliquidUserRole]의 `other` 변형입니다.
+final class HyperliquidUserRoleOther extends HyperliquidUserRole {
+  /// `other` 변형의 값을 만듭니다.
+  const HyperliquidUserRoleOther({required this.role, this.dataJson});
+
+  /// 거래소 API의 `role` 값입니다.
+  final String role;
+
+  /// 거래소 API의 `data_json` 값입니다.
+  final String? dataJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidReferral]입니다.
+final class HyperliquidReferral {
+  /// [HyperliquidReferral]의 값을 만듭니다.
+  const HyperliquidReferral({
+    this.referredBy,
+    required this.cumulativeVolume,
+    required this.unclaimedRewards,
+    required this.claimedRewards,
+    required this.builderRewards,
+    required this.referrerStateJson,
+    required this.rewardHistoryJson,
+    required this.tokenToStateJson,
+  });
+
+  /// 거래소 API의 `referred_by` 값입니다.
+  final HyperliquidReferrer? referredBy;
+
+  /// 거래소 API의 `cumulative_volume` 값입니다.
+  final Decimal cumulativeVolume;
+
+  /// 거래소 API의 `unclaimed_rewards` 값입니다.
+  final Decimal unclaimedRewards;
+
+  /// 거래소 API의 `claimed_rewards` 값입니다.
+  final Decimal claimedRewards;
+
+  /// 거래소 API의 `builder_rewards` 값입니다.
+  final Decimal builderRewards;
+
+  /// 거래소 API의 `referrer_state_json` 값입니다.
+  final String referrerStateJson;
+
+  /// 거래소 API의 `reward_history_json` 값입니다.
+  final String rewardHistoryJson;
+
+  /// 거래소 API의 `token_to_state_json` 값입니다.
+  final String tokenToStateJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidReferrer]입니다.
+final class HyperliquidReferrer {
+  /// [HyperliquidReferrer]의 값을 만듭니다.
+  const HyperliquidReferrer({required this.address, required this.code});
+
+  /// 거래소 API의 `address` 값입니다.
+  final String address;
+
+  /// 거래소 API의 `code` 값입니다.
+  final String code;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidUserFees]입니다.
+final class HyperliquidUserFees {
+  /// [HyperliquidUserFees]의 값을 만듭니다.
+  const HyperliquidUserFees({
+    required this.dailyVolumes,
+    required this.feeScheduleJson,
+    required this.userCrossRate,
+    required this.userAddRate,
+    this.userSpotCrossRate,
+    this.userSpotAddRate,
+    this.activeReferralDiscount,
+    required this.detailsJson,
+  });
+
+  /// 거래소 API의 `daily_volumes` 값입니다.
+  final List<HyperliquidDailyVolume> dailyVolumes;
+
+  /// 거래소 API의 `fee_schedule_json` 값입니다.
+  final String feeScheduleJson;
+
+  /// 거래소 API의 `user_cross_rate` 값입니다.
+  final Decimal userCrossRate;
+
+  /// 거래소 API의 `user_add_rate` 값입니다.
+  final Decimal userAddRate;
+
+  /// 거래소 API의 `user_spot_cross_rate` 값입니다.
+  final Decimal? userSpotCrossRate;
+
+  /// 거래소 API의 `user_spot_add_rate` 값입니다.
+  final Decimal? userSpotAddRate;
+
+  /// 거래소 API의 `active_referral_discount` 값입니다.
+  final Decimal? activeReferralDiscount;
+
+  /// 거래소 API의 `details_json` 값입니다.
+  final String detailsJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidUserFill]입니다.
+final class HyperliquidUserFill {
+  /// [HyperliquidUserFill]의 값을 만듭니다.
+  const HyperliquidUserFill({
+    required this.coin,
+    required this.price,
+    required this.size,
+    required this.side,
+    required this.time,
+    required this.startPosition,
+    required this.direction,
+    required this.closedPnl,
+    required this.hash,
+    required this.orderId,
+    required this.crossed,
+    required this.fee,
+    this.builderFee,
+    required this.tradeId,
+    required this.feeToken,
+    this.twapId,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `coin` 값입니다.
+  final String coin;
+
+  /// 거래소 API의 `price` 값입니다.
+  final Decimal price;
+
+  /// 거래소 API의 `size` 값입니다.
+  final Decimal size;
+
+  /// 거래소 API의 `side` 값입니다.
+  final String side;
+
+  /// 거래소 API의 `time` 값입니다.
+  final Timestamp time;
+
+  /// 거래소 API의 `start_position` 값입니다.
+  final Decimal startPosition;
+
+  /// 거래소 API의 `direction` 값입니다.
+  final String direction;
+
+  /// 거래소 API의 `closed_pnl` 값입니다.
+  final Decimal closedPnl;
+
+  /// 거래소 API의 `hash` 값입니다.
+  final String hash;
+
+  /// 거래소 API의 `order_id` 값입니다.
+  final BigInt orderId;
+
+  /// 거래소 API의 `crossed` 값입니다.
+  final bool crossed;
+
+  /// 거래소 API의 `fee` 값입니다.
+  final Decimal fee;
+
+  /// 거래소 API의 `builder_fee` 값입니다.
+  final Decimal? builderFee;
+
+  /// 거래소 API의 `trade_id` 값입니다.
+  final BigInt tradeId;
+
+  /// 거래소 API의 `fee_token` 값입니다.
+  final String feeToken;
+
+  /// 거래소 API의 `twap_id` 값입니다.
+  final BigInt? twapId;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidOrderReference]입니다.
+sealed class HyperliquidOrderReference {
+  /// 변형 클래스가 공통으로 사용하는 기본 생성자입니다.
+  const HyperliquidOrderReference();
+
+  /// [HyperliquidOrderReference]의 `orderId` 변형을 만듭니다.
+  const factory HyperliquidOrderReference.orderId(BigInt value) =
+      HyperliquidOrderReferenceOrderId;
+
+  /// [HyperliquidOrderReference]의 `clientOrderId` 변형을 만듭니다.
+  const factory HyperliquidOrderReference.clientOrderId(String value) =
+      HyperliquidOrderReferenceClientOrderId;
+}
+
+/// [HyperliquidOrderReference]의 `orderId` 변형입니다.
+final class HyperliquidOrderReferenceOrderId extends HyperliquidOrderReference {
+  /// [value]를 담은 `orderId` 변형을 만듭니다.
+  const HyperliquidOrderReferenceOrderId(this.value);
+
+  /// 거래소 API의 `value` 값입니다.
+  final BigInt value;
+}
+
+/// [HyperliquidOrderReference]의 `clientOrderId` 변형입니다.
+final class HyperliquidOrderReferenceClientOrderId
+    extends HyperliquidOrderReference {
+  /// [value]를 담은 `clientOrderId` 변형을 만듭니다.
+  const HyperliquidOrderReferenceClientOrderId(this.value);
+
+  /// 거래소 API의 `value` 값입니다.
+  final String value;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidOpenOrder]입니다.
+final class HyperliquidOpenOrder {
+  /// [HyperliquidOpenOrder]의 값을 만듭니다.
+  const HyperliquidOpenOrder({
+    required this.coin,
+    required this.limitPrice,
+    required this.orderId,
+    required this.side,
+    required this.size,
+    required this.timestamp,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `coin` 값입니다.
+  final String coin;
+
+  /// 거래소 API의 `limit_price` 값입니다.
+  final Decimal limitPrice;
+
+  /// 거래소 API의 `order_id` 값입니다.
+  final BigInt orderId;
+
+  /// 거래소 API의 `side` 값입니다.
+  final String side;
+
+  /// 거래소 API의 `size` 값입니다.
+  final Decimal size;
+
+  /// 거래소 API의 `timestamp` 값입니다.
+  final Timestamp timestamp;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidOrderDetail]입니다.
+final class HyperliquidOrderDetail {
+  /// [HyperliquidOrderDetail]의 값을 만듭니다.
+  const HyperliquidOrderDetail({
+    required this.coin,
+    required this.side,
+    required this.limitPrice,
+    required this.size,
+    required this.orderId,
+    required this.timestamp,
+    required this.triggerCondition,
+    required this.isTrigger,
+    required this.triggerPrice,
+    required this.childrenJson,
+    required this.isPositionTpsl,
+    required this.reduceOnly,
+    required this.orderType,
+    required this.originalSize,
+    this.timeInForce,
+    this.clientOrderId,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `coin` 값입니다.
+  final String coin;
+
+  /// 거래소 API의 `side` 값입니다.
+  final String side;
+
+  /// 거래소 API의 `limit_price` 값입니다.
+  final Decimal limitPrice;
+
+  /// 거래소 API의 `size` 값입니다.
+  final Decimal size;
+
+  /// 거래소 API의 `order_id` 값입니다.
+  final BigInt orderId;
+
+  /// 거래소 API의 `timestamp` 값입니다.
+  final Timestamp timestamp;
+
+  /// 거래소 API의 `trigger_condition` 값입니다.
+  final String triggerCondition;
+
+  /// 거래소 API의 `is_trigger` 값입니다.
+  final bool isTrigger;
+
+  /// 거래소 API의 `trigger_price` 값입니다.
+  final Decimal triggerPrice;
+
+  /// 거래소 API의 `children_json` 값입니다.
+  final String childrenJson;
+
+  /// 거래소 API의 `is_position_tpsl` 값입니다.
+  final bool isPositionTpsl;
+
+  /// 거래소 API의 `reduce_only` 값입니다.
+  final bool reduceOnly;
+
+  /// 거래소 API의 `order_type` 값입니다.
+  final String orderType;
+
+  /// 거래소 API의 `original_size` 값입니다.
+  final Decimal originalSize;
+
+  /// 거래소 API의 `time_in_force` 값입니다.
+  final String? timeInForce;
+
+  /// 거래소 API의 `client_order_id` 값입니다.
+  final String? clientOrderId;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidOrderInfo]입니다.
+final class HyperliquidOrderInfo {
+  /// [HyperliquidOrderInfo]의 값을 만듭니다.
+  const HyperliquidOrderInfo({
+    required this.order,
+    required this.status,
+    required this.statusTimestamp,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `order` 값입니다.
+  final HyperliquidOrderDetail order;
+
+  /// 거래소 API의 `status` 값입니다.
+  final String status;
+
+  /// 거래소 API의 `status_timestamp` 값입니다.
+  final Timestamp statusTimestamp;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidOrderStatusResponse]입니다.
+sealed class HyperliquidOrderStatusResponse {
+  /// 변형 클래스가 공통으로 사용하는 기본 생성자입니다.
+  const HyperliquidOrderStatusResponse();
+
+  /// [HyperliquidOrderStatusResponse]의 `order` 변형을 만듭니다.
+  const factory HyperliquidOrderStatusResponse.order(
+    HyperliquidOrderInfo value,
+  ) = HyperliquidOrderStatusResponseOrder;
+
+  /// [HyperliquidOrderStatusResponse]의 `unknownOrder` 변형을 만듭니다.
+  const factory HyperliquidOrderStatusResponse.unknownOrder() =
+      HyperliquidOrderStatusResponseUnknownOrder;
+
+  /// [HyperliquidOrderStatusResponse]의 `other` 변형을 만듭니다.
+  const factory HyperliquidOrderStatusResponse.other({
+    required String status,
+    required String rawJson,
+  }) = HyperliquidOrderStatusResponseOther;
+}
+
+/// [HyperliquidOrderStatusResponse]의 `order` 변형입니다.
+final class HyperliquidOrderStatusResponseOrder
+    extends HyperliquidOrderStatusResponse {
+  /// [value]를 담은 `order` 변형을 만듭니다.
+  const HyperliquidOrderStatusResponseOrder(this.value);
+
+  /// 거래소 API의 `value` 값입니다.
+  final HyperliquidOrderInfo value;
+}
+
+/// [HyperliquidOrderStatusResponse]의 `unknownOrder` 변형입니다.
+final class HyperliquidOrderStatusResponseUnknownOrder
+    extends HyperliquidOrderStatusResponse {
+  /// `unknownOrder` 변형을 만듭니다.
+  const HyperliquidOrderStatusResponseUnknownOrder();
+}
+
+/// [HyperliquidOrderStatusResponse]의 `other` 변형입니다.
+final class HyperliquidOrderStatusResponseOther
+    extends HyperliquidOrderStatusResponse {
+  /// `other` 변형의 값을 만듭니다.
+  const HyperliquidOrderStatusResponseOther({
+    required this.status,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `status` 값입니다.
+  final String status;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidDailyVolume]입니다.
+final class HyperliquidDailyVolume {
+  /// [HyperliquidDailyVolume]의 값을 만듭니다.
+  const HyperliquidDailyVolume({
+    required this.date,
+    required this.userCross,
+    required this.userAdd,
+    required this.exchange,
+  });
+
+  /// 거래소 API의 `date` 값입니다.
+  final String date;
+
+  /// 거래소 API의 `user_cross` 값입니다.
+  final Decimal userCross;
+
+  /// 거래소 API의 `user_add` 값입니다.
+  final Decimal userAdd;
+
+  /// 거래소 API의 `exchange` 값입니다.
+  final Decimal exchange;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidPortfolioPeriod]입니다.
+final class HyperliquidPortfolioPeriod {
+  /// [HyperliquidPortfolioPeriod]의 값을 만듭니다.
+  const HyperliquidPortfolioPeriod({
+    required this.period,
+    required this.accountValueHistory,
+    required this.pnlHistory,
+    required this.volume,
+  });
+
+  /// 거래소 API의 `period` 값입니다.
+  final String period;
+
+  /// 거래소 API의 `account_value_history` 값입니다.
+  final List<HyperliquidPortfolioPoint> accountValueHistory;
+
+  /// 거래소 API의 `pnl_history` 값입니다.
+  final List<HyperliquidPortfolioPoint> pnlHistory;
+
+  /// 거래소 API의 `volume` 값입니다.
+  final Decimal volume;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidPortfolioPoint]입니다.
+final class HyperliquidPortfolioPoint {
+  /// [HyperliquidPortfolioPoint]의 값을 만듭니다.
+  const HyperliquidPortfolioPoint({required this.time, required this.value});
+
+  /// 거래소 API의 `time` 값입니다.
+  final Timestamp time;
+
+  /// 거래소 API의 `value` 값입니다.
+  final Decimal value;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidSubAccount]입니다.
+final class HyperliquidSubAccount {
+  /// [HyperliquidSubAccount]의 값을 만듭니다.
+  const HyperliquidSubAccount({
+    required this.name,
+    required this.user,
+    required this.master,
+    required this.perpetualStateJson,
+    required this.spotStateJson,
+  });
+
+  /// 거래소 API의 `name` 값입니다.
+  final String name;
+
+  /// 거래소 API의 `user` 값입니다.
+  final String user;
+
+  /// 거래소 API의 `master` 값입니다.
+  final String master;
+
+  /// 거래소 API의 `perpetual_state_json` 값입니다.
+  final String perpetualStateJson;
+
+  /// 거래소 API의 `spot_state_json` 값입니다.
+  final String spotStateJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidVaultEquity]입니다.
+final class HyperliquidVaultEquity {
+  /// [HyperliquidVaultEquity]의 값을 만듭니다.
+  const HyperliquidVaultEquity({
+    required this.vaultAddress,
+    required this.equity,
+    this.lockedUntil,
+  });
+
+  /// 거래소 API의 `vault_address` 값입니다.
+  final String vaultAddress;
+
+  /// 거래소 API의 `equity` 값입니다.
+  final Decimal equity;
+
+  /// 거래소 API의 `locked_until` 값입니다.
+  final Timestamp? lockedUntil;
 }

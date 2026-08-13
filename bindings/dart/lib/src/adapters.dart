@@ -364,6 +364,7 @@ abstract base class _NativeAdapterBase
 
 /// Upbit 현물 거래소 어댑터입니다.
 final class UpbitAdapter extends _NativeAdapterBase {
+  /// 기본 한국 리전으로 Upbit 현물 어댑터를 만듭니다.
   factory UpbitAdapter({String? accessKey, String? secretKey}) =>
       UpbitAdapter.withRegion(
         UpbitRegion.korea,
@@ -371,6 +372,7 @@ final class UpbitAdapter extends _NativeAdapterBase {
         secretKey: secretKey,
       );
 
+  /// 지정한 [region]의 Upbit 현물 어댑터를 만듭니다.
   factory UpbitAdapter.withRegion(
     UpbitRegion region, {
     String? accessKey,
@@ -391,8 +393,10 @@ final class UpbitAdapter extends _NativeAdapterBase {
 
   UpbitAdapter._(super.handle, this.region);
 
+  /// 이 어댑터가 호출할 Upbit 리전입니다.
   final UpbitRegion region;
 
+  /// 같은 리전으로 인증 정보를 넣은 새 어댑터를 만듭니다.
   UpbitAdapter withCredentials(String accessKey, String secretKey) =>
       UpbitAdapter.withRegion(
         region,
@@ -403,6 +407,7 @@ final class UpbitAdapter extends _NativeAdapterBase {
 
 /// Bithumb 현물 거래소 어댑터입니다.
 final class BithumbAdapter extends _NativeAdapterBase {
+  /// Bithumb 현물 어댑터를 만듭니다.
   factory BithumbAdapter({String? accessKey, String? secretKey}) {
     validateBrowserCredentials(accessKey, secretKey);
     return BithumbAdapter._(
@@ -417,12 +422,14 @@ final class BithumbAdapter extends _NativeAdapterBase {
 
   BithumbAdapter._(super.handle);
 
+  /// 인증 정보를 넣은 새 Bithumb 어댑터를 만듭니다.
   BithumbAdapter withCredentials(String accessKey, String secretKey) =>
       BithumbAdapter(accessKey: accessKey, secretKey: secretKey);
 }
 
 /// Binance 현물 또는 USD-M 무기한 선물 어댑터입니다.
 final class BinanceAdapter extends _NativeAdapterBase {
+  /// Binance 현물 어댑터를 만듭니다.
   factory BinanceAdapter.spot({String? apiKey, String? secretKey}) {
     validateBrowserCredentials(apiKey, secretKey);
     return BinanceAdapter._(
@@ -436,6 +443,7 @@ final class BinanceAdapter extends _NativeAdapterBase {
     );
   }
 
+  /// Binance USD-M 무기한 선물 어댑터를 만듭니다.
   factory BinanceAdapter.usdMFutures({String? apiKey, String? secretKey}) {
     validateBrowserCredentials(apiKey, secretKey);
     return BinanceAdapter._(
@@ -451,8 +459,10 @@ final class BinanceAdapter extends _NativeAdapterBase {
 
   BinanceAdapter._(super.handle, this.venue);
 
+  /// 이 어댑터가 호출할 Binance venue입니다.
   final BinanceMarket venue;
 
+  /// 같은 venue로 인증 정보를 넣은 새 어댑터를 만듭니다.
   BinanceAdapter withCredentials(String apiKey, String secretKey) =>
       switch (venue) {
         BinanceMarket.spot => BinanceAdapter.spot(
@@ -468,15 +478,18 @@ final class BinanceAdapter extends _NativeAdapterBase {
 
 /// 생성자로 만들 수 없는 Binance USD-M listen key입니다.
 final class BinanceListenKey {
+  /// 내부에서 발급한 listen key를 감싸 만듭니다.
   const BinanceListenKey._(this._handle);
 
   final native.WireBinanceListenKey _handle;
 
+  /// WebSocket 수명 주기 호출에만 전달할 비밀 listen key 값입니다.
   String get value => _handle.value;
 }
 
 /// Hyperliquid mainnet 또는 testnet 어댑터입니다.
 final class HyperliquidAdapter extends _NativeAdapterBase {
+  /// Hyperliquid mainnet 어댑터를 만듭니다.
   factory HyperliquidAdapter({String? address, String? privateKey}) {
     validateBrowserCredentials(null, privateKey);
     return HyperliquidAdapter._(
@@ -491,6 +504,7 @@ final class HyperliquidAdapter extends _NativeAdapterBase {
     );
   }
 
+  /// Hyperliquid testnet 어댑터를 만듭니다.
   factory HyperliquidAdapter.testnet({String? address, String? privateKey}) {
     validateBrowserCredentials(null, privateKey);
     return HyperliquidAdapter._(
@@ -507,8 +521,10 @@ final class HyperliquidAdapter extends _NativeAdapterBase {
 
   HyperliquidAdapter._(super.handle, this.isTestnet);
 
+  /// testnet을 사용하는지 여부입니다.
   final bool isTestnet;
 
+  /// 같은 네트워크로 지갑 주소와 개인 키를 넣은 새 어댑터를 만듭니다.
   HyperliquidAdapter withWallet(String address, String privateKey) => isTestnet
       ? HyperliquidAdapter.testnet(address: address, privateKey: privateKey)
       : HyperliquidAdapter(address: address, privateKey: privateKey);

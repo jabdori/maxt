@@ -2,7 +2,8 @@
 
 [English](getting-started.md) | [한국어](getting-started.ko.md)
 
-공개 REST와 시장 스트림에는 거래소 계정이 필요하지 않습니다.
+이 가이드는 Binance 현물(Spot)부터 시작합니다. 공개 REST와 시장 스트림에는 거래소
+계정이 필요하지 않습니다.
 
 ## 설치
 
@@ -11,7 +12,7 @@ Rust 1.85 이상이 필요합니다. 스트림 예제는 `futures_util::StreamEx
 
 ```toml
 [dependencies]
-maxt = "0.1"
+maxt = "0.2.1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 futures-util = "0.3"
 ```
@@ -19,13 +20,13 @@ futures-util = "0.3"
 ## 시장 데이터 조회
 
 ```rust,no_run
-use maxt::adapters::UpbitAdapter;
+use maxt::adapters::BinanceAdapter;
 use maxt::{Client, Exchange, Market, MarketKind};
 
 #[tokio::main]
 async fn main() -> maxt::Result<()> {
-    let client = Client::new(UpbitAdapter::new());
-    let market = Market::spot(Exchange::Upbit, "BTC", "KRW");
+    let client = Client::new(BinanceAdapter::spot());
+    let market = Market::spot(Exchange::Binance, "BTC", "USDT");
 
     let markets = client.markets(MarketKind::Spot).await?;
     let ticker = client.ticker(&market).await?;
@@ -45,14 +46,14 @@ async fn main() -> maxt::Result<()> {
 
 ```rust,no_run
 use futures_util::StreamExt;
-use maxt::adapters::UpbitAdapter;
+use maxt::adapters::BinanceAdapter;
 use maxt::{Client, Exchange, Feed, Market, MarketEvent, Subscription};
 
 #[tokio::main]
 async fn main() -> maxt::Result<()> {
-    let client = Client::new(UpbitAdapter::new());
+    let client = Client::new(BinanceAdapter::spot());
     let subscription = Subscription::new()
-        .market(Market::spot(Exchange::Upbit, "BTC", "KRW"))
+        .market(Market::spot(Exchange::Binance, "BTC", "USDT"))
         .feed(Feed::Trades);
 
     let mut stream = client.subscribe(&subscription).await?;
@@ -80,4 +81,10 @@ async fn main() -> maxt::Result<()> {
 
 - [거래소 지원](providers.ko.md): 생성자, 인증 정보, 거래소 한도
 - [공통 API 레퍼런스](common-api.ko.md): 요청, 스트림, 오류, 비공개 API
+- [Python 패키지](../bindings/python/README.ko.md), [Dart / Flutter 패키지](../bindings/dart/README.ko.md), [TypeScript 패키지](../bindings/typescript/README.ko.md): 언어별 설정과 실행 가능한 Binance 예제
 - [실행 가능한 예제](../examples/)
+
+이 가이드는 의도적으로 공개 호출만 사용합니다. 계좌, 주문, 전송 작업은 `Client`를
+만들기 전에 어댑터를 설정하세요. Hyperliquid의 계좌 조회는 서명 없이 공개 조회 주소를
+사용할 수 있지만, 서명 작업에는 signer가 필요합니다. 정확한 어댑터 설정은
+[거래소 지원](providers.ko.md)을 참고하세요.

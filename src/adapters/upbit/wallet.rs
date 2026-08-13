@@ -17,7 +17,10 @@ use crate::types::{
 };
 
 use super::parse::{self, EXCHANGE};
-use super::{UpbitCredentials, UpbitDepositInfo, private, rest};
+use super::{
+    UpbitApiKey, UpbitCredentials, UpbitDepositInfo, UpbitKrwDeposit, UpbitKrwTransferRequest,
+    UpbitKrwWithdrawal, private, rest,
+};
 
 const WALLET_STATUS_PATH: &str = "/v1/status/wallet";
 const DEPOSIT_CHANCE_PATH: &str = "/v1/deposits/chance/coin";
@@ -32,6 +35,9 @@ const CANCEL_WITHDRAWAL_PATH: &str = "/v1/withdraws/coin";
 const DEPOSITS_PATH: &str = "/v1/deposits";
 const DEPOSIT_PATH: &str = "/v1/deposit";
 const WITHDRAWALS_PATH: &str = "/v1/withdraws";
+const KRW_DEPOSIT_PATH: &str = "/v1/deposits/krw";
+const KRW_WITHDRAWAL_PATH: &str = "/v1/withdraws/krw";
+const API_KEYS_PATH: &str = "/v1/api_keys";
 const MAX_HISTORY_COUNT: u32 = 100;
 
 #[derive(Debug, Deserialize)]
@@ -150,6 +156,51 @@ struct RawTransfer {
     fee: Option<Value>,
 }
 
+#[derive(Debug, Deserialize)]
+struct RawKrwDeposit {
+    #[serde(rename = "type")]
+    transfer_type: String,
+    uuid: String,
+    currency: String,
+    #[serde(default)]
+    net_type: Option<String>,
+    txid: String,
+    state: String,
+    created_at: String,
+    #[serde(default)]
+    done_at: Option<String>,
+    amount: Value,
+    fee: Value,
+    transaction_type: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct RawKrwWithdrawal {
+    #[serde(rename = "type")]
+    transfer_type: String,
+    uuid: String,
+    currency: String,
+    #[serde(default)]
+    net_type: Option<String>,
+    #[serde(default)]
+    txid: Option<String>,
+    state: String,
+    created_at: String,
+    #[serde(default)]
+    done_at: Option<String>,
+    amount: Value,
+    fee: Value,
+    transaction_type: String,
+    #[serde(default)]
+    is_cancelable: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+struct RawApiKey {
+    access_key: String,
+    expire_at: String,
+}
+
 pub(crate) async fn asset_networks(
     credentials: &UpbitCredentials,
     http: &HttpTransport,
@@ -207,6 +258,43 @@ pub(crate) async fn deposit_info(
     let request = deposit_chance_request(credentials, &asset, &provider_id)?;
     let body = rest::send(http, &request).await?;
     parse_deposit_info(&body, &asset, &provider_id)
+}
+
+pub(crate) async fn deposit_krw(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    request: &UpbitKrwTransferRequest,
+) -> Result<UpbitKrwDeposit> {
+    let response = krw_transfer_request(credentials, KRW_DEPOSIT_PATH, request)?;
+    let body = rest::send(http, &response).await?;
+    parse_krw_deposit(&parse::json(&body)?)
+}
+
+pub(crate) async fn withdraw_krw(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    request: &UpbitKrwTransferRequest,
+) -> Result<UpbitKrwWithdrawal> {
+    let response = krw_transfer_request(credentials, KRW_WITHDRAWAL_PATH, request)?;
+    let body = rest::send(http, &response).await?;
+    parse_krw_withdrawal(&parse::json(&body)?)
+}
+
+pub(crate) async fn api_keys(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+) -> Result<Vec<UpbitApiKey>> {
+    let response = signed_get(credentials, API_KEYS_PATH, &[])?;
+    let body = rest::send(http, &response).await?;
+    parse::json::<Vec<RawApiKey>>(&body)?
+        .into_iter()
+        .map(|raw| {
+            Ok(UpbitApiKey {
+                access_key: required_text("access_key", raw.access_key)?,
+                expires_at: required_timestamp("expire_at", raw.expire_at)?,
+            })
+        })
+        .collect()
 }
 
 pub(crate) async fn deposit_address(
@@ -576,6 +664,35 @@ fn create_deposit_address_request(
         ))
 }
 
+fn krw_transfer_request(
+    credentials: &UpbitCredentials,
+    path: &'static str,
+    request: &UpbitKrwTransferRequest,
+) -> Result<HttpRequest> {
+    if request.amount <= Decimal::ZERO {
+        return Err(Error::invalid_request(
+            "amount",
+            "Upbit KRW transfer amounts must be greater than zero",
+        ));
+    }
+
+    let params = [
+        ("amount", request.amount.to_string()),
+        (
+            "two_factor_type",
+            request.two_factor_type.wire_name().to_string(),
+        ),
+    ];
+    let query = private::json_body_query(&params);
+
+    Ok(HttpRequest::post(path)
+        .json_body(private::json_body(&params)?)
+        .header(
+            private::AUTHORIZATION,
+            private::authorization(credentials, &query)?,
+        ))
+}
+
 fn reject_deposit_address_amount(request: &DepositAddressRequest) -> Result<()> {
     if request.amount.is_some() {
         return Err(Error::invalid_request(
@@ -928,7 +1045,40 @@ fn parse_deposit(raw: &RawTransfer) -> Result<Deposit> {
         status: deposit_status(&raw.state),
         provider_status: raw.state.clone(),
         tx_id: raw.txid.clone(),
-        created_at: timestamp_opt(raw.created_at.as_deref())?,
+        created_at: timestamp_opt("created_at", raw.created_at.as_deref())?,
+    })
+}
+
+fn parse_krw_deposit(raw: &RawKrwDeposit) -> Result<UpbitKrwDeposit> {
+    Ok(UpbitKrwDeposit {
+        transfer_type: required_text("type", raw.transfer_type.clone())?,
+        uuid: required_text("uuid", raw.uuid.clone())?,
+        currency: required_text("currency", raw.currency.clone())?.to_ascii_uppercase(),
+        net_type: raw.net_type.clone(),
+        txid: required_text("txid", raw.txid.clone())?,
+        state: required_text("state", raw.state.clone())?,
+        created_at: required_timestamp("created_at", raw.created_at.clone())?,
+        done_at: timestamp_opt("done_at", raw.done_at.as_deref())?,
+        amount: decimal_value(&raw.amount, "amount")?,
+        fee: decimal_value(&raw.fee, "fee")?,
+        transaction_type: required_text("transaction_type", raw.transaction_type.clone())?,
+    })
+}
+
+fn parse_krw_withdrawal(raw: &RawKrwWithdrawal) -> Result<UpbitKrwWithdrawal> {
+    Ok(UpbitKrwWithdrawal {
+        transfer_type: required_text("type", raw.transfer_type.clone())?,
+        uuid: required_text("uuid", raw.uuid.clone())?,
+        currency: required_text("currency", raw.currency.clone())?.to_ascii_uppercase(),
+        net_type: raw.net_type.clone(),
+        txid: raw.txid.clone(),
+        state: required_text("state", raw.state.clone())?,
+        created_at: required_timestamp("created_at", raw.created_at.clone())?,
+        done_at: timestamp_opt("done_at", raw.done_at.as_deref())?,
+        amount: decimal_value(&raw.amount, "amount")?,
+        fee: decimal_value(&raw.fee, "fee")?,
+        transaction_type: required_text("transaction_type", raw.transaction_type.clone())?,
+        is_cancelable: raw.is_cancelable,
     })
 }
 
@@ -945,7 +1095,7 @@ fn parse_withdrawal(raw: &RawTransfer) -> Result<Withdrawal> {
         status: withdrawal_status(&raw.state),
         provider_status: raw.state.clone(),
         tx_id: raw.txid.clone(),
-        created_at: timestamp_opt(raw.created_at.as_deref())?,
+        created_at: timestamp_opt("created_at", raw.created_at.as_deref())?,
     })
 }
 
@@ -957,15 +1107,30 @@ fn decimal_value(value: &Value, field: &str) -> Result<Decimal> {
     }
 }
 
-fn timestamp_opt(raw: Option<&str>) -> Result<Option<crate::types::Timestamp>> {
+fn timestamp_opt(
+    field: &'static str,
+    raw: Option<&str>,
+) -> Result<Option<crate::types::Timestamp>> {
     raw.map(|raw| {
         DateTime::parse_from_rfc3339(raw)
             .ok()
             .and_then(|parsed| parsed.timestamp_nanos_opt())
             .map(crate::types::Timestamp::from_nanos)
-            .ok_or_else(|| Error::decode(format!("`created_at` is not RFC 3339: {raw}")))
+            .ok_or_else(|| Error::decode(format!("`{field}` is not RFC 3339: {raw}")))
     })
     .transpose()
+}
+
+fn required_timestamp(field: &'static str, raw: String) -> Result<crate::types::Timestamp> {
+    timestamp_opt(field, Some(&raw))?.ok_or_else(|| Error::decode(format!("`{field}` is missing")))
+}
+
+fn required_text(field: &'static str, value: String) -> Result<String> {
+    if value.trim().is_empty() {
+        Err(Error::decode(format!("`{field}` is missing or empty")))
+    } else {
+        Ok(value)
+    }
 }
 
 fn deposit_status(raw: &str) -> DepositStatus {
@@ -1289,6 +1454,80 @@ mod tests {
     }
 
     #[test]
+    fn krw_requests_use_json_body_and_hash_the_exact_documented_fields() {
+        let request = UpbitKrwTransferRequest::new(
+            Decimal::from(10_000),
+            super::super::UpbitKrwTwoFactorType::Naver,
+        );
+        let deposit = krw_transfer_request(&credentials(), KRW_DEPOSIT_PATH, &request)
+            .expect("serializable KRW deposit");
+        let withdrawal = krw_transfer_request(&credentials(), KRW_WITHDRAWAL_PATH, &request)
+            .expect("serializable KRW withdrawal");
+        let signed = "amount=10000&two_factor_type=naver";
+
+        for response in [&deposit, &withdrawal] {
+            assert_eq!(
+                response.body.as_deref(),
+                Some(r#"{"amount":"10000","two_factor_type":"naver"}"#)
+            );
+            assert_eq!(
+                claims(response)["query_hash"],
+                hex::encode(Sha512::digest(signed.as_bytes()))
+            );
+        }
+        assert_eq!(deposit.path, KRW_DEPOSIT_PATH);
+        assert_eq!(withdrawal.path, KRW_WITHDRAWAL_PATH);
+        assert!(
+            krw_transfer_request(
+                &credentials(),
+                KRW_DEPOSIT_PATH,
+                &UpbitKrwTransferRequest::new(
+                    Decimal::ZERO,
+                    super::super::UpbitKrwTwoFactorType::Kakao,
+                ),
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn krw_and_api_key_fixtures_preserve_official_fields() {
+        let deposit: RawKrwDeposit = parse::json(
+            r#"{"type":"deposit","uuid":"d-1","currency":"KRW","net_type":null,"txid":"tx-d","state":"ACCEPTED","created_at":"2025-07-04T15:00:00+09:00","done_at":null,"amount":"10000","fee":"0.0","transaction_type":"default"}"#,
+        )
+        .expect("official deposit fixture");
+        let deposit = parse_krw_deposit(&deposit).expect("deposit parse");
+        assert_eq!(deposit.currency, "KRW");
+        assert_eq!(deposit.txid, "tx-d");
+        assert_eq!(deposit.amount, Decimal::from(10_000));
+        assert_eq!(deposit.fee, Decimal::ZERO);
+        assert_eq!(deposit.done_at, None);
+
+        let withdrawal: RawKrwWithdrawal = parse::json(
+            r#"{"type":"withdraw","uuid":"w-1","currency":"KRW","net_type":null,"txid":null,"state":"processing","created_at":"2025-07-01T15:00:00+09:00","done_at":null,"amount":"10000","fee":"0.0","transaction_type":"default","is_cancelable":false}"#,
+        )
+        .expect("official withdrawal fixture");
+        let withdrawal = parse_krw_withdrawal(&withdrawal).expect("withdrawal parse");
+        assert_eq!(withdrawal.txid, None);
+        assert_eq!(withdrawal.is_cancelable, Some(false));
+        assert_eq!(withdrawal.state, "processing");
+
+        let keys: Vec<RawApiKey> =
+            parse::json(r#"[{"access_key":"key-1","expire_at":"2026-06-25T11:22:54+09:00"}]"#)
+                .expect("official API-key fixture");
+        let key = UpbitApiKey {
+            access_key: required_text("access_key", keys[0].access_key.clone()).expect("key"),
+            expires_at: required_timestamp("expire_at", keys[0].expire_at.clone()).expect("expiry"),
+        };
+        assert_eq!(key.access_key, "key-1");
+        assert!(key.expires_at.as_nanos() > 0);
+
+        let error = required_timestamp("expire_at", "not-a-time".to_string())
+            .expect_err("invalid expiry must identify its source field");
+        assert!(matches!(error, Error::Decode { detail } if detail.contains("`expire_at`")));
+    }
+
+    #[test]
     fn every_wallet_read_uses_the_documented_path_and_history_parameters() {
         let credentials = credentials();
         let status = signed_get(&credentials, WALLET_STATUS_PATH, &[]).expect("status request");
@@ -1308,6 +1547,7 @@ mod tests {
         let chance = withdraw_chance_request(&credentials, "BTC", "BTC").expect("chance request");
         let allowlist =
             signed_get(&credentials, WITHDRAWAL_ADDRESSES_PATH, &[]).expect("allowlist request");
+        let api_keys = signed_get(&credentials, API_KEYS_PATH, &[]).expect("API-key request");
         let history = TransferHistoryRequest::new().asset("BTC").limit(25);
         let deposits = history_request(&credentials, DEPOSITS_PATH, &history, 2, 25)
             .expect("deposit history request");
@@ -1333,6 +1573,7 @@ mod tests {
             "/v1/withdraws/chance?currency=BTC&net_type=BTC"
         );
         assert_eq!(allowlist.target(), WITHDRAWAL_ADDRESSES_PATH);
+        assert_eq!(api_keys.target(), API_KEYS_PATH);
         assert_eq!(
             deposits.target(),
             "/v1/deposits?currency=BTC&page=2&limit=25&order_by=desc"

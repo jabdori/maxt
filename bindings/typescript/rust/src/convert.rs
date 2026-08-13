@@ -1,18 +1,33 @@
 use maxt::adapters::{
-    BinanceAggregateTrade, BinanceAggregateTradesRequest, BinanceMarkPrice, BinanceOpenInterest,
-    BinanceSpotOrderDetail, BinanceSymbolFilters, BithumbAlertStep, BithumbApiKey, BithumbAssetFee,
+    BinanceAccountTrade, BinanceAggregateTrade, BinanceAggregateTradesRequest, BinanceC2cTrade,
+    BinanceC2cTradeHistoryPage, BinanceC2cTradeHistoryRequest, BinanceC2cTradeType,
+    BinanceMarkPrice, BinanceOpenInterest, BinanceSpotOrderDetail, BinanceSymbolFilters,
+    BinanceTestOrder, BinanceTestOrderRequest, BithumbAlertStep, BithumbApiKey, BithumbAssetFee,
     BithumbBatchOrder, BithumbBatchOrderFailure, BithumbBatchOrderOutcome,
-    BithumbBatchOrdersRequest, BithumbBatchOrdersResult, BithumbKrwDeposit,
+    BithumbBatchOrdersRequest, BithumbBatchOrdersResult, BithumbClosedOrder,
+    BithumbClosedOrderState, BithumbClosedOrdersRequest, BithumbKrwDeposit,
     BithumbKrwDepositsRequest, BithumbKrwTransferRequest, BithumbKrwWithdrawal,
     BithumbKrwWithdrawalsRequest, BithumbMarketAlert, BithumbNetworkFee, BithumbNotice,
-    BithumbOrderDirection, BithumbPendingOrderState, BithumbPendingOrdersRequest, BithumbTwapOrder,
-    BithumbTwapOrderDirection, BithumbTwapOrderRequest, BithumbTwapOrdersRequest, BithumbTwapState,
-    HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind, HyperliquidMidPrice,
-    UpbitBatchCancelRequest, UpbitBatchCancelScope, UpbitCancelAndNewOrder,
-    UpbitCancelAndNewOrderRequest, UpbitCancelAndNewOrderResult, UpbitDepositInfo,
-    UpbitMarketEvent, UpbitOrderBookInstrument, UpbitOrderDirection, UpbitOrderReference,
-    UpbitOrderVolume, UpbitSmpType, UpbitTravelRuleVasp, UpbitTravelRuleVerification,
-    UpbitYearCandle,
+    BithumbOrderDetail, BithumbOrderDetailRequest, BithumbOrderDetailTrade, BithumbOrderDirection,
+    BithumbOrderListItem, BithumbOrderListRequest, BithumbOrderListState, BithumbPendingOrderState,
+    BithumbPendingOrdersRequest, BithumbTwapOrder, BithumbTwapOrderDirection,
+    BithumbTwapOrderRequest, BithumbTwapOrdersRequest, BithumbTwapState, BithumbWithdrawalAddress,
+    HyperliquidAssetContext, HyperliquidDailyVolume, HyperliquidLedgerEntry, HyperliquidLedgerKind,
+    HyperliquidMidPrice, HyperliquidOpenOrder, HyperliquidOrderDetail, HyperliquidOrderInfo,
+    HyperliquidOrderReference, HyperliquidOrderStatusResponse, HyperliquidPortfolioPeriod,
+    HyperliquidPortfolioPoint, HyperliquidReferral, HyperliquidReferrer, HyperliquidSubAccount,
+    HyperliquidUserFees, HyperliquidUserFill, HyperliquidUserRateLimit, HyperliquidUserRole,
+    HyperliquidVaultEquity, UpbitApiKey, UpbitBatchCancelRequest, UpbitBatchCancelScope,
+    UpbitCancelAndNewOrder, UpbitCancelAndNewOrderRequest, UpbitCancelAndNewOrderResult,
+    UpbitClosedOrder, UpbitClosedOrderState, UpbitClosedOrdersRequest, UpbitDepositInfo,
+    UpbitKrwDeposit, UpbitKrwTransferRequest, UpbitKrwTwoFactorType, UpbitKrwWithdrawal,
+    UpbitMarketEvent, UpbitOrderBookInstrument, UpbitOrderDetail, UpbitOrderDetailRequest,
+    UpbitOrderDetailTrade, UpbitOrderDirection, UpbitOrderReference, UpbitOrderVolume, UpbitPocket,
+    UpbitPocketApiKey, UpbitPocketApiKeyGroup, UpbitPocketApiKeysRequest, UpbitPocketBalance,
+    UpbitPocketTransfer, UpbitPocketTransferDirection, UpbitPocketTransferOrder,
+    UpbitPocketTransferQuery, UpbitPocketTransferRequest, UpbitPocketTransferState,
+    UpbitPocketUniversalTransferRequest, UpbitSmpType, UpbitTravelRuleVasp,
+    UpbitTravelRuleVerification, UpbitYearCandle,
 };
 use maxt::{
     AccountEvent, AssetNetwork, Balance, CancelOrdersRequest, CancelOrdersResult, CancelledOrder,
@@ -205,6 +220,22 @@ pub(crate) struct WireSubscription {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitListedSubscription {
+    pub(crate) feed_type: String,
+    pub(crate) markets: Vec<WireMarket>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) level: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitSubscriptionList {
+    pub(crate) ticket: String,
+    pub(crate) subscriptions: Vec<WireUpbitListedSubscription>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct WireStreamConfig {
     #[serde(deserialize_with = "explicit_option")]
     pub(crate) max_reconnect_attempts: Option<u32>,
@@ -271,6 +302,110 @@ pub(crate) struct WireUpbitOrderBookInstrument {
     pub(crate) quote_currency: String,
     pub(crate) tick_size: String,
     pub(crate) supported_levels: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitOrderDetailRequest {
+    pub(crate) market: WireMarket,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) uuid: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) identifier: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitOrderDetailTrade {
+    pub(crate) market: WireMarket,
+    pub(crate) uuid: String,
+    pub(crate) price: String,
+    pub(crate) volume: String,
+    pub(crate) funds: String,
+    pub(crate) trend: String,
+    pub(crate) created_at: String,
+    pub(crate) side: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitOrderDetail {
+    pub(crate) market: WireMarket,
+    pub(crate) uuid: String,
+    pub(crate) side: String,
+    pub(crate) order_type: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) price: Option<String>,
+    pub(crate) state: String,
+    pub(crate) created_at: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) volume: Option<String>,
+    pub(crate) remaining_volume: String,
+    pub(crate) executed_volume: String,
+    pub(crate) reserved_fee: String,
+    pub(crate) remaining_fee: String,
+    pub(crate) paid_fee: String,
+    pub(crate) locked: String,
+    pub(crate) trades_count: u32,
+    pub(crate) prevented_volume: String,
+    pub(crate) prevented_locked: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) time_in_force: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) identifier: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) smp_type: Option<String>,
+    pub(crate) trades: Vec<WireUpbitOrderDetailTrade>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitClosedOrdersRequest {
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) market: Option<WireMarket>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) state: Option<String>,
+    pub(crate) states: Vec<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) start_time: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) end_time: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) limit: Option<u32>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) order_by: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitClosedOrder {
+    pub(crate) market: WireMarket,
+    pub(crate) uuid: String,
+    pub(crate) side: String,
+    pub(crate) ord_type: String,
+    pub(crate) state: String,
+    pub(crate) created_at: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) volume: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) price: Option<String>,
+    pub(crate) remaining_volume: String,
+    pub(crate) executed_volume: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) executed_funds: Option<String>,
+    pub(crate) reserved_fee: String,
+    pub(crate) remaining_fee: String,
+    pub(crate) paid_fee: String,
+    pub(crate) locked: String,
+    pub(crate) trades_count: u32,
+    pub(crate) prevented_volume: String,
+    pub(crate) prevented_locked: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) time_in_force: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) identifier: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) smp_type: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -390,6 +525,162 @@ pub(crate) struct WireUpbitCancelAndNewOrderResult {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitKrwTransferRequest {
+    pub(crate) amount: String,
+    pub(crate) two_factor_type: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitKrwDeposit {
+    pub(crate) transfer_type: String,
+    pub(crate) uuid: String,
+    pub(crate) currency: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) net_type: Option<String>,
+    pub(crate) txid: String,
+    pub(crate) state: String,
+    pub(crate) created_at: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) done_at: Option<String>,
+    pub(crate) amount: String,
+    pub(crate) fee: String,
+    pub(crate) transaction_type: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitKrwWithdrawal {
+    pub(crate) transfer_type: String,
+    pub(crate) uuid: String,
+    pub(crate) currency: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) net_type: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) txid: Option<String>,
+    pub(crate) state: String,
+    pub(crate) created_at: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) done_at: Option<String>,
+    pub(crate) amount: String,
+    pub(crate) fee: String,
+    pub(crate) transaction_type: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) is_cancelable: Option<bool>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitApiKey {
+    pub(crate) access_key: String,
+    pub(crate) expires_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitPocket {
+    pub(crate) uuid: String,
+    pub(crate) name: String,
+    pub(crate) kind: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitPocketApiKey {
+    pub(crate) access_key: String,
+    pub(crate) permissions: Vec<String>,
+    pub(crate) allowed_ips: Vec<String>,
+    pub(crate) created_at: String,
+    pub(crate) expired_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitPocketApiKeyGroup {
+    pub(crate) uuid: String,
+    pub(crate) keys: Vec<WireUpbitPocketApiKey>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitPocketApiKeysRequest {
+    pub(crate) uuids: Vec<String>,
+    pub(crate) include_expired: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitPocketBalance {
+    pub(crate) currency: String,
+    pub(crate) balance: String,
+    pub(crate) locked: String,
+    pub(crate) avg_buy_price: String,
+    pub(crate) avg_buy_price_modified: bool,
+    pub(crate) unit_currency: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitPocketTransferQuery {
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) from: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) to: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) direction: Option<String>,
+    pub(crate) states: Vec<String>,
+    pub(crate) uuids: Vec<String>,
+    pub(crate) identifiers: Vec<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) start_time: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) end_time: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) currency: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) limit: Option<u32>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) order_by: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitPocketUniversalTransferRequest {
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) from: Option<String>,
+    pub(crate) to: String,
+    pub(crate) currency: String,
+    pub(crate) amount: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) identifier: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitPocketTransferRequest {
+    pub(crate) to: String,
+    pub(crate) currency: String,
+    pub(crate) amount: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) identifier: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireUpbitPocketTransfer {
+    pub(crate) uuid: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) identifier: Option<String>,
+    pub(crate) from: String,
+    pub(crate) to: String,
+    pub(crate) state: String,
+    pub(crate) currency: String,
+    pub(crate) amount: String,
+    pub(crate) created_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[allow(dead_code, reason = "Task 9 제공자 브리지 입력으로 사용될 예정")]
 pub(crate) struct WireBithumbMarketAlert {
     pub(crate) kind: String,
@@ -505,6 +796,59 @@ pub(crate) struct WireBithumbPendingOrdersRequest {
     pub(crate) order_by: Option<String>,
     #[serde(deserialize_with = "explicit_option")]
     pub(crate) cursor: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBithumbClosedOrdersRequest {
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) market: Option<WireMarket>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) state: Option<String>,
+    pub(crate) states: Vec<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) start_time: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) end_time: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) limit: Option<u32>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) order_by: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) cursor: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBithumbClosedOrder {
+    pub(crate) order_id: String,
+    pub(crate) side: String,
+    pub(crate) order_type: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) price: Option<String>,
+    pub(crate) state: String,
+    pub(crate) market: WireMarket,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) created_at: Option<String>,
+    pub(crate) volume: String,
+    pub(crate) remaining_volume: String,
+    pub(crate) reserved_fee: String,
+    pub(crate) remaining_fee: String,
+    pub(crate) paid_fee: String,
+    pub(crate) locked: String,
+    pub(crate) executed_volume: String,
+    pub(crate) executed_funds: String,
+    pub(crate) trades_count: u32,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) client_order_id: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) stp_type: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) time_in_force: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) cancel_type: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) canceling_order_id: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -630,6 +974,129 @@ pub(crate) struct WireBithumbNetworkFee {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+pub(crate) struct WireBithumbWithdrawalAddress {
+    pub(crate) currency: String,
+    pub(crate) net_type: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) network_name: Option<String>,
+    pub(crate) withdraw_address: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) secondary_address: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) exchange_name: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) owner_type: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) owner_ko_name: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) owner_en_name: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) owner_corp_ko_name: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) owner_corp_en_name: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBithumbOrderDetailRequest {
+    pub(crate) market: WireMarket,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) uuid: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) client_order_id: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBithumbOrderDetailTrade {
+    pub(crate) market: WireMarket,
+    pub(crate) uuid: String,
+    pub(crate) price: String,
+    pub(crate) volume: String,
+    pub(crate) funds: String,
+    pub(crate) side: String,
+    pub(crate) created_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBithumbOrderDetail {
+    pub(crate) uuid: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) client_order_id: Option<String>,
+    pub(crate) side: String,
+    pub(crate) order_type: String,
+    pub(crate) price: String,
+    pub(crate) state: String,
+    pub(crate) market: WireMarket,
+    pub(crate) created_at: String,
+    pub(crate) volume: String,
+    pub(crate) remaining_volume: String,
+    pub(crate) reserved_fee: String,
+    pub(crate) remaining_fee: String,
+    pub(crate) paid_fee: String,
+    pub(crate) locked: String,
+    pub(crate) executed_volume: String,
+    pub(crate) executed_funds: String,
+    pub(crate) trades_count: u32,
+    pub(crate) trades: Vec<WireBithumbOrderDetailTrade>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) stp_type: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) cancel_type: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) canceling_uuid: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) time_in_force: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBithumbOrderListRequest {
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) market: Option<WireMarket>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) state: Option<String>,
+    pub(crate) states: Vec<String>,
+    pub(crate) uuids: Vec<String>,
+    pub(crate) client_order_ids: Vec<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) page: Option<u32>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) limit: Option<u32>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) order_by: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBithumbOrderListItem {
+    pub(crate) uuid: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) client_order_id: Option<String>,
+    pub(crate) side: String,
+    pub(crate) order_type: String,
+    pub(crate) price: String,
+    pub(crate) state: String,
+    pub(crate) market: WireMarket,
+    pub(crate) created_at: String,
+    pub(crate) volume: String,
+    pub(crate) remaining_volume: String,
+    pub(crate) reserved_fee: String,
+    pub(crate) remaining_fee: String,
+    pub(crate) paid_fee: String,
+    pub(crate) locked: String,
+    pub(crate) executed_volume: String,
+    pub(crate) executed_funds: String,
+    pub(crate) trades_count: u32,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) stp_type: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) time_in_force: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[allow(dead_code, reason = "Task 9 제공자 브리지 입력으로 사용될 예정")]
 pub(crate) struct WireBinanceSymbolFilters {
     pub(crate) symbol: String,
@@ -660,6 +1127,15 @@ pub(crate) struct WireBinanceSpotOrderDetail {
     pub(crate) filled_quote_quantity: String,
     #[serde(deserialize_with = "explicit_option")]
     pub(crate) updated_at: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceSpotAveragePrice {
+    pub(crate) market: WireMarket,
+    pub(crate) minutes: u32,
+    pub(crate) price: String,
+    pub(crate) close_time: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -715,6 +1191,124 @@ pub(crate) struct WireBinanceAggregateTrade {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceAccountTrade {
+    pub(crate) market: WireMarket,
+    pub(crate) id: String,
+    pub(crate) order_id: String,
+    pub(crate) timestamp: String,
+    pub(crate) side: String,
+    pub(crate) maker: bool,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) best_match: Option<bool>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) order_list_id: Option<String>,
+    pub(crate) price: String,
+    pub(crate) quantity: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) quote_quantity: Option<String>,
+    pub(crate) commission: String,
+    pub(crate) commission_asset: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) realized_pnl: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) position_side: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) pair: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) base_quantity: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) margin_asset: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceTestOrderRequest {
+    pub(crate) order: WireOrderRequest,
+    pub(crate) compute_commission_rates: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceTestOrder {
+    pub(crate) response_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceC2cTradeHistoryRequest {
+    pub(crate) trade_type: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) start_timestamp: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) end_timestamp: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) page: Option<u32>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) rows: Option<u32>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) recv_window: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceC2cTrade {
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) order_number: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) adv_no: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) trade_type: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) asset: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) fiat: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) fiat_symbol: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) amount: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) total_price: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) unit_price: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) order_status: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) created_at: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) commission: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) counterparty_nickname: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) pay_method_name: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) additional_kyc_verify: Option<u32>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) taker_commission_rate: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) taker_commission: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) taker_amount: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) advertisement_role: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireBinanceC2cTradeHistoryPage {
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) code: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) message: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) data: Option<Vec<WireBinanceC2cTrade>>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) total: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) success: Option<bool>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[allow(dead_code, reason = "Task 9 제공자 브리지 입력으로 사용될 예정")]
 pub(crate) struct WireHyperliquidLedgerEntry {
     pub(crate) kind: String,
@@ -753,6 +1347,201 @@ pub(crate) struct WireHyperliquidAssetContext {
 pub(crate) struct WireHyperliquidMidPrice {
     pub(crate) market: WireMarket,
     pub(crate) price: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidUserRateLimit {
+    pub(crate) cumulative_volume: String,
+    pub(crate) requests_used: String,
+    pub(crate) requests_cap: String,
+    pub(crate) requests_surplus: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub(crate) enum WireHyperliquidUserRole {
+    User,
+    Agent {
+        #[serde(deserialize_with = "explicit_option")]
+        user: Option<String>,
+    },
+    Vault,
+    SubAccount {
+        #[serde(deserialize_with = "explicit_option")]
+        master: Option<String>,
+    },
+    Missing,
+    Other {
+        role: String,
+        #[serde(deserialize_with = "explicit_option")]
+        data_json: Option<String>,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidReferrer {
+    pub(crate) address: String,
+    pub(crate) code: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidReferral {
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) referred_by: Option<WireHyperliquidReferrer>,
+    pub(crate) cumulative_volume: String,
+    pub(crate) unclaimed_rewards: String,
+    pub(crate) claimed_rewards: String,
+    pub(crate) builder_rewards: String,
+    pub(crate) referrer_state_json: String,
+    pub(crate) reward_history_json: String,
+    pub(crate) token_to_state_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidDailyVolume {
+    pub(crate) date: String,
+    pub(crate) user_cross: String,
+    pub(crate) user_add: String,
+    pub(crate) exchange: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidUserFees {
+    pub(crate) daily_volumes: Vec<WireHyperliquidDailyVolume>,
+    pub(crate) fee_schedule_json: String,
+    pub(crate) user_cross_rate: String,
+    pub(crate) user_add_rate: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) user_spot_cross_rate: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) user_spot_add_rate: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) active_referral_discount: Option<String>,
+    pub(crate) details_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidUserFill {
+    pub(crate) coin: String,
+    pub(crate) price: String,
+    pub(crate) size: String,
+    pub(crate) side: String,
+    pub(crate) time: String,
+    pub(crate) start_position: String,
+    pub(crate) direction: String,
+    pub(crate) closed_pnl: String,
+    pub(crate) hash: String,
+    pub(crate) order_id: String,
+    pub(crate) crossed: bool,
+    pub(crate) fee: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) builder_fee: Option<String>,
+    pub(crate) trade_id: String,
+    pub(crate) fee_token: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) twap_id: Option<String>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub(crate) enum WireHyperliquidOrderReference {
+    OrderId { value: String },
+    ClientOrderId { value: String },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidOpenOrder {
+    pub(crate) coin: String,
+    pub(crate) limit_price: String,
+    pub(crate) order_id: String,
+    pub(crate) side: String,
+    pub(crate) size: String,
+    pub(crate) timestamp: String,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidOrderDetail {
+    pub(crate) coin: String,
+    pub(crate) side: String,
+    pub(crate) limit_price: String,
+    pub(crate) size: String,
+    pub(crate) order_id: String,
+    pub(crate) timestamp: String,
+    pub(crate) trigger_condition: String,
+    pub(crate) is_trigger: bool,
+    pub(crate) trigger_price: String,
+    pub(crate) children_json: String,
+    pub(crate) is_position_tpsl: bool,
+    pub(crate) reduce_only: bool,
+    pub(crate) order_type: String,
+    pub(crate) original_size: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) time_in_force: Option<String>,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) client_order_id: Option<String>,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidOrderInfo {
+    pub(crate) order: WireHyperliquidOrderDetail,
+    pub(crate) status: String,
+    pub(crate) status_timestamp: String,
+    pub(crate) raw_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub(crate) enum WireHyperliquidOrderStatusResponse {
+    Order { value: WireHyperliquidOrderInfo },
+    UnknownOrder,
+    Other { status: String, raw_json: String },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidPortfolioPoint {
+    pub(crate) time: String,
+    pub(crate) value: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidPortfolioPeriod {
+    pub(crate) period: String,
+    pub(crate) account_value_history: Vec<WireHyperliquidPortfolioPoint>,
+    pub(crate) pnl_history: Vec<WireHyperliquidPortfolioPoint>,
+    pub(crate) volume: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidSubAccount {
+    pub(crate) name: String,
+    pub(crate) user: String,
+    pub(crate) master: String,
+    pub(crate) perpetual_state_json: String,
+    pub(crate) spot_state_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WireHyperliquidVaultEquity {
+    pub(crate) vault_address: String,
+    pub(crate) equity: String,
+    #[serde(deserialize_with = "explicit_option")]
+    pub(crate) locked_until: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1477,6 +2266,66 @@ impl TryFrom<WireBithumbPendingOrdersRequest> for BithumbPendingOrdersRequest {
     }
 }
 
+impl TryFrom<WireBithumbClosedOrdersRequest> for BithumbClosedOrdersRequest {
+    type Error = Error;
+
+    fn try_from(value: WireBithumbClosedOrdersRequest) -> Result<Self, Self::Error> {
+        let closed_order_state = |value: &str, field| match value {
+            "done" => Ok(BithumbClosedOrderState::Done),
+            "cancel" => Ok(BithumbClosedOrderState::Cancel),
+            _ => Err(invalid_enum(field, value)),
+        };
+        Ok(Self {
+            market: value.market.map(TryInto::try_into).transpose()?,
+            state: value
+                .state
+                .as_deref()
+                .map(|value| closed_order_state(value, "state"))
+                .transpose()?,
+            states: value
+                .states
+                .iter()
+                .map(|value| closed_order_state(value, "states"))
+                .collect::<Result<_, _>>()?,
+            start_time: timestamp_option_from_wire(value.start_time, "start_time")?,
+            end_time: timestamp_option_from_wire(value.end_time, "end_time")?,
+            limit: value.limit,
+            order_by: bithumb_order_direction_from_wire(value.order_by)?,
+            cursor: value.cursor.map(Cursor::new),
+        })
+    }
+}
+
+impl TryFrom<BithumbClosedOrder> for WireBithumbClosedOrder {
+    type Error = Error;
+
+    fn try_from(value: BithumbClosedOrder) -> Result<Self, Self::Error> {
+        Ok(Self {
+            order_id: value.order_id,
+            side: value.side,
+            order_type: value.order_type,
+            price: decimal_option_to_wire(value.price),
+            state: value.state,
+            market: value.market.try_into()?,
+            created_at: timestamp_option_to_wire(value.created_at),
+            volume: decimal_to_wire(value.volume),
+            remaining_volume: decimal_to_wire(value.remaining_volume),
+            reserved_fee: decimal_to_wire(value.reserved_fee),
+            remaining_fee: decimal_to_wire(value.remaining_fee),
+            paid_fee: decimal_to_wire(value.paid_fee),
+            locked: decimal_to_wire(value.locked),
+            executed_volume: decimal_to_wire(value.executed_volume),
+            executed_funds: decimal_to_wire(value.executed_funds),
+            trades_count: value.trades_count,
+            client_order_id: value.client_order_id,
+            stp_type: value.stp_type,
+            time_in_force: value.time_in_force,
+            cancel_type: value.cancel_type,
+            canceling_order_id: value.canceling_order_id,
+        })
+    }
+}
+
 fn bithumb_order_direction_from_wire(
     value: Option<String>,
 ) -> Result<Option<BithumbOrderDirection>, Error> {
@@ -1488,6 +2337,19 @@ fn bithumb_order_direction_from_wire(
             _ => Err(invalid_enum("order_by", value)),
         })
         .transpose()
+}
+
+fn bithumb_order_list_state_from_wire(
+    value: &str,
+    field: &str,
+) -> Result<BithumbOrderListState, Error> {
+    match value {
+        "wait" => Ok(BithumbOrderListState::Wait),
+        "watch" => Ok(BithumbOrderListState::Watch),
+        "done" => Ok(BithumbOrderListState::Done),
+        "cancel" => Ok(BithumbOrderListState::Cancel),
+        _ => Err(invalid_enum(field, value)),
+    }
 }
 
 impl TryFrom<WireBithumbKrwWithdrawalsRequest> for BithumbKrwWithdrawalsRequest {
@@ -1821,6 +2683,123 @@ impl TryFrom<BinanceAggregateTrade> for WireBinanceAggregateTrade {
             quantity: decimal_to_wire(value.quantity),
             normal_quantity: decimal_option_to_wire(value.normal_quantity),
             taker_side: side_to_wire(value.taker_side).to_owned(),
+        })
+    }
+}
+
+impl TryFrom<BinanceAccountTrade> for WireBinanceAccountTrade {
+    type Error = Error;
+
+    fn try_from(value: BinanceAccountTrade) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.try_into()?,
+            id: value.id,
+            order_id: value.order_id,
+            timestamp: timestamp_to_wire(value.timestamp),
+            side: side_to_wire(value.side).to_owned(),
+            maker: value.maker,
+            best_match: value.best_match,
+            order_list_id: value.order_list_id,
+            price: decimal_to_wire(value.price),
+            quantity: decimal_to_wire(value.quantity),
+            quote_quantity: decimal_option_to_wire(value.quote_quantity),
+            commission: decimal_to_wire(value.commission),
+            commission_asset: value.commission_asset,
+            realized_pnl: decimal_option_to_wire(value.realized_pnl),
+            position_side: value.position_side,
+            pair: value.pair,
+            base_quantity: decimal_option_to_wire(value.base_quantity),
+            margin_asset: value.margin_asset,
+        })
+    }
+}
+
+impl TryFrom<WireBinanceTestOrderRequest> for BinanceTestOrderRequest {
+    type Error = Error;
+
+    fn try_from(value: WireBinanceTestOrderRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            order: value.order.try_into()?,
+            compute_commission_rates: value.compute_commission_rates,
+        })
+    }
+}
+
+impl TryFrom<BinanceTestOrder> for WireBinanceTestOrder {
+    type Error = Error;
+
+    fn try_from(value: BinanceTestOrder) -> Result<Self, Self::Error> {
+        Ok(Self {
+            response_json: value.response_json,
+        })
+    }
+}
+
+impl TryFrom<WireBinanceC2cTradeHistoryRequest> for BinanceC2cTradeHistoryRequest {
+    type Error = Error;
+
+    fn try_from(value: WireBinanceC2cTradeHistoryRequest) -> Result<Self, Self::Error> {
+        let trade_type = match value.trade_type.as_str() {
+            "BUY" => BinanceC2cTradeType::Buy,
+            "SELL" => BinanceC2cTradeType::Sell,
+            _ => return Err(invalid_enum("trade_type", &value.trade_type)),
+        };
+        Ok(Self {
+            trade_type,
+            start_timestamp: timestamp_option_from_wire(value.start_timestamp, "start_timestamp")?,
+            end_timestamp: timestamp_option_from_wire(value.end_timestamp, "end_timestamp")?,
+            page: value.page,
+            rows: value.rows,
+            recv_window: value
+                .recv_window
+                .as_deref()
+                .map(|value| u64_from_wire(value, "recv_window"))
+                .transpose()?,
+        })
+    }
+}
+
+impl TryFrom<BinanceC2cTrade> for WireBinanceC2cTrade {
+    type Error = Error;
+
+    fn try_from(value: BinanceC2cTrade) -> Result<Self, Self::Error> {
+        Ok(Self {
+            order_number: value.order_number,
+            adv_no: value.adv_no,
+            trade_type: value.trade_type,
+            asset: value.asset,
+            fiat: value.fiat,
+            fiat_symbol: value.fiat_symbol,
+            amount: decimal_option_to_wire(value.amount),
+            total_price: decimal_option_to_wire(value.total_price),
+            unit_price: decimal_option_to_wire(value.unit_price),
+            order_status: value.order_status,
+            created_at: timestamp_option_to_wire(value.created_at),
+            commission: decimal_option_to_wire(value.commission),
+            counterparty_nickname: value.counterparty_nickname,
+            pay_method_name: value.pay_method_name,
+            additional_kyc_verify: value.additional_kyc_verify,
+            taker_commission_rate: decimal_option_to_wire(value.taker_commission_rate),
+            taker_commission: decimal_option_to_wire(value.taker_commission),
+            taker_amount: decimal_option_to_wire(value.taker_amount),
+            advertisement_role: value.advertisement_role,
+        })
+    }
+}
+
+impl TryFrom<BinanceC2cTradeHistoryPage> for WireBinanceC2cTradeHistoryPage {
+    type Error = Error;
+
+    fn try_from(value: BinanceC2cTradeHistoryPage) -> Result<Self, Self::Error> {
+        Ok(Self {
+            code: value.code,
+            message: value.message,
+            data: value
+                .data
+                .map(|values| values.into_iter().map(TryInto::try_into).collect())
+                .transpose()?,
+            total: value.total.map(|value| value.to_string()),
+            success: value.success,
         })
     }
 }
@@ -2247,6 +3226,37 @@ impl TryFrom<WireSubscription> for Subscription {
     }
 }
 
+impl TryFrom<maxt::UpbitListedSubscription> for WireUpbitListedSubscription {
+    type Error = Error;
+
+    fn try_from(value: maxt::UpbitListedSubscription) -> Result<Self, Self::Error> {
+        Ok(Self {
+            feed_type: value.feed_type,
+            markets: value
+                .markets
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<maxt::Result<_>>()?,
+            level: value.level.map(decimal_to_wire),
+        })
+    }
+}
+
+impl TryFrom<maxt::UpbitSubscriptionList> for WireUpbitSubscriptionList {
+    type Error = Error;
+
+    fn try_from(value: maxt::UpbitSubscriptionList) -> Result<Self, Self::Error> {
+        Ok(Self {
+            ticket: value.ticket,
+            subscriptions: value
+                .subscriptions
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<maxt::Result<_>>()?,
+        })
+    }
+}
+
 impl TryFrom<StreamConfig> for WireStreamConfig {
     type Error = Error;
 
@@ -2397,6 +3407,149 @@ impl TryFrom<UpbitOrderBookInstrument> for WireUpbitOrderBookInstrument {
     }
 }
 
+impl TryFrom<WireUpbitOrderDetailRequest> for UpbitOrderDetailRequest {
+    type Error = Error;
+
+    fn try_from(value: WireUpbitOrderDetailRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.try_into()?,
+            uuid: value.uuid,
+            identifier: value.identifier,
+        })
+    }
+}
+
+impl TryFrom<UpbitOrderDetailTrade> for WireUpbitOrderDetailTrade {
+    type Error = Error;
+
+    fn try_from(value: UpbitOrderDetailTrade) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.try_into()?,
+            uuid: value.uuid,
+            price: decimal_to_wire(value.price),
+            volume: decimal_to_wire(value.volume),
+            funds: decimal_to_wire(value.funds),
+            trend: value.trend,
+            created_at: timestamp_to_wire(value.created_at),
+            side: value.side,
+        })
+    }
+}
+
+impl TryFrom<UpbitOrderDetail> for WireUpbitOrderDetail {
+    type Error = Error;
+
+    fn try_from(value: UpbitOrderDetail) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.try_into()?,
+            uuid: value.uuid,
+            side: value.side,
+            order_type: value.order_type,
+            price: decimal_option_to_wire(value.price),
+            state: value.state,
+            created_at: timestamp_to_wire(value.created_at),
+            volume: decimal_option_to_wire(value.volume),
+            remaining_volume: decimal_to_wire(value.remaining_volume),
+            executed_volume: decimal_to_wire(value.executed_volume),
+            reserved_fee: decimal_to_wire(value.reserved_fee),
+            remaining_fee: decimal_to_wire(value.remaining_fee),
+            paid_fee: decimal_to_wire(value.paid_fee),
+            locked: decimal_to_wire(value.locked),
+            trades_count: value.trades_count,
+            prevented_volume: decimal_to_wire(value.prevented_volume),
+            prevented_locked: decimal_to_wire(value.prevented_locked),
+            time_in_force: value.time_in_force,
+            identifier: value.identifier,
+            smp_type: value.smp_type,
+            trades: value
+                .trades
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+        })
+    }
+}
+
+impl TryFrom<WireUpbitClosedOrdersRequest> for UpbitClosedOrdersRequest {
+    type Error = Error;
+
+    fn try_from(value: WireUpbitClosedOrdersRequest) -> Result<Self, Self::Error> {
+        let state = value
+            .state
+            .as_deref()
+            .map(|value| match value {
+                "done" => Ok(UpbitClosedOrderState::Done),
+                "cancel" => Ok(UpbitClosedOrderState::Cancel),
+                _ => Err(invalid_enum("state", value)),
+            })
+            .transpose()?;
+        let states = value
+            .states
+            .into_iter()
+            .map(|value| match value.as_str() {
+                "done" => Ok(UpbitClosedOrderState::Done),
+                "cancel" => Ok(UpbitClosedOrderState::Cancel),
+                _ => Err(invalid_enum("states", &value)),
+            })
+            .collect::<Result<_, _>>()?;
+        Ok(Self {
+            market: value.market.map(TryInto::try_into).transpose()?,
+            state,
+            states,
+            start_time: value
+                .start_time
+                .as_deref()
+                .map(|value| timestamp_from_wire(value, "start_time"))
+                .transpose()?,
+            end_time: value
+                .end_time
+                .as_deref()
+                .map(|value| timestamp_from_wire(value, "end_time"))
+                .transpose()?,
+            limit: value.limit,
+            order_by: value
+                .order_by
+                .as_deref()
+                .map(|value| match value {
+                    "asc" => Ok(UpbitOrderDirection::Ascending),
+                    "desc" => Ok(UpbitOrderDirection::Descending),
+                    _ => Err(invalid_enum("order_by", value)),
+                })
+                .transpose()?,
+        })
+    }
+}
+
+impl TryFrom<UpbitClosedOrder> for WireUpbitClosedOrder {
+    type Error = Error;
+
+    fn try_from(value: UpbitClosedOrder) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.try_into()?,
+            uuid: value.uuid,
+            side: value.side,
+            ord_type: value.ord_type,
+            state: value.state,
+            created_at: timestamp_to_wire(value.created_at),
+            volume: decimal_option_to_wire(value.volume),
+            price: decimal_option_to_wire(value.price),
+            remaining_volume: decimal_to_wire(value.remaining_volume),
+            executed_volume: decimal_to_wire(value.executed_volume),
+            executed_funds: decimal_option_to_wire(value.executed_funds),
+            reserved_fee: decimal_to_wire(value.reserved_fee),
+            remaining_fee: decimal_to_wire(value.remaining_fee),
+            paid_fee: decimal_to_wire(value.paid_fee),
+            locked: decimal_to_wire(value.locked),
+            trades_count: value.trades_count,
+            prevented_volume: decimal_to_wire(value.prevented_volume),
+            prevented_locked: decimal_to_wire(value.prevented_locked),
+            time_in_force: value.time_in_force,
+            identifier: value.identifier,
+            smp_type: value.smp_type,
+        })
+    }
+}
+
 impl TryFrom<UpbitDepositInfo> for WireUpbitDepositInfo {
     type Error = Error;
 
@@ -2435,6 +3588,236 @@ impl TryFrom<UpbitTravelRuleVerification> for WireUpbitTravelRuleVerification {
             deposit_uuid: value.deposit_uuid,
             deposit_state: value.deposit_state,
             verification_result: value.verification_result,
+        })
+    }
+}
+
+impl TryFrom<WireUpbitKrwTransferRequest> for UpbitKrwTransferRequest {
+    type Error = Error;
+
+    fn try_from(value: WireUpbitKrwTransferRequest) -> Result<Self, Self::Error> {
+        let two_factor_type = match value.two_factor_type.as_str() {
+            "kakao" => UpbitKrwTwoFactorType::Kakao,
+            "naver" => UpbitKrwTwoFactorType::Naver,
+            "hana" => UpbitKrwTwoFactorType::Hana,
+            value => return Err(invalid_enum("two_factor_type", value)),
+        };
+        Ok(Self::new(
+            decimal_from_wire(&value.amount, "amount")?,
+            two_factor_type,
+        ))
+    }
+}
+
+impl TryFrom<UpbitPocket> for WireUpbitPocket {
+    type Error = Error;
+
+    fn try_from(value: UpbitPocket) -> Result<Self, Self::Error> {
+        Ok(Self {
+            uuid: value.uuid,
+            name: value.name,
+            kind: value.kind,
+        })
+    }
+}
+
+impl TryFrom<UpbitPocketApiKey> for WireUpbitPocketApiKey {
+    type Error = Error;
+
+    fn try_from(value: UpbitPocketApiKey) -> Result<Self, Self::Error> {
+        Ok(Self {
+            access_key: value.access_key,
+            permissions: value.permissions,
+            allowed_ips: value.allowed_ips,
+            created_at: timestamp_to_wire(value.created_at),
+            expired_at: timestamp_to_wire(value.expired_at),
+        })
+    }
+}
+
+impl TryFrom<UpbitPocketApiKeyGroup> for WireUpbitPocketApiKeyGroup {
+    type Error = Error;
+
+    fn try_from(value: UpbitPocketApiKeyGroup) -> Result<Self, Self::Error> {
+        Ok(Self {
+            uuid: value.uuid,
+            keys: value
+                .keys
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+        })
+    }
+}
+
+impl TryFrom<WireUpbitPocketApiKeysRequest> for UpbitPocketApiKeysRequest {
+    type Error = Error;
+
+    fn try_from(value: WireUpbitPocketApiKeysRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            uuids: value.uuids,
+            include_expired: value.include_expired,
+        })
+    }
+}
+
+impl TryFrom<UpbitPocketBalance> for WireUpbitPocketBalance {
+    type Error = Error;
+
+    fn try_from(value: UpbitPocketBalance) -> Result<Self, Self::Error> {
+        Ok(Self {
+            currency: value.currency,
+            balance: decimal_to_wire(value.balance),
+            locked: decimal_to_wire(value.locked),
+            avg_buy_price: decimal_to_wire(value.avg_buy_price),
+            avg_buy_price_modified: value.avg_buy_price_modified,
+            unit_currency: value.unit_currency,
+        })
+    }
+}
+
+impl TryFrom<WireUpbitPocketTransferQuery> for UpbitPocketTransferQuery {
+    type Error = Error;
+
+    fn try_from(value: WireUpbitPocketTransferQuery) -> Result<Self, Self::Error> {
+        let direction = value
+            .direction
+            .as_deref()
+            .map(|value| match value {
+                "in" => Ok(UpbitPocketTransferDirection::Incoming),
+                "out" => Ok(UpbitPocketTransferDirection::Outgoing),
+                "all" => Ok(UpbitPocketTransferDirection::All),
+                _ => Err(invalid_enum("direction", value)),
+            })
+            .transpose()?;
+        let states = value
+            .states
+            .into_iter()
+            .map(|value| match value.as_str() {
+                "submitted" => Ok(UpbitPocketTransferState::Submitted),
+                "processing" => Ok(UpbitPocketTransferState::Processing),
+                "done" => Ok(UpbitPocketTransferState::Done),
+                "failed" => Ok(UpbitPocketTransferState::Failed),
+                _ => Err(invalid_enum("states", &value)),
+            })
+            .collect::<Result<_, _>>()?;
+        let order_by = value
+            .order_by
+            .as_deref()
+            .map(|value| match value {
+                "asc" => Ok(UpbitPocketTransferOrder::Ascending),
+                "desc" => Ok(UpbitPocketTransferOrder::Descending),
+                _ => Err(invalid_enum("order_by", value)),
+            })
+            .transpose()?;
+        Ok(UpbitPocketTransferQuery {
+            from: value.from,
+            to: value.to,
+            direction,
+            states,
+            uuids: value.uuids,
+            identifiers: value.identifiers,
+            start_time: timestamp_option_from_wire(value.start_time, "start_time")?,
+            end_time: timestamp_option_from_wire(value.end_time, "end_time")?,
+            currency: value.currency,
+            limit: value.limit,
+            order_by,
+        })
+    }
+}
+
+impl TryFrom<WireUpbitPocketUniversalTransferRequest> for UpbitPocketUniversalTransferRequest {
+    type Error = Error;
+
+    fn try_from(value: WireUpbitPocketUniversalTransferRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            from: value.from,
+            to: value.to,
+            currency: value.currency,
+            amount: decimal_from_wire(&value.amount, "amount")?,
+            identifier: value.identifier,
+        })
+    }
+}
+
+impl TryFrom<WireUpbitPocketTransferRequest> for UpbitPocketTransferRequest {
+    type Error = Error;
+
+    fn try_from(value: WireUpbitPocketTransferRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            to: value.to,
+            currency: value.currency,
+            amount: decimal_from_wire(&value.amount, "amount")?,
+            identifier: value.identifier,
+        })
+    }
+}
+
+impl TryFrom<UpbitPocketTransfer> for WireUpbitPocketTransfer {
+    type Error = Error;
+
+    fn try_from(value: UpbitPocketTransfer) -> Result<Self, Self::Error> {
+        Ok(Self {
+            uuid: value.uuid,
+            identifier: value.identifier,
+            from: value.from,
+            to: value.to,
+            state: value.state,
+            currency: value.currency,
+            amount: decimal_to_wire(value.amount),
+            created_at: timestamp_to_wire(value.created_at),
+        })
+    }
+}
+
+impl TryFrom<UpbitKrwDeposit> for WireUpbitKrwDeposit {
+    type Error = Error;
+
+    fn try_from(value: UpbitKrwDeposit) -> Result<Self, Self::Error> {
+        Ok(Self {
+            transfer_type: value.transfer_type,
+            uuid: value.uuid,
+            currency: value.currency,
+            net_type: value.net_type,
+            txid: value.txid,
+            state: value.state,
+            created_at: timestamp_to_wire(value.created_at),
+            done_at: timestamp_option_to_wire(value.done_at),
+            amount: decimal_to_wire(value.amount),
+            fee: decimal_to_wire(value.fee),
+            transaction_type: value.transaction_type,
+        })
+    }
+}
+
+impl TryFrom<UpbitKrwWithdrawal> for WireUpbitKrwWithdrawal {
+    type Error = Error;
+
+    fn try_from(value: UpbitKrwWithdrawal) -> Result<Self, Self::Error> {
+        Ok(Self {
+            transfer_type: value.transfer_type,
+            uuid: value.uuid,
+            currency: value.currency,
+            net_type: value.net_type,
+            txid: value.txid,
+            state: value.state,
+            created_at: timestamp_to_wire(value.created_at),
+            done_at: timestamp_option_to_wire(value.done_at),
+            amount: decimal_to_wire(value.amount),
+            fee: decimal_to_wire(value.fee),
+            transaction_type: value.transaction_type,
+            is_cancelable: value.is_cancelable,
+        })
+    }
+}
+
+impl TryFrom<UpbitApiKey> for WireUpbitApiKey {
+    type Error = Error;
+
+    fn try_from(value: UpbitApiKey) -> Result<Self, Self::Error> {
+        Ok(Self {
+            access_key: value.access_key,
+            expires_at: timestamp_to_wire(value.expires_at),
         })
     }
 }
@@ -2547,6 +3930,143 @@ impl TryFrom<BithumbNetworkFee> for WireBithumbNetworkFee {
     }
 }
 
+impl TryFrom<BithumbWithdrawalAddress> for WireBithumbWithdrawalAddress {
+    type Error = Error;
+
+    fn try_from(value: BithumbWithdrawalAddress) -> Result<Self, Self::Error> {
+        Ok(Self {
+            currency: value.currency,
+            net_type: value.net_type,
+            network_name: value.network_name,
+            withdraw_address: value.withdraw_address,
+            secondary_address: value.secondary_address,
+            exchange_name: value.exchange_name,
+            owner_type: value.owner_type,
+            owner_ko_name: value.owner_ko_name,
+            owner_en_name: value.owner_en_name,
+            owner_corp_ko_name: value.owner_corp_ko_name,
+            owner_corp_en_name: value.owner_corp_en_name,
+        })
+    }
+}
+
+impl TryFrom<WireBithumbOrderDetailRequest> for BithumbOrderDetailRequest {
+    type Error = Error;
+
+    fn try_from(value: WireBithumbOrderDetailRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.try_into()?,
+            uuid: value.uuid,
+            client_order_id: value.client_order_id,
+        })
+    }
+}
+
+impl TryFrom<WireBithumbOrderListRequest> for BithumbOrderListRequest {
+    type Error = Error;
+
+    fn try_from(value: WireBithumbOrderListRequest) -> Result<Self, Self::Error> {
+        let state = value
+            .state
+            .as_deref()
+            .map(|value| bithumb_order_list_state_from_wire(value, "state"))
+            .transpose()?;
+        Ok(Self {
+            market: value.market.map(TryInto::try_into).transpose()?,
+            state,
+            states: value
+                .states
+                .iter()
+                .map(|value| bithumb_order_list_state_from_wire(value, "states"))
+                .collect::<Result<_, _>>()?,
+            uuids: value.uuids,
+            client_order_ids: value.client_order_ids,
+            page: value.page,
+            limit: value.limit,
+            order_by: bithumb_order_direction_from_wire(value.order_by)?,
+        })
+    }
+}
+
+impl TryFrom<BithumbOrderDetailTrade> for WireBithumbOrderDetailTrade {
+    type Error = Error;
+
+    fn try_from(value: BithumbOrderDetailTrade) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.try_into()?,
+            uuid: value.uuid,
+            price: decimal_to_wire(value.price),
+            volume: decimal_to_wire(value.volume),
+            funds: decimal_to_wire(value.funds),
+            side: value.side,
+            created_at: timestamp_to_wire(value.created_at),
+        })
+    }
+}
+
+impl TryFrom<BithumbOrderDetail> for WireBithumbOrderDetail {
+    type Error = Error;
+
+    fn try_from(value: BithumbOrderDetail) -> Result<Self, Self::Error> {
+        Ok(Self {
+            uuid: value.uuid,
+            client_order_id: value.client_order_id,
+            side: value.side,
+            order_type: value.order_type,
+            price: decimal_to_wire(value.price),
+            state: value.state,
+            market: value.market.try_into()?,
+            created_at: timestamp_to_wire(value.created_at),
+            volume: decimal_to_wire(value.volume),
+            remaining_volume: decimal_to_wire(value.remaining_volume),
+            reserved_fee: decimal_to_wire(value.reserved_fee),
+            remaining_fee: decimal_to_wire(value.remaining_fee),
+            paid_fee: decimal_to_wire(value.paid_fee),
+            locked: decimal_to_wire(value.locked),
+            executed_volume: decimal_to_wire(value.executed_volume),
+            executed_funds: decimal_to_wire(value.executed_funds),
+            trades_count: value.trades_count,
+            trades: value
+                .trades
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            stp_type: value.stp_type,
+            cancel_type: value.cancel_type,
+            canceling_uuid: value.canceling_uuid,
+            time_in_force: value.time_in_force,
+        })
+    }
+}
+
+impl TryFrom<BithumbOrderListItem> for WireBithumbOrderListItem {
+    type Error = Error;
+
+    fn try_from(value: BithumbOrderListItem) -> Result<Self, Self::Error> {
+        Ok(Self {
+            uuid: value.uuid,
+            client_order_id: value.client_order_id,
+            side: value.side,
+            order_type: value.order_type,
+            price: decimal_to_wire(value.price),
+            state: value.state,
+            market: value.market.try_into()?,
+            created_at: timestamp_to_wire(value.created_at),
+            volume: decimal_to_wire(value.volume),
+            remaining_volume: decimal_to_wire(value.remaining_volume),
+            reserved_fee: decimal_to_wire(value.reserved_fee),
+            remaining_fee: decimal_to_wire(value.remaining_fee),
+            paid_fee: decimal_to_wire(value.paid_fee),
+            locked: decimal_to_wire(value.locked),
+            executed_volume: decimal_to_wire(value.executed_volume),
+            executed_funds: decimal_to_wire(value.executed_funds),
+            trades_count: value.trades_count,
+            stp_type: value.stp_type,
+            time_in_force: value.time_in_force,
+        })
+    }
+}
+
 impl TryFrom<BithumbTwapOrder> for WireBithumbTwapOrder {
     type Error = Error;
 
@@ -2601,6 +4121,19 @@ impl TryFrom<BinanceSpotOrderDetail> for WireBinanceSpotOrderDetail {
             time_in_force: value.time_in_force,
             filled_quote_quantity: decimal_to_wire(value.filled_quote_quantity),
             updated_at: timestamp_option_to_wire(value.updated_at),
+        })
+    }
+}
+
+impl TryFrom<maxt::adapters::BinanceSpotAveragePrice> for WireBinanceSpotAveragePrice {
+    type Error = Error;
+
+    fn try_from(value: maxt::adapters::BinanceSpotAveragePrice) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.try_into()?,
+            minutes: value.minutes,
+            price: decimal_to_wire(value.price),
+            close_time: timestamp_to_wire(value.close_time),
         })
     }
 }
@@ -2673,6 +4206,270 @@ impl TryFrom<HyperliquidMidPrice> for WireHyperliquidMidPrice {
         Ok(Self {
             market: value.market.try_into()?,
             price: decimal_to_wire(value.price),
+        })
+    }
+}
+
+impl TryFrom<HyperliquidUserRateLimit> for WireHyperliquidUserRateLimit {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidUserRateLimit) -> Result<Self, Self::Error> {
+        Ok(Self {
+            cumulative_volume: decimal_to_wire(value.cumulative_volume),
+            requests_used: value.requests_used.to_string(),
+            requests_cap: value.requests_cap.to_string(),
+            requests_surplus: value.requests_surplus.to_string(),
+        })
+    }
+}
+
+impl TryFrom<HyperliquidUserRole> for WireHyperliquidUserRole {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidUserRole) -> Result<Self, Self::Error> {
+        match value {
+            HyperliquidUserRole::User => Ok(Self::User),
+            HyperliquidUserRole::Agent { user } => Ok(Self::Agent { user }),
+            HyperliquidUserRole::Vault => Ok(Self::Vault),
+            HyperliquidUserRole::SubAccount { master } => Ok(Self::SubAccount { master }),
+            HyperliquidUserRole::Missing => Ok(Self::Missing),
+            HyperliquidUserRole::Other { role, data_json } => Ok(Self::Other { role, data_json }),
+            _ => Err(binding_contract("HyperliquidUserRole")),
+        }
+    }
+}
+
+impl TryFrom<HyperliquidReferrer> for WireHyperliquidReferrer {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidReferrer) -> Result<Self, Self::Error> {
+        Ok(Self {
+            address: value.address,
+            code: value.code,
+        })
+    }
+}
+
+impl TryFrom<HyperliquidReferral> for WireHyperliquidReferral {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidReferral) -> Result<Self, Self::Error> {
+        Ok(Self {
+            referred_by: value.referred_by.map(TryInto::try_into).transpose()?,
+            cumulative_volume: decimal_to_wire(value.cumulative_volume),
+            unclaimed_rewards: decimal_to_wire(value.unclaimed_rewards),
+            claimed_rewards: decimal_to_wire(value.claimed_rewards),
+            builder_rewards: decimal_to_wire(value.builder_rewards),
+            referrer_state_json: value.referrer_state_json,
+            reward_history_json: value.reward_history_json,
+            token_to_state_json: value.token_to_state_json,
+        })
+    }
+}
+
+impl TryFrom<HyperliquidDailyVolume> for WireHyperliquidDailyVolume {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidDailyVolume) -> Result<Self, Self::Error> {
+        Ok(Self {
+            date: value.date,
+            user_cross: decimal_to_wire(value.user_cross),
+            user_add: decimal_to_wire(value.user_add),
+            exchange: decimal_to_wire(value.exchange),
+        })
+    }
+}
+
+impl TryFrom<HyperliquidUserFees> for WireHyperliquidUserFees {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidUserFees) -> Result<Self, Self::Error> {
+        Ok(Self {
+            daily_volumes: value
+                .daily_volumes
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            fee_schedule_json: value.fee_schedule_json,
+            user_cross_rate: decimal_to_wire(value.user_cross_rate),
+            user_add_rate: decimal_to_wire(value.user_add_rate),
+            user_spot_cross_rate: decimal_option_to_wire(value.user_spot_cross_rate),
+            user_spot_add_rate: decimal_option_to_wire(value.user_spot_add_rate),
+            active_referral_discount: decimal_option_to_wire(value.active_referral_discount),
+            details_json: value.details_json,
+        })
+    }
+}
+
+impl TryFrom<HyperliquidUserFill> for WireHyperliquidUserFill {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidUserFill) -> Result<Self, Self::Error> {
+        Ok(Self {
+            coin: value.coin,
+            price: decimal_to_wire(value.price),
+            size: decimal_to_wire(value.size),
+            side: value.side,
+            time: timestamp_to_wire(value.time),
+            start_position: decimal_to_wire(value.start_position),
+            direction: value.direction,
+            closed_pnl: decimal_to_wire(value.closed_pnl),
+            hash: value.hash,
+            order_id: value.order_id.to_string(),
+            crossed: value.crossed,
+            fee: decimal_to_wire(value.fee),
+            builder_fee: decimal_option_to_wire(value.builder_fee),
+            trade_id: value.trade_id.to_string(),
+            fee_token: value.fee_token,
+            twap_id: value.twap_id.map(|value| value.to_string()),
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<WireHyperliquidOrderReference> for HyperliquidOrderReference {
+    type Error = Error;
+
+    fn try_from(value: WireHyperliquidOrderReference) -> Result<Self, Self::Error> {
+        Ok(match value {
+            WireHyperliquidOrderReference::OrderId { value } => {
+                Self::OrderId(u64_from_wire(&value, "reference.value")?)
+            }
+            WireHyperliquidOrderReference::ClientOrderId { value } => Self::ClientOrderId(value),
+        })
+    }
+}
+
+impl TryFrom<HyperliquidOpenOrder> for WireHyperliquidOpenOrder {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidOpenOrder) -> Result<Self, Self::Error> {
+        Ok(Self {
+            coin: value.coin,
+            limit_price: decimal_to_wire(value.limit_price),
+            order_id: value.order_id.to_string(),
+            side: value.side,
+            size: decimal_to_wire(value.size),
+            timestamp: timestamp_to_wire(value.timestamp),
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<HyperliquidOrderDetail> for WireHyperliquidOrderDetail {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidOrderDetail) -> Result<Self, Self::Error> {
+        Ok(Self {
+            coin: value.coin,
+            side: value.side,
+            limit_price: decimal_to_wire(value.limit_price),
+            size: decimal_to_wire(value.size),
+            order_id: value.order_id.to_string(),
+            timestamp: timestamp_to_wire(value.timestamp),
+            trigger_condition: value.trigger_condition,
+            is_trigger: value.is_trigger,
+            trigger_price: decimal_to_wire(value.trigger_price),
+            children_json: value.children_json,
+            is_position_tpsl: value.is_position_tpsl,
+            reduce_only: value.reduce_only,
+            order_type: value.order_type,
+            original_size: decimal_to_wire(value.original_size),
+            time_in_force: value.time_in_force,
+            client_order_id: value.client_order_id,
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<HyperliquidOrderInfo> for WireHyperliquidOrderInfo {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidOrderInfo) -> Result<Self, Self::Error> {
+        Ok(Self {
+            order: value.order.try_into()?,
+            status: value.status,
+            status_timestamp: timestamp_to_wire(value.status_timestamp),
+            raw_json: value.raw_json,
+        })
+    }
+}
+
+impl TryFrom<HyperliquidOrderStatusResponse> for WireHyperliquidOrderStatusResponse {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidOrderStatusResponse) -> Result<Self, Self::Error> {
+        Ok(match value {
+            HyperliquidOrderStatusResponse::Order(value) => Self::Order {
+                value: (*value).try_into()?,
+            },
+            HyperliquidOrderStatusResponse::UnknownOrder => Self::UnknownOrder,
+            HyperliquidOrderStatusResponse::Other { status, raw_json } => {
+                Self::Other { status, raw_json }
+            }
+            _ => {
+                return Err(Error::adapter(
+                    "unsupported Hyperliquid order status response",
+                ));
+            }
+        })
+    }
+}
+
+impl TryFrom<HyperliquidPortfolioPoint> for WireHyperliquidPortfolioPoint {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidPortfolioPoint) -> Result<Self, Self::Error> {
+        Ok(Self {
+            time: timestamp_to_wire(value.time),
+            value: decimal_to_wire(value.value),
+        })
+    }
+}
+
+impl TryFrom<HyperliquidPortfolioPeriod> for WireHyperliquidPortfolioPeriod {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidPortfolioPeriod) -> Result<Self, Self::Error> {
+        Ok(Self {
+            period: value.period,
+            account_value_history: value
+                .account_value_history
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            pnl_history: value
+                .pnl_history
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            volume: decimal_to_wire(value.volume),
+        })
+    }
+}
+
+impl TryFrom<HyperliquidSubAccount> for WireHyperliquidSubAccount {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidSubAccount) -> Result<Self, Self::Error> {
+        Ok(Self {
+            name: value.name,
+            user: value.user,
+            master: value.master,
+            perpetual_state_json: value.perpetual_state_json,
+            spot_state_json: value.spot_state_json,
+        })
+    }
+}
+
+impl TryFrom<HyperliquidVaultEquity> for WireHyperliquidVaultEquity {
+    type Error = Error;
+
+    fn try_from(value: HyperliquidVaultEquity) -> Result<Self, Self::Error> {
+        Ok(Self {
+            vault_address: value.vault_address,
+            equity: decimal_to_wire(value.equity),
+            locked_until: timestamp_option_to_wire(value.locked_until),
         })
     }
 }
@@ -5180,7 +6977,9 @@ mod tests {
 
     #[test]
     fn provider_wire_dtos_keep_strings_nulls_and_known_variants() {
-        use maxt::adapters::{BithumbAlertStep, HyperliquidLedgerKind, UpbitMarketEvent};
+        use maxt::adapters::{
+            BithumbAlertStep, HyperliquidLedgerKind, HyperliquidUserRole, UpbitMarketEvent,
+        };
 
         let upbit = WireUpbitMarketEvent::try_from(UpbitMarketEvent::default()).unwrap();
         assert_eq!(
@@ -5270,6 +7069,63 @@ mod tests {
                 price: "113376.5".to_owned(),
             })
             .unwrap(),
+            serde_json::to_value(WireUpbitKrwTransferRequest {
+                amount: "10000.00".to_owned(),
+                two_factor_type: "kakao".to_owned(),
+            })
+            .unwrap(),
+            serde_json::to_value(WireBithumbWithdrawalAddress {
+                currency: "XRP".to_owned(),
+                net_type: "XRP".to_owned(),
+                network_name: None,
+                withdraw_address: "rAddress".to_owned(),
+                secondary_address: Some("1234".to_owned()),
+                exchange_name: None,
+                owner_type: None,
+                owner_ko_name: None,
+                owner_en_name: None,
+                owner_corp_ko_name: None,
+                owner_corp_en_name: None,
+            })
+            .unwrap(),
+            serde_json::to_value(WireBinanceAccountTrade {
+                market: WireMarket {
+                    exchange: "binance".to_owned(),
+                    kind: "spot".to_owned(),
+                    base: "BTC".to_owned(),
+                    quote: "USDT".to_owned(),
+                },
+                id: "1".to_owned(),
+                order_id: "2".to_owned(),
+                timestamp: i64::MAX.to_string(),
+                side: "buy".to_owned(),
+                maker: true,
+                best_match: Some(true),
+                order_list_id: Some("-1".to_owned()),
+                price: "1.2300".to_owned(),
+                quantity: "0.0100".to_owned(),
+                quote_quantity: Some("0.0123".to_owned()),
+                commission: "0.0001".to_owned(),
+                commission_asset: "BNB".to_owned(),
+                realized_pnl: None,
+                position_side: None,
+                pair: None,
+                base_quantity: None,
+                margin_asset: None,
+            })
+            .unwrap(),
+            serde_json::to_value(WireHyperliquidUserRole::Other {
+                role: "futureRole".to_owned(),
+                data_json: Some("null".to_owned()),
+            })
+            .unwrap(),
+            serde_json::to_value(WireHyperliquidUserRateLimit {
+                cumulative_volume: "1.2300".to_owned(),
+                requests_used: u64::MAX.to_string(),
+                requests_cap: u64::MAX.to_string(),
+                requests_surplus: "0".to_owned(),
+            })
+            .unwrap(),
         ];
         for value in values {
             assert!(
@@ -5287,6 +7143,20 @@ mod tests {
                 "filters"
             ),
             Err(Error::InvalidRequest { field, .. }) if field == "filters"
+        ));
+        assert!(matches!(
+            UpbitKrwTransferRequest::try_from(WireUpbitKrwTransferRequest {
+                amount: "1".to_owned(),
+                two_factor_type: "unknown".to_owned(),
+            }),
+            Err(Error::InvalidRequest { field, .. }) if field == "two_factor_type"
+        ));
+        assert!(matches!(
+            WireHyperliquidUserRole::try_from(HyperliquidUserRole::Other {
+                role: "futureRole".to_owned(),
+                data_json: None,
+            }),
+            Ok(WireHyperliquidUserRole::Other { .. })
         ));
     }
 

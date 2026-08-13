@@ -331,6 +331,23 @@ pub(crate) fn upbit_order_direction_to_wire(value: maxt::adapters::UpbitOrderDir
     }
 }
 
+pub(crate) fn upbit_closed_order_state_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::adapters::UpbitClosedOrderState> {
+    let value = text(value)?;
+    match value.as_str() {
+        "done" => Ok(maxt::adapters::UpbitClosedOrderState::Done),
+        "cancel" => Ok(maxt::adapters::UpbitClosedOrderState::Cancel),
+        _ => Err(invalid("upbit closed order state", &value)),
+    }
+}
+
+pub(crate) fn upbit_closed_order_state_to_wire(value: maxt::adapters::UpbitClosedOrderState) -> PyResult<&'static str> {
+    match value {
+        maxt::adapters::UpbitClosedOrderState::Done => Ok("done"),
+        maxt::adapters::UpbitClosedOrderState::Cancel => Ok("cancel"),
+        _ => Err(binding_contract("UpbitClosedOrderState")),
+    }
+}
+
 pub(crate) fn upbit_smp_type_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitSmpType> {
     let value = text(value)?;
     match value.as_str() {
@@ -347,6 +364,82 @@ pub(crate) fn upbit_smp_type_to_wire(value: maxt::UpbitSmpType) -> PyResult<&'st
         maxt::UpbitSmpType::CancelTaker => Ok("cancel_taker"),
         maxt::UpbitSmpType::Reduce => Ok("reduce"),
         _ => Err(binding_contract("UpbitSmpType")),
+    }
+}
+
+pub(crate) fn upbit_krw_two_factor_type_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitKrwTwoFactorType> {
+    let value = text(value)?;
+    match value.as_str() {
+        "kakao" => Ok(maxt::UpbitKrwTwoFactorType::Kakao),
+        "naver" => Ok(maxt::UpbitKrwTwoFactorType::Naver),
+        "hana" => Ok(maxt::UpbitKrwTwoFactorType::Hana),
+        _ => Err(invalid("upbit krw two factor type", &value)),
+    }
+}
+
+pub(crate) fn upbit_krw_two_factor_type_to_wire(value: maxt::UpbitKrwTwoFactorType) -> PyResult<&'static str> {
+    match value {
+        maxt::UpbitKrwTwoFactorType::Kakao => Ok("kakao"),
+        maxt::UpbitKrwTwoFactorType::Naver => Ok("naver"),
+        maxt::UpbitKrwTwoFactorType::Hana => Ok("hana"),
+        _ => Err(binding_contract("UpbitKrwTwoFactorType")),
+    }
+}
+
+pub(crate) fn upbit_pocket_transfer_state_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::adapters::UpbitPocketTransferState> {
+    let value = text(value)?;
+    match value.as_str() {
+        "submitted" => Ok(maxt::adapters::UpbitPocketTransferState::Submitted),
+        "processing" => Ok(maxt::adapters::UpbitPocketTransferState::Processing),
+        "done" => Ok(maxt::adapters::UpbitPocketTransferState::Done),
+        "failed" => Ok(maxt::adapters::UpbitPocketTransferState::Failed),
+        _ => Err(invalid("upbit pocket transfer state", &value)),
+    }
+}
+
+pub(crate) fn upbit_pocket_transfer_state_to_wire(value: maxt::adapters::UpbitPocketTransferState) -> PyResult<&'static str> {
+    match value {
+        maxt::adapters::UpbitPocketTransferState::Submitted => Ok("submitted"),
+        maxt::adapters::UpbitPocketTransferState::Processing => Ok("processing"),
+        maxt::adapters::UpbitPocketTransferState::Done => Ok("done"),
+        maxt::adapters::UpbitPocketTransferState::Failed => Ok("failed"),
+        _ => Err(binding_contract("UpbitPocketTransferState")),
+    }
+}
+
+pub(crate) fn upbit_pocket_transfer_direction_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::adapters::UpbitPocketTransferDirection> {
+    let value = text(value)?;
+    match value.as_str() {
+        "in" => Ok(maxt::adapters::UpbitPocketTransferDirection::Incoming),
+        "out" => Ok(maxt::adapters::UpbitPocketTransferDirection::Outgoing),
+        "all" => Ok(maxt::adapters::UpbitPocketTransferDirection::All),
+        _ => Err(invalid("upbit pocket transfer direction", &value)),
+    }
+}
+
+pub(crate) fn upbit_pocket_transfer_direction_to_wire(value: maxt::adapters::UpbitPocketTransferDirection) -> PyResult<&'static str> {
+    match value {
+        maxt::adapters::UpbitPocketTransferDirection::Incoming => Ok("in"),
+        maxt::adapters::UpbitPocketTransferDirection::Outgoing => Ok("out"),
+        maxt::adapters::UpbitPocketTransferDirection::All => Ok("all"),
+        _ => Err(binding_contract("UpbitPocketTransferDirection")),
+    }
+}
+
+pub(crate) fn upbit_pocket_transfer_order_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::adapters::UpbitPocketTransferOrder> {
+    let value = text(value)?;
+    match value.as_str() {
+        "asc" => Ok(maxt::adapters::UpbitPocketTransferOrder::Ascending),
+        "desc" => Ok(maxt::adapters::UpbitPocketTransferOrder::Descending),
+        _ => Err(invalid("upbit pocket transfer order", &value)),
+    }
+}
+
+pub(crate) fn upbit_pocket_transfer_order_to_wire(value: maxt::adapters::UpbitPocketTransferOrder) -> PyResult<&'static str> {
+    match value {
+        maxt::adapters::UpbitPocketTransferOrder::Ascending => Ok("asc"),
+        maxt::adapters::UpbitPocketTransferOrder::Descending => Ok("desc"),
+        _ => Err(binding_contract("UpbitPocketTransferOrder")),
     }
 }
 
@@ -367,6 +460,23 @@ pub(crate) fn bithumb_pending_order_state_to_wire(value: maxt::adapters::Bithumb
     }
 }
 
+pub(crate) fn bithumb_closed_order_state_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::adapters::BithumbClosedOrderState> {
+    let value = text(value)?;
+    match value.as_str() {
+        "done" => Ok(maxt::adapters::BithumbClosedOrderState::Done),
+        "cancel" => Ok(maxt::adapters::BithumbClosedOrderState::Cancel),
+        _ => Err(invalid("bithumb closed order state", &value)),
+    }
+}
+
+pub(crate) fn bithumb_closed_order_state_to_wire(value: maxt::adapters::BithumbClosedOrderState) -> PyResult<&'static str> {
+    match value {
+        maxt::adapters::BithumbClosedOrderState::Done => Ok("done"),
+        maxt::adapters::BithumbClosedOrderState::Cancel => Ok("cancel"),
+        _ => Err(binding_contract("BithumbClosedOrderState")),
+    }
+}
+
 pub(crate) fn bithumb_order_direction_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::adapters::BithumbOrderDirection> {
     let value = text(value)?;
     match value.as_str() {
@@ -381,6 +491,27 @@ pub(crate) fn bithumb_order_direction_to_wire(value: maxt::adapters::BithumbOrde
         maxt::adapters::BithumbOrderDirection::Ascending => Ok("asc"),
         maxt::adapters::BithumbOrderDirection::Descending => Ok("desc"),
         _ => Err(binding_contract("BithumbOrderDirection")),
+    }
+}
+
+pub(crate) fn bithumb_order_list_state_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::BithumbOrderListState> {
+    let value = text(value)?;
+    match value.as_str() {
+        "wait" => Ok(maxt::BithumbOrderListState::Wait),
+        "watch" => Ok(maxt::BithumbOrderListState::Watch),
+        "done" => Ok(maxt::BithumbOrderListState::Done),
+        "cancel" => Ok(maxt::BithumbOrderListState::Cancel),
+        _ => Err(invalid("bithumb order list state", &value)),
+    }
+}
+
+pub(crate) fn bithumb_order_list_state_to_wire(value: maxt::BithumbOrderListState) -> PyResult<&'static str> {
+    match value {
+        maxt::BithumbOrderListState::Wait => Ok("wait"),
+        maxt::BithumbOrderListState::Watch => Ok("watch"),
+        maxt::BithumbOrderListState::Done => Ok("done"),
+        maxt::BithumbOrderListState::Cancel => Ok("cancel"),
+        _ => Err(binding_contract("BithumbOrderListState")),
     }
 }
 
@@ -417,6 +548,23 @@ pub(crate) fn bithumb_twap_order_direction_to_wire(value: maxt::BithumbTwapOrder
         maxt::BithumbTwapOrderDirection::Ascending => Ok("asc"),
         maxt::BithumbTwapOrderDirection::Descending => Ok("desc"),
         _ => Err(binding_contract("BithumbTwapOrderDirection")),
+    }
+}
+
+pub(crate) fn binance_c2c_trade_type_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::adapters::BinanceC2cTradeType> {
+    let value = text(value)?;
+    match value.as_str() {
+        "BUY" => Ok(maxt::adapters::BinanceC2cTradeType::Buy),
+        "SELL" => Ok(maxt::adapters::BinanceC2cTradeType::Sell),
+        _ => Err(invalid("binance c2c trade type", &value)),
+    }
+}
+
+pub(crate) fn binance_c2c_trade_type_to_wire(value: maxt::adapters::BinanceC2cTradeType) -> PyResult<&'static str> {
+    match value {
+        maxt::adapters::BinanceC2cTradeType::Buy => Ok("BUY"),
+        maxt::adapters::BinanceC2cTradeType::Sell => Ok("SELL"),
+        _ => Err(binding_contract("BinanceC2cTradeType")),
     }
 }
 
@@ -1527,6 +1675,50 @@ pub(crate) fn transfer_history_request_to_wire(
     )
 }
 
+pub(crate) fn upbit_listed_subscription_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitListedSubscription> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["feed_type", "markets", "level"], "upbit_listed_subscription")?;
+    Ok(maxt::UpbitListedSubscription {
+        feed_type: required(dict, "feed_type")?.extract::<String>()?,
+        markets: list_from_wire(&required(dict, "markets")?, market_from_wire)?,
+        level: optional(dict, "level")?.map(|value| -> PyResult<_> { decimal_from_wire(&value, "level") }).transpose()?,
+    })
+}
+
+pub(crate) fn upbit_listed_subscription_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitListedSubscription,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "feed_type" => &value.feed_type,
+        "markets" => list_to_wire(py, &value.markets, market_to_wire)?,
+        "level" => value.level.map(decimal_to_wire),
+    )
+}
+
+pub(crate) fn upbit_subscription_list_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitSubscriptionList> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["ticket", "subscriptions"], "upbit_subscription_list")?;
+    Ok(maxt::UpbitSubscriptionList {
+        ticket: required(dict, "ticket")?.extract::<String>()?,
+        subscriptions: list_from_wire(&required(dict, "subscriptions")?, upbit_listed_subscription_from_wire)?,
+    })
+}
+
+pub(crate) fn upbit_subscription_list_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitSubscriptionList,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "ticket" => &value.ticket,
+        "subscriptions" => list_to_wire(py, &value.subscriptions, upbit_listed_subscription_to_wire)?,
+    )
+}
+
 pub(crate) fn upbit_year_candle_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitYearCandle> {
     let value = wire_object(value)?;
     let dict = value.cast::<PyDict>()?;
@@ -1588,6 +1780,137 @@ pub(crate) fn upbit_order_book_instrument_to_wire(
         "quote_currency" => &value.quote_currency,
         "tick_size" => decimal_to_wire(value.tick_size),
         "supported_levels" => value.supported_levels.iter().map(|item| decimal_to_wire(*item)).collect::<Vec<_>>(),
+    )
+}
+
+pub(crate) fn upbit_order_detail_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitOrderDetailRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["market", "uuid", "identifier"], "upbit_order_detail_request")?;
+    Ok(maxt::UpbitOrderDetailRequest {
+        market: market_from_wire(&required(dict, "market")?)?,
+        uuid: optional(dict, "uuid")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        identifier: optional(dict, "identifier")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+    })
+}
+
+pub(crate) fn upbit_order_detail_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitOrderDetailRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "market" => market_to_wire(py, &value.market)?,
+        "uuid" => &value.uuid,
+        "identifier" => &value.identifier,
+    )
+}
+
+pub(crate) fn upbit_order_detail_trade_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitOrderDetailTrade,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "market" => market_to_wire(py, &value.market)?,
+        "uuid" => &value.uuid,
+        "price" => decimal_to_wire(value.price),
+        "volume" => decimal_to_wire(value.volume),
+        "funds" => decimal_to_wire(value.funds),
+        "trend" => &value.trend,
+        "created_at" => timestamp_to_wire(value.created_at),
+        "side" => &value.side,
+    )
+}
+
+pub(crate) fn upbit_order_detail_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitOrderDetail,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "market" => market_to_wire(py, &value.market)?,
+        "uuid" => &value.uuid,
+        "side" => &value.side,
+        "order_type" => &value.order_type,
+        "price" => value.price.map(decimal_to_wire),
+        "state" => &value.state,
+        "created_at" => timestamp_to_wire(value.created_at),
+        "volume" => value.volume.map(decimal_to_wire),
+        "remaining_volume" => decimal_to_wire(value.remaining_volume),
+        "executed_volume" => decimal_to_wire(value.executed_volume),
+        "reserved_fee" => decimal_to_wire(value.reserved_fee),
+        "remaining_fee" => decimal_to_wire(value.remaining_fee),
+        "paid_fee" => decimal_to_wire(value.paid_fee),
+        "locked" => decimal_to_wire(value.locked),
+        "trades_count" => value.trades_count,
+        "prevented_volume" => decimal_to_wire(value.prevented_volume),
+        "prevented_locked" => decimal_to_wire(value.prevented_locked),
+        "time_in_force" => &value.time_in_force,
+        "identifier" => &value.identifier,
+        "smp_type" => &value.smp_type,
+        "trades" => list_to_wire(py, &value.trades, upbit_order_detail_trade_to_wire)?,
+    )
+}
+
+pub(crate) fn upbit_closed_orders_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitClosedOrdersRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["market", "state", "states", "start_time", "end_time", "limit", "order_by"], "upbit_closed_orders_request")?;
+    Ok(maxt::UpbitClosedOrdersRequest {
+        market: optional(dict, "market")?.map(|value| -> PyResult<_> { market_from_wire(&value) }).transpose()?,
+        state: optional(dict, "state")?.map(|value| -> PyResult<_> { upbit_closed_order_state_from_wire(&value) }).transpose()?,
+        states: list_from_wire(&required(dict, "states")?, upbit_closed_order_state_from_wire)?,
+        start_time: optional(dict, "start_time")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
+        end_time: optional(dict, "end_time")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
+        limit: optional(dict, "limit")?.map(|value| -> PyResult<_> { u32_from_wire(&value, "limit") }).transpose()?,
+        order_by: optional(dict, "order_by")?.map(|value| -> PyResult<_> { upbit_order_direction_from_wire(&value) }).transpose()?,
+    })
+}
+
+pub(crate) fn upbit_closed_orders_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitClosedOrdersRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "market" => value.market.as_ref().map(|item| market_to_wire(py, item)).transpose()?,
+        "state" => value.state.map(upbit_closed_order_state_to_wire).transpose()?,
+        "states" => value.states.iter().copied().map(upbit_closed_order_state_to_wire).collect::<PyResult<Vec<_>>>()?,
+        "start_time" => value.start_time.map(timestamp_to_wire),
+        "end_time" => value.end_time.map(timestamp_to_wire),
+        "limit" => value.limit,
+        "order_by" => value.order_by.map(upbit_order_direction_to_wire).transpose()?,
+    )
+}
+
+pub(crate) fn upbit_closed_order_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitClosedOrder,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "market" => market_to_wire(py, &value.market)?,
+        "uuid" => &value.uuid,
+        "side" => &value.side,
+        "ord_type" => &value.ord_type,
+        "state" => &value.state,
+        "created_at" => timestamp_to_wire(value.created_at),
+        "volume" => value.volume.map(decimal_to_wire),
+        "price" => value.price.map(decimal_to_wire),
+        "remaining_volume" => decimal_to_wire(value.remaining_volume),
+        "executed_volume" => decimal_to_wire(value.executed_volume),
+        "executed_funds" => value.executed_funds.map(decimal_to_wire),
+        "reserved_fee" => decimal_to_wire(value.reserved_fee),
+        "remaining_fee" => decimal_to_wire(value.remaining_fee),
+        "paid_fee" => decimal_to_wire(value.paid_fee),
+        "locked" => decimal_to_wire(value.locked),
+        "trades_count" => value.trades_count,
+        "prevented_volume" => decimal_to_wire(value.prevented_volume),
+        "prevented_locked" => decimal_to_wire(value.prevented_locked),
+        "time_in_force" => &value.time_in_force,
+        "identifier" => &value.identifier,
+        "smp_type" => &value.smp_type,
     )
 }
 
@@ -1897,6 +2220,373 @@ pub(crate) fn upbit_cancel_and_new_order_result_to_wire(
     )
 }
 
+pub(crate) fn upbit_krw_transfer_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitKrwTransferRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["amount", "two_factor_type"], "upbit_krw_transfer_request")?;
+    Ok(maxt::UpbitKrwTransferRequest {
+        amount: decimal_from_wire(&required(dict, "amount")?, "amount")?,
+        two_factor_type: upbit_krw_two_factor_type_from_wire(&required(dict, "two_factor_type")?)?,
+    })
+}
+
+pub(crate) fn upbit_krw_transfer_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitKrwTransferRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "amount" => decimal_to_wire(value.amount),
+        "two_factor_type" => upbit_krw_two_factor_type_to_wire(value.two_factor_type)?,
+    )
+}
+
+pub(crate) fn upbit_krw_deposit_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitKrwDeposit> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["transfer_type", "uuid", "currency", "net_type", "txid", "state", "created_at", "done_at", "amount", "fee", "transaction_type"], "upbit_krw_deposit")?;
+    Ok(maxt::UpbitKrwDeposit {
+        transfer_type: required(dict, "transfer_type")?.extract::<String>()?,
+        uuid: required(dict, "uuid")?.extract::<String>()?,
+        currency: required(dict, "currency")?.extract::<String>()?,
+        net_type: optional(dict, "net_type")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        txid: required(dict, "txid")?.extract::<String>()?,
+        state: required(dict, "state")?.extract::<String>()?,
+        created_at: required(dict, "created_at")?.extract().map(Timestamp::from_nanos)?,
+        done_at: optional(dict, "done_at")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
+        amount: decimal_from_wire(&required(dict, "amount")?, "amount")?,
+        fee: decimal_from_wire(&required(dict, "fee")?, "fee")?,
+        transaction_type: required(dict, "transaction_type")?.extract::<String>()?,
+    })
+}
+
+pub(crate) fn upbit_krw_deposit_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitKrwDeposit,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "transfer_type" => &value.transfer_type,
+        "uuid" => &value.uuid,
+        "currency" => &value.currency,
+        "net_type" => &value.net_type,
+        "txid" => &value.txid,
+        "state" => &value.state,
+        "created_at" => timestamp_to_wire(value.created_at),
+        "done_at" => value.done_at.map(timestamp_to_wire),
+        "amount" => decimal_to_wire(value.amount),
+        "fee" => decimal_to_wire(value.fee),
+        "transaction_type" => &value.transaction_type,
+    )
+}
+
+pub(crate) fn upbit_krw_withdrawal_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitKrwWithdrawal> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["transfer_type", "uuid", "currency", "net_type", "txid", "state", "created_at", "done_at", "amount", "fee", "transaction_type", "is_cancelable"], "upbit_krw_withdrawal")?;
+    Ok(maxt::UpbitKrwWithdrawal {
+        transfer_type: required(dict, "transfer_type")?.extract::<String>()?,
+        uuid: required(dict, "uuid")?.extract::<String>()?,
+        currency: required(dict, "currency")?.extract::<String>()?,
+        net_type: optional(dict, "net_type")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        txid: optional(dict, "txid")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        state: required(dict, "state")?.extract::<String>()?,
+        created_at: required(dict, "created_at")?.extract().map(Timestamp::from_nanos)?,
+        done_at: optional(dict, "done_at")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
+        amount: decimal_from_wire(&required(dict, "amount")?, "amount")?,
+        fee: decimal_from_wire(&required(dict, "fee")?, "fee")?,
+        transaction_type: required(dict, "transaction_type")?.extract::<String>()?,
+        is_cancelable: optional(dict, "is_cancelable")?.map(|value| -> PyResult<_> { value.extract() }).transpose()?,
+    })
+}
+
+pub(crate) fn upbit_krw_withdrawal_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitKrwWithdrawal,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "transfer_type" => &value.transfer_type,
+        "uuid" => &value.uuid,
+        "currency" => &value.currency,
+        "net_type" => &value.net_type,
+        "txid" => &value.txid,
+        "state" => &value.state,
+        "created_at" => timestamp_to_wire(value.created_at),
+        "done_at" => value.done_at.map(timestamp_to_wire),
+        "amount" => decimal_to_wire(value.amount),
+        "fee" => decimal_to_wire(value.fee),
+        "transaction_type" => &value.transaction_type,
+        "is_cancelable" => value.is_cancelable,
+    )
+}
+
+pub(crate) fn upbit_api_key_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitApiKey> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["access_key", "expires_at"], "upbit_api_key")?;
+    Ok(maxt::UpbitApiKey {
+        access_key: required(dict, "access_key")?.extract::<String>()?,
+        expires_at: required(dict, "expires_at")?.extract().map(Timestamp::from_nanos)?,
+    })
+}
+
+pub(crate) fn upbit_api_key_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitApiKey,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "access_key" => &value.access_key,
+        "expires_at" => timestamp_to_wire(value.expires_at),
+    )
+}
+
+pub(crate) fn upbit_pocket_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitPocket> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["uuid", "name", "kind"], "upbit_pocket")?;
+    Ok(maxt::UpbitPocket {
+        uuid: required(dict, "uuid")?.extract::<String>()?,
+        name: required(dict, "name")?.extract::<String>()?,
+        kind: required(dict, "kind")?.extract::<String>()?,
+    })
+}
+
+pub(crate) fn upbit_pocket_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitPocket,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "uuid" => &value.uuid,
+        "name" => &value.name,
+        "kind" => &value.kind,
+    )
+}
+
+pub(crate) fn upbit_pocket_api_key_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitPocketApiKey> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["access_key", "permissions", "allowed_ips", "created_at", "expired_at"], "upbit_pocket_api_key")?;
+    Ok(maxt::UpbitPocketApiKey {
+        access_key: required(dict, "access_key")?.extract::<String>()?,
+        permissions: required(dict, "permissions")?.extract::<Vec<String>>()?,
+        allowed_ips: required(dict, "allowed_ips")?.extract::<Vec<String>>()?,
+        created_at: required(dict, "created_at")?.extract().map(Timestamp::from_nanos)?,
+        expired_at: required(dict, "expired_at")?.extract().map(Timestamp::from_nanos)?,
+    })
+}
+
+pub(crate) fn upbit_pocket_api_key_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitPocketApiKey,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "access_key" => &value.access_key,
+        "permissions" => &value.permissions,
+        "allowed_ips" => &value.allowed_ips,
+        "created_at" => timestamp_to_wire(value.created_at),
+        "expired_at" => timestamp_to_wire(value.expired_at),
+    )
+}
+
+pub(crate) fn upbit_pocket_api_key_group_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitPocketApiKeyGroup> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["uuid", "keys"], "upbit_pocket_api_key_group")?;
+    Ok(maxt::UpbitPocketApiKeyGroup {
+        uuid: required(dict, "uuid")?.extract::<String>()?,
+        keys: list_from_wire(&required(dict, "keys")?, upbit_pocket_api_key_from_wire)?,
+    })
+}
+
+pub(crate) fn upbit_pocket_api_key_group_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitPocketApiKeyGroup,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "uuid" => &value.uuid,
+        "keys" => list_to_wire(py, &value.keys, upbit_pocket_api_key_to_wire)?,
+    )
+}
+
+pub(crate) fn upbit_pocket_api_keys_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitPocketApiKeysRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["uuids", "include_expired"], "upbit_pocket_api_keys_request")?;
+    Ok(maxt::UpbitPocketApiKeysRequest {
+        uuids: required(dict, "uuids")?.extract::<Vec<String>>()?,
+        include_expired: required(dict, "include_expired")?.extract()?,
+    })
+}
+
+pub(crate) fn upbit_pocket_api_keys_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitPocketApiKeysRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "uuids" => &value.uuids,
+        "include_expired" => value.include_expired,
+    )
+}
+
+pub(crate) fn upbit_pocket_balance_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitPocketBalance> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["currency", "balance", "locked", "avg_buy_price", "avg_buy_price_modified", "unit_currency"], "upbit_pocket_balance")?;
+    Ok(maxt::UpbitPocketBalance {
+        currency: required(dict, "currency")?.extract::<String>()?,
+        balance: decimal_from_wire(&required(dict, "balance")?, "balance")?,
+        locked: decimal_from_wire(&required(dict, "locked")?, "locked")?,
+        avg_buy_price: decimal_from_wire(&required(dict, "avg_buy_price")?, "avg_buy_price")?,
+        avg_buy_price_modified: required(dict, "avg_buy_price_modified")?.extract()?,
+        unit_currency: required(dict, "unit_currency")?.extract::<String>()?,
+    })
+}
+
+pub(crate) fn upbit_pocket_balance_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitPocketBalance,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "currency" => &value.currency,
+        "balance" => decimal_to_wire(value.balance),
+        "locked" => decimal_to_wire(value.locked),
+        "avg_buy_price" => decimal_to_wire(value.avg_buy_price),
+        "avg_buy_price_modified" => value.avg_buy_price_modified,
+        "unit_currency" => &value.unit_currency,
+    )
+}
+
+pub(crate) fn upbit_pocket_transfer_query_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitPocketTransferQuery> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["from", "to", "direction", "states", "uuids", "identifiers", "start_time", "end_time", "currency", "limit", "order_by"], "upbit_pocket_transfer_query")?;
+    Ok(maxt::UpbitPocketTransferQuery {
+        from: optional(dict, "from")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        to: optional(dict, "to")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        direction: optional(dict, "direction")?.map(|value| -> PyResult<_> { upbit_pocket_transfer_direction_from_wire(&value) }).transpose()?,
+        states: list_from_wire(&required(dict, "states")?, upbit_pocket_transfer_state_from_wire)?,
+        uuids: required(dict, "uuids")?.extract::<Vec<String>>()?,
+        identifiers: required(dict, "identifiers")?.extract::<Vec<String>>()?,
+        start_time: optional(dict, "start_time")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
+        end_time: optional(dict, "end_time")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
+        currency: optional(dict, "currency")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        limit: optional(dict, "limit")?.map(|value| -> PyResult<_> { u32_from_wire(&value, "limit") }).transpose()?,
+        order_by: optional(dict, "order_by")?.map(|value| -> PyResult<_> { upbit_pocket_transfer_order_from_wire(&value) }).transpose()?,
+    })
+}
+
+pub(crate) fn upbit_pocket_transfer_query_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitPocketTransferQuery,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "from" => &value.from,
+        "to" => &value.to,
+        "direction" => value.direction.map(upbit_pocket_transfer_direction_to_wire).transpose()?,
+        "states" => value.states.iter().copied().map(upbit_pocket_transfer_state_to_wire).collect::<PyResult<Vec<_>>>()?,
+        "uuids" => &value.uuids,
+        "identifiers" => &value.identifiers,
+        "start_time" => value.start_time.map(timestamp_to_wire),
+        "end_time" => value.end_time.map(timestamp_to_wire),
+        "currency" => &value.currency,
+        "limit" => value.limit,
+        "order_by" => value.order_by.map(upbit_pocket_transfer_order_to_wire).transpose()?,
+    )
+}
+
+pub(crate) fn upbit_pocket_universal_transfer_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitPocketUniversalTransferRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["from", "to", "currency", "amount", "identifier"], "upbit_pocket_universal_transfer_request")?;
+    Ok(maxt::UpbitPocketUniversalTransferRequest {
+        from: optional(dict, "from")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        to: required(dict, "to")?.extract::<String>()?,
+        currency: required(dict, "currency")?.extract::<String>()?,
+        amount: decimal_from_wire(&required(dict, "amount")?, "amount")?,
+        identifier: optional(dict, "identifier")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+    })
+}
+
+pub(crate) fn upbit_pocket_universal_transfer_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitPocketUniversalTransferRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "from" => &value.from,
+        "to" => &value.to,
+        "currency" => &value.currency,
+        "amount" => decimal_to_wire(value.amount),
+        "identifier" => &value.identifier,
+    )
+}
+
+pub(crate) fn upbit_pocket_transfer_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitPocketTransferRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["to", "currency", "amount", "identifier"], "upbit_pocket_transfer_request")?;
+    Ok(maxt::UpbitPocketTransferRequest {
+        to: required(dict, "to")?.extract::<String>()?,
+        currency: required(dict, "currency")?.extract::<String>()?,
+        amount: decimal_from_wire(&required(dict, "amount")?, "amount")?,
+        identifier: optional(dict, "identifier")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+    })
+}
+
+pub(crate) fn upbit_pocket_transfer_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitPocketTransferRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "to" => &value.to,
+        "currency" => &value.currency,
+        "amount" => decimal_to_wire(value.amount),
+        "identifier" => &value.identifier,
+    )
+}
+
+pub(crate) fn upbit_pocket_transfer_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::UpbitPocketTransfer> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["uuid", "identifier", "from", "to", "state", "currency", "amount", "created_at"], "upbit_pocket_transfer")?;
+    Ok(maxt::UpbitPocketTransfer {
+        uuid: required(dict, "uuid")?.extract::<String>()?,
+        identifier: optional(dict, "identifier")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        from: required(dict, "from")?.extract::<String>()?,
+        to: required(dict, "to")?.extract::<String>()?,
+        state: required(dict, "state")?.extract::<String>()?,
+        currency: required(dict, "currency")?.extract::<String>()?,
+        amount: decimal_from_wire(&required(dict, "amount")?, "amount")?,
+        created_at: required(dict, "created_at")?.extract().map(Timestamp::from_nanos)?,
+    })
+}
+
+pub(crate) fn upbit_pocket_transfer_to_wire(
+    py: Python<'_>,
+    value: &maxt::UpbitPocketTransfer,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "uuid" => &value.uuid,
+        "identifier" => &value.identifier,
+        "from" => &value.from,
+        "to" => &value.to,
+        "state" => &value.state,
+        "currency" => &value.currency,
+        "amount" => decimal_to_wire(value.amount),
+        "created_at" => timestamp_to_wire(value.created_at),
+    )
+}
+
 pub(crate) fn bithumb_notice_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::BithumbNotice> {
     let value = wire_object(value)?;
     let dict = value.cast::<PyDict>()?;
@@ -2124,6 +2814,69 @@ pub(crate) fn bithumb_pending_orders_request_to_wire(
         "limit" => value.limit,
         "order_by" => value.order_by.map(bithumb_order_direction_to_wire).transpose()?,
         "cursor" => value.cursor.as_ref().map(Cursor::as_str),
+    )
+}
+
+pub(crate) fn bithumb_closed_orders_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::BithumbClosedOrdersRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["market", "state", "states", "start_time", "end_time", "limit", "order_by", "cursor"], "bithumb_closed_orders_request")?;
+    Ok(maxt::BithumbClosedOrdersRequest {
+        market: optional(dict, "market")?.map(|value| -> PyResult<_> { market_from_wire(&value) }).transpose()?,
+        state: optional(dict, "state")?.map(|value| -> PyResult<_> { bithumb_closed_order_state_from_wire(&value) }).transpose()?,
+        states: list_from_wire(&required(dict, "states")?, bithumb_closed_order_state_from_wire)?,
+        start_time: optional(dict, "start_time")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
+        end_time: optional(dict, "end_time")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
+        limit: optional(dict, "limit")?.map(|value| -> PyResult<_> { u32_from_wire(&value, "limit") }).transpose()?,
+        order_by: optional(dict, "order_by")?.map(|value| -> PyResult<_> { bithumb_order_direction_from_wire(&value) }).transpose()?,
+        cursor: optional(dict, "cursor")?.map(|value| value.extract::<String>().map(Cursor::new)).transpose()?,
+    })
+}
+
+pub(crate) fn bithumb_closed_orders_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::BithumbClosedOrdersRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "market" => value.market.as_ref().map(|item| market_to_wire(py, item)).transpose()?,
+        "state" => value.state.map(bithumb_closed_order_state_to_wire).transpose()?,
+        "states" => value.states.iter().copied().map(bithumb_closed_order_state_to_wire).collect::<PyResult<Vec<_>>>()?,
+        "start_time" => value.start_time.map(timestamp_to_wire),
+        "end_time" => value.end_time.map(timestamp_to_wire),
+        "limit" => value.limit,
+        "order_by" => value.order_by.map(bithumb_order_direction_to_wire).transpose()?,
+        "cursor" => value.cursor.as_ref().map(Cursor::as_str),
+    )
+}
+
+pub(crate) fn bithumb_closed_order_to_wire(
+    py: Python<'_>,
+    value: &maxt::BithumbClosedOrder,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "order_id" => &value.order_id,
+        "side" => &value.side,
+        "order_type" => &value.order_type,
+        "price" => value.price.map(decimal_to_wire),
+        "state" => &value.state,
+        "market" => market_to_wire(py, &value.market)?,
+        "created_at" => value.created_at.map(timestamp_to_wire),
+        "volume" => decimal_to_wire(value.volume),
+        "remaining_volume" => decimal_to_wire(value.remaining_volume),
+        "reserved_fee" => decimal_to_wire(value.reserved_fee),
+        "remaining_fee" => decimal_to_wire(value.remaining_fee),
+        "paid_fee" => decimal_to_wire(value.paid_fee),
+        "locked" => decimal_to_wire(value.locked),
+        "executed_volume" => decimal_to_wire(value.executed_volume),
+        "executed_funds" => decimal_to_wire(value.executed_funds),
+        "trades_count" => value.trades_count,
+        "client_order_id" => &value.client_order_id,
+        "stp_type" => &value.stp_type,
+        "time_in_force" => &value.time_in_force,
+        "cancel_type" => &value.cancel_type,
+        "canceling_order_id" => &value.canceling_order_id,
     )
 }
 
@@ -2412,6 +3165,189 @@ pub(crate) fn bithumb_network_fee_to_wire(
     )
 }
 
+pub(crate) fn bithumb_withdrawal_address_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::BithumbWithdrawalAddress> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["currency", "net_type", "network_name", "withdraw_address", "secondary_address", "exchange_name", "owner_type", "owner_ko_name", "owner_en_name", "owner_corp_ko_name", "owner_corp_en_name"], "bithumb_withdrawal_address")?;
+    Ok(maxt::BithumbWithdrawalAddress {
+        currency: required(dict, "currency")?.extract::<String>()?,
+        net_type: required(dict, "net_type")?.extract::<String>()?,
+        network_name: optional(dict, "network_name")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        withdraw_address: required(dict, "withdraw_address")?.extract::<String>()?,
+        secondary_address: optional(dict, "secondary_address")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        exchange_name: optional(dict, "exchange_name")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        owner_type: optional(dict, "owner_type")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        owner_ko_name: optional(dict, "owner_ko_name")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        owner_en_name: optional(dict, "owner_en_name")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        owner_corp_ko_name: optional(dict, "owner_corp_ko_name")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        owner_corp_en_name: optional(dict, "owner_corp_en_name")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+    })
+}
+
+pub(crate) fn bithumb_withdrawal_address_to_wire(
+    py: Python<'_>,
+    value: &maxt::BithumbWithdrawalAddress,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "currency" => &value.currency,
+        "net_type" => &value.net_type,
+        "network_name" => &value.network_name,
+        "withdraw_address" => &value.withdraw_address,
+        "secondary_address" => &value.secondary_address,
+        "exchange_name" => &value.exchange_name,
+        "owner_type" => &value.owner_type,
+        "owner_ko_name" => &value.owner_ko_name,
+        "owner_en_name" => &value.owner_en_name,
+        "owner_corp_ko_name" => &value.owner_corp_ko_name,
+        "owner_corp_en_name" => &value.owner_corp_en_name,
+    )
+}
+
+pub(crate) fn bithumb_order_detail_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::BithumbOrderDetailRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["market", "uuid", "client_order_id"], "bithumb_order_detail_request")?;
+    Ok(maxt::BithumbOrderDetailRequest {
+        market: market_from_wire(&required(dict, "market")?)?,
+        uuid: optional(dict, "uuid")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+        client_order_id: optional(dict, "client_order_id")?.map(|value| -> PyResult<_> { value.extract::<String>() }).transpose()?,
+    })
+}
+
+pub(crate) fn bithumb_order_detail_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::BithumbOrderDetailRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "market" => market_to_wire(py, &value.market)?,
+        "uuid" => &value.uuid,
+        "client_order_id" => &value.client_order_id,
+    )
+}
+
+pub(crate) fn bithumb_order_detail_trade_to_wire(
+    py: Python<'_>,
+    value: &maxt::BithumbOrderDetailTrade,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "market" => market_to_wire(py, &value.market)?,
+        "uuid" => &value.uuid,
+        "price" => decimal_to_wire(value.price),
+        "volume" => decimal_to_wire(value.volume),
+        "funds" => decimal_to_wire(value.funds),
+        "side" => &value.side,
+        "created_at" => timestamp_to_wire(value.created_at),
+    )
+}
+
+pub(crate) fn bithumb_order_detail_to_wire(
+    py: Python<'_>,
+    value: &maxt::BithumbOrderDetail,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "uuid" => &value.uuid,
+        "client_order_id" => &value.client_order_id,
+        "side" => &value.side,
+        "order_type" => &value.order_type,
+        "price" => decimal_to_wire(value.price),
+        "state" => &value.state,
+        "market" => market_to_wire(py, &value.market)?,
+        "created_at" => timestamp_to_wire(value.created_at),
+        "volume" => decimal_to_wire(value.volume),
+        "remaining_volume" => decimal_to_wire(value.remaining_volume),
+        "reserved_fee" => decimal_to_wire(value.reserved_fee),
+        "remaining_fee" => decimal_to_wire(value.remaining_fee),
+        "paid_fee" => decimal_to_wire(value.paid_fee),
+        "locked" => decimal_to_wire(value.locked),
+        "executed_volume" => decimal_to_wire(value.executed_volume),
+        "executed_funds" => decimal_to_wire(value.executed_funds),
+        "trades_count" => value.trades_count,
+        "trades" => list_to_wire(py, &value.trades, bithumb_order_detail_trade_to_wire)?,
+        "stp_type" => &value.stp_type,
+        "cancel_type" => &value.cancel_type,
+        "canceling_uuid" => &value.canceling_uuid,
+        "time_in_force" => &value.time_in_force,
+    )
+}
+
+pub(crate) fn bithumb_order_list_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::BithumbOrderListRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["market", "state", "states", "uuids", "client_order_ids", "page", "limit", "order_by"], "bithumb_order_list_request")?;
+    Ok(maxt::BithumbOrderListRequest {
+        market: optional(dict, "market")?.map(|value| -> PyResult<_> { market_from_wire(&value) }).transpose()?,
+        state: optional(dict, "state")?.map(|value| -> PyResult<_> { bithumb_order_list_state_from_wire(&value) }).transpose()?,
+        states: list_from_wire(&required(dict, "states")?, bithumb_order_list_state_from_wire)?,
+        uuids: required(dict, "uuids")?.extract::<Vec<String>>()?,
+        client_order_ids: required(dict, "client_order_ids")?.extract::<Vec<String>>()?,
+        page: optional(dict, "page")?.map(|value| -> PyResult<_> { u32_from_wire(&value, "page") }).transpose()?,
+        limit: optional(dict, "limit")?.map(|value| -> PyResult<_> { u32_from_wire(&value, "limit") }).transpose()?,
+        order_by: optional(dict, "order_by")?.map(|value| -> PyResult<_> { bithumb_order_direction_from_wire(&value) }).transpose()?,
+    })
+}
+
+pub(crate) fn bithumb_order_list_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::BithumbOrderListRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "market" => value.market.as_ref().map(|item| market_to_wire(py, item)).transpose()?,
+        "state" => value.state.map(bithumb_order_list_state_to_wire).transpose()?,
+        "states" => value.states.iter().copied().map(bithumb_order_list_state_to_wire).collect::<PyResult<Vec<_>>>()?,
+        "uuids" => &value.uuids,
+        "client_order_ids" => &value.client_order_ids,
+        "page" => value.page,
+        "limit" => value.limit,
+        "order_by" => value.order_by.map(bithumb_order_direction_to_wire).transpose()?,
+    )
+}
+
+pub(crate) fn bithumb_order_list_item_to_wire(
+    py: Python<'_>,
+    value: &maxt::BithumbOrderListItem,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "uuid" => &value.uuid,
+        "client_order_id" => &value.client_order_id,
+        "side" => &value.side,
+        "order_type" => &value.order_type,
+        "price" => decimal_to_wire(value.price),
+        "state" => &value.state,
+        "market" => market_to_wire(py, &value.market)?,
+        "created_at" => timestamp_to_wire(value.created_at),
+        "volume" => decimal_to_wire(value.volume),
+        "remaining_volume" => decimal_to_wire(value.remaining_volume),
+        "reserved_fee" => decimal_to_wire(value.reserved_fee),
+        "remaining_fee" => decimal_to_wire(value.remaining_fee),
+        "paid_fee" => decimal_to_wire(value.paid_fee),
+        "locked" => decimal_to_wire(value.locked),
+        "executed_volume" => decimal_to_wire(value.executed_volume),
+        "executed_funds" => decimal_to_wire(value.executed_funds),
+        "trades_count" => value.trades_count,
+        "stp_type" => &value.stp_type,
+        "time_in_force" => &value.time_in_force,
+    )
+}
+
+pub(crate) fn binance_spot_average_price_to_wire(
+    py: Python<'_>,
+    value: &maxt::BinanceSpotAveragePrice,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "market" => market_to_wire(py, &value.market)?,
+        "minutes" => value.minutes,
+        "price" => decimal_to_wire(value.price),
+        "close_time" => timestamp_to_wire(value.close_time),
+    )
+}
+
 pub(crate) fn binance_mark_price_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::BinanceMarkPrice> {
     let value = wire_object(value)?;
     let dict = value.cast::<PyDict>()?;
@@ -2530,6 +3466,135 @@ pub(crate) fn binance_aggregate_trade_to_wire(
     )
 }
 
+pub(crate) fn binance_account_trade_to_wire(
+    py: Python<'_>,
+    value: &maxt::BinanceAccountTrade,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "market" => market_to_wire(py, &value.market)?,
+        "id" => &value.id,
+        "order_id" => &value.order_id,
+        "timestamp" => timestamp_to_wire(value.timestamp),
+        "side" => side_to_wire(value.side)?,
+        "maker" => value.maker,
+        "best_match" => value.best_match,
+        "order_list_id" => &value.order_list_id,
+        "price" => decimal_to_wire(value.price),
+        "quantity" => decimal_to_wire(value.quantity),
+        "quote_quantity" => value.quote_quantity.map(decimal_to_wire),
+        "commission" => decimal_to_wire(value.commission),
+        "commission_asset" => &value.commission_asset,
+        "realized_pnl" => value.realized_pnl.map(decimal_to_wire),
+        "position_side" => &value.position_side,
+        "pair" => &value.pair,
+        "base_quantity" => value.base_quantity.map(decimal_to_wire),
+        "margin_asset" => &value.margin_asset,
+    )
+}
+
+pub(crate) fn binance_test_order_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::BinanceTestOrderRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["order", "compute_commission_rates"], "binance_test_order_request")?;
+    Ok(maxt::BinanceTestOrderRequest {
+        order: order_request_from_wire(&required(dict, "order")?)?,
+        compute_commission_rates: required(dict, "compute_commission_rates")?.extract()?,
+    })
+}
+
+pub(crate) fn binance_test_order_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::BinanceTestOrderRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "order" => order_request_to_wire(py, &value.order)?,
+        "compute_commission_rates" => value.compute_commission_rates,
+    )
+}
+
+pub(crate) fn binance_test_order_to_wire(
+    py: Python<'_>,
+    value: &maxt::BinanceTestOrder,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "response_json" => &value.response_json,
+    )
+}
+
+pub(crate) fn binance_c2c_trade_history_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::BinanceC2cTradeHistoryRequest> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["trade_type", "start_timestamp", "end_timestamp", "page", "rows", "recv_window"], "binance_c2c_trade_history_request")?;
+    Ok(maxt::BinanceC2cTradeHistoryRequest {
+        trade_type: binance_c2c_trade_type_from_wire(&required(dict, "trade_type")?)?,
+        start_timestamp: optional(dict, "start_timestamp")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
+        end_timestamp: optional(dict, "end_timestamp")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
+        page: optional(dict, "page")?.map(|value| -> PyResult<_> { u32_from_wire(&value, "page") }).transpose()?,
+        rows: optional(dict, "rows")?.map(|value| -> PyResult<_> { u32_from_wire(&value, "rows") }).transpose()?,
+        recv_window: optional(dict, "recv_window")?.map(|value| -> PyResult<_> { value.extract() }).transpose()?,
+    })
+}
+
+pub(crate) fn binance_c2c_trade_history_request_to_wire(
+    py: Python<'_>,
+    value: &maxt::BinanceC2cTradeHistoryRequest,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "trade_type" => binance_c2c_trade_type_to_wire(value.trade_type)?,
+        "start_timestamp" => value.start_timestamp.map(timestamp_to_wire),
+        "end_timestamp" => value.end_timestamp.map(timestamp_to_wire),
+        "page" => value.page,
+        "rows" => value.rows,
+        "recv_window" => value.recv_window,
+    )
+}
+
+pub(crate) fn binance_c2c_trade_to_wire(
+    py: Python<'_>,
+    value: &maxt::BinanceC2cTrade,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "order_number" => &value.order_number,
+        "adv_no" => &value.adv_no,
+        "trade_type" => &value.trade_type,
+        "asset" => &value.asset,
+        "fiat" => &value.fiat,
+        "fiat_symbol" => &value.fiat_symbol,
+        "amount" => value.amount.map(decimal_to_wire),
+        "total_price" => value.total_price.map(decimal_to_wire),
+        "unit_price" => value.unit_price.map(decimal_to_wire),
+        "order_status" => &value.order_status,
+        "created_at" => value.created_at.map(timestamp_to_wire),
+        "commission" => value.commission.map(decimal_to_wire),
+        "counterparty_nickname" => &value.counterparty_nickname,
+        "pay_method_name" => &value.pay_method_name,
+        "additional_kyc_verify" => value.additional_kyc_verify,
+        "taker_commission_rate" => value.taker_commission_rate.map(decimal_to_wire),
+        "taker_commission" => value.taker_commission.map(decimal_to_wire),
+        "taker_amount" => value.taker_amount.map(decimal_to_wire),
+        "advertisement_role" => &value.advertisement_role,
+    )
+}
+
+pub(crate) fn binance_c2c_trade_history_page_to_wire(
+    py: Python<'_>,
+    value: &maxt::BinanceC2cTradeHistoryPage,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "code" => &value.code,
+        "message" => &value.message,
+        "data" => value.data.as_ref().map(|items| list_to_wire(py, items, binance_c2c_trade_to_wire)).transpose()?,
+        "total" => value.total,
+        "success" => value.success,
+    )
+}
+
 pub(crate) fn hyperliquid_mid_price_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::HyperliquidMidPrice> {
     let value = wire_object(value)?;
     let dict = value.cast::<PyDict>()?;
@@ -2548,6 +3613,331 @@ pub(crate) fn hyperliquid_mid_price_to_wire(
         py,
         "market" => market_to_wire(py, &value.market)?,
         "price" => decimal_to_wire(value.price),
+    )
+}
+
+pub(crate) fn hyperliquid_user_rate_limit_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidUserRateLimit,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "cumulative_volume" => decimal_to_wire(value.cumulative_volume),
+        "requests_used" => value.requests_used,
+        "requests_cap" => value.requests_cap,
+        "requests_surplus" => value.requests_surplus,
+    )
+}
+
+pub(crate) fn hyperliquid_user_role_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidUserRole,
+) -> PyResult<Py<PyAny>> {
+    match value {
+        maxt::HyperliquidUserRole::User => wire_dict!(py, "kind" => "user"),
+        maxt::HyperliquidUserRole::Agent { user } => wire_dict!(py, "kind" => "agent", "user" => user.as_deref()),
+        maxt::HyperliquidUserRole::Vault => wire_dict!(py, "kind" => "vault"),
+        maxt::HyperliquidUserRole::SubAccount { master } => wire_dict!(py, "kind" => "sub_account", "master" => master.as_deref()),
+        maxt::HyperliquidUserRole::Missing => wire_dict!(py, "kind" => "missing"),
+        maxt::HyperliquidUserRole::Other { role, data_json } => wire_dict!(py, "kind" => "other", "role" => role.as_str(), "data_json" => data_json.as_deref()),
+        _ => Err(binding_contract("HyperliquidUserRole")),
+    }
+}
+
+pub(crate) fn hyperliquid_referral_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidReferral,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "referred_by" => value.referred_by.as_ref().map(|item| hyperliquid_referrer_to_wire(py, item)).transpose()?,
+        "cumulative_volume" => decimal_to_wire(value.cumulative_volume),
+        "unclaimed_rewards" => decimal_to_wire(value.unclaimed_rewards),
+        "claimed_rewards" => decimal_to_wire(value.claimed_rewards),
+        "builder_rewards" => decimal_to_wire(value.builder_rewards),
+        "referrer_state_json" => &value.referrer_state_json,
+        "reward_history_json" => &value.reward_history_json,
+        "token_to_state_json" => &value.token_to_state_json,
+    )
+}
+
+pub(crate) fn hyperliquid_referrer_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::HyperliquidReferrer> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["address", "code"], "hyperliquid_referrer")?;
+    Ok(maxt::HyperliquidReferrer {
+        address: required(dict, "address")?.extract::<String>()?,
+        code: required(dict, "code")?.extract::<String>()?,
+    })
+}
+
+pub(crate) fn hyperliquid_referrer_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidReferrer,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "address" => &value.address,
+        "code" => &value.code,
+    )
+}
+
+pub(crate) fn hyperliquid_user_fees_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidUserFees,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "daily_volumes" => list_to_wire(py, &value.daily_volumes, hyperliquid_daily_volume_to_wire)?,
+        "fee_schedule_json" => &value.fee_schedule_json,
+        "user_cross_rate" => decimal_to_wire(value.user_cross_rate),
+        "user_add_rate" => decimal_to_wire(value.user_add_rate),
+        "user_spot_cross_rate" => value.user_spot_cross_rate.map(decimal_to_wire),
+        "user_spot_add_rate" => value.user_spot_add_rate.map(decimal_to_wire),
+        "active_referral_discount" => value.active_referral_discount.map(decimal_to_wire),
+        "details_json" => &value.details_json,
+    )
+}
+
+pub(crate) fn hyperliquid_user_fill_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidUserFill,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "coin" => &value.coin,
+        "price" => decimal_to_wire(value.price),
+        "size" => decimal_to_wire(value.size),
+        "side" => &value.side,
+        "time" => timestamp_to_wire(value.time),
+        "start_position" => decimal_to_wire(value.start_position),
+        "direction" => &value.direction,
+        "closed_pnl" => decimal_to_wire(value.closed_pnl),
+        "hash" => &value.hash,
+        "order_id" => value.order_id,
+        "crossed" => value.crossed,
+        "fee" => decimal_to_wire(value.fee),
+        "builder_fee" => value.builder_fee.map(decimal_to_wire),
+        "trade_id" => value.trade_id,
+        "fee_token" => &value.fee_token,
+        "twap_id" => value.twap_id,
+        "raw_json" => &value.raw_json,
+    )
+}
+
+pub(crate) fn hyperliquid_order_reference_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::HyperliquidOrderReference> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    let kind = text(&required(dict, "kind")?)?;
+    match kind.as_str() {
+        "order_id" => {
+            only_fields(dict, &["kind", "value"], "hyperliquid_order_reference")?;
+            Ok(maxt::HyperliquidOrderReference::OrderId(required(dict, "value")?.extract()?))
+        },
+        "client_order_id" => {
+            only_fields(dict, &["kind", "value"], "hyperliquid_order_reference")?;
+            Ok(maxt::HyperliquidOrderReference::ClientOrderId(required(dict, "value")?.extract::<String>()?))
+        },
+        _ => Err(invalid("hyperliquid_order_reference", &kind)),
+    }
+}
+
+pub(crate) fn hyperliquid_order_reference_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidOrderReference,
+) -> PyResult<Py<PyAny>> {
+    match value {
+        maxt::HyperliquidOrderReference::OrderId(value) => wire_dict!(py, "kind" => "order_id", "value" => *value),
+        maxt::HyperliquidOrderReference::ClientOrderId(value) => wire_dict!(py, "kind" => "client_order_id", "value" => value.as_str()),
+        _ => Err(binding_contract("HyperliquidOrderReference")),
+    }
+}
+
+pub(crate) fn hyperliquid_open_order_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidOpenOrder,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "coin" => &value.coin,
+        "limit_price" => decimal_to_wire(value.limit_price),
+        "order_id" => value.order_id,
+        "side" => &value.side,
+        "size" => decimal_to_wire(value.size),
+        "timestamp" => timestamp_to_wire(value.timestamp),
+        "raw_json" => &value.raw_json,
+    )
+}
+
+pub(crate) fn hyperliquid_order_detail_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidOrderDetail,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "coin" => &value.coin,
+        "side" => &value.side,
+        "limit_price" => decimal_to_wire(value.limit_price),
+        "size" => decimal_to_wire(value.size),
+        "order_id" => value.order_id,
+        "timestamp" => timestamp_to_wire(value.timestamp),
+        "trigger_condition" => &value.trigger_condition,
+        "is_trigger" => value.is_trigger,
+        "trigger_price" => decimal_to_wire(value.trigger_price),
+        "children_json" => &value.children_json,
+        "is_position_tpsl" => value.is_position_tpsl,
+        "reduce_only" => value.reduce_only,
+        "order_type" => &value.order_type,
+        "original_size" => decimal_to_wire(value.original_size),
+        "time_in_force" => &value.time_in_force,
+        "client_order_id" => &value.client_order_id,
+        "raw_json" => &value.raw_json,
+    )
+}
+
+pub(crate) fn hyperliquid_order_info_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidOrderInfo,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "order" => hyperliquid_order_detail_to_wire(py, &value.order)?,
+        "status" => &value.status,
+        "status_timestamp" => timestamp_to_wire(value.status_timestamp),
+        "raw_json" => &value.raw_json,
+    )
+}
+
+pub(crate) fn hyperliquid_order_status_response_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidOrderStatusResponse,
+) -> PyResult<Py<PyAny>> {
+    match value {
+        maxt::HyperliquidOrderStatusResponse::Order(value) => wire_dict!(py, "kind" => "order", "value" => hyperliquid_order_info_to_wire(py, value)?),
+        maxt::HyperliquidOrderStatusResponse::UnknownOrder => wire_dict!(py, "kind" => "unknown_order"),
+        maxt::HyperliquidOrderStatusResponse::Other { status, raw_json } => wire_dict!(py, "kind" => "other", "status" => status.as_str(), "raw_json" => raw_json.as_str()),
+        _ => Err(binding_contract("HyperliquidOrderStatusResponse")),
+    }
+}
+
+pub(crate) fn hyperliquid_daily_volume_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::HyperliquidDailyVolume> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["date", "user_cross", "user_add", "exchange"], "hyperliquid_daily_volume")?;
+    Ok(maxt::HyperliquidDailyVolume {
+        date: required(dict, "date")?.extract::<String>()?,
+        user_cross: decimal_from_wire(&required(dict, "user_cross")?, "user_cross")?,
+        user_add: decimal_from_wire(&required(dict, "user_add")?, "user_add")?,
+        exchange: decimal_from_wire(&required(dict, "exchange")?, "exchange")?,
+    })
+}
+
+pub(crate) fn hyperliquid_daily_volume_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidDailyVolume,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "date" => &value.date,
+        "user_cross" => decimal_to_wire(value.user_cross),
+        "user_add" => decimal_to_wire(value.user_add),
+        "exchange" => decimal_to_wire(value.exchange),
+    )
+}
+
+pub(crate) fn hyperliquid_portfolio_period_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::HyperliquidPortfolioPeriod> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["period", "account_value_history", "pnl_history", "volume"], "hyperliquid_portfolio_period")?;
+    Ok(maxt::HyperliquidPortfolioPeriod {
+        period: required(dict, "period")?.extract::<String>()?,
+        account_value_history: list_from_wire(&required(dict, "account_value_history")?, hyperliquid_portfolio_point_from_wire)?,
+        pnl_history: list_from_wire(&required(dict, "pnl_history")?, hyperliquid_portfolio_point_from_wire)?,
+        volume: decimal_from_wire(&required(dict, "volume")?, "volume")?,
+    })
+}
+
+pub(crate) fn hyperliquid_portfolio_period_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidPortfolioPeriod,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "period" => &value.period,
+        "account_value_history" => list_to_wire(py, &value.account_value_history, hyperliquid_portfolio_point_to_wire)?,
+        "pnl_history" => list_to_wire(py, &value.pnl_history, hyperliquid_portfolio_point_to_wire)?,
+        "volume" => decimal_to_wire(value.volume),
+    )
+}
+
+pub(crate) fn hyperliquid_portfolio_point_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::HyperliquidPortfolioPoint> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["time", "value"], "hyperliquid_portfolio_point")?;
+    Ok(maxt::HyperliquidPortfolioPoint {
+        time: required(dict, "time")?.extract().map(Timestamp::from_nanos)?,
+        value: decimal_from_wire(&required(dict, "value")?, "value")?,
+    })
+}
+
+pub(crate) fn hyperliquid_portfolio_point_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidPortfolioPoint,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "time" => timestamp_to_wire(value.time),
+        "value" => decimal_to_wire(value.value),
+    )
+}
+
+pub(crate) fn hyperliquid_sub_account_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::HyperliquidSubAccount> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["name", "user", "master", "perpetual_state_json", "spot_state_json"], "hyperliquid_sub_account")?;
+    Ok(maxt::HyperliquidSubAccount {
+        name: required(dict, "name")?.extract::<String>()?,
+        user: required(dict, "user")?.extract::<String>()?,
+        master: required(dict, "master")?.extract::<String>()?,
+        perpetual_state_json: required(dict, "perpetual_state_json")?.extract::<String>()?,
+        spot_state_json: required(dict, "spot_state_json")?.extract::<String>()?,
+    })
+}
+
+pub(crate) fn hyperliquid_sub_account_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidSubAccount,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "name" => &value.name,
+        "user" => &value.user,
+        "master" => &value.master,
+        "perpetual_state_json" => &value.perpetual_state_json,
+        "spot_state_json" => &value.spot_state_json,
+    )
+}
+
+pub(crate) fn hyperliquid_vault_equity_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::HyperliquidVaultEquity> {
+    let value = wire_object(value)?;
+    let dict = value.cast::<PyDict>()?;
+    only_fields(dict, &["vault_address", "equity", "locked_until"], "hyperliquid_vault_equity")?;
+    Ok(maxt::HyperliquidVaultEquity {
+        vault_address: required(dict, "vault_address")?.extract::<String>()?,
+        equity: decimal_from_wire(&required(dict, "equity")?, "equity")?,
+        locked_until: optional(dict, "locked_until")?.map(|value| -> PyResult<_> { value.extract().map(Timestamp::from_nanos) }).transpose()?,
+    })
+}
+
+pub(crate) fn hyperliquid_vault_equity_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidVaultEquity,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "vault_address" => &value.vault_address,
+        "equity" => decimal_to_wire(value.equity),
+        "locked_until" => value.locked_until.map(timestamp_to_wire),
     )
 }
 
@@ -2602,6 +3992,39 @@ pub(crate) fn funding_payments_page_to_wire(
     wire_dict!(
         py,
         "items" => list_to_wire(py, &value.items, funding_payment_to_wire)?,
+        "next" => value.next.as_ref().map(Cursor::as_str),
+    )
+}
+
+pub(crate) fn closed_orders_page_to_wire(
+    py: Python<'_>,
+    value: &Page<maxt::BithumbClosedOrder>,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "items" => list_to_wire(py, &value.items, bithumb_closed_order_to_wire)?,
+        "next" => value.next.as_ref().map(Cursor::as_str),
+    )
+}
+
+pub(crate) fn twap_orders_page_to_wire(
+    py: Python<'_>,
+    value: &Page<maxt::BithumbTwapOrder>,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "items" => list_to_wire(py, &value.items, bithumb_twap_order_to_wire)?,
+        "next" => value.next.as_ref().map(Cursor::as_str),
+    )
+}
+
+pub(crate) fn account_trades_page_to_wire(
+    py: Python<'_>,
+    value: &Page<maxt::BinanceAccountTrade>,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "items" => list_to_wire(py, &value.items, binance_account_trade_to_wire)?,
         "next" => value.next.as_ref().map(Cursor::as_str),
     )
 }

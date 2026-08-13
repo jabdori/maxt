@@ -1,19 +1,19 @@
 use std::sync::Arc;
 
+#[cfg(test)]
+use maxt::Adapter;
 use maxt::adapters::{
     BinanceAdapter, BinanceListenKey, BinanceMarket, BithumbAdapter, BithumbAlertStep,
     BithumbMarketAlert, HyperliquidAdapter, HyperliquidLedgerEntry, HyperliquidLedgerKind,
     UpbitAdapter, UpbitMarketEvent, UpbitRegion,
 };
-#[cfg(test)]
-use maxt::Adapter;
 use maxt::{Cursor, Market, Page, Timestamp};
+use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
-use pyo3::IntoPyObjectExt;
 
-use crate::client::{operation, NativeClient};
+use crate::client::{NativeClient, operation};
 use crate::convert::{
     binance_mark_price_to_wire, binance_open_interest_to_wire, decimal_from_wire, decimal_to_wire,
     hyperliquid_mid_price_to_wire, list_to_wire, market_from_wire, market_to_wire,
@@ -105,7 +105,9 @@ impl NativeUpbitAdapter {
         }
         Ok(Self {
             inner: Arc::new(adapter),
-            authenticated: credentials.is_some(),
+            authenticated: credentials.is_some_and(|(access_key, secret_key)| {
+                !access_key.trim().is_empty() && !secret_key.trim().is_empty()
+            }),
         })
     }
 
@@ -234,6 +236,48 @@ impl NativeUpbitAdapter {
         )
     }
 
+    fn list_subscriptions<'py>(
+        &self,
+        py: Python<'py>,
+        subscription: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let subscription = crate::convert::subscription_from_wire(subscription)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.list_subscriptions(&subscription).await },
+            |py, value| upbit_subscription_list_to_wire(py, &value),
+        )
+    }
+
+    fn order_detail<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::upbit_order_detail_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.order_detail(&request).await },
+            |py, value| crate::convert::upbit_order_detail_to_wire(py, &value),
+        )
+    }
+
+    fn closed_orders<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::upbit_closed_orders_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.closed_orders(&request).await },
+            |py, values| list_to_wire(py, &values, crate::convert::upbit_closed_order_to_wire),
+        )
+    }
+
     fn test_order<'py>(
         &self,
         py: Python<'py>,
@@ -337,6 +381,139 @@ impl NativeUpbitAdapter {
             |py, value| crate::convert::upbit_cancel_and_new_order_result_to_wire(py, &value),
         )
     }
+
+    fn deposit_krw<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::upbit_krw_transfer_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.deposit_krw(&request).await },
+            |py, value| crate::convert::upbit_krw_deposit_to_wire(py, &value),
+        )
+    }
+
+    fn withdraw_krw<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::upbit_krw_transfer_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.withdraw_krw(&request).await },
+            |py, value| crate::convert::upbit_krw_withdrawal_to_wire(py, &value),
+        )
+    }
+
+    fn api_keys<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(py, async move { adapter.api_keys().await }, |py, values| {
+            list_to_wire(py, &values, crate::convert::upbit_api_key_to_wire)
+        })
+    }
+
+    fn list_pockets<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.list_pockets().await },
+            |py, values| list_to_wire(py, &values, crate::convert::upbit_pocket_to_wire),
+        )
+    }
+
+    fn list_pocket_api_keys<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::upbit_pocket_api_keys_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.list_pocket_api_keys(&request).await },
+            |py, values| {
+                list_to_wire(
+                    py,
+                    &values,
+                    crate::convert::upbit_pocket_api_key_group_to_wire,
+                )
+            },
+        )
+    }
+
+    fn sub_pocket_balances<'py>(
+        &self,
+        py: Python<'py>,
+        pocket_uuid: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.sub_pocket_balances(&pocket_uuid).await },
+            |py, values| list_to_wire(py, &values, crate::convert::upbit_pocket_balance_to_wire),
+        )
+    }
+
+    fn universal_transfer<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::upbit_pocket_universal_transfer_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.universal_transfer(&request).await },
+            |py, value| crate::convert::upbit_pocket_transfer_to_wire(py, &value),
+        )
+    }
+
+    fn universal_transfers<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::upbit_pocket_transfer_query_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.universal_transfers(&request).await },
+            |py, values| list_to_wire(py, &values, crate::convert::upbit_pocket_transfer_to_wire),
+        )
+    }
+
+    fn sub_pocket_transfer<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::upbit_pocket_transfer_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.sub_pocket_transfer(&request).await },
+            |py, value| crate::convert::upbit_pocket_transfer_to_wire(py, &value),
+        )
+    }
+
+    fn sub_pocket_transfers<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::upbit_pocket_transfer_query_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.sub_pocket_transfers(&request).await },
+            |py, values| list_to_wire(py, &values, crate::convert::upbit_pocket_transfer_to_wire),
+        )
+    }
 }
 
 #[pyclass(module = "maxt._native", frozen)]
@@ -414,6 +591,49 @@ impl NativeBithumbAdapter {
         })
     }
 
+    fn withdrawal_addresses<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.withdrawal_addresses().await },
+            |py, values| {
+                list_to_wire(
+                    py,
+                    &values,
+                    crate::convert::bithumb_withdrawal_address_to_wire,
+                )
+            },
+        )
+    }
+
+    fn order_detail<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::bithumb_order_detail_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.order_detail(&request).await },
+            |py, value| crate::convert::bithumb_order_detail_to_wire(py, &value),
+        )
+    }
+
+    fn order_list<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::bithumb_order_list_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.order_list(&request).await },
+            |py, values| list_to_wire(py, &values, crate::convert::bithumb_order_list_item_to_wire),
+        )
+    }
+
     fn krw_withdrawals<'py>(
         &self,
         py: Python<'py>,
@@ -484,6 +704,20 @@ impl NativeBithumbAdapter {
         )
     }
 
+    fn closed_orders<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::bithumb_closed_orders_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.closed_orders(&request).await },
+            |py, value| crate::convert::closed_orders_page_to_wire(py, &value),
+        )
+    }
+
     fn twap_orders<'py>(
         &self,
         py: Python<'py>,
@@ -538,7 +772,6 @@ impl NativeBithumbAdapter {
             |py, value| crate::convert::bithumb_batch_orders_result_to_wire(py, &value),
         )
     }
-
 }
 
 #[pyclass(module = "maxt._native", frozen)]
@@ -611,6 +844,20 @@ impl NativeBinanceAdapter {
         )
     }
 
+    fn spot_average_price<'py>(
+        &self,
+        py: Python<'py>,
+        market: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let market = market_from_wire(market)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.spot_average_price(&market).await },
+            |py, value| binance_spot_average_price_to_wire(py, &value),
+        )
+    }
+
     fn mark_price<'py>(
         &self,
         py: Python<'py>,
@@ -659,6 +906,62 @@ impl NativeBinanceAdapter {
             py,
             async move { adapter.aggregate_trades(&request).await },
             |py, values| list_to_wire(py, &values, crate::convert::binance_aggregate_trade_to_wire),
+        )
+    }
+
+    fn account_trades<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::history_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.account_trades(&request).await },
+            |py, value| crate::convert::account_trades_page_to_wire(py, &value),
+        )
+    }
+
+    fn c2c_trade_history<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::binance_c2c_trade_history_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.c2c_trade_history(&request).await },
+            |py, value| crate::convert::binance_c2c_trade_history_page_to_wire(py, &value),
+        )
+    }
+
+    fn test_order<'py>(
+        &self,
+        py: Python<'py>,
+        request: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::binance_test_order_request_from_wire(&request)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.test_order(&request).await },
+            |py, value| crate::convert::binance_test_order_to_wire(py, &value),
+        )
+    }
+
+    fn cancel_all_open_orders<'py>(
+        &self,
+        py: Python<'py>,
+        market: Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let market = market_from_wire(&market)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.cancel_all_open_orders(&market).await },
+            |py, ()| Ok(py.None()),
         )
     }
 
@@ -790,6 +1093,142 @@ impl NativeHyperliquidAdapter {
             list_to_wire(py, &values, hyperliquid_mid_price_to_wire)
         })
     }
+
+    fn basic_open_orders<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.basic_open_orders().await },
+            |py, values| list_to_wire(py, &values, crate::convert::hyperliquid_open_order_to_wire),
+        )
+    }
+
+    fn order_status<'py>(
+        &self,
+        py: Python<'py>,
+        reference: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let reference = crate::convert::hyperliquid_order_reference_from_wire(reference)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.order_status(reference).await },
+            |py, value| crate::convert::hyperliquid_order_status_response_to_wire(py, &value),
+        )
+    }
+
+    fn historical_orders<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.historical_orders().await },
+            |py, values| list_to_wire(py, &values, crate::convert::hyperliquid_order_info_to_wire),
+        )
+    }
+
+    fn user_fills<'py>(
+        &self,
+        py: Python<'py>,
+        aggregate_by_time: bool,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.user_fills(aggregate_by_time).await },
+            |py, values| list_to_wire(py, &values, crate::convert::hyperliquid_user_fill_to_wire),
+        )
+    }
+
+    #[pyo3(signature = (from_ns, to_ns=None, aggregate_by_time=false))]
+    fn user_fills_by_time<'py>(
+        &self,
+        py: Python<'py>,
+        from_ns: i64,
+        to_ns: Option<i64>,
+        aggregate_by_time: bool,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let from = Timestamp::from_nanos(from_ns);
+        let to = to_ns.map(Timestamp::from_nanos);
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move {
+                adapter
+                    .user_fills_by_time(from, to, aggregate_by_time)
+                    .await
+            },
+            |py, values| list_to_wire(py, &values, crate::convert::hyperliquid_user_fill_to_wire),
+        )
+    }
+
+    fn user_rate_limit<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.user_rate_limit().await },
+            |py, value| crate::convert::hyperliquid_user_rate_limit_to_wire(py, &value),
+        )
+    }
+
+    fn user_role<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(py, async move { adapter.user_role().await }, |py, value| {
+            crate::convert::hyperliquid_user_role_to_wire(py, &value)
+        })
+    }
+
+    fn referral<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(py, async move { adapter.referral().await }, |py, value| {
+            crate::convert::hyperliquid_referral_to_wire(py, &value)
+        })
+    }
+
+    fn user_fees<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(py, async move { adapter.user_fees().await }, |py, value| {
+            crate::convert::hyperliquid_user_fees_to_wire(py, &value)
+        })
+    }
+
+    fn portfolio<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.portfolio().await },
+            |py, values| {
+                list_to_wire(
+                    py,
+                    &values,
+                    crate::convert::hyperliquid_portfolio_period_to_wire,
+                )
+            },
+        )
+    }
+
+    fn sub_accounts<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.sub_accounts().await },
+            |py, values| list_to_wire(py, &values, crate::convert::hyperliquid_sub_account_to_wire),
+        )
+    }
+
+    fn user_vault_equities<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.user_vault_equities().await },
+            |py, values| {
+                list_to_wire(
+                    py,
+                    &values,
+                    crate::convert::hyperliquid_vault_equity_to_wire,
+                )
+            },
+        )
+    }
 }
 
 include!("generated/provider_convert.rs");
@@ -834,6 +1273,17 @@ mod tests {
             .unwrap();
         assert_eq!(upbit.region().unwrap(), "singapore");
         assert!(upbit.authenticated());
+
+        assert!(
+            !NativeUpbitAdapter::new("korea", Some(" ".into()), Some("secret".into()))
+                .unwrap()
+                .authenticated()
+        );
+        assert!(
+            !NativeUpbitAdapter::new("korea", Some("access".into()), Some(" \t".into()))
+                .unwrap()
+                .authenticated()
+        );
 
         let binance =
             NativeBinanceAdapter::new("usd_m", Some("key".into()), Some("secret".into())).unwrap();

@@ -28,34 +28,48 @@ mod generated_dispatch;
 /// Dart Adapter가 받을 market feed입니다.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireFeed {
+    /// 최근 체결 feed입니다.
     Trades,
+    /// 호가 스냅샷 feed입니다.
     OrderBook,
+    /// ticker 요약 feed입니다.
     Ticker,
+    /// 지정 간격의 캔들 feed입니다.
     Candles(crate::convert::WireInterval),
 }
 
 /// Dart Adapter가 받을 owned subscription입니다.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireSubscription {
+    /// 하나 이상이어야 하는 대상 시장입니다.
     pub markets: Vec<WireMarket>,
+    /// 하나 이상이어야 하는 구독 feed입니다.
     pub feeds: Vec<WireFeed>,
 }
 
 /// Dart Adapter가 받을 overflow 정책입니다.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireOverflow {
+    /// 소비자가 따라올 때까지 producer를 대기시킵니다.
     Backpressure,
+    /// 버퍼가 차면 새 이벤트를 버립니다.
     DropNewest,
 }
 
 /// Dart Adapter가 받을 owned stream 설정입니다.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireStreamConfig {
+    /// 재연결 시도 횟수 제한입니다. null이면 제한하지 않습니다.
     pub max_reconnect_attempts: Option<u32>,
+    /// 첫 재연결 전 대기 시간(밀리초)입니다.
     pub initial_reconnect_delay_ms: u64,
+    /// 재연결 대기 시간의 최대값(밀리초)입니다.
     pub max_reconnect_delay_ms: u64,
+    /// 연결이 유휴 상태로 허용되는 최대 시간(밀리초)입니다.
     pub idle_timeout_ms: u64,
+    /// 이벤트 버퍼 크기입니다.
     pub buffer_size: usize,
+    /// 버퍼가 찼을 때의 동작입니다.
     pub overflow: WireOverflow,
 }
 

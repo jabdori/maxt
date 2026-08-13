@@ -1,0 +1,971 @@
+//! 공식 catalog 전체와 현재 공개 계약을 한 번에 감사하는 Cargo 도구입니다.
+//!
+//! 이 도구는 Rust `OPERATIONS`/`binding_schema()`와 고정 TSV만 사용합니다. Rust 소스를
+//! 정규식으로 재해석하지 않으며, 연결되지 않은 공식 행은 `Unreviewed`로 남깁니다.
+
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    env, fs,
+    path::{Path, PathBuf},
+    process,
+};
+
+use maxt::Exchange;
+use maxt_bindings_common::{
+    coverage::{Implementation, OPERATIONS, OperationMapping, Validation},
+    schema::binding_schema,
+};
+
+const OUT_LEDGER: &str = "audit-ledger-2026-08-10.tsv";
+const OUT_QUEUE: &str = "audit-queue-2026-08-10.tsv";
+const OUT_WORK: &str = "implementation-worklist-2026-08-10.tsv";
+const OUT_EXECUTION: &str = "execution-checklist-2026-08-10.tsv";
+const OUT_PLATFORM: &str = "platform-service-worklist-2026-08-10.tsv";
+
+// 하나의 공식 operation이 여러 provider surface를 공급하는 명시적 감사 alias입니다.
+const PROVIDER_AUDIT_ALIASES: &[(Exchange, &str, &str)] = &[(
+    Exchange::Hyperliquid,
+    "user_non_funding_ledger_updates",
+    "non_funding_ledger",
+)];
+
+#[derive(Clone, Copy)]
+struct Catalog {
+    exchange: Exchange,
+    source: &'static str,
+    lifecycle: usize,
+    exposure: Option<usize>,
+    classification: Option<&'static str>,
+}
+
+#[derive(Clone, Copy)]
+struct Bridge<'a> {
+    local_product: &'a str,
+    local_id: &'a str,
+}
+
+struct RenderedOutput {
+    name: &'static str,
+    contents: String,
+    rows: usize,
+}
+
+#[derive(Default)]
+struct ExecutionGroup {
+    exchanges: BTreeSet<String>,
+    coverage_states: BTreeSet<String>,
+    mapping_methods: BTreeSet<String>,
+    official_operations: BTreeSet<String>,
+    exposures: BTreeSet<String>,
+    coverage_locators: BTreeSet<String>,
+    rust_locators: BTreeSet<String>,
+    verification: BTreeSet<String>,
+    approval_states: BTreeSet<String>,
+}
+
+fn rows(source: &'static str) -> impl Iterator<Item = Vec<&'static str>> {
+    source
+        .lines()
+        .filter(|line| !line.is_empty() && !line.starts_with('#'))
+        .map(|line| line.split('\t').collect())
+}
+
+fn key(fields: &[&str]) -> String {
+    fields[..5].join("\t")
+}
+
+fn exchange_name(exchange: Exchange) -> &'static str {
+    match exchange {
+        Exchange::Upbit => "Upbit",
+        Exchange::Bithumb => "Bithumb",
+        Exchange::Binance => "Binance",
+        Exchange::Hyperliquid => "Hyperliquid",
+        _ => "Other",
+    }
+}
+
+fn exchange_slug(exchange: Exchange) -> &'static str {
+    match exchange {
+        Exchange::Upbit => "upbit",
+        Exchange::Bithumb => "bithumb",
+        Exchange::Binance => "binance",
+        Exchange::Hyperliquid => "hyperliquid",
+        _ => "other",
+    }
+}
+
+fn snake_to_camel(value: &str) -> String {
+    let mut output = String::new();
+    for (index, part) in value.split('_').enumerate() {
+        if index == 0 {
+            output.push_str(part);
+        } else {
+            let mut chars = part.chars();
+            if let Some(first) = chars.next() {
+                output.extend(first.to_uppercase());
+                output.push_str(chars.as_str());
+            }
+        }
+    }
+    output
+}
+
+fn sanitize(value: &str) -> String {
+    value.replace(['\t', '\r', '\n'], " ")
+}
+
+fn emit(header: &[&str], comments: &[&str], records: &[Vec<String>]) -> String {
+    let mut output = comments
+        .iter()
+        .map(|comment| format!("# {comment}"))
+        .collect::<Vec<_>>();
+    output.push(header.join("\t"));
+    output.extend(records.iter().map(|record| {
+        record
+            .iter()
+            .map(|value| sanitize(value))
+            .collect::<Vec<_>>()
+            .join("\t")
+    }));
+    format!("{}\n", output.join("\n"))
+}
+
+fn operation_mapping(
+    operation: &maxt_bindings_common::coverage::OperationCoverage,
+) -> Vec<(&'static str, &'static str)> {
+    match operation.mapping {
+        OperationMapping::Common(name) => vec![(name, "common")],
+        OperationMapping::CommonMany(names) => names.iter().map(|name| (*name, "common")).collect(),
+        OperationMapping::Provider(name) => vec![(name, "provider")],
+        OperationMapping::CommonAndProvider { common, provider } => common
+            .iter()
+            .map(|name| (*name, "common"))
+            .chain(provider.iter().map(|name| (*name, "provider")))
+            .collect(),
+        OperationMapping::PlatformLimited { service, .. } => vec![(service, "platform")],
+    }
+}
+
+fn operation_names(
+    schema: &maxt_bindings_common::schema::Schema,
+    exchange: Exchange,
+) -> BTreeSet<&'static str> {
+    let mut names = schema
+        .adapter_operations
+        .iter()
+        .map(|operation| operation.rust_name)
+        .collect::<BTreeSet<_>>();
+    names.extend(schema.client_members.iter().copied());
+    if let Some(provider) = schema
+        .providers
+        .iter()
+        .find(|provider| provider.exchange == exchange_slug(exchange))
+    {
+        names.extend(provider.methods.iter().map(|method| method.rust_name));
+    }
+    names
+}
+
+fn rust_locator(root: &Path, exchange: Exchange, name: &str, kind: &str) -> Option<String> {
+    let path = if kind == "common" {
+        "src/adapter.rs"
+    } else {
+        match exchange {
+            Exchange::Upbit => "src/adapters/upbit/mod.rs",
+            Exchange::Bithumb => "src/adapters/bithumb/mod.rs",
+            Exchange::Binance => "src/adapters/binance/mod.rs",
+            Exchange::Hyperliquid => "src/adapters/hyperliquid/mod.rs",
+            _ => "src/adapters/mod.rs",
+        }
+    };
+    let source = fs::read_to_string(root.join(path)).ok()?;
+    let needle = format!("fn {name}(");
+    source.lines().enumerate().find_map(|(index, line)| {
+        line.contains(&needle)
+            .then(|| format!("{path}:{}", index + 1))
+    })
+}
+
+fn has_all_name_variants(root: &Path, paths: &[&str], names: &BTreeSet<&str>) -> bool {
+    let source = paths
+        .iter()
+        .filter_map(|relative| fs::read_to_string(root.join(relative)).ok())
+        .collect::<Vec<_>>()
+        .join("\n");
+    !names.is_empty()
+        && names
+            .iter()
+            .all(|name| source.contains(name) || source.contains(&snake_to_camel(name)))
+}
+
+fn workspace_root() -> &'static Path {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(Path::parent)
+        .expect("workspace repository root")
+}
+
+fn catalog_root() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("catalog")
+}
+
+fn render(root: &Path) -> Vec<RenderedOutput> {
+    let catalogs = [
+        Catalog {
+            exchange: Exchange::Upbit,
+            source: include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/catalog/upbit-2026-08-10.tsv"
+            )),
+            lifecycle: 5,
+            exposure: None,
+            classification: Some(include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/catalog/upbit-classification-2026-08-10.tsv"
+            ))),
+        },
+        Catalog {
+            exchange: Exchange::Upbit,
+            source: include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/catalog/upbit-korea-2026-08-10.tsv"
+            )),
+            lifecycle: 5,
+            exposure: None,
+            classification: Some(include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/catalog/upbit-classification-2026-08-10.tsv"
+            ))),
+        },
+        Catalog {
+            exchange: Exchange::Bithumb,
+            source: include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/catalog/bithumb-2026-08-10.tsv"
+            )),
+            lifecycle: 5,
+            exposure: None,
+            classification: Some(include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/catalog/bithumb-classification-2026-08-10.tsv"
+            ))),
+        },
+        Catalog {
+            exchange: Exchange::Binance,
+            source: include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/catalog/binance-2026-08-10.tsv"
+            )),
+            lifecycle: 7,
+            exposure: Some(8),
+            classification: None,
+        },
+        Catalog {
+            exchange: Exchange::Hyperliquid,
+            source: include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/catalog/hyperliquid-2026-08-10.tsv"
+            )),
+            lifecycle: 5,
+            exposure: Some(6),
+            classification: None,
+        },
+    ];
+    let bridges = [
+        (
+            Exchange::Upbit,
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/catalog/upbit-coverage-2026-08-10.tsv"
+            )),
+        ),
+        (
+            Exchange::Bithumb,
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/catalog/bithumb-coverage-2026-08-10.tsv"
+            )),
+        ),
+        (
+            Exchange::Binance,
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/catalog/binance-coverage-2026-08-10.tsv"
+            )),
+        ),
+        (
+            Exchange::Hyperliquid,
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/catalog/hyperliquid-coverage-2026-08-10.tsv"
+            )),
+        ),
+    ];
+    let mut bridge_map = BTreeMap::<(Exchange, String), Vec<Bridge<'_>>>::new();
+    for (exchange, source) in bridges {
+        for fields in rows(source) {
+            bridge_map
+                .entry((exchange, key(&fields[2..])))
+                .or_default()
+                .push(Bridge {
+                    local_product: fields[0],
+                    local_id: fields[1],
+                });
+        }
+    }
+    let mut classification_map = BTreeMap::<(Exchange, String), &'static str>::new();
+    for catalog in catalogs {
+        if let Some(source) = catalog.classification {
+            for fields in rows(source) {
+                classification_map.insert((catalog.exchange, key(&fields)), fields[6]);
+            }
+        }
+    }
+    let schema = binding_schema();
+    let schema_names = [
+        operation_names(&schema, Exchange::Upbit),
+        operation_names(&schema, Exchange::Bithumb),
+        operation_names(&schema, Exchange::Binance),
+        operation_names(&schema, Exchange::Hyperliquid),
+    ];
+    let mut operations = BTreeMap::new();
+    for operation in OPERATIONS {
+        operations.insert(
+            (operation.exchange, operation.product, operation.id),
+            operation,
+        );
+    }
+    let mapped_provider_methods = OPERATIONS
+        .iter()
+        .flat_map(|operation| {
+            operation_mapping(operation)
+                .into_iter()
+                .map(move |(name, kind)| (operation.exchange, name, kind))
+        })
+        .chain(
+            PROVIDER_AUDIT_ALIASES
+                .iter()
+                .map(|(_, _, method)| (Exchange::Hyperliquid, *method, "provider")),
+        )
+        .collect::<BTreeSet<_>>();
+    for provider in schema.providers {
+        for method in provider.methods {
+            if matches!(
+                method.kind,
+                maxt_bindings_common::schema::ProviderMethodKind::Async
+            ) {
+                let mapped = mapped_provider_methods.contains(&(
+                    match provider.exchange {
+                        "upbit" => Exchange::Upbit,
+                        "bithumb" => Exchange::Bithumb,
+                        "binance" => Exchange::Binance,
+                        "hyperliquid" => Exchange::Hyperliquid,
+                        _ => panic!("unknown provider {}", provider.exchange),
+                    },
+                    method.rust_name,
+                    "provider",
+                ));
+                assert!(
+                    mapped,
+                    "public provider method {}.{} is outside the official coverage bridge; record it in the fixed audit backlog before implementation",
+                    provider.exchange, method.rust_name,
+                );
+            }
+        }
+    }
+    let mut ledger = Vec::<Vec<String>>::new();
+    let mut queue = Vec::<Vec<String>>::new();
+    let mut work = Vec::<Vec<String>>::new();
+    let mut platform = Vec::<Vec<String>>::new();
+    for catalog in catalogs {
+        for fields in rows(catalog.source) {
+            let lifecycle = fields[catalog.lifecycle];
+            if matches!(lifecycle, "deprecated" | "documented_deprecated") {
+                continue;
+            }
+            let official = key(&fields);
+            let exposure = classification_map
+                .get(&(catalog.exchange, official.clone()))
+                .copied()
+                .or_else(|| catalog.exposure.map(|index| fields[index]))
+                .unwrap_or("provider_typed");
+            let bridges = bridge_map
+                .get(&(catalog.exchange, official.clone()))
+                .cloned()
+                .unwrap_or_default();
+            let local = bridges
+                .iter()
+                .map(|bridge| format!("{}.{}", bridge.local_product, bridge.local_id))
+                .collect::<Vec<_>>();
+            let local_ops = bridges
+                .iter()
+                .filter_map(|bridge| {
+                    operations
+                        .get(&(catalog.exchange, bridge.local_product, bridge.local_id))
+                        .copied()
+                })
+                .collect::<Vec<_>>();
+            let state = if local_ops.is_empty() {
+                "Unlinked".to_owned()
+            } else if local_ops
+                .iter()
+                .all(|op| op.implementation == Implementation::Implemented)
+            {
+                "Implemented".to_owned()
+            } else if local_ops
+                .iter()
+                .any(|op| op.implementation == Implementation::Planned)
+            {
+                "Planned".to_owned()
+            } else {
+                "Partial".to_owned()
+            };
+            let mappings = local_ops
+                .iter()
+                .flat_map(|op| operation_mapping(op))
+                .collect::<Vec<_>>();
+            let mapping_names = mappings
+                .iter()
+                .map(|(name, _)| *name)
+                .collect::<BTreeSet<_>>();
+            let source_locators = mappings
+                .iter()
+                .filter_map(|(name, kind)| rust_locator(root, catalog.exchange, name, kind))
+                .collect::<BTreeSet<_>>();
+            let rust_present =
+                !local_ops.is_empty() && source_locators.len() >= mapping_names.len();
+            let schema_present = mappings.iter().all(|(name, _)| {
+                schema_names[match catalog.exchange {
+                    Exchange::Upbit => 0,
+                    Exchange::Bithumb => 1,
+                    Exchange::Binance => 2,
+                    Exchange::Hyperliquid => 3,
+                    _ => 0,
+                }]
+                .contains(name)
+            });
+            let generated_names = mapping_names.clone();
+            let codegen_names_present = has_all_name_variants(
+                root,
+                &[
+                    "bindings/python/python/maxt/_generated_contract.py",
+                    "bindings/dart/lib/src/generated_contract.dart",
+                    "bindings/typescript/src/generated/contract.ts",
+                ],
+                &generated_names,
+            );
+            let python_present = has_all_name_variants(
+                root,
+                &[
+                    "bindings/python/python/maxt/_generated_contract.py",
+                    "bindings/python/python/maxt/adapters.py",
+                ],
+                &generated_names,
+            );
+            let dart_present = has_all_name_variants(
+                root,
+                &[
+                    "bindings/dart/lib/src/generated_contract.dart",
+                    "bindings/dart/lib/src/generated_provider_methods.dart",
+                ],
+                &generated_names,
+            );
+            let typescript_present = has_all_name_variants(
+                root,
+                &[
+                    "bindings/typescript/src/generated/contract.ts",
+                    "bindings/typescript/src/generated/api.ts",
+                ],
+                &generated_names,
+            );
+            let verification = local_ops
+                .iter()
+                .map(|op| match op.validation {
+                    Validation::Documented => "Documented",
+                    Validation::Fixture => "Fixture",
+                    Validation::Testnet => "Testnet",
+                    Validation::LiveRead => "LiveRead",
+                    Validation::LiveWrite => "LiveWrite",
+                })
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .collect::<Vec<_>>()
+                .join("+");
+            let platform_decision = if exposure == "platform_limited" {
+                "이번 릴리스 보류(임시; 사용자 승인 필요)"
+            } else {
+                "해당 없음"
+            };
+            let semantic_blocker = catalog.exchange == Exchange::Binance
+                && fields[0] == "Futures (USDⓈ-M) WebSocket Market Streams"
+                && fields[4] == "aggregateTradeStreams";
+            let audit_status = if semantic_blocker {
+                "Blocked"
+            } else if exposure == "platform_limited" || state == "Unlinked" {
+                "Unreviewed"
+            } else if state == "Planned" {
+                "Planned"
+            } else if state == "Partial"
+                || !rust_present
+                || !schema_present
+                || !codegen_names_present
+                || !python_present
+                || !dart_present
+                || !typescript_present
+                || verification.is_empty()
+            {
+                "Partial"
+            } else {
+                "MechanicallyConnected"
+            };
+            let source_locator_text = source_locators.into_iter().collect::<Vec<_>>().join(";");
+            let local_status = if local_ops.is_empty() {
+                "unreviewed"
+            } else if rust_present {
+                "present"
+            } else {
+                "missing_or_unverified"
+            };
+            let schema_status = if local_ops.is_empty() {
+                "unreviewed"
+            } else if schema_present {
+                "present"
+            } else {
+                "missing_or_unverified"
+            };
+            let schema_locator = if local_ops.is_empty() {
+                ""
+            } else {
+                "bindings/common/src/schema.rs::binding_schema"
+            };
+            let row = vec![
+                exchange_name(catalog.exchange).to_owned(),
+                fields[0].to_owned(),
+                fields[1].to_owned(),
+                fields[2].to_owned(),
+                fields[3].to_owned(),
+                fields[4].to_owned(),
+                lifecycle.to_owned(),
+                exposure.to_owned(),
+                if exposure == "platform_limited" {
+                    "separate_platform_or_protocol_service"
+                } else {
+                    "general_adapter_or_provider"
+                }
+                .to_owned(),
+                platform_decision.to_owned(),
+                local.join(";"),
+                if bridges.is_empty() {
+                    "not_connected"
+                } else {
+                    "connected"
+                }
+                .to_owned(),
+                if bridges.is_empty() {
+                    ""
+                } else {
+                    "bindings/common/src/coverage.rs::OPERATIONS"
+                }
+                .to_owned(),
+                state,
+                local_status.to_owned(),
+                source_locator_text,
+                schema_status.to_owned(),
+                schema_locator.to_owned(),
+                if local_ops.is_empty() {
+                    "unreviewed"
+                } else if codegen_names_present {
+                    "present"
+                } else {
+                    "missing_or_unverified"
+                }
+                .to_owned(),
+                if local_ops.is_empty() {
+                    ""
+                } else {
+                    "bindings/python/python/maxt/_generated_contract.py;bindings/dart/lib/src/generated_contract.dart;bindings/typescript/src/generated/contract.ts"
+                }
+                .to_owned(),
+                if local_ops.is_empty() {
+                    "unreviewed"
+                } else if python_present {
+                    "present"
+                } else {
+                    "missing_or_unverified"
+                }
+                .to_owned(),
+                if local_ops.is_empty() {
+                    ""
+                } else {
+                    "bindings/python/python/maxt/adapters.py"
+                }
+                .to_owned(),
+                if local_ops.is_empty() {
+                    "unreviewed"
+                } else if dart_present {
+                    "present"
+                } else {
+                    "missing_or_unverified"
+                }
+                .to_owned(),
+                if local_ops.is_empty() {
+                    ""
+                } else {
+                    "bindings/dart/lib/src/generated_provider_methods.dart"
+                }
+                .to_owned(),
+                if local_ops.is_empty() {
+                    "unreviewed"
+                } else if typescript_present {
+                    "present"
+                } else {
+                    "missing_or_unverified"
+                }
+                .to_owned(),
+                if local_ops.is_empty() {
+                    ""
+                } else {
+                    "bindings/typescript/src/generated/api.ts"
+                }
+                .to_owned(),
+                verification,
+                audit_status.to_owned(),
+                mapping_names.into_iter().collect::<Vec<_>>().join(";"),
+                if exposure == "platform_limited" {
+                    "별도 platform/protocol service 결정 대기; 사용자 승인 전 구현 재개 금지".to_owned()
+                } else if semantic_blocker {
+                    "공용 MarketEvent가 집계 체결의 fill ID 범위를 보존하지 못함; 억지 변환·새 공개 API 금지".to_owned()
+                } else if audit_status == "MechanicallyConnected" {
+                    "감사 초안; 의미상 Complete 아님".to_owned()
+                } else {
+                    "원장/감사 queue에 유지; 새 발견은 다음 backlog".to_owned()
+                },
+            ];
+            if exposure == "platform_limited" {
+                platform.push(row.clone());
+            } else {
+                queue.push(row.clone());
+                if matches!(audit_status, "Partial" | "Planned" | "Blocked") {
+                    work.push(row.clone());
+                }
+            }
+            ledger.push(row);
+        }
+    }
+    ledger.sort_by(|a, b| a[..6].cmp(&b[..6]));
+    queue.sort_by(|a, b| a[..6].cmp(&b[..6]));
+    work.sort_by(|a, b| a[..6].cmp(&b[..6]));
+    platform.sort_by(|a, b| a[..6].cmp(&b[..6]));
+    assert_eq!(ledger.len(), 1_374);
+    assert_eq!(platform.len(), 437);
+    assert_eq!(queue.len(), 937);
+    assert_eq!(work.len(), 52);
+    let mut execution_groups = BTreeMap::<String, ExecutionGroup>::new();
+    for row in &work {
+        for local_operation in row[10].split(';').filter(|value| !value.is_empty()) {
+            let group = execution_groups
+                .entry(local_operation.to_owned())
+                .or_default();
+            group.exchanges.insert(row[0].clone());
+            group.coverage_states.insert(row[13].clone());
+            group.exposures.insert(row[7].clone());
+            group.coverage_locators.insert(row[12].clone());
+            group.rust_locators.extend(
+                row[15]
+                    .split(';')
+                    .filter(|value| !value.is_empty())
+                    .map(str::to_owned),
+            );
+            group.verification.extend(
+                row[26]
+                    .split('+')
+                    .filter(|value| !value.is_empty())
+                    .map(str::to_owned),
+            );
+            if row[27] == "Blocked" {
+                group.approval_states.insert(row[29].clone());
+            }
+            group.mapping_methods.extend(
+                row[28]
+                    .split(';')
+                    .filter(|value| !value.is_empty())
+                    .map(str::to_owned),
+            );
+            group.official_operations.insert(format!(
+                "{} | {} | {} | {} | {} | {}",
+                row[0], row[1], row[2], row[3], row[4], row[5]
+            ));
+        }
+    }
+    assert_eq!(execution_groups.len(), 41);
+    assert_eq!(
+        execution_groups
+            .values()
+            .flat_map(|group| group.mapping_methods.iter())
+            .collect::<BTreeSet<_>>()
+            .len(),
+        23
+    );
+    let execution = execution_groups
+        .into_iter()
+        .map(|(local_operation, group)| {
+            let exchanges = group.exchanges.into_iter().collect::<Vec<_>>();
+            let owner = if exchanges.len() > 1 {
+                "common_contract".to_owned()
+            } else {
+                exchanges
+                    .first()
+                    .map(|exchange| format!("{}_owner", exchange.to_lowercase()))
+                    .unwrap_or_else(|| "unassigned".to_owned())
+            };
+            vec![
+                local_operation,
+                exchanges.join(";"),
+                owner,
+                group
+                    .coverage_states
+                    .into_iter()
+                    .collect::<Vec<_>>()
+                    .join(";"),
+                group
+                    .mapping_methods
+                    .into_iter()
+                    .collect::<Vec<_>>()
+                    .join(";"),
+                group.official_operations.len().to_string(),
+                group
+                    .official_operations
+                    .into_iter()
+                    .collect::<Vec<_>>()
+                    .join(" || "),
+                group.exposures.into_iter().collect::<Vec<_>>().join(";"),
+                group
+                    .coverage_locators
+                    .into_iter()
+                    .collect::<Vec<_>>()
+                    .join(";"),
+                group
+                    .rust_locators
+                    .into_iter()
+                    .collect::<Vec<_>>()
+                    .join(";"),
+                group.verification.into_iter().collect::<Vec<_>>().join("+"),
+                "고정 후보; 목록 밖 추가 금지".to_owned(),
+                if group.approval_states.is_empty() {
+                    "사용자 승인 대기; 구현 미승인".to_owned()
+                } else {
+                    format!(
+                        "Blocked: {}",
+                        group
+                            .approval_states
+                            .into_iter()
+                            .collect::<Vec<_>>()
+                            .join(";")
+                    )
+                },
+            ]
+        })
+        .collect::<Vec<_>>();
+    let header = [
+        "exchange",
+        "official_product",
+        "interface",
+        "method",
+        "path_or_message",
+        "operation_id",
+        "lifecycle",
+        "exposure",
+        "platform_boundary",
+        "platform_decision",
+        "local_operations",
+        "bridge_status",
+        "coverage_locator",
+        "coverage_state",
+        "rust_status",
+        "rust_locators",
+        "schema_status",
+        "schema_locator",
+        "codegen_status",
+        "codegen_locator",
+        "Python_status",
+        "Python_locator",
+        "Dart_status",
+        "Dart_locator",
+        "TypeScript_status",
+        "TypeScript_locator",
+        "verification",
+        "audit_status",
+        "mapping_names",
+        "next_batch",
+    ];
+    let execution_header = [
+        "local_operation",
+        "exchanges",
+        "owner",
+        "coverage_states",
+        "mapping_methods",
+        "official_row_count",
+        "official_operations",
+        "exposures",
+        "coverage_locators",
+        "rust_locators",
+        "verification",
+        "implementation_scope",
+        "approval_state",
+    ];
+    vec![
+        RenderedOutput {
+            name: OUT_LEDGER,
+            contents: emit(
+                &header,
+                &[
+                    "mechanical audit baseline for all 1,374 active official rows; not a semantic completion audit",
+                    "deprecated source rows are retained but excluded from this active ledger",
+                    "Unlinked rows are Unreviewed, never automatically treated as unimplemented",
+                    "platform_limited rows remain in the ledger and are separated from general Adapter work",
+                ],
+                &ledger,
+            ),
+            rows: ledger.len(),
+        },
+        RenderedOutput {
+            name: OUT_QUEUE,
+            contents: emit(
+                &header,
+                &[
+                    "all 937 general-SDK rows retained for semantic audit; Unreviewed is not implementation work",
+                ],
+                &queue,
+            ),
+            rows: queue.len(),
+        },
+        RenderedOutput {
+            name: OUT_WORK,
+            contents: emit(
+                &header,
+                &[
+                    "52 official Partial/Planned/Blocked rows; this is a candidate-row list, not 52 independent implementation tasks",
+                ],
+                &work,
+            ),
+            rows: work.len(),
+        },
+        RenderedOutput {
+            name: OUT_EXECUTION,
+            contents: emit(
+                &execution_header,
+                &[
+                    "41 unique local-operation execution units derived from the 52 candidate rows",
+                    "23 unique mapping methods; shared common contracts remain grouped to prevent duplicate implementation",
+                    "implementation remains unapproved until the user approves this checklist",
+                ],
+                &execution,
+            ),
+            rows: execution.len(),
+        },
+        RenderedOutput {
+            name: OUT_PLATFORM,
+            contents: emit(
+                &header,
+                &[
+                    "437 platform_limited rows retained at a separate platform/protocol boundary; all decisions are provisional pending user approval",
+                ],
+                &platform,
+            ),
+            rows: platform.len(),
+        },
+    ]
+}
+
+fn check(outputs: &[RenderedOutput]) -> Result<(), String> {
+    let root = catalog_root();
+    for output in outputs {
+        let checked_in = fs::read(root.join(output.name))
+            .map_err(|error| format!("read {}: {error}", output.name))?;
+        if checked_in != output.contents.as_bytes() {
+            return Err(format!(
+                "{} differs from the mechanical audit baseline; run with --write after reviewing the diff",
+                output.name
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn write(outputs: &[RenderedOutput]) -> Result<(), String> {
+    let root = catalog_root();
+    for output in outputs {
+        fs::write(root.join(output.name), &output.contents)
+            .map_err(|error| format!("write {}: {error}", output.name))?;
+    }
+    Ok(())
+}
+
+fn run() -> Result<(), String> {
+    let mut args = env::args().skip(1);
+    let mode = args
+        .next()
+        .ok_or_else(|| "usage: generate_audit_ledger --check|--write".to_owned())?;
+    if args.next().is_some() {
+        return Err("usage: generate_audit_ledger --check|--write".to_owned());
+    }
+    let outputs = render(workspace_root());
+    match mode.as_str() {
+        "--check" => check(&outputs)?,
+        "--write" => write(&outputs)?,
+        _ => return Err("usage: generate_audit_ledger --check|--write".to_owned()),
+    }
+    println!(
+        "mechanical audit baseline: {} active; {} audit queue; {} candidate rows; {} execution units; {} platform rows",
+        outputs[0].rows, outputs[1].rows, outputs[2].rows, outputs[3].rows, outputs[4].rows
+    );
+    Ok(())
+}
+
+fn main() {
+    if let Err(error) = run() {
+        eprintln!("{error}");
+        process::exit(1);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rendering_is_pure_and_checked_in_outputs_match() {
+        let outputs = render(workspace_root());
+        let root = catalog_root();
+        let before = outputs
+            .iter()
+            .map(|output| fs::read(root.join(output.name)).expect("read checked-in audit output"))
+            .collect::<Vec<_>>();
+        check(&outputs).expect("checked-in audit outputs match the in-memory render");
+        let after = outputs
+            .iter()
+            .map(|output| fs::read(root.join(output.name)).expect("read checked-in audit output"))
+            .collect::<Vec<_>>();
+        assert_eq!(after, before, "--check must not modify audit outputs");
+        for (output, (expected_rows, expected_columns)) in
+            outputs
+                .iter()
+                .zip([(1_374, 30), (937, 30), (52, 30), (41, 13), (437, 30)])
+        {
+            let rows = output
+                .contents
+                .lines()
+                .filter(|line| !line.is_empty() && !line.starts_with('#'))
+                .collect::<Vec<_>>();
+            assert_eq!(output.rows, expected_rows, "{}", output.name);
+            assert_eq!(rows.len() - 1, expected_rows, "{}", output.name);
+            assert!(
+                rows[1..]
+                    .iter()
+                    .all(|row| row.split('\t').count() == expected_columns),
+                "{} width",
+                output.name
+            );
+        }
+    }
+}

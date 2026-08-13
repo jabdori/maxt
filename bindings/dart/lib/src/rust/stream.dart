@@ -25,10 +25,15 @@ abstract class NativeMarketSubscription implements RustOpaqueInterface {}
 sealed class AccountStreamItem with _$AccountStreamItem {
   const AccountStreamItem._();
 
+  /// 정상 계정 이벤트입니다.
   const factory AccountStreamItem.event(WireAccountEvent field0) =
       AccountStreamItem_Event;
+
+  /// 스트림을 끝내지 않는 오류입니다.
   const factory AccountStreamItem.error(NativeError field0) =
       AccountStreamItem_Error;
+
+  /// 계정 스트림의 자연 종료를 나타냅니다.
   const factory AccountStreamItem.end() = AccountStreamItem_End;
 }
 
@@ -36,10 +41,15 @@ sealed class AccountStreamItem with _$AccountStreamItem {
 sealed class MarketStreamItem with _$MarketStreamItem {
   const MarketStreamItem._();
 
+  /// 정상 시장 이벤트입니다.
   const factory MarketStreamItem.event(WireMarketEvent field0) =
       MarketStreamItem_Event;
+
+  /// 스트림을 끝내지 않는 오류입니다.
   const factory MarketStreamItem.error(NativeError field0) =
       MarketStreamItem_Error;
+
+  /// 시장 스트림의 자연 종료를 나타냅니다.
   const factory MarketStreamItem.end() = MarketStreamItem_End;
 }
 
@@ -47,10 +57,15 @@ sealed class MarketStreamItem with _$MarketStreamItem {
 sealed class WireAccountEvent with _$WireAccountEvent {
   const WireAccountEvent._();
 
+  /// 계정 잔고 이벤트입니다.
   const factory WireAccountEvent.balance(WireBalance field0) =
       WireAccountEvent_Balance;
+
+  /// 계정 주문 이벤트입니다.
   const factory WireAccountEvent.order(WireOrder field0) =
       WireAccountEvent_Order;
+
+  /// 재연결 뒤 수신이 재개됐음을 알립니다.
   const factory WireAccountEvent.reconnected() = WireAccountEvent_Reconnected;
 }
 
@@ -58,10 +73,15 @@ sealed class WireAccountEvent with _$WireAccountEvent {
 sealed class WireAccountStreamItem with _$WireAccountStreamItem {
   const WireAccountStreamItem._();
 
+  /// 정상 계정 이벤트입니다.
   const factory WireAccountStreamItem.event(WireAccountEvent field0) =
       WireAccountStreamItem_Event;
+
+  /// 스트림을 끝내지 않는 오류입니다.
   const factory WireAccountStreamItem.error(NativeError field0) =
       WireAccountStreamItem_Error;
+
+  /// 계정 스트림의 자연 종료 또는 명시적 close를 나타냅니다.
   const factory WireAccountStreamItem.end() = WireAccountStreamItem_End;
 }
 
@@ -69,13 +89,22 @@ sealed class WireAccountStreamItem with _$WireAccountStreamItem {
 sealed class WireMarketEvent with _$WireMarketEvent {
   const WireMarketEvent._();
 
+  /// 시장 체결 이벤트입니다.
   const factory WireMarketEvent.trade(WireTrade field0) = WireMarketEvent_Trade;
+
+  /// 시장 호가 스냅샷 이벤트입니다.
   const factory WireMarketEvent.orderBook(WireOrderBook field0) =
       WireMarketEvent_OrderBook;
+
+  /// 시장 ticker 이벤트입니다.
   const factory WireMarketEvent.ticker(WireTicker field0) =
       WireMarketEvent_Ticker;
+
+  /// 시장 캔들 이벤트입니다.
   const factory WireMarketEvent.candle(WireCandle field0) =
       WireMarketEvent_Candle;
+
+  /// 재연결 뒤 수신이 재개됐음을 알립니다.
   const factory WireMarketEvent.reconnected() = WireMarketEvent_Reconnected;
 }
 
@@ -83,9 +112,14 @@ sealed class WireMarketEvent with _$WireMarketEvent {
 sealed class WireMarketStreamItem with _$WireMarketStreamItem {
   const WireMarketStreamItem._();
 
+  /// 정상 시장 이벤트입니다.
   const factory WireMarketStreamItem.event(WireMarketEvent field0) =
       WireMarketStreamItem_Event;
+
+  /// 스트림을 끝내지 않는 오류입니다.
   const factory WireMarketStreamItem.error(NativeError field0) =
       WireMarketStreamItem_Error;
+
+  /// 시장 스트림의 자연 종료 또는 명시적 close를 나타냅니다.
   const factory WireMarketStreamItem.end() = WireMarketStreamItem_End;
 }

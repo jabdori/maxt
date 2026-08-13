@@ -8,13 +8,17 @@ use std::future::Future;
 #[cfg(test)]
 use maxt::Adapter;
 use maxt::adapters::{
-    BinanceAdapter, BinanceAggregateTradesRequest, BinanceListenKey, BinanceMarket, BithumbAdapter,
-    BithumbBatchOrdersRequest, BithumbKrwDepositsRequest, BithumbKrwTransferRequest,
-    BithumbKrwWithdrawalsRequest, BithumbPendingOrdersRequest, BithumbTwapOrderRequest,
-    BithumbTwapOrdersRequest, HyperliquidAdapter, UpbitAdapter, UpbitCancelAndNewOrderRequest,
+    BinanceAdapter, BinanceAggregateTradesRequest, BinanceC2cTradeHistoryRequest, BinanceListenKey,
+    BinanceMarket, BinanceTestOrderRequest, BithumbAdapter, BithumbBatchOrdersRequest,
+    BithumbClosedOrdersRequest, BithumbKrwDepositsRequest, BithumbKrwTransferRequest,
+    BithumbKrwWithdrawalsRequest, BithumbOrderDetailRequest, BithumbOrderListRequest,
+    BithumbPendingOrdersRequest, BithumbTwapOrderRequest, BithumbTwapOrdersRequest,
+    HyperliquidAdapter, UpbitAdapter, UpbitCancelAndNewOrderRequest, UpbitClosedOrdersRequest,
+    UpbitKrwTransferRequest, UpbitOrderDetailRequest, UpbitPocketApiKeysRequest,
+    UpbitPocketTransferQuery, UpbitPocketTransferRequest, UpbitPocketUniversalTransferRequest,
     UpbitRegion,
 };
-use maxt::{Cursor, Error, Market};
+use maxt::{Cursor, Error, HyperliquidOrderReference, Market};
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
 use napi::bindgen_prelude::{Either, PromiseRaw};
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
@@ -29,18 +33,32 @@ use wasm_bindgen::prelude::*;
 
 use crate::client::NativeClient;
 use crate::convert::{
-    WireBinanceAggregateTrade, WireBinanceAggregateTradesRequest, WireBinanceMarkPrice,
-    WireBinanceOpenInterest, WireBinanceSpotOrderDetail, WireBinanceSymbolFilters,
-    WireBithumbApiKey, WireBithumbAssetFee, WireBithumbBatchOrdersRequest,
-    WireBithumbBatchOrdersResult, WireBithumbKrwDeposit, WireBithumbKrwDepositsRequest,
-    WireBithumbKrwTransferRequest, WireBithumbKrwWithdrawal, WireBithumbKrwWithdrawalsRequest,
-    WireBithumbMarketAlert, WireBithumbNotice, WireBithumbPendingOrdersRequest,
-    WireBithumbTwapOrder, WireBithumbTwapOrderRequest, WireBithumbTwapOrdersRequest,
+    WireBinanceAccountTrade, WireBinanceAggregateTrade, WireBinanceAggregateTradesRequest,
+    WireBinanceC2cTradeHistoryPage, WireBinanceC2cTradeHistoryRequest, WireBinanceMarkPrice,
+    WireBinanceOpenInterest, WireBinanceSpotAveragePrice, WireBinanceSpotOrderDetail,
+    WireBinanceSymbolFilters, WireBinanceTestOrder, WireBinanceTestOrderRequest, WireBithumbApiKey,
+    WireBithumbAssetFee, WireBithumbBatchOrdersRequest, WireBithumbBatchOrdersResult,
+    WireBithumbClosedOrder, WireBithumbClosedOrdersRequest, WireBithumbKrwDeposit,
+    WireBithumbKrwDepositsRequest, WireBithumbKrwTransferRequest, WireBithumbKrwWithdrawal,
+    WireBithumbKrwWithdrawalsRequest, WireBithumbMarketAlert, WireBithumbNotice,
+    WireBithumbOrderDetail, WireBithumbOrderDetailRequest, WireBithumbOrderListItem,
+    WireBithumbOrderListRequest, WireBithumbPendingOrdersRequest, WireBithumbTwapOrder,
+    WireBithumbTwapOrderRequest, WireBithumbTwapOrdersRequest, WireBithumbWithdrawalAddress,
     WireCancelOrdersResult, WireHyperliquidAssetContext, WireHyperliquidLedgerEntry,
-    WireHyperliquidMidPrice, WireMarket, WireOrder, WireOrderBook, WireOrderRequest, WirePage,
-    WireTicker, WireUpbitBatchCancelRequest, WireUpbitCancelAndNewOrderRequest,
-    WireUpbitCancelAndNewOrderResult, WireUpbitDepositInfo, WireUpbitMarketEvent,
-    WireUpbitOrderBookInstrument, WireUpbitTravelRuleVasp, WireUpbitTravelRuleVerification,
+    WireHyperliquidMidPrice, WireHyperliquidOpenOrder, WireHyperliquidOrderInfo,
+    WireHyperliquidOrderReference, WireHyperliquidOrderStatusResponse,
+    WireHyperliquidPortfolioPeriod, WireHyperliquidReferral, WireHyperliquidSubAccount,
+    WireHyperliquidUserFees, WireHyperliquidUserFill, WireHyperliquidUserRateLimit,
+    WireHyperliquidUserRole, WireHyperliquidVaultEquity, WireMarket, WireOrder, WireOrderBook,
+    WireOrderRequest, WirePage, WireTicker, WireUpbitApiKey, WireUpbitBatchCancelRequest,
+    WireUpbitCancelAndNewOrderRequest, WireUpbitCancelAndNewOrderResult, WireUpbitClosedOrder,
+    WireUpbitClosedOrdersRequest, WireUpbitDepositInfo, WireUpbitKrwDeposit,
+    WireUpbitKrwTransferRequest, WireUpbitKrwWithdrawal, WireUpbitMarketEvent,
+    WireUpbitOrderBookInstrument, WireUpbitOrderDetail, WireUpbitOrderDetailRequest,
+    WireUpbitPocket, WireUpbitPocketApiKeyGroup, WireUpbitPocketApiKeysRequest,
+    WireUpbitPocketBalance, WireUpbitPocketTransfer, WireUpbitPocketTransferQuery,
+    WireUpbitPocketTransferRequest, WireUpbitPocketUniversalTransferRequest,
+    WireUpbitSubscriptionList, WireUpbitTravelRuleVasp, WireUpbitTravelRuleVerification,
     WireUpbitYearCandle, decimal_from_wire, from_wire_text, network_from_wire, outcome,
     timestamp_from_wire,
 };
@@ -329,6 +347,21 @@ impl NativeUpbit {
         ))
     }
 
+    async fn list_subscriptions(&self, subscription: maxt::Result<String>) -> Value {
+        match parse_wire::<maxt::Subscription, crate::convert::WireSubscription>(
+            subscription,
+            "subscription",
+        ) {
+            Ok(subscription) => outcome(
+                self.adapter
+                    .list_subscriptions(&subscription)
+                    .await
+                    .and_then(TryInto::<WireUpbitSubscriptionList>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
     async fn test_order(&self, request: maxt::Result<String>) -> Value {
         match parse_wire::<maxt::OrderRequest, WireOrderRequest>(request, "request") {
             Ok(request) => outcome(
@@ -434,6 +467,140 @@ impl NativeUpbit {
                     .await
                     .and_then(TryInto::<WireUpbitCancelAndNewOrderResult>::try_into),
             ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn deposit_krw(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<UpbitKrwTransferRequest, WireUpbitKrwTransferRequest>(request, "request")
+        {
+            Ok(request) => outcome(
+                self.adapter
+                    .deposit_krw(&request)
+                    .await
+                    .and_then(TryInto::<WireUpbitKrwDeposit>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn withdraw_krw(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<UpbitKrwTransferRequest, WireUpbitKrwTransferRequest>(request, "request")
+        {
+            Ok(request) => outcome(
+                self.adapter
+                    .withdraw_krw(&request)
+                    .await
+                    .and_then(TryInto::<WireUpbitKrwWithdrawal>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn api_keys(&self) -> Value {
+        outcome(wire_vec::<_, WireUpbitApiKey>(
+            self.adapter.api_keys().await,
+        ))
+    }
+
+    async fn list_pockets(&self) -> Value {
+        outcome(wire_vec::<_, WireUpbitPocket>(
+            self.adapter.list_pockets().await,
+        ))
+    }
+
+    async fn list_pocket_api_keys(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<UpbitPocketApiKeysRequest, WireUpbitPocketApiKeysRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(wire_vec::<_, WireUpbitPocketApiKeyGroup>(
+                self.adapter.list_pocket_api_keys(&request).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn sub_pocket_balances(&self, pocket_uuid: maxt::Result<String>) -> Value {
+        match parse_text::<String>(pocket_uuid, "pocket_uuid") {
+            Ok(pocket_uuid) => outcome(wire_vec::<_, WireUpbitPocketBalance>(
+                self.adapter.sub_pocket_balances(&pocket_uuid).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn universal_transfer(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<
+            UpbitPocketUniversalTransferRequest,
+            WireUpbitPocketUniversalTransferRequest,
+        >(request, "request")
+        {
+            Ok(request) => outcome(
+                self.adapter
+                    .universal_transfer(&request)
+                    .await
+                    .and_then(TryInto::<WireUpbitPocketTransfer>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn universal_transfers(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<UpbitPocketTransferQuery, WireUpbitPocketTransferQuery>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(wire_vec::<_, WireUpbitPocketTransfer>(
+                self.adapter.universal_transfers(&request).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn sub_pocket_transfer(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<UpbitPocketTransferRequest, WireUpbitPocketTransferRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(
+                self.adapter
+                    .sub_pocket_transfer(&request)
+                    .await
+                    .and_then(TryInto::<WireUpbitPocketTransfer>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn sub_pocket_transfers(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<UpbitPocketTransferQuery, WireUpbitPocketTransferQuery>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(wire_vec::<_, WireUpbitPocketTransfer>(
+                self.adapter.sub_pocket_transfers(&request).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn order_detail(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<UpbitOrderDetailRequest, WireUpbitOrderDetailRequest>(request, "request")
+        {
+            Ok(request) => outcome(
+                self.adapter
+                    .order_detail(&request)
+                    .await
+                    .and_then(TryInto::<WireUpbitOrderDetail>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn closed_orders(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<UpbitClosedOrdersRequest, WireUpbitClosedOrdersRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(wire_vec::<_, WireUpbitClosedOrder>(
+                self.adapter.closed_orders(&request).await,
+            )),
             Err(error) => outcome::<Value>(Err(error)),
         }
     }
@@ -553,6 +720,20 @@ impl NativeUpbit {
         self.market_events().await
     }
 
+    #[napi(js_name = "listSubscriptions", ts_args_type = "subscription: string")]
+    pub fn list_subscriptions_native<'env>(
+        &self,
+        env: &'env Env,
+        subscription: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let subscription = native_json_text(subscription, "subscription");
+        spawn_native(
+            env,
+            async move { this.list_subscriptions(subscription).await },
+        )
+    }
+
     #[napi(js_name = "testOrder", ts_args_type = "request: string")]
     pub fn test_order_native<'env>(
         &self,
@@ -650,6 +831,134 @@ impl NativeUpbit {
         let this = self.clone();
         let request = native_json_text(request, "request");
         spawn_native(env, async move { this.cancel_and_new_order(request).await })
+    }
+
+    #[napi(js_name = "depositKrw", ts_args_type = "request: string")]
+    pub fn deposit_krw_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.deposit_krw(request).await })
+    }
+
+    #[napi(js_name = "withdrawKrw", ts_args_type = "request: string")]
+    pub fn withdraw_krw_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.withdraw_krw(request).await })
+    }
+
+    #[napi(js_name = "apiKeys")]
+    pub fn api_keys_native<'env>(&self, env: &'env Env) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.api_keys().await })
+    }
+
+    #[napi(js_name = "listPockets")]
+    pub fn list_pockets_native<'env>(
+        &self,
+        env: &'env Env,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.list_pockets().await })
+    }
+
+    #[napi(js_name = "listPocketApiKeys", ts_args_type = "request: string")]
+    pub fn list_pocket_api_keys_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.list_pocket_api_keys(request).await })
+    }
+
+    #[napi(js_name = "subPocketBalances", ts_args_type = "pocketUuid: string")]
+    pub fn sub_pocket_balances_native<'env>(
+        &self,
+        env: &'env Env,
+        pocket_uuid: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let pocket_uuid = native_json_text(pocket_uuid, "pocketUuid");
+        spawn_native(
+            env,
+            async move { this.sub_pocket_balances(pocket_uuid).await },
+        )
+    }
+
+    #[napi(js_name = "universalTransfer", ts_args_type = "request: string")]
+    pub fn universal_transfer_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.universal_transfer(request).await })
+    }
+
+    #[napi(js_name = "universalTransfers", ts_args_type = "request: string")]
+    pub fn universal_transfers_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.universal_transfers(request).await })
+    }
+
+    #[napi(js_name = "subPocketTransfer", ts_args_type = "request: string")]
+    pub fn sub_pocket_transfer_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.sub_pocket_transfer(request).await })
+    }
+
+    #[napi(js_name = "subPocketTransfers", ts_args_type = "request: string")]
+    pub fn sub_pocket_transfers_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.sub_pocket_transfers(request).await })
+    }
+
+    #[napi(js_name = "orderDetail", ts_args_type = "request: string")]
+    pub fn order_detail_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.order_detail(request).await })
+    }
+
+    #[napi(js_name = "closedOrders", ts_args_type = "request: string")]
+    pub fn closed_orders_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.closed_orders(request).await })
     }
 }
 
@@ -749,6 +1058,20 @@ impl NativeBithumb {
         }
     }
 
+    async fn closed_orders(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<BithumbClosedOrdersRequest, WireBithumbClosedOrdersRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(
+                self.adapter
+                    .closed_orders(&request)
+                    .await
+                    .and_then(TryInto::<WirePage<WireBithumbClosedOrder>>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
     async fn batch_orders(&self, request: maxt::Result<String>) -> Value {
         match parse_wire::<BithumbBatchOrdersRequest, WireBithumbBatchOrdersRequest>(
             request, "request",
@@ -841,6 +1164,36 @@ impl NativeBithumb {
             Err(error) => outcome::<Value>(Err(error)),
         }
     }
+
+    async fn withdrawal_addresses(&self) -> Value {
+        outcome(wire_vec::<_, WireBithumbWithdrawalAddress>(
+            self.adapter.withdrawal_addresses().await,
+        ))
+    }
+
+    async fn order_detail(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<BithumbOrderDetailRequest, WireBithumbOrderDetailRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(
+                self.adapter
+                    .order_detail(&request)
+                    .await
+                    .and_then(TryInto::<WireBithumbOrderDetail>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn order_list(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<BithumbOrderListRequest, WireBithumbOrderListRequest>(request, "request")
+        {
+            Ok(request) => outcome(wire_vec::<_, WireBithumbOrderListItem>(
+                self.adapter.order_list(&request).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
 }
 
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
@@ -898,6 +1251,17 @@ impl NativeBithumb {
         let this = self.clone();
         let request = native_json_text(request, "request");
         spawn_native(env, async move { this.pending_orders(request).await })
+    }
+
+    #[napi(js_name = "closedOrders", ts_args_type = "request: string")]
+    pub fn closed_orders_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.closed_orders(request).await })
     }
 
     #[napi(js_name = "batchOrders", ts_args_type = "request: string")]
@@ -990,6 +1354,37 @@ impl NativeBithumb {
             async move { this.cancel_twap_order(algo_order_id).await },
         )
     }
+
+    #[napi(js_name = "withdrawalAddresses")]
+    pub fn withdrawal_addresses_native<'env>(
+        &self,
+        env: &'env Env,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.withdrawal_addresses().await })
+    }
+
+    #[napi(js_name = "orderDetail", ts_args_type = "request: string")]
+    pub fn order_detail_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.order_detail(request).await })
+    }
+
+    #[napi(js_name = "orderList", ts_args_type = "request: string")]
+    pub fn order_list_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.order_list(request).await })
+    }
 }
 
 impl Clone for NativeBithumb {
@@ -1056,6 +1451,18 @@ impl NativeBinance {
         }
     }
 
+    async fn spot_average_price(&self, market: maxt::Result<String>) -> Value {
+        match parse_wire::<Market, WireMarket>(market, "market") {
+            Ok(market) => outcome(
+                self.adapter
+                    .spot_average_price(&market)
+                    .await
+                    .and_then(TryInto::<WireBinanceSpotAveragePrice>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
     async fn spot_order(
         &self,
         market: maxt::Result<String>,
@@ -1111,6 +1518,59 @@ impl NativeBinance {
             Ok(request) => outcome(wire_vec::<_, WireBinanceAggregateTrade>(
                 self.adapter.aggregate_trades(&request).await,
             )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn account_trades(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<maxt::HistoryRequest, crate::convert::WireHistoryRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(
+                self.adapter
+                    .account_trades(&request)
+                    .await
+                    .and_then(TryInto::<WirePage<WireBinanceAccountTrade>>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn c2c_trade_history(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<BinanceC2cTradeHistoryRequest, WireBinanceC2cTradeHistoryRequest>(
+            request, "request",
+        ) {
+            Ok(request) => outcome(
+                self.adapter
+                    .c2c_trade_history(&request)
+                    .await
+                    .and_then(TryInto::<WireBinanceC2cTradeHistoryPage>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn test_order(&self, request: maxt::Result<String>) -> Value {
+        match parse_wire::<BinanceTestOrderRequest, WireBinanceTestOrderRequest>(request, "request")
+        {
+            Ok(request) => outcome(
+                self.adapter
+                    .test_order(&request)
+                    .await
+                    .and_then(TryInto::<WireBinanceTestOrder>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn cancel_all_open_orders(&self, market: maxt::Result<String>) -> Value {
+        match parse_wire::<Market, WireMarket>(market, "market") {
+            Ok(market) => outcome(
+                self.adapter
+                    .cancel_all_open_orders(&market)
+                    .await
+                    .map(|()| Value::Null),
+            ),
             Err(error) => outcome::<Value>(Err(error)),
         }
     }
@@ -1177,6 +1637,17 @@ impl NativeBinance {
         spawn_native(env, async move { this.spot_symbol_filters(market).await })
     }
 
+    #[napi(js_name = "spotAveragePrice", ts_args_type = "market: string")]
+    pub fn spot_average_price_native<'env>(
+        &self,
+        env: &'env Env,
+        market: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let market = native_json_text(market, "market");
+        spawn_native(env, async move { this.spot_average_price(market).await })
+    }
+
     #[napi(
         js_name = "spotOrder",
         ts_args_type = "market: string, orderId: string"
@@ -1233,6 +1704,53 @@ impl NativeBinance {
         let this = self.clone();
         let request = native_json_text(request, "request");
         spawn_native(env, async move { this.aggregate_trades(request).await })
+    }
+
+    #[napi(js_name = "accountTrades", ts_args_type = "request: string")]
+    pub fn account_trades_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.account_trades(request).await })
+    }
+
+    #[napi(js_name = "c2cTradeHistory", ts_args_type = "request: string")]
+    pub fn c2c_trade_history_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.c2c_trade_history(request).await })
+    }
+
+    #[napi(js_name = "testOrder", ts_args_type = "request: string")]
+    pub fn test_order_native<'env>(
+        &self,
+        env: &'env Env,
+        request: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let request = native_json_text(request, "request");
+        spawn_native(env, async move { this.test_order(request).await })
+    }
+
+    #[napi(js_name = "cancelAllOpenOrders", ts_args_type = "market: string")]
+    pub fn cancel_all_open_orders_native<'env>(
+        &self,
+        env: &'env Env,
+        market: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let market = native_json_text(market, "market");
+        spawn_native(
+            env,
+            async move { this.cancel_all_open_orders(market).await },
+        )
     }
 
     #[napi(js_name = "usdMCreateListenKey")]
@@ -1351,6 +1869,125 @@ impl NativeHyperliquid {
             self.adapter.all_mids().await,
         ))
     }
+
+    async fn user_rate_limit(&self) -> Value {
+        outcome(
+            self.adapter
+                .user_rate_limit()
+                .await
+                .and_then(TryInto::<WireHyperliquidUserRateLimit>::try_into),
+        )
+    }
+
+    async fn user_role(&self) -> Value {
+        outcome(
+            self.adapter
+                .user_role()
+                .await
+                .and_then(TryInto::<WireHyperliquidUserRole>::try_into),
+        )
+    }
+
+    async fn referral(&self) -> Value {
+        outcome(
+            self.adapter
+                .referral()
+                .await
+                .and_then(TryInto::<WireHyperliquidReferral>::try_into),
+        )
+    }
+
+    async fn user_fees(&self) -> Value {
+        outcome(
+            self.adapter
+                .user_fees()
+                .await
+                .and_then(TryInto::<WireHyperliquidUserFees>::try_into),
+        )
+    }
+
+    async fn portfolio(&self) -> Value {
+        outcome(wire_vec::<_, WireHyperliquidPortfolioPeriod>(
+            self.adapter.portfolio().await,
+        ))
+    }
+
+    async fn sub_accounts(&self) -> Value {
+        outcome(wire_vec::<_, WireHyperliquidSubAccount>(
+            self.adapter.sub_accounts().await,
+        ))
+    }
+
+    async fn user_vault_equities(&self) -> Value {
+        outcome(wire_vec::<_, WireHyperliquidVaultEquity>(
+            self.adapter.user_vault_equities().await,
+        ))
+    }
+
+    async fn user_fills(&self, aggregate_by_time: maxt::Result<String>) -> Value {
+        match parse_text::<bool>(aggregate_by_time, "aggregate_by_time") {
+            Ok(aggregate_by_time) => outcome(wire_vec::<_, WireHyperliquidUserFill>(
+                self.adapter.user_fills(aggregate_by_time).await,
+            )),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn user_fills_by_time(
+        &self,
+        from: maxt::Result<String>,
+        to: maxt::Result<String>,
+        aggregate_by_time: maxt::Result<String>,
+    ) -> Value {
+        let from = parse_text::<String>(from, "from")
+            .and_then(|value| timestamp_from_wire(&value, "from"));
+        let to = parse_text::<Option<String>>(to, "to").and_then(|value| {
+            value
+                .as_deref()
+                .map(|value| timestamp_from_wire(value, "to"))
+                .transpose()
+        });
+        let aggregate_by_time = parse_text::<bool>(aggregate_by_time, "aggregate_by_time");
+        match (from, to, aggregate_by_time) {
+            (Ok(from), Ok(to), Ok(aggregate_by_time)) => {
+                outcome(wire_vec::<_, WireHyperliquidUserFill>(
+                    self.adapter
+                        .user_fills_by_time(from, to, aggregate_by_time)
+                        .await,
+                ))
+            }
+            (Err(error), _, _) | (_, Err(error), _) | (_, _, Err(error)) => {
+                outcome::<Value>(Err(error))
+            }
+        }
+    }
+
+    async fn basic_open_orders(&self) -> Value {
+        outcome(wire_vec::<_, WireHyperliquidOpenOrder>(
+            self.adapter.basic_open_orders().await,
+        ))
+    }
+
+    async fn order_status(&self, reference: maxt::Result<String>) -> Value {
+        match parse_wire::<HyperliquidOrderReference, WireHyperliquidOrderReference>(
+            reference,
+            "reference",
+        ) {
+            Ok(reference) => outcome(
+                self.adapter
+                    .order_status(reference)
+                    .await
+                    .and_then(TryInto::<WireHyperliquidOrderStatusResponse>::try_into),
+            ),
+            Err(error) => outcome::<Value>(Err(error)),
+        }
+    }
+
+    async fn historical_orders(&self) -> Value {
+        outcome(wire_vec::<_, WireHyperliquidOrderInfo>(
+            self.adapter.historical_orders().await,
+        ))
+    }
 }
 
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
@@ -1403,6 +2040,117 @@ impl NativeHyperliquid {
     pub fn all_mids_native<'env>(&self, env: &'env Env) -> napi::Result<PromiseRaw<'env, Value>> {
         let this = self.clone();
         spawn_native(env, async move { this.all_mids().await })
+    }
+
+    #[napi(js_name = "userRateLimit")]
+    pub fn user_rate_limit_native<'env>(
+        &self,
+        env: &'env Env,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.user_rate_limit().await })
+    }
+
+    #[napi(js_name = "userRole")]
+    pub fn user_role_native<'env>(&self, env: &'env Env) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.user_role().await })
+    }
+
+    #[napi(js_name = "referral")]
+    pub fn referral_native<'env>(&self, env: &'env Env) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.referral().await })
+    }
+
+    #[napi(js_name = "userFees")]
+    pub fn user_fees_native<'env>(&self, env: &'env Env) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.user_fees().await })
+    }
+
+    #[napi(js_name = "portfolio")]
+    pub fn portfolio_native<'env>(&self, env: &'env Env) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.portfolio().await })
+    }
+
+    #[napi(js_name = "subAccounts")]
+    pub fn sub_accounts_native<'env>(
+        &self,
+        env: &'env Env,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.sub_accounts().await })
+    }
+
+    #[napi(js_name = "userVaultEquities")]
+    pub fn user_vault_equities_native<'env>(
+        &self,
+        env: &'env Env,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.user_vault_equities().await })
+    }
+
+    #[napi(js_name = "userFills", ts_args_type = "aggregateByTime: string")]
+    pub fn user_fills_native<'env>(
+        &self,
+        env: &'env Env,
+        aggregate_by_time: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let aggregate_by_time = native_json_text(aggregate_by_time, "aggregateByTime");
+        spawn_native(env, async move { this.user_fills(aggregate_by_time).await })
+    }
+
+    #[napi(
+        js_name = "userFillsByTime",
+        ts_args_type = "from: string, to: string, aggregateByTime: string"
+    )]
+    pub fn user_fills_by_time_native<'env>(
+        &self,
+        env: &'env Env,
+        from: NativeJsonText<'env>,
+        to: NativeJsonText<'env>,
+        aggregate_by_time: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let from = native_json_text(from, "from");
+        let to = native_json_text(to, "to");
+        let aggregate_by_time = native_json_text(aggregate_by_time, "aggregateByTime");
+        spawn_native(env, async move {
+            this.user_fills_by_time(from, to, aggregate_by_time).await
+        })
+    }
+
+    #[napi(js_name = "basicOpenOrders")]
+    pub fn basic_open_orders_native<'env>(
+        &self,
+        env: &'env Env,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.basic_open_orders().await })
+    }
+
+    #[napi(js_name = "orderStatus", ts_args_type = "reference: string")]
+    pub fn order_status_native<'env>(
+        &self,
+        env: &'env Env,
+        reference: NativeJsonText<'env>,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        let reference = native_json_text(reference, "reference");
+        spawn_native(env, async move { this.order_status(reference).await })
+    }
+
+    #[napi(js_name = "historicalOrders")]
+    pub fn historical_orders_native<'env>(
+        &self,
+        env: &'env Env,
+    ) -> napi::Result<PromiseRaw<'env, Value>> {
+        let this = self.clone();
+        spawn_native(env, async move { this.historical_orders().await })
     }
 }
 
@@ -1534,6 +2282,11 @@ impl NativeUpbit {
         crate::web::value(self.market_events().await)
     }
 
+    #[wasm_bindgen(js_name = "listSubscriptions")]
+    pub async fn list_subscriptions_wasm(&self, subscription: String) -> JsValue {
+        crate::web::value(self.list_subscriptions(Ok(subscription)).await)
+    }
+
     #[wasm_bindgen(js_name = "testOrder")]
     pub async fn test_order_wasm(&self, request: String) -> JsValue {
         crate::web::value(self.test_order(Ok(request)).await)
@@ -1584,6 +2337,66 @@ impl NativeUpbit {
     pub async fn cancel_and_new_order_wasm(&self, request: String) -> JsValue {
         crate::web::value(self.cancel_and_new_order(Ok(request)).await)
     }
+
+    #[wasm_bindgen(js_name = "depositKrw")]
+    pub async fn deposit_krw_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.deposit_krw(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "withdrawKrw")]
+    pub async fn withdraw_krw_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.withdraw_krw(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "apiKeys")]
+    pub async fn api_keys_wasm(&self) -> JsValue {
+        crate::web::value(self.api_keys().await)
+    }
+
+    #[wasm_bindgen(js_name = "listPockets")]
+    pub async fn list_pockets_wasm(&self) -> JsValue {
+        crate::web::value(self.list_pockets().await)
+    }
+
+    #[wasm_bindgen(js_name = "listPocketApiKeys")]
+    pub async fn list_pocket_api_keys_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.list_pocket_api_keys(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "subPocketBalances")]
+    pub async fn sub_pocket_balances_wasm(&self, pocket_uuid: String) -> JsValue {
+        crate::web::value(self.sub_pocket_balances(Ok(pocket_uuid)).await)
+    }
+
+    #[wasm_bindgen(js_name = "universalTransfer")]
+    pub async fn universal_transfer_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.universal_transfer(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "universalTransfers")]
+    pub async fn universal_transfers_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.universal_transfers(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "subPocketTransfer")]
+    pub async fn sub_pocket_transfer_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.sub_pocket_transfer(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "subPocketTransfers")]
+    pub async fn sub_pocket_transfers_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.sub_pocket_transfers(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "orderDetail")]
+    pub async fn order_detail_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.order_detail(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "closedOrders")]
+    pub async fn closed_orders_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.closed_orders(Ok(request)).await)
+    }
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -1622,6 +2435,11 @@ impl NativeBithumb {
     #[wasm_bindgen(js_name = "pendingOrders")]
     pub async fn pending_orders_wasm(&self, request: String) -> JsValue {
         crate::web::value(self.pending_orders(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "closedOrders")]
+    pub async fn closed_orders_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.closed_orders(Ok(request)).await)
     }
 
     #[wasm_bindgen(js_name = "batchOrders")]
@@ -1663,6 +2481,21 @@ impl NativeBithumb {
     pub async fn cancel_twap_order_wasm(&self, algo_order_id: String) -> JsValue {
         crate::web::value(self.cancel_twap_order(Ok(algo_order_id)).await)
     }
+
+    #[wasm_bindgen(js_name = "withdrawalAddresses")]
+    pub async fn withdrawal_addresses_wasm(&self) -> JsValue {
+        crate::web::value(self.withdrawal_addresses().await)
+    }
+
+    #[wasm_bindgen(js_name = "orderDetail")]
+    pub async fn order_detail_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.order_detail(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "orderList")]
+    pub async fn order_list_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.order_list(Ok(request)).await)
+    }
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -1681,6 +2514,11 @@ impl NativeBinance {
     #[wasm_bindgen(js_name = "spotSymbolFilters")]
     pub async fn spot_symbol_filters_wasm(&self, market: String) -> JsValue {
         crate::web::value(self.spot_symbol_filters(Ok(market)).await)
+    }
+
+    #[wasm_bindgen(js_name = "spotAveragePrice")]
+    pub async fn spot_average_price_wasm(&self, market: String) -> JsValue {
+        crate::web::value(self.spot_average_price(Ok(market)).await)
     }
 
     #[wasm_bindgen(js_name = "spotOrder")]
@@ -1706,6 +2544,26 @@ impl NativeBinance {
     #[wasm_bindgen(js_name = "aggregateTrades")]
     pub async fn aggregate_trades_wasm(&self, request: String) -> JsValue {
         crate::web::value(self.aggregate_trades(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "accountTrades")]
+    pub async fn account_trades_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.account_trades(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "c2cTradeHistory")]
+    pub async fn c2c_trade_history_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.c2c_trade_history(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "testOrder")]
+    pub async fn test_order_wasm(&self, request: String) -> JsValue {
+        crate::web::value(self.test_order(Ok(request)).await)
+    }
+
+    #[wasm_bindgen(js_name = "cancelAllOpenOrders")]
+    pub async fn cancel_all_open_orders_wasm(&self, market: String) -> JsValue {
+        crate::web::value(self.cancel_all_open_orders(Ok(market)).await)
     }
 
     #[wasm_bindgen(js_name = "usdMCreateListenKey")]
@@ -1759,6 +2617,74 @@ impl NativeHyperliquid {
     #[wasm_bindgen(js_name = "allMids")]
     pub async fn all_mids_wasm(&self) -> JsValue {
         crate::web::value(self.all_mids().await)
+    }
+
+    #[wasm_bindgen(js_name = "userRateLimit")]
+    pub async fn user_rate_limit_wasm(&self) -> JsValue {
+        crate::web::value(self.user_rate_limit().await)
+    }
+
+    #[wasm_bindgen(js_name = "userRole")]
+    pub async fn user_role_wasm(&self) -> JsValue {
+        crate::web::value(self.user_role().await)
+    }
+
+    #[wasm_bindgen(js_name = "referral")]
+    pub async fn referral_wasm(&self) -> JsValue {
+        crate::web::value(self.referral().await)
+    }
+
+    #[wasm_bindgen(js_name = "userFees")]
+    pub async fn user_fees_wasm(&self) -> JsValue {
+        crate::web::value(self.user_fees().await)
+    }
+
+    #[wasm_bindgen(js_name = "portfolio")]
+    pub async fn portfolio_wasm(&self) -> JsValue {
+        crate::web::value(self.portfolio().await)
+    }
+
+    #[wasm_bindgen(js_name = "subAccounts")]
+    pub async fn sub_accounts_wasm(&self) -> JsValue {
+        crate::web::value(self.sub_accounts().await)
+    }
+
+    #[wasm_bindgen(js_name = "userVaultEquities")]
+    pub async fn user_vault_equities_wasm(&self) -> JsValue {
+        crate::web::value(self.user_vault_equities().await)
+    }
+
+    #[wasm_bindgen(js_name = "userFills")]
+    pub async fn user_fills_wasm(&self, aggregate_by_time: String) -> JsValue {
+        crate::web::value(self.user_fills(Ok(aggregate_by_time)).await)
+    }
+
+    #[wasm_bindgen(js_name = "userFillsByTime")]
+    pub async fn user_fills_by_time_wasm(
+        &self,
+        from: String,
+        to: String,
+        aggregate_by_time: String,
+    ) -> JsValue {
+        crate::web::value(
+            self.user_fills_by_time(Ok(from), Ok(to), Ok(aggregate_by_time))
+                .await,
+        )
+    }
+
+    #[wasm_bindgen(js_name = "basicOpenOrders")]
+    pub async fn basic_open_orders_wasm(&self) -> JsValue {
+        crate::web::value(self.basic_open_orders().await)
+    }
+
+    #[wasm_bindgen(js_name = "orderStatus")]
+    pub async fn order_status_wasm(&self, reference: String) -> JsValue {
+        crate::web::value(self.order_status(Ok(reference)).await)
+    }
+
+    #[wasm_bindgen(js_name = "historicalOrders")]
+    pub async fn historical_orders_wasm(&self) -> JsValue {
+        crate::web::value(self.historical_orders().await)
     }
 }
 
@@ -1874,6 +2800,46 @@ mod tests {
         assert_eq!(result["ok"], false);
         assert_eq!(result["error"]["kind"], "invalid_request");
         assert_eq!(result["error"]["field"], "level");
+
+        let result = upbit
+            .universal_transfers(Ok(
+                r#"{"from":null,"to":null,"direction":"sideways","states":[],"uuids":[],"identifiers":[],"start_time":null,"end_time":null,"currency":null,"limit":null,"order_by":null}"#.to_owned(),
+            ))
+            .await;
+        assert_eq!(result["ok"], false);
+        assert_eq!(result["error"]["field"], "direction");
+
+        let result = upbit
+            .closed_orders(Ok(
+                r#"{"market":null,"state":"future","states":[],"start_time":null,"end_time":null,"limit":null,"order_by":null}"#.to_owned(),
+            ))
+            .await;
+        assert_eq!(result["ok"], false);
+        assert_eq!(result["error"]["field"], "state");
+
+        let bithumb =
+            NativeBithumb::create(Ok(r#"{"access_key":null,"secret_key":null}"#.to_owned()))
+                .unwrap();
+        let result = bithumb
+            .closed_orders(Ok(
+                r#"{"market":null,"state":"future","states":[],"start_time":null,"end_time":null,"limit":null,"order_by":null,"cursor":null}"#.to_owned(),
+            ))
+            .await;
+        assert_eq!(result["ok"], false);
+        assert_eq!(result["error"]["kind"], "invalid_request");
+        assert_eq!(result["error"]["field"], "state");
+
+        let binance = NativeBinance::create(Ok(
+            r#"{"venue":"spot","api_key":null,"secret_key":null}"#.to_owned(),
+        ))
+        .unwrap();
+        let result = binance
+            .c2c_trade_history(Ok(
+                r#"{"trade_type":"HOLD","start_timestamp":null,"end_timestamp":null,"page":null,"rows":null,"recv_window":null}"#.to_owned(),
+            ))
+            .await;
+        assert_eq!(result["ok"], false);
+        assert_eq!(result["error"]["field"], "trade_type");
 
         assert_eq!(ok_value(outcome(Ok(Value::Null))), Value::Null);
     }

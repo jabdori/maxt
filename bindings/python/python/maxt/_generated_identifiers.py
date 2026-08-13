@@ -246,10 +246,39 @@ class UpbitOrderDirection(str, Enum):
     DESCENDING = "desc"
 
 
+class UpbitClosedOrderState(str, Enum):
+    DONE = "done"
+    CANCEL = "cancel"
+
+
 class UpbitSmpType(str, Enum):
     CANCEL_MAKER = "cancel_maker"
     CANCEL_TAKER = "cancel_taker"
     REDUCE = "reduce"
+
+
+class UpbitKrwTwoFactorType(str, Enum):
+    KAKAO = "kakao"
+    NAVER = "naver"
+    HANA = "hana"
+
+
+class UpbitPocketTransferState(str, Enum):
+    SUBMITTED = "submitted"
+    PROCESSING = "processing"
+    DONE = "done"
+    FAILED = "failed"
+
+
+class UpbitPocketTransferDirection(str, Enum):
+    INCOMING = "in"
+    OUTGOING = "out"
+    ALL = "all"
+
+
+class UpbitPocketTransferOrder(str, Enum):
+    ASCENDING = "asc"
+    DESCENDING = "desc"
 
 
 class BithumbAlertStep(str, Enum):
@@ -264,9 +293,21 @@ class BithumbPendingOrderState(str, Enum):
     WATCH = "watch"
 
 
+class BithumbClosedOrderState(str, Enum):
+    DONE = "done"
+    CANCEL = "cancel"
+
+
 class BithumbOrderDirection(str, Enum):
     ASCENDING = "asc"
     DESCENDING = "desc"
+
+
+class BithumbOrderListState(str, Enum):
+    WAIT = "wait"
+    WATCH = "watch"
+    DONE = "done"
+    CANCEL = "cancel"
 
 
 class BithumbTwapState(str, Enum):
@@ -283,6 +324,11 @@ class BithumbTwapOrderDirection(str, Enum):
 class BinanceMarket(str, Enum):
     SPOT = "spot"
     USD_M_FUTURES = "usd_m"
+
+
+class BinanceC2cTradeType(str, Enum):
+    BUY = "BUY"
+    SELL = "SELL"
 
 
 class HyperliquidLedgerKind(str, Enum):
@@ -400,13 +446,21 @@ TimeInForce.__module__ = "maxt.models"
 SizeKind.__module__ = "maxt.models"
 UpbitRegion.__module__ = "maxt.models"
 UpbitOrderDirection.__module__ = "maxt.models"
+UpbitClosedOrderState.__module__ = "maxt.models"
 UpbitSmpType.__module__ = "maxt.models"
+UpbitKrwTwoFactorType.__module__ = "maxt.models"
+UpbitPocketTransferState.__module__ = "maxt.models"
+UpbitPocketTransferDirection.__module__ = "maxt.models"
+UpbitPocketTransferOrder.__module__ = "maxt.models"
 BithumbAlertStep.__module__ = "maxt.models"
 BithumbPendingOrderState.__module__ = "maxt.models"
+BithumbClosedOrderState.__module__ = "maxt.models"
 BithumbOrderDirection.__module__ = "maxt.models"
+BithumbOrderListState.__module__ = "maxt.models"
 BithumbTwapState.__module__ = "maxt.models"
 BithumbTwapOrderDirection.__module__ = "maxt.models"
 BinanceMarket.__module__ = "maxt.models"
+BinanceC2cTradeType.__module__ = "maxt.models"
 HyperliquidLedgerKind.__module__ = "maxt.models"
 ExchangeErrorKind.__module__ = "maxt._api"
 Network.__module__ = "maxt.models"
@@ -430,13 +484,21 @@ __all__ = [
     "SizeKind",
     "UpbitRegion",
     "UpbitOrderDirection",
+    "UpbitClosedOrderState",
     "UpbitSmpType",
+    "UpbitKrwTwoFactorType",
+    "UpbitPocketTransferState",
+    "UpbitPocketTransferDirection",
+    "UpbitPocketTransferOrder",
     "BithumbAlertStep",
     "BithumbPendingOrderState",
+    "BithumbClosedOrderState",
     "BithumbOrderDirection",
+    "BithumbOrderListState",
     "BithumbTwapState",
     "BithumbTwapOrderDirection",
     "BinanceMarket",
+    "BinanceC2cTradeType",
     "HyperliquidLedgerKind",
     "ExchangeErrorKind",
     "Network",

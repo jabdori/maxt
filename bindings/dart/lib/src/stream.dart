@@ -143,10 +143,16 @@ final class _ManagedSubscription<T> implements StreamSubscription<T> {
 
 /// 시장 데이터 구독 스트림입니다.
 final class MarketStream extends _CloseableStream<MarketEvent> {
+  /// 내부 어댑터 이벤트 소스로 시장 스트림을 만듭니다.
+  ///
+  /// 일반 애플리케이션에서는 [Client.subscribe]가 이 스트림을 반환합니다.
   MarketStream(super.source, {super.onClose});
 }
 
 /// 비공개 계정 구독 스트림입니다.
 final class AccountStream extends _CloseableStream<AccountEvent> {
+  /// 내부 어댑터 이벤트 소스로 계정 스트림을 만듭니다.
+  ///
+  /// 일반 애플리케이션에서는 [Client.subscribeAccount]가 이 스트림을 반환합니다.
   AccountStream(super.source, {super.onClose});
 }

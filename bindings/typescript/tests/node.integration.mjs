@@ -210,6 +210,66 @@ test("Bithumb pending orders validate the provider limit before a network reques
   );
 });
 
+test("provider account and pocket methods reject without network I/O", async () => {
+  await maxt.initialize();
+  const upbitRequest = new maxt.UpbitKrwTransferRequest(
+    maxt.Decimal.parse("10000"),
+    maxt.UpbitKrwTwoFactorType.Kakao,
+  );
+  const binanceMarket = maxt.Market.spot(maxt.Exchange.Binance, "BTC", "USDT");
+  const binanceOrder = new maxt.BinanceTestOrderRequest(maxt.OrderRequest.limit(
+    binanceMarket,
+    maxt.Side.Buy,
+    maxt.Size.base(maxt.Decimal.parse("0.01")),
+    maxt.Decimal.parse("100000"),
+  ));
+  const upbit = new maxt.UpbitAdapter();
+  const bithumb = new maxt.BithumbAdapter();
+  const binance = maxt.BinanceAdapter.spot();
+  const hyperliquid = new maxt.HyperliquidAdapter();
+  const bithumbMarket = maxt.Market.spot(maxt.Exchange.Bithumb, "BTC", "KRW");
+  const calls = [
+    () => upbit.depositKrw(upbitRequest),
+    () => upbit.withdrawKrw(upbitRequest),
+    () => upbit.apiKeys(),
+    () => upbit.listPockets(),
+    () => upbit.listPocketApiKeys(new maxt.UpbitPocketApiKeysRequest()),
+    () => upbit.subPocketBalances("pocket-1"),
+    () => upbit.universalTransfer(new maxt.UpbitPocketUniversalTransferRequest(
+      null, "pocket-1", "BTC", maxt.Decimal.parse("0.01"),
+    )),
+    () => upbit.universalTransfers(new maxt.UpbitPocketTransferQuery()),
+    () => upbit.subPocketTransfer(new maxt.UpbitPocketTransferRequest(
+      "pocket-1", "BTC", maxt.Decimal.parse("0.01"),
+    )),
+    () => upbit.subPocketTransfers(new maxt.UpbitPocketTransferQuery()),
+    () => upbit.closedOrders(new maxt.UpbitClosedOrdersRequest()),
+    () => bithumb.withdrawalAddresses(),
+    () => bithumb.closedOrders(new maxt.BithumbClosedOrdersRequest()),
+    () => bithumb.orderDetail(new maxt.BithumbOrderDetailRequest(bithumbMarket, "order-1")),
+    () => binance.accountTrades(new maxt.HistoryRequest(binanceMarket)),
+    () => binance.c2cTradeHistory(new maxt.BinanceC2cTradeHistoryRequest(
+      maxt.BinanceC2cTradeType.Buy,
+    )),
+    () => binance.testOrder(binanceOrder),
+    () => binance.cancelAllOpenOrders(binanceMarket),
+    () => hyperliquid.userRateLimit(),
+    () => hyperliquid.userRole(),
+    () => hyperliquid.referral(),
+    () => hyperliquid.userFees(),
+    () => hyperliquid.portfolio(),
+    () => hyperliquid.subAccounts(),
+    () => hyperliquid.userVaultEquities(),
+    () => hyperliquid.basicOpenOrders(),
+    () => hyperliquid.orderStatus({ kind: "client_order_id", value: "not-a-cloid" }),
+    () => hyperliquid.historicalOrders(),
+  ];
+
+  for (const call of calls) {
+    await assert.rejects(call(), (error) => error instanceof maxt.AuthError);
+  }
+});
+
 test("custom Adapter calls round-trip through Rust without losing values", async () => {
   const market = Market.spot(Exchange.Binance, "BTC", "USDT");
   const expected = new Ticker(

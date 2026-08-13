@@ -1,6 +1,7 @@
 //! Upbit spot adapter for Korea, Singapore, Indonesia, and Thailand.
 
 mod parse;
+mod pockets;
 mod private;
 mod rest;
 mod stream;
@@ -28,6 +29,9 @@ use crate::types::{
     TransferDestination, Withdrawal, WithdrawalQuote,
 };
 
+pub use stream::{
+    ListedSubscription as UpbitListedSubscription, SubscriptionList as UpbitSubscriptionList,
+};
 pub use travel_rule::{UpbitTravelRuleVasp, UpbitTravelRuleVerification};
 
 /// Selects an Upbit regional deployment.
@@ -138,6 +142,289 @@ pub struct UpbitOrderBookInstrument {
     pub supported_levels: Vec<Decimal>,
 }
 
+/// Identifies one Upbit order while retaining its provider-specific detail.
+///
+/// [`UpbitOrderDetailRequest::market`] is not sent to `GET /v1/order` because
+/// Upbit resolves orders globally by UUID or client identifier. It makes the
+/// expected market explicit so the adapter can reject a response belonging to
+/// another market.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpbitOrderDetailRequest {
+    /// Market the returned order must belong to.
+    pub market: Market,
+    /// Upbit's exchange-assigned order UUID.
+    ///
+    /// Upbit resolves this field when both it and [`Self::identifier`] are
+    /// present.
+    pub uuid: Option<String>,
+    /// Caller-assigned identifier supplied when the order was created.
+    pub identifier: Option<String>,
+}
+
+impl UpbitOrderDetailRequest {
+    /// Starts a lookup for one expected market.
+    pub fn new(market: Market) -> Self {
+        Self {
+            market,
+            uuid: None,
+            identifier: None,
+        }
+    }
+
+    /// Starts a lookup by Upbit's exchange-assigned order UUID.
+    pub fn by_uuid(market: Market, uuid: impl Into<String>) -> Self {
+        Self::new(market).uuid(uuid)
+    }
+
+    /// Starts a lookup by the caller-assigned order identifier.
+    pub fn by_identifier(market: Market, identifier: impl Into<String>) -> Self {
+        Self::new(market).identifier(identifier)
+    }
+
+    /// Adds Upbit's exchange-assigned order UUID.
+    ///
+    /// When an identifier is also present, Upbit resolves the UUID.
+    #[must_use]
+    pub fn uuid(mut self, uuid: impl Into<String>) -> Self {
+        self.uuid = Some(uuid.into());
+        self
+    }
+
+    /// Adds the caller-assigned order identifier.
+    #[must_use]
+    pub fn identifier(mut self, identifier: impl Into<String>) -> Self {
+        self.identifier = Some(identifier.into());
+        self
+    }
+}
+
+/// A final lifecycle state accepted by Upbit's closed-order endpoint.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UpbitClosedOrderState {
+    /// An order whose requested quantity was fully executed.
+    Done,
+    /// An order cancelled before its requested quantity was fully executed.
+    Cancel,
+}
+
+impl UpbitClosedOrderState {
+    const fn wire_name(self) -> &'static str {
+        match self {
+            Self::Done => "done",
+            Self::Cancel => "cancel",
+        }
+    }
+}
+
+/// Filters for Upbit's provider-specific closed-order list.
+///
+/// Set either [`Self::state`] or a non-empty [`Self::states`] list, never
+/// both. Upbit defaults to both final states, the previous seven days, 100
+/// results, and newest-first ordering when the corresponding fields are unset.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct UpbitClosedOrdersRequest {
+    /// Optional Upbit spot-market filter.
+    pub market: Option<Market>,
+    /// One final lifecycle-state filter.
+    pub state: Option<UpbitClosedOrderState>,
+    /// Multiple final lifecycle-state filters.
+    pub states: Vec<UpbitClosedOrderState>,
+    /// Optional beginning of the order-creation window.
+    pub start_time: Option<crate::types::Timestamp>,
+    /// Optional end of the order-creation window.
+    pub end_time: Option<crate::types::Timestamp>,
+    /// Optional result count from 1 through 1,000.
+    pub limit: Option<u32>,
+    /// Optional creation-time ordering. Upbit defaults to newest first.
+    pub order_by: Option<UpbitOrderDirection>,
+}
+
+impl UpbitClosedOrdersRequest {
+    /// Starts an unfiltered request using Upbit's defaults.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Filters by one market.
+    #[must_use]
+    pub fn market(mut self, market: Market) -> Self {
+        self.market = Some(market);
+        self
+    }
+
+    /// Filters by one final lifecycle state.
+    #[must_use]
+    pub fn state(mut self, state: UpbitClosedOrderState) -> Self {
+        self.state = Some(state);
+        self
+    }
+
+    /// Filters by one or more final lifecycle states.
+    #[must_use]
+    pub fn states(mut self, states: impl Into<Vec<UpbitClosedOrderState>>) -> Self {
+        self.states = states.into();
+        self
+    }
+
+    /// Sets the beginning of the order-creation window.
+    #[must_use]
+    pub fn start_time(mut self, start_time: crate::types::Timestamp) -> Self {
+        self.start_time = Some(start_time);
+        self
+    }
+
+    /// Sets the end of the order-creation window.
+    #[must_use]
+    pub fn end_time(mut self, end_time: crate::types::Timestamp) -> Self {
+        self.end_time = Some(end_time);
+        self
+    }
+
+    /// Limits the response to between 1 and 1,000 orders.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+
+    /// Chooses oldest-first or newest-first ordering.
+    #[must_use]
+    pub fn order_by(mut self, order_by: UpbitOrderDirection) -> Self {
+        self.order_by = Some(order_by);
+        self
+    }
+}
+
+/// One summary returned by Upbit's closed-order list endpoint.
+///
+/// This type intentionally does not reuse [`UpbitOrderDetail`]: closed-order
+/// rows contain no `trades` array. Provider enum values remain strings so a
+/// new Upbit value does not make an otherwise valid response undecodable.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct UpbitClosedOrder {
+    /// Upbit spot market.
+    pub market: Market,
+    /// Upbit's exchange-assigned order UUID.
+    pub uuid: String,
+    /// Upbit's raw order side, such as `ask` or `bid`.
+    pub side: String,
+    /// Upbit's raw order type, such as `limit`, `price`, `market`, or `best`.
+    pub ord_type: String,
+    /// Upbit's raw final lifecycle state, `done` or `cancel`.
+    pub state: String,
+    /// Order creation time.
+    pub created_at: crate::types::Timestamp,
+    /// Submitted base quantity, when the order type carries one.
+    pub volume: Option<Decimal>,
+    /// Order price, or total quote amount for a market buy.
+    pub price: Option<Decimal>,
+    /// Base quantity remaining after fills.
+    pub remaining_volume: Decimal,
+    /// Cumulative executed base quantity.
+    pub executed_volume: Decimal,
+    /// Cumulative executed quote amount when Upbit includes it.
+    pub executed_funds: Option<Decimal>,
+    /// Fee Upbit reserved when it accepted the order.
+    pub reserved_fee: Decimal,
+    /// Reserved fee not yet used.
+    pub remaining_fee: Decimal,
+    /// Cumulative paid fee.
+    pub paid_fee: Decimal,
+    /// Funds or quantity still locked in the order.
+    pub locked: Decimal,
+    /// Number of fills Upbit associates with this order.
+    pub trades_count: u32,
+    /// Quantity cancelled by self-match prevention.
+    pub prevented_volume: Decimal,
+    /// Assets unlocked by self-match prevention.
+    pub prevented_locked: Decimal,
+    /// Raw time-in-force value, when the order used one.
+    pub time_in_force: Option<String>,
+    /// Caller-assigned identifier, when the order was created with one.
+    pub identifier: Option<String>,
+    /// Raw self-match-prevention mode, when the order used one.
+    pub smp_type: Option<String>,
+}
+
+/// One fill returned inside [`UpbitOrderDetail`].
+///
+/// Upbit's raw direction and trend strings remain strings so a newly added
+/// provider value does not make an otherwise valid order unreadable.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct UpbitOrderDetailTrade {
+    /// Market reported for this fill.
+    pub market: Market,
+    /// Upbit's fill UUID.
+    pub uuid: String,
+    /// Execution price.
+    pub price: Decimal,
+    /// Executed base quantity.
+    pub volume: Decimal,
+    /// Executed quote amount.
+    pub funds: Decimal,
+    /// Upbit's raw price-trend value, such as `up` or `down`.
+    pub trend: String,
+    /// Execution time.
+    pub created_at: crate::types::Timestamp,
+    /// Upbit's raw order side for this fill, such as `ask` or `bid`.
+    pub side: String,
+}
+
+/// The full provider-specific response from Upbit's single-order endpoint.
+///
+/// The common [`Order`] intentionally retains only cross-exchange fields.
+/// This type preserves Upbit's fees, self-match-prevention values, and every
+/// individual fill. Raw provider enum strings remain strings so future Upbit
+/// values do not make an otherwise valid response undecodable.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct UpbitOrderDetail {
+    /// Upbit spot market.
+    pub market: Market,
+    /// Upbit's exchange-assigned order UUID.
+    pub uuid: String,
+    /// Upbit's raw order side, such as `ask` or `bid`.
+    pub side: String,
+    /// Upbit's raw order type, such as `limit`, `price`, `market`, or `best`.
+    pub order_type: String,
+    /// Order price, or total quote amount for a market buy.
+    pub price: Option<Decimal>,
+    /// Upbit's raw lifecycle state, such as `wait`, `watch`, `done`, or `cancel`.
+    pub state: String,
+    /// Order creation time.
+    pub created_at: crate::types::Timestamp,
+    /// Submitted base quantity, when the order type carries one.
+    pub volume: Option<Decimal>,
+    /// Base quantity remaining after fills.
+    pub remaining_volume: Decimal,
+    /// Cumulative executed base quantity.
+    pub executed_volume: Decimal,
+    /// Fee Upbit reserved when it accepted the order.
+    pub reserved_fee: Decimal,
+    /// Reserved fee not yet used.
+    pub remaining_fee: Decimal,
+    /// Cumulative paid fee.
+    pub paid_fee: Decimal,
+    /// Funds or quantity still locked in the order.
+    pub locked: Decimal,
+    /// Number of fills Upbit associates with this order.
+    pub trades_count: u32,
+    /// Quantity cancelled by self-match prevention.
+    pub prevented_volume: Decimal,
+    /// Assets unlocked by self-match prevention.
+    pub prevented_locked: Decimal,
+    /// Raw time-in-force value, when the order used one.
+    pub time_in_force: Option<String>,
+    /// Caller-assigned identifier, when the order was created with one.
+    pub identifier: Option<String>,
+    /// Raw self-match-prevention mode, when the order used one.
+    pub smp_type: Option<String>,
+    /// Individual fills in Upbit's response order.
+    pub trades: Vec<UpbitOrderDetailTrade>,
+}
+
 /// Upbit가 반환한 한 자산·네트워크의 입금 가능 정보입니다.
 ///
 /// `network`과 `provider_network`은 응답의 `net_type`을 그대로 보존합니다.
@@ -161,6 +448,469 @@ pub struct UpbitDepositInfo {
     pub minimum_deposit_confirmations: u64,
     /// 입금 수량에 적용하는 소수 자릿수입니다.
     pub decimal_precision: u64,
+}
+
+/// Required second-factor method for an Upbit Korea KRW transfer.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UpbitKrwTwoFactorType {
+    /// Kakao authentication.
+    Kakao,
+    /// Naver certificate authentication.
+    Naver,
+    /// Hana certificate authentication.
+    Hana,
+}
+
+impl UpbitKrwTwoFactorType {
+    pub(crate) const fn wire_name(self) -> &'static str {
+        match self {
+            Self::Kakao => "kakao",
+            Self::Naver => "naver",
+            Self::Hana => "hana",
+        }
+    }
+}
+
+/// Request for an Upbit Korea KRW deposit or withdrawal.
+///
+/// Upbit verifies the registered transfer account and the selected
+/// second-factor method itself. Those account credentials are never accepted
+/// or stored by this API.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpbitKrwTransferRequest {
+    /// KRW amount to transfer. It must be greater than zero.
+    pub amount: Decimal,
+    /// Required provider-side second-factor method.
+    pub two_factor_type: UpbitKrwTwoFactorType,
+}
+
+impl UpbitKrwTransferRequest {
+    /// Starts a KRW transfer request with its required second-factor method.
+    pub fn new(amount: Decimal, two_factor_type: UpbitKrwTwoFactorType) -> Self {
+        Self {
+            amount,
+            two_factor_type,
+        }
+    }
+}
+
+/// One Upbit Korea KRW deposit returned after a deposit request.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpbitKrwDeposit {
+    /// Upbit's transfer type, normally `deposit`.
+    pub transfer_type: String,
+    /// Upbit-issued deposit UUID.
+    pub uuid: String,
+    /// Currency returned by Upbit, normally `KRW`.
+    pub currency: String,
+    /// Provider network. KRW deposits return `None`.
+    pub net_type: Option<String>,
+    /// Provider transaction identifier.
+    pub txid: String,
+    /// Provider lifecycle state under Upbit's spelling.
+    pub state: String,
+    /// Request creation time.
+    pub created_at: crate::types::Timestamp,
+    /// Completion time, when Upbit has completed the deposit.
+    pub done_at: Option<crate::types::Timestamp>,
+    /// Deposited KRW amount.
+    pub amount: Decimal,
+    /// Provider fee.
+    pub fee: Decimal,
+    /// Upbit transfer type, such as `default` or `internal`.
+    pub transaction_type: String,
+}
+
+/// One Upbit Korea KRW withdrawal returned after a withdrawal request.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpbitKrwWithdrawal {
+    /// Upbit's transfer type, normally `withdraw`.
+    pub transfer_type: String,
+    /// Upbit-issued withdrawal UUID.
+    pub uuid: String,
+    /// Currency returned by Upbit, normally `KRW`.
+    pub currency: String,
+    /// Provider network. KRW withdrawals return `None`.
+    pub net_type: Option<String>,
+    /// Provider transaction identifier, when one has been assigned.
+    pub txid: Option<String>,
+    /// Provider lifecycle state under Upbit's spelling.
+    pub state: String,
+    /// Request creation time.
+    pub created_at: crate::types::Timestamp,
+    /// Completion time, when Upbit has completed the withdrawal.
+    pub done_at: Option<crate::types::Timestamp>,
+    /// Withdrawn KRW amount.
+    pub amount: Decimal,
+    /// Provider fee.
+    pub fee: Decimal,
+    /// Upbit transfer type, such as `default` or `internal`.
+    pub transaction_type: String,
+    /// Whether Upbit currently permits cancellation, when supplied.
+    pub is_cancelable: Option<bool>,
+}
+
+/// One API key registered on an Upbit Korea account.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpbitApiKey {
+    /// Upbit access-key identifier.
+    pub access_key: String,
+    /// Provider-reported key expiry time.
+    pub expires_at: crate::types::Timestamp,
+}
+
+/// One Upbit Korea account pocket.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpbitPocket {
+    /// Upbit's pocket UUID.
+    pub uuid: String,
+    /// User-visible pocket name.
+    pub name: String,
+    /// Provider pocket type, such as `main` or `user_spot_trading`.
+    ///
+    /// This stays a provider string so a newly introduced pocket type does not
+    /// make a successful response undecodable.
+    pub kind: String,
+}
+
+/// One API key issued for a pocket.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpbitPocketApiKey {
+    /// Upbit access-key identifier. Secret-key material is never returned.
+    pub access_key: String,
+    /// Provider permission names assigned to this key.
+    pub permissions: Vec<String>,
+    /// IP addresses that Upbit permits this key to use.
+    pub allowed_ips: Vec<String>,
+    /// Provider-reported creation time.
+    pub created_at: crate::types::Timestamp,
+    /// Provider-reported expiry time.
+    pub expired_at: crate::types::Timestamp,
+}
+
+/// API keys grouped by their owning Upbit pocket.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpbitPocketApiKeyGroup {
+    /// Owning pocket UUID.
+    pub uuid: String,
+    /// Keys issued for this pocket.
+    pub keys: Vec<UpbitPocketApiKey>,
+}
+
+/// Request filters for Upbit Korea's pocket API-key list.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct UpbitPocketApiKeysRequest {
+    /// Optional pocket UUID filter. An empty list returns every visible pocket.
+    pub uuids: Vec<String>,
+    /// Whether expired keys are included. `false` is Upbit's documented default.
+    pub include_expired: bool,
+}
+
+impl UpbitPocketApiKeysRequest {
+    /// Starts an unfiltered API-key list request.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Limits the response to these pocket UUIDs.
+    #[must_use]
+    pub fn uuids(mut self, uuids: impl Into<Vec<String>>) -> Self {
+        self.uuids = uuids.into();
+        self
+    }
+
+    /// Includes keys that have expired.
+    #[must_use]
+    pub fn include_expired(mut self) -> Self {
+        self.include_expired = true;
+        self
+    }
+}
+
+/// One balance row belonging to an Upbit pocket.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpbitPocketBalance {
+    /// Asset code returned by Upbit.
+    pub currency: String,
+    /// Amount currently available to trade or transfer.
+    pub balance: Decimal,
+    /// Amount reserved by orders or transfers.
+    pub locked: Decimal,
+    /// Provider-reported average acquisition price.
+    pub avg_buy_price: Decimal,
+    /// Whether Upbit has adjusted the average acquisition price.
+    pub avg_buy_price_modified: bool,
+    /// Currency in which `avg_buy_price` is expressed.
+    pub unit_currency: String,
+}
+
+/// A state accepted by Upbit's pocket-transfer list endpoints.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UpbitPocketTransferState {
+    /// The transfer request was accepted.
+    Submitted,
+    /// Upbit is processing the transfer.
+    Processing,
+    /// The transfer completed.
+    Done,
+    /// The transfer failed.
+    Failed,
+}
+
+impl UpbitPocketTransferState {
+    pub(crate) const fn wire_name(self) -> &'static str {
+        match self {
+            Self::Submitted => "submitted",
+            Self::Processing => "processing",
+            Self::Done => "done",
+            Self::Failed => "failed",
+        }
+    }
+}
+
+/// Direction accepted by the current sub-pocket transfer-history endpoint.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UpbitPocketTransferDirection {
+    /// Transfers received by the current sub-pocket.
+    Incoming,
+    /// Transfers sent by the current sub-pocket.
+    Outgoing,
+    /// Both incoming and outgoing transfers.
+    All,
+}
+
+impl UpbitPocketTransferDirection {
+    pub(crate) const fn wire_name(self) -> &'static str {
+        match self {
+            Self::Incoming => "in",
+            Self::Outgoing => "out",
+            Self::All => "all",
+        }
+    }
+}
+
+/// Result ordering accepted by Upbit's pocket-transfer list endpoints.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UpbitPocketTransferOrder {
+    /// Oldest transfer first.
+    Ascending,
+    /// Newest transfer first.
+    Descending,
+}
+
+impl UpbitPocketTransferOrder {
+    pub(crate) const fn wire_name(self) -> &'static str {
+        match self {
+            Self::Ascending => "asc",
+            Self::Descending => "desc",
+        }
+    }
+}
+
+/// Filters for one Upbit pocket-transfer history endpoint.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct UpbitPocketTransferQuery {
+    /// Optional source-pocket UUID filter for a main-pocket history query.
+    pub from: Option<String>,
+    /// Optional destination-pocket UUID filter for a main-pocket history query.
+    pub to: Option<String>,
+    /// Optional direction filter for a sub-pocket history query.
+    pub direction: Option<UpbitPocketTransferDirection>,
+    /// Optional lifecycle-state filters.
+    pub states: Vec<UpbitPocketTransferState>,
+    /// Optional Upbit transfer UUID filters, limited to 20 values.
+    pub uuids: Vec<String>,
+    /// Optional caller identifier filters, limited to 20 values.
+    pub identifiers: Vec<String>,
+    /// Optional inclusive beginning of the query window.
+    pub start_time: Option<crate::types::Timestamp>,
+    /// Optional inclusive end of the query window.
+    pub end_time: Option<crate::types::Timestamp>,
+    /// Optional asset-code filter.
+    pub currency: Option<String>,
+    /// Optional page size from 1 through 100.
+    pub limit: Option<u32>,
+    /// Optional result order. Upbit defaults to newest first.
+    pub order_by: Option<UpbitPocketTransferOrder>,
+}
+
+impl UpbitPocketTransferQuery {
+    /// Starts an unfiltered transfer-history query.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Filters a main-pocket history query by source pocket UUID.
+    #[must_use]
+    pub fn from(mut self, value: impl Into<String>) -> Self {
+        self.from = Some(value.into());
+        self
+    }
+
+    /// Filters a main-pocket history query by destination pocket UUID.
+    #[must_use]
+    pub fn to(mut self, value: impl Into<String>) -> Self {
+        self.to = Some(value.into());
+        self
+    }
+
+    /// Filters a sub-pocket history query by direction.
+    #[must_use]
+    pub fn direction(mut self, value: UpbitPocketTransferDirection) -> Self {
+        self.direction = Some(value);
+        self
+    }
+
+    /// Filters by one or more transfer states.
+    #[must_use]
+    pub fn states(mut self, values: impl Into<Vec<UpbitPocketTransferState>>) -> Self {
+        self.states = values.into();
+        self
+    }
+
+    /// Filters by Upbit transfer UUIDs.
+    #[must_use]
+    pub fn uuids(mut self, values: impl Into<Vec<String>>) -> Self {
+        self.uuids = values.into();
+        self
+    }
+
+    /// Filters by caller-assigned transfer identifiers.
+    #[must_use]
+    pub fn identifiers(mut self, values: impl Into<Vec<String>>) -> Self {
+        self.identifiers = values.into();
+        self
+    }
+
+    /// Sets the inclusive start of the query window.
+    #[must_use]
+    pub fn start_time(mut self, value: crate::types::Timestamp) -> Self {
+        self.start_time = Some(value);
+        self
+    }
+
+    /// Sets the inclusive end of the query window.
+    #[must_use]
+    pub fn end_time(mut self, value: crate::types::Timestamp) -> Self {
+        self.end_time = Some(value);
+        self
+    }
+
+    /// Filters by asset code.
+    #[must_use]
+    pub fn currency(mut self, value: impl Into<String>) -> Self {
+        self.currency = Some(value.into());
+        self
+    }
+
+    /// Sets the result count from 1 through 100.
+    #[must_use]
+    pub fn limit(mut self, value: u32) -> Self {
+        self.limit = Some(value);
+        self
+    }
+
+    /// Sets result ordering.
+    #[must_use]
+    pub fn order_by(mut self, value: UpbitPocketTransferOrder) -> Self {
+        self.order_by = Some(value);
+        self
+    }
+}
+
+/// Main-pocket request to move assets between Upbit pockets.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpbitPocketUniversalTransferRequest {
+    /// Optional source-pocket UUID. Omit it to use the API key's pocket.
+    pub from: Option<String>,
+    /// Destination-pocket UUID. This is required by Upbit's current OpenAPI contract.
+    pub to: String,
+    /// Asset code to move.
+    pub currency: String,
+    /// Positive asset amount to move.
+    pub amount: Decimal,
+    /// Optional one-time caller identifier.
+    pub identifier: Option<String>,
+}
+
+impl UpbitPocketUniversalTransferRequest {
+    /// Creates a main-pocket transfer request with Upbit's required destination.
+    pub fn new(to: impl Into<String>, currency: impl Into<String>, amount: Decimal) -> Self {
+        Self {
+            from: None,
+            to: to.into(),
+            currency: currency.into(),
+            amount,
+            identifier: None,
+        }
+    }
+
+    /// Uses an explicit source pocket instead of the API key's pocket.
+    #[must_use]
+    pub fn from(mut self, value: impl Into<String>) -> Self {
+        self.from = Some(value.into());
+        self
+    }
+
+    /// Supplies Upbit's one-time transfer identifier.
+    #[must_use]
+    pub fn identifier(mut self, value: impl Into<String>) -> Self {
+        self.identifier = Some(value.into());
+        self
+    }
+}
+
+/// Sub-pocket request to move assets to another Upbit pocket.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpbitPocketTransferRequest {
+    /// Destination-pocket UUID. This is required by Upbit's current OpenAPI contract.
+    pub to: String,
+    /// Asset code to move.
+    pub currency: String,
+    /// Positive asset amount to move.
+    pub amount: Decimal,
+    /// Optional one-time caller identifier.
+    pub identifier: Option<String>,
+}
+
+impl UpbitPocketTransferRequest {
+    /// Creates a sub-pocket transfer request with Upbit's required destination.
+    pub fn new(to: impl Into<String>, currency: impl Into<String>, amount: Decimal) -> Self {
+        Self {
+            to: to.into(),
+            currency: currency.into(),
+            amount,
+            identifier: None,
+        }
+    }
+
+    /// Supplies Upbit's one-time transfer identifier.
+    #[must_use]
+    pub fn identifier(mut self, value: impl Into<String>) -> Self {
+        self.identifier = Some(value.into());
+        self
+    }
+}
+
+/// One transfer between Upbit pockets.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpbitPocketTransfer {
+    /// Upbit's transfer UUID.
+    pub uuid: String,
+    /// Caller-supplied transfer identifier, when one was used.
+    pub identifier: Option<String>,
+    /// Source-pocket UUID.
+    pub from: String,
+    /// Destination-pocket UUID.
+    pub to: String,
+    /// Provider lifecycle state, retained under Upbit's spelling.
+    pub state: String,
+    /// Asset code moved by this transfer.
+    pub currency: String,
+    /// Asset amount moved by this transfer.
+    pub amount: Decimal,
+    /// Provider-reported request creation time.
+    pub created_at: crate::types::Timestamp,
 }
 
 /// Upbit's ordering when choosing open orders to cancel.
@@ -417,6 +1167,17 @@ pub(crate) struct UpbitCredentials {
     pub(crate) secret_key: String,
 }
 
+impl UpbitCredentials {
+    fn validate(&self) -> Result<()> {
+        if self.access_key.trim().is_empty() || self.secret_key.trim().is_empty() {
+            return Err(Error::auth(
+                "upbit needs both an access key and a secret key",
+            ));
+        }
+        Ok(())
+    }
+}
+
 impl UpbitAdapter {
     /// Creates an unauthenticated adapter for Upbit Korea.
     pub fn new() -> Self {
@@ -554,6 +1315,14 @@ impl UpbitAdapter {
         rest::market_events(self.http()?).await
     }
 
+    /// Opens a temporary public connection and asks Upbit to confirm the requested subscriptions.
+    pub async fn list_subscriptions(
+        &self,
+        subscription: &Subscription,
+    ) -> Result<UpbitSubscriptionList> {
+        stream::list_subscriptions(self.region.websocket_url().to_string(), subscription).await
+    }
+
     /// Validates an order without creating it on Upbit.
     ///
     /// Upbit returns a dry-run order object. Its identifier and status do not
@@ -562,11 +1331,135 @@ impl UpbitAdapter {
         private::test_order(self.credentials()?, self.http()?, request).await
     }
 
+    /// Retrieves one Upbit order with its fees, SMP outcome, and fills.
+    ///
+    /// The common [`Adapter::order`] result intentionally carries only fields
+    /// shared across exchanges. Use this provider-specific read when the
+    /// complete `GET /v1/order` response is required. Upbit uses `uuid` when
+    /// both request identifiers are set.
+    pub async fn order_detail(
+        &self,
+        request: &UpbitOrderDetailRequest,
+    ) -> Result<UpbitOrderDetail> {
+        private::order_detail(self.credentials()?, self.http()?, request).await
+    }
+
+    /// Retrieves closed Upbit orders without discarding provider-only fields.
+    ///
+    /// This read uses `GET /v1/orders/closed`, requires an API key with View
+    /// Orders permission, and returns summary rows without individual trades.
+    pub async fn closed_orders(
+        &self,
+        request: &UpbitClosedOrdersRequest,
+    ) -> Result<Vec<UpbitClosedOrder>> {
+        private::closed_orders(self.credentials()?, self.http()?, request).await
+    }
+
     /// 한 자산·네트워크의 Upbit 입금 가능 정보를 조회합니다.
     ///
     /// Upbit의 응답은 실시간 서비스 상태를 보장하지 않으며 몇 분 지연될 수 있습니다.
     pub async fn deposit_info(&self, asset: &str, network: &Network) -> Result<UpbitDepositInfo> {
         wallet::deposit_info(self.credentials()?, self.http()?, asset, network).await
+    }
+
+    /// Deposits KRW from the registered account using Upbit Korea's required
+    /// second-factor confirmation.
+    ///
+    /// This is a financial write and is available only for
+    /// [`UpbitRegion::Korea`]. Upbit confirms the account and second factor on
+    /// its side; no bank credentials are accepted here.
+    pub async fn deposit_krw(&self, request: &UpbitKrwTransferRequest) -> Result<UpbitKrwDeposit> {
+        self.ensure_korea_wallet_region()?;
+        wallet::deposit_krw(self.credentials()?, self.http()?, request).await
+    }
+
+    /// Requests a KRW withdrawal from Upbit Korea with second-factor
+    /// confirmation.
+    ///
+    /// This is a financial write. A withdrawal-enabled API key can still be
+    /// rejected when Upbit's withdrawal safety lock is enabled.
+    pub async fn withdraw_krw(
+        &self,
+        request: &UpbitKrwTransferRequest,
+    ) -> Result<UpbitKrwWithdrawal> {
+        self.ensure_korea_wallet_region()?;
+        wallet::withdraw_krw(self.credentials()?, self.http()?, request).await
+    }
+
+    /// Lists access keys registered on this Upbit Korea account.
+    ///
+    /// This provider-specific read returns key identifiers and expiry times,
+    /// never secret-key material.
+    pub async fn api_keys(&self) -> Result<Vec<UpbitApiKey>> {
+        self.ensure_korea_wallet_region()?;
+        wallet::api_keys(self.credentials()?, self.http()?).await
+    }
+
+    /// Lists pockets visible to this Upbit Korea API key.
+    ///
+    /// Pocket management is a Korea-only provider API and is kept separate
+    /// from the common account contract because it exposes provider-specific
+    /// account topology.
+    pub async fn list_pockets(&self) -> Result<Vec<UpbitPocket>> {
+        self.ensure_korea_pockets_region()?;
+        pockets::list(self.credentials()?, self.http()?).await
+    }
+
+    /// Lists API keys grouped by their Upbit Korea pocket.
+    pub async fn list_pocket_api_keys(
+        &self,
+        request: &UpbitPocketApiKeysRequest,
+    ) -> Result<Vec<UpbitPocketApiKeyGroup>> {
+        self.ensure_korea_pockets_region()?;
+        pockets::list_api_keys(self.credentials()?, self.http()?, request).await
+    }
+
+    /// Lists balances held by one Upbit Korea sub-pocket.
+    pub async fn sub_pocket_balances(&self, pocket_uuid: &str) -> Result<Vec<UpbitPocketBalance>> {
+        self.ensure_korea_pockets_region()?;
+        pockets::balances(self.credentials()?, self.http()?, pocket_uuid).await
+    }
+
+    /// Moves assets between pockets through Upbit Korea's main-pocket endpoint.
+    ///
+    /// This is a financial write. The destination (`to`) is required by the
+    /// current official OpenAPI contract.
+    pub async fn universal_transfer(
+        &self,
+        request: &UpbitPocketUniversalTransferRequest,
+    ) -> Result<UpbitPocketTransfer> {
+        self.ensure_korea_pockets_region()?;
+        pockets::universal_transfer(self.credentials()?, self.http()?, request).await
+    }
+
+    /// Lists transfers recorded by Upbit Korea's main-pocket endpoint.
+    pub async fn universal_transfers(
+        &self,
+        request: &UpbitPocketTransferQuery,
+    ) -> Result<Vec<UpbitPocketTransfer>> {
+        self.ensure_korea_pockets_region()?;
+        pockets::universal_transfers(self.credentials()?, self.http()?, request).await
+    }
+
+    /// Moves assets from the current Upbit Korea sub-pocket.
+    ///
+    /// This is a financial write. The destination (`to`) is required by the
+    /// current official OpenAPI contract.
+    pub async fn sub_pocket_transfer(
+        &self,
+        request: &UpbitPocketTransferRequest,
+    ) -> Result<UpbitPocketTransfer> {
+        self.ensure_korea_pockets_region()?;
+        pockets::sub_pocket_transfer(self.credentials()?, self.http()?, request).await
+    }
+
+    /// Lists transfers recorded by the current Upbit Korea sub-pocket.
+    pub async fn sub_pocket_transfers(
+        &self,
+        request: &UpbitPocketTransferQuery,
+    ) -> Result<Vec<UpbitPocketTransfer>> {
+        self.ensure_korea_pockets_region()?;
+        pockets::sub_pocket_transfers(self.credentials()?, self.http()?, request).await
     }
 
     /// Lists VASPs supported by Upbit's Travel Rule service.
@@ -654,7 +1547,9 @@ impl UpbitAdapter {
     }
 
     pub(crate) fn is_authenticated(&self) -> bool {
-        self.credentials.is_some()
+        self.credentials
+            .as_ref()
+            .is_some_and(|credentials| credentials.validate().is_ok())
     }
 
     fn http(&self) -> Result<&HttpTransport> {
@@ -662,12 +1557,36 @@ impl UpbitAdapter {
     }
 
     fn credentials(&self) -> Result<&UpbitCredentials> {
-        self.credentials.as_ref().ok_or_else(|| {
+        let credentials = self.credentials.as_ref().ok_or_else(|| {
             Error::auth(
                 "this Upbit adapter has no credentials; add them with \
                  `UpbitAdapter::with_credentials`",
             )
-        })
+        })?;
+        credentials.validate()?;
+        Ok(credentials)
+    }
+
+    fn ensure_korea_wallet_region(&self) -> Result<()> {
+        if self.region == UpbitRegion::Korea {
+            Ok(())
+        } else {
+            Err(Error::invalid_request(
+                "region",
+                "Upbit KRW transfers and API-key listing are available only in the Korea region",
+            ))
+        }
+    }
+
+    fn ensure_korea_pockets_region(&self) -> Result<()> {
+        if self.region == UpbitRegion::Korea {
+            Ok(())
+        } else {
+            Err(Error::invalid_request(
+                "region",
+                "Upbit pocket APIs are available only in the Korea region",
+            ))
+        }
     }
 
     fn validate_withdrawal_destination(&self, request: &WithdrawRequest) -> Result<()> {
@@ -1070,6 +1989,25 @@ mod tests {
         }
     }
 
+    #[tokio::test]
+    async fn credentials_reject_blank_keys_and_accept_a_nonblank_pair() {
+        for (access_key, secret_key) in [
+            ("", "secret"),
+            (" \t", "secret"),
+            ("access", ""),
+            ("access", " \n"),
+        ] {
+            let adapter = UpbitAdapter::new().with_credentials(access_key, secret_key);
+            assert!(matches!(adapter.credentials(), Err(Error::Auth { .. })));
+            assert!(matches!(adapter.balances().await, Err(Error::Auth { .. })));
+            assert!(!adapter.is_authenticated());
+        }
+
+        let adapter = UpbitAdapter::new().with_credentials("access", "secret");
+        assert!(adapter.credentials().is_ok());
+        assert!(adapter.is_authenticated());
+    }
+
     #[test]
     fn public_market_data_works_without_credentials() {
         let public = UpbitAdapter::new();
@@ -1105,6 +2043,45 @@ mod tests {
                 .with_credentials("access", "secret")
                 .supports(Feature::TravelRule)
         );
+    }
+
+    #[tokio::test]
+    async fn korea_only_wallet_methods_reject_other_regions_before_credentials() {
+        let adapter = UpbitAdapter::with_region(UpbitRegion::Singapore);
+        let request = UpbitKrwTransferRequest::new(Decimal::ONE, UpbitKrwTwoFactorType::Kakao);
+
+        for result in [
+            adapter.deposit_krw(&request).await.map(|_| ()),
+            adapter.withdraw_krw(&request).await.map(|_| ()),
+            adapter.api_keys().await.map(|_| ()),
+        ] {
+            assert!(
+                matches!(result, Err(Error::InvalidRequest { field, .. }) if field == "region")
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn korea_only_pocket_methods_reject_other_regions_before_credentials() {
+        let adapter = UpbitAdapter::with_region(UpbitRegion::Singapore);
+        let api_keys = UpbitPocketApiKeysRequest::new();
+        let universal = UpbitPocketUniversalTransferRequest::new("pocket-2", "XRP", Decimal::ONE);
+        let sub_pocket = UpbitPocketTransferRequest::new("pocket-2", "XRP", Decimal::ONE);
+        let history = UpbitPocketTransferQuery::new();
+
+        for result in [
+            adapter.list_pockets().await.map(|_| ()),
+            adapter.list_pocket_api_keys(&api_keys).await.map(|_| ()),
+            adapter.sub_pocket_balances("pocket-1").await.map(|_| ()),
+            adapter.universal_transfer(&universal).await.map(|_| ()),
+            adapter.universal_transfers(&history).await.map(|_| ()),
+            adapter.sub_pocket_transfer(&sub_pocket).await.map(|_| ()),
+            adapter.sub_pocket_transfers(&history).await.map(|_| ()),
+        ] {
+            assert!(
+                matches!(result, Err(Error::InvalidRequest { field, .. }) if field == "region")
+            );
+        }
     }
 
     #[tokio::test]
@@ -1159,6 +2136,18 @@ mod tests {
         ));
         assert!(matches!(
             public.test_order(&order).await,
+            Err(Error::Auth { .. })
+        ));
+        assert!(matches!(
+            public
+                .order_detail(&UpbitOrderDetailRequest::by_uuid(market.clone(), "order-1"))
+                .await,
+            Err(Error::Auth { .. })
+        ));
+        assert!(matches!(
+            public
+                .closed_orders(&UpbitClosedOrdersRequest::new().market(market.clone()))
+                .await,
             Err(Error::Auth { .. })
         ));
         assert!(matches!(

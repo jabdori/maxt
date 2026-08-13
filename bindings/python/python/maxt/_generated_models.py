@@ -452,6 +452,19 @@ class TransferHistoryRequest(WireModel):
 
 
 @dataclass(frozen=True)
+class UpbitListedSubscription(WireModel):
+    feed_type: str
+    markets: list[Market]
+    level: Optional[Decimal] = None
+
+
+@dataclass(frozen=True)
+class UpbitSubscriptionList(WireModel):
+    ticket: str
+    subscriptions: list[UpbitListedSubscription]
+
+
+@dataclass(frozen=True)
 class UpbitYearCandle(WireModel):
     market: Market
     open_time: Timestamp
@@ -472,6 +485,88 @@ class UpbitOrderBookInstrument(WireModel):
     quote_currency: str
     tick_size: Decimal
     supported_levels: list[Decimal]
+
+
+@dataclass(frozen=True)
+class UpbitOrderDetailRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    market: Market
+    uuid: Optional[str] = None
+    identifier: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class UpbitOrderDetailTrade(WireModel):
+    market: Market
+    uuid: str
+    price: Decimal
+    volume: Decimal
+    funds: Decimal
+    trend: str
+    created_at: Timestamp
+    side: str
+
+
+@dataclass(frozen=True)
+class UpbitOrderDetail(WireModel):
+    market: Market
+    uuid: str
+    side: str
+    order_type: str
+    price: Optional[Decimal]
+    state: str
+    created_at: Timestamp
+    volume: Optional[Decimal]
+    remaining_volume: Decimal
+    executed_volume: Decimal
+    reserved_fee: Decimal
+    remaining_fee: Decimal
+    paid_fee: Decimal
+    locked: Decimal
+    trades_count: int
+    prevented_volume: Decimal
+    prevented_locked: Decimal
+    time_in_force: Optional[str]
+    identifier: Optional[str]
+    smp_type: Optional[str]
+    trades: list[UpbitOrderDetailTrade]
+
+
+@dataclass(frozen=True)
+class UpbitClosedOrdersRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    market: Optional[Market]
+    state: Optional[UpbitClosedOrderState]
+    states: list[UpbitClosedOrderState]
+    start_time: Optional[Timestamp] = None
+    end_time: Optional[Timestamp] = None
+    limit: Optional[int] = None
+    order_by: Optional[UpbitOrderDirection] = None
+
+
+@dataclass(frozen=True)
+class UpbitClosedOrder(WireModel):
+    market: Market
+    uuid: str
+    side: str
+    ord_type: str
+    state: str
+    created_at: Timestamp
+    volume: Optional[Decimal]
+    price: Optional[Decimal]
+    remaining_volume: Decimal
+    executed_volume: Decimal
+    executed_funds: Optional[Decimal]
+    reserved_fee: Decimal
+    remaining_fee: Decimal
+    paid_fee: Decimal
+    locked: Decimal
+    trades_count: int
+    prevented_volume: Decimal
+    prevented_locked: Decimal
+    time_in_force: Optional[str] = None
+    identifier: Optional[str] = None
+    smp_type: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -831,6 +926,136 @@ class UpbitCancelAndNewOrderResult(WireModel):
 
 
 @dataclass(frozen=True)
+class UpbitKrwTransferRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    amount: Decimal
+    two_factor_type: UpbitKrwTwoFactorType
+
+
+@dataclass(frozen=True)
+class UpbitKrwDeposit(WireModel):
+    transfer_type: str
+    uuid: str
+    currency: str
+    net_type: Optional[str]
+    txid: str
+    state: str
+    created_at: Timestamp
+    done_at: Optional[Timestamp]
+    amount: Decimal
+    fee: Decimal
+    transaction_type: str
+
+
+@dataclass(frozen=True)
+class UpbitKrwWithdrawal(WireModel):
+    transfer_type: str
+    uuid: str
+    currency: str
+    net_type: Optional[str]
+    txid: Optional[str]
+    state: str
+    created_at: Timestamp
+    done_at: Optional[Timestamp]
+    amount: Decimal
+    fee: Decimal
+    transaction_type: str
+    is_cancelable: Optional[bool] = None
+
+
+@dataclass(frozen=True)
+class UpbitApiKey(WireModel):
+    access_key: str
+    expires_at: Timestamp
+
+
+@dataclass(frozen=True)
+class UpbitPocket(WireModel):
+    uuid: str
+    name: str
+    kind: str
+
+
+@dataclass(frozen=True)
+class UpbitPocketApiKey(WireModel):
+    access_key: str
+    permissions: list[str]
+    allowed_ips: list[str]
+    created_at: Timestamp
+    expired_at: Timestamp
+
+
+@dataclass(frozen=True)
+class UpbitPocketApiKeyGroup(WireModel):
+    uuid: str
+    keys: list[UpbitPocketApiKey]
+
+
+@dataclass(frozen=True)
+class UpbitPocketApiKeysRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    uuids: list[str]
+    include_expired: bool
+
+
+@dataclass(frozen=True)
+class UpbitPocketBalance(WireModel):
+    currency: str
+    balance: Decimal
+    locked: Decimal
+    avg_buy_price: Decimal
+    avg_buy_price_modified: bool
+    unit_currency: str
+
+
+@dataclass(frozen=True)
+class UpbitPocketTransferQuery(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    from_: Optional[str] = field(metadata={"wire_name": "from"})
+    to: Optional[str]
+    direction: Optional[UpbitPocketTransferDirection]
+    states: list[UpbitPocketTransferState]
+    uuids: list[str]
+    identifiers: list[str]
+    start_time: Optional[Timestamp] = None
+    end_time: Optional[Timestamp] = None
+    currency: Optional[str] = None
+    limit: Optional[int] = None
+    order_by: Optional[UpbitPocketTransferOrder] = None
+
+
+@dataclass(frozen=True)
+class UpbitPocketUniversalTransferRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    from_: Optional[str] = field(metadata={"wire_name": "from"})
+    to: str
+    currency: str
+    amount: Decimal
+    identifier: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class UpbitPocketTransferRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    to: str
+    currency: str
+    amount: Decimal
+    identifier: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class UpbitPocketTransfer(WireModel):
+    uuid: str
+    identifier: Optional[str]
+    from_: str = field(metadata={"wire_name": "from"})
+    to: str
+    state: str
+    currency: str
+    amount: Decimal
+    created_at: Timestamp
+
+
+@dataclass(frozen=True)
 class BithumbNotice(WireModel):
     categories: list[str]
     title: str
@@ -911,6 +1136,44 @@ class BithumbPendingOrdersRequest(WireModel):
     limit: Optional[int] = None
     order_by: Optional[BithumbOrderDirection] = None
     cursor: Optional[Cursor] = None
+
+
+@dataclass(frozen=True)
+class BithumbClosedOrdersRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    market: Optional[Market] = None
+    state: Optional[BithumbClosedOrderState] = None
+    states: list[BithumbClosedOrderState] = field(default_factory=list)
+    start_time: Optional[Timestamp] = None
+    end_time: Optional[Timestamp] = None
+    limit: Optional[int] = None
+    order_by: Optional[BithumbOrderDirection] = None
+    cursor: Optional[Cursor] = None
+
+
+@dataclass(frozen=True)
+class BithumbClosedOrder(WireModel):
+    order_id: str
+    side: str
+    order_type: str
+    price: Optional[Decimal]
+    state: str
+    market: Market
+    created_at: Optional[Timestamp]
+    volume: Decimal
+    remaining_volume: Decimal
+    reserved_fee: Decimal
+    remaining_fee: Decimal
+    paid_fee: Decimal
+    locked: Decimal
+    executed_volume: Decimal
+    executed_funds: Decimal
+    trades_count: int
+    client_order_id: Optional[str] = None
+    stp_type: Optional[str] = None
+    time_in_force: Optional[str] = None
+    cancel_type: Optional[str] = None
+    canceling_order_id: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -1059,6 +1322,110 @@ class BithumbNetworkFee(WireModel):
 
 
 @dataclass(frozen=True)
+class BithumbWithdrawalAddress(WireModel):
+    currency: str
+    net_type: str
+    network_name: Optional[str]
+    withdraw_address: str
+    secondary_address: Optional[str] = None
+    exchange_name: Optional[str] = None
+    owner_type: Optional[str] = None
+    owner_ko_name: Optional[str] = None
+    owner_en_name: Optional[str] = None
+    owner_corp_ko_name: Optional[str] = None
+    owner_corp_en_name: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class BithumbOrderDetailRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    market: Market
+    uuid: Optional[str] = None
+    client_order_id: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class BithumbOrderDetailTrade(WireModel):
+    market: Market
+    uuid: str
+    price: Decimal
+    volume: Decimal
+    funds: Decimal
+    side: str
+    created_at: Timestamp
+
+
+@dataclass(frozen=True)
+class BithumbOrderDetail(WireModel):
+    uuid: str
+    client_order_id: Optional[str]
+    side: str
+    order_type: str
+    price: Decimal
+    state: str
+    market: Market
+    created_at: Timestamp
+    volume: Decimal
+    remaining_volume: Decimal
+    reserved_fee: Decimal
+    remaining_fee: Decimal
+    paid_fee: Decimal
+    locked: Decimal
+    executed_volume: Decimal
+    executed_funds: Decimal
+    trades_count: int
+    trades: list[BithumbOrderDetailTrade]
+    stp_type: Optional[str] = None
+    cancel_type: Optional[str] = None
+    canceling_uuid: Optional[str] = None
+    time_in_force: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class BithumbOrderListRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    market: Optional[Market]
+    state: Optional[BithumbOrderListState]
+    states: list[BithumbOrderListState]
+    uuids: list[str]
+    client_order_ids: list[str]
+    page: Optional[int] = None
+    limit: Optional[int] = None
+    order_by: Optional[BithumbOrderDirection] = None
+
+
+@dataclass(frozen=True)
+class BithumbOrderListItem(WireModel):
+    uuid: str
+    client_order_id: Optional[str]
+    side: str
+    order_type: str
+    price: Decimal
+    state: str
+    market: Market
+    created_at: Timestamp
+    volume: Decimal
+    remaining_volume: Decimal
+    reserved_fee: Decimal
+    remaining_fee: Decimal
+    paid_fee: Decimal
+    locked: Decimal
+    executed_volume: Decimal
+    executed_funds: Decimal
+    trades_count: int
+    stp_type: Optional[str] = None
+    time_in_force: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class BinanceSpotAveragePrice(WireModel):
+    market: Market
+    minutes: int
+    price: Decimal
+    close_time: Timestamp
+
+
+@dataclass(frozen=True)
 class BinanceMarkPrice(WireModel):
     market: Market
     mark_price: Decimal
@@ -1101,9 +1468,513 @@ class BinanceAggregateTrade(WireModel):
 
 
 @dataclass(frozen=True)
+class BinanceAccountTrade(WireModel):
+    market: Market
+    id: str
+    order_id: str
+    timestamp: Timestamp
+    side: Side
+    maker: bool
+    best_match: Optional[bool]
+    order_list_id: Optional[str]
+    price: Decimal
+    quantity: Decimal
+    quote_quantity: Optional[Decimal]
+    commission: Decimal
+    commission_asset: str
+    realized_pnl: Optional[Decimal] = None
+    position_side: Optional[str] = None
+    pair: Optional[str] = None
+    base_quantity: Optional[Decimal] = None
+    margin_asset: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class BinanceTestOrderRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    order: OrderRequest
+    compute_commission_rates: bool
+
+
+@dataclass(frozen=True)
+class BinanceTestOrder(WireModel):
+    response_json: str
+
+
+@dataclass(frozen=True)
+class BinanceC2cTradeHistoryRequest(WireModel):
+    __wire_strict__: ClassVar[bool] = True
+    trade_type: BinanceC2cTradeType
+    start_timestamp: Optional[Timestamp] = None
+    end_timestamp: Optional[Timestamp] = None
+    page: Optional[int] = None
+    rows: Optional[int] = None
+    recv_window: Optional[int] = None
+
+
+@dataclass(frozen=True)
+class BinanceC2cTrade(WireModel):
+    order_number: Optional[str] = None
+    adv_no: Optional[str] = None
+    trade_type: Optional[str] = None
+    asset: Optional[str] = None
+    fiat: Optional[str] = None
+    fiat_symbol: Optional[str] = None
+    amount: Optional[Decimal] = None
+    total_price: Optional[Decimal] = None
+    unit_price: Optional[Decimal] = None
+    order_status: Optional[str] = None
+    created_at: Optional[Timestamp] = None
+    commission: Optional[Decimal] = None
+    counterparty_nickname: Optional[str] = None
+    pay_method_name: Optional[str] = None
+    additional_kyc_verify: Optional[int] = None
+    taker_commission_rate: Optional[Decimal] = None
+    taker_commission: Optional[Decimal] = None
+    taker_amount: Optional[Decimal] = None
+    advertisement_role: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        if self.asset is not None:
+            object.__setattr__(self, "asset", _ascii_upper(self.asset))
+
+
+@dataclass(frozen=True)
+class BinanceC2cTradeHistoryPage(WireModel):
+    code: Optional[str] = None
+    message: Optional[str] = None
+    data: Optional[list[BinanceC2cTrade]] = None
+    total: Optional[int] = None
+    success: Optional[bool] = None
+
+
+@dataclass(frozen=True)
 class HyperliquidMidPrice(WireModel):
     market: Market
     price: Decimal
+
+
+@dataclass(frozen=True)
+class HyperliquidUserRateLimit(WireModel):
+    cumulative_volume: Decimal
+    requests_used: int
+    requests_cap: int
+    requests_surplus: int
+
+
+@dataclass(frozen=True)
+class HyperliquidUserRole(WireModel):
+    _wire_union: ClassVar[bool] = True
+    kind: str
+    user: Optional[str] = None
+    master: Optional[str] = None
+    role: Optional[str] = None
+    data_json: Optional[str] = None
+
+    @classmethod
+    def from_user(cls) -> HyperliquidUserRole:
+        return cls("user")
+
+    @classmethod
+    def agent(cls, user: Optional[str] = None) -> HyperliquidUserRole:
+        return cls("agent", user=user)
+
+    @classmethod
+    def vault(cls) -> HyperliquidUserRole:
+        return cls("vault")
+
+    @classmethod
+    def sub_account(cls, master: Optional[str] = None) -> HyperliquidUserRole:
+        return cls("sub_account", master=master)
+
+    @classmethod
+    def missing(cls) -> HyperliquidUserRole:
+        return cls("missing")
+
+    @classmethod
+    def other(cls, role: str, data_json: Optional[str] = None) -> HyperliquidUserRole:
+        return cls("other", role=role, data_json=data_json)
+
+    @classmethod
+    def from_wire(cls, value: dict[str, Any]) -> HyperliquidUserRole:
+        kind = value.get("kind")
+        if kind == "user":
+            for key in value:
+                if key not in {"kind"}:
+                    raise ValueError(f"HyperliquidUserRole.user does not accept {key}")
+            return cls.from_user(
+            )
+        if kind == "agent":
+            for key in value:
+                if key not in {"kind", "user"}:
+                    raise ValueError(f"HyperliquidUserRole.agent does not accept {key}")
+            return cls.agent(
+                user=_decode_value(Optional[str], value.get("user")),
+            )
+        if kind == "vault":
+            for key in value:
+                if key not in {"kind"}:
+                    raise ValueError(f"HyperliquidUserRole.vault does not accept {key}")
+            return cls.vault(
+            )
+        if kind == "sub_account":
+            for key in value:
+                if key not in {"kind", "master"}:
+                    raise ValueError(f"HyperliquidUserRole.sub_account does not accept {key}")
+            return cls.sub_account(
+                master=_decode_value(Optional[str], value.get("master")),
+            )
+        if kind == "missing":
+            for key in value:
+                if key not in {"kind"}:
+                    raise ValueError(f"HyperliquidUserRole.missing does not accept {key}")
+            return cls.missing(
+            )
+        if kind == "other":
+            for key in value:
+                if key not in {"kind", "role", "data_json"}:
+                    raise ValueError(f"HyperliquidUserRole.other does not accept {key}")
+            return cls.other(
+                role=_decode_value(str, value["role"]),
+                data_json=_decode_value(Optional[str], value.get("data_json")),
+            )
+        raise ValueError(f"unknown HyperliquidUserRole kind: {kind}")
+
+    def to_wire(self) -> dict[str, Any]:
+        if self.kind == "user":
+            if self.user is not None:
+                raise ValueError("HyperliquidUserRole.user does not accept user")
+            if self.master is not None:
+                raise ValueError("HyperliquidUserRole.user does not accept master")
+            if self.role is not None:
+                raise ValueError("HyperliquidUserRole.user does not accept role")
+            if self.data_json is not None:
+                raise ValueError("HyperliquidUserRole.user does not accept data_json")
+            return {
+                "kind": "user",
+            }
+        if self.kind == "agent":
+            if self.master is not None:
+                raise ValueError("HyperliquidUserRole.agent does not accept master")
+            if self.role is not None:
+                raise ValueError("HyperliquidUserRole.agent does not accept role")
+            if self.data_json is not None:
+                raise ValueError("HyperliquidUserRole.agent does not accept data_json")
+            return {
+                "kind": "agent",
+                "user": _model_to_wire(self.user),
+            }
+        if self.kind == "vault":
+            if self.user is not None:
+                raise ValueError("HyperliquidUserRole.vault does not accept user")
+            if self.master is not None:
+                raise ValueError("HyperliquidUserRole.vault does not accept master")
+            if self.role is not None:
+                raise ValueError("HyperliquidUserRole.vault does not accept role")
+            if self.data_json is not None:
+                raise ValueError("HyperliquidUserRole.vault does not accept data_json")
+            return {
+                "kind": "vault",
+            }
+        if self.kind == "sub_account":
+            if self.user is not None:
+                raise ValueError("HyperliquidUserRole.sub_account does not accept user")
+            if self.role is not None:
+                raise ValueError("HyperliquidUserRole.sub_account does not accept role")
+            if self.data_json is not None:
+                raise ValueError("HyperliquidUserRole.sub_account does not accept data_json")
+            return {
+                "kind": "sub_account",
+                "master": _model_to_wire(self.master),
+            }
+        if self.kind == "missing":
+            if self.user is not None:
+                raise ValueError("HyperliquidUserRole.missing does not accept user")
+            if self.master is not None:
+                raise ValueError("HyperliquidUserRole.missing does not accept master")
+            if self.role is not None:
+                raise ValueError("HyperliquidUserRole.missing does not accept role")
+            if self.data_json is not None:
+                raise ValueError("HyperliquidUserRole.missing does not accept data_json")
+            return {
+                "kind": "missing",
+            }
+        if self.kind == "other":
+            if self.user is not None:
+                raise ValueError("HyperliquidUserRole.other does not accept user")
+            if self.master is not None:
+                raise ValueError("HyperliquidUserRole.other does not accept master")
+            if self.role is None:
+                raise ValueError("HyperliquidUserRole.other requires role")
+            return {
+                "kind": "other",
+                "role": _model_to_wire(self.role),
+                "data_json": _model_to_wire(self.data_json),
+            }
+        raise ValueError(f"unknown HyperliquidUserRole kind: {self.kind}")
+
+
+@dataclass(frozen=True)
+class HyperliquidReferral(WireModel):
+    referred_by: Optional[HyperliquidReferrer]
+    cumulative_volume: Decimal
+    unclaimed_rewards: Decimal
+    claimed_rewards: Decimal
+    builder_rewards: Decimal
+    referrer_state_json: str
+    reward_history_json: str
+    token_to_state_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidReferrer(WireModel):
+    address: str
+    code: str
+
+
+@dataclass(frozen=True)
+class HyperliquidUserFees(WireModel):
+    daily_volumes: list[HyperliquidDailyVolume]
+    fee_schedule_json: str
+    user_cross_rate: Decimal
+    user_add_rate: Decimal
+    user_spot_cross_rate: Optional[Decimal]
+    user_spot_add_rate: Optional[Decimal]
+    active_referral_discount: Optional[Decimal]
+    details_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidUserFill(WireModel):
+    coin: str
+    price: Decimal
+    size: Decimal
+    side: str
+    time: Timestamp
+    start_position: Decimal
+    direction: str
+    closed_pnl: Decimal
+    hash: str
+    order_id: int
+    crossed: bool
+    fee: Decimal
+    builder_fee: Optional[Decimal]
+    trade_id: int
+    fee_token: str
+    twap_id: Optional[int]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidOrderReference(WireModel):
+    _wire_union: ClassVar[bool] = True
+    kind: str
+    value: Optional[Union[int, str]] = None
+
+    @classmethod
+    def order_id(cls, value: int) -> HyperliquidOrderReference:
+        return cls("order_id", value=value)
+
+    @classmethod
+    def client_order_id(cls, value: str) -> HyperliquidOrderReference:
+        return cls("client_order_id", value=value)
+
+    @classmethod
+    def from_wire(cls, value: dict[str, Any]) -> HyperliquidOrderReference:
+        kind = value.get("kind")
+        if kind == "order_id":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"HyperliquidOrderReference.order_id does not accept {key}")
+            return cls.order_id(
+                value=_decode_value(int, value["value"]),
+            )
+        if kind == "client_order_id":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"HyperliquidOrderReference.client_order_id does not accept {key}")
+            return cls.client_order_id(
+                value=_decode_value(str, value["value"]),
+            )
+        raise ValueError(f"unknown HyperliquidOrderReference kind: {kind}")
+
+    def to_wire(self) -> dict[str, Any]:
+        if self.kind == "order_id":
+            if self.value is None:
+                raise ValueError("HyperliquidOrderReference.order_id requires value")
+            return {
+                "kind": "order_id",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "client_order_id":
+            if self.value is None:
+                raise ValueError("HyperliquidOrderReference.client_order_id requires value")
+            return {
+                "kind": "client_order_id",
+                "value": _model_to_wire(self.value),
+            }
+        raise ValueError(f"unknown HyperliquidOrderReference kind: {self.kind}")
+
+
+@dataclass(frozen=True)
+class HyperliquidOpenOrder(WireModel):
+    coin: str
+    limit_price: Decimal
+    order_id: int
+    side: str
+    size: Decimal
+    timestamp: Timestamp
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidOrderDetail(WireModel):
+    coin: str
+    side: str
+    limit_price: Decimal
+    size: Decimal
+    order_id: int
+    timestamp: Timestamp
+    trigger_condition: str
+    is_trigger: bool
+    trigger_price: Decimal
+    children_json: str
+    is_position_tpsl: bool
+    reduce_only: bool
+    order_type: str
+    original_size: Decimal
+    time_in_force: Optional[str]
+    client_order_id: Optional[str]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidOrderInfo(WireModel):
+    order: HyperliquidOrderDetail
+    status: str
+    status_timestamp: Timestamp
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidOrderStatusResponse(WireModel):
+    _wire_union: ClassVar[bool] = True
+    kind: str
+    value: Optional[HyperliquidOrderInfo] = None
+    status: Optional[str] = None
+    raw_json: Optional[str] = None
+
+    @classmethod
+    def order(cls, value: HyperliquidOrderInfo) -> HyperliquidOrderStatusResponse:
+        return cls("order", value=value)
+
+    @classmethod
+    def unknown_order(cls) -> HyperliquidOrderStatusResponse:
+        return cls("unknown_order")
+
+    @classmethod
+    def other(cls, status: str, raw_json: str) -> HyperliquidOrderStatusResponse:
+        return cls("other", status=status, raw_json=raw_json)
+
+    @classmethod
+    def from_wire(cls, value: dict[str, Any]) -> HyperliquidOrderStatusResponse:
+        kind = value.get("kind")
+        if kind == "order":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"HyperliquidOrderStatusResponse.order does not accept {key}")
+            return cls.order(
+                value=_decode_value(HyperliquidOrderInfo, value["value"]),
+            )
+        if kind == "unknown_order":
+            for key in value:
+                if key not in {"kind"}:
+                    raise ValueError(f"HyperliquidOrderStatusResponse.unknown_order does not accept {key}")
+            return cls.unknown_order(
+            )
+        if kind == "other":
+            for key in value:
+                if key not in {"kind", "status", "raw_json"}:
+                    raise ValueError(f"HyperliquidOrderStatusResponse.other does not accept {key}")
+            return cls.other(
+                status=_decode_value(str, value["status"]),
+                raw_json=_decode_value(str, value["raw_json"]),
+            )
+        raise ValueError(f"unknown HyperliquidOrderStatusResponse kind: {kind}")
+
+    def to_wire(self) -> dict[str, Any]:
+        if self.kind == "order":
+            if self.status is not None:
+                raise ValueError("HyperliquidOrderStatusResponse.order does not accept status")
+            if self.raw_json is not None:
+                raise ValueError("HyperliquidOrderStatusResponse.order does not accept raw_json")
+            if self.value is None:
+                raise ValueError("HyperliquidOrderStatusResponse.order requires value")
+            return {
+                "kind": "order",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "unknown_order":
+            if self.value is not None:
+                raise ValueError("HyperliquidOrderStatusResponse.unknown_order does not accept value")
+            if self.status is not None:
+                raise ValueError("HyperliquidOrderStatusResponse.unknown_order does not accept status")
+            if self.raw_json is not None:
+                raise ValueError("HyperliquidOrderStatusResponse.unknown_order does not accept raw_json")
+            return {
+                "kind": "unknown_order",
+            }
+        if self.kind == "other":
+            if self.value is not None:
+                raise ValueError("HyperliquidOrderStatusResponse.other does not accept value")
+            if self.status is None:
+                raise ValueError("HyperliquidOrderStatusResponse.other requires status")
+            if self.raw_json is None:
+                raise ValueError("HyperliquidOrderStatusResponse.other requires raw_json")
+            return {
+                "kind": "other",
+                "status": _model_to_wire(self.status),
+                "raw_json": _model_to_wire(self.raw_json),
+            }
+        raise ValueError(f"unknown HyperliquidOrderStatusResponse kind: {self.kind}")
+
+
+@dataclass(frozen=True)
+class HyperliquidDailyVolume(WireModel):
+    date: str
+    user_cross: Decimal
+    user_add: Decimal
+    exchange: Decimal
+
+
+@dataclass(frozen=True)
+class HyperliquidPortfolioPeriod(WireModel):
+    period: str
+    account_value_history: list[HyperliquidPortfolioPoint]
+    pnl_history: list[HyperliquidPortfolioPoint]
+    volume: Decimal
+
+
+@dataclass(frozen=True)
+class HyperliquidPortfolioPoint(WireModel):
+    time: Timestamp
+    value: Decimal
+
+
+@dataclass(frozen=True)
+class HyperliquidSubAccount(WireModel):
+    name: str
+    user: str
+    master: str
+    perpetual_state_json: str
+    spot_state_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidVaultEquity(WireModel):
+    vault_address: str
+    equity: Decimal
+    locked_until: Optional[Timestamp] = None
 
 
 __all__ = [
@@ -1134,8 +2005,15 @@ __all__ = [
     "WithdrawRequest",
     "TransferLookupRequest",
     "TransferHistoryRequest",
+    "UpbitListedSubscription",
+    "UpbitSubscriptionList",
     "UpbitYearCandle",
     "UpbitOrderBookInstrument",
+    "UpbitOrderDetailRequest",
+    "UpbitOrderDetailTrade",
+    "UpbitOrderDetail",
+    "UpbitClosedOrdersRequest",
+    "UpbitClosedOrder",
     "UpbitDepositInfo",
     "UpbitTravelRuleVasp",
     "UpbitTravelRuleVerification",
@@ -1146,6 +2024,19 @@ __all__ = [
     "UpbitCancelAndNewOrder",
     "UpbitCancelAndNewOrderRequest",
     "UpbitCancelAndNewOrderResult",
+    "UpbitKrwTransferRequest",
+    "UpbitKrwDeposit",
+    "UpbitKrwWithdrawal",
+    "UpbitApiKey",
+    "UpbitPocket",
+    "UpbitPocketApiKey",
+    "UpbitPocketApiKeyGroup",
+    "UpbitPocketApiKeysRequest",
+    "UpbitPocketBalance",
+    "UpbitPocketTransferQuery",
+    "UpbitPocketUniversalTransferRequest",
+    "UpbitPocketTransferRequest",
+    "UpbitPocketTransfer",
     "BithumbNotice",
     "BithumbApiKey",
     "BithumbKrwWithdrawalsRequest",
@@ -1154,6 +2045,8 @@ __all__ = [
     "BithumbKrwWithdrawal",
     "BithumbKrwDeposit",
     "BithumbPendingOrdersRequest",
+    "BithumbClosedOrdersRequest",
+    "BithumbClosedOrder",
     "BithumbBatchOrdersRequest",
     "BithumbBatchOrder",
     "BithumbBatchOrderFailure",
@@ -1164,9 +2057,38 @@ __all__ = [
     "BithumbTwapOrder",
     "BithumbAssetFee",
     "BithumbNetworkFee",
+    "BithumbWithdrawalAddress",
+    "BithumbOrderDetailRequest",
+    "BithumbOrderDetailTrade",
+    "BithumbOrderDetail",
+    "BithumbOrderListRequest",
+    "BithumbOrderListItem",
+    "BinanceSpotAveragePrice",
     "BinanceMarkPrice",
     "BinanceOpenInterest",
     "BinanceAggregateTradesRequest",
     "BinanceAggregateTrade",
+    "BinanceAccountTrade",
+    "BinanceTestOrderRequest",
+    "BinanceTestOrder",
+    "BinanceC2cTradeHistoryRequest",
+    "BinanceC2cTrade",
+    "BinanceC2cTradeHistoryPage",
     "HyperliquidMidPrice",
+    "HyperliquidUserRateLimit",
+    "HyperliquidUserRole",
+    "HyperliquidReferral",
+    "HyperliquidReferrer",
+    "HyperliquidUserFees",
+    "HyperliquidUserFill",
+    "HyperliquidOrderReference",
+    "HyperliquidOpenOrder",
+    "HyperliquidOrderDetail",
+    "HyperliquidOrderInfo",
+    "HyperliquidOrderStatusResponse",
+    "HyperliquidDailyVolume",
+    "HyperliquidPortfolioPeriod",
+    "HyperliquidPortfolioPoint",
+    "HyperliquidSubAccount",
+    "HyperliquidVaultEquity",
 ]

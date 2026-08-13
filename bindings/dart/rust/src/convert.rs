@@ -6,30 +6,39 @@ mod generated_shape_guard;
 pub use generated_models::*;
 
 use maxt::adapters::{
-    BinanceSpotOrderDetail, BinanceSymbolFilters, BithumbAlertStep, BithumbMarketAlert,
-    BithumbOrderDirection, BithumbPendingOrderState, BithumbTwapOrderDirection, BithumbTwapState,
-    HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind, UpbitMarketEvent,
-    UpbitOrderDirection,
+    BinanceC2cTradeType, BinanceSpotOrderDetail, BinanceSymbolFilters, BithumbAlertStep,
+    BithumbClosedOrderState, BithumbMarketAlert, BithumbOrderDirection, BithumbOrderListState,
+    BithumbPendingOrderState, BithumbTwapOrderDirection, BithumbTwapState, HyperliquidAssetContext,
+    HyperliquidLedgerEntry, HyperliquidLedgerKind, UpbitMarketEvent, UpbitOrderDirection,
+    UpbitPocketTransferDirection, UpbitPocketTransferOrder, UpbitPocketTransferState,
 };
 use maxt::{
     Balance, Candle, CandleRequest, Cursor, Decimal, Error, Exchange, ExchangeErrorKind, Feature,
     FundingPayment, FundingRate, HistoryRequest, Interval, Level, MarginMode, MarginRequest,
     MarginSummary, Market, MarketInfo, MarketKind, MarketStatus, Order, OrderBook, OrderIdKind,
     OrderRequest, OrderStatus, OrderType, Page, Position, Side, Size, Ticker, TimeInForce,
-    Timestamp, Trade, TransferErrorKind, UpbitSmpType,
+    Timestamp, Trade, TransferErrorKind, UpbitKrwTwoFactorType, UpbitSmpType,
 };
 
+/// Dart와 Rust 사이에서 거래소를 식별하는 값입니다.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireExchange {
+    /// Upbit입니다.
     Upbit,
+    /// Bithumb입니다.
     Bithumb,
+    /// Binance입니다.
     Binance,
+    /// Hyperliquid입니다.
     Hyperliquid,
 }
 
+/// Dart와 Rust 사이에서 시장 종류를 식별하는 값입니다.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireMarketKind {
+    /// 현물 시장입니다.
     Spot,
+    /// 무기한 선물 시장입니다.
     Perpetual,
 }
 
@@ -41,9 +50,12 @@ pub enum WireMarketStatus {
     Unknown,
 }
 
+/// 주문·체결 방향입니다.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireSide {
+    /// 매수입니다.
     Buy,
+    /// 매도입니다.
     Sell,
 }
 
@@ -146,17 +158,25 @@ pub enum WireSizeKind {
     Quote,
 }
 
+/// 수량이 기준 통화인지 견적 통화인지와 그 정확한 십진 문자열입니다.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireSize {
+    /// 수량 단위입니다.
     pub kind: WireSizeKind,
+    /// 반올림하지 않은 십진 문자열입니다.
     pub value: String,
 }
 
+/// 거래소·시장 종류·기준 통화·견적 통화로 구성된 시장 식별자입니다.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireMarket {
+    /// 시장을 제공하는 거래소입니다.
     pub exchange: WireExchange,
+    /// 현물 또는 무기한 선물 시장입니다.
     pub kind: WireMarketKind,
+    /// 기준 통화입니다.
     pub base: String,
+    /// 견적 통화입니다.
     pub quote: String,
 }
 
@@ -355,9 +375,24 @@ pub enum WireBithumbPendingOrderState {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireBithumbClosedOrderState {
+    Done,
+    Cancel,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireBithumbOrderDirection {
     Ascending,
     Descending,
+}
+
+/// Bithumb 주문 목록 조회에 사용할 주문 상태입니다.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireBithumbOrderListState {
+    Wait,
+    Watch,
+    Done,
+    Cancel,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -384,6 +419,55 @@ pub enum WireUpbitSmpType {
     CancelMaker,
     CancelTaker,
     Reduce,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireUpbitKrwTwoFactorType {
+    Kakao,
+    Naver,
+    Hana,
+}
+
+/// Upbit 포켓 이전의 처리 상태입니다.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireUpbitPocketTransferState {
+    /// 요청이 접수됐습니다.
+    Submitted,
+    /// 이전을 처리 중입니다.
+    Processing,
+    /// 이전이 완료됐습니다.
+    Done,
+    /// 이전이 실패했습니다.
+    Failed,
+}
+
+/// 포켓 이전 이력의 입출금 방향 필터입니다.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireUpbitPocketTransferDirection {
+    /// 들어온 이전만 조회합니다.
+    Incoming,
+    /// 나간 이전만 조회합니다.
+    Outgoing,
+    /// 양방향 이전을 조회합니다.
+    All,
+}
+
+/// 포켓 이전 이력의 시간 정렬 순서입니다.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireUpbitPocketTransferOrder {
+    /// 오래된 이전부터 반환합니다.
+    Ascending,
+    /// 최신 이전부터 반환합니다.
+    Descending,
+}
+
+/// Binance C2C 거래 방향입니다.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireBinanceC2cTradeType {
+    /// C2C 매수입니다.
+    Buy,
+    /// C2C 매도입니다.
+    Sell,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1301,6 +1385,24 @@ impl From<WireBithumbPendingOrderState> for BithumbPendingOrderState {
     }
 }
 
+impl From<BithumbClosedOrderState> for WireBithumbClosedOrderState {
+    fn from(value: BithumbClosedOrderState) -> Self {
+        match value {
+            BithumbClosedOrderState::Done => Self::Done,
+            BithumbClosedOrderState::Cancel => Self::Cancel,
+        }
+    }
+}
+
+impl From<WireBithumbClosedOrderState> for BithumbClosedOrderState {
+    fn from(value: WireBithumbClosedOrderState) -> Self {
+        match value {
+            WireBithumbClosedOrderState::Done => Self::Done,
+            WireBithumbClosedOrderState::Cancel => Self::Cancel,
+        }
+    }
+}
+
 impl From<BithumbOrderDirection> for WireBithumbOrderDirection {
     fn from(value: BithumbOrderDirection) -> Self {
         match value {
@@ -1315,6 +1417,28 @@ impl From<WireBithumbOrderDirection> for BithumbOrderDirection {
         match value {
             WireBithumbOrderDirection::Ascending => Self::Ascending,
             WireBithumbOrderDirection::Descending => Self::Descending,
+        }
+    }
+}
+
+impl From<BithumbOrderListState> for WireBithumbOrderListState {
+    fn from(value: BithumbOrderListState) -> Self {
+        match value {
+            BithumbOrderListState::Wait => Self::Wait,
+            BithumbOrderListState::Watch => Self::Watch,
+            BithumbOrderListState::Done => Self::Done,
+            BithumbOrderListState::Cancel => Self::Cancel,
+        }
+    }
+}
+
+impl From<WireBithumbOrderListState> for BithumbOrderListState {
+    fn from(value: WireBithumbOrderListState) -> Self {
+        match value {
+            WireBithumbOrderListState::Wait => Self::Wait,
+            WireBithumbOrderListState::Watch => Self::Watch,
+            WireBithumbOrderListState::Done => Self::Done,
+            WireBithumbOrderListState::Cancel => Self::Cancel,
         }
     }
 }
@@ -1391,6 +1515,104 @@ impl From<WireUpbitSmpType> for UpbitSmpType {
             WireUpbitSmpType::CancelMaker => Self::CancelMaker,
             WireUpbitSmpType::CancelTaker => Self::CancelTaker,
             WireUpbitSmpType::Reduce => Self::Reduce,
+        }
+    }
+}
+
+impl From<UpbitKrwTwoFactorType> for WireUpbitKrwTwoFactorType {
+    fn from(value: UpbitKrwTwoFactorType) -> Self {
+        match value {
+            UpbitKrwTwoFactorType::Kakao => Self::Kakao,
+            UpbitKrwTwoFactorType::Naver => Self::Naver,
+            UpbitKrwTwoFactorType::Hana => Self::Hana,
+        }
+    }
+}
+
+impl From<WireUpbitKrwTwoFactorType> for UpbitKrwTwoFactorType {
+    fn from(value: WireUpbitKrwTwoFactorType) -> Self {
+        match value {
+            WireUpbitKrwTwoFactorType::Kakao => Self::Kakao,
+            WireUpbitKrwTwoFactorType::Naver => Self::Naver,
+            WireUpbitKrwTwoFactorType::Hana => Self::Hana,
+        }
+    }
+}
+
+impl From<UpbitPocketTransferState> for WireUpbitPocketTransferState {
+    fn from(value: UpbitPocketTransferState) -> Self {
+        match value {
+            UpbitPocketTransferState::Submitted => Self::Submitted,
+            UpbitPocketTransferState::Processing => Self::Processing,
+            UpbitPocketTransferState::Done => Self::Done,
+            UpbitPocketTransferState::Failed => Self::Failed,
+        }
+    }
+}
+
+impl From<WireUpbitPocketTransferState> for UpbitPocketTransferState {
+    fn from(value: WireUpbitPocketTransferState) -> Self {
+        match value {
+            WireUpbitPocketTransferState::Submitted => Self::Submitted,
+            WireUpbitPocketTransferState::Processing => Self::Processing,
+            WireUpbitPocketTransferState::Done => Self::Done,
+            WireUpbitPocketTransferState::Failed => Self::Failed,
+        }
+    }
+}
+
+impl From<UpbitPocketTransferDirection> for WireUpbitPocketTransferDirection {
+    fn from(value: UpbitPocketTransferDirection) -> Self {
+        match value {
+            UpbitPocketTransferDirection::Incoming => Self::Incoming,
+            UpbitPocketTransferDirection::Outgoing => Self::Outgoing,
+            UpbitPocketTransferDirection::All => Self::All,
+        }
+    }
+}
+
+impl From<WireUpbitPocketTransferDirection> for UpbitPocketTransferDirection {
+    fn from(value: WireUpbitPocketTransferDirection) -> Self {
+        match value {
+            WireUpbitPocketTransferDirection::Incoming => Self::Incoming,
+            WireUpbitPocketTransferDirection::Outgoing => Self::Outgoing,
+            WireUpbitPocketTransferDirection::All => Self::All,
+        }
+    }
+}
+
+impl From<UpbitPocketTransferOrder> for WireUpbitPocketTransferOrder {
+    fn from(value: UpbitPocketTransferOrder) -> Self {
+        match value {
+            UpbitPocketTransferOrder::Ascending => Self::Ascending,
+            UpbitPocketTransferOrder::Descending => Self::Descending,
+        }
+    }
+}
+
+impl From<WireUpbitPocketTransferOrder> for UpbitPocketTransferOrder {
+    fn from(value: WireUpbitPocketTransferOrder) -> Self {
+        match value {
+            WireUpbitPocketTransferOrder::Ascending => Self::Ascending,
+            WireUpbitPocketTransferOrder::Descending => Self::Descending,
+        }
+    }
+}
+
+impl From<BinanceC2cTradeType> for WireBinanceC2cTradeType {
+    fn from(value: BinanceC2cTradeType) -> Self {
+        match value {
+            BinanceC2cTradeType::Buy => Self::Buy,
+            BinanceC2cTradeType::Sell => Self::Sell,
+        }
+    }
+}
+
+impl From<WireBinanceC2cTradeType> for BinanceC2cTradeType {
+    fn from(value: WireBinanceC2cTradeType) -> Self {
+        match value {
+            WireBinanceC2cTradeType::Buy => Self::Buy,
+            WireBinanceC2cTradeType::Sell => Self::Sell,
         }
     }
 }

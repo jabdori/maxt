@@ -5,17 +5,41 @@
 use std::collections::HashMap;
 use std::time::Duration;
 
+use futures_util::StreamExt;
+use rust_decimal::Decimal;
 use serde_json::{Map, Value};
 
 use crate::error::{Error, Result};
 use crate::feature::Feature;
-use crate::transport::{Heartbeat, HeartbeatFrame};
-use crate::types::{Candle, Feed, Interval, Market, MarketEvent, Subscription, Timestamp};
+use crate::transport::{Heartbeat, HeartbeatFrame, WsCommand, WsConnect, ws};
+use crate::types::{
+    Candle, Feed, Interval, Market, MarketEvent, StreamConfig, Subscription, Timestamp,
+};
 
 use super::parse::{self, EXCHANGE, RawStreamCandle};
 
 /// Full-name JSON frame format.
 const FRAME_FORMAT: &str = "DEFAULT";
+
+/// One subscription returned by Upbit's `LIST_SUBSCRIPTIONS` operation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ListedSubscription {
+    /// Upbit's WebSocket data type, such as `ticker` or `orderbook`.
+    pub feed_type: String,
+    /// Markets carried by this data type; account-wide items have no markets.
+    pub markets: Vec<Market>,
+    /// Order-book aggregation level when one was requested.
+    pub level: Option<Decimal>,
+}
+
+/// Upbit's response to one `LIST_SUBSCRIPTIONS` request.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SubscriptionList {
+    /// Ticket that correlated the request and response.
+    pub ticket: String,
+    /// Data types confirmed by Upbit on the temporary connection.
+    pub subscriptions: Vec<ListedSubscription>,
+}
 
 /// Sends text `PING` every 15 seconds and waits at least 60 seconds for traffic.
 pub(crate) const HEARTBEAT: Heartbeat = Heartbeat {
@@ -54,6 +78,148 @@ pub(crate) fn subscribe_frame(subscription: &Subscription, ticket: &str) -> Resu
 
     serde_json::to_string(&payload)
         .map_err(|err| Error::decode(format!("could not build Upbit subscribe frame: {err}")))
+}
+
+/// Builds the operation frame that asks an active connection what it carries.
+pub(crate) fn list_subscriptions_frame(ticket: &str) -> Result<String> {
+    if ticket.trim().is_empty() {
+        return Err(Error::invalid_request(
+            "ticket",
+            "an Upbit subscription-list request needs a ticket",
+        ));
+    }
+
+    serde_json::to_string(&serde_json::json!([
+        { "ticket": ticket },
+        { "method": "LIST_SUBSCRIPTIONS" },
+        { "format": FRAME_FORMAT }
+    ]))
+    .map_err(|err| Error::decode(format!("could not build Upbit operation frame: {err}")))
+}
+
+/// Opens one temporary public connection and asks Upbit to confirm its subscriptions.
+pub(crate) async fn list_subscriptions(
+    url: String,
+    subscription: &Subscription,
+) -> Result<SubscriptionList> {
+    let ticket = uuid::Uuid::new_v4().to_string();
+    let session = ws::connect(
+        WsConnect {
+            url,
+            headers: None,
+            subscribe: WsConnect::fixed(vec![
+                subscribe_frame(subscription, &ticket)?,
+                list_subscriptions_frame(&ticket)?,
+            ]),
+            heartbeat: None,
+        },
+        &StreamConfig {
+            max_reconnect_attempts: Some(0),
+            idle_timeout_ms: 10_000,
+            ..StreamConfig::default()
+        },
+    )
+    .await?;
+    futures_util::pin_mut!(session);
+
+    while let Some(item) = session.next().await {
+        let frame = match item? {
+            WsCommand::Text(frame) => frame,
+            WsCommand::Binary(bytes) => String::from_utf8(bytes).map_err(|err| {
+                Error::decode(format!("Upbit sent a frame that is not UTF-8: {err}"))
+            })?,
+            WsCommand::Reconnected => continue,
+        };
+        if let Some(result) = maybe_subscription_list(&frame)? {
+            return Ok(result);
+        }
+    }
+
+    Err(Error::transport(
+        "Upbit closed before answering LIST_SUBSCRIPTIONS",
+    ))
+}
+
+/// Decodes Upbit's full-name `LIST_SUBSCRIPTIONS` response.
+pub(crate) fn subscription_list(frame: &str) -> Result<SubscriptionList> {
+    let object = frame_object(frame)?;
+    if let Some(error) = object.get("error") {
+        return Err(frame_error(error));
+    }
+    if object.get("method").and_then(Value::as_str) != Some("LIST_SUBSCRIPTIONS") {
+        return Err(Error::decode(
+            "Upbit subscription-list response has no `LIST_SUBSCRIPTIONS` method".to_string(),
+        ));
+    }
+
+    let ticket = required_text(&object, "ticket")?;
+    let subscriptions = object
+        .get("result")
+        .and_then(Value::as_array)
+        .ok_or_else(|| Error::decode("Upbit subscription-list response has no `result` array"))?
+        .iter()
+        .map(|entry| {
+            let entry = entry
+                .as_object()
+                .ok_or_else(|| Error::decode("Upbit subscription-list result is not an object"))?;
+            let feed_type = required_text(entry, "type")?;
+            let markets = entry
+                .get("codes")
+                .map(|codes| {
+                    codes
+                        .as_array()
+                        .ok_or_else(|| {
+                            Error::decode("Upbit subscription-list `codes` is not an array")
+                        })?
+                        .iter()
+                        .map(|code| {
+                            code.as_str()
+                                .ok_or_else(|| {
+                                    Error::decode("Upbit subscription-list market code is not text")
+                                })
+                                .and_then(parse::market_from_native_symbol)
+                        })
+                        .collect()
+                })
+                .transpose()?
+                .unwrap_or_default();
+            let level = entry
+                .get("level")
+                .map(|level| parse::decimal_text(&level.to_string(), "level"))
+                .transpose()?;
+
+            Ok(ListedSubscription {
+                feed_type,
+                markets,
+                level,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    Ok(SubscriptionList {
+        ticket,
+        subscriptions,
+    })
+}
+
+fn maybe_subscription_list(frame: &str) -> Result<Option<SubscriptionList>> {
+    let object = frame_object(frame)?;
+    if let Some(error) = object.get("error") {
+        return Err(frame_error(error));
+    }
+    if object.get("method").and_then(Value::as_str) != Some("LIST_SUBSCRIPTIONS") {
+        return Ok(None);
+    }
+    subscription_list(&reserialize(&object)?).map(Some)
+}
+
+fn required_text(object: &Map<String, Value>, field: &'static str) -> Result<String> {
+    object
+        .get(field)
+        .and_then(Value::as_str)
+        .filter(|value| !value.trim().is_empty())
+        .map(str::to_string)
+        .ok_or_else(|| Error::decode(format!("Upbit subscription-list `{field}` is missing")))
 }
 
 /// The `type` Upbit expects for a feed.
@@ -465,6 +631,70 @@ mod tests {
         assert_eq!(value[2]["type"], "candle.1m");
         assert_eq!(value[3]["format"], "DEFAULT");
         assert_eq!(value.as_array().expect("a list").len(), 4);
+    }
+
+    #[test]
+    fn list_subscriptions_uses_the_documented_operation_frame() {
+        let frame = list_subscriptions_frame("ticket-1").expect("a valid operation frame");
+        assert_eq!(
+            serde_json::from_str::<Value>(&frame).expect("valid JSON"),
+            serde_json::json!([
+                {"ticket": "ticket-1"},
+                {"method": "LIST_SUBSCRIPTIONS"},
+                {"format": "DEFAULT"}
+            ])
+        );
+        assert!(matches!(
+            list_subscriptions_frame("  "),
+            Err(Error::InvalidRequest { field, .. }) if field == "ticket"
+        ));
+    }
+
+    #[test]
+    fn list_subscriptions_preserves_codes_levels_and_account_wide_items() {
+        let response = subscription_list(
+            r#"{
+                "method":"LIST_SUBSCRIPTIONS",
+                "result":[
+                    {"type":"ticker","codes":["KRW-BTC"]},
+                    {"type":"orderbook","codes":["KRW-BTC","BTC-ETH"],"level":1000.5},
+                    {"type":"myAsset"}
+                ],
+                "ticket":"ticket-1"
+            }"#,
+        )
+        .expect("the official response shape");
+
+        assert_eq!(response.ticket, "ticket-1");
+        assert_eq!(response.subscriptions[0].feed_type, "ticker");
+        assert_eq!(
+            response.subscriptions[0].markets,
+            [Market::spot(Exchange::Upbit, "BTC", "KRW")]
+        );
+        assert_eq!(response.subscriptions[1].feed_type, "orderbook");
+        assert_eq!(
+            response.subscriptions[1].level,
+            Some(Decimal::new(10_005, 1))
+        );
+        assert_eq!(
+            response.subscriptions[1].markets[1],
+            Market::spot(Exchange::Upbit, "ETH", "BTC")
+        );
+        assert!(response.subscriptions[2].markets.is_empty());
+    }
+
+    #[test]
+    fn list_subscriptions_rejects_a_different_operation_or_malformed_result() {
+        for frame in [
+            r#"{"method":"OTHER","result":[],"ticket":"t"}"#,
+            r#"{"method":"LIST_SUBSCRIPTIONS","ticket":"t"}"#,
+            r#"{"method":"LIST_SUBSCRIPTIONS","result":[{"type":"ticker","codes":[1]}],"ticket":"t"}"#,
+        ] {
+            assert!(matches!(
+                subscription_list(frame),
+                Err(Error::Decode { .. })
+            ));
+        }
     }
 
     #[test]

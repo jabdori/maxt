@@ -5,6 +5,7 @@ import maxt
 import maxt.models as maxt_models
 from maxt import (
     Balance,
+    BithumbClosedOrdersRequest,
     CancelOrdersRequest,
     CancelOrdersResult,
     CancelledOrder,
@@ -17,6 +18,11 @@ from maxt import (
     FundingPayment,
     FundingRate,
     HistoryRequest,
+    HyperliquidOpenOrder,
+    HyperliquidOrderDetail,
+    HyperliquidOrderInfo,
+    HyperliquidOrderReference,
+    HyperliquidOrderStatusResponse,
     Interval,
     Level,
     MarketEvent,
@@ -59,12 +65,85 @@ from maxt.models import _model_from_wire, _model_to_wire
 
 
 class WireModelTests(unittest.TestCase):
+    def test_bithumb_closed_orders_defaults_to_all_final_states(self) -> None:
+        request = BithumbClosedOrdersRequest()
+        another = BithumbClosedOrdersRequest()
+
+        self.assertIsNone(request.market)
+        self.assertIsNone(request.state)
+        self.assertEqual(request.states, [])
+        self.assertIsNot(request.states, another.states)
+
     def test_wire_conversion_helpers_are_not_public(self) -> None:
         for name in ("_model_from_wire", "_model_to_wire"):
             with self.subTest(name=name):
                 self.assertNotIn(name, maxt.__all__)
                 self.assertFalse(hasattr(maxt, name))
                 self.assertNotIn(name, maxt_models.__all__)
+
+    def test_hyperliquid_order_unions_and_models_decode_losslessly(self) -> None:
+        reference = HyperliquidOrderReference.client_order_id(
+            "0x0123456789abcdef0123456789abcdef"
+        )
+        self.assertEqual(reference.to_wire(), {
+            "kind": "client_order_id",
+            "value": "0x0123456789abcdef0123456789abcdef",
+        })
+        detail_wire = {
+            "coin": "ETH",
+            "side": "B",
+            "limit_price": "3500.2500",
+            "size": "0.1000",
+            "order_id": 42,
+            "timestamp": 1_700_000_000_000_000_013,
+            "trigger_condition": "N/A",
+            "is_trigger": False,
+            "trigger_price": "0",
+            "children_json": "[]",
+            "is_position_tpsl": False,
+            "reduce_only": True,
+            "order_type": "Limit",
+            "original_size": "0.1000",
+            "time_in_force": "Gtc",
+            "client_order_id": reference.value,
+            "raw_json": '{"oid":42}',
+        }
+        info_wire = {
+            "order": detail_wire,
+            "status": "open",
+            "status_timestamp": 1_700_000_000_000_000_014,
+            "raw_json": '{"status":"open"}',
+        }
+
+        open_order = HyperliquidOpenOrder.from_wire({
+            "coin": "ETH",
+            "limit_price": "3500.2500",
+            "order_id": 42,
+            "side": "B",
+            "size": "0.1000",
+            "timestamp": 1_700_000_000_000_000_013,
+            "raw_json": '{"coin":"ETH"}',
+        })
+        detail = HyperliquidOrderDetail.from_wire(detail_wire)
+        info = HyperliquidOrderInfo.from_wire(info_wire)
+        response = HyperliquidOrderStatusResponse.from_wire(
+            {"kind": "order", "value": info_wire}
+        )
+
+        self.assertEqual(open_order.limit_price, Decimal("3500.2500"))
+        self.assertTrue(detail.reduce_only)
+        self.assertEqual(info.order.client_order_id, reference.value)
+        self.assertEqual(response.value, info)
+        self.assertEqual(
+            HyperliquidOrderStatusResponse.from_wire({"kind": "unknown_order"}).kind,
+            "unknown_order",
+        )
+        self.assertEqual(
+            HyperliquidOrderStatusResponse.from_wire(
+                {"kind": "other", "status": "future", "raw_json": "{}"}
+            ).status,
+            "future",
+        )
 
     def test_enum_helpers_match_the_rust_value_types(self) -> None:
         self.assertEqual(

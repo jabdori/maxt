@@ -1,0 +1,230 @@
+# Hyperliquid documented-exact logical-operation catalog snapshot
+# baseline_date: 2026-08-10
+# source_index: https://hyperliquid.gitbook.io/hyperliquid-docs/llms.txt
+# source_note: Hyperliquid GitBook pages are mutable; this file is the reviewed 2026-08-10 snapshot.
+# source_api: https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint ; https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint ; https://hyperliquid.gitbook.io/hyperliquid-docs/hypercore/multi-sig ; https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/priority-fees
+# source_websocket: https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/subscriptions ; https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/timeouts-and-heartbeats
+# source_deployers: https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/hip-3-deployer-actions ; https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/hip-4-deployer-actions ; https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/deploying-hip-1-and-hip-2-assets
+# source_hyperevm: https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/hyperevm/json-rpc ; https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/hyperevm/interacting-with-hypercore ; https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/hyperevm/dual-block-architecture
+# scope: excludes Explorer because the official documentation exposes no complete Explorer request schema; excludes SDK-only-unverified operations.
+# exposure: local public-surface classification; see README.md
+# columns: official_product	interface	method	path_or_message	operation_id	lifecycle	exposure
+Info endpoint	Http	POST	/info type=allMids	allMids	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=openOrders	openOrders	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=frontendOpenOrders	frontendOpenOrders	documented_active	common_existing
+Info endpoint	Http	POST	/info type=userFills	userFills	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=userFillsByTime	userFillsByTime	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=userRateLimit	userRateLimit	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=orderStatus	orderStatus	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=l2Book	l2Book	documented_active	common_existing
+Info endpoint	Http	POST	/info type=candleSnapshot	candleSnapshot	documented_active	common_existing
+Info endpoint	Http	POST	/info type=maxBuilderFee	maxBuilderFee	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=historicalOrders	historicalOrders	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=userTwapSliceFills	userTwapSliceFills	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=subAccounts	subAccounts	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=vaultDetails	vaultDetails	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=userVaultEquities	userVaultEquities	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=userRole	userRole	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=portfolio	portfolio	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=referral	referral	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=userFees	userFees	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=delegations	delegations	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=delegatorSummary	delegatorSummary	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=delegatorHistory	delegatorHistory	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=delegatorRewards	delegatorRewards	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=userDexAbstraction	userDexAbstraction	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=userAbstraction	userAbstraction	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=borrowLendUserState	borrowLendUserState	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=borrowLendReserveState	borrowLendReserveState	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=allBorrowLendReserveStates	allBorrowLendReserveStates	documented_active	provider_typed
+Info endpoint	Http	POST	/info type=approvedBuilders	approvedBuilders	documented_active	provider_typed
+Perpetuals info	Http	POST	/info type=perpDexs	perpDexs	documented_active	provider_typed
+Perpetuals info	Http	POST	/info type=meta	meta	documented_active	common_existing
+Perpetuals info	Http	POST	/info type=metaAndAssetCtxs	metaAndAssetCtxs	documented_active	common_and_provider
+Perpetuals info	Http	POST	/info type=clearinghouseState	clearinghouseState	documented_active	common_existing
+Perpetuals info	Http	POST	/info type=userFunding	userFunding	documented_active	common_existing
+Perpetuals info	Http	POST	/info type=userNonFundingLedgerUpdates	userNonFundingLedgerUpdates	documented_active	common_existing
+Perpetuals info	Http	POST	/info type=fundingHistory	fundingHistory	documented_active	common_existing
+Perpetuals info	Http	POST	/info type=predictedFundings	predictedFundings	documented_active	provider_typed
+Perpetuals info	Http	POST	/info type=perpsAtOpenInterestCap	perpsAtOpenInterestCap	documented_active	provider_typed
+Perpetuals info	Http	POST	/info type=perpDeployAuctionStatus	perpDeployAuctionStatus	documented_active	provider_typed
+Perpetuals info	Http	POST	/info type=activeAssetData	activeAssetData	documented_active	provider_typed
+Perpetuals info	Http	POST	/info type=perpDexLimits	perpDexLimits	documented_active	provider_typed
+Perpetuals info	Http	POST	/info type=perpDexStatus	perpDexStatus	documented_active	provider_typed
+Perpetuals info	Http	POST	/info type=allPerpMetas	allPerpMetas	documented_active	provider_typed
+Perpetuals info	Http	POST	/info type=perpAnnotation	perpAnnotation	documented_active	provider_typed
+Perpetuals info	Http	POST	/info type=perpCategories	perpCategories	documented_active	provider_typed
+Perpetuals info	Http	POST	/info type=perpConciseAnnotations	perpConciseAnnotations	documented_active	provider_typed
+Spot info	Http	POST	/info type=spotMeta	spotMeta	documented_active	common_existing
+Spot info	Http	POST	/info type=spotMetaAndAssetCtxs	spotMetaAndAssetCtxs	documented_active	common_and_provider
+Spot info	Http	POST	/info type=spotClearinghouseState	spotClearinghouseState	documented_active	common_existing
+Spot info	Http	POST	/info type=spotDeployState	spotDeployState	documented_active	provider_typed
+Spot info	Http	POST	/info type=spotPairDeployAuctionStatus	spotPairDeployAuctionStatus	documented_active	provider_typed
+Spot info	Http	POST	/info type=tokenDetails	tokenDetails	documented_active	provider_typed
+Spot info	Http	POST	/info type=outcomeMeta	outcomeMeta	documented_active	provider_typed
+Spot info	Http	POST	/info type=settledOutcome	settledOutcome	documented_active	provider_typed
+HIP-4 info	Http	POST	/info type=outcomeTemplates	outcomeTemplates	documented_active	platform_limited
+Info rate limits	Http	POST	/info type=recentTrades	recentTrades	documented_active	common_existing
+Exchange endpoint	Http	POST	/exchange action=order	order	documented_active	common_existing
+Exchange endpoint	Http	POST	/exchange action=cancel	cancel	documented_active	common_existing
+Exchange endpoint	Http	POST	/exchange action=cancelByCloid	cancelByCloid	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=scheduleCancel	scheduleCancel	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=modify	modify	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=batchModify	batchModify	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=updateLeverage	updateLeverage	documented_active	common_existing
+Exchange endpoint	Http	POST	/exchange action=updateIsolatedMargin	updateIsolatedMargin	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=topUpIsolatedOnlyMargin	topUpIsolatedOnlyMargin	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=sendAsset	sendAsset	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=agentSendAsset	agentSendAsset	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=sendToEvmWithData	sendToEvmWithData	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=usdSend	usdSend	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=spotSend	spotSend	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=withdraw3	withdraw3	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=usdClassTransfer	usdClassTransfer	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=cDeposit	cDeposit	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=cWithdraw	cWithdraw	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=tokenDelegate	tokenDelegate	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=vaultTransfer	vaultTransfer	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=hip3LiquidatorTransfer	hip3LiquidatorTransfer	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=approveAgent	approveAgent	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=approveBuilderFee	approveBuilderFee	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=twapOrder	twapOrder	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=twapCancel	twapCancel	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=reserveRequestWeight	reserveRequestWeight	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=noop	noop	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=userDexAbstraction	userDexAbstraction	documented_deprecated	deprecated_excluded
+Exchange endpoint	Http	POST	/exchange action=agentEnableDexAbstraction	agentEnableDexAbstraction	documented_deprecated	deprecated_excluded
+Exchange endpoint	Http	POST	/exchange action=userSetAbstraction	userSetAbstraction	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=agentSetAbstraction	agentSetAbstraction	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=userOutcome variant=splitOutcome	userOutcome.splitOutcome	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=userOutcome variant=mergeOutcome	userOutcome.mergeOutcome	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=userOutcome variant=mergeQuestion	userOutcome.mergeQuestion	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=userOutcome variant=negateOutcome	userOutcome.negateOutcome	documented_active	provider_typed
+Exchange endpoint	Http	POST	/exchange action=validatorL1Stream	validatorL1Stream	documented_active	platform_limited
+Exchange endpoint	Http	POST	/exchange action=authorizeAqav2Role	authorizeAqav2Role	documented_active	platform_limited
+Exchange endpoint	Http	POST	/exchange action=claimRewards	claimRewards	documented_active	provider_typed
+HIP-3 deployer actions	Http	POST	/exchange action=perpDeploy variant=registerAsset2	perpDeploy.registerAsset2	documented_active	platform_limited
+HIP-3 deployer actions	Http	POST	/exchange action=perpDeploy variant=registerAsset	perpDeploy.registerAsset	documented_active	platform_limited
+HIP-3 deployer actions	Http	POST	/exchange action=perpDeploy variant=setOracle	perpDeploy.setOracle	documented_active	platform_limited
+HIP-3 deployer actions	Http	POST	/exchange action=perpDeploy variant=setFundingMultipliers	perpDeploy.setFundingMultipliers	documented_active	platform_limited
+HIP-3 deployer actions	Http	POST	/exchange action=perpDeploy variant=setFundingInterestRates	perpDeploy.setFundingInterestRates	documented_active	platform_limited
+HIP-3 deployer actions	Http	POST	/exchange action=perpDeploy variant=haltTrading	perpDeploy.haltTrading	documented_active	platform_limited
+HIP-3 deployer actions	Http	POST	/exchange action=perpDeploy variant=setMarginTableIds	perpDeploy.setMarginTableIds	documented_active	platform_limited
+HIP-3 deployer actions	Http	POST	/exchange action=perpDeploy variant=setFeeRecipient	perpDeploy.setFeeRecipient	documented_active	platform_limited
+HIP-3 deployer actions	Http	POST	/exchange action=perpDeploy variant=setOpenInterestCaps	perpDeploy.setOpenInterestCaps	documented_active	platform_limited
+HIP-3 deployer actions	Http	POST	/exchange action=perpDeploy variant=setSubDeployers	perpDeploy.setSubDeployers	documented_active	platform_limited
+HIP-3 deployer actions	Http	POST	/exchange action=perpDeploy variant=setMarginModes	perpDeploy.setMarginModes	documented_active	platform_limited
+HIP-3 deployer actions	Http	POST	/exchange action=perpDeploy variant=setDeployerFees	perpDeploy.setDeployerFees	documented_active	platform_limited
+HIP-3 deployer actions	Http	POST	/exchange action=perpDeploy variant=setPerpAnnotation	perpDeploy.setPerpAnnotation	documented_active	platform_limited
+HIP-3 deployer actions	Http	POST	/exchange action=perpDeploy variant=disableDex	perpDeploy.disableDex	documented_active	platform_limited
+HIP-4 deployer actions	Http	POST	/exchange action=activateOutcomeDeployer	activateOutcomeDeployer	documented_testnet	platform_limited
+HIP-4 deployer actions	Http	POST	/exchange action=spotDeploy outcome.registerStandaloneOutcomeFromTemplate	spotDeploy.registerStandaloneOutcomeFromTemplate	documented_testnet	platform_limited
+HIP-4 deployer actions	Http	POST	/exchange action=spotDeploy outcome.registerQuestionFromTemplate	spotDeploy.registerQuestionFromTemplate	documented_testnet	platform_limited
+HIP-4 deployer actions	Http	POST	/exchange action=spotDeploy outcome.settleOutcome	spotDeploy.settleOutcome	documented_testnet	platform_limited
+HIP-4 deployer actions	Http	POST	/exchange action=spotDeploy outcome.settleQuestion2	spotDeploy.settleQuestion2	documented_testnet	platform_limited
+HIP-1/HIP-2 deployer actions	Http	POST	/exchange action=spotDeploy variant=registerToken2	spotDeploy.registerToken2	documented_active	platform_limited
+HIP-1/HIP-2 deployer actions	Http	POST	/exchange action=spotDeploy variant=userGenesis	spotDeploy.userGenesis	documented_active	platform_limited
+HIP-1/HIP-2 deployer actions	Http	POST	/exchange action=spotDeploy variant=genesis	spotDeploy.genesis	documented_active	platform_limited
+HIP-1/HIP-2 deployer actions	Http	POST	/exchange action=spotDeploy variant=registerSpot	spotDeploy.registerSpot	documented_active	platform_limited
+HIP-1/HIP-2 deployer actions	Http	POST	/exchange action=spotDeploy variant=registerHyperliquidity	spotDeploy.registerHyperliquidity	documented_active	platform_limited
+HIP-1/HIP-2 deployer actions	Http	POST	/exchange action=spotDeploy variant=setDeployerTradingFeeShare	spotDeploy.setDeployerTradingFeeShare	documented_active	platform_limited
+HIP-1/HIP-2 deployer actions	Http	POST	/exchange action=spotDeploy variant=enableQuoteToken	spotDeploy.enableQuoteToken	documented_active	platform_limited
+HIP-1/HIP-2 deployer actions	Http	POST	/exchange action=spotDeploy variant=enableAlignedQuoteToken	spotDeploy.enableAlignedQuoteToken	documented_active	platform_limited
+HIP-1/HIP-2 deployer actions	Http	POST	/exchange action=spotDeploy variant=disableQuoteToken	spotDeploy.disableQuoteToken	documented_active	platform_limited
+HIP-1/HIP-2 deployer actions	Http	POST	/exchange action=spotDeploy variant=disableAlignedQuoteToken	spotDeploy.disableAlignedQuoteToken	documented_active	platform_limited
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=allMids	allMids	documented_active	provider_typed
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=notification	notification	documented_active	provider_typed
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=webData3	webData3	documented_active	provider_typed
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=twapStates	twapStates	documented_active	provider_typed
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=clearinghouseState	clearinghouseState	documented_active	provider_typed
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=openOrders	openOrders	documented_active	provider_typed
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=candle	candle	documented_active	common_existing
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=l2Book	l2Book	documented_active	common_existing
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=trades	trades	documented_active	common_existing
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=orderUpdates	orderUpdates	documented_active	common_existing
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=userEvents	userEvents	documented_active	provider_typed
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=userFills	userFills	documented_active	provider_typed
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=userFundings	userFundings	documented_active	provider_typed
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=userNonFundingLedgerUpdates	userNonFundingLedgerUpdates	documented_active	provider_typed
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=activeAssetCtx	activeAssetCtx	documented_active	common_existing
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=activeAssetData	activeAssetData	documented_active	provider_typed
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=userTwapSliceFills	userTwapSliceFills	documented_active	provider_typed
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=userTwapHistory	userTwapHistory	documented_active	provider_typed
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=bbo	bbo	documented_active	provider_typed
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=spotState	spotState	documented_active	common_existing
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=allDexsClearinghouseState	allDexsClearinghouseState	documented_active	provider_typed
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=allDexsAssetCtxs	allDexsAssetCtxs	documented_active	provider_typed
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=outcomeMetaUpdates	outcomeMetaUpdates	documented_active	provider_typed
+WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=fastAssetCtxs	fastAssetCtxs	documented_active	provider_typed
+WebSocket control	WebSocket	subscribe	method=subscribe subscription=<type>	subscribe	documented_active	provider_typed
+WebSocket control	WebSocket	unsubscribe	method=unsubscribe subscription=<type>	unsubscribe	documented_active	provider_typed
+WebSocket control	WebSocket	ping	method=ping	ping	documented_active	provider_typed
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=net_version	net_version	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=web3_clientVersion	web3_clientVersion	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_blockNumber	eth_blockNumber	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_call	eth_call	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_chainId	eth_chainId	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_estimateGas	eth_estimateGas	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_feeHistory	eth_feeHistory	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_gasPrice	eth_gasPrice	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_getBalance	eth_getBalance	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_getBlockByHash	eth_getBlockByHash	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_getBlockByNumber	eth_getBlockByNumber	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_getBlockReceipts	eth_getBlockReceipts	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_getBlockTransactionCountByHash	eth_getBlockTransactionCountByHash	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_getBlockTransactionCountByNumber	eth_getBlockTransactionCountByNumber	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_getCode	eth_getCode	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_getLogs	eth_getLogs	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_getStorageAt	eth_getStorageAt	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_getTransactionByBlockHashAndIndex	eth_getTransactionByBlockHashAndIndex	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_getTransactionByBlockNumberAndIndex	eth_getTransactionByBlockNumberAndIndex	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_getTransactionByHash	eth_getTransactionByHash	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_getTransactionCount	eth_getTransactionCount	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_getTransactionReceipt	eth_getTransactionReceipt	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_maxPriorityFeePerGas	eth_maxPriorityFeePerGas	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_syncing	eth_syncing	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_bigBlockGasPrice	eth_bigBlockGasPrice	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_usingBigBlocks	eth_usingBigBlocks	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_getSystemTxsByBlockHash	eth_getSystemTxsByBlockHash	documented_active	platform_limited
+HyperEVM JSON-RPC	JsonRpc	POST	https://rpc.hyperliquid.xyz/evm method=eth_getSystemTxsByBlockNumber	eth_getSystemTxsByBlockNumber	documented_active	platform_limited
+CoreWriter	Contract	CALL	0x3333333333333333333333333333333333333333 action_id=1	limitOrder	documented_active	platform_limited
+CoreWriter	Contract	CALL	0x3333333333333333333333333333333333333333 action_id=2	vaultTransfer	documented_active	platform_limited
+CoreWriter	Contract	CALL	0x3333333333333333333333333333333333333333 action_id=3	tokenDelegate	documented_active	platform_limited
+CoreWriter	Contract	CALL	0x3333333333333333333333333333333333333333 action_id=4	stakingDeposit	documented_active	platform_limited
+CoreWriter	Contract	CALL	0x3333333333333333333333333333333333333333 action_id=5	stakingWithdraw	documented_active	platform_limited
+CoreWriter	Contract	CALL	0x3333333333333333333333333333333333333333 action_id=6	spotSend	documented_active	platform_limited
+CoreWriter	Contract	CALL	0x3333333333333333333333333333333333333333 action_id=7	usdClassTransfer	documented_active	platform_limited
+CoreWriter	Contract	CALL	0x3333333333333333333333333333333333333333 action_id=8	finalizeEvmContract	documented_active	platform_limited
+CoreWriter	Contract	CALL	0x3333333333333333333333333333333333333333 action_id=9	addApiWallet	documented_active	platform_limited
+CoreWriter	Contract	CALL	0x3333333333333333333333333333333333333333 action_id=10	cancelOrderByOid	documented_active	platform_limited
+CoreWriter	Contract	CALL	0x3333333333333333333333333333333333333333 action_id=11	cancelOrderByCloid	documented_active	platform_limited
+CoreWriter	Contract	CALL	0x3333333333333333333333333333333333333333 action_id=12	approveBuilderFee	documented_active	platform_limited
+CoreWriter	Contract	CALL	0x3333333333333333333333333333333333333333 action_id=13	sendAsset	documented_active	platform_limited
+CoreWriter	Contract	CALL	0x3333333333333333333333333333333333333333 action_id=15	borrowLendOperation	documented_active	platform_limited
+CoreWriter	Contract	CALL	0x3333333333333333333333333333333333333333 action_id=16	setAbstraction	documented_active	platform_limited
+CoreWriter	Contract	CALL	0x3333333333333333333333333333333333333333 action_id=17	outcomeOperation	documented_active	platform_limited
+L1Read precompile	Contract	STATICCALL	L1Read.sol::position	position	documented_testnet	platform_limited
+L1Read precompile	Contract	STATICCALL	L1Read.sol::position2	position2	documented_testnet	platform_limited
+L1Read precompile	Contract	STATICCALL	L1Read.sol::spotBalance	spotBalance	documented_testnet	platform_limited
+L1Read precompile	Contract	STATICCALL	L1Read.sol::userVaultEquity	userVaultEquity	documented_testnet	platform_limited
+L1Read precompile	Contract	STATICCALL	L1Read.sol::withdrawable	withdrawable	documented_testnet	platform_limited
+L1Read precompile	Contract	STATICCALL	L1Read.sol::delegations	delegations	documented_testnet	platform_limited
+L1Read precompile	Contract	STATICCALL	L1Read.sol::delegatorSummary	delegatorSummary	documented_testnet	platform_limited
+L1Read precompile	Contract	STATICCALL	L1Read.sol::markPx	markPx	documented_testnet	platform_limited
+L1Read precompile	Contract	STATICCALL	L1Read.sol::oraclePx	oraclePx	documented_testnet	platform_limited
+L1Read precompile	Contract	STATICCALL	L1Read.sol::spotPx	spotPx	documented_testnet	platform_limited
+L1Read precompile	Contract	STATICCALL	L1Read.sol::l1BlockNumber	l1BlockNumber	documented_testnet	platform_limited
+L1Read precompile	Contract	STATICCALL	L1Read.sol::perpAssetInfo	perpAssetInfo	documented_testnet	platform_limited
+L1Read precompile	Contract	STATICCALL	L1Read.sol::spotInfo	spotInfo	documented_testnet	platform_limited
+L1Read precompile	Contract	STATICCALL	L1Read.sol::tokenInfo	tokenInfo	documented_testnet	platform_limited
+L1Read precompile	Contract	STATICCALL	L1Read.sol::tokenSupply	tokenSupply	documented_testnet	platform_limited
+L1Read precompile	Contract	STATICCALL	L1Read.sol::bbo	bbo	documented_testnet	platform_limited
+L1Read precompile	Contract	STATICCALL	L1Read.sol::accountMarginSummary	accountMarginSummary	documented_testnet	platform_limited
+L1Read precompile	Contract	STATICCALL	L1Read.sol::coreUserExists	coreUserExists	documented_testnet	platform_limited
+L1Read precompile	Contract	STATICCALL	L1Read.sol::borrowLendUserState	borrowLendUserState	documented_testnet	platform_limited
+L1Read precompile	Contract	STATICCALL	L1Read.sol::borrowLendReserveState	borrowLendReserveState	documented_testnet	platform_limited
+L1Read precompile	Contract	STATICCALL	L1Read.sol::outcomeStatus	outcomeStatus	documented_testnet	platform_limited
+Exchange supplementary docs	Http	POST	/exchange action=convertToMultiSigUser	convertToMultiSigUser	documented_active	provider_typed
+Exchange supplementary docs	Http	POST	/exchange action=multiSig	multiSig	documented_active	provider_typed
+Exchange supplementary docs	Http	POST	/exchange action=evmUserModify	evmUserModify	documented_active	provider_typed
+Exchange supplementary docs	Http	POST	/exchange action=gossipPriorityBid	gossipPriorityBid	documented_active	provider_typed

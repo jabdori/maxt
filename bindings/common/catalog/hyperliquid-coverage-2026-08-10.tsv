@@ -1,0 +1,39 @@
+# Hyperliquid current coverage to official catalog bridge
+# baseline_date: 2026-08-10
+# source_catalog: hyperliquid-2026-08-10.tsv
+# columns: local_product	local_operation_id	official_product	official_interface	official_method	official_path_or_message	official_operation_id	mapping_note
+info	meta	Perpetuals info	Http	POST	/info type=meta	meta	exact discriminator match
+info	spot_meta	Spot info	Http	POST	/info type=spotMeta	spotMeta	exact discriminator match
+info	all_mids	Info endpoint	Http	POST	/info type=allMids	allMids	exact discriminator match
+info	user_fills	Info endpoint	Http	POST	/info type=userFills	userFills	exact discriminator match
+info	user_fills_by_time	Info endpoint	Http	POST	/info type=userFillsByTime	userFillsByTime	exact discriminator match
+info	open_orders	Info endpoint	Http	POST	/info type=openOrders	openOrders	exact discriminator match; compact provider API distinct from frontendOpenOrders
+info	order_status	Info endpoint	Http	POST	/info type=orderStatus	orderStatus	exact discriminator match
+info	historical_orders	Info endpoint	Http	POST	/info type=historicalOrders	historicalOrders	exact discriminator match
+info	meta_and_asset_contexts	Perpetuals info	Http	POST	/info type=metaAndAssetCtxs	metaAndAssetCtxs	exact discriminator match
+info	spot_meta_and_asset_contexts	Spot info	Http	POST	/info type=spotMetaAndAssetCtxs	spotMetaAndAssetCtxs	exact discriminator match
+info	l2_book	Info endpoint	Http	POST	/info type=l2Book	l2Book	exact discriminator match
+info	recent_trades	Info rate limits	Http	POST	/info type=recentTrades	recentTrades	officially listed in rate limits
+info	candle_snapshot	Info endpoint	Http	POST	/info type=candleSnapshot	candleSnapshot	exact discriminator match
+info	spot_clearinghouse_state	Spot info	Http	POST	/info type=spotClearinghouseState	spotClearinghouseState	exact discriminator match
+info	clearinghouse_state	Perpetuals info	Http	POST	/info type=clearinghouseState	clearinghouseState	exact discriminator match
+info	frontend_open_orders	Info endpoint	Http	POST	/info type=frontendOpenOrders	frontendOpenOrders	exact discriminator match
+info	funding_history	Perpetuals info	Http	POST	/info type=fundingHistory	fundingHistory	exact discriminator match
+info	user_funding	Perpetuals info	Http	POST	/info type=userFunding	userFunding	exact discriminator match
+info	user_non_funding_ledger_updates	Perpetuals info	Http	POST	/info type=userNonFundingLedgerUpdates	userNonFundingLedgerUpdates	exact discriminator match
+info	user_rate_limit	Info endpoint	Http	POST	/info type=userRateLimit	userRateLimit	exact discriminator match
+info	user_role	Info endpoint	Http	POST	/info type=userRole	userRole	exact discriminator match
+info	referral	Info endpoint	Http	POST	/info type=referral	referral	exact discriminator match
+info	user_fees	Info endpoint	Http	POST	/info type=userFees	userFees	exact discriminator match
+info	portfolio	Info endpoint	Http	POST	/info type=portfolio	portfolio	exact discriminator match
+info	sub_accounts	Info endpoint	Http	POST	/info type=subAccounts	subAccounts	exact discriminator match
+info	user_vault_equities	Info endpoint	Http	POST	/info type=userVaultEquities	userVaultEquities	exact discriminator match
+exchange	order	Exchange endpoint	Http	POST	/exchange action=order	order	exact action discriminator match
+exchange	cancel	Exchange endpoint	Http	POST	/exchange action=cancel	cancel	exact action discriminator match
+exchange	update_leverage	Exchange endpoint	Http	POST	/exchange action=updateLeverage	updateLeverage	exact action discriminator match
+subscriptions	trades	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=trades	trades	exact subscription discriminator match
+subscriptions	l2_book	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=l2Book	l2Book	exact subscription discriminator match
+subscriptions	active_asset_context	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=activeAssetCtx	activeAssetCtx	exact subscription discriminator match
+subscriptions	candle	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=candle	candle	exact subscription discriminator match
+subscriptions	order_updates	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=orderUpdates	orderUpdates	exact subscription discriminator match
+subscriptions	spot_state	WebSocket subscriptions	WebSocket	subscribe	method=subscribe subscription.type=spotState	spotState	exact subscription discriminator match

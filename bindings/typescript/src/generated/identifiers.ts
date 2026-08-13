@@ -287,6 +287,16 @@ export class UpbitOrderDirection extends StringValue {
   private constructor(id: string) { super(id); Object.freeze(this); }
 }
 
+export class UpbitClosedOrderState extends StringValue {
+  static readonly Done = new UpbitClosedOrderState("done");
+  static readonly Cancel = new UpbitClosedOrderState("cancel");
+  static readonly values: readonly UpbitClosedOrderState[] = Object.freeze([
+    UpbitClosedOrderState.Done,
+    UpbitClosedOrderState.Cancel,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
 export class UpbitSmpType extends StringValue {
   static readonly CancelMaker = new UpbitSmpType("cancel_maker");
   static readonly CancelTaker = new UpbitSmpType("cancel_taker");
@@ -295,6 +305,54 @@ export class UpbitSmpType extends StringValue {
     UpbitSmpType.CancelMaker,
     UpbitSmpType.CancelTaker,
     UpbitSmpType.Reduce,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class UpbitKrwTwoFactorType extends StringValue {
+  static readonly Kakao = new UpbitKrwTwoFactorType("kakao");
+  static readonly Naver = new UpbitKrwTwoFactorType("naver");
+  static readonly Hana = new UpbitKrwTwoFactorType("hana");
+  static readonly values: readonly UpbitKrwTwoFactorType[] = Object.freeze([
+    UpbitKrwTwoFactorType.Kakao,
+    UpbitKrwTwoFactorType.Naver,
+    UpbitKrwTwoFactorType.Hana,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class UpbitPocketTransferState extends StringValue {
+  static readonly Submitted = new UpbitPocketTransferState("submitted");
+  static readonly Processing = new UpbitPocketTransferState("processing");
+  static readonly Done = new UpbitPocketTransferState("done");
+  static readonly Failed = new UpbitPocketTransferState("failed");
+  static readonly values: readonly UpbitPocketTransferState[] = Object.freeze([
+    UpbitPocketTransferState.Submitted,
+    UpbitPocketTransferState.Processing,
+    UpbitPocketTransferState.Done,
+    UpbitPocketTransferState.Failed,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class UpbitPocketTransferDirection extends StringValue {
+  static readonly Incoming = new UpbitPocketTransferDirection("in");
+  static readonly Outgoing = new UpbitPocketTransferDirection("out");
+  static readonly All = new UpbitPocketTransferDirection("all");
+  static readonly values: readonly UpbitPocketTransferDirection[] = Object.freeze([
+    UpbitPocketTransferDirection.Incoming,
+    UpbitPocketTransferDirection.Outgoing,
+    UpbitPocketTransferDirection.All,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class UpbitPocketTransferOrder extends StringValue {
+  static readonly Ascending = new UpbitPocketTransferOrder("asc");
+  static readonly Descending = new UpbitPocketTransferOrder("desc");
+  static readonly values: readonly UpbitPocketTransferOrder[] = Object.freeze([
+    UpbitPocketTransferOrder.Ascending,
+    UpbitPocketTransferOrder.Descending,
   ]);
   private constructor(id: string) { super(id); Object.freeze(this); }
 }
@@ -323,12 +381,36 @@ export class BithumbPendingOrderState extends StringValue {
   private constructor(id: string) { super(id); Object.freeze(this); }
 }
 
+export class BithumbClosedOrderState extends StringValue {
+  static readonly Done = new BithumbClosedOrderState("done");
+  static readonly Cancel = new BithumbClosedOrderState("cancel");
+  static readonly values: readonly BithumbClosedOrderState[] = Object.freeze([
+    BithumbClosedOrderState.Done,
+    BithumbClosedOrderState.Cancel,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
 export class BithumbOrderDirection extends StringValue {
   static readonly Ascending = new BithumbOrderDirection("asc");
   static readonly Descending = new BithumbOrderDirection("desc");
   static readonly values: readonly BithumbOrderDirection[] = Object.freeze([
     BithumbOrderDirection.Ascending,
     BithumbOrderDirection.Descending,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class BithumbOrderListState extends StringValue {
+  static readonly Wait = new BithumbOrderListState("wait");
+  static readonly Watch = new BithumbOrderListState("watch");
+  static readonly Done = new BithumbOrderListState("done");
+  static readonly Cancel = new BithumbOrderListState("cancel");
+  static readonly values: readonly BithumbOrderListState[] = Object.freeze([
+    BithumbOrderListState.Wait,
+    BithumbOrderListState.Watch,
+    BithumbOrderListState.Done,
+    BithumbOrderListState.Cancel,
   ]);
   private constructor(id: string) { super(id); Object.freeze(this); }
 }
@@ -361,6 +443,16 @@ export class BinanceMarket extends StringValue {
   static readonly values: readonly BinanceMarket[] = Object.freeze([
     BinanceMarket.Spot,
     BinanceMarket.UsdMFutures,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class BinanceC2cTradeType extends StringValue {
+  static readonly Buy = new BinanceC2cTradeType("BUY");
+  static readonly Sell = new BinanceC2cTradeType("SELL");
+  static readonly values: readonly BinanceC2cTradeType[] = Object.freeze([
+    BinanceC2cTradeType.Buy,
+    BinanceC2cTradeType.Sell,
   ]);
   private constructor(id: string) { super(id); Object.freeze(this); }
 }

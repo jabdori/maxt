@@ -6,6 +6,9 @@ mod rest;
 mod stream;
 mod wallet;
 
+#[cfg(test)]
+mod execution_checklist;
+
 use std::sync::OnceLock;
 
 use rust_decimal::Decimal;
@@ -26,20 +29,143 @@ use crate::types::{
     Withdrawal, WithdrawalQuote,
 };
 
-pub use private::{BinanceListenKey, BinanceSpotOrderDetail};
+pub use private::{
+    BinanceAccountTrade, BinanceC2cTrade, BinanceC2cTradeHistoryPage, BinanceListenKey,
+    BinanceSpotOrderDetail, BinanceTestOrder,
+};
 pub use rest::BinanceSymbolFilters;
 
-/// A request for Binance USD-M compressed aggregate trades.
+/// The C2C side filter Binance accepts.
+///
+/// Binance's C2C history endpoint accepts these two uppercase values only.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum BinanceC2cTradeType {
+    /// C2C orders that bought the crypto asset.
+    Buy,
+    /// C2C orders that sold the crypto asset.
+    Sell,
+}
+
+impl BinanceC2cTradeType {
+    pub(crate) const fn code(self) -> &'static str {
+        match self {
+            Self::Buy => "BUY",
+            Self::Sell => "SELL",
+        }
+    }
+}
+
+/// Filters one numbered page of Binance C2C order history.
+///
+/// Leaving both timestamp bounds unset preserves Binance's documented default:
+/// the most recent 30 days. When both are set, their inclusive span may be at
+/// most 30 days. C2C uses one-based page numbers rather than a cursor.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BinanceC2cTradeHistoryRequest {
+    /// Required C2C order side filter.
+    pub trade_type: BinanceC2cTradeType,
+    /// Inclusive lower timestamp bound.
+    pub start_timestamp: Option<Timestamp>,
+    /// Inclusive upper timestamp bound.
+    pub end_timestamp: Option<Timestamp>,
+    /// One-based result page; `None` sends Binance's documented default of 1.
+    pub page: Option<u32>,
+    /// Result rows; `None` sends Binance's documented default of 100.
+    pub rows: Option<u32>,
+    /// Signed-request receive window in milliseconds, up to 60,000.
+    pub recv_window: Option<u64>,
+}
+
+impl BinanceC2cTradeHistoryRequest {
+    /// Starts a C2C-history request for the required trade side.
+    pub fn new(trade_type: BinanceC2cTradeType) -> Self {
+        Self {
+            trade_type,
+            start_timestamp: None,
+            end_timestamp: None,
+            page: None,
+            rows: None,
+            recv_window: None,
+        }
+    }
+
+    /// Sets the inclusive lower timestamp bound.
+    #[must_use]
+    pub fn start_timestamp(mut self, start_timestamp: Timestamp) -> Self {
+        self.start_timestamp = Some(start_timestamp);
+        self
+    }
+
+    /// Sets the inclusive upper timestamp bound.
+    #[must_use]
+    pub fn end_timestamp(mut self, end_timestamp: Timestamp) -> Self {
+        self.end_timestamp = Some(end_timestamp);
+        self
+    }
+
+    /// Selects Binance's one-based result page.
+    #[must_use]
+    pub fn page(mut self, page: u32) -> Self {
+        self.page = Some(page);
+        self
+    }
+
+    /// Selects the number of C2C orders returned in the page.
+    #[must_use]
+    pub fn rows(mut self, rows: u32) -> Self {
+        self.rows = Some(rows);
+        self
+    }
+
+    /// Sets the signed-request receive window in milliseconds.
+    #[must_use]
+    pub fn recv_window(mut self, recv_window: u64) -> Self {
+        self.recv_window = Some(recv_window);
+        self
+    }
+}
+
+/// A Binance test-order request.
+///
+/// This keeps Spot's optional commission-rate calculation out of the common
+/// [`OrderRequest`] contract. Binance documents the option only for Spot;
+/// requesting it from a USD-M adapter is rejected before a request is sent.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BinanceTestOrderRequest {
+    /// The order to validate.
+    pub order: OrderRequest,
+    /// Ask Spot to include the commission-rate response object.
+    pub compute_commission_rates: bool,
+}
+
+impl BinanceTestOrderRequest {
+    /// Starts a test-order request without commission-rate calculation.
+    pub fn new(order: OrderRequest) -> Self {
+        Self {
+            order,
+            compute_commission_rates: false,
+        }
+    }
+
+    /// Requests Spot's commission-rate calculation response.
+    #[must_use]
+    pub fn compute_commission_rates(mut self) -> Self {
+        self.compute_commission_rates = true;
+        self
+    }
+}
+
+/// A request for Binance compressed aggregate trades.
 ///
 /// `from_id` selects an inclusive aggregate-trade cursor. `start_time` and
-/// `end_time` select inclusive millisecond time bounds; Binance permits a
-/// window shorter than one hour and only keeps the last 48 hours. The two
-/// selection modes cannot be combined because Binance warns that doing so can
-/// time out. The endpoint returns one page; use the last aggregate ID plus one
-/// as the next `from_id` when walking by ID.
+/// `end_time` select inclusive millisecond time bounds. Spot accepts each time
+/// bound independently and has no fixed time-window cap. USD-M permits a
+/// paired window shorter than one hour and does not allow it with `from_id`.
+/// The endpoint returns one page; use the last aggregate ID plus one as the
+/// next `from_id` when walking by ID.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BinanceAggregateTradesRequest {
-    /// The USD-M perpetual market to query.
+    /// The Spot or USD-M perpetual market to query.
     pub market: Market,
     /// Inclusive Binance aggregate-trade ID to start at.
     pub from_id: Option<u64>,
@@ -53,7 +179,7 @@ pub struct BinanceAggregateTradesRequest {
 }
 
 impl BinanceAggregateTradesRequest {
-    /// Starts a request for one USD-M perpetual market.
+    /// Starts a request for one Spot or USD-M perpetual market.
     pub fn new(market: Market) -> Self {
         Self {
             market,
@@ -93,14 +219,14 @@ impl BinanceAggregateTradesRequest {
     }
 }
 
-/// One Binance USD-M compressed aggregate trade.
+/// One Binance compressed aggregate trade.
 ///
 /// Binance combines market fills that occur within 100 ms at the same price
 /// and taking side. `first_trade_id` and `last_trade_id` preserve the covered
 /// individual-fill range; this is not interchangeable with [`Trade`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BinanceAggregateTrade {
-    /// The USD-M perpetual market.
+    /// The Spot or USD-M perpetual market.
     pub market: Market,
     /// Binance's aggregate-trade identifier.
     pub aggregate_id: u64,
@@ -112,13 +238,29 @@ pub struct BinanceAggregateTrade {
     pub timestamp: Timestamp,
     /// Aggregate execution price, in the quote asset.
     pub price: Decimal,
-    /// Aggregate quantity, in the base asset. RPI fills may be included.
+    /// Aggregate quantity, in the base asset. RPI fills may be included on
+    /// venues that provide them.
     pub quantity: Decimal,
-    /// Quantity excluding RPI fills when Binance provides the `nq` field.
+    /// Quantity excluding RPI fills when Binance provides the optional `nq`
+    /// field.
     pub normal_quantity: Option<Decimal>,
     /// The side that took liquidity. Binance's `m` field identifies the maker
     /// as the buyer, so it is inverted here.
     pub taker_side: Side,
+}
+
+/// Binance Spot's current average price for one market.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceSpotAveragePrice {
+    /// The Spot market this snapshot describes.
+    pub market: Market,
+    /// Binance's averaging interval, in minutes.
+    pub minutes: u32,
+    /// The average price, in the quote asset.
+    pub price: Decimal,
+    /// The last trade time included in the average.
+    pub close_time: Timestamp,
 }
 
 /// Binance USD-M's current mark-price snapshot for one perpetual market.
@@ -424,6 +566,59 @@ impl BinanceAdapter {
         private::spot_order(self, market, order_id).await
     }
 
+    /// Reads one page of signed account trades for Spot or USD-M.
+    ///
+    /// Binance supplies an ID-based continuation, but this provider method
+    /// does not manufacture a cursor until it can carry that ID safely. A
+    /// full page therefore has no `next` cursor; use the returned trade ID to
+    /// make a provider-specific follow-up when that API is added.
+    pub async fn account_trades(
+        &self,
+        request: &HistoryRequest,
+    ) -> Result<Page<BinanceAccountTrade>> {
+        private::account_trades(self, request).await
+    }
+
+    /// Reads one numbered page of the configured account's C2C order history.
+    ///
+    /// This is a Spot/Funding Wallet SAPI operation. Binance returns its own
+    /// `code`, `message`, `data`, `total`, and `success` envelope, so this
+    /// provider method preserves that envelope instead of inventing a common
+    /// cursor. Increment [`BinanceC2cTradeHistoryRequest::page`] while the
+    /// requested page and row count have not covered `total`.
+    pub async fn c2c_trade_history(
+        &self,
+        request: &BinanceC2cTradeHistoryRequest,
+    ) -> Result<BinanceC2cTradeHistoryPage> {
+        private::c2c_trade_history(self, request).await
+    }
+
+    /// Validates an order without sending it to Binance's matching engine.
+    ///
+    /// Spot ordinarily returns `{}`; requesting its commission-rate calculation
+    /// instead returns a commission object. USD-M returns an order-shaped object.
+    /// The canonical JSON response preserves every successful object shape.
+    pub async fn test_order(&self, request: &BinanceTestOrderRequest) -> Result<BinanceTestOrder> {
+        private::test_order(self, request).await
+    }
+
+    /// Cancels every open order for one market in one provider call.
+    ///
+    /// Spot returns cancellation reports while USD-M returns an acknowledgement,
+    /// so the common result is deliberately a successful unit result rather
+    /// than an incomplete order list.
+    pub async fn cancel_all_open_orders(&self, market: &Market) -> Result<()> {
+        private::cancel_all_open_orders(self, market).await
+    }
+
+    /// Reads Binance Spot's current average price for one market.
+    ///
+    /// This public endpoint needs no credentials. A USD-M adapter or a
+    /// non-Spot market is rejected before a request is sent.
+    pub async fn spot_average_price(&self, market: &Market) -> Result<BinanceSpotAveragePrice> {
+        rest::spot_average_price(self, market).await
+    }
+
     /// Reads the current USD-M mark price and funding context for one market.
     pub async fn mark_price(&self, market: &Market) -> Result<BinanceMarkPrice> {
         rest::mark_price(self, market).await
@@ -442,7 +637,7 @@ impl BinanceAdapter {
         rest::open_interest(self, market).await
     }
 
-    /// Reads one page of USD-M compressed aggregate trades.
+    /// Reads one page of Spot or USD-M compressed aggregate trades.
     ///
     /// This is Binance's 100 ms/same-price/same-taking-side aggregation, not a
     /// list of individual fills. The endpoint is public and needs no key.

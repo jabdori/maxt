@@ -24,8 +24,10 @@ use super::parse::{self, EXCHANGE};
 use super::rest;
 use super::{
     BithumbApiKey, BithumbBatchOrder, BithumbBatchOrderFailure, BithumbBatchOrderOutcome,
-    BithumbBatchOrdersRequest, BithumbBatchOrdersResult, BithumbCredentials, BithumbOrderDirection,
-    BithumbPendingOrderState, BithumbPendingOrdersRequest, BithumbTwapOrder,
+    BithumbBatchOrdersRequest, BithumbBatchOrdersResult, BithumbClosedOrder,
+    BithumbClosedOrdersRequest, BithumbCredentials, BithumbOrderDetail, BithumbOrderDetailRequest,
+    BithumbOrderDetailTrade, BithumbOrderDirection, BithumbOrderListItem, BithumbOrderListRequest,
+    BithumbOrderListState, BithumbPendingOrderState, BithumbPendingOrdersRequest, BithumbTwapOrder,
     BithumbTwapOrderDirection, BithumbTwapOrderRequest, BithumbTwapOrdersRequest, BithumbTwapState,
 };
 
@@ -216,6 +218,102 @@ pub(crate) fn open_orders_request(
     }
     // `wait` is Bithumb's resting-order state.
     params.push(("state", "wait".to_string()));
+
+    signed_get(credentials, "/v1/orders", &params)
+}
+
+/// Builds the legacy `/v1/orders` list request without reducing its filters.
+pub(crate) fn order_list_request(
+    credentials: &BithumbCredentials,
+    request: &BithumbOrderListRequest,
+) -> Result<HttpRequest> {
+    if request.state.is_some() && !request.states.is_empty() {
+        return Err(Error::invalid_request(
+            "states",
+            "Bithumb accepts either `state` or `states`, not both",
+        ));
+    }
+    if request
+        .states
+        .iter()
+        .any(|state| *state == BithumbOrderListState::Watch)
+        && request
+            .states
+            .iter()
+            .any(|state| *state != BithumbOrderListState::Watch)
+    {
+        return Err(Error::invalid_request(
+            "states",
+            "Bithumb does not combine `watch` with ordinary order states",
+        ));
+    }
+    if request.uuids.len() > 100 {
+        return Err(Error::invalid_request(
+            "uuids",
+            format!(
+                "Bithumb accepts at most 100 order UUIDs, not {}",
+                request.uuids.len()
+            ),
+        ));
+    }
+    let use_uuid_filters = !request.uuids.is_empty();
+    if !use_uuid_filters && request.client_order_ids.len() > 100 {
+        return Err(Error::invalid_request(
+            "client_order_ids",
+            format!(
+                "Bithumb accepts at most 100 client order ids, not {}",
+                request.client_order_ids.len()
+            ),
+        ));
+    }
+
+    let page = request.page.unwrap_or(1);
+    if page == 0 {
+        return Err(Error::invalid_request(
+            "page",
+            "Bithumb order-list pages start at 1",
+        ));
+    }
+    let limit = request.limit.unwrap_or(100);
+    if !(1..=100).contains(&limit) {
+        return Err(Error::invalid_request(
+            "limit",
+            format!("Bithumb serves 1 to 100 orders per page, not {limit}"),
+        ));
+    }
+
+    let mut params = Vec::new();
+    if let Some(market) = &request.market {
+        params.push(("market", parse::native_symbol(market)?));
+    }
+    if let Some(state) = request.state {
+        params.push(("state", state.wire_name().to_string()));
+    }
+    for state in &request.states {
+        params.push(("states[]", state.wire_name().to_string()));
+    }
+    for uuid in &request.uuids {
+        params.push(("uuids[]", checked_order_uuid(uuid)?));
+    }
+    if !use_uuid_filters {
+        for client_order_id in &request.client_order_ids {
+            validate_client_order_id(client_order_id)?;
+            params.push(("client_order_ids[]", client_order_id.clone()));
+        }
+    }
+    params.push(("page", page.to_string()));
+    params.push(("limit", limit.to_string()));
+    params.push((
+        "order_by",
+        match request
+            .order_by
+            .unwrap_or(BithumbOrderDirection::Descending)
+        {
+            BithumbOrderDirection::Ascending => "asc",
+            BithumbOrderDirection::Descending => "desc",
+        }
+        .to_string(),
+    ));
 
     signed_get(credentials, "/v1/orders", &params)
 }
@@ -447,9 +545,35 @@ pub(crate) fn order_by_client_id_request(
         credentials,
         market,
         "client_order_id",
-        "client_id",
+        "client_order_id",
         client_id,
     )
+}
+
+/// Builds the documented `/v1/order` lookup, including both identifiers when
+/// present. Bithumb gives `uuid` precedence in that case.
+pub(crate) fn order_detail_request(
+    credentials: &BithumbCredentials,
+    request: &BithumbOrderDetailRequest,
+) -> Result<HttpRequest> {
+    parse::native_symbol(&request.market)?;
+
+    let mut params = Vec::with_capacity(2);
+    if let Some(uuid) = &request.uuid {
+        params.push(("uuid", checked_order_uuid(uuid)?));
+    }
+    if let Some(client_order_id) = &request.client_order_id {
+        validate_client_order_id(client_order_id)?;
+        params.push(("client_order_id", client_order_id.clone()));
+    }
+    if params.is_empty() {
+        return Err(Error::invalid_request(
+            "identifier",
+            "set a Bithumb UUID or client order id",
+        ));
+    }
+
+    signed_get(credentials, "/v1/order", &params)
 }
 
 pub(crate) fn orders_by_ids_request(
@@ -503,6 +627,14 @@ fn order_request_by(
     signed_get(credentials, "/v1/order", &[(parameter, value.to_string())])
 }
 
+fn checked_order_uuid(value: &str) -> Result<String> {
+    if value.trim().is_empty() {
+        return Err(Error::invalid_request("uuid", "must not be empty"));
+    }
+    signed_value("uuid", value)?;
+    Ok(value.to_owned())
+}
+
 pub(crate) fn order_history_request(
     credentials: &BithumbCredentials,
     request: &OrderHistoryRequest,
@@ -523,6 +655,87 @@ pub(crate) fn order_history_request(
     }
     params.push(("limit", limit.to_string()));
     params.push(("order_by", "desc".to_string()));
+    signed_get_with_cursor(
+        credentials,
+        "/v2/orders/history",
+        params,
+        request.cursor.as_ref(),
+    )
+}
+
+pub(crate) fn closed_orders_request(
+    credentials: &BithumbCredentials,
+    request: &BithumbClosedOrdersRequest,
+) -> Result<HttpRequest> {
+    const SEVEN_DAYS_NANOS: i64 = 7 * 24 * 60 * 60 * 1_000_000_000;
+
+    if request.state.is_some() && !request.states.is_empty() {
+        return Err(Error::invalid_request(
+            "states",
+            "Bithumb accepts either `state` or `states`, not both",
+        ));
+    }
+    if let Some(limit) = request.limit
+        && !(1..=1_000).contains(&limit)
+    {
+        return Err(Error::invalid_request(
+            "limit",
+            format!("Bithumb serves 1 to 1000 closed orders per page, not {limit}"),
+        ));
+    }
+
+    if let (Some(start_time), Some(end_time)) = (request.start_time, request.end_time) {
+        let width = end_time
+            .as_nanos()
+            .checked_sub(start_time.as_nanos())
+            .ok_or_else(|| Error::invalid_request("end_time", "must be at least `start_time`"))?;
+        if width < 0 {
+            return Err(Error::invalid_request(
+                "end_time",
+                "must be at least `start_time`",
+            ));
+        }
+        if width > SEVEN_DAYS_NANOS {
+            return Err(Error::invalid_request(
+                "end_time",
+                "Bithumb closed-order windows cannot exceed seven days",
+            ));
+        }
+    }
+
+    let start_time = request.start_time.map(Timestamp::as_millis);
+    let end_time = request.end_time.map(Timestamp::as_millis);
+
+    let mut params = Vec::new();
+    if let Some(market) = &request.market {
+        params.push(("market", parse::native_symbol(market)?));
+    }
+    if let Some(state) = request.state {
+        params.push(("state", state.wire_name().to_owned()));
+    }
+    for state in &request.states {
+        params.push(("states[]", state.wire_name().to_owned()));
+    }
+    if let Some(start_time) = start_time {
+        params.push(("start_time", start_time.to_string()));
+    }
+    if let Some(end_time) = end_time {
+        params.push(("end_time", end_time.to_string()));
+    }
+    if let Some(limit) = request.limit {
+        params.push(("limit", limit.to_string()));
+    }
+    if let Some(order_by) = request.order_by {
+        params.push((
+            "order_by",
+            match order_by {
+                BithumbOrderDirection::Ascending => "asc",
+                BithumbOrderDirection::Descending => "desc",
+            }
+            .to_owned(),
+        ));
+    }
+
     signed_get_with_cursor(
         credentials,
         "/v2/orders/history",
@@ -765,7 +978,7 @@ fn validate_client_order_id(value: &str) -> Result<()> {
         return Ok(());
     }
     Err(Error::invalid_request(
-        "client_id",
+        "client_order_id",
         "a bithumb client order id must be 1-36 ASCII letters, digits, '-' or '_'",
     ))
 }
@@ -1043,6 +1256,37 @@ pub(crate) async fn order_by_client_id(
     checked_market(parse::order(&body)?, market)
 }
 
+/// Reads a single Bithumb order without collapsing provider-specific fields.
+pub(crate) async fn order_detail(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    request: &BithumbOrderDetailRequest,
+) -> Result<BithumbOrderDetail> {
+    let body = rest::send(http, &order_detail_request(credentials, request)?).await?;
+    let detail = parse_order_detail(&body)?;
+    if detail.market == request.market {
+        Ok(detail)
+    } else {
+        Err(Error::invalid_request(
+            "market",
+            format!(
+                "the requested identifier belongs to {}, not {}",
+                detail.market, request.market
+            ),
+        ))
+    }
+}
+
+/// Reads the legacy Bithumb order list without collapsing provider fields.
+pub(crate) async fn order_list(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    request: &BithumbOrderListRequest,
+) -> Result<Vec<BithumbOrderListItem>> {
+    let body = rest::send(http, &order_list_request(credentials, request)?).await?;
+    parse_order_list(&body)
+}
+
 pub(crate) async fn orders_by_ids(
     http: &HttpTransport,
     credentials: &BithumbCredentials,
@@ -1059,6 +1303,98 @@ pub(crate) async fn order_history(
 ) -> Result<Page<Order>> {
     let body = rest::send(http, &order_history_request(credentials, request)?).await?;
     order_page(&body)
+}
+
+pub(crate) async fn closed_orders(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    request: &BithumbClosedOrdersRequest,
+) -> Result<Page<BithumbClosedOrder>> {
+    let body = rest::send(http, &closed_orders_request(credentials, request)?).await?;
+    closed_order_page(&body)
+}
+
+fn closed_order_page(body: &Value) -> Result<Page<BithumbClosedOrder>> {
+    let data = body
+        .get("data")
+        .and_then(Value::as_array)
+        .ok_or_else(|| Error::decode("bithumb closed-order page carries no `data` array"))?;
+    let has_next = body
+        .get("has_next")
+        .and_then(Value::as_bool)
+        .ok_or_else(|| Error::decode("bithumb closed-order page `has_next` is not a boolean"))?;
+    let next = match body.get("next_key") {
+        Some(Value::Null) => None,
+        Some(Value::String(value)) if !value.is_empty() => Some(Cursor::new(value.clone())),
+        Some(_) => {
+            return Err(Error::decode(
+                "bithumb closed-order page `next_key` is not a non-empty string or null",
+            ));
+        }
+        None => {
+            return Err(Error::decode(
+                "bithumb closed-order page carries no `next_key`",
+            ));
+        }
+    };
+    if has_next != next.is_some() {
+        return Err(Error::decode(
+            "bithumb closed-order page disagrees about `has_next` and `next_key`",
+        ));
+    }
+
+    Ok(Page {
+        items: data
+            .iter()
+            .map(parse_closed_order)
+            .collect::<Result<Vec<_>>>()?,
+        next,
+    })
+}
+
+fn parse_closed_order(value: &Value) -> Result<BithumbClosedOrder> {
+    Ok(BithumbClosedOrder {
+        order_id: detail_text(value, "order_id")?,
+        side: detail_text(value, "side")?,
+        order_type: detail_text(value, "order_type")?,
+        price: closed_order_optional_decimal(value, "price")?,
+        state: detail_text(value, "state")?,
+        market: parse::market_field(value, "market")?,
+        created_at: closed_order_optional_time(value, "created_at")?,
+        volume: parse::dec(value, "volume")?,
+        remaining_volume: parse::dec(value, "remaining_volume")?,
+        reserved_fee: parse::dec(value, "reserved_fee")?,
+        remaining_fee: parse::dec(value, "remaining_fee")?,
+        paid_fee: parse::dec(value, "paid_fee")?,
+        locked: parse::dec(value, "locked")?,
+        executed_volume: parse::dec(value, "executed_volume")?,
+        executed_funds: parse::dec(value, "executed_funds")?,
+        trades_count: detail_u32(value, "trades_count")?,
+        client_order_id: detail_optional_text(value, "client_order_id")?,
+        stp_type: detail_optional_text(value, "stp_type")?,
+        time_in_force: detail_optional_text(value, "time_in_force")?,
+        cancel_type: detail_optional_text(value, "cancel_type")?,
+        canceling_order_id: detail_optional_text(value, "canceling_order_id")?,
+    })
+}
+
+fn closed_order_optional_decimal(value: &Value, field: &'static str) -> Result<Option<Decimal>> {
+    match value.get(field) {
+        None | Some(Value::Null) => Ok(None),
+        Some(_) => parse::dec(value, field).map(Some),
+    }
+}
+
+fn closed_order_optional_time(value: &Value, field: &'static str) -> Result<Option<Timestamp>> {
+    detail_optional_text(value, field)?
+        .map(|raw| {
+            parse::offset_time(&raw).ok_or_else(|| {
+                Error::decode(format!(
+                    "bithumb closed order `{field}` is not an RFC 3339 timestamp with an offset"
+                ))
+            })
+        })
+        .transpose()
 }
 
 fn order_page(body: &Value) -> Result<Page<Order>> {
@@ -1109,6 +1445,134 @@ fn checked_market(order: Order, expected: &Market) -> Result<Order> {
             ),
         ))
     }
+}
+
+fn parse_order_detail(body: &Value) -> Result<BithumbOrderDetail> {
+    let trades = body
+        .get("trades")
+        .and_then(Value::as_array)
+        .ok_or_else(|| Error::decode("bithumb order detail has no `trades` array"))?
+        .iter()
+        .map(parse_order_detail_trade)
+        .collect::<Result<Vec<_>>>()?;
+    let trades_count = detail_u32(body, "trades_count")?;
+    if trades.len() != usize::try_from(trades_count).unwrap_or(usize::MAX) {
+        return Err(Error::decode(
+            "bithumb order detail disagrees about `trades_count` and the `trades` array",
+        ));
+    }
+
+    Ok(BithumbOrderDetail {
+        uuid: detail_text(body, "uuid")?,
+        client_order_id: detail_optional_text(body, "client_order_id")?,
+        side: detail_text(body, "side")?,
+        order_type: detail_text(body, "ord_type")?,
+        price: parse::dec(body, "price")?,
+        state: detail_text(body, "state")?,
+        market: parse::market_field(body, "market")?,
+        created_at: detail_time(body, "created_at")?,
+        volume: parse::dec(body, "volume")?,
+        remaining_volume: parse::dec(body, "remaining_volume")?,
+        reserved_fee: parse::dec(body, "reserved_fee")?,
+        remaining_fee: parse::dec(body, "remaining_fee")?,
+        paid_fee: parse::dec(body, "paid_fee")?,
+        locked: parse::dec(body, "locked")?,
+        executed_volume: parse::dec(body, "executed_volume")?,
+        executed_funds: parse::dec(body, "executed_funds")?,
+        trades_count,
+        trades,
+        stp_type: detail_optional_text(body, "stp_type")?,
+        cancel_type: detail_optional_text(body, "cancel_type")?,
+        canceling_uuid: detail_optional_text(body, "canceling_uuid")?,
+        time_in_force: detail_optional_text(body, "time_in_force")?,
+    })
+}
+
+fn parse_order_detail_trade(value: &Value) -> Result<BithumbOrderDetailTrade> {
+    Ok(BithumbOrderDetailTrade {
+        market: parse::market_field(value, "market")?,
+        uuid: detail_text(value, "uuid")?,
+        price: parse::dec(value, "price")?,
+        volume: parse::dec(value, "volume")?,
+        funds: parse::dec(value, "funds")?,
+        side: detail_text(value, "side")?,
+        created_at: detail_time(value, "created_at")?,
+    })
+}
+
+fn parse_order_list(body: &Value) -> Result<Vec<BithumbOrderListItem>> {
+    body.as_array()
+        .ok_or_else(|| Error::decode("bithumb order list is not an array"))?
+        .iter()
+        .map(parse_order_list_item)
+        .collect()
+}
+
+fn parse_order_list_item(value: &Value) -> Result<BithumbOrderListItem> {
+    Ok(BithumbOrderListItem {
+        uuid: detail_text(value, "uuid")?,
+        client_order_id: detail_optional_text(value, "client_order_id")?,
+        side: detail_text(value, "side")?,
+        order_type: detail_text(value, "ord_type")?,
+        price: parse::dec(value, "price")?,
+        state: detail_text(value, "state")?,
+        market: parse::market_field(value, "market")?,
+        created_at: detail_time(value, "created_at")?,
+        volume: parse::dec(value, "volume")?,
+        remaining_volume: parse::dec(value, "remaining_volume")?,
+        reserved_fee: parse::dec(value, "reserved_fee")?,
+        remaining_fee: parse::dec(value, "remaining_fee")?,
+        paid_fee: parse::dec(value, "paid_fee")?,
+        locked: parse::dec(value, "locked")?,
+        executed_volume: parse::dec(value, "executed_volume")?,
+        executed_funds: parse::dec(value, "executed_funds")?,
+        trades_count: detail_u32(value, "trades_count")?,
+        stp_type: detail_optional_text(value, "stp_type")?,
+        time_in_force: detail_optional_text(value, "time_in_force")?,
+    })
+}
+
+fn detail_text(value: &Value, field: &'static str) -> Result<String> {
+    value
+        .get(field)
+        .and_then(Value::as_str)
+        .filter(|value| !value.is_empty())
+        .map(str::to_owned)
+        .ok_or_else(|| {
+            Error::decode(format!(
+                "bithumb order detail `{field}` is missing or empty"
+            ))
+        })
+}
+
+fn detail_optional_text(value: &Value, field: &'static str) -> Result<Option<String>> {
+    match value.get(field) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(value)) if !value.is_empty() => Ok(Some(value.clone())),
+        Some(Value::String(_)) => Err(Error::decode(format!(
+            "bithumb order detail `{field}` must not be empty when present"
+        ))),
+        Some(_) => Err(Error::decode(format!(
+            "bithumb order detail `{field}` is not text"
+        ))),
+    }
+}
+
+fn detail_time(value: &Value, field: &'static str) -> Result<Timestamp> {
+    let raw = detail_text(value, field)?;
+    parse::offset_time(&raw).ok_or_else(|| {
+        Error::decode(format!(
+            "bithumb order detail `{field}` is not an RFC 3339 timestamp with an offset"
+        ))
+    })
+}
+
+fn detail_u32(value: &Value, field: &'static str) -> Result<u32> {
+    value
+        .get(field)
+        .and_then(Value::as_u64)
+        .and_then(|value| u32::try_from(value).ok())
+        .ok_or_else(|| Error::decode(format!("bithumb order detail `{field}` is not a u32")))
 }
 
 pub(crate) async fn place_order(
@@ -1335,6 +1799,7 @@ pub(crate) fn websocket_authorization(credentials: &BithumbCredentials) -> Resul
 
 #[cfg(test)]
 mod tests {
+    use super::super::BithumbClosedOrderState;
     use super::*;
     use crate::types::{Exchange, TimeInForce};
 
@@ -1516,6 +1981,42 @@ mod tests {
                 .expect("signed")
                 .target(),
             "/v1/order?client_order_id=client-1"
+        );
+        let detail =
+            BithumbOrderDetailRequest::by_uuid(btc_krw(), "order-1").client_order_id("client-1");
+        assert_eq!(
+            order_detail_request(&credentials(), &detail)
+                .expect("signed")
+                .target(),
+            "/v1/order?uuid=order-1&client_order_id=client-1"
+        );
+        let order_list = BithumbOrderListRequest::new()
+            .market(btc_krw())
+            .states(vec![
+                BithumbOrderListState::Done,
+                BithumbOrderListState::Cancel,
+            ])
+            .uuids(vec!["order-1".to_string(), "order-2".to_string()])
+            .client_order_ids(vec!["client-1".to_string(), "client-2".to_string()])
+            .page(2)
+            .limit(25)
+            .order_by(BithumbOrderDirection::Ascending);
+        let request = order_list_request(&credentials(), &order_list).expect("signed");
+        assert_eq!(
+            request.target(),
+            "/v1/orders?market=KRW-BTC&states[]=done&states[]=cancel&uuids[]=order-1&uuids[]=order-2&page=2&limit=25&order_by=asc"
+        );
+        let authorization = request
+            .headers
+            .iter()
+            .find(|(name, _)| name == "authorization")
+            .map(|(_, value)| value)
+            .expect("an authorization header");
+        assert_eq!(
+            payload(authorization)["query_hash"],
+            sha512_hex(
+                b"market=KRW-BTC&states[]=done&states[]=cancel&uuids[]=order-1&uuids[]=order-2&page=2&limit=25&order_by=asc"
+            )
         );
     }
 
@@ -1776,6 +2277,161 @@ mod tests {
                 b"market=KRW-BTC&state=cancel&start_time=1700000000000&end_time=1700000999999&limit=25&order_by=desc&next_key=opaque:cursor%2F"
             )
         );
+    }
+
+    #[test]
+    fn closed_orders_hash_raw_values_but_url_encode_the_opaque_cursor() {
+        let request = BithumbClosedOrdersRequest::new()
+            .market(btc_krw())
+            .states(vec![
+                BithumbClosedOrderState::Done,
+                BithumbClosedOrderState::Cancel,
+            ])
+            .start_time(Timestamp::from_nanos(1_700_000_000_000_999_999))
+            .end_time(Timestamp::from_nanos(1_700_001_000_000_999_999))
+            .limit(1_000)
+            .order_by(BithumbOrderDirection::Ascending)
+            .cursor(Cursor::new("opaque+/=="));
+        let built = closed_orders_request(&credentials(), &request).expect("signed history");
+
+        assert_eq!(
+            built.target(),
+            "/v2/orders/history?market=KRW-BTC&states[]=done&states[]=cancel&start_time=1700000000000&end_time=1700001000000&limit=1000&order_by=asc&next_key=opaque%2B%2F%3D%3D"
+        );
+        let authorization = built
+            .headers
+            .iter()
+            .find(|(name, _)| name == "authorization")
+            .map(|(_, value)| value)
+            .expect("authorization");
+        assert_eq!(
+            payload(authorization)["query_hash"],
+            sha512_hex(
+                b"market=KRW-BTC&states[]=done&states[]=cancel&start_time=1700000000000&end_time=1700001000000&limit=1000&order_by=asc&next_key=opaque+/=="
+            )
+        );
+    }
+
+    #[test]
+    fn closed_orders_reject_invalid_filters_before_signing() {
+        let conflicting = BithumbClosedOrdersRequest::new()
+            .state(BithumbClosedOrderState::Done)
+            .states(vec![BithumbClosedOrderState::Cancel]);
+        let backwards = BithumbClosedOrdersRequest::new()
+            .start_time(Timestamp::from_millis(2))
+            .end_time(Timestamp::from_millis(1));
+        let too_wide = BithumbClosedOrdersRequest::new()
+            .start_time(Timestamp::from_millis(0))
+            .end_time(Timestamp::from_millis(7 * 24 * 60 * 60 * 1_000 + 1));
+
+        for request in [conflicting, backwards, too_wide] {
+            assert!(matches!(
+                closed_orders_request(&credentials(), &request),
+                Err(Error::InvalidRequest { .. })
+            ));
+        }
+        for limit in [0, 1_001] {
+            assert!(matches!(
+                closed_orders_request(
+                    &credentials(),
+                    &BithumbClosedOrdersRequest::new().limit(limit),
+                ),
+                Err(Error::InvalidRequest { field, .. }) if field == "limit"
+            ));
+        }
+    }
+
+    #[test]
+    fn closed_order_page_preserves_all_provider_fields_and_null_cursor() {
+        let page = closed_order_page(&serde_json::json!({
+            "data": [{
+                "order_id": "C0101000007410714029",
+                "side": "provider_future_side",
+                "order_type": "provider_future_type",
+                "price": "50000000.0",
+                "state": "provider_future_state",
+                "market": "KRW-BTC",
+                "created_at": "2026-04-06T12:00:00.000+09:00",
+                "volume": "0.001",
+                "remaining_volume": "0.0",
+                "reserved_fee": "25.0",
+                "remaining_fee": "0.0",
+                "paid_fee": "25.0",
+                "locked": "0.0",
+                "executed_volume": "0.001",
+                "executed_funds": "50000.0",
+                "trades_count": 1,
+                "client_order_id": "my-order-001",
+                "stp_type": "provider_future_stp",
+                "time_in_force": "provider_future_tif",
+                "cancel_type": "provider_future_cancel",
+                "canceling_order_id": "C0101000007410714000"
+            }, {
+                "order_id": "C0101000007410714030",
+                "side": "ask",
+                "order_type": "market",
+                "state": "cancel",
+                "market": "KRW-BTC",
+                "volume": "1",
+                "remaining_volume": "1",
+                "reserved_fee": "0",
+                "remaining_fee": "0",
+                "paid_fee": "0",
+                "locked": "0",
+                "executed_volume": "0",
+                "executed_funds": "0",
+                "trades_count": 0
+            }],
+            "has_next": false,
+            "next_key": null
+        }))
+        .expect("official-shaped page");
+
+        assert_eq!(page.next, None);
+        assert_eq!(page.items.len(), 2);
+        let order = &page.items[0];
+        assert_eq!(order.order_id, "C0101000007410714029");
+        assert_eq!(order.side, "provider_future_side");
+        assert_eq!(order.order_type, "provider_future_type");
+        assert_eq!(order.state, "provider_future_state");
+        assert_eq!(order.price, Some(Decimal::from(50_000_000)));
+        assert_eq!(
+            order.created_at,
+            Some(Timestamp::from_millis(1_775_444_400_000))
+        );
+        assert_eq!(order.volume, Decimal::new(1, 3));
+        assert_eq!(order.remaining_volume, Decimal::ZERO);
+        assert_eq!(order.reserved_fee, Decimal::from(25));
+        assert_eq!(order.remaining_fee, Decimal::ZERO);
+        assert_eq!(order.paid_fee, Decimal::from(25));
+        assert_eq!(order.locked, Decimal::ZERO);
+        assert_eq!(order.executed_volume, Decimal::new(1, 3));
+        assert_eq!(order.executed_funds, Decimal::from(50_000));
+        assert_eq!(order.trades_count, 1);
+        assert_eq!(order.client_order_id.as_deref(), Some("my-order-001"));
+        assert_eq!(order.stp_type.as_deref(), Some("provider_future_stp"));
+        assert_eq!(order.time_in_force.as_deref(), Some("provider_future_tif"));
+        assert_eq!(order.cancel_type.as_deref(), Some("provider_future_cancel"));
+        assert_eq!(
+            order.canceling_order_id.as_deref(),
+            Some("C0101000007410714000")
+        );
+        assert_eq!(page.items[1].price, None);
+        assert_eq!(page.items[1].created_at, None);
+    }
+
+    #[test]
+    fn closed_order_page_requires_consistent_cursor_metadata() {
+        for body in [
+            serde_json::json!({"data": [], "has_next": false}),
+            serde_json::json!({"data": [], "has_next": true, "next_key": null}),
+            serde_json::json!({"data": [], "has_next": false, "next_key": "cursor"}),
+        ] {
+            assert!(matches!(
+                closed_order_page(&body),
+                Err(Error::Decode { .. })
+            ));
+        }
     }
 
     #[test]
@@ -2063,6 +2719,211 @@ mod tests {
             ))
             .is_err()
         );
+    }
+
+    #[test]
+    fn order_detail_requires_a_safe_identifier_and_a_bithumb_market() {
+        let market = btc_krw();
+        for request in [
+            BithumbOrderDetailRequest::new(market.clone()),
+            BithumbOrderDetailRequest::by_uuid(market.clone(), ""),
+            BithumbOrderDetailRequest::by_uuid(market.clone(), "id&market=KRW-ETH"),
+            BithumbOrderDetailRequest::by_client_order_id(market.clone(), "not valid"),
+            BithumbOrderDetailRequest::by_uuid(
+                Market::spot(Exchange::Upbit, "BTC", "KRW"),
+                "order-1",
+            ),
+        ] {
+            assert!(order_detail_request(&credentials(), &request).is_err());
+        }
+
+        assert!(matches!(
+            order_detail_request(
+                &credentials(),
+                &BithumbOrderDetailRequest::by_client_order_id(market, "not valid"),
+            ),
+            Err(Error::InvalidRequest { field, .. }) if field == "client_order_id"
+        ));
+    }
+
+    #[test]
+    fn order_list_rejects_conflicting_or_invalid_filters_before_signing() {
+        let conflicting_states = BithumbOrderListRequest::new()
+            .state(BithumbOrderListState::Wait)
+            .states(vec![BithumbOrderListState::Done]);
+        let mixed_watch = BithumbOrderListRequest::new().states(vec![
+            BithumbOrderListState::Watch,
+            BithumbOrderListState::Done,
+        ]);
+        let zero_page = BithumbOrderListRequest::new().page(0);
+        let large_limit = BithumbOrderListRequest::new().limit(101);
+        let too_many_uuids = BithumbOrderListRequest::new()
+            .uuids((0..101).map(|index| index.to_string()).collect::<Vec<_>>());
+        let unsafe_uuid = BithumbOrderListRequest::new().uuids(vec!["uuid&state=done".to_string()]);
+        let unsafe_client_id =
+            BithumbOrderListRequest::new().client_order_ids(vec!["not valid".to_string()]);
+        let too_many_client_ids = BithumbOrderListRequest::new().client_order_ids(
+            (0..101)
+                .map(|index| format!("client-{index}"))
+                .collect::<Vec<_>>(),
+        );
+
+        for request in [
+            conflicting_states,
+            mixed_watch,
+            zero_page,
+            large_limit,
+            too_many_uuids,
+            unsafe_uuid,
+            unsafe_client_id,
+            too_many_client_ids,
+        ] {
+            assert!(order_list_request(&credentials(), &request).is_err());
+        }
+    }
+
+    #[test]
+    fn order_list_ignores_client_order_ids_when_uuids_are_present() {
+        let request = BithumbOrderListRequest::new()
+            .uuids(vec!["order-1".to_string()])
+            .client_order_ids(vec!["not valid".to_string(); 101]);
+
+        assert_eq!(
+            order_list_request(&credentials(), &request)
+                .expect("UUID filters take precedence")
+                .target(),
+            "/v1/orders?uuids[]=order-1&page=1&limit=100&order_by=desc"
+        );
+    }
+
+    #[test]
+    fn order_list_fixture_preserves_every_documented_provider_field() {
+        // Shape reference: https://apidocs.bithumb.com/reference/%EC%A3%BC%EB%AC%B8-%EB%A6%AC%EC%8A%A4%ED%8A%B8-%EC%A1%B0%ED%9A%8C
+        let orders = parse_order_list(&serde_json::json!([
+            {
+                "uuid": "C0101000000001799625",
+                "client_order_id": "strategy-42",
+                "side": "ask",
+                "ord_type": "best",
+                "price": "84001000",
+                "state": "wait",
+                "market": "KRW-BTC",
+                "created_at": "2024-07-12T16:30:01+09:00",
+                "volume": "0.2",
+                "remaining_volume": "0.2",
+                "reserved_fee": "0",
+                "remaining_fee": "0",
+                "paid_fee": "0",
+                "locked": "0.2",
+                "executed_volume": "0",
+                "executed_funds": "0",
+                "trades_count": 0,
+                "stp_type": "cancel_taker",
+                "time_in_force": "ioc"
+            },
+            {
+                "uuid": "C0661000000000760010",
+                "side": "ask",
+                "ord_type": "limit",
+                "price": "1055",
+                "state": "done",
+                "market": "KRW-GMT",
+                "created_at": "2024-07-10T20:00:02+09:00",
+                "volume": "16",
+                "remaining_volume": "11",
+                "reserved_fee": "0",
+                "remaining_fee": "0",
+                "paid_fee": "0.52",
+                "locked": "11",
+                "executed_volume": "5",
+                "executed_funds": "5275",
+                "trades_count": 1
+            }
+        ]))
+        .expect("official-shaped fixture");
+
+        assert_eq!(orders.len(), 2);
+        assert_eq!(orders[0].uuid, "C0101000000001799625");
+        assert_eq!(orders[0].client_order_id.as_deref(), Some("strategy-42"));
+        assert_eq!(orders[0].order_type, "best");
+        assert_eq!(orders[0].executed_funds, Decimal::ZERO);
+        assert_eq!(orders[0].stp_type.as_deref(), Some("cancel_taker"));
+        assert_eq!(orders[0].time_in_force.as_deref(), Some("ioc"));
+        assert_eq!(orders[1].client_order_id, None);
+        assert_eq!(orders[1].paid_fee, Decimal::new(52, 2));
+        assert_eq!(orders[1].executed_funds, Decimal::from(5_275));
+        assert_eq!(orders[1].trades_count, 1);
+    }
+
+    #[test]
+    fn order_detail_fixture_preserves_provider_only_fields_and_every_trade() {
+        // Shape reference: https://apidocs.bithumb.com/reference/%EA%B0%9C%EB%B3%84-%EC%A3%BC%EB%AC%B8-%EC%A1%B0%ED%9A%8C.md
+        let detail = parse_order_detail(&serde_json::json!({
+            "uuid": "C0101000000001799231",
+            "client_order_id": "strategy-42",
+            "side": "bid",
+            "ord_type": "best",
+            "price": "83000000",
+            "state": "cancel",
+            "market": "KRW-BTC",
+            "created_at": "2024-07-09T16:32:23+09:00",
+            "volume": "1",
+            "remaining_volume": "0",
+            "reserved_fee": "207500",
+            "remaining_fee": "0",
+            "paid_fee": "207500",
+            "locked": "0",
+            "executed_volume": "1",
+            "executed_funds": "83000000",
+            "trades_count": 1,
+            "stp_type": "provider_future_stp",
+            "cancel_type": "tif_cancel",
+            "canceling_uuid": "C0101000000001713005",
+            "time_in_force": "ioc",
+            "trades": [{
+                "market": "KRW-BTC",
+                "uuid": "C0101000000001713006",
+                "price": "83000000",
+                "volume": "1",
+                "funds": "83000000",
+                "side": "bid",
+                "created_at": "2024-07-09T16:32:23+09:00"
+            }]
+        }))
+        .expect("official-shaped fixture");
+
+        assert_eq!(detail.uuid, "C0101000000001799231");
+        assert_eq!(detail.client_order_id.as_deref(), Some("strategy-42"));
+        assert_eq!(detail.side, "bid");
+        assert_eq!(detail.order_type, "best");
+        assert_eq!(detail.state, "cancel");
+        assert_eq!(detail.price, Decimal::from(83_000_000));
+        assert_eq!(detail.executed_funds, Decimal::from(83_000_000));
+        assert_eq!(detail.reserved_fee, Decimal::from(207_500));
+        assert_eq!(detail.trades_count, 1);
+        assert_eq!(detail.trades[0].uuid, "C0101000000001713006");
+        assert_eq!(detail.trades[0].funds, Decimal::from(83_000_000));
+        assert_eq!(detail.stp_type.as_deref(), Some("provider_future_stp"));
+        assert_eq!(detail.cancel_type.as_deref(), Some("tif_cancel"));
+        assert_eq!(
+            detail.canceling_uuid.as_deref(),
+            Some("C0101000000001713005")
+        );
+        assert_eq!(detail.time_in_force.as_deref(), Some("ioc"));
+    }
+
+    #[test]
+    fn order_detail_rejects_a_trade_count_that_does_not_match_its_trades() {
+        let error = parse_order_detail(&serde_json::json!({
+            "uuid": "order-1", "side": "bid", "ord_type": "limit", "price": "1",
+            "state": "done", "market": "KRW-BTC", "created_at": "2024-01-01T00:00:00+09:00",
+            "volume": "1", "remaining_volume": "0", "reserved_fee": "0", "remaining_fee": "0",
+            "paid_fee": "0", "locked": "0", "executed_volume": "1", "executed_funds": "1",
+            "trades_count": 1, "trades": []
+        }))
+        .expect_err("inconsistent fixture");
+
+        assert!(matches!(error, Error::Decode { .. }));
     }
 
     #[test]

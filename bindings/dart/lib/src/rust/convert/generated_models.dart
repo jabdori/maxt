@@ -64,6 +64,111 @@ class WireAssetNetwork {
           memoRequired == other.memoRequired;
 }
 
+class WireBinanceAccountTrade {
+  final WireMarket market;
+  final String id;
+  final String orderId;
+  final PlatformInt64 timestampNs;
+  final WireSide side;
+  final bool maker;
+  final bool? bestMatch;
+  final String? orderListId;
+  final String price;
+  final String quantity;
+  final String? quoteQuantity;
+  final String commission;
+  final String commissionAsset;
+  final String? realizedPnl;
+  final String? positionSide;
+  final String? pair;
+  final String? baseQuantity;
+  final String? marginAsset;
+
+  const WireBinanceAccountTrade({
+    required this.market,
+    required this.id,
+    required this.orderId,
+    required this.timestampNs,
+    required this.side,
+    required this.maker,
+    this.bestMatch,
+    this.orderListId,
+    required this.price,
+    required this.quantity,
+    this.quoteQuantity,
+    required this.commission,
+    required this.commissionAsset,
+    this.realizedPnl,
+    this.positionSide,
+    this.pair,
+    this.baseQuantity,
+    this.marginAsset,
+  });
+
+  @override
+  int get hashCode =>
+      market.hashCode ^
+      id.hashCode ^
+      orderId.hashCode ^
+      timestampNs.hashCode ^
+      side.hashCode ^
+      maker.hashCode ^
+      bestMatch.hashCode ^
+      orderListId.hashCode ^
+      price.hashCode ^
+      quantity.hashCode ^
+      quoteQuantity.hashCode ^
+      commission.hashCode ^
+      commissionAsset.hashCode ^
+      realizedPnl.hashCode ^
+      positionSide.hashCode ^
+      pair.hashCode ^
+      baseQuantity.hashCode ^
+      marginAsset.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBinanceAccountTrade &&
+          runtimeType == other.runtimeType &&
+          market == other.market &&
+          id == other.id &&
+          orderId == other.orderId &&
+          timestampNs == other.timestampNs &&
+          side == other.side &&
+          maker == other.maker &&
+          bestMatch == other.bestMatch &&
+          orderListId == other.orderListId &&
+          price == other.price &&
+          quantity == other.quantity &&
+          quoteQuantity == other.quoteQuantity &&
+          commission == other.commission &&
+          commissionAsset == other.commissionAsset &&
+          realizedPnl == other.realizedPnl &&
+          positionSide == other.positionSide &&
+          pair == other.pair &&
+          baseQuantity == other.baseQuantity &&
+          marginAsset == other.marginAsset;
+}
+
+class WireBinanceAccountTradePage {
+  final List<WireBinanceAccountTrade> items;
+  final String? next;
+
+  const WireBinanceAccountTradePage({required this.items, this.next});
+
+  @override
+  int get hashCode => items.hashCode ^ next.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBinanceAccountTradePage &&
+          runtimeType == other.runtimeType &&
+          items == other.items &&
+          next == other.next;
+}
+
 class WireBinanceAggregateTrade {
   final WireMarket market;
   final BigInt aggregateId;
@@ -150,6 +255,171 @@ class WireBinanceAggregateTradesRequest {
           limit == other.limit;
 }
 
+class WireBinanceC2cTrade {
+  final String? orderNumber;
+  final String? advNo;
+  final String? tradeType;
+  final String? asset;
+  final String? fiat;
+  final String? fiatSymbol;
+  final String? amount;
+  final String? totalPrice;
+  final String? unitPrice;
+  final String? orderStatus;
+  final PlatformInt64? createdAtNs;
+  final String? commission;
+  final String? counterpartyNickname;
+  final String? payMethodName;
+  final int? additionalKycVerify;
+  final String? takerCommissionRate;
+  final String? takerCommission;
+  final String? takerAmount;
+  final String? advertisementRole;
+
+  const WireBinanceC2cTrade({
+    this.orderNumber,
+    this.advNo,
+    this.tradeType,
+    this.asset,
+    this.fiat,
+    this.fiatSymbol,
+    this.amount,
+    this.totalPrice,
+    this.unitPrice,
+    this.orderStatus,
+    this.createdAtNs,
+    this.commission,
+    this.counterpartyNickname,
+    this.payMethodName,
+    this.additionalKycVerify,
+    this.takerCommissionRate,
+    this.takerCommission,
+    this.takerAmount,
+    this.advertisementRole,
+  });
+
+  @override
+  int get hashCode =>
+      orderNumber.hashCode ^
+      advNo.hashCode ^
+      tradeType.hashCode ^
+      asset.hashCode ^
+      fiat.hashCode ^
+      fiatSymbol.hashCode ^
+      amount.hashCode ^
+      totalPrice.hashCode ^
+      unitPrice.hashCode ^
+      orderStatus.hashCode ^
+      createdAtNs.hashCode ^
+      commission.hashCode ^
+      counterpartyNickname.hashCode ^
+      payMethodName.hashCode ^
+      additionalKycVerify.hashCode ^
+      takerCommissionRate.hashCode ^
+      takerCommission.hashCode ^
+      takerAmount.hashCode ^
+      advertisementRole.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBinanceC2cTrade &&
+          runtimeType == other.runtimeType &&
+          orderNumber == other.orderNumber &&
+          advNo == other.advNo &&
+          tradeType == other.tradeType &&
+          asset == other.asset &&
+          fiat == other.fiat &&
+          fiatSymbol == other.fiatSymbol &&
+          amount == other.amount &&
+          totalPrice == other.totalPrice &&
+          unitPrice == other.unitPrice &&
+          orderStatus == other.orderStatus &&
+          createdAtNs == other.createdAtNs &&
+          commission == other.commission &&
+          counterpartyNickname == other.counterpartyNickname &&
+          payMethodName == other.payMethodName &&
+          additionalKycVerify == other.additionalKycVerify &&
+          takerCommissionRate == other.takerCommissionRate &&
+          takerCommission == other.takerCommission &&
+          takerAmount == other.takerAmount &&
+          advertisementRole == other.advertisementRole;
+}
+
+class WireBinanceC2cTradeHistoryPage {
+  final String? code;
+  final String? message;
+  final List<WireBinanceC2cTrade>? data;
+  final BigInt? total;
+  final bool? success;
+
+  const WireBinanceC2cTradeHistoryPage({
+    this.code,
+    this.message,
+    this.data,
+    this.total,
+    this.success,
+  });
+
+  @override
+  int get hashCode =>
+      code.hashCode ^
+      message.hashCode ^
+      data.hashCode ^
+      total.hashCode ^
+      success.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBinanceC2cTradeHistoryPage &&
+          runtimeType == other.runtimeType &&
+          code == other.code &&
+          message == other.message &&
+          data == other.data &&
+          total == other.total &&
+          success == other.success;
+}
+
+class WireBinanceC2cTradeHistoryRequest {
+  final WireBinanceC2cTradeType tradeType;
+  final PlatformInt64? startTimestampNs;
+  final PlatformInt64? endTimestampNs;
+  final int? page;
+  final int? rows;
+  final BigInt? recvWindow;
+
+  const WireBinanceC2cTradeHistoryRequest({
+    required this.tradeType,
+    this.startTimestampNs,
+    this.endTimestampNs,
+    this.page,
+    this.rows,
+    this.recvWindow,
+  });
+
+  @override
+  int get hashCode =>
+      tradeType.hashCode ^
+      startTimestampNs.hashCode ^
+      endTimestampNs.hashCode ^
+      page.hashCode ^
+      rows.hashCode ^
+      recvWindow.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBinanceC2cTradeHistoryRequest &&
+          runtimeType == other.runtimeType &&
+          tradeType == other.tradeType &&
+          startTimestampNs == other.startTimestampNs &&
+          endTimestampNs == other.endTimestampNs &&
+          page == other.page &&
+          rows == other.rows &&
+          recvWindow == other.recvWindow;
+}
+
 class WireBinanceMarkPrice {
   final WireMarket market;
   final String markPrice;
@@ -219,6 +489,74 @@ class WireBinanceOpenInterest {
           market == other.market &&
           openInterest == other.openInterest &&
           timeNs == other.timeNs;
+}
+
+class WireBinanceSpotAveragePrice {
+  final WireMarket market;
+  final int minutes;
+  final String price;
+  final PlatformInt64 closeTimeNs;
+
+  const WireBinanceSpotAveragePrice({
+    required this.market,
+    required this.minutes,
+    required this.price,
+    required this.closeTimeNs,
+  });
+
+  @override
+  int get hashCode =>
+      market.hashCode ^
+      minutes.hashCode ^
+      price.hashCode ^
+      closeTimeNs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBinanceSpotAveragePrice &&
+          runtimeType == other.runtimeType &&
+          market == other.market &&
+          minutes == other.minutes &&
+          price == other.price &&
+          closeTimeNs == other.closeTimeNs;
+}
+
+class WireBinanceTestOrder {
+  final String responseJson;
+
+  const WireBinanceTestOrder({required this.responseJson});
+
+  @override
+  int get hashCode => responseJson.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBinanceTestOrder &&
+          runtimeType == other.runtimeType &&
+          responseJson == other.responseJson;
+}
+
+class WireBinanceTestOrderRequest {
+  final WireOrderRequest order;
+  final bool computeCommissionRates;
+
+  const WireBinanceTestOrderRequest({
+    required this.order,
+    required this.computeCommissionRates,
+  });
+
+  @override
+  int get hashCode => order.hashCode ^ computeCommissionRates.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBinanceTestOrderRequest &&
+          runtimeType == other.runtimeType &&
+          order == other.order &&
+          computeCommissionRates == other.computeCommissionRates;
 }
 
 class WireBithumbApiKey {
@@ -383,6 +721,170 @@ class WireBithumbBatchOrdersResult {
       other is WireBithumbBatchOrdersResult &&
           runtimeType == other.runtimeType &&
           outcomes == other.outcomes;
+}
+
+class WireBithumbClosedOrder {
+  final String orderId;
+  final String side;
+  final String orderType;
+  final String? price;
+  final String state;
+  final WireMarket market;
+  final PlatformInt64? createdAtNs;
+  final String volume;
+  final String remainingVolume;
+  final String reservedFee;
+  final String remainingFee;
+  final String paidFee;
+  final String locked;
+  final String executedVolume;
+  final String executedFunds;
+  final int tradesCount;
+  final String? clientOrderId;
+  final String? stpType;
+  final String? timeInForce;
+  final String? cancelType;
+  final String? cancelingOrderId;
+
+  const WireBithumbClosedOrder({
+    required this.orderId,
+    required this.side,
+    required this.orderType,
+    this.price,
+    required this.state,
+    required this.market,
+    this.createdAtNs,
+    required this.volume,
+    required this.remainingVolume,
+    required this.reservedFee,
+    required this.remainingFee,
+    required this.paidFee,
+    required this.locked,
+    required this.executedVolume,
+    required this.executedFunds,
+    required this.tradesCount,
+    this.clientOrderId,
+    this.stpType,
+    this.timeInForce,
+    this.cancelType,
+    this.cancelingOrderId,
+  });
+
+  @override
+  int get hashCode =>
+      orderId.hashCode ^
+      side.hashCode ^
+      orderType.hashCode ^
+      price.hashCode ^
+      state.hashCode ^
+      market.hashCode ^
+      createdAtNs.hashCode ^
+      volume.hashCode ^
+      remainingVolume.hashCode ^
+      reservedFee.hashCode ^
+      remainingFee.hashCode ^
+      paidFee.hashCode ^
+      locked.hashCode ^
+      executedVolume.hashCode ^
+      executedFunds.hashCode ^
+      tradesCount.hashCode ^
+      clientOrderId.hashCode ^
+      stpType.hashCode ^
+      timeInForce.hashCode ^
+      cancelType.hashCode ^
+      cancelingOrderId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbClosedOrder &&
+          runtimeType == other.runtimeType &&
+          orderId == other.orderId &&
+          side == other.side &&
+          orderType == other.orderType &&
+          price == other.price &&
+          state == other.state &&
+          market == other.market &&
+          createdAtNs == other.createdAtNs &&
+          volume == other.volume &&
+          remainingVolume == other.remainingVolume &&
+          reservedFee == other.reservedFee &&
+          remainingFee == other.remainingFee &&
+          paidFee == other.paidFee &&
+          locked == other.locked &&
+          executedVolume == other.executedVolume &&
+          executedFunds == other.executedFunds &&
+          tradesCount == other.tradesCount &&
+          clientOrderId == other.clientOrderId &&
+          stpType == other.stpType &&
+          timeInForce == other.timeInForce &&
+          cancelType == other.cancelType &&
+          cancelingOrderId == other.cancelingOrderId;
+}
+
+class WireBithumbClosedOrderPage {
+  final List<WireBithumbClosedOrder> items;
+  final String? next;
+
+  const WireBithumbClosedOrderPage({required this.items, this.next});
+
+  @override
+  int get hashCode => items.hashCode ^ next.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbClosedOrderPage &&
+          runtimeType == other.runtimeType &&
+          items == other.items &&
+          next == other.next;
+}
+
+class WireBithumbClosedOrdersRequest {
+  final WireMarket? market;
+  final WireBithumbClosedOrderState? state;
+  final List<WireBithumbClosedOrderState> states;
+  final PlatformInt64? startTimeNs;
+  final PlatformInt64? endTimeNs;
+  final int? limit;
+  final WireBithumbOrderDirection? orderBy;
+  final String? cursor;
+
+  const WireBithumbClosedOrdersRequest({
+    this.market,
+    this.state,
+    required this.states,
+    this.startTimeNs,
+    this.endTimeNs,
+    this.limit,
+    this.orderBy,
+    this.cursor,
+  });
+
+  @override
+  int get hashCode =>
+      market.hashCode ^
+      state.hashCode ^
+      states.hashCode ^
+      startTimeNs.hashCode ^
+      endTimeNs.hashCode ^
+      limit.hashCode ^
+      orderBy.hashCode ^
+      cursor.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbClosedOrdersRequest &&
+          runtimeType == other.runtimeType &&
+          market == other.market &&
+          state == other.state &&
+          states == other.states &&
+          startTimeNs == other.startTimeNs &&
+          endTimeNs == other.endTimeNs &&
+          limit == other.limit &&
+          orderBy == other.orderBy &&
+          cursor == other.cursor;
 }
 
 class WireBithumbKrwDeposit {
@@ -671,6 +1173,314 @@ class WireBithumbNotice {
           modifiedAtNs == other.modifiedAtNs;
 }
 
+class WireBithumbOrderDetail {
+  final String uuid;
+  final String? clientOrderId;
+  final String side;
+  final String orderType;
+  final String price;
+  final String state;
+  final WireMarket market;
+  final PlatformInt64 createdAtNs;
+  final String volume;
+  final String remainingVolume;
+  final String reservedFee;
+  final String remainingFee;
+  final String paidFee;
+  final String locked;
+  final String executedVolume;
+  final String executedFunds;
+  final int tradesCount;
+  final List<WireBithumbOrderDetailTrade> trades;
+  final String? stpType;
+  final String? cancelType;
+  final String? cancelingUuid;
+  final String? timeInForce;
+
+  const WireBithumbOrderDetail({
+    required this.uuid,
+    this.clientOrderId,
+    required this.side,
+    required this.orderType,
+    required this.price,
+    required this.state,
+    required this.market,
+    required this.createdAtNs,
+    required this.volume,
+    required this.remainingVolume,
+    required this.reservedFee,
+    required this.remainingFee,
+    required this.paidFee,
+    required this.locked,
+    required this.executedVolume,
+    required this.executedFunds,
+    required this.tradesCount,
+    required this.trades,
+    this.stpType,
+    this.cancelType,
+    this.cancelingUuid,
+    this.timeInForce,
+  });
+
+  @override
+  int get hashCode =>
+      uuid.hashCode ^
+      clientOrderId.hashCode ^
+      side.hashCode ^
+      orderType.hashCode ^
+      price.hashCode ^
+      state.hashCode ^
+      market.hashCode ^
+      createdAtNs.hashCode ^
+      volume.hashCode ^
+      remainingVolume.hashCode ^
+      reservedFee.hashCode ^
+      remainingFee.hashCode ^
+      paidFee.hashCode ^
+      locked.hashCode ^
+      executedVolume.hashCode ^
+      executedFunds.hashCode ^
+      tradesCount.hashCode ^
+      trades.hashCode ^
+      stpType.hashCode ^
+      cancelType.hashCode ^
+      cancelingUuid.hashCode ^
+      timeInForce.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbOrderDetail &&
+          runtimeType == other.runtimeType &&
+          uuid == other.uuid &&
+          clientOrderId == other.clientOrderId &&
+          side == other.side &&
+          orderType == other.orderType &&
+          price == other.price &&
+          state == other.state &&
+          market == other.market &&
+          createdAtNs == other.createdAtNs &&
+          volume == other.volume &&
+          remainingVolume == other.remainingVolume &&
+          reservedFee == other.reservedFee &&
+          remainingFee == other.remainingFee &&
+          paidFee == other.paidFee &&
+          locked == other.locked &&
+          executedVolume == other.executedVolume &&
+          executedFunds == other.executedFunds &&
+          tradesCount == other.tradesCount &&
+          trades == other.trades &&
+          stpType == other.stpType &&
+          cancelType == other.cancelType &&
+          cancelingUuid == other.cancelingUuid &&
+          timeInForce == other.timeInForce;
+}
+
+class WireBithumbOrderDetailRequest {
+  final WireMarket market;
+  final String? uuid;
+  final String? clientOrderId;
+
+  const WireBithumbOrderDetailRequest({
+    required this.market,
+    this.uuid,
+    this.clientOrderId,
+  });
+
+  @override
+  int get hashCode => market.hashCode ^ uuid.hashCode ^ clientOrderId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbOrderDetailRequest &&
+          runtimeType == other.runtimeType &&
+          market == other.market &&
+          uuid == other.uuid &&
+          clientOrderId == other.clientOrderId;
+}
+
+class WireBithumbOrderDetailTrade {
+  final WireMarket market;
+  final String uuid;
+  final String price;
+  final String volume;
+  final String funds;
+  final String side;
+  final PlatformInt64 createdAtNs;
+
+  const WireBithumbOrderDetailTrade({
+    required this.market,
+    required this.uuid,
+    required this.price,
+    required this.volume,
+    required this.funds,
+    required this.side,
+    required this.createdAtNs,
+  });
+
+  @override
+  int get hashCode =>
+      market.hashCode ^
+      uuid.hashCode ^
+      price.hashCode ^
+      volume.hashCode ^
+      funds.hashCode ^
+      side.hashCode ^
+      createdAtNs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbOrderDetailTrade &&
+          runtimeType == other.runtimeType &&
+          market == other.market &&
+          uuid == other.uuid &&
+          price == other.price &&
+          volume == other.volume &&
+          funds == other.funds &&
+          side == other.side &&
+          createdAtNs == other.createdAtNs;
+}
+
+class WireBithumbOrderListItem {
+  final String uuid;
+  final String? clientOrderId;
+  final String side;
+  final String orderType;
+  final String price;
+  final String state;
+  final WireMarket market;
+  final PlatformInt64 createdAtNs;
+  final String volume;
+  final String remainingVolume;
+  final String reservedFee;
+  final String remainingFee;
+  final String paidFee;
+  final String locked;
+  final String executedVolume;
+  final String executedFunds;
+  final int tradesCount;
+  final String? stpType;
+  final String? timeInForce;
+
+  const WireBithumbOrderListItem({
+    required this.uuid,
+    this.clientOrderId,
+    required this.side,
+    required this.orderType,
+    required this.price,
+    required this.state,
+    required this.market,
+    required this.createdAtNs,
+    required this.volume,
+    required this.remainingVolume,
+    required this.reservedFee,
+    required this.remainingFee,
+    required this.paidFee,
+    required this.locked,
+    required this.executedVolume,
+    required this.executedFunds,
+    required this.tradesCount,
+    this.stpType,
+    this.timeInForce,
+  });
+
+  @override
+  int get hashCode =>
+      uuid.hashCode ^
+      clientOrderId.hashCode ^
+      side.hashCode ^
+      orderType.hashCode ^
+      price.hashCode ^
+      state.hashCode ^
+      market.hashCode ^
+      createdAtNs.hashCode ^
+      volume.hashCode ^
+      remainingVolume.hashCode ^
+      reservedFee.hashCode ^
+      remainingFee.hashCode ^
+      paidFee.hashCode ^
+      locked.hashCode ^
+      executedVolume.hashCode ^
+      executedFunds.hashCode ^
+      tradesCount.hashCode ^
+      stpType.hashCode ^
+      timeInForce.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbOrderListItem &&
+          runtimeType == other.runtimeType &&
+          uuid == other.uuid &&
+          clientOrderId == other.clientOrderId &&
+          side == other.side &&
+          orderType == other.orderType &&
+          price == other.price &&
+          state == other.state &&
+          market == other.market &&
+          createdAtNs == other.createdAtNs &&
+          volume == other.volume &&
+          remainingVolume == other.remainingVolume &&
+          reservedFee == other.reservedFee &&
+          remainingFee == other.remainingFee &&
+          paidFee == other.paidFee &&
+          locked == other.locked &&
+          executedVolume == other.executedVolume &&
+          executedFunds == other.executedFunds &&
+          tradesCount == other.tradesCount &&
+          stpType == other.stpType &&
+          timeInForce == other.timeInForce;
+}
+
+class WireBithumbOrderListRequest {
+  final WireMarket? market;
+  final WireBithumbOrderListState? state;
+  final List<WireBithumbOrderListState> states;
+  final List<String> uuids;
+  final List<String> clientOrderIds;
+  final int? page;
+  final int? limit;
+  final WireBithumbOrderDirection? orderBy;
+
+  const WireBithumbOrderListRequest({
+    this.market,
+    this.state,
+    required this.states,
+    required this.uuids,
+    required this.clientOrderIds,
+    this.page,
+    this.limit,
+    this.orderBy,
+  });
+
+  @override
+  int get hashCode =>
+      market.hashCode ^
+      state.hashCode ^
+      states.hashCode ^
+      uuids.hashCode ^
+      clientOrderIds.hashCode ^
+      page.hashCode ^
+      limit.hashCode ^
+      orderBy.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbOrderListRequest &&
+          runtimeType == other.runtimeType &&
+          market == other.market &&
+          state == other.state &&
+          states == other.states &&
+          uuids == other.uuids &&
+          clientOrderIds == other.clientOrderIds &&
+          page == other.page &&
+          limit == other.limit &&
+          orderBy == other.orderBy;
+}
+
 class WireBithumbPendingOrdersRequest {
   final WireMarket? market;
   final WireBithumbPendingOrderState? state;
@@ -883,6 +1693,65 @@ class WireBithumbTwapOrdersRequest {
           cursor == other.cursor &&
           limit == other.limit &&
           orderBy == other.orderBy;
+}
+
+class WireBithumbWithdrawalAddress {
+  final String currency;
+  final String netType;
+  final String? networkName;
+  final String withdrawAddress;
+  final String? secondaryAddress;
+  final String? exchangeName;
+  final String? ownerType;
+  final String? ownerKoName;
+  final String? ownerEnName;
+  final String? ownerCorpKoName;
+  final String? ownerCorpEnName;
+
+  const WireBithumbWithdrawalAddress({
+    required this.currency,
+    required this.netType,
+    this.networkName,
+    required this.withdrawAddress,
+    this.secondaryAddress,
+    this.exchangeName,
+    this.ownerType,
+    this.ownerKoName,
+    this.ownerEnName,
+    this.ownerCorpKoName,
+    this.ownerCorpEnName,
+  });
+
+  @override
+  int get hashCode =>
+      currency.hashCode ^
+      netType.hashCode ^
+      networkName.hashCode ^
+      withdrawAddress.hashCode ^
+      secondaryAddress.hashCode ^
+      exchangeName.hashCode ^
+      ownerType.hashCode ^
+      ownerKoName.hashCode ^
+      ownerEnName.hashCode ^
+      ownerCorpKoName.hashCode ^
+      ownerCorpEnName.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireBithumbWithdrawalAddress &&
+          runtimeType == other.runtimeType &&
+          currency == other.currency &&
+          netType == other.netType &&
+          networkName == other.networkName &&
+          withdrawAddress == other.withdrawAddress &&
+          secondaryAddress == other.secondaryAddress &&
+          exchangeName == other.exchangeName &&
+          ownerType == other.ownerType &&
+          ownerKoName == other.ownerKoName &&
+          ownerEnName == other.ownerEnName &&
+          ownerCorpKoName == other.ownerCorpKoName &&
+          ownerCorpEnName == other.ownerCorpEnName;
 }
 
 class WireCancelOrdersRequest {
@@ -1254,6 +2123,34 @@ class WireExchangeTransferRequest {
           amount == other.amount;
 }
 
+class WireHyperliquidDailyVolume {
+  final String date;
+  final String userCross;
+  final String userAdd;
+  final String exchange;
+
+  const WireHyperliquidDailyVolume({
+    required this.date,
+    required this.userCross,
+    required this.userAdd,
+    required this.exchange,
+  });
+
+  @override
+  int get hashCode =>
+      date.hashCode ^ userCross.hashCode ^ userAdd.hashCode ^ exchange.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireHyperliquidDailyVolume &&
+          runtimeType == other.runtimeType &&
+          date == other.date &&
+          userCross == other.userCross &&
+          userAdd == other.userAdd &&
+          exchange == other.exchange;
+}
+
 class WireHyperliquidMidPrice {
   final WireMarket market;
   final String price;
@@ -1270,6 +2167,546 @@ class WireHyperliquidMidPrice {
           runtimeType == other.runtimeType &&
           market == other.market &&
           price == other.price;
+}
+
+class WireHyperliquidOpenOrder {
+  final String coin;
+  final String limitPrice;
+  final BigInt orderId;
+  final String side;
+  final String size;
+  final PlatformInt64 timestampNs;
+  final String rawJson;
+
+  const WireHyperliquidOpenOrder({
+    required this.coin,
+    required this.limitPrice,
+    required this.orderId,
+    required this.side,
+    required this.size,
+    required this.timestampNs,
+    required this.rawJson,
+  });
+
+  @override
+  int get hashCode =>
+      coin.hashCode ^
+      limitPrice.hashCode ^
+      orderId.hashCode ^
+      side.hashCode ^
+      size.hashCode ^
+      timestampNs.hashCode ^
+      rawJson.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireHyperliquidOpenOrder &&
+          runtimeType == other.runtimeType &&
+          coin == other.coin &&
+          limitPrice == other.limitPrice &&
+          orderId == other.orderId &&
+          side == other.side &&
+          size == other.size &&
+          timestampNs == other.timestampNs &&
+          rawJson == other.rawJson;
+}
+
+class WireHyperliquidOrderDetail {
+  final String coin;
+  final String side;
+  final String limitPrice;
+  final String size;
+  final BigInt orderId;
+  final PlatformInt64 timestampNs;
+  final String triggerCondition;
+  final bool isTrigger;
+  final String triggerPrice;
+  final String childrenJson;
+  final bool isPositionTpsl;
+  final bool reduceOnly;
+  final String orderType;
+  final String originalSize;
+  final String? timeInForce;
+  final String? clientOrderId;
+  final String rawJson;
+
+  const WireHyperliquidOrderDetail({
+    required this.coin,
+    required this.side,
+    required this.limitPrice,
+    required this.size,
+    required this.orderId,
+    required this.timestampNs,
+    required this.triggerCondition,
+    required this.isTrigger,
+    required this.triggerPrice,
+    required this.childrenJson,
+    required this.isPositionTpsl,
+    required this.reduceOnly,
+    required this.orderType,
+    required this.originalSize,
+    this.timeInForce,
+    this.clientOrderId,
+    required this.rawJson,
+  });
+
+  @override
+  int get hashCode =>
+      coin.hashCode ^
+      side.hashCode ^
+      limitPrice.hashCode ^
+      size.hashCode ^
+      orderId.hashCode ^
+      timestampNs.hashCode ^
+      triggerCondition.hashCode ^
+      isTrigger.hashCode ^
+      triggerPrice.hashCode ^
+      childrenJson.hashCode ^
+      isPositionTpsl.hashCode ^
+      reduceOnly.hashCode ^
+      orderType.hashCode ^
+      originalSize.hashCode ^
+      timeInForce.hashCode ^
+      clientOrderId.hashCode ^
+      rawJson.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireHyperliquidOrderDetail &&
+          runtimeType == other.runtimeType &&
+          coin == other.coin &&
+          side == other.side &&
+          limitPrice == other.limitPrice &&
+          size == other.size &&
+          orderId == other.orderId &&
+          timestampNs == other.timestampNs &&
+          triggerCondition == other.triggerCondition &&
+          isTrigger == other.isTrigger &&
+          triggerPrice == other.triggerPrice &&
+          childrenJson == other.childrenJson &&
+          isPositionTpsl == other.isPositionTpsl &&
+          reduceOnly == other.reduceOnly &&
+          orderType == other.orderType &&
+          originalSize == other.originalSize &&
+          timeInForce == other.timeInForce &&
+          clientOrderId == other.clientOrderId &&
+          rawJson == other.rawJson;
+}
+
+class WireHyperliquidOrderInfo {
+  final WireHyperliquidOrderDetail order;
+  final String status;
+  final PlatformInt64 statusTimestampNs;
+  final String rawJson;
+
+  const WireHyperliquidOrderInfo({
+    required this.order,
+    required this.status,
+    required this.statusTimestampNs,
+    required this.rawJson,
+  });
+
+  @override
+  int get hashCode =>
+      order.hashCode ^
+      status.hashCode ^
+      statusTimestampNs.hashCode ^
+      rawJson.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireHyperliquidOrderInfo &&
+          runtimeType == other.runtimeType &&
+          order == other.order &&
+          status == other.status &&
+          statusTimestampNs == other.statusTimestampNs &&
+          rawJson == other.rawJson;
+}
+
+@freezed
+sealed class WireHyperliquidOrderReference
+    with _$WireHyperliquidOrderReference {
+  const WireHyperliquidOrderReference._();
+
+  const factory WireHyperliquidOrderReference.orderId(BigInt field0) =
+      WireHyperliquidOrderReference_OrderId;
+  const factory WireHyperliquidOrderReference.clientOrderId(String field0) =
+      WireHyperliquidOrderReference_ClientOrderId;
+}
+
+@freezed
+sealed class WireHyperliquidOrderStatusResponse
+    with _$WireHyperliquidOrderStatusResponse {
+  const WireHyperliquidOrderStatusResponse._();
+
+  const factory WireHyperliquidOrderStatusResponse.order(
+    WireHyperliquidOrderInfo field0,
+  ) = WireHyperliquidOrderStatusResponse_Order;
+  const factory WireHyperliquidOrderStatusResponse.unknownOrder() =
+      WireHyperliquidOrderStatusResponse_UnknownOrder;
+  const factory WireHyperliquidOrderStatusResponse.other({
+    required String status,
+    required String rawJson,
+  }) = WireHyperliquidOrderStatusResponse_Other;
+}
+
+class WireHyperliquidPortfolioPeriod {
+  final String period;
+  final List<WireHyperliquidPortfolioPoint> accountValueHistory;
+  final List<WireHyperliquidPortfolioPoint> pnlHistory;
+  final String volume;
+
+  const WireHyperliquidPortfolioPeriod({
+    required this.period,
+    required this.accountValueHistory,
+    required this.pnlHistory,
+    required this.volume,
+  });
+
+  @override
+  int get hashCode =>
+      period.hashCode ^
+      accountValueHistory.hashCode ^
+      pnlHistory.hashCode ^
+      volume.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireHyperliquidPortfolioPeriod &&
+          runtimeType == other.runtimeType &&
+          period == other.period &&
+          accountValueHistory == other.accountValueHistory &&
+          pnlHistory == other.pnlHistory &&
+          volume == other.volume;
+}
+
+class WireHyperliquidPortfolioPoint {
+  final PlatformInt64 timeNs;
+  final String value;
+
+  const WireHyperliquidPortfolioPoint({
+    required this.timeNs,
+    required this.value,
+  });
+
+  @override
+  int get hashCode => timeNs.hashCode ^ value.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireHyperliquidPortfolioPoint &&
+          runtimeType == other.runtimeType &&
+          timeNs == other.timeNs &&
+          value == other.value;
+}
+
+class WireHyperliquidReferral {
+  final WireHyperliquidReferrer? referredBy;
+  final String cumulativeVolume;
+  final String unclaimedRewards;
+  final String claimedRewards;
+  final String builderRewards;
+  final String referrerStateJson;
+  final String rewardHistoryJson;
+  final String tokenToStateJson;
+
+  const WireHyperliquidReferral({
+    this.referredBy,
+    required this.cumulativeVolume,
+    required this.unclaimedRewards,
+    required this.claimedRewards,
+    required this.builderRewards,
+    required this.referrerStateJson,
+    required this.rewardHistoryJson,
+    required this.tokenToStateJson,
+  });
+
+  @override
+  int get hashCode =>
+      referredBy.hashCode ^
+      cumulativeVolume.hashCode ^
+      unclaimedRewards.hashCode ^
+      claimedRewards.hashCode ^
+      builderRewards.hashCode ^
+      referrerStateJson.hashCode ^
+      rewardHistoryJson.hashCode ^
+      tokenToStateJson.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireHyperliquidReferral &&
+          runtimeType == other.runtimeType &&
+          referredBy == other.referredBy &&
+          cumulativeVolume == other.cumulativeVolume &&
+          unclaimedRewards == other.unclaimedRewards &&
+          claimedRewards == other.claimedRewards &&
+          builderRewards == other.builderRewards &&
+          referrerStateJson == other.referrerStateJson &&
+          rewardHistoryJson == other.rewardHistoryJson &&
+          tokenToStateJson == other.tokenToStateJson;
+}
+
+class WireHyperliquidReferrer {
+  final String address;
+  final String code;
+
+  const WireHyperliquidReferrer({required this.address, required this.code});
+
+  @override
+  int get hashCode => address.hashCode ^ code.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireHyperliquidReferrer &&
+          runtimeType == other.runtimeType &&
+          address == other.address &&
+          code == other.code;
+}
+
+class WireHyperliquidSubAccount {
+  final String name;
+  final String user;
+  final String master;
+  final String perpetualStateJson;
+  final String spotStateJson;
+
+  const WireHyperliquidSubAccount({
+    required this.name,
+    required this.user,
+    required this.master,
+    required this.perpetualStateJson,
+    required this.spotStateJson,
+  });
+
+  @override
+  int get hashCode =>
+      name.hashCode ^
+      user.hashCode ^
+      master.hashCode ^
+      perpetualStateJson.hashCode ^
+      spotStateJson.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireHyperliquidSubAccount &&
+          runtimeType == other.runtimeType &&
+          name == other.name &&
+          user == other.user &&
+          master == other.master &&
+          perpetualStateJson == other.perpetualStateJson &&
+          spotStateJson == other.spotStateJson;
+}
+
+class WireHyperliquidUserFees {
+  final List<WireHyperliquidDailyVolume> dailyVolumes;
+  final String feeScheduleJson;
+  final String userCrossRate;
+  final String userAddRate;
+  final String? userSpotCrossRate;
+  final String? userSpotAddRate;
+  final String? activeReferralDiscount;
+  final String detailsJson;
+
+  const WireHyperliquidUserFees({
+    required this.dailyVolumes,
+    required this.feeScheduleJson,
+    required this.userCrossRate,
+    required this.userAddRate,
+    this.userSpotCrossRate,
+    this.userSpotAddRate,
+    this.activeReferralDiscount,
+    required this.detailsJson,
+  });
+
+  @override
+  int get hashCode =>
+      dailyVolumes.hashCode ^
+      feeScheduleJson.hashCode ^
+      userCrossRate.hashCode ^
+      userAddRate.hashCode ^
+      userSpotCrossRate.hashCode ^
+      userSpotAddRate.hashCode ^
+      activeReferralDiscount.hashCode ^
+      detailsJson.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireHyperliquidUserFees &&
+          runtimeType == other.runtimeType &&
+          dailyVolumes == other.dailyVolumes &&
+          feeScheduleJson == other.feeScheduleJson &&
+          userCrossRate == other.userCrossRate &&
+          userAddRate == other.userAddRate &&
+          userSpotCrossRate == other.userSpotCrossRate &&
+          userSpotAddRate == other.userSpotAddRate &&
+          activeReferralDiscount == other.activeReferralDiscount &&
+          detailsJson == other.detailsJson;
+}
+
+class WireHyperliquidUserFill {
+  final String coin;
+  final String price;
+  final String size;
+  final String side;
+  final PlatformInt64 timeNs;
+  final String startPosition;
+  final String direction;
+  final String closedPnl;
+  final String hash;
+  final BigInt orderId;
+  final bool crossed;
+  final String fee;
+  final String? builderFee;
+  final BigInt tradeId;
+  final String feeToken;
+  final BigInt? twapId;
+  final String rawJson;
+
+  const WireHyperliquidUserFill({
+    required this.coin,
+    required this.price,
+    required this.size,
+    required this.side,
+    required this.timeNs,
+    required this.startPosition,
+    required this.direction,
+    required this.closedPnl,
+    required this.hash,
+    required this.orderId,
+    required this.crossed,
+    required this.fee,
+    this.builderFee,
+    required this.tradeId,
+    required this.feeToken,
+    this.twapId,
+    required this.rawJson,
+  });
+
+  @override
+  int get hashCode =>
+      coin.hashCode ^
+      price.hashCode ^
+      size.hashCode ^
+      side.hashCode ^
+      timeNs.hashCode ^
+      startPosition.hashCode ^
+      direction.hashCode ^
+      closedPnl.hashCode ^
+      hash.hashCode ^
+      orderId.hashCode ^
+      crossed.hashCode ^
+      fee.hashCode ^
+      builderFee.hashCode ^
+      tradeId.hashCode ^
+      feeToken.hashCode ^
+      twapId.hashCode ^
+      rawJson.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireHyperliquidUserFill &&
+          runtimeType == other.runtimeType &&
+          coin == other.coin &&
+          price == other.price &&
+          size == other.size &&
+          side == other.side &&
+          timeNs == other.timeNs &&
+          startPosition == other.startPosition &&
+          direction == other.direction &&
+          closedPnl == other.closedPnl &&
+          hash == other.hash &&
+          orderId == other.orderId &&
+          crossed == other.crossed &&
+          fee == other.fee &&
+          builderFee == other.builderFee &&
+          tradeId == other.tradeId &&
+          feeToken == other.feeToken &&
+          twapId == other.twapId &&
+          rawJson == other.rawJson;
+}
+
+class WireHyperliquidUserRateLimit {
+  final String cumulativeVolume;
+  final BigInt requestsUsed;
+  final BigInt requestsCap;
+  final BigInt requestsSurplus;
+
+  const WireHyperliquidUserRateLimit({
+    required this.cumulativeVolume,
+    required this.requestsUsed,
+    required this.requestsCap,
+    required this.requestsSurplus,
+  });
+
+  @override
+  int get hashCode =>
+      cumulativeVolume.hashCode ^
+      requestsUsed.hashCode ^
+      requestsCap.hashCode ^
+      requestsSurplus.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireHyperliquidUserRateLimit &&
+          runtimeType == other.runtimeType &&
+          cumulativeVolume == other.cumulativeVolume &&
+          requestsUsed == other.requestsUsed &&
+          requestsCap == other.requestsCap &&
+          requestsSurplus == other.requestsSurplus;
+}
+
+@freezed
+sealed class WireHyperliquidUserRole with _$WireHyperliquidUserRole {
+  const WireHyperliquidUserRole._();
+
+  const factory WireHyperliquidUserRole.user() = WireHyperliquidUserRole_User;
+  const factory WireHyperliquidUserRole.agent({String? user}) =
+      WireHyperliquidUserRole_Agent;
+  const factory WireHyperliquidUserRole.vault() = WireHyperliquidUserRole_Vault;
+  const factory WireHyperliquidUserRole.subAccount({String? master}) =
+      WireHyperliquidUserRole_SubAccount;
+  const factory WireHyperliquidUserRole.missing() =
+      WireHyperliquidUserRole_Missing;
+  const factory WireHyperliquidUserRole.other({
+    required String role,
+    String? dataJson,
+  }) = WireHyperliquidUserRole_Other;
+}
+
+class WireHyperliquidVaultEquity {
+  final String vaultAddress;
+  final String equity;
+  final PlatformInt64? lockedUntilNs;
+
+  const WireHyperliquidVaultEquity({
+    required this.vaultAddress,
+    required this.equity,
+    this.lockedUntilNs,
+  });
+
+  @override
+  int get hashCode =>
+      vaultAddress.hashCode ^ equity.hashCode ^ lockedUntilNs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireHyperliquidVaultEquity &&
+          runtimeType == other.runtimeType &&
+          vaultAddress == other.vaultAddress &&
+          equity == other.equity &&
+          lockedUntilNs == other.lockedUntilNs;
 }
 
 class WireOrderAccount {
@@ -1635,6 +3072,24 @@ sealed class WireTravelRuleRequirement with _$WireTravelRuleRequirement {
       WireTravelRuleRequirement_Required;
 }
 
+class WireUpbitApiKey {
+  final String accessKey;
+  final PlatformInt64 expiresAtNs;
+
+  const WireUpbitApiKey({required this.accessKey, required this.expiresAtNs});
+
+  @override
+  int get hashCode => accessKey.hashCode ^ expiresAtNs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitApiKey &&
+          runtimeType == other.runtimeType &&
+          accessKey == other.accessKey &&
+          expiresAtNs == other.expiresAtNs;
+}
+
 class WireUpbitBatchCancelRequest {
   final WireUpbitBatchCancelScope scope;
   final List<WireMarket>? excludedPairs;
@@ -1765,6 +3220,150 @@ class WireUpbitCancelAndNewOrderResult {
           newOrderIdentifier == other.newOrderIdentifier;
 }
 
+class WireUpbitClosedOrder {
+  final WireMarket market;
+  final String uuid;
+  final String side;
+  final String ordType;
+  final String state;
+  final PlatformInt64 createdAtNs;
+  final String? volume;
+  final String? price;
+  final String remainingVolume;
+  final String executedVolume;
+  final String? executedFunds;
+  final String reservedFee;
+  final String remainingFee;
+  final String paidFee;
+  final String locked;
+  final int tradesCount;
+  final String preventedVolume;
+  final String preventedLocked;
+  final String? timeInForce;
+  final String? identifier;
+  final String? smpType;
+
+  const WireUpbitClosedOrder({
+    required this.market,
+    required this.uuid,
+    required this.side,
+    required this.ordType,
+    required this.state,
+    required this.createdAtNs,
+    this.volume,
+    this.price,
+    required this.remainingVolume,
+    required this.executedVolume,
+    this.executedFunds,
+    required this.reservedFee,
+    required this.remainingFee,
+    required this.paidFee,
+    required this.locked,
+    required this.tradesCount,
+    required this.preventedVolume,
+    required this.preventedLocked,
+    this.timeInForce,
+    this.identifier,
+    this.smpType,
+  });
+
+  @override
+  int get hashCode =>
+      market.hashCode ^
+      uuid.hashCode ^
+      side.hashCode ^
+      ordType.hashCode ^
+      state.hashCode ^
+      createdAtNs.hashCode ^
+      volume.hashCode ^
+      price.hashCode ^
+      remainingVolume.hashCode ^
+      executedVolume.hashCode ^
+      executedFunds.hashCode ^
+      reservedFee.hashCode ^
+      remainingFee.hashCode ^
+      paidFee.hashCode ^
+      locked.hashCode ^
+      tradesCount.hashCode ^
+      preventedVolume.hashCode ^
+      preventedLocked.hashCode ^
+      timeInForce.hashCode ^
+      identifier.hashCode ^
+      smpType.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitClosedOrder &&
+          runtimeType == other.runtimeType &&
+          market == other.market &&
+          uuid == other.uuid &&
+          side == other.side &&
+          ordType == other.ordType &&
+          state == other.state &&
+          createdAtNs == other.createdAtNs &&
+          volume == other.volume &&
+          price == other.price &&
+          remainingVolume == other.remainingVolume &&
+          executedVolume == other.executedVolume &&
+          executedFunds == other.executedFunds &&
+          reservedFee == other.reservedFee &&
+          remainingFee == other.remainingFee &&
+          paidFee == other.paidFee &&
+          locked == other.locked &&
+          tradesCount == other.tradesCount &&
+          preventedVolume == other.preventedVolume &&
+          preventedLocked == other.preventedLocked &&
+          timeInForce == other.timeInForce &&
+          identifier == other.identifier &&
+          smpType == other.smpType;
+}
+
+enum WireUpbitClosedOrderState { done, cancel }
+
+class WireUpbitClosedOrdersRequest {
+  final WireMarket? market;
+  final WireUpbitClosedOrderState? state;
+  final List<WireUpbitClosedOrderState> states;
+  final PlatformInt64? startTimeNs;
+  final PlatformInt64? endTimeNs;
+  final int? limit;
+  final WireUpbitOrderDirection? orderBy;
+
+  const WireUpbitClosedOrdersRequest({
+    this.market,
+    this.state,
+    required this.states,
+    this.startTimeNs,
+    this.endTimeNs,
+    this.limit,
+    this.orderBy,
+  });
+
+  @override
+  int get hashCode =>
+      market.hashCode ^
+      state.hashCode ^
+      states.hashCode ^
+      startTimeNs.hashCode ^
+      endTimeNs.hashCode ^
+      limit.hashCode ^
+      orderBy.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitClosedOrdersRequest &&
+          runtimeType == other.runtimeType &&
+          market == other.market &&
+          state == other.state &&
+          states == other.states &&
+          startTimeNs == other.startTimeNs &&
+          endTimeNs == other.endTimeNs &&
+          limit == other.limit &&
+          orderBy == other.orderBy;
+}
+
 class WireUpbitDepositInfo {
   final String asset;
   final String? network;
@@ -1812,6 +3411,173 @@ class WireUpbitDepositInfo {
           decimalPrecision == other.decimalPrecision;
 }
 
+class WireUpbitKrwDeposit {
+  final String transferType;
+  final String uuid;
+  final String currency;
+  final String? netType;
+  final String txid;
+  final String state;
+  final PlatformInt64 createdAtNs;
+  final PlatformInt64? doneAtNs;
+  final String amount;
+  final String fee;
+  final String transactionType;
+
+  const WireUpbitKrwDeposit({
+    required this.transferType,
+    required this.uuid,
+    required this.currency,
+    this.netType,
+    required this.txid,
+    required this.state,
+    required this.createdAtNs,
+    this.doneAtNs,
+    required this.amount,
+    required this.fee,
+    required this.transactionType,
+  });
+
+  @override
+  int get hashCode =>
+      transferType.hashCode ^
+      uuid.hashCode ^
+      currency.hashCode ^
+      netType.hashCode ^
+      txid.hashCode ^
+      state.hashCode ^
+      createdAtNs.hashCode ^
+      doneAtNs.hashCode ^
+      amount.hashCode ^
+      fee.hashCode ^
+      transactionType.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitKrwDeposit &&
+          runtimeType == other.runtimeType &&
+          transferType == other.transferType &&
+          uuid == other.uuid &&
+          currency == other.currency &&
+          netType == other.netType &&
+          txid == other.txid &&
+          state == other.state &&
+          createdAtNs == other.createdAtNs &&
+          doneAtNs == other.doneAtNs &&
+          amount == other.amount &&
+          fee == other.fee &&
+          transactionType == other.transactionType;
+}
+
+class WireUpbitKrwTransferRequest {
+  final String amount;
+  final WireUpbitKrwTwoFactorType twoFactorType;
+
+  const WireUpbitKrwTransferRequest({
+    required this.amount,
+    required this.twoFactorType,
+  });
+
+  @override
+  int get hashCode => amount.hashCode ^ twoFactorType.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitKrwTransferRequest &&
+          runtimeType == other.runtimeType &&
+          amount == other.amount &&
+          twoFactorType == other.twoFactorType;
+}
+
+class WireUpbitKrwWithdrawal {
+  final String transferType;
+  final String uuid;
+  final String currency;
+  final String? netType;
+  final String? txid;
+  final String state;
+  final PlatformInt64 createdAtNs;
+  final PlatformInt64? doneAtNs;
+  final String amount;
+  final String fee;
+  final String transactionType;
+  final bool? isCancelable;
+
+  const WireUpbitKrwWithdrawal({
+    required this.transferType,
+    required this.uuid,
+    required this.currency,
+    this.netType,
+    this.txid,
+    required this.state,
+    required this.createdAtNs,
+    this.doneAtNs,
+    required this.amount,
+    required this.fee,
+    required this.transactionType,
+    this.isCancelable,
+  });
+
+  @override
+  int get hashCode =>
+      transferType.hashCode ^
+      uuid.hashCode ^
+      currency.hashCode ^
+      netType.hashCode ^
+      txid.hashCode ^
+      state.hashCode ^
+      createdAtNs.hashCode ^
+      doneAtNs.hashCode ^
+      amount.hashCode ^
+      fee.hashCode ^
+      transactionType.hashCode ^
+      isCancelable.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitKrwWithdrawal &&
+          runtimeType == other.runtimeType &&
+          transferType == other.transferType &&
+          uuid == other.uuid &&
+          currency == other.currency &&
+          netType == other.netType &&
+          txid == other.txid &&
+          state == other.state &&
+          createdAtNs == other.createdAtNs &&
+          doneAtNs == other.doneAtNs &&
+          amount == other.amount &&
+          fee == other.fee &&
+          transactionType == other.transactionType &&
+          isCancelable == other.isCancelable;
+}
+
+class WireUpbitListedSubscription {
+  final String feedType;
+  final List<WireMarket> markets;
+  final String? level;
+
+  const WireUpbitListedSubscription({
+    required this.feedType,
+    required this.markets,
+    this.level,
+  });
+
+  @override
+  int get hashCode => feedType.hashCode ^ markets.hashCode ^ level.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitListedSubscription &&
+          runtimeType == other.runtimeType &&
+          feedType == other.feedType &&
+          markets == other.markets &&
+          level == other.level;
+}
+
 class WireUpbitOrderBookInstrument {
   final WireMarket market;
   final String quoteCurrency;
@@ -1843,6 +3609,176 @@ class WireUpbitOrderBookInstrument {
           supportedLevels == other.supportedLevels;
 }
 
+class WireUpbitOrderDetail {
+  final WireMarket market;
+  final String uuid;
+  final String side;
+  final String orderType;
+  final String? price;
+  final String state;
+  final PlatformInt64 createdAtNs;
+  final String? volume;
+  final String remainingVolume;
+  final String executedVolume;
+  final String reservedFee;
+  final String remainingFee;
+  final String paidFee;
+  final String locked;
+  final int tradesCount;
+  final String preventedVolume;
+  final String preventedLocked;
+  final String? timeInForce;
+  final String? identifier;
+  final String? smpType;
+  final List<WireUpbitOrderDetailTrade> trades;
+
+  const WireUpbitOrderDetail({
+    required this.market,
+    required this.uuid,
+    required this.side,
+    required this.orderType,
+    this.price,
+    required this.state,
+    required this.createdAtNs,
+    this.volume,
+    required this.remainingVolume,
+    required this.executedVolume,
+    required this.reservedFee,
+    required this.remainingFee,
+    required this.paidFee,
+    required this.locked,
+    required this.tradesCount,
+    required this.preventedVolume,
+    required this.preventedLocked,
+    this.timeInForce,
+    this.identifier,
+    this.smpType,
+    required this.trades,
+  });
+
+  @override
+  int get hashCode =>
+      market.hashCode ^
+      uuid.hashCode ^
+      side.hashCode ^
+      orderType.hashCode ^
+      price.hashCode ^
+      state.hashCode ^
+      createdAtNs.hashCode ^
+      volume.hashCode ^
+      remainingVolume.hashCode ^
+      executedVolume.hashCode ^
+      reservedFee.hashCode ^
+      remainingFee.hashCode ^
+      paidFee.hashCode ^
+      locked.hashCode ^
+      tradesCount.hashCode ^
+      preventedVolume.hashCode ^
+      preventedLocked.hashCode ^
+      timeInForce.hashCode ^
+      identifier.hashCode ^
+      smpType.hashCode ^
+      trades.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitOrderDetail &&
+          runtimeType == other.runtimeType &&
+          market == other.market &&
+          uuid == other.uuid &&
+          side == other.side &&
+          orderType == other.orderType &&
+          price == other.price &&
+          state == other.state &&
+          createdAtNs == other.createdAtNs &&
+          volume == other.volume &&
+          remainingVolume == other.remainingVolume &&
+          executedVolume == other.executedVolume &&
+          reservedFee == other.reservedFee &&
+          remainingFee == other.remainingFee &&
+          paidFee == other.paidFee &&
+          locked == other.locked &&
+          tradesCount == other.tradesCount &&
+          preventedVolume == other.preventedVolume &&
+          preventedLocked == other.preventedLocked &&
+          timeInForce == other.timeInForce &&
+          identifier == other.identifier &&
+          smpType == other.smpType &&
+          trades == other.trades;
+}
+
+class WireUpbitOrderDetailRequest {
+  final WireMarket market;
+  final String? uuid;
+  final String? identifier;
+
+  const WireUpbitOrderDetailRequest({
+    required this.market,
+    this.uuid,
+    this.identifier,
+  });
+
+  @override
+  int get hashCode => market.hashCode ^ uuid.hashCode ^ identifier.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitOrderDetailRequest &&
+          runtimeType == other.runtimeType &&
+          market == other.market &&
+          uuid == other.uuid &&
+          identifier == other.identifier;
+}
+
+class WireUpbitOrderDetailTrade {
+  final WireMarket market;
+  final String uuid;
+  final String price;
+  final String volume;
+  final String funds;
+  final String trend;
+  final PlatformInt64 createdAtNs;
+  final String side;
+
+  const WireUpbitOrderDetailTrade({
+    required this.market,
+    required this.uuid,
+    required this.price,
+    required this.volume,
+    required this.funds,
+    required this.trend,
+    required this.createdAtNs,
+    required this.side,
+  });
+
+  @override
+  int get hashCode =>
+      market.hashCode ^
+      uuid.hashCode ^
+      price.hashCode ^
+      volume.hashCode ^
+      funds.hashCode ^
+      trend.hashCode ^
+      createdAtNs.hashCode ^
+      side.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitOrderDetailTrade &&
+          runtimeType == other.runtimeType &&
+          market == other.market &&
+          uuid == other.uuid &&
+          price == other.price &&
+          volume == other.volume &&
+          funds == other.funds &&
+          trend == other.trend &&
+          createdAtNs == other.createdAtNs &&
+          side == other.side;
+}
+
 @freezed
 sealed class WireUpbitOrderReference with _$WireUpbitOrderReference {
   const WireUpbitOrderReference._();
@@ -1861,6 +3797,333 @@ sealed class WireUpbitOrderVolume with _$WireUpbitOrderVolume {
       WireUpbitOrderVolume_Amount;
   const factory WireUpbitOrderVolume.remainOnly() =
       WireUpbitOrderVolume_RemainOnly;
+}
+
+class WireUpbitPocket {
+  final String uuid;
+  final String name;
+  final String kind;
+
+  const WireUpbitPocket({
+    required this.uuid,
+    required this.name,
+    required this.kind,
+  });
+
+  @override
+  int get hashCode => uuid.hashCode ^ name.hashCode ^ kind.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitPocket &&
+          runtimeType == other.runtimeType &&
+          uuid == other.uuid &&
+          name == other.name &&
+          kind == other.kind;
+}
+
+class WireUpbitPocketApiKey {
+  final String accessKey;
+  final List<String> permissions;
+  final List<String> allowedIps;
+  final PlatformInt64 createdAtNs;
+  final PlatformInt64 expiredAtNs;
+
+  const WireUpbitPocketApiKey({
+    required this.accessKey,
+    required this.permissions,
+    required this.allowedIps,
+    required this.createdAtNs,
+    required this.expiredAtNs,
+  });
+
+  @override
+  int get hashCode =>
+      accessKey.hashCode ^
+      permissions.hashCode ^
+      allowedIps.hashCode ^
+      createdAtNs.hashCode ^
+      expiredAtNs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitPocketApiKey &&
+          runtimeType == other.runtimeType &&
+          accessKey == other.accessKey &&
+          permissions == other.permissions &&
+          allowedIps == other.allowedIps &&
+          createdAtNs == other.createdAtNs &&
+          expiredAtNs == other.expiredAtNs;
+}
+
+class WireUpbitPocketApiKeyGroup {
+  final String uuid;
+  final List<WireUpbitPocketApiKey> keys;
+
+  const WireUpbitPocketApiKeyGroup({required this.uuid, required this.keys});
+
+  @override
+  int get hashCode => uuid.hashCode ^ keys.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitPocketApiKeyGroup &&
+          runtimeType == other.runtimeType &&
+          uuid == other.uuid &&
+          keys == other.keys;
+}
+
+class WireUpbitPocketApiKeysRequest {
+  final List<String> uuids;
+  final bool includeExpired;
+
+  const WireUpbitPocketApiKeysRequest({
+    required this.uuids,
+    required this.includeExpired,
+  });
+
+  @override
+  int get hashCode => uuids.hashCode ^ includeExpired.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitPocketApiKeysRequest &&
+          runtimeType == other.runtimeType &&
+          uuids == other.uuids &&
+          includeExpired == other.includeExpired;
+}
+
+class WireUpbitPocketBalance {
+  final String currency;
+  final String balance;
+  final String locked;
+  final String avgBuyPrice;
+  final bool avgBuyPriceModified;
+  final String unitCurrency;
+
+  const WireUpbitPocketBalance({
+    required this.currency,
+    required this.balance,
+    required this.locked,
+    required this.avgBuyPrice,
+    required this.avgBuyPriceModified,
+    required this.unitCurrency,
+  });
+
+  @override
+  int get hashCode =>
+      currency.hashCode ^
+      balance.hashCode ^
+      locked.hashCode ^
+      avgBuyPrice.hashCode ^
+      avgBuyPriceModified.hashCode ^
+      unitCurrency.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitPocketBalance &&
+          runtimeType == other.runtimeType &&
+          currency == other.currency &&
+          balance == other.balance &&
+          locked == other.locked &&
+          avgBuyPrice == other.avgBuyPrice &&
+          avgBuyPriceModified == other.avgBuyPriceModified &&
+          unitCurrency == other.unitCurrency;
+}
+
+class WireUpbitPocketTransfer {
+  final String uuid;
+  final String? identifier;
+  final String from;
+  final String to;
+  final String state;
+  final String currency;
+  final String amount;
+  final PlatformInt64 createdAtNs;
+
+  const WireUpbitPocketTransfer({
+    required this.uuid,
+    this.identifier,
+    required this.from,
+    required this.to,
+    required this.state,
+    required this.currency,
+    required this.amount,
+    required this.createdAtNs,
+  });
+
+  @override
+  int get hashCode =>
+      uuid.hashCode ^
+      identifier.hashCode ^
+      from.hashCode ^
+      to.hashCode ^
+      state.hashCode ^
+      currency.hashCode ^
+      amount.hashCode ^
+      createdAtNs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitPocketTransfer &&
+          runtimeType == other.runtimeType &&
+          uuid == other.uuid &&
+          identifier == other.identifier &&
+          from == other.from &&
+          to == other.to &&
+          state == other.state &&
+          currency == other.currency &&
+          amount == other.amount &&
+          createdAtNs == other.createdAtNs;
+}
+
+class WireUpbitPocketTransferQuery {
+  final String? from;
+  final String? to;
+  final WireUpbitPocketTransferDirection? direction;
+  final List<WireUpbitPocketTransferState> states;
+  final List<String> uuids;
+  final List<String> identifiers;
+  final PlatformInt64? startTimeNs;
+  final PlatformInt64? endTimeNs;
+  final String? currency;
+  final int? limit;
+  final WireUpbitPocketTransferOrder? orderBy;
+
+  const WireUpbitPocketTransferQuery({
+    this.from,
+    this.to,
+    this.direction,
+    required this.states,
+    required this.uuids,
+    required this.identifiers,
+    this.startTimeNs,
+    this.endTimeNs,
+    this.currency,
+    this.limit,
+    this.orderBy,
+  });
+
+  @override
+  int get hashCode =>
+      from.hashCode ^
+      to.hashCode ^
+      direction.hashCode ^
+      states.hashCode ^
+      uuids.hashCode ^
+      identifiers.hashCode ^
+      startTimeNs.hashCode ^
+      endTimeNs.hashCode ^
+      currency.hashCode ^
+      limit.hashCode ^
+      orderBy.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitPocketTransferQuery &&
+          runtimeType == other.runtimeType &&
+          from == other.from &&
+          to == other.to &&
+          direction == other.direction &&
+          states == other.states &&
+          uuids == other.uuids &&
+          identifiers == other.identifiers &&
+          startTimeNs == other.startTimeNs &&
+          endTimeNs == other.endTimeNs &&
+          currency == other.currency &&
+          limit == other.limit &&
+          orderBy == other.orderBy;
+}
+
+class WireUpbitPocketTransferRequest {
+  final String to;
+  final String currency;
+  final String amount;
+  final String? identifier;
+
+  const WireUpbitPocketTransferRequest({
+    required this.to,
+    required this.currency,
+    required this.amount,
+    this.identifier,
+  });
+
+  @override
+  int get hashCode =>
+      to.hashCode ^ currency.hashCode ^ amount.hashCode ^ identifier.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitPocketTransferRequest &&
+          runtimeType == other.runtimeType &&
+          to == other.to &&
+          currency == other.currency &&
+          amount == other.amount &&
+          identifier == other.identifier;
+}
+
+class WireUpbitPocketUniversalTransferRequest {
+  final String? from;
+  final String to;
+  final String currency;
+  final String amount;
+  final String? identifier;
+
+  const WireUpbitPocketUniversalTransferRequest({
+    this.from,
+    required this.to,
+    required this.currency,
+    required this.amount,
+    this.identifier,
+  });
+
+  @override
+  int get hashCode =>
+      from.hashCode ^
+      to.hashCode ^
+      currency.hashCode ^
+      amount.hashCode ^
+      identifier.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitPocketUniversalTransferRequest &&
+          runtimeType == other.runtimeType &&
+          from == other.from &&
+          to == other.to &&
+          currency == other.currency &&
+          amount == other.amount &&
+          identifier == other.identifier;
+}
+
+class WireUpbitSubscriptionList {
+  final String ticket;
+  final List<WireUpbitListedSubscription> subscriptions;
+
+  const WireUpbitSubscriptionList({
+    required this.ticket,
+    required this.subscriptions,
+  });
+
+  @override
+  int get hashCode => ticket.hashCode ^ subscriptions.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireUpbitSubscriptionList &&
+          runtimeType == other.runtimeType &&
+          ticket == other.ticket &&
+          subscriptions == other.subscriptions;
 }
 
 class WireUpbitTravelRuleVasp {

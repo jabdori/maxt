@@ -116,16 +116,23 @@ pub enum OperationMapping {
         /// Exchange-specific typed service operations.
         provider: &'static [&'static str],
     },
-    /// Typed service operation unavailable on one platform.
+    /// 별도 플랫폼·프로토콜 typed service operation.
+    ///
+    /// 이는 lifecycle 및 구현 상태와 독립된 공개 경계입니다. 활성 operation을 manifest 또는
+    /// 구현 감사 범위에서 제외한다는 뜻은 아니지만, 일반 거래소 `Adapter`의 구현 범위에는
+    /// 넣지 않습니다. 지원을 결정하면 이 service 경계에서 구현합니다.
     PlatformLimited {
         /// Service method.
         service: &'static str,
-        /// Unsupported platform.
+        /// Required platform, protocol, runtime, or access boundary.
         platform: &'static str,
     },
 }
 
-/// Current implementation state.
+/// 현재 coverage에 연결된 operation의 구현 상태.
+///
+/// 이 값은 공식 manifest의 lifecycle 또는 exposure와 별개입니다. 아직 coverage bridge가
+/// 없는 공식 행의 Rust 구현 상태는 이 값만으로 추론할 수 없습니다.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Implementation {
     /// Catalogued but not implemented.
@@ -168,6 +175,86 @@ pub enum Availability {
     Testnet,
 }
 
+/// Official catalog scope used when one exchange publishes regional API differences.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CatalogScope {
+    /// The Global Upbit catalog, including Singapore-only operations.
+    Global,
+    /// The Korea Upbit catalog.
+    Korea,
+}
+
+/// Official operation count for one regional product catalog.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RegionalProductCount {
+    /// Owning exchange.
+    pub exchange: Exchange,
+    /// Product identifier from [`PRODUCTS`].
+    pub product: &'static str,
+    /// Official documentation scope.
+    pub scope: CatalogScope,
+    /// Active operation count in this scope.
+    pub endpoint_count: u16,
+}
+
+/// Upbit regional catalog counts at [`BASELINE_DATE`].
+pub const REGIONAL_PRODUCT_COUNTS: &[RegionalProductCount] = &[
+    RegionalProductCount {
+        exchange: Exchange::Upbit,
+        product: "quotation",
+        scope: CatalogScope::Global,
+        endpoint_count: 17,
+    },
+    RegionalProductCount {
+        exchange: Exchange::Upbit,
+        product: "quotation",
+        scope: CatalogScope::Korea,
+        endpoint_count: 17,
+    },
+    RegionalProductCount {
+        exchange: Exchange::Upbit,
+        product: "exchange",
+        scope: CatalogScope::Global,
+        endpoint_count: 14,
+    },
+    RegionalProductCount {
+        exchange: Exchange::Upbit,
+        product: "exchange",
+        scope: CatalogScope::Korea,
+        endpoint_count: 14,
+    },
+    RegionalProductCount {
+        exchange: Exchange::Upbit,
+        product: "wallet",
+        scope: CatalogScope::Global,
+        endpoint_count: 13,
+    },
+    RegionalProductCount {
+        exchange: Exchange::Upbit,
+        product: "wallet",
+        scope: CatalogScope::Korea,
+        endpoint_count: 16,
+    },
+    RegionalProductCount {
+        exchange: Exchange::Upbit,
+        product: "travel_rule",
+        scope: CatalogScope::Global,
+        endpoint_count: 3,
+    },
+    RegionalProductCount {
+        exchange: Exchange::Upbit,
+        product: "travel_rule",
+        scope: CatalogScope::Korea,
+        endpoint_count: 3,
+    },
+    RegionalProductCount {
+        exchange: Exchange::Upbit,
+        product: "pockets",
+        scope: CatalogScope::Korea,
+        endpoint_count: 7,
+    },
+];
+
 /// One product in an exchange's official API catalog.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ProductCoverage {
@@ -186,51 +273,104 @@ pub struct ProductCoverage {
 }
 
 impl ProductCoverage {
-    /// Number of operations currently recorded for this product.
-    pub fn mapped_operations(self) -> usize {
+    /// Number of operations currently recorded for this product in one catalog scope.
+    pub fn mapped_operations_for(self, scope: CatalogScope) -> usize {
         OPERATIONS
             .iter()
-            .filter(|operation| operation.exchange == self.exchange && operation.product == self.id)
+            .filter(|operation| {
+                operation.exchange == self.exchange
+                    && operation.product == self.id
+                    && operation_applies_to_scope(operation, scope)
+            })
             .count()
     }
 
-    /// Number of recorded operations whose full official contract is implemented.
-    pub fn implemented_operations(self) -> usize {
+    /// Number of operations currently recorded for this product in the Global catalog.
+    pub fn mapped_operations(self) -> usize {
+        self.mapped_operations_for(CatalogScope::Global)
+    }
+
+    /// Number of recorded operations whose full official contract is implemented in one scope.
+    pub fn implemented_operations_for(self, scope: CatalogScope) -> usize {
         OPERATIONS
             .iter()
             .filter(|operation| {
                 operation.exchange == self.exchange
                     && operation.product == self.id
                     && operation.implementation == Implementation::Implemented
+                    && operation_applies_to_scope(operation, scope)
             })
             .count()
     }
 
-    /// Number of recorded operations with a partial Rust implementation.
-    pub fn partial_operations(self) -> usize {
+    /// Number of recorded Global operations whose full official contract is implemented.
+    pub fn implemented_operations(self) -> usize {
+        self.implemented_operations_for(CatalogScope::Global)
+    }
+
+    /// Number of recorded operations with a partial Rust implementation in one scope.
+    pub fn partial_operations_for(self, scope: CatalogScope) -> usize {
         OPERATIONS
             .iter()
             .filter(|operation| {
                 operation.exchange == self.exchange
                     && operation.product == self.id
                     && operation.implementation == Implementation::Partial
+                    && operation_applies_to_scope(operation, scope)
             })
             .count()
     }
 
-    /// Product status derived from operation records rather than edited by hand.
-    pub fn stage(self) -> CoverageStage {
-        let mapped = self.mapped_operations();
-        if self.implemented_operations() + self.partial_operations() == 0 {
+    /// Number of recorded Global operations with a partial Rust implementation.
+    pub fn partial_operations(self) -> usize {
+        self.partial_operations_for(CatalogScope::Global)
+    }
+
+    /// Official endpoint count for one catalog scope.
+    pub fn endpoint_count_for(self, scope: CatalogScope) -> Option<u16> {
+        REGIONAL_PRODUCT_COUNTS
+            .iter()
+            .find(|count| {
+                count.exchange == self.exchange && count.product == self.id && count.scope == scope
+            })
+            .map(|count| count.endpoint_count)
+            .or_else(|| {
+                (scope == CatalogScope::Global)
+                    .then_some(self.endpoint_count)
+                    .flatten()
+            })
+    }
+
+    /// Product status derived from operation records rather than edited by hand in one scope.
+    pub fn stage_for(self, scope: CatalogScope) -> CoverageStage {
+        let mapped = self.mapped_operations_for(scope);
+        if self.implemented_operations_for(scope) + self.partial_operations_for(scope) == 0 {
             return CoverageStage::Planned;
         }
-        if self.endpoint_count == u16::try_from(mapped).ok()
-            && self.implemented_operations() == mapped
+        if self.endpoint_count_for(scope) == u16::try_from(mapped).ok()
+            && self.implemented_operations_for(scope) == mapped
         {
             CoverageStage::Complete
         } else {
             CoverageStage::Partial
         }
+    }
+
+    /// Global product status derived from operation records rather than edited by hand.
+    pub fn stage(self) -> CoverageStage {
+        self.stage_for(CatalogScope::Global)
+    }
+}
+
+fn operation_applies_to_scope(operation: &OperationCoverage, scope: CatalogScope) -> bool {
+    if operation.exchange != Exchange::Upbit {
+        return true;
+    }
+    match operation.availability {
+        Availability::Region("Korea") => scope == CatalogScope::Korea,
+        Availability::Region("Korea or Singapore") => true,
+        Availability::Region(_) => false,
+        _ => true,
     }
 }
 
@@ -966,7 +1106,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("subscribe"),
         Validation::LiveRead,
     )),
-    planned(operation(
+    operation(
         Exchange::Upbit,
         "quotation",
         "list_subscriptions",
@@ -976,8 +1116,8 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         Authentication::Public,
         OperationRisk::Read,
         OperationMapping::Provider("list_subscriptions"),
-        Validation::Documented,
-    )),
+        Validation::Fixture,
+    ),
     operation(
         Exchange::Upbit,
         "exchange",
@@ -1026,7 +1166,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("open_orders"),
         Validation::Fixture,
     ),
-    partial(operation(
+    operation(
         Exchange::Upbit,
         "exchange",
         "get_order",
@@ -1035,9 +1175,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::Read,
-        OperationMapping::CommonMany(&["order", "order_by_client_id"]),
+        OperationMapping::CommonAndProvider {
+            common: &["order", "order_by_client_id"],
+            provider: &["order_detail"],
+        },
         Validation::Fixture,
-    )),
+    ),
     partial(operation(
         Exchange::Upbit,
         "exchange",
@@ -1050,7 +1193,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("orders_by_ids"),
         Validation::Fixture,
     )),
-    partial(operation(
+    operation(
         Exchange::Upbit,
         "exchange",
         "closed_orders",
@@ -1059,9 +1202,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::Read,
-        OperationMapping::Common("order_history"),
+        OperationMapping::CommonAndProvider {
+            common: &["order_history"],
+            provider: &["closed_orders"],
+        },
         Validation::Fixture,
-    )),
+    ),
     partial(operation(
         Exchange::Upbit,
         "exchange",
@@ -1305,6 +1451,156 @@ pub const OPERATIONS: &[OperationCoverage] = &[
     restricted(
         operation(
             Exchange::Upbit,
+            "wallet",
+            "deposit_krw",
+            "POST",
+            "/v1/deposits/krw",
+            ApiInterface::Http,
+            Authentication::Jwt,
+            OperationRisk::FinancialWrite,
+            OperationMapping::Provider("deposit_krw"),
+            Validation::Fixture,
+        ),
+        Availability::Region("Korea"),
+    ),
+    restricted(
+        operation(
+            Exchange::Upbit,
+            "wallet",
+            "withdraw_krw",
+            "POST",
+            "/v1/withdraws/krw",
+            ApiInterface::Http,
+            Authentication::Jwt,
+            OperationRisk::FinancialWrite,
+            OperationMapping::Provider("withdraw_krw"),
+            Validation::Fixture,
+        ),
+        Availability::Region("Korea"),
+    ),
+    restricted(
+        operation(
+            Exchange::Upbit,
+            "wallet",
+            "api_keys",
+            "GET",
+            "/v1/api_keys",
+            ApiInterface::Http,
+            Authentication::Jwt,
+            OperationRisk::Read,
+            OperationMapping::Provider("api_keys"),
+            Validation::Fixture,
+        ),
+        Availability::Region("Korea"),
+    ),
+    restricted(
+        operation(
+            Exchange::Upbit,
+            "pockets",
+            "list_pockets",
+            "GET",
+            "/v1/pockets",
+            ApiInterface::Http,
+            Authentication::Jwt,
+            OperationRisk::Read,
+            OperationMapping::Provider("list_pockets"),
+            Validation::Fixture,
+        ),
+        Availability::Region("Korea"),
+    ),
+    restricted(
+        operation(
+            Exchange::Upbit,
+            "pockets",
+            "list_pocket_api_keys",
+            "GET",
+            "/v1/pockets/api_keys",
+            ApiInterface::Http,
+            Authentication::Jwt,
+            OperationRisk::Read,
+            OperationMapping::Provider("list_pocket_api_keys"),
+            Validation::Fixture,
+        ),
+        Availability::Region("Korea"),
+    ),
+    restricted(
+        operation(
+            Exchange::Upbit,
+            "pockets",
+            "sub_pocket_balances",
+            "GET",
+            "/v1/pockets/assets",
+            ApiInterface::Http,
+            Authentication::Jwt,
+            OperationRisk::Read,
+            OperationMapping::Provider("sub_pocket_balances"),
+            Validation::Fixture,
+        ),
+        Availability::Region("Korea"),
+    ),
+    restricted(
+        operation(
+            Exchange::Upbit,
+            "pockets",
+            "universal_transfer",
+            "POST",
+            "/v1/pockets/universal_transfers",
+            ApiInterface::Http,
+            Authentication::Jwt,
+            OperationRisk::FinancialWrite,
+            OperationMapping::Provider("universal_transfer"),
+            Validation::Fixture,
+        ),
+        Availability::Region("Korea"),
+    ),
+    restricted(
+        operation(
+            Exchange::Upbit,
+            "pockets",
+            "universal_transfers",
+            "GET",
+            "/v1/pockets/universal_transfers",
+            ApiInterface::Http,
+            Authentication::Jwt,
+            OperationRisk::Read,
+            OperationMapping::Provider("universal_transfers"),
+            Validation::Fixture,
+        ),
+        Availability::Region("Korea"),
+    ),
+    restricted(
+        operation(
+            Exchange::Upbit,
+            "pockets",
+            "sub_pocket_transfer",
+            "POST",
+            "/v1/pockets/transfers",
+            ApiInterface::Http,
+            Authentication::Jwt,
+            OperationRisk::FinancialWrite,
+            OperationMapping::Provider("sub_pocket_transfer"),
+            Validation::Fixture,
+        ),
+        Availability::Region("Korea"),
+    ),
+    restricted(
+        operation(
+            Exchange::Upbit,
+            "pockets",
+            "sub_pocket_transfers",
+            "GET",
+            "/v1/pockets/transfers",
+            ApiInterface::Http,
+            Authentication::Jwt,
+            OperationRisk::Read,
+            OperationMapping::Provider("sub_pocket_transfers"),
+            Validation::Fixture,
+        ),
+        Availability::Region("Korea"),
+    ),
+    restricted(
+        operation(
+            Exchange::Upbit,
             "travel_rule",
             "travel_rule_vasps",
             "GET",
@@ -1422,7 +1718,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("trades"),
         Validation::LiveRead,
     ),
-    partial(operation(
+    operation(
         Exchange::Bithumb,
         "quotation",
         "ticker",
@@ -1433,7 +1729,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationRisk::Read,
         OperationMapping::Common("ticker"),
         Validation::LiveRead,
-    )),
+    ),
     partial(operation(
         Exchange::Bithumb,
         "quotation",
@@ -1551,10 +1847,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::Read,
-        OperationMapping::Common("open_orders"),
+        OperationMapping::CommonAndProvider {
+            common: &["open_orders"],
+            provider: &["order_list"],
+        },
         Validation::Fixture,
     )),
-    partial(operation(
+    operation(
         Exchange::Bithumb,
         "exchange",
         "get_order",
@@ -1563,9 +1862,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::Read,
-        OperationMapping::CommonMany(&["order", "order_by_client_id"]),
+        OperationMapping::CommonAndProvider {
+            common: &["order", "order_by_client_id"],
+            provider: &["order_detail"],
+        },
         Validation::Fixture,
-    )),
+    ),
     partial(operation(
         Exchange::Bithumb,
         "exchange",
@@ -1590,7 +1892,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Provider("pending_orders"),
         Validation::Fixture,
     ),
-    partial(operation(
+    operation(
         Exchange::Bithumb,
         "exchange",
         "closed_orders",
@@ -1599,9 +1901,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::Read,
-        OperationMapping::Common("order_history"),
+        OperationMapping::CommonAndProvider {
+            common: &["order_history"],
+            provider: &["closed_orders"],
+        },
         Validation::Fixture,
-    )),
+    ),
     partial(operation(
         Exchange::Bithumb,
         "exchange",
@@ -1743,7 +2048,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::Read,
-        OperationMapping::Common("prepare_withdrawal"),
+        OperationMapping::Provider("withdrawal_addresses"),
         Validation::Fixture,
     ),
     operation(
@@ -1941,6 +2246,30 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("trades"),
         Validation::LiveRead,
     ),
+    partial(operation(
+        Exchange::Binance,
+        "spot",
+        "aggregate_trades",
+        "GET",
+        "/api/v3/aggTrades",
+        ApiInterface::Http,
+        Authentication::Public,
+        OperationRisk::Read,
+        OperationMapping::Provider("aggregate_trades"),
+        Validation::Fixture,
+    )),
+    operation(
+        Exchange::Binance,
+        "spot",
+        "average_price",
+        "GET",
+        "/api/v3/avgPrice",
+        ApiInterface::Http,
+        Authentication::Public,
+        OperationRisk::Read,
+        OperationMapping::Provider("spot_average_price"),
+        Validation::Fixture,
+    ),
     operation(
         Exchange::Binance,
         "spot",
@@ -2025,6 +2354,42 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::CommonMany(&["cancel_order", "cancel_order_by_client_id"]),
         Validation::Fixture,
     )),
+    operation(
+        Exchange::Binance,
+        "spot",
+        "account_trades",
+        "GET",
+        "/api/v3/myTrades",
+        ApiInterface::Http,
+        Authentication::Hmac,
+        OperationRisk::Read,
+        OperationMapping::Provider("account_trades"),
+        Validation::Fixture,
+    ),
+    operation(
+        Exchange::Binance,
+        "spot",
+        "test_order",
+        "POST",
+        "/api/v3/order/test",
+        ApiInterface::Http,
+        Authentication::Hmac,
+        OperationRisk::FinancialWrite,
+        OperationMapping::Provider("test_order"),
+        Validation::Fixture,
+    ),
+    operation(
+        Exchange::Binance,
+        "spot",
+        "cancel_all_open_orders",
+        "DELETE",
+        "/api/v3/openOrders",
+        ApiInterface::Http,
+        Authentication::Hmac,
+        OperationRisk::FinancialWrite,
+        OperationMapping::Provider("cancel_all_open_orders"),
+        Validation::Fixture,
+    ),
     operation(
         Exchange::Binance,
         "spot",
@@ -2241,6 +2606,42 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::CommonMany(&["cancel_order", "cancel_order_by_client_id"]),
         Validation::Fixture,
     )),
+    operation(
+        Exchange::Binance,
+        "usd_m",
+        "account_trades",
+        "GET",
+        "/fapi/v1/userTrades",
+        ApiInterface::Http,
+        Authentication::Hmac,
+        OperationRisk::Read,
+        OperationMapping::Provider("account_trades"),
+        Validation::Fixture,
+    ),
+    operation(
+        Exchange::Binance,
+        "usd_m",
+        "test_order",
+        "POST",
+        "/fapi/v1/order/test",
+        ApiInterface::Http,
+        Authentication::Hmac,
+        OperationRisk::FinancialWrite,
+        OperationMapping::Provider("test_order"),
+        Validation::Fixture,
+    ),
+    operation(
+        Exchange::Binance,
+        "usd_m",
+        "cancel_all_open_orders",
+        "DELETE",
+        "/fapi/v1/allOpenOrders",
+        ApiInterface::Http,
+        Authentication::Hmac,
+        OperationRisk::FinancialWrite,
+        OperationMapping::Provider("cancel_all_open_orders"),
+        Validation::Fixture,
+    ),
     operation(
         Exchange::Binance,
         "usd_m",
@@ -2496,6 +2897,18 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("withdrawals"),
         Validation::Fixture,
     ),
+    operation(
+        Exchange::Binance,
+        "c2c",
+        "c2c_trade_history",
+        "GET",
+        "/sapi/v1/c2c/orderMatch/listUserOrderHistory",
+        ApiInterface::Http,
+        Authentication::Hmac,
+        OperationRisk::Read,
+        OperationMapping::Provider("c2c_trade_history"),
+        Validation::Fixture,
+    ),
     partial(operation(
         Exchange::Hyperliquid,
         "info",
@@ -2532,6 +2945,66 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Provider("all_mids"),
         Validation::Fixture,
     )),
+    operation(
+        Exchange::Hyperliquid,
+        "info",
+        "user_fills",
+        "POST",
+        "/info type=userFills",
+        ApiInterface::Http,
+        Authentication::Public,
+        OperationRisk::Read,
+        OperationMapping::Provider("user_fills"),
+        Validation::Fixture,
+    ),
+    operation(
+        Exchange::Hyperliquid,
+        "info",
+        "user_fills_by_time",
+        "POST",
+        "/info type=userFillsByTime",
+        ApiInterface::Http,
+        Authentication::Public,
+        OperationRisk::Read,
+        OperationMapping::Provider("user_fills_by_time"),
+        Validation::Fixture,
+    ),
+    operation(
+        Exchange::Hyperliquid,
+        "info",
+        "open_orders",
+        "POST",
+        "/info type=openOrders",
+        ApiInterface::Http,
+        Authentication::Public,
+        OperationRisk::Read,
+        OperationMapping::Provider("basic_open_orders"),
+        Validation::Fixture,
+    ),
+    operation(
+        Exchange::Hyperliquid,
+        "info",
+        "order_status",
+        "POST",
+        "/info type=orderStatus",
+        ApiInterface::Http,
+        Authentication::Public,
+        OperationRisk::Read,
+        OperationMapping::Provider("order_status"),
+        Validation::Fixture,
+    ),
+    operation(
+        Exchange::Hyperliquid,
+        "info",
+        "historical_orders",
+        "POST",
+        "/info type=historicalOrders",
+        ApiInterface::Http,
+        Authentication::Public,
+        OperationRisk::Read,
+        OperationMapping::Provider("historical_orders"),
+        Validation::Fixture,
+    ),
     partial(operation(
         Exchange::Hyperliquid,
         "info",
@@ -2608,6 +3081,90 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         Authentication::Public,
         OperationRisk::Read,
         OperationMapping::Common("balances"),
+        Validation::Fixture,
+    ),
+    operation(
+        Exchange::Hyperliquid,
+        "info",
+        "user_rate_limit",
+        "POST",
+        "/info type=userRateLimit",
+        ApiInterface::Http,
+        Authentication::Public,
+        OperationRisk::Read,
+        OperationMapping::Provider("user_rate_limit"),
+        Validation::Fixture,
+    ),
+    operation(
+        Exchange::Hyperliquid,
+        "info",
+        "user_role",
+        "POST",
+        "/info type=userRole",
+        ApiInterface::Http,
+        Authentication::Public,
+        OperationRisk::Read,
+        OperationMapping::Provider("user_role"),
+        Validation::Fixture,
+    ),
+    operation(
+        Exchange::Hyperliquid,
+        "info",
+        "referral",
+        "POST",
+        "/info type=referral",
+        ApiInterface::Http,
+        Authentication::Public,
+        OperationRisk::Read,
+        OperationMapping::Provider("referral"),
+        Validation::Fixture,
+    ),
+    operation(
+        Exchange::Hyperliquid,
+        "info",
+        "user_fees",
+        "POST",
+        "/info type=userFees",
+        ApiInterface::Http,
+        Authentication::Public,
+        OperationRisk::Read,
+        OperationMapping::Provider("user_fees"),
+        Validation::Fixture,
+    ),
+    operation(
+        Exchange::Hyperliquid,
+        "info",
+        "portfolio",
+        "POST",
+        "/info type=portfolio",
+        ApiInterface::Http,
+        Authentication::Public,
+        OperationRisk::Read,
+        OperationMapping::Provider("portfolio"),
+        Validation::Fixture,
+    ),
+    operation(
+        Exchange::Hyperliquid,
+        "info",
+        "sub_accounts",
+        "POST",
+        "/info type=subAccounts",
+        ApiInterface::Http,
+        Authentication::Public,
+        OperationRisk::Read,
+        OperationMapping::Provider("sub_accounts"),
+        Validation::Fixture,
+    ),
+    operation(
+        Exchange::Hyperliquid,
+        "info",
+        "user_vault_equities",
+        "POST",
+        "/info type=userVaultEquities",
+        ApiInterface::Http,
+        Authentication::Public,
+        OperationRisk::Read,
+        OperationMapping::Provider("user_vault_equities"),
         Validation::Fixture,
     ),
     partial(operation(
@@ -2776,18 +3333,6 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         Authentication::Public,
         OperationRisk::Read,
         OperationMapping::Common("subscribe_account"),
-        Validation::Fixture,
-    ),
-    operation(
-        Exchange::Hyperliquid,
-        "subscriptions",
-        "ping",
-        "REQUEST",
-        "ping",
-        ApiInterface::WebSocketStream,
-        Authentication::Public,
-        OperationRisk::Read,
-        OperationMapping::Common("subscribe"),
         Validation::Fixture,
     ),
 ];

@@ -98,6 +98,30 @@ impl From<WireDepositStatus> for maxt::DepositStatus {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireUpbitClosedOrderState {
+    Done,
+    Cancel,
+}
+
+impl From<maxt::adapters::UpbitClosedOrderState> for WireUpbitClosedOrderState {
+    fn from(value: maxt::adapters::UpbitClosedOrderState) -> Self {
+        match value {
+            maxt::adapters::UpbitClosedOrderState::Done => Self::Done,
+            maxt::adapters::UpbitClosedOrderState::Cancel => Self::Cancel,
+        }
+    }
+}
+
+impl From<WireUpbitClosedOrderState> for maxt::adapters::UpbitClosedOrderState {
+    fn from(value: WireUpbitClosedOrderState) -> Self {
+        match value {
+            WireUpbitClosedOrderState::Done => Self::Done,
+            WireUpbitClosedOrderState::Cancel => Self::Cancel,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireOrderAccount {
     pub balance: WireBalance,
@@ -1171,6 +1195,38 @@ impl TryFrom<WireTransferHistoryRequest> for maxt::TransferHistoryRequest {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitListedSubscription {
+    pub feed_type: String,
+    pub markets: Vec<WireMarket>,
+    pub level: Option<String>,
+}
+
+impl From<maxt::UpbitListedSubscription> for WireUpbitListedSubscription {
+    fn from(value: maxt::UpbitListedSubscription) -> Self {
+        Self {
+            feed_type: value.feed_type,
+            markets: value.markets.into_iter().map(Into::into).collect(),
+            level: value.level.map(decimal_to_wire),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitSubscriptionList {
+    pub ticket: String,
+    pub subscriptions: Vec<WireUpbitListedSubscription>,
+}
+
+impl From<maxt::UpbitSubscriptionList> for WireUpbitSubscriptionList {
+    fn from(value: maxt::UpbitSubscriptionList) -> Self {
+        Self {
+            ticket: value.ticket,
+            subscriptions: value.subscriptions.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireUpbitYearCandle {
     pub market: WireMarket,
     pub open_time_ns: i64,
@@ -1264,6 +1320,209 @@ impl TryFrom<WireUpbitOrderBookInstrument> for maxt::UpbitOrderBookInstrument {
                 })
                 .collect::<Result<_, _>>()?,
         })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitOrderDetailRequest {
+    pub market: WireMarket,
+    pub uuid: Option<String>,
+    pub identifier: Option<String>,
+}
+
+impl From<maxt::UpbitOrderDetailRequest> for WireUpbitOrderDetailRequest {
+    fn from(value: maxt::UpbitOrderDetailRequest) -> Self {
+        Self {
+            market: value.market.into(),
+            uuid: value.uuid,
+            identifier: value.identifier,
+        }
+    }
+}
+
+impl TryFrom<WireUpbitOrderDetailRequest> for maxt::UpbitOrderDetailRequest {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitOrderDetailRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.into(),
+            uuid: value.uuid,
+            identifier: value.identifier,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitOrderDetailTrade {
+    pub market: WireMarket,
+    pub uuid: String,
+    pub price: String,
+    pub volume: String,
+    pub funds: String,
+    pub trend: String,
+    pub created_at_ns: i64,
+    pub side: String,
+}
+
+impl From<maxt::UpbitOrderDetailTrade> for WireUpbitOrderDetailTrade {
+    fn from(value: maxt::UpbitOrderDetailTrade) -> Self {
+        Self {
+            market: value.market.into(),
+            uuid: value.uuid,
+            price: decimal_to_wire(value.price),
+            volume: decimal_to_wire(value.volume),
+            funds: decimal_to_wire(value.funds),
+            trend: value.trend,
+            created_at_ns: timestamp_to_wire(value.created_at),
+            side: value.side,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitOrderDetail {
+    pub market: WireMarket,
+    pub uuid: String,
+    pub side: String,
+    pub order_type: String,
+    pub price: Option<String>,
+    pub state: String,
+    pub created_at_ns: i64,
+    pub volume: Option<String>,
+    pub remaining_volume: String,
+    pub executed_volume: String,
+    pub reserved_fee: String,
+    pub remaining_fee: String,
+    pub paid_fee: String,
+    pub locked: String,
+    pub trades_count: u32,
+    pub prevented_volume: String,
+    pub prevented_locked: String,
+    pub time_in_force: Option<String>,
+    pub identifier: Option<String>,
+    pub smp_type: Option<String>,
+    pub trades: Vec<WireUpbitOrderDetailTrade>,
+}
+
+impl From<maxt::UpbitOrderDetail> for WireUpbitOrderDetail {
+    fn from(value: maxt::UpbitOrderDetail) -> Self {
+        Self {
+            market: value.market.into(),
+            uuid: value.uuid,
+            side: value.side,
+            order_type: value.order_type,
+            price: value.price.map(decimal_to_wire),
+            state: value.state,
+            created_at_ns: timestamp_to_wire(value.created_at),
+            volume: value.volume.map(decimal_to_wire),
+            remaining_volume: decimal_to_wire(value.remaining_volume),
+            executed_volume: decimal_to_wire(value.executed_volume),
+            reserved_fee: decimal_to_wire(value.reserved_fee),
+            remaining_fee: decimal_to_wire(value.remaining_fee),
+            paid_fee: decimal_to_wire(value.paid_fee),
+            locked: decimal_to_wire(value.locked),
+            trades_count: value.trades_count,
+            prevented_volume: decimal_to_wire(value.prevented_volume),
+            prevented_locked: decimal_to_wire(value.prevented_locked),
+            time_in_force: value.time_in_force,
+            identifier: value.identifier,
+            smp_type: value.smp_type,
+            trades: value.trades.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitClosedOrdersRequest {
+    pub market: Option<WireMarket>,
+    pub state: Option<WireUpbitClosedOrderState>,
+    pub states: Vec<WireUpbitClosedOrderState>,
+    pub start_time_ns: Option<i64>,
+    pub end_time_ns: Option<i64>,
+    pub limit: Option<u32>,
+    pub order_by: Option<WireUpbitOrderDirection>,
+}
+
+impl From<maxt::UpbitClosedOrdersRequest> for WireUpbitClosedOrdersRequest {
+    fn from(value: maxt::UpbitClosedOrdersRequest) -> Self {
+        Self {
+            market: value.market.map(Into::into),
+            state: value.state.map(Into::into),
+            states: value.states.into_iter().map(Into::into).collect(),
+            start_time_ns: value.start_time.map(timestamp_to_wire),
+            end_time_ns: value.end_time.map(timestamp_to_wire),
+            limit: value.limit,
+            order_by: value.order_by.map(Into::into),
+        }
+    }
+}
+
+impl TryFrom<WireUpbitClosedOrdersRequest> for maxt::UpbitClosedOrdersRequest {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitClosedOrdersRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.map(Into::into),
+            state: value.state.map(Into::into),
+            states: value.states.into_iter().map(Into::into).collect(),
+            start_time: value.start_time_ns.map(Timestamp::from_nanos),
+            end_time: value.end_time_ns.map(Timestamp::from_nanos),
+            limit: value.limit,
+            order_by: value.order_by.map(Into::into),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitClosedOrder {
+    pub market: WireMarket,
+    pub uuid: String,
+    pub side: String,
+    pub ord_type: String,
+    pub state: String,
+    pub created_at_ns: i64,
+    pub volume: Option<String>,
+    pub price: Option<String>,
+    pub remaining_volume: String,
+    pub executed_volume: String,
+    pub executed_funds: Option<String>,
+    pub reserved_fee: String,
+    pub remaining_fee: String,
+    pub paid_fee: String,
+    pub locked: String,
+    pub trades_count: u32,
+    pub prevented_volume: String,
+    pub prevented_locked: String,
+    pub time_in_force: Option<String>,
+    pub identifier: Option<String>,
+    pub smp_type: Option<String>,
+}
+
+impl From<maxt::UpbitClosedOrder> for WireUpbitClosedOrder {
+    fn from(value: maxt::UpbitClosedOrder) -> Self {
+        Self {
+            market: value.market.into(),
+            uuid: value.uuid,
+            side: value.side,
+            ord_type: value.ord_type,
+            state: value.state,
+            created_at_ns: timestamp_to_wire(value.created_at),
+            volume: value.volume.map(decimal_to_wire),
+            price: value.price.map(decimal_to_wire),
+            remaining_volume: decimal_to_wire(value.remaining_volume),
+            executed_volume: decimal_to_wire(value.executed_volume),
+            executed_funds: value.executed_funds.map(decimal_to_wire),
+            reserved_fee: decimal_to_wire(value.reserved_fee),
+            remaining_fee: decimal_to_wire(value.remaining_fee),
+            paid_fee: decimal_to_wire(value.paid_fee),
+            locked: decimal_to_wire(value.locked),
+            trades_count: value.trades_count,
+            prevented_volume: decimal_to_wire(value.prevented_volume),
+            prevented_locked: decimal_to_wire(value.prevented_locked),
+            time_in_force: value.time_in_force,
+            identifier: value.identifier,
+            smp_type: value.smp_type,
+        }
     }
 }
 
@@ -1666,6 +1925,492 @@ impl TryFrom<WireUpbitCancelAndNewOrderResult> for maxt::UpbitCancelAndNewOrderR
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitKrwTransferRequest {
+    pub amount: String,
+    pub two_factor_type: WireUpbitKrwTwoFactorType,
+}
+
+impl From<maxt::UpbitKrwTransferRequest> for WireUpbitKrwTransferRequest {
+    fn from(value: maxt::UpbitKrwTransferRequest) -> Self {
+        Self {
+            amount: decimal_to_wire(value.amount),
+            two_factor_type: value.two_factor_type.into(),
+        }
+    }
+}
+
+impl TryFrom<WireUpbitKrwTransferRequest> for maxt::UpbitKrwTransferRequest {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitKrwTransferRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            amount: decimal_from_wire(&value.amount, "amount").map_err(NativeError::from)?,
+            two_factor_type: value.two_factor_type.into(),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitKrwDeposit {
+    pub transfer_type: String,
+    pub uuid: String,
+    pub currency: String,
+    pub net_type: Option<String>,
+    pub txid: String,
+    pub state: String,
+    pub created_at_ns: i64,
+    pub done_at_ns: Option<i64>,
+    pub amount: String,
+    pub fee: String,
+    pub transaction_type: String,
+}
+
+impl From<maxt::UpbitKrwDeposit> for WireUpbitKrwDeposit {
+    fn from(value: maxt::UpbitKrwDeposit) -> Self {
+        Self {
+            transfer_type: value.transfer_type,
+            uuid: value.uuid,
+            currency: value.currency,
+            net_type: value.net_type,
+            txid: value.txid,
+            state: value.state,
+            created_at_ns: timestamp_to_wire(value.created_at),
+            done_at_ns: value.done_at.map(timestamp_to_wire),
+            amount: decimal_to_wire(value.amount),
+            fee: decimal_to_wire(value.fee),
+            transaction_type: value.transaction_type,
+        }
+    }
+}
+
+impl TryFrom<WireUpbitKrwDeposit> for maxt::UpbitKrwDeposit {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitKrwDeposit) -> Result<Self, Self::Error> {
+        Ok(Self {
+            transfer_type: value.transfer_type,
+            uuid: value.uuid,
+            currency: value.currency,
+            net_type: value.net_type,
+            txid: value.txid,
+            state: value.state,
+            created_at: Timestamp::from_nanos(value.created_at_ns),
+            done_at: value.done_at_ns.map(Timestamp::from_nanos),
+            amount: decimal_from_wire(&value.amount, "amount").map_err(NativeError::from)?,
+            fee: decimal_from_wire(&value.fee, "fee").map_err(NativeError::from)?,
+            transaction_type: value.transaction_type,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitKrwWithdrawal {
+    pub transfer_type: String,
+    pub uuid: String,
+    pub currency: String,
+    pub net_type: Option<String>,
+    pub txid: Option<String>,
+    pub state: String,
+    pub created_at_ns: i64,
+    pub done_at_ns: Option<i64>,
+    pub amount: String,
+    pub fee: String,
+    pub transaction_type: String,
+    pub is_cancelable: Option<bool>,
+}
+
+impl From<maxt::UpbitKrwWithdrawal> for WireUpbitKrwWithdrawal {
+    fn from(value: maxt::UpbitKrwWithdrawal) -> Self {
+        Self {
+            transfer_type: value.transfer_type,
+            uuid: value.uuid,
+            currency: value.currency,
+            net_type: value.net_type,
+            txid: value.txid,
+            state: value.state,
+            created_at_ns: timestamp_to_wire(value.created_at),
+            done_at_ns: value.done_at.map(timestamp_to_wire),
+            amount: decimal_to_wire(value.amount),
+            fee: decimal_to_wire(value.fee),
+            transaction_type: value.transaction_type,
+            is_cancelable: value.is_cancelable,
+        }
+    }
+}
+
+impl TryFrom<WireUpbitKrwWithdrawal> for maxt::UpbitKrwWithdrawal {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitKrwWithdrawal) -> Result<Self, Self::Error> {
+        Ok(Self {
+            transfer_type: value.transfer_type,
+            uuid: value.uuid,
+            currency: value.currency,
+            net_type: value.net_type,
+            txid: value.txid,
+            state: value.state,
+            created_at: Timestamp::from_nanos(value.created_at_ns),
+            done_at: value.done_at_ns.map(Timestamp::from_nanos),
+            amount: decimal_from_wire(&value.amount, "amount").map_err(NativeError::from)?,
+            fee: decimal_from_wire(&value.fee, "fee").map_err(NativeError::from)?,
+            transaction_type: value.transaction_type,
+            is_cancelable: value.is_cancelable,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitApiKey {
+    pub access_key: String,
+    pub expires_at_ns: i64,
+}
+
+impl From<maxt::UpbitApiKey> for WireUpbitApiKey {
+    fn from(value: maxt::UpbitApiKey) -> Self {
+        Self {
+            access_key: value.access_key,
+            expires_at_ns: timestamp_to_wire(value.expires_at),
+        }
+    }
+}
+
+impl TryFrom<WireUpbitApiKey> for maxt::UpbitApiKey {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitApiKey) -> Result<Self, Self::Error> {
+        Ok(Self {
+            access_key: value.access_key,
+            expires_at: Timestamp::from_nanos(value.expires_at_ns),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitPocket {
+    pub uuid: String,
+    pub name: String,
+    pub kind: String,
+}
+
+impl From<maxt::UpbitPocket> for WireUpbitPocket {
+    fn from(value: maxt::UpbitPocket) -> Self {
+        Self {
+            uuid: value.uuid,
+            name: value.name,
+            kind: value.kind,
+        }
+    }
+}
+
+impl TryFrom<WireUpbitPocket> for maxt::UpbitPocket {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitPocket) -> Result<Self, Self::Error> {
+        Ok(Self {
+            uuid: value.uuid,
+            name: value.name,
+            kind: value.kind,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitPocketApiKey {
+    pub access_key: String,
+    pub permissions: Vec<String>,
+    pub allowed_ips: Vec<String>,
+    pub created_at_ns: i64,
+    pub expired_at_ns: i64,
+}
+
+impl From<maxt::UpbitPocketApiKey> for WireUpbitPocketApiKey {
+    fn from(value: maxt::UpbitPocketApiKey) -> Self {
+        Self {
+            access_key: value.access_key,
+            permissions: value.permissions,
+            allowed_ips: value.allowed_ips,
+            created_at_ns: timestamp_to_wire(value.created_at),
+            expired_at_ns: timestamp_to_wire(value.expired_at),
+        }
+    }
+}
+
+impl TryFrom<WireUpbitPocketApiKey> for maxt::UpbitPocketApiKey {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitPocketApiKey) -> Result<Self, Self::Error> {
+        Ok(Self {
+            access_key: value.access_key,
+            permissions: value.permissions,
+            allowed_ips: value.allowed_ips,
+            created_at: Timestamp::from_nanos(value.created_at_ns),
+            expired_at: Timestamp::from_nanos(value.expired_at_ns),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitPocketApiKeyGroup {
+    pub uuid: String,
+    pub keys: Vec<WireUpbitPocketApiKey>,
+}
+
+impl From<maxt::UpbitPocketApiKeyGroup> for WireUpbitPocketApiKeyGroup {
+    fn from(value: maxt::UpbitPocketApiKeyGroup) -> Self {
+        Self {
+            uuid: value.uuid,
+            keys: value.keys.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl TryFrom<WireUpbitPocketApiKeyGroup> for maxt::UpbitPocketApiKeyGroup {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitPocketApiKeyGroup) -> Result<Self, Self::Error> {
+        Ok(Self {
+            uuid: value.uuid,
+            keys: value
+                .keys
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitPocketApiKeysRequest {
+    pub uuids: Vec<String>,
+    pub include_expired: bool,
+}
+
+impl From<maxt::UpbitPocketApiKeysRequest> for WireUpbitPocketApiKeysRequest {
+    fn from(value: maxt::UpbitPocketApiKeysRequest) -> Self {
+        Self {
+            uuids: value.uuids,
+            include_expired: value.include_expired,
+        }
+    }
+}
+
+impl TryFrom<WireUpbitPocketApiKeysRequest> for maxt::UpbitPocketApiKeysRequest {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitPocketApiKeysRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            uuids: value.uuids,
+            include_expired: value.include_expired,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitPocketBalance {
+    pub currency: String,
+    pub balance: String,
+    pub locked: String,
+    pub avg_buy_price: String,
+    pub avg_buy_price_modified: bool,
+    pub unit_currency: String,
+}
+
+impl From<maxt::UpbitPocketBalance> for WireUpbitPocketBalance {
+    fn from(value: maxt::UpbitPocketBalance) -> Self {
+        Self {
+            currency: value.currency,
+            balance: decimal_to_wire(value.balance),
+            locked: decimal_to_wire(value.locked),
+            avg_buy_price: decimal_to_wire(value.avg_buy_price),
+            avg_buy_price_modified: value.avg_buy_price_modified,
+            unit_currency: value.unit_currency,
+        }
+    }
+}
+
+impl TryFrom<WireUpbitPocketBalance> for maxt::UpbitPocketBalance {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitPocketBalance) -> Result<Self, Self::Error> {
+        Ok(Self {
+            currency: value.currency,
+            balance: decimal_from_wire(&value.balance, "balance").map_err(NativeError::from)?,
+            locked: decimal_from_wire(&value.locked, "locked").map_err(NativeError::from)?,
+            avg_buy_price: decimal_from_wire(&value.avg_buy_price, "avg_buy_price")
+                .map_err(NativeError::from)?,
+            avg_buy_price_modified: value.avg_buy_price_modified,
+            unit_currency: value.unit_currency,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitPocketTransferQuery {
+    pub from: Option<String>,
+    pub to: Option<String>,
+    pub direction: Option<WireUpbitPocketTransferDirection>,
+    pub states: Vec<WireUpbitPocketTransferState>,
+    pub uuids: Vec<String>,
+    pub identifiers: Vec<String>,
+    pub start_time_ns: Option<i64>,
+    pub end_time_ns: Option<i64>,
+    pub currency: Option<String>,
+    pub limit: Option<u32>,
+    pub order_by: Option<WireUpbitPocketTransferOrder>,
+}
+
+impl From<maxt::UpbitPocketTransferQuery> for WireUpbitPocketTransferQuery {
+    fn from(value: maxt::UpbitPocketTransferQuery) -> Self {
+        Self {
+            from: value.from,
+            to: value.to,
+            direction: value.direction.map(Into::into),
+            states: value.states.into_iter().map(Into::into).collect(),
+            uuids: value.uuids,
+            identifiers: value.identifiers,
+            start_time_ns: value.start_time.map(timestamp_to_wire),
+            end_time_ns: value.end_time.map(timestamp_to_wire),
+            currency: value.currency,
+            limit: value.limit,
+            order_by: value.order_by.map(Into::into),
+        }
+    }
+}
+
+impl TryFrom<WireUpbitPocketTransferQuery> for maxt::UpbitPocketTransferQuery {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitPocketTransferQuery) -> Result<Self, Self::Error> {
+        Ok(Self {
+            from: value.from,
+            to: value.to,
+            direction: value.direction.map(Into::into),
+            states: value.states.into_iter().map(Into::into).collect(),
+            uuids: value.uuids,
+            identifiers: value.identifiers,
+            start_time: value.start_time_ns.map(Timestamp::from_nanos),
+            end_time: value.end_time_ns.map(Timestamp::from_nanos),
+            currency: value.currency,
+            limit: value.limit,
+            order_by: value.order_by.map(Into::into),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitPocketUniversalTransferRequest {
+    pub from: Option<String>,
+    pub to: String,
+    pub currency: String,
+    pub amount: String,
+    pub identifier: Option<String>,
+}
+
+impl From<maxt::UpbitPocketUniversalTransferRequest> for WireUpbitPocketUniversalTransferRequest {
+    fn from(value: maxt::UpbitPocketUniversalTransferRequest) -> Self {
+        Self {
+            from: value.from,
+            to: value.to,
+            currency: value.currency,
+            amount: decimal_to_wire(value.amount),
+            identifier: value.identifier,
+        }
+    }
+}
+
+impl TryFrom<WireUpbitPocketUniversalTransferRequest>
+    for maxt::UpbitPocketUniversalTransferRequest
+{
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitPocketUniversalTransferRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            from: value.from,
+            to: value.to,
+            currency: value.currency,
+            amount: decimal_from_wire(&value.amount, "amount").map_err(NativeError::from)?,
+            identifier: value.identifier,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitPocketTransferRequest {
+    pub to: String,
+    pub currency: String,
+    pub amount: String,
+    pub identifier: Option<String>,
+}
+
+impl From<maxt::UpbitPocketTransferRequest> for WireUpbitPocketTransferRequest {
+    fn from(value: maxt::UpbitPocketTransferRequest) -> Self {
+        Self {
+            to: value.to,
+            currency: value.currency,
+            amount: decimal_to_wire(value.amount),
+            identifier: value.identifier,
+        }
+    }
+}
+
+impl TryFrom<WireUpbitPocketTransferRequest> for maxt::UpbitPocketTransferRequest {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitPocketTransferRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            to: value.to,
+            currency: value.currency,
+            amount: decimal_from_wire(&value.amount, "amount").map_err(NativeError::from)?,
+            identifier: value.identifier,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitPocketTransfer {
+    pub uuid: String,
+    pub identifier: Option<String>,
+    pub from: String,
+    pub to: String,
+    pub state: String,
+    pub currency: String,
+    pub amount: String,
+    pub created_at_ns: i64,
+}
+
+impl From<maxt::UpbitPocketTransfer> for WireUpbitPocketTransfer {
+    fn from(value: maxt::UpbitPocketTransfer) -> Self {
+        Self {
+            uuid: value.uuid,
+            identifier: value.identifier,
+            from: value.from,
+            to: value.to,
+            state: value.state,
+            currency: value.currency,
+            amount: decimal_to_wire(value.amount),
+            created_at_ns: timestamp_to_wire(value.created_at),
+        }
+    }
+}
+
+impl TryFrom<WireUpbitPocketTransfer> for maxt::UpbitPocketTransfer {
+    type Error = NativeError;
+
+    fn try_from(value: WireUpbitPocketTransfer) -> Result<Self, Self::Error> {
+        Ok(Self {
+            uuid: value.uuid,
+            identifier: value.identifier,
+            from: value.from,
+            to: value.to,
+            state: value.state,
+            currency: value.currency,
+            amount: decimal_from_wire(&value.amount, "amount").map_err(NativeError::from)?,
+            created_at: Timestamp::from_nanos(value.created_at_ns),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireBithumbNotice {
     pub categories: Vec<String>,
     pub title: String,
@@ -1963,6 +2708,103 @@ impl TryFrom<WireBithumbPendingOrdersRequest> for maxt::BithumbPendingOrdersRequ
             order_by: value.order_by.map(Into::into),
             cursor: value.cursor.map(maxt::Cursor::new),
         })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbClosedOrdersRequest {
+    pub market: Option<WireMarket>,
+    pub state: Option<WireBithumbClosedOrderState>,
+    pub states: Vec<WireBithumbClosedOrderState>,
+    pub start_time_ns: Option<i64>,
+    pub end_time_ns: Option<i64>,
+    pub limit: Option<u32>,
+    pub order_by: Option<WireBithumbOrderDirection>,
+    pub cursor: Option<String>,
+}
+
+impl From<maxt::BithumbClosedOrdersRequest> for WireBithumbClosedOrdersRequest {
+    fn from(value: maxt::BithumbClosedOrdersRequest) -> Self {
+        Self {
+            market: value.market.map(Into::into),
+            state: value.state.map(Into::into),
+            states: value.states.into_iter().map(Into::into).collect(),
+            start_time_ns: value.start_time.map(timestamp_to_wire),
+            end_time_ns: value.end_time.map(timestamp_to_wire),
+            limit: value.limit,
+            order_by: value.order_by.map(Into::into),
+            cursor: value.cursor.map(|cursor| cursor.as_str().to_owned()),
+        }
+    }
+}
+
+impl TryFrom<WireBithumbClosedOrdersRequest> for maxt::BithumbClosedOrdersRequest {
+    type Error = NativeError;
+
+    fn try_from(value: WireBithumbClosedOrdersRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.map(Into::into),
+            state: value.state.map(Into::into),
+            states: value.states.into_iter().map(Into::into).collect(),
+            start_time: value.start_time_ns.map(Timestamp::from_nanos),
+            end_time: value.end_time_ns.map(Timestamp::from_nanos),
+            limit: value.limit,
+            order_by: value.order_by.map(Into::into),
+            cursor: value.cursor.map(maxt::Cursor::new),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbClosedOrder {
+    pub order_id: String,
+    pub side: String,
+    pub order_type: String,
+    pub price: Option<String>,
+    pub state: String,
+    pub market: WireMarket,
+    pub created_at_ns: Option<i64>,
+    pub volume: String,
+    pub remaining_volume: String,
+    pub reserved_fee: String,
+    pub remaining_fee: String,
+    pub paid_fee: String,
+    pub locked: String,
+    pub executed_volume: String,
+    pub executed_funds: String,
+    pub trades_count: u32,
+    pub client_order_id: Option<String>,
+    pub stp_type: Option<String>,
+    pub time_in_force: Option<String>,
+    pub cancel_type: Option<String>,
+    pub canceling_order_id: Option<String>,
+}
+
+impl From<maxt::BithumbClosedOrder> for WireBithumbClosedOrder {
+    fn from(value: maxt::BithumbClosedOrder) -> Self {
+        Self {
+            order_id: value.order_id,
+            side: value.side,
+            order_type: value.order_type,
+            price: value.price.map(decimal_to_wire),
+            state: value.state,
+            market: value.market.into(),
+            created_at_ns: value.created_at.map(timestamp_to_wire),
+            volume: decimal_to_wire(value.volume),
+            remaining_volume: decimal_to_wire(value.remaining_volume),
+            reserved_fee: decimal_to_wire(value.reserved_fee),
+            remaining_fee: decimal_to_wire(value.remaining_fee),
+            paid_fee: decimal_to_wire(value.paid_fee),
+            locked: decimal_to_wire(value.locked),
+            executed_volume: decimal_to_wire(value.executed_volume),
+            executed_funds: decimal_to_wire(value.executed_funds),
+            trades_count: value.trades_count,
+            client_order_id: value.client_order_id,
+            stp_type: value.stp_type,
+            time_in_force: value.time_in_force,
+            cancel_type: value.cancel_type,
+            canceling_order_id: value.canceling_order_id,
+        }
     }
 }
 
@@ -2363,6 +3205,280 @@ impl TryFrom<WireBithumbNetworkFee> for maxt::BithumbNetworkFee {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbWithdrawalAddress {
+    pub currency: String,
+    pub net_type: String,
+    pub network_name: Option<String>,
+    pub withdraw_address: String,
+    pub secondary_address: Option<String>,
+    pub exchange_name: Option<String>,
+    pub owner_type: Option<String>,
+    pub owner_ko_name: Option<String>,
+    pub owner_en_name: Option<String>,
+    pub owner_corp_ko_name: Option<String>,
+    pub owner_corp_en_name: Option<String>,
+}
+
+impl From<maxt::BithumbWithdrawalAddress> for WireBithumbWithdrawalAddress {
+    fn from(value: maxt::BithumbWithdrawalAddress) -> Self {
+        Self {
+            currency: value.currency,
+            net_type: value.net_type,
+            network_name: value.network_name,
+            withdraw_address: value.withdraw_address,
+            secondary_address: value.secondary_address,
+            exchange_name: value.exchange_name,
+            owner_type: value.owner_type,
+            owner_ko_name: value.owner_ko_name,
+            owner_en_name: value.owner_en_name,
+            owner_corp_ko_name: value.owner_corp_ko_name,
+            owner_corp_en_name: value.owner_corp_en_name,
+        }
+    }
+}
+
+impl TryFrom<WireBithumbWithdrawalAddress> for maxt::BithumbWithdrawalAddress {
+    type Error = NativeError;
+
+    fn try_from(value: WireBithumbWithdrawalAddress) -> Result<Self, Self::Error> {
+        Ok(Self {
+            currency: value.currency,
+            net_type: value.net_type,
+            network_name: value.network_name,
+            withdraw_address: value.withdraw_address,
+            secondary_address: value.secondary_address,
+            exchange_name: value.exchange_name,
+            owner_type: value.owner_type,
+            owner_ko_name: value.owner_ko_name,
+            owner_en_name: value.owner_en_name,
+            owner_corp_ko_name: value.owner_corp_ko_name,
+            owner_corp_en_name: value.owner_corp_en_name,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbOrderDetailRequest {
+    pub market: WireMarket,
+    pub uuid: Option<String>,
+    pub client_order_id: Option<String>,
+}
+
+impl From<maxt::BithumbOrderDetailRequest> for WireBithumbOrderDetailRequest {
+    fn from(value: maxt::BithumbOrderDetailRequest) -> Self {
+        Self {
+            market: value.market.into(),
+            uuid: value.uuid,
+            client_order_id: value.client_order_id,
+        }
+    }
+}
+
+impl TryFrom<WireBithumbOrderDetailRequest> for maxt::BithumbOrderDetailRequest {
+    type Error = NativeError;
+
+    fn try_from(value: WireBithumbOrderDetailRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.into(),
+            uuid: value.uuid,
+            client_order_id: value.client_order_id,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbOrderDetailTrade {
+    pub market: WireMarket,
+    pub uuid: String,
+    pub price: String,
+    pub volume: String,
+    pub funds: String,
+    pub side: String,
+    pub created_at_ns: i64,
+}
+
+impl From<maxt::BithumbOrderDetailTrade> for WireBithumbOrderDetailTrade {
+    fn from(value: maxt::BithumbOrderDetailTrade) -> Self {
+        Self {
+            market: value.market.into(),
+            uuid: value.uuid,
+            price: decimal_to_wire(value.price),
+            volume: decimal_to_wire(value.volume),
+            funds: decimal_to_wire(value.funds),
+            side: value.side,
+            created_at_ns: timestamp_to_wire(value.created_at),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbOrderDetail {
+    pub uuid: String,
+    pub client_order_id: Option<String>,
+    pub side: String,
+    pub order_type: String,
+    pub price: String,
+    pub state: String,
+    pub market: WireMarket,
+    pub created_at_ns: i64,
+    pub volume: String,
+    pub remaining_volume: String,
+    pub reserved_fee: String,
+    pub remaining_fee: String,
+    pub paid_fee: String,
+    pub locked: String,
+    pub executed_volume: String,
+    pub executed_funds: String,
+    pub trades_count: u32,
+    pub trades: Vec<WireBithumbOrderDetailTrade>,
+    pub stp_type: Option<String>,
+    pub cancel_type: Option<String>,
+    pub canceling_uuid: Option<String>,
+    pub time_in_force: Option<String>,
+}
+
+impl From<maxt::BithumbOrderDetail> for WireBithumbOrderDetail {
+    fn from(value: maxt::BithumbOrderDetail) -> Self {
+        Self {
+            uuid: value.uuid,
+            client_order_id: value.client_order_id,
+            side: value.side,
+            order_type: value.order_type,
+            price: decimal_to_wire(value.price),
+            state: value.state,
+            market: value.market.into(),
+            created_at_ns: timestamp_to_wire(value.created_at),
+            volume: decimal_to_wire(value.volume),
+            remaining_volume: decimal_to_wire(value.remaining_volume),
+            reserved_fee: decimal_to_wire(value.reserved_fee),
+            remaining_fee: decimal_to_wire(value.remaining_fee),
+            paid_fee: decimal_to_wire(value.paid_fee),
+            locked: decimal_to_wire(value.locked),
+            executed_volume: decimal_to_wire(value.executed_volume),
+            executed_funds: decimal_to_wire(value.executed_funds),
+            trades_count: value.trades_count,
+            trades: value.trades.into_iter().map(Into::into).collect(),
+            stp_type: value.stp_type,
+            cancel_type: value.cancel_type,
+            canceling_uuid: value.canceling_uuid,
+            time_in_force: value.time_in_force,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbOrderListRequest {
+    pub market: Option<WireMarket>,
+    pub state: Option<WireBithumbOrderListState>,
+    pub states: Vec<WireBithumbOrderListState>,
+    pub uuids: Vec<String>,
+    pub client_order_ids: Vec<String>,
+    pub page: Option<u32>,
+    pub limit: Option<u32>,
+    pub order_by: Option<WireBithumbOrderDirection>,
+}
+
+impl From<maxt::BithumbOrderListRequest> for WireBithumbOrderListRequest {
+    fn from(value: maxt::BithumbOrderListRequest) -> Self {
+        Self {
+            market: value.market.map(Into::into),
+            state: value.state.map(Into::into),
+            states: value.states.into_iter().map(Into::into).collect(),
+            uuids: value.uuids,
+            client_order_ids: value.client_order_ids,
+            page: value.page,
+            limit: value.limit,
+            order_by: value.order_by.map(Into::into),
+        }
+    }
+}
+
+impl TryFrom<WireBithumbOrderListRequest> for maxt::BithumbOrderListRequest {
+    type Error = NativeError;
+
+    fn try_from(value: WireBithumbOrderListRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            market: value.market.map(Into::into),
+            state: value.state.map(Into::into),
+            states: value.states.into_iter().map(Into::into).collect(),
+            uuids: value.uuids,
+            client_order_ids: value.client_order_ids,
+            page: value.page,
+            limit: value.limit,
+            order_by: value.order_by.map(Into::into),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbOrderListItem {
+    pub uuid: String,
+    pub client_order_id: Option<String>,
+    pub side: String,
+    pub order_type: String,
+    pub price: String,
+    pub state: String,
+    pub market: WireMarket,
+    pub created_at_ns: i64,
+    pub volume: String,
+    pub remaining_volume: String,
+    pub reserved_fee: String,
+    pub remaining_fee: String,
+    pub paid_fee: String,
+    pub locked: String,
+    pub executed_volume: String,
+    pub executed_funds: String,
+    pub trades_count: u32,
+    pub stp_type: Option<String>,
+    pub time_in_force: Option<String>,
+}
+
+impl From<maxt::BithumbOrderListItem> for WireBithumbOrderListItem {
+    fn from(value: maxt::BithumbOrderListItem) -> Self {
+        Self {
+            uuid: value.uuid,
+            client_order_id: value.client_order_id,
+            side: value.side,
+            order_type: value.order_type,
+            price: decimal_to_wire(value.price),
+            state: value.state,
+            market: value.market.into(),
+            created_at_ns: timestamp_to_wire(value.created_at),
+            volume: decimal_to_wire(value.volume),
+            remaining_volume: decimal_to_wire(value.remaining_volume),
+            reserved_fee: decimal_to_wire(value.reserved_fee),
+            remaining_fee: decimal_to_wire(value.remaining_fee),
+            paid_fee: decimal_to_wire(value.paid_fee),
+            locked: decimal_to_wire(value.locked),
+            executed_volume: decimal_to_wire(value.executed_volume),
+            executed_funds: decimal_to_wire(value.executed_funds),
+            trades_count: value.trades_count,
+            stp_type: value.stp_type,
+            time_in_force: value.time_in_force,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBinanceSpotAveragePrice {
+    pub market: WireMarket,
+    pub minutes: u32,
+    pub price: String,
+    pub close_time_ns: i64,
+}
+
+impl From<maxt::BinanceSpotAveragePrice> for WireBinanceSpotAveragePrice {
+    fn from(value: maxt::BinanceSpotAveragePrice) -> Self {
+        Self {
+            market: value.market.into(),
+            minutes: value.minutes,
+            price: decimal_to_wire(value.price),
+            close_time_ns: timestamp_to_wire(value.close_time),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireBinanceMarkPrice {
     pub market: WireMarket,
     pub mark_price: String,
@@ -2533,6 +3649,202 @@ impl TryFrom<WireBinanceAggregateTrade> for maxt::BinanceAggregateTrade {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBinanceAccountTrade {
+    pub market: WireMarket,
+    pub id: String,
+    pub order_id: String,
+    pub timestamp_ns: i64,
+    pub side: WireSide,
+    pub maker: bool,
+    pub best_match: Option<bool>,
+    pub order_list_id: Option<String>,
+    pub price: String,
+    pub quantity: String,
+    pub quote_quantity: Option<String>,
+    pub commission: String,
+    pub commission_asset: String,
+    pub realized_pnl: Option<String>,
+    pub position_side: Option<String>,
+    pub pair: Option<String>,
+    pub base_quantity: Option<String>,
+    pub margin_asset: Option<String>,
+}
+
+impl From<maxt::BinanceAccountTrade> for WireBinanceAccountTrade {
+    fn from(value: maxt::BinanceAccountTrade) -> Self {
+        Self {
+            market: value.market.into(),
+            id: value.id,
+            order_id: value.order_id,
+            timestamp_ns: timestamp_to_wire(value.timestamp),
+            side: value.side.into(),
+            maker: value.maker,
+            best_match: value.best_match,
+            order_list_id: value.order_list_id,
+            price: decimal_to_wire(value.price),
+            quantity: decimal_to_wire(value.quantity),
+            quote_quantity: value.quote_quantity.map(decimal_to_wire),
+            commission: decimal_to_wire(value.commission),
+            commission_asset: value.commission_asset,
+            realized_pnl: value.realized_pnl.map(decimal_to_wire),
+            position_side: value.position_side,
+            pair: value.pair,
+            base_quantity: value.base_quantity.map(decimal_to_wire),
+            margin_asset: value.margin_asset,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBinanceTestOrderRequest {
+    pub order: WireOrderRequest,
+    pub compute_commission_rates: bool,
+}
+
+impl From<maxt::BinanceTestOrderRequest> for WireBinanceTestOrderRequest {
+    fn from(value: maxt::BinanceTestOrderRequest) -> Self {
+        Self {
+            order: value.order.into(),
+            compute_commission_rates: value.compute_commission_rates,
+        }
+    }
+}
+
+impl TryFrom<WireBinanceTestOrderRequest> for maxt::BinanceTestOrderRequest {
+    type Error = NativeError;
+
+    fn try_from(value: WireBinanceTestOrderRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            order: value.order.try_into()?,
+            compute_commission_rates: value.compute_commission_rates,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBinanceTestOrder {
+    pub response_json: String,
+}
+
+impl From<maxt::BinanceTestOrder> for WireBinanceTestOrder {
+    fn from(value: maxt::BinanceTestOrder) -> Self {
+        Self {
+            response_json: value.response_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBinanceC2cTradeHistoryRequest {
+    pub trade_type: WireBinanceC2cTradeType,
+    pub start_timestamp_ns: Option<i64>,
+    pub end_timestamp_ns: Option<i64>,
+    pub page: Option<u32>,
+    pub rows: Option<u32>,
+    pub recv_window: Option<u64>,
+}
+
+impl From<maxt::BinanceC2cTradeHistoryRequest> for WireBinanceC2cTradeHistoryRequest {
+    fn from(value: maxt::BinanceC2cTradeHistoryRequest) -> Self {
+        Self {
+            trade_type: value.trade_type.into(),
+            start_timestamp_ns: value.start_timestamp.map(timestamp_to_wire),
+            end_timestamp_ns: value.end_timestamp.map(timestamp_to_wire),
+            page: value.page,
+            rows: value.rows,
+            recv_window: value.recv_window,
+        }
+    }
+}
+
+impl TryFrom<WireBinanceC2cTradeHistoryRequest> for maxt::BinanceC2cTradeHistoryRequest {
+    type Error = NativeError;
+
+    fn try_from(value: WireBinanceC2cTradeHistoryRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            trade_type: value.trade_type.into(),
+            start_timestamp: value.start_timestamp_ns.map(Timestamp::from_nanos),
+            end_timestamp: value.end_timestamp_ns.map(Timestamp::from_nanos),
+            page: value.page,
+            rows: value.rows,
+            recv_window: value.recv_window,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBinanceC2cTrade {
+    pub order_number: Option<String>,
+    pub adv_no: Option<String>,
+    pub trade_type: Option<String>,
+    pub asset: Option<String>,
+    pub fiat: Option<String>,
+    pub fiat_symbol: Option<String>,
+    pub amount: Option<String>,
+    pub total_price: Option<String>,
+    pub unit_price: Option<String>,
+    pub order_status: Option<String>,
+    pub created_at_ns: Option<i64>,
+    pub commission: Option<String>,
+    pub counterparty_nickname: Option<String>,
+    pub pay_method_name: Option<String>,
+    pub additional_kyc_verify: Option<u32>,
+    pub taker_commission_rate: Option<String>,
+    pub taker_commission: Option<String>,
+    pub taker_amount: Option<String>,
+    pub advertisement_role: Option<String>,
+}
+
+impl From<maxt::BinanceC2cTrade> for WireBinanceC2cTrade {
+    fn from(value: maxt::BinanceC2cTrade) -> Self {
+        Self {
+            order_number: value.order_number,
+            adv_no: value.adv_no,
+            trade_type: value.trade_type,
+            asset: value.asset,
+            fiat: value.fiat,
+            fiat_symbol: value.fiat_symbol,
+            amount: value.amount.map(decimal_to_wire),
+            total_price: value.total_price.map(decimal_to_wire),
+            unit_price: value.unit_price.map(decimal_to_wire),
+            order_status: value.order_status,
+            created_at_ns: value.created_at.map(timestamp_to_wire),
+            commission: value.commission.map(decimal_to_wire),
+            counterparty_nickname: value.counterparty_nickname,
+            pay_method_name: value.pay_method_name,
+            additional_kyc_verify: value.additional_kyc_verify,
+            taker_commission_rate: value.taker_commission_rate.map(decimal_to_wire),
+            taker_commission: value.taker_commission.map(decimal_to_wire),
+            taker_amount: value.taker_amount.map(decimal_to_wire),
+            advertisement_role: value.advertisement_role,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBinanceC2cTradeHistoryPage {
+    pub code: Option<String>,
+    pub message: Option<String>,
+    pub data: Option<Vec<WireBinanceC2cTrade>>,
+    pub total: Option<u64>,
+    pub success: Option<bool>,
+}
+
+impl From<maxt::BinanceC2cTradeHistoryPage> for WireBinanceC2cTradeHistoryPage {
+    fn from(value: maxt::BinanceC2cTradeHistoryPage) -> Self {
+        Self {
+            code: value.code,
+            message: value.message,
+            data: value
+                .data
+                .map(|values| values.into_iter().map(Into::into).collect()),
+            total: value.total,
+            success: value.success,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireHyperliquidMidPrice {
     pub market: WireMarket,
     pub price: String,
@@ -2554,6 +3866,486 @@ impl TryFrom<WireHyperliquidMidPrice> for maxt::HyperliquidMidPrice {
         Ok(Self {
             market: value.market.into(),
             price: decimal_from_wire(&value.price, "price").map_err(NativeError::from)?,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidUserRateLimit {
+    pub cumulative_volume: String,
+    pub requests_used: u64,
+    pub requests_cap: u64,
+    pub requests_surplus: u64,
+}
+
+impl From<maxt::HyperliquidUserRateLimit> for WireHyperliquidUserRateLimit {
+    fn from(value: maxt::HyperliquidUserRateLimit) -> Self {
+        Self {
+            cumulative_volume: decimal_to_wire(value.cumulative_volume),
+            requests_used: value.requests_used,
+            requests_cap: value.requests_cap,
+            requests_surplus: value.requests_surplus,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WireHyperliquidUserRole {
+    User,
+    Agent {
+        user: Option<String>,
+    },
+    Vault,
+    SubAccount {
+        master: Option<String>,
+    },
+    Missing,
+    Other {
+        role: String,
+        data_json: Option<String>,
+    },
+}
+
+impl From<maxt::HyperliquidUserRole> for WireHyperliquidUserRole {
+    fn from(value: maxt::HyperliquidUserRole) -> Self {
+        match value {
+            maxt::HyperliquidUserRole::User => Self::User,
+            maxt::HyperliquidUserRole::Agent { user } => Self::Agent { user },
+            maxt::HyperliquidUserRole::Vault => Self::Vault,
+            maxt::HyperliquidUserRole::SubAccount { master } => Self::SubAccount { master },
+            maxt::HyperliquidUserRole::Missing => Self::Missing,
+            maxt::HyperliquidUserRole::Other { role, data_json } => Self::Other { role, data_json },
+            _ => unreachable!("new HyperliquidUserRole variant requires a Dart wire variant"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidReferral {
+    pub referred_by: Option<WireHyperliquidReferrer>,
+    pub cumulative_volume: String,
+    pub unclaimed_rewards: String,
+    pub claimed_rewards: String,
+    pub builder_rewards: String,
+    pub referrer_state_json: String,
+    pub reward_history_json: String,
+    pub token_to_state_json: String,
+}
+
+impl From<maxt::HyperliquidReferral> for WireHyperliquidReferral {
+    fn from(value: maxt::HyperliquidReferral) -> Self {
+        Self {
+            referred_by: value.referred_by.map(Into::into),
+            cumulative_volume: decimal_to_wire(value.cumulative_volume),
+            unclaimed_rewards: decimal_to_wire(value.unclaimed_rewards),
+            claimed_rewards: decimal_to_wire(value.claimed_rewards),
+            builder_rewards: decimal_to_wire(value.builder_rewards),
+            referrer_state_json: value.referrer_state_json,
+            reward_history_json: value.reward_history_json,
+            token_to_state_json: value.token_to_state_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidReferrer {
+    pub address: String,
+    pub code: String,
+}
+
+impl From<maxt::HyperliquidReferrer> for WireHyperliquidReferrer {
+    fn from(value: maxt::HyperliquidReferrer) -> Self {
+        Self {
+            address: value.address,
+            code: value.code,
+        }
+    }
+}
+
+impl TryFrom<WireHyperliquidReferrer> for maxt::HyperliquidReferrer {
+    type Error = NativeError;
+
+    fn try_from(value: WireHyperliquidReferrer) -> Result<Self, Self::Error> {
+        Ok(Self {
+            address: value.address,
+            code: value.code,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidUserFees {
+    pub daily_volumes: Vec<WireHyperliquidDailyVolume>,
+    pub fee_schedule_json: String,
+    pub user_cross_rate: String,
+    pub user_add_rate: String,
+    pub user_spot_cross_rate: Option<String>,
+    pub user_spot_add_rate: Option<String>,
+    pub active_referral_discount: Option<String>,
+    pub details_json: String,
+}
+
+impl From<maxt::HyperliquidUserFees> for WireHyperliquidUserFees {
+    fn from(value: maxt::HyperliquidUserFees) -> Self {
+        Self {
+            daily_volumes: value.daily_volumes.into_iter().map(Into::into).collect(),
+            fee_schedule_json: value.fee_schedule_json,
+            user_cross_rate: decimal_to_wire(value.user_cross_rate),
+            user_add_rate: decimal_to_wire(value.user_add_rate),
+            user_spot_cross_rate: value.user_spot_cross_rate.map(decimal_to_wire),
+            user_spot_add_rate: value.user_spot_add_rate.map(decimal_to_wire),
+            active_referral_discount: value.active_referral_discount.map(decimal_to_wire),
+            details_json: value.details_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidUserFill {
+    pub coin: String,
+    pub price: String,
+    pub size: String,
+    pub side: String,
+    pub time_ns: i64,
+    pub start_position: String,
+    pub direction: String,
+    pub closed_pnl: String,
+    pub hash: String,
+    pub order_id: u64,
+    pub crossed: bool,
+    pub fee: String,
+    pub builder_fee: Option<String>,
+    pub trade_id: u64,
+    pub fee_token: String,
+    pub twap_id: Option<u64>,
+    pub raw_json: String,
+}
+
+impl From<maxt::HyperliquidUserFill> for WireHyperliquidUserFill {
+    fn from(value: maxt::HyperliquidUserFill) -> Self {
+        Self {
+            coin: value.coin,
+            price: decimal_to_wire(value.price),
+            size: decimal_to_wire(value.size),
+            side: value.side,
+            time_ns: timestamp_to_wire(value.time),
+            start_position: decimal_to_wire(value.start_position),
+            direction: value.direction,
+            closed_pnl: decimal_to_wire(value.closed_pnl),
+            hash: value.hash,
+            order_id: value.order_id,
+            crossed: value.crossed,
+            fee: decimal_to_wire(value.fee),
+            builder_fee: value.builder_fee.map(decimal_to_wire),
+            trade_id: value.trade_id,
+            fee_token: value.fee_token,
+            twap_id: value.twap_id,
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WireHyperliquidOrderReference {
+    OrderId(u64),
+    ClientOrderId(String),
+}
+
+impl From<maxt::HyperliquidOrderReference> for WireHyperliquidOrderReference {
+    fn from(value: maxt::HyperliquidOrderReference) -> Self {
+        match value {
+            maxt::HyperliquidOrderReference::OrderId(value) => Self::OrderId(value),
+            maxt::HyperliquidOrderReference::ClientOrderId(value) => Self::ClientOrderId(value),
+            _ => unreachable!("new HyperliquidOrderReference variant requires a Dart wire variant"),
+        }
+    }
+}
+
+impl TryFrom<WireHyperliquidOrderReference> for maxt::HyperliquidOrderReference {
+    type Error = NativeError;
+
+    fn try_from(value: WireHyperliquidOrderReference) -> Result<Self, Self::Error> {
+        Ok(match value {
+            WireHyperliquidOrderReference::OrderId(value) => Self::OrderId(value),
+            WireHyperliquidOrderReference::ClientOrderId(value) => Self::ClientOrderId(value),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidOpenOrder {
+    pub coin: String,
+    pub limit_price: String,
+    pub order_id: u64,
+    pub side: String,
+    pub size: String,
+    pub timestamp_ns: i64,
+    pub raw_json: String,
+}
+
+impl From<maxt::HyperliquidOpenOrder> for WireHyperliquidOpenOrder {
+    fn from(value: maxt::HyperliquidOpenOrder) -> Self {
+        Self {
+            coin: value.coin,
+            limit_price: decimal_to_wire(value.limit_price),
+            order_id: value.order_id,
+            side: value.side,
+            size: decimal_to_wire(value.size),
+            timestamp_ns: timestamp_to_wire(value.timestamp),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidOrderDetail {
+    pub coin: String,
+    pub side: String,
+    pub limit_price: String,
+    pub size: String,
+    pub order_id: u64,
+    pub timestamp_ns: i64,
+    pub trigger_condition: String,
+    pub is_trigger: bool,
+    pub trigger_price: String,
+    pub children_json: String,
+    pub is_position_tpsl: bool,
+    pub reduce_only: bool,
+    pub order_type: String,
+    pub original_size: String,
+    pub time_in_force: Option<String>,
+    pub client_order_id: Option<String>,
+    pub raw_json: String,
+}
+
+impl From<maxt::HyperliquidOrderDetail> for WireHyperliquidOrderDetail {
+    fn from(value: maxt::HyperliquidOrderDetail) -> Self {
+        Self {
+            coin: value.coin,
+            side: value.side,
+            limit_price: decimal_to_wire(value.limit_price),
+            size: decimal_to_wire(value.size),
+            order_id: value.order_id,
+            timestamp_ns: timestamp_to_wire(value.timestamp),
+            trigger_condition: value.trigger_condition,
+            is_trigger: value.is_trigger,
+            trigger_price: decimal_to_wire(value.trigger_price),
+            children_json: value.children_json,
+            is_position_tpsl: value.is_position_tpsl,
+            reduce_only: value.reduce_only,
+            order_type: value.order_type,
+            original_size: decimal_to_wire(value.original_size),
+            time_in_force: value.time_in_force,
+            client_order_id: value.client_order_id,
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidOrderInfo {
+    pub order: WireHyperliquidOrderDetail,
+    pub status: String,
+    pub status_timestamp_ns: i64,
+    pub raw_json: String,
+}
+
+impl From<maxt::HyperliquidOrderInfo> for WireHyperliquidOrderInfo {
+    fn from(value: maxt::HyperliquidOrderInfo) -> Self {
+        Self {
+            order: value.order.into(),
+            status: value.status,
+            status_timestamp_ns: timestamp_to_wire(value.status_timestamp),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WireHyperliquidOrderStatusResponse {
+    Order(WireHyperliquidOrderInfo),
+    UnknownOrder,
+    Other { status: String, raw_json: String },
+}
+
+impl From<maxt::HyperliquidOrderStatusResponse> for WireHyperliquidOrderStatusResponse {
+    fn from(value: maxt::HyperliquidOrderStatusResponse) -> Self {
+        match value {
+            maxt::HyperliquidOrderStatusResponse::Order(value) => Self::Order((*value).into()),
+            maxt::HyperliquidOrderStatusResponse::UnknownOrder => Self::UnknownOrder,
+            maxt::HyperliquidOrderStatusResponse::Other { status, raw_json } => {
+                Self::Other { status, raw_json }
+            }
+            _ => unreachable!(
+                "new HyperliquidOrderStatusResponse variant requires a Dart wire variant"
+            ),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidDailyVolume {
+    pub date: String,
+    pub user_cross: String,
+    pub user_add: String,
+    pub exchange: String,
+}
+
+impl From<maxt::HyperliquidDailyVolume> for WireHyperliquidDailyVolume {
+    fn from(value: maxt::HyperliquidDailyVolume) -> Self {
+        Self {
+            date: value.date,
+            user_cross: decimal_to_wire(value.user_cross),
+            user_add: decimal_to_wire(value.user_add),
+            exchange: decimal_to_wire(value.exchange),
+        }
+    }
+}
+
+impl TryFrom<WireHyperliquidDailyVolume> for maxt::HyperliquidDailyVolume {
+    type Error = NativeError;
+
+    fn try_from(value: WireHyperliquidDailyVolume) -> Result<Self, Self::Error> {
+        Ok(Self {
+            date: value.date,
+            user_cross: decimal_from_wire(&value.user_cross, "user_cross")
+                .map_err(NativeError::from)?,
+            user_add: decimal_from_wire(&value.user_add, "user_add").map_err(NativeError::from)?,
+            exchange: decimal_from_wire(&value.exchange, "exchange").map_err(NativeError::from)?,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidPortfolioPeriod {
+    pub period: String,
+    pub account_value_history: Vec<WireHyperliquidPortfolioPoint>,
+    pub pnl_history: Vec<WireHyperliquidPortfolioPoint>,
+    pub volume: String,
+}
+
+impl From<maxt::HyperliquidPortfolioPeriod> for WireHyperliquidPortfolioPeriod {
+    fn from(value: maxt::HyperliquidPortfolioPeriod) -> Self {
+        Self {
+            period: value.period,
+            account_value_history: value
+                .account_value_history
+                .into_iter()
+                .map(Into::into)
+                .collect(),
+            pnl_history: value.pnl_history.into_iter().map(Into::into).collect(),
+            volume: decimal_to_wire(value.volume),
+        }
+    }
+}
+
+impl TryFrom<WireHyperliquidPortfolioPeriod> for maxt::HyperliquidPortfolioPeriod {
+    type Error = NativeError;
+
+    fn try_from(value: WireHyperliquidPortfolioPeriod) -> Result<Self, Self::Error> {
+        Ok(Self {
+            period: value.period,
+            account_value_history: value
+                .account_value_history
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            pnl_history: value
+                .pnl_history
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            volume: decimal_from_wire(&value.volume, "volume").map_err(NativeError::from)?,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidPortfolioPoint {
+    pub time_ns: i64,
+    pub value: String,
+}
+
+impl From<maxt::HyperliquidPortfolioPoint> for WireHyperliquidPortfolioPoint {
+    fn from(value: maxt::HyperliquidPortfolioPoint) -> Self {
+        Self {
+            time_ns: timestamp_to_wire(value.time),
+            value: decimal_to_wire(value.value),
+        }
+    }
+}
+
+impl TryFrom<WireHyperliquidPortfolioPoint> for maxt::HyperliquidPortfolioPoint {
+    type Error = NativeError;
+
+    fn try_from(value: WireHyperliquidPortfolioPoint) -> Result<Self, Self::Error> {
+        Ok(Self {
+            time: Timestamp::from_nanos(value.time_ns),
+            value: decimal_from_wire(&value.value, "value").map_err(NativeError::from)?,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidSubAccount {
+    pub name: String,
+    pub user: String,
+    pub master: String,
+    pub perpetual_state_json: String,
+    pub spot_state_json: String,
+}
+
+impl From<maxt::HyperliquidSubAccount> for WireHyperliquidSubAccount {
+    fn from(value: maxt::HyperliquidSubAccount) -> Self {
+        Self {
+            name: value.name,
+            user: value.user,
+            master: value.master,
+            perpetual_state_json: value.perpetual_state_json,
+            spot_state_json: value.spot_state_json,
+        }
+    }
+}
+
+impl TryFrom<WireHyperliquidSubAccount> for maxt::HyperliquidSubAccount {
+    type Error = NativeError;
+
+    fn try_from(value: WireHyperliquidSubAccount) -> Result<Self, Self::Error> {
+        Ok(Self {
+            name: value.name,
+            user: value.user,
+            master: value.master,
+            perpetual_state_json: value.perpetual_state_json,
+            spot_state_json: value.spot_state_json,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidVaultEquity {
+    pub vault_address: String,
+    pub equity: String,
+    pub locked_until_ns: Option<i64>,
+}
+
+impl From<maxt::HyperliquidVaultEquity> for WireHyperliquidVaultEquity {
+    fn from(value: maxt::HyperliquidVaultEquity) -> Self {
+        Self {
+            vault_address: value.vault_address,
+            equity: decimal_to_wire(value.equity),
+            locked_until_ns: value.locked_until.map(timestamp_to_wire),
+        }
+    }
+}
+
+impl TryFrom<WireHyperliquidVaultEquity> for maxt::HyperliquidVaultEquity {
+    type Error = NativeError;
+
+    fn try_from(value: WireHyperliquidVaultEquity) -> Result<Self, Self::Error> {
+        Ok(Self {
+            vault_address: value.vault_address,
+            equity: decimal_from_wire(&value.equity, "equity").map_err(NativeError::from)?,
+            locked_until: value.locked_until_ns.map(Timestamp::from_nanos),
         })
     }
 }
@@ -2649,6 +4441,21 @@ impl TryFrom<WireOrderPage> for maxt::Page<maxt::Order> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbClosedOrderPage {
+    pub items: Vec<WireBithumbClosedOrder>,
+    pub next: Option<String>,
+}
+
+impl From<maxt::Page<maxt::BithumbClosedOrder>> for WireBithumbClosedOrderPage {
+    fn from(value: maxt::Page<maxt::BithumbClosedOrder>) -> Self {
+        Self {
+            items: value.items.into_iter().map(Into::into).collect(),
+            next: value.next.map(|cursor| cursor.as_str().to_owned()),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireBithumbTwapOrderPage {
     pub items: Vec<WireBithumbTwapOrder>,
     pub next: Option<String>,
@@ -2675,5 +4482,20 @@ impl TryFrom<WireBithumbTwapOrderPage> for maxt::Page<maxt::BithumbTwapOrder> {
                 .collect::<Result<_, _>>()?,
             next: value.next.map(maxt::Cursor::new),
         })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBinanceAccountTradePage {
+    pub items: Vec<WireBinanceAccountTrade>,
+    pub next: Option<String>,
+}
+
+impl From<maxt::Page<maxt::BinanceAccountTrade>> for WireBinanceAccountTradePage {
+    fn from(value: maxt::Page<maxt::BinanceAccountTrade>) -> Self {
+        Self {
+            items: value.items.into_iter().map(Into::into).collect(),
+            next: value.next.map(|cursor| cursor.as_str().to_owned()),
+        }
     }
 }

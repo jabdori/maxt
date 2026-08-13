@@ -6,9 +6,22 @@
 `Client::adapter()`가 반환한 `A`에서 호출합니다. 런타임에 거래소를 선택하려면
 `Client<Box<dyn Adapter>>`를 사용합니다.
 
-## API 영역
+## 접근 설정
 
-인증 정보는 `Client::new(adapter)` 호출 전에 어댑터에 설정합니다.
+공개 REST, 시장 스트림, 지원되는 공개 펀딩 이력 호출은 내장 어댑터를 별도 계정 설정
+없이 만들어 사용할 수 있습니다. 아래의 비공개 영역은 계정 범위 또는 변경 작업이며,
+필요한 설정은 거래소마다 다릅니다.
+
+- Binance, Upbit, Bithumb은 각 거래소의 인증 정보 쌍을 사용합니다.
+- Hyperliquid는 계좌 조회에 공개 조회 주소를, 서명 작업에 로컬 signer를 사용합니다.
+  `with_wallet(address, private_key)`는 두 설정을 함께 적용합니다.
+
+`Client::new(adapter)` 전에 어댑터를 설정하세요. `supports(feature)`는 현재 설정한
+어댑터가 기능을 제공하는지 알려 주지만, 요청 검증, 시장·지역 선택, 거래소 권한은
+여전히 별도로 적용됩니다. 생성자는 [거래소 지원](providers.ko.md), 세부 요구 사항은
+각 거래소 레퍼런스를 참고하세요.
+
+## API 영역
 
 | 영역 | 메서드 |
 | --- | --- |
@@ -143,7 +156,8 @@
 
 ## 기능 확인
 
-`Client::supports(feature)`는 네트워크 I/O를 수행하지 않습니다.
+`Client::supports(feature)`는 네트워크 I/O를 수행하지 않습니다. `false`는 필요한
+어댑터 설정이 없거나 작업이 구조적으로 미지원이라는 뜻입니다.
 
 | 상태 | 계약 |
 | --- | --- |
@@ -253,6 +267,9 @@
 
 `Client::adapter()`가 반환한 `&A`에서 거래소 전용 일괄 조회(batch), 원본
 context, alert, ledger 메서드를 호출합니다. 목록은 거래소별 레퍼런스를 참고하세요.
+
+기록된 endpoint의 매핑과 구현·검증 상태는 생성된
+[endpoint 지원 레퍼런스](../bindings/common/generated/api.md)를 참고하세요.
 
 ## 외부 어댑터
 

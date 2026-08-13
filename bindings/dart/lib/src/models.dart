@@ -1078,34 +1078,56 @@ final class Subscription {
 sealed class MarketEvent {
   const MarketEvent();
 
+  /// 한 건의 체결 이벤트입니다.
   const factory MarketEvent.trade(Trade value) = TradeMarketEvent;
+
+  /// 최신 호가창 스냅샷 이벤트입니다.
   const factory MarketEvent.orderBook(OrderBook value) = OrderBookMarketEvent;
+
+  /// 현재가 요약 이벤트입니다.
   const factory MarketEvent.ticker(Ticker value) = TickerMarketEvent;
+
+  /// 생성·갱신·마감된 캔들 이벤트입니다.
   const factory MarketEvent.candle(Candle value) = CandleMarketEvent;
+
+  /// 연결이 복구되었으며, 단절 중 이벤트가 유실되었음을 알립니다.
   const factory MarketEvent.reconnected() = ReconnectedMarketEvent;
 }
 
 final class TradeMarketEvent extends MarketEvent {
+  /// [value]에 한 건의 체결을 담아 만듭니다.
   const TradeMarketEvent(this.value);
+
+  /// 거래소가 보낸 체결 정보입니다.
   final Trade value;
 }
 
 final class OrderBookMarketEvent extends MarketEvent {
+  /// [value]에 최신 호가창 스냅샷을 담아 만듭니다.
   const OrderBookMarketEvent(this.value);
+
+  /// 거래소가 보낸 호가창 스냅샷입니다.
   final OrderBook value;
 }
 
 final class TickerMarketEvent extends MarketEvent {
+  /// [value]에 현재가 요약을 담아 만듭니다.
   const TickerMarketEvent(this.value);
+
+  /// 거래소가 보낸 현재가 요약입니다.
   final Ticker value;
 }
 
 final class CandleMarketEvent extends MarketEvent {
+  /// [value]에 캔들 갱신 정보를 담아 만듭니다.
   const CandleMarketEvent(this.value);
+
+  /// 거래소가 보낸 캔들 정보입니다.
   final Candle value;
 }
 
 final class ReconnectedMarketEvent extends MarketEvent {
+  /// 연결 복구 알림을 만듭니다.
   const ReconnectedMarketEvent();
 }
 
@@ -1113,21 +1135,33 @@ final class ReconnectedMarketEvent extends MarketEvent {
 sealed class AccountEvent {
   const AccountEvent();
 
+  /// 잔고가 변경된 계정 이벤트입니다.
   const factory AccountEvent.balance(Balance value) = BalanceAccountEvent;
+
+  /// 주문 생성·체결·취소 상태를 알리는 계정 이벤트입니다.
   const factory AccountEvent.order(Order value) = OrderAccountEvent;
+
+  /// 계정 스트림 연결이 복구되었으며 상태 재조회가 필요함을 알립니다.
   const factory AccountEvent.reconnected() = ReconnectedAccountEvent;
 }
 
 final class BalanceAccountEvent extends AccountEvent {
+  /// [value]에 변경된 잔고를 담아 만듭니다.
   const BalanceAccountEvent(this.value);
+
+  /// 거래소가 보낸 최신 잔고입니다.
   final Balance value;
 }
 
 final class OrderAccountEvent extends AccountEvent {
+  /// [value]에 변경된 주문을 담아 만듭니다.
   const OrderAccountEvent(this.value);
+
+  /// 거래소가 보낸 최신 주문 상태입니다.
   final Order value;
 }
 
 final class ReconnectedAccountEvent extends AccountEvent {
+  /// 계정 연결 복구 알림을 만듭니다.
   const ReconnectedAccountEvent();
 }

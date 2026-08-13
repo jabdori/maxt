@@ -28,7 +28,14 @@ use crate::types::{
 
 use parse::Universe;
 
-pub use native::{HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind};
+#[allow(unused_imports)]
+pub use native::{
+    HyperliquidAssetContext, HyperliquidDailyVolume, HyperliquidLedgerEntry, HyperliquidLedgerKind,
+    HyperliquidOpenOrder, HyperliquidOrderDetail, HyperliquidOrderInfo, HyperliquidOrderReference,
+    HyperliquidOrderStatusResponse, HyperliquidPortfolioPeriod, HyperliquidPortfolioPoint,
+    HyperliquidReferral, HyperliquidReferrer, HyperliquidSubAccount, HyperliquidUserFees,
+    HyperliquidUserFill, HyperliquidUserRateLimit, HyperliquidUserRole, HyperliquidVaultEquity,
+};
 
 /// Hyperliquid's current mid price for one market.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -68,8 +75,8 @@ static SIGNED_ACTION_LANE: Mutex<()> = Mutex::const_new(());
 /// to `markPx`; it is not the latest execution price. Use the trades API when
 /// an execution price and trade time are required.
 ///
-/// Provider-specific data is available through
-/// [`HyperliquidAdapter::non_funding_ledger`] and
+/// Provider-specific data is available through the account Info methods,
+/// [`HyperliquidAdapter::non_funding_ledger`], and
 /// [`HyperliquidAdapter::asset_context`].
 #[derive(Debug, Clone)]
 pub struct HyperliquidAdapter {
@@ -230,6 +237,173 @@ impl HyperliquidAdapter {
         let connection = self.connect().await?;
 
         rest::ledger(&connection.http, &user, from, to, cursor, limit).await
+    }
+
+    /// Reads the configured account's current Info API request allowance.
+    ///
+    /// This is a public account read: it needs an address but no signature.
+    pub async fn user_rate_limit(&self) -> Result<HyperliquidUserRateLimit> {
+        let user = self.query_address()?;
+        let connection = self.connect().await?;
+
+        rest::user_rate_limit(&connection.http, &user).await
+    }
+
+    /// Reads the configured account's Hyperliquid role.
+    ///
+    /// Unknown provider role names remain available as
+    /// [`HyperliquidUserRole::Other`]. This is a public account read and does
+    /// not use the local signer.
+    pub async fn user_role(&self) -> Result<HyperliquidUserRole> {
+        let user = self.query_address()?;
+        let connection = self.connect().await?;
+
+        rest::user_role(&connection.http, &user).await
+    }
+
+    /// Reads the configured account's referral state.
+    ///
+    /// Stable balances are parsed exactly; provider-owned nested program state
+    /// remains JSON so an added referral stage does not discard data.
+    pub async fn referral(&self) -> Result<HyperliquidReferral> {
+        let user = self.query_address()?;
+        let connection = self.connect().await?;
+
+        rest::referral(&connection.http, &user).await
+    }
+
+    /// Reads the configured account's fee schedule and current fee rates.
+    ///
+    /// The full provider fee schedule is retained because Hyperliquid can add
+    /// product tiers independently of the common order-fee model.
+    pub async fn user_fees(&self) -> Result<HyperliquidUserFees> {
+        let user = self.query_address()?;
+        let connection = self.connect().await?;
+
+        rest::user_fees(&connection.http, &user).await
+    }
+
+    /// Reads the configured account's portfolio history by provider period.
+    pub async fn portfolio(&self) -> Result<Vec<HyperliquidPortfolioPeriod>> {
+        let user = self.query_address()?;
+        let connection = self.connect().await?;
+
+        rest::portfolio(&connection.http, &user).await
+    }
+
+    /// Reads the configured account's subaccounts.
+    ///
+    /// Hyperliquid returns `null` when an account has none; this method returns
+    /// an empty list for that documented absence.
+    pub async fn sub_accounts(&self) -> Result<Vec<HyperliquidSubAccount>> {
+        let user = self.query_address()?;
+        let connection = self.connect().await?;
+
+        rest::sub_accounts(&connection.http, &user).await
+    }
+
+    /// Reads the configured account's current vault equity positions.
+    pub async fn user_vault_equities(&self) -> Result<Vec<HyperliquidVaultEquity>> {
+        let user = self.query_address()?;
+        let connection = self.connect().await?;
+
+        rest::user_vault_equities(&connection.http, &user).await
+    }
+
+    /// Reads the configured account's most recent fills.
+    ///
+    /// Hyperliquid returns at most 2,000 fills. Set `aggregate_by_time` to
+    /// combine eligible partial fills using Hyperliquid's documented rule.
+    /// The provider-specific [`HyperliquidUserFill`] preserves execution,
+    /// account-position, fee, and raw provider data without widening the
+    /// common [`Trade`](crate::Trade) contract.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Auth`](crate::Error::Auth) before any network request
+    /// when no valid query address is configured.
+    pub async fn user_fills(&self, aggregate_by_time: bool) -> Result<Vec<HyperliquidUserFill>> {
+        let user = self.query_address()?;
+        let connection = self.connect().await?;
+
+        rest::user_fills(&connection.http, &user, aggregate_by_time).await
+    }
+
+    /// Reads the configured account's fills in the inclusive provider time range.
+    ///
+    /// `from` maps to Hyperliquid's required `startTime`; `to`, when present,
+    /// maps to its optional inclusive `endTime`. Hyperliquid returns at most
+    /// 2,000 fills per response and retains only its 10,000 most recent fills.
+    /// Set `aggregate_by_time` to use the provider's partial-fill aggregation.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Auth`](crate::Error::Auth) before any network request
+    /// when no valid query address is configured.
+    pub async fn user_fills_by_time(
+        &self,
+        from: Timestamp,
+        to: Option<Timestamp>,
+        aggregate_by_time: bool,
+    ) -> Result<Vec<HyperliquidUserFill>> {
+        let user = self.query_address()?;
+        let connection = self.connect().await?;
+
+        rest::user_fills_by_time(&connection.http, &user, from, to, aggregate_by_time).await
+    }
+
+    /// Reads the configured account's compact `openOrders` response.
+    ///
+    /// This provider-specific method is deliberately named `basic_open_orders`
+    /// to distinguish it from the common open-order API, which uses the richer
+    /// `frontendOpenOrders` response.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Auth`](crate::Error::Auth) before any network request
+    /// when no valid query address is configured.
+    pub async fn basic_open_orders(&self) -> Result<Vec<HyperliquidOpenOrder>> {
+        let user = self.query_address()?;
+        let connection = self.connect().await?;
+
+        rest::basic_open_orders(&connection.http, &user).await
+    }
+
+    /// Queries one order by server order id or 16-byte client order id.
+    ///
+    /// Hyperliquid's documented `unknownOid` response is returned as
+    /// [`HyperliquidOrderStatusResponse::UnknownOrder`], not as an error.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Auth`](crate::Error::Auth) before any network request
+    /// when no valid query address is configured. Malformed client order ids
+    /// return [`Error::InvalidRequest`](crate::Error::InvalidRequest).
+    pub async fn order_status(
+        &self,
+        reference: HyperliquidOrderReference,
+    ) -> Result<HyperliquidOrderStatusResponse> {
+        let user = self.query_address()?;
+        rest::validate_order_reference(&reference)?;
+        let connection = self.connect().await?;
+
+        rest::order_status(&connection.http, &user, &reference).await
+    }
+
+    /// Reads up to Hyperliquid's 2,000 most recent historical orders.
+    ///
+    /// Status and order enum strings remain in their provider spelling, and
+    /// each record retains the full response object as JSON.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Auth`](crate::Error::Auth) before any network request
+    /// when no valid query address is configured.
+    pub async fn historical_orders(&self) -> Result<Vec<HyperliquidOrderInfo>> {
+        let user = self.query_address()?;
+        let connection = self.connect().await?;
+
+        rest::historical_orders(&connection.http, &user).await
     }
 
     /// Reads the current asset context for one market.
@@ -812,6 +986,67 @@ mod tests {
             public.non_funding_ledger(None, None, None, None).await,
             Err(Error::Auth { .. })
         ));
+        assert!(matches!(
+            public.user_rate_limit().await,
+            Err(Error::Auth { .. })
+        ));
+        assert!(matches!(public.user_role().await, Err(Error::Auth { .. })));
+        assert!(matches!(public.referral().await, Err(Error::Auth { .. })));
+        assert!(matches!(public.user_fees().await, Err(Error::Auth { .. })));
+        assert!(matches!(public.portfolio().await, Err(Error::Auth { .. })));
+        assert!(matches!(
+            public.sub_accounts().await,
+            Err(Error::Auth { .. })
+        ));
+        assert!(matches!(
+            public.user_vault_equities().await,
+            Err(Error::Auth { .. })
+        ));
+        assert!(matches!(
+            public.user_fills(false).await,
+            Err(Error::Auth { .. })
+        ));
+        assert!(matches!(
+            public
+                .user_fills_by_time(Timestamp::from_millis(0), None, false)
+                .await,
+            Err(Error::Auth { .. })
+        ));
+        assert!(matches!(
+            public.basic_open_orders().await,
+            Err(Error::Auth { .. })
+        ));
+        assert!(matches!(
+            public
+                .order_status(HyperliquidOrderReference::order_id(1))
+                .await,
+            Err(Error::Auth { .. })
+        ));
+        assert!(matches!(
+            public.historical_orders().await,
+            Err(Error::Auth { .. })
+        ));
+    }
+
+    #[tokio::test]
+    async fn order_status_preflight_checks_address_then_reference_before_connecting() {
+        let missing_address = HyperliquidAdapter::new();
+        assert!(matches!(
+            missing_address
+                .order_status(HyperliquidOrderReference::client_order_id("not-a-cloid"))
+                .await,
+            Err(Error::Auth { .. })
+        ));
+
+        let configured = HyperliquidAdapter::new()
+            .with_query_address("0x14791697260e4c9a71f18484c9f997b308e59325");
+        let invalid = configured
+            .order_status(HyperliquidOrderReference::client_order_id("not-a-cloid"))
+            .await;
+        assert!(
+            matches!(&invalid, Err(Error::InvalidRequest { field, .. }) if *field == "client_order_id"),
+            "{invalid:?}"
+        );
     }
 
     #[tokio::test]

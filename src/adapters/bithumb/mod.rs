@@ -6,6 +6,8 @@ mod rest;
 mod stream;
 mod wallet;
 
+pub use wallet::BithumbWithdrawalAddress;
+
 use crate::adapter::{Adapter, BoxFuture};
 use crate::error::{Error, Result};
 use crate::feature::Feature;
@@ -331,6 +333,222 @@ pub enum BithumbOrderDirection {
     Descending,
 }
 
+/// A final state accepted by Bithumb's closed-order endpoint.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BithumbClosedOrderState {
+    /// An order whose execution completed.
+    Done,
+    /// An order that was cancelled.
+    Cancel,
+}
+
+impl BithumbClosedOrderState {
+    pub(crate) const fn wire_name(self) -> &'static str {
+        match self {
+            Self::Done => "done",
+            Self::Cancel => "cancel",
+        }
+    }
+}
+
+/// Filters for Bithumb's cursor-paginated closed-order endpoint.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct BithumbClosedOrdersRequest {
+    /// Optional Bithumb spot-market filter.
+    pub market: Option<Market>,
+    /// One final-state filter.
+    pub state: Option<BithumbClosedOrderState>,
+    /// Multiple final-state filters.
+    pub states: Vec<BithumbClosedOrderState>,
+    /// Optional beginning of the provider query window.
+    pub start_time: Option<Timestamp>,
+    /// Optional end of the provider query window.
+    pub end_time: Option<Timestamp>,
+    /// Page size from 1 through 1,000.
+    pub limit: Option<u32>,
+    /// Optional result order; Bithumb defaults to newest first.
+    pub order_by: Option<BithumbOrderDirection>,
+    /// Opaque cursor returned by the preceding page.
+    pub cursor: Option<Cursor>,
+}
+
+impl BithumbClosedOrdersRequest {
+    /// Starts an unfiltered request using Bithumb's defaults.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Filters by one market.
+    #[must_use]
+    pub fn market(mut self, market: Market) -> Self {
+        self.market = Some(market);
+        self
+    }
+
+    /// Filters by one final state.
+    #[must_use]
+    pub fn state(mut self, state: BithumbClosedOrderState) -> Self {
+        self.state = Some(state);
+        self
+    }
+
+    /// Filters by multiple final states.
+    #[must_use]
+    pub fn states(mut self, states: impl Into<Vec<BithumbClosedOrderState>>) -> Self {
+        self.states = states.into();
+        self
+    }
+
+    /// Sets the beginning of the provider query window.
+    #[must_use]
+    pub fn start_time(mut self, start_time: Timestamp) -> Self {
+        self.start_time = Some(start_time);
+        self
+    }
+
+    /// Sets the end of the provider query window.
+    #[must_use]
+    pub fn end_time(mut self, end_time: Timestamp) -> Self {
+        self.end_time = Some(end_time);
+        self
+    }
+
+    /// Selects the page size from 1 through 1,000.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+
+    /// Selects the result order.
+    #[must_use]
+    pub fn order_by(mut self, order_by: BithumbOrderDirection) -> Self {
+        self.order_by = Some(order_by);
+        self
+    }
+
+    /// Continues from a provider-issued opaque cursor.
+    #[must_use]
+    pub fn cursor(mut self, cursor: Cursor) -> Self {
+        self.cursor = Some(cursor);
+        self
+    }
+}
+
+/// A state accepted by Bithumb's legacy order-list endpoint.
+///
+/// The `watch` state represents automatic orders. Bithumb does not allow it
+/// in the same multi-state request as normal-order states.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BithumbOrderListState {
+    /// An order resting in the order book.
+    Wait,
+    /// An automatic order waiting for its trigger condition.
+    Watch,
+    /// An order whose execution completed.
+    Done,
+    /// An order that was cancelled.
+    Cancel,
+}
+
+impl BithumbOrderListState {
+    pub(crate) const fn wire_name(self) -> &'static str {
+        match self {
+            Self::Wait => "wait",
+            Self::Watch => "watch",
+            Self::Done => "done",
+            Self::Cancel => "cancel",
+        }
+    }
+}
+
+/// Filters for Bithumb's legacy paginated order-list endpoint.
+///
+/// Set either `state` or `states`, never both. If both identifier lists are
+/// non-empty, Bithumb resolves `uuids` and ignores `client_order_ids`.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct BithumbOrderListRequest {
+    /// Optional Bithumb spot-market filter.
+    pub market: Option<Market>,
+    /// One lifecycle-state filter.
+    pub state: Option<BithumbOrderListState>,
+    /// Multiple lifecycle-state filters.
+    pub states: Vec<BithumbOrderListState>,
+    /// Exchange-assigned order identifiers, limited to 100 values.
+    pub uuids: Vec<String>,
+    /// Caller-assigned order identifiers, limited to 100 values.
+    pub client_order_ids: Vec<String>,
+    /// Page number; Bithumb defaults to 1.
+    pub page: Option<u32>,
+    /// Page size; Bithumb defaults to 100 and serves at most 100 rows.
+    pub limit: Option<u32>,
+    /// Result order; Bithumb defaults to newest first.
+    pub order_by: Option<BithumbOrderDirection>,
+}
+
+impl BithumbOrderListRequest {
+    /// Starts an unfiltered request using Bithumb's defaults.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Filters by one market.
+    #[must_use]
+    pub fn market(mut self, market: Market) -> Self {
+        self.market = Some(market);
+        self
+    }
+
+    /// Filters by one lifecycle state.
+    #[must_use]
+    pub fn state(mut self, state: BithumbOrderListState) -> Self {
+        self.state = Some(state);
+        self
+    }
+
+    /// Filters by multiple lifecycle states.
+    #[must_use]
+    pub fn states(mut self, states: impl Into<Vec<BithumbOrderListState>>) -> Self {
+        self.states = states.into();
+        self
+    }
+
+    /// Filters by Bithumb's exchange-assigned order identifiers.
+    #[must_use]
+    pub fn uuids(mut self, uuids: impl Into<Vec<String>>) -> Self {
+        self.uuids = uuids.into();
+        self
+    }
+
+    /// Filters by caller-assigned order identifiers.
+    #[must_use]
+    pub fn client_order_ids(mut self, client_order_ids: impl Into<Vec<String>>) -> Self {
+        self.client_order_ids = client_order_ids.into();
+        self
+    }
+
+    /// Selects a one-based Bithumb page number.
+    #[must_use]
+    pub fn page(mut self, page: u32) -> Self {
+        self.page = Some(page);
+        self
+    }
+
+    /// Selects the page size from 1 through 100.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+
+    /// Selects the result order.
+    #[must_use]
+    pub fn order_by(mut self, order_by: BithumbOrderDirection) -> Self {
+        self.order_by = Some(order_by);
+        self
+    }
+}
+
 /// Filters for Bithumb's paginated pending-order endpoint.
 ///
 /// Leave `state` and `order_by` unset to use Bithumb's `wait` and `desc`
@@ -347,6 +565,234 @@ pub struct BithumbPendingOrdersRequest {
     pub order_by: Option<BithumbOrderDirection>,
     /// Cursor returned by the preceding page.
     pub cursor: Option<Cursor>,
+}
+
+/// Identifies one Bithumb order while retaining its provider-specific detail.
+///
+/// [`BithumbOrderDetailRequest::market`] is not sent to Bithumb: `/v1/order`
+/// accepts only identifiers. It makes the expected market explicit and lets
+/// the adapter reject a response for a different market.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BithumbOrderDetailRequest {
+    /// Market the returned order must belong to.
+    pub market: Market,
+    /// Exchange-assigned order identifier.
+    ///
+    /// Bithumb gives this field precedence when both identifiers are present.
+    pub uuid: Option<String>,
+    /// Caller-assigned identifier, when the order was created with one.
+    pub client_order_id: Option<String>,
+}
+
+impl BithumbOrderDetailRequest {
+    /// Starts a lookup for one expected market.
+    pub fn new(market: Market) -> Self {
+        Self {
+            market,
+            uuid: None,
+            client_order_id: None,
+        }
+    }
+
+    /// Starts a lookup by Bithumb's exchange-assigned identifier.
+    pub fn by_uuid(market: Market, uuid: impl Into<String>) -> Self {
+        Self::new(market).uuid(uuid)
+    }
+
+    /// Starts a lookup by the caller-assigned identifier.
+    pub fn by_client_order_id(market: Market, client_order_id: impl Into<String>) -> Self {
+        Self::new(market).client_order_id(client_order_id)
+    }
+
+    /// Adds Bithumb's exchange-assigned identifier.
+    ///
+    /// When a client identifier is also present, Bithumb resolves the UUID.
+    #[must_use]
+    pub fn uuid(mut self, uuid: impl Into<String>) -> Self {
+        self.uuid = Some(uuid.into());
+        self
+    }
+
+    /// Adds the caller-assigned identifier.
+    #[must_use]
+    pub fn client_order_id(mut self, client_order_id: impl Into<String>) -> Self {
+        self.client_order_id = Some(client_order_id.into());
+        self
+    }
+}
+
+/// One fill returned inside [`BithumbOrderDetail`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BithumbOrderDetailTrade {
+    /// Market Bithumb reports for this fill.
+    pub market: Market,
+    /// Bithumb's fill identifier.
+    pub uuid: String,
+    /// Execution price.
+    pub price: rust_decimal::Decimal,
+    /// Executed base quantity.
+    pub volume: rust_decimal::Decimal,
+    /// Executed quote amount.
+    pub funds: rust_decimal::Decimal,
+    /// Bithumb's raw fill side (`bid` or `ask`).
+    pub side: String,
+    /// Execution time.
+    pub created_at: Timestamp,
+}
+
+/// The full provider-specific response from Bithumb's single-order endpoint.
+///
+/// The common [`Order`] drops fee, fill, cancellation, and provider lifecycle
+/// fields. This type retains them under Bithumb's documented semantics. Raw
+/// provider enum strings remain strings so new Bithumb values do not make an
+/// otherwise valid response undecodable.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BithumbOrderDetail {
+    /// Bithumb's exchange-assigned order identifier.
+    pub uuid: String,
+    /// Caller-assigned identifier, when the order was created with one.
+    pub client_order_id: Option<String>,
+    /// Bithumb's raw order side (`bid` or `ask`).
+    pub side: String,
+    /// Bithumb's raw order type, such as `limit`, `price`, `market`, or `best`.
+    pub order_type: String,
+    /// Order price.
+    pub price: rust_decimal::Decimal,
+    /// Bithumb's raw lifecycle state, such as `wait`, `watch`, `done`, or `cancel`.
+    pub state: String,
+    /// Bithumb spot market.
+    pub market: Market,
+    /// Order creation time.
+    pub created_at: Timestamp,
+    /// Submitted base quantity.
+    pub volume: rust_decimal::Decimal,
+    /// Base quantity remaining after fills.
+    pub remaining_volume: rust_decimal::Decimal,
+    /// Fee Bithumb reserved when the order was accepted.
+    pub reserved_fee: rust_decimal::Decimal,
+    /// Reserved fee not yet used.
+    pub remaining_fee: rust_decimal::Decimal,
+    /// Cumulative paid fee.
+    pub paid_fee: rust_decimal::Decimal,
+    /// Funds or quantity still locked in the order.
+    pub locked: rust_decimal::Decimal,
+    /// Cumulative executed base quantity.
+    pub executed_volume: rust_decimal::Decimal,
+    /// Cumulative executed quote amount.
+    pub executed_funds: rust_decimal::Decimal,
+    /// Number of fills Bithumb associates with this order.
+    pub trades_count: u32,
+    /// Individual fills in Bithumb's response order.
+    pub trades: Vec<BithumbOrderDetailTrade>,
+    /// Raw self-trade-prevention outcome, when Bithumb returns one.
+    pub stp_type: Option<String>,
+    /// Raw cancellation cause, when Bithumb returns one.
+    pub cancel_type: Option<String>,
+    /// Identifier of the order that caused an STP cancellation, when supplied.
+    pub canceling_uuid: Option<String>,
+    /// Raw time-in-force value, when the order used one.
+    pub time_in_force: Option<String>,
+}
+
+/// One provider-specific order returned by Bithumb's legacy list endpoint.
+///
+/// Unlike [`BithumbOrderDetail`], the list endpoint does not return individual
+/// fills or cancellation-cause fields. Every field it does return is retained
+/// here instead of being reduced to the common [`Order`] model.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BithumbOrderListItem {
+    /// Bithumb's exchange-assigned order identifier.
+    pub uuid: String,
+    /// Caller-assigned identifier, when the order was created with one.
+    pub client_order_id: Option<String>,
+    /// Bithumb's raw order side (`bid` or `ask`).
+    pub side: String,
+    /// Bithumb's raw order type, such as `limit`, `price`, `market`, or `best`.
+    pub order_type: String,
+    /// Order price.
+    pub price: rust_decimal::Decimal,
+    /// Bithumb's raw lifecycle state, such as `wait`, `watch`, `done`, or `cancel`.
+    pub state: String,
+    /// Bithumb spot market.
+    pub market: Market,
+    /// Order creation time.
+    pub created_at: Timestamp,
+    /// Submitted base quantity.
+    pub volume: rust_decimal::Decimal,
+    /// Base quantity remaining after fills.
+    pub remaining_volume: rust_decimal::Decimal,
+    /// Fee Bithumb reserved when the order was accepted.
+    pub reserved_fee: rust_decimal::Decimal,
+    /// Reserved fee not yet used.
+    pub remaining_fee: rust_decimal::Decimal,
+    /// Cumulative paid fee.
+    pub paid_fee: rust_decimal::Decimal,
+    /// Funds or quantity still locked in the order.
+    pub locked: rust_decimal::Decimal,
+    /// Cumulative executed base quantity.
+    pub executed_volume: rust_decimal::Decimal,
+    /// Cumulative executed quote amount.
+    pub executed_funds: rust_decimal::Decimal,
+    /// Number of fills Bithumb associates with this order.
+    pub trades_count: u32,
+    /// Raw self-trade-prevention outcome, when Bithumb returns one.
+    pub stp_type: Option<String>,
+    /// Raw time-in-force value, when the order used one.
+    pub time_in_force: Option<String>,
+}
+
+/// One provider-specific order returned by Bithumb's closed-order endpoint.
+///
+/// Provider enum fields remain raw strings so newly introduced Bithumb values
+/// do not make an otherwise valid response undecodable.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BithumbClosedOrder {
+    /// Bithumb's exchange-assigned order identifier.
+    pub order_id: String,
+    /// Bithumb's raw order side.
+    pub side: String,
+    /// Bithumb's raw order type.
+    pub order_type: String,
+    /// Order price, when Bithumb returns it.
+    pub price: Option<rust_decimal::Decimal>,
+    /// Bithumb's raw final state.
+    pub state: String,
+    /// Bithumb spot market.
+    pub market: Market,
+    /// Order creation time, when Bithumb returns it.
+    pub created_at: Option<Timestamp>,
+    /// Submitted base quantity.
+    pub volume: rust_decimal::Decimal,
+    /// Base quantity remaining after fills.
+    pub remaining_volume: rust_decimal::Decimal,
+    /// Fee Bithumb reserved when the order was accepted.
+    pub reserved_fee: rust_decimal::Decimal,
+    /// Reserved fee not yet used.
+    pub remaining_fee: rust_decimal::Decimal,
+    /// Cumulative paid fee.
+    pub paid_fee: rust_decimal::Decimal,
+    /// Funds or quantity still locked in the order.
+    pub locked: rust_decimal::Decimal,
+    /// Cumulative executed base quantity.
+    pub executed_volume: rust_decimal::Decimal,
+    /// Cumulative executed quote amount.
+    pub executed_funds: rust_decimal::Decimal,
+    /// Number of fills Bithumb associates with this order.
+    pub trades_count: u32,
+    /// Caller-assigned identifier, when one exists.
+    pub client_order_id: Option<String>,
+    /// Raw self-trade-prevention outcome, when Bithumb returns one.
+    pub stp_type: Option<String>,
+    /// Raw time-in-force value, when the order used one.
+    pub time_in_force: Option<String>,
+    /// Raw cancellation cause, when Bithumb returns one.
+    pub cancel_type: Option<String>,
+    /// Order that caused an STP cancellation, when supplied.
+    pub canceling_order_id: Option<String>,
 }
 
 /// One order in a Bithumb batch-order request.
@@ -763,6 +1209,49 @@ impl BithumbAdapter {
         private::api_keys(self.http()?, self.credentials()?).await
     }
 
+    /// Returns every registered Bithumb withdrawal-address entry for this account.
+    ///
+    /// This provider-specific list is distinct from [`Adapter::prepare_withdrawal`]:
+    /// it returns Bithumb's registered address metadata and does not validate a
+    /// prospective withdrawal or calculate a common withdrawal quote.
+    pub async fn withdrawal_addresses(&self) -> Result<Vec<BithumbWithdrawalAddress>> {
+        wallet::withdrawal_addresses(self.http()?, self.credentials()?).await
+    }
+
+    /// Returns one Bithumb order with its provider-specific fill, fee, and
+    /// cancellation metadata.
+    ///
+    /// `/v1/order` resolves `uuid` before `client_order_id` when both are set.
+    /// The request's market is validated locally against the returned order;
+    /// Bithumb does not accept it as a query parameter.
+    pub async fn order_detail(
+        &self,
+        request: &BithumbOrderDetailRequest,
+    ) -> Result<BithumbOrderDetail> {
+        private::order_detail(self.http()?, self.credentials()?, request).await
+    }
+
+    /// Returns one legacy Bithumb order-list page without dropping provider fields.
+    ///
+    /// The endpoint accepts ordinary and automatic order states, but Bithumb
+    /// forbids mixing `watch` with `wait`, `done`, or `cancel` in `states`.
+    /// When both identifier lists are supplied, Bithumb gives `uuids`
+    /// precedence over `client_order_ids`.
+    pub async fn order_list(
+        &self,
+        request: &BithumbOrderListRequest,
+    ) -> Result<Vec<BithumbOrderListItem>> {
+        private::order_list(self.http()?, self.credentials()?, request).await
+    }
+
+    /// Returns one page of final Bithumb orders without dropping provider fields.
+    pub async fn closed_orders(
+        &self,
+        request: &BithumbClosedOrdersRequest,
+    ) -> Result<Page<BithumbClosedOrder>> {
+        private::closed_orders(self.http()?, self.credentials()?, request).await
+    }
+
     /// Returns one page of Bithumb `wait` or `watch` orders.
     pub async fn pending_orders(
         &self,
@@ -1131,6 +1620,49 @@ mod tests {
     async fn pending_orders_without_credentials_are_rejected_before_network_io() {
         let error = BithumbAdapter::new()
             .pending_orders(&BithumbPendingOrdersRequest::new())
+            .await
+            .expect_err("no credentials were supplied");
+
+        assert!(matches!(error, Error::Auth { .. }));
+    }
+
+    #[tokio::test]
+    async fn withdrawal_addresses_without_credentials_are_rejected_before_network_io() {
+        let error = BithumbAdapter::new()
+            .withdrawal_addresses()
+            .await
+            .expect_err("no credentials were supplied");
+
+        assert!(matches!(error, Error::Auth { .. }));
+    }
+
+    #[tokio::test]
+    async fn order_detail_without_credentials_is_rejected_before_network_io() {
+        let error = BithumbAdapter::new()
+            .order_detail(&BithumbOrderDetailRequest::by_uuid(
+                Market::spot(Exchange::Bithumb, "BTC", "KRW"),
+                "C0101000000001818113",
+            ))
+            .await
+            .expect_err("no credentials were supplied");
+
+        assert!(matches!(error, Error::Auth { .. }));
+    }
+
+    #[tokio::test]
+    async fn order_list_without_credentials_is_rejected_before_network_io() {
+        let error = BithumbAdapter::new()
+            .order_list(&BithumbOrderListRequest::new())
+            .await
+            .expect_err("no credentials were supplied");
+
+        assert!(matches!(error, Error::Auth { .. }));
+    }
+
+    #[tokio::test]
+    async fn closed_orders_without_credentials_are_rejected_before_network_io() {
+        let error = BithumbAdapter::new()
+            .closed_orders(&BithumbClosedOrdersRequest::new())
             .await
             .expect_err("no credentials were supplied");
 

@@ -23,11 +23,12 @@
 | `trades(market, limit)` | `/api/v3/trades`; `limit: 1..=1000` | `/fapi/v1/trades`; `limit: 1..=1000` |
 | `order_book(market, depth)` | `/api/v3/depth`; `depth: 1..=5000`; 각 측 `len() <= depth` | `/fapi/v1/depth`; `depth: {5, 10, 20, 50, 100, 500, 1000}`; 각 측 `len() <= depth` |
 | `ticker(market)` | `/api/v3/ticker/24hr`; 최근 24시간 요약 | `/fapi/v1/ticker/24hr`; 최근 24시간 요약 |
+| `spot_average_price(market)` | 공개 `/api/v3/avgPrice`; Binance의 평균 구간과 마지막 포함 체결 시각을 담은 현재 Spot 평균가 스냅샷 | `Error::Unsupported` |
 | `funding_rates(request)` | `Error::Unsupported` | `/fapi/v1/fundingRate`; `limit: 1..=1000`; `None → 100` |
 | `mark_price(market)` | `Error::Unsupported` | `/fapi/v1/premiumIndex`; USD-M 무기한 선물 1건의 mark price 스냅샷 |
 | `mark_prices()` | `Error::Unsupported` | `/fapi/v1/premiumIndex`; 지원하는 USD-M 무기한 선물 시장의 현재 스냅샷 |
 | `open_interest(market)` | `Error::Unsupported` | `/fapi/v1/openInterest`; USD-M 무기한 선물 1건의 미결제약정(open interest) 스냅샷 |
-| `aggregate_trades(request)` | `Error::Unsupported` | USD-M 전용 공개 `/fapi/v1/aggTrades`; `limit: 1..=1000` (`None → 500`); `from_id`부터 조회하거나 `start_time`~`end_time` 범위를 조회하며, 두 방식은 함께 사용할 수 없음; 시간 간격은 1시간 미만 |
+| `aggregate_trades(request)` | 공개 `/api/v3/aggTrades`; `limit: 1..=1000` (`None → 500`); `from_id`부터 조회하거나 `start_time`~`end_time` 포함 범위를 조회하며, 두 방식은 함께 사용할 수 없음 | 공개 `/fapi/v1/aggTrades`; Spot과 같은 집계 체결 타입과 요청 규칙. Binance는 최근 48시간 선물 체결 이력만 보관하고 `start_time`~`end_time` 포함 범위는 1시간 미만이어야 함 |
 
 체결 결과는 최신순입니다. Spot은 거래소 호가 timestamp가 없어
 `OrderBook::timestamp = local_read_time`입니다. USD-M은 거래소 timestamp를
@@ -94,6 +95,10 @@ USD-M은 `OrderBook`을 `/public/stream`으로, `Ticker`, `Candles`를
 | --- | --- |
 | `spot_symbol_filters(&market)` | Spot `PRICE_FILTER`, `LOT_SIZE`, `NOTIONAL`; USD-M은 미지원 |
 | `spot_order(&market, order_id)` | 숫자 `order_id`로 Spot 주문 1건 조회; 완료 주문 포함 |
+| `account_trades(request)` | 서명된 계정 체결 페이지: Spot `GET /api/v3/myTrades`, USD-M `GET /fapi/v1/userTrades`. 시장 1개를 지정한 `HistoryRequest`를 사용하며 `limit`은 1~1,000(기본 500). 안전한 공통 재개 커서가 없어 `next == None`. fixture만 검증 |
+| `c2c_trade_history(request)` | 서명된 Spot/Funding `GET /sapi/v1/c2c/orderMatch/listUserOrderHistory`. `BUY` 또는 `SELL`이 필수이고, page 기본값은 1, rows 기본값은 100이며 rows는 최대 100, 조회 기간은 최대 30일. 공통 페이지 커서로 억지 변환하지 않고 Binance의 선택 C2C 응답 envelope을 보존. fixture만 검증 |
+| `test_order(request)` | 서명된 TRADE 검증: Spot `POST /api/v3/order/test`, USD-M `POST /fapi/v1/order/test`; 매칭 엔진에 주문을 제출하지 않음. `BinanceTestOrderRequest::compute_commission_rates`는 Spot에서만 사용 가능하고 USD-M에서는 요청 전 거절. fixture만 검증 |
+| `cancel_all_open_orders(&market)` | 시장 1개의 활성 주문을 취소하는 서명된 금전성 쓰기: Spot `DELETE /api/v3/openOrders`, USD-M `DELETE /fapi/v1/allOpenOrders`. 불완전한 주문 목록 대신 거래소별 문서화된 응답 형태를 검증한 `()`를 반환. fixture만 검증 |
 | `usd_m_create_listen_key()` | USD-M account listen key 생성 또는 연장 |
 | `usd_m_keepalive_listen_key()` | 설정된 API key가 소유한 활성 USD-M listen key 연장 |
 | `usd_m_close_listen_key()` | 설정된 API key가 소유한 활성 USD-M listen key 종료 |
@@ -103,10 +108,13 @@ USD-M의 `mark_price`, `mark_prices`, `open_interest`는 공개 읽기 전용
 않았습니다. `mark_prices()` 결과는 maxt가 지원하는 USD-M 무기한 선물 시장으로
 제한됩니다.
 
-`aggregate_trades(request)`도 공개 읽기 전용 USD-M 메서드입니다. Binance는 최근
-48시간 이내의 선물 체결 이력만 보관합니다. 한 번에 한 페이지를 반환하므로 ID로
-순회할 때 마지막 aggregate ID에 1을 더한 값을 다음 `from_id`로 사용하세요. 이
-메서드는 fixture로 검증했으며 실제 읽기 요청(live read)은 아직 검증하지 않았습니다.
+`aggregate_trades(request)`는 같은 거래소 전용 집계 체결 타입을 반환하는 공개 읽기
+전용 Spot·USD-M 메서드입니다. 두 거래소 모두 포함 `from_id` 커서 또는 포함 시간
+범위를 사용하되 함께 사용할 수 없습니다. USD-M은 최근 48시간 선물 체결 이력만
+보관하고 시간 범위가 1시간 미만이어야 하지만 Spot에는 같은 로컬 보관·시간 범위
+제한이 없습니다. 한 번에 한 페이지를 반환하므로 ID로 순회할 때 마지막 aggregate
+ID에 1을 더한 값을 다음 `from_id`로 사용하세요. 이 메서드는 fixture로 검증했으며
+실제 읽기 요청(live read)은 아직 검증하지 않았습니다.
 
 `subscribe_account`는 USD-M listen key 수명 주기를 관리합니다. Spot은 서명된
 `userDataStream.subscribe.signature` 요청을 사용하며 listen key를 사용하지
@@ -124,9 +132,13 @@ Binance는 IP 기준 `REQUEST_WEIGHT`를 부과합니다. 현재 한도는 `exch
 `Error::is_rate_limited() == true`입니다.
 
 - [Spot REST 시장 데이터](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/market)
+- [Spot 계정 체결](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/account)
+- [C2C 거래 이력](https://developers.binance.com/en/docs/catalog/investment-and-services-c2-c/api/rest-api/~#get-c2-ctrade-history)
+- [Spot 주문 테스트·일괄 취소](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/trade)
 - [Spot REST 한도](https://developers.binance.com/en/docs/products/spot/rest-api)
 - [Spot WebSocket stream](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/ws-streams/~)
 - [USD-M REST 시장 데이터](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data)
+- [USD-M 계정 체결·주문 테스트·일괄 취소](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/trade)
 - [USD-M Mark Price](https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Mark-Price)
 - [USD-M Open Interest](https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Open-Interest)
 - [USD-M 압축/집계 체결](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data#compressed-aggregate-trades-list)

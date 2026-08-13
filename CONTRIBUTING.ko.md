@@ -121,6 +121,21 @@ CI는 Markdown, Rust, TOML에 기여자 컴퓨터의 절대 경로가 포함된 
 7. 기능 계약 테스트, 거래소 레퍼런스의 영어·한국어 문서, 관련 예제를 갱신합니다.
 8. 변경한 영역의 CI 검사만 실행합니다.
 
+## 공식 API 목록
+
+거래소 operation을 추가하기 전에는
+[`bindings/common/catalog`](bindings/common/catalog/README.ko.md)의 고정된 공식 원본과
+coverage 연결표를 먼저 갱신하세요. 원본 목록은 문서에 공개된 전체 operation을 기록하고,
+`src/coverage.rs`는 구현됐거나 의도적으로 계획된 공개 surface만 기록합니다. 요청·응답·오류의
+의미가 기존 `Adapter`/`Client`와 정확히 같을 때만 공통으로 분류하고, 그렇지 않으면 거래소 전용
+typed API로 유지하세요. 단지 미구현이라는 이유로 일반 operation을 플랫폼 제한으로 분류하면 안
+됩니다.
+
+공통 `Adapter`, 공통 타입, `bindings/common/src/schema.rs` 변경은 거래소별 병렬 구현 전에
+한 번만 결정하세요. Rust 제품군이 안정화된 뒤 바인딩을 생성하고, 최종 전체 빌드 전에는 provider
+문서를 갱신하세요. 선택한 제품군, 생성 바인딩, 문서, 최종 검증이 모두 끝난 뒤에만 릴리스 태그를
+생성하거나 푸시합니다.
+
 ## 배포
 
 - `rust-vX.Y.Z`: crates.io

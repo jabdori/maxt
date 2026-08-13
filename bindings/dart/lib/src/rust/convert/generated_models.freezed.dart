@@ -304,6 +304,1110 @@ as WireBithumbBatchOrderFailure,
 }
 
 /// @nodoc
+mixin _$WireHyperliquidOrderReference {
+
+ Object get field0;
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireHyperliquidOrderReference&&const DeepCollectionEquality().equals(other.field0, field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(field0));
+
+@override
+String toString() {
+  return 'WireHyperliquidOrderReference(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+class $WireHyperliquidOrderReferenceCopyWith<$Res>  {
+$WireHyperliquidOrderReferenceCopyWith(WireHyperliquidOrderReference _, $Res Function(WireHyperliquidOrderReference) __);
+}
+
+
+/// Adds pattern-matching-related methods to [WireHyperliquidOrderReference].
+extension WireHyperliquidOrderReferencePatterns on WireHyperliquidOrderReference {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( WireHyperliquidOrderReference_OrderId value)?  orderId,TResult Function( WireHyperliquidOrderReference_ClientOrderId value)?  clientOrderId,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case WireHyperliquidOrderReference_OrderId() when orderId != null:
+return orderId(_that);case WireHyperliquidOrderReference_ClientOrderId() when clientOrderId != null:
+return clientOrderId(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( WireHyperliquidOrderReference_OrderId value)  orderId,required TResult Function( WireHyperliquidOrderReference_ClientOrderId value)  clientOrderId,}){
+final _that = this;
+switch (_that) {
+case WireHyperliquidOrderReference_OrderId():
+return orderId(_that);case WireHyperliquidOrderReference_ClientOrderId():
+return clientOrderId(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( WireHyperliquidOrderReference_OrderId value)?  orderId,TResult? Function( WireHyperliquidOrderReference_ClientOrderId value)?  clientOrderId,}){
+final _that = this;
+switch (_that) {
+case WireHyperliquidOrderReference_OrderId() when orderId != null:
+return orderId(_that);case WireHyperliquidOrderReference_ClientOrderId() when clientOrderId != null:
+return clientOrderId(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( BigInt field0)?  orderId,TResult Function( String field0)?  clientOrderId,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case WireHyperliquidOrderReference_OrderId() when orderId != null:
+return orderId(_that.field0);case WireHyperliquidOrderReference_ClientOrderId() when clientOrderId != null:
+return clientOrderId(_that.field0);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( BigInt field0)  orderId,required TResult Function( String field0)  clientOrderId,}) {final _that = this;
+switch (_that) {
+case WireHyperliquidOrderReference_OrderId():
+return orderId(_that.field0);case WireHyperliquidOrderReference_ClientOrderId():
+return clientOrderId(_that.field0);}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( BigInt field0)?  orderId,TResult? Function( String field0)?  clientOrderId,}) {final _that = this;
+switch (_that) {
+case WireHyperliquidOrderReference_OrderId() when orderId != null:
+return orderId(_that.field0);case WireHyperliquidOrderReference_ClientOrderId() when clientOrderId != null:
+return clientOrderId(_that.field0);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class WireHyperliquidOrderReference_OrderId extends WireHyperliquidOrderReference {
+  const WireHyperliquidOrderReference_OrderId(this.field0): super._();
+
+
+@override final  BigInt field0;
+
+/// Create a copy of WireHyperliquidOrderReference
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireHyperliquidOrderReference_OrderIdCopyWith<WireHyperliquidOrderReference_OrderId> get copyWith => _$WireHyperliquidOrderReference_OrderIdCopyWithImpl<WireHyperliquidOrderReference_OrderId>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireHyperliquidOrderReference_OrderId&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireHyperliquidOrderReference.orderId(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireHyperliquidOrderReference_OrderIdCopyWith<$Res> implements $WireHyperliquidOrderReferenceCopyWith<$Res> {
+  factory $WireHyperliquidOrderReference_OrderIdCopyWith(WireHyperliquidOrderReference_OrderId value, $Res Function(WireHyperliquidOrderReference_OrderId) _then) = _$WireHyperliquidOrderReference_OrderIdCopyWithImpl;
+@useResult
+$Res call({
+ BigInt field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireHyperliquidOrderReference_OrderIdCopyWithImpl<$Res>
+    implements $WireHyperliquidOrderReference_OrderIdCopyWith<$Res> {
+  _$WireHyperliquidOrderReference_OrderIdCopyWithImpl(this._self, this._then);
+
+  final WireHyperliquidOrderReference_OrderId _self;
+  final $Res Function(WireHyperliquidOrderReference_OrderId) _then;
+
+/// Create a copy of WireHyperliquidOrderReference
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireHyperliquidOrderReference_OrderId(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as BigInt,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireHyperliquidOrderReference_ClientOrderId extends WireHyperliquidOrderReference {
+  const WireHyperliquidOrderReference_ClientOrderId(this.field0): super._();
+
+
+@override final  String field0;
+
+/// Create a copy of WireHyperliquidOrderReference
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireHyperliquidOrderReference_ClientOrderIdCopyWith<WireHyperliquidOrderReference_ClientOrderId> get copyWith => _$WireHyperliquidOrderReference_ClientOrderIdCopyWithImpl<WireHyperliquidOrderReference_ClientOrderId>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireHyperliquidOrderReference_ClientOrderId&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireHyperliquidOrderReference.clientOrderId(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireHyperliquidOrderReference_ClientOrderIdCopyWith<$Res> implements $WireHyperliquidOrderReferenceCopyWith<$Res> {
+  factory $WireHyperliquidOrderReference_ClientOrderIdCopyWith(WireHyperliquidOrderReference_ClientOrderId value, $Res Function(WireHyperliquidOrderReference_ClientOrderId) _then) = _$WireHyperliquidOrderReference_ClientOrderIdCopyWithImpl;
+@useResult
+$Res call({
+ String field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireHyperliquidOrderReference_ClientOrderIdCopyWithImpl<$Res>
+    implements $WireHyperliquidOrderReference_ClientOrderIdCopyWith<$Res> {
+  _$WireHyperliquidOrderReference_ClientOrderIdCopyWithImpl(this._self, this._then);
+
+  final WireHyperliquidOrderReference_ClientOrderId _self;
+  final $Res Function(WireHyperliquidOrderReference_ClientOrderId) _then;
+
+/// Create a copy of WireHyperliquidOrderReference
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireHyperliquidOrderReference_ClientOrderId(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+mixin _$WireHyperliquidOrderStatusResponse {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireHyperliquidOrderStatusResponse);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireHyperliquidOrderStatusResponse()';
+}
+
+
+}
+
+/// @nodoc
+class $WireHyperliquidOrderStatusResponseCopyWith<$Res>  {
+$WireHyperliquidOrderStatusResponseCopyWith(WireHyperliquidOrderStatusResponse _, $Res Function(WireHyperliquidOrderStatusResponse) __);
+}
+
+
+/// Adds pattern-matching-related methods to [WireHyperliquidOrderStatusResponse].
+extension WireHyperliquidOrderStatusResponsePatterns on WireHyperliquidOrderStatusResponse {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( WireHyperliquidOrderStatusResponse_Order value)?  order,TResult Function( WireHyperliquidOrderStatusResponse_UnknownOrder value)?  unknownOrder,TResult Function( WireHyperliquidOrderStatusResponse_Other value)?  other,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case WireHyperliquidOrderStatusResponse_Order() when order != null:
+return order(_that);case WireHyperliquidOrderStatusResponse_UnknownOrder() when unknownOrder != null:
+return unknownOrder(_that);case WireHyperliquidOrderStatusResponse_Other() when other != null:
+return other(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( WireHyperliquidOrderStatusResponse_Order value)  order,required TResult Function( WireHyperliquidOrderStatusResponse_UnknownOrder value)  unknownOrder,required TResult Function( WireHyperliquidOrderStatusResponse_Other value)  other,}){
+final _that = this;
+switch (_that) {
+case WireHyperliquidOrderStatusResponse_Order():
+return order(_that);case WireHyperliquidOrderStatusResponse_UnknownOrder():
+return unknownOrder(_that);case WireHyperliquidOrderStatusResponse_Other():
+return other(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( WireHyperliquidOrderStatusResponse_Order value)?  order,TResult? Function( WireHyperliquidOrderStatusResponse_UnknownOrder value)?  unknownOrder,TResult? Function( WireHyperliquidOrderStatusResponse_Other value)?  other,}){
+final _that = this;
+switch (_that) {
+case WireHyperliquidOrderStatusResponse_Order() when order != null:
+return order(_that);case WireHyperliquidOrderStatusResponse_UnknownOrder() when unknownOrder != null:
+return unknownOrder(_that);case WireHyperliquidOrderStatusResponse_Other() when other != null:
+return other(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( WireHyperliquidOrderInfo field0)?  order,TResult Function()?  unknownOrder,TResult Function( String status,  String rawJson)?  other,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case WireHyperliquidOrderStatusResponse_Order() when order != null:
+return order(_that.field0);case WireHyperliquidOrderStatusResponse_UnknownOrder() when unknownOrder != null:
+return unknownOrder();case WireHyperliquidOrderStatusResponse_Other() when other != null:
+return other(_that.status,_that.rawJson);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( WireHyperliquidOrderInfo field0)  order,required TResult Function()  unknownOrder,required TResult Function( String status,  String rawJson)  other,}) {final _that = this;
+switch (_that) {
+case WireHyperliquidOrderStatusResponse_Order():
+return order(_that.field0);case WireHyperliquidOrderStatusResponse_UnknownOrder():
+return unknownOrder();case WireHyperliquidOrderStatusResponse_Other():
+return other(_that.status,_that.rawJson);}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( WireHyperliquidOrderInfo field0)?  order,TResult? Function()?  unknownOrder,TResult? Function( String status,  String rawJson)?  other,}) {final _that = this;
+switch (_that) {
+case WireHyperliquidOrderStatusResponse_Order() when order != null:
+return order(_that.field0);case WireHyperliquidOrderStatusResponse_UnknownOrder() when unknownOrder != null:
+return unknownOrder();case WireHyperliquidOrderStatusResponse_Other() when other != null:
+return other(_that.status,_that.rawJson);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class WireHyperliquidOrderStatusResponse_Order extends WireHyperliquidOrderStatusResponse {
+  const WireHyperliquidOrderStatusResponse_Order(this.field0): super._();
+
+
+ final  WireHyperliquidOrderInfo field0;
+
+/// Create a copy of WireHyperliquidOrderStatusResponse
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireHyperliquidOrderStatusResponse_OrderCopyWith<WireHyperliquidOrderStatusResponse_Order> get copyWith => _$WireHyperliquidOrderStatusResponse_OrderCopyWithImpl<WireHyperliquidOrderStatusResponse_Order>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireHyperliquidOrderStatusResponse_Order&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireHyperliquidOrderStatusResponse.order(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireHyperliquidOrderStatusResponse_OrderCopyWith<$Res> implements $WireHyperliquidOrderStatusResponseCopyWith<$Res> {
+  factory $WireHyperliquidOrderStatusResponse_OrderCopyWith(WireHyperliquidOrderStatusResponse_Order value, $Res Function(WireHyperliquidOrderStatusResponse_Order) _then) = _$WireHyperliquidOrderStatusResponse_OrderCopyWithImpl;
+@useResult
+$Res call({
+ WireHyperliquidOrderInfo field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireHyperliquidOrderStatusResponse_OrderCopyWithImpl<$Res>
+    implements $WireHyperliquidOrderStatusResponse_OrderCopyWith<$Res> {
+  _$WireHyperliquidOrderStatusResponse_OrderCopyWithImpl(this._self, this._then);
+
+  final WireHyperliquidOrderStatusResponse_Order _self;
+  final $Res Function(WireHyperliquidOrderStatusResponse_Order) _then;
+
+/// Create a copy of WireHyperliquidOrderStatusResponse
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireHyperliquidOrderStatusResponse_Order(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireHyperliquidOrderInfo,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireHyperliquidOrderStatusResponse_UnknownOrder extends WireHyperliquidOrderStatusResponse {
+  const WireHyperliquidOrderStatusResponse_UnknownOrder(): super._();
+
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireHyperliquidOrderStatusResponse_UnknownOrder);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireHyperliquidOrderStatusResponse.unknownOrder()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class WireHyperliquidOrderStatusResponse_Other extends WireHyperliquidOrderStatusResponse {
+  const WireHyperliquidOrderStatusResponse_Other({required this.status, required this.rawJson}): super._();
+
+
+ final  String status;
+ final  String rawJson;
+
+/// Create a copy of WireHyperliquidOrderStatusResponse
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireHyperliquidOrderStatusResponse_OtherCopyWith<WireHyperliquidOrderStatusResponse_Other> get copyWith => _$WireHyperliquidOrderStatusResponse_OtherCopyWithImpl<WireHyperliquidOrderStatusResponse_Other>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireHyperliquidOrderStatusResponse_Other&&(identical(other.status, status) || other.status == status)&&(identical(other.rawJson, rawJson) || other.rawJson == rawJson));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,status,rawJson);
+
+@override
+String toString() {
+  return 'WireHyperliquidOrderStatusResponse.other(status: $status, rawJson: $rawJson)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireHyperliquidOrderStatusResponse_OtherCopyWith<$Res> implements $WireHyperliquidOrderStatusResponseCopyWith<$Res> {
+  factory $WireHyperliquidOrderStatusResponse_OtherCopyWith(WireHyperliquidOrderStatusResponse_Other value, $Res Function(WireHyperliquidOrderStatusResponse_Other) _then) = _$WireHyperliquidOrderStatusResponse_OtherCopyWithImpl;
+@useResult
+$Res call({
+ String status, String rawJson
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireHyperliquidOrderStatusResponse_OtherCopyWithImpl<$Res>
+    implements $WireHyperliquidOrderStatusResponse_OtherCopyWith<$Res> {
+  _$WireHyperliquidOrderStatusResponse_OtherCopyWithImpl(this._self, this._then);
+
+  final WireHyperliquidOrderStatusResponse_Other _self;
+  final $Res Function(WireHyperliquidOrderStatusResponse_Other) _then;
+
+/// Create a copy of WireHyperliquidOrderStatusResponse
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? status = null,Object? rawJson = null,}) {
+  return _then(WireHyperliquidOrderStatusResponse_Other(
+status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as String,rawJson: null == rawJson ? _self.rawJson : rawJson // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+mixin _$WireHyperliquidUserRole {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireHyperliquidUserRole);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireHyperliquidUserRole()';
+}
+
+
+}
+
+/// @nodoc
+class $WireHyperliquidUserRoleCopyWith<$Res>  {
+$WireHyperliquidUserRoleCopyWith(WireHyperliquidUserRole _, $Res Function(WireHyperliquidUserRole) __);
+}
+
+
+/// Adds pattern-matching-related methods to [WireHyperliquidUserRole].
+extension WireHyperliquidUserRolePatterns on WireHyperliquidUserRole {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( WireHyperliquidUserRole_User value)?  user,TResult Function( WireHyperliquidUserRole_Agent value)?  agent,TResult Function( WireHyperliquidUserRole_Vault value)?  vault,TResult Function( WireHyperliquidUserRole_SubAccount value)?  subAccount,TResult Function( WireHyperliquidUserRole_Missing value)?  missing,TResult Function( WireHyperliquidUserRole_Other value)?  other,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case WireHyperliquidUserRole_User() when user != null:
+return user(_that);case WireHyperliquidUserRole_Agent() when agent != null:
+return agent(_that);case WireHyperliquidUserRole_Vault() when vault != null:
+return vault(_that);case WireHyperliquidUserRole_SubAccount() when subAccount != null:
+return subAccount(_that);case WireHyperliquidUserRole_Missing() when missing != null:
+return missing(_that);case WireHyperliquidUserRole_Other() when other != null:
+return other(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( WireHyperliquidUserRole_User value)  user,required TResult Function( WireHyperliquidUserRole_Agent value)  agent,required TResult Function( WireHyperliquidUserRole_Vault value)  vault,required TResult Function( WireHyperliquidUserRole_SubAccount value)  subAccount,required TResult Function( WireHyperliquidUserRole_Missing value)  missing,required TResult Function( WireHyperliquidUserRole_Other value)  other,}){
+final _that = this;
+switch (_that) {
+case WireHyperliquidUserRole_User():
+return user(_that);case WireHyperliquidUserRole_Agent():
+return agent(_that);case WireHyperliquidUserRole_Vault():
+return vault(_that);case WireHyperliquidUserRole_SubAccount():
+return subAccount(_that);case WireHyperliquidUserRole_Missing():
+return missing(_that);case WireHyperliquidUserRole_Other():
+return other(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( WireHyperliquidUserRole_User value)?  user,TResult? Function( WireHyperliquidUserRole_Agent value)?  agent,TResult? Function( WireHyperliquidUserRole_Vault value)?  vault,TResult? Function( WireHyperliquidUserRole_SubAccount value)?  subAccount,TResult? Function( WireHyperliquidUserRole_Missing value)?  missing,TResult? Function( WireHyperliquidUserRole_Other value)?  other,}){
+final _that = this;
+switch (_that) {
+case WireHyperliquidUserRole_User() when user != null:
+return user(_that);case WireHyperliquidUserRole_Agent() when agent != null:
+return agent(_that);case WireHyperliquidUserRole_Vault() when vault != null:
+return vault(_that);case WireHyperliquidUserRole_SubAccount() when subAccount != null:
+return subAccount(_that);case WireHyperliquidUserRole_Missing() when missing != null:
+return missing(_that);case WireHyperliquidUserRole_Other() when other != null:
+return other(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  user,TResult Function( String? user)?  agent,TResult Function()?  vault,TResult Function( String? master)?  subAccount,TResult Function()?  missing,TResult Function( String role,  String? dataJson)?  other,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case WireHyperliquidUserRole_User() when user != null:
+return user();case WireHyperliquidUserRole_Agent() when agent != null:
+return agent(_that.user);case WireHyperliquidUserRole_Vault() when vault != null:
+return vault();case WireHyperliquidUserRole_SubAccount() when subAccount != null:
+return subAccount(_that.master);case WireHyperliquidUserRole_Missing() when missing != null:
+return missing();case WireHyperliquidUserRole_Other() when other != null:
+return other(_that.role,_that.dataJson);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  user,required TResult Function( String? user)  agent,required TResult Function()  vault,required TResult Function( String? master)  subAccount,required TResult Function()  missing,required TResult Function( String role,  String? dataJson)  other,}) {final _that = this;
+switch (_that) {
+case WireHyperliquidUserRole_User():
+return user();case WireHyperliquidUserRole_Agent():
+return agent(_that.user);case WireHyperliquidUserRole_Vault():
+return vault();case WireHyperliquidUserRole_SubAccount():
+return subAccount(_that.master);case WireHyperliquidUserRole_Missing():
+return missing();case WireHyperliquidUserRole_Other():
+return other(_that.role,_that.dataJson);}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  user,TResult? Function( String? user)?  agent,TResult? Function()?  vault,TResult? Function( String? master)?  subAccount,TResult? Function()?  missing,TResult? Function( String role,  String? dataJson)?  other,}) {final _that = this;
+switch (_that) {
+case WireHyperliquidUserRole_User() when user != null:
+return user();case WireHyperliquidUserRole_Agent() when agent != null:
+return agent(_that.user);case WireHyperliquidUserRole_Vault() when vault != null:
+return vault();case WireHyperliquidUserRole_SubAccount() when subAccount != null:
+return subAccount(_that.master);case WireHyperliquidUserRole_Missing() when missing != null:
+return missing();case WireHyperliquidUserRole_Other() when other != null:
+return other(_that.role,_that.dataJson);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class WireHyperliquidUserRole_User extends WireHyperliquidUserRole {
+  const WireHyperliquidUserRole_User(): super._();
+
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireHyperliquidUserRole_User);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireHyperliquidUserRole.user()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class WireHyperliquidUserRole_Agent extends WireHyperliquidUserRole {
+  const WireHyperliquidUserRole_Agent({this.user}): super._();
+
+
+ final  String? user;
+
+/// Create a copy of WireHyperliquidUserRole
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireHyperliquidUserRole_AgentCopyWith<WireHyperliquidUserRole_Agent> get copyWith => _$WireHyperliquidUserRole_AgentCopyWithImpl<WireHyperliquidUserRole_Agent>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireHyperliquidUserRole_Agent&&(identical(other.user, user) || other.user == user));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,user);
+
+@override
+String toString() {
+  return 'WireHyperliquidUserRole.agent(user: $user)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireHyperliquidUserRole_AgentCopyWith<$Res> implements $WireHyperliquidUserRoleCopyWith<$Res> {
+  factory $WireHyperliquidUserRole_AgentCopyWith(WireHyperliquidUserRole_Agent value, $Res Function(WireHyperliquidUserRole_Agent) _then) = _$WireHyperliquidUserRole_AgentCopyWithImpl;
+@useResult
+$Res call({
+ String? user
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireHyperliquidUserRole_AgentCopyWithImpl<$Res>
+    implements $WireHyperliquidUserRole_AgentCopyWith<$Res> {
+  _$WireHyperliquidUserRole_AgentCopyWithImpl(this._self, this._then);
+
+  final WireHyperliquidUserRole_Agent _self;
+  final $Res Function(WireHyperliquidUserRole_Agent) _then;
+
+/// Create a copy of WireHyperliquidUserRole
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? user = freezed,}) {
+  return _then(WireHyperliquidUserRole_Agent(
+user: freezed == user ? _self.user : user // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireHyperliquidUserRole_Vault extends WireHyperliquidUserRole {
+  const WireHyperliquidUserRole_Vault(): super._();
+
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireHyperliquidUserRole_Vault);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireHyperliquidUserRole.vault()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class WireHyperliquidUserRole_SubAccount extends WireHyperliquidUserRole {
+  const WireHyperliquidUserRole_SubAccount({this.master}): super._();
+
+
+ final  String? master;
+
+/// Create a copy of WireHyperliquidUserRole
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireHyperliquidUserRole_SubAccountCopyWith<WireHyperliquidUserRole_SubAccount> get copyWith => _$WireHyperliquidUserRole_SubAccountCopyWithImpl<WireHyperliquidUserRole_SubAccount>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireHyperliquidUserRole_SubAccount&&(identical(other.master, master) || other.master == master));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,master);
+
+@override
+String toString() {
+  return 'WireHyperliquidUserRole.subAccount(master: $master)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireHyperliquidUserRole_SubAccountCopyWith<$Res> implements $WireHyperliquidUserRoleCopyWith<$Res> {
+  factory $WireHyperliquidUserRole_SubAccountCopyWith(WireHyperliquidUserRole_SubAccount value, $Res Function(WireHyperliquidUserRole_SubAccount) _then) = _$WireHyperliquidUserRole_SubAccountCopyWithImpl;
+@useResult
+$Res call({
+ String? master
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireHyperliquidUserRole_SubAccountCopyWithImpl<$Res>
+    implements $WireHyperliquidUserRole_SubAccountCopyWith<$Res> {
+  _$WireHyperliquidUserRole_SubAccountCopyWithImpl(this._self, this._then);
+
+  final WireHyperliquidUserRole_SubAccount _self;
+  final $Res Function(WireHyperliquidUserRole_SubAccount) _then;
+
+/// Create a copy of WireHyperliquidUserRole
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? master = freezed,}) {
+  return _then(WireHyperliquidUserRole_SubAccount(
+master: freezed == master ? _self.master : master // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireHyperliquidUserRole_Missing extends WireHyperliquidUserRole {
+  const WireHyperliquidUserRole_Missing(): super._();
+
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireHyperliquidUserRole_Missing);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireHyperliquidUserRole.missing()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class WireHyperliquidUserRole_Other extends WireHyperliquidUserRole {
+  const WireHyperliquidUserRole_Other({required this.role, this.dataJson}): super._();
+
+
+ final  String role;
+ final  String? dataJson;
+
+/// Create a copy of WireHyperliquidUserRole
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireHyperliquidUserRole_OtherCopyWith<WireHyperliquidUserRole_Other> get copyWith => _$WireHyperliquidUserRole_OtherCopyWithImpl<WireHyperliquidUserRole_Other>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireHyperliquidUserRole_Other&&(identical(other.role, role) || other.role == role)&&(identical(other.dataJson, dataJson) || other.dataJson == dataJson));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,role,dataJson);
+
+@override
+String toString() {
+  return 'WireHyperliquidUserRole.other(role: $role, dataJson: $dataJson)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireHyperliquidUserRole_OtherCopyWith<$Res> implements $WireHyperliquidUserRoleCopyWith<$Res> {
+  factory $WireHyperliquidUserRole_OtherCopyWith(WireHyperliquidUserRole_Other value, $Res Function(WireHyperliquidUserRole_Other) _then) = _$WireHyperliquidUserRole_OtherCopyWithImpl;
+@useResult
+$Res call({
+ String role, String? dataJson
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireHyperliquidUserRole_OtherCopyWithImpl<$Res>
+    implements $WireHyperliquidUserRole_OtherCopyWith<$Res> {
+  _$WireHyperliquidUserRole_OtherCopyWithImpl(this._self, this._then);
+
+  final WireHyperliquidUserRole_Other _self;
+  final $Res Function(WireHyperliquidUserRole_Other) _then;
+
+/// Create a copy of WireHyperliquidUserRole
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? role = null,Object? dataJson = freezed,}) {
+  return _then(WireHyperliquidUserRole_Other(
+role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
+as String,dataJson: freezed == dataJson ? _self.dataJson : dataJson // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
+}
+
+/// @nodoc
 mixin _$WireTransferDestination {
 
  Object get field0;

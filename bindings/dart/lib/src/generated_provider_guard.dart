@@ -21,10 +21,16 @@ void _generatedProviderGuard({
   );
   upbit.tickers(_generatedProviderValue<List<Market>>());
   upbit.tickersByQuote(_generatedProviderValue<List<String>>());
-  upbit.yearCandles(_generatedProviderValue<Market>());
+  upbit.yearCandles(
+    _generatedProviderValue<Market>(),
+    _generatedProviderValue<Timestamp?>(),
+  );
   upbit.orderbookInstruments(_generatedProviderValue<List<Market>>());
   upbit.marketEvents();
+  upbit.listSubscriptions(_generatedProviderValue<Subscription>());
   upbit.testOrder(_generatedProviderValue<OrderRequest>());
+  upbit.orderDetail(_generatedProviderValue<UpbitOrderDetailRequest>());
+  upbit.closedOrders(_generatedProviderValue<UpbitClosedOrdersRequest>());
   upbit.depositInfo(
     _generatedProviderValue<String>(),
     _generatedProviderValue<Network>(),
@@ -46,6 +52,20 @@ void _generatedProviderGuard({
   upbit.cancelAndNewOrder(
     _generatedProviderValue<UpbitCancelAndNewOrderRequest>(),
   );
+  upbit.depositKrw(_generatedProviderValue<UpbitKrwTransferRequest>());
+  upbit.withdrawKrw(_generatedProviderValue<UpbitKrwTransferRequest>());
+  upbit.apiKeys();
+  upbit.listPockets();
+  upbit.listPocketApiKeys(_generatedProviderValue<UpbitPocketApiKeysRequest>());
+  upbit.subPocketBalances(_generatedProviderValue<String>());
+  upbit.universalTransfer(
+    _generatedProviderValue<UpbitPocketUniversalTransferRequest>(),
+  );
+  upbit.universalTransfers(_generatedProviderValue<UpbitPocketTransferQuery>());
+  upbit.subPocketTransfer(
+    _generatedProviderValue<UpbitPocketTransferRequest>(),
+  );
+  upbit.subPocketTransfers(_generatedProviderValue<UpbitPocketTransferQuery>());
   BithumbAdapter();
   bithumb.marketWarnings();
   bithumb.marketAlerts();
@@ -59,10 +79,14 @@ void _generatedProviderGuard({
   bithumb.krwDeposits(_generatedProviderValue<BithumbKrwDepositsRequest>());
   bithumb.depositKrw(_generatedProviderValue<BithumbKrwTransferRequest>());
   bithumb.pendingOrders(_generatedProviderValue<BithumbPendingOrdersRequest>());
+  bithumb.closedOrders(_generatedProviderValue<BithumbClosedOrdersRequest>());
   bithumb.batchOrders(_generatedProviderValue<BithumbBatchOrdersRequest>());
   bithumb.twapOrders(_generatedProviderValue<BithumbTwapOrdersRequest>());
   bithumb.createTwapOrder(_generatedProviderValue<BithumbTwapOrderRequest>());
   bithumb.cancelTwapOrder(_generatedProviderValue<String>());
+  bithumb.withdrawalAddresses();
+  bithumb.orderDetail(_generatedProviderValue<BithumbOrderDetailRequest>());
+  bithumb.orderList(_generatedProviderValue<BithumbOrderListRequest>());
   BinanceAdapter.spot();
   BinanceAdapter.usdMFutures();
   binance.venue;
@@ -71,12 +95,19 @@ void _generatedProviderGuard({
     _generatedProviderValue<Market>(),
     _generatedProviderValue<String>(),
   );
+  binance.spotAveragePrice(_generatedProviderValue<Market>());
   binance.markPrice(_generatedProviderValue<Market>());
   binance.markPrices();
   binance.openInterest(_generatedProviderValue<Market>());
   binance.aggregateTrades(
     _generatedProviderValue<BinanceAggregateTradesRequest>(),
   );
+  binance.accountTrades(_generatedProviderValue<HistoryRequest>());
+  binance.c2cTradeHistory(
+    _generatedProviderValue<BinanceC2cTradeHistoryRequest>(),
+  );
+  binance.testOrder(_generatedProviderValue<BinanceTestOrderRequest>());
+  binance.cancelAllOpenOrders(_generatedProviderValue<Market>());
   binance.usdMCreateListenKey();
   binance.usdMKeepaliveListenKey();
   binance.usdMCloseListenKey();
@@ -84,6 +115,22 @@ void _generatedProviderGuard({
   HyperliquidAdapter.testnet();
   hyperliquid.isTestnet;
   hyperliquid.allMids();
+  hyperliquid.userFills(_generatedProviderValue<bool>());
+  hyperliquid.userFillsByTime(
+    _generatedProviderValue<Timestamp>(),
+    _generatedProviderValue<Timestamp?>(),
+    _generatedProviderValue<bool>(),
+  );
+  hyperliquid.basicOpenOrders();
+  hyperliquid.orderStatus(_generatedProviderValue<HyperliquidOrderReference>());
+  hyperliquid.historicalOrders();
   hyperliquid.nonFundingLedger();
   hyperliquid.assetContext(_generatedProviderValue<Market>());
+  hyperliquid.userRateLimit();
+  hyperliquid.userRole();
+  hyperliquid.referral();
+  hyperliquid.userFees();
+  hyperliquid.portfolio();
+  hyperliquid.subAccounts();
+  hyperliquid.userVaultEquities();
 }

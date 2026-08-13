@@ -7,7 +7,7 @@ import { AccountStream, MarketStream, StreamError } from "../stream.js";
 import * as Codec from "./codec.js";
 import type * as Wire from "./contract.js";
 
-export const NATIVE_API_VERSION = 21 as const;
+export const NATIVE_API_VERSION = 28 as const;
 
 export type NativeOutcome<T> =
   | { readonly ok: true; readonly value: T }
@@ -71,13 +71,26 @@ export interface RawNativeUpbitHandle {
   yearCandles(market: string, to: string, count: string): Promise<unknown>;
   orderbookInstruments(markets: string): Promise<unknown>;
   marketEvents(): Promise<unknown>;
+  listSubscriptions(subscription: string): Promise<unknown>;
   testOrder(request: string): Promise<unknown>;
+  orderDetail(request: string): Promise<unknown>;
+  closedOrders(request: string): Promise<unknown>;
   depositInfo(asset: string, network: string): Promise<unknown>;
   travelRuleVasps(): Promise<unknown>;
   verifyTravelRuleByUuid(depositUuid: string, vaspUuid: string): Promise<unknown>;
   verifyTravelRuleByTxid(txid: string, vaspUuid: string, currency: string, netType: string): Promise<unknown>;
   batchCancelOpenOrders(request: string): Promise<unknown>;
   cancelAndNewOrder(request: string): Promise<unknown>;
+  depositKrw(request: string): Promise<unknown>;
+  withdrawKrw(request: string): Promise<unknown>;
+  apiKeys(): Promise<unknown>;
+  listPockets(): Promise<unknown>;
+  listPocketApiKeys(request: string): Promise<unknown>;
+  subPocketBalances(pocketUuid: string): Promise<unknown>;
+  universalTransfer(request: string): Promise<unknown>;
+  universalTransfers(request: string): Promise<unknown>;
+  subPocketTransfer(request: string): Promise<unknown>;
+  subPocketTransfers(request: string): Promise<unknown>;
 }
 
 export interface RawNativeBithumbHandle {
@@ -92,10 +105,14 @@ export interface RawNativeBithumbHandle {
   krwDeposits(request: string): Promise<unknown>;
   depositKrw(request: string): Promise<unknown>;
   pendingOrders(request: string): Promise<unknown>;
+  closedOrders(request: string): Promise<unknown>;
   batchOrders(request: string): Promise<unknown>;
   twapOrders(request: string): Promise<unknown>;
   createTwapOrder(request: string): Promise<unknown>;
   cancelTwapOrder(algoOrderId: string): Promise<unknown>;
+  withdrawalAddresses(): Promise<unknown>;
+  orderDetail(request: string): Promise<unknown>;
+  orderList(request: string): Promise<unknown>;
 }
 
 export interface RawNativeBinanceHandle {
@@ -103,10 +120,15 @@ export interface RawNativeBinanceHandle {
   venue(): string;
   spotSymbolFilters(market: string): Promise<unknown>;
   spotOrder(market: string, orderId: string): Promise<unknown>;
+  spotAveragePrice(market: string): Promise<unknown>;
   markPrice(market: string): Promise<unknown>;
   markPrices(): Promise<unknown>;
   openInterest(market: string): Promise<unknown>;
   aggregateTrades(request: string): Promise<unknown>;
+  accountTrades(request: string): Promise<unknown>;
+  c2cTradeHistory(request: string): Promise<unknown>;
+  testOrder(request: string): Promise<unknown>;
+  cancelAllOpenOrders(market: string): Promise<unknown>;
   usdMCreateListenKey(): Promise<unknown>;
   usdMKeepaliveListenKey(): Promise<unknown>;
   usdMCloseListenKey(): Promise<unknown>;
@@ -116,8 +138,20 @@ export interface RawNativeHyperliquidHandle {
   client(): RawNativeClient;
   isTestnet(): boolean;
   allMids(): Promise<unknown>;
+  userFills(aggregateByTime: string): Promise<unknown>;
+  userFillsByTime(from: string, to: string, aggregateByTime: string): Promise<unknown>;
+  basicOpenOrders(): Promise<unknown>;
+  orderStatus(reference: string): Promise<unknown>;
+  historicalOrders(): Promise<unknown>;
   nonFundingLedger(from: string, to: string, cursor: string, limit: string): Promise<unknown>;
   assetContext(market: string): Promise<unknown>;
+  userRateLimit(): Promise<unknown>;
+  userRole(): Promise<unknown>;
+  referral(): Promise<unknown>;
+  userFees(): Promise<unknown>;
+  portfolio(): Promise<unknown>;
+  subAccounts(): Promise<unknown>;
+  userVaultEquities(): Promise<unknown>;
 }
 
 export interface RawForeignAdapterCallbacks {
@@ -209,13 +243,26 @@ export interface NativeUpbitHandle {
   yearCandles(market: Wire.MarketWire, to: Wire.TimestampWire | null, count: number | null): Promise<NativeOutcome<readonly Wire.UpbitYearCandleWire[]>>;
   orderbookInstruments(markets: readonly Wire.MarketWire[]): Promise<NativeOutcome<readonly Wire.UpbitOrderBookInstrumentWire[]>>;
   marketEvents(): Promise<NativeOutcome<readonly (readonly [Wire.MarketWire, Wire.UpbitMarketEventWire])[]>>;
+  listSubscriptions(subscription: Wire.SubscriptionWire): Promise<NativeOutcome<Wire.UpbitSubscriptionListWire>>;
   testOrder(request: Wire.OrderRequestWire): Promise<NativeOutcome<Wire.OrderWire>>;
+  orderDetail(request: Wire.UpbitOrderDetailRequestWire): Promise<NativeOutcome<Wire.UpbitOrderDetailWire>>;
+  closedOrders(request: Wire.UpbitClosedOrdersRequestWire): Promise<NativeOutcome<readonly Wire.UpbitClosedOrderWire[]>>;
   depositInfo(asset: string, network: string): Promise<NativeOutcome<Wire.UpbitDepositInfoWire>>;
   travelRuleVasps(): Promise<NativeOutcome<readonly Wire.UpbitTravelRuleVaspWire[]>>;
   verifyTravelRuleByUuid(depositUuid: string, vaspUuid: string): Promise<NativeOutcome<Wire.UpbitTravelRuleVerificationWire>>;
   verifyTravelRuleByTxid(txid: string, vaspUuid: string, currency: string, netType: string): Promise<NativeOutcome<Wire.UpbitTravelRuleVerificationWire>>;
   batchCancelOpenOrders(request: Wire.UpbitBatchCancelRequestWire): Promise<NativeOutcome<Wire.CancelOrdersResultWire>>;
   cancelAndNewOrder(request: Wire.UpbitCancelAndNewOrderRequestWire): Promise<NativeOutcome<Wire.UpbitCancelAndNewOrderResultWire>>;
+  depositKrw(request: Wire.UpbitKrwTransferRequestWire): Promise<NativeOutcome<Wire.UpbitKrwDepositWire>>;
+  withdrawKrw(request: Wire.UpbitKrwTransferRequestWire): Promise<NativeOutcome<Wire.UpbitKrwWithdrawalWire>>;
+  apiKeys(): Promise<NativeOutcome<readonly Wire.UpbitApiKeyWire[]>>;
+  listPockets(): Promise<NativeOutcome<readonly Wire.UpbitPocketWire[]>>;
+  listPocketApiKeys(request: Wire.UpbitPocketApiKeysRequestWire): Promise<NativeOutcome<readonly Wire.UpbitPocketApiKeyGroupWire[]>>;
+  subPocketBalances(pocketUuid: string): Promise<NativeOutcome<readonly Wire.UpbitPocketBalanceWire[]>>;
+  universalTransfer(request: Wire.UpbitPocketUniversalTransferRequestWire): Promise<NativeOutcome<Wire.UpbitPocketTransferWire>>;
+  universalTransfers(request: Wire.UpbitPocketTransferQueryWire): Promise<NativeOutcome<readonly Wire.UpbitPocketTransferWire[]>>;
+  subPocketTransfer(request: Wire.UpbitPocketTransferRequestWire): Promise<NativeOutcome<Wire.UpbitPocketTransferWire>>;
+  subPocketTransfers(request: Wire.UpbitPocketTransferQueryWire): Promise<NativeOutcome<readonly Wire.UpbitPocketTransferWire[]>>;
 }
 
 export interface NativeBithumbHandle {
@@ -230,10 +277,14 @@ export interface NativeBithumbHandle {
   krwDeposits(request: Wire.BithumbKrwDepositsRequestWire): Promise<NativeOutcome<readonly Wire.BithumbKrwDepositWire[]>>;
   depositKrw(request: Wire.BithumbKrwTransferRequestWire): Promise<NativeOutcome<Wire.BithumbKrwDepositWire>>;
   pendingOrders(request: Wire.BithumbPendingOrdersRequestWire): Promise<NativeOutcome<Wire.PageWire<Wire.OrderWire>>>;
+  closedOrders(request: Wire.BithumbClosedOrdersRequestWire): Promise<NativeOutcome<Wire.PageWire<Wire.BithumbClosedOrderWire>>>;
   batchOrders(request: Wire.BithumbBatchOrdersRequestWire): Promise<NativeOutcome<Wire.BithumbBatchOrdersResultWire>>;
   twapOrders(request: Wire.BithumbTwapOrdersRequestWire): Promise<NativeOutcome<Wire.PageWire<Wire.BithumbTwapOrderWire>>>;
   createTwapOrder(request: Wire.BithumbTwapOrderRequestWire): Promise<NativeOutcome<string>>;
   cancelTwapOrder(algoOrderId: string): Promise<NativeOutcome<string>>;
+  withdrawalAddresses(): Promise<NativeOutcome<readonly Wire.BithumbWithdrawalAddressWire[]>>;
+  orderDetail(request: Wire.BithumbOrderDetailRequestWire): Promise<NativeOutcome<Wire.BithumbOrderDetailWire>>;
+  orderList(request: Wire.BithumbOrderListRequestWire): Promise<NativeOutcome<readonly Wire.BithumbOrderListItemWire[]>>;
 }
 
 export interface NativeBinanceHandle {
@@ -241,10 +292,15 @@ export interface NativeBinanceHandle {
   venue(): string;
   spotSymbolFilters(market: Wire.MarketWire): Promise<NativeOutcome<Wire.BinanceSymbolFiltersWire>>;
   spotOrder(market: Wire.MarketWire, orderId: string): Promise<NativeOutcome<Wire.BinanceSpotOrderDetailWire>>;
+  spotAveragePrice(market: Wire.MarketWire): Promise<NativeOutcome<Wire.BinanceSpotAveragePriceWire>>;
   markPrice(market: Wire.MarketWire): Promise<NativeOutcome<Wire.BinanceMarkPriceWire>>;
   markPrices(): Promise<NativeOutcome<readonly Wire.BinanceMarkPriceWire[]>>;
   openInterest(market: Wire.MarketWire): Promise<NativeOutcome<Wire.BinanceOpenInterestWire>>;
   aggregateTrades(request: Wire.BinanceAggregateTradesRequestWire): Promise<NativeOutcome<readonly Wire.BinanceAggregateTradeWire[]>>;
+  accountTrades(request: Wire.HistoryRequestWire): Promise<NativeOutcome<Wire.PageWire<Wire.BinanceAccountTradeWire>>>;
+  c2cTradeHistory(request: Wire.BinanceC2cTradeHistoryRequestWire): Promise<NativeOutcome<Wire.BinanceC2cTradeHistoryPageWire>>;
+  testOrder(request: Wire.BinanceTestOrderRequestWire): Promise<NativeOutcome<Wire.BinanceTestOrderWire>>;
+  cancelAllOpenOrders(market: Wire.MarketWire): Promise<NativeOutcome<null>>;
   usdMCreateListenKey(): Promise<NativeOutcome<Wire.BinanceListenKeyWire>>;
   usdMKeepaliveListenKey(): Promise<NativeOutcome<null>>;
   usdMCloseListenKey(): Promise<NativeOutcome<null>>;
@@ -254,8 +310,20 @@ export interface NativeHyperliquidHandle {
   client(): NativeClientHandle;
   isTestnet(): boolean;
   allMids(): Promise<NativeOutcome<readonly Wire.HyperliquidMidPriceWire[]>>;
+  userFills(aggregateByTime: boolean): Promise<NativeOutcome<readonly Wire.HyperliquidUserFillWire[]>>;
+  userFillsByTime(from: Wire.TimestampWire, to: Wire.TimestampWire | null, aggregateByTime: boolean): Promise<NativeOutcome<readonly Wire.HyperliquidUserFillWire[]>>;
+  basicOpenOrders(): Promise<NativeOutcome<readonly Wire.HyperliquidOpenOrderWire[]>>;
+  orderStatus(reference: Wire.HyperliquidOrderReferenceWire): Promise<NativeOutcome<Wire.HyperliquidOrderStatusResponseWire>>;
+  historicalOrders(): Promise<NativeOutcome<readonly Wire.HyperliquidOrderInfoWire[]>>;
   nonFundingLedger(from: Wire.TimestampWire | null, to: Wire.TimestampWire | null, cursor: string | null, limit: number | null): Promise<NativeOutcome<Wire.PageWire<Wire.HyperliquidLedgerEntryWire>>>;
   assetContext(market: Wire.MarketWire): Promise<NativeOutcome<Wire.HyperliquidAssetContextWire>>;
+  userRateLimit(): Promise<NativeOutcome<Wire.HyperliquidUserRateLimitWire>>;
+  userRole(): Promise<NativeOutcome<Wire.HyperliquidUserRoleWire>>;
+  referral(): Promise<NativeOutcome<Wire.HyperliquidReferralWire>>;
+  userFees(): Promise<NativeOutcome<Wire.HyperliquidUserFeesWire>>;
+  portfolio(): Promise<NativeOutcome<readonly Wire.HyperliquidPortfolioPeriodWire[]>>;
+  subAccounts(): Promise<NativeOutcome<readonly Wire.HyperliquidSubAccountWire[]>>;
+  userVaultEquities(): Promise<NativeOutcome<readonly Wire.HyperliquidVaultEquityWire[]>>;
 }
 
 export interface NativeBackend {
@@ -325,13 +393,26 @@ export function createJsonBackend(raw: RawNativeModule): NativeBackend {
         yearCandles: (market: Wire.MarketWire, to: Wire.TimestampWire | null, count: number | null) => handle.yearCandles(Codec.stringifyWire(market), Codec.stringifyWire(to), Codec.stringifyWire(count)) as Promise<NativeOutcome<readonly Wire.UpbitYearCandleWire[]>>,
         orderbookInstruments: (markets: readonly Wire.MarketWire[]) => handle.orderbookInstruments(Codec.stringifyWire(markets)) as Promise<NativeOutcome<readonly Wire.UpbitOrderBookInstrumentWire[]>>,
         marketEvents: () => handle.marketEvents() as Promise<NativeOutcome<readonly (readonly [Wire.MarketWire, Wire.UpbitMarketEventWire])[]>>,
+        listSubscriptions: (subscription: Wire.SubscriptionWire) => handle.listSubscriptions(Codec.stringifyWire(subscription)) as Promise<NativeOutcome<Wire.UpbitSubscriptionListWire>>,
         testOrder: (request: Wire.OrderRequestWire) => handle.testOrder(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.OrderWire>>,
+        orderDetail: (request: Wire.UpbitOrderDetailRequestWire) => handle.orderDetail(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.UpbitOrderDetailWire>>,
+        closedOrders: (request: Wire.UpbitClosedOrdersRequestWire) => handle.closedOrders(Codec.stringifyWire(request)) as Promise<NativeOutcome<readonly Wire.UpbitClosedOrderWire[]>>,
         depositInfo: (asset: string, network: string) => handle.depositInfo(Codec.stringifyWire(asset), Codec.stringifyWire(network)) as Promise<NativeOutcome<Wire.UpbitDepositInfoWire>>,
         travelRuleVasps: () => handle.travelRuleVasps() as Promise<NativeOutcome<readonly Wire.UpbitTravelRuleVaspWire[]>>,
         verifyTravelRuleByUuid: (depositUuid: string, vaspUuid: string) => handle.verifyTravelRuleByUuid(Codec.stringifyWire(depositUuid), Codec.stringifyWire(vaspUuid)) as Promise<NativeOutcome<Wire.UpbitTravelRuleVerificationWire>>,
         verifyTravelRuleByTxid: (txid: string, vaspUuid: string, currency: string, netType: string) => handle.verifyTravelRuleByTxid(Codec.stringifyWire(txid), Codec.stringifyWire(vaspUuid), Codec.stringifyWire(currency), Codec.stringifyWire(netType)) as Promise<NativeOutcome<Wire.UpbitTravelRuleVerificationWire>>,
         batchCancelOpenOrders: (request: Wire.UpbitBatchCancelRequestWire) => handle.batchCancelOpenOrders(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.CancelOrdersResultWire>>,
         cancelAndNewOrder: (request: Wire.UpbitCancelAndNewOrderRequestWire) => handle.cancelAndNewOrder(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.UpbitCancelAndNewOrderResultWire>>,
+        depositKrw: (request: Wire.UpbitKrwTransferRequestWire) => handle.depositKrw(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.UpbitKrwDepositWire>>,
+        withdrawKrw: (request: Wire.UpbitKrwTransferRequestWire) => handle.withdrawKrw(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.UpbitKrwWithdrawalWire>>,
+        apiKeys: () => handle.apiKeys() as Promise<NativeOutcome<readonly Wire.UpbitApiKeyWire[]>>,
+        listPockets: () => handle.listPockets() as Promise<NativeOutcome<readonly Wire.UpbitPocketWire[]>>,
+        listPocketApiKeys: (request: Wire.UpbitPocketApiKeysRequestWire) => handle.listPocketApiKeys(Codec.stringifyWire(request)) as Promise<NativeOutcome<readonly Wire.UpbitPocketApiKeyGroupWire[]>>,
+        subPocketBalances: (pocketUuid: string) => handle.subPocketBalances(Codec.stringifyWire(pocketUuid)) as Promise<NativeOutcome<readonly Wire.UpbitPocketBalanceWire[]>>,
+        universalTransfer: (request: Wire.UpbitPocketUniversalTransferRequestWire) => handle.universalTransfer(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.UpbitPocketTransferWire>>,
+        universalTransfers: (request: Wire.UpbitPocketTransferQueryWire) => handle.universalTransfers(Codec.stringifyWire(request)) as Promise<NativeOutcome<readonly Wire.UpbitPocketTransferWire[]>>,
+        subPocketTransfer: (request: Wire.UpbitPocketTransferRequestWire) => handle.subPocketTransfer(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.UpbitPocketTransferWire>>,
+        subPocketTransfers: (request: Wire.UpbitPocketTransferQueryWire) => handle.subPocketTransfers(Codec.stringifyWire(request)) as Promise<NativeOutcome<readonly Wire.UpbitPocketTransferWire[]>>,
       };
     },
     bithumb(options) {
@@ -348,10 +429,14 @@ export function createJsonBackend(raw: RawNativeModule): NativeBackend {
         krwDeposits: (request: Wire.BithumbKrwDepositsRequestWire) => handle.krwDeposits(Codec.stringifyWire(request)) as Promise<NativeOutcome<readonly Wire.BithumbKrwDepositWire[]>>,
         depositKrw: (request: Wire.BithumbKrwTransferRequestWire) => handle.depositKrw(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.BithumbKrwDepositWire>>,
         pendingOrders: (request: Wire.BithumbPendingOrdersRequestWire) => handle.pendingOrders(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.PageWire<Wire.OrderWire>>>,
+        closedOrders: (request: Wire.BithumbClosedOrdersRequestWire) => handle.closedOrders(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.PageWire<Wire.BithumbClosedOrderWire>>>,
         batchOrders: (request: Wire.BithumbBatchOrdersRequestWire) => handle.batchOrders(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.BithumbBatchOrdersResultWire>>,
         twapOrders: (request: Wire.BithumbTwapOrdersRequestWire) => handle.twapOrders(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.PageWire<Wire.BithumbTwapOrderWire>>>,
         createTwapOrder: (request: Wire.BithumbTwapOrderRequestWire) => handle.createTwapOrder(Codec.stringifyWire(request)) as Promise<NativeOutcome<string>>,
         cancelTwapOrder: (algoOrderId: string) => handle.cancelTwapOrder(Codec.stringifyWire(algoOrderId)) as Promise<NativeOutcome<string>>,
+        withdrawalAddresses: () => handle.withdrawalAddresses() as Promise<NativeOutcome<readonly Wire.BithumbWithdrawalAddressWire[]>>,
+        orderDetail: (request: Wire.BithumbOrderDetailRequestWire) => handle.orderDetail(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.BithumbOrderDetailWire>>,
+        orderList: (request: Wire.BithumbOrderListRequestWire) => handle.orderList(Codec.stringifyWire(request)) as Promise<NativeOutcome<readonly Wire.BithumbOrderListItemWire[]>>,
       };
     },
     binance(options) {
@@ -361,10 +446,15 @@ export function createJsonBackend(raw: RawNativeModule): NativeBackend {
         venue: () => handle.venue(),
         spotSymbolFilters: (market: Wire.MarketWire) => handle.spotSymbolFilters(Codec.stringifyWire(market)) as Promise<NativeOutcome<Wire.BinanceSymbolFiltersWire>>,
         spotOrder: (market: Wire.MarketWire, orderId: string) => handle.spotOrder(Codec.stringifyWire(market), Codec.stringifyWire(orderId)) as Promise<NativeOutcome<Wire.BinanceSpotOrderDetailWire>>,
+        spotAveragePrice: (market: Wire.MarketWire) => handle.spotAveragePrice(Codec.stringifyWire(market)) as Promise<NativeOutcome<Wire.BinanceSpotAveragePriceWire>>,
         markPrice: (market: Wire.MarketWire) => handle.markPrice(Codec.stringifyWire(market)) as Promise<NativeOutcome<Wire.BinanceMarkPriceWire>>,
         markPrices: () => handle.markPrices() as Promise<NativeOutcome<readonly Wire.BinanceMarkPriceWire[]>>,
         openInterest: (market: Wire.MarketWire) => handle.openInterest(Codec.stringifyWire(market)) as Promise<NativeOutcome<Wire.BinanceOpenInterestWire>>,
         aggregateTrades: (request: Wire.BinanceAggregateTradesRequestWire) => handle.aggregateTrades(Codec.stringifyWire(request)) as Promise<NativeOutcome<readonly Wire.BinanceAggregateTradeWire[]>>,
+        accountTrades: (request: Wire.HistoryRequestWire) => handle.accountTrades(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.PageWire<Wire.BinanceAccountTradeWire>>>,
+        c2cTradeHistory: (request: Wire.BinanceC2cTradeHistoryRequestWire) => handle.c2cTradeHistory(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.BinanceC2cTradeHistoryPageWire>>,
+        testOrder: (request: Wire.BinanceTestOrderRequestWire) => handle.testOrder(Codec.stringifyWire(request)) as Promise<NativeOutcome<Wire.BinanceTestOrderWire>>,
+        cancelAllOpenOrders: (market: Wire.MarketWire) => handle.cancelAllOpenOrders(Codec.stringifyWire(market)) as Promise<NativeOutcome<null>>,
         usdMCreateListenKey: () => handle.usdMCreateListenKey() as Promise<NativeOutcome<Wire.BinanceListenKeyWire>>,
         usdMKeepaliveListenKey: () => handle.usdMKeepaliveListenKey() as Promise<NativeOutcome<null>>,
         usdMCloseListenKey: () => handle.usdMCloseListenKey() as Promise<NativeOutcome<null>>,
@@ -376,8 +466,20 @@ export function createJsonBackend(raw: RawNativeModule): NativeBackend {
         client: () => wrapJsonClient(handle.client()),
         isTestnet: () => handle.isTestnet(),
         allMids: () => handle.allMids() as Promise<NativeOutcome<readonly Wire.HyperliquidMidPriceWire[]>>,
+        userFills: (aggregateByTime: boolean) => handle.userFills(Codec.stringifyWire(aggregateByTime)) as Promise<NativeOutcome<readonly Wire.HyperliquidUserFillWire[]>>,
+        userFillsByTime: (from: Wire.TimestampWire, to: Wire.TimestampWire | null, aggregateByTime: boolean) => handle.userFillsByTime(Codec.stringifyWire(from), Codec.stringifyWire(to), Codec.stringifyWire(aggregateByTime)) as Promise<NativeOutcome<readonly Wire.HyperliquidUserFillWire[]>>,
+        basicOpenOrders: () => handle.basicOpenOrders() as Promise<NativeOutcome<readonly Wire.HyperliquidOpenOrderWire[]>>,
+        orderStatus: (reference: Wire.HyperliquidOrderReferenceWire) => handle.orderStatus(Codec.stringifyWire(reference)) as Promise<NativeOutcome<Wire.HyperliquidOrderStatusResponseWire>>,
+        historicalOrders: () => handle.historicalOrders() as Promise<NativeOutcome<readonly Wire.HyperliquidOrderInfoWire[]>>,
         nonFundingLedger: (from: Wire.TimestampWire | null, to: Wire.TimestampWire | null, cursor: string | null, limit: number | null) => handle.nonFundingLedger(Codec.stringifyWire(from), Codec.stringifyWire(to), Codec.stringifyWire(cursor), Codec.stringifyWire(limit)) as Promise<NativeOutcome<Wire.PageWire<Wire.HyperliquidLedgerEntryWire>>>,
         assetContext: (market: Wire.MarketWire) => handle.assetContext(Codec.stringifyWire(market)) as Promise<NativeOutcome<Wire.HyperliquidAssetContextWire>>,
+        userRateLimit: () => handle.userRateLimit() as Promise<NativeOutcome<Wire.HyperliquidUserRateLimitWire>>,
+        userRole: () => handle.userRole() as Promise<NativeOutcome<Wire.HyperliquidUserRoleWire>>,
+        referral: () => handle.referral() as Promise<NativeOutcome<Wire.HyperliquidReferralWire>>,
+        userFees: () => handle.userFees() as Promise<NativeOutcome<Wire.HyperliquidUserFeesWire>>,
+        portfolio: () => handle.portfolio() as Promise<NativeOutcome<readonly Wire.HyperliquidPortfolioPeriodWire[]>>,
+        subAccounts: () => handle.subAccounts() as Promise<NativeOutcome<readonly Wire.HyperliquidSubAccountWire[]>>,
+        userVaultEquities: () => handle.userVaultEquities() as Promise<NativeOutcome<readonly Wire.HyperliquidVaultEquityWire[]>>,
       };
     },
   };
@@ -1058,11 +1160,14 @@ export class UpbitAdapter extends NativeAdapter {
   async orderBooksAtLevel(markets: readonly Model.Market[], level: Model.Decimal, depth: number | null = null): Promise<readonly Model.OrderBook[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.orderBooksAtLevel(markets.map(Codec.marketToWire), level.toString(), Codec.checkedOptionalU32(depth, "depth"))).map(Codec.orderBookFromWire); }
   async tickers(markets: readonly Model.Market[]): Promise<readonly Model.Ticker[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.tickers(markets.map(Codec.marketToWire))).map(Codec.tickerFromWire); }
   async tickersByQuote(quoteCurrencies: readonly string[]): Promise<readonly Model.Ticker[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.tickersByQuote(quoteCurrencies)).map(Codec.tickerFromWire); }
-  async yearCandles(market: Model.Market, to: Model.Timestamp | null = null, count: number | null = null): Promise<readonly Model.UpbitYearCandle[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.yearCandles(Codec.marketToWire(market), to?.nanosecondsSinceEpoch.toString() ?? null, Codec.checkedOptionalU32(count, "count"))).map(Codec.upbitYearCandleFromWire); }
+  async yearCandles(market: Model.Market, to: Model.Timestamp | null, count: number | null = null): Promise<readonly Model.UpbitYearCandle[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.yearCandles(Codec.marketToWire(market), to?.nanosecondsSinceEpoch.toString() ?? null, Codec.checkedOptionalU32(count, "count"))).map(Codec.upbitYearCandleFromWire); }
   async orderbookInstruments(markets: readonly Model.Market[]): Promise<readonly Model.UpbitOrderBookInstrument[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.orderbookInstruments(markets.map(Codec.marketToWire))).map(Codec.upbitOrderBookInstrumentFromWire); }
   async marketEvents(): Promise<readonly (readonly [Model.Market, Model.UpbitMarketEvent])[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.marketEvents()).map(Codec.upbitMarketEventPairFromWire); }
+  async listSubscriptions(subscription: Model.Subscription): Promise<Model.UpbitSubscriptionList> { await ensureInitialized(); return Codec.upbitSubscriptionListFromWire(Codec.unwrapOutcome(await this.#provider.listSubscriptions(Codec.subscriptionToWire(subscription)))); }
   /** Validates an Upbit order without creating it. The returned dry-run ID cannot be queried or cancelled, and its status is not a live order. */
   async testOrder(request: Model.OrderRequest): Promise<Model.Order> { await ensureInitialized(); return Codec.orderFromWire(Codec.unwrapOutcome(await this.#provider.testOrder(Codec.orderRequestToWire(request)))); }
+  async orderDetail(request: Model.UpbitOrderDetailRequest): Promise<Model.UpbitOrderDetail> { await ensureInitialized(); return Codec.upbitOrderDetailFromWire(Codec.unwrapOutcome(await this.#provider.orderDetail(Codec.upbitOrderDetailRequestToWire(request)))); }
+  async closedOrders(request: Model.UpbitClosedOrdersRequest): Promise<readonly Model.UpbitClosedOrder[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.closedOrders(Codec.upbitClosedOrdersRequestToWire(request))).map(Codec.upbitClosedOrderFromWire); }
   async depositInfo(asset: string, network: Model.Network): Promise<Model.UpbitDepositInfo> { await ensureInitialized(); return Codec.upbitDepositInfoFromWire(Codec.unwrapOutcome(await this.#provider.depositInfo(asset, network.id))); }
   /** Lists VASPs available for Upbit Korea or Singapore Travel Rule verification. */
   async travelRuleVasps(): Promise<readonly Model.UpbitTravelRuleVasp[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.travelRuleVasps()).map(Codec.upbitTravelRuleVaspFromWire); }
@@ -1072,6 +1177,16 @@ export class UpbitAdapter extends NativeAdapter {
   async verifyTravelRuleByTxid(txid: string, vaspUuid: string, currency: string, netType: string): Promise<Model.UpbitTravelRuleVerification> { await ensureInitialized(); return Codec.upbitTravelRuleVerificationFromWire(Codec.unwrapOutcome(await this.#provider.verifyTravelRuleByTxid(txid, vaspUuid, currency, netType))); }
   async batchCancelOpenOrders(request: Model.UpbitBatchCancelRequest): Promise<Model.CancelOrdersResult> { await ensureInitialized(); return Codec.cancelOrdersResultFromWire(Codec.unwrapOutcome(await this.#provider.batchCancelOpenOrders(Codec.upbitBatchCancelRequestToWire(request)))); }
   async cancelAndNewOrder(request: Model.UpbitCancelAndNewOrderRequest): Promise<Model.UpbitCancelAndNewOrderResult> { await ensureInitialized(); return Codec.upbitCancelAndNewOrderResultFromWire(Codec.unwrapOutcome(await this.#provider.cancelAndNewOrder(Codec.upbitCancelAndNewOrderRequestToWire(request)))); }
+  async depositKrw(request: Model.UpbitKrwTransferRequest): Promise<Model.UpbitKrwDeposit> { await ensureInitialized(); return Codec.upbitKrwDepositFromWire(Codec.unwrapOutcome(await this.#provider.depositKrw(Codec.upbitKrwTransferRequestToWire(request)))); }
+  async withdrawKrw(request: Model.UpbitKrwTransferRequest): Promise<Model.UpbitKrwWithdrawal> { await ensureInitialized(); return Codec.upbitKrwWithdrawalFromWire(Codec.unwrapOutcome(await this.#provider.withdrawKrw(Codec.upbitKrwTransferRequestToWire(request)))); }
+  async apiKeys(): Promise<readonly Model.UpbitApiKey[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.apiKeys()).map(Codec.upbitApiKeyFromWire); }
+  async listPockets(): Promise<readonly Model.UpbitPocket[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.listPockets()).map(Codec.upbitPocketFromWire); }
+  async listPocketApiKeys(request: Model.UpbitPocketApiKeysRequest): Promise<readonly Model.UpbitPocketApiKeyGroup[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.listPocketApiKeys(Codec.upbitPocketApiKeysRequestToWire(request))).map(Codec.upbitPocketApiKeyGroupFromWire); }
+  async subPocketBalances(pocketUuid: string): Promise<readonly Model.UpbitPocketBalance[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.subPocketBalances(pocketUuid)).map(Codec.upbitPocketBalanceFromWire); }
+  async universalTransfer(request: Model.UpbitPocketUniversalTransferRequest): Promise<Model.UpbitPocketTransfer> { await ensureInitialized(); return Codec.upbitPocketTransferFromWire(Codec.unwrapOutcome(await this.#provider.universalTransfer(Codec.upbitPocketUniversalTransferRequestToWire(request)))); }
+  async universalTransfers(request: Model.UpbitPocketTransferQuery): Promise<readonly Model.UpbitPocketTransfer[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.universalTransfers(Codec.upbitPocketTransferQueryToWire(request))).map(Codec.upbitPocketTransferFromWire); }
+  async subPocketTransfer(request: Model.UpbitPocketTransferRequest): Promise<Model.UpbitPocketTransfer> { await ensureInitialized(); return Codec.upbitPocketTransferFromWire(Codec.unwrapOutcome(await this.#provider.subPocketTransfer(Codec.upbitPocketTransferRequestToWire(request)))); }
+  async subPocketTransfers(request: Model.UpbitPocketTransferQuery): Promise<readonly Model.UpbitPocketTransfer[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.subPocketTransfers(Codec.upbitPocketTransferQueryToWire(request))).map(Codec.upbitPocketTransferFromWire); }
 }
 
 export class BithumbAdapter extends NativeAdapter {
@@ -1092,10 +1207,14 @@ export class BithumbAdapter extends NativeAdapter {
   /** Submits a Bithumb KRW transfer request. This is a financial write. */
   async depositKrw(request: Model.BithumbKrwTransferRequest): Promise<Model.BithumbKrwDeposit> { await ensureInitialized(); return Codec.bithumbKrwDepositFromWire(Codec.unwrapOutcome(await this.#provider.depositKrw(Codec.bithumbKrwTransferRequestToWire(request)))); }
   async pendingOrders(request: Model.BithumbPendingOrdersRequest): Promise<Model.Page<Model.Order>> { await ensureInitialized(); return Codec.pageFromWire(Codec.unwrapOutcome(await this.#provider.pendingOrders(Codec.bithumbPendingOrdersRequestToWire(request))), Codec.orderFromWire); }
+  async closedOrders(request: Model.BithumbClosedOrdersRequest): Promise<Model.Page<Model.BithumbClosedOrder>> { await ensureInitialized(); return Codec.pageFromWire(Codec.unwrapOutcome(await this.#provider.closedOrders(Codec.bithumbClosedOrdersRequestToWire(request))), Codec.bithumbClosedOrderFromWire); }
   async batchOrders(request: Model.BithumbBatchOrdersRequest): Promise<Model.BithumbBatchOrdersResult> { await ensureInitialized(); return Codec.bithumbBatchOrdersResultFromWire(Codec.unwrapOutcome(await this.#provider.batchOrders(Codec.bithumbBatchOrdersRequestToWire(request)))); }
   async twapOrders(request: Model.BithumbTwapOrdersRequest): Promise<Model.Page<Model.BithumbTwapOrder>> { await ensureInitialized(); return Codec.pageFromWire(Codec.unwrapOutcome(await this.#provider.twapOrders(Codec.bithumbTwapOrdersRequestToWire(request))), Codec.bithumbTwapOrderFromWire); }
   async createTwapOrder(request: Model.BithumbTwapOrderRequest): Promise<string> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.createTwapOrder(Codec.bithumbTwapOrderRequestToWire(request))); }
   async cancelTwapOrder(algoOrderId: string): Promise<string> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.cancelTwapOrder(algoOrderId)); }
+  async withdrawalAddresses(): Promise<readonly Model.BithumbWithdrawalAddress[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.withdrawalAddresses()).map(Codec.bithumbWithdrawalAddressFromWire); }
+  async orderDetail(request: Model.BithumbOrderDetailRequest): Promise<Model.BithumbOrderDetail> { await ensureInitialized(); return Codec.bithumbOrderDetailFromWire(Codec.unwrapOutcome(await this.#provider.orderDetail(Codec.bithumbOrderDetailRequestToWire(request)))); }
+  async orderList(request: Model.BithumbOrderListRequest): Promise<readonly Model.BithumbOrderListItem[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.orderList(Codec.bithumbOrderListRequestToWire(request))).map(Codec.bithumbOrderListItemFromWire); }
 }
 
 export class BinanceAdapter extends NativeAdapter {
@@ -1113,10 +1232,15 @@ export class BinanceAdapter extends NativeAdapter {
   get venue(): Model.BinanceMarket { return Codec.binanceMarketFromWire(this.#provider.venue()); }
   async spotSymbolFilters(market: Model.Market): Promise<Model.BinanceSymbolFilters> { await ensureInitialized(); return Codec.binanceSymbolFiltersFromWire(Codec.unwrapOutcome(await this.#provider.spotSymbolFilters(Codec.marketToWire(market)))); }
   async spotOrder(market: Model.Market, orderId: string): Promise<Model.BinanceSpotOrderDetail> { await ensureInitialized(); return Codec.binanceSpotOrderDetailFromWire(Codec.unwrapOutcome(await this.#provider.spotOrder(Codec.marketToWire(market), orderId))); }
+  async spotAveragePrice(market: Model.Market): Promise<Model.BinanceSpotAveragePrice> { await ensureInitialized(); return Codec.binanceSpotAveragePriceFromWire(Codec.unwrapOutcome(await this.#provider.spotAveragePrice(Codec.marketToWire(market)))); }
   async markPrice(market: Model.Market): Promise<Model.BinanceMarkPrice> { await ensureInitialized(); return Codec.binanceMarkPriceFromWire(Codec.unwrapOutcome(await this.#provider.markPrice(Codec.marketToWire(market)))); }
   async markPrices(): Promise<readonly Model.BinanceMarkPrice[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.markPrices()).map(Codec.binanceMarkPriceFromWire); }
   async openInterest(market: Model.Market): Promise<Model.BinanceOpenInterest> { await ensureInitialized(); return Codec.binanceOpenInterestFromWire(Codec.unwrapOutcome(await this.#provider.openInterest(Codec.marketToWire(market)))); }
   async aggregateTrades(request: Model.BinanceAggregateTradesRequest): Promise<readonly Model.BinanceAggregateTrade[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.aggregateTrades(Codec.binanceAggregateTradesRequestToWire(request))).map(Codec.binanceAggregateTradeFromWire); }
+  async accountTrades(request: Model.HistoryRequest): Promise<Model.Page<Model.BinanceAccountTrade>> { await ensureInitialized(); return Codec.pageFromWire(Codec.unwrapOutcome(await this.#provider.accountTrades(Codec.historyRequestToWire(request))), Codec.binanceAccountTradeFromWire); }
+  async c2cTradeHistory(request: Model.BinanceC2cTradeHistoryRequest): Promise<Model.BinanceC2cTradeHistoryPage> { await ensureInitialized(); return Codec.binanceC2cTradeHistoryPageFromWire(Codec.unwrapOutcome(await this.#provider.c2cTradeHistory(Codec.binanceC2cTradeHistoryRequestToWire(request)))); }
+  async testOrder(request: Model.BinanceTestOrderRequest): Promise<Model.BinanceTestOrder> { await ensureInitialized(); return Codec.binanceTestOrderFromWire(Codec.unwrapOutcome(await this.#provider.testOrder(Codec.binanceTestOrderRequestToWire(request)))); }
+  async cancelAllOpenOrders(market: Model.Market): Promise<void> { await ensureInitialized(); Codec.unwrapOutcome(await this.#provider.cancelAllOpenOrders(Codec.marketToWire(market))); }
   async usdMCreateListenKey(): Promise<BinanceListenKey> { await ensureInitialized(); const value = Codec.unwrapOutcome(await this.#provider.usdMCreateListenKey()); return new BinanceListenKey(value.id, value.value); }
   async usdMKeepaliveListenKey(): Promise<void> { await ensureInitialized(); Codec.unwrapOutcome(await this.#provider.usdMKeepaliveListenKey()); }
   async usdMCloseListenKey(): Promise<void> { await ensureInitialized(); Codec.unwrapOutcome(await this.#provider.usdMCloseListenKey()); }
@@ -1133,6 +1257,18 @@ export class HyperliquidAdapter extends NativeAdapter {
   }
   get isTestnet(): boolean { return this.#provider.isTestnet(); }
   async allMids(): Promise<readonly Model.HyperliquidMidPrice[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.allMids()).map(Codec.hyperliquidMidPriceFromWire); }
+  async userFills(aggregateByTime: boolean): Promise<readonly Model.HyperliquidUserFill[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.userFills(aggregateByTime)).map(Codec.hyperliquidUserFillFromWire); }
+  async userFillsByTime(from: Model.Timestamp, to: Model.Timestamp | null, aggregateByTime: boolean): Promise<readonly Model.HyperliquidUserFill[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.userFillsByTime(from.nanosecondsSinceEpoch.toString(), to?.nanosecondsSinceEpoch.toString() ?? null, aggregateByTime)).map(Codec.hyperliquidUserFillFromWire); }
+  async basicOpenOrders(): Promise<readonly Model.HyperliquidOpenOrder[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.basicOpenOrders()).map(Codec.hyperliquidOpenOrderFromWire); }
+  async orderStatus(reference: Model.HyperliquidOrderReference): Promise<Model.HyperliquidOrderStatusResponse> { await ensureInitialized(); return Codec.hyperliquidOrderStatusResponseFromWire(Codec.unwrapOutcome(await this.#provider.orderStatus(Codec.hyperliquidOrderReferenceToWire(reference)))); }
+  async historicalOrders(): Promise<readonly Model.HyperliquidOrderInfo[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.historicalOrders()).map(Codec.hyperliquidOrderInfoFromWire); }
   async nonFundingLedger(from: Model.Timestamp | null = null, to: Model.Timestamp | null = null, cursor: Model.Cursor | null = null, limit: number | null = null): Promise<Model.Page<Model.HyperliquidLedgerEntry>> { await ensureInitialized(); return Codec.pageFromWire(Codec.unwrapOutcome(await this.#provider.nonFundingLedger(from?.nanosecondsSinceEpoch.toString() ?? null, to?.nanosecondsSinceEpoch.toString() ?? null, cursor?.value ?? null, Codec.checkedOptionalU32(limit, "limit"))), Codec.hyperliquidLedgerEntryFromWire); }
   async assetContext(market: Model.Market): Promise<Model.HyperliquidAssetContext> { await ensureInitialized(); return Codec.hyperliquidAssetContextFromWire(Codec.unwrapOutcome(await this.#provider.assetContext(Codec.marketToWire(market)))); }
+  async userRateLimit(): Promise<Model.HyperliquidUserRateLimit> { await ensureInitialized(); return Codec.hyperliquidUserRateLimitFromWire(Codec.unwrapOutcome(await this.#provider.userRateLimit())); }
+  async userRole(): Promise<Model.HyperliquidUserRole> { await ensureInitialized(); return Codec.hyperliquidUserRoleFromWire(Codec.unwrapOutcome(await this.#provider.userRole())); }
+  async referral(): Promise<Model.HyperliquidReferral> { await ensureInitialized(); return Codec.hyperliquidReferralFromWire(Codec.unwrapOutcome(await this.#provider.referral())); }
+  async userFees(): Promise<Model.HyperliquidUserFees> { await ensureInitialized(); return Codec.hyperliquidUserFeesFromWire(Codec.unwrapOutcome(await this.#provider.userFees())); }
+  async portfolio(): Promise<readonly Model.HyperliquidPortfolioPeriod[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.portfolio()).map(Codec.hyperliquidPortfolioPeriodFromWire); }
+  async subAccounts(): Promise<readonly Model.HyperliquidSubAccount[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.subAccounts()).map(Codec.hyperliquidSubAccountFromWire); }
+  async userVaultEquities(): Promise<readonly Model.HyperliquidVaultEquity[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.userVaultEquities()).map(Codec.hyperliquidVaultEquityFromWire); }
 }

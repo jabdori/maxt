@@ -5,7 +5,7 @@
 use std::collections::BTreeSet;
 
 use maxt::{Exchange, Feature};
-use maxt_bindings_common::schema::{ProviderOptionValue, Type, binding_schema};
+use maxt_bindings_common::schema::{ApiType, ProviderOptionValue, Type, binding_schema};
 use syn::{ImplItem, Item, TraitItem};
 
 fn snake_to_camel(value: &str) -> String {
@@ -228,6 +228,35 @@ fn schema_provider_methods_match_every_core_adapter() {
 }
 
 #[test]
+fn upbit_list_subscriptions_preserves_the_provider_response_shape() {
+    let schema = binding_schema();
+    let method = schema
+        .providers
+        .iter()
+        .find(|provider| provider.exchange == "upbit")
+        .unwrap()
+        .methods
+        .iter()
+        .find(|method| method.rust_name == "list_subscriptions")
+        .unwrap();
+    assert_eq!(method.arguments[0].ty, ApiType::Named("Subscription"));
+    assert_eq!(method.result, ApiType::Named("UpbitSubscriptionList"));
+    let listed = schema
+        .records
+        .iter()
+        .find(|record| record.name == "UpbitListedSubscriptionWire")
+        .unwrap();
+    assert_eq!(
+        listed
+            .fields
+            .iter()
+            .map(|field| field.name)
+            .collect::<Vec<_>>(),
+        ["feed_type", "markets", "level"]
+    );
+}
+
+#[test]
 fn provider_constructors_cover_their_native_options() {
     let schema = binding_schema();
     for provider in schema.providers {
@@ -316,6 +345,37 @@ fn enum_variants(source: &str, name: &str) -> Vec<String> {
         .unwrap_or_else(|| panic!("enum {name} is missing"))
 }
 
+fn public_type_fields(source: &str, name: &str) -> Vec<String> {
+    syn::parse_file(source)
+        .unwrap()
+        .items
+        .into_iter()
+        .find_map(|item| match item {
+            Item::Struct(item) if item.ident == name => Some(
+                item.fields
+                    .into_iter()
+                    .filter(|field| matches!(field.vis, syn::Visibility::Public(_)))
+                    .map(|field| field.ident.unwrap().to_string())
+                    .collect(),
+            ),
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("struct {name} is missing"))
+}
+
+fn snake_to_pascal(value: &str) -> String {
+    value
+        .split('_')
+        .map(|part| {
+            let mut characters = part.chars();
+            characters
+                .next()
+                .map(|first| first.to_ascii_uppercase().to_string() + characters.as_str())
+                .unwrap_or_default()
+        })
+        .collect()
+}
+
 #[test]
 fn schema_identifier_variants_match_the_core_enums() {
     let schema = binding_schema();
@@ -391,6 +451,26 @@ fn schema_identifier_variants_match_the_core_enums() {
             include_str!("../../../src/adapters/upbit/mod.rs"),
         ),
         (
+            "UpbitClosedOrderState",
+            "UpbitClosedOrderState",
+            include_str!("../../../src/adapters/upbit/mod.rs"),
+        ),
+        (
+            "UpbitPocketTransferState",
+            "UpbitPocketTransferState",
+            include_str!("../../../src/adapters/upbit/mod.rs"),
+        ),
+        (
+            "UpbitPocketTransferDirection",
+            "UpbitPocketTransferDirection",
+            include_str!("../../../src/adapters/upbit/mod.rs"),
+        ),
+        (
+            "UpbitPocketTransferOrder",
+            "UpbitPocketTransferOrder",
+            include_str!("../../../src/adapters/upbit/mod.rs"),
+        ),
+        (
             "BithumbAlertStep",
             "BithumbAlertStep",
             include_str!("../../../src/adapters/bithumb/mod.rs"),
@@ -401,13 +481,28 @@ fn schema_identifier_variants_match_the_core_enums() {
             include_str!("../../../src/adapters/bithumb/mod.rs"),
         ),
         (
+            "BithumbClosedOrderState",
+            "BithumbClosedOrderState",
+            include_str!("../../../src/adapters/bithumb/mod.rs"),
+        ),
+        (
             "BithumbOrderDirection",
             "BithumbOrderDirection",
             include_str!("../../../src/adapters/bithumb/mod.rs"),
         ),
         (
+            "BithumbOrderListState",
+            "BithumbOrderListState",
+            include_str!("../../../src/adapters/bithumb/mod.rs"),
+        ),
+        (
             "BinanceMarket",
             "BinanceMarket",
+            include_str!("../../../src/adapters/binance/mod.rs"),
+        ),
+        (
+            "BinanceC2cTradeType",
+            "BinanceC2cTradeType",
             include_str!("../../../src/adapters/binance/mod.rs"),
         ),
         (
@@ -435,6 +530,240 @@ fn schema_identifier_variants_match_the_core_enums() {
             "{identifier_name} variants differ",
         );
     }
+}
+
+#[test]
+fn upbit_closed_orders_schema_matches_the_core_types() {
+    let schema = binding_schema();
+    let source = include_str!("../../../src/adapters/upbit/mod.rs");
+    for name in ["UpbitClosedOrdersRequest", "UpbitClosedOrder"] {
+        let record = schema
+            .records
+            .iter()
+            .find(|record| record.name == format!("{name}Wire"))
+            .unwrap();
+        assert_eq!(
+            public_type_fields(source, name),
+            record
+                .fields
+                .iter()
+                .map(|field| field.name.to_owned())
+                .collect::<Vec<_>>(),
+            "{name} fields differ",
+        );
+    }
+}
+
+#[test]
+fn binance_spot_average_price_schema_matches_the_core_type() {
+    let schema = binding_schema();
+    assert_eq!(schema.native_api_version, 28);
+
+    let record = schema
+        .records
+        .iter()
+        .find(|record| record.name == "BinanceSpotAveragePriceWire")
+        .unwrap();
+    assert_eq!(
+        public_type_fields(
+            include_str!("../../../src/adapters/binance/mod.rs"),
+            "BinanceSpotAveragePrice",
+        ),
+        record
+            .fields
+            .iter()
+            .map(|field| field.name.to_owned())
+            .collect::<Vec<_>>(),
+    );
+    assert_eq!(
+        record
+            .fields
+            .iter()
+            .map(|field| (field.name, field.ty.clone()))
+            .collect::<Vec<_>>(),
+        vec![
+            ("market", Type::Named("MarketWire")),
+            ("minutes", Type::Number),
+            ("price", Type::Decimal),
+            ("close_time", Type::Timestamp),
+        ],
+    );
+}
+
+#[test]
+fn bithumb_closed_orders_schema_matches_the_core_types() {
+    let schema = binding_schema();
+
+    let state = schema.identifier("BithumbClosedOrderState").unwrap();
+    assert_eq!(
+        state
+            .variants
+            .iter()
+            .map(|variant| (variant.rust_name, variant.wire_name))
+            .collect::<Vec<_>>(),
+        [("Done", "done"), ("Cancel", "cancel")],
+    );
+
+    let source = include_str!("../../../src/adapters/bithumb/mod.rs");
+    for name in ["BithumbClosedOrdersRequest", "BithumbClosedOrder"] {
+        let record = schema
+            .records
+            .iter()
+            .find(|record| record.name == format!("{name}Wire"))
+            .unwrap();
+        assert_eq!(
+            public_type_fields(source, name),
+            record
+                .fields
+                .iter()
+                .map(|field| field.name.to_owned())
+                .collect::<Vec<_>>(),
+            "{name} fields differ",
+        );
+    }
+
+    let request = schema
+        .records
+        .iter()
+        .find(|record| record.name == "BithumbClosedOrdersRequestWire")
+        .unwrap();
+    assert_eq!(
+        request
+            .fields
+            .iter()
+            .map(|field| (field.name, field.ty.clone()))
+            .collect::<Vec<_>>(),
+        vec![
+            (
+                "market",
+                Type::Optional(Box::new(Type::Named("MarketWire"))),
+            ),
+            (
+                "state",
+                Type::Optional(Box::new(Type::Identifier("BithumbClosedOrderState"))),
+            ),
+            (
+                "states",
+                Type::List(Box::new(Type::Identifier("BithumbClosedOrderState"))),
+            ),
+            ("start_time", Type::Optional(Box::new(Type::Timestamp))),
+            ("end_time", Type::Optional(Box::new(Type::Timestamp))),
+            ("limit", Type::Optional(Box::new(Type::Number))),
+            (
+                "order_by",
+                Type::Optional(Box::new(Type::Identifier("BithumbOrderDirection"))),
+            ),
+            ("cursor", Type::Optional(Box::new(Type::String))),
+        ],
+    );
+
+    let order = schema
+        .records
+        .iter()
+        .find(|record| record.name == "BithumbClosedOrderWire")
+        .unwrap();
+    assert_eq!(
+        order
+            .fields
+            .iter()
+            .map(|field| (field.name, field.ty.clone()))
+            .collect::<Vec<_>>(),
+        vec![
+            ("order_id", Type::String),
+            ("side", Type::String),
+            ("order_type", Type::String),
+            ("price", Type::Optional(Box::new(Type::Decimal))),
+            ("state", Type::String),
+            ("market", Type::Named("MarketWire")),
+            ("created_at", Type::Optional(Box::new(Type::Timestamp))),
+            ("volume", Type::Decimal),
+            ("remaining_volume", Type::Decimal),
+            ("reserved_fee", Type::Decimal),
+            ("remaining_fee", Type::Decimal),
+            ("paid_fee", Type::Decimal),
+            ("locked", Type::Decimal),
+            ("executed_volume", Type::Decimal),
+            ("executed_funds", Type::Decimal),
+            ("trades_count", Type::Number),
+            ("client_order_id", Type::Optional(Box::new(Type::String))),
+            ("stp_type", Type::Optional(Box::new(Type::String))),
+            ("time_in_force", Type::Optional(Box::new(Type::String))),
+            ("cancel_type", Type::Optional(Box::new(Type::String))),
+            ("canceling_order_id", Type::Optional(Box::new(Type::String)),),
+        ],
+    );
+
+    let method = schema
+        .providers
+        .iter()
+        .find(|provider| provider.exchange == "bithumb")
+        .unwrap()
+        .methods
+        .iter()
+        .find(|method| method.rust_name == "closed_orders")
+        .unwrap();
+    assert_eq!(method.name, "closedOrders");
+    assert_eq!(
+        method.arguments[0].ty,
+        ApiType::Named("BithumbClosedOrdersRequest")
+    );
+    assert_eq!(method.result, ApiType::Page("BithumbClosedOrder"));
+}
+
+#[test]
+fn hyperliquid_order_schema_matches_the_core_types() {
+    let schema = binding_schema();
+    let source = include_str!("../../../src/adapters/hyperliquid/native.rs");
+
+    let reference = schema
+        .unions
+        .iter()
+        .find(|union| union.name == "HyperliquidOrderReferenceWire")
+        .unwrap();
+    assert_eq!(
+        enum_variants(source, "HyperliquidOrderReference"),
+        reference
+            .variants
+            .iter()
+            .map(|variant| snake_to_pascal(variant.name))
+            .collect::<Vec<_>>(),
+    );
+
+    for name in [
+        "HyperliquidOpenOrder",
+        "HyperliquidOrderDetail",
+        "HyperliquidOrderInfo",
+    ] {
+        let record = schema
+            .records
+            .iter()
+            .find(|record| record.name == format!("{name}Wire"))
+            .unwrap();
+        assert_eq!(
+            public_type_fields(source, name),
+            record
+                .fields
+                .iter()
+                .map(|field| field.name.to_owned())
+                .collect::<Vec<_>>(),
+            "{name} fields differ",
+        );
+    }
+
+    let response = schema
+        .unions
+        .iter()
+        .find(|union| union.name == "HyperliquidOrderStatusResponseWire")
+        .unwrap();
+    assert_eq!(
+        enum_variants(source, "HyperliquidOrderStatusResponse"),
+        response
+            .variants
+            .iter()
+            .filter(|variant| variant.name != "other")
+            .map(|variant| snake_to_pascal(variant.name))
+            .collect::<Vec<_>>(),
+    );
 }
 
 fn referenced_identifiers(value: &Type, names: &mut Vec<&'static str>) {

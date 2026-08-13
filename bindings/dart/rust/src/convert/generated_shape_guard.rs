@@ -434,6 +434,21 @@ fn _guard_margin_request_wire(value: WireMarginRequest) {
     } = value;
 }
 
+fn _guard_upbit_listed_subscription_wire(value: WireUpbitListedSubscription) {
+    let WireUpbitListedSubscription {
+        feed_type: _,
+        markets: _,
+        level: _,
+    } = value;
+}
+
+fn _guard_upbit_subscription_list_wire(value: WireUpbitSubscriptionList) {
+    let WireUpbitSubscriptionList {
+        ticket: _,
+        subscriptions: _,
+    } = value;
+}
+
 fn _guard_upbit_year_candle_wire(value: WireUpbitYearCandle) {
     let WireUpbitYearCandle {
         market: _,
@@ -456,6 +471,91 @@ fn _guard_upbit_order_book_instrument_wire(value: WireUpbitOrderBookInstrument) 
         quote_currency: _,
         tick_size: _,
         supported_levels: _,
+    } = value;
+}
+
+fn _guard_upbit_order_detail_request_wire(value: WireUpbitOrderDetailRequest) {
+    let WireUpbitOrderDetailRequest {
+        market: _,
+        uuid: _,
+        identifier: _,
+    } = value;
+}
+
+fn _guard_upbit_order_detail_trade_wire(value: WireUpbitOrderDetailTrade) {
+    let WireUpbitOrderDetailTrade {
+        market: _,
+        uuid: _,
+        price: _,
+        volume: _,
+        funds: _,
+        trend: _,
+        created_at_ns: _,
+        side: _,
+    } = value;
+}
+
+fn _guard_upbit_order_detail_wire(value: WireUpbitOrderDetail) {
+    let WireUpbitOrderDetail {
+        market: _,
+        uuid: _,
+        side: _,
+        order_type: _,
+        price: _,
+        state: _,
+        created_at_ns: _,
+        volume: _,
+        remaining_volume: _,
+        executed_volume: _,
+        reserved_fee: _,
+        remaining_fee: _,
+        paid_fee: _,
+        locked: _,
+        trades_count: _,
+        prevented_volume: _,
+        prevented_locked: _,
+        time_in_force: _,
+        identifier: _,
+        smp_type: _,
+        trades: _,
+    } = value;
+}
+
+fn _guard_upbit_closed_orders_request_wire(value: WireUpbitClosedOrdersRequest) {
+    let WireUpbitClosedOrdersRequest {
+        market: _,
+        state: _,
+        states: _,
+        start_time_ns: _,
+        end_time_ns: _,
+        limit: _,
+        order_by: _,
+    } = value;
+}
+
+fn _guard_upbit_closed_order_wire(value: WireUpbitClosedOrder) {
+    let WireUpbitClosedOrder {
+        market: _,
+        uuid: _,
+        side: _,
+        ord_type: _,
+        state: _,
+        created_at_ns: _,
+        volume: _,
+        price: _,
+        remaining_volume: _,
+        executed_volume: _,
+        executed_funds: _,
+        reserved_fee: _,
+        remaining_fee: _,
+        paid_fee: _,
+        locked: _,
+        trades_count: _,
+        prevented_volume: _,
+        prevented_locked: _,
+        time_in_force: _,
+        identifier: _,
+        smp_type: _,
     } = value;
 }
 
@@ -503,6 +603,143 @@ fn _guard_upbit_cancel_and_new_order_result_wire(value: WireUpbitCancelAndNewOrd
         previous_order: _,
         new_order_uuid: _,
         new_order_identifier: _,
+    } = value;
+}
+
+fn _guard_upbit_krw_transfer_request_wire(value: WireUpbitKrwTransferRequest) {
+    let WireUpbitKrwTransferRequest {
+        amount: _,
+        two_factor_type: _,
+    } = value;
+}
+
+fn _guard_upbit_krw_deposit_wire(value: WireUpbitKrwDeposit) {
+    let WireUpbitKrwDeposit {
+        transfer_type: _,
+        uuid: _,
+        currency: _,
+        net_type: _,
+        txid: _,
+        state: _,
+        created_at_ns: _,
+        done_at_ns: _,
+        amount: _,
+        fee: _,
+        transaction_type: _,
+    } = value;
+}
+
+fn _guard_upbit_krw_withdrawal_wire(value: WireUpbitKrwWithdrawal) {
+    let WireUpbitKrwWithdrawal {
+        transfer_type: _,
+        uuid: _,
+        currency: _,
+        net_type: _,
+        txid: _,
+        state: _,
+        created_at_ns: _,
+        done_at_ns: _,
+        amount: _,
+        fee: _,
+        transaction_type: _,
+        is_cancelable: _,
+    } = value;
+}
+
+fn _guard_upbit_api_key_wire(value: WireUpbitApiKey) {
+    let WireUpbitApiKey {
+        access_key: _,
+        expires_at_ns: _,
+    } = value;
+}
+
+fn _guard_upbit_pocket_wire(value: WireUpbitPocket) {
+    let WireUpbitPocket {
+        uuid: _,
+        name: _,
+        kind: _,
+    } = value;
+}
+
+fn _guard_upbit_pocket_api_key_wire(value: WireUpbitPocketApiKey) {
+    let WireUpbitPocketApiKey {
+        access_key: _,
+        permissions: _,
+        allowed_ips: _,
+        created_at_ns: _,
+        expired_at_ns: _,
+    } = value;
+}
+
+fn _guard_upbit_pocket_api_key_group_wire(value: WireUpbitPocketApiKeyGroup) {
+    let WireUpbitPocketApiKeyGroup { uuid: _, keys: _ } = value;
+}
+
+fn _guard_upbit_pocket_api_keys_request_wire(value: WireUpbitPocketApiKeysRequest) {
+    let WireUpbitPocketApiKeysRequest {
+        uuids: _,
+        include_expired: _,
+    } = value;
+}
+
+fn _guard_upbit_pocket_balance_wire(value: WireUpbitPocketBalance) {
+    let WireUpbitPocketBalance {
+        currency: _,
+        balance: _,
+        locked: _,
+        avg_buy_price: _,
+        avg_buy_price_modified: _,
+        unit_currency: _,
+    } = value;
+}
+
+fn _guard_upbit_pocket_transfer_query_wire(value: WireUpbitPocketTransferQuery) {
+    let WireUpbitPocketTransferQuery {
+        from: _,
+        to: _,
+        direction: _,
+        states: _,
+        uuids: _,
+        identifiers: _,
+        start_time_ns: _,
+        end_time_ns: _,
+        currency: _,
+        limit: _,
+        order_by: _,
+    } = value;
+}
+
+fn _guard_upbit_pocket_universal_transfer_request_wire(
+    value: WireUpbitPocketUniversalTransferRequest,
+) {
+    let WireUpbitPocketUniversalTransferRequest {
+        from: _,
+        to: _,
+        currency: _,
+        amount: _,
+        identifier: _,
+    } = value;
+}
+
+fn _guard_upbit_pocket_transfer_request_wire(value: WireUpbitPocketTransferRequest) {
+    let WireUpbitPocketTransferRequest {
+        to: _,
+        currency: _,
+        amount: _,
+        identifier: _,
+    } = value;
+}
+
+fn _guard_upbit_pocket_transfer_wire(value: WireUpbitPocketTransfer) {
+    let WireUpbitPocketTransfer {
+        uuid: _,
+        identifier: _,
+        from: _,
+        to: _,
+        state: _,
+        currency: _,
+        amount: _,
+        created_at_ns: _,
     } = value;
 }
 
@@ -561,6 +798,32 @@ fn _guard_bithumb_krw_deposit_wire(value: WireBithumbKrwDeposit) {
         amount: _,
         fee: _,
         transaction_type: _,
+    } = value;
+}
+
+fn _guard_bithumb_closed_order_wire(value: WireBithumbClosedOrder) {
+    let WireBithumbClosedOrder {
+        order_id: _,
+        side: _,
+        order_type: _,
+        price: _,
+        state: _,
+        market: _,
+        created_at_ns: _,
+        volume: _,
+        remaining_volume: _,
+        reserved_fee: _,
+        remaining_fee: _,
+        paid_fee: _,
+        locked: _,
+        executed_volume: _,
+        executed_funds: _,
+        trades_count: _,
+        client_order_id: _,
+        stp_type: _,
+        time_in_force: _,
+        cancel_type: _,
+        canceling_order_id: _,
     } = value;
 }
 
@@ -638,6 +901,106 @@ fn _guard_bithumb_twap_order_wire(value: WireBithumbTwapOrder) {
     } = value;
 }
 
+fn _guard_bithumb_withdrawal_address_wire(value: WireBithumbWithdrawalAddress) {
+    let WireBithumbWithdrawalAddress {
+        currency: _,
+        net_type: _,
+        network_name: _,
+        withdraw_address: _,
+        secondary_address: _,
+        exchange_name: _,
+        owner_type: _,
+        owner_ko_name: _,
+        owner_en_name: _,
+        owner_corp_ko_name: _,
+        owner_corp_en_name: _,
+    } = value;
+}
+
+fn _guard_bithumb_order_detail_request_wire(value: WireBithumbOrderDetailRequest) {
+    let WireBithumbOrderDetailRequest {
+        market: _,
+        uuid: _,
+        client_order_id: _,
+    } = value;
+}
+
+fn _guard_bithumb_order_detail_trade_wire(value: WireBithumbOrderDetailTrade) {
+    let WireBithumbOrderDetailTrade {
+        market: _,
+        uuid: _,
+        price: _,
+        volume: _,
+        funds: _,
+        side: _,
+        created_at_ns: _,
+    } = value;
+}
+
+fn _guard_bithumb_order_detail_wire(value: WireBithumbOrderDetail) {
+    let WireBithumbOrderDetail {
+        uuid: _,
+        client_order_id: _,
+        side: _,
+        order_type: _,
+        price: _,
+        state: _,
+        market: _,
+        created_at_ns: _,
+        volume: _,
+        remaining_volume: _,
+        reserved_fee: _,
+        remaining_fee: _,
+        paid_fee: _,
+        locked: _,
+        executed_volume: _,
+        executed_funds: _,
+        trades_count: _,
+        trades: _,
+        stp_type: _,
+        cancel_type: _,
+        canceling_uuid: _,
+        time_in_force: _,
+    } = value;
+}
+
+fn _guard_bithumb_order_list_request_wire(value: WireBithumbOrderListRequest) {
+    let WireBithumbOrderListRequest {
+        market: _,
+        state: _,
+        states: _,
+        uuids: _,
+        client_order_ids: _,
+        page: _,
+        limit: _,
+        order_by: _,
+    } = value;
+}
+
+fn _guard_bithumb_order_list_item_wire(value: WireBithumbOrderListItem) {
+    let WireBithumbOrderListItem {
+        uuid: _,
+        client_order_id: _,
+        side: _,
+        order_type: _,
+        price: _,
+        state: _,
+        market: _,
+        created_at_ns: _,
+        volume: _,
+        remaining_volume: _,
+        reserved_fee: _,
+        remaining_fee: _,
+        paid_fee: _,
+        locked: _,
+        executed_volume: _,
+        executed_funds: _,
+        trades_count: _,
+        stp_type: _,
+        time_in_force: _,
+    } = value;
+}
+
 fn _guard_binance_symbol_filters_wire(value: WireBinanceSymbolFilters) {
     let WireBinanceSymbolFilters {
         symbol: _,
@@ -659,6 +1022,15 @@ fn _guard_binance_spot_order_detail_wire(value: WireBinanceSpotOrderDetail) {
         time_in_force: _,
         filled_quote_quantity: _,
         updated_at_ns: _,
+    } = value;
+}
+
+fn _guard_binance_spot_average_price_wire(value: WireBinanceSpotAveragePrice) {
+    let WireBinanceSpotAveragePrice {
+        market: _,
+        minutes: _,
+        price: _,
+        close_time_ns: _,
     } = value;
 }
 
@@ -707,6 +1079,85 @@ fn _guard_binance_aggregate_trade_wire(value: WireBinanceAggregateTrade) {
     } = value;
 }
 
+fn _guard_binance_account_trade_wire(value: WireBinanceAccountTrade) {
+    let WireBinanceAccountTrade {
+        market: _,
+        id: _,
+        order_id: _,
+        timestamp_ns: _,
+        side: _,
+        maker: _,
+        best_match: _,
+        order_list_id: _,
+        price: _,
+        quantity: _,
+        quote_quantity: _,
+        commission: _,
+        commission_asset: _,
+        realized_pnl: _,
+        position_side: _,
+        pair: _,
+        base_quantity: _,
+        margin_asset: _,
+    } = value;
+}
+
+fn _guard_binance_test_order_request_wire(value: WireBinanceTestOrderRequest) {
+    let WireBinanceTestOrderRequest {
+        order: _,
+        compute_commission_rates: _,
+    } = value;
+}
+
+fn _guard_binance_test_order_wire(value: WireBinanceTestOrder) {
+    let WireBinanceTestOrder { response_json: _ } = value;
+}
+
+fn _guard_binance_c2c_trade_history_request_wire(value: WireBinanceC2cTradeHistoryRequest) {
+    let WireBinanceC2cTradeHistoryRequest {
+        trade_type: _,
+        start_timestamp_ns: _,
+        end_timestamp_ns: _,
+        page: _,
+        rows: _,
+        recv_window: _,
+    } = value;
+}
+
+fn _guard_binance_c2c_trade_wire(value: WireBinanceC2cTrade) {
+    let WireBinanceC2cTrade {
+        order_number: _,
+        adv_no: _,
+        trade_type: _,
+        asset: _,
+        fiat: _,
+        fiat_symbol: _,
+        amount: _,
+        total_price: _,
+        unit_price: _,
+        order_status: _,
+        created_at_ns: _,
+        commission: _,
+        counterparty_nickname: _,
+        pay_method_name: _,
+        additional_kyc_verify: _,
+        taker_commission_rate: _,
+        taker_commission: _,
+        taker_amount: _,
+        advertisement_role: _,
+    } = value;
+}
+
+fn _guard_binance_c2c_trade_history_page_wire(value: WireBinanceC2cTradeHistoryPage) {
+    let WireBinanceC2cTradeHistoryPage {
+        code: _,
+        message: _,
+        data: _,
+        total: _,
+        success: _,
+    } = value;
+}
+
 fn _guard_hyperliquid_mid_price_wire(value: WireHyperliquidMidPrice) {
     let WireHyperliquidMidPrice {
         market: _,
@@ -723,6 +1174,156 @@ fn _guard_hyperliquid_asset_context_wire(value: WireHyperliquidAssetContext) {
         open_interest: _,
         size_decimals: _,
         price_decimals: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_user_rate_limit_wire(value: WireHyperliquidUserRateLimit) {
+    let WireHyperliquidUserRateLimit {
+        cumulative_volume: _,
+        requests_used: _,
+        requests_cap: _,
+        requests_surplus: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_referrer_wire(value: WireHyperliquidReferrer) {
+    let WireHyperliquidReferrer {
+        address: _,
+        code: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_referral_wire(value: WireHyperliquidReferral) {
+    let WireHyperliquidReferral {
+        referred_by: _,
+        cumulative_volume: _,
+        unclaimed_rewards: _,
+        claimed_rewards: _,
+        builder_rewards: _,
+        referrer_state_json: _,
+        reward_history_json: _,
+        token_to_state_json: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_daily_volume_wire(value: WireHyperliquidDailyVolume) {
+    let WireHyperliquidDailyVolume {
+        date: _,
+        user_cross: _,
+        user_add: _,
+        exchange: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_user_fees_wire(value: WireHyperliquidUserFees) {
+    let WireHyperliquidUserFees {
+        daily_volumes: _,
+        fee_schedule_json: _,
+        user_cross_rate: _,
+        user_add_rate: _,
+        user_spot_cross_rate: _,
+        user_spot_add_rate: _,
+        active_referral_discount: _,
+        details_json: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_user_fill_wire(value: WireHyperliquidUserFill) {
+    let WireHyperliquidUserFill {
+        coin: _,
+        price: _,
+        size: _,
+        side: _,
+        time_ns: _,
+        start_position: _,
+        direction: _,
+        closed_pnl: _,
+        hash: _,
+        order_id: _,
+        crossed: _,
+        fee: _,
+        builder_fee: _,
+        trade_id: _,
+        fee_token: _,
+        twap_id: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_open_order_wire(value: WireHyperliquidOpenOrder) {
+    let WireHyperliquidOpenOrder {
+        coin: _,
+        limit_price: _,
+        order_id: _,
+        side: _,
+        size: _,
+        timestamp_ns: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_order_detail_wire(value: WireHyperliquidOrderDetail) {
+    let WireHyperliquidOrderDetail {
+        coin: _,
+        side: _,
+        limit_price: _,
+        size: _,
+        order_id: _,
+        timestamp_ns: _,
+        trigger_condition: _,
+        is_trigger: _,
+        trigger_price: _,
+        children_json: _,
+        is_position_tpsl: _,
+        reduce_only: _,
+        order_type: _,
+        original_size: _,
+        time_in_force: _,
+        client_order_id: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_order_info_wire(value: WireHyperliquidOrderInfo) {
+    let WireHyperliquidOrderInfo {
+        order: _,
+        status: _,
+        status_timestamp_ns: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_portfolio_point_wire(value: WireHyperliquidPortfolioPoint) {
+    let WireHyperliquidPortfolioPoint {
+        time_ns: _,
+        value: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_portfolio_period_wire(value: WireHyperliquidPortfolioPeriod) {
+    let WireHyperliquidPortfolioPeriod {
+        period: _,
+        account_value_history: _,
+        pnl_history: _,
+        volume: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_sub_account_wire(value: WireHyperliquidSubAccount) {
+    let WireHyperliquidSubAccount {
+        name: _,
+        user: _,
+        master: _,
+        perpetual_state_json: _,
+        spot_state_json: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_vault_equity_wire(value: WireHyperliquidVaultEquity) {
+    let WireHyperliquidVaultEquity {
+        vault_address: _,
+        equity: _,
+        locked_until_ns: _,
     } = value;
 }
 
@@ -764,6 +1365,38 @@ fn _guard_upbit_cancel_and_new_order_wire(value: WireUpbitCancelAndNewOrder) {
         WireUpbitCancelAndNewOrder::BestSell {
             volume: _,
             time_in_force: _,
+        } => {}
+    }
+}
+
+fn _guard_hyperliquid_user_role_wire(value: WireHyperliquidUserRole) {
+    match value {
+        WireHyperliquidUserRole::User => {}
+        WireHyperliquidUserRole::Agent { user: _ } => {}
+        WireHyperliquidUserRole::Vault => {}
+        WireHyperliquidUserRole::SubAccount { master: _ } => {}
+        WireHyperliquidUserRole::Missing => {}
+        WireHyperliquidUserRole::Other {
+            role: _,
+            data_json: _,
+        } => {}
+    }
+}
+
+fn _guard_hyperliquid_order_reference_wire(value: WireHyperliquidOrderReference) {
+    match value {
+        WireHyperliquidOrderReference::OrderId(_) => {}
+        WireHyperliquidOrderReference::ClientOrderId(_) => {}
+    }
+}
+
+fn _guard_hyperliquid_order_status_response_wire(value: WireHyperliquidOrderStatusResponse) {
+    match value {
+        WireHyperliquidOrderStatusResponse::Order(_) => {}
+        WireHyperliquidOrderStatusResponse::UnknownOrder => {}
+        WireHyperliquidOrderStatusResponse::Other {
+            status: _,
+            raw_json: _,
         } => {}
     }
 }
@@ -976,11 +1609,50 @@ fn _guard_upbit_order_direction(value: WireUpbitOrderDirection) {
     }
 }
 
+fn _guard_upbit_closed_order_state(value: WireUpbitClosedOrderState) {
+    match value {
+        WireUpbitClosedOrderState::Done => {}
+        WireUpbitClosedOrderState::Cancel => {}
+    }
+}
+
 fn _guard_upbit_smp_type(value: WireUpbitSmpType) {
     match value {
         WireUpbitSmpType::CancelMaker => {}
         WireUpbitSmpType::CancelTaker => {}
         WireUpbitSmpType::Reduce => {}
+    }
+}
+
+fn _guard_upbit_krw_two_factor_type(value: WireUpbitKrwTwoFactorType) {
+    match value {
+        WireUpbitKrwTwoFactorType::Kakao => {}
+        WireUpbitKrwTwoFactorType::Naver => {}
+        WireUpbitKrwTwoFactorType::Hana => {}
+    }
+}
+
+fn _guard_upbit_pocket_transfer_state(value: WireUpbitPocketTransferState) {
+    match value {
+        WireUpbitPocketTransferState::Submitted => {}
+        WireUpbitPocketTransferState::Processing => {}
+        WireUpbitPocketTransferState::Done => {}
+        WireUpbitPocketTransferState::Failed => {}
+    }
+}
+
+fn _guard_upbit_pocket_transfer_direction(value: WireUpbitPocketTransferDirection) {
+    match value {
+        WireUpbitPocketTransferDirection::Incoming => {}
+        WireUpbitPocketTransferDirection::Outgoing => {}
+        WireUpbitPocketTransferDirection::All => {}
+    }
+}
+
+fn _guard_upbit_pocket_transfer_order(value: WireUpbitPocketTransferOrder) {
+    match value {
+        WireUpbitPocketTransferOrder::Ascending => {}
+        WireUpbitPocketTransferOrder::Descending => {}
     }
 }
 
@@ -1000,10 +1672,26 @@ fn _guard_bithumb_pending_order_state(value: WireBithumbPendingOrderState) {
     }
 }
 
+fn _guard_bithumb_closed_order_state(value: WireBithumbClosedOrderState) {
+    match value {
+        WireBithumbClosedOrderState::Done => {}
+        WireBithumbClosedOrderState::Cancel => {}
+    }
+}
+
 fn _guard_bithumb_order_direction(value: WireBithumbOrderDirection) {
     match value {
         WireBithumbOrderDirection::Ascending => {}
         WireBithumbOrderDirection::Descending => {}
+    }
+}
+
+fn _guard_bithumb_order_list_state(value: WireBithumbOrderListState) {
+    match value {
+        WireBithumbOrderListState::Wait => {}
+        WireBithumbOrderListState::Watch => {}
+        WireBithumbOrderListState::Done => {}
+        WireBithumbOrderListState::Cancel => {}
     }
 }
 
@@ -1019,6 +1707,13 @@ fn _guard_bithumb_twap_order_direction(value: WireBithumbTwapOrderDirection) {
     match value {
         WireBithumbTwapOrderDirection::Ascending => {}
         WireBithumbTwapOrderDirection::Descending => {}
+    }
+}
+
+fn _guard_binance_c2c_trade_type(value: WireBinanceC2cTradeType) {
+    match value {
+        WireBinanceC2cTradeType::Buy => {}
+        WireBinanceC2cTradeType::Sell => {}
     }
 }
 

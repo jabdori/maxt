@@ -13,6 +13,11 @@ readme = "README.md"
 [features]
 codegen = []
 
+[[bin]]
+name = "generate_audit_ledger"
+path = "src/bin/generate_audit_ledger.rs"
+required-features = ["codegen"]
+
 [dependencies]
 maxt = { version = "=0.2.1", path = "../.." }
 

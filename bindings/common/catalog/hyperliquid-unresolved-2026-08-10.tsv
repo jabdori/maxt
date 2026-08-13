@@ -1,0 +1,16 @@
+# Hyperliquid unresolved official-inventory status snapshot
+# baseline_date: 2026-08-10
+# explorer_source: https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits.md
+# explorer_evidence: the official rate-limits page names all explorer API requests and blockList, but publishes no complete explorer request schema or operation list
+# sdk_source: https://github.com/hyperliquid-dex/hyperliquid-python-sdk
+# sdk_revision: 2fdb18f9517675ea03695a0962bd19eece9c83f0
+# columns: family	status	candidate	source_locator
+explorer	blocked_exact_count	blockList	https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits.md
+sdk	sdk_only_unverified	userToMultiSigSigners	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/info.py#L625-L626
+sdk	sdk_only_unverified	extraAgents	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/info.py#L744-L763
+sdk	sdk_only_unverified	setReferrer	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/exchange.py#L434-L452
+sdk	sdk_only_unverified	createSubAccount	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/exchange.py#L454-L472
+sdk	sdk_only_unverified	subAccountTransfer	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/exchange.py#L518-L538
+sdk	sdk_only_unverified	subAccountSpotTransfer	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/exchange.py#L540-L561
+sdk	sdk_only_unverified	CSignerAction	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/exchange.py#L981-L999
+sdk	sdk_only_unverified	CValidatorAction	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/exchange.py#L1001-L1097

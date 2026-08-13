@@ -59,6 +59,19 @@ fn binance_spot_order_to_wire(
     )
 }
 
+fn binance_spot_average_price_to_wire(
+    py: Python<'_>,
+    value: &maxt::adapters::BinanceSpotAveragePrice,
+) -> PyResult<Py<PyAny>> {
+    provider_dict!(
+        py,
+        "market" => market_to_wire(py, &value.market)?,
+        "minutes" => value.minutes,
+        "price" => decimal_to_wire(value.price),
+        "close_time" => timestamp_to_wire(value.close_time),
+    )
+}
+
 fn hyperliquid_ledger_entry_to_wire(
     py: Python<'_>,
     value: &maxt::adapters::HyperliquidLedgerEntry,
@@ -200,5 +213,27 @@ fn hyperliquid_ledger_page_to_wire(
         py,
         "items" => list_to_wire(py, &value.items, hyperliquid_ledger_entry_to_wire)?,
         "next" => value.next.as_ref().map(Cursor::as_str),
+    )
+}
+fn upbit_subscription_list_to_wire(
+    py: Python<'_>,
+    value: &maxt::adapters::UpbitSubscriptionList,
+) -> PyResult<Py<PyAny>> {
+    provider_dict!(
+        py,
+        "ticket" => &value.ticket,
+        "subscriptions" => list_to_wire(py, &value.subscriptions, upbit_listed_subscription_to_wire)?,
+    )
+}
+
+fn upbit_listed_subscription_to_wire(
+    py: Python<'_>,
+    value: &maxt::adapters::UpbitListedSubscription,
+) -> PyResult<Py<PyAny>> {
+    provider_dict!(
+        py,
+        "feed_type" => &value.feed_type,
+        "markets" => list_to_wire(py, &value.markets, market_to_wire)?,
+        "level" => value.level.map(decimal_to_wire),
     )
 }

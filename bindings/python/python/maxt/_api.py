@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from importlib import import_module
 from inspect import isawaitable
-from typing import Any, AsyncIterator, Generic, Literal, Optional, TypeVar, Union
+from typing import Any, AsyncIterator, Generic, Literal, Optional, TypeVar, Union, cast
 
 from ._generated_identifiers import ExchangeErrorKind, TransferErrorKind
 from ._generated_wire import ERROR_FIELDS
@@ -142,7 +142,11 @@ def _load_native() -> Any:
 def _error_from_wire(value: dict[str, Any]) -> MaxtError:
     kind_value = value.get("kind")
     kind = kind_value if isinstance(kind_value, str) else None
-    expected_fields = ERROR_FIELDS.get(kind) if kind is not None else None
+    expected_fields = (
+        cast(dict[str, dict[str, str]], ERROR_FIELDS).get(kind)
+        if kind is not None
+        else None
+    )
     if expected_fields is not None:
         present = set(value)
         if kind == "exchange" and "provider_message" in present:

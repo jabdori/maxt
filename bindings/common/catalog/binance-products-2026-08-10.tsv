@@ -1,0 +1,48 @@
+# Binance official catalog product normalization
+# baseline_date: 2026-08-10
+# columns: official_product	product
+Algo Trading REST	algo
+Alpha Trading REST	alpha
+Alpha WebSocket Market Streams	alpha
+Stocks Trading REST	stocks
+Stocks Trading WebSocket Streams	stocks
+C2C REST	c2c
+Convert REST	convert
+Copy Trading REST	copy_trading
+Crypto Loan REST	crypto_loan
+Futures (COIN-M) REST	coin_m
+Futures (COIN-M) WebSocket	coin_m
+Futures (COIN-M) WebSocket Market Streams	coin_m
+Options REST	options
+Options WebSocket Market Streams	options
+Portfolio Margin Pro REST	portfolio_margin_pro
+Portfolio Margin REST	portfolio_margin
+Futures (USDⓈ-M) REST	usd_m
+Futures (USDⓈ-M) WebSocket	usd_m
+Futures (USDⓈ-M) WebSocket Market Streams	usd_m
+Discount Buy REST	discount_buy
+Dual Investment REST	dual_investment
+Exchange Link REST	exchange_link
+Fiat REST	fiat
+Fund Account REST	fund_account
+Gift Card REST	gift_card
+Institutional Loan REST	institutional_loan
+KYC SaaS REST	kyc_saas
+Link and Trade REST	link_and_trade
+Link Plus REST	link_plus
+Margin REST	margin
+Mining REST	mining
+Binance Pay REST	pay
+Rebate REST	rebate
+Simple Earn REST	simple_earn
+Spot REST	spot
+Spot WebSocket	spot
+Spot WebSocket Market Streams	spot
+Spot Block Matching REST	spot_block_matching
+Staking REST	staking
+Sub Account REST	sub_account
+VIP Loan REST	vip_loan
+VIP Service REST	vip_service
+VIP CAAS REST	caas
+Wallet REST	wallet
+Prediction Trading REST	prediction

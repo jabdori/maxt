@@ -1,0 +1,62 @@
+# Upbit official API exposure classification
+# baseline_date: 2026-08-10
+# source_catalogs: upbit-2026-08-10.tsv, upbit-korea-2026-08-10.tsv
+# coverage_bridge: upbit-coverage-2026-08-10.tsv
+# columns: official_product	interface	method	path_or_message	operation_id	lifecycle	exposure
+Quotation	Http	GET	/v1/market/all	list-trading-pairs	documented_active	common_and_provider
+Quotation	Http	GET	/v1/candles/seconds	list-candles-seconds	documented_active	common_existing
+Quotation	Http	GET	/v1/candles/minutes/{unit}	list-candles-minutes	documented_active	common_existing
+Quotation	Http	GET	/v1/candles/days	list-candles-days	documented_active	common_existing
+Quotation	Http	GET	/v1/candles/weeks	list-candles-weeks	documented_active	common_existing
+Quotation	Http	GET	/v1/candles/months	list-candles-months	documented_active	common_existing
+Quotation	Http	GET	/v1/candles/years	list-candles-years	documented_active	provider_typed
+Quotation	Http	GET	/v1/trades/ticks	list-pair-trades	documented_active	common_existing
+Quotation	Http	GET	/v1/ticker	list-tickers	documented_active	common_and_provider
+Quotation	Http	GET	/v1/ticker/all	list-quote-tickers	documented_active	provider_typed
+Quotation	Http	GET	/v1/orderbook	list-orderbooks	documented_active	common_and_provider
+Quotation	Http	GET	/v1/orderbook/instruments	list-orderbook-instruments	documented_active	provider_typed
+Quotation	WebSocketStream	SUBSCRIBE	type=ticker	ticker	documented_active	common_existing
+Quotation	WebSocketStream	SUBSCRIBE	type=trade	trade	documented_active	common_existing
+Quotation	WebSocketStream	SUBSCRIBE	type=orderbook	orderbook	documented_active	common_existing
+Quotation	WebSocketStream	SUBSCRIBE	type=candle.{unit}	candle.{unit}	documented_active	common_existing
+Quotation	WebSocketRequest	LIST_SUBSCRIPTIONS	method=LIST_SUBSCRIPTIONS	LIST_SUBSCRIPTIONS	documented_active	provider_typed
+Exchange	Http	GET	/v1/accounts	get-balance	documented_active	common_existing
+Exchange	Http	GET	/v1/orders/chance	available-order-information	documented_active	common_existing
+Exchange	Http	POST	/v1/orders	new-order	documented_active	common_existing
+Exchange	Http	POST	/v1/orders/test	order-test	documented_active	provider_typed
+Exchange	Http	GET	/v1/order	get-order	documented_active	common_and_provider
+Exchange	Http	GET	/v1/orders/uuids	list-orders-by-ids	documented_active	common_existing
+Exchange	Http	GET	/v1/orders/open	list-open-orders	documented_active	common_existing
+Exchange	Http	GET	/v1/orders/closed	list-closed-orders	documented_active	common_and_provider
+Exchange	Http	DELETE	/v1/order	cancel-order	documented_active	common_existing
+Exchange	Http	DELETE	/v1/orders/uuids	cancel-orders-by-ids	documented_active	common_existing
+Exchange	Http	DELETE	/v1/orders/open	batch-cancel-orders	documented_active	provider_typed
+Exchange	Http	POST	/v1/orders/cancel_and_new	cancel-and-new-order	documented_active	provider_typed
+Exchange	WebSocketStream	SUBSCRIBE	type=myOrder	myOrder	documented_active	common_existing
+Exchange	WebSocketStream	SUBSCRIBE	type=myAsset	myAsset	documented_active	common_existing
+Deposits and withdrawals	Http	GET	/v1/status/wallet	get-service-status	documented_active	common_existing
+Deposits and withdrawals	Http	GET	/v1/withdraws/chance	available-withdrawal-information	documented_active	common_existing
+Deposits and withdrawals	Http	GET	/v1/withdraws/coin_addresses	list-withdrawal-addresses	documented_active	common_existing
+Deposits and withdrawals	Http	POST	/v1/withdraws/coin	withdraw	documented_active	common_existing
+Deposits and withdrawals	Http	GET	/v1/withdraw	get-withdrawal	documented_active	common_existing
+Deposits and withdrawals	Http	GET	/v1/withdraws	list-withdrawals	documented_active	common_existing
+Deposits and withdrawals	Http	DELETE	/v1/withdraws/coin	cancel-withdrawal	documented_active	common_existing
+Deposits and withdrawals	Http	GET	/v1/deposits/chance/coin	available-deposit-information	documented_active	provider_typed
+Deposits and withdrawals	Http	POST	/v1/deposits/generate_coin_address	create-deposit-address	documented_active	common_existing
+Deposits and withdrawals	Http	GET	/v1/deposits/coin_address	get-deposit-address	documented_active	common_existing
+Deposits and withdrawals	Http	GET	/v1/deposits/coin_addresses	list-deposit-addresses	documented_active	common_existing
+Deposits and withdrawals	Http	GET	/v1/deposit	get-deposit	documented_active	common_existing
+Deposits and withdrawals	Http	GET	/v1/deposits	list-deposits	documented_active	common_existing
+Travel Rule	Http	GET	/v1/travel_rule/vasps	list-travelrule-vasps	documented_active	provider_typed
+Travel Rule	Http	POST	/v1/travel_rule/deposit/uuid	verify-travelrule-by-uuid	documented_active	provider_typed
+Travel Rule	Http	POST	/v1/travel_rule/deposit/txid	verify-travelrule-by-txid	documented_active	provider_typed
+Korea pockets	Http	GET	/v1/pockets	list-pockets	documented_active_korea_only	provider_typed
+Korea pockets	Http	GET	/v1/pockets/api_keys	list-pocket-api-keys	documented_active_korea_only	provider_typed
+Korea pockets	Http	GET	/v1/pockets/assets	get-sub-pocket-balance	documented_active_korea_only	provider_typed
+Korea pockets	Http	POST	/v1/pockets/universal_transfers	universal-transfer	documented_active_korea_only	provider_typed
+Korea pockets	Http	GET	/v1/pockets/universal_transfers	list-universal-transfers	documented_active_korea_only	provider_typed
+Korea pockets	Http	POST	/v1/pockets/transfers	transfer	documented_active_korea_only	provider_typed
+Korea pockets	Http	GET	/v1/pockets/transfers	list-transfers	documented_active_korea_only	provider_typed
+Korea deposits and withdrawals	Http	POST	/v1/deposits/krw	deposit-krw	documented_active_korea_only	provider_typed
+Korea deposits and withdrawals	Http	POST	/v1/withdraws/krw	withdraw-krw	documented_active_korea_only	provider_typed
+Korea deposits and withdrawals	Http	GET	/v1/api_keys	list-api-keys	documented_active_korea_only	provider_typed

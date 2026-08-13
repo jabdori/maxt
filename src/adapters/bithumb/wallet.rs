@@ -138,25 +138,39 @@ struct Chance {
     supports_withdrawal: bool,
 }
 
-#[derive(Debug, Clone, Deserialize)]
-struct WithdrawalAddress {
-    currency: String,
-    net_type: String,
-    withdraw_address: String,
+/// One registered Bithumb withdrawal address and its provider metadata.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+pub struct BithumbWithdrawalAddress {
+    /// Asset code returned by Bithumb.
+    pub currency: String,
+    /// Bithumb's exact withdrawal-network code.
+    pub net_type: String,
+    /// Bithumb's display name for the withdrawal network, when supplied.
     #[serde(default)]
-    secondary_address: Option<String>,
+    pub network_name: Option<String>,
+    /// Primary withdrawal address.
+    pub withdraw_address: String,
+    /// Secondary address, memo, or destination tag when Bithumb stores one.
     #[serde(default)]
-    exchange_name: Option<String>,
+    pub secondary_address: Option<String>,
+    /// Destination exchange name when Bithumb stores one.
     #[serde(default)]
-    owner_type: Option<String>,
+    pub exchange_name: Option<String>,
+    /// Bithumb's owner classification, preserved verbatim.
     #[serde(default)]
-    owner_ko_name: Option<String>,
+    pub owner_type: Option<String>,
+    /// Individual owner name in Korean, when supplied.
     #[serde(default)]
-    owner_en_name: Option<String>,
+    pub owner_ko_name: Option<String>,
+    /// Individual owner name in English, when supplied.
     #[serde(default)]
-    owner_corp_ko_name: Option<String>,
+    pub owner_en_name: Option<String>,
+    /// Corporate owner name in Korean, when supplied.
     #[serde(default)]
-    owner_corp_en_name: Option<String>,
+    pub owner_corp_ko_name: Option<String>,
+    /// Corporate owner name in English, when supplied.
+    #[serde(default)]
+    pub owner_corp_en_name: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -494,12 +508,16 @@ async fn withdraw_chance(
     parse_chance(&body, asset)
 }
 
-async fn withdrawal_addresses(
+pub(crate) async fn withdrawal_addresses(
     http: &HttpTransport,
     credentials: &BithumbCredentials,
-) -> Result<Vec<WithdrawalAddress>> {
-    let request = signed_get(credentials, WITHDRAWAL_ADDRESSES_PATH, &[])?;
+) -> Result<Vec<BithumbWithdrawalAddress>> {
+    let request = withdrawal_addresses_request(credentials)?;
     decode(&rest::send(http, &request).await?)
+}
+
+fn withdrawal_addresses_request(credentials: &BithumbCredentials) -> Result<HttpRequest> {
+    signed_get(credentials, WITHDRAWAL_ADDRESSES_PATH, &[])
 }
 
 fn signed_get(
@@ -801,7 +819,7 @@ fn withdraw_request(
     request: &WithdrawRequest,
     asset: &str,
     provider_id: &str,
-    allowed: &WithdrawalAddress,
+    allowed: &BithumbWithdrawalAddress,
 ) -> Result<HttpRequest> {
     let mut params = vec![
         ("currency", asset.to_string()),
@@ -1243,7 +1261,7 @@ fn network_matches(requested: &Network, parsed: Option<&Network>, provider: Opti
 }
 
 fn address_matches(
-    allowed: &WithdrawalAddress,
+    allowed: &BithumbWithdrawalAddress,
     request: &WithdrawRequest,
     asset: &str,
     provider_id: &str,
@@ -1254,7 +1272,7 @@ fn address_matches(
         && allowed.secondary_address.as_deref() == request.destination.memo()
 }
 
-fn travel_rule_data_missing(request: &WithdrawRequest, allowed: &WithdrawalAddress) -> bool {
+fn travel_rule_data_missing(request: &WithdrawRequest, allowed: &BithumbWithdrawalAddress) -> bool {
     matches!(
         &request.destination,
         TransferDestination::Exchange(destination)
@@ -1322,10 +1340,11 @@ mod tests {
         )
     }
 
-    fn allowed_address() -> WithdrawalAddress {
-        WithdrawalAddress {
+    fn allowed_address() -> BithumbWithdrawalAddress {
+        BithumbWithdrawalAddress {
             currency: "XRP".to_string(),
             net_type: "XRP".to_string(),
+            network_name: Some("XRP Ledger".to_string()),
             withdraw_address: "rDestination".to_string(),
             secondary_address: Some("12345".to_string()),
             exchange_name: Some("Upbit".to_string()),
@@ -1534,8 +1553,7 @@ mod tests {
         )
         .expect("address request");
         let chance = withdraw_chance_request(&credentials, "BTC", "BTC").expect("chance request");
-        let allowlist =
-            signed_get(&credentials, WITHDRAWAL_ADDRESSES_PATH, &[]).expect("allowlist request");
+        let allowlist = withdrawal_addresses_request(&credentials).expect("allowlist request");
         let history = TransferHistoryRequest::new().asset("BTC").limit(25);
         let deposits = history_request(&credentials, DEPOSITS_PATH, &history, 2, 25)
             .expect("deposit history request");
@@ -1561,6 +1579,92 @@ mod tests {
             withdrawals.target(),
             "/v1/withdraws?currency=BTC&page=3&limit=25&order_by=desc"
         );
+    }
+
+    #[test]
+    fn official_withdrawal_address_fixture_preserves_every_published_field() {
+        let addresses: Vec<BithumbWithdrawalAddress> = decode(&parsed(
+            r#"[
+              {
+                "currency":"ETH",
+                "net_type":"ETH",
+                "network_name":"Ethereum",
+                "withdraw_address":"0x569ece3d6cd807a31b1a2d85ebfee79f89fe0b87",
+                "secondary_address":null,
+                "exchange_name":"vv",
+                "owner_type":"personal",
+                "owner_ko_name":"홍길동",
+                "owner_en_name":null,
+                "owner_corp_ko_name":null,
+                "owner_corp_en_name":null
+              },
+              {
+                "currency":"ETH",
+                "net_type":"ETH",
+                "network_name":"Ethereum",
+                "withdraw_address":"0x562ece3d6cd807a31b1a5d85ebfee79f78fe0b26",
+                "secondary_address":null,
+                "exchange_name":"Binance",
+                "owner_type":"personal",
+                "owner_ko_name":null,
+                "owner_en_name":"GIL DONG HONG",
+                "owner_corp_ko_name":null,
+                "owner_corp_en_name":null
+              }
+            ]"#,
+        ))
+        .expect("official withdrawal-address fixture");
+
+        assert_eq!(addresses[0].currency, "ETH");
+        assert_eq!(addresses[0].net_type, "ETH");
+        assert_eq!(addresses[0].network_name.as_deref(), Some("Ethereum"));
+        assert_eq!(
+            addresses[0].withdraw_address,
+            "0x569ece3d6cd807a31b1a2d85ebfee79f89fe0b87"
+        );
+        assert_eq!(addresses[0].exchange_name.as_deref(), Some("vv"));
+        assert_eq!(addresses[0].owner_type.as_deref(), Some("personal"));
+        assert_eq!(addresses[0].owner_ko_name.as_deref(), Some("홍길동"));
+        assert_eq!(addresses[1].exchange_name.as_deref(), Some("Binance"));
+        assert_eq!(addresses[1].owner_type.as_deref(), Some("personal"));
+        assert_eq!(addresses[1].owner_en_name.as_deref(), Some("GIL DONG HONG"));
+    }
+
+    #[test]
+    fn corporate_owner_names_are_not_dropped() {
+        let address: BithumbWithdrawalAddress = decode(&parsed(
+            r#"{
+              "currency":"ETH",
+              "net_type":"ETH",
+              "network_name":"Ethereum",
+              "withdraw_address":"0x562ece3d6cd807a31b1a5d85ebfee79f78fe0b26",
+              "secondary_address":null,
+              "exchange_name":"Binance",
+              "owner_type":"corporation",
+              "owner_ko_name":null,
+              "owner_en_name":null,
+              "owner_corp_ko_name":"주식회사 예시",
+              "owner_corp_en_name":"Example Co., Ltd."
+            }"#,
+        ))
+        .expect("corporate owner fixture");
+
+        assert_eq!(address.owner_corp_ko_name.as_deref(), Some("주식회사 예시"));
+        assert_eq!(
+            address.owner_corp_en_name.as_deref(),
+            Some("Example Co., Ltd.")
+        );
+    }
+
+    #[test]
+    fn withdrawal_address_list_request_is_a_parameterless_jwt_get() {
+        let request = withdrawal_addresses_request(&credentials()).expect("allowlist request");
+
+        assert_eq!(request.target(), WITHDRAWAL_ADDRESSES_PATH);
+        let token = claims(&request);
+        assert_eq!(token["access_key"], "test-access");
+        assert!(token.get("query_hash").is_none());
+        assert!(token.get("query_hash_alg").is_none());
     }
 
     #[test]

@@ -4,12 +4,12 @@
 # sdk_source: https://github.com/hyperliquid-dex/hyperliquid-python-sdk
 # sdk_revision: 2fdb18f9517675ea03695a0962bd19eece9c83f0
 # columns: family	audit_result	next_action	candidate	source_locator
-explorer	needs_evidence	continue_audit	blockList	https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits.md
-sdk	needs_evidence	continue_audit	userToMultiSigSigners	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/info.py#L625-L626
-sdk	needs_evidence	continue_audit	extraAgents	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/info.py#L744-L763
-sdk	needs_evidence	continue_audit	setReferrer	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/exchange.py#L434-L452
-sdk	needs_evidence	continue_audit	createSubAccount	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/exchange.py#L454-L472
-sdk	needs_evidence	continue_audit	subAccountTransfer	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/exchange.py#L518-L538
-sdk	needs_evidence	continue_audit	subAccountSpotTransfer	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/exchange.py#L540-L561
-sdk	needs_evidence	continue_audit	CSignerAction	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/exchange.py#L981-L999
-sdk	needs_evidence	continue_audit	CValidatorAction	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/exchange.py#L1001-L1097
+explorer	blocked	official_contract_required	blockList	https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits.md
+sdk	blocked	official_contract_required	userToMultiSigSigners	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/info.py#L625-L626
+sdk	blocked	official_contract_required	extraAgents	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/info.py#L744-L763
+sdk	blocked	official_contract_required	setReferrer	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/exchange.py#L434-L452
+sdk	blocked	official_contract_required	createSubAccount	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/exchange.py#L454-L472
+sdk	blocked	official_contract_required	subAccountTransfer	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/exchange.py#L518-L538
+sdk	blocked	official_contract_required	subAccountSpotTransfer	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/exchange.py#L540-L561
+sdk	blocked	official_contract_required	CSignerAction	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/exchange.py#L981-L999
+sdk	blocked	official_contract_required	CValidatorAction	https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/hyperliquid/exchange.py#L1001-L1097

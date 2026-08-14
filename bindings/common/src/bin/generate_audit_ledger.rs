@@ -136,9 +136,9 @@ fn valid_audit_result(result: &str, next_action: &str) -> bool {
         (result, next_action),
         ("verified", "none")
             | ("gap_found", "needs_approval")
+            | ("not_implemented", "needs_approval")
             | ("needs_design", "service_or_contract_decision")
-            | ("needs_evidence", "continue_audit")
-            | ("not_checked", "continue_audit")
+            | ("blocked", "official_contract_required")
     )
 }
 
@@ -582,17 +582,17 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
                     next_action: "service_or_contract_decision",
                     reason: "Requires a separate platform or protocol service; release scope requires user approval.",
                 }
-            } else if matches!(state.as_str(), "Partial" | "Planned") {
+            } else if state == "Partial" {
                 AuditReview {
-                    result: "needs_evidence",
-                    next_action: "continue_audit",
-                    reason: "The existing implementation scope is retained, but operation-level semantic audit evidence is incomplete.",
+                    result: "gap_found",
+                    next_action: "needs_approval",
+                    reason: "Current coverage explicitly marks this connected public contract as Partial.",
                 }
             } else {
                 AuditReview {
-                    result: "not_checked",
-                    next_action: "continue_audit",
-                    reason: "No semantic audit record is available for this operation.",
+                    result: "not_implemented",
+                    next_action: "needs_approval",
+                    reason: "No connected Rust, schema, or public binding contract exists for this active operation.",
                 }
             };
             let review_key = (catalog.exchange, official.clone());
@@ -607,7 +607,7 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
                 "invalid derived audit result/action for {}",
                 fields[4]
             );
-            if matches!(review.result, "verified" | "gap_found") {
+            if review.result == "verified" {
                 assert!(
                     bridges.len() > 0
                         && state == "Implemented"
@@ -623,16 +623,37 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
                     fields[4]
                 );
             }
+            if review.result == "gap_found" {
+                assert!(
+                    bridges.len() > 0
+                        && rust_present
+                        && schema_present
+                        && codegen_names_present
+                        && python_present
+                        && dart_present
+                        && typescript_present
+                        && !verification.is_empty(),
+                    "gap_found audit review lacks a connected public contract for {}",
+                    fields[4]
+                );
+            }
+            if review.result == "not_implemented" {
+                assert!(
+                    bridges.is_empty() && local_ops.is_empty(),
+                    "not_implemented audit review has a connected public contract for {}",
+                    fields[4]
+                );
+            }
             let source_locator_text = source_locators.into_iter().collect::<Vec<_>>().join(";");
             let local_status = if local_ops.is_empty() {
-                "unreviewed"
+                "absent"
             } else if rust_present {
                 "present"
             } else {
                 "missing_or_unverified"
             };
             let schema_status = if local_ops.is_empty() {
-                "unreviewed"
+                "absent"
             } else if schema_present {
                 "present"
             } else {
@@ -678,7 +699,7 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
                 schema_status.to_owned(),
                 schema_locator.to_owned(),
                 if local_ops.is_empty() {
-                    "unreviewed"
+                    "absent"
                 } else if codegen_names_present {
                     "present"
                 } else {
@@ -692,7 +713,7 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
                 }
                 .to_owned(),
                 if local_ops.is_empty() {
-                    "unreviewed"
+                    "absent"
                 } else if python_present {
                     "present"
                 } else {
@@ -706,7 +727,7 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
                 }
                 .to_owned(),
                 if local_ops.is_empty() {
-                    "unreviewed"
+                    "absent"
                 } else if dart_present {
                     "present"
                 } else {
@@ -720,7 +741,7 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
                 }
                 .to_owned(),
                 if local_ops.is_empty() {
-                    "unreviewed"
+                    "absent"
                 } else if typescript_present {
                     "present"
                 } else {
@@ -913,7 +934,7 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
                 &[
                     "audit ledger for all 1,374 active official rows",
                     "deprecated source rows are retained but excluded from this active ledger",
-                    "not_checked means no semantic audit record; it never means automatically unimplemented",
+                    "every row has an explicit audited result; not_implemented means no connected public contract exists",
                     "platform_limited rows remain in the ledger and are separated from general Adapter work",
                 ],
                 &ledger,
@@ -925,7 +946,7 @@ fn render(root: &Path) -> Vec<RenderedOutput> {
             contents: emit(
                 &header,
                 &[
-                    "all 937 general-SDK rows retained for semantic audit; not_checked is not implementation work",
+                    "all 937 general-SDK rows; this is a filtered ledger view, not an implementation schedule",
                 ],
                 &queue,
             ),

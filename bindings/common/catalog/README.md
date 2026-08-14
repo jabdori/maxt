@@ -32,7 +32,7 @@ This inventory does not conflate these three axes:
 | --- | --- |
 | lifecycle | Whether the official documentation marks an operation active or deprecated |
 | exposure | Whether maxt exposes it through the common `Client`/`Adapter`, an exchange-specific typed service, or a separate platform/protocol service |
-| implementation | Rust official-contract preservation and verification evidence. A source row outside a bridge has not yet been audited on this axis; it is not automatically unimplemented. |
+| implementation | The audited current public-contract state: verified, a known contract gap, no implementation, a required design decision, or an official-source blocker. |
 
 ## Public-exposure classification
 
@@ -77,49 +77,61 @@ implemented, or that all must be implemented immediately.
 The human-readable ledger separates current coverage from an audit conclusion
 and its next action. `coverage_implementation_state` is the current curated
 coverage value; it is not an audit verdict. The checked-in `audit/reviews.tsv`
-records exact operation keys that a reviewer has read. Rows without a review
-record never become a completion claim automatically.
+records exact operation keys that a reviewer has read. A missing explicit
+review is rendered from the fixed coverage state, never as an unknown state.
 
 | `audit_result` | `next_action` | Meaning |
 | --- | --- | --- |
 | `verified` | `none` | Rust, public bindings, and verification evidence were reviewed. |
 | `gap_found` | `needs_approval` | The operation works, but the official contract is not fully preserved. |
+| `not_implemented` | `needs_approval` | The completed audit found no connected Rust, schema, or public-binding contract. |
 | `needs_design` | `service_or_contract_decision` | A general Adapter would misstate the protocol or platform boundary. |
-| `needs_evidence` | `continue_audit` | Current evidence is insufficient for a semantic conclusion. |
-| `not_checked` | `continue_audit` | No semantic review has been recorded yet. |
+| `blocked` | `official_contract_required` | The official source does not publish a complete contract from which a manifest row can be implemented. |
 
 `reason` explains the concrete basis. This deliberately removes
 `MechanicallyConnected` from the final ledger: bridge, Rust, schema, generated
 contract, binding, and validation columns retain the machine evidence without
-claiming semantic completion. `audit-queue` retains all 937 general-SDK rows.
-There are currently no reviewed `gap_found / needs_approval` rows, so both the
-worklist and `execution-checklist` are empty. New discoveries remain in the
-audit queue until reviewed; they do not enter the worklist.
+claiming semantic completion. `audit-queue` is the filtered 937-row general-SDK
+ledger, not an implementation schedule. The worklist contains only connected
+`gap_found / needs_approval` rows; it remains unauthorized until the user
+approves a fixed implementation batch.
 
 The current semantic-audit result summary is below. It is not a remaining-work
 count.
 
-| Scope | Verified | Gap found | Needs design | Needs evidence | Not checked | Total |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| General SDK | 143 | 0 | 42 | 752 | 0 | 937 |
-| Separate platform/protocol boundary | 0 | 0 | 437 | 0 | 0 | 437 |
+| Scope | Verified | Gap found | Not implemented | Needs design | Total |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| General SDK | 143 | 51 | 701 | 42 | 937 |
+| Separate platform/protocol boundary | 0 | 0 | 0 | 437 | 437 |
+
+The general-SDK result is also fixed by exchange. It describes the current
+public-contract state, not a scheduled implementation count.
+
+| Exchange | Verified | Gap found | Not implemented | Needs design | Total |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Upbit | 42 | 15 | 0 | 0 | 57 |
+| Bithumb | 32 | 15 | 0 | 0 | 47 |
+| Binance | 41 | 14 | 649 | 9 | 713 |
+| Hyperliquid | 28 | 7 | 52 | 33 | 120 |
 
 Current coverage bridges contain 57 Upbit, 47 Bithumb, 57 Binance, and 35
 Hyperliquid local rows: 196 total. Binance `mark_price` and `mark_prices` both
 bridge to the one official `premiumIndex` operation, so the bridge has 195
 unique official-operation targets. Within the local bridge rows, `coverage.rs`
 implementation status is 144 Implemented, 51 Partial, and 1 Planned.
-Therefore `937 - 196` is only
-the number of general-SDK classification rows without a bridge; it is not
-remaining implementation work. A row outside a bridge is not reported as
-unimplemented before an operation-by-operation audit of existing Rust behavior
-and official-contract preservation.
+The 701 `not_implemented` rows are a completed audit finding: they have no
+connected Rust, schema, or public-binding contract. They are not an approved
+implementation batch. The 51 `gap_found` rows have a connected public surface
+that coverage explicitly marks Partial; their worklist entries likewise require
+approval before any implementation starts.
+The 51 connected gaps are grouped into 40 local-operation units in
+`audit/execution-checklist.tsv`; none is authorized merely by appearing there.
 
 Where the official source lacks a complete request schema or operation list,
 the inventory does not guess a count or discard the scope.
-`hyperliquid/unresolved.tsv` records `needs_evidence / continue_audit` with a
-source locator until an official schema permits manifest rows and an audit
-result.
+`hyperliquid/unresolved.tsv` records `blocked / official_contract_required`
+with a source locator until an official schema permits manifest rows and an
+audit result.
 
 ## Central contract decision
 
@@ -132,7 +144,7 @@ it as a provider typed API.
 
 The Hyperliquid rate-limit documentation names `blockList` and the Explorer
 family but provides no complete request schema or operation list. Its count is
-not guessed; it remains `needs_evidence / continue_audit` in
+not guessed; it remains `blocked / official_contract_required` in
 `hyperliquid/unresolved.tsv` until an official schema is available.
 
 ## Verification
@@ -150,15 +162,15 @@ cargo run -p maxt-bindings-common --bin generate_audit_ledger --features codegen
 ```
 
 `--check` renders and compares entirely in memory without writing files.
-Only `--write` updates the active 1,374-row ledger, 937-row audit queue,
-currently empty approval-candidate and execution-checklist files, and the
-437-row separate-service list. `coverage_inventory` verifies row/column counts,
+Only `--write` updates the active 1,374-row ledger, 937-row filtered general-SDK
+ledger, approval-candidate and execution-checklist files, and the 437-row
+separate-service list. `coverage_inventory` verifies row/column counts,
 allowed result/action pairs, review-key integrity, and derived grouping.
 
 This test checks source row counts and fields, official bridges, regional Upbit
 inventory, explicit deprecations, and the connection to current coverage rows.
-It counts bridge connections and implementation status separately, and never
-infers remaining implementation work from an absent bridge.
+It distinguishes the completed `not_implemented` finding from an approved
+implementation batch.
 Until the fixed Rust scope is complete, work runs only each feature's minimum
 unit tests. One integration stage then closes schema, code generation, all
 three language bindings, documentation, and full regression together.

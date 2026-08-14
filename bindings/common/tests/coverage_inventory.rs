@@ -78,8 +78,8 @@ fn frozen_active_audit_ledger_and_derived_queues_are_consistent() {
     let reviews = audit_rows(AUDIT_REVIEWS);
     assert_eq!(ledger.len(), 1_374);
     assert_eq!(queue.len(), 937);
-    assert_eq!(work.len(), 0);
-    assert_eq!(execution.len(), 0);
+    assert_eq!(work.len(), 51);
+    assert_eq!(execution.len(), 40);
     assert_eq!(platform.len(), 437);
     assert_eq!(reviews.len(), 886);
     assert!(ledger.iter().all(|row| row.len() == 31));
@@ -102,13 +102,26 @@ fn frozen_active_audit_ledger_and_derived_queues_are_consistent() {
             (row[28], row[29]),
             ("verified", "none")
                 | ("gap_found", "needs_approval")
+                | ("not_implemented", "needs_approval")
                 | ("needs_design", "service_or_contract_decision")
-                | ("needs_evidence", "continue_audit")
-                | ("not_checked", "continue_audit")
+                | ("blocked", "official_contract_required")
         ) && !row[30].is_empty()
     }));
+    let audit_counts = ledger.iter().fold(BTreeMap::new(), |mut counts, row| {
+        *counts.entry(row[28]).or_default() += 1;
+        counts
+    });
+    assert_eq!(
+        audit_counts,
+        BTreeMap::from([
+            ("gap_found", 51),
+            ("needs_design", 479),
+            ("not_implemented", 701),
+            ("verified", 143),
+        ])
+    );
     assert!(ledger.iter().all(|row| {
-        !matches!(row[28], "verified" | "gap_found")
+        (row[28] != "verified"
             || (row[11] == "connected"
                 && row[13] == "Implemented"
                 && row[14] == "present"
@@ -117,7 +130,25 @@ fn frozen_active_audit_ledger_and_derived_queues_are_consistent() {
                 && row[20] == "present"
                 && row[22] == "present"
                 && row[24] == "present"
-                && !row[26].is_empty())
+                && !row[26].is_empty()))
+            && (row[28] != "gap_found"
+                || (row[11] == "connected"
+                    && row[14] == "present"
+                    && row[16] == "present"
+                    && row[18] == "present"
+                    && row[20] == "present"
+                    && row[22] == "present"
+                    && row[24] == "present"
+                    && !row[26].is_empty()))
+            && (row[28] != "not_implemented"
+                || (row[11] == "not_connected"
+                    && row[13] == "Unlinked"
+                    && row[14] == "absent"
+                    && row[16] == "absent"
+                    && row[18] == "absent"
+                    && row[20] == "absent"
+                    && row[22] == "absent"
+                    && row[24] == "absent"))
     }));
     assert!(
         ledger.iter().all(|row| {
@@ -169,9 +200,9 @@ fn frozen_active_audit_ledger_and_derived_queues_are_consistent() {
         (row[6], row[7]),
         ("verified", "none")
             | ("gap_found", "needs_approval")
+            | ("not_implemented", "needs_approval")
             | ("needs_design", "service_or_contract_decision")
-            | ("needs_evidence", "continue_audit")
-            | ("not_checked", "continue_audit")
+            | ("blocked", "official_contract_required")
     ) && !row[8].is_empty()));
 }
 
@@ -1310,7 +1341,12 @@ fn hyperliquid_unresolved_inventory_is_explicitly_bounded() {
             .filter(|fields| fields[0] == "explorer")
             .map(|fields| (fields[0], fields[1], fields[2], fields[3]))
             .collect::<BTreeSet<_>>(),
-        BTreeSet::from([("explorer", "needs_evidence", "continue_audit", "blockList",)]),
+        BTreeSet::from([(
+            "explorer",
+            "blocked",
+            "official_contract_required",
+            "blockList",
+        )]),
     );
     assert_eq!(
         unresolved
@@ -1332,7 +1368,7 @@ fn hyperliquid_unresolved_inventory_is_explicitly_bounded() {
     assert!(
         unresolved
             .iter()
-            .all(|fields| { fields[1] == "needs_evidence" && fields[2] == "continue_audit" })
+            .all(|fields| { fields[1] == "blocked" && fields[2] == "official_contract_required" })
     );
 }
 

@@ -400,6 +400,12 @@ class UpbitAdapter(_NativeAdapter):
         self,
         subscription: Subscription,
     ) -> UpbitSubscriptionList:
+        """Return subscriptions on the one matching active Upbit connection.
+
+        Start ``subscribe(subscription)`` first, keep that stream running, and
+        pass the same selector. No match or more than one match raises
+        ``InvalidRequestError``.
+        """
         value = await self._call(self._handle.list_subscriptions, subscription.to_wire())
         return _model_from_wire("UpbitSubscriptionList", value)
 

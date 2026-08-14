@@ -113,7 +113,7 @@
 | `orderbook_instruments(&[Market])` | `markets.len() >= 1`; 현재 가격 구간의 호가 단위와 지원하는 묶음 단위 반환; 지역 응답에 없으면 묶음 단위는 빈 배열 | `orderbook` |
 | `year_candles(market, to, count)` | `count: 1..=200` 또는 `None`; ISO-8601 기준 시각 선택; 오래된 순서; 한국 시작 시각은 지역에 따라 없을 수 있음 | `candle` |
 | `market_events()` | 시장별 투자 유의 여부와 기준 | `market` |
-| `list_subscriptions(subscription)` | 임시 공개 연결에서 `LIST_SUBSCRIPTIONS`가 반환한 ticket·데이터 유형·시장·선택 호가 묶음 단위를 보존. fixture만 검증 | WebSocket request |
+| `list_subscriptions(subscription)` | `subscribe`로 먼저 열고 반환된 stream을 계속 실행한 뒤, 정확히 같은 `subscription`을 전달한 하나의 활성 Upbit 공개 연결을 조회합니다. 일치하는 연결이 없거나 둘 이상이면 다른 socket을 임의로 조회하지 않고 로컬에서 실패합니다. `LIST_SUBSCRIPTIONS`가 반환한 ticket·데이터 유형·시장·선택 호가 묶음 단위를 보존합니다. fixture만 검증 | WebSocket request |
 | `test_order(request)` | 주문을 생성하지 않고 검증; 주문 생성 권한 필요; 반환 `Order`는 dry-run 결과이므로 ID를 조회·취소할 수 없고 상태도 실제 활성 주문을 뜻하지 않음 | `order-test` |
 | `order_detail(request)` | 인증 필요 거래소 전용 `GET /v1/order`. 요청에는 예상 `market`과 UUID 및/또는 `identifier`를 지정하며 식별자 하나는 필수이고 둘 다 있으면 Upbit가 UUID를 우선합니다. 공통 `Order`가 담지 않는 상세 체결·수수료·잠금 수량·자전거래 방지(SMP)·유효 조건 원본 필드를 보존합니다. `identifier`의 예약 문자는 안전하게 percent-encoding하고 JWT query hash에는 원래 질의 문자열을 사용합니다. fixture만 검증 | `default` |
 | `closed_orders(request)` | 인증 필요 거래소 전용 `GET /v1/orders/closed` 종료 주문 요약 목록. 선택 `market`, `state`, `states[]`를 받으며 `state`와 `states[]`는 함께 쓸 수 없음. 주문 생성 시각 조회 구간은 최대 7일, `limit: 1..=1_000`, 오래된 순서 또는 최신순 정렬. Timestamp는 밀리초로 직접 전달. 수수료·SMP·`identifier`·유효 조건을 보존하지만 개별 `trades`는 없음. fixture만 검증했고 실제 거래·읽기 요청은 하지 않음 | `default` |

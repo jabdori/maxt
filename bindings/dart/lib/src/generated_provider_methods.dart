@@ -81,7 +81,11 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
             values.map(_upbitMarketEventFromWire).toList(growable: false),
       );
 
-  /// Upbit 전용 API인 `list_subscriptions`를 호출합니다.
+  /// Returns the subscriptions on one already active Upbit connection.
+  ///
+  /// Call [subscribe] first, keep its returned stream running, and pass the
+  /// exact same [subscription]. The call fails when no active connection, or
+  /// more than one active connection, matches that selector.
   Future<UpbitSubscriptionList> listSubscriptions(Subscription subscription) =>
       _nativeFuture(
         () => _handle.upbitListSubscriptions(

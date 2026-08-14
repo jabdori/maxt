@@ -8,6 +8,9 @@ mod stream;
 mod travel_rule;
 mod wallet;
 
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex, Weak};
+
 use futures_core::Stream;
 use futures_util::StreamExt;
 use rust_decimal::Decimal;
@@ -34,6 +37,85 @@ pub use stream::{
 };
 pub use travel_rule::{UpbitTravelRuleVasp, UpbitTravelRuleVerification};
 pub use wallet::UpbitWithdrawalAddress;
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+struct SubscriptionKey {
+    markets: Vec<Market>,
+    feeds: Vec<crate::types::Feed>,
+}
+
+impl From<&Subscription> for SubscriptionKey {
+    fn from(subscription: &Subscription) -> Self {
+        Self {
+            markets: subscription.markets().to_vec(),
+            feeds: subscription.feeds().to_vec(),
+        }
+    }
+}
+
+/// Active Upbit market connections indexed by their public subscription.
+///
+/// The exchange operation is connection-scoped. A selector is accepted only
+/// when it identifies exactly one currently live connection.
+#[derive(Default)]
+struct ActiveSubscriptions {
+    connections: Mutex<HashMap<SubscriptionKey, Vec<Weak<stream::SubscriptionControl>>>>,
+}
+
+impl std::fmt::Debug for ActiveSubscriptions {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ActiveSubscriptions")
+            .finish_non_exhaustive()
+    }
+}
+
+impl ActiveSubscriptions {
+    fn register(&self, subscription: SubscriptionKey, control: &Arc<stream::SubscriptionControl>) {
+        self.connections
+            .lock()
+            .expect("Upbit active-subscription mutex poisoned")
+            .entry(subscription)
+            .or_default()
+            .push(Arc::downgrade(control));
+    }
+
+    fn control(&self, subscription: &Subscription) -> Result<Arc<stream::SubscriptionControl>> {
+        let key = SubscriptionKey::from(subscription);
+        let live = {
+            let mut connections = self
+                .connections
+                .lock()
+                .expect("Upbit active-subscription mutex poisoned");
+            let Some(controls) = connections.get_mut(&key) else {
+                return Err(Error::invalid_request(
+                    "subscription",
+                    "no active Upbit connection matches this subscription",
+                ));
+            };
+            controls.retain(|control| control.strong_count() > 0);
+            let live = controls
+                .iter()
+                .filter_map(Weak::upgrade)
+                .collect::<Vec<_>>();
+            if controls.is_empty() {
+                connections.remove(&key);
+            }
+            live
+        };
+
+        match live.as_slice() {
+            [control] => Ok(Arc::clone(control)),
+            [] => Err(Error::invalid_request(
+                "subscription",
+                "no active Upbit connection matches this subscription",
+            )),
+            _ => Err(Error::invalid_request(
+                "subscription",
+                "more than one active Upbit connection matches this subscription",
+            )),
+        }
+    }
+}
 
 /// Selects an Upbit regional deployment.
 ///
@@ -1160,6 +1242,7 @@ pub struct UpbitAdapter {
     credentials: Option<UpbitCredentials>,
     /// Cached transport initialization result, reported on first use.
     http: std::result::Result<HttpTransport, Error>,
+    active_subscriptions: Arc<ActiveSubscriptions>,
 }
 
 #[derive(Debug, Clone)]
@@ -1191,6 +1274,7 @@ impl UpbitAdapter {
             region,
             credentials: None,
             http: HttpTransport::new(region.rest_base_url()),
+            active_subscriptions: Arc::default(),
         }
     }
 
@@ -1316,12 +1400,22 @@ impl UpbitAdapter {
         rest::market_events(self.http()?).await
     }
 
-    /// Opens a temporary public connection and asks Upbit to confirm the requested subscriptions.
+    /// Reads subscriptions on the one active public connection matching `subscription`.
+    ///
+    /// Upbit scopes `LIST_SUBSCRIPTIONS` to an existing WebSocket connection.
+    /// Call [`Adapter::subscribe`] first and pass that exact subscription. The
+    /// adapter rejects no match or multiple matching live connections rather
+    /// than returning a result for the wrong socket. Keep the returned
+    /// [`MarketStream`](crate::MarketStream) running so it can dispatch the
+    /// operation reply.
     pub async fn list_subscriptions(
         &self,
         subscription: &Subscription,
     ) -> Result<UpbitSubscriptionList> {
-        stream::list_subscriptions(self.region.websocket_url().to_string(), subscription).await
+        self.active_subscriptions
+            .control(subscription)?
+            .list_subscriptions()
+            .await
     }
 
     /// Validates an order without creating it on Upbit.
@@ -1683,6 +1777,8 @@ impl Adapter for UpbitAdapter {
         let frame = stream::subscribe_frame(subscription, &ticket());
         let url = self.region.websocket_url().to_string();
         let config = config.clone();
+        let active_subscriptions = Arc::clone(&self.active_subscriptions);
+        let subscription = SubscriptionKey::from(subscription);
 
         Box::pin(async move {
             let session = ws::connect(
@@ -1696,16 +1792,14 @@ impl Adapter for UpbitAdapter {
             )
             .await?;
             let close = session.close_handle();
+            let control = Arc::new(stream::SubscriptionControl::new(session.send_handle()));
+            active_subscriptions.register(subscription, &control);
 
             // Candle completion state belongs to one WebSocket connection.
-            let mut decoder = stream::Decoder::default();
+            let decoder = stream::Decoder::default();
 
             Ok(MarketStream::new_with_close(
-                events(
-                    session,
-                    move |frame| decoder.decode(frame),
-                    MarketEvent::Reconnected,
-                ),
+                controlled_market_events(session, control, decoder),
                 move || async move { close.close().await },
             ))
         })
@@ -1925,6 +2019,43 @@ fn ticket() -> String {
     uuid::Uuid::new_v4().to_string()
 }
 
+/// Decodes one public Upbit connection while reserving operation replies for
+/// the caller that issued them on that same socket.
+fn controlled_market_events(
+    session: WsSession,
+    control: Arc<stream::SubscriptionControl>,
+    mut decoder: stream::Decoder,
+) -> impl Stream<Item = Result<MarketEvent>> + Send {
+    session.flat_map(move |item| {
+        let items = match item {
+            Ok(WsCommand::Text(text)) => {
+                if control.handle_frame(&text) {
+                    Vec::new()
+                } else {
+                    split(decoder.decode(&text))
+                }
+            }
+            Ok(WsCommand::Binary(bytes)) => match String::from_utf8(bytes) {
+                Ok(text) if control.handle_frame(&text) => Vec::new(),
+                Ok(text) => split(decoder.decode(&text)),
+                Err(err) => vec![Err(Error::decode(format!(
+                    "upbit sent a frame that is not UTF-8: {err}"
+                )))],
+            },
+            Ok(WsCommand::Reconnected) => {
+                control.fail_pending();
+                vec![Ok(MarketEvent::Reconnected)]
+            }
+            Err(err) => {
+                control.fail_pending();
+                vec![Err(err)]
+            }
+        };
+
+        futures_util::stream::iter(items)
+    })
+}
+
 /// Decodes frames in arrival order and flattens each into zero or more events.
 fn events<T: Clone + Send + 'static>(
     session: WsSession,
@@ -2033,6 +2164,22 @@ mod tests {
         ] {
             assert!(public.supports(feature), "{feature:?}");
         }
+    }
+
+    #[tokio::test]
+    async fn list_subscriptions_never_opens_a_temporary_connection() {
+        let subscription = Subscription::new()
+            .market(Market::spot(Exchange::Upbit, "BTC", "KRW"))
+            .feed(crate::types::Feed::Ticker);
+
+        let error = UpbitAdapter::new()
+            .list_subscriptions(&subscription)
+            .await
+            .expect_err("a connection-scoped operation needs an active connection");
+        assert!(matches!(
+            error,
+            Error::InvalidRequest { field, .. } if field == "subscription"
+        ));
     }
 
     #[test]

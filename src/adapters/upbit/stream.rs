@@ -3,18 +3,17 @@
 //! One connection can carry multiple markets and feed types.
 
 use std::collections::HashMap;
+use std::sync::Mutex;
 use std::time::Duration;
 
-use futures_util::StreamExt;
 use rust_decimal::Decimal;
 use serde_json::{Map, Value};
+use tokio::sync::oneshot;
 
 use crate::error::{Error, Result};
 use crate::feature::Feature;
-use crate::transport::{Heartbeat, HeartbeatFrame, WsCommand, WsConnect, ws};
-use crate::types::{
-    Candle, Feed, Interval, Market, MarketEvent, StreamConfig, Subscription, Timestamp,
-};
+use crate::transport::{Heartbeat, HeartbeatFrame, WsSendHandle};
+use crate::types::{Candle, Feed, Interval, Market, MarketEvent, Subscription, Timestamp};
 
 use super::parse::{self, EXCHANGE, RawStreamCandle};
 
@@ -37,8 +36,164 @@ pub struct ListedSubscription {
 pub struct SubscriptionList {
     /// Ticket that correlated the request and response.
     pub ticket: String,
-    /// Data types confirmed by Upbit on the temporary connection.
+    /// Data types confirmed by Upbit on the queried active connection.
     pub subscriptions: Vec<ListedSubscription>,
+}
+
+/// Coordinates one `LIST_SUBSCRIPTIONS` request on an existing connection.
+///
+/// The socket lifecycle itself remains shared transport code. Upbit alone owns
+/// the operation's response shape and correlation ticket.
+pub(crate) struct SubscriptionControl {
+    send: WsSendHandle,
+    pending: Mutex<Option<PendingSubscriptionList>>,
+}
+
+struct PendingSubscriptionList {
+    ticket: String,
+    response: oneshot::Sender<Result<SubscriptionList>>,
+}
+
+impl SubscriptionControl {
+    pub(crate) fn new(send: WsSendHandle) -> Self {
+        Self {
+            send,
+            pending: Mutex::new(None),
+        }
+    }
+
+    /// Sends the documented operation through this exact active connection.
+    pub(crate) async fn list_subscriptions(&self) -> Result<SubscriptionList> {
+        let ticket = uuid::Uuid::new_v4().to_string();
+        let mut connection_epoch = self.send.connection_epoch();
+        let (response, received) = oneshot::channel();
+        {
+            let mut pending = self.pending.lock().expect("Upbit operation mutex poisoned");
+            if pending.is_some() {
+                return Err(Error::adapter(
+                    "an Upbit LIST_SUBSCRIPTIONS request is already waiting on this connection",
+                ));
+            }
+            *pending = Some(PendingSubscriptionList {
+                ticket: ticket.clone(),
+                response,
+            });
+        }
+
+        let guard = PendingGuard {
+            control: self,
+            ticket: ticket.clone(),
+            active: true,
+        };
+        self.send
+            .send_text(list_subscriptions_frame(&ticket)?)
+            .await?;
+        let result = tokio::select! {
+            biased;
+            changed = connection_epoch.changed() => {
+                match changed {
+                    Ok(()) => Err(Error::transport(
+                        "Upbit WebSocket reconnected before answering LIST_SUBSCRIPTIONS",
+                    )),
+                    Err(_) => Err(Error::transport(
+                        "Upbit WebSocket closed before answering LIST_SUBSCRIPTIONS",
+                    )),
+                }
+            }
+            result = received => result.map_err(|_| {
+                Error::transport("Upbit WebSocket closed before answering LIST_SUBSCRIPTIONS")
+            })?,
+        };
+        guard.disarm();
+        result
+    }
+
+    /// Consumes an operation reply so it is never decoded as market data.
+    pub(crate) fn handle_frame(&self, frame: &str) -> bool {
+        let Ok(object) = frame_object(frame) else {
+            return false;
+        };
+        let listed = object.get("method").and_then(Value::as_str) == Some("LIST_SUBSCRIPTIONS");
+        let mut pending = self.pending.lock().expect("Upbit operation mutex poisoned");
+        if !listed && !(pending.is_some() && object.contains_key("error")) {
+            return false;
+        }
+        let Some(waiting) = pending.as_ref() else {
+            return listed;
+        };
+        if listed
+            && object
+                .get("ticket")
+                .and_then(Value::as_str)
+                .is_some_and(|ticket| ticket != waiting.ticket)
+        {
+            // A cancelled earlier call can still receive its reply after a
+            // later query has started. It must not fail that newer query.
+            return true;
+        }
+        let waiting = pending
+            .take()
+            .expect("a checked Upbit pending operation is still present");
+        let expected_ticket = waiting.ticket.clone();
+        let result = reserialize(&object)
+            .and_then(|frame| subscription_list(&frame))
+            .and_then(|result| {
+                if result.ticket == expected_ticket {
+                    Ok(result)
+                } else {
+                    Err(Error::decode(format!(
+                        "Upbit subscription-list ticket `{}` does not match request `{}`",
+                        result.ticket, expected_ticket
+                    )))
+                }
+            });
+        let _ = waiting.response.send(result);
+        true
+    }
+
+    /// A reconnect cannot return a reply to an operation sent on the old socket.
+    pub(crate) fn fail_pending(&self) {
+        let pending = self
+            .pending
+            .lock()
+            .expect("Upbit operation mutex poisoned")
+            .take();
+        if let Some(pending) = pending {
+            let _ = pending.response.send(Err(Error::transport(
+                "Upbit WebSocket reconnected before answering LIST_SUBSCRIPTIONS",
+            )));
+        }
+    }
+
+    fn clear(&self, ticket: &str) {
+        let mut pending = self.pending.lock().expect("Upbit operation mutex poisoned");
+        if pending
+            .as_ref()
+            .is_some_and(|pending| pending.ticket == ticket)
+        {
+            pending.take();
+        }
+    }
+}
+
+struct PendingGuard<'a> {
+    control: &'a SubscriptionControl,
+    ticket: String,
+    active: bool,
+}
+
+impl PendingGuard<'_> {
+    fn disarm(mut self) {
+        self.active = false;
+    }
+}
+
+impl Drop for PendingGuard<'_> {
+    fn drop(&mut self) {
+        if self.active {
+            self.control.clear(&self.ticket);
+        }
+    }
 }
 
 /// Sends text `PING` every 15 seconds and waits at least 60 seconds for traffic.
@@ -95,49 +250,6 @@ pub(crate) fn list_subscriptions_frame(ticket: &str) -> Result<String> {
         { "format": FRAME_FORMAT }
     ]))
     .map_err(|err| Error::decode(format!("could not build Upbit operation frame: {err}")))
-}
-
-/// Opens one temporary public connection and asks Upbit to confirm its subscriptions.
-pub(crate) async fn list_subscriptions(
-    url: String,
-    subscription: &Subscription,
-) -> Result<SubscriptionList> {
-    let ticket = uuid::Uuid::new_v4().to_string();
-    let session = ws::connect(
-        WsConnect {
-            url,
-            headers: None,
-            subscribe: WsConnect::fixed(vec![
-                subscribe_frame(subscription, &ticket)?,
-                list_subscriptions_frame(&ticket)?,
-            ]),
-            heartbeat: None,
-        },
-        &StreamConfig {
-            max_reconnect_attempts: Some(0),
-            idle_timeout_ms: 10_000,
-            ..StreamConfig::default()
-        },
-    )
-    .await?;
-    futures_util::pin_mut!(session);
-
-    while let Some(item) = session.next().await {
-        let frame = match item? {
-            WsCommand::Text(frame) => frame,
-            WsCommand::Binary(bytes) => String::from_utf8(bytes).map_err(|err| {
-                Error::decode(format!("Upbit sent a frame that is not UTF-8: {err}"))
-            })?,
-            WsCommand::Reconnected => continue,
-        };
-        if let Some(result) = maybe_subscription_list(&frame)? {
-            return Ok(result);
-        }
-    }
-
-    Err(Error::transport(
-        "Upbit closed before answering LIST_SUBSCRIPTIONS",
-    ))
 }
 
 /// Decodes Upbit's full-name `LIST_SUBSCRIPTIONS` response.
@@ -200,17 +312,6 @@ pub(crate) fn subscription_list(frame: &str) -> Result<SubscriptionList> {
         ticket,
         subscriptions,
     })
-}
-
-fn maybe_subscription_list(frame: &str) -> Result<Option<SubscriptionList>> {
-    let object = frame_object(frame)?;
-    if let Some(error) = object.get("error") {
-        return Err(frame_error(error));
-    }
-    if object.get("method").and_then(Value::as_str) != Some("LIST_SUBSCRIPTIONS") {
-        return Ok(None);
-    }
-    subscription_list(&reserialize(&object)?).map(Some)
 }
 
 fn required_text(object: &Map<String, Value>, field: &'static str) -> Result<String> {
@@ -452,6 +553,8 @@ pub(crate) fn frame_error(error: &Value) -> Error {
 mod tests {
     use super::*;
     use crate::types::{Exchange, Market, Side, Timestamp};
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures_util::{SinkExt, StreamExt};
     use rust_decimal::Decimal;
 
     // Representative public trade frame.
@@ -695,6 +798,191 @@ mod tests {
                 Err(Error::Decode { .. })
             ));
         }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    #[tokio::test]
+    async fn list_subscriptions_uses_the_already_open_connection() {
+        use tokio::sync::mpsc;
+        use tokio_tungstenite::tungstenite::Message;
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("a free local port");
+        let address = listener.local_addr().expect("the local address");
+        let (frames, mut received) = mpsc::channel(2);
+        let (complete, wait_for_complete) = oneshot::channel();
+        tokio::spawn(async move {
+            let mut wait_for_complete = Some(wait_for_complete);
+            let Ok((stream, _)) = listener.accept().await else {
+                return;
+            };
+            let Ok(mut socket) = tokio_tungstenite::accept_async(stream).await else {
+                return;
+            };
+            for index in 0..2 {
+                let Some(Ok(Message::Text(frame))) = socket.next().await else {
+                    return;
+                };
+                let frame = frame.to_string();
+                if frames.send(frame.clone()).await.is_err() {
+                    return;
+                }
+                if index == 1 {
+                    let ticket = serde_json::from_str::<Value>(&frame)
+                        .ok()
+                        .and_then(|value| value[0]["ticket"].as_str().map(str::to_owned));
+                    let Some(ticket) = ticket else {
+                        return;
+                    };
+                    let _ = socket
+                        .send(Message::Text(
+                            serde_json::json!({
+                                "method": "LIST_SUBSCRIPTIONS",
+                                "result": [{"type": "ticker", "codes": ["KRW-BTC"]}],
+                                "ticket": ticket,
+                            })
+                            .to_string()
+                            .into(),
+                        ))
+                        .await;
+                    let _ = wait_for_complete
+                        .take()
+                        .expect("only one operation response")
+                        .await;
+                }
+            }
+        });
+
+        let mut session = crate::transport::ws::connect(
+            crate::transport::WsConnect {
+                url: format!("ws://{address}"),
+                headers: None,
+                subscribe: crate::transport::WsConnect::fixed(vec![
+                    subscribe_frame(
+                        &Subscription::new()
+                            .market(Market::spot(Exchange::Upbit, "BTC", "KRW"))
+                            .feed(Feed::Ticker),
+                        "initial-ticket",
+                    )
+                    .expect("the initial subscription frame"),
+                ]),
+                heartbeat: None,
+            },
+            &crate::types::StreamConfig {
+                max_reconnect_attempts: Some(0),
+                ..crate::types::StreamConfig::default()
+            },
+        )
+        .await
+        .expect("the initial connection");
+        let control = std::sync::Arc::new(SubscriptionControl::new(session.send_handle()));
+        let query = {
+            let control = std::sync::Arc::clone(&control);
+            tokio::spawn(async move { control.list_subscriptions().await })
+        };
+
+        let initial = received.recv().await.expect("the initial frame");
+        assert!(initial.contains("initial-ticket"));
+        let operation = received.recv().await.expect("the operation frame");
+        let operation = serde_json::from_str::<Value>(&operation).expect("the operation JSON");
+        assert_eq!(operation[1]["method"], "LIST_SUBSCRIPTIONS");
+        assert_eq!(operation[2]["format"], "DEFAULT");
+
+        while let Some(command) = session.next().await {
+            let crate::transport::WsCommand::Text(frame) = command.expect("the response frame")
+            else {
+                continue;
+            };
+            if control.handle_frame(&frame) {
+                break;
+            }
+        }
+        let result = query
+            .await
+            .expect("the query task")
+            .expect("the operation response");
+        assert_eq!(
+            result.ticket,
+            operation[0]["ticket"]
+                .as_str()
+                .expect("the operation ticket")
+        );
+        assert_eq!(result.subscriptions[0].feed_type, "ticker");
+        let _ = complete.send(());
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    #[tokio::test]
+    async fn list_subscriptions_fails_when_its_socket_reconnects() {
+        use tokio::sync::mpsc;
+        use tokio_tungstenite::tungstenite::Message;
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("a free local port");
+        let address = listener.local_addr().expect("the local address");
+        let (ready, mut initial_subscribed) = mpsc::channel(1);
+        tokio::spawn(async move {
+            let Ok((stream, _)) = listener.accept().await else {
+                return;
+            };
+            let Ok(mut socket) = tokio_tungstenite::accept_async(stream).await else {
+                return;
+            };
+            let Some(Ok(Message::Text(_))) = socket.next().await else {
+                return;
+            };
+            if ready.send(()).await.is_err() {
+                return;
+            }
+            // The operation is accepted on this socket, then the exchange
+            // closes it before replying. A reply from the next socket cannot
+            // answer this request.
+            let Some(Ok(Message::Text(_))) = socket.next().await else {
+                return;
+            };
+            let _ = socket.close(None).await;
+
+            let Ok((stream, _)) = listener.accept().await else {
+                return;
+            };
+            let Ok(mut socket) = tokio_tungstenite::accept_async(stream).await else {
+                return;
+            };
+            let _ = socket.next().await;
+            std::future::pending::<()>().await;
+        });
+
+        let session = crate::transport::ws::connect(
+            crate::transport::WsConnect {
+                url: format!("ws://{address}"),
+                headers: None,
+                subscribe: crate::transport::WsConnect::fixed(vec!["subscribe".to_owned()]),
+                heartbeat: None,
+            },
+            &crate::types::StreamConfig {
+                initial_reconnect_delay_ms: 1,
+                max_reconnect_delay_ms: 1,
+                idle_timeout_ms: 60_000,
+                ..crate::types::StreamConfig::default()
+            },
+        )
+        .await
+        .expect("the initial connection");
+        let close = session.close_handle();
+        let control = SubscriptionControl::new(session.send_handle());
+        initial_subscribed
+            .recv()
+            .await
+            .expect("the server received the initial subscription");
+
+        let error = tokio::time::timeout(Duration::from_secs(5), control.list_subscriptions())
+            .await
+            .expect("the reconnect boundary is reported")
+            .expect_err("the original socket was replaced");
+        assert!(matches!(error, Error::Transport { .. }), "{error}");
+        close.close().await.expect("the session closes");
     }
 
     #[test]

@@ -78,8 +78,8 @@ fn frozen_active_audit_ledger_and_derived_queues_are_consistent() {
     let reviews = audit_rows(AUDIT_REVIEWS);
     assert_eq!(ledger.len(), 1_374);
     assert_eq!(queue.len(), 937);
-    assert_eq!(work.len(), 1);
-    assert_eq!(execution.len(), 1);
+    assert_eq!(work.len(), 0);
+    assert_eq!(execution.len(), 0);
     assert_eq!(platform.len(), 437);
     assert_eq!(reviews.len(), 886);
     assert!(ledger.iter().all(|row| row.len() == 31));

@@ -44,6 +44,13 @@ impl Socket {
             .map_err(|error| Error::transport(error.to_string()))
     }
 
+    pub(super) async fn send_text(&mut self, text: &str) -> Result<()> {
+        self.0
+            .send(Message::Text(text.to_owned().into()))
+            .await
+            .map_err(|error| Error::transport(error.to_string()))
+    }
+
     #[cfg(test)]
     pub(super) async fn close_for_test(&mut self) {
         let _ = self.0.close(None).await;

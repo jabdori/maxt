@@ -54,9 +54,9 @@ hash, 참여자, 원본 체결 식별자를 함께 둡니다. 이 필드를 모�
 
 ## 범위 밖
 
-Upbit `LIST_SUBSCRIPTIONS`는 거래소 데이터 확장이 아니라 연결 제어 작업입니다. 현재
-구현은 기존 `MarketStream`을 조회하지 않고 임시 socket을 엽니다. 이 동작을 바꾸려면
-양방향 스트림 제어에 관한 별도 결정을 내려야 합니다.
+Upbit `LIST_SUBSCRIPTIONS`는 거래소 데이터 확장이 아니라 연결 제어 작업입니다. 어댑터
+내부 처리 방식은 [ADR 0002](0002-upbit-connection-scoped-operations.ko.md)에서 별도로
+결정합니다.
 
 platform-limited 작업은 별도 서비스 또는 명시적인 차단 결정으로 남습니다. 이 ADR은
 그 작업의 어댑터 경계를 바꾸지 않습니다.

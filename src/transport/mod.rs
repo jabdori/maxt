@@ -12,7 +12,9 @@ pub(crate) mod ws;
 #[allow(unused_imports)]
 pub(crate) use http::{HttpMethod, HttpRequest, HttpResponse, HttpTransport};
 #[allow(unused_imports)]
-pub(crate) use ws::{Heartbeat, HeartbeatFrame, WsCommand, WsConnect, WsSession, connect};
+pub(crate) use ws::{
+    Heartbeat, HeartbeatFrame, WsCommand, WsConnect, WsSendHandle, WsSession, connect,
+};
 
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) fn ensure_crypto_provider() {

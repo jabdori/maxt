@@ -786,6 +786,9 @@ fn render_provider_method(provider: &Provider, method: &ProviderMethod, schema: 
         ),
     };
     let documentation = match (provider.exchange, method.rust_name) {
+        ("upbit", "list_subscriptions") => {
+            "  /** Returns subscriptions on the one active Upbit connection matching the selector. Call subscribe first, keep that stream running, and pass the same selector; no or multiple matches fail instead of querying a different socket. */\n"
+        }
         ("upbit", "test_order") => {
             "  /** Validates an Upbit order without creating it. The returned dry-run ID cannot be queried or cancelled, and its status is not a live order. */\n"
         }

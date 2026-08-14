@@ -839,7 +839,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 임시 Upbit 연결이 실제로 구독한 항목을 반환합니다.
+    /// 일치하는 활성 Upbit 연결이 실제로 구독한 항목을 반환합니다.
+    ///
+    /// 먼저 같은 선택자(selector)로 구독을 시작하고 반환된 stream을 계속 실행해야 합니다.
     pub async fn upbit_list_subscriptions(
         &self,
         subscription: WireSubscription,

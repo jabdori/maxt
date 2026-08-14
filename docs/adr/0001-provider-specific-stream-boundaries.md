@@ -63,9 +63,8 @@ native trade identifier. It must not add those fields to every exchange's
 ## Out of scope
 
 Upbit `LIST_SUBSCRIPTIONS` is a connection-control operation, not a
-provider-data extension. Its current implementation opens a temporary socket
-instead of querying an existing `MarketStream`; any change to that behaviour
-requires a separate decision about bidirectional stream control.
+provider-data extension. Its adapter-local handling is decided separately in
+[ADR 0002](0002-upbit-connection-scoped-operations.md).
 
 Platform-limited operations remain separate services or explicit blocked
 decisions. This ADR does not change their adapter boundary.

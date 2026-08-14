@@ -1702,7 +1702,7 @@ fn provider_method_source(exchange: &str, method: &str) -> String {
             "  Future<List<UpbitMarketEvent>> marketEvents() =>\n      _nativeFuture(_handle.upbitMarketEvents).then(\n        (values) =>\n            values.map(_upbitMarketEventFromWire).toList(growable: false),\n      );\n"
         }
         ("upbit", "list_subscriptions") => {
-            "  Future<UpbitSubscriptionList> listSubscriptions(\n    Subscription subscription,\n  ) => _nativeFuture(\n    () => _handle.upbitListSubscriptions(\n      subscription: _subscriptionToWire(subscription),\n    ),\n  ).then(_upbitSubscriptionListFromWire);\n"
+            "  /// Returns the subscriptions on one already active Upbit connection.\n  ///\n  /// Call [subscribe] first, keep its returned stream running, and pass the\n  /// exact same [subscription]. The call fails when no active connection, or\n  /// more than one active connection, matches that selector.\n  Future<UpbitSubscriptionList> listSubscriptions(\n    Subscription subscription,\n  ) => _nativeFuture(\n    () => _handle.upbitListSubscriptions(\n      subscription: _subscriptionToWire(subscription),\n    ),\n  ).then(_upbitSubscriptionListFromWire);\n"
         }
         ("upbit", "test_order") => {
             "  /// Validates an Upbit order without creating it.\n  ///\n  /// The returned [Order] is a dry-run result. Do not query or cancel its ID,\n  /// and do not treat its status as a live order.\n  Future<Order> testOrder(OrderRequest request) => _nativeFuture(\n    () => _handle.upbitTestOrder(request: _orderRequestToWire(request)),\n  ).then(_orderFromWire);\n"

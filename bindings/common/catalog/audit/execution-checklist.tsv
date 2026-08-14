@@ -2,4 +2,3 @@
 # each group keeps all mapped official rows together to prevent duplicate implementation
 # needs_approval means implementation remains unauthorized until the user approves it
 local_operation	exchanges	owner	coverage_states	mapping_methods	official_row_count	official_operations	exposures	coverage_locators	rust_locators	verification	audit_result	next_action	reasons
-quotation.list_subscriptions	Upbit	upbit_owner	Implemented	list_subscriptions	1	Upbit | Quotation | WebSocketRequest | LIST_SUBSCRIPTIONS | method=LIST_SUBSCRIPTIONS | LIST_SUBSCRIPTIONS	provider_typed	bindings/common/src/coverage.rs::OPERATIONS	src/adapters/upbit/mod.rs:1320	Fixture	gap_found	needs_approval	The method creates a new public socket instead of querying the existing connection.

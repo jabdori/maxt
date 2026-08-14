@@ -183,7 +183,7 @@ Upbit	Quotation	Http	GET	/v1/orderbook/instruments	list-orderbook-instruments	ve
 Upbit	Quotation	Http	GET	/v1/ticker	list-tickers	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
 Upbit	Quotation	Http	GET	/v1/ticker/all	list-quote-tickers	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
 Upbit	Quotation	Http	GET	/v1/trades/ticks	list-pair-trades	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
-Upbit	Quotation	WebSocketRequest	LIST_SUBSCRIPTIONS	method=LIST_SUBSCRIPTIONS	LIST_SUBSCRIPTIONS	gap_found	needs_approval	The method creates a new public socket instead of querying the existing connection.
+Upbit	Quotation	WebSocketRequest	LIST_SUBSCRIPTIONS	method=LIST_SUBSCRIPTIONS	LIST_SUBSCRIPTIONS	verified	none	Audited active-connection selection, same-socket operation delivery, response correlation, public bindings, and fixture verification.
 Upbit	Travel Rule	Http	GET	/v1/travel_rule/vasps	list-travelrule-vasps	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
 Upbit	Travel Rule	Http	POST	/v1/travel_rule/deposit/txid	verify-travelrule-by-txid	verified	none	Audited Rust contract, public bindings, and verification evidence are present.
 Upbit	Travel Rule	Http	POST	/v1/travel_rule/deposit/uuid	verify-travelrule-by-uuid	verified	none	Audited Rust contract, public bindings, and verification evidence are present.

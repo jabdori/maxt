@@ -99,6 +99,7 @@ Dart 패키지는 Android, iOS, Linux, macOS, Windows, Web을 지원합니다. T
 - [시작하기](docs/getting-started.ko.md)
 - [공통 API](docs/common-api.ko.md)
 - [거래소 지원](docs/providers.ko.md)
+- [아키텍처 결정: 거래소 전용 스트림 경계](docs/adr/0001-provider-specific-stream-boundaries.ko.md)
 - [endpoint 지원 reference](bindings/common/generated/api.md)
 - Rust API: `cargo doc --open`
 - [Python](bindings/python/README.ko.md)

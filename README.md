@@ -101,6 +101,7 @@ TypeScript package supports Node.js and browser WebAssembly.
 - [Getting started](docs/getting-started.md)
 - [Common API](docs/common-api.md)
 - [Provider support](docs/providers.md)
+- [Architecture decision: provider-specific stream boundaries](docs/adr/0001-provider-specific-stream-boundaries.md)
 - [Endpoint coverage reference](bindings/common/generated/api.md)
 - Rust API: `cargo doc --open`
 - [Python](bindings/python/README.md)

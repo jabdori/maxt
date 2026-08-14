@@ -92,17 +92,16 @@ record never become a completion claim automatically.
 `MechanicallyConnected` from the final ledger: bridge, Rust, schema, generated
 contract, binding, and validation columns retain the machine evidence without
 claiming semantic completion. `audit-queue` retains all 937 general-SDK rows.
-The current worklist contains only 28 reviewed `gap_found` rows whose next
-action is `needs_approval`; it is not approval to implement them. Their 28
-local-operation groups stay in `execution-checklist`. New discoveries remain
-in the audit queue until reviewed; they do not enter the worklist.
+There are currently no reviewed `gap_found / needs_approval` rows, so both the
+worklist and `execution-checklist` are empty. New discoveries remain in the
+audit queue until reviewed; they do not enter the worklist.
 
 The current semantic-audit result summary is below. It is not a remaining-work
 count.
 
 | Scope | Verified | Gap found | Needs design | Needs evidence | Not checked | Total |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| General SDK | 115 | 28 | 42 | 51 | 701 | 937 |
+| General SDK | 143 | 0 | 42 | 752 | 0 | 937 |
 | Separate platform/protocol boundary | 0 | 0 | 437 | 0 | 0 | 437 |
 
 Current coverage bridges contain 57 Upbit, 47 Bithumb, 57 Binance, and 35
@@ -152,8 +151,8 @@ cargo run -p maxt-bindings-common --bin generate_audit_ledger --features codegen
 
 `--check` renders and compares entirely in memory without writing files.
 Only `--write` updates the active 1,374-row ledger, 937-row audit queue,
-28-row approval-candidate list, 28-row execution checklist, and 437-row
-separate-service list. `coverage_inventory` verifies row/column counts,
+currently empty approval-candidate and execution-checklist files, and the
+437-row separate-service list. `coverage_inventory` verifies row/column counts,
 allowed result/action pairs, review-key integrity, and derived grouping.
 
 This test checks source row counts and fields, official bridges, regional Upbit

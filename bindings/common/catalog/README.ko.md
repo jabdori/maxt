@@ -82,16 +82,15 @@ platform/protocol service 지원, service 또는 contract 결정이 필요한 `n
 `reason` 열은 구체적 근거를 기록합니다. 따라서 최종 원장에서
 `MechanicallyConnected`를 제거했습니다. bridge, Rust, schema, 생성 계약, 바인딩, 검증 열이
 기계적 근거를 그대로 보존하되 의미상 완료를 주장하지 않습니다. `audit-queue`는 일반 SDK
-937개 전체를 유지합니다. 현재 worklist에는 `gap_found / needs_approval`로 검토된 28개 행만
-들어가며, 이것은 구현 승인 자체가 아닙니다. 해당 28개 local operation 묶음은
-`execution-checklist`에 보존합니다. 새 발견은 검토 전까지 worklist가 아니라 audit queue에만
+937개 전체를 유지합니다. 현재 `gap_found / needs_approval` 행이 없으므로 worklist와
+`execution-checklist`는 비어 있습니다. 새 발견은 검토 전까지 worklist가 아니라 audit queue에만
 남습니다.
 
 현재 의미 감사 결과 집계는 아래와 같습니다. 잔여 구현 수가 아닙니다.
 
 | 범위 | Verified | Gap found | Needs design | Needs evidence | Not checked | 합계 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 일반 SDK | 115 | 28 | 42 | 51 | 701 | 937 |
+| 일반 SDK | 143 | 0 | 42 | 752 | 0 | 937 |
 | 별도 플랫폼·프로토콜 경계 | 0 | 0 | 437 | 0 | 0 | 437 |
 
 현재 coverage의 local 행은 Upbit 57개, Bithumb 47개, Binance 57개, Hyperliquid 35개로
@@ -134,7 +133,7 @@ cargo run -p maxt-bindings-common --bin generate_audit_ledger --features codegen
 ```
 
 `--check`는 메모리에서 렌더링한 결과와 현재 파일을 비교할 뿐 파일을 쓰지 않습니다. `--write`만
-활성 1,374행, 감사 큐 937행, 승인 후보 28행, 실행 단위 28행, 별도 플랫폼 service 437행을 갱신합니다.
+활성 1,374행, 감사 큐 937행, 현재 비어 있는 승인 후보·실행 단위 목록, 별도 플랫폼 service 437행을 갱신합니다.
 `coverage_inventory`는 행 수·열 수·허용된 result/action 조합, review key 무결성, 파생 관계를
 검증합니다.
 

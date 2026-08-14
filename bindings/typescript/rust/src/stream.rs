@@ -3,12 +3,19 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use futures_util::StreamExt;
-use maxt::{AccountStream, Error, MarketStream};
+use maxt::{
+    AccountStream, Error, HyperliquidAccountEvent, HyperliquidAccountStream,
+    HyperliquidMarketEvent, HyperliquidMarketStream, MarketStream,
+};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{Value, json};
 use tokio::sync::{Mutex, OnceCell, watch};
 
-use crate::convert::{account_stream_item, market_stream_item};
+use crate::convert::{
+    WireBalance, WireCandle, WireHyperliquidL2Book, WireHyperliquidRecentTrade,
+    WireHyperliquidSpotBalance, WireOrder, WireOrderBook, WireTicker, WireTrade, WireError,
+    account_stream_item, decimal_to_wire, market_stream_item, timestamp_to_wire,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -44,6 +51,25 @@ impl NativeStreamRegistry {
         stream: AccountStream,
     ) -> maxt::Result<WireStreamHandle> {
         self.insert(NativeStream::Account(stream), "account").await
+    }
+
+    pub(crate) async fn insert_hyperliquid_market(
+        &self,
+        stream: HyperliquidMarketStream,
+    ) -> maxt::Result<WireStreamHandle> {
+        self.insert(NativeStream::HyperliquidMarket(stream), "hyperliquid_market")
+            .await
+    }
+
+    pub(crate) async fn insert_hyperliquid_account(
+        &self,
+        stream: HyperliquidAccountStream,
+    ) -> maxt::Result<WireStreamHandle> {
+        self.insert(
+            NativeStream::HyperliquidAccount(stream),
+            "hyperliquid_account",
+        )
+        .await
     }
 
     async fn insert(
@@ -147,6 +173,9 @@ impl NativeSubscription {
                 item.map(market_stream_item)
                     .map(serde_json::to_value)
                     .transpose()
+                    .map_err(|error| {
+                        Error::adapter(format!("could not serialize stream item: {error}"))
+                    })
             }
             NativeStream::Account(stream) => {
                 let item = tokio::select! {
@@ -157,9 +186,35 @@ impl NativeSubscription {
                 item.map(account_stream_item)
                     .map(serde_json::to_value)
                     .transpose()
+                    .map_err(|error| {
+                        Error::adapter(format!("could not serialize stream item: {error}"))
+                    })
             }
-        }
-        .map_err(|error| Error::adapter(format!("could not serialize stream item: {error}")))?;
+            NativeStream::HyperliquidMarket(stream) => {
+                let item = tokio::select! {
+                    biased;
+                    _ = closed.changed() => return Ok(None),
+                    item = stream.next() => item,
+                };
+                item.map(hyperliquid_market_stream_item)
+                    .transpose()
+                    .map_err(|error| {
+                        Error::adapter(format!("could not serialize Hyperliquid stream item: {error}"))
+                    })
+            }
+            NativeStream::HyperliquidAccount(stream) => {
+                let item = tokio::select! {
+                    biased;
+                    _ = closed.changed() => return Ok(None),
+                    item = stream.next() => item,
+                };
+                item.map(hyperliquid_account_stream_item)
+                    .transpose()
+                    .map_err(|error| {
+                        Error::adapter(format!("could not serialize Hyperliquid stream item: {error}"))
+                    })
+            }
+        }?;
         if item.is_none() {
             inner.take();
         }
@@ -183,6 +238,8 @@ impl NativeSubscription {
         let result = match inner.as_mut() {
             Some(NativeStream::Market(stream)) => stream.close().await,
             Some(NativeStream::Account(stream)) => stream.close().await,
+            Some(NativeStream::HyperliquidMarket(stream)) => stream.close().await,
+            Some(NativeStream::HyperliquidAccount(stream)) => stream.close().await,
             None => Ok(()),
         };
         inner.take();
@@ -193,6 +250,131 @@ impl NativeSubscription {
 enum NativeStream {
     Market(MarketStream),
     Account(AccountStream),
+    HyperliquidMarket(HyperliquidMarketStream),
+    HyperliquidAccount(HyperliquidAccountStream),
+}
+
+fn wire_value(value: impl Serialize) -> maxt::Result<Value> {
+    serde_json::to_value(value)
+        .map_err(|error| Error::adapter(format!("could not serialize native stream item: {error}")))
+}
+
+fn error_item(error: Error) -> Value {
+    json!({"kind": "error", "error": WireError::from(error)})
+}
+
+fn hyperliquid_market_stream_item(item: maxt::Result<HyperliquidMarketEvent>) -> maxt::Result<Value> {
+    match item {
+        Ok(event) => hyperliquid_market_event_value(event)
+            .map(|event| json!({"kind": "event", "event": event}))
+            .or_else(|error| Ok(error_item(error))),
+        Err(error) => Ok(error_item(error)),
+    }
+}
+
+fn hyperliquid_account_stream_item(
+    item: maxt::Result<HyperliquidAccountEvent>,
+) -> maxt::Result<Value> {
+    match item {
+        Ok(event) => hyperliquid_account_event_value(event)
+            .map(|event| json!({"kind": "event", "event": event}))
+            .or_else(|error| Ok(error_item(error))),
+        Err(error) => Ok(error_item(error)),
+    }
+}
+
+fn hyperliquid_market_event_value(event: HyperliquidMarketEvent) -> maxt::Result<Value> {
+    match event {
+        HyperliquidMarketEvent::Trade(value) => Ok(json!({
+            "kind": "trade",
+            "value": {
+                "common": wire_value(WireTrade::try_from(value.common)?)?,
+                "provider": wire_value(WireHyperliquidRecentTrade::try_from(value.provider)?)?,
+            },
+        })),
+        HyperliquidMarketEvent::OrderBook(value) => Ok(json!({
+            "kind": "order_book",
+            "value": {
+                "common": wire_value(WireOrderBook::try_from(value.common)?)?,
+                "provider": wire_value(WireHyperliquidL2Book::try_from(value.provider)?)?,
+            },
+        })),
+        HyperliquidMarketEvent::Candle(value) => Ok(json!({
+            "kind": "candle",
+            "value": {
+                "common": wire_value(WireCandle::try_from(value.common)?)?,
+                "provider": wire_value(crate::convert::WireHyperliquidCandleSnapshot::try_from(value.provider)?)?,
+            },
+        })),
+        HyperliquidMarketEvent::AssetContext(value) => Ok(json!({
+            "kind": "asset_context",
+            "value": {
+                "common": wire_value(WireTicker::try_from(value.common)?)?,
+                "coin": value.coin,
+                "mid_price": value.mid_price.map(decimal_to_wire),
+                "mark_price": value.mark_price.map(decimal_to_wire),
+                "previous_day_price": value.previous_day_price.map(decimal_to_wire),
+                "day_base_volume": value.day_base_volume.map(decimal_to_wire),
+                "day_notional_volume": value.day_notional_volume.map(decimal_to_wire),
+                "oracle_price": value.oracle_price.map(decimal_to_wire),
+                "funding_rate": value.funding_rate.map(decimal_to_wire),
+                "open_interest": value.open_interest.map(decimal_to_wire),
+                "circulating_supply": value.circulating_supply.map(decimal_to_wire),
+                "total_supply": value.total_supply.map(decimal_to_wire),
+                "raw_json": value.raw_json,
+            },
+        })),
+        HyperliquidMarketEvent::Reconnected => Ok(json!({"kind": "reconnected"})),
+        _ => Err(Error::adapter(
+            "native Hyperliquid market stream returned an unknown event variant",
+        )),
+    }
+}
+
+fn hyperliquid_account_event_value(event: HyperliquidAccountEvent) -> maxt::Result<Value> {
+    match event {
+        HyperliquidAccountEvent::OrderUpdate(value) => Ok(json!({
+            "kind": "order_update",
+            "value": {
+                "common": wire_value(WireOrder::try_from(value.common)?)?,
+                "coin": value.coin,
+                "side": value.side,
+                "limit_price": decimal_to_wire(value.limit_price),
+                "remaining_size": decimal_to_wire(value.remaining_size),
+                "original_size": decimal_to_wire(value.original_size),
+                "order_id": value.order_id.to_string(),
+                "accepted_at": timestamp_to_wire(value.accepted_at),
+                "client_order_id": value.client_order_id,
+                "status": value.status,
+                "status_at": value.status_at.map(timestamp_to_wire),
+                "raw_json": value.raw_json,
+            },
+        })),
+        HyperliquidAccountEvent::SpotState(value) => {
+            let balances = value
+                .balances
+                .into_iter()
+                .map(|balance| {
+                    Ok(json!({
+                        "common": wire_value(WireBalance::try_from(balance.common)?)?,
+                        "provider": wire_value(WireHyperliquidSpotBalance::try_from(balance.provider)?)?,
+                    }))
+                })
+                .collect::<maxt::Result<Vec<_>>>()?;
+            Ok(json!({
+                "kind": "spot_state",
+                "value": {
+                    "user": value.user,
+                    "balances": balances,
+                    "raw_json": value.raw_json,
+                },
+            }))
+        }
+        HyperliquidAccountEvent::Reconnected => Ok(json!({"kind": "reconnected"})),
+        _ => Err(Error::adapter(
+            "native Hyperliquid account stream returned an unknown event variant",
+        )),
+    }
 }
 
 #[cfg(test)]

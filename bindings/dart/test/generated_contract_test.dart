@@ -222,6 +222,14 @@ void main() {
       'hyperliquid': {
         'isTestnet': (HyperliquidAdapter value) => value.isTestnet,
         'allMids': (HyperliquidAdapter value) => value.allMids,
+        'subscribeDetailed': (HyperliquidAdapter value) =>
+            value.subscribeDetailed,
+        'subscribeDetailedWith': (HyperliquidAdapter value) =>
+            value.subscribeDetailedWith,
+        'subscribeDetailedAccount': (HyperliquidAdapter value) =>
+            value.subscribeDetailedAccount,
+        'subscribeDetailedAccountWith': (HyperliquidAdapter value) =>
+            value.subscribeDetailedAccountWith,
         'userFills': (HyperliquidAdapter value) => value.userFills,
         'userFillsByTime': (HyperliquidAdapter value) => value.userFillsByTime,
         'basicOpenOrders': (HyperliquidAdapter value) => value.basicOpenOrders,

@@ -4151,6 +4151,131 @@ pub(crate) fn hyperliquid_recent_trade_to_wire(
     )
 }
 
+pub(crate) fn hyperliquid_trade_event_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidTradeEvent,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "common" => trade_to_wire(py, &value.common)?,
+        "provider" => hyperliquid_recent_trade_to_wire(py, &value.provider)?,
+    )
+}
+
+pub(crate) fn hyperliquid_order_book_event_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidOrderBookEvent,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "common" => order_book_to_wire(py, &value.common)?,
+        "provider" => hyperliquid_l2_book_to_wire(py, &value.provider)?,
+    )
+}
+
+pub(crate) fn hyperliquid_candle_event_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidCandleEvent,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "common" => candle_to_wire(py, &value.common)?,
+        "provider" => hyperliquid_candle_snapshot_to_wire(py, &value.provider)?,
+    )
+}
+
+pub(crate) fn hyperliquid_asset_context_event_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidAssetContextEvent,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "common" => ticker_to_wire(py, &value.common)?,
+        "coin" => &value.coin,
+        "mid_price" => value.mid_price.map(decimal_to_wire),
+        "mark_price" => value.mark_price.map(decimal_to_wire),
+        "previous_day_price" => value.previous_day_price.map(decimal_to_wire),
+        "day_base_volume" => value.day_base_volume.map(decimal_to_wire),
+        "day_notional_volume" => value.day_notional_volume.map(decimal_to_wire),
+        "oracle_price" => value.oracle_price.map(decimal_to_wire),
+        "funding_rate" => value.funding_rate.map(decimal_to_wire),
+        "open_interest" => value.open_interest.map(decimal_to_wire),
+        "circulating_supply" => value.circulating_supply.map(decimal_to_wire),
+        "total_supply" => value.total_supply.map(decimal_to_wire),
+        "raw_json" => &value.raw_json,
+    )
+}
+
+pub(crate) fn hyperliquid_order_update_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidOrderUpdate,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "common" => order_to_wire(py, &value.common)?,
+        "coin" => &value.coin,
+        "side" => &value.side,
+        "limit_price" => decimal_to_wire(value.limit_price),
+        "remaining_size" => decimal_to_wire(value.remaining_size),
+        "original_size" => decimal_to_wire(value.original_size),
+        "order_id" => value.order_id,
+        "accepted_at" => timestamp_to_wire(value.accepted_at),
+        "client_order_id" => &value.client_order_id,
+        "status" => &value.status,
+        "status_at" => value.status_at.map(timestamp_to_wire),
+        "raw_json" => &value.raw_json,
+    )
+}
+
+pub(crate) fn hyperliquid_spot_state_balance_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidSpotStateBalance,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "common" => balance_to_wire(py, &value.common)?,
+        "provider" => hyperliquid_spot_balance_to_wire(py, &value.provider)?,
+    )
+}
+
+pub(crate) fn hyperliquid_spot_state_event_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidSpotStateEvent,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "user" => &value.user,
+        "balances" => list_to_wire(py, &value.balances, hyperliquid_spot_state_balance_to_wire)?,
+        "raw_json" => &value.raw_json,
+    )
+}
+
+pub(crate) fn hyperliquid_market_event_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidMarketEvent,
+) -> PyResult<Py<PyAny>> {
+    match value {
+        maxt::HyperliquidMarketEvent::Trade(value) => wire_dict!(py, "kind" => "trade", "value" => hyperliquid_trade_event_to_wire(py, value)?),
+        maxt::HyperliquidMarketEvent::OrderBook(value) => wire_dict!(py, "kind" => "order_book", "value" => hyperliquid_order_book_event_to_wire(py, value)?),
+        maxt::HyperliquidMarketEvent::AssetContext(value) => wire_dict!(py, "kind" => "asset_context", "value" => hyperliquid_asset_context_event_to_wire(py, value)?),
+        maxt::HyperliquidMarketEvent::Candle(value) => wire_dict!(py, "kind" => "candle", "value" => hyperliquid_candle_event_to_wire(py, value)?),
+        maxt::HyperliquidMarketEvent::Reconnected => wire_dict!(py, "kind" => "reconnected"),
+        _ => Err(binding_contract("HyperliquidMarketEvent")),
+    }
+}
+
+pub(crate) fn hyperliquid_account_event_to_wire(
+    py: Python<'_>,
+    value: &maxt::HyperliquidAccountEvent,
+) -> PyResult<Py<PyAny>> {
+    match value {
+        maxt::HyperliquidAccountEvent::OrderUpdate(value) => wire_dict!(py, "kind" => "order_update", "value" => hyperliquid_order_update_to_wire(py, value)?),
+        maxt::HyperliquidAccountEvent::SpotState(value) => wire_dict!(py, "kind" => "spot_state", "value" => hyperliquid_spot_state_event_to_wire(py, value)?),
+        maxt::HyperliquidAccountEvent::Reconnected => wire_dict!(py, "kind" => "reconnected"),
+        _ => Err(binding_contract("HyperliquidAccountEvent")),
+    }
+}
+
 pub(crate) fn hyperliquid_funding_history_entry_to_wire(
     py: Python<'_>,
     value: &maxt::HyperliquidFundingHistoryEntry,

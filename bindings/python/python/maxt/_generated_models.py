@@ -7,7 +7,7 @@ from decimal import Decimal
 from typing import Any, ClassVar, Optional, Union
 
 from ._generated_identifiers import *  # noqa: F403
-from .models import Balance, Cursor, Market, Order, OrderRequest, Timestamp, WireModel, _ascii_upper, _decode_value, _model_to_wire
+from .models import Balance, Candle, Cursor, Market, Order, OrderBook, OrderRequest, Ticker, Timestamp, Trade, WireModel, _ascii_upper, _decode_value, _model_to_wire
 
 
 @dataclass(frozen=True)
@@ -1918,6 +1918,240 @@ class HyperliquidRecentTrade(WireModel):
 
 
 @dataclass(frozen=True)
+class HyperliquidTradeEvent(WireModel):
+    common: Trade
+    provider: HyperliquidRecentTrade
+
+
+@dataclass(frozen=True)
+class HyperliquidOrderBookEvent(WireModel):
+    common: OrderBook
+    provider: HyperliquidL2Book
+
+
+@dataclass(frozen=True)
+class HyperliquidCandleEvent(WireModel):
+    common: Candle
+    provider: HyperliquidCandleSnapshot
+
+
+@dataclass(frozen=True)
+class HyperliquidAssetContextEvent(WireModel):
+    common: Ticker
+    coin: str
+    mid_price: Optional[Decimal]
+    mark_price: Optional[Decimal]
+    previous_day_price: Optional[Decimal]
+    day_base_volume: Optional[Decimal]
+    day_notional_volume: Optional[Decimal]
+    oracle_price: Optional[Decimal]
+    funding_rate: Optional[Decimal]
+    open_interest: Optional[Decimal]
+    circulating_supply: Optional[Decimal]
+    total_supply: Optional[Decimal]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidOrderUpdate(WireModel):
+    common: Order
+    coin: str
+    side: str
+    limit_price: Decimal
+    remaining_size: Decimal
+    original_size: Decimal
+    order_id: int
+    accepted_at: Timestamp
+    client_order_id: Optional[str]
+    status: str
+    status_at: Optional[Timestamp]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidSpotStateBalance(WireModel):
+    common: Balance
+    provider: HyperliquidSpotBalance
+
+
+@dataclass(frozen=True)
+class HyperliquidSpotStateEvent(WireModel):
+    user: str
+    balances: list[HyperliquidSpotStateBalance]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidMarketEvent(WireModel):
+    _wire_union: ClassVar[bool] = True
+    kind: str
+    value: Optional[Union[HyperliquidAssetContextEvent, HyperliquidCandleEvent, HyperliquidOrderBookEvent, HyperliquidTradeEvent]] = None
+
+    @classmethod
+    def trade(cls, value: HyperliquidTradeEvent) -> HyperliquidMarketEvent:
+        return cls("trade", value=value)
+
+    @classmethod
+    def order_book(cls, value: HyperliquidOrderBookEvent) -> HyperliquidMarketEvent:
+        return cls("order_book", value=value)
+
+    @classmethod
+    def asset_context(cls, value: HyperliquidAssetContextEvent) -> HyperliquidMarketEvent:
+        return cls("asset_context", value=value)
+
+    @classmethod
+    def candle(cls, value: HyperliquidCandleEvent) -> HyperliquidMarketEvent:
+        return cls("candle", value=value)
+
+    @classmethod
+    def reconnected(cls) -> HyperliquidMarketEvent:
+        return cls("reconnected")
+
+    @classmethod
+    def from_wire(cls, value: dict[str, Any]) -> HyperliquidMarketEvent:
+        kind = value.get("kind")
+        if kind == "trade":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"HyperliquidMarketEvent.trade does not accept {key}")
+            return cls.trade(
+                value=_decode_value(HyperliquidTradeEvent, value["value"]),
+            )
+        if kind == "order_book":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"HyperliquidMarketEvent.order_book does not accept {key}")
+            return cls.order_book(
+                value=_decode_value(HyperliquidOrderBookEvent, value["value"]),
+            )
+        if kind == "asset_context":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"HyperliquidMarketEvent.asset_context does not accept {key}")
+            return cls.asset_context(
+                value=_decode_value(HyperliquidAssetContextEvent, value["value"]),
+            )
+        if kind == "candle":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"HyperliquidMarketEvent.candle does not accept {key}")
+            return cls.candle(
+                value=_decode_value(HyperliquidCandleEvent, value["value"]),
+            )
+        if kind == "reconnected":
+            for key in value:
+                if key not in {"kind"}:
+                    raise ValueError(f"HyperliquidMarketEvent.reconnected does not accept {key}")
+            return cls.reconnected(
+            )
+        raise ValueError(f"unknown HyperliquidMarketEvent kind: {kind}")
+
+    def to_wire(self) -> dict[str, Any]:
+        if self.kind == "trade":
+            if self.value is None:
+                raise ValueError("HyperliquidMarketEvent.trade requires value")
+            return {
+                "kind": "trade",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "order_book":
+            if self.value is None:
+                raise ValueError("HyperliquidMarketEvent.order_book requires value")
+            return {
+                "kind": "order_book",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "asset_context":
+            if self.value is None:
+                raise ValueError("HyperliquidMarketEvent.asset_context requires value")
+            return {
+                "kind": "asset_context",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "candle":
+            if self.value is None:
+                raise ValueError("HyperliquidMarketEvent.candle requires value")
+            return {
+                "kind": "candle",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "reconnected":
+            if self.value is not None:
+                raise ValueError("HyperliquidMarketEvent.reconnected does not accept value")
+            return {
+                "kind": "reconnected",
+            }
+        raise ValueError(f"unknown HyperliquidMarketEvent kind: {self.kind}")
+
+
+@dataclass(frozen=True)
+class HyperliquidAccountEvent(WireModel):
+    _wire_union: ClassVar[bool] = True
+    kind: str
+    value: Optional[Union[HyperliquidOrderUpdate, HyperliquidSpotStateEvent]] = None
+
+    @classmethod
+    def order_update(cls, value: HyperliquidOrderUpdate) -> HyperliquidAccountEvent:
+        return cls("order_update", value=value)
+
+    @classmethod
+    def spot_state(cls, value: HyperliquidSpotStateEvent) -> HyperliquidAccountEvent:
+        return cls("spot_state", value=value)
+
+    @classmethod
+    def reconnected(cls) -> HyperliquidAccountEvent:
+        return cls("reconnected")
+
+    @classmethod
+    def from_wire(cls, value: dict[str, Any]) -> HyperliquidAccountEvent:
+        kind = value.get("kind")
+        if kind == "order_update":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"HyperliquidAccountEvent.order_update does not accept {key}")
+            return cls.order_update(
+                value=_decode_value(HyperliquidOrderUpdate, value["value"]),
+            )
+        if kind == "spot_state":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"HyperliquidAccountEvent.spot_state does not accept {key}")
+            return cls.spot_state(
+                value=_decode_value(HyperliquidSpotStateEvent, value["value"]),
+            )
+        if kind == "reconnected":
+            for key in value:
+                if key not in {"kind"}:
+                    raise ValueError(f"HyperliquidAccountEvent.reconnected does not accept {key}")
+            return cls.reconnected(
+            )
+        raise ValueError(f"unknown HyperliquidAccountEvent kind: {kind}")
+
+    def to_wire(self) -> dict[str, Any]:
+        if self.kind == "order_update":
+            if self.value is None:
+                raise ValueError("HyperliquidAccountEvent.order_update requires value")
+            return {
+                "kind": "order_update",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "spot_state":
+            if self.value is None:
+                raise ValueError("HyperliquidAccountEvent.spot_state requires value")
+            return {
+                "kind": "spot_state",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "reconnected":
+            if self.value is not None:
+                raise ValueError("HyperliquidAccountEvent.reconnected does not accept value")
+            return {
+                "kind": "reconnected",
+            }
+        raise ValueError(f"unknown HyperliquidAccountEvent kind: {self.kind}")
+
+
+@dataclass(frozen=True)
 class HyperliquidFundingHistoryEntry(WireModel):
     coin: str
     market: Market
@@ -2566,6 +2800,15 @@ __all__ = [
     "HyperliquidBookLevel",
     "HyperliquidL2Book",
     "HyperliquidRecentTrade",
+    "HyperliquidTradeEvent",
+    "HyperliquidOrderBookEvent",
+    "HyperliquidCandleEvent",
+    "HyperliquidAssetContextEvent",
+    "HyperliquidOrderUpdate",
+    "HyperliquidSpotStateBalance",
+    "HyperliquidSpotStateEvent",
+    "HyperliquidMarketEvent",
+    "HyperliquidAccountEvent",
     "HyperliquidFundingHistoryEntry",
     "HyperliquidUserFunding",
     "HyperliquidSpotBalance",

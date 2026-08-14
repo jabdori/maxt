@@ -3285,6 +3285,87 @@ class WireExchangeTransferRequest {
           amount == other.amount;
 }
 
+@freezed
+sealed class WireHyperliquidAccountEvent with _$WireHyperliquidAccountEvent {
+  const WireHyperliquidAccountEvent._();
+
+  const factory WireHyperliquidAccountEvent.orderUpdate(
+    WireHyperliquidOrderUpdate field0,
+  ) = WireHyperliquidAccountEvent_OrderUpdate;
+  const factory WireHyperliquidAccountEvent.spotState(
+    WireHyperliquidSpotStateEvent field0,
+  ) = WireHyperliquidAccountEvent_SpotState;
+  const factory WireHyperliquidAccountEvent.reconnected() =
+      WireHyperliquidAccountEvent_Reconnected;
+}
+
+class WireHyperliquidAssetContextEvent {
+  final WireTicker common;
+  final String coin;
+  final String? midPrice;
+  final String? markPrice;
+  final String? previousDayPrice;
+  final String? dayBaseVolume;
+  final String? dayNotionalVolume;
+  final String? oraclePrice;
+  final String? fundingRate;
+  final String? openInterest;
+  final String? circulatingSupply;
+  final String? totalSupply;
+  final String rawJson;
+
+  const WireHyperliquidAssetContextEvent({
+    required this.common,
+    required this.coin,
+    this.midPrice,
+    this.markPrice,
+    this.previousDayPrice,
+    this.dayBaseVolume,
+    this.dayNotionalVolume,
+    this.oraclePrice,
+    this.fundingRate,
+    this.openInterest,
+    this.circulatingSupply,
+    this.totalSupply,
+    required this.rawJson,
+  });
+
+  @override
+  int get hashCode =>
+      common.hashCode ^
+      coin.hashCode ^
+      midPrice.hashCode ^
+      markPrice.hashCode ^
+      previousDayPrice.hashCode ^
+      dayBaseVolume.hashCode ^
+      dayNotionalVolume.hashCode ^
+      oraclePrice.hashCode ^
+      fundingRate.hashCode ^
+      openInterest.hashCode ^
+      circulatingSupply.hashCode ^
+      totalSupply.hashCode ^
+      rawJson.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireHyperliquidAssetContextEvent &&
+          runtimeType == other.runtimeType &&
+          common == other.common &&
+          coin == other.coin &&
+          midPrice == other.midPrice &&
+          markPrice == other.markPrice &&
+          previousDayPrice == other.previousDayPrice &&
+          dayBaseVolume == other.dayBaseVolume &&
+          dayNotionalVolume == other.dayNotionalVolume &&
+          oraclePrice == other.oraclePrice &&
+          fundingRate == other.fundingRate &&
+          openInterest == other.openInterest &&
+          circulatingSupply == other.circulatingSupply &&
+          totalSupply == other.totalSupply &&
+          rawJson == other.rawJson;
+}
+
 class WireHyperliquidBookLevel {
   final String price;
   final String size;
@@ -3307,6 +3388,27 @@ class WireHyperliquidBookLevel {
           price == other.price &&
           size == other.size &&
           orderCount == other.orderCount;
+}
+
+class WireHyperliquidCandleEvent {
+  final WireCandle common;
+  final WireHyperliquidCandleSnapshot provider;
+
+  const WireHyperliquidCandleEvent({
+    required this.common,
+    required this.provider,
+  });
+
+  @override
+  int get hashCode => common.hashCode ^ provider.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireHyperliquidCandleEvent &&
+          runtimeType == other.runtimeType &&
+          common == other.common &&
+          provider == other.provider;
 }
 
 class WireHyperliquidCandleSnapshot {
@@ -3499,6 +3601,26 @@ class WireHyperliquidL2Book {
           rawJson == other.rawJson;
 }
 
+@freezed
+sealed class WireHyperliquidMarketEvent with _$WireHyperliquidMarketEvent {
+  const WireHyperliquidMarketEvent._();
+
+  const factory WireHyperliquidMarketEvent.trade(
+    WireHyperliquidTradeEvent field0,
+  ) = WireHyperliquidMarketEvent_Trade;
+  const factory WireHyperliquidMarketEvent.orderBook(
+    WireHyperliquidOrderBookEvent field0,
+  ) = WireHyperliquidMarketEvent_OrderBook;
+  const factory WireHyperliquidMarketEvent.assetContext(
+    WireHyperliquidAssetContextEvent field0,
+  ) = WireHyperliquidMarketEvent_AssetContext;
+  const factory WireHyperliquidMarketEvent.candle(
+    WireHyperliquidCandleEvent field0,
+  ) = WireHyperliquidMarketEvent_Candle;
+  const factory WireHyperliquidMarketEvent.reconnected() =
+      WireHyperliquidMarketEvent_Reconnected;
+}
+
 class WireHyperliquidMidPrice {
   final WireMarket market;
   final String price;
@@ -3558,6 +3680,27 @@ class WireHyperliquidOpenOrder {
           size == other.size &&
           timestampNs == other.timestampNs &&
           rawJson == other.rawJson;
+}
+
+class WireHyperliquidOrderBookEvent {
+  final WireOrderBook common;
+  final WireHyperliquidL2Book provider;
+
+  const WireHyperliquidOrderBookEvent({
+    required this.common,
+    required this.provider,
+  });
+
+  @override
+  int get hashCode => common.hashCode ^ provider.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireHyperliquidOrderBookEvent &&
+          runtimeType == other.runtimeType &&
+          common == other.common &&
+          provider == other.provider;
 }
 
 class WireHyperliquidOrderDetail {
@@ -3699,6 +3842,69 @@ sealed class WireHyperliquidOrderStatusResponse
     required String status,
     required String rawJson,
   }) = WireHyperliquidOrderStatusResponse_Other;
+}
+
+class WireHyperliquidOrderUpdate {
+  final WireOrder common;
+  final String coin;
+  final String side;
+  final String limitPrice;
+  final String remainingSize;
+  final String originalSize;
+  final BigInt orderId;
+  final PlatformInt64 acceptedAtNs;
+  final String? clientOrderId;
+  final String status;
+  final PlatformInt64? statusAtNs;
+  final String rawJson;
+
+  const WireHyperliquidOrderUpdate({
+    required this.common,
+    required this.coin,
+    required this.side,
+    required this.limitPrice,
+    required this.remainingSize,
+    required this.originalSize,
+    required this.orderId,
+    required this.acceptedAtNs,
+    this.clientOrderId,
+    required this.status,
+    this.statusAtNs,
+    required this.rawJson,
+  });
+
+  @override
+  int get hashCode =>
+      common.hashCode ^
+      coin.hashCode ^
+      side.hashCode ^
+      limitPrice.hashCode ^
+      remainingSize.hashCode ^
+      originalSize.hashCode ^
+      orderId.hashCode ^
+      acceptedAtNs.hashCode ^
+      clientOrderId.hashCode ^
+      status.hashCode ^
+      statusAtNs.hashCode ^
+      rawJson.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireHyperliquidOrderUpdate &&
+          runtimeType == other.runtimeType &&
+          common == other.common &&
+          coin == other.coin &&
+          side == other.side &&
+          limitPrice == other.limitPrice &&
+          remainingSize == other.remainingSize &&
+          originalSize == other.originalSize &&
+          orderId == other.orderId &&
+          acceptedAtNs == other.acceptedAtNs &&
+          clientOrderId == other.clientOrderId &&
+          status == other.status &&
+          statusAtNs == other.statusAtNs &&
+          rawJson == other.rawJson;
 }
 
 class WireHyperliquidPortfolioPeriod {
@@ -4067,6 +4273,51 @@ class WireHyperliquidSpotPair {
           rawJson == other.rawJson;
 }
 
+class WireHyperliquidSpotStateBalance {
+  final WireBalance common;
+  final WireHyperliquidSpotBalance provider;
+
+  const WireHyperliquidSpotStateBalance({
+    required this.common,
+    required this.provider,
+  });
+
+  @override
+  int get hashCode => common.hashCode ^ provider.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireHyperliquidSpotStateBalance &&
+          runtimeType == other.runtimeType &&
+          common == other.common &&
+          provider == other.provider;
+}
+
+class WireHyperliquidSpotStateEvent {
+  final String user;
+  final List<WireHyperliquidSpotStateBalance> balances;
+  final String rawJson;
+
+  const WireHyperliquidSpotStateEvent({
+    required this.user,
+    required this.balances,
+    required this.rawJson,
+  });
+
+  @override
+  int get hashCode => user.hashCode ^ balances.hashCode ^ rawJson.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireHyperliquidSpotStateEvent &&
+          runtimeType == other.runtimeType &&
+          user == other.user &&
+          balances == other.balances &&
+          rawJson == other.rawJson;
+}
+
 class WireHyperliquidSpotToken {
   final String name;
   final int sizeDecimals;
@@ -4155,6 +4406,27 @@ class WireHyperliquidSubAccount {
           master == other.master &&
           perpetualStateJson == other.perpetualStateJson &&
           spotStateJson == other.spotStateJson;
+}
+
+class WireHyperliquidTradeEvent {
+  final WireTrade common;
+  final WireHyperliquidRecentTrade provider;
+
+  const WireHyperliquidTradeEvent({
+    required this.common,
+    required this.provider,
+  });
+
+  @override
+  int get hashCode => common.hashCode ^ provider.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WireHyperliquidTradeEvent &&
+          runtimeType == other.runtimeType &&
+          common == other.common &&
+          provider == other.provider;
 }
 
 class WireHyperliquidUserFees {

@@ -12,7 +12,7 @@ pub(crate) fn render(schema: &Schema) -> String {
 import {{ AdapterError, MaxtError, UnsupportedError, errorFromWire, errorToWire }} from "../errors.js";
 import * as Model from "../models.js";
 import {{ ensureInitialized, getBackend }} from "../native.js";
-import {{ AccountStream, MarketStream, StreamError }} from "../stream.js";
+import {{ AccountStream, HyperliquidAccountStream, HyperliquidMarketStream, MarketStream, StreamError }} from "../stream.js";
 import * as Codec from "./codec.js";
 import type * as Wire from "./contract.js";
 
@@ -189,6 +189,9 @@ fn public_type(ty: ApiType) -> String {
         ApiType::Handle(name) | ApiType::HandleToken(name) => name.to_owned(),
         ApiType::MarketStream => "MarketStream".to_owned(),
         ApiType::AccountStream => "AccountStream".to_owned(),
+        ApiType::ProviderMarketStream(event) | ApiType::ProviderAccountStream(event) => {
+            format!("{}Stream", event.strip_suffix("Event").unwrap_or(event))
+        }
         ApiType::Unit => "void".to_owned(),
     }
 }
@@ -240,6 +243,12 @@ fn wire_type(ty: ApiType, schema: &Schema) -> String {
         ApiType::HandleToken(_) => "string".to_owned(),
         ApiType::MarketStream => "NativeStreamHandle<Wire.MarketStreamItemWire>".to_owned(),
         ApiType::AccountStream => "NativeStreamHandle<Wire.AccountStreamItemWire>".to_owned(),
+        ApiType::ProviderMarketStream(event) | ApiType::ProviderAccountStream(event) => {
+            format!(
+                "NativeStreamHandle<Wire.{}StreamItemWire>",
+                event.strip_suffix("Event").unwrap_or(event)
+            )
+        }
         ApiType::Unit => "null".to_owned(),
     }
 }
@@ -289,6 +298,16 @@ fn render_raw_provider(output: &mut String, provider: &Provider) {
             )),
         }
     }
+    if provider.methods.iter().any(|method| {
+        matches!(
+            method.result,
+            ApiType::ProviderMarketStream(_) | ApiType::ProviderAccountStream(_)
+        )
+    }) {
+        output.push_str(
+            "  streamNext(id: string): Promise<unknown>;\n  streamClose(id: string): Promise<unknown>;\n",
+        );
+    }
     output.push_str("}\n\n");
 }
 
@@ -329,20 +348,57 @@ fn render_json_backend(output: &mut String, schema: &Schema) {
             "    {}(options) {{\n      const handle = callFactory(() => raw.{}(Codec.stringifyWire(options)));\n      return {{\n        client: () => wrapJsonClient(handle.client()),\n",
             provider.exchange, provider.native_factory
         ));
+        let has_provider_stream = provider.methods.iter().any(|method| {
+            matches!(
+                method.result,
+                ApiType::ProviderMarketStream(_) | ApiType::ProviderAccountStream(_)
+            )
+        });
+        if has_provider_stream {
+            output.push_str(
+                "        streamNext: (id: string) => handle.streamNext(Codec.stringifyWire(id)),\n        streamClose: (id: string) => handle.streamClose(Codec.stringifyWire(id)),\n",
+            );
+        }
         for method in provider.methods {
             match method.kind {
                 ProviderMethodKind::Property => output.push_str(&format!(
                     "        {}: () => handle.{}(),\n",
                     method.name, method.name
                 )),
-                ProviderMethodKind::Async => output.push_str(&format!(
-                    "        {}: ({}) => handle.{}({}) as Promise<NativeOutcome<{}>>,\n",
-                    method.name,
-                    wire_parameters(method.arguments, schema),
-                    method.name,
-                    json_arguments(method.arguments),
-                    native_result_type(method.result, schema)
-                )),
+                ProviderMethodKind::Async => {
+                    if matches!(
+                        method.result,
+                        ApiType::ProviderMarketStream(_) | ApiType::ProviderAccountStream(_)
+                    ) {
+                        let item = match method.result {
+                            ApiType::ProviderMarketStream(event)
+                            | ApiType::ProviderAccountStream(event) => {
+                                format!(
+                                    "Wire.{}StreamItemWire",
+                                    event.strip_suffix("Event").unwrap_or(event)
+                                )
+                            }
+                            _ => unreachable!(),
+                        };
+                        output.push_str(&format!(
+                            "        async {}({}) {{\n          const outcome = await handle.{}({}) as NativeOutcome<Wire.NativeStreamReferenceWire>;\n          return outcome.ok ? {{ ok: true, value: {{\n            next: () => handle.streamNext(Codec.stringifyWire(outcome.value.id)) as Promise<NativeOutcome<{} | null>>,\n            close: () => handle.streamClose(Codec.stringifyWire(outcome.value.id)) as Promise<NativeOutcome<null>>,\n          }} }} : outcome;\n        }},\n",
+                            method.name,
+                            wire_parameters(method.arguments, schema),
+                            method.name,
+                            json_arguments(method.arguments),
+                            item
+                        ));
+                    } else {
+                        output.push_str(&format!(
+                            "        {}: ({}) => handle.{}({}) as Promise<NativeOutcome<{}>>,\n",
+                            method.name,
+                            wire_parameters(method.arguments, schema),
+                            method.name,
+                            json_arguments(method.arguments),
+                            native_result_type(method.result, schema)
+                        ));
+                    }
+                }
             }
         }
         output.push_str("      };\n    },\n");
@@ -713,6 +769,16 @@ fn render_provider_method(provider: &Provider, method: &ProviderMethod, schema: 
         ApiType::Unit => format!("Codec.unwrapOutcome(await {call});"),
         ApiType::Handle(model) => format!(
             "const value = Codec.unwrapOutcome(await {call}); return new {model}(value.id, value.value);"
+        ),
+        ApiType::ProviderMarketStream(event) => format!(
+            "const handle = Codec.unwrapOutcome(await {call}); return new {}Stream(nativeItems(handle, Codec.{}StreamItemFromWire), async () => {{ Codec.unwrapOutcome(await handle.close()); }});",
+            event.strip_suffix("Event").unwrap_or(event),
+            lower_camel(event.strip_suffix("Event").unwrap_or(event)),
+        ),
+        ApiType::ProviderAccountStream(event) => format!(
+            "const handle = Codec.unwrapOutcome(await {call}); return new {}Stream(nativeItems(handle, Codec.{}StreamItemFromWire), async () => {{ Codec.unwrapOutcome(await handle.close()); }});",
+            event.strip_suffix("Event").unwrap_or(event),
+            lower_camel(event.strip_suffix("Event").unwrap_or(event)),
         ),
         _ => panic!(
             "unsupported provider result {}.{}",

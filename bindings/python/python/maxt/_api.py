@@ -19,6 +19,8 @@ from .models import (
     FundingPayment,
     FundingRate,
     HistoryRequest,
+    HyperliquidAccountEvent,
+    HyperliquidMarketEvent,
     MarginRequest,
     MarginSummary,
     Market,
@@ -279,6 +281,18 @@ class AccountStream(AsyncStream[T]):
     pass
 
 
+class HyperliquidMarketStream(
+    MarketStream[Union[StreamEvent[HyperliquidMarketEvent], StreamError]]
+):
+    """Full-fidelity Hyperliquid market subscription."""
+
+
+class HyperliquidAccountStream(
+    AccountStream[Union[StreamEvent[HyperliquidAccountEvent], StreamError]]
+):
+    """Full-fidelity Hyperliquid account subscription."""
+
+
 from ._generated_api import _GeneratedAdapterApi, _GeneratedClientApi
 
 
@@ -355,6 +369,8 @@ __all__ = [
     "DecodeError",
     "ExchangeError",
     "ExchangeErrorKind",
+    "HyperliquidAccountStream",
+    "HyperliquidMarketStream",
     "InvalidRequestError",
     "MarketStream",
     "MaxtError",

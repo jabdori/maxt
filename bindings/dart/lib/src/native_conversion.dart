@@ -327,6 +327,46 @@ Stream<StreamItem<AccountEvent>> _nativeAccountItems(
   }
 }
 
+Stream<StreamItem<HyperliquidMarketEvent>> _nativeHyperliquidMarketItems(
+  native_stream.NativeHyperliquidMarketSubscription subscription,
+) async* {
+  while (true) {
+    final item = await _nativeFuture(
+      () => native.nativeHyperliquidMarketSubscriptionNext(
+        subscription: subscription,
+      ),
+    );
+    switch (item) {
+      case native_stream.WireHyperliquidMarketStreamItem_Event(:final field0):
+        yield StreamItem.event(_hyperliquidMarketEventFromWire(field0));
+      case native_stream.WireHyperliquidMarketStreamItem_Error(:final field0):
+        yield StreamItem.error(_nativeError(field0));
+      case native_stream.WireHyperliquidMarketStreamItem_End():
+        return;
+    }
+  }
+}
+
+Stream<StreamItem<HyperliquidAccountEvent>> _nativeHyperliquidAccountItems(
+  native_stream.NativeHyperliquidAccountSubscription subscription,
+) async* {
+  while (true) {
+    final item = await _nativeFuture(
+      () => native.nativeHyperliquidAccountSubscriptionNext(
+        subscription: subscription,
+      ),
+    );
+    switch (item) {
+      case native_stream.WireHyperliquidAccountStreamItem_Event(:final field0):
+        yield StreamItem.event(_hyperliquidAccountEventFromWire(field0));
+      case native_stream.WireHyperliquidAccountStreamItem_Error(:final field0):
+        yield StreamItem.error(_nativeError(field0));
+      case native_stream.WireHyperliquidAccountStreamItem_End():
+        return;
+    }
+  }
+}
+
 T _nativeSync<T>(T Function() call) {
   try {
     return call();

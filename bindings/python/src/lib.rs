@@ -21,5 +21,7 @@ fn native(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<client::NativeClient>()?;
     module.add_class::<stream::NativeMarketStream>()?;
     module.add_class::<stream::NativeAccountStream>()?;
+    module.add_class::<stream::NativeHyperliquidMarketStream>()?;
+    module.add_class::<stream::NativeHyperliquidAccountStream>()?;
     Ok(())
 }

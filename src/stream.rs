@@ -48,6 +48,64 @@ fn poll_stream<T>(
     }
 }
 
+/// Shared close and polling state for a typed built-in stream.
+///
+/// This is crate-private so provider-specific streams can preserve the same
+/// cancellation and reconnect cleanup semantics without widening the public
+/// common-stream API.
+pub(crate) struct TypedStream<T> {
+    inner: Option<Pin<Box<dyn Stream<Item = Result<T>> + Send>>>,
+    close: Option<CloseHook>,
+    closing: Option<CloseFuture>,
+}
+
+impl<T> TypedStream<T> {
+    pub(crate) fn new(inner: impl Stream<Item = Result<T>> + Send + 'static) -> Self {
+        Self {
+            inner: Some(Box::pin(inner)),
+            close: None,
+            closing: None,
+        }
+    }
+
+    pub(crate) fn new_with_close<F, Fut>(
+        inner: impl Stream<Item = Result<T>> + Send + 'static,
+        close: F,
+    ) -> Self
+    where
+        F: FnOnce() -> Fut + Send + 'static,
+        Fut: Future<Output = Result<()>> + Send + 'static,
+    {
+        Self {
+            inner: Some(Box::pin(inner)),
+            close: Some(Box::new(move || Box::pin(close()))),
+            closing: None,
+        }
+    }
+
+    pub(crate) async fn close(&mut self) -> Result<()> {
+        if self.closing.is_none() {
+            self.closing = self.close.take().map(|close| close());
+        }
+        let result = match self.closing.as_mut() {
+            Some(closing) => closing.await,
+            None => Ok(()),
+        };
+        self.closing = None;
+        self.inner.take();
+        result
+    }
+}
+
+impl<T> Stream for TypedStream<T> {
+    type Item = Result<T>;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let this = self.as_mut().get_mut();
+        poll_stream(&mut this.inner, &mut this.close, &mut this.closing, cx)
+    }
+}
+
 /// A live market data subscription.
 ///
 /// Yields [`MarketEvent`]s until it ends with `None`. Built-in adapters handle
@@ -67,9 +125,7 @@ fn poll_stream<T>(
 /// signal to stop their connection tasks; a custom stream controls its own
 /// cleanup.
 pub struct MarketStream {
-    inner: Option<Pin<Box<dyn Stream<Item = Result<MarketEvent>> + Send>>>,
-    close: Option<CloseHook>,
-    closing: Option<CloseFuture>,
+    inner: TypedStream<MarketEvent>,
 }
 
 impl MarketStream {
@@ -83,9 +139,7 @@ impl MarketStream {
     /// and emits [`MarketEvent::Reconnected`].
     pub fn new(inner: impl Stream<Item = Result<MarketEvent>> + Send + 'static) -> Self {
         Self {
-            inner: Some(Box::pin(inner)),
-            close: None,
-            closing: None,
+            inner: TypedStream::new(inner),
         }
     }
 
@@ -104,9 +158,7 @@ impl MarketStream {
         Fut: Future<Output = Result<()>> + Send + 'static,
     {
         Self {
-            inner: Some(Box::pin(inner)),
-            close: Some(Box::new(move || Box::pin(close()))),
-            closing: None,
+            inner: TypedStream::new_with_close(inner, close),
         }
     }
 
@@ -116,16 +168,7 @@ impl MarketStream {
     /// are no-ops. If the caller cancels this future, the next call resumes the
     /// same cleanup future.
     pub async fn close(&mut self) -> Result<()> {
-        if self.closing.is_none() {
-            self.closing = self.close.take().map(|close| close());
-        }
-        let result = match self.closing.as_mut() {
-            Some(closing) => closing.await,
-            None => Ok(()),
-        };
-        self.closing = None;
-        self.inner.take();
-        result
+        self.inner.close().await
     }
 }
 
@@ -134,7 +177,7 @@ impl Stream for MarketStream {
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let this = self.as_mut().get_mut();
-        poll_stream(&mut this.inner, &mut this.close, &mut this.closing, cx)
+        Pin::new(&mut this.inner).poll_next(cx)
     }
 }
 
@@ -156,9 +199,7 @@ impl fmt::Debug for MarketStream {
 /// [`MarketStream`]. Dropping this value drops its inner stream; cleanup is the
 /// producer's responsibility.
 pub struct AccountStream {
-    inner: Option<Pin<Box<dyn Stream<Item = Result<AccountEvent>> + Send>>>,
-    close: Option<CloseHook>,
-    closing: Option<CloseFuture>,
+    inner: TypedStream<AccountEvent>,
 }
 
 impl AccountStream {
@@ -173,9 +214,7 @@ impl AccountStream {
     /// failures as `Err` items.
     pub fn new(inner: impl Stream<Item = Result<AccountEvent>> + Send + 'static) -> Self {
         Self {
-            inner: Some(Box::pin(inner)),
-            close: None,
-            closing: None,
+            inner: TypedStream::new(inner),
         }
     }
 
@@ -194,9 +233,7 @@ impl AccountStream {
         Fut: Future<Output = Result<()>> + Send + 'static,
     {
         Self {
-            inner: Some(Box::pin(inner)),
-            close: Some(Box::new(move || Box::pin(close()))),
-            closing: None,
+            inner: TypedStream::new_with_close(inner, close),
         }
     }
 
@@ -206,16 +243,7 @@ impl AccountStream {
     /// are no-ops. If the caller cancels this future, the next call resumes the
     /// same cleanup future.
     pub async fn close(&mut self) -> Result<()> {
-        if self.closing.is_none() {
-            self.closing = self.close.take().map(|close| close());
-        }
-        let result = match self.closing.as_mut() {
-            Some(closing) => closing.await,
-            None => Ok(()),
-        };
-        self.closing = None;
-        self.inner.take();
-        result
+        self.inner.close().await
     }
 }
 
@@ -224,7 +252,7 @@ impl Stream for AccountStream {
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let this = self.as_mut().get_mut();
-        poll_stream(&mut this.inner, &mut this.close, &mut this.closing, cx)
+        Pin::new(&mut this.inner).poll_next(cx)
     }
 }
 

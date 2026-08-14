@@ -5,7 +5,8 @@ use serde_json::Value;
 
 use crate::error::{Error, Result};
 use crate::types::{
-    Deposit, DepositStatus, Market, MarketKind, Timestamp, Withdrawal, WithdrawalStatus,
+    Balance, Candle, Deposit, DepositStatus, Market, MarketKind, Order, OrderBook, Ticker,
+    Timestamp, Trade, Withdrawal, WithdrawalStatus,
 };
 
 use super::parse::{
@@ -98,6 +99,151 @@ pub struct HyperliquidRecentTrade {
     pub users: Vec<String>,
     /// Complete provider response object, encoded as JSON.
     pub raw_json: String,
+}
+
+/// One native Hyperliquid `trades` stream event.
+///
+/// [`Self::common`] keeps the portable trade projection while `provider`
+/// preserves the native transaction and participant fields.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct HyperliquidTradeEvent {
+    /// Portable trade projection used by the common stream API.
+    pub common: Trade,
+    /// Native Hyperliquid trade data.
+    pub provider: HyperliquidRecentTrade,
+}
+
+/// One native Hyperliquid `l2Book` stream event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct HyperliquidOrderBookEvent {
+    /// Portable order-book projection used by the common stream API.
+    pub common: OrderBook,
+    /// Native levels, including per-level order counts.
+    pub provider: HyperliquidL2Book,
+}
+
+/// One native Hyperliquid `candle` stream event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct HyperliquidCandleEvent {
+    /// Portable candle projection used by the common stream API.
+    pub common: Candle,
+    /// Native candle fields, including its inclusive close time and trade count.
+    pub provider: HyperliquidCandleSnapshot,
+}
+
+/// One native Hyperliquid `activeAssetCtx` or `activeSpotAssetCtx` event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct HyperliquidAssetContextEvent {
+    /// Portable ticker projection used by the common stream API.
+    pub common: Ticker,
+    /// Hyperliquid's native market name.
+    pub coin: String,
+    /// Mid price, when published.
+    pub mid_price: Option<Decimal>,
+    /// Mark price, when published.
+    pub mark_price: Option<Decimal>,
+    /// Previous-day price, when published.
+    pub previous_day_price: Option<Decimal>,
+    /// Day base volume, when published.
+    pub day_base_volume: Option<Decimal>,
+    /// Day notional volume, when published.
+    pub day_notional_volume: Option<Decimal>,
+    /// Oracle price for perpetual markets, when published.
+    pub oracle_price: Option<Decimal>,
+    /// Funding rate for perpetual markets, when published.
+    pub funding_rate: Option<Decimal>,
+    /// Open interest for perpetual markets, when published.
+    pub open_interest: Option<Decimal>,
+    /// Circulating supply for spot markets, when published.
+    pub circulating_supply: Option<Decimal>,
+    /// Total supply for spot markets, when published.
+    pub total_supply: Option<Decimal>,
+    /// Complete provider response object, encoded as JSON.
+    pub raw_json: String,
+}
+
+/// One native Hyperliquid `orderUpdates` stream event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct HyperliquidOrderUpdate {
+    /// Portable order projection used by the common account stream API.
+    pub common: Order,
+    /// Hyperliquid's native market name.
+    pub coin: String,
+    /// Provider side string, currently `A` or `B`.
+    pub side: String,
+    /// Provider limit price.
+    pub limit_price: Decimal,
+    /// Remaining provider order size.
+    pub remaining_size: Decimal,
+    /// Original provider order size.
+    pub original_size: Decimal,
+    /// Provider order identifier.
+    pub order_id: u64,
+    /// Provider acceptance timestamp.
+    pub accepted_at: Timestamp,
+    /// Provider client order identifier, when supplied.
+    pub client_order_id: Option<String>,
+    /// Provider status string, preserved without normalization.
+    pub status: String,
+    /// Provider status-update timestamp, when supplied.
+    pub status_at: Option<Timestamp>,
+    /// Complete provider response object, encoded as JSON.
+    pub raw_json: String,
+}
+
+/// One native balance in a Hyperliquid `spotState` stream event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct HyperliquidSpotStateBalance {
+    /// Portable balance projection used by the common account stream API.
+    pub common: Balance,
+    /// Native balance details including token and entry notional.
+    pub provider: HyperliquidSpotBalance,
+}
+
+/// One native Hyperliquid `spotState` stream event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct HyperliquidSpotStateEvent {
+    /// Account address carried by the provider frame.
+    pub user: String,
+    /// Balances in provider response order.
+    pub balances: Vec<HyperliquidSpotStateBalance>,
+    /// Complete provider response object, encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A full-fidelity Hyperliquid market stream event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum HyperliquidMarketEvent {
+    /// A native trade update.
+    Trade(HyperliquidTradeEvent),
+    /// A native order-book snapshot update.
+    OrderBook(HyperliquidOrderBookEvent),
+    /// A native asset-context update.
+    AssetContext(HyperliquidAssetContextEvent),
+    /// A native candle update.
+    Candle(HyperliquidCandleEvent),
+    /// The connection was restored and events may have been missed.
+    Reconnected,
+}
+
+/// A full-fidelity Hyperliquid account stream event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum HyperliquidAccountEvent {
+    /// A native order-status update.
+    OrderUpdate(HyperliquidOrderUpdate),
+    /// A native Spot account-state update.
+    SpotState(HyperliquidSpotStateEvent),
+    /// The connection was restored and events may have been missed.
+    Reconnected,
 }
 
 /// One historical Hyperliquid funding-rate observation with its premium.
@@ -903,7 +1049,7 @@ pub(crate) fn recent_trades(
         .collect()
 }
 
-fn recent_trade(
+pub(crate) fn recent_trade(
     raw: &RawTrade,
     universe: &Universe,
     value: &Value,
@@ -918,6 +1064,97 @@ fn recent_trade(
         trade_id: raw.tid.to_string(),
         hash: raw.hash.clone(),
         users: raw.users.clone(),
+        raw_json: json_text(value)?,
+    })
+}
+
+/// Maps one native trade stream entry and its normalized projection.
+pub(crate) fn stream_trade(
+    raw: &RawTrade,
+    universe: &Universe,
+    value: &Value,
+) -> Result<HyperliquidTradeEvent> {
+    Ok(HyperliquidTradeEvent {
+        common: parse::trade(raw, universe)?,
+        provider: recent_trade(raw, universe, value)?,
+    })
+}
+
+/// Maps one native L2 stream frame and its normalized projection.
+pub(crate) fn stream_order_book(
+    raw: &RawBook,
+    universe: &Universe,
+    value: &Value,
+) -> Result<HyperliquidOrderBookEvent> {
+    Ok(HyperliquidOrderBookEvent {
+        common: parse::order_book(raw, universe)?,
+        provider: l2_book(value, universe)?,
+    })
+}
+
+/// Maps one native candle stream entry and its normalized projection.
+pub(crate) fn stream_candle(
+    raw: &RawCandle,
+    universe: &Universe,
+    value: &Value,
+    at: Timestamp,
+) -> Result<HyperliquidCandleEvent> {
+    Ok(HyperliquidCandleEvent {
+        common: parse::candle(raw, universe, at)?,
+        provider: candle_snapshot(raw, universe, value)?,
+    })
+}
+
+/// Maps one native asset-context frame and its normalized ticker projection.
+pub(crate) fn stream_asset_context(
+    coin: &str,
+    raw: &RawAssetCtx,
+    universe: &Universe,
+    value: &Value,
+    at: Timestamp,
+) -> Result<HyperliquidAssetContextEvent> {
+    let decimal =
+        |value: Option<&str>, field| value.map(|value| parse::decimal(value, field)).transpose();
+    let market = universe.market_from_native_symbol(coin)?.clone();
+
+    Ok(HyperliquidAssetContextEvent {
+        common: parse::ticker(raw, &market, at)?,
+        coin: coin.to_owned(),
+        mid_price: decimal(raw.mid_px.as_deref(), "midPx")?,
+        mark_price: decimal(raw.mark_px.as_deref(), "markPx")?,
+        previous_day_price: decimal(raw.prev_day_px.as_deref(), "prevDayPx")?,
+        day_base_volume: decimal(raw.day_base_volume.as_deref(), "dayBaseVlm")?,
+        day_notional_volume: decimal(raw.day_notional_volume.as_deref(), "dayNtlVlm")?,
+        oracle_price: decimal(raw.oracle_px.as_deref(), "oraclePx")?,
+        funding_rate: decimal(raw.funding.as_deref(), "funding")?,
+        open_interest: decimal(raw.open_interest.as_deref(), "openInterest")?,
+        circulating_supply: decimal(raw.circulating_supply.as_deref(), "circulatingSupply")?,
+        total_supply: decimal(raw.total_supply.as_deref(), "totalSupply")?,
+        raw_json: json_text(value)?,
+    })
+}
+
+/// Maps one native order update and its normalized order projection.
+pub(crate) fn stream_order_update(
+    raw: &parse::RawStreamOrder,
+    universe: &Universe,
+    value: &Value,
+) -> Result<HyperliquidOrderUpdate> {
+    Ok(HyperliquidOrderUpdate {
+        common: parse::stream_order(raw, universe)?,
+        coin: raw.order.coin.clone(),
+        side: raw.order.side.clone(),
+        limit_price: parse::decimal(&raw.order.limit_px, "limitPx")?,
+        remaining_size: parse::decimal(&raw.order.sz, "sz")?,
+        original_size: parse::decimal(&raw.order.orig_sz, "origSz")?,
+        order_id: raw.order.oid,
+        accepted_at: parse::millis(raw.order.timestamp, "timestamp")?,
+        client_order_id: raw.order.cloid.clone(),
+        status: raw.status.clone(),
+        status_at: raw
+            .status_timestamp
+            .map(|time| parse::millis(time, "statusTimestamp"))
+            .transpose()?,
         raw_json: json_text(value)?,
     })
 }
@@ -1015,25 +1252,57 @@ pub(crate) fn spot_clearinghouse_state(raw: &Value) -> Result<HyperliquidSpotCle
         .balances
         .iter()
         .zip(values)
-        .map(|(balance, value)| {
-            Ok(HyperliquidSpotBalance {
-                coin: balance.coin.clone(),
-                token: balance.token,
-                total: parse::decimal(&balance.total, "total")?,
-                hold: parse::decimal(&balance.hold, "hold")?,
-                entry_notional: balance
-                    .entry_notional
-                    .as_deref()
-                    .map(|value| parse::decimal(value, "entryNtl"))
-                    .transpose()?,
-                raw_json: json_text(value)?,
-            })
-        })
+        .map(|(balance, value)| spot_balance(balance, value))
         .collect::<Result<Vec<_>>>()?;
 
     Ok(HyperliquidSpotClearinghouseState {
         balances,
         raw_json: json_text(raw)?,
+    })
+}
+
+/// Maps a native `spotState` stream frame without narrowing its balances.
+pub(crate) fn stream_spot_state(
+    raw: &parse::RawStreamSpotState,
+    value: &Value,
+) -> Result<HyperliquidSpotStateEvent> {
+    let values = value
+        .get("spotState")
+        .and_then(|state| state.get("balances"))
+        .and_then(Value::as_array)
+        .ok_or_else(|| Error::decode("Hyperliquid spotState has no `spotState.balances` array"))?;
+    let balances = raw
+        .spot_state
+        .balances
+        .iter()
+        .zip(values)
+        .map(|(balance, value)| {
+            Ok(HyperliquidSpotStateBalance {
+                common: parse::balance(balance)?,
+                provider: spot_balance(balance, value)?,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    Ok(HyperliquidSpotStateEvent {
+        user: raw.user.clone(),
+        balances,
+        raw_json: json_text(value)?,
+    })
+}
+
+fn spot_balance(raw: &parse::RawSpotBalance, value: &Value) -> Result<HyperliquidSpotBalance> {
+    Ok(HyperliquidSpotBalance {
+        coin: raw.coin.clone(),
+        token: raw.token,
+        total: parse::decimal(&raw.total, "total")?,
+        hold: parse::decimal(&raw.hold, "hold")?,
+        entry_notional: raw
+            .entry_notional
+            .as_deref()
+            .map(|value| parse::decimal(value, "entryNtl"))
+            .transpose()?,
+        raw_json: json_text(value)?,
     })
 }
 

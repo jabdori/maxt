@@ -1546,6 +1546,77 @@ fn _guard_hyperliquid_recent_trade_wire(value: WireHyperliquidRecentTrade) {
     } = value;
 }
 
+fn _guard_hyperliquid_trade_event_wire(value: WireHyperliquidTradeEvent) {
+    let WireHyperliquidTradeEvent {
+        common: _,
+        provider: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_order_book_event_wire(value: WireHyperliquidOrderBookEvent) {
+    let WireHyperliquidOrderBookEvent {
+        common: _,
+        provider: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_candle_event_wire(value: WireHyperliquidCandleEvent) {
+    let WireHyperliquidCandleEvent {
+        common: _,
+        provider: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_asset_context_event_wire(value: WireHyperliquidAssetContextEvent) {
+    let WireHyperliquidAssetContextEvent {
+        common: _,
+        coin: _,
+        mid_price: _,
+        mark_price: _,
+        previous_day_price: _,
+        day_base_volume: _,
+        day_notional_volume: _,
+        oracle_price: _,
+        funding_rate: _,
+        open_interest: _,
+        circulating_supply: _,
+        total_supply: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_order_update_wire(value: WireHyperliquidOrderUpdate) {
+    let WireHyperliquidOrderUpdate {
+        common: _,
+        coin: _,
+        side: _,
+        limit_price: _,
+        remaining_size: _,
+        original_size: _,
+        order_id: _,
+        accepted_at_ns: _,
+        client_order_id: _,
+        status: _,
+        status_at_ns: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_spot_state_balance_wire(value: WireHyperliquidSpotStateBalance) {
+    let WireHyperliquidSpotStateBalance {
+        common: _,
+        provider: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_spot_state_event_wire(value: WireHyperliquidSpotStateEvent) {
+    let WireHyperliquidSpotStateEvent {
+        user: _,
+        balances: _,
+        raw_json: _,
+    } = value;
+}
+
 fn _guard_hyperliquid_funding_history_entry_wire(value: WireHyperliquidFundingHistoryEntry) {
     let WireHyperliquidFundingHistoryEntry {
         coin: _,
@@ -1926,6 +1997,24 @@ fn _guard_travel_rule_requirement_wire(value: WireTravelRuleRequirement) {
     match value {
         WireTravelRuleRequirement::NotRequired => {}
         WireTravelRuleRequirement::Required { consent_url: _ } => {}
+    }
+}
+
+fn _guard_hyperliquid_market_event_wire(value: WireHyperliquidMarketEvent) {
+    match value {
+        WireHyperliquidMarketEvent::Trade(_) => {}
+        WireHyperliquidMarketEvent::OrderBook(_) => {}
+        WireHyperliquidMarketEvent::AssetContext(_) => {}
+        WireHyperliquidMarketEvent::Candle(_) => {}
+        WireHyperliquidMarketEvent::Reconnected => {}
+    }
+}
+
+fn _guard_hyperliquid_account_event_wire(value: WireHyperliquidAccountEvent) {
+    match value {
+        WireHyperliquidAccountEvent::OrderUpdate(_) => {}
+        WireHyperliquidAccountEvent::SpotState(_) => {}
+        WireHyperliquidAccountEvent::Reconnected => {}
     }
 }
 

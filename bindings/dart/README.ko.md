@@ -69,12 +69,12 @@ isolate는 다시 초기화할 수 없습니다.
 
 ## 지원 상태
 
-- [x] Android
-- [x] iOS
-- [x] Linux
-- [x] macOS
-- [x] Windows
-- [x] Dart Web
+- ✓ Android
+- ✓ iOS
+- ✓ Linux
+- ✓ macOS
+- ✓ Windows
+- ✓ Dart Web
 
 Dart 3.10 또는 호환 Flutter SDK가 필요합니다. 이 패키지는 미리 빌드된 네이티브
 라이브러리를 내려받지 않습니다. Dart 또는 Flutter 애플리케이션을 빌드할 때 build
@@ -148,7 +148,7 @@ Binance 테스트넷(testnet) 생성자는 제공하지 않습니다. Hyperliqui
 | `BinanceAdapter` | `BinanceAdapter.usdMFutures()` | 공개: `markPrice()`, `markPrices()`, `openInterest()`, `aggregateTrades()`, `usdMExchangeInfo()`; 인증 필요: `usdMAccountInformation()`, `usdMPositionInformation()`, `accountTrades()`, `testOrder()`, `cancelAllOpenOrders()`, `usdMCreateListenKey()`, `usdMKeepaliveListenKey()`, `usdMCloseListenKey()` |
 | `UpbitAdapter` | `UpbitAdapter()` 또는 `UpbitAdapter.withRegion(...)` | `orderBooks()`, `orderBooksAtLevel()`, `tickers()`, `tickersByQuote()`, `yearCandles()`, `orderbookInstruments()`, `marketEvents()`; 인증 필요: `testOrder()`, `orderDetail()`, `closedOrders()`, `depositInfo()`, `withdrawalAddresses()`, `travelRuleVasps()`, `verifyTravelRuleByUuid()`, `verifyTravelRuleByTxid()`, `batchCancelOpenOrders()`, `cancelAndNewOrder()`; 한국 전용: `depositKrw()`, `withdrawKrw()`, `apiKeys()`, `listPockets()`, `listPocketApiKeys()`, `subPocketBalances()`, `universalTransfer()`, `universalTransfers()`, `subPocketTransfer()`, `subPocketTransfers()` |
 | `BithumbAdapter` | `BithumbAdapter()` | `marketWarnings()`, `marketAlerts()`, `notices()`, `transferFees()`; 인증 필요: `apiKeys()`, `withdrawalAddresses()`, `orderDetail()`, `orderList()`, `closedOrders()`, `krwWithdrawals()`, `withdrawKrw()`, `krwDeposits()`, `depositKrw()`, `pendingOrders()`, `batchOrders()`, `twapOrders()`, `createTwapOrder()`, `cancelTwapOrder()` |
-| `HyperliquidAdapter` | `HyperliquidAdapter()` 또는 `HyperliquidAdapter.testnet()` | 공개: `allMids()`, `assetContext()`, `candleSnapshot()`, `l2Book()`, `recentTrades()`, `fundingHistory()`, `spotMeta()`, `spotMetaAndAssetContexts()`; 주소별 서명 없는 읽기: `userFunding()`, `spotClearinghouseState()`, `basicOpenOrders()`, `orderStatus(reference)`, `historicalOrders()`, `userFills()`, `userFillsByTime()`, `nonFundingLedger()`, `userRateLimit()`, `userRole()`, `referral()`, `userFees()`, `portfolio()`, `subAccounts()`, `userVaultEquities()` |
+| `HyperliquidAdapter` | `HyperliquidAdapter()` 또는 `HyperliquidAdapter.testnet()` | 공개: `allMids()`, `assetContext()`, `candleSnapshot()`, `l2Book()`, `recentTrades()`, `fundingHistory()`, `spotMeta()`, `spotMetaAndAssetContexts()`; 상세 스트림: `subscribeDetailed()`, `subscribeDetailedWith()`, `subscribeDetailedAccount()`, `subscribeDetailedAccountWith()`; 주소별 서명 없는 읽기: `userFunding()`, `spotClearinghouseState()`, `basicOpenOrders()`, `orderStatus(reference)`, `historicalOrders()`, `userFills()`, `userFillsByTime()`, `nonFundingLedger()`, `userRateLimit()`, `userRole()`, `referral()`, `userFees()`, `portfolio()`, `subAccounts()`, `userVaultEquities()` |
 
 `UpbitAdapter.testOrder()`는 주문을 생성하지 않고 검증합니다. 반환 `Order`는
 dry-run 결과이므로 `id`를 조회·취소에 사용하면 안 되며 상태도 실제 활성 주문을 뜻하지 않습니다.

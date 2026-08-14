@@ -452,6 +452,15 @@ pub(crate) fn render_rust_models(schema: &Schema) -> String {
         "HyperliquidCandleSnapshot",
         "HyperliquidL2Book",
         "HyperliquidRecentTrade",
+        "HyperliquidTradeEvent",
+        "HyperliquidOrderBookEvent",
+        "HyperliquidCandleEvent",
+        "HyperliquidAssetContextEvent",
+        "HyperliquidOrderUpdate",
+        "HyperliquidSpotStateBalance",
+        "HyperliquidSpotStateEvent",
+        "HyperliquidMarketEvent",
+        "HyperliquidAccountEvent",
         "HyperliquidFundingHistoryEntry",
         "HyperliquidUserFunding",
         "HyperliquidSpotBalance",
@@ -813,7 +822,7 @@ fn render_rust_wire_union(
                 "            _ => unreachable!(\"new {name} variant requires a Dart wire variant\"),\n"
             )
         }
-        "HyperliquidUserRole" | "HyperliquidOrderStatusResponse" if !include_from_wire => format!(
+        _ if !include_from_wire => format!(
             "            _ => unreachable!(\"new {name} variant requires a Dart wire variant\"),\n"
         ),
         _ => String::new(),
@@ -1512,6 +1521,8 @@ pub(crate) fn render_wire_shape_guard(schema: &Schema) -> String {
         "AccountEventWire",
         "MarketStreamItemWire",
         "AccountStreamItemWire",
+        "HyperliquidMarketStreamItemWire",
+        "HyperliquidAccountStreamItemWire",
         "ErrorWire",
         "AdapterCallWire",
         "AdapterReplyWire",
@@ -1888,6 +1899,18 @@ fn provider_method_source(exchange: &str, method: &str) -> String {
         ("hyperliquid", "non_funding_ledger") => {
             "  Future<Page<HyperliquidLedgerEntry>> nonFundingLedger({\n    Timestamp? from,\n    Timestamp? to,\n    Cursor? cursor,\n    int? limit,\n  }) => _nativeFuture(\n    () => _handle.hyperliquidNonFundingLedger(\n      fromNs: from == null\n          ? null\n          : platformInt64FromBigInt(from.nanosecondsSinceEpoch),\n      toNs: to == null\n          ? null\n          : platformInt64FromBigInt(to.nanosecondsSinceEpoch),\n      cursor: cursor?.value,\n      limit: checkedUint32(limit, field: 'limit'),\n    ),\n  ).then(_hyperliquidLedgerPageFromWire);\n"
         }
+        ("hyperliquid", "subscribe_detailed") => {
+            "  /// Opens a Hyperliquid market stream that preserves provider-specific fields.\n  Future<HyperliquidMarketStream> subscribeDetailed(\n    Subscription subscription,\n  ) => subscribeDetailedWith(subscription, defaultStreamConfig());\n"
+        }
+        ("hyperliquid", "subscribe_detailed_with") => {
+            "  /// Opens a full-fidelity Hyperliquid market stream with [config].\n  Future<HyperliquidMarketStream> subscribeDetailedWith(\n    Subscription subscription,\n    StreamConfig config,\n  ) async {\n    validateStreamConfigIntegers(config);\n    final handle = await _nativeFuture(\n      () => _handle.hyperliquidSubscribeDetailedWith(\n        subscription: _subscriptionToWire(subscription),\n        config: _streamConfigToWire(config),\n      ),\n    );\n    return HyperliquidMarketStream(\n      _nativeHyperliquidMarketItems(handle),\n      onClose: () => _nativeFuture(\n        () => native.nativeHyperliquidMarketSubscriptionClose(\n          subscription: handle,\n        ),\n      ),\n    );\n  }\n"
+        }
+        ("hyperliquid", "subscribe_detailed_account") => {
+            "  /// Opens a Hyperliquid account stream that preserves provider-specific fields.\n  Future<HyperliquidAccountStream> subscribeDetailedAccount() =>\n      subscribeDetailedAccountWith(defaultStreamConfig());\n"
+        }
+        ("hyperliquid", "subscribe_detailed_account_with") => {
+            "  /// Opens a full-fidelity Hyperliquid account stream with [config].\n  Future<HyperliquidAccountStream> subscribeDetailedAccountWith(\n    StreamConfig config,\n  ) async {\n    validateStreamConfigIntegers(config);\n    final handle = await _nativeFuture(\n      () => _handle.hyperliquidSubscribeDetailedAccountWith(\n        config: _streamConfigToWire(config),\n      ),\n    );\n    return HyperliquidAccountStream(\n      _nativeHyperliquidAccountItems(handle),\n      onClose: () => _nativeFuture(\n        () => native.nativeHyperliquidAccountSubscriptionClose(\n          subscription: handle,\n        ),\n      ),\n    );\n  }\n"
+        }
         ("hyperliquid", "asset_context") => {
             "  Future<HyperliquidAssetContext> assetContext(Market market) => _nativeFuture(\n    () => _handle.hyperliquidAssetContext(market: _marketToWire(market)),\n  ).then(_hyperliquidAssetContextFromWire);\n"
         }
@@ -2119,7 +2142,10 @@ fn rust_wire_type(ty: ApiType) -> String {
         ApiType::Handle(name) => format!("Wire{name}"),
         ApiType::HandleToken(name) => name.into(),
         ApiType::Unit => "()".into(),
-        ApiType::MarketStream | ApiType::AccountStream => {
+        ApiType::MarketStream
+        | ApiType::AccountStream
+        | ApiType::ProviderMarketStream(_)
+        | ApiType::ProviderAccountStream(_) => {
             unreachable!("stream façades remain handwritten")
         }
     }
@@ -2993,6 +3019,9 @@ fn dart_type(ty: ApiType) -> String {
         ApiType::HandleToken(name) => name.into(),
         ApiType::MarketStream => "MarketStream".into(),
         ApiType::AccountStream => "AccountStream".into(),
+        ApiType::ProviderMarketStream(event) | ApiType::ProviderAccountStream(event) => {
+            format!("{}Stream", event.strip_suffix("Event").unwrap_or(event))
+        }
         ApiType::Unit => "void".into(),
     }
 }

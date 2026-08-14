@@ -24,7 +24,9 @@ pub use crate::adapter::{
 pub use crate::convert::*;
 pub use crate::stream::{
     AccountStreamItem, AccountStreamSink, MarketStreamItem, MarketStreamSink,
-    NativeAccountSubscription, NativeMarketSubscription, WireAccountEvent, WireAccountStreamItem,
+    NativeAccountSubscription, NativeHyperliquidAccountSubscription,
+    NativeHyperliquidMarketSubscription, NativeMarketSubscription, WireAccountEvent,
+    WireAccountStreamItem, WireHyperliquidAccountStreamItem, WireHyperliquidMarketStreamItem,
     WireMarketEvent, WireMarketStreamItem,
 };
 
@@ -89,6 +91,34 @@ pub async fn native_market_subscription_close(
 /// 네이티브 계정 구독을 중단하고 원본 Rust stream 정리를 기다립니다.
 pub async fn native_account_subscription_close(
     subscription: &NativeAccountSubscription,
+) -> Result<(), NativeError> {
+    subscription.close().await
+}
+
+/// 네이티브 Hyperliquid 시장 구독에서 다음 event/error/end 항목을 읽습니다.
+pub async fn native_hyperliquid_market_subscription_next(
+    subscription: &NativeHyperliquidMarketSubscription,
+) -> WireHyperliquidMarketStreamItem {
+    subscription.next().await
+}
+
+/// 네이티브 Hyperliquid 계정 구독에서 다음 event/error/end 항목을 읽습니다.
+pub async fn native_hyperliquid_account_subscription_next(
+    subscription: &NativeHyperliquidAccountSubscription,
+) -> WireHyperliquidAccountStreamItem {
+    subscription.next().await
+}
+
+/// 네이티브 Hyperliquid 시장 구독을 중단하고 원본 Rust stream 정리를 기다립니다.
+pub async fn native_hyperliquid_market_subscription_close(
+    subscription: &NativeHyperliquidMarketSubscription,
+) -> Result<(), NativeError> {
+    subscription.close().await
+}
+
+/// 네이티브 Hyperliquid 계정 구독을 중단하고 원본 Rust stream 정리를 기다립니다.
+pub async fn native_hyperliquid_account_subscription_close(
+    subscription: &NativeHyperliquidAccountSubscription,
 ) -> Result<(), NativeError> {
     subscription.close().await
 }
@@ -609,6 +639,74 @@ impl NativeClient {
             .subscribe_account(&config)
             .await
             .map(NativeAccountSubscription::new)
+            .map_err(Into::into)
+    }
+
+    /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 Hyperliquid 원본 시장 구독을 반환합니다.
+    pub async fn hyperliquid_subscribe_detailed(
+        &self,
+        subscription: WireSubscription,
+    ) -> Result<NativeHyperliquidMarketSubscription, NativeError> {
+        let subscription = subscription.into();
+        let adapter = match self.built_in("hyperliquid_subscribe_detailed")? {
+            BuiltInAdapter::Hyperliquid(adapter) => adapter,
+            _ => return Err(provider_mismatch("Hyperliquid")),
+        };
+        adapter
+            .subscribe_detailed(&subscription)
+            .await
+            .map(NativeHyperliquidMarketSubscription::new)
+            .map_err(Into::into)
+    }
+
+    /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 설정형 Hyperliquid 원본 시장 구독을 반환합니다.
+    pub async fn hyperliquid_subscribe_detailed_with(
+        &self,
+        subscription: WireSubscription,
+        config: WireStreamConfig,
+    ) -> Result<NativeHyperliquidMarketSubscription, NativeError> {
+        let subscription = subscription.into();
+        let config = config.into();
+        let adapter = match self.built_in("hyperliquid_subscribe_detailed_with")? {
+            BuiltInAdapter::Hyperliquid(adapter) => adapter,
+            _ => return Err(provider_mismatch("Hyperliquid")),
+        };
+        adapter
+            .subscribe_detailed_with(&subscription, &config)
+            .await
+            .map(NativeHyperliquidMarketSubscription::new)
+            .map_err(Into::into)
+    }
+
+    /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 Hyperliquid 원본 계정 구독을 반환합니다.
+    pub async fn hyperliquid_subscribe_detailed_account(
+        &self,
+    ) -> Result<NativeHyperliquidAccountSubscription, NativeError> {
+        let adapter = match self.built_in("hyperliquid_subscribe_detailed_account")? {
+            BuiltInAdapter::Hyperliquid(adapter) => adapter,
+            _ => return Err(provider_mismatch("Hyperliquid")),
+        };
+        adapter
+            .subscribe_detailed_account()
+            .await
+            .map(NativeHyperliquidAccountSubscription::new)
+            .map_err(Into::into)
+    }
+
+    /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 설정형 Hyperliquid 원본 계정 구독을 반환합니다.
+    pub async fn hyperliquid_subscribe_detailed_account_with(
+        &self,
+        config: WireStreamConfig,
+    ) -> Result<NativeHyperliquidAccountSubscription, NativeError> {
+        let config = config.into();
+        let adapter = match self.built_in("hyperliquid_subscribe_detailed_account_with")? {
+            BuiltInAdapter::Hyperliquid(adapter) => adapter,
+            _ => return Err(provider_mismatch("Hyperliquid")),
+        };
+        adapter
+            .subscribe_detailed_account_with(&config)
+            .await
+            .map(NativeHyperliquidAccountSubscription::new)
             .map_err(Into::into)
     }
 

@@ -3471,6 +3471,215 @@ wire.WireHyperliquidRecentTrade _hyperliquidRecentTradeToWire(
   rawJson: value.rawJson,
 );
 
+HyperliquidTradeEvent _hyperliquidTradeEventFromWire(
+  wire.WireHyperliquidTradeEvent value,
+) => HyperliquidTradeEvent(
+  common: _tradeFromWire(value.common),
+  provider: _hyperliquidRecentTradeFromWire(value.provider),
+);
+wire.WireHyperliquidTradeEvent _hyperliquidTradeEventToWire(
+  HyperliquidTradeEvent value,
+) => wire.WireHyperliquidTradeEvent(
+  common: _tradeToWire(value.common),
+  provider: _hyperliquidRecentTradeToWire(value.provider),
+);
+
+HyperliquidOrderBookEvent _hyperliquidOrderBookEventFromWire(
+  wire.WireHyperliquidOrderBookEvent value,
+) => HyperliquidOrderBookEvent(
+  common: _orderBookFromWire(value.common),
+  provider: _hyperliquidL2BookFromWire(value.provider),
+);
+wire.WireHyperliquidOrderBookEvent _hyperliquidOrderBookEventToWire(
+  HyperliquidOrderBookEvent value,
+) => wire.WireHyperliquidOrderBookEvent(
+  common: _orderBookToWire(value.common),
+  provider: _hyperliquidL2BookToWire(value.provider),
+);
+
+HyperliquidCandleEvent _hyperliquidCandleEventFromWire(
+  wire.WireHyperliquidCandleEvent value,
+) => HyperliquidCandleEvent(
+  common: _candleFromWire(value.common),
+  provider: _hyperliquidCandleSnapshotFromWire(value.provider),
+);
+wire.WireHyperliquidCandleEvent _hyperliquidCandleEventToWire(
+  HyperliquidCandleEvent value,
+) => wire.WireHyperliquidCandleEvent(
+  common: _candleToWire(value.common),
+  provider: _hyperliquidCandleSnapshotToWire(value.provider),
+);
+
+HyperliquidAssetContextEvent _hyperliquidAssetContextEventFromWire(
+  wire.WireHyperliquidAssetContextEvent value,
+) => HyperliquidAssetContextEvent(
+  common: _tickerFromWire(value.common),
+  coin: value.coin,
+  midPrice: _decimalFromWire(value.midPrice),
+  markPrice: _decimalFromWire(value.markPrice),
+  previousDayPrice: _decimalFromWire(value.previousDayPrice),
+  dayBaseVolume: _decimalFromWire(value.dayBaseVolume),
+  dayNotionalVolume: _decimalFromWire(value.dayNotionalVolume),
+  oraclePrice: _decimalFromWire(value.oraclePrice),
+  fundingRate: _decimalFromWire(value.fundingRate),
+  openInterest: _decimalFromWire(value.openInterest),
+  circulatingSupply: _decimalFromWire(value.circulatingSupply),
+  totalSupply: _decimalFromWire(value.totalSupply),
+  rawJson: value.rawJson,
+);
+wire.WireHyperliquidAssetContextEvent _hyperliquidAssetContextEventToWire(
+  HyperliquidAssetContextEvent value,
+) => wire.WireHyperliquidAssetContextEvent(
+  common: _tickerToWire(value.common),
+  coin: value.coin,
+  midPrice: value.midPrice?.toString(),
+  markPrice: value.markPrice?.toString(),
+  previousDayPrice: value.previousDayPrice?.toString(),
+  dayBaseVolume: value.dayBaseVolume?.toString(),
+  dayNotionalVolume: value.dayNotionalVolume?.toString(),
+  oraclePrice: value.oraclePrice?.toString(),
+  fundingRate: value.fundingRate?.toString(),
+  openInterest: value.openInterest?.toString(),
+  circulatingSupply: value.circulatingSupply?.toString(),
+  totalSupply: value.totalSupply?.toString(),
+  rawJson: value.rawJson,
+);
+
+HyperliquidOrderUpdate _hyperliquidOrderUpdateFromWire(
+  wire.WireHyperliquidOrderUpdate value,
+) => HyperliquidOrderUpdate(
+  common: _orderFromWire(value.common),
+  coin: value.coin,
+  side: value.side,
+  limitPrice: Decimal.parse(value.limitPrice),
+  remainingSize: Decimal.parse(value.remainingSize),
+  originalSize: Decimal.parse(value.originalSize),
+  orderId: value.orderId,
+  acceptedAt: _timestampFromWire(value.acceptedAtNs)!,
+  clientOrderId: value.clientOrderId,
+  status: value.status,
+  statusAt: _timestampFromWire(value.statusAtNs),
+  rawJson: value.rawJson,
+);
+wire.WireHyperliquidOrderUpdate _hyperliquidOrderUpdateToWire(
+  HyperliquidOrderUpdate value,
+) => wire.WireHyperliquidOrderUpdate(
+  common: _orderToWire(value.common),
+  coin: value.coin,
+  side: value.side,
+  limitPrice: value.limitPrice.toString(),
+  remainingSize: value.remainingSize.toString(),
+  originalSize: value.originalSize.toString(),
+  orderId: value.orderId,
+  acceptedAtNs: _timestampToWire(value.acceptedAt),
+  clientOrderId: value.clientOrderId,
+  status: value.status,
+  statusAtNs: _optionalTimestampToWire(value.statusAt),
+  rawJson: value.rawJson,
+);
+
+HyperliquidSpotStateBalance _hyperliquidSpotStateBalanceFromWire(
+  wire.WireHyperliquidSpotStateBalance value,
+) => HyperliquidSpotStateBalance(
+  common: _balanceFromWire(value.common),
+  provider: _hyperliquidSpotBalanceFromWire(value.provider),
+);
+wire.WireHyperliquidSpotStateBalance _hyperliquidSpotStateBalanceToWire(
+  HyperliquidSpotStateBalance value,
+) => wire.WireHyperliquidSpotStateBalance(
+  common: _balanceToWire(value.common),
+  provider: _hyperliquidSpotBalanceToWire(value.provider),
+);
+
+HyperliquidSpotStateEvent _hyperliquidSpotStateEventFromWire(
+  wire.WireHyperliquidSpotStateEvent value,
+) => HyperliquidSpotStateEvent(
+  user: value.user,
+  balances: value.balances
+      .map(_hyperliquidSpotStateBalanceFromWire)
+      .toList(growable: false),
+  rawJson: value.rawJson,
+);
+wire.WireHyperliquidSpotStateEvent _hyperliquidSpotStateEventToWire(
+  HyperliquidSpotStateEvent value,
+) => wire.WireHyperliquidSpotStateEvent(
+  user: value.user,
+  balances: value.balances
+      .map(_hyperliquidSpotStateBalanceToWire)
+      .toList(growable: false),
+  rawJson: value.rawJson,
+);
+
+HyperliquidMarketEvent _hyperliquidMarketEventFromWire(
+  wire.WireHyperliquidMarketEvent value,
+) => switch (value) {
+  wire.WireHyperliquidMarketEvent_Trade(:final field0) =>
+    HyperliquidMarketEvent.trade(_hyperliquidTradeEventFromWire(field0)),
+  wire.WireHyperliquidMarketEvent_OrderBook(:final field0) =>
+    HyperliquidMarketEvent.orderBook(
+      _hyperliquidOrderBookEventFromWire(field0),
+    ),
+  wire.WireHyperliquidMarketEvent_AssetContext(:final field0) =>
+    HyperliquidMarketEvent.assetContext(
+      _hyperliquidAssetContextEventFromWire(field0),
+    ),
+  wire.WireHyperliquidMarketEvent_Candle(:final field0) =>
+    HyperliquidMarketEvent.candle(_hyperliquidCandleEventFromWire(field0)),
+  wire.WireHyperliquidMarketEvent_Reconnected() =>
+    const HyperliquidMarketEvent.reconnected(),
+};
+
+wire.WireHyperliquidMarketEvent _hyperliquidMarketEventToWire(
+  HyperliquidMarketEvent value,
+) => switch (value) {
+  HyperliquidMarketEventTrade(:final value) =>
+    wire.WireHyperliquidMarketEvent.trade(_hyperliquidTradeEventToWire(value)),
+  HyperliquidMarketEventOrderBook(:final value) =>
+    wire.WireHyperliquidMarketEvent.orderBook(
+      _hyperliquidOrderBookEventToWire(value),
+    ),
+  HyperliquidMarketEventAssetContext(:final value) =>
+    wire.WireHyperliquidMarketEvent.assetContext(
+      _hyperliquidAssetContextEventToWire(value),
+    ),
+  HyperliquidMarketEventCandle(:final value) =>
+    wire.WireHyperliquidMarketEvent.candle(
+      _hyperliquidCandleEventToWire(value),
+    ),
+  HyperliquidMarketEventReconnected() =>
+    const wire.WireHyperliquidMarketEvent.reconnected(),
+};
+
+HyperliquidAccountEvent _hyperliquidAccountEventFromWire(
+  wire.WireHyperliquidAccountEvent value,
+) => switch (value) {
+  wire.WireHyperliquidAccountEvent_OrderUpdate(:final field0) =>
+    HyperliquidAccountEvent.orderUpdate(
+      _hyperliquidOrderUpdateFromWire(field0),
+    ),
+  wire.WireHyperliquidAccountEvent_SpotState(:final field0) =>
+    HyperliquidAccountEvent.spotState(
+      _hyperliquidSpotStateEventFromWire(field0),
+    ),
+  wire.WireHyperliquidAccountEvent_Reconnected() =>
+    const HyperliquidAccountEvent.reconnected(),
+};
+
+wire.WireHyperliquidAccountEvent _hyperliquidAccountEventToWire(
+  HyperliquidAccountEvent value,
+) => switch (value) {
+  HyperliquidAccountEventOrderUpdate(:final value) =>
+    wire.WireHyperliquidAccountEvent.orderUpdate(
+      _hyperliquidOrderUpdateToWire(value),
+    ),
+  HyperliquidAccountEventSpotState(:final value) =>
+    wire.WireHyperliquidAccountEvent.spotState(
+      _hyperliquidSpotStateEventToWire(value),
+    ),
+  HyperliquidAccountEventReconnected() =>
+    const wire.WireHyperliquidAccountEvent.reconnected(),
+};
+
 HyperliquidFundingHistoryEntry _hyperliquidFundingHistoryEntryFromWire(
   wire.WireHyperliquidFundingHistoryEntry value,
 ) => HyperliquidFundingHistoryEntry(

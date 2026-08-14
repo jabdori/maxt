@@ -492,6 +492,18 @@ export function accountStreamItemFromWire(value: Wire.AccountStreamItemWire): St
     : new StreamEvent(accountEventFromWire(value.event));
 }
 
+export function hyperliquidMarketStreamItemFromWire(value: Wire.HyperliquidMarketStreamItemWire): StreamItem<Model.HyperliquidMarketEvent> {
+  return value.kind === "error"
+    ? new StreamError(errorFromWire(value.error))
+    : new StreamEvent(hyperliquidMarketEventFromWire(value.event));
+}
+
+export function hyperliquidAccountStreamItemFromWire(value: Wire.HyperliquidAccountStreamItemWire): StreamItem<Model.HyperliquidAccountEvent> {
+  return value.kind === "error"
+    ? new StreamError(errorFromWire(value.error))
+    : new StreamEvent(hyperliquidAccountEventFromWire(value.event));
+}
+
 export function pageFromWire<T, W>(value: Wire.PageWire<W>, decode: (wire: W) => T): Model.Page<T> {
   return new Model.Page(value.items.map(decode), value.next === null ? null : new Model.Cursor(value.next));
 }

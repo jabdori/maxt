@@ -7,7 +7,10 @@ use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll};
 
 use futures_core::Stream;
-use maxt::{AccountEvent, AccountStream, MarketEvent, MarketStream, Result};
+use maxt::{
+    AccountEvent, AccountStream, HyperliquidAccountEvent, HyperliquidAccountStream,
+    HyperliquidMarketEvent, HyperliquidMarketStream, MarketEvent, MarketStream, Result,
+};
 use pyo3::exceptions::{PyRuntimeError, PyStopAsyncIteration};
 use pyo3::prelude::*;
 use pyo3::types::{PyAnyMethods, PyDict};
@@ -437,6 +440,128 @@ pub(crate) struct NativeAccountStream {
     state: Arc<NativeStreamState<AccountStream>>,
 }
 
+#[pyclass(module = "maxt._native")]
+pub(crate) struct NativeHyperliquidMarketStream {
+    state: Arc<NativeStreamState<HyperliquidMarketStream>>,
+}
+
+impl NativeHyperliquidMarketStream {
+    fn new(stream: HyperliquidMarketStream) -> Self {
+        Self {
+            state: Arc::new(NativeStreamState::new(stream)),
+        }
+    }
+}
+
+#[pymethods]
+impl NativeHyperliquidMarketStream {
+    fn __aiter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+        slf
+    }
+
+    fn __anext__<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let state = Arc::clone(&self.state);
+        pyo3_async_runtimes::tokio::future_into_py(py, async move {
+            let item = {
+                let mut guard = state.inner.lock().await;
+                if state.closed.load(Ordering::Acquire) {
+                    return Err(PyStopAsyncIteration::new_err(()));
+                }
+                let Some(stream) = guard.as_mut() else {
+                    return Err(PyStopAsyncIteration::new_err(()));
+                };
+                let polled = tokio::select! {
+                    biased;
+                    _ = state.close.notified() => StreamPoll::Closed,
+                    item = poll_fn(|cx| Pin::new(&mut *stream).poll_next(cx)) => StreamPoll::Item(item),
+                };
+                match polled {
+                    StreamPoll::Closed => None,
+                    StreamPoll::Item(_) if state.closed.load(Ordering::Acquire) => None,
+                    StreamPoll::Item(Some(item)) => Some(item),
+                    StreamPoll::Item(None) => {
+                        state.closed.store(true, Ordering::Release);
+                        None
+                    }
+                }
+            };
+            match item {
+                Some(item) => Python::attach(|py| hyperliquid_market_item_to_wire(py, item)),
+                None => Err(PyStopAsyncIteration::new_err(())),
+            }
+        })
+    }
+
+    fn aclose<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let state = Arc::clone(&self.state);
+        pyo3_async_runtimes::tokio::future_into_py(py, async move {
+            state.close().await.map_err(crate::convert::core_error)?;
+            Ok(())
+        })
+    }
+}
+
+#[pyclass(module = "maxt._native")]
+pub(crate) struct NativeHyperliquidAccountStream {
+    state: Arc<NativeStreamState<HyperliquidAccountStream>>,
+}
+
+impl NativeHyperliquidAccountStream {
+    fn new(stream: HyperliquidAccountStream) -> Self {
+        Self {
+            state: Arc::new(NativeStreamState::new(stream)),
+        }
+    }
+}
+
+#[pymethods]
+impl NativeHyperliquidAccountStream {
+    fn __aiter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+        slf
+    }
+
+    fn __anext__<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let state = Arc::clone(&self.state);
+        pyo3_async_runtimes::tokio::future_into_py(py, async move {
+            let item = {
+                let mut guard = state.inner.lock().await;
+                if state.closed.load(Ordering::Acquire) {
+                    return Err(PyStopAsyncIteration::new_err(()));
+                }
+                let Some(stream) = guard.as_mut() else {
+                    return Err(PyStopAsyncIteration::new_err(()));
+                };
+                let polled = tokio::select! {
+                    biased;
+                    _ = state.close.notified() => StreamPoll::Closed,
+                    item = poll_fn(|cx| Pin::new(&mut *stream).poll_next(cx)) => StreamPoll::Item(item),
+                };
+                match polled {
+                    StreamPoll::Closed => None,
+                    StreamPoll::Item(_) if state.closed.load(Ordering::Acquire) => None,
+                    StreamPoll::Item(Some(item)) => Some(item),
+                    StreamPoll::Item(None) => {
+                        state.closed.store(true, Ordering::Release);
+                        None
+                    }
+                }
+            };
+            match item {
+                Some(item) => Python::attach(|py| hyperliquid_account_item_to_wire(py, item)),
+                None => Err(PyStopAsyncIteration::new_err(())),
+            }
+        })
+    }
+
+    fn aclose<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let state = Arc::clone(&self.state);
+        pyo3_async_runtimes::tokio::future_into_py(py, async move {
+            state.close().await.map_err(crate::convert::core_error)?;
+            Ok(())
+        })
+    }
+}
+
 impl NativeAccountStream {
     fn new(stream: AccountStream) -> Self {
         Self {
@@ -537,6 +662,34 @@ impl NativeStreamState<AccountStream> {
     }
 }
 
+impl NativeStreamState<HyperliquidMarketStream> {
+    async fn close(&self) -> Result<()> {
+        self.closed.store(true, Ordering::Release);
+        self.close.notify_one();
+        let mut guard = self.inner.lock().await;
+        let result = match guard.as_mut() {
+            Some(stream) => stream.close().await,
+            None => Ok(()),
+        };
+        guard.take();
+        result
+    }
+}
+
+impl NativeStreamState<HyperliquidAccountStream> {
+    async fn close(&self) -> Result<()> {
+        self.closed.store(true, Ordering::Release);
+        self.close.notify_one();
+        let mut guard = self.inner.lock().await;
+        let result = match guard.as_mut() {
+            Some(stream) => stream.close().await,
+            None => Ok(()),
+        };
+        guard.take();
+        result
+    }
+}
+
 pub(crate) fn market_stream<'py>(
     py: Python<'py>,
     stream: MarketStream,
@@ -549,6 +702,20 @@ pub(crate) fn account_stream<'py>(
     stream: AccountStream,
 ) -> PyResult<Bound<'py, PyAny>> {
     Bound::new(py, NativeAccountStream::new(stream)).map(Bound::into_any)
+}
+
+pub(crate) fn hyperliquid_market_stream<'py>(
+    py: Python<'py>,
+    stream: HyperliquidMarketStream,
+) -> PyResult<Bound<'py, PyAny>> {
+    Bound::new(py, NativeHyperliquidMarketStream::new(stream)).map(Bound::into_any)
+}
+
+pub(crate) fn hyperliquid_account_stream<'py>(
+    py: Python<'py>,
+    stream: HyperliquidAccountStream,
+) -> PyResult<Bound<'py, PyAny>> {
+    Bound::new(py, NativeHyperliquidAccountStream::new(stream)).map(Bound::into_any)
 }
 
 fn market_item_to_wire(py: Python<'_>, item: Result<MarketEvent>) -> PyResult<Py<PyAny>> {
@@ -583,10 +750,43 @@ fn account_item_to_wire(py: Python<'_>, item: Result<AccountEvent>) -> PyResult<
     }
 }
 
+fn hyperliquid_market_item_to_wire(
+    py: Python<'_>,
+    item: Result<HyperliquidMarketEvent>,
+) -> PyResult<Py<PyAny>> {
+    match item {
+        Ok(event) => provider_stream_event_wire(
+            py,
+            crate::convert::hyperliquid_market_event_to_wire(py, &event)?,
+        ),
+        Err(error) => stream_error_wire(py, &error),
+    }
+}
+
+fn hyperliquid_account_item_to_wire(
+    py: Python<'_>,
+    item: Result<HyperliquidAccountEvent>,
+) -> PyResult<Py<PyAny>> {
+    match item {
+        Ok(event) => provider_stream_event_wire(
+            py,
+            crate::convert::hyperliquid_account_event_to_wire(py, &event)?,
+        ),
+        Err(error) => stream_error_wire(py, &error),
+    }
+}
+
 fn stream_event_wire(py: Python<'_>, kind: &str, value: Py<PyAny>) -> PyResult<Py<PyAny>> {
     let event = PyDict::new(py);
     event.set_item("kind", kind)?;
     event.set_item("value", value)?;
+    let item = PyDict::new(py);
+    item.set_item("kind", "event")?;
+    item.set_item("event", event)?;
+    Ok(item.into_any().unbind())
+}
+
+fn provider_stream_event_wire(py: Python<'_>, event: Py<PyAny>) -> PyResult<Py<PyAny>> {
     let item = PyDict::new(py);
     item.set_item("kind", "event")?;
     item.set_item("event", event)?;

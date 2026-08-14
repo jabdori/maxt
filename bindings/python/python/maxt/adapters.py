@@ -4,7 +4,15 @@ from decimal import Decimal
 from importlib import import_module
 from typing import Any, Awaitable, Callable, Optional, TypeVar, Union
 
-from ._api import AccountStream, Adapter, MarketStream, StreamError, StreamEvent
+from ._api import (
+    AccountStream,
+    Adapter,
+    HyperliquidAccountStream,
+    HyperliquidMarketStream,
+    MarketStream,
+    StreamError,
+    StreamEvent,
+)
 from ._generated_delegate import _GeneratedNativeClientDelegateApi
 from .models import (
     AccountEvent,
@@ -65,6 +73,7 @@ from .models import (
     FundingPayment,
     FundingRate,
     HyperliquidAssetContext,
+    HyperliquidAccountEvent,
     HyperliquidCandleSnapshot,
     HyperliquidL2Book,
     HyperliquidRecentTrade,
@@ -75,6 +84,7 @@ from .models import (
     HyperliquidSpotMetaAndAssetContexts,
     HyperliquidLedgerEntry,
     HyperliquidMidPrice,
+    HyperliquidMarketEvent,
     HyperliquidOpenOrder,
     HyperliquidOrderInfo,
     HyperliquidOrderReference,
@@ -173,6 +183,14 @@ def _decode_account_event(value: dict[str, Any]) -> AccountEvent:
     )
 
 
+def _decode_hyperliquid_market_event(value: dict[str, Any]) -> HyperliquidMarketEvent:
+    return _model_from_wire("HyperliquidMarketEvent", value)
+
+
+def _decode_hyperliquid_account_event(value: dict[str, Any]) -> HyperliquidAccountEvent:
+    return _model_from_wire("HyperliquidAccountEvent", value)
+
+
 def _decode_stream_item(value: dict[str, Any], *, account: bool) -> Any:
     if value["kind"] == "error":
         return StreamError(_api_module()._error_from_wire(value["error"]))
@@ -193,16 +211,28 @@ def _public_native_error(native: Any, error: Exception) -> Optional[Exception]:
 
 
 class _DecodedStream:
-    def __init__(self, source: Any, *, account: bool, native: Any) -> None:
+    def __init__(
+        self,
+        source: Any,
+        *,
+        account: bool,
+        native: Any,
+        decode: Optional[Callable[[dict[str, Any]], Any]] = None,
+    ) -> None:
         self._source = source.__aiter__()
         self._account = account
         self._native_module = native
+        self._decode = decode
 
     def __aiter__(self) -> _DecodedStream:
         return self
 
     async def __anext__(self) -> Any:
         value = await self._source.__anext__()
+        if self._decode is not None:
+            if value["kind"] == "error":
+                return StreamError(_api_module()._error_from_wire(value["error"]))
+            return StreamEvent(self._decode(value["event"]))
         return _decode_stream_item(value, account=self._account)
 
     async def aclose(self) -> None:
@@ -251,6 +281,26 @@ class _NativeClientDelegate(_GeneratedNativeClientDelegateApi, Adapter):
     ) -> AccountStream[Union[StreamEvent[AccountEvent], StreamError]]:
         return AccountStream(
             _DecodedStream(source, account=True, native=self._native_module)
+        )
+
+    def _hyperliquid_market_stream(self, source: Any) -> HyperliquidMarketStream:
+        return HyperliquidMarketStream(
+            _DecodedStream(
+                source,
+                account=False,
+                native=self._native_module,
+                decode=_decode_hyperliquid_market_event,
+            )
+        )
+
+    def _hyperliquid_account_stream(self, source: Any) -> HyperliquidAccountStream:
+        return HyperliquidAccountStream(
+            _DecodedStream(
+                source,
+                account=True,
+                native=self._native_module,
+                decode=_decode_hyperliquid_account_event,
+            )
         )
 
 
@@ -970,6 +1020,39 @@ class HyperliquidAdapter(_NativeAdapter):
     async def all_mids(self) -> list[HyperliquidMidPrice]:
         values = await self._call(self._handle.all_mids)
         return [HyperliquidMidPrice.from_wire(value) for value in values]
+
+    async def subscribe_detailed(
+        self,
+        subscription: Subscription,
+    ) -> HyperliquidMarketStream:
+        source = await self._call(self._handle.subscribe_detailed, subscription.to_wire())
+        return self._hyperliquid_market_stream(source)
+
+    async def subscribe_detailed_with(
+        self,
+        subscription: Subscription,
+        config: StreamConfig,
+    ) -> HyperliquidMarketStream:
+        source = await self._call(
+            self._handle.subscribe_detailed_with,
+            subscription.to_wire(),
+            config.to_wire(),
+        )
+        return self._hyperliquid_market_stream(source)
+
+    async def subscribe_detailed_account(self) -> HyperliquidAccountStream:
+        source = await self._call(self._handle.subscribe_detailed_account)
+        return self._hyperliquid_account_stream(source)
+
+    async def subscribe_detailed_account_with(
+        self,
+        config: StreamConfig,
+    ) -> HyperliquidAccountStream:
+        source = await self._call(
+            self._handle.subscribe_detailed_account_with,
+            config.to_wire(),
+        )
+        return self._hyperliquid_account_stream(source)
 
     async def basic_open_orders(self) -> list[HyperliquidOpenOrder]:
         values = await self._call(self._handle.basic_open_orders)

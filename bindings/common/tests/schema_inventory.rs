@@ -557,7 +557,7 @@ fn upbit_closed_orders_schema_matches_the_core_types() {
 #[test]
 fn binance_spot_average_price_schema_matches_the_core_type() {
     let schema = binding_schema();
-    assert_eq!(schema.native_api_version, 29);
+    assert_eq!(schema.native_api_version, 30);
 
     let record = schema
         .records
@@ -763,6 +763,91 @@ fn hyperliquid_order_schema_matches_the_core_types() {
             .filter(|variant| variant.name != "other")
             .map(|variant| snake_to_pascal(variant.name))
             .collect::<Vec<_>>(),
+    );
+}
+
+#[test]
+fn hyperliquid_detailed_stream_schema_matches_the_core_types() {
+    let schema = binding_schema();
+    let source = include_str!("../../../src/adapters/hyperliquid/native.rs");
+
+    for name in [
+        "HyperliquidTradeEvent",
+        "HyperliquidOrderBookEvent",
+        "HyperliquidCandleEvent",
+        "HyperliquidAssetContextEvent",
+        "HyperliquidOrderUpdate",
+        "HyperliquidSpotStateBalance",
+        "HyperliquidSpotStateEvent",
+    ] {
+        let record = schema
+            .records
+            .iter()
+            .find(|record| record.name == format!("{name}Wire"))
+            .unwrap();
+        assert_eq!(
+            public_type_fields(source, name),
+            record
+                .fields
+                .iter()
+                .map(|field| field.name.to_owned())
+                .collect::<Vec<_>>(),
+            "{name} fields differ",
+        );
+    }
+
+    for name in ["HyperliquidMarketEvent", "HyperliquidAccountEvent"] {
+        let union = schema
+            .unions
+            .iter()
+            .find(|union| union.name == format!("{name}Wire"))
+            .unwrap();
+        assert_eq!(
+            enum_variants(source, name),
+            union
+                .variants
+                .iter()
+                .map(|variant| snake_to_pascal(variant.name))
+                .collect::<Vec<_>>(),
+            "{name} variants differ",
+        );
+    }
+
+    let provider = schema
+        .providers
+        .iter()
+        .find(|provider| provider.exchange == "hyperliquid")
+        .unwrap();
+    let methods = provider
+        .methods
+        .iter()
+        .filter(|method| method.rust_name.starts_with("subscribe_detailed"))
+        .map(|method| (method.rust_name, method.name, method.result))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        methods,
+        vec![
+            (
+                "subscribe_detailed",
+                "subscribeDetailed",
+                ApiType::ProviderMarketStream("HyperliquidMarketEvent"),
+            ),
+            (
+                "subscribe_detailed_with",
+                "subscribeDetailedWith",
+                ApiType::ProviderMarketStream("HyperliquidMarketEvent"),
+            ),
+            (
+                "subscribe_detailed_account",
+                "subscribeDetailedAccount",
+                ApiType::ProviderAccountStream("HyperliquidAccountEvent"),
+            ),
+            (
+                "subscribe_detailed_account_with",
+                "subscribeDetailedAccountWith",
+                ApiType::ProviderAccountStream("HyperliquidAccountEvent"),
+            ),
+        ],
     );
 }
 

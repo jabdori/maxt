@@ -1261,6 +1261,56 @@ RECORD_FIELDS = {
         "users": "list:string",
         "raw_json": "string",
     },
+    "HyperliquidTradeEvent": {
+        "common": "named:Trade",
+        "provider": "named:HyperliquidRecentTrade",
+    },
+    "HyperliquidOrderBookEvent": {
+        "common": "named:OrderBook",
+        "provider": "named:HyperliquidL2Book",
+    },
+    "HyperliquidCandleEvent": {
+        "common": "named:Candle",
+        "provider": "named:HyperliquidCandleSnapshot",
+    },
+    "HyperliquidAssetContextEvent": {
+        "common": "named:Ticker",
+        "coin": "string",
+        "mid_price": "optional:decimal",
+        "mark_price": "optional:decimal",
+        "previous_day_price": "optional:decimal",
+        "day_base_volume": "optional:decimal",
+        "day_notional_volume": "optional:decimal",
+        "oracle_price": "optional:decimal",
+        "funding_rate": "optional:decimal",
+        "open_interest": "optional:decimal",
+        "circulating_supply": "optional:decimal",
+        "total_supply": "optional:decimal",
+        "raw_json": "string",
+    },
+    "HyperliquidOrderUpdate": {
+        "common": "named:Order",
+        "coin": "string",
+        "side": "string",
+        "limit_price": "decimal",
+        "remaining_size": "decimal",
+        "original_size": "decimal",
+        "order_id": "unsigned_integer",
+        "accepted_at": "timestamp",
+        "client_order_id": "optional:string",
+        "status": "string",
+        "status_at": "optional:timestamp",
+        "raw_json": "string",
+    },
+    "HyperliquidSpotStateBalance": {
+        "common": "named:Balance",
+        "provider": "named:HyperliquidSpotBalance",
+    },
+    "HyperliquidSpotStateEvent": {
+        "user": "string",
+        "balances": "list:named:HyperliquidSpotStateBalance",
+        "raw_json": "string",
+    },
     "HyperliquidFundingHistoryEntry": {
         "coin": "string",
         "market": "named:Market",
@@ -1622,6 +1672,32 @@ UNION_FIELDS = {
             "interval": "identifier:Interval",
         },
     },
+    "HyperliquidMarketEvent": {
+        "trade": {
+            "value": "named:HyperliquidTradeEvent",
+        },
+        "order_book": {
+            "value": "named:HyperliquidOrderBookEvent",
+        },
+        "asset_context": {
+            "value": "named:HyperliquidAssetContextEvent",
+        },
+        "candle": {
+            "value": "named:HyperliquidCandleEvent",
+        },
+        "reconnected": {
+        },
+    },
+    "HyperliquidAccountEvent": {
+        "order_update": {
+            "value": "named:HyperliquidOrderUpdate",
+        },
+        "spot_state": {
+            "value": "named:HyperliquidSpotStateEvent",
+        },
+        "reconnected": {
+        },
+    },
     "MarketEvent": {
         "trade": {
             "trade": "named:Trade",
@@ -1659,6 +1735,22 @@ UNION_FIELDS = {
     "AccountStreamItem": {
         "event": {
             "event": "named:AccountEvent",
+        },
+        "error": {
+            "error": "named:Error",
+        },
+    },
+    "HyperliquidMarketStreamItem": {
+        "event": {
+            "event": "named:HyperliquidMarketEvent",
+        },
+        "error": {
+            "error": "named:Error",
+        },
+    },
+    "HyperliquidAccountStreamItem": {
+        "event": {
+            "event": "named:HyperliquidAccountEvent",
         },
         "error": {
             "error": "named:Error",

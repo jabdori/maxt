@@ -3326,7 +3326,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe"],
+            provider: &["subscribe_detailed"],
+        },
         Validation::LiveRead,
     ),
     operation(
@@ -3338,7 +3341,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe"],
+            provider: &["subscribe_detailed"],
+        },
         Validation::LiveRead,
     ),
     operation(
@@ -3350,7 +3356,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe"],
+            provider: &["subscribe_detailed"],
+        },
         Validation::LiveRead,
     ),
     operation(
@@ -3362,7 +3371,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe"],
+            provider: &["subscribe_detailed"],
+        },
         Validation::LiveRead,
     ),
     operation(
@@ -3374,7 +3386,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe_account"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe_account"],
+            provider: &["subscribe_detailed_account"],
+        },
         Validation::Fixture,
     ),
     operation(
@@ -3386,7 +3401,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe_account"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe_account"],
+            provider: &["subscribe_detailed_account"],
+        },
         Validation::Fixture,
     ),
 ];

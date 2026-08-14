@@ -313,7 +313,11 @@ impl NativeUpbitAdapter {
             py,
             async move { adapter.withdrawal_addresses().await },
             |py, values| {
-                list_to_wire(py, &values, crate::convert::upbit_withdrawal_address_to_wire)
+                list_to_wire(
+                    py,
+                    &values,
+                    crate::convert::upbit_withdrawal_address_to_wire,
+                )
             },
         )
     }
@@ -945,7 +949,11 @@ impl NativeBinanceAdapter {
             py,
             async move { adapter.all_coins_information().await },
             |py, values| {
-                list_to_wire(py, &values, crate::convert::binance_coin_information_to_wire)
+                list_to_wire(
+                    py,
+                    &values,
+                    crate::convert::binance_coin_information_to_wire,
+                )
             },
         )
     }
@@ -988,7 +996,11 @@ impl NativeBinanceAdapter {
             py,
             async move { adapter.withdraw_address_list().await },
             |py, values| {
-                list_to_wire(py, &values, crate::convert::binance_withdrawal_address_to_wire)
+                list_to_wire(
+                    py,
+                    &values,
+                    crate::convert::binance_withdrawal_address_to_wire,
+                )
             },
         )
     }
@@ -1253,7 +1265,11 @@ impl NativeHyperliquidAdapter {
             py,
             async move { adapter.candle_snapshot(&market, &interval, from, to).await },
             |py, values| {
-                list_to_wire(py, &values, crate::convert::hyperliquid_candle_snapshot_to_wire)
+                list_to_wire(
+                    py,
+                    &values,
+                    crate::convert::hyperliquid_candle_snapshot_to_wire,
+                )
             },
         )
     }
@@ -1283,7 +1299,11 @@ impl NativeHyperliquidAdapter {
             py,
             async move { adapter.recent_trades(&market).await },
             |py, values| {
-                list_to_wire(py, &values, crate::convert::hyperliquid_recent_trade_to_wire)
+                list_to_wire(
+                    py,
+                    &values,
+                    crate::convert::hyperliquid_recent_trade_to_wire,
+                )
             },
         )
     }
@@ -1327,7 +1347,11 @@ impl NativeHyperliquidAdapter {
             py,
             async move { adapter.user_funding(from, to).await },
             |py, values| {
-                list_to_wire(py, &values, crate::convert::hyperliquid_user_funding_to_wire)
+                list_to_wire(
+                    py,
+                    &values,
+                    crate::convert::hyperliquid_user_funding_to_wire,
+                )
             },
         )
     }
@@ -1343,17 +1367,12 @@ impl NativeHyperliquidAdapter {
 
     fn spot_meta<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let adapter = Arc::clone(&self.inner);
-        operation(
-            py,
-            async move { adapter.spot_meta().await },
-            |py, value| crate::convert::hyperliquid_spot_meta_to_wire(py, &value),
-        )
+        operation(py, async move { adapter.spot_meta().await }, |py, value| {
+            crate::convert::hyperliquid_spot_meta_to_wire(py, &value)
+        })
     }
 
-    fn spot_meta_and_asset_contexts<'py>(
-        &self,
-        py: Python<'py>,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn spot_meta_and_asset_contexts<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let adapter = Arc::clone(&self.inner);
         operation(
             py,
@@ -1369,6 +1388,63 @@ impl NativeHyperliquidAdapter {
         operation(py, async move { adapter.all_mids().await }, |py, values| {
             list_to_wire(py, &values, hyperliquid_mid_price_to_wire)
         })
+    }
+
+    fn subscribe_detailed<'py>(
+        &self,
+        py: Python<'py>,
+        subscription: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let subscription = crate::convert::subscription_from_wire(subscription)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.subscribe_detailed(&subscription).await },
+            |py, stream| crate::stream::hyperliquid_market_stream(py, stream).map(Bound::unbind),
+        )
+    }
+
+    fn subscribe_detailed_with<'py>(
+        &self,
+        py: Python<'py>,
+        subscription: &Bound<'_, PyAny>,
+        config: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let subscription = crate::convert::subscription_from_wire(subscription)?;
+        let config = crate::convert::stream_config_from_wire(config)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move {
+                adapter
+                    .subscribe_detailed_with(&subscription, &config)
+                    .await
+            },
+            |py, stream| crate::stream::hyperliquid_market_stream(py, stream).map(Bound::unbind),
+        )
+    }
+
+    fn subscribe_detailed_account<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.subscribe_detailed_account().await },
+            |py, stream| crate::stream::hyperliquid_account_stream(py, stream).map(Bound::unbind),
+        )
+    }
+
+    fn subscribe_detailed_account_with<'py>(
+        &self,
+        py: Python<'py>,
+        config: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let config = crate::convert::stream_config_from_wire(config)?;
+        let adapter = Arc::clone(&self.inner);
+        operation(
+            py,
+            async move { adapter.subscribe_detailed_account_with(&config).await },
+            |py, stream| crate::stream::hyperliquid_account_stream(py, stream).map(Bound::unbind),
+        )
     }
 
     fn basic_open_orders<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {

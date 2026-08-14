@@ -408,7 +408,7 @@ impl<A: Adapter> Client<A> {
     }
 }
 
-fn default_stream_config() -> StreamConfig {
+pub(crate) fn default_stream_config() -> StreamConfig {
     #[cfg(target_arch = "wasm32")]
     {
         StreamConfig {

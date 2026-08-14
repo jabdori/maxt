@@ -2416,6 +2416,68 @@ export class HyperliquidRecentTrade {
   }
 }
 
+/** A Hyperliquid trade update with its portable projection and native fields. */
+export class HyperliquidTradeEvent {
+  constructor(readonly common: Trade, readonly provider: HyperliquidRecentTrade) {
+    freezeRecord(this);
+  }
+}
+
+/** A Hyperliquid L2-book update with per-level native order counts. */
+export class HyperliquidOrderBookEvent {
+  constructor(readonly common: OrderBook, readonly provider: HyperliquidL2Book) {
+    freezeRecord(this);
+  }
+}
+
+/** A Hyperliquid candle update with its native trade count. */
+export class HyperliquidCandleEvent {
+  constructor(readonly common: Candle, readonly provider: HyperliquidCandleSnapshot) {
+    freezeRecord(this);
+  }
+}
+
+/** A Hyperliquid active-asset context update. */
+export class HyperliquidAssetContextEvent {
+  constructor(
+    readonly common: Ticker,
+    readonly coin: string,
+    readonly midPrice: Decimal | null,
+    readonly markPrice: Decimal | null,
+    readonly previousDayPrice: Decimal | null,
+    readonly dayBaseVolume: Decimal | null,
+    readonly dayNotionalVolume: Decimal | null,
+    readonly oraclePrice: Decimal | null,
+    readonly fundingRate: Decimal | null,
+    readonly openInterest: Decimal | null,
+    readonly circulatingSupply: Decimal | null,
+    readonly totalSupply: Decimal | null,
+    readonly rawJson: string,
+  ) { freezeRecord(this); }
+}
+
+/** A Hyperliquid order-status update with provider lifecycle fields. */
+export class HyperliquidOrderUpdate {
+  readonly orderId: bigint;
+  constructor(
+    readonly common: Order,
+    readonly coin: string,
+    readonly side: string,
+    readonly limitPrice: Decimal,
+    readonly remainingSize: Decimal,
+    readonly originalSize: Decimal,
+    orderId: bigint,
+    readonly acceptedAt: Timestamp,
+    readonly clientOrderId: string | null,
+    readonly status: string,
+    readonly statusAt: Timestamp | null,
+    readonly rawJson: string,
+  ) {
+    this.orderId = checkedU64(orderId, "orderId");
+    freezeRecord(this);
+  }
+}
+
 export class HyperliquidFundingHistoryEntry {
   constructor(
     readonly coin: string,
@@ -2460,6 +2522,38 @@ export class HyperliquidSpotBalance {
     freezeRecord(this);
   }
 }
+
+/** One balance from a Hyperliquid `spotState` update. */
+export class HyperliquidSpotStateBalance {
+  constructor(readonly common: Balance, readonly provider: HyperliquidSpotBalance) {
+    freezeRecord(this);
+  }
+}
+
+/** A Hyperliquid `spotState` account update. */
+export class HyperliquidSpotStateEvent {
+  readonly balances: readonly HyperliquidSpotStateBalance[];
+  constructor(
+    readonly user: string,
+    balances: readonly HyperliquidSpotStateBalance[],
+    readonly rawJson: string,
+  ) {
+    this.balances = Object.freeze([...balances]);
+    freezeRecord(this);
+  }
+}
+
+export type HyperliquidMarketEvent =
+  | { readonly kind: "trade"; readonly value: HyperliquidTradeEvent }
+  | { readonly kind: "order_book"; readonly value: HyperliquidOrderBookEvent }
+  | { readonly kind: "asset_context"; readonly value: HyperliquidAssetContextEvent }
+  | { readonly kind: "candle"; readonly value: HyperliquidCandleEvent }
+  | { readonly kind: "reconnected" };
+
+export type HyperliquidAccountEvent =
+  | { readonly kind: "order_update"; readonly value: HyperliquidOrderUpdate }
+  | { readonly kind: "spot_state"; readonly value: HyperliquidSpotStateEvent }
+  | { readonly kind: "reconnected" };
 
 export class HyperliquidSpotClearinghouseState {
   readonly balances: readonly HyperliquidSpotBalance[];

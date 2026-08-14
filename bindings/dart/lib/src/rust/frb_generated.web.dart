@@ -45,6 +45,14 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
       .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient;
 
   CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_NativeHyperliquidAccountSubscriptionPtr =>
+      wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_NativeHyperliquidMarketSubscriptionPtr =>
+      wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription;
+
+  CrossPlatformFinalizerArg
   get rust_arc_decrement_strong_count_NativeMarketSubscriptionPtr => wire
       .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeMarketSubscription;
 
@@ -86,6 +94,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  NativeHyperliquidAccountSubscription
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+    dynamic raw,
+  );
+
+  @protected
+  NativeHyperliquidMarketSubscription
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
+    dynamic raw,
+  );
+
+  @protected
   NativeMarketSubscription
   dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeMarketSubscription(
     dynamic raw,
@@ -118,6 +138,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   NativeClient
   dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
+    dynamic raw,
+  );
+
+  @protected
+  NativeHyperliquidAccountSubscription
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+    dynamic raw,
+  );
+
+  @protected
+  NativeHyperliquidMarketSubscription
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
     dynamic raw,
   );
 
@@ -169,6 +201,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   NativeClient
   dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
+    dynamic raw,
+  );
+
+  @protected
+  NativeHyperliquidAccountSubscription
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+    dynamic raw,
+  );
+
+  @protected
+  NativeHyperliquidMarketSubscription
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
     dynamic raw,
   );
 
@@ -407,8 +451,28 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireHistoryRequest dco_decode_box_autoadd_wire_history_request(dynamic raw);
 
   @protected
+  WireHyperliquidAccountEvent
+  dco_decode_box_autoadd_wire_hyperliquid_account_event(dynamic raw);
+
+  @protected
+  WireHyperliquidAssetContextEvent
+  dco_decode_box_autoadd_wire_hyperliquid_asset_context_event(dynamic raw);
+
+  @protected
+  WireHyperliquidCandleEvent
+  dco_decode_box_autoadd_wire_hyperliquid_candle_event(dynamic raw);
+
+  @protected
   WireHyperliquidEvmContract
   dco_decode_box_autoadd_wire_hyperliquid_evm_contract(dynamic raw);
+
+  @protected
+  WireHyperliquidMarketEvent
+  dco_decode_box_autoadd_wire_hyperliquid_market_event(dynamic raw);
+
+  @protected
+  WireHyperliquidOrderBookEvent
+  dco_decode_box_autoadd_wire_hyperliquid_order_book_event(dynamic raw);
 
   @protected
   WireHyperliquidOrderInfo dco_decode_box_autoadd_wire_hyperliquid_order_info(
@@ -420,7 +484,20 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   dco_decode_box_autoadd_wire_hyperliquid_order_reference(dynamic raw);
 
   @protected
+  WireHyperliquidOrderUpdate
+  dco_decode_box_autoadd_wire_hyperliquid_order_update(dynamic raw);
+
+  @protected
   WireHyperliquidReferrer dco_decode_box_autoadd_wire_hyperliquid_referrer(
+    dynamic raw,
+  );
+
+  @protected
+  WireHyperliquidSpotStateEvent
+  dco_decode_box_autoadd_wire_hyperliquid_spot_state_event(dynamic raw);
+
+  @protected
+  WireHyperliquidTradeEvent dco_decode_box_autoadd_wire_hyperliquid_trade_event(
     dynamic raw,
   );
 
@@ -833,6 +910,10 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   List<WireHyperliquidSpotPair> dco_decode_list_wire_hyperliquid_spot_pair(
     dynamic raw,
   );
+
+  @protected
+  List<WireHyperliquidSpotStateBalance>
+  dco_decode_list_wire_hyperliquid_spot_state_balance(dynamic raw);
 
   @protected
   List<WireHyperliquidSpotToken> dco_decode_list_wire_hyperliquid_spot_token(
@@ -1526,12 +1607,30 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireHistoryRequest dco_decode_wire_history_request(dynamic raw);
 
   @protected
+  WireHyperliquidAccountEvent dco_decode_wire_hyperliquid_account_event(
+    dynamic raw,
+  );
+
+  @protected
+  WireHyperliquidAccountStreamItem
+  dco_decode_wire_hyperliquid_account_stream_item(dynamic raw);
+
+  @protected
   WireHyperliquidAssetContext dco_decode_wire_hyperliquid_asset_context(
     dynamic raw,
   );
 
   @protected
+  WireHyperliquidAssetContextEvent
+  dco_decode_wire_hyperliquid_asset_context_event(dynamic raw);
+
+  @protected
   WireHyperliquidBookLevel dco_decode_wire_hyperliquid_book_level(dynamic raw);
+
+  @protected
+  WireHyperliquidCandleEvent dco_decode_wire_hyperliquid_candle_event(
+    dynamic raw,
+  );
 
   @protected
   WireHyperliquidCandleSnapshot dco_decode_wire_hyperliquid_candle_snapshot(
@@ -1571,10 +1670,24 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireHyperliquidMarketEvent dco_decode_wire_hyperliquid_market_event(
+    dynamic raw,
+  );
+
+  @protected
+  WireHyperliquidMarketStreamItem
+  dco_decode_wire_hyperliquid_market_stream_item(dynamic raw);
+
+  @protected
   WireHyperliquidMidPrice dco_decode_wire_hyperliquid_mid_price(dynamic raw);
 
   @protected
   WireHyperliquidOpenOrder dco_decode_wire_hyperliquid_open_order(dynamic raw);
+
+  @protected
+  WireHyperliquidOrderBookEvent dco_decode_wire_hyperliquid_order_book_event(
+    dynamic raw,
+  );
 
   @protected
   WireHyperliquidOrderDetail dco_decode_wire_hyperliquid_order_detail(
@@ -1592,6 +1705,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   WireHyperliquidOrderStatusResponse
   dco_decode_wire_hyperliquid_order_status_response(dynamic raw);
+
+  @protected
+  WireHyperliquidOrderUpdate dco_decode_wire_hyperliquid_order_update(
+    dynamic raw,
+  );
 
   @protected
   WireHyperliquidPortfolioPeriod dco_decode_wire_hyperliquid_portfolio_period(
@@ -1638,10 +1756,24 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireHyperliquidSpotPair dco_decode_wire_hyperliquid_spot_pair(dynamic raw);
 
   @protected
+  WireHyperliquidSpotStateBalance
+  dco_decode_wire_hyperliquid_spot_state_balance(dynamic raw);
+
+  @protected
+  WireHyperliquidSpotStateEvent dco_decode_wire_hyperliquid_spot_state_event(
+    dynamic raw,
+  );
+
+  @protected
   WireHyperliquidSpotToken dco_decode_wire_hyperliquid_spot_token(dynamic raw);
 
   @protected
   WireHyperliquidSubAccount dco_decode_wire_hyperliquid_sub_account(
+    dynamic raw,
+  );
+
+  @protected
+  WireHyperliquidTradeEvent dco_decode_wire_hyperliquid_trade_event(
     dynamic raw,
   );
 
@@ -2016,6 +2148,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  NativeHyperliquidAccountSubscription
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  NativeHyperliquidMarketSubscription
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   NativeMarketSubscription
   sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeMarketSubscription(
     SseDeserializer deserializer,
@@ -2048,6 +2192,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   NativeClient
   sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  NativeHyperliquidAccountSubscription
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  NativeHyperliquidMarketSubscription
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
     SseDeserializer deserializer,
   );
 
@@ -2093,6 +2249,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   NativeClient
   sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  NativeHyperliquidAccountSubscription
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  NativeHyperliquidMarketSubscription
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
     SseDeserializer deserializer,
   );
 
@@ -2395,8 +2563,38 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireHyperliquidAccountEvent
+  sse_decode_box_autoadd_wire_hyperliquid_account_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireHyperliquidAssetContextEvent
+  sse_decode_box_autoadd_wire_hyperliquid_asset_context_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireHyperliquidCandleEvent
+  sse_decode_box_autoadd_wire_hyperliquid_candle_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireHyperliquidEvmContract
   sse_decode_box_autoadd_wire_hyperliquid_evm_contract(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireHyperliquidMarketEvent
+  sse_decode_box_autoadd_wire_hyperliquid_market_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireHyperliquidOrderBookEvent
+  sse_decode_box_autoadd_wire_hyperliquid_order_book_event(
     SseDeserializer deserializer,
   );
 
@@ -2412,7 +2610,24 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireHyperliquidOrderUpdate
+  sse_decode_box_autoadd_wire_hyperliquid_order_update(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireHyperliquidReferrer sse_decode_box_autoadd_wire_hyperliquid_referrer(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireHyperliquidSpotStateEvent
+  sse_decode_box_autoadd_wire_hyperliquid_spot_state_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireHyperliquidTradeEvent sse_decode_box_autoadd_wire_hyperliquid_trade_event(
     SseDeserializer deserializer,
   );
 
@@ -2929,6 +3144,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   List<WireHyperliquidSpotPair> sse_decode_list_wire_hyperliquid_spot_pair(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<WireHyperliquidSpotStateBalance>
+  sse_decode_list_wire_hyperliquid_spot_state_balance(
     SseDeserializer deserializer,
   );
 
@@ -3790,12 +4011,30 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireHyperliquidAccountEvent sse_decode_wire_hyperliquid_account_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireHyperliquidAccountStreamItem
+  sse_decode_wire_hyperliquid_account_stream_item(SseDeserializer deserializer);
+
+  @protected
   WireHyperliquidAssetContext sse_decode_wire_hyperliquid_asset_context(
     SseDeserializer deserializer,
   );
 
   @protected
+  WireHyperliquidAssetContextEvent
+  sse_decode_wire_hyperliquid_asset_context_event(SseDeserializer deserializer);
+
+  @protected
   WireHyperliquidBookLevel sse_decode_wire_hyperliquid_book_level(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireHyperliquidCandleEvent sse_decode_wire_hyperliquid_candle_event(
     SseDeserializer deserializer,
   );
 
@@ -3841,12 +4080,26 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireHyperliquidMarketEvent sse_decode_wire_hyperliquid_market_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireHyperliquidMarketStreamItem
+  sse_decode_wire_hyperliquid_market_stream_item(SseDeserializer deserializer);
+
+  @protected
   WireHyperliquidMidPrice sse_decode_wire_hyperliquid_mid_price(
     SseDeserializer deserializer,
   );
 
   @protected
   WireHyperliquidOpenOrder sse_decode_wire_hyperliquid_open_order(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireHyperliquidOrderBookEvent sse_decode_wire_hyperliquid_order_book_event(
     SseDeserializer deserializer,
   );
 
@@ -3868,6 +4121,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   WireHyperliquidOrderStatusResponse
   sse_decode_wire_hyperliquid_order_status_response(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireHyperliquidOrderUpdate sse_decode_wire_hyperliquid_order_update(
     SseDeserializer deserializer,
   );
 
@@ -3928,12 +4186,26 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireHyperliquidSpotStateBalance
+  sse_decode_wire_hyperliquid_spot_state_balance(SseDeserializer deserializer);
+
+  @protected
+  WireHyperliquidSpotStateEvent sse_decode_wire_hyperliquid_spot_state_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireHyperliquidSpotToken sse_decode_wire_hyperliquid_spot_token(
     SseDeserializer deserializer,
   );
 
   @protected
   WireHyperliquidSubAccount sse_decode_wire_hyperliquid_sub_account(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireHyperliquidTradeEvent sse_decode_wire_hyperliquid_trade_event(
     SseDeserializer deserializer,
   );
 
@@ -4383,6 +4655,20 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+    NativeHyperliquidAccountSubscription self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
+    NativeHyperliquidMarketSubscription self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
   sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeMarketSubscription(
     NativeMarketSubscription self,
     SseSerializer serializer,
@@ -4420,6 +4706,20 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   void
   sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
     NativeClient self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+    NativeHyperliquidAccountSubscription self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
+    NativeHyperliquidMarketSubscription self,
     SseSerializer serializer,
   );
 
@@ -4479,6 +4779,20 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   void
   sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
     NativeClient self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+    NativeHyperliquidAccountSubscription self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
+    NativeHyperliquidMarketSubscription self,
     SseSerializer serializer,
   );
 
@@ -4824,8 +5138,38 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_wire_hyperliquid_account_event(
+    WireHyperliquidAccountEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_hyperliquid_asset_context_event(
+    WireHyperliquidAssetContextEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_hyperliquid_candle_event(
+    WireHyperliquidCandleEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_wire_hyperliquid_evm_contract(
     WireHyperliquidEvmContract self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_hyperliquid_market_event(
+    WireHyperliquidMarketEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_hyperliquid_order_book_event(
+    WireHyperliquidOrderBookEvent self,
     SseSerializer serializer,
   );
 
@@ -4842,8 +5186,26 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_wire_hyperliquid_order_update(
+    WireHyperliquidOrderUpdate self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_wire_hyperliquid_referrer(
     WireHyperliquidReferrer self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_hyperliquid_spot_state_event(
+    WireHyperliquidSpotStateEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_hyperliquid_trade_event(
+    WireHyperliquidTradeEvent self,
     SseSerializer serializer,
   );
 
@@ -5465,6 +5827,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_list_wire_hyperliquid_spot_pair(
     List<WireHyperliquidSpotPair> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_wire_hyperliquid_spot_state_balance(
+    List<WireHyperliquidSpotStateBalance> self,
     SseSerializer serializer,
   );
 
@@ -6504,14 +6872,38 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_wire_hyperliquid_account_event(
+    WireHyperliquidAccountEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_hyperliquid_account_stream_item(
+    WireHyperliquidAccountStreamItem self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_hyperliquid_asset_context(
     WireHyperliquidAssetContext self,
     SseSerializer serializer,
   );
 
   @protected
+  void sse_encode_wire_hyperliquid_asset_context_event(
+    WireHyperliquidAssetContextEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_hyperliquid_book_level(
     WireHyperliquidBookLevel self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_hyperliquid_candle_event(
+    WireHyperliquidCandleEvent self,
     SseSerializer serializer,
   );
 
@@ -6564,6 +6956,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_wire_hyperliquid_market_event(
+    WireHyperliquidMarketEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_hyperliquid_market_stream_item(
+    WireHyperliquidMarketStreamItem self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_hyperliquid_mid_price(
     WireHyperliquidMidPrice self,
     SseSerializer serializer,
@@ -6572,6 +6976,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_hyperliquid_open_order(
     WireHyperliquidOpenOrder self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_hyperliquid_order_book_event(
+    WireHyperliquidOrderBookEvent self,
     SseSerializer serializer,
   );
 
@@ -6596,6 +7006,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_hyperliquid_order_status_response(
     WireHyperliquidOrderStatusResponse self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_hyperliquid_order_update(
+    WireHyperliquidOrderUpdate self,
     SseSerializer serializer,
   );
 
@@ -6666,6 +7082,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_wire_hyperliquid_spot_state_balance(
+    WireHyperliquidSpotStateBalance self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_hyperliquid_spot_state_event(
+    WireHyperliquidSpotStateEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_hyperliquid_spot_token(
     WireHyperliquidSpotToken self,
     SseSerializer serializer,
@@ -6674,6 +7102,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_hyperliquid_sub_account(
     WireHyperliquidSubAccount self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_hyperliquid_trade_event(
+    WireHyperliquidTradeEvent self,
     SseSerializer serializer,
   );
 
@@ -7286,6 +7720,38 @@ class MaxtRustLibWire implements BaseWire {
       );
 
   void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+        ptr,
+      );
+
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+        ptr,
+      );
+
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
+        ptr,
+      );
+
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
+        ptr,
+      );
+
+  void
   rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeMarketSubscription(
     int ptr,
   ) => wasmModule
@@ -7371,6 +7837,26 @@ extension type MaxtRustLibWasmModule._(JSObject _) implements JSObject {
 
   external void
   rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
+    int ptr,
+  );
+
+  external void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+    int ptr,
+  );
+
+  external void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+    int ptr,
+  );
+
+  external void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
+    int ptr,
+  );
+
+  external void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
     int ptr,
   );
 

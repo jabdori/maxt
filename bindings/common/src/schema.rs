@@ -106,6 +106,14 @@ pub enum ApiType {
     HandleToken(&'static str),
     MarketStream,
     AccountStream,
+    /// A provider-owned market stream with one named tagged event type.
+    ///
+    /// This is a schema marker, not a public cross-provider generic stream.
+    ProviderMarketStream(&'static str),
+    /// A provider-owned account stream with one named tagged event type.
+    ///
+    /// This is a schema marker, not a public cross-provider generic stream.
+    ProviderAccountStream(&'static str),
     Unit,
 }
 
@@ -1392,6 +1400,15 @@ const MODELS: &[&str] = &[
     "HyperliquidBookLevel",
     "HyperliquidL2Book",
     "HyperliquidRecentTrade",
+    "HyperliquidTradeEvent",
+    "HyperliquidOrderBookEvent",
+    "HyperliquidCandleEvent",
+    "HyperliquidAssetContextEvent",
+    "HyperliquidOrderUpdate",
+    "HyperliquidSpotStateBalance",
+    "HyperliquidSpotStateEvent",
+    "HyperliquidMarketEvent",
+    "HyperliquidAccountEvent",
     "HyperliquidFundingHistoryEntry",
     "HyperliquidUserFunding",
     "HyperliquidSpotBalance",
@@ -1569,6 +1586,15 @@ const HYPERLIQUID_ORDER_REFERENCE: &[Argument] = &[argument(
     ApiType::Named("HyperliquidOrderReference"),
     None,
 )];
+const HYPERLIQUID_DETAILED_SUBSCRIPTION: &[Argument] = &[argument(
+    "subscription",
+    ApiType::Named("Subscription"),
+    None,
+)];
+const HYPERLIQUID_DETAILED_SUBSCRIPTION_CONFIG: &[Argument] = &[
+    argument("subscription", ApiType::Named("Subscription"), None),
+    argument("config", ApiType::Named("StreamConfig"), None),
+];
 const ACCESS_KEY_CREDENTIALS: &[Argument] = &[
     argument("accessKey", ApiType::OptionalString, Some("null")),
     argument("secretKey", ApiType::OptionalString, Some("null")),
@@ -2223,6 +2249,34 @@ const HYPERLIQUID_METHODS: &[ProviderMethod] = &[
         kind: ProviderMethodKind::Async,
         arguments: &[],
         result: ApiType::List("HyperliquidMidPrice"),
+    },
+    ProviderMethod {
+        rust_name: "subscribe_detailed",
+        name: "subscribeDetailed",
+        kind: ProviderMethodKind::Async,
+        arguments: HYPERLIQUID_DETAILED_SUBSCRIPTION,
+        result: ApiType::ProviderMarketStream("HyperliquidMarketEvent"),
+    },
+    ProviderMethod {
+        rust_name: "subscribe_detailed_with",
+        name: "subscribeDetailedWith",
+        kind: ProviderMethodKind::Async,
+        arguments: HYPERLIQUID_DETAILED_SUBSCRIPTION_CONFIG,
+        result: ApiType::ProviderMarketStream("HyperliquidMarketEvent"),
+    },
+    ProviderMethod {
+        rust_name: "subscribe_detailed_account",
+        name: "subscribeDetailedAccount",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::ProviderAccountStream("HyperliquidAccountEvent"),
+    },
+    ProviderMethod {
+        rust_name: "subscribe_detailed_account_with",
+        name: "subscribeDetailedAccountWith",
+        kind: ProviderMethodKind::Async,
+        arguments: CONFIG,
+        result: ApiType::ProviderAccountStream("HyperliquidAccountEvent"),
     },
     ProviderMethod {
         rust_name: "user_fills",
@@ -4270,6 +4324,80 @@ pub fn binding_schema() -> Schema {
             ],
         ),
         record(
+            "HyperliquidTradeEventWire",
+            vec![
+                field("common", Type::named("TradeWire")),
+                field("provider", Type::named("HyperliquidRecentTradeWire")),
+            ],
+        ),
+        record(
+            "HyperliquidOrderBookEventWire",
+            vec![
+                field("common", Type::named("OrderBookWire")),
+                field("provider", Type::named("HyperliquidL2BookWire")),
+            ],
+        ),
+        record(
+            "HyperliquidCandleEventWire",
+            vec![
+                field("common", Type::named("CandleWire")),
+                field("provider", Type::named("HyperliquidCandleSnapshotWire")),
+            ],
+        ),
+        record(
+            "HyperliquidAssetContextEventWire",
+            vec![
+                field("common", Type::named("TickerWire")),
+                field("coin", Type::String),
+                field("mid_price", Type::optional(decimal.clone())),
+                field("mark_price", Type::optional(decimal.clone())),
+                field("previous_day_price", Type::optional(decimal.clone())),
+                field("day_base_volume", Type::optional(decimal.clone())),
+                field("day_notional_volume", Type::optional(decimal.clone())),
+                field("oracle_price", Type::optional(decimal.clone())),
+                field("funding_rate", Type::optional(decimal.clone())),
+                field("open_interest", Type::optional(decimal.clone())),
+                field("circulating_supply", Type::optional(decimal.clone())),
+                field("total_supply", Type::optional(decimal.clone())),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "HyperliquidOrderUpdateWire",
+            vec![
+                field("common", Type::named("OrderWire")),
+                field("coin", Type::String),
+                field("side", Type::String),
+                field("limit_price", decimal.clone()),
+                field("remaining_size", decimal.clone()),
+                field("original_size", decimal.clone()),
+                field("order_id", Type::UnsignedInteger),
+                field("accepted_at", timestamp.clone()),
+                field("client_order_id", Type::optional(Type::String)),
+                field("status", Type::String),
+                field("status_at", Type::optional(timestamp.clone())),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "HyperliquidSpotStateBalanceWire",
+            vec![
+                field("common", Type::named("BalanceWire")),
+                field("provider", Type::named("HyperliquidSpotBalanceWire")),
+            ],
+        ),
+        record(
+            "HyperliquidSpotStateEventWire",
+            vec![
+                field("user", Type::String),
+                field(
+                    "balances",
+                    Type::list(Type::named("HyperliquidSpotStateBalanceWire")),
+                ),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
             "HyperliquidFundingHistoryEntryWire",
             vec![
                 field("coin", Type::String),
@@ -4795,6 +4923,47 @@ pub fn binding_schema() -> Schema {
             ],
         },
         TaggedUnion {
+            name: "HyperliquidMarketEventWire",
+            type_parameters: &[],
+            variants: vec![
+                variant(
+                    "trade",
+                    vec![field("value", Type::named("HyperliquidTradeEventWire"))],
+                ),
+                variant(
+                    "order_book",
+                    vec![field("value", Type::named("HyperliquidOrderBookEventWire"))],
+                ),
+                variant(
+                    "asset_context",
+                    vec![field(
+                        "value",
+                        Type::named("HyperliquidAssetContextEventWire"),
+                    )],
+                ),
+                variant(
+                    "candle",
+                    vec![field("value", Type::named("HyperliquidCandleEventWire"))],
+                ),
+                variant("reconnected", vec![]),
+            ],
+        },
+        TaggedUnion {
+            name: "HyperliquidAccountEventWire",
+            type_parameters: &[],
+            variants: vec![
+                variant(
+                    "order_update",
+                    vec![field("value", Type::named("HyperliquidOrderUpdateWire"))],
+                ),
+                variant(
+                    "spot_state",
+                    vec![field("value", Type::named("HyperliquidSpotStateEventWire"))],
+                ),
+                variant("reconnected", vec![]),
+            ],
+        },
+        TaggedUnion {
             name: "MarketEventWire",
             type_parameters: &[],
             variants: vec![
@@ -4838,6 +5007,28 @@ pub fn binding_schema() -> Schema {
                 variant(
                     "event",
                     vec![field("event", Type::named("AccountEventWire"))],
+                ),
+                variant("error", vec![field("error", Type::named("ErrorWire"))]),
+            ],
+        },
+        TaggedUnion {
+            name: "HyperliquidMarketStreamItemWire",
+            type_parameters: &[],
+            variants: vec![
+                variant(
+                    "event",
+                    vec![field("event", Type::named("HyperliquidMarketEventWire"))],
+                ),
+                variant("error", vec![field("error", Type::named("ErrorWire"))]),
+            ],
+        },
+        TaggedUnion {
+            name: "HyperliquidAccountStreamItemWire",
+            type_parameters: &[],
+            variants: vec![
+                variant(
+                    "event",
+                    vec![field("event", Type::named("HyperliquidAccountEventWire"))],
                 ),
                 variant("error", vec![field("error", Type::named("ErrorWire"))]),
             ],
@@ -5147,7 +5338,7 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
-        native_api_version: 29,
+        native_api_version: 30,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
         identifiers: IDENTIFIERS,

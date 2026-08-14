@@ -27,12 +27,25 @@ const REVIEW_INPUT: &str = include_str!(concat!(
     "/catalog/audit/reviews.tsv"
 ));
 
-// 하나의 공식 operation이 여러 provider surface를 공급하는 명시적 감사 alias입니다.
-const PROVIDER_AUDIT_ALIASES: &[(Exchange, &str, &str)] = &[(
-    Exchange::Hyperliquid,
-    "user_non_funding_ledger_updates",
-    "non_funding_ledger",
-)];
+// 하나의 공식 operation이 여러 provider surface를 공급하거나 같은 구독의 설정
+// overload를 제공하는 명시적 감사 alias입니다.
+const PROVIDER_AUDIT_ALIASES: &[(Exchange, &str, &str)] = &[
+    (
+        Exchange::Hyperliquid,
+        "user_non_funding_ledger_updates",
+        "non_funding_ledger",
+    ),
+    (
+        Exchange::Hyperliquid,
+        "subscriptions",
+        "subscribe_detailed_with",
+    ),
+    (
+        Exchange::Hyperliquid,
+        "subscriptions",
+        "subscribe_detailed_account_with",
+    ),
+];
 
 #[derive(Clone, Copy)]
 struct Catalog {

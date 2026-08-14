@@ -156,3 +156,17 @@ final class AccountStream extends _CloseableStream<AccountEvent> {
   /// 일반 애플리케이션에서는 [Client.subscribeAccount]가 이 스트림을 반환합니다.
   AccountStream(super.source, {super.onClose});
 }
+
+/// Hyperliquid 원본 시장 필드를 함께 보존하는 단일 구독 스트림입니다.
+final class HyperliquidMarketStream
+    extends _CloseableStream<HyperliquidMarketEvent> {
+  /// 내부 Hyperliquid 이벤트 소스로 스트림을 만듭니다.
+  HyperliquidMarketStream(super.source, {super.onClose});
+}
+
+/// Hyperliquid 원본 계정 필드를 함께 보존하는 단일 구독 스트림입니다.
+final class HyperliquidAccountStream
+    extends _CloseableStream<HyperliquidAccountEvent> {
+  /// 내부 Hyperliquid 이벤트 소스로 스트림을 만듭니다.
+  HyperliquidAccountStream(super.source, {super.onClose});
+}

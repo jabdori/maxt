@@ -6,8 +6,12 @@ mod rest;
 mod sign;
 mod stream;
 
+use std::fmt;
+use std::pin::Pin;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::task::{Context, Poll};
 
+use futures_core::Stream;
 use futures_util::StreamExt;
 use rust_decimal::Decimal;
 use tokio::sync::{Mutex, OnceCell};
@@ -18,7 +22,7 @@ use crate::feature::Feature;
 use crate::request::{
     CandleRequest, HistoryRequest, MarginRequest, OrderRequest, TransferHistoryRequest,
 };
-use crate::stream::{AccountStream, MarketStream};
+use crate::stream::{AccountStream, MarketStream, TypedStream};
 use crate::transport::{HttpTransport, WsCommand, WsConnect, ws};
 use crate::types::{
     AccountEvent, Balance, Candle, Cursor, Deposit, Exchange, FundingPayment, FundingRate,
@@ -30,16 +34,19 @@ use parse::Universe;
 
 #[allow(unused_imports)]
 pub use native::{
-    HyperliquidAssetContext, HyperliquidBookLevel, HyperliquidCandleSnapshot,
+    HyperliquidAccountEvent, HyperliquidAssetContext, HyperliquidAssetContextEvent,
+    HyperliquidBookLevel, HyperliquidCandleEvent, HyperliquidCandleSnapshot,
     HyperliquidDailyVolume, HyperliquidEvmContract, HyperliquidFundingHistoryEntry,
-    HyperliquidL2Book, HyperliquidLedgerEntry, HyperliquidLedgerKind, HyperliquidOpenOrder,
-    HyperliquidOrderDetail, HyperliquidOrderInfo, HyperliquidOrderReference,
-    HyperliquidOrderStatusResponse, HyperliquidPortfolioPeriod, HyperliquidPortfolioPoint,
-    HyperliquidRecentTrade, HyperliquidReferral, HyperliquidReferrer, HyperliquidSpotAssetContext,
-    HyperliquidSpotBalance, HyperliquidSpotClearinghouseState, HyperliquidSpotMeta,
-    HyperliquidSpotMetaAndAssetContexts, HyperliquidSpotPair, HyperliquidSpotToken,
-    HyperliquidSubAccount, HyperliquidUserFees, HyperliquidUserFill, HyperliquidUserFunding,
-    HyperliquidUserRateLimit, HyperliquidUserRole, HyperliquidVaultEquity,
+    HyperliquidL2Book, HyperliquidLedgerEntry, HyperliquidLedgerKind, HyperliquidMarketEvent,
+    HyperliquidOpenOrder, HyperliquidOrderBookEvent, HyperliquidOrderDetail, HyperliquidOrderInfo,
+    HyperliquidOrderReference, HyperliquidOrderStatusResponse, HyperliquidOrderUpdate,
+    HyperliquidPortfolioPeriod, HyperliquidPortfolioPoint, HyperliquidRecentTrade,
+    HyperliquidReferral, HyperliquidReferrer, HyperliquidSpotAssetContext, HyperliquidSpotBalance,
+    HyperliquidSpotClearinghouseState, HyperliquidSpotMeta, HyperliquidSpotMetaAndAssetContexts,
+    HyperliquidSpotPair, HyperliquidSpotStateBalance, HyperliquidSpotStateEvent,
+    HyperliquidSpotToken, HyperliquidSubAccount, HyperliquidTradeEvent, HyperliquidUserFees,
+    HyperliquidUserFill, HyperliquidUserFunding, HyperliquidUserRateLimit, HyperliquidUserRole,
+    HyperliquidVaultEquity,
 };
 
 /// Hyperliquid's current mid price for one market.
@@ -89,6 +96,94 @@ pub struct HyperliquidAdapter {
     query_address: Option<String>,
     signer: Option<HyperliquidSigner>,
     connection: OnceCell<Connection>,
+}
+
+/// A full-fidelity Hyperliquid market subscription.
+///
+/// It yields [`HyperliquidMarketEvent`] values and uses the same connection,
+/// reconnect, buffering, and close rules as [`MarketStream`]. Use
+/// [`HyperliquidAdapter::subscribe_detailed`] to construct one.
+pub struct HyperliquidMarketStream {
+    inner: TypedStream<HyperliquidMarketEvent>,
+}
+
+impl HyperliquidMarketStream {
+    fn new_with_close<F, Fut>(
+        inner: impl Stream<Item = Result<HyperliquidMarketEvent>> + Send + 'static,
+        close: F,
+    ) -> Self
+    where
+        F: FnOnce() -> Fut + Send + 'static,
+        Fut: std::future::Future<Output = Result<()>> + Send + 'static,
+    {
+        Self {
+            inner: TypedStream::new_with_close(inner, close),
+        }
+    }
+
+    /// Stops this subscription and waits for the WebSocket to close.
+    pub async fn close(&mut self) -> Result<()> {
+        self.inner.close().await
+    }
+}
+
+impl Stream for HyperliquidMarketStream {
+    type Item = Result<HyperliquidMarketEvent>;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        Pin::new(&mut self.inner).poll_next(cx)
+    }
+}
+
+impl fmt::Debug for HyperliquidMarketStream {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("HyperliquidMarketStream")
+            .finish_non_exhaustive()
+    }
+}
+
+/// A full-fidelity Hyperliquid account subscription.
+///
+/// It yields [`HyperliquidAccountEvent`] values and uses the same connection,
+/// reconnect, buffering, and close rules as [`AccountStream`]. Use
+/// [`HyperliquidAdapter::subscribe_detailed_account`] to construct one.
+pub struct HyperliquidAccountStream {
+    inner: TypedStream<HyperliquidAccountEvent>,
+}
+
+impl HyperliquidAccountStream {
+    fn new_with_close<F, Fut>(
+        inner: impl Stream<Item = Result<HyperliquidAccountEvent>> + Send + 'static,
+        close: F,
+    ) -> Self
+    where
+        F: FnOnce() -> Fut + Send + 'static,
+        Fut: std::future::Future<Output = Result<()>> + Send + 'static,
+    {
+        Self {
+            inner: TypedStream::new_with_close(inner, close),
+        }
+    }
+
+    /// Stops this subscription and waits for the WebSocket to close.
+    pub async fn close(&mut self) -> Result<()> {
+        self.inner.close().await
+    }
+}
+
+impl Stream for HyperliquidAccountStream {
+    type Item = Result<HyperliquidAccountEvent>;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        Pin::new(&mut self.inner).poll_next(cx)
+    }
+}
+
+impl fmt::Debug for HyperliquidAccountStream {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("HyperliquidAccountStream")
+            .finish_non_exhaustive()
+    }
 }
 
 /// Lazily initialized HTTP transport and cached `meta`/`spotMeta` symbol table.
@@ -560,6 +655,87 @@ impl HyperliquidAdapter {
         rest::all_mids(&connection.http, &connection.universe).await
     }
 
+    /// Opens a full-fidelity market subscription with default connection settings.
+    ///
+    /// The returned events retain the documented Hyperliquid fields that the
+    /// portable [`MarketStream`] deliberately omits. Use
+    /// [`Self::subscribe_detailed_with`] to set reconnect and buffering rules.
+    pub async fn subscribe_detailed(
+        &self,
+        subscription: &Subscription,
+    ) -> Result<HyperliquidMarketStream> {
+        self.subscribe_detailed_with(subscription, &crate::client::default_stream_config())
+            .await
+    }
+
+    /// Opens a full-fidelity market subscription with explicit connection settings.
+    pub async fn subscribe_detailed_with(
+        &self,
+        subscription: &Subscription,
+        config: &StreamConfig,
+    ) -> Result<HyperliquidMarketStream> {
+        let connection = self.connect().await?;
+        let frames = stream::subscribe_frames(subscription, &connection.universe)?;
+        let session = ws::connect(
+            WsConnect {
+                url: self.websocket_url().to_string(),
+                headers: None,
+                subscribe: WsConnect::fixed(frames),
+                heartbeat: Some(stream::HEARTBEAT),
+            },
+            config,
+        )
+        .await?;
+        let close = session.close_handle();
+        let universe = connection.universe.clone();
+        let mut decoder = stream::DetailedDecoder::default();
+
+        Ok(HyperliquidMarketStream::new_with_close(
+            session.flat_map(move |command| {
+                futures_util::stream::iter(detailed_market_events(command, &universe, &mut decoder))
+            }),
+            move || async move { close.close().await },
+        ))
+    }
+
+    /// Opens a full-fidelity account subscription with default connection settings.
+    ///
+    /// This public account read needs a configured query address, but no local
+    /// signature. Use [`Self::subscribe_detailed_account_with`] to set
+    /// reconnect and buffering rules.
+    pub async fn subscribe_detailed_account(&self) -> Result<HyperliquidAccountStream> {
+        self.subscribe_detailed_account_with(&crate::client::default_stream_config())
+            .await
+    }
+
+    /// Opens a full-fidelity account subscription with explicit connection settings.
+    pub async fn subscribe_detailed_account_with(
+        &self,
+        config: &StreamConfig,
+    ) -> Result<HyperliquidAccountStream> {
+        let user = self.query_address()?;
+        let connection = self.connect().await?;
+        let session = ws::connect(
+            WsConnect {
+                url: self.websocket_url().to_string(),
+                headers: None,
+                subscribe: WsConnect::fixed(stream::account_subscribe_frames(&user)),
+                heartbeat: Some(stream::HEARTBEAT),
+            },
+            config,
+        )
+        .await?;
+        let close = session.close_handle();
+        let universe = connection.universe.clone();
+
+        Ok(HyperliquidAccountStream::new_with_close(
+            session.flat_map(move |command| {
+                futures_util::stream::iter(detailed_account_events(command, &universe))
+            }),
+            move || async move { close.close().await },
+        ))
+    }
+
     /// Initializes the HTTP client and symbol table once.
     async fn connect(&self) -> Result<&Connection> {
         self.connection
@@ -954,6 +1130,52 @@ fn account_events(command: Result<WsCommand>, universe: &Universe) -> Vec<Result
     }
 }
 
+/// Decodes one connection event into full-fidelity provider market events.
+fn detailed_market_events(
+    command: Result<WsCommand>,
+    universe: &Universe,
+    decoder: &mut stream::DetailedDecoder,
+) -> Vec<Result<HyperliquidMarketEvent>> {
+    let text = match command {
+        Ok(WsCommand::Text(text)) => text,
+        Ok(WsCommand::Binary(bytes)) => match String::from_utf8(bytes) {
+            Ok(text) => text,
+            Err(err) => return vec![Err(Error::decode(format!("frame is not UTF-8: {err}")))],
+        },
+        Ok(WsCommand::Reconnected) => {
+            decoder.reconnected();
+            return vec![Ok(HyperliquidMarketEvent::Reconnected)];
+        }
+        Err(err) => return vec![Err(err)],
+    };
+
+    match decoder.decode(&text, universe, Timestamp::now()) {
+        Ok(events) => events.into_iter().map(Ok).collect(),
+        Err(err) => vec![Err(err)],
+    }
+}
+
+/// Decodes one private connection event into full-fidelity provider account events.
+fn detailed_account_events(
+    command: Result<WsCommand>,
+    universe: &Universe,
+) -> Vec<Result<HyperliquidAccountEvent>> {
+    let text = match command {
+        Ok(WsCommand::Text(text)) => text,
+        Ok(WsCommand::Binary(bytes)) => match String::from_utf8(bytes) {
+            Ok(text) => text,
+            Err(err) => return vec![Err(Error::decode(format!("frame is not UTF-8: {err}")))],
+        },
+        Ok(WsCommand::Reconnected) => return vec![Ok(HyperliquidAccountEvent::Reconnected)],
+        Err(err) => return vec![Err(err)],
+    };
+
+    match stream::decode_detailed_account(&text, universe) {
+        Ok(events) => events.into_iter().map(Ok).collect(),
+        Err(err) => vec![Err(err)],
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1009,6 +1231,43 @@ mod tests {
         };
         assert!(settled.closed);
         assert_eq!(settled.open_time, Timestamp::from_millis(WINDOW_TWO_MS));
+    }
+
+    #[test]
+    fn detailed_reconnect_clears_native_candle_state_and_reports_the_gap() {
+        const WINDOW_ONE_MS: i64 = 1_785_397_500_000;
+        const WINDOW_TWO_MS: i64 = 1_785_397_560_000;
+
+        let universe = universe();
+        let mut decoder = stream::DetailedDecoder::default();
+        let text = |frame: String| Ok(WsCommand::Text(frame));
+
+        let events =
+            detailed_market_events(text(candle_frame(WINDOW_ONE_MS)), &universe, &mut decoder);
+        assert_eq!(events.len(), 1);
+
+        let events = detailed_market_events(Ok(WsCommand::Reconnected), &universe, &mut decoder);
+        assert!(matches!(
+            events.as_slice(),
+            [Ok(HyperliquidMarketEvent::Reconnected)]
+        ));
+
+        let events =
+            detailed_market_events(text(candle_frame(WINDOW_TWO_MS)), &universe, &mut decoder);
+        let [Ok(HyperliquidMarketEvent::Candle(forming))] = events.as_slice() else {
+            panic!("expected only the post-reconnect forming candle: {events:?}");
+        };
+        assert!(!forming.common.closed);
+        assert_eq!(
+            forming.common.open_time,
+            Timestamp::from_millis(WINDOW_TWO_MS)
+        );
+
+        let events = detailed_account_events(Ok(WsCommand::Reconnected), &universe);
+        assert!(matches!(
+            events.as_slice(),
+            [Ok(HyperliquidAccountEvent::Reconnected)]
+        ));
     }
 
     #[test]

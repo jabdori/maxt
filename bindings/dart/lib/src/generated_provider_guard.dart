@@ -132,6 +132,15 @@ void _generatedProviderGuard({
   HyperliquidAdapter.testnet();
   hyperliquid.isTestnet;
   hyperliquid.allMids();
+  hyperliquid.subscribeDetailed(_generatedProviderValue<Subscription>());
+  hyperliquid.subscribeDetailedWith(
+    _generatedProviderValue<Subscription>(),
+    _generatedProviderValue<StreamConfig>(),
+  );
+  hyperliquid.subscribeDetailedAccount();
+  hyperliquid.subscribeDetailedAccountWith(
+    _generatedProviderValue<StreamConfig>(),
+  );
   hyperliquid.userFills(_generatedProviderValue<bool>());
   hyperliquid.userFillsByTime(
     _generatedProviderValue<Timestamp>(),

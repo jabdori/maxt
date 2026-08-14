@@ -3268,6 +3268,236 @@ export function hyperliquidRecentTradeToWire(value: Model.HyperliquidRecentTrade
   };
 }
 
+export function hyperliquidTradeEventFromWire(value: Wire.HyperliquidTradeEventWire): Model.HyperliquidTradeEvent {
+  return new Model.HyperliquidTradeEvent(tradeFromWire(value.common), hyperliquidRecentTradeFromWire(value.provider));
+}
+
+export function hyperliquidTradeEventToWire(value: Model.HyperliquidTradeEvent): Wire.HyperliquidTradeEventWire {
+  for (const key of Object.keys(value)) {
+    if (!["common", "provider"].includes(key)) {
+      throw new InvalidRequestError("hyperliquidTradeEvent." + key, "HyperliquidTradeEvent does not accept " + key);
+    }
+  }
+  return {
+    common: tradeToWire(value.common),
+    provider: hyperliquidRecentTradeToWire(value.provider),
+  };
+}
+
+export function hyperliquidOrderBookEventFromWire(value: Wire.HyperliquidOrderBookEventWire): Model.HyperliquidOrderBookEvent {
+  return new Model.HyperliquidOrderBookEvent(orderBookFromWire(value.common), hyperliquidL2BookFromWire(value.provider));
+}
+
+export function hyperliquidOrderBookEventToWire(value: Model.HyperliquidOrderBookEvent): Wire.HyperliquidOrderBookEventWire {
+  for (const key of Object.keys(value)) {
+    if (!["common", "provider"].includes(key)) {
+      throw new InvalidRequestError("hyperliquidOrderBookEvent." + key, "HyperliquidOrderBookEvent does not accept " + key);
+    }
+  }
+  return {
+    common: orderBookToWire(value.common),
+    provider: hyperliquidL2BookToWire(value.provider),
+  };
+}
+
+export function hyperliquidCandleEventFromWire(value: Wire.HyperliquidCandleEventWire): Model.HyperliquidCandleEvent {
+  return new Model.HyperliquidCandleEvent(candleFromWire(value.common), hyperliquidCandleSnapshotFromWire(value.provider));
+}
+
+export function hyperliquidCandleEventToWire(value: Model.HyperliquidCandleEvent): Wire.HyperliquidCandleEventWire {
+  for (const key of Object.keys(value)) {
+    if (!["common", "provider"].includes(key)) {
+      throw new InvalidRequestError("hyperliquidCandleEvent." + key, "HyperliquidCandleEvent does not accept " + key);
+    }
+  }
+  return {
+    common: candleToWire(value.common),
+    provider: hyperliquidCandleSnapshotToWire(value.provider),
+  };
+}
+
+export function hyperliquidAssetContextEventFromWire(value: Wire.HyperliquidAssetContextEventWire): Model.HyperliquidAssetContextEvent {
+  return new Model.HyperliquidAssetContextEvent(tickerFromWire(value.common), value.coin, value.mid_price === null ? null : Model.Decimal.parse(value.mid_price), value.mark_price === null ? null : Model.Decimal.parse(value.mark_price), value.previous_day_price === null ? null : Model.Decimal.parse(value.previous_day_price), value.day_base_volume === null ? null : Model.Decimal.parse(value.day_base_volume), value.day_notional_volume === null ? null : Model.Decimal.parse(value.day_notional_volume), value.oracle_price === null ? null : Model.Decimal.parse(value.oracle_price), value.funding_rate === null ? null : Model.Decimal.parse(value.funding_rate), value.open_interest === null ? null : Model.Decimal.parse(value.open_interest), value.circulating_supply === null ? null : Model.Decimal.parse(value.circulating_supply), value.total_supply === null ? null : Model.Decimal.parse(value.total_supply), value.raw_json);
+}
+
+export function hyperliquidAssetContextEventToWire(value: Model.HyperliquidAssetContextEvent): Wire.HyperliquidAssetContextEventWire {
+  for (const key of Object.keys(value)) {
+    if (!["common", "coin", "midPrice", "markPrice", "previousDayPrice", "dayBaseVolume", "dayNotionalVolume", "oraclePrice", "fundingRate", "openInterest", "circulatingSupply", "totalSupply", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("hyperliquidAssetContextEvent." + key, "HyperliquidAssetContextEvent does not accept " + key);
+    }
+  }
+  return {
+    common: tickerToWire(value.common),
+    coin: value.coin,
+    mid_price: value.midPrice === null ? null : value.midPrice.toString(),
+    mark_price: value.markPrice === null ? null : value.markPrice.toString(),
+    previous_day_price: value.previousDayPrice === null ? null : value.previousDayPrice.toString(),
+    day_base_volume: value.dayBaseVolume === null ? null : value.dayBaseVolume.toString(),
+    day_notional_volume: value.dayNotionalVolume === null ? null : value.dayNotionalVolume.toString(),
+    oracle_price: value.oraclePrice === null ? null : value.oraclePrice.toString(),
+    funding_rate: value.fundingRate === null ? null : value.fundingRate.toString(),
+    open_interest: value.openInterest === null ? null : value.openInterest.toString(),
+    circulating_supply: value.circulatingSupply === null ? null : value.circulatingSupply.toString(),
+    total_supply: value.totalSupply === null ? null : value.totalSupply.toString(),
+    raw_json: value.rawJson,
+  };
+}
+
+export function hyperliquidOrderUpdateFromWire(value: Wire.HyperliquidOrderUpdateWire): Model.HyperliquidOrderUpdate {
+  return new Model.HyperliquidOrderUpdate(orderFromWire(value.common), value.coin, value.side, Model.Decimal.parse(value.limit_price), Model.Decimal.parse(value.remaining_size), Model.Decimal.parse(value.original_size), unsignedInteger(value.order_id, "order_id"), Model.Timestamp.fromNanoseconds(BigInt(value.accepted_at)), value.client_order_id === null ? null : value.client_order_id, value.status, value.status_at === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.status_at)), value.raw_json);
+}
+
+export function hyperliquidOrderUpdateToWire(value: Model.HyperliquidOrderUpdate): Wire.HyperliquidOrderUpdateWire {
+  for (const key of Object.keys(value)) {
+    if (!["common", "coin", "side", "limitPrice", "remainingSize", "originalSize", "orderId", "acceptedAt", "clientOrderId", "status", "statusAt", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("hyperliquidOrderUpdate." + key, "HyperliquidOrderUpdate does not accept " + key);
+    }
+  }
+  return {
+    common: orderToWire(value.common),
+    coin: value.coin,
+    side: value.side,
+    limit_price: value.limitPrice.toString(),
+    remaining_size: value.remainingSize.toString(),
+    original_size: value.originalSize.toString(),
+    order_id: value.orderId.toString(),
+    accepted_at: value.acceptedAt.nanosecondsSinceEpoch.toString(),
+    client_order_id: value.clientOrderId === null ? null : value.clientOrderId,
+    status: value.status,
+    status_at: value.statusAt === null ? null : value.statusAt.nanosecondsSinceEpoch.toString(),
+    raw_json: value.rawJson,
+  };
+}
+
+export function hyperliquidSpotStateBalanceFromWire(value: Wire.HyperliquidSpotStateBalanceWire): Model.HyperliquidSpotStateBalance {
+  return new Model.HyperliquidSpotStateBalance(balanceFromWire(value.common), hyperliquidSpotBalanceFromWire(value.provider));
+}
+
+export function hyperliquidSpotStateBalanceToWire(value: Model.HyperliquidSpotStateBalance): Wire.HyperliquidSpotStateBalanceWire {
+  for (const key of Object.keys(value)) {
+    if (!["common", "provider"].includes(key)) {
+      throw new InvalidRequestError("hyperliquidSpotStateBalance." + key, "HyperliquidSpotStateBalance does not accept " + key);
+    }
+  }
+  return {
+    common: balanceToWire(value.common),
+    provider: hyperliquidSpotBalanceToWire(value.provider),
+  };
+}
+
+export function hyperliquidSpotStateEventFromWire(value: Wire.HyperliquidSpotStateEventWire): Model.HyperliquidSpotStateEvent {
+  return new Model.HyperliquidSpotStateEvent(value.user, value.balances.map((item) => hyperliquidSpotStateBalanceFromWire(item)), value.raw_json);
+}
+
+export function hyperliquidSpotStateEventToWire(value: Model.HyperliquidSpotStateEvent): Wire.HyperliquidSpotStateEventWire {
+  for (const key of Object.keys(value)) {
+    if (!["user", "balances", "rawJson"].includes(key)) {
+      throw new InvalidRequestError("hyperliquidSpotStateEvent." + key, "HyperliquidSpotStateEvent does not accept " + key);
+    }
+  }
+  return {
+    user: value.user,
+    balances: value.balances.map((item) => hyperliquidSpotStateBalanceToWire(item)),
+    raw_json: value.rawJson,
+  };
+}
+
+export function hyperliquidMarketEventFromWire(value: Wire.HyperliquidMarketEventWire): Model.HyperliquidMarketEvent {
+  switch (value.kind) {
+    case "trade": return Object.freeze({ kind: "trade", value: hyperliquidTradeEventFromWire(value.value) });
+    case "order_book": return Object.freeze({ kind: "order_book", value: hyperliquidOrderBookEventFromWire(value.value) });
+    case "asset_context": return Object.freeze({ kind: "asset_context", value: hyperliquidAssetContextEventFromWire(value.value) });
+    case "candle": return Object.freeze({ kind: "candle", value: hyperliquidCandleEventFromWire(value.value) });
+    case "reconnected": return Object.freeze({ kind: "reconnected" });
+  }
+  return assertNever(value);
+}
+
+export function hyperliquidMarketEventToWire(value: Model.HyperliquidMarketEvent): Wire.HyperliquidMarketEventWire {
+  switch (value.kind) {
+    case "trade": {
+      for (const key of Object.keys(value)) {
+        if (!["kind", "value"].includes(key)) {
+          throw new InvalidRequestError("hyperliquidMarketEvent." + key, "HyperliquidMarketEvent.trade does not accept " + key);
+        }
+      }
+      return { kind: "trade", value: hyperliquidTradeEventToWire(value.value) };
+    }
+    case "order_book": {
+      for (const key of Object.keys(value)) {
+        if (!["kind", "value"].includes(key)) {
+          throw new InvalidRequestError("hyperliquidMarketEvent." + key, "HyperliquidMarketEvent.order_book does not accept " + key);
+        }
+      }
+      return { kind: "order_book", value: hyperliquidOrderBookEventToWire(value.value) };
+    }
+    case "asset_context": {
+      for (const key of Object.keys(value)) {
+        if (!["kind", "value"].includes(key)) {
+          throw new InvalidRequestError("hyperliquidMarketEvent." + key, "HyperliquidMarketEvent.asset_context does not accept " + key);
+        }
+      }
+      return { kind: "asset_context", value: hyperliquidAssetContextEventToWire(value.value) };
+    }
+    case "candle": {
+      for (const key of Object.keys(value)) {
+        if (!["kind", "value"].includes(key)) {
+          throw new InvalidRequestError("hyperliquidMarketEvent." + key, "HyperliquidMarketEvent.candle does not accept " + key);
+        }
+      }
+      return { kind: "candle", value: hyperliquidCandleEventToWire(value.value) };
+    }
+    case "reconnected": {
+      for (const key of Object.keys(value)) {
+        if (!["kind"].includes(key)) {
+          throw new InvalidRequestError("hyperliquidMarketEvent." + key, "HyperliquidMarketEvent.reconnected does not accept " + key);
+        }
+      }
+      return { kind: "reconnected" };
+    }
+  }
+  return assertNever(value);
+}
+
+export function hyperliquidAccountEventFromWire(value: Wire.HyperliquidAccountEventWire): Model.HyperliquidAccountEvent {
+  switch (value.kind) {
+    case "order_update": return Object.freeze({ kind: "order_update", value: hyperliquidOrderUpdateFromWire(value.value) });
+    case "spot_state": return Object.freeze({ kind: "spot_state", value: hyperliquidSpotStateEventFromWire(value.value) });
+    case "reconnected": return Object.freeze({ kind: "reconnected" });
+  }
+  return assertNever(value);
+}
+
+export function hyperliquidAccountEventToWire(value: Model.HyperliquidAccountEvent): Wire.HyperliquidAccountEventWire {
+  switch (value.kind) {
+    case "order_update": {
+      for (const key of Object.keys(value)) {
+        if (!["kind", "value"].includes(key)) {
+          throw new InvalidRequestError("hyperliquidAccountEvent." + key, "HyperliquidAccountEvent.order_update does not accept " + key);
+        }
+      }
+      return { kind: "order_update", value: hyperliquidOrderUpdateToWire(value.value) };
+    }
+    case "spot_state": {
+      for (const key of Object.keys(value)) {
+        if (!["kind", "value"].includes(key)) {
+          throw new InvalidRequestError("hyperliquidAccountEvent." + key, "HyperliquidAccountEvent.spot_state does not accept " + key);
+        }
+      }
+      return { kind: "spot_state", value: hyperliquidSpotStateEventToWire(value.value) };
+    }
+    case "reconnected": {
+      for (const key of Object.keys(value)) {
+        if (!["kind"].includes(key)) {
+          throw new InvalidRequestError("hyperliquidAccountEvent." + key, "HyperliquidAccountEvent.reconnected does not accept " + key);
+        }
+      }
+      return { kind: "reconnected" };
+    }
+  }
+  return assertNever(value);
+}
+
 export function hyperliquidFundingHistoryEntryFromWire(value: Wire.HyperliquidFundingHistoryEntryWire): Model.HyperliquidFundingHistoryEntry {
   return new Model.HyperliquidFundingHistoryEntry(value.coin, marketFromWire(value.market), Model.Decimal.parse(value.funding_rate), value.premium === null ? null : Model.Decimal.parse(value.premium), Model.Timestamp.fromNanoseconds(BigInt(value.time)), value.raw_json);
 }
@@ -3977,6 +4207,18 @@ export function accountStreamItemFromWire(value: Wire.AccountStreamItemWire): St
   return value.kind === "error"
     ? new StreamError(errorFromWire(value.error))
     : new StreamEvent(accountEventFromWire(value.event));
+}
+
+export function hyperliquidMarketStreamItemFromWire(value: Wire.HyperliquidMarketStreamItemWire): StreamItem<Model.HyperliquidMarketEvent> {
+  return value.kind === "error"
+    ? new StreamError(errorFromWire(value.error))
+    : new StreamEvent(hyperliquidMarketEventFromWire(value.event));
+}
+
+export function hyperliquidAccountStreamItemFromWire(value: Wire.HyperliquidAccountStreamItemWire): StreamItem<Model.HyperliquidAccountEvent> {
+  return value.kind === "error"
+    ? new StreamError(errorFromWire(value.error))
+    : new StreamEvent(hyperliquidAccountEventFromWire(value.event));
 }
 
 export function pageFromWire<T, W>(value: Wire.PageWire<W>, decode: (wire: W) => T): Model.Page<T> {

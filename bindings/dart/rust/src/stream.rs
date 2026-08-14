@@ -10,11 +10,14 @@ use flutter_rust_bridge::{BaseAsyncRuntime, rust_async::RwLock};
 use futures_channel::oneshot;
 use futures_core::Stream;
 use maxt::{
-    AccountEvent, AccountStream, Error, MarketEvent, MarketStream, Overflow, Result, StreamConfig,
+    AccountEvent, AccountStream, Error, HyperliquidAccountEvent, HyperliquidAccountStream,
+    HyperliquidMarketEvent, HyperliquidMarketStream, MarketEvent, MarketStream, Overflow, Result,
+    StreamConfig,
 };
 
 use crate::convert::{
-    NativeError, WireBalance, WireCandle, WireOrder, WireOrderBook, WireTicker, WireTrade,
+    NativeError, WireBalance, WireCandle, WireHyperliquidAccountEvent, WireHyperliquidMarketEvent,
+    WireOrder, WireOrderBook, WireTicker, WireTrade,
 };
 
 const OPEN: u8 = 0;
@@ -91,6 +94,28 @@ pub enum WireAccountStreamItem {
     /// 스트림을 끝내지 않는 오류입니다.
     Error(NativeError),
     /// 계정 스트림의 자연 종료 또는 명시적 close를 나타냅니다.
+    End,
+}
+
+/// Hyperliquid 원본 시장 스트림의 event/error/end 항목입니다.
+#[derive(Debug)]
+pub enum WireHyperliquidMarketStreamItem {
+    /// 정상 Hyperliquid 시장 이벤트입니다.
+    Event(WireHyperliquidMarketEvent),
+    /// 스트림을 끝내지 않는 오류입니다.
+    Error(NativeError),
+    /// 자연 종료 또는 명시적 close를 나타냅니다.
+    End,
+}
+
+/// Hyperliquid 원본 계정 스트림의 event/error/end 항목입니다.
+#[derive(Debug)]
+pub enum WireHyperliquidAccountStreamItem {
+    /// 정상 Hyperliquid 계정 이벤트입니다.
+    Event(WireHyperliquidAccountEvent),
+    /// 스트림을 끝내지 않는 오류입니다.
+    Error(NativeError),
+    /// 자연 종료 또는 명시적 close를 나타냅니다.
     End,
 }
 
@@ -261,6 +286,18 @@ impl AsyncClose for AccountStream {
     }
 }
 
+impl AsyncClose for HyperliquidMarketStream {
+    fn close(&mut self) -> Pin<Box<dyn Future<Output = Result<()>> + Send + '_>> {
+        Box::pin(HyperliquidMarketStream::close(self))
+    }
+}
+
+impl AsyncClose for HyperliquidAccountStream {
+    fn close(&mut self) -> Pin<Box<dyn Future<Output = Result<()>> + Send + '_>> {
+        Box::pin(HyperliquidAccountStream::close(self))
+    }
+}
+
 fn spawn_subscription<S, T, U>(
     source: S,
     mut convert: impl FnMut(Result<T>) -> U + Send + 'static,
@@ -375,6 +412,60 @@ pub struct NativeAccountSubscription {
     inner: NativeSubscription<WireAccountStreamItem>,
 }
 
+/// Hyperliquid 원본 시장 구독의 수명과 비종료 오류를 Dart에 보존하는 handle입니다.
+#[flutter_rust_bridge::frb(opaque)]
+pub struct NativeHyperliquidMarketSubscription {
+    inner: NativeSubscription<WireHyperliquidMarketStreamItem>,
+}
+
+impl NativeHyperliquidMarketSubscription {
+    pub(crate) fn new(stream: HyperliquidMarketStream) -> Self {
+        Self {
+            inner: spawn_subscription(stream, hyperliquid_market_stream_item),
+        }
+    }
+
+    /// 다음 event/error를 반환하며, 자연 종료 또는 `close` 뒤에는 `End`를 반환합니다.
+    pub async fn next(&self) -> WireHyperliquidMarketStreamItem {
+        self.inner
+            .next()
+            .await
+            .unwrap_or(WireHyperliquidMarketStreamItem::End)
+    }
+
+    /// 전달 작업을 중단하고 원본 Rust stream이 drop될 때까지 기다립니다.
+    pub async fn close(&self) -> std::result::Result<(), NativeError> {
+        self.inner.close().await.map_err(Into::into)
+    }
+}
+
+/// Hyperliquid 원본 계정 구독의 수명과 비종료 오류를 Dart에 보존하는 handle입니다.
+#[flutter_rust_bridge::frb(opaque)]
+pub struct NativeHyperliquidAccountSubscription {
+    inner: NativeSubscription<WireHyperliquidAccountStreamItem>,
+}
+
+impl NativeHyperliquidAccountSubscription {
+    pub(crate) fn new(stream: HyperliquidAccountStream) -> Self {
+        Self {
+            inner: spawn_subscription(stream, hyperliquid_account_stream_item),
+        }
+    }
+
+    /// 다음 event/error를 반환하며, 자연 종료 또는 `close` 뒤에는 `End`를 반환합니다.
+    pub async fn next(&self) -> WireHyperliquidAccountStreamItem {
+        self.inner
+            .next()
+            .await
+            .unwrap_or(WireHyperliquidAccountStreamItem::End)
+    }
+
+    /// 전달 작업을 중단하고 원본 Rust stream이 drop될 때까지 기다립니다.
+    pub async fn close(&self) -> std::result::Result<(), NativeError> {
+        self.inner.close().await.map_err(Into::into)
+    }
+}
+
 impl NativeAccountSubscription {
     pub(crate) fn new(stream: AccountStream) -> Self {
         Self {
@@ -413,6 +504,24 @@ fn account_stream_item(item: Result<AccountEvent>) -> WireAccountStreamItem {
             Err(error) => WireAccountStreamItem::Error(error.into()),
         },
         Err(error) => WireAccountStreamItem::Error(error.into()),
+    }
+}
+
+fn hyperliquid_market_stream_item(
+    item: Result<HyperliquidMarketEvent>,
+) -> WireHyperliquidMarketStreamItem {
+    match item {
+        Ok(event) => WireHyperliquidMarketStreamItem::Event(event.into()),
+        Err(error) => WireHyperliquidMarketStreamItem::Error(error.into()),
+    }
+}
+
+fn hyperliquid_account_stream_item(
+    item: Result<HyperliquidAccountEvent>,
+) -> WireHyperliquidAccountStreamItem {
+    match item {
+        Ok(event) => WireHyperliquidAccountStreamItem::Event(event.into()),
+        Err(error) => WireHyperliquidAccountStreamItem::Error(error.into()),
     }
 }
 

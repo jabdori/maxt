@@ -169,23 +169,51 @@ pub(crate) struct RawAssetCtx {
     /// Native market name supplied by spot contexts.
     #[serde(default)]
     pub(crate) coin: Option<String>,
-    #[serde(rename = "midPx", default)]
+    #[serde(
+        rename = "midPx",
+        default,
+        deserialize_with = "optional_number_or_string"
+    )]
     pub(crate) mid_px: Option<String>,
-    #[serde(rename = "markPx", default)]
+    #[serde(
+        rename = "markPx",
+        default,
+        deserialize_with = "optional_number_or_string"
+    )]
     pub(crate) mark_px: Option<String>,
-    #[serde(rename = "prevDayPx", default)]
+    #[serde(
+        rename = "prevDayPx",
+        default,
+        deserialize_with = "optional_number_or_string"
+    )]
     pub(crate) prev_day_px: Option<String>,
-    #[serde(rename = "dayBaseVlm", default)]
+    #[serde(
+        rename = "dayBaseVlm",
+        default,
+        deserialize_with = "optional_number_or_string"
+    )]
     pub(crate) day_base_volume: Option<String>,
-    #[serde(rename = "dayNtlVlm", default)]
+    #[serde(
+        rename = "dayNtlVlm",
+        default,
+        deserialize_with = "optional_number_or_string"
+    )]
     pub(crate) day_notional_volume: Option<String>,
     /// The external price funding is computed against. Perpetuals only.
-    #[serde(rename = "oraclePx", default)]
+    #[serde(
+        rename = "oraclePx",
+        default,
+        deserialize_with = "optional_number_or_string"
+    )]
     pub(crate) oracle_px: Option<String>,
     /// The current funding rate. Perpetuals only.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "optional_number_or_string")]
     pub(crate) funding: Option<String>,
-    #[serde(rename = "openInterest", default)]
+    #[serde(
+        rename = "openInterest",
+        default,
+        deserialize_with = "optional_number_or_string"
+    )]
     pub(crate) open_interest: Option<String>,
     #[serde(
         rename = "circulatingSupply",
@@ -335,6 +363,8 @@ pub(crate) struct RawLedgerUpdate {
 pub(crate) struct RawStreamOrder {
     pub(crate) order: RawStreamOrderBody,
     pub(crate) status: String,
+    #[serde(rename = "statusTimestamp", default)]
+    pub(crate) status_timestamp: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -348,11 +378,14 @@ pub(crate) struct RawStreamOrderBody {
     pub(crate) orig_sz: String,
     pub(crate) oid: u64,
     pub(crate) timestamp: i64,
+    #[serde(default)]
+    pub(crate) cloid: Option<String>,
 }
 
 /// The `spotState` private stream frame's `data`.
 #[derive(Debug, Deserialize)]
 pub(crate) struct RawStreamSpotState {
+    pub(crate) user: String,
     #[serde(rename = "spotState")]
     pub(crate) spot_state: RawSpotState,
 }

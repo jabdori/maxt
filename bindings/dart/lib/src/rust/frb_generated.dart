@@ -70,7 +70,7 @@ class MaxtRustLib
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => -1245704565;
+  int get rustContentHash => -713924114;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -482,6 +482,30 @@ abstract class MaxtRustLibApi extends BaseApi {
   Future<List<WireHyperliquidSubAccount>>
   crateApiNativeClientHyperliquidSubAccounts({required NativeClient that});
 
+  Future<NativeHyperliquidMarketSubscription>
+  crateApiNativeClientHyperliquidSubscribeDetailed({
+    required NativeClient that,
+    required WireSubscription subscription,
+  });
+
+  Future<NativeHyperliquidAccountSubscription>
+  crateApiNativeClientHyperliquidSubscribeDetailedAccount({
+    required NativeClient that,
+  });
+
+  Future<NativeHyperliquidAccountSubscription>
+  crateApiNativeClientHyperliquidSubscribeDetailedAccountWith({
+    required NativeClient that,
+    required WireStreamConfig config,
+  });
+
+  Future<NativeHyperliquidMarketSubscription>
+  crateApiNativeClientHyperliquidSubscribeDetailedWith({
+    required NativeClient that,
+    required WireSubscription subscription,
+    required WireStreamConfig config,
+  });
+
   Future<WireHyperliquidUserFees> crateApiNativeClientHyperliquidUserFees({
     required NativeClient that,
   });
@@ -829,6 +853,24 @@ abstract class MaxtRustLibApi extends BaseApi {
     required NativeAccountSubscription subscription,
   });
 
+  Future<void> crateApiNativeHyperliquidAccountSubscriptionClose({
+    required NativeHyperliquidAccountSubscription subscription,
+  });
+
+  Future<WireHyperliquidAccountStreamItem>
+  crateApiNativeHyperliquidAccountSubscriptionNext({
+    required NativeHyperliquidAccountSubscription subscription,
+  });
+
+  Future<void> crateApiNativeHyperliquidMarketSubscriptionClose({
+    required NativeHyperliquidMarketSubscription subscription,
+  });
+
+  Future<WireHyperliquidMarketStreamItem>
+  crateApiNativeHyperliquidMarketSubscriptionNext({
+    required NativeHyperliquidMarketSubscription subscription,
+  });
+
   Future<void> crateApiNativeMarketSubscriptionClose({
     required NativeMarketSubscription subscription,
   });
@@ -887,6 +929,24 @@ abstract class MaxtRustLibApi extends BaseApi {
   get rust_arc_decrement_strong_count_NativeClient;
 
   CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_NativeClientPtr;
+
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_NativeHyperliquidAccountSubscription;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_NativeHyperliquidAccountSubscription;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_NativeHyperliquidAccountSubscriptionPtr;
+
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_NativeHyperliquidMarketSubscription;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_NativeHyperliquidMarketSubscription;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_NativeHyperliquidMarketSubscriptionPtr;
 
   RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_NativeMarketSubscription;
@@ -4048,6 +4108,173 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       );
 
   @override
+  Future<NativeHyperliquidMarketSubscription>
+  crateApiNativeClientHyperliquidSubscribeDetailed({
+    required NativeClient that,
+    required WireSubscription subscription,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
+            that,
+            serializer,
+          );
+          sse_encode_box_autoadd_wire_subscription(subscription, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 83,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData:
+              sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription,
+          decodeErrorData: sse_decode_native_error,
+        ),
+        constMeta: kCrateApiNativeClientHyperliquidSubscribeDetailedConstMeta,
+        argValues: [that, subscription],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiNativeClientHyperliquidSubscribeDetailedConstMeta =>
+      const TaskConstMeta(
+        debugName: "NativeClient_hyperliquid_subscribe_detailed",
+        argNames: ["that", "subscription"],
+      );
+
+  @override
+  Future<NativeHyperliquidAccountSubscription>
+  crateApiNativeClientHyperliquidSubscribeDetailedAccount({
+    required NativeClient that,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 84,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData:
+              sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription,
+          decodeErrorData: sse_decode_native_error,
+        ),
+        constMeta:
+            kCrateApiNativeClientHyperliquidSubscribeDetailedAccountConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiNativeClientHyperliquidSubscribeDetailedAccountConstMeta =>
+      const TaskConstMeta(
+        debugName: "NativeClient_hyperliquid_subscribe_detailed_account",
+        argNames: ["that"],
+      );
+
+  @override
+  Future<NativeHyperliquidAccountSubscription>
+  crateApiNativeClientHyperliquidSubscribeDetailedAccountWith({
+    required NativeClient that,
+    required WireStreamConfig config,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
+            that,
+            serializer,
+          );
+          sse_encode_box_autoadd_wire_stream_config(config, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 85,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData:
+              sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription,
+          decodeErrorData: sse_decode_native_error,
+        ),
+        constMeta:
+            kCrateApiNativeClientHyperliquidSubscribeDetailedAccountWithConstMeta,
+        argValues: [that, config],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiNativeClientHyperliquidSubscribeDetailedAccountWithConstMeta =>
+      const TaskConstMeta(
+        debugName: "NativeClient_hyperliquid_subscribe_detailed_account_with",
+        argNames: ["that", "config"],
+      );
+
+  @override
+  Future<NativeHyperliquidMarketSubscription>
+  crateApiNativeClientHyperliquidSubscribeDetailedWith({
+    required NativeClient that,
+    required WireSubscription subscription,
+    required WireStreamConfig config,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
+            that,
+            serializer,
+          );
+          sse_encode_box_autoadd_wire_subscription(subscription, serializer);
+          sse_encode_box_autoadd_wire_stream_config(config, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 86,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData:
+              sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription,
+          decodeErrorData: sse_decode_native_error,
+        ),
+        constMeta:
+            kCrateApiNativeClientHyperliquidSubscribeDetailedWithConstMeta,
+        argValues: [that, subscription, config],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiNativeClientHyperliquidSubscribeDetailedWithConstMeta =>
+      const TaskConstMeta(
+        debugName: "NativeClient_hyperliquid_subscribe_detailed_with",
+        argNames: ["that", "subscription", "config"],
+      );
+
+  @override
   Future<WireHyperliquidUserFees> crateApiNativeClientHyperliquidUserFees({
     required NativeClient that,
   }) {
@@ -4062,7 +4289,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 83,
+            funcId: 87,
             port: port_,
           );
         },
@@ -4101,7 +4328,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 84,
+            funcId: 88,
             port: port_,
           );
         },
@@ -4144,7 +4371,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 85,
+            funcId: 89,
             port: port_,
           );
         },
@@ -4185,7 +4412,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 86,
+            funcId: 90,
             port: port_,
           );
         },
@@ -4220,7 +4447,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 87,
+            funcId: 91,
             port: port_,
           );
         },
@@ -4256,7 +4483,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 88,
+            funcId: 92,
             port: port_,
           );
         },
@@ -4293,7 +4520,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 89,
+            funcId: 93,
             port: port_,
           );
         },
@@ -4325,7 +4552,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
             that,
             serializer,
           );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 90)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 94)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_opt_box_autoadd_bool,
@@ -4359,7 +4586,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 91,
+            funcId: 95,
             port: port_,
           );
         },
@@ -4397,7 +4624,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 92,
+            funcId: 96,
             port: port_,
           );
         },
@@ -4435,7 +4662,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 93,
+            funcId: 97,
             port: port_,
           );
         },
@@ -4475,7 +4702,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 94,
+            funcId: 98,
             port: port_,
           );
         },
@@ -4514,7 +4741,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 95,
+            funcId: 99,
             port: port_,
           );
         },
@@ -4554,7 +4781,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 96,
+            funcId: 100,
             port: port_,
           );
         },
@@ -4595,7 +4822,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 97,
+            funcId: 101,
             port: port_,
           );
         },
@@ -4633,7 +4860,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 98,
+            funcId: 102,
             port: port_,
           );
         },
@@ -4671,7 +4898,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 99,
+            funcId: 103,
             port: port_,
           );
         },
@@ -4709,7 +4936,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 100,
+            funcId: 104,
             port: port_,
           );
         },
@@ -4747,7 +4974,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 101,
+            funcId: 105,
             port: port_,
           );
         },
@@ -4793,7 +5020,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 102,
+            funcId: 106,
             port: port_,
           );
         },
@@ -4834,7 +5061,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 103,
+            funcId: 107,
             port: port_,
           );
         },
@@ -4872,7 +5099,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 104,
+            funcId: 108,
             port: port_,
           );
         },
@@ -4910,7 +5137,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 105,
+            funcId: 109,
             port: port_,
           );
         },
@@ -4950,7 +5177,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 106,
+            funcId: 110,
             port: port_,
           );
         },
@@ -4989,7 +5216,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 107,
+            funcId: 111,
             port: port_,
           );
         },
@@ -5028,7 +5255,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           return pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 108,
+            funcId: 112,
           )!;
         },
         codec: SseCodec(
@@ -5065,7 +5292,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 109,
+            funcId: 113,
             port: port_,
           );
         },
@@ -5104,7 +5331,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 110,
+            funcId: 114,
             port: port_,
           );
         },
@@ -5140,7 +5367,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           return pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 111,
+            funcId: 115,
           )!;
         },
         codec: SseCodec(
@@ -5175,7 +5402,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 112,
+            funcId: 116,
             port: port_,
           );
         },
@@ -5217,7 +5444,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 113,
+            funcId: 117,
             port: port_,
           );
         },
@@ -5259,7 +5486,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 114,
+            funcId: 118,
             port: port_,
           );
         },
@@ -5300,7 +5527,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 115,
+            funcId: 119,
             port: port_,
           );
         },
@@ -5340,7 +5567,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 116,
+            funcId: 120,
             port: port_,
           );
         },
@@ -5381,7 +5608,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 117,
+            funcId: 121,
             port: port_,
           );
         },
@@ -5423,7 +5650,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 118,
+            funcId: 122,
             port: port_,
           );
         },
@@ -5459,7 +5686,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 119,
+            funcId: 123,
             port: port_,
           );
         },
@@ -5497,7 +5724,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 120,
+            funcId: 124,
             port: port_,
           );
         },
@@ -5533,7 +5760,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 121,
+            funcId: 125,
             port: port_,
           );
         },
@@ -5573,7 +5800,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 122,
+            funcId: 126,
             port: port_,
           );
         },
@@ -5615,7 +5842,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 123,
+            funcId: 127,
             port: port_,
           );
         },
@@ -5656,7 +5883,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 124,
+            funcId: 128,
             port: port_,
           );
         },
@@ -5695,7 +5922,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 125,
+            funcId: 129,
             port: port_,
           );
         },
@@ -5731,7 +5958,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           return pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 126,
+            funcId: 130,
           )!;
         },
         codec: SseCodec(
@@ -5769,7 +5996,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 127,
+            funcId: 131,
             port: port_,
           );
         },
@@ -5810,7 +6037,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 128,
+            funcId: 132,
             port: port_,
           );
         },
@@ -5852,7 +6079,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 129,
+            funcId: 133,
             port: port_,
           );
         },
@@ -5890,7 +6117,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 130,
+            funcId: 134,
             port: port_,
           );
         },
@@ -5928,7 +6155,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 131,
+            funcId: 135,
             port: port_,
           );
         },
@@ -5966,7 +6193,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 132,
+            funcId: 136,
             port: port_,
           );
         },
@@ -6001,7 +6228,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 133,
+            funcId: 137,
             port: port_,
           );
         },
@@ -6042,7 +6269,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 134,
+            funcId: 138,
             port: port_,
           );
         },
@@ -6084,7 +6311,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 135,
+            funcId: 139,
             port: port_,
           );
         },
@@ -6129,7 +6356,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 136,
+            funcId: 140,
             port: port_,
           );
         },
@@ -6170,7 +6397,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 137,
+            funcId: 141,
             port: port_,
           );
         },
@@ -6211,7 +6438,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 138,
+            funcId: 142,
             port: port_,
           );
         },
@@ -6246,7 +6473,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 139,
+            funcId: 143,
             port: port_,
           );
         },
@@ -6288,7 +6515,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 140,
+            funcId: 144,
             port: port_,
           );
         },
@@ -6326,7 +6553,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 141,
+            funcId: 145,
             port: port_,
           );
         },
@@ -6367,7 +6594,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 142,
+            funcId: 146,
             port: port_,
           );
         },
@@ -6408,7 +6635,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 143,
+            funcId: 147,
             port: port_,
           );
         },
@@ -6444,7 +6671,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           return pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 144,
+            funcId: 148,
           )!;
         },
         codec: SseCodec(
@@ -6481,7 +6708,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 145,
+            funcId: 149,
             port: port_,
           );
         },
@@ -6511,7 +6738,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           return pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 146,
+            funcId: 150,
           )!;
         },
         codec: SseCodec(
@@ -6538,7 +6765,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           return pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 147,
+            funcId: 151,
           )!;
         },
         codec: SseCodec(
@@ -6575,7 +6802,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 148,
+            funcId: 152,
             port: port_,
           );
         },
@@ -6611,7 +6838,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 149,
+            funcId: 153,
             port: port_,
           );
         },
@@ -6647,7 +6874,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 150,
+            funcId: 154,
             port: port_,
           );
         },
@@ -6669,6 +6896,155 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       );
 
   @override
+  Future<void> crateApiNativeHyperliquidAccountSubscriptionClose({
+    required NativeHyperliquidAccountSubscription subscription,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+            subscription,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 155,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_native_error,
+        ),
+        constMeta: kCrateApiNativeHyperliquidAccountSubscriptionCloseConstMeta,
+        argValues: [subscription],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiNativeHyperliquidAccountSubscriptionCloseConstMeta =>
+      const TaskConstMeta(
+        debugName: "native_hyperliquid_account_subscription_close",
+        argNames: ["subscription"],
+      );
+
+  @override
+  Future<WireHyperliquidAccountStreamItem>
+  crateApiNativeHyperliquidAccountSubscriptionNext({
+    required NativeHyperliquidAccountSubscription subscription,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+            subscription,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 156,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_wire_hyperliquid_account_stream_item,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiNativeHyperliquidAccountSubscriptionNextConstMeta,
+        argValues: [subscription],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiNativeHyperliquidAccountSubscriptionNextConstMeta =>
+      const TaskConstMeta(
+        debugName: "native_hyperliquid_account_subscription_next",
+        argNames: ["subscription"],
+      );
+
+  @override
+  Future<void> crateApiNativeHyperliquidMarketSubscriptionClose({
+    required NativeHyperliquidMarketSubscription subscription,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
+            subscription,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 157,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_native_error,
+        ),
+        constMeta: kCrateApiNativeHyperliquidMarketSubscriptionCloseConstMeta,
+        argValues: [subscription],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiNativeHyperliquidMarketSubscriptionCloseConstMeta =>
+      const TaskConstMeta(
+        debugName: "native_hyperliquid_market_subscription_close",
+        argNames: ["subscription"],
+      );
+
+  @override
+  Future<WireHyperliquidMarketStreamItem>
+  crateApiNativeHyperliquidMarketSubscriptionNext({
+    required NativeHyperliquidMarketSubscription subscription,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
+            subscription,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 158,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_wire_hyperliquid_market_stream_item,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiNativeHyperliquidMarketSubscriptionNextConstMeta,
+        argValues: [subscription],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiNativeHyperliquidMarketSubscriptionNextConstMeta =>
+      const TaskConstMeta(
+        debugName: "native_hyperliquid_market_subscription_next",
+        argNames: ["subscription"],
+      );
+
+  @override
   Future<void> crateApiNativeMarketSubscriptionClose({
     required NativeMarketSubscription subscription,
   }) {
@@ -6683,7 +7059,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 151,
+            funcId: 159,
             port: port_,
           );
         },
@@ -6719,7 +7095,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 152,
+            funcId: 160,
             port: port_,
           );
         },
@@ -6749,7 +7125,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           return pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 153,
+            funcId: 161,
           )!;
         },
         codec: SseCodec(
@@ -6789,7 +7165,7 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 154,
+            funcId: 162,
             port: port_,
           );
         },
@@ -6887,6 +7263,22 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient;
 
   RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_NativeHyperliquidAccountSubscription => wire
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_NativeHyperliquidAccountSubscription => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription;
+
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_NativeHyperliquidMarketSubscription => wire
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_NativeHyperliquidMarketSubscription => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription;
+
+  RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_NativeMarketSubscription => wire
       .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeMarketSubscription;
 
@@ -6956,6 +7348,28 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  NativeHyperliquidAccountSubscription
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return NativeHyperliquidAccountSubscriptionImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
+  }
+
+  @protected
+  NativeHyperliquidMarketSubscription
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return NativeHyperliquidMarketSubscriptionImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
+  }
+
+  @protected
   NativeMarketSubscription
   dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeMarketSubscription(
     dynamic raw,
@@ -7011,6 +7425,28 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return NativeClientImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  NativeHyperliquidAccountSubscription
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return NativeHyperliquidAccountSubscriptionImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
+  }
+
+  @protected
+  NativeHyperliquidMarketSubscription
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return NativeHyperliquidMarketSubscriptionImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
   }
 
   @protected
@@ -7093,6 +7529,28 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return NativeClientImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  NativeHyperliquidAccountSubscription
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return NativeHyperliquidAccountSubscriptionImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
+  }
+
+  @protected
+  NativeHyperliquidMarketSubscription
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return NativeHyperliquidMarketSubscriptionImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
   }
 
   @protected
@@ -7780,10 +8238,45 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireHyperliquidAccountEvent
+  dco_decode_box_autoadd_wire_hyperliquid_account_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_wire_hyperliquid_account_event(raw);
+  }
+
+  @protected
+  WireHyperliquidAssetContextEvent
+  dco_decode_box_autoadd_wire_hyperliquid_asset_context_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_wire_hyperliquid_asset_context_event(raw);
+  }
+
+  @protected
+  WireHyperliquidCandleEvent
+  dco_decode_box_autoadd_wire_hyperliquid_candle_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_wire_hyperliquid_candle_event(raw);
+  }
+
+  @protected
   WireHyperliquidEvmContract
   dco_decode_box_autoadd_wire_hyperliquid_evm_contract(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_wire_hyperliquid_evm_contract(raw);
+  }
+
+  @protected
+  WireHyperliquidMarketEvent
+  dco_decode_box_autoadd_wire_hyperliquid_market_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_wire_hyperliquid_market_event(raw);
+  }
+
+  @protected
+  WireHyperliquidOrderBookEvent
+  dco_decode_box_autoadd_wire_hyperliquid_order_book_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_wire_hyperliquid_order_book_event(raw);
   }
 
   @protected
@@ -7802,11 +8295,33 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireHyperliquidOrderUpdate
+  dco_decode_box_autoadd_wire_hyperliquid_order_update(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_wire_hyperliquid_order_update(raw);
+  }
+
+  @protected
   WireHyperliquidReferrer dco_decode_box_autoadd_wire_hyperliquid_referrer(
     dynamic raw,
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_wire_hyperliquid_referrer(raw);
+  }
+
+  @protected
+  WireHyperliquidSpotStateEvent
+  dco_decode_box_autoadd_wire_hyperliquid_spot_state_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_wire_hyperliquid_spot_state_event(raw);
+  }
+
+  @protected
+  WireHyperliquidTradeEvent dco_decode_box_autoadd_wire_hyperliquid_trade_event(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_wire_hyperliquid_trade_event(raw);
   }
 
   @protected
@@ -8628,6 +9143,15 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>)
         .map(dco_decode_wire_hyperliquid_spot_pair)
+        .toList();
+  }
+
+  @protected
+  List<WireHyperliquidSpotStateBalance>
+  dco_decode_list_wire_hyperliquid_spot_state_balance(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>)
+        .map(dco_decode_wire_hyperliquid_spot_state_balance)
         .toList();
   }
 
@@ -10983,6 +11507,47 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireHyperliquidAccountEvent dco_decode_wire_hyperliquid_account_event(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    switch (raw[0]) {
+      case 0:
+        return WireHyperliquidAccountEvent_OrderUpdate(
+          dco_decode_box_autoadd_wire_hyperliquid_order_update(raw[1]),
+        );
+      case 1:
+        return WireHyperliquidAccountEvent_SpotState(
+          dco_decode_box_autoadd_wire_hyperliquid_spot_state_event(raw[1]),
+        );
+      case 2:
+        return WireHyperliquidAccountEvent_Reconnected();
+      default:
+        throw Exception("unreachable");
+    }
+  }
+
+  @protected
+  WireHyperliquidAccountStreamItem
+  dco_decode_wire_hyperliquid_account_stream_item(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    switch (raw[0]) {
+      case 0:
+        return WireHyperliquidAccountStreamItem_Event(
+          dco_decode_box_autoadd_wire_hyperliquid_account_event(raw[1]),
+        );
+      case 1:
+        return WireHyperliquidAccountStreamItem_Error(
+          dco_decode_box_autoadd_native_error(raw[1]),
+        );
+      case 2:
+        return WireHyperliquidAccountStreamItem_End();
+      default:
+        throw Exception("unreachable");
+    }
+  }
+
+  @protected
   WireHyperliquidAssetContext dco_decode_wire_hyperliquid_asset_context(
     dynamic raw,
   ) {
@@ -11002,6 +11567,30 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireHyperliquidAssetContextEvent
+  dco_decode_wire_hyperliquid_asset_context_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 13)
+      throw Exception('unexpected arr length: expect 13 but see ${arr.length}');
+    return WireHyperliquidAssetContextEvent(
+      common: dco_decode_wire_ticker(arr[0]),
+      coin: dco_decode_String(arr[1]),
+      midPrice: dco_decode_opt_String(arr[2]),
+      markPrice: dco_decode_opt_String(arr[3]),
+      previousDayPrice: dco_decode_opt_String(arr[4]),
+      dayBaseVolume: dco_decode_opt_String(arr[5]),
+      dayNotionalVolume: dco_decode_opt_String(arr[6]),
+      oraclePrice: dco_decode_opt_String(arr[7]),
+      fundingRate: dco_decode_opt_String(arr[8]),
+      openInterest: dco_decode_opt_String(arr[9]),
+      circulatingSupply: dco_decode_opt_String(arr[10]),
+      totalSupply: dco_decode_opt_String(arr[11]),
+      rawJson: dco_decode_String(arr[12]),
+    );
+  }
+
+  @protected
   WireHyperliquidBookLevel dco_decode_wire_hyperliquid_book_level(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -11011,6 +11600,20 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       price: dco_decode_String(arr[0]),
       size: dco_decode_String(arr[1]),
       orderCount: dco_decode_opt_box_autoadd_u_64(arr[2]),
+    );
+  }
+
+  @protected
+  WireHyperliquidCandleEvent dco_decode_wire_hyperliquid_candle_event(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return WireHyperliquidCandleEvent(
+      common: dco_decode_wire_candle(arr[0]),
+      provider: dco_decode_wire_hyperliquid_candle_snapshot(arr[1]),
     );
   }
 
@@ -11144,6 +11747,55 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireHyperliquidMarketEvent dco_decode_wire_hyperliquid_market_event(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    switch (raw[0]) {
+      case 0:
+        return WireHyperliquidMarketEvent_Trade(
+          dco_decode_box_autoadd_wire_hyperliquid_trade_event(raw[1]),
+        );
+      case 1:
+        return WireHyperliquidMarketEvent_OrderBook(
+          dco_decode_box_autoadd_wire_hyperliquid_order_book_event(raw[1]),
+        );
+      case 2:
+        return WireHyperliquidMarketEvent_AssetContext(
+          dco_decode_box_autoadd_wire_hyperliquid_asset_context_event(raw[1]),
+        );
+      case 3:
+        return WireHyperliquidMarketEvent_Candle(
+          dco_decode_box_autoadd_wire_hyperliquid_candle_event(raw[1]),
+        );
+      case 4:
+        return WireHyperliquidMarketEvent_Reconnected();
+      default:
+        throw Exception("unreachable");
+    }
+  }
+
+  @protected
+  WireHyperliquidMarketStreamItem
+  dco_decode_wire_hyperliquid_market_stream_item(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    switch (raw[0]) {
+      case 0:
+        return WireHyperliquidMarketStreamItem_Event(
+          dco_decode_box_autoadd_wire_hyperliquid_market_event(raw[1]),
+        );
+      case 1:
+        return WireHyperliquidMarketStreamItem_Error(
+          dco_decode_box_autoadd_native_error(raw[1]),
+        );
+      case 2:
+        return WireHyperliquidMarketStreamItem_End();
+      default:
+        throw Exception("unreachable");
+    }
+  }
+
+  @protected
   WireHyperliquidMidPrice dco_decode_wire_hyperliquid_mid_price(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -11169,6 +11821,20 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       size: dco_decode_String(arr[4]),
       timestampNs: dco_decode_i_64(arr[5]),
       rawJson: dco_decode_String(arr[6]),
+    );
+  }
+
+  @protected
+  WireHyperliquidOrderBookEvent dco_decode_wire_hyperliquid_order_book_event(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return WireHyperliquidOrderBookEvent(
+      common: dco_decode_wire_order_book(arr[0]),
+      provider: dco_decode_wire_hyperliquid_l_2_book(arr[1]),
     );
   }
 
@@ -11251,6 +11917,30 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       default:
         throw Exception("unreachable");
     }
+  }
+
+  @protected
+  WireHyperliquidOrderUpdate dco_decode_wire_hyperliquid_order_update(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 12)
+      throw Exception('unexpected arr length: expect 12 but see ${arr.length}');
+    return WireHyperliquidOrderUpdate(
+      common: dco_decode_wire_order(arr[0]),
+      coin: dco_decode_String(arr[1]),
+      side: dco_decode_String(arr[2]),
+      limitPrice: dco_decode_String(arr[3]),
+      remainingSize: dco_decode_String(arr[4]),
+      originalSize: dco_decode_String(arr[5]),
+      orderId: dco_decode_u_64(arr[6]),
+      acceptedAtNs: dco_decode_i_64(arr[7]),
+      clientOrderId: dco_decode_opt_String(arr[8]),
+      status: dco_decode_String(arr[9]),
+      statusAtNs: dco_decode_opt_box_autoadd_i_64(arr[10]),
+      rawJson: dco_decode_String(arr[11]),
+    );
   }
 
   @protected
@@ -11431,6 +12121,34 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireHyperliquidSpotStateBalance
+  dco_decode_wire_hyperliquid_spot_state_balance(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return WireHyperliquidSpotStateBalance(
+      common: dco_decode_wire_balance(arr[0]),
+      provider: dco_decode_wire_hyperliquid_spot_balance(arr[1]),
+    );
+  }
+
+  @protected
+  WireHyperliquidSpotStateEvent dco_decode_wire_hyperliquid_spot_state_event(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return WireHyperliquidSpotStateEvent(
+      user: dco_decode_String(arr[0]),
+      balances: dco_decode_list_wire_hyperliquid_spot_state_balance(arr[1]),
+      rawJson: dco_decode_String(arr[2]),
+    );
+  }
+
+  @protected
   WireHyperliquidSpotToken dco_decode_wire_hyperliquid_spot_token(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -11466,6 +12184,20 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       master: dco_decode_String(arr[2]),
       perpetualStateJson: dco_decode_String(arr[3]),
       spotStateJson: dco_decode_String(arr[4]),
+    );
+  }
+
+  @protected
+  WireHyperliquidTradeEvent dco_decode_wire_hyperliquid_trade_event(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return WireHyperliquidTradeEvent(
+      common: dco_decode_wire_trade(arr[0]),
+      provider: dco_decode_wire_hyperliquid_recent_trade(arr[1]),
     );
   }
 
@@ -12939,6 +13671,30 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  NativeHyperliquidAccountSubscription
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return NativeHyperliquidAccountSubscriptionImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  NativeHyperliquidMarketSubscription
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return NativeHyperliquidMarketSubscriptionImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
   NativeMarketSubscription
   sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeMarketSubscription(
     SseDeserializer deserializer,
@@ -13005,6 +13761,30 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return NativeClientImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  NativeHyperliquidAccountSubscription
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return NativeHyperliquidAccountSubscriptionImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  NativeHyperliquidMarketSubscription
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return NativeHyperliquidMarketSubscriptionImpl.frbInternalSseDecode(
       sse_decode_usize(deserializer),
       sse_decode_i_32(deserializer),
     );
@@ -13096,6 +13876,30 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return NativeClientImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  NativeHyperliquidAccountSubscription
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return NativeHyperliquidAccountSubscriptionImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  NativeHyperliquidMarketSubscription
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return NativeHyperliquidMarketSubscriptionImpl.frbInternalSseDecode(
       sse_decode_usize(deserializer),
       sse_decode_i_32(deserializer),
     );
@@ -13910,12 +14714,57 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireHyperliquidAccountEvent
+  sse_decode_box_autoadd_wire_hyperliquid_account_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_wire_hyperliquid_account_event(deserializer));
+  }
+
+  @protected
+  WireHyperliquidAssetContextEvent
+  sse_decode_box_autoadd_wire_hyperliquid_asset_context_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_wire_hyperliquid_asset_context_event(deserializer));
+  }
+
+  @protected
+  WireHyperliquidCandleEvent
+  sse_decode_box_autoadd_wire_hyperliquid_candle_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_wire_hyperliquid_candle_event(deserializer));
+  }
+
+  @protected
   WireHyperliquidEvmContract
   sse_decode_box_autoadd_wire_hyperliquid_evm_contract(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_wire_hyperliquid_evm_contract(deserializer));
+  }
+
+  @protected
+  WireHyperliquidMarketEvent
+  sse_decode_box_autoadd_wire_hyperliquid_market_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_wire_hyperliquid_market_event(deserializer));
+  }
+
+  @protected
+  WireHyperliquidOrderBookEvent
+  sse_decode_box_autoadd_wire_hyperliquid_order_book_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_wire_hyperliquid_order_book_event(deserializer));
   }
 
   @protected
@@ -13936,11 +14785,37 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireHyperliquidOrderUpdate
+  sse_decode_box_autoadd_wire_hyperliquid_order_update(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_wire_hyperliquid_order_update(deserializer));
+  }
+
+  @protected
   WireHyperliquidReferrer sse_decode_box_autoadd_wire_hyperliquid_referrer(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_wire_hyperliquid_referrer(deserializer));
+  }
+
+  @protected
+  WireHyperliquidSpotStateEvent
+  sse_decode_box_autoadd_wire_hyperliquid_spot_state_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_wire_hyperliquid_spot_state_event(deserializer));
+  }
+
+  @protected
+  WireHyperliquidTradeEvent sse_decode_box_autoadd_wire_hyperliquid_trade_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_wire_hyperliquid_trade_event(deserializer));
   }
 
   @protected
@@ -15123,6 +15998,21 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
     var ans_ = <WireHyperliquidSpotPair>[];
     for (var idx_ = 0; idx_ < len_; ++idx_) {
       ans_.add(sse_decode_wire_hyperliquid_spot_pair(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<WireHyperliquidSpotStateBalance>
+  sse_decode_list_wire_hyperliquid_spot_state_balance(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <WireHyperliquidSpotStateBalance>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_wire_hyperliquid_spot_state_balance(deserializer));
     }
     return ans_;
   }
@@ -18377,6 +19267,56 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireHyperliquidAccountEvent sse_decode_wire_hyperliquid_account_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var tag_ = sse_decode_i_32(deserializer);
+    switch (tag_) {
+      case 0:
+        var var_field0 = sse_decode_box_autoadd_wire_hyperliquid_order_update(
+          deserializer,
+        );
+        return WireHyperliquidAccountEvent_OrderUpdate(var_field0);
+      case 1:
+        var var_field0 =
+            sse_decode_box_autoadd_wire_hyperliquid_spot_state_event(
+              deserializer,
+            );
+        return WireHyperliquidAccountEvent_SpotState(var_field0);
+      case 2:
+        return WireHyperliquidAccountEvent_Reconnected();
+      default:
+        throw UnimplementedError('');
+    }
+  }
+
+  @protected
+  WireHyperliquidAccountStreamItem
+  sse_decode_wire_hyperliquid_account_stream_item(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var tag_ = sse_decode_i_32(deserializer);
+    switch (tag_) {
+      case 0:
+        var var_field0 = sse_decode_box_autoadd_wire_hyperliquid_account_event(
+          deserializer,
+        );
+        return WireHyperliquidAccountStreamItem_Event(var_field0);
+      case 1:
+        var var_field0 = sse_decode_box_autoadd_native_error(deserializer);
+        return WireHyperliquidAccountStreamItem_Error(var_field0);
+      case 2:
+        return WireHyperliquidAccountStreamItem_End();
+      default:
+        throw UnimplementedError('');
+    }
+  }
+
+  @protected
   WireHyperliquidAssetContext sse_decode_wire_hyperliquid_asset_context(
     SseDeserializer deserializer,
   ) {
@@ -18400,6 +19340,42 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireHyperliquidAssetContextEvent
+  sse_decode_wire_hyperliquid_asset_context_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_common = sse_decode_wire_ticker(deserializer);
+    var var_coin = sse_decode_String(deserializer);
+    var var_midPrice = sse_decode_opt_String(deserializer);
+    var var_markPrice = sse_decode_opt_String(deserializer);
+    var var_previousDayPrice = sse_decode_opt_String(deserializer);
+    var var_dayBaseVolume = sse_decode_opt_String(deserializer);
+    var var_dayNotionalVolume = sse_decode_opt_String(deserializer);
+    var var_oraclePrice = sse_decode_opt_String(deserializer);
+    var var_fundingRate = sse_decode_opt_String(deserializer);
+    var var_openInterest = sse_decode_opt_String(deserializer);
+    var var_circulatingSupply = sse_decode_opt_String(deserializer);
+    var var_totalSupply = sse_decode_opt_String(deserializer);
+    var var_rawJson = sse_decode_String(deserializer);
+    return WireHyperliquidAssetContextEvent(
+      common: var_common,
+      coin: var_coin,
+      midPrice: var_midPrice,
+      markPrice: var_markPrice,
+      previousDayPrice: var_previousDayPrice,
+      dayBaseVolume: var_dayBaseVolume,
+      dayNotionalVolume: var_dayNotionalVolume,
+      oraclePrice: var_oraclePrice,
+      fundingRate: var_fundingRate,
+      openInterest: var_openInterest,
+      circulatingSupply: var_circulatingSupply,
+      totalSupply: var_totalSupply,
+      rawJson: var_rawJson,
+    );
+  }
+
+  @protected
   WireHyperliquidBookLevel sse_decode_wire_hyperliquid_book_level(
     SseDeserializer deserializer,
   ) {
@@ -18411,6 +19387,21 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       price: var_price,
       size: var_size,
       orderCount: var_orderCount,
+    );
+  }
+
+  @protected
+  WireHyperliquidCandleEvent sse_decode_wire_hyperliquid_candle_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_common = sse_decode_wire_candle(deserializer);
+    var var_provider = sse_decode_wire_hyperliquid_candle_snapshot(
+      deserializer,
+    );
+    return WireHyperliquidCandleEvent(
+      common: var_common,
+      provider: var_provider,
     );
   }
 
@@ -18565,6 +19556,65 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireHyperliquidMarketEvent sse_decode_wire_hyperliquid_market_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var tag_ = sse_decode_i_32(deserializer);
+    switch (tag_) {
+      case 0:
+        var var_field0 = sse_decode_box_autoadd_wire_hyperliquid_trade_event(
+          deserializer,
+        );
+        return WireHyperliquidMarketEvent_Trade(var_field0);
+      case 1:
+        var var_field0 =
+            sse_decode_box_autoadd_wire_hyperliquid_order_book_event(
+              deserializer,
+            );
+        return WireHyperliquidMarketEvent_OrderBook(var_field0);
+      case 2:
+        var var_field0 =
+            sse_decode_box_autoadd_wire_hyperliquid_asset_context_event(
+              deserializer,
+            );
+        return WireHyperliquidMarketEvent_AssetContext(var_field0);
+      case 3:
+        var var_field0 = sse_decode_box_autoadd_wire_hyperliquid_candle_event(
+          deserializer,
+        );
+        return WireHyperliquidMarketEvent_Candle(var_field0);
+      case 4:
+        return WireHyperliquidMarketEvent_Reconnected();
+      default:
+        throw UnimplementedError('');
+    }
+  }
+
+  @protected
+  WireHyperliquidMarketStreamItem
+  sse_decode_wire_hyperliquid_market_stream_item(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var tag_ = sse_decode_i_32(deserializer);
+    switch (tag_) {
+      case 0:
+        var var_field0 = sse_decode_box_autoadd_wire_hyperliquid_market_event(
+          deserializer,
+        );
+        return WireHyperliquidMarketStreamItem_Event(var_field0);
+      case 1:
+        var var_field0 = sse_decode_box_autoadd_native_error(deserializer);
+        return WireHyperliquidMarketStreamItem_Error(var_field0);
+      case 2:
+        return WireHyperliquidMarketStreamItem_End();
+      default:
+        throw UnimplementedError('');
+    }
+  }
+
+  @protected
   WireHyperliquidMidPrice sse_decode_wire_hyperliquid_mid_price(
     SseDeserializer deserializer,
   ) {
@@ -18594,6 +19644,19 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       size: var_size,
       timestampNs: var_timestampNs,
       rawJson: var_rawJson,
+    );
+  }
+
+  @protected
+  WireHyperliquidOrderBookEvent sse_decode_wire_hyperliquid_order_book_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_common = sse_decode_wire_order_book(deserializer);
+    var var_provider = sse_decode_wire_hyperliquid_l_2_book(deserializer);
+    return WireHyperliquidOrderBookEvent(
+      common: var_common,
+      provider: var_provider,
     );
   }
 
@@ -18702,6 +19765,39 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       default:
         throw UnimplementedError('');
     }
+  }
+
+  @protected
+  WireHyperliquidOrderUpdate sse_decode_wire_hyperliquid_order_update(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_common = sse_decode_wire_order(deserializer);
+    var var_coin = sse_decode_String(deserializer);
+    var var_side = sse_decode_String(deserializer);
+    var var_limitPrice = sse_decode_String(deserializer);
+    var var_remainingSize = sse_decode_String(deserializer);
+    var var_originalSize = sse_decode_String(deserializer);
+    var var_orderId = sse_decode_u_64(deserializer);
+    var var_acceptedAtNs = sse_decode_i_64(deserializer);
+    var var_clientOrderId = sse_decode_opt_String(deserializer);
+    var var_status = sse_decode_String(deserializer);
+    var var_statusAtNs = sse_decode_opt_box_autoadd_i_64(deserializer);
+    var var_rawJson = sse_decode_String(deserializer);
+    return WireHyperliquidOrderUpdate(
+      common: var_common,
+      coin: var_coin,
+      side: var_side,
+      limitPrice: var_limitPrice,
+      remainingSize: var_remainingSize,
+      originalSize: var_originalSize,
+      orderId: var_orderId,
+      acceptedAtNs: var_acceptedAtNs,
+      clientOrderId: var_clientOrderId,
+      status: var_status,
+      statusAtNs: var_statusAtNs,
+      rawJson: var_rawJson,
+    );
   }
 
   @protected
@@ -18916,6 +20012,35 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  WireHyperliquidSpotStateBalance
+  sse_decode_wire_hyperliquid_spot_state_balance(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_common = sse_decode_wire_balance(deserializer);
+    var var_provider = sse_decode_wire_hyperliquid_spot_balance(deserializer);
+    return WireHyperliquidSpotStateBalance(
+      common: var_common,
+      provider: var_provider,
+    );
+  }
+
+  @protected
+  WireHyperliquidSpotStateEvent sse_decode_wire_hyperliquid_spot_state_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_user = sse_decode_String(deserializer);
+    var var_balances = sse_decode_list_wire_hyperliquid_spot_state_balance(
+      deserializer,
+    );
+    var var_rawJson = sse_decode_String(deserializer);
+    return WireHyperliquidSpotStateEvent(
+      user: var_user,
+      balances: var_balances,
+      rawJson: var_rawJson,
+    );
+  }
+
+  @protected
   WireHyperliquidSpotToken sse_decode_wire_hyperliquid_spot_token(
     SseDeserializer deserializer,
   ) {
@@ -18961,6 +20086,19 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
       master: var_master,
       perpetualStateJson: var_perpetualStateJson,
       spotStateJson: var_spotStateJson,
+    );
+  }
+
+  @protected
+  WireHyperliquidTradeEvent sse_decode_wire_hyperliquid_trade_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_common = sse_decode_wire_trade(deserializer);
+    var var_provider = sse_decode_wire_hyperliquid_recent_trade(deserializer);
+    return WireHyperliquidTradeEvent(
+      common: var_common,
+      provider: var_provider,
     );
   }
 
@@ -20781,6 +21919,36 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
 
   @protected
   void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+    NativeHyperliquidAccountSubscription self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as NativeHyperliquidAccountSubscriptionImpl).frbInternalSseEncode(
+        move: true,
+      ),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
+    NativeHyperliquidMarketSubscription self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as NativeHyperliquidMarketSubscriptionImpl).frbInternalSseEncode(
+        move: true,
+      ),
+      serializer,
+    );
+  }
+
+  @protected
+  void
   sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeMarketSubscription(
     NativeMarketSubscription self,
     SseSerializer serializer,
@@ -20853,6 +22021,36 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_usize(
       (self as NativeClientImpl).frbInternalSseEncode(move: false),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+    NativeHyperliquidAccountSubscription self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as NativeHyperliquidAccountSubscriptionImpl).frbInternalSseEncode(
+        move: false,
+      ),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
+    NativeHyperliquidMarketSubscription self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as NativeHyperliquidMarketSubscriptionImpl).frbInternalSseEncode(
+        move: false,
+      ),
       serializer,
     );
   }
@@ -20974,6 +22172,36 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_usize(
       (self as NativeClientImpl).frbInternalSseEncode(move: null),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidAccountSubscription(
+    NativeHyperliquidAccountSubscription self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as NativeHyperliquidAccountSubscriptionImpl).frbInternalSseEncode(
+        move: null,
+      ),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeHyperliquidMarketSubscription(
+    NativeHyperliquidMarketSubscription self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as NativeHyperliquidMarketSubscriptionImpl).frbInternalSseEncode(
+        move: null,
+      ),
       serializer,
     );
   }
@@ -21765,12 +22993,57 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  void sse_encode_box_autoadd_wire_hyperliquid_account_event(
+    WireHyperliquidAccountEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_hyperliquid_account_event(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_wire_hyperliquid_asset_context_event(
+    WireHyperliquidAssetContextEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_hyperliquid_asset_context_event(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_wire_hyperliquid_candle_event(
+    WireHyperliquidCandleEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_hyperliquid_candle_event(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_wire_hyperliquid_evm_contract(
     WireHyperliquidEvmContract self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_wire_hyperliquid_evm_contract(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_wire_hyperliquid_market_event(
+    WireHyperliquidMarketEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_hyperliquid_market_event(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_wire_hyperliquid_order_book_event(
+    WireHyperliquidOrderBookEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_hyperliquid_order_book_event(self, serializer);
   }
 
   @protected
@@ -21792,12 +23065,39 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  void sse_encode_box_autoadd_wire_hyperliquid_order_update(
+    WireHyperliquidOrderUpdate self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_hyperliquid_order_update(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_wire_hyperliquid_referrer(
     WireHyperliquidReferrer self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_wire_hyperliquid_referrer(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_wire_hyperliquid_spot_state_event(
+    WireHyperliquidSpotStateEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_hyperliquid_spot_state_event(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_wire_hyperliquid_trade_event(
+    WireHyperliquidTradeEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_hyperliquid_trade_event(self, serializer);
   }
 
   @protected
@@ -22909,6 +24209,18 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
     sse_encode_i_32(self.length, serializer);
     for (final item in self) {
       sse_encode_wire_hyperliquid_spot_pair(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_wire_hyperliquid_spot_state_balance(
+    List<WireHyperliquidSpotStateBalance> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_wire_hyperliquid_spot_state_balance(item, serializer);
     }
   }
 
@@ -25382,6 +26694,51 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  void sse_encode_wire_hyperliquid_account_event(
+    WireHyperliquidAccountEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    switch (self) {
+      case WireHyperliquidAccountEvent_OrderUpdate(field0: final field0):
+        sse_encode_i_32(0, serializer);
+        sse_encode_box_autoadd_wire_hyperliquid_order_update(
+          field0,
+          serializer,
+        );
+      case WireHyperliquidAccountEvent_SpotState(field0: final field0):
+        sse_encode_i_32(1, serializer);
+        sse_encode_box_autoadd_wire_hyperliquid_spot_state_event(
+          field0,
+          serializer,
+        );
+      case WireHyperliquidAccountEvent_Reconnected():
+        sse_encode_i_32(2, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_wire_hyperliquid_account_stream_item(
+    WireHyperliquidAccountStreamItem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    switch (self) {
+      case WireHyperliquidAccountStreamItem_Event(field0: final field0):
+        sse_encode_i_32(0, serializer);
+        sse_encode_box_autoadd_wire_hyperliquid_account_event(
+          field0,
+          serializer,
+        );
+      case WireHyperliquidAccountStreamItem_Error(field0: final field0):
+        sse_encode_i_32(1, serializer);
+        sse_encode_box_autoadd_native_error(field0, serializer);
+      case WireHyperliquidAccountStreamItem_End():
+        sse_encode_i_32(2, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_wire_hyperliquid_asset_context(
     WireHyperliquidAssetContext self,
     SseSerializer serializer,
@@ -25397,6 +26754,27 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  void sse_encode_wire_hyperliquid_asset_context_event(
+    WireHyperliquidAssetContextEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_ticker(self.common, serializer);
+    sse_encode_String(self.coin, serializer);
+    sse_encode_opt_String(self.midPrice, serializer);
+    sse_encode_opt_String(self.markPrice, serializer);
+    sse_encode_opt_String(self.previousDayPrice, serializer);
+    sse_encode_opt_String(self.dayBaseVolume, serializer);
+    sse_encode_opt_String(self.dayNotionalVolume, serializer);
+    sse_encode_opt_String(self.oraclePrice, serializer);
+    sse_encode_opt_String(self.fundingRate, serializer);
+    sse_encode_opt_String(self.openInterest, serializer);
+    sse_encode_opt_String(self.circulatingSupply, serializer);
+    sse_encode_opt_String(self.totalSupply, serializer);
+    sse_encode_String(self.rawJson, serializer);
+  }
+
+  @protected
   void sse_encode_wire_hyperliquid_book_level(
     WireHyperliquidBookLevel self,
     SseSerializer serializer,
@@ -25405,6 +26783,16 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
     sse_encode_String(self.price, serializer);
     sse_encode_String(self.size, serializer);
     sse_encode_opt_box_autoadd_u_64(self.orderCount, serializer);
+  }
+
+  @protected
+  void sse_encode_wire_hyperliquid_candle_event(
+    WireHyperliquidCandleEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_candle(self.common, serializer);
+    sse_encode_wire_hyperliquid_candle_snapshot(self.provider, serializer);
   }
 
   @protected
@@ -25513,6 +26901,60 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  void sse_encode_wire_hyperliquid_market_event(
+    WireHyperliquidMarketEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    switch (self) {
+      case WireHyperliquidMarketEvent_Trade(field0: final field0):
+        sse_encode_i_32(0, serializer);
+        sse_encode_box_autoadd_wire_hyperliquid_trade_event(field0, serializer);
+      case WireHyperliquidMarketEvent_OrderBook(field0: final field0):
+        sse_encode_i_32(1, serializer);
+        sse_encode_box_autoadd_wire_hyperliquid_order_book_event(
+          field0,
+          serializer,
+        );
+      case WireHyperliquidMarketEvent_AssetContext(field0: final field0):
+        sse_encode_i_32(2, serializer);
+        sse_encode_box_autoadd_wire_hyperliquid_asset_context_event(
+          field0,
+          serializer,
+        );
+      case WireHyperliquidMarketEvent_Candle(field0: final field0):
+        sse_encode_i_32(3, serializer);
+        sse_encode_box_autoadd_wire_hyperliquid_candle_event(
+          field0,
+          serializer,
+        );
+      case WireHyperliquidMarketEvent_Reconnected():
+        sse_encode_i_32(4, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_wire_hyperliquid_market_stream_item(
+    WireHyperliquidMarketStreamItem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    switch (self) {
+      case WireHyperliquidMarketStreamItem_Event(field0: final field0):
+        sse_encode_i_32(0, serializer);
+        sse_encode_box_autoadd_wire_hyperliquid_market_event(
+          field0,
+          serializer,
+        );
+      case WireHyperliquidMarketStreamItem_Error(field0: final field0):
+        sse_encode_i_32(1, serializer);
+        sse_encode_box_autoadd_native_error(field0, serializer);
+      case WireHyperliquidMarketStreamItem_End():
+        sse_encode_i_32(2, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_wire_hyperliquid_mid_price(
     WireHyperliquidMidPrice self,
     SseSerializer serializer,
@@ -25535,6 +26977,16 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
     sse_encode_String(self.size, serializer);
     sse_encode_i_64(self.timestampNs, serializer);
     sse_encode_String(self.rawJson, serializer);
+  }
+
+  @protected
+  void sse_encode_wire_hyperliquid_order_book_event(
+    WireHyperliquidOrderBookEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_order_book(self.common, serializer);
+    sse_encode_wire_hyperliquid_l_2_book(self.provider, serializer);
   }
 
   @protected
@@ -25610,6 +27062,26 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
         sse_encode_String(status, serializer);
         sse_encode_String(rawJson, serializer);
     }
+  }
+
+  @protected
+  void sse_encode_wire_hyperliquid_order_update(
+    WireHyperliquidOrderUpdate self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_order(self.common, serializer);
+    sse_encode_String(self.coin, serializer);
+    sse_encode_String(self.side, serializer);
+    sse_encode_String(self.limitPrice, serializer);
+    sse_encode_String(self.remainingSize, serializer);
+    sse_encode_String(self.originalSize, serializer);
+    sse_encode_u_64(self.orderId, serializer);
+    sse_encode_i_64(self.acceptedAtNs, serializer);
+    sse_encode_opt_String(self.clientOrderId, serializer);
+    sse_encode_String(self.status, serializer);
+    sse_encode_opt_box_autoadd_i_64(self.statusAtNs, serializer);
+    sse_encode_String(self.rawJson, serializer);
   }
 
   @protected
@@ -25767,6 +27239,30 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
   }
 
   @protected
+  void sse_encode_wire_hyperliquid_spot_state_balance(
+    WireHyperliquidSpotStateBalance self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_balance(self.common, serializer);
+    sse_encode_wire_hyperliquid_spot_balance(self.provider, serializer);
+  }
+
+  @protected
+  void sse_encode_wire_hyperliquid_spot_state_event(
+    WireHyperliquidSpotStateEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.user, serializer);
+    sse_encode_list_wire_hyperliquid_spot_state_balance(
+      self.balances,
+      serializer,
+    );
+    sse_encode_String(self.rawJson, serializer);
+  }
+
+  @protected
   void sse_encode_wire_hyperliquid_spot_token(
     WireHyperliquidSpotToken self,
     SseSerializer serializer,
@@ -25798,6 +27294,16 @@ class MaxtRustLibApiImpl extends MaxtRustLibApiImplPlatform
     sse_encode_String(self.master, serializer);
     sse_encode_String(self.perpetualStateJson, serializer);
     sse_encode_String(self.spotStateJson, serializer);
+  }
+
+  @protected
+  void sse_encode_wire_hyperliquid_trade_event(
+    WireHyperliquidTradeEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wire_trade(self.common, serializer);
+    sse_encode_wire_hyperliquid_recent_trade(self.provider, serializer);
   }
 
   @protected
@@ -27798,6 +29304,40 @@ class NativeClientImpl extends RustOpaque implements NativeClient {
         that: this,
       );
 
+  /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 Hyperliquid 원본 시장 구독을 반환합니다.
+  Future<NativeHyperliquidMarketSubscription> hyperliquidSubscribeDetailed({
+    required WireSubscription subscription,
+  }) =>
+      MaxtRustLib.instance.api.crateApiNativeClientHyperliquidSubscribeDetailed(
+        that: this,
+        subscription: subscription,
+      );
+
+  /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 Hyperliquid 원본 계정 구독을 반환합니다.
+  Future<NativeHyperliquidAccountSubscription>
+  hyperliquidSubscribeDetailedAccount() => MaxtRustLib.instance.api
+      .crateApiNativeClientHyperliquidSubscribeDetailedAccount(that: this);
+
+  /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 설정형 Hyperliquid 원본 계정 구독을 반환합니다.
+  Future<NativeHyperliquidAccountSubscription>
+  hyperliquidSubscribeDetailedAccountWith({required WireStreamConfig config}) =>
+      MaxtRustLib.instance.api
+          .crateApiNativeClientHyperliquidSubscribeDetailedAccountWith(
+            that: this,
+            config: config,
+          );
+
+  /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 설정형 Hyperliquid 원본 시장 구독을 반환합니다.
+  Future<NativeHyperliquidMarketSubscription> hyperliquidSubscribeDetailedWith({
+    required WireSubscription subscription,
+    required WireStreamConfig config,
+  }) => MaxtRustLib.instance.api
+      .crateApiNativeClientHyperliquidSubscribeDetailedWith(
+        that: this,
+        subscription: subscription,
+        config: config,
+      );
+
   /// 구성된 Hyperliquid 주소의 제공자 수수료 일정을 반환합니다.
   ///
   /// 제공자가 확장할 수 있는 세부 tier 정보도 보존합니다.
@@ -28277,6 +29817,66 @@ class NativeClientImpl extends RustOpaque implements NativeClient {
   }) => MaxtRustLib.instance.api.crateApiNativeClientWithdrawals(
     that: this,
     request: request,
+  );
+}
+
+@sealed
+class NativeHyperliquidAccountSubscriptionImpl extends RustOpaque
+    implements NativeHyperliquidAccountSubscription {
+  // Not to be used by end users
+  NativeHyperliquidAccountSubscriptionImpl.frbInternalDcoDecode(
+    List<dynamic> wire,
+  ) : super.frbInternalDcoDecode(wire, _kStaticData);
+
+  // Not to be used by end users
+  NativeHyperliquidAccountSubscriptionImpl.frbInternalSseDecode(
+    BigInt ptr,
+    int externalSizeOnNative,
+  ) : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+  static final _kStaticData = RustArcStaticData(
+    rustArcIncrementStrongCount: MaxtRustLib
+        .instance
+        .api
+        .rust_arc_increment_strong_count_NativeHyperliquidAccountSubscription,
+    rustArcDecrementStrongCount: MaxtRustLib
+        .instance
+        .api
+        .rust_arc_decrement_strong_count_NativeHyperliquidAccountSubscription,
+    rustArcDecrementStrongCountPtr: MaxtRustLib
+        .instance
+        .api
+        .rust_arc_decrement_strong_count_NativeHyperliquidAccountSubscriptionPtr,
+  );
+}
+
+@sealed
+class NativeHyperliquidMarketSubscriptionImpl extends RustOpaque
+    implements NativeHyperliquidMarketSubscription {
+  // Not to be used by end users
+  NativeHyperliquidMarketSubscriptionImpl.frbInternalDcoDecode(
+    List<dynamic> wire,
+  ) : super.frbInternalDcoDecode(wire, _kStaticData);
+
+  // Not to be used by end users
+  NativeHyperliquidMarketSubscriptionImpl.frbInternalSseDecode(
+    BigInt ptr,
+    int externalSizeOnNative,
+  ) : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+  static final _kStaticData = RustArcStaticData(
+    rustArcIncrementStrongCount: MaxtRustLib
+        .instance
+        .api
+        .rust_arc_increment_strong_count_NativeHyperliquidMarketSubscription,
+    rustArcDecrementStrongCount: MaxtRustLib
+        .instance
+        .api
+        .rust_arc_decrement_strong_count_NativeHyperliquidMarketSubscription,
+    rustArcDecrementStrongCountPtr: MaxtRustLib
+        .instance
+        .api
+        .rust_arc_decrement_strong_count_NativeHyperliquidMarketSubscriptionPtr,
   );
 }
 

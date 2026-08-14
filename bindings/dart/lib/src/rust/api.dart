@@ -71,6 +71,37 @@ Future<void> nativeAccountSubscriptionClose({
   subscription: subscription,
 );
 
+/// 네이티브 Hyperliquid 시장 구독에서 다음 event/error/end 항목을 읽습니다.
+Future<WireHyperliquidMarketStreamItem>
+nativeHyperliquidMarketSubscriptionNext({
+  required NativeHyperliquidMarketSubscription subscription,
+}) => MaxtRustLib.instance.api.crateApiNativeHyperliquidMarketSubscriptionNext(
+  subscription: subscription,
+);
+
+/// 네이티브 Hyperliquid 계정 구독에서 다음 event/error/end 항목을 읽습니다.
+Future<WireHyperliquidAccountStreamItem>
+nativeHyperliquidAccountSubscriptionNext({
+  required NativeHyperliquidAccountSubscription subscription,
+}) => MaxtRustLib.instance.api.crateApiNativeHyperliquidAccountSubscriptionNext(
+  subscription: subscription,
+);
+
+/// 네이티브 Hyperliquid 시장 구독을 중단하고 원본 Rust stream 정리를 기다립니다.
+Future<void> nativeHyperliquidMarketSubscriptionClose({
+  required NativeHyperliquidMarketSubscription subscription,
+}) => MaxtRustLib.instance.api.crateApiNativeHyperliquidMarketSubscriptionClose(
+  subscription: subscription,
+);
+
+/// 네이티브 Hyperliquid 계정 구독을 중단하고 원본 Rust stream 정리를 기다립니다.
+Future<void> nativeHyperliquidAccountSubscriptionClose({
+  required NativeHyperliquidAccountSubscription subscription,
+}) =>
+    MaxtRustLib.instance.api.crateApiNativeHyperliquidAccountSubscriptionClose(
+      subscription: subscription,
+    );
+
 /// Dart callback을 공통 Adapter 구현으로 등록합니다.
 Future<DartAdapter> registerDartAdapter({
   required WireExchange exchange,
@@ -474,6 +505,25 @@ abstract class NativeClient implements RustOpaqueInterface {
   ///
   /// 제공자가 계정이 없음을 null로 보내면 빈 목록으로 반환합니다.
   Future<List<WireHyperliquidSubAccount>> hyperliquidSubAccounts();
+
+  /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 Hyperliquid 원본 시장 구독을 반환합니다.
+  Future<NativeHyperliquidMarketSubscription> hyperliquidSubscribeDetailed({
+    required WireSubscription subscription,
+  });
+
+  /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 Hyperliquid 원본 계정 구독을 반환합니다.
+  Future<NativeHyperliquidAccountSubscription>
+  hyperliquidSubscribeDetailedAccount();
+
+  /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 설정형 Hyperliquid 원본 계정 구독을 반환합니다.
+  Future<NativeHyperliquidAccountSubscription>
+  hyperliquidSubscribeDetailedAccountWith({required WireStreamConfig config});
+
+  /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 설정형 Hyperliquid 원본 시장 구독을 반환합니다.
+  Future<NativeHyperliquidMarketSubscription> hyperliquidSubscribeDetailedWith({
+    required WireSubscription subscription,
+    required WireStreamConfig config,
+  });
 
   /// 구성된 Hyperliquid 주소의 제공자 수수료 일정을 반환합니다.
   ///

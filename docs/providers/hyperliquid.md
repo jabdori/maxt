@@ -84,6 +84,26 @@ Use `trades` or `Feed::Trades` for execution prices and times.
 The adapter sends `{"method":"ping"}` every 15 seconds. `l2Book.nSigFigs` and
 `l2Book.mantissa` are not exposed.
 
+### Full-fidelity Hyperliquid streams
+
+The portable `Client::subscribe()` and `Client::subscribe_account()` APIs keep
+their normalized event contracts. When an application needs the documented
+Hyperliquid-only fields, call the concrete adapter methods instead:
+
+| Method | Result | Requirement |
+| --- | --- | --- |
+| `subscribe_detailed(&subscription)` | `HyperliquidMarketStream` | Public market subscription |
+| `subscribe_detailed_with(&subscription, &config)` | `HyperliquidMarketStream` | Same subscription with explicit reconnect and buffer settings |
+| `subscribe_detailed_account()` | `HyperliquidAccountStream` | Configured query address; no local signer |
+| `subscribe_detailed_account_with(&config)` | `HyperliquidAccountStream` | Same account subscription with explicit connection settings |
+
+Each detailed event contains a normalized `common` value and its
+Hyperliquid-native value. Market events retain trade `hash` and `users`,
+L2-level `n`, asset-context values, and candle trade counts. Account events
+retain order status, status timestamp, client order ID, and Spot
+`entryNotional` balances. `raw_json` preserves the source frame for
+forward-compatible fields.
+
 ## Account configuration and provider-specific APIs
 
 Public market data and market streams need no account configuration.

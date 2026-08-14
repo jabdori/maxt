@@ -1404,6 +1404,63 @@ export interface HyperliquidRecentTradeWire {
   readonly raw_json: string;
 }
 
+export interface HyperliquidTradeEventWire {
+  readonly common: TradeWire;
+  readonly provider: HyperliquidRecentTradeWire;
+}
+
+export interface HyperliquidOrderBookEventWire {
+  readonly common: OrderBookWire;
+  readonly provider: HyperliquidL2BookWire;
+}
+
+export interface HyperliquidCandleEventWire {
+  readonly common: CandleWire;
+  readonly provider: HyperliquidCandleSnapshotWire;
+}
+
+export interface HyperliquidAssetContextEventWire {
+  readonly common: TickerWire;
+  readonly coin: string;
+  readonly mid_price: DecimalWire | null;
+  readonly mark_price: DecimalWire | null;
+  readonly previous_day_price: DecimalWire | null;
+  readonly day_base_volume: DecimalWire | null;
+  readonly day_notional_volume: DecimalWire | null;
+  readonly oracle_price: DecimalWire | null;
+  readonly funding_rate: DecimalWire | null;
+  readonly open_interest: DecimalWire | null;
+  readonly circulating_supply: DecimalWire | null;
+  readonly total_supply: DecimalWire | null;
+  readonly raw_json: string;
+}
+
+export interface HyperliquidOrderUpdateWire {
+  readonly common: OrderWire;
+  readonly coin: string;
+  readonly side: string;
+  readonly limit_price: DecimalWire;
+  readonly remaining_size: DecimalWire;
+  readonly original_size: DecimalWire;
+  readonly order_id: string;
+  readonly accepted_at: TimestampWire;
+  readonly client_order_id: string | null;
+  readonly status: string;
+  readonly status_at: TimestampWire | null;
+  readonly raw_json: string;
+}
+
+export interface HyperliquidSpotStateBalanceWire {
+  readonly common: BalanceWire;
+  readonly provider: HyperliquidSpotBalanceWire;
+}
+
+export interface HyperliquidSpotStateEventWire {
+  readonly user: string;
+  readonly balances: readonly HyperliquidSpotStateBalanceWire[];
+  readonly raw_json: string;
+}
+
 export interface HyperliquidFundingHistoryEntryWire {
   readonly coin: string;
   readonly market: MarketWire;
@@ -1720,6 +1777,18 @@ export type FeedWire =
   | { readonly kind: "ticker"; }
   | { readonly kind: "candles"; readonly interval: string; };
 
+export type HyperliquidMarketEventWire =
+  | { readonly kind: "trade"; readonly value: HyperliquidTradeEventWire; }
+  | { readonly kind: "order_book"; readonly value: HyperliquidOrderBookEventWire; }
+  | { readonly kind: "asset_context"; readonly value: HyperliquidAssetContextEventWire; }
+  | { readonly kind: "candle"; readonly value: HyperliquidCandleEventWire; }
+  | { readonly kind: "reconnected"; };
+
+export type HyperliquidAccountEventWire =
+  | { readonly kind: "order_update"; readonly value: HyperliquidOrderUpdateWire; }
+  | { readonly kind: "spot_state"; readonly value: HyperliquidSpotStateEventWire; }
+  | { readonly kind: "reconnected"; };
+
 export type MarketEventWire =
   | { readonly kind: "trade"; readonly trade: TradeWire; }
   | { readonly kind: "order_book"; readonly order_book: OrderBookWire; }
@@ -1738,6 +1807,14 @@ export type MarketStreamItemWire =
 
 export type AccountStreamItemWire =
   | { readonly kind: "event"; readonly event: AccountEventWire; }
+  | { readonly kind: "error"; readonly error: ErrorWire; };
+
+export type HyperliquidMarketStreamItemWire =
+  | { readonly kind: "event"; readonly event: HyperliquidMarketEventWire; }
+  | { readonly kind: "error"; readonly error: ErrorWire; };
+
+export type HyperliquidAccountStreamItemWire =
+  | { readonly kind: "event"; readonly event: HyperliquidAccountEventWire; }
   | { readonly kind: "error"; readonly error: ErrorWire; };
 
 export type ErrorWire =
@@ -1819,7 +1896,7 @@ export type AdapterReplyWire =
   | { readonly kind: "unit"; };
 
 export const EXCHANGES = ["upbit", "bithumb", "binance", "hyperliquid"] as const;
-export const NATIVE_API_VERSION = 29 as const;
+export const NATIVE_API_VERSION = 30 as const;
 export const FEATURES = ["markets", "trades", "order_book", "ticker", "candles", "trade_stream", "order_book_stream", "ticker_stream", "candle_stream", "balances", "asset_networks", "deposit_addresses", "deposit_history", "deposit_lookup", "travel_rule", "withdrawal_quotes", "withdrawals", "withdrawal_history", "withdrawal_lookup", "withdrawal_cancellation", "open_orders", "order_history", "account_stream", "trading", "positions", "margin", "funding_rates", "funding_payments", "margin_config", "reduce_only_orders"] as const;
 export const ERROR_VARIANTS = ["InvalidRequest", "Transfer", "Unsupported", "Adapter", "Auth", "Exchange", "Transport", "Decode"] as const;
 export const ADAPTER_OPERATIONS = ["markets", "trades", "orderBook", "ticker", "candles", "subscribe", "balances", "orderRules", "assetNetworks", "depositAddresses", "depositAddress", "createDepositAddress", "prepareWithdrawal", "withdraw", "deposit", "withdrawal", "cancelWithdrawal", "deposits", "withdrawals", "openOrders", "order", "orderByClientId", "ordersByIds", "orderHistory", "subscribeAccount", "placeOrder", "cancelOrder", "cancelOrderByClientId", "cancelOrders", "positions", "marginSummary", "fundingRates", "fundingPayments", "setMargin"] as const;
@@ -1828,7 +1905,7 @@ export const PROVIDER_METHODS = {
   upbit: ["region", "orderBooks", "orderBooksAtLevel", "tickers", "tickersByQuote", "yearCandles", "orderbookInstruments", "marketEvents", "listSubscriptions", "testOrder", "orderDetail", "closedOrders", "depositInfo", "withdrawalAddresses", "travelRuleVasps", "verifyTravelRuleByUuid", "verifyTravelRuleByTxid", "batchCancelOpenOrders", "cancelAndNewOrder", "depositKrw", "withdrawKrw", "apiKeys", "listPockets", "listPocketApiKeys", "subPocketBalances", "universalTransfer", "universalTransfers", "subPocketTransfer", "subPocketTransfers"],
   bithumb: ["marketWarnings", "marketAlerts", "notices", "transferFees", "apiKeys", "krwWithdrawals", "withdrawKrw", "krwDeposits", "depositKrw", "pendingOrders", "closedOrders", "batchOrders", "twapOrders", "createTwapOrder", "cancelTwapOrder", "withdrawalAddresses", "orderDetail", "orderList"],
   binance: ["venue", "spotSymbolFilters", "spotOrder", "spotAveragePrice", "spotAccountInformation", "spotCancelAllOpenOrders", "spotExchangeInfo", "usdMAccountInformation", "usdMExchangeInfo", "usdMPositionInformation", "allCoinsInformation", "apiKeyPermissions", "depositHistory", "questionnaireRequirements", "withdrawAddressList", "withdrawHistory", "markPrice", "markPrices", "openInterest", "aggregateTrades", "accountTrades", "c2cTradeHistory", "testOrder", "cancelAllOpenOrders", "usdMCreateListenKey", "usdMKeepaliveListenKey", "usdMCloseListenKey"],
-  hyperliquid: ["isTestnet", "allMids", "userFills", "userFillsByTime", "basicOpenOrders", "orderStatus", "historicalOrders", "nonFundingLedger", "assetContext", "candleSnapshot", "l2Book", "recentTrades", "fundingHistory", "userFunding", "spotClearinghouseState", "spotMeta", "spotMetaAndAssetContexts", "userRateLimit", "userRole", "referral", "userFees", "portfolio", "subAccounts", "userVaultEquities"],
+  hyperliquid: ["isTestnet", "allMids", "subscribeDetailed", "subscribeDetailedWith", "subscribeDetailedAccount", "subscribeDetailedAccountWith", "userFills", "userFillsByTime", "basicOpenOrders", "orderStatus", "historicalOrders", "nonFundingLedger", "assetContext", "candleSnapshot", "l2Book", "recentTrades", "fundingHistory", "userFunding", "spotClearinghouseState", "spotMeta", "spotMetaAndAssetContexts", "userRateLimit", "userRole", "referral", "userFees", "portfolio", "subAccounts", "userVaultEquities"],
 } as const;
 export const PROVIDER_CONSTRUCTORS = {
   upbit: ["constructor", "withRegion"],
@@ -1837,12 +1914,12 @@ export const PROVIDER_CONSTRUCTORS = {
   hyperliquid: ["constructor", "testnet"],
 } as const;
 export const IDENTIFIERS = ["Exchange", "Feature", "MarketKind", "MarketStatus", "Side", "Interval", "Overflow", "MarginMode", "OrderStatus", "OrderIdKind", "OrderType", "TimeInForce", "SizeKind", "UpbitRegion", "UpbitOrderDirection", "UpbitClosedOrderState", "UpbitSmpType", "UpbitKrwTwoFactorType", "UpbitPocketTransferState", "UpbitPocketTransferDirection", "UpbitPocketTransferOrder", "BithumbAlertStep", "BithumbPendingOrderState", "BithumbClosedOrderState", "BithumbOrderDirection", "BithumbOrderListState", "BithumbTwapState", "BithumbTwapOrderDirection", "BinanceMarket", "BinanceC2cTradeType", "HyperliquidLedgerKind", "ExchangeErrorKind", "Network", "WithdrawalStatus", "DepositStatus", "TransferErrorKind"] as const;
-export const MODELS = ["Market", "MarketInfo", "Trade", "Level", "OrderBook", "Ticker", "Candle", "Balance", "OrderAccount", "OrderOption", "OrderRules", "AssetNetwork", "DepositAddress", "DepositAddressEntry", "ExchangeDestination", "ChainDestination", "ExchangeTransferRequest", "ChainTransferRequest", "TransferDestination", "WithdrawalFee", "TravelRuleRequirement", "WithdrawalQuote", "TransferPlan", "Withdrawal", "Deposit", "Order", "CancelledOrder", "OrderCancelFailure", "CancelOrdersResult", "Position", "MarginSummary", "FundingRate", "FundingPayment", "CandleRequest", "OrderRequest", "OrderLookupRequest", "CancelOrdersRequest", "OrderHistoryRequest", "DepositAddressRequest", "WithdrawRequest", "TransferLookupRequest", "TransferHistoryRequest", "StreamConfig", "Subscription", "HistoryRequest", "MarginRequest", "UpbitMarketEvent", "UpbitListedSubscription", "UpbitSubscriptionList", "UpbitYearCandle", "UpbitOrderBookInstrument", "UpbitOrderDetailRequest", "UpbitOrderDetailTrade", "UpbitOrderDetail", "UpbitClosedOrdersRequest", "UpbitClosedOrder", "UpbitDepositInfo", "UpbitWithdrawalAddress", "UpbitTravelRuleVasp", "UpbitTravelRuleVerification", "UpbitBatchCancelScope", "UpbitBatchCancelRequest", "UpbitOrderReference", "UpbitOrderVolume", "UpbitCancelAndNewOrder", "UpbitCancelAndNewOrderRequest", "UpbitCancelAndNewOrderResult", "UpbitKrwTransferRequest", "UpbitKrwDeposit", "UpbitKrwWithdrawal", "UpbitApiKey", "UpbitPocket", "UpbitPocketApiKey", "UpbitPocketApiKeyGroup", "UpbitPocketApiKeysRequest", "UpbitPocketBalance", "UpbitPocketTransferQuery", "UpbitPocketUniversalTransferRequest", "UpbitPocketTransferRequest", "UpbitPocketTransfer", "BithumbMarketAlert", "BithumbNotice", "BithumbApiKey", "BithumbKrwWithdrawalsRequest", "BithumbKrwDepositsRequest", "BithumbKrwTransferRequest", "BithumbKrwWithdrawal", "BithumbKrwDeposit", "BithumbPendingOrdersRequest", "BithumbClosedOrdersRequest", "BithumbClosedOrder", "BithumbBatchOrdersRequest", "BithumbBatchOrder", "BithumbBatchOrderFailure", "BithumbBatchOrderOutcome", "BithumbBatchOrdersResult", "BithumbTwapOrdersRequest", "BithumbTwapOrderRequest", "BithumbTwapOrder", "BithumbAssetFee", "BithumbNetworkFee", "BithumbWithdrawalAddress", "BithumbOrderDetailRequest", "BithumbOrderDetailTrade", "BithumbOrderDetail", "BithumbOrderListRequest", "BithumbOrderListItem", "BinanceSymbolFilters", "BinanceSpotOrderDetail", "BinanceDepositHistoryRequest", "BinanceWithdrawHistoryRequest", "BinanceSpotAccountInformation", "BinanceSpotCommissionRates", "BinanceSpotAccountBalance", "BinanceSpotCancelAllOpenOrders", "BinanceSpotCancelledOrder", "BinanceUsdMAccountInformation", "BinanceUsdMAccountAsset", "BinanceUsdMAccountPosition", "BinanceUsdMPositionInformation", "BinanceExchangeInfo", "BinanceExchangeSymbol", "BinanceCoinInformation", "BinanceCoinNetworkInformation", "BinanceApiKeyPermissions", "BinanceDepositHistory", "BinanceDepositHistoryEntry", "BinanceQuestionnaireRequirements", "BinanceWithdrawalAddress", "BinanceWithdrawHistory", "BinanceWithdrawHistoryEntry", "BinanceSpotAveragePrice", "BinanceMarkPrice", "BinanceOpenInterest", "BinanceAggregateTradesRequest", "BinanceAggregateTrade", "BinanceAccountTrade", "BinanceTestOrderRequest", "BinanceTestOrder", "BinanceC2cTradeHistoryRequest", "BinanceC2cTrade", "BinanceC2cTradeHistoryPage", "HyperliquidLedgerEntry", "HyperliquidCandleSnapshot", "HyperliquidBookLevel", "HyperliquidL2Book", "HyperliquidRecentTrade", "HyperliquidFundingHistoryEntry", "HyperliquidUserFunding", "HyperliquidSpotBalance", "HyperliquidSpotClearinghouseState", "HyperliquidEvmContract", "HyperliquidSpotToken", "HyperliquidSpotPair", "HyperliquidSpotMeta", "HyperliquidSpotAssetContext", "HyperliquidSpotMetaAndAssetContexts", "HyperliquidMidPrice", "HyperliquidAssetContext", "HyperliquidUserRateLimit", "HyperliquidUserRole", "HyperliquidReferral", "HyperliquidReferrer", "HyperliquidUserFees", "HyperliquidUserFill", "HyperliquidOrderReference", "HyperliquidOpenOrder", "HyperliquidOrderDetail", "HyperliquidOrderInfo", "HyperliquidOrderStatusResponse", "HyperliquidDailyVolume", "HyperliquidPortfolioPeriod", "HyperliquidPortfolioPoint", "HyperliquidSubAccount", "HyperliquidVaultEquity"] as const;
+export const MODELS = ["Market", "MarketInfo", "Trade", "Level", "OrderBook", "Ticker", "Candle", "Balance", "OrderAccount", "OrderOption", "OrderRules", "AssetNetwork", "DepositAddress", "DepositAddressEntry", "ExchangeDestination", "ChainDestination", "ExchangeTransferRequest", "ChainTransferRequest", "TransferDestination", "WithdrawalFee", "TravelRuleRequirement", "WithdrawalQuote", "TransferPlan", "Withdrawal", "Deposit", "Order", "CancelledOrder", "OrderCancelFailure", "CancelOrdersResult", "Position", "MarginSummary", "FundingRate", "FundingPayment", "CandleRequest", "OrderRequest", "OrderLookupRequest", "CancelOrdersRequest", "OrderHistoryRequest", "DepositAddressRequest", "WithdrawRequest", "TransferLookupRequest", "TransferHistoryRequest", "StreamConfig", "Subscription", "HistoryRequest", "MarginRequest", "UpbitMarketEvent", "UpbitListedSubscription", "UpbitSubscriptionList", "UpbitYearCandle", "UpbitOrderBookInstrument", "UpbitOrderDetailRequest", "UpbitOrderDetailTrade", "UpbitOrderDetail", "UpbitClosedOrdersRequest", "UpbitClosedOrder", "UpbitDepositInfo", "UpbitWithdrawalAddress", "UpbitTravelRuleVasp", "UpbitTravelRuleVerification", "UpbitBatchCancelScope", "UpbitBatchCancelRequest", "UpbitOrderReference", "UpbitOrderVolume", "UpbitCancelAndNewOrder", "UpbitCancelAndNewOrderRequest", "UpbitCancelAndNewOrderResult", "UpbitKrwTransferRequest", "UpbitKrwDeposit", "UpbitKrwWithdrawal", "UpbitApiKey", "UpbitPocket", "UpbitPocketApiKey", "UpbitPocketApiKeyGroup", "UpbitPocketApiKeysRequest", "UpbitPocketBalance", "UpbitPocketTransferQuery", "UpbitPocketUniversalTransferRequest", "UpbitPocketTransferRequest", "UpbitPocketTransfer", "BithumbMarketAlert", "BithumbNotice", "BithumbApiKey", "BithumbKrwWithdrawalsRequest", "BithumbKrwDepositsRequest", "BithumbKrwTransferRequest", "BithumbKrwWithdrawal", "BithumbKrwDeposit", "BithumbPendingOrdersRequest", "BithumbClosedOrdersRequest", "BithumbClosedOrder", "BithumbBatchOrdersRequest", "BithumbBatchOrder", "BithumbBatchOrderFailure", "BithumbBatchOrderOutcome", "BithumbBatchOrdersResult", "BithumbTwapOrdersRequest", "BithumbTwapOrderRequest", "BithumbTwapOrder", "BithumbAssetFee", "BithumbNetworkFee", "BithumbWithdrawalAddress", "BithumbOrderDetailRequest", "BithumbOrderDetailTrade", "BithumbOrderDetail", "BithumbOrderListRequest", "BithumbOrderListItem", "BinanceSymbolFilters", "BinanceSpotOrderDetail", "BinanceDepositHistoryRequest", "BinanceWithdrawHistoryRequest", "BinanceSpotAccountInformation", "BinanceSpotCommissionRates", "BinanceSpotAccountBalance", "BinanceSpotCancelAllOpenOrders", "BinanceSpotCancelledOrder", "BinanceUsdMAccountInformation", "BinanceUsdMAccountAsset", "BinanceUsdMAccountPosition", "BinanceUsdMPositionInformation", "BinanceExchangeInfo", "BinanceExchangeSymbol", "BinanceCoinInformation", "BinanceCoinNetworkInformation", "BinanceApiKeyPermissions", "BinanceDepositHistory", "BinanceDepositHistoryEntry", "BinanceQuestionnaireRequirements", "BinanceWithdrawalAddress", "BinanceWithdrawHistory", "BinanceWithdrawHistoryEntry", "BinanceSpotAveragePrice", "BinanceMarkPrice", "BinanceOpenInterest", "BinanceAggregateTradesRequest", "BinanceAggregateTrade", "BinanceAccountTrade", "BinanceTestOrderRequest", "BinanceTestOrder", "BinanceC2cTradeHistoryRequest", "BinanceC2cTrade", "BinanceC2cTradeHistoryPage", "HyperliquidLedgerEntry", "HyperliquidCandleSnapshot", "HyperliquidBookLevel", "HyperliquidL2Book", "HyperliquidRecentTrade", "HyperliquidTradeEvent", "HyperliquidOrderBookEvent", "HyperliquidCandleEvent", "HyperliquidAssetContextEvent", "HyperliquidOrderUpdate", "HyperliquidSpotStateBalance", "HyperliquidSpotStateEvent", "HyperliquidMarketEvent", "HyperliquidAccountEvent", "HyperliquidFundingHistoryEntry", "HyperliquidUserFunding", "HyperliquidSpotBalance", "HyperliquidSpotClearinghouseState", "HyperliquidEvmContract", "HyperliquidSpotToken", "HyperliquidSpotPair", "HyperliquidSpotMeta", "HyperliquidSpotAssetContext", "HyperliquidSpotMetaAndAssetContexts", "HyperliquidMidPrice", "HyperliquidAssetContext", "HyperliquidUserRateLimit", "HyperliquidUserRole", "HyperliquidReferral", "HyperliquidReferrer", "HyperliquidUserFees", "HyperliquidUserFill", "HyperliquidOrderReference", "HyperliquidOpenOrder", "HyperliquidOrderDetail", "HyperliquidOrderInfo", "HyperliquidOrderStatusResponse", "HyperliquidDailyVolume", "HyperliquidPortfolioPeriod", "HyperliquidPortfolioPoint", "HyperliquidSubAccount", "HyperliquidVaultEquity"] as const;
 export const RAW_NATIVE_EXPORTS = ["NATIVE_API_VERSION", "NativeClient", "createCustomClient", "NativeUpbit", "createUpbit", "NativeBithumb", "createBithumb", "NativeBinance", "createBinance", "NativeHyperliquid", "createHyperliquid"] as const;
 export const RAW_NATIVE_CLIENT_MEMBERS = ["exchange", "supports", "markets", "trades", "orderBook", "ticker", "candles", "subscribe", "subscribeWith", "balances", "orderRules", "assetNetworks", "depositAddresses", "depositAddress", "createDepositAddress", "prepareWithdrawal", "withdraw", "deposit", "withdrawal", "cancelWithdrawal", "deposits", "withdrawals", "openOrders", "openOrdersOn", "order", "orderByClientId", "ordersByIds", "orderHistory", "subscribeAccount", "subscribeAccountWith", "placeOrder", "cancelOrder", "cancelOrderByClientId", "cancelOrders", "positions", "positionsOn", "marginSummary", "fundingRates", "fundingPayments", "setMargin", "prepareTransferTo", "prepareTransferToChain", "executeTransfer", "streamNext", "streamClose"] as const;
 export const RAW_PROVIDER_MEMBERS = {
   upbit: ["client", "region", "orderBooks", "orderBooksAtLevel", "tickers", "tickersByQuote", "yearCandles", "orderbookInstruments", "marketEvents", "listSubscriptions", "testOrder", "orderDetail", "closedOrders", "depositInfo", "withdrawalAddresses", "travelRuleVasps", "verifyTravelRuleByUuid", "verifyTravelRuleByTxid", "batchCancelOpenOrders", "cancelAndNewOrder", "depositKrw", "withdrawKrw", "apiKeys", "listPockets", "listPocketApiKeys", "subPocketBalances", "universalTransfer", "universalTransfers", "subPocketTransfer", "subPocketTransfers"],
   bithumb: ["client", "marketWarnings", "marketAlerts", "notices", "transferFees", "apiKeys", "krwWithdrawals", "withdrawKrw", "krwDeposits", "depositKrw", "pendingOrders", "closedOrders", "batchOrders", "twapOrders", "createTwapOrder", "cancelTwapOrder", "withdrawalAddresses", "orderDetail", "orderList"],
   binance: ["client", "venue", "spotSymbolFilters", "spotOrder", "spotAveragePrice", "spotAccountInformation", "spotCancelAllOpenOrders", "spotExchangeInfo", "usdMAccountInformation", "usdMExchangeInfo", "usdMPositionInformation", "allCoinsInformation", "apiKeyPermissions", "depositHistory", "questionnaireRequirements", "withdrawAddressList", "withdrawHistory", "markPrice", "markPrices", "openInterest", "aggregateTrades", "accountTrades", "c2cTradeHistory", "testOrder", "cancelAllOpenOrders", "usdMCreateListenKey", "usdMKeepaliveListenKey", "usdMCloseListenKey"],
-  hyperliquid: ["client", "isTestnet", "allMids", "userFills", "userFillsByTime", "basicOpenOrders", "orderStatus", "historicalOrders", "nonFundingLedger", "assetContext", "candleSnapshot", "l2Book", "recentTrades", "fundingHistory", "userFunding", "spotClearinghouseState", "spotMeta", "spotMetaAndAssetContexts", "userRateLimit", "userRole", "referral", "userFees", "portfolio", "subAccounts", "userVaultEquities"],
+  hyperliquid: ["client", "isTestnet", "allMids", "subscribeDetailed", "subscribeDetailedWith", "subscribeDetailedAccount", "subscribeDetailedAccountWith", "userFills", "userFillsByTime", "basicOpenOrders", "orderStatus", "historicalOrders", "nonFundingLedger", "assetContext", "candleSnapshot", "l2Book", "recentTrades", "fundingHistory", "userFunding", "spotClearinghouseState", "spotMeta", "spotMetaAndAssetContexts", "userRateLimit", "userRole", "referral", "userFees", "portfolio", "subAccounts", "userVaultEquities", "streamNext", "streamClose"],
 } as const;

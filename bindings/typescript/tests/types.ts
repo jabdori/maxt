@@ -17,6 +17,7 @@ import {
   type DepositAddressEntry,
   DepositAddressRequest,
   Exchange,
+  Feed,
   HistoryRequest,
   Market,
   Network,
@@ -82,6 +83,8 @@ import {
   BithumbTwapOrdersRequest,
   Cursor,
   HyperliquidAdapter,
+  type HyperliquidAccountStream,
+  type HyperliquidMarketStream,
   type HyperliquidMidPrice,
   type HyperliquidOpenOrder,
   type HyperliquidOrderInfo,
@@ -115,6 +118,7 @@ import {
   type Order,
   Side,
   Size,
+  Subscription,
   TimeInForce,
 } from "../src/node.js";
 
@@ -154,6 +158,12 @@ const binanceTestOrder: Promise<BinanceTestOrder> = adapter.testOrder(
 const cancelAllOpenOrders: Promise<void> = adapter.cancelAllOpenOrders(market);
 const hyperliquid = new HyperliquidAdapter();
 const allMids: Promise<readonly HyperliquidMidPrice[]> = hyperliquid.allMids();
+const hyperliquidMarket = Market.perpetual(Exchange.Hyperliquid, "BTC", "USDC");
+const detailedMarket: Promise<HyperliquidMarketStream> = hyperliquid.subscribeDetailed(
+  new Subscription([hyperliquidMarket], [Feed.Trades]),
+);
+const detailedAccount: Promise<HyperliquidAccountStream> =
+  hyperliquid.subscribeDetailedAccount();
 const userRateLimit: Promise<HyperliquidUserRateLimit> = hyperliquid.userRateLimit();
 const userRole: Promise<HyperliquidUserRole> = hyperliquid.userRole();
 const referral: Promise<HyperliquidReferral> = hyperliquid.referral();

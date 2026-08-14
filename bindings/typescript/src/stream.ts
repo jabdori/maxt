@@ -1,5 +1,10 @@
 import { InvalidRequestError, type MaxtError } from "./errors.js";
-import type { AccountEvent, MarketEvent } from "./models.js";
+import type {
+  AccountEvent,
+  HyperliquidAccountEvent,
+  HyperliquidMarketEvent,
+  MarketEvent,
+} from "./models.js";
 
 export class StreamEvent<T> {
   readonly kind = "event";
@@ -84,3 +89,13 @@ export class AsyncStream<T> implements AsyncIterableIterator<T> {
 export class MarketStream extends AsyncStream<StreamItem<MarketEvent>> {}
 
 export class AccountStream extends AsyncStream<StreamItem<AccountEvent>> {}
+
+/** Full-fidelity Hyperliquid market subscription events. */
+export class HyperliquidMarketStream extends AsyncStream<
+  StreamItem<HyperliquidMarketEvent>
+> {}
+
+/** Full-fidelity Hyperliquid account subscription events. */
+export class HyperliquidAccountStream extends AsyncStream<
+  StreamItem<HyperliquidAccountEvent>
+> {}

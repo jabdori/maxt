@@ -4721,6 +4721,195 @@ impl From<maxt::HyperliquidRecentTrade> for WireHyperliquidRecentTrade {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidTradeEvent {
+    pub common: WireTrade,
+    pub provider: WireHyperliquidRecentTrade,
+}
+
+impl From<maxt::HyperliquidTradeEvent> for WireHyperliquidTradeEvent {
+    fn from(value: maxt::HyperliquidTradeEvent) -> Self {
+        Self {
+            common: value.common.into(),
+            provider: value.provider.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidOrderBookEvent {
+    pub common: WireOrderBook,
+    pub provider: WireHyperliquidL2Book,
+}
+
+impl From<maxt::HyperliquidOrderBookEvent> for WireHyperliquidOrderBookEvent {
+    fn from(value: maxt::HyperliquidOrderBookEvent) -> Self {
+        Self {
+            common: value.common.into(),
+            provider: value.provider.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidCandleEvent {
+    pub common: WireCandle,
+    pub provider: WireHyperliquidCandleSnapshot,
+}
+
+impl From<maxt::HyperliquidCandleEvent> for WireHyperliquidCandleEvent {
+    fn from(value: maxt::HyperliquidCandleEvent) -> Self {
+        Self {
+            common: value.common.into(),
+            provider: value.provider.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidAssetContextEvent {
+    pub common: WireTicker,
+    pub coin: String,
+    pub mid_price: Option<String>,
+    pub mark_price: Option<String>,
+    pub previous_day_price: Option<String>,
+    pub day_base_volume: Option<String>,
+    pub day_notional_volume: Option<String>,
+    pub oracle_price: Option<String>,
+    pub funding_rate: Option<String>,
+    pub open_interest: Option<String>,
+    pub circulating_supply: Option<String>,
+    pub total_supply: Option<String>,
+    pub raw_json: String,
+}
+
+impl From<maxt::HyperliquidAssetContextEvent> for WireHyperliquidAssetContextEvent {
+    fn from(value: maxt::HyperliquidAssetContextEvent) -> Self {
+        Self {
+            common: value.common.into(),
+            coin: value.coin,
+            mid_price: value.mid_price.map(decimal_to_wire),
+            mark_price: value.mark_price.map(decimal_to_wire),
+            previous_day_price: value.previous_day_price.map(decimal_to_wire),
+            day_base_volume: value.day_base_volume.map(decimal_to_wire),
+            day_notional_volume: value.day_notional_volume.map(decimal_to_wire),
+            oracle_price: value.oracle_price.map(decimal_to_wire),
+            funding_rate: value.funding_rate.map(decimal_to_wire),
+            open_interest: value.open_interest.map(decimal_to_wire),
+            circulating_supply: value.circulating_supply.map(decimal_to_wire),
+            total_supply: value.total_supply.map(decimal_to_wire),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidOrderUpdate {
+    pub common: WireOrder,
+    pub coin: String,
+    pub side: String,
+    pub limit_price: String,
+    pub remaining_size: String,
+    pub original_size: String,
+    pub order_id: u64,
+    pub accepted_at_ns: i64,
+    pub client_order_id: Option<String>,
+    pub status: String,
+    pub status_at_ns: Option<i64>,
+    pub raw_json: String,
+}
+
+impl From<maxt::HyperliquidOrderUpdate> for WireHyperliquidOrderUpdate {
+    fn from(value: maxt::HyperliquidOrderUpdate) -> Self {
+        Self {
+            common: value.common.into(),
+            coin: value.coin,
+            side: value.side,
+            limit_price: decimal_to_wire(value.limit_price),
+            remaining_size: decimal_to_wire(value.remaining_size),
+            original_size: decimal_to_wire(value.original_size),
+            order_id: value.order_id,
+            accepted_at_ns: timestamp_to_wire(value.accepted_at),
+            client_order_id: value.client_order_id,
+            status: value.status,
+            status_at_ns: value.status_at.map(timestamp_to_wire),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidSpotStateBalance {
+    pub common: WireBalance,
+    pub provider: WireHyperliquidSpotBalance,
+}
+
+impl From<maxt::HyperliquidSpotStateBalance> for WireHyperliquidSpotStateBalance {
+    fn from(value: maxt::HyperliquidSpotStateBalance) -> Self {
+        Self {
+            common: value.common.into(),
+            provider: value.provider.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidSpotStateEvent {
+    pub user: String,
+    pub balances: Vec<WireHyperliquidSpotStateBalance>,
+    pub raw_json: String,
+}
+
+impl From<maxt::HyperliquidSpotStateEvent> for WireHyperliquidSpotStateEvent {
+    fn from(value: maxt::HyperliquidSpotStateEvent) -> Self {
+        Self {
+            user: value.user,
+            balances: value.balances.into_iter().map(Into::into).collect(),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WireHyperliquidMarketEvent {
+    Trade(WireHyperliquidTradeEvent),
+    OrderBook(WireHyperliquidOrderBookEvent),
+    AssetContext(WireHyperliquidAssetContextEvent),
+    Candle(WireHyperliquidCandleEvent),
+    Reconnected,
+}
+
+impl From<maxt::HyperliquidMarketEvent> for WireHyperliquidMarketEvent {
+    fn from(value: maxt::HyperliquidMarketEvent) -> Self {
+        match value {
+            maxt::HyperliquidMarketEvent::Trade(value) => Self::Trade(value.into()),
+            maxt::HyperliquidMarketEvent::OrderBook(value) => Self::OrderBook(value.into()),
+            maxt::HyperliquidMarketEvent::AssetContext(value) => Self::AssetContext(value.into()),
+            maxt::HyperliquidMarketEvent::Candle(value) => Self::Candle(value.into()),
+            maxt::HyperliquidMarketEvent::Reconnected => Self::Reconnected,
+            _ => unreachable!("new HyperliquidMarketEvent variant requires a Dart wire variant"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WireHyperliquidAccountEvent {
+    OrderUpdate(WireHyperliquidOrderUpdate),
+    SpotState(WireHyperliquidSpotStateEvent),
+    Reconnected,
+}
+
+impl From<maxt::HyperliquidAccountEvent> for WireHyperliquidAccountEvent {
+    fn from(value: maxt::HyperliquidAccountEvent) -> Self {
+        match value {
+            maxt::HyperliquidAccountEvent::OrderUpdate(value) => Self::OrderUpdate(value.into()),
+            maxt::HyperliquidAccountEvent::SpotState(value) => Self::SpotState(value.into()),
+            maxt::HyperliquidAccountEvent::Reconnected => Self::Reconnected,
+            _ => unreachable!("new HyperliquidAccountEvent variant requires a Dart wire variant"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireHyperliquidFundingHistoryEntry {
     pub coin: String,
     pub market: WireMarket,

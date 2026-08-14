@@ -94,6 +94,25 @@
 어댑터는 15초마다 `{"method":"ping"}`을 전송합니다. `l2Book.nSigFigs`,
 `l2Book.mantissa`는 노출하지 않습니다.
 
+### Hyperliquid 상세 스트림
+
+이식 가능한 `Client::subscribe()`와 `Client::subscribe_account()`는
+정규화한 이벤트 계약을 그대로 유지합니다. 공식 Hyperliquid 전용 필드가 필요한
+애플리케이션은 구체 어댑터 메서드를 호출하세요.
+
+| 메서드 | 결과 | 조건 |
+| --- | --- | --- |
+| `subscribe_detailed(&subscription)` | `HyperliquidMarketStream` | 공개 시장 구독 |
+| `subscribe_detailed_with(&subscription, &config)` | `HyperliquidMarketStream` | 재연결·버퍼 설정을 명시한 같은 시장 구독 |
+| `subscribe_detailed_account()` | `HyperliquidAccountStream` | 공개 조회 주소 필요, 로컬 서명 불필요 |
+| `subscribe_detailed_account_with(&config)` | `HyperliquidAccountStream` | 연결 설정을 명시한 같은 계정 구독 |
+
+상세 이벤트는 정규화한 `common` 값과 Hyperliquid 원본 값을 함께 담습니다.
+시장 이벤트는 체결 `hash`·`users`, L2 단계 `n`, 자산 context 값, 캔들 체결
+건수를 보존합니다. 계정 이벤트는 주문 상태·상태 시각·클라이언트 주문 ID와 Spot
+`entryNotional` 잔고를 보존합니다. `raw_json`은 이후 추가될 필드를 위해 원본
+프레임을 함께 보관합니다.
+
 ## 계정 설정과 거래소 전용 API
 
 공개 시장 데이터와 시장 스트림에는 계정 설정이 필요하지 않습니다. Hyperliquid는

@@ -69,12 +69,12 @@ A disposed isolate cannot be initialized again.
 
 ## Support
 
-- [x] Android
-- [x] iOS
-- [x] Linux
-- [x] macOS
-- [x] Windows
-- [x] Dart Web
+- ✓ Android
+- ✓ iOS
+- ✓ Linux
+- ✓ macOS
+- ✓ Windows
+- ✓ Dart Web
 
 Dart 3.10 or a compatible Flutter SDK is required. This package does not
 download prebuilt native libraries. Its build hook compiles the included Rust
@@ -148,7 +148,7 @@ Exchange-specific methods remain available through `client.adapter`.
 | `BinanceAdapter` | `BinanceAdapter.usdMFutures()` | Public: `markPrice()`, `markPrices()`, `openInterest()`, `aggregateTrades()`, `usdMExchangeInfo()`; authenticated: `usdMAccountInformation()`, `usdMPositionInformation()`, `accountTrades()`, `testOrder()`, `cancelAllOpenOrders()`, `usdMCreateListenKey()`, `usdMKeepaliveListenKey()`, `usdMCloseListenKey()` |
 | `UpbitAdapter` | `UpbitAdapter()` or `UpbitAdapter.withRegion(...)` | `orderBooks()`, `orderBooksAtLevel()`, `tickers()`, `tickersByQuote()`, `yearCandles()`, `orderbookInstruments()`, `marketEvents()`; authenticated: `testOrder()`, `orderDetail()`, `closedOrders()`, `depositInfo()`, `withdrawalAddresses()`, `travelRuleVasps()`, `verifyTravelRuleByUuid()`, `verifyTravelRuleByTxid()`, `batchCancelOpenOrders()`, `cancelAndNewOrder()`; Korea only: `depositKrw()`, `withdrawKrw()`, `apiKeys()`, `listPockets()`, `listPocketApiKeys()`, `subPocketBalances()`, `universalTransfer()`, `universalTransfers()`, `subPocketTransfer()`, `subPocketTransfers()` |
 | `BithumbAdapter` | `BithumbAdapter()` | `marketWarnings()`, `marketAlerts()`, `notices()`, `transferFees()`; authenticated: `apiKeys()`, `withdrawalAddresses()`, `orderDetail()`, `orderList()`, `closedOrders()`, `krwWithdrawals()`, `withdrawKrw()`, `krwDeposits()`, `depositKrw()`, `pendingOrders()`, `batchOrders()`, `twapOrders()`, `createTwapOrder()`, `cancelTwapOrder()` |
-| `HyperliquidAdapter` | `HyperliquidAdapter()` or `HyperliquidAdapter.testnet()` | Public: `allMids()`, `assetContext()`, `candleSnapshot()`, `l2Book()`, `recentTrades()`, `fundingHistory()`, `spotMeta()`, `spotMetaAndAssetContexts()`; address-scoped, unsigned reads: `userFunding()`, `spotClearinghouseState()`, `basicOpenOrders()`, `orderStatus(reference)`, `historicalOrders()`, `userFills()`, `userFillsByTime()`, `nonFundingLedger()`, `userRateLimit()`, `userRole()`, `referral()`, `userFees()`, `portfolio()`, `subAccounts()`, `userVaultEquities()` |
+| `HyperliquidAdapter` | `HyperliquidAdapter()` or `HyperliquidAdapter.testnet()` | Public: `allMids()`, `assetContext()`, `candleSnapshot()`, `l2Book()`, `recentTrades()`, `fundingHistory()`, `spotMeta()`, `spotMetaAndAssetContexts()`; full-fidelity streams: `subscribeDetailed()`, `subscribeDetailedWith()`, `subscribeDetailedAccount()`, `subscribeDetailedAccountWith()`; address-scoped, unsigned reads: `userFunding()`, `spotClearinghouseState()`, `basicOpenOrders()`, `orderStatus(reference)`, `historicalOrders()`, `userFills()`, `userFillsByTime()`, `nonFundingLedger()`, `userRateLimit()`, `userRole()`, `referral()`, `userFees()`, `portfolio()`, `subAccounts()`, `userVaultEquities()` |
 
 `UpbitAdapter.testOrder()` validates an order without creating it. The returned
 `Order` is a dry-run result: do not query or cancel its `id`, and do not treat

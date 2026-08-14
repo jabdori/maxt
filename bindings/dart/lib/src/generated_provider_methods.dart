@@ -644,6 +644,57 @@ extension HyperliquidAdapterGeneratedMethods on HyperliquidAdapter {
             values.map(_hyperliquidMidPriceFromWire).toList(growable: false),
       );
 
+  /// Opens a Hyperliquid market stream that preserves provider-specific fields.
+  Future<HyperliquidMarketStream> subscribeDetailed(
+    Subscription subscription,
+  ) => subscribeDetailedWith(subscription, defaultStreamConfig());
+
+  /// Opens a full-fidelity Hyperliquid market stream with [config].
+  Future<HyperliquidMarketStream> subscribeDetailedWith(
+    Subscription subscription,
+    StreamConfig config,
+  ) async {
+    validateStreamConfigIntegers(config);
+    final handle = await _nativeFuture(
+      () => _handle.hyperliquidSubscribeDetailedWith(
+        subscription: _subscriptionToWire(subscription),
+        config: _streamConfigToWire(config),
+      ),
+    );
+    return HyperliquidMarketStream(
+      _nativeHyperliquidMarketItems(handle),
+      onClose: () => _nativeFuture(
+        () => native.nativeHyperliquidMarketSubscriptionClose(
+          subscription: handle,
+        ),
+      ),
+    );
+  }
+
+  /// Opens a Hyperliquid account stream that preserves provider-specific fields.
+  Future<HyperliquidAccountStream> subscribeDetailedAccount() =>
+      subscribeDetailedAccountWith(defaultStreamConfig());
+
+  /// Opens a full-fidelity Hyperliquid account stream with [config].
+  Future<HyperliquidAccountStream> subscribeDetailedAccountWith(
+    StreamConfig config,
+  ) async {
+    validateStreamConfigIntegers(config);
+    final handle = await _nativeFuture(
+      () => _handle.hyperliquidSubscribeDetailedAccountWith(
+        config: _streamConfigToWire(config),
+      ),
+    );
+    return HyperliquidAccountStream(
+      _nativeHyperliquidAccountItems(handle),
+      onClose: () => _nativeFuture(
+        () => native.nativeHyperliquidAccountSubscriptionClose(
+          subscription: handle,
+        ),
+      ),
+    );
+  }
+
   /// Hyperliquid 전용 API인 `user_fills`를 호출합니다.
   Future<List<HyperliquidUserFill>> userFills(bool aggregateByTime) =>
       _nativeFuture(

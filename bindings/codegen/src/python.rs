@@ -165,7 +165,7 @@ from dataclasses import dataclass, field\n\
 from decimal import Decimal\n\
 from typing import Any, ClassVar, Optional, Union\n\n\
 from ._generated_identifiers import *  # noqa: F403\n\
-from .models import Balance, Cursor, Market, Order, OrderRequest, Timestamp, WireModel, _ascii_upper, _decode_value, _model_to_wire\n",
+from .models import Balance, Candle, Cursor, Market, Order, OrderBook, OrderRequest, Ticker, Timestamp, Trade, WireModel, _ascii_upper, _decode_value, _model_to_wire\n",
     );
     for name in &generated {
         if let Some(record) = schema
@@ -578,6 +578,28 @@ class NativeClient:
     def supports(self, feature: Any) -> bool: ...
 "#,
     );
+    let mut provider_streams = Vec::new();
+    for provider in schema.providers {
+        for method in provider.methods {
+            let (ApiType::ProviderMarketStream(event) | ApiType::ProviderAccountStream(event)) =
+                method.result
+            else {
+                continue;
+            };
+            let name = format!(
+                "Native{}Stream",
+                event.strip_suffix("Event").unwrap_or(event)
+            );
+            if !provider_streams.contains(&name) {
+                provider_streams.push(name);
+            }
+        }
+    }
+    for name in provider_streams {
+        output.push_str(&format!(
+            "class {name}(AsyncIterator[Wire]):\n    def __aiter__(self) -> {name}: ...\n    def __anext__(self) -> Awaitable[Wire]: ...\n    def aclose(self) -> Awaitable[None]: ...\n\n\n"
+        ));
+    }
     for operation in schema.adapter_operations {
         for method in operation.client_methods {
             output.push_str(&format!(
@@ -1068,6 +1090,15 @@ pub(crate) fn render_rust_convert(schema: &Schema) -> String {
         "HyperliquidCandleSnapshot",
         "HyperliquidL2Book",
         "HyperliquidRecentTrade",
+        "HyperliquidTradeEvent",
+        "HyperliquidOrderBookEvent",
+        "HyperliquidCandleEvent",
+        "HyperliquidAssetContextEvent",
+        "HyperliquidOrderUpdate",
+        "HyperliquidSpotStateBalance",
+        "HyperliquidSpotStateEvent",
+        "HyperliquidMarketEvent",
+        "HyperliquidAccountEvent",
         "HyperliquidFundingHistoryEntry",
         "HyperliquidUserFunding",
         "HyperliquidSpotBalance",
@@ -2059,6 +2090,12 @@ fn native_type(value: ApiType) -> String {
         ApiType::HandleToken(name) => format!("Native{name}"),
         ApiType::MarketStream => "NativeMarketStream".to_owned(),
         ApiType::AccountStream => "NativeAccountStream".to_owned(),
+        ApiType::ProviderMarketStream(event) | ApiType::ProviderAccountStream(event) => {
+            format!(
+                "Native{}Stream",
+                event.strip_suffix("Event").unwrap_or(event)
+            )
+        }
         ApiType::Unit => "None".to_owned(),
         ApiType::Boolean => "bool".to_owned(),
         ApiType::String => "str".to_owned(),
@@ -2204,6 +2241,12 @@ fn python_type(value: ApiType) -> String {
         }
         ApiType::AccountStream => {
             "AccountStream[Union[StreamEvent[AccountEvent], StreamError]]".to_owned()
+        }
+        ApiType::ProviderMarketStream(event) | ApiType::ProviderAccountStream(event) => {
+            format!(
+                "{}Stream[Union[StreamEvent[{event}], StreamError]]",
+                event.strip_suffix("Event").unwrap_or(event)
+            )
         }
         ApiType::Unit => "None".to_owned(),
     }
@@ -2446,6 +2489,9 @@ mod tests {
     fn generated_models_preserve_python_keyword_wire_names() {
         let output = render_models(&binding_schema());
 
+        assert!(output.contains(
+            "from .models import Balance, Candle, Cursor, Market, Order, OrderBook, OrderRequest, Ticker, Timestamp, Trade"
+        ));
         assert!(output.contains(
             "class OrderHistoryRequest(WireModel):\n    __wire_strict__: ClassVar[bool] = True\n    market: Optional[Market] = None\n    statuses: list[OrderStatus] = field(default_factory=list)"
         ));

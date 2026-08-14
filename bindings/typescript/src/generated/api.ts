@@ -3,11 +3,11 @@
 import { AdapterError, MaxtError, UnsupportedError, errorFromWire, errorToWire } from "../errors.js";
 import * as Model from "../models.js";
 import { ensureInitialized, getBackend } from "../native.js";
-import { AccountStream, MarketStream, StreamError } from "../stream.js";
+import { AccountStream, HyperliquidAccountStream, HyperliquidMarketStream, MarketStream, StreamError } from "../stream.js";
 import * as Codec from "./codec.js";
 import type * as Wire from "./contract.js";
 
-export const NATIVE_API_VERSION = 29 as const;
+export const NATIVE_API_VERSION = 30 as const;
 
 export type NativeOutcome<T> =
   | { readonly ok: true; readonly value: T }
@@ -151,6 +151,10 @@ export interface RawNativeHyperliquidHandle {
   client(): RawNativeClient;
   isTestnet(): boolean;
   allMids(): Promise<unknown>;
+  subscribeDetailed(subscription: string): Promise<unknown>;
+  subscribeDetailedWith(subscription: string, config: string): Promise<unknown>;
+  subscribeDetailedAccount(): Promise<unknown>;
+  subscribeDetailedAccountWith(config: string): Promise<unknown>;
   userFills(aggregateByTime: string): Promise<unknown>;
   userFillsByTime(from: string, to: string, aggregateByTime: string): Promise<unknown>;
   basicOpenOrders(): Promise<unknown>;
@@ -173,6 +177,8 @@ export interface RawNativeHyperliquidHandle {
   portfolio(): Promise<unknown>;
   subAccounts(): Promise<unknown>;
   userVaultEquities(): Promise<unknown>;
+  streamNext(id: string): Promise<unknown>;
+  streamClose(id: string): Promise<unknown>;
 }
 
 export interface RawForeignAdapterCallbacks {
@@ -344,6 +350,10 @@ export interface NativeHyperliquidHandle {
   client(): NativeClientHandle;
   isTestnet(): boolean;
   allMids(): Promise<NativeOutcome<readonly Wire.HyperliquidMidPriceWire[]>>;
+  subscribeDetailed(subscription: Wire.SubscriptionWire): Promise<NativeOutcome<NativeStreamHandle<Wire.HyperliquidMarketStreamItemWire>>>;
+  subscribeDetailedWith(subscription: Wire.SubscriptionWire, config: Wire.StreamConfigWire): Promise<NativeOutcome<NativeStreamHandle<Wire.HyperliquidMarketStreamItemWire>>>;
+  subscribeDetailedAccount(): Promise<NativeOutcome<NativeStreamHandle<Wire.HyperliquidAccountStreamItemWire>>>;
+  subscribeDetailedAccountWith(config: Wire.StreamConfigWire): Promise<NativeOutcome<NativeStreamHandle<Wire.HyperliquidAccountStreamItemWire>>>;
   userFills(aggregateByTime: boolean): Promise<NativeOutcome<readonly Wire.HyperliquidUserFillWire[]>>;
   userFillsByTime(from: Wire.TimestampWire, to: Wire.TimestampWire | null, aggregateByTime: boolean): Promise<NativeOutcome<readonly Wire.HyperliquidUserFillWire[]>>;
   basicOpenOrders(): Promise<NativeOutcome<readonly Wire.HyperliquidOpenOrderWire[]>>;
@@ -519,8 +529,38 @@ export function createJsonBackend(raw: RawNativeModule): NativeBackend {
       const handle = callFactory(() => raw.createHyperliquid(Codec.stringifyWire(options)));
       return {
         client: () => wrapJsonClient(handle.client()),
+        streamNext: (id: string) => handle.streamNext(Codec.stringifyWire(id)),
+        streamClose: (id: string) => handle.streamClose(Codec.stringifyWire(id)),
         isTestnet: () => handle.isTestnet(),
         allMids: () => handle.allMids() as Promise<NativeOutcome<readonly Wire.HyperliquidMidPriceWire[]>>,
+        async subscribeDetailed(subscription: Wire.SubscriptionWire) {
+          const outcome = await handle.subscribeDetailed(Codec.stringifyWire(subscription)) as NativeOutcome<Wire.NativeStreamReferenceWire>;
+          return outcome.ok ? { ok: true, value: {
+            next: () => handle.streamNext(Codec.stringifyWire(outcome.value.id)) as Promise<NativeOutcome<Wire.HyperliquidMarketStreamItemWire | null>>,
+            close: () => handle.streamClose(Codec.stringifyWire(outcome.value.id)) as Promise<NativeOutcome<null>>,
+          } } : outcome;
+        },
+        async subscribeDetailedWith(subscription: Wire.SubscriptionWire, config: Wire.StreamConfigWire) {
+          const outcome = await handle.subscribeDetailedWith(Codec.stringifyWire(subscription), Codec.stringifyWire(config)) as NativeOutcome<Wire.NativeStreamReferenceWire>;
+          return outcome.ok ? { ok: true, value: {
+            next: () => handle.streamNext(Codec.stringifyWire(outcome.value.id)) as Promise<NativeOutcome<Wire.HyperliquidMarketStreamItemWire | null>>,
+            close: () => handle.streamClose(Codec.stringifyWire(outcome.value.id)) as Promise<NativeOutcome<null>>,
+          } } : outcome;
+        },
+        async subscribeDetailedAccount() {
+          const outcome = await handle.subscribeDetailedAccount() as NativeOutcome<Wire.NativeStreamReferenceWire>;
+          return outcome.ok ? { ok: true, value: {
+            next: () => handle.streamNext(Codec.stringifyWire(outcome.value.id)) as Promise<NativeOutcome<Wire.HyperliquidAccountStreamItemWire | null>>,
+            close: () => handle.streamClose(Codec.stringifyWire(outcome.value.id)) as Promise<NativeOutcome<null>>,
+          } } : outcome;
+        },
+        async subscribeDetailedAccountWith(config: Wire.StreamConfigWire) {
+          const outcome = await handle.subscribeDetailedAccountWith(Codec.stringifyWire(config)) as NativeOutcome<Wire.NativeStreamReferenceWire>;
+          return outcome.ok ? { ok: true, value: {
+            next: () => handle.streamNext(Codec.stringifyWire(outcome.value.id)) as Promise<NativeOutcome<Wire.HyperliquidAccountStreamItemWire | null>>,
+            close: () => handle.streamClose(Codec.stringifyWire(outcome.value.id)) as Promise<NativeOutcome<null>>,
+          } } : outcome;
+        },
         userFills: (aggregateByTime: boolean) => handle.userFills(Codec.stringifyWire(aggregateByTime)) as Promise<NativeOutcome<readonly Wire.HyperliquidUserFillWire[]>>,
         userFillsByTime: (from: Wire.TimestampWire, to: Wire.TimestampWire | null, aggregateByTime: boolean) => handle.userFillsByTime(Codec.stringifyWire(from), Codec.stringifyWire(to), Codec.stringifyWire(aggregateByTime)) as Promise<NativeOutcome<readonly Wire.HyperliquidUserFillWire[]>>,
         basicOpenOrders: () => handle.basicOpenOrders() as Promise<NativeOutcome<readonly Wire.HyperliquidOpenOrderWire[]>>,
@@ -1333,6 +1373,10 @@ export class HyperliquidAdapter extends NativeAdapter {
   }
   get isTestnet(): boolean { return this.#provider.isTestnet(); }
   async allMids(): Promise<readonly Model.HyperliquidMidPrice[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.allMids()).map(Codec.hyperliquidMidPriceFromWire); }
+  async subscribeDetailed(subscription: Model.Subscription): Promise<HyperliquidMarketStream> { await ensureInitialized(); const handle = Codec.unwrapOutcome(await this.#provider.subscribeDetailed(Codec.subscriptionToWire(subscription))); return new HyperliquidMarketStream(nativeItems(handle, Codec.hyperliquidMarketStreamItemFromWire), async () => { Codec.unwrapOutcome(await handle.close()); }); }
+  async subscribeDetailedWith(subscription: Model.Subscription, config: Model.StreamConfig): Promise<HyperliquidMarketStream> { await ensureInitialized(); const handle = Codec.unwrapOutcome(await this.#provider.subscribeDetailedWith(Codec.subscriptionToWire(subscription), Codec.streamConfigToWire(config))); return new HyperliquidMarketStream(nativeItems(handle, Codec.hyperliquidMarketStreamItemFromWire), async () => { Codec.unwrapOutcome(await handle.close()); }); }
+  async subscribeDetailedAccount(): Promise<HyperliquidAccountStream> { await ensureInitialized(); const handle = Codec.unwrapOutcome(await this.#provider.subscribeDetailedAccount()); return new HyperliquidAccountStream(nativeItems(handle, Codec.hyperliquidAccountStreamItemFromWire), async () => { Codec.unwrapOutcome(await handle.close()); }); }
+  async subscribeDetailedAccountWith(config: Model.StreamConfig): Promise<HyperliquidAccountStream> { await ensureInitialized(); const handle = Codec.unwrapOutcome(await this.#provider.subscribeDetailedAccountWith(Codec.streamConfigToWire(config))); return new HyperliquidAccountStream(nativeItems(handle, Codec.hyperliquidAccountStreamItemFromWire), async () => { Codec.unwrapOutcome(await handle.close()); }); }
   async userFills(aggregateByTime: boolean): Promise<readonly Model.HyperliquidUserFill[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.userFills(aggregateByTime)).map(Codec.hyperliquidUserFillFromWire); }
   async userFillsByTime(from: Model.Timestamp, to: Model.Timestamp | null, aggregateByTime: boolean): Promise<readonly Model.HyperliquidUserFill[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.userFillsByTime(from.nanosecondsSinceEpoch.toString(), to?.nanosecondsSinceEpoch.toString() ?? null, aggregateByTime)).map(Codec.hyperliquidUserFillFromWire); }
   async basicOpenOrders(): Promise<readonly Model.HyperliquidOpenOrder[]> { await ensureInitialized(); return Codec.unwrapOutcome(await this.#provider.basicOpenOrders()).map(Codec.hyperliquidOpenOrderFromWire); }

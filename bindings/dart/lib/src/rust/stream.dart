@@ -4,6 +4,7 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import 'convert.dart';
+import 'convert/generated_models.dart';
 import 'frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
@@ -17,6 +18,14 @@ abstract class MarketStreamSink implements RustOpaqueInterface {}
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeAccountSubscription>>
 abstract class NativeAccountSubscription implements RustOpaqueInterface {}
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeHyperliquidAccountSubscription>>
+abstract class NativeHyperliquidAccountSubscription
+    implements RustOpaqueInterface {}
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeHyperliquidMarketSubscription>>
+abstract class NativeHyperliquidMarketSubscription
+    implements RustOpaqueInterface {}
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeMarketSubscription>>
 abstract class NativeMarketSubscription implements RustOpaqueInterface {}
@@ -83,6 +92,44 @@ sealed class WireAccountStreamItem with _$WireAccountStreamItem {
 
   /// 계정 스트림의 자연 종료 또는 명시적 close를 나타냅니다.
   const factory WireAccountStreamItem.end() = WireAccountStreamItem_End;
+}
+
+@freezed
+sealed class WireHyperliquidAccountStreamItem
+    with _$WireHyperliquidAccountStreamItem {
+  const WireHyperliquidAccountStreamItem._();
+
+  /// 정상 Hyperliquid 계정 이벤트입니다.
+  const factory WireHyperliquidAccountStreamItem.event(
+    WireHyperliquidAccountEvent field0,
+  ) = WireHyperliquidAccountStreamItem_Event;
+
+  /// 스트림을 끝내지 않는 오류입니다.
+  const factory WireHyperliquidAccountStreamItem.error(NativeError field0) =
+      WireHyperliquidAccountStreamItem_Error;
+
+  /// 자연 종료 또는 명시적 close를 나타냅니다.
+  const factory WireHyperliquidAccountStreamItem.end() =
+      WireHyperliquidAccountStreamItem_End;
+}
+
+@freezed
+sealed class WireHyperliquidMarketStreamItem
+    with _$WireHyperliquidMarketStreamItem {
+  const WireHyperliquidMarketStreamItem._();
+
+  /// 정상 Hyperliquid 시장 이벤트입니다.
+  const factory WireHyperliquidMarketStreamItem.event(
+    WireHyperliquidMarketEvent field0,
+  ) = WireHyperliquidMarketStreamItem_Event;
+
+  /// 스트림을 끝내지 않는 오류입니다.
+  const factory WireHyperliquidMarketStreamItem.error(NativeError field0) =
+      WireHyperliquidMarketStreamItem_Error;
+
+  /// 자연 종료 또는 명시적 close를 나타냅니다.
+  const factory WireHyperliquidMarketStreamItem.end() =
+      WireHyperliquidMarketStreamItem_End;
 }
 
 @freezed

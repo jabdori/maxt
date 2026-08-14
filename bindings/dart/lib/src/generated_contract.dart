@@ -209,6 +209,10 @@ const providerMethods = <String, List<String>>{
   'hyperliquid': <String>[
     'isTestnet',
     'allMids',
+    'subscribeDetailed',
+    'subscribeDetailedWith',
+    'subscribeDetailedAccount',
+    'subscribeDetailedAccountWith',
     'userFills',
     'userFillsByTime',
     'basicOpenOrders',

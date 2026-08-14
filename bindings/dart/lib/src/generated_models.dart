@@ -4487,6 +4487,307 @@ final class HyperliquidRecentTrade {
   final String rawJson;
 }
 
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidTradeEvent]입니다.
+final class HyperliquidTradeEvent {
+  /// [HyperliquidTradeEvent]의 값을 만듭니다.
+  const HyperliquidTradeEvent({required this.common, required this.provider});
+
+  /// 거래소 API의 `common` 값입니다.
+  final Trade common;
+
+  /// 거래소 API의 `provider` 값입니다.
+  final HyperliquidRecentTrade provider;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidOrderBookEvent]입니다.
+final class HyperliquidOrderBookEvent {
+  /// [HyperliquidOrderBookEvent]의 값을 만듭니다.
+  const HyperliquidOrderBookEvent({
+    required this.common,
+    required this.provider,
+  });
+
+  /// 거래소 API의 `common` 값입니다.
+  final OrderBook common;
+
+  /// 거래소 API의 `provider` 값입니다.
+  final HyperliquidL2Book provider;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidCandleEvent]입니다.
+final class HyperliquidCandleEvent {
+  /// [HyperliquidCandleEvent]의 값을 만듭니다.
+  const HyperliquidCandleEvent({required this.common, required this.provider});
+
+  /// 거래소 API의 `common` 값입니다.
+  final Candle common;
+
+  /// 거래소 API의 `provider` 값입니다.
+  final HyperliquidCandleSnapshot provider;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidAssetContextEvent]입니다.
+final class HyperliquidAssetContextEvent {
+  /// [HyperliquidAssetContextEvent]의 값을 만듭니다.
+  const HyperliquidAssetContextEvent({
+    required this.common,
+    required this.coin,
+    this.midPrice,
+    this.markPrice,
+    this.previousDayPrice,
+    this.dayBaseVolume,
+    this.dayNotionalVolume,
+    this.oraclePrice,
+    this.fundingRate,
+    this.openInterest,
+    this.circulatingSupply,
+    this.totalSupply,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `common` 값입니다.
+  final Ticker common;
+
+  /// 거래소 API의 `coin` 값입니다.
+  final String coin;
+
+  /// 거래소 API의 `mid_price` 값입니다.
+  final Decimal? midPrice;
+
+  /// 거래소 API의 `mark_price` 값입니다.
+  final Decimal? markPrice;
+
+  /// 거래소 API의 `previous_day_price` 값입니다.
+  final Decimal? previousDayPrice;
+
+  /// 거래소 API의 `day_base_volume` 값입니다.
+  final Decimal? dayBaseVolume;
+
+  /// 거래소 API의 `day_notional_volume` 값입니다.
+  final Decimal? dayNotionalVolume;
+
+  /// 거래소 API의 `oracle_price` 값입니다.
+  final Decimal? oraclePrice;
+
+  /// 거래소 API의 `funding_rate` 값입니다.
+  final Decimal? fundingRate;
+
+  /// 거래소 API의 `open_interest` 값입니다.
+  final Decimal? openInterest;
+
+  /// 거래소 API의 `circulating_supply` 값입니다.
+  final Decimal? circulatingSupply;
+
+  /// 거래소 API의 `total_supply` 값입니다.
+  final Decimal? totalSupply;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidOrderUpdate]입니다.
+final class HyperliquidOrderUpdate {
+  /// [HyperliquidOrderUpdate]의 값을 만듭니다.
+  const HyperliquidOrderUpdate({
+    required this.common,
+    required this.coin,
+    required this.side,
+    required this.limitPrice,
+    required this.remainingSize,
+    required this.originalSize,
+    required this.orderId,
+    required this.acceptedAt,
+    this.clientOrderId,
+    required this.status,
+    this.statusAt,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `common` 값입니다.
+  final Order common;
+
+  /// 거래소 API의 `coin` 값입니다.
+  final String coin;
+
+  /// 거래소 API의 `side` 값입니다.
+  final String side;
+
+  /// 거래소 API의 `limit_price` 값입니다.
+  final Decimal limitPrice;
+
+  /// 거래소 API의 `remaining_size` 값입니다.
+  final Decimal remainingSize;
+
+  /// 거래소 API의 `original_size` 값입니다.
+  final Decimal originalSize;
+
+  /// 거래소 API의 `order_id` 값입니다.
+  final BigInt orderId;
+
+  /// 거래소 API의 `accepted_at` 값입니다.
+  final Timestamp acceptedAt;
+
+  /// 거래소 API의 `client_order_id` 값입니다.
+  final String? clientOrderId;
+
+  /// 거래소 API의 `status` 값입니다.
+  final String status;
+
+  /// 거래소 API의 `status_at` 값입니다.
+  final Timestamp? statusAt;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidSpotStateBalance]입니다.
+final class HyperliquidSpotStateBalance {
+  /// [HyperliquidSpotStateBalance]의 값을 만듭니다.
+  const HyperliquidSpotStateBalance({
+    required this.common,
+    required this.provider,
+  });
+
+  /// 거래소 API의 `common` 값입니다.
+  final Balance common;
+
+  /// 거래소 API의 `provider` 값입니다.
+  final HyperliquidSpotBalance provider;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidSpotStateEvent]입니다.
+final class HyperliquidSpotStateEvent {
+  /// [HyperliquidSpotStateEvent]의 값을 만듭니다.
+  const HyperliquidSpotStateEvent({
+    required this.user,
+    required this.balances,
+    required this.rawJson,
+  });
+
+  /// 거래소 API의 `user` 값입니다.
+  final String user;
+
+  /// 거래소 API의 `balances` 값입니다.
+  final List<HyperliquidSpotStateBalance> balances;
+
+  /// 거래소 API의 `raw_json` 값입니다.
+  final String rawJson;
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidMarketEvent]입니다.
+sealed class HyperliquidMarketEvent {
+  /// 변형 클래스가 공통으로 사용하는 기본 생성자입니다.
+  const HyperliquidMarketEvent();
+
+  /// [HyperliquidMarketEvent]의 `trade` 변형을 만듭니다.
+  const factory HyperliquidMarketEvent.trade(HyperliquidTradeEvent value) =
+      HyperliquidMarketEventTrade;
+
+  /// [HyperliquidMarketEvent]의 `orderBook` 변형을 만듭니다.
+  const factory HyperliquidMarketEvent.orderBook(
+    HyperliquidOrderBookEvent value,
+  ) = HyperliquidMarketEventOrderBook;
+
+  /// [HyperliquidMarketEvent]의 `assetContext` 변형을 만듭니다.
+  const factory HyperliquidMarketEvent.assetContext(
+    HyperliquidAssetContextEvent value,
+  ) = HyperliquidMarketEventAssetContext;
+
+  /// [HyperliquidMarketEvent]의 `candle` 변형을 만듭니다.
+  const factory HyperliquidMarketEvent.candle(HyperliquidCandleEvent value) =
+      HyperliquidMarketEventCandle;
+
+  /// [HyperliquidMarketEvent]의 `reconnected` 변형을 만듭니다.
+  const factory HyperliquidMarketEvent.reconnected() =
+      HyperliquidMarketEventReconnected;
+}
+
+/// [HyperliquidMarketEvent]의 `trade` 변형입니다.
+final class HyperliquidMarketEventTrade extends HyperliquidMarketEvent {
+  /// [value]를 담은 `trade` 변형을 만듭니다.
+  const HyperliquidMarketEventTrade(this.value);
+
+  /// 거래소 API의 `value` 값입니다.
+  final HyperliquidTradeEvent value;
+}
+
+/// [HyperliquidMarketEvent]의 `orderBook` 변형입니다.
+final class HyperliquidMarketEventOrderBook extends HyperliquidMarketEvent {
+  /// [value]를 담은 `orderBook` 변형을 만듭니다.
+  const HyperliquidMarketEventOrderBook(this.value);
+
+  /// 거래소 API의 `value` 값입니다.
+  final HyperliquidOrderBookEvent value;
+}
+
+/// [HyperliquidMarketEvent]의 `assetContext` 변형입니다.
+final class HyperliquidMarketEventAssetContext extends HyperliquidMarketEvent {
+  /// [value]를 담은 `assetContext` 변형을 만듭니다.
+  const HyperliquidMarketEventAssetContext(this.value);
+
+  /// 거래소 API의 `value` 값입니다.
+  final HyperliquidAssetContextEvent value;
+}
+
+/// [HyperliquidMarketEvent]의 `candle` 변형입니다.
+final class HyperliquidMarketEventCandle extends HyperliquidMarketEvent {
+  /// [value]를 담은 `candle` 변형을 만듭니다.
+  const HyperliquidMarketEventCandle(this.value);
+
+  /// 거래소 API의 `value` 값입니다.
+  final HyperliquidCandleEvent value;
+}
+
+/// [HyperliquidMarketEvent]의 `reconnected` 변형입니다.
+final class HyperliquidMarketEventReconnected extends HyperliquidMarketEvent {
+  /// `reconnected` 변형을 만듭니다.
+  const HyperliquidMarketEventReconnected();
+}
+
+/// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidAccountEvent]입니다.
+sealed class HyperliquidAccountEvent {
+  /// 변형 클래스가 공통으로 사용하는 기본 생성자입니다.
+  const HyperliquidAccountEvent();
+
+  /// [HyperliquidAccountEvent]의 `orderUpdate` 변형을 만듭니다.
+  const factory HyperliquidAccountEvent.orderUpdate(
+    HyperliquidOrderUpdate value,
+  ) = HyperliquidAccountEventOrderUpdate;
+
+  /// [HyperliquidAccountEvent]의 `spotState` 변형을 만듭니다.
+  const factory HyperliquidAccountEvent.spotState(
+    HyperliquidSpotStateEvent value,
+  ) = HyperliquidAccountEventSpotState;
+
+  /// [HyperliquidAccountEvent]의 `reconnected` 변형을 만듭니다.
+  const factory HyperliquidAccountEvent.reconnected() =
+      HyperliquidAccountEventReconnected;
+}
+
+/// [HyperliquidAccountEvent]의 `orderUpdate` 변형입니다.
+final class HyperliquidAccountEventOrderUpdate extends HyperliquidAccountEvent {
+  /// [value]를 담은 `orderUpdate` 변형을 만듭니다.
+  const HyperliquidAccountEventOrderUpdate(this.value);
+
+  /// 거래소 API의 `value` 값입니다.
+  final HyperliquidOrderUpdate value;
+}
+
+/// [HyperliquidAccountEvent]의 `spotState` 변형입니다.
+final class HyperliquidAccountEventSpotState extends HyperliquidAccountEvent {
+  /// [value]를 담은 `spotState` 변형을 만듭니다.
+  const HyperliquidAccountEventSpotState(this.value);
+
+  /// 거래소 API의 `value` 값입니다.
+  final HyperliquidSpotStateEvent value;
+}
+
+/// [HyperliquidAccountEvent]의 `reconnected` 변형입니다.
+final class HyperliquidAccountEventReconnected extends HyperliquidAccountEvent {
+  /// `reconnected` 변형을 만듭니다.
+  const HyperliquidAccountEventReconnected();
+}
+
 /// 거래소 API와 주고받는 구조화된 데이터 모델인 [HyperliquidFundingHistoryEntry]입니다.
 final class HyperliquidFundingHistoryEntry {
   /// [HyperliquidFundingHistoryEntry]의 값을 만듭니다.

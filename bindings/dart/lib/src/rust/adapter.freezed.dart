@@ -55,7 +55,7 @@ extension AdapterCallPatterns on AdapterCall {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( AdapterCall_Markets value)?  markets,TResult Function( AdapterCall_Trades value)?  trades,TResult Function( AdapterCall_OrderBook value)?  orderBook,TResult Function( AdapterCall_Ticker value)?  ticker,TResult Function( AdapterCall_Candles value)?  candles,TResult Function( AdapterCall_Balances value)?  balances,TResult Function( AdapterCall_OpenOrders value)?  openOrders,TResult Function( AdapterCall_PlaceOrder value)?  placeOrder,TResult Function( AdapterCall_CancelOrder value)?  cancelOrder,TResult Function( AdapterCall_Positions value)?  positions,TResult Function( AdapterCall_MarginSummary value)?  marginSummary,TResult Function( AdapterCall_FundingRates value)?  fundingRates,TResult Function( AdapterCall_FundingPayments value)?  fundingPayments,TResult Function( AdapterCall_SetMargin value)?  setMargin,TResult Function( AdapterCall_Subscribe value)?  subscribe,TResult Function( AdapterCall_SubscribeAccount value)?  subscribeAccount,TResult Function( AdapterCall_CancelStream value)?  cancelStream,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( AdapterCall_Markets value)?  markets,TResult Function( AdapterCall_Trades value)?  trades,TResult Function( AdapterCall_OrderBook value)?  orderBook,TResult Function( AdapterCall_Ticker value)?  ticker,TResult Function( AdapterCall_Candles value)?  candles,TResult Function( AdapterCall_Balances value)?  balances,TResult Function( AdapterCall_OrderRules value)?  orderRules,TResult Function( AdapterCall_AssetNetworks value)?  assetNetworks,TResult Function( AdapterCall_DepositAddresses value)?  depositAddresses,TResult Function( AdapterCall_DepositAddress value)?  depositAddress,TResult Function( AdapterCall_CreateDepositAddress value)?  createDepositAddress,TResult Function( AdapterCall_PrepareWithdrawal value)?  prepareWithdrawal,TResult Function( AdapterCall_Withdraw value)?  withdraw,TResult Function( AdapterCall_Deposit value)?  deposit,TResult Function( AdapterCall_Withdrawal value)?  withdrawal,TResult Function( AdapterCall_CancelWithdrawal value)?  cancelWithdrawal,TResult Function( AdapterCall_Deposits value)?  deposits,TResult Function( AdapterCall_Withdrawals value)?  withdrawals,TResult Function( AdapterCall_OpenOrders value)?  openOrders,TResult Function( AdapterCall_Order value)?  order,TResult Function( AdapterCall_OrderByClientId value)?  orderByClientId,TResult Function( AdapterCall_OrdersByIds value)?  ordersByIds,TResult Function( AdapterCall_OrderHistory value)?  orderHistory,TResult Function( AdapterCall_PlaceOrder value)?  placeOrder,TResult Function( AdapterCall_CancelOrder value)?  cancelOrder,TResult Function( AdapterCall_CancelOrderByClientId value)?  cancelOrderByClientId,TResult Function( AdapterCall_CancelOrders value)?  cancelOrders,TResult Function( AdapterCall_Positions value)?  positions,TResult Function( AdapterCall_MarginSummary value)?  marginSummary,TResult Function( AdapterCall_FundingRates value)?  fundingRates,TResult Function( AdapterCall_FundingPayments value)?  fundingPayments,TResult Function( AdapterCall_SetMargin value)?  setMargin,TResult Function( AdapterCall_Subscribe value)?  subscribe,TResult Function( AdapterCall_SubscribeAccount value)?  subscribeAccount,TResult Function( AdapterCall_CancelStream value)?  cancelStream,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case AdapterCall_Markets() when markets != null:
@@ -64,10 +64,28 @@ return trades(_that);case AdapterCall_OrderBook() when orderBook != null:
 return orderBook(_that);case AdapterCall_Ticker() when ticker != null:
 return ticker(_that);case AdapterCall_Candles() when candles != null:
 return candles(_that);case AdapterCall_Balances() when balances != null:
-return balances(_that);case AdapterCall_OpenOrders() when openOrders != null:
-return openOrders(_that);case AdapterCall_PlaceOrder() when placeOrder != null:
+return balances(_that);case AdapterCall_OrderRules() when orderRules != null:
+return orderRules(_that);case AdapterCall_AssetNetworks() when assetNetworks != null:
+return assetNetworks(_that);case AdapterCall_DepositAddresses() when depositAddresses != null:
+return depositAddresses(_that);case AdapterCall_DepositAddress() when depositAddress != null:
+return depositAddress(_that);case AdapterCall_CreateDepositAddress() when createDepositAddress != null:
+return createDepositAddress(_that);case AdapterCall_PrepareWithdrawal() when prepareWithdrawal != null:
+return prepareWithdrawal(_that);case AdapterCall_Withdraw() when withdraw != null:
+return withdraw(_that);case AdapterCall_Deposit() when deposit != null:
+return deposit(_that);case AdapterCall_Withdrawal() when withdrawal != null:
+return withdrawal(_that);case AdapterCall_CancelWithdrawal() when cancelWithdrawal != null:
+return cancelWithdrawal(_that);case AdapterCall_Deposits() when deposits != null:
+return deposits(_that);case AdapterCall_Withdrawals() when withdrawals != null:
+return withdrawals(_that);case AdapterCall_OpenOrders() when openOrders != null:
+return openOrders(_that);case AdapterCall_Order() when order != null:
+return order(_that);case AdapterCall_OrderByClientId() when orderByClientId != null:
+return orderByClientId(_that);case AdapterCall_OrdersByIds() when ordersByIds != null:
+return ordersByIds(_that);case AdapterCall_OrderHistory() when orderHistory != null:
+return orderHistory(_that);case AdapterCall_PlaceOrder() when placeOrder != null:
 return placeOrder(_that);case AdapterCall_CancelOrder() when cancelOrder != null:
-return cancelOrder(_that);case AdapterCall_Positions() when positions != null:
+return cancelOrder(_that);case AdapterCall_CancelOrderByClientId() when cancelOrderByClientId != null:
+return cancelOrderByClientId(_that);case AdapterCall_CancelOrders() when cancelOrders != null:
+return cancelOrders(_that);case AdapterCall_Positions() when positions != null:
 return positions(_that);case AdapterCall_MarginSummary() when marginSummary != null:
 return marginSummary(_that);case AdapterCall_FundingRates() when fundingRates != null:
 return fundingRates(_that);case AdapterCall_FundingPayments() when fundingPayments != null:
@@ -93,7 +111,7 @@ return cancelStream(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( AdapterCall_Markets value)  markets,required TResult Function( AdapterCall_Trades value)  trades,required TResult Function( AdapterCall_OrderBook value)  orderBook,required TResult Function( AdapterCall_Ticker value)  ticker,required TResult Function( AdapterCall_Candles value)  candles,required TResult Function( AdapterCall_Balances value)  balances,required TResult Function( AdapterCall_OpenOrders value)  openOrders,required TResult Function( AdapterCall_PlaceOrder value)  placeOrder,required TResult Function( AdapterCall_CancelOrder value)  cancelOrder,required TResult Function( AdapterCall_Positions value)  positions,required TResult Function( AdapterCall_MarginSummary value)  marginSummary,required TResult Function( AdapterCall_FundingRates value)  fundingRates,required TResult Function( AdapterCall_FundingPayments value)  fundingPayments,required TResult Function( AdapterCall_SetMargin value)  setMargin,required TResult Function( AdapterCall_Subscribe value)  subscribe,required TResult Function( AdapterCall_SubscribeAccount value)  subscribeAccount,required TResult Function( AdapterCall_CancelStream value)  cancelStream,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( AdapterCall_Markets value)  markets,required TResult Function( AdapterCall_Trades value)  trades,required TResult Function( AdapterCall_OrderBook value)  orderBook,required TResult Function( AdapterCall_Ticker value)  ticker,required TResult Function( AdapterCall_Candles value)  candles,required TResult Function( AdapterCall_Balances value)  balances,required TResult Function( AdapterCall_OrderRules value)  orderRules,required TResult Function( AdapterCall_AssetNetworks value)  assetNetworks,required TResult Function( AdapterCall_DepositAddresses value)  depositAddresses,required TResult Function( AdapterCall_DepositAddress value)  depositAddress,required TResult Function( AdapterCall_CreateDepositAddress value)  createDepositAddress,required TResult Function( AdapterCall_PrepareWithdrawal value)  prepareWithdrawal,required TResult Function( AdapterCall_Withdraw value)  withdraw,required TResult Function( AdapterCall_Deposit value)  deposit,required TResult Function( AdapterCall_Withdrawal value)  withdrawal,required TResult Function( AdapterCall_CancelWithdrawal value)  cancelWithdrawal,required TResult Function( AdapterCall_Deposits value)  deposits,required TResult Function( AdapterCall_Withdrawals value)  withdrawals,required TResult Function( AdapterCall_OpenOrders value)  openOrders,required TResult Function( AdapterCall_Order value)  order,required TResult Function( AdapterCall_OrderByClientId value)  orderByClientId,required TResult Function( AdapterCall_OrdersByIds value)  ordersByIds,required TResult Function( AdapterCall_OrderHistory value)  orderHistory,required TResult Function( AdapterCall_PlaceOrder value)  placeOrder,required TResult Function( AdapterCall_CancelOrder value)  cancelOrder,required TResult Function( AdapterCall_CancelOrderByClientId value)  cancelOrderByClientId,required TResult Function( AdapterCall_CancelOrders value)  cancelOrders,required TResult Function( AdapterCall_Positions value)  positions,required TResult Function( AdapterCall_MarginSummary value)  marginSummary,required TResult Function( AdapterCall_FundingRates value)  fundingRates,required TResult Function( AdapterCall_FundingPayments value)  fundingPayments,required TResult Function( AdapterCall_SetMargin value)  setMargin,required TResult Function( AdapterCall_Subscribe value)  subscribe,required TResult Function( AdapterCall_SubscribeAccount value)  subscribeAccount,required TResult Function( AdapterCall_CancelStream value)  cancelStream,}){
 final _that = this;
 switch (_that) {
 case AdapterCall_Markets():
@@ -102,10 +120,28 @@ return trades(_that);case AdapterCall_OrderBook():
 return orderBook(_that);case AdapterCall_Ticker():
 return ticker(_that);case AdapterCall_Candles():
 return candles(_that);case AdapterCall_Balances():
-return balances(_that);case AdapterCall_OpenOrders():
-return openOrders(_that);case AdapterCall_PlaceOrder():
+return balances(_that);case AdapterCall_OrderRules():
+return orderRules(_that);case AdapterCall_AssetNetworks():
+return assetNetworks(_that);case AdapterCall_DepositAddresses():
+return depositAddresses(_that);case AdapterCall_DepositAddress():
+return depositAddress(_that);case AdapterCall_CreateDepositAddress():
+return createDepositAddress(_that);case AdapterCall_PrepareWithdrawal():
+return prepareWithdrawal(_that);case AdapterCall_Withdraw():
+return withdraw(_that);case AdapterCall_Deposit():
+return deposit(_that);case AdapterCall_Withdrawal():
+return withdrawal(_that);case AdapterCall_CancelWithdrawal():
+return cancelWithdrawal(_that);case AdapterCall_Deposits():
+return deposits(_that);case AdapterCall_Withdrawals():
+return withdrawals(_that);case AdapterCall_OpenOrders():
+return openOrders(_that);case AdapterCall_Order():
+return order(_that);case AdapterCall_OrderByClientId():
+return orderByClientId(_that);case AdapterCall_OrdersByIds():
+return ordersByIds(_that);case AdapterCall_OrderHistory():
+return orderHistory(_that);case AdapterCall_PlaceOrder():
 return placeOrder(_that);case AdapterCall_CancelOrder():
-return cancelOrder(_that);case AdapterCall_Positions():
+return cancelOrder(_that);case AdapterCall_CancelOrderByClientId():
+return cancelOrderByClientId(_that);case AdapterCall_CancelOrders():
+return cancelOrders(_that);case AdapterCall_Positions():
 return positions(_that);case AdapterCall_MarginSummary():
 return marginSummary(_that);case AdapterCall_FundingRates():
 return fundingRates(_that);case AdapterCall_FundingPayments():
@@ -127,7 +163,7 @@ return cancelStream(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( AdapterCall_Markets value)?  markets,TResult? Function( AdapterCall_Trades value)?  trades,TResult? Function( AdapterCall_OrderBook value)?  orderBook,TResult? Function( AdapterCall_Ticker value)?  ticker,TResult? Function( AdapterCall_Candles value)?  candles,TResult? Function( AdapterCall_Balances value)?  balances,TResult? Function( AdapterCall_OpenOrders value)?  openOrders,TResult? Function( AdapterCall_PlaceOrder value)?  placeOrder,TResult? Function( AdapterCall_CancelOrder value)?  cancelOrder,TResult? Function( AdapterCall_Positions value)?  positions,TResult? Function( AdapterCall_MarginSummary value)?  marginSummary,TResult? Function( AdapterCall_FundingRates value)?  fundingRates,TResult? Function( AdapterCall_FundingPayments value)?  fundingPayments,TResult? Function( AdapterCall_SetMargin value)?  setMargin,TResult? Function( AdapterCall_Subscribe value)?  subscribe,TResult? Function( AdapterCall_SubscribeAccount value)?  subscribeAccount,TResult? Function( AdapterCall_CancelStream value)?  cancelStream,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( AdapterCall_Markets value)?  markets,TResult? Function( AdapterCall_Trades value)?  trades,TResult? Function( AdapterCall_OrderBook value)?  orderBook,TResult? Function( AdapterCall_Ticker value)?  ticker,TResult? Function( AdapterCall_Candles value)?  candles,TResult? Function( AdapterCall_Balances value)?  balances,TResult? Function( AdapterCall_OrderRules value)?  orderRules,TResult? Function( AdapterCall_AssetNetworks value)?  assetNetworks,TResult? Function( AdapterCall_DepositAddresses value)?  depositAddresses,TResult? Function( AdapterCall_DepositAddress value)?  depositAddress,TResult? Function( AdapterCall_CreateDepositAddress value)?  createDepositAddress,TResult? Function( AdapterCall_PrepareWithdrawal value)?  prepareWithdrawal,TResult? Function( AdapterCall_Withdraw value)?  withdraw,TResult? Function( AdapterCall_Deposit value)?  deposit,TResult? Function( AdapterCall_Withdrawal value)?  withdrawal,TResult? Function( AdapterCall_CancelWithdrawal value)?  cancelWithdrawal,TResult? Function( AdapterCall_Deposits value)?  deposits,TResult? Function( AdapterCall_Withdrawals value)?  withdrawals,TResult? Function( AdapterCall_OpenOrders value)?  openOrders,TResult? Function( AdapterCall_Order value)?  order,TResult? Function( AdapterCall_OrderByClientId value)?  orderByClientId,TResult? Function( AdapterCall_OrdersByIds value)?  ordersByIds,TResult? Function( AdapterCall_OrderHistory value)?  orderHistory,TResult? Function( AdapterCall_PlaceOrder value)?  placeOrder,TResult? Function( AdapterCall_CancelOrder value)?  cancelOrder,TResult? Function( AdapterCall_CancelOrderByClientId value)?  cancelOrderByClientId,TResult? Function( AdapterCall_CancelOrders value)?  cancelOrders,TResult? Function( AdapterCall_Positions value)?  positions,TResult? Function( AdapterCall_MarginSummary value)?  marginSummary,TResult? Function( AdapterCall_FundingRates value)?  fundingRates,TResult? Function( AdapterCall_FundingPayments value)?  fundingPayments,TResult? Function( AdapterCall_SetMargin value)?  setMargin,TResult? Function( AdapterCall_Subscribe value)?  subscribe,TResult? Function( AdapterCall_SubscribeAccount value)?  subscribeAccount,TResult? Function( AdapterCall_CancelStream value)?  cancelStream,}){
 final _that = this;
 switch (_that) {
 case AdapterCall_Markets() when markets != null:
@@ -136,10 +172,28 @@ return trades(_that);case AdapterCall_OrderBook() when orderBook != null:
 return orderBook(_that);case AdapterCall_Ticker() when ticker != null:
 return ticker(_that);case AdapterCall_Candles() when candles != null:
 return candles(_that);case AdapterCall_Balances() when balances != null:
-return balances(_that);case AdapterCall_OpenOrders() when openOrders != null:
-return openOrders(_that);case AdapterCall_PlaceOrder() when placeOrder != null:
+return balances(_that);case AdapterCall_OrderRules() when orderRules != null:
+return orderRules(_that);case AdapterCall_AssetNetworks() when assetNetworks != null:
+return assetNetworks(_that);case AdapterCall_DepositAddresses() when depositAddresses != null:
+return depositAddresses(_that);case AdapterCall_DepositAddress() when depositAddress != null:
+return depositAddress(_that);case AdapterCall_CreateDepositAddress() when createDepositAddress != null:
+return createDepositAddress(_that);case AdapterCall_PrepareWithdrawal() when prepareWithdrawal != null:
+return prepareWithdrawal(_that);case AdapterCall_Withdraw() when withdraw != null:
+return withdraw(_that);case AdapterCall_Deposit() when deposit != null:
+return deposit(_that);case AdapterCall_Withdrawal() when withdrawal != null:
+return withdrawal(_that);case AdapterCall_CancelWithdrawal() when cancelWithdrawal != null:
+return cancelWithdrawal(_that);case AdapterCall_Deposits() when deposits != null:
+return deposits(_that);case AdapterCall_Withdrawals() when withdrawals != null:
+return withdrawals(_that);case AdapterCall_OpenOrders() when openOrders != null:
+return openOrders(_that);case AdapterCall_Order() when order != null:
+return order(_that);case AdapterCall_OrderByClientId() when orderByClientId != null:
+return orderByClientId(_that);case AdapterCall_OrdersByIds() when ordersByIds != null:
+return ordersByIds(_that);case AdapterCall_OrderHistory() when orderHistory != null:
+return orderHistory(_that);case AdapterCall_PlaceOrder() when placeOrder != null:
 return placeOrder(_that);case AdapterCall_CancelOrder() when cancelOrder != null:
-return cancelOrder(_that);case AdapterCall_Positions() when positions != null:
+return cancelOrder(_that);case AdapterCall_CancelOrderByClientId() when cancelOrderByClientId != null:
+return cancelOrderByClientId(_that);case AdapterCall_CancelOrders() when cancelOrders != null:
+return cancelOrders(_that);case AdapterCall_Positions() when positions != null:
 return positions(_that);case AdapterCall_MarginSummary() when marginSummary != null:
 return marginSummary(_that);case AdapterCall_FundingRates() when fundingRates != null:
 return fundingRates(_that);case AdapterCall_FundingPayments() when fundingPayments != null:
@@ -164,7 +218,7 @@ return cancelStream(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( WireMarketKind kind)?  markets,TResult Function( WireMarket market,  int? limit)?  trades,TResult Function( WireMarket market,  int? depth)?  orderBook,TResult Function( WireMarket market)?  ticker,TResult Function( WireCandleRequest request)?  candles,TResult Function()?  balances,TResult Function( WireMarket? market)?  openOrders,TResult Function( WireOrderRequest request)?  placeOrder,TResult Function( WireMarket market,  String orderId)?  cancelOrder,TResult Function( WireMarket? market)?  positions,TResult Function()?  marginSummary,TResult Function( WireHistoryRequest request)?  fundingRates,TResult Function( WireHistoryRequest request)?  fundingPayments,TResult Function( WireMarginRequest request)?  setMargin,TResult Function( String streamId,  WireSubscription subscription,  WireStreamConfig config,  MarketStreamSink sink)?  subscribe,TResult Function( String streamId,  WireStreamConfig config,  AccountStreamSink sink)?  subscribeAccount,TResult Function( String streamId)?  cancelStream,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( WireMarketKind kind)?  markets,TResult Function( WireMarket market,  int? limit)?  trades,TResult Function( WireMarket market,  int? depth)?  orderBook,TResult Function( WireMarket market)?  ticker,TResult Function( WireCandleRequest request)?  candles,TResult Function()?  balances,TResult Function( WireMarket market)?  orderRules,TResult Function( String asset)?  assetNetworks,TResult Function()?  depositAddresses,TResult Function( WireDepositAddressRequest request)?  depositAddress,TResult Function( WireDepositAddressRequest request)?  createDepositAddress,TResult Function( WireWithdrawRequest request)?  prepareWithdrawal,TResult Function( WireWithdrawRequest request)?  withdraw,TResult Function( WireTransferLookupRequest request)?  deposit,TResult Function( WireTransferLookupRequest request)?  withdrawal,TResult Function( String withdrawalId)?  cancelWithdrawal,TResult Function( WireTransferHistoryRequest request)?  deposits,TResult Function( WireTransferHistoryRequest request)?  withdrawals,TResult Function( WireMarket? market)?  openOrders,TResult Function( WireMarket market,  String orderId)?  order,TResult Function( WireMarket market,  String clientId)?  orderByClientId,TResult Function( WireOrderLookupRequest request)?  ordersByIds,TResult Function( WireOrderHistoryRequest request)?  orderHistory,TResult Function( WireOrderRequest request)?  placeOrder,TResult Function( WireMarket market,  String orderId)?  cancelOrder,TResult Function( WireMarket market,  String clientId)?  cancelOrderByClientId,TResult Function( WireCancelOrdersRequest request)?  cancelOrders,TResult Function( WireMarket? market)?  positions,TResult Function()?  marginSummary,TResult Function( WireHistoryRequest request)?  fundingRates,TResult Function( WireHistoryRequest request)?  fundingPayments,TResult Function( WireMarginRequest request)?  setMargin,TResult Function( String streamId,  WireSubscription subscription,  WireStreamConfig config,  MarketStreamSink sink)?  subscribe,TResult Function( String streamId,  WireStreamConfig config,  AccountStreamSink sink)?  subscribeAccount,TResult Function( String streamId)?  cancelStream,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case AdapterCall_Markets() when markets != null:
 return markets(_that.kind);case AdapterCall_Trades() when trades != null:
@@ -172,10 +226,28 @@ return trades(_that.market,_that.limit);case AdapterCall_OrderBook() when orderB
 return orderBook(_that.market,_that.depth);case AdapterCall_Ticker() when ticker != null:
 return ticker(_that.market);case AdapterCall_Candles() when candles != null:
 return candles(_that.request);case AdapterCall_Balances() when balances != null:
-return balances();case AdapterCall_OpenOrders() when openOrders != null:
-return openOrders(_that.market);case AdapterCall_PlaceOrder() when placeOrder != null:
+return balances();case AdapterCall_OrderRules() when orderRules != null:
+return orderRules(_that.market);case AdapterCall_AssetNetworks() when assetNetworks != null:
+return assetNetworks(_that.asset);case AdapterCall_DepositAddresses() when depositAddresses != null:
+return depositAddresses();case AdapterCall_DepositAddress() when depositAddress != null:
+return depositAddress(_that.request);case AdapterCall_CreateDepositAddress() when createDepositAddress != null:
+return createDepositAddress(_that.request);case AdapterCall_PrepareWithdrawal() when prepareWithdrawal != null:
+return prepareWithdrawal(_that.request);case AdapterCall_Withdraw() when withdraw != null:
+return withdraw(_that.request);case AdapterCall_Deposit() when deposit != null:
+return deposit(_that.request);case AdapterCall_Withdrawal() when withdrawal != null:
+return withdrawal(_that.request);case AdapterCall_CancelWithdrawal() when cancelWithdrawal != null:
+return cancelWithdrawal(_that.withdrawalId);case AdapterCall_Deposits() when deposits != null:
+return deposits(_that.request);case AdapterCall_Withdrawals() when withdrawals != null:
+return withdrawals(_that.request);case AdapterCall_OpenOrders() when openOrders != null:
+return openOrders(_that.market);case AdapterCall_Order() when order != null:
+return order(_that.market,_that.orderId);case AdapterCall_OrderByClientId() when orderByClientId != null:
+return orderByClientId(_that.market,_that.clientId);case AdapterCall_OrdersByIds() when ordersByIds != null:
+return ordersByIds(_that.request);case AdapterCall_OrderHistory() when orderHistory != null:
+return orderHistory(_that.request);case AdapterCall_PlaceOrder() when placeOrder != null:
 return placeOrder(_that.request);case AdapterCall_CancelOrder() when cancelOrder != null:
-return cancelOrder(_that.market,_that.orderId);case AdapterCall_Positions() when positions != null:
+return cancelOrder(_that.market,_that.orderId);case AdapterCall_CancelOrderByClientId() when cancelOrderByClientId != null:
+return cancelOrderByClientId(_that.market,_that.clientId);case AdapterCall_CancelOrders() when cancelOrders != null:
+return cancelOrders(_that.request);case AdapterCall_Positions() when positions != null:
 return positions(_that.market);case AdapterCall_MarginSummary() when marginSummary != null:
 return marginSummary();case AdapterCall_FundingRates() when fundingRates != null:
 return fundingRates(_that.request);case AdapterCall_FundingPayments() when fundingPayments != null:
@@ -201,7 +273,7 @@ return cancelStream(_that.streamId);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( WireMarketKind kind)  markets,required TResult Function( WireMarket market,  int? limit)  trades,required TResult Function( WireMarket market,  int? depth)  orderBook,required TResult Function( WireMarket market)  ticker,required TResult Function( WireCandleRequest request)  candles,required TResult Function()  balances,required TResult Function( WireMarket? market)  openOrders,required TResult Function( WireOrderRequest request)  placeOrder,required TResult Function( WireMarket market,  String orderId)  cancelOrder,required TResult Function( WireMarket? market)  positions,required TResult Function()  marginSummary,required TResult Function( WireHistoryRequest request)  fundingRates,required TResult Function( WireHistoryRequest request)  fundingPayments,required TResult Function( WireMarginRequest request)  setMargin,required TResult Function( String streamId,  WireSubscription subscription,  WireStreamConfig config,  MarketStreamSink sink)  subscribe,required TResult Function( String streamId,  WireStreamConfig config,  AccountStreamSink sink)  subscribeAccount,required TResult Function( String streamId)  cancelStream,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( WireMarketKind kind)  markets,required TResult Function( WireMarket market,  int? limit)  trades,required TResult Function( WireMarket market,  int? depth)  orderBook,required TResult Function( WireMarket market)  ticker,required TResult Function( WireCandleRequest request)  candles,required TResult Function()  balances,required TResult Function( WireMarket market)  orderRules,required TResult Function( String asset)  assetNetworks,required TResult Function()  depositAddresses,required TResult Function( WireDepositAddressRequest request)  depositAddress,required TResult Function( WireDepositAddressRequest request)  createDepositAddress,required TResult Function( WireWithdrawRequest request)  prepareWithdrawal,required TResult Function( WireWithdrawRequest request)  withdraw,required TResult Function( WireTransferLookupRequest request)  deposit,required TResult Function( WireTransferLookupRequest request)  withdrawal,required TResult Function( String withdrawalId)  cancelWithdrawal,required TResult Function( WireTransferHistoryRequest request)  deposits,required TResult Function( WireTransferHistoryRequest request)  withdrawals,required TResult Function( WireMarket? market)  openOrders,required TResult Function( WireMarket market,  String orderId)  order,required TResult Function( WireMarket market,  String clientId)  orderByClientId,required TResult Function( WireOrderLookupRequest request)  ordersByIds,required TResult Function( WireOrderHistoryRequest request)  orderHistory,required TResult Function( WireOrderRequest request)  placeOrder,required TResult Function( WireMarket market,  String orderId)  cancelOrder,required TResult Function( WireMarket market,  String clientId)  cancelOrderByClientId,required TResult Function( WireCancelOrdersRequest request)  cancelOrders,required TResult Function( WireMarket? market)  positions,required TResult Function()  marginSummary,required TResult Function( WireHistoryRequest request)  fundingRates,required TResult Function( WireHistoryRequest request)  fundingPayments,required TResult Function( WireMarginRequest request)  setMargin,required TResult Function( String streamId,  WireSubscription subscription,  WireStreamConfig config,  MarketStreamSink sink)  subscribe,required TResult Function( String streamId,  WireStreamConfig config,  AccountStreamSink sink)  subscribeAccount,required TResult Function( String streamId)  cancelStream,}) {final _that = this;
 switch (_that) {
 case AdapterCall_Markets():
 return markets(_that.kind);case AdapterCall_Trades():
@@ -209,10 +281,28 @@ return trades(_that.market,_that.limit);case AdapterCall_OrderBook():
 return orderBook(_that.market,_that.depth);case AdapterCall_Ticker():
 return ticker(_that.market);case AdapterCall_Candles():
 return candles(_that.request);case AdapterCall_Balances():
-return balances();case AdapterCall_OpenOrders():
-return openOrders(_that.market);case AdapterCall_PlaceOrder():
+return balances();case AdapterCall_OrderRules():
+return orderRules(_that.market);case AdapterCall_AssetNetworks():
+return assetNetworks(_that.asset);case AdapterCall_DepositAddresses():
+return depositAddresses();case AdapterCall_DepositAddress():
+return depositAddress(_that.request);case AdapterCall_CreateDepositAddress():
+return createDepositAddress(_that.request);case AdapterCall_PrepareWithdrawal():
+return prepareWithdrawal(_that.request);case AdapterCall_Withdraw():
+return withdraw(_that.request);case AdapterCall_Deposit():
+return deposit(_that.request);case AdapterCall_Withdrawal():
+return withdrawal(_that.request);case AdapterCall_CancelWithdrawal():
+return cancelWithdrawal(_that.withdrawalId);case AdapterCall_Deposits():
+return deposits(_that.request);case AdapterCall_Withdrawals():
+return withdrawals(_that.request);case AdapterCall_OpenOrders():
+return openOrders(_that.market);case AdapterCall_Order():
+return order(_that.market,_that.orderId);case AdapterCall_OrderByClientId():
+return orderByClientId(_that.market,_that.clientId);case AdapterCall_OrdersByIds():
+return ordersByIds(_that.request);case AdapterCall_OrderHistory():
+return orderHistory(_that.request);case AdapterCall_PlaceOrder():
 return placeOrder(_that.request);case AdapterCall_CancelOrder():
-return cancelOrder(_that.market,_that.orderId);case AdapterCall_Positions():
+return cancelOrder(_that.market,_that.orderId);case AdapterCall_CancelOrderByClientId():
+return cancelOrderByClientId(_that.market,_that.clientId);case AdapterCall_CancelOrders():
+return cancelOrders(_that.request);case AdapterCall_Positions():
 return positions(_that.market);case AdapterCall_MarginSummary():
 return marginSummary();case AdapterCall_FundingRates():
 return fundingRates(_that.request);case AdapterCall_FundingPayments():
@@ -234,7 +324,7 @@ return cancelStream(_that.streamId);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( WireMarketKind kind)?  markets,TResult? Function( WireMarket market,  int? limit)?  trades,TResult? Function( WireMarket market,  int? depth)?  orderBook,TResult? Function( WireMarket market)?  ticker,TResult? Function( WireCandleRequest request)?  candles,TResult? Function()?  balances,TResult? Function( WireMarket? market)?  openOrders,TResult? Function( WireOrderRequest request)?  placeOrder,TResult? Function( WireMarket market,  String orderId)?  cancelOrder,TResult? Function( WireMarket? market)?  positions,TResult? Function()?  marginSummary,TResult? Function( WireHistoryRequest request)?  fundingRates,TResult? Function( WireHistoryRequest request)?  fundingPayments,TResult? Function( WireMarginRequest request)?  setMargin,TResult? Function( String streamId,  WireSubscription subscription,  WireStreamConfig config,  MarketStreamSink sink)?  subscribe,TResult? Function( String streamId,  WireStreamConfig config,  AccountStreamSink sink)?  subscribeAccount,TResult? Function( String streamId)?  cancelStream,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( WireMarketKind kind)?  markets,TResult? Function( WireMarket market,  int? limit)?  trades,TResult? Function( WireMarket market,  int? depth)?  orderBook,TResult? Function( WireMarket market)?  ticker,TResult? Function( WireCandleRequest request)?  candles,TResult? Function()?  balances,TResult? Function( WireMarket market)?  orderRules,TResult? Function( String asset)?  assetNetworks,TResult? Function()?  depositAddresses,TResult? Function( WireDepositAddressRequest request)?  depositAddress,TResult? Function( WireDepositAddressRequest request)?  createDepositAddress,TResult? Function( WireWithdrawRequest request)?  prepareWithdrawal,TResult? Function( WireWithdrawRequest request)?  withdraw,TResult? Function( WireTransferLookupRequest request)?  deposit,TResult? Function( WireTransferLookupRequest request)?  withdrawal,TResult? Function( String withdrawalId)?  cancelWithdrawal,TResult? Function( WireTransferHistoryRequest request)?  deposits,TResult? Function( WireTransferHistoryRequest request)?  withdrawals,TResult? Function( WireMarket? market)?  openOrders,TResult? Function( WireMarket market,  String orderId)?  order,TResult? Function( WireMarket market,  String clientId)?  orderByClientId,TResult? Function( WireOrderLookupRequest request)?  ordersByIds,TResult? Function( WireOrderHistoryRequest request)?  orderHistory,TResult? Function( WireOrderRequest request)?  placeOrder,TResult? Function( WireMarket market,  String orderId)?  cancelOrder,TResult? Function( WireMarket market,  String clientId)?  cancelOrderByClientId,TResult? Function( WireCancelOrdersRequest request)?  cancelOrders,TResult? Function( WireMarket? market)?  positions,TResult? Function()?  marginSummary,TResult? Function( WireHistoryRequest request)?  fundingRates,TResult? Function( WireHistoryRequest request)?  fundingPayments,TResult? Function( WireMarginRequest request)?  setMargin,TResult? Function( String streamId,  WireSubscription subscription,  WireStreamConfig config,  MarketStreamSink sink)?  subscribe,TResult? Function( String streamId,  WireStreamConfig config,  AccountStreamSink sink)?  subscribeAccount,TResult? Function( String streamId)?  cancelStream,}) {final _that = this;
 switch (_that) {
 case AdapterCall_Markets() when markets != null:
 return markets(_that.kind);case AdapterCall_Trades() when trades != null:
@@ -242,10 +332,28 @@ return trades(_that.market,_that.limit);case AdapterCall_OrderBook() when orderB
 return orderBook(_that.market,_that.depth);case AdapterCall_Ticker() when ticker != null:
 return ticker(_that.market);case AdapterCall_Candles() when candles != null:
 return candles(_that.request);case AdapterCall_Balances() when balances != null:
-return balances();case AdapterCall_OpenOrders() when openOrders != null:
-return openOrders(_that.market);case AdapterCall_PlaceOrder() when placeOrder != null:
+return balances();case AdapterCall_OrderRules() when orderRules != null:
+return orderRules(_that.market);case AdapterCall_AssetNetworks() when assetNetworks != null:
+return assetNetworks(_that.asset);case AdapterCall_DepositAddresses() when depositAddresses != null:
+return depositAddresses();case AdapterCall_DepositAddress() when depositAddress != null:
+return depositAddress(_that.request);case AdapterCall_CreateDepositAddress() when createDepositAddress != null:
+return createDepositAddress(_that.request);case AdapterCall_PrepareWithdrawal() when prepareWithdrawal != null:
+return prepareWithdrawal(_that.request);case AdapterCall_Withdraw() when withdraw != null:
+return withdraw(_that.request);case AdapterCall_Deposit() when deposit != null:
+return deposit(_that.request);case AdapterCall_Withdrawal() when withdrawal != null:
+return withdrawal(_that.request);case AdapterCall_CancelWithdrawal() when cancelWithdrawal != null:
+return cancelWithdrawal(_that.withdrawalId);case AdapterCall_Deposits() when deposits != null:
+return deposits(_that.request);case AdapterCall_Withdrawals() when withdrawals != null:
+return withdrawals(_that.request);case AdapterCall_OpenOrders() when openOrders != null:
+return openOrders(_that.market);case AdapterCall_Order() when order != null:
+return order(_that.market,_that.orderId);case AdapterCall_OrderByClientId() when orderByClientId != null:
+return orderByClientId(_that.market,_that.clientId);case AdapterCall_OrdersByIds() when ordersByIds != null:
+return ordersByIds(_that.request);case AdapterCall_OrderHistory() when orderHistory != null:
+return orderHistory(_that.request);case AdapterCall_PlaceOrder() when placeOrder != null:
 return placeOrder(_that.request);case AdapterCall_CancelOrder() when cancelOrder != null:
-return cancelOrder(_that.market,_that.orderId);case AdapterCall_Positions() when positions != null:
+return cancelOrder(_that.market,_that.orderId);case AdapterCall_CancelOrderByClientId() when cancelOrderByClientId != null:
+return cancelOrderByClientId(_that.market,_that.clientId);case AdapterCall_CancelOrders() when cancelOrders != null:
+return cancelOrders(_that.request);case AdapterCall_Positions() when positions != null:
 return positions(_that.market);case AdapterCall_MarginSummary() when marginSummary != null:
 return marginSummary();case AdapterCall_FundingRates() when fundingRates != null:
 return fundingRates(_that.request);case AdapterCall_FundingPayments() when fundingPayments != null:
@@ -630,6 +738,764 @@ String toString() {
 /// @nodoc
 
 
+class AdapterCall_OrderRules extends AdapterCall {
+  const AdapterCall_OrderRules({required this.market}): super._();
+
+
+ final  WireMarket market;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterCall_OrderRulesCopyWith<AdapterCall_OrderRules> get copyWith => _$AdapterCall_OrderRulesCopyWithImpl<AdapterCall_OrderRules>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterCall_OrderRules&&(identical(other.market, market) || other.market == market));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,market);
+
+@override
+String toString() {
+  return 'AdapterCall.orderRules(market: $market)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterCall_OrderRulesCopyWith<$Res> implements $AdapterCallCopyWith<$Res> {
+  factory $AdapterCall_OrderRulesCopyWith(AdapterCall_OrderRules value, $Res Function(AdapterCall_OrderRules) _then) = _$AdapterCall_OrderRulesCopyWithImpl;
+@useResult
+$Res call({
+ WireMarket market
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterCall_OrderRulesCopyWithImpl<$Res>
+    implements $AdapterCall_OrderRulesCopyWith<$Res> {
+  _$AdapterCall_OrderRulesCopyWithImpl(this._self, this._then);
+
+  final AdapterCall_OrderRules _self;
+  final $Res Function(AdapterCall_OrderRules) _then;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? market = null,}) {
+  return _then(AdapterCall_OrderRules(
+market: null == market ? _self.market : market // ignore: cast_nullable_to_non_nullable
+as WireMarket,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterCall_AssetNetworks extends AdapterCall {
+  const AdapterCall_AssetNetworks({required this.asset}): super._();
+
+
+ final  String asset;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterCall_AssetNetworksCopyWith<AdapterCall_AssetNetworks> get copyWith => _$AdapterCall_AssetNetworksCopyWithImpl<AdapterCall_AssetNetworks>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterCall_AssetNetworks&&(identical(other.asset, asset) || other.asset == asset));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,asset);
+
+@override
+String toString() {
+  return 'AdapterCall.assetNetworks(asset: $asset)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterCall_AssetNetworksCopyWith<$Res> implements $AdapterCallCopyWith<$Res> {
+  factory $AdapterCall_AssetNetworksCopyWith(AdapterCall_AssetNetworks value, $Res Function(AdapterCall_AssetNetworks) _then) = _$AdapterCall_AssetNetworksCopyWithImpl;
+@useResult
+$Res call({
+ String asset
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterCall_AssetNetworksCopyWithImpl<$Res>
+    implements $AdapterCall_AssetNetworksCopyWith<$Res> {
+  _$AdapterCall_AssetNetworksCopyWithImpl(this._self, this._then);
+
+  final AdapterCall_AssetNetworks _self;
+  final $Res Function(AdapterCall_AssetNetworks) _then;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? asset = null,}) {
+  return _then(AdapterCall_AssetNetworks(
+asset: null == asset ? _self.asset : asset // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterCall_DepositAddresses extends AdapterCall {
+  const AdapterCall_DepositAddresses(): super._();
+
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterCall_DepositAddresses);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'AdapterCall.depositAddresses()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class AdapterCall_DepositAddress extends AdapterCall {
+  const AdapterCall_DepositAddress({required this.request}): super._();
+
+
+ final  WireDepositAddressRequest request;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterCall_DepositAddressCopyWith<AdapterCall_DepositAddress> get copyWith => _$AdapterCall_DepositAddressCopyWithImpl<AdapterCall_DepositAddress>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterCall_DepositAddress&&(identical(other.request, request) || other.request == request));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,request);
+
+@override
+String toString() {
+  return 'AdapterCall.depositAddress(request: $request)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterCall_DepositAddressCopyWith<$Res> implements $AdapterCallCopyWith<$Res> {
+  factory $AdapterCall_DepositAddressCopyWith(AdapterCall_DepositAddress value, $Res Function(AdapterCall_DepositAddress) _then) = _$AdapterCall_DepositAddressCopyWithImpl;
+@useResult
+$Res call({
+ WireDepositAddressRequest request
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterCall_DepositAddressCopyWithImpl<$Res>
+    implements $AdapterCall_DepositAddressCopyWith<$Res> {
+  _$AdapterCall_DepositAddressCopyWithImpl(this._self, this._then);
+
+  final AdapterCall_DepositAddress _self;
+  final $Res Function(AdapterCall_DepositAddress) _then;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? request = null,}) {
+  return _then(AdapterCall_DepositAddress(
+request: null == request ? _self.request : request // ignore: cast_nullable_to_non_nullable
+as WireDepositAddressRequest,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterCall_CreateDepositAddress extends AdapterCall {
+  const AdapterCall_CreateDepositAddress({required this.request}): super._();
+
+
+ final  WireDepositAddressRequest request;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterCall_CreateDepositAddressCopyWith<AdapterCall_CreateDepositAddress> get copyWith => _$AdapterCall_CreateDepositAddressCopyWithImpl<AdapterCall_CreateDepositAddress>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterCall_CreateDepositAddress&&(identical(other.request, request) || other.request == request));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,request);
+
+@override
+String toString() {
+  return 'AdapterCall.createDepositAddress(request: $request)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterCall_CreateDepositAddressCopyWith<$Res> implements $AdapterCallCopyWith<$Res> {
+  factory $AdapterCall_CreateDepositAddressCopyWith(AdapterCall_CreateDepositAddress value, $Res Function(AdapterCall_CreateDepositAddress) _then) = _$AdapterCall_CreateDepositAddressCopyWithImpl;
+@useResult
+$Res call({
+ WireDepositAddressRequest request
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterCall_CreateDepositAddressCopyWithImpl<$Res>
+    implements $AdapterCall_CreateDepositAddressCopyWith<$Res> {
+  _$AdapterCall_CreateDepositAddressCopyWithImpl(this._self, this._then);
+
+  final AdapterCall_CreateDepositAddress _self;
+  final $Res Function(AdapterCall_CreateDepositAddress) _then;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? request = null,}) {
+  return _then(AdapterCall_CreateDepositAddress(
+request: null == request ? _self.request : request // ignore: cast_nullable_to_non_nullable
+as WireDepositAddressRequest,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterCall_PrepareWithdrawal extends AdapterCall {
+  const AdapterCall_PrepareWithdrawal({required this.request}): super._();
+
+
+ final  WireWithdrawRequest request;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterCall_PrepareWithdrawalCopyWith<AdapterCall_PrepareWithdrawal> get copyWith => _$AdapterCall_PrepareWithdrawalCopyWithImpl<AdapterCall_PrepareWithdrawal>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterCall_PrepareWithdrawal&&(identical(other.request, request) || other.request == request));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,request);
+
+@override
+String toString() {
+  return 'AdapterCall.prepareWithdrawal(request: $request)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterCall_PrepareWithdrawalCopyWith<$Res> implements $AdapterCallCopyWith<$Res> {
+  factory $AdapterCall_PrepareWithdrawalCopyWith(AdapterCall_PrepareWithdrawal value, $Res Function(AdapterCall_PrepareWithdrawal) _then) = _$AdapterCall_PrepareWithdrawalCopyWithImpl;
+@useResult
+$Res call({
+ WireWithdrawRequest request
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterCall_PrepareWithdrawalCopyWithImpl<$Res>
+    implements $AdapterCall_PrepareWithdrawalCopyWith<$Res> {
+  _$AdapterCall_PrepareWithdrawalCopyWithImpl(this._self, this._then);
+
+  final AdapterCall_PrepareWithdrawal _self;
+  final $Res Function(AdapterCall_PrepareWithdrawal) _then;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? request = null,}) {
+  return _then(AdapterCall_PrepareWithdrawal(
+request: null == request ? _self.request : request // ignore: cast_nullable_to_non_nullable
+as WireWithdrawRequest,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterCall_Withdraw extends AdapterCall {
+  const AdapterCall_Withdraw({required this.request}): super._();
+
+
+ final  WireWithdrawRequest request;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterCall_WithdrawCopyWith<AdapterCall_Withdraw> get copyWith => _$AdapterCall_WithdrawCopyWithImpl<AdapterCall_Withdraw>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterCall_Withdraw&&(identical(other.request, request) || other.request == request));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,request);
+
+@override
+String toString() {
+  return 'AdapterCall.withdraw(request: $request)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterCall_WithdrawCopyWith<$Res> implements $AdapterCallCopyWith<$Res> {
+  factory $AdapterCall_WithdrawCopyWith(AdapterCall_Withdraw value, $Res Function(AdapterCall_Withdraw) _then) = _$AdapterCall_WithdrawCopyWithImpl;
+@useResult
+$Res call({
+ WireWithdrawRequest request
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterCall_WithdrawCopyWithImpl<$Res>
+    implements $AdapterCall_WithdrawCopyWith<$Res> {
+  _$AdapterCall_WithdrawCopyWithImpl(this._self, this._then);
+
+  final AdapterCall_Withdraw _self;
+  final $Res Function(AdapterCall_Withdraw) _then;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? request = null,}) {
+  return _then(AdapterCall_Withdraw(
+request: null == request ? _self.request : request // ignore: cast_nullable_to_non_nullable
+as WireWithdrawRequest,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterCall_Deposit extends AdapterCall {
+  const AdapterCall_Deposit({required this.request}): super._();
+
+
+ final  WireTransferLookupRequest request;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterCall_DepositCopyWith<AdapterCall_Deposit> get copyWith => _$AdapterCall_DepositCopyWithImpl<AdapterCall_Deposit>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterCall_Deposit&&(identical(other.request, request) || other.request == request));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,request);
+
+@override
+String toString() {
+  return 'AdapterCall.deposit(request: $request)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterCall_DepositCopyWith<$Res> implements $AdapterCallCopyWith<$Res> {
+  factory $AdapterCall_DepositCopyWith(AdapterCall_Deposit value, $Res Function(AdapterCall_Deposit) _then) = _$AdapterCall_DepositCopyWithImpl;
+@useResult
+$Res call({
+ WireTransferLookupRequest request
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterCall_DepositCopyWithImpl<$Res>
+    implements $AdapterCall_DepositCopyWith<$Res> {
+  _$AdapterCall_DepositCopyWithImpl(this._self, this._then);
+
+  final AdapterCall_Deposit _self;
+  final $Res Function(AdapterCall_Deposit) _then;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? request = null,}) {
+  return _then(AdapterCall_Deposit(
+request: null == request ? _self.request : request // ignore: cast_nullable_to_non_nullable
+as WireTransferLookupRequest,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterCall_Withdrawal extends AdapterCall {
+  const AdapterCall_Withdrawal({required this.request}): super._();
+
+
+ final  WireTransferLookupRequest request;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterCall_WithdrawalCopyWith<AdapterCall_Withdrawal> get copyWith => _$AdapterCall_WithdrawalCopyWithImpl<AdapterCall_Withdrawal>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterCall_Withdrawal&&(identical(other.request, request) || other.request == request));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,request);
+
+@override
+String toString() {
+  return 'AdapterCall.withdrawal(request: $request)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterCall_WithdrawalCopyWith<$Res> implements $AdapterCallCopyWith<$Res> {
+  factory $AdapterCall_WithdrawalCopyWith(AdapterCall_Withdrawal value, $Res Function(AdapterCall_Withdrawal) _then) = _$AdapterCall_WithdrawalCopyWithImpl;
+@useResult
+$Res call({
+ WireTransferLookupRequest request
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterCall_WithdrawalCopyWithImpl<$Res>
+    implements $AdapterCall_WithdrawalCopyWith<$Res> {
+  _$AdapterCall_WithdrawalCopyWithImpl(this._self, this._then);
+
+  final AdapterCall_Withdrawal _self;
+  final $Res Function(AdapterCall_Withdrawal) _then;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? request = null,}) {
+  return _then(AdapterCall_Withdrawal(
+request: null == request ? _self.request : request // ignore: cast_nullable_to_non_nullable
+as WireTransferLookupRequest,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterCall_CancelWithdrawal extends AdapterCall {
+  const AdapterCall_CancelWithdrawal({required this.withdrawalId}): super._();
+
+
+ final  String withdrawalId;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterCall_CancelWithdrawalCopyWith<AdapterCall_CancelWithdrawal> get copyWith => _$AdapterCall_CancelWithdrawalCopyWithImpl<AdapterCall_CancelWithdrawal>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterCall_CancelWithdrawal&&(identical(other.withdrawalId, withdrawalId) || other.withdrawalId == withdrawalId));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,withdrawalId);
+
+@override
+String toString() {
+  return 'AdapterCall.cancelWithdrawal(withdrawalId: $withdrawalId)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterCall_CancelWithdrawalCopyWith<$Res> implements $AdapterCallCopyWith<$Res> {
+  factory $AdapterCall_CancelWithdrawalCopyWith(AdapterCall_CancelWithdrawal value, $Res Function(AdapterCall_CancelWithdrawal) _then) = _$AdapterCall_CancelWithdrawalCopyWithImpl;
+@useResult
+$Res call({
+ String withdrawalId
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterCall_CancelWithdrawalCopyWithImpl<$Res>
+    implements $AdapterCall_CancelWithdrawalCopyWith<$Res> {
+  _$AdapterCall_CancelWithdrawalCopyWithImpl(this._self, this._then);
+
+  final AdapterCall_CancelWithdrawal _self;
+  final $Res Function(AdapterCall_CancelWithdrawal) _then;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? withdrawalId = null,}) {
+  return _then(AdapterCall_CancelWithdrawal(
+withdrawalId: null == withdrawalId ? _self.withdrawalId : withdrawalId // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterCall_Deposits extends AdapterCall {
+  const AdapterCall_Deposits({required this.request}): super._();
+
+
+ final  WireTransferHistoryRequest request;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterCall_DepositsCopyWith<AdapterCall_Deposits> get copyWith => _$AdapterCall_DepositsCopyWithImpl<AdapterCall_Deposits>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterCall_Deposits&&(identical(other.request, request) || other.request == request));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,request);
+
+@override
+String toString() {
+  return 'AdapterCall.deposits(request: $request)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterCall_DepositsCopyWith<$Res> implements $AdapterCallCopyWith<$Res> {
+  factory $AdapterCall_DepositsCopyWith(AdapterCall_Deposits value, $Res Function(AdapterCall_Deposits) _then) = _$AdapterCall_DepositsCopyWithImpl;
+@useResult
+$Res call({
+ WireTransferHistoryRequest request
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterCall_DepositsCopyWithImpl<$Res>
+    implements $AdapterCall_DepositsCopyWith<$Res> {
+  _$AdapterCall_DepositsCopyWithImpl(this._self, this._then);
+
+  final AdapterCall_Deposits _self;
+  final $Res Function(AdapterCall_Deposits) _then;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? request = null,}) {
+  return _then(AdapterCall_Deposits(
+request: null == request ? _self.request : request // ignore: cast_nullable_to_non_nullable
+as WireTransferHistoryRequest,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterCall_Withdrawals extends AdapterCall {
+  const AdapterCall_Withdrawals({required this.request}): super._();
+
+
+ final  WireTransferHistoryRequest request;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterCall_WithdrawalsCopyWith<AdapterCall_Withdrawals> get copyWith => _$AdapterCall_WithdrawalsCopyWithImpl<AdapterCall_Withdrawals>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterCall_Withdrawals&&(identical(other.request, request) || other.request == request));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,request);
+
+@override
+String toString() {
+  return 'AdapterCall.withdrawals(request: $request)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterCall_WithdrawalsCopyWith<$Res> implements $AdapterCallCopyWith<$Res> {
+  factory $AdapterCall_WithdrawalsCopyWith(AdapterCall_Withdrawals value, $Res Function(AdapterCall_Withdrawals) _then) = _$AdapterCall_WithdrawalsCopyWithImpl;
+@useResult
+$Res call({
+ WireTransferHistoryRequest request
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterCall_WithdrawalsCopyWithImpl<$Res>
+    implements $AdapterCall_WithdrawalsCopyWith<$Res> {
+  _$AdapterCall_WithdrawalsCopyWithImpl(this._self, this._then);
+
+  final AdapterCall_Withdrawals _self;
+  final $Res Function(AdapterCall_Withdrawals) _then;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? request = null,}) {
+  return _then(AdapterCall_Withdrawals(
+request: null == request ? _self.request : request // ignore: cast_nullable_to_non_nullable
+as WireTransferHistoryRequest,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
 class AdapterCall_OpenOrders extends AdapterCall {
   const AdapterCall_OpenOrders({this.market}): super._();
 
@@ -687,6 +1553,274 @@ class _$AdapterCall_OpenOrdersCopyWithImpl<$Res>
   return _then(AdapterCall_OpenOrders(
 market: freezed == market ? _self.market : market // ignore: cast_nullable_to_non_nullable
 as WireMarket?,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterCall_Order extends AdapterCall {
+  const AdapterCall_Order({required this.market, required this.orderId}): super._();
+
+
+ final  WireMarket market;
+ final  String orderId;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterCall_OrderCopyWith<AdapterCall_Order> get copyWith => _$AdapterCall_OrderCopyWithImpl<AdapterCall_Order>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterCall_Order&&(identical(other.market, market) || other.market == market)&&(identical(other.orderId, orderId) || other.orderId == orderId));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,market,orderId);
+
+@override
+String toString() {
+  return 'AdapterCall.order(market: $market, orderId: $orderId)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterCall_OrderCopyWith<$Res> implements $AdapterCallCopyWith<$Res> {
+  factory $AdapterCall_OrderCopyWith(AdapterCall_Order value, $Res Function(AdapterCall_Order) _then) = _$AdapterCall_OrderCopyWithImpl;
+@useResult
+$Res call({
+ WireMarket market, String orderId
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterCall_OrderCopyWithImpl<$Res>
+    implements $AdapterCall_OrderCopyWith<$Res> {
+  _$AdapterCall_OrderCopyWithImpl(this._self, this._then);
+
+  final AdapterCall_Order _self;
+  final $Res Function(AdapterCall_Order) _then;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? market = null,Object? orderId = null,}) {
+  return _then(AdapterCall_Order(
+market: null == market ? _self.market : market // ignore: cast_nullable_to_non_nullable
+as WireMarket,orderId: null == orderId ? _self.orderId : orderId // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterCall_OrderByClientId extends AdapterCall {
+  const AdapterCall_OrderByClientId({required this.market, required this.clientId}): super._();
+
+
+ final  WireMarket market;
+ final  String clientId;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterCall_OrderByClientIdCopyWith<AdapterCall_OrderByClientId> get copyWith => _$AdapterCall_OrderByClientIdCopyWithImpl<AdapterCall_OrderByClientId>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterCall_OrderByClientId&&(identical(other.market, market) || other.market == market)&&(identical(other.clientId, clientId) || other.clientId == clientId));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,market,clientId);
+
+@override
+String toString() {
+  return 'AdapterCall.orderByClientId(market: $market, clientId: $clientId)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterCall_OrderByClientIdCopyWith<$Res> implements $AdapterCallCopyWith<$Res> {
+  factory $AdapterCall_OrderByClientIdCopyWith(AdapterCall_OrderByClientId value, $Res Function(AdapterCall_OrderByClientId) _then) = _$AdapterCall_OrderByClientIdCopyWithImpl;
+@useResult
+$Res call({
+ WireMarket market, String clientId
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterCall_OrderByClientIdCopyWithImpl<$Res>
+    implements $AdapterCall_OrderByClientIdCopyWith<$Res> {
+  _$AdapterCall_OrderByClientIdCopyWithImpl(this._self, this._then);
+
+  final AdapterCall_OrderByClientId _self;
+  final $Res Function(AdapterCall_OrderByClientId) _then;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? market = null,Object? clientId = null,}) {
+  return _then(AdapterCall_OrderByClientId(
+market: null == market ? _self.market : market // ignore: cast_nullable_to_non_nullable
+as WireMarket,clientId: null == clientId ? _self.clientId : clientId // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterCall_OrdersByIds extends AdapterCall {
+  const AdapterCall_OrdersByIds({required this.request}): super._();
+
+
+ final  WireOrderLookupRequest request;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterCall_OrdersByIdsCopyWith<AdapterCall_OrdersByIds> get copyWith => _$AdapterCall_OrdersByIdsCopyWithImpl<AdapterCall_OrdersByIds>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterCall_OrdersByIds&&(identical(other.request, request) || other.request == request));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,request);
+
+@override
+String toString() {
+  return 'AdapterCall.ordersByIds(request: $request)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterCall_OrdersByIdsCopyWith<$Res> implements $AdapterCallCopyWith<$Res> {
+  factory $AdapterCall_OrdersByIdsCopyWith(AdapterCall_OrdersByIds value, $Res Function(AdapterCall_OrdersByIds) _then) = _$AdapterCall_OrdersByIdsCopyWithImpl;
+@useResult
+$Res call({
+ WireOrderLookupRequest request
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterCall_OrdersByIdsCopyWithImpl<$Res>
+    implements $AdapterCall_OrdersByIdsCopyWith<$Res> {
+  _$AdapterCall_OrdersByIdsCopyWithImpl(this._self, this._then);
+
+  final AdapterCall_OrdersByIds _self;
+  final $Res Function(AdapterCall_OrdersByIds) _then;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? request = null,}) {
+  return _then(AdapterCall_OrdersByIds(
+request: null == request ? _self.request : request // ignore: cast_nullable_to_non_nullable
+as WireOrderLookupRequest,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterCall_OrderHistory extends AdapterCall {
+  const AdapterCall_OrderHistory({required this.request}): super._();
+
+
+ final  WireOrderHistoryRequest request;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterCall_OrderHistoryCopyWith<AdapterCall_OrderHistory> get copyWith => _$AdapterCall_OrderHistoryCopyWithImpl<AdapterCall_OrderHistory>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterCall_OrderHistory&&(identical(other.request, request) || other.request == request));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,request);
+
+@override
+String toString() {
+  return 'AdapterCall.orderHistory(request: $request)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterCall_OrderHistoryCopyWith<$Res> implements $AdapterCallCopyWith<$Res> {
+  factory $AdapterCall_OrderHistoryCopyWith(AdapterCall_OrderHistory value, $Res Function(AdapterCall_OrderHistory) _then) = _$AdapterCall_OrderHistoryCopyWithImpl;
+@useResult
+$Res call({
+ WireOrderHistoryRequest request
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterCall_OrderHistoryCopyWithImpl<$Res>
+    implements $AdapterCall_OrderHistoryCopyWith<$Res> {
+  _$AdapterCall_OrderHistoryCopyWithImpl(this._self, this._then);
+
+  final AdapterCall_OrderHistory _self;
+  final $Res Function(AdapterCall_OrderHistory) _then;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? request = null,}) {
+  return _then(AdapterCall_OrderHistory(
+request: null == request ? _self.request : request // ignore: cast_nullable_to_non_nullable
+as WireOrderHistoryRequest,
   ));
 }
 
@@ -821,6 +1955,140 @@ class _$AdapterCall_CancelOrderCopyWithImpl<$Res>
 market: null == market ? _self.market : market // ignore: cast_nullable_to_non_nullable
 as WireMarket,orderId: null == orderId ? _self.orderId : orderId // ignore: cast_nullable_to_non_nullable
 as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterCall_CancelOrderByClientId extends AdapterCall {
+  const AdapterCall_CancelOrderByClientId({required this.market, required this.clientId}): super._();
+
+
+ final  WireMarket market;
+ final  String clientId;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterCall_CancelOrderByClientIdCopyWith<AdapterCall_CancelOrderByClientId> get copyWith => _$AdapterCall_CancelOrderByClientIdCopyWithImpl<AdapterCall_CancelOrderByClientId>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterCall_CancelOrderByClientId&&(identical(other.market, market) || other.market == market)&&(identical(other.clientId, clientId) || other.clientId == clientId));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,market,clientId);
+
+@override
+String toString() {
+  return 'AdapterCall.cancelOrderByClientId(market: $market, clientId: $clientId)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterCall_CancelOrderByClientIdCopyWith<$Res> implements $AdapterCallCopyWith<$Res> {
+  factory $AdapterCall_CancelOrderByClientIdCopyWith(AdapterCall_CancelOrderByClientId value, $Res Function(AdapterCall_CancelOrderByClientId) _then) = _$AdapterCall_CancelOrderByClientIdCopyWithImpl;
+@useResult
+$Res call({
+ WireMarket market, String clientId
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterCall_CancelOrderByClientIdCopyWithImpl<$Res>
+    implements $AdapterCall_CancelOrderByClientIdCopyWith<$Res> {
+  _$AdapterCall_CancelOrderByClientIdCopyWithImpl(this._self, this._then);
+
+  final AdapterCall_CancelOrderByClientId _self;
+  final $Res Function(AdapterCall_CancelOrderByClientId) _then;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? market = null,Object? clientId = null,}) {
+  return _then(AdapterCall_CancelOrderByClientId(
+market: null == market ? _self.market : market // ignore: cast_nullable_to_non_nullable
+as WireMarket,clientId: null == clientId ? _self.clientId : clientId // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterCall_CancelOrders extends AdapterCall {
+  const AdapterCall_CancelOrders({required this.request}): super._();
+
+
+ final  WireCancelOrdersRequest request;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterCall_CancelOrdersCopyWith<AdapterCall_CancelOrders> get copyWith => _$AdapterCall_CancelOrdersCopyWithImpl<AdapterCall_CancelOrders>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterCall_CancelOrders&&(identical(other.request, request) || other.request == request));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,request);
+
+@override
+String toString() {
+  return 'AdapterCall.cancelOrders(request: $request)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterCall_CancelOrdersCopyWith<$Res> implements $AdapterCallCopyWith<$Res> {
+  factory $AdapterCall_CancelOrdersCopyWith(AdapterCall_CancelOrders value, $Res Function(AdapterCall_CancelOrders) _then) = _$AdapterCall_CancelOrdersCopyWithImpl;
+@useResult
+$Res call({
+ WireCancelOrdersRequest request
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterCall_CancelOrdersCopyWithImpl<$Res>
+    implements $AdapterCall_CancelOrdersCopyWith<$Res> {
+  _$AdapterCall_CancelOrdersCopyWithImpl(this._self, this._then);
+
+  final AdapterCall_CancelOrders _self;
+  final $Res Function(AdapterCall_CancelOrders) _then;
+
+/// Create a copy of AdapterCall
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? request = null,}) {
+  return _then(AdapterCall_CancelOrders(
+request: null == request ? _self.request : request // ignore: cast_nullable_to_non_nullable
+as WireCancelOrdersRequest,
   ));
 }
 
@@ -1375,7 +2643,7 @@ extension AdapterReplyPatterns on AdapterReply {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( AdapterReply_Markets value)?  markets,TResult Function( AdapterReply_Trades value)?  trades,TResult Function( AdapterReply_OrderBook value)?  orderBook,TResult Function( AdapterReply_Ticker value)?  ticker,TResult Function( AdapterReply_Candles value)?  candles,TResult Function( AdapterReply_Balances value)?  balances,TResult Function( AdapterReply_OpenOrders value)?  openOrders,TResult Function( AdapterReply_PlaceOrder value)?  placeOrder,TResult Function( AdapterReply_CancelOrder value)?  cancelOrder,TResult Function( AdapterReply_Positions value)?  positions,TResult Function( AdapterReply_MarginSummary value)?  marginSummary,TResult Function( AdapterReply_FundingRates value)?  fundingRates,TResult Function( AdapterReply_FundingPayments value)?  fundingPayments,TResult Function( AdapterReply_Unit value)?  unit,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( AdapterReply_Markets value)?  markets,TResult Function( AdapterReply_Trades value)?  trades,TResult Function( AdapterReply_OrderBook value)?  orderBook,TResult Function( AdapterReply_Ticker value)?  ticker,TResult Function( AdapterReply_Candles value)?  candles,TResult Function( AdapterReply_Balances value)?  balances,TResult Function( AdapterReply_OrderRules value)?  orderRules,TResult Function( AdapterReply_AssetNetworks value)?  assetNetworks,TResult Function( AdapterReply_DepositAddresses value)?  depositAddresses,TResult Function( AdapterReply_DepositAddress value)?  depositAddress,TResult Function( AdapterReply_CreateDepositAddress value)?  createDepositAddress,TResult Function( AdapterReply_PrepareWithdrawal value)?  prepareWithdrawal,TResult Function( AdapterReply_Withdraw value)?  withdraw,TResult Function( AdapterReply_Deposit value)?  deposit,TResult Function( AdapterReply_Withdrawal value)?  withdrawal,TResult Function( AdapterReply_Deposits value)?  deposits,TResult Function( AdapterReply_Withdrawals value)?  withdrawals,TResult Function( AdapterReply_OpenOrders value)?  openOrders,TResult Function( AdapterReply_Order value)?  order,TResult Function( AdapterReply_OrdersByIds value)?  ordersByIds,TResult Function( AdapterReply_OrderHistory value)?  orderHistory,TResult Function( AdapterReply_PlaceOrder value)?  placeOrder,TResult Function( AdapterReply_CancelOrders value)?  cancelOrders,TResult Function( AdapterReply_Positions value)?  positions,TResult Function( AdapterReply_MarginSummary value)?  marginSummary,TResult Function( AdapterReply_FundingRates value)?  fundingRates,TResult Function( AdapterReply_FundingPayments value)?  fundingPayments,TResult Function( AdapterReply_Unit value)?  unit,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case AdapterReply_Markets() when markets != null:
@@ -1384,10 +2652,24 @@ return trades(_that);case AdapterReply_OrderBook() when orderBook != null:
 return orderBook(_that);case AdapterReply_Ticker() when ticker != null:
 return ticker(_that);case AdapterReply_Candles() when candles != null:
 return candles(_that);case AdapterReply_Balances() when balances != null:
-return balances(_that);case AdapterReply_OpenOrders() when openOrders != null:
-return openOrders(_that);case AdapterReply_PlaceOrder() when placeOrder != null:
-return placeOrder(_that);case AdapterReply_CancelOrder() when cancelOrder != null:
-return cancelOrder(_that);case AdapterReply_Positions() when positions != null:
+return balances(_that);case AdapterReply_OrderRules() when orderRules != null:
+return orderRules(_that);case AdapterReply_AssetNetworks() when assetNetworks != null:
+return assetNetworks(_that);case AdapterReply_DepositAddresses() when depositAddresses != null:
+return depositAddresses(_that);case AdapterReply_DepositAddress() when depositAddress != null:
+return depositAddress(_that);case AdapterReply_CreateDepositAddress() when createDepositAddress != null:
+return createDepositAddress(_that);case AdapterReply_PrepareWithdrawal() when prepareWithdrawal != null:
+return prepareWithdrawal(_that);case AdapterReply_Withdraw() when withdraw != null:
+return withdraw(_that);case AdapterReply_Deposit() when deposit != null:
+return deposit(_that);case AdapterReply_Withdrawal() when withdrawal != null:
+return withdrawal(_that);case AdapterReply_Deposits() when deposits != null:
+return deposits(_that);case AdapterReply_Withdrawals() when withdrawals != null:
+return withdrawals(_that);case AdapterReply_OpenOrders() when openOrders != null:
+return openOrders(_that);case AdapterReply_Order() when order != null:
+return order(_that);case AdapterReply_OrdersByIds() when ordersByIds != null:
+return ordersByIds(_that);case AdapterReply_OrderHistory() when orderHistory != null:
+return orderHistory(_that);case AdapterReply_PlaceOrder() when placeOrder != null:
+return placeOrder(_that);case AdapterReply_CancelOrders() when cancelOrders != null:
+return cancelOrders(_that);case AdapterReply_Positions() when positions != null:
 return positions(_that);case AdapterReply_MarginSummary() when marginSummary != null:
 return marginSummary(_that);case AdapterReply_FundingRates() when fundingRates != null:
 return fundingRates(_that);case AdapterReply_FundingPayments() when fundingPayments != null:
@@ -1410,7 +2692,7 @@ return unit(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( AdapterReply_Markets value)  markets,required TResult Function( AdapterReply_Trades value)  trades,required TResult Function( AdapterReply_OrderBook value)  orderBook,required TResult Function( AdapterReply_Ticker value)  ticker,required TResult Function( AdapterReply_Candles value)  candles,required TResult Function( AdapterReply_Balances value)  balances,required TResult Function( AdapterReply_OpenOrders value)  openOrders,required TResult Function( AdapterReply_PlaceOrder value)  placeOrder,required TResult Function( AdapterReply_CancelOrder value)  cancelOrder,required TResult Function( AdapterReply_Positions value)  positions,required TResult Function( AdapterReply_MarginSummary value)  marginSummary,required TResult Function( AdapterReply_FundingRates value)  fundingRates,required TResult Function( AdapterReply_FundingPayments value)  fundingPayments,required TResult Function( AdapterReply_Unit value)  unit,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( AdapterReply_Markets value)  markets,required TResult Function( AdapterReply_Trades value)  trades,required TResult Function( AdapterReply_OrderBook value)  orderBook,required TResult Function( AdapterReply_Ticker value)  ticker,required TResult Function( AdapterReply_Candles value)  candles,required TResult Function( AdapterReply_Balances value)  balances,required TResult Function( AdapterReply_OrderRules value)  orderRules,required TResult Function( AdapterReply_AssetNetworks value)  assetNetworks,required TResult Function( AdapterReply_DepositAddresses value)  depositAddresses,required TResult Function( AdapterReply_DepositAddress value)  depositAddress,required TResult Function( AdapterReply_CreateDepositAddress value)  createDepositAddress,required TResult Function( AdapterReply_PrepareWithdrawal value)  prepareWithdrawal,required TResult Function( AdapterReply_Withdraw value)  withdraw,required TResult Function( AdapterReply_Deposit value)  deposit,required TResult Function( AdapterReply_Withdrawal value)  withdrawal,required TResult Function( AdapterReply_Deposits value)  deposits,required TResult Function( AdapterReply_Withdrawals value)  withdrawals,required TResult Function( AdapterReply_OpenOrders value)  openOrders,required TResult Function( AdapterReply_Order value)  order,required TResult Function( AdapterReply_OrdersByIds value)  ordersByIds,required TResult Function( AdapterReply_OrderHistory value)  orderHistory,required TResult Function( AdapterReply_PlaceOrder value)  placeOrder,required TResult Function( AdapterReply_CancelOrders value)  cancelOrders,required TResult Function( AdapterReply_Positions value)  positions,required TResult Function( AdapterReply_MarginSummary value)  marginSummary,required TResult Function( AdapterReply_FundingRates value)  fundingRates,required TResult Function( AdapterReply_FundingPayments value)  fundingPayments,required TResult Function( AdapterReply_Unit value)  unit,}){
 final _that = this;
 switch (_that) {
 case AdapterReply_Markets():
@@ -1419,10 +2701,24 @@ return trades(_that);case AdapterReply_OrderBook():
 return orderBook(_that);case AdapterReply_Ticker():
 return ticker(_that);case AdapterReply_Candles():
 return candles(_that);case AdapterReply_Balances():
-return balances(_that);case AdapterReply_OpenOrders():
-return openOrders(_that);case AdapterReply_PlaceOrder():
-return placeOrder(_that);case AdapterReply_CancelOrder():
-return cancelOrder(_that);case AdapterReply_Positions():
+return balances(_that);case AdapterReply_OrderRules():
+return orderRules(_that);case AdapterReply_AssetNetworks():
+return assetNetworks(_that);case AdapterReply_DepositAddresses():
+return depositAddresses(_that);case AdapterReply_DepositAddress():
+return depositAddress(_that);case AdapterReply_CreateDepositAddress():
+return createDepositAddress(_that);case AdapterReply_PrepareWithdrawal():
+return prepareWithdrawal(_that);case AdapterReply_Withdraw():
+return withdraw(_that);case AdapterReply_Deposit():
+return deposit(_that);case AdapterReply_Withdrawal():
+return withdrawal(_that);case AdapterReply_Deposits():
+return deposits(_that);case AdapterReply_Withdrawals():
+return withdrawals(_that);case AdapterReply_OpenOrders():
+return openOrders(_that);case AdapterReply_Order():
+return order(_that);case AdapterReply_OrdersByIds():
+return ordersByIds(_that);case AdapterReply_OrderHistory():
+return orderHistory(_that);case AdapterReply_PlaceOrder():
+return placeOrder(_that);case AdapterReply_CancelOrders():
+return cancelOrders(_that);case AdapterReply_Positions():
 return positions(_that);case AdapterReply_MarginSummary():
 return marginSummary(_that);case AdapterReply_FundingRates():
 return fundingRates(_that);case AdapterReply_FundingPayments():
@@ -1441,7 +2737,7 @@ return unit(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( AdapterReply_Markets value)?  markets,TResult? Function( AdapterReply_Trades value)?  trades,TResult? Function( AdapterReply_OrderBook value)?  orderBook,TResult? Function( AdapterReply_Ticker value)?  ticker,TResult? Function( AdapterReply_Candles value)?  candles,TResult? Function( AdapterReply_Balances value)?  balances,TResult? Function( AdapterReply_OpenOrders value)?  openOrders,TResult? Function( AdapterReply_PlaceOrder value)?  placeOrder,TResult? Function( AdapterReply_CancelOrder value)?  cancelOrder,TResult? Function( AdapterReply_Positions value)?  positions,TResult? Function( AdapterReply_MarginSummary value)?  marginSummary,TResult? Function( AdapterReply_FundingRates value)?  fundingRates,TResult? Function( AdapterReply_FundingPayments value)?  fundingPayments,TResult? Function( AdapterReply_Unit value)?  unit,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( AdapterReply_Markets value)?  markets,TResult? Function( AdapterReply_Trades value)?  trades,TResult? Function( AdapterReply_OrderBook value)?  orderBook,TResult? Function( AdapterReply_Ticker value)?  ticker,TResult? Function( AdapterReply_Candles value)?  candles,TResult? Function( AdapterReply_Balances value)?  balances,TResult? Function( AdapterReply_OrderRules value)?  orderRules,TResult? Function( AdapterReply_AssetNetworks value)?  assetNetworks,TResult? Function( AdapterReply_DepositAddresses value)?  depositAddresses,TResult? Function( AdapterReply_DepositAddress value)?  depositAddress,TResult? Function( AdapterReply_CreateDepositAddress value)?  createDepositAddress,TResult? Function( AdapterReply_PrepareWithdrawal value)?  prepareWithdrawal,TResult? Function( AdapterReply_Withdraw value)?  withdraw,TResult? Function( AdapterReply_Deposit value)?  deposit,TResult? Function( AdapterReply_Withdrawal value)?  withdrawal,TResult? Function( AdapterReply_Deposits value)?  deposits,TResult? Function( AdapterReply_Withdrawals value)?  withdrawals,TResult? Function( AdapterReply_OpenOrders value)?  openOrders,TResult? Function( AdapterReply_Order value)?  order,TResult? Function( AdapterReply_OrdersByIds value)?  ordersByIds,TResult? Function( AdapterReply_OrderHistory value)?  orderHistory,TResult? Function( AdapterReply_PlaceOrder value)?  placeOrder,TResult? Function( AdapterReply_CancelOrders value)?  cancelOrders,TResult? Function( AdapterReply_Positions value)?  positions,TResult? Function( AdapterReply_MarginSummary value)?  marginSummary,TResult? Function( AdapterReply_FundingRates value)?  fundingRates,TResult? Function( AdapterReply_FundingPayments value)?  fundingPayments,TResult? Function( AdapterReply_Unit value)?  unit,}){
 final _that = this;
 switch (_that) {
 case AdapterReply_Markets() when markets != null:
@@ -1450,10 +2746,24 @@ return trades(_that);case AdapterReply_OrderBook() when orderBook != null:
 return orderBook(_that);case AdapterReply_Ticker() when ticker != null:
 return ticker(_that);case AdapterReply_Candles() when candles != null:
 return candles(_that);case AdapterReply_Balances() when balances != null:
-return balances(_that);case AdapterReply_OpenOrders() when openOrders != null:
-return openOrders(_that);case AdapterReply_PlaceOrder() when placeOrder != null:
-return placeOrder(_that);case AdapterReply_CancelOrder() when cancelOrder != null:
-return cancelOrder(_that);case AdapterReply_Positions() when positions != null:
+return balances(_that);case AdapterReply_OrderRules() when orderRules != null:
+return orderRules(_that);case AdapterReply_AssetNetworks() when assetNetworks != null:
+return assetNetworks(_that);case AdapterReply_DepositAddresses() when depositAddresses != null:
+return depositAddresses(_that);case AdapterReply_DepositAddress() when depositAddress != null:
+return depositAddress(_that);case AdapterReply_CreateDepositAddress() when createDepositAddress != null:
+return createDepositAddress(_that);case AdapterReply_PrepareWithdrawal() when prepareWithdrawal != null:
+return prepareWithdrawal(_that);case AdapterReply_Withdraw() when withdraw != null:
+return withdraw(_that);case AdapterReply_Deposit() when deposit != null:
+return deposit(_that);case AdapterReply_Withdrawal() when withdrawal != null:
+return withdrawal(_that);case AdapterReply_Deposits() when deposits != null:
+return deposits(_that);case AdapterReply_Withdrawals() when withdrawals != null:
+return withdrawals(_that);case AdapterReply_OpenOrders() when openOrders != null:
+return openOrders(_that);case AdapterReply_Order() when order != null:
+return order(_that);case AdapterReply_OrdersByIds() when ordersByIds != null:
+return ordersByIds(_that);case AdapterReply_OrderHistory() when orderHistory != null:
+return orderHistory(_that);case AdapterReply_PlaceOrder() when placeOrder != null:
+return placeOrder(_that);case AdapterReply_CancelOrders() when cancelOrders != null:
+return cancelOrders(_that);case AdapterReply_Positions() when positions != null:
 return positions(_that);case AdapterReply_MarginSummary() when marginSummary != null:
 return marginSummary(_that);case AdapterReply_FundingRates() when fundingRates != null:
 return fundingRates(_that);case AdapterReply_FundingPayments() when fundingPayments != null:
@@ -1475,7 +2785,7 @@ return unit(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( List<WireMarketInfo> field0)?  markets,TResult Function( List<WireTrade> field0)?  trades,TResult Function( WireOrderBook field0)?  orderBook,TResult Function( WireTicker field0)?  ticker,TResult Function( List<WireCandle> field0)?  candles,TResult Function( List<WireBalance> field0)?  balances,TResult Function( List<WireOrder> field0)?  openOrders,TResult Function( WireOrder field0)?  placeOrder,TResult Function( WireOrder field0)?  cancelOrder,TResult Function( List<WirePosition> field0)?  positions,TResult Function( WireMarginSummary field0)?  marginSummary,TResult Function( WireFundingRatePage field0)?  fundingRates,TResult Function( WireFundingPaymentPage field0)?  fundingPayments,TResult Function()?  unit,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( List<WireMarketInfo> field0)?  markets,TResult Function( List<WireTrade> field0)?  trades,TResult Function( WireOrderBook field0)?  orderBook,TResult Function( WireTicker field0)?  ticker,TResult Function( List<WireCandle> field0)?  candles,TResult Function( List<WireBalance> field0)?  balances,TResult Function( WireOrderRules field0)?  orderRules,TResult Function( List<WireAssetNetwork> field0)?  assetNetworks,TResult Function( List<WireDepositAddressEntry> field0)?  depositAddresses,TResult Function( WireDepositAddress field0)?  depositAddress,TResult Function( WireDepositAddress field0)?  createDepositAddress,TResult Function( WireWithdrawalQuote field0)?  prepareWithdrawal,TResult Function( WireWithdrawal field0)?  withdraw,TResult Function( WireDeposit field0)?  deposit,TResult Function( WireWithdrawal field0)?  withdrawal,TResult Function( WireDepositPage field0)?  deposits,TResult Function( WireWithdrawalPage field0)?  withdrawals,TResult Function( List<WireOrder> field0)?  openOrders,TResult Function( WireOrder field0)?  order,TResult Function( List<WireOrder> field0)?  ordersByIds,TResult Function( WireOrderPage field0)?  orderHistory,TResult Function( WireOrder field0)?  placeOrder,TResult Function( WireCancelOrdersResult field0)?  cancelOrders,TResult Function( List<WirePosition> field0)?  positions,TResult Function( WireMarginSummary field0)?  marginSummary,TResult Function( WireFundingRatePage field0)?  fundingRates,TResult Function( WireFundingPaymentPage field0)?  fundingPayments,TResult Function()?  unit,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case AdapterReply_Markets() when markets != null:
 return markets(_that.field0);case AdapterReply_Trades() when trades != null:
@@ -1483,10 +2793,24 @@ return trades(_that.field0);case AdapterReply_OrderBook() when orderBook != null
 return orderBook(_that.field0);case AdapterReply_Ticker() when ticker != null:
 return ticker(_that.field0);case AdapterReply_Candles() when candles != null:
 return candles(_that.field0);case AdapterReply_Balances() when balances != null:
-return balances(_that.field0);case AdapterReply_OpenOrders() when openOrders != null:
-return openOrders(_that.field0);case AdapterReply_PlaceOrder() when placeOrder != null:
-return placeOrder(_that.field0);case AdapterReply_CancelOrder() when cancelOrder != null:
-return cancelOrder(_that.field0);case AdapterReply_Positions() when positions != null:
+return balances(_that.field0);case AdapterReply_OrderRules() when orderRules != null:
+return orderRules(_that.field0);case AdapterReply_AssetNetworks() when assetNetworks != null:
+return assetNetworks(_that.field0);case AdapterReply_DepositAddresses() when depositAddresses != null:
+return depositAddresses(_that.field0);case AdapterReply_DepositAddress() when depositAddress != null:
+return depositAddress(_that.field0);case AdapterReply_CreateDepositAddress() when createDepositAddress != null:
+return createDepositAddress(_that.field0);case AdapterReply_PrepareWithdrawal() when prepareWithdrawal != null:
+return prepareWithdrawal(_that.field0);case AdapterReply_Withdraw() when withdraw != null:
+return withdraw(_that.field0);case AdapterReply_Deposit() when deposit != null:
+return deposit(_that.field0);case AdapterReply_Withdrawal() when withdrawal != null:
+return withdrawal(_that.field0);case AdapterReply_Deposits() when deposits != null:
+return deposits(_that.field0);case AdapterReply_Withdrawals() when withdrawals != null:
+return withdrawals(_that.field0);case AdapterReply_OpenOrders() when openOrders != null:
+return openOrders(_that.field0);case AdapterReply_Order() when order != null:
+return order(_that.field0);case AdapterReply_OrdersByIds() when ordersByIds != null:
+return ordersByIds(_that.field0);case AdapterReply_OrderHistory() when orderHistory != null:
+return orderHistory(_that.field0);case AdapterReply_PlaceOrder() when placeOrder != null:
+return placeOrder(_that.field0);case AdapterReply_CancelOrders() when cancelOrders != null:
+return cancelOrders(_that.field0);case AdapterReply_Positions() when positions != null:
 return positions(_that.field0);case AdapterReply_MarginSummary() when marginSummary != null:
 return marginSummary(_that.field0);case AdapterReply_FundingRates() when fundingRates != null:
 return fundingRates(_that.field0);case AdapterReply_FundingPayments() when fundingPayments != null:
@@ -1509,7 +2833,7 @@ return unit();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( List<WireMarketInfo> field0)  markets,required TResult Function( List<WireTrade> field0)  trades,required TResult Function( WireOrderBook field0)  orderBook,required TResult Function( WireTicker field0)  ticker,required TResult Function( List<WireCandle> field0)  candles,required TResult Function( List<WireBalance> field0)  balances,required TResult Function( List<WireOrder> field0)  openOrders,required TResult Function( WireOrder field0)  placeOrder,required TResult Function( WireOrder field0)  cancelOrder,required TResult Function( List<WirePosition> field0)  positions,required TResult Function( WireMarginSummary field0)  marginSummary,required TResult Function( WireFundingRatePage field0)  fundingRates,required TResult Function( WireFundingPaymentPage field0)  fundingPayments,required TResult Function()  unit,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( List<WireMarketInfo> field0)  markets,required TResult Function( List<WireTrade> field0)  trades,required TResult Function( WireOrderBook field0)  orderBook,required TResult Function( WireTicker field0)  ticker,required TResult Function( List<WireCandle> field0)  candles,required TResult Function( List<WireBalance> field0)  balances,required TResult Function( WireOrderRules field0)  orderRules,required TResult Function( List<WireAssetNetwork> field0)  assetNetworks,required TResult Function( List<WireDepositAddressEntry> field0)  depositAddresses,required TResult Function( WireDepositAddress field0)  depositAddress,required TResult Function( WireDepositAddress field0)  createDepositAddress,required TResult Function( WireWithdrawalQuote field0)  prepareWithdrawal,required TResult Function( WireWithdrawal field0)  withdraw,required TResult Function( WireDeposit field0)  deposit,required TResult Function( WireWithdrawal field0)  withdrawal,required TResult Function( WireDepositPage field0)  deposits,required TResult Function( WireWithdrawalPage field0)  withdrawals,required TResult Function( List<WireOrder> field0)  openOrders,required TResult Function( WireOrder field0)  order,required TResult Function( List<WireOrder> field0)  ordersByIds,required TResult Function( WireOrderPage field0)  orderHistory,required TResult Function( WireOrder field0)  placeOrder,required TResult Function( WireCancelOrdersResult field0)  cancelOrders,required TResult Function( List<WirePosition> field0)  positions,required TResult Function( WireMarginSummary field0)  marginSummary,required TResult Function( WireFundingRatePage field0)  fundingRates,required TResult Function( WireFundingPaymentPage field0)  fundingPayments,required TResult Function()  unit,}) {final _that = this;
 switch (_that) {
 case AdapterReply_Markets():
 return markets(_that.field0);case AdapterReply_Trades():
@@ -1517,10 +2841,24 @@ return trades(_that.field0);case AdapterReply_OrderBook():
 return orderBook(_that.field0);case AdapterReply_Ticker():
 return ticker(_that.field0);case AdapterReply_Candles():
 return candles(_that.field0);case AdapterReply_Balances():
-return balances(_that.field0);case AdapterReply_OpenOrders():
-return openOrders(_that.field0);case AdapterReply_PlaceOrder():
-return placeOrder(_that.field0);case AdapterReply_CancelOrder():
-return cancelOrder(_that.field0);case AdapterReply_Positions():
+return balances(_that.field0);case AdapterReply_OrderRules():
+return orderRules(_that.field0);case AdapterReply_AssetNetworks():
+return assetNetworks(_that.field0);case AdapterReply_DepositAddresses():
+return depositAddresses(_that.field0);case AdapterReply_DepositAddress():
+return depositAddress(_that.field0);case AdapterReply_CreateDepositAddress():
+return createDepositAddress(_that.field0);case AdapterReply_PrepareWithdrawal():
+return prepareWithdrawal(_that.field0);case AdapterReply_Withdraw():
+return withdraw(_that.field0);case AdapterReply_Deposit():
+return deposit(_that.field0);case AdapterReply_Withdrawal():
+return withdrawal(_that.field0);case AdapterReply_Deposits():
+return deposits(_that.field0);case AdapterReply_Withdrawals():
+return withdrawals(_that.field0);case AdapterReply_OpenOrders():
+return openOrders(_that.field0);case AdapterReply_Order():
+return order(_that.field0);case AdapterReply_OrdersByIds():
+return ordersByIds(_that.field0);case AdapterReply_OrderHistory():
+return orderHistory(_that.field0);case AdapterReply_PlaceOrder():
+return placeOrder(_that.field0);case AdapterReply_CancelOrders():
+return cancelOrders(_that.field0);case AdapterReply_Positions():
 return positions(_that.field0);case AdapterReply_MarginSummary():
 return marginSummary(_that.field0);case AdapterReply_FundingRates():
 return fundingRates(_that.field0);case AdapterReply_FundingPayments():
@@ -1539,7 +2877,7 @@ return unit();}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( List<WireMarketInfo> field0)?  markets,TResult? Function( List<WireTrade> field0)?  trades,TResult? Function( WireOrderBook field0)?  orderBook,TResult? Function( WireTicker field0)?  ticker,TResult? Function( List<WireCandle> field0)?  candles,TResult? Function( List<WireBalance> field0)?  balances,TResult? Function( List<WireOrder> field0)?  openOrders,TResult? Function( WireOrder field0)?  placeOrder,TResult? Function( WireOrder field0)?  cancelOrder,TResult? Function( List<WirePosition> field0)?  positions,TResult? Function( WireMarginSummary field0)?  marginSummary,TResult? Function( WireFundingRatePage field0)?  fundingRates,TResult? Function( WireFundingPaymentPage field0)?  fundingPayments,TResult? Function()?  unit,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( List<WireMarketInfo> field0)?  markets,TResult? Function( List<WireTrade> field0)?  trades,TResult? Function( WireOrderBook field0)?  orderBook,TResult? Function( WireTicker field0)?  ticker,TResult? Function( List<WireCandle> field0)?  candles,TResult? Function( List<WireBalance> field0)?  balances,TResult? Function( WireOrderRules field0)?  orderRules,TResult? Function( List<WireAssetNetwork> field0)?  assetNetworks,TResult? Function( List<WireDepositAddressEntry> field0)?  depositAddresses,TResult? Function( WireDepositAddress field0)?  depositAddress,TResult? Function( WireDepositAddress field0)?  createDepositAddress,TResult? Function( WireWithdrawalQuote field0)?  prepareWithdrawal,TResult? Function( WireWithdrawal field0)?  withdraw,TResult? Function( WireDeposit field0)?  deposit,TResult? Function( WireWithdrawal field0)?  withdrawal,TResult? Function( WireDepositPage field0)?  deposits,TResult? Function( WireWithdrawalPage field0)?  withdrawals,TResult? Function( List<WireOrder> field0)?  openOrders,TResult? Function( WireOrder field0)?  order,TResult? Function( List<WireOrder> field0)?  ordersByIds,TResult? Function( WireOrderPage field0)?  orderHistory,TResult? Function( WireOrder field0)?  placeOrder,TResult? Function( WireCancelOrdersResult field0)?  cancelOrders,TResult? Function( List<WirePosition> field0)?  positions,TResult? Function( WireMarginSummary field0)?  marginSummary,TResult? Function( WireFundingRatePage field0)?  fundingRates,TResult? Function( WireFundingPaymentPage field0)?  fundingPayments,TResult? Function()?  unit,}) {final _that = this;
 switch (_that) {
 case AdapterReply_Markets() when markets != null:
 return markets(_that.field0);case AdapterReply_Trades() when trades != null:
@@ -1547,10 +2885,24 @@ return trades(_that.field0);case AdapterReply_OrderBook() when orderBook != null
 return orderBook(_that.field0);case AdapterReply_Ticker() when ticker != null:
 return ticker(_that.field0);case AdapterReply_Candles() when candles != null:
 return candles(_that.field0);case AdapterReply_Balances() when balances != null:
-return balances(_that.field0);case AdapterReply_OpenOrders() when openOrders != null:
-return openOrders(_that.field0);case AdapterReply_PlaceOrder() when placeOrder != null:
-return placeOrder(_that.field0);case AdapterReply_CancelOrder() when cancelOrder != null:
-return cancelOrder(_that.field0);case AdapterReply_Positions() when positions != null:
+return balances(_that.field0);case AdapterReply_OrderRules() when orderRules != null:
+return orderRules(_that.field0);case AdapterReply_AssetNetworks() when assetNetworks != null:
+return assetNetworks(_that.field0);case AdapterReply_DepositAddresses() when depositAddresses != null:
+return depositAddresses(_that.field0);case AdapterReply_DepositAddress() when depositAddress != null:
+return depositAddress(_that.field0);case AdapterReply_CreateDepositAddress() when createDepositAddress != null:
+return createDepositAddress(_that.field0);case AdapterReply_PrepareWithdrawal() when prepareWithdrawal != null:
+return prepareWithdrawal(_that.field0);case AdapterReply_Withdraw() when withdraw != null:
+return withdraw(_that.field0);case AdapterReply_Deposit() when deposit != null:
+return deposit(_that.field0);case AdapterReply_Withdrawal() when withdrawal != null:
+return withdrawal(_that.field0);case AdapterReply_Deposits() when deposits != null:
+return deposits(_that.field0);case AdapterReply_Withdrawals() when withdrawals != null:
+return withdrawals(_that.field0);case AdapterReply_OpenOrders() when openOrders != null:
+return openOrders(_that.field0);case AdapterReply_Order() when order != null:
+return order(_that.field0);case AdapterReply_OrdersByIds() when ordersByIds != null:
+return ordersByIds(_that.field0);case AdapterReply_OrderHistory() when orderHistory != null:
+return orderHistory(_that.field0);case AdapterReply_PlaceOrder() when placeOrder != null:
+return placeOrder(_that.field0);case AdapterReply_CancelOrders() when cancelOrders != null:
+return cancelOrders(_that.field0);case AdapterReply_Positions() when positions != null:
 return positions(_that.field0);case AdapterReply_MarginSummary() when marginSummary != null:
 return marginSummary(_that.field0);case AdapterReply_FundingRates() when fundingRates != null:
 return fundingRates(_that.field0);case AdapterReply_FundingPayments() when fundingPayments != null:
@@ -1986,6 +3338,744 @@ as List<WireBalance>,
 /// @nodoc
 
 
+class AdapterReply_OrderRules extends AdapterReply {
+  const AdapterReply_OrderRules(this.field0): super._();
+
+
+ final  WireOrderRules field0;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterReply_OrderRulesCopyWith<AdapterReply_OrderRules> get copyWith => _$AdapterReply_OrderRulesCopyWithImpl<AdapterReply_OrderRules>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterReply_OrderRules&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'AdapterReply.orderRules(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterReply_OrderRulesCopyWith<$Res> implements $AdapterReplyCopyWith<$Res> {
+  factory $AdapterReply_OrderRulesCopyWith(AdapterReply_OrderRules value, $Res Function(AdapterReply_OrderRules) _then) = _$AdapterReply_OrderRulesCopyWithImpl;
+@useResult
+$Res call({
+ WireOrderRules field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterReply_OrderRulesCopyWithImpl<$Res>
+    implements $AdapterReply_OrderRulesCopyWith<$Res> {
+  _$AdapterReply_OrderRulesCopyWithImpl(this._self, this._then);
+
+  final AdapterReply_OrderRules _self;
+  final $Res Function(AdapterReply_OrderRules) _then;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(AdapterReply_OrderRules(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireOrderRules,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterReply_AssetNetworks extends AdapterReply {
+  const AdapterReply_AssetNetworks(final  List<WireAssetNetwork> field0): _field0 = field0,super._();
+
+
+ final  List<WireAssetNetwork> _field0;
+ List<WireAssetNetwork> get field0 {
+  if (_field0 is EqualUnmodifiableListView) return _field0;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_field0);
+}
+
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterReply_AssetNetworksCopyWith<AdapterReply_AssetNetworks> get copyWith => _$AdapterReply_AssetNetworksCopyWithImpl<AdapterReply_AssetNetworks>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterReply_AssetNetworks&&const DeepCollectionEquality().equals(other._field0, _field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_field0));
+
+@override
+String toString() {
+  return 'AdapterReply.assetNetworks(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterReply_AssetNetworksCopyWith<$Res> implements $AdapterReplyCopyWith<$Res> {
+  factory $AdapterReply_AssetNetworksCopyWith(AdapterReply_AssetNetworks value, $Res Function(AdapterReply_AssetNetworks) _then) = _$AdapterReply_AssetNetworksCopyWithImpl;
+@useResult
+$Res call({
+ List<WireAssetNetwork> field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterReply_AssetNetworksCopyWithImpl<$Res>
+    implements $AdapterReply_AssetNetworksCopyWith<$Res> {
+  _$AdapterReply_AssetNetworksCopyWithImpl(this._self, this._then);
+
+  final AdapterReply_AssetNetworks _self;
+  final $Res Function(AdapterReply_AssetNetworks) _then;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(AdapterReply_AssetNetworks(
+null == field0 ? _self._field0 : field0 // ignore: cast_nullable_to_non_nullable
+as List<WireAssetNetwork>,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterReply_DepositAddresses extends AdapterReply {
+  const AdapterReply_DepositAddresses(final  List<WireDepositAddressEntry> field0): _field0 = field0,super._();
+
+
+ final  List<WireDepositAddressEntry> _field0;
+ List<WireDepositAddressEntry> get field0 {
+  if (_field0 is EqualUnmodifiableListView) return _field0;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_field0);
+}
+
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterReply_DepositAddressesCopyWith<AdapterReply_DepositAddresses> get copyWith => _$AdapterReply_DepositAddressesCopyWithImpl<AdapterReply_DepositAddresses>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterReply_DepositAddresses&&const DeepCollectionEquality().equals(other._field0, _field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_field0));
+
+@override
+String toString() {
+  return 'AdapterReply.depositAddresses(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterReply_DepositAddressesCopyWith<$Res> implements $AdapterReplyCopyWith<$Res> {
+  factory $AdapterReply_DepositAddressesCopyWith(AdapterReply_DepositAddresses value, $Res Function(AdapterReply_DepositAddresses) _then) = _$AdapterReply_DepositAddressesCopyWithImpl;
+@useResult
+$Res call({
+ List<WireDepositAddressEntry> field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterReply_DepositAddressesCopyWithImpl<$Res>
+    implements $AdapterReply_DepositAddressesCopyWith<$Res> {
+  _$AdapterReply_DepositAddressesCopyWithImpl(this._self, this._then);
+
+  final AdapterReply_DepositAddresses _self;
+  final $Res Function(AdapterReply_DepositAddresses) _then;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(AdapterReply_DepositAddresses(
+null == field0 ? _self._field0 : field0 // ignore: cast_nullable_to_non_nullable
+as List<WireDepositAddressEntry>,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterReply_DepositAddress extends AdapterReply {
+  const AdapterReply_DepositAddress(this.field0): super._();
+
+
+ final  WireDepositAddress field0;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterReply_DepositAddressCopyWith<AdapterReply_DepositAddress> get copyWith => _$AdapterReply_DepositAddressCopyWithImpl<AdapterReply_DepositAddress>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterReply_DepositAddress&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'AdapterReply.depositAddress(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterReply_DepositAddressCopyWith<$Res> implements $AdapterReplyCopyWith<$Res> {
+  factory $AdapterReply_DepositAddressCopyWith(AdapterReply_DepositAddress value, $Res Function(AdapterReply_DepositAddress) _then) = _$AdapterReply_DepositAddressCopyWithImpl;
+@useResult
+$Res call({
+ WireDepositAddress field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterReply_DepositAddressCopyWithImpl<$Res>
+    implements $AdapterReply_DepositAddressCopyWith<$Res> {
+  _$AdapterReply_DepositAddressCopyWithImpl(this._self, this._then);
+
+  final AdapterReply_DepositAddress _self;
+  final $Res Function(AdapterReply_DepositAddress) _then;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(AdapterReply_DepositAddress(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireDepositAddress,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterReply_CreateDepositAddress extends AdapterReply {
+  const AdapterReply_CreateDepositAddress(this.field0): super._();
+
+
+ final  WireDepositAddress field0;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterReply_CreateDepositAddressCopyWith<AdapterReply_CreateDepositAddress> get copyWith => _$AdapterReply_CreateDepositAddressCopyWithImpl<AdapterReply_CreateDepositAddress>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterReply_CreateDepositAddress&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'AdapterReply.createDepositAddress(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterReply_CreateDepositAddressCopyWith<$Res> implements $AdapterReplyCopyWith<$Res> {
+  factory $AdapterReply_CreateDepositAddressCopyWith(AdapterReply_CreateDepositAddress value, $Res Function(AdapterReply_CreateDepositAddress) _then) = _$AdapterReply_CreateDepositAddressCopyWithImpl;
+@useResult
+$Res call({
+ WireDepositAddress field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterReply_CreateDepositAddressCopyWithImpl<$Res>
+    implements $AdapterReply_CreateDepositAddressCopyWith<$Res> {
+  _$AdapterReply_CreateDepositAddressCopyWithImpl(this._self, this._then);
+
+  final AdapterReply_CreateDepositAddress _self;
+  final $Res Function(AdapterReply_CreateDepositAddress) _then;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(AdapterReply_CreateDepositAddress(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireDepositAddress,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterReply_PrepareWithdrawal extends AdapterReply {
+  const AdapterReply_PrepareWithdrawal(this.field0): super._();
+
+
+ final  WireWithdrawalQuote field0;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterReply_PrepareWithdrawalCopyWith<AdapterReply_PrepareWithdrawal> get copyWith => _$AdapterReply_PrepareWithdrawalCopyWithImpl<AdapterReply_PrepareWithdrawal>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterReply_PrepareWithdrawal&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'AdapterReply.prepareWithdrawal(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterReply_PrepareWithdrawalCopyWith<$Res> implements $AdapterReplyCopyWith<$Res> {
+  factory $AdapterReply_PrepareWithdrawalCopyWith(AdapterReply_PrepareWithdrawal value, $Res Function(AdapterReply_PrepareWithdrawal) _then) = _$AdapterReply_PrepareWithdrawalCopyWithImpl;
+@useResult
+$Res call({
+ WireWithdrawalQuote field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterReply_PrepareWithdrawalCopyWithImpl<$Res>
+    implements $AdapterReply_PrepareWithdrawalCopyWith<$Res> {
+  _$AdapterReply_PrepareWithdrawalCopyWithImpl(this._self, this._then);
+
+  final AdapterReply_PrepareWithdrawal _self;
+  final $Res Function(AdapterReply_PrepareWithdrawal) _then;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(AdapterReply_PrepareWithdrawal(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireWithdrawalQuote,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterReply_Withdraw extends AdapterReply {
+  const AdapterReply_Withdraw(this.field0): super._();
+
+
+ final  WireWithdrawal field0;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterReply_WithdrawCopyWith<AdapterReply_Withdraw> get copyWith => _$AdapterReply_WithdrawCopyWithImpl<AdapterReply_Withdraw>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterReply_Withdraw&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'AdapterReply.withdraw(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterReply_WithdrawCopyWith<$Res> implements $AdapterReplyCopyWith<$Res> {
+  factory $AdapterReply_WithdrawCopyWith(AdapterReply_Withdraw value, $Res Function(AdapterReply_Withdraw) _then) = _$AdapterReply_WithdrawCopyWithImpl;
+@useResult
+$Res call({
+ WireWithdrawal field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterReply_WithdrawCopyWithImpl<$Res>
+    implements $AdapterReply_WithdrawCopyWith<$Res> {
+  _$AdapterReply_WithdrawCopyWithImpl(this._self, this._then);
+
+  final AdapterReply_Withdraw _self;
+  final $Res Function(AdapterReply_Withdraw) _then;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(AdapterReply_Withdraw(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireWithdrawal,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterReply_Deposit extends AdapterReply {
+  const AdapterReply_Deposit(this.field0): super._();
+
+
+ final  WireDeposit field0;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterReply_DepositCopyWith<AdapterReply_Deposit> get copyWith => _$AdapterReply_DepositCopyWithImpl<AdapterReply_Deposit>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterReply_Deposit&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'AdapterReply.deposit(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterReply_DepositCopyWith<$Res> implements $AdapterReplyCopyWith<$Res> {
+  factory $AdapterReply_DepositCopyWith(AdapterReply_Deposit value, $Res Function(AdapterReply_Deposit) _then) = _$AdapterReply_DepositCopyWithImpl;
+@useResult
+$Res call({
+ WireDeposit field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterReply_DepositCopyWithImpl<$Res>
+    implements $AdapterReply_DepositCopyWith<$Res> {
+  _$AdapterReply_DepositCopyWithImpl(this._self, this._then);
+
+  final AdapterReply_Deposit _self;
+  final $Res Function(AdapterReply_Deposit) _then;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(AdapterReply_Deposit(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireDeposit,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterReply_Withdrawal extends AdapterReply {
+  const AdapterReply_Withdrawal(this.field0): super._();
+
+
+ final  WireWithdrawal field0;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterReply_WithdrawalCopyWith<AdapterReply_Withdrawal> get copyWith => _$AdapterReply_WithdrawalCopyWithImpl<AdapterReply_Withdrawal>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterReply_Withdrawal&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'AdapterReply.withdrawal(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterReply_WithdrawalCopyWith<$Res> implements $AdapterReplyCopyWith<$Res> {
+  factory $AdapterReply_WithdrawalCopyWith(AdapterReply_Withdrawal value, $Res Function(AdapterReply_Withdrawal) _then) = _$AdapterReply_WithdrawalCopyWithImpl;
+@useResult
+$Res call({
+ WireWithdrawal field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterReply_WithdrawalCopyWithImpl<$Res>
+    implements $AdapterReply_WithdrawalCopyWith<$Res> {
+  _$AdapterReply_WithdrawalCopyWithImpl(this._self, this._then);
+
+  final AdapterReply_Withdrawal _self;
+  final $Res Function(AdapterReply_Withdrawal) _then;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(AdapterReply_Withdrawal(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireWithdrawal,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterReply_Deposits extends AdapterReply {
+  const AdapterReply_Deposits(this.field0): super._();
+
+
+ final  WireDepositPage field0;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterReply_DepositsCopyWith<AdapterReply_Deposits> get copyWith => _$AdapterReply_DepositsCopyWithImpl<AdapterReply_Deposits>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterReply_Deposits&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'AdapterReply.deposits(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterReply_DepositsCopyWith<$Res> implements $AdapterReplyCopyWith<$Res> {
+  factory $AdapterReply_DepositsCopyWith(AdapterReply_Deposits value, $Res Function(AdapterReply_Deposits) _then) = _$AdapterReply_DepositsCopyWithImpl;
+@useResult
+$Res call({
+ WireDepositPage field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterReply_DepositsCopyWithImpl<$Res>
+    implements $AdapterReply_DepositsCopyWith<$Res> {
+  _$AdapterReply_DepositsCopyWithImpl(this._self, this._then);
+
+  final AdapterReply_Deposits _self;
+  final $Res Function(AdapterReply_Deposits) _then;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(AdapterReply_Deposits(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireDepositPage,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterReply_Withdrawals extends AdapterReply {
+  const AdapterReply_Withdrawals(this.field0): super._();
+
+
+ final  WireWithdrawalPage field0;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterReply_WithdrawalsCopyWith<AdapterReply_Withdrawals> get copyWith => _$AdapterReply_WithdrawalsCopyWithImpl<AdapterReply_Withdrawals>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterReply_Withdrawals&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'AdapterReply.withdrawals(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterReply_WithdrawalsCopyWith<$Res> implements $AdapterReplyCopyWith<$Res> {
+  factory $AdapterReply_WithdrawalsCopyWith(AdapterReply_Withdrawals value, $Res Function(AdapterReply_Withdrawals) _then) = _$AdapterReply_WithdrawalsCopyWithImpl;
+@useResult
+$Res call({
+ WireWithdrawalPage field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterReply_WithdrawalsCopyWithImpl<$Res>
+    implements $AdapterReply_WithdrawalsCopyWith<$Res> {
+  _$AdapterReply_WithdrawalsCopyWithImpl(this._self, this._then);
+
+  final AdapterReply_Withdrawals _self;
+  final $Res Function(AdapterReply_Withdrawals) _then;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(AdapterReply_Withdrawals(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireWithdrawalPage,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
 class AdapterReply_OpenOrders extends AdapterReply {
   const AdapterReply_OpenOrders(final  List<WireOrder> field0): _field0 = field0,super._();
 
@@ -2049,6 +4139,210 @@ class _$AdapterReply_OpenOrdersCopyWithImpl<$Res>
   return _then(AdapterReply_OpenOrders(
 null == field0 ? _self._field0 : field0 // ignore: cast_nullable_to_non_nullable
 as List<WireOrder>,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterReply_Order extends AdapterReply {
+  const AdapterReply_Order(this.field0): super._();
+
+
+ final  WireOrder field0;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterReply_OrderCopyWith<AdapterReply_Order> get copyWith => _$AdapterReply_OrderCopyWithImpl<AdapterReply_Order>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterReply_Order&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'AdapterReply.order(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterReply_OrderCopyWith<$Res> implements $AdapterReplyCopyWith<$Res> {
+  factory $AdapterReply_OrderCopyWith(AdapterReply_Order value, $Res Function(AdapterReply_Order) _then) = _$AdapterReply_OrderCopyWithImpl;
+@useResult
+$Res call({
+ WireOrder field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterReply_OrderCopyWithImpl<$Res>
+    implements $AdapterReply_OrderCopyWith<$Res> {
+  _$AdapterReply_OrderCopyWithImpl(this._self, this._then);
+
+  final AdapterReply_Order _self;
+  final $Res Function(AdapterReply_Order) _then;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(AdapterReply_Order(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireOrder,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterReply_OrdersByIds extends AdapterReply {
+  const AdapterReply_OrdersByIds(final  List<WireOrder> field0): _field0 = field0,super._();
+
+
+ final  List<WireOrder> _field0;
+ List<WireOrder> get field0 {
+  if (_field0 is EqualUnmodifiableListView) return _field0;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_field0);
+}
+
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterReply_OrdersByIdsCopyWith<AdapterReply_OrdersByIds> get copyWith => _$AdapterReply_OrdersByIdsCopyWithImpl<AdapterReply_OrdersByIds>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterReply_OrdersByIds&&const DeepCollectionEquality().equals(other._field0, _field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_field0));
+
+@override
+String toString() {
+  return 'AdapterReply.ordersByIds(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterReply_OrdersByIdsCopyWith<$Res> implements $AdapterReplyCopyWith<$Res> {
+  factory $AdapterReply_OrdersByIdsCopyWith(AdapterReply_OrdersByIds value, $Res Function(AdapterReply_OrdersByIds) _then) = _$AdapterReply_OrdersByIdsCopyWithImpl;
+@useResult
+$Res call({
+ List<WireOrder> field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterReply_OrdersByIdsCopyWithImpl<$Res>
+    implements $AdapterReply_OrdersByIdsCopyWith<$Res> {
+  _$AdapterReply_OrdersByIdsCopyWithImpl(this._self, this._then);
+
+  final AdapterReply_OrdersByIds _self;
+  final $Res Function(AdapterReply_OrdersByIds) _then;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(AdapterReply_OrdersByIds(
+null == field0 ? _self._field0 : field0 // ignore: cast_nullable_to_non_nullable
+as List<WireOrder>,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AdapterReply_OrderHistory extends AdapterReply {
+  const AdapterReply_OrderHistory(this.field0): super._();
+
+
+ final  WireOrderPage field0;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AdapterReply_OrderHistoryCopyWith<AdapterReply_OrderHistory> get copyWith => _$AdapterReply_OrderHistoryCopyWithImpl<AdapterReply_OrderHistory>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterReply_OrderHistory&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'AdapterReply.orderHistory(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AdapterReply_OrderHistoryCopyWith<$Res> implements $AdapterReplyCopyWith<$Res> {
+  factory $AdapterReply_OrderHistoryCopyWith(AdapterReply_OrderHistory value, $Res Function(AdapterReply_OrderHistory) _then) = _$AdapterReply_OrderHistoryCopyWithImpl;
+@useResult
+$Res call({
+ WireOrderPage field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$AdapterReply_OrderHistoryCopyWithImpl<$Res>
+    implements $AdapterReply_OrderHistoryCopyWith<$Res> {
+  _$AdapterReply_OrderHistoryCopyWithImpl(this._self, this._then);
+
+  final AdapterReply_OrderHistory _self;
+  final $Res Function(AdapterReply_OrderHistory) _then;
+
+/// Create a copy of AdapterReply
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(AdapterReply_OrderHistory(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireOrderPage,
   ));
 }
 
@@ -2124,23 +4418,23 @@ as WireOrder,
 /// @nodoc
 
 
-class AdapterReply_CancelOrder extends AdapterReply {
-  const AdapterReply_CancelOrder(this.field0): super._();
+class AdapterReply_CancelOrders extends AdapterReply {
+  const AdapterReply_CancelOrders(this.field0): super._();
 
 
- final  WireOrder field0;
+ final  WireCancelOrdersResult field0;
 
 /// Create a copy of AdapterReply
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$AdapterReply_CancelOrderCopyWith<AdapterReply_CancelOrder> get copyWith => _$AdapterReply_CancelOrderCopyWithImpl<AdapterReply_CancelOrder>(this, _$identity);
+$AdapterReply_CancelOrdersCopyWith<AdapterReply_CancelOrders> get copyWith => _$AdapterReply_CancelOrdersCopyWithImpl<AdapterReply_CancelOrders>(this, _$identity);
 
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterReply_CancelOrder&&(identical(other.field0, field0) || other.field0 == field0));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdapterReply_CancelOrders&&(identical(other.field0, field0) || other.field0 == field0));
 }
 
 
@@ -2149,18 +4443,18 @@ int get hashCode => Object.hash(runtimeType,field0);
 
 @override
 String toString() {
-  return 'AdapterReply.cancelOrder(field0: $field0)';
+  return 'AdapterReply.cancelOrders(field0: $field0)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class $AdapterReply_CancelOrderCopyWith<$Res> implements $AdapterReplyCopyWith<$Res> {
-  factory $AdapterReply_CancelOrderCopyWith(AdapterReply_CancelOrder value, $Res Function(AdapterReply_CancelOrder) _then) = _$AdapterReply_CancelOrderCopyWithImpl;
+abstract mixin class $AdapterReply_CancelOrdersCopyWith<$Res> implements $AdapterReplyCopyWith<$Res> {
+  factory $AdapterReply_CancelOrdersCopyWith(AdapterReply_CancelOrders value, $Res Function(AdapterReply_CancelOrders) _then) = _$AdapterReply_CancelOrdersCopyWithImpl;
 @useResult
 $Res call({
- WireOrder field0
+ WireCancelOrdersResult field0
 });
 
 
@@ -2168,19 +4462,19 @@ $Res call({
 
 }
 /// @nodoc
-class _$AdapterReply_CancelOrderCopyWithImpl<$Res>
-    implements $AdapterReply_CancelOrderCopyWith<$Res> {
-  _$AdapterReply_CancelOrderCopyWithImpl(this._self, this._then);
+class _$AdapterReply_CancelOrdersCopyWithImpl<$Res>
+    implements $AdapterReply_CancelOrdersCopyWith<$Res> {
+  _$AdapterReply_CancelOrdersCopyWithImpl(this._self, this._then);
 
-  final AdapterReply_CancelOrder _self;
-  final $Res Function(AdapterReply_CancelOrder) _then;
+  final AdapterReply_CancelOrders _self;
+  final $Res Function(AdapterReply_CancelOrders) _then;
 
 /// Create a copy of AdapterReply
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
-  return _then(AdapterReply_CancelOrder(
+  return _then(AdapterReply_CancelOrders(
 null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
-as WireOrder,
+as WireCancelOrdersResult,
   ));
 }
 

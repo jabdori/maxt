@@ -121,6 +121,22 @@ Match the nearest adapter. Do not add empty files for structural symmetry.
    and affected examples.
 8. Run the CI checks for the changed area.
 
+## Official API inventory
+
+Before adding an exchange operation, update the pinned official source and its
+coverage bridge in [`bindings/common/catalog`](bindings/common/catalog/README.md).
+The source list records every documented operation; `src/coverage.rs` records
+only the implemented or intentionally planned public surface. Classify an
+operation as common only when its request, response, and error meaning already
+matches `Adapter`/`Client`; otherwise keep it provider typed. Do not label an
+ordinary unimplemented operation platform-limited.
+
+Decide any shared `Adapter`, common type, and `bindings/common/src/schema.rs`
+change once before parallel provider implementation. Generate bindings after
+the Rust product family is stable. Update provider documentation before the
+final full build; create or push release tags only after all selected product
+families, generated bindings, documentation, and final checks are complete.
+
 ## Releases
 
 - `rust-vX.Y.Z`: crates.io
@@ -130,6 +146,9 @@ Match the nearest adapter. Do not add empty files for structural symmetry.
 
 Each registry release is triggered by its matching tag. The tag version must
 match that package's manifest version.
+
+Push release tags one at a time. GitHub does not create push events when more
+than three tags are pushed together.
 
 ## Generated files
 

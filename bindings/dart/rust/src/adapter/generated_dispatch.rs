@@ -26,9 +26,72 @@ pub(super) fn dispatch(call: CommonAdapterCall) -> Option<(AdapterCall, Expected
             ExpectedReply::Candles,
         )),
         CommonAdapterCall::Balances => Some((AdapterCall::Balances, ExpectedReply::Balances)),
+        CommonAdapterCall::OrderRules { market } => Some((
+            AdapterCall::OrderRules { market: market.into() },
+            ExpectedReply::OrderRules,
+        )),
+        CommonAdapterCall::AssetNetworks { asset } => Some((
+            AdapterCall::AssetNetworks { asset },
+            ExpectedReply::AssetNetworks,
+        )),
+        CommonAdapterCall::DepositAddresses => {
+            Some((AdapterCall::DepositAddresses, ExpectedReply::DepositAddresses))
+        }
+        CommonAdapterCall::DepositAddress { request } => Some((
+            AdapterCall::DepositAddress { request: request.into() },
+            ExpectedReply::DepositAddress,
+        )),
+        CommonAdapterCall::CreateDepositAddress { request } => Some((
+            AdapterCall::CreateDepositAddress { request: request.into() },
+            ExpectedReply::CreateDepositAddress,
+        )),
+        CommonAdapterCall::PrepareWithdrawal { request } => Some((
+            AdapterCall::PrepareWithdrawal { request: request.into() },
+            ExpectedReply::PrepareWithdrawal,
+        )),
+        CommonAdapterCall::Withdraw { request } => Some((
+            AdapterCall::Withdraw { request: request.into() },
+            ExpectedReply::Withdraw,
+        )),
+        CommonAdapterCall::Deposit { request } => Some((
+            AdapterCall::Deposit { request: request.into() },
+            ExpectedReply::Deposit,
+        )),
+        CommonAdapterCall::Withdrawal { request } => Some((
+            AdapterCall::Withdrawal { request: request.into() },
+            ExpectedReply::Withdrawal,
+        )),
+        CommonAdapterCall::CancelWithdrawal { withdrawal_id } => Some((
+            AdapterCall::CancelWithdrawal { withdrawal_id },
+            ExpectedReply::Unit,
+        )),
+        CommonAdapterCall::Deposits { request } => Some((
+            AdapterCall::Deposits { request: request.into() },
+            ExpectedReply::Deposits,
+        )),
+        CommonAdapterCall::Withdrawals { request } => Some((
+            AdapterCall::Withdrawals { request: request.into() },
+            ExpectedReply::Withdrawals,
+        )),
         CommonAdapterCall::OpenOrders { market } => Some((
             AdapterCall::OpenOrders { market: market.map(Into::into) },
             ExpectedReply::OpenOrders,
+        )),
+        CommonAdapterCall::Order { market, order_id } => Some((
+            AdapterCall::Order { market: market.into(), order_id },
+            ExpectedReply::Order,
+        )),
+        CommonAdapterCall::OrderByClientId { market, client_id } => Some((
+            AdapterCall::OrderByClientId { market: market.into(), client_id },
+            ExpectedReply::OrderByClientId,
+        )),
+        CommonAdapterCall::OrdersByIds { request } => Some((
+            AdapterCall::OrdersByIds { request: request.into() },
+            ExpectedReply::OrdersByIds,
+        )),
+        CommonAdapterCall::OrderHistory { request } => Some((
+            AdapterCall::OrderHistory { request: request.into() },
+            ExpectedReply::OrderHistory,
         )),
         CommonAdapterCall::PlaceOrder { request } => Some((
             AdapterCall::PlaceOrder { request: request.into() },
@@ -36,7 +99,15 @@ pub(super) fn dispatch(call: CommonAdapterCall) -> Option<(AdapterCall, Expected
         )),
         CommonAdapterCall::CancelOrder { market, order_id } => Some((
             AdapterCall::CancelOrder { market: market.into(), order_id },
-            ExpectedReply::CancelOrder,
+            ExpectedReply::Unit,
+        )),
+        CommonAdapterCall::CancelOrderByClientId { market, client_id } => Some((
+            AdapterCall::CancelOrderByClientId { market: market.into(), client_id },
+            ExpectedReply::Unit,
+        )),
+        CommonAdapterCall::CancelOrders { request } => Some((
+            AdapterCall::CancelOrders { request: request.into() },
+            ExpectedReply::CancelOrders,
         )),
         CommonAdapterCall::Positions { market } => Some((
             AdapterCall::Positions { market: market.map(Into::into) },

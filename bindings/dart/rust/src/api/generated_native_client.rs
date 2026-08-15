@@ -62,6 +62,136 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
+    pub async fn order_rules(&self, market: WireMarket) -> Result<WireOrderRules, NativeError> {
+        self.adapter
+            .order_rules(&market.into())
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn asset_networks(
+        &self,
+        asset: String,
+    ) -> Result<Vec<WireAssetNetwork>, NativeError> {
+        self.adapter
+            .asset_networks(&asset)
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
+    pub async fn deposit_addresses(&self) -> Result<Vec<WireDepositAddressEntry>, NativeError> {
+        self.adapter
+            .deposit_addresses()
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
+    pub async fn deposit_address(
+        &self,
+        request: WireDepositAddressRequest,
+    ) -> Result<WireDepositAddress, NativeError> {
+        let request = request.try_into()?;
+        self.adapter
+            .deposit_address(&request)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn create_deposit_address(
+        &self,
+        request: WireDepositAddressRequest,
+    ) -> Result<WireDepositAddress, NativeError> {
+        let request = request.try_into()?;
+        self.adapter
+            .create_deposit_address(&request)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn prepare_withdrawal(
+        &self,
+        request: WireWithdrawRequest,
+    ) -> Result<WireWithdrawalQuote, NativeError> {
+        let request = request.try_into()?;
+        self.adapter
+            .prepare_withdrawal(&request)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn withdraw(
+        &self,
+        request: WireWithdrawRequest,
+    ) -> Result<WireWithdrawal, NativeError> {
+        let request = request.try_into()?;
+        self.adapter
+            .withdraw(&request)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn deposit(
+        &self,
+        request: WireTransferLookupRequest,
+    ) -> Result<WireDeposit, NativeError> {
+        let request = request.try_into()?;
+        self.adapter
+            .deposit(&request)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn withdrawal(
+        &self,
+        request: WireTransferLookupRequest,
+    ) -> Result<WireWithdrawal, NativeError> {
+        let request = request.try_into()?;
+        self.adapter
+            .withdrawal(&request)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn cancel_withdrawal(&self, withdrawal_id: String) -> Result<(), NativeError> {
+        self.adapter
+            .cancel_withdrawal(&withdrawal_id)
+            .await
+            .map_err(Into::into)
+    }
+
+    pub async fn deposits(
+        &self,
+        request: WireTransferHistoryRequest,
+    ) -> Result<WireDepositPage, NativeError> {
+        let request = request.try_into()?;
+        self.adapter
+            .deposits(&request)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn withdrawals(
+        &self,
+        request: WireTransferHistoryRequest,
+    ) -> Result<WireWithdrawalPage, NativeError> {
+        let request = request.try_into()?;
+        self.adapter
+            .withdrawals(&request)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
     pub async fn open_orders(
         &self,
         market: Option<WireMarket>,
@@ -71,6 +201,54 @@ impl NativeClient {
             .open_orders(market.as_ref())
             .await
             .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
+    pub async fn order(
+        &self,
+        market: WireMarket,
+        order_id: String,
+    ) -> Result<WireOrder, NativeError> {
+        self.adapter
+            .order(&market.into(), &order_id)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn order_by_client_id(
+        &self,
+        market: WireMarket,
+        client_id: String,
+    ) -> Result<WireOrder, NativeError> {
+        self.adapter
+            .order_by_client_id(&market.into(), &client_id)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn orders_by_ids(
+        &self,
+        request: WireOrderLookupRequest,
+    ) -> Result<Vec<WireOrder>, NativeError> {
+        let request = request.try_into()?;
+        self.adapter
+            .orders_by_ids(&request)
+            .await
+            .map(|items| items.into_iter().map(Into::into).collect())
+            .map_err(Into::into)
+    }
+
+    pub async fn order_history(
+        &self,
+        request: WireOrderHistoryRequest,
+    ) -> Result<WireOrderPage, NativeError> {
+        let request = request.try_into()?;
+        self.adapter
+            .order_history(&request)
+            .await
+            .map(Into::into)
             .map_err(Into::into)
     }
 
@@ -87,9 +265,31 @@ impl NativeClient {
         &self,
         market: WireMarket,
         order_id: String,
-    ) -> Result<WireOrder, NativeError> {
+    ) -> Result<(), NativeError> {
         self.adapter
             .cancel_order(&market.into(), &order_id)
+            .await
+            .map_err(Into::into)
+    }
+
+    pub async fn cancel_order_by_client_id(
+        &self,
+        market: WireMarket,
+        client_id: String,
+    ) -> Result<(), NativeError> {
+        self.adapter
+            .cancel_order_by_client_id(&market.into(), &client_id)
+            .await
+            .map_err(Into::into)
+    }
+
+    pub async fn cancel_orders(
+        &self,
+        request: WireCancelOrdersRequest,
+    ) -> Result<WireCancelOrdersResult, NativeError> {
+        let request = request.try_into()?;
+        self.adapter
+            .cancel_orders(&request)
             .await
             .map(Into::into)
             .map_err(Into::into)
@@ -142,5 +342,43 @@ impl NativeClient {
     pub async fn set_margin(&self, request: WireMarginRequest) -> Result<(), NativeError> {
         let request = request.try_into()?;
         self.adapter.set_margin(&request).await.map_err(Into::into)
+    }
+
+    pub async fn prepare_transfer_to(
+        &self,
+        destination: &NativeClient,
+        request: WireExchangeTransferRequest,
+    ) -> Result<WireTransferPlan, NativeError> {
+        let request = request.try_into()?;
+        maxt::prepare_exchange_transfer(
+            self.adapter.as_ref(),
+            destination.adapter.as_ref(),
+            &request,
+        )
+        .await
+        .map(Into::into)
+        .map_err(Into::into)
+    }
+
+    pub async fn prepare_transfer_to_chain(
+        &self,
+        request: WireChainTransferRequest,
+    ) -> Result<WireTransferPlan, NativeError> {
+        let request = request.try_into()?;
+        maxt::prepare_chain_transfer(self.adapter.as_ref(), &request)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
+
+    pub async fn execute_transfer(
+        &self,
+        plan: WireTransferPlan,
+    ) -> Result<WireWithdrawal, NativeError> {
+        let plan = plan.try_into()?;
+        maxt::execute_transfer_plan(self.adapter.as_ref(), &plan)
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
     }
 }

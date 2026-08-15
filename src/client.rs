@@ -3,11 +3,17 @@
 use crate::adapter::Adapter;
 use crate::error::Result;
 use crate::feature::Feature;
-use crate::request::{CandleRequest, HistoryRequest, MarginRequest, OrderRequest};
+use crate::request::{
+    CancelOrdersRequest, CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest,
+    OrderHistoryRequest, OrderLookupRequest, OrderRequest, TransferHistoryRequest,
+    TransferLookupRequest, WithdrawRequest,
+};
 use crate::stream::{AccountStream, MarketStream};
 use crate::types::{
-    Balance, Candle, Exchange, FundingPayment, FundingRate, MarginSummary, Market, MarketInfo,
-    MarketKind, Order, OrderBook, Page, Position, StreamConfig, Subscription, Ticker, Trade,
+    AssetNetwork, Balance, CancelOrdersResult, Candle, Deposit, DepositAddress,
+    DepositAddressEntry, Exchange, FundingPayment, FundingRate, MarginSummary, Market, MarketInfo,
+    MarketKind, Order, OrderBook, OrderRules, Page, Position, StreamConfig, Subscription, Ticker,
+    Trade, Withdrawal, WithdrawalQuote,
 };
 
 /// The common API over one exchange adapter.
@@ -148,6 +154,98 @@ impl<A: Adapter> Client<A> {
         self.adapter.balances().await
     }
 
+    /// Reads current order fees, limits, supported combinations, and balances.
+    ///
+    /// Requires credentials.
+    pub async fn order_rules(&self, market: &Market) -> Result<OrderRules> {
+        self.adapter.order_rules(market).await
+    }
+
+    /// Reads live deposit and withdrawal rules for one asset.
+    pub async fn asset_networks(&self, asset: &str) -> Result<Vec<AssetNetwork>> {
+        if asset.trim().is_empty() {
+            return Err(crate::Error::invalid_request(
+                "asset",
+                "asset must not be empty",
+            ));
+        }
+        self.adapter.asset_networks(asset).await
+    }
+
+    /// Lists all exchange-issued deposit addresses for this account.
+    ///
+    /// A provider can omit network metadata, and an address can be absent
+    /// while issuance is still pending.
+    pub async fn deposit_addresses(&self) -> Result<Vec<DepositAddressEntry>> {
+        self.adapter.deposit_addresses().await
+    }
+
+    /// Reads an exchange-issued deposit address for one asset and network.
+    pub async fn deposit_address(&self, request: &DepositAddressRequest) -> Result<DepositAddress> {
+        self.adapter.deposit_address(request).await
+    }
+
+    /// Requests creation of an exchange-issued deposit address.
+    ///
+    /// Exchanges can issue an address asynchronously. A successful request may
+    /// therefore return an address with [`DepositAddress::address`] set to
+    /// `None`; query [`Self::deposit_address`] until it is available.
+    pub async fn create_deposit_address(
+        &self,
+        request: &DepositAddressRequest,
+    ) -> Result<DepositAddress> {
+        self.adapter.create_deposit_address(request).await
+    }
+
+    /// Checks a withdrawal against current account and network rules.
+    pub async fn prepare_withdrawal(&self, request: &WithdrawRequest) -> Result<WithdrawalQuote> {
+        validate_withdraw_request(request)?;
+        self.adapter.prepare_withdrawal(request).await
+    }
+
+    /// Submits one withdrawal without automatic retry.
+    pub async fn withdraw(&self, request: &WithdrawRequest) -> Result<Withdrawal> {
+        validate_withdraw_request(request)?;
+        self.adapter.withdraw(request).await
+    }
+
+    /// Looks up one deposit by exchange UUID or transaction ID.
+    pub async fn deposit(&self, request: &TransferLookupRequest) -> Result<Deposit> {
+        request.reference()?;
+        self.adapter.deposit(request).await
+    }
+
+    /// Looks up one withdrawal by exchange UUID or transaction ID.
+    pub async fn withdrawal(&self, request: &TransferLookupRequest) -> Result<Withdrawal> {
+        request.reference()?;
+        self.adapter.withdrawal(request).await
+    }
+
+    /// Cancels a withdrawal that the exchange still permits to be cancelled.
+    ///
+    /// A successful return confirms only that the exchange accepted the
+    /// cancellation request. Call [`Self::withdrawal`] afterwards to observe
+    /// the terminal withdrawal state.
+    pub async fn cancel_withdrawal(&self, withdrawal_id: &str) -> Result<()> {
+        if withdrawal_id.trim().is_empty() {
+            return Err(crate::Error::invalid_request(
+                "withdrawal_id",
+                "withdrawal ID must not be empty",
+            ));
+        }
+        self.adapter.cancel_withdrawal(withdrawal_id).await
+    }
+
+    /// Reads one page of deposit history.
+    pub async fn deposits(&self, request: &TransferHistoryRequest) -> Result<Page<Deposit>> {
+        self.adapter.deposits(request).await
+    }
+
+    /// Reads one page of withdrawal history.
+    pub async fn withdrawals(&self, request: &TransferHistoryRequest) -> Result<Page<Withdrawal>> {
+        self.adapter.withdrawals(request).await
+    }
+
     /// Reads the account's open orders across every market.
     ///
     /// Requires credentials. A returned order may have completed between the
@@ -162,6 +260,38 @@ impl<A: Adapter> Client<A> {
     /// adapter applies the market filter.
     pub async fn open_orders_on(&self, market: &Market) -> Result<Vec<Order>> {
         self.adapter.open_orders(Some(market)).await
+    }
+
+    /// Reads one order by the exchange's own identifier.
+    ///
+    /// Requires credentials. `market` prevents an identifier from silently
+    /// resolving to an order on a different market.
+    pub async fn order(&self, market: &Market, order_id: &str) -> Result<Order> {
+        self.adapter.order(market, order_id).await
+    }
+
+    /// Reads one order by the caller-assigned identifier used at placement.
+    ///
+    /// Requires credentials.
+    pub async fn order_by_client_id(&self, market: &Market, client_id: &str) -> Result<Order> {
+        self.adapter.order_by_client_id(market, client_id).await
+    }
+
+    /// Looks up up to 100 orders by exchange or caller-assigned identifiers.
+    ///
+    /// Requires credentials. Providers may omit unknown, malformed, or
+    /// account-inaccessible identifiers instead of returning one result per ID.
+    pub async fn orders_by_ids(&self, request: &OrderLookupRequest) -> Result<Vec<Order>> {
+        crate::adapters::validate_order_lookup(request)?;
+        self.adapter.orders_by_ids(request).await
+    }
+
+    /// Reads one newest-first page of completed or cancelled orders.
+    ///
+    /// Requires credentials. Feed [`Page::next`](crate::Page::next) back into
+    /// the request until it is `None`.
+    pub async fn order_history(&self, request: &OrderHistoryRequest) -> Result<Page<Order>> {
+        self.adapter.order_history(request).await
     }
 
     /// Opens a live private account subscription with default settings.
@@ -195,11 +325,31 @@ impl<A: Adapter> Client<A> {
 
     /// Cancels an order.
     ///
-    /// Requires credentials. Cancellation races execution. The returned
-    /// [`Order`] is the provider acknowledgement; some providers omit final
-    /// fill state. Reconcile the order when the final outcome matters.
-    pub async fn cancel_order(&self, market: &Market, order_id: &str) -> Result<Order> {
+    /// Requires credentials. `Ok(())` confirms that the provider accepted or
+    /// confirmed the cancellation response; it is not a final fill snapshot.
+    /// Cancellation races execution, so query the order when the final outcome
+    /// matters.
+    pub async fn cancel_order(&self, market: &Market, order_id: &str) -> Result<()> {
         self.adapter.cancel_order(market, order_id).await
+    }
+
+    /// Cancels an order by the caller-assigned identifier used at placement.
+    ///
+    /// Requires credentials. Cancellation has the same race and reconciliation
+    /// requirements as [`Client::cancel_order`].
+    pub async fn cancel_order_by_client_id(&self, market: &Market, client_id: &str) -> Result<()> {
+        self.adapter
+            .cancel_order_by_client_id(market, client_id)
+            .await
+    }
+
+    /// Cancels multiple orders without treating a partial failure as an atomic failure.
+    ///
+    /// Requires credentials. Provider limits differ; Upbit accepts at most 20
+    /// identifiers and Bithumb accepts at most 30.
+    pub async fn cancel_orders(&self, request: &CancelOrdersRequest) -> Result<CancelOrdersResult> {
+        crate::adapters::validate_cancel_orders(request)?;
+        self.adapter.cancel_orders(request).await
     }
 
     /// Reads every open position.
@@ -258,7 +408,7 @@ impl<A: Adapter> Client<A> {
     }
 }
 
-fn default_stream_config() -> StreamConfig {
+pub(crate) fn default_stream_config() -> StreamConfig {
     #[cfg(target_arch = "wasm32")]
     {
         StreamConfig {
@@ -270,6 +420,51 @@ fn default_stream_config() -> StreamConfig {
     {
         StreamConfig::default()
     }
+}
+
+fn validate_withdraw_request(request: &WithdrawRequest) -> Result<()> {
+    if request.asset.trim().is_empty() {
+        return Err(crate::Error::invalid_request(
+            "asset",
+            "asset must not be empty",
+        ));
+    }
+    if request.amount <= crate::Decimal::ZERO {
+        return Err(crate::Error::invalid_request(
+            "amount",
+            "amount must be greater than zero",
+        ));
+    }
+    if !request.network.same_chain(request.destination.network()) {
+        return Err(crate::Error::transfer(
+            crate::TransferErrorKind::NetworkMismatch,
+            format!(
+                "withdrawal network {} differs from destination network {}",
+                request.network,
+                request.destination.network(),
+            ),
+        ));
+    }
+    if !request
+        .asset
+        .eq_ignore_ascii_case(request.destination.asset())
+    {
+        return Err(crate::Error::transfer(
+            crate::TransferErrorKind::AssetMismatch,
+            format!(
+                "withdrawal asset {} differs from destination asset {}",
+                request.asset,
+                request.destination.asset(),
+            ),
+        ));
+    }
+    if request.destination.address().trim().is_empty() {
+        return Err(crate::Error::invalid_request(
+            "destination.address",
+            "address must not be empty",
+        ));
+    }
+    Ok(())
 }
 
 impl<A: Adapter> From<A> for Client<A> {

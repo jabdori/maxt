@@ -3,21 +3,28 @@
 import 'adapter.dart';
 import 'adapters.dart'
     show NativeClientDelegate, checkedUint32, validateStreamConfigIntegers;
+import 'errors.dart';
 import 'models.dart';
 import 'runtime.dart';
 import 'stream.dart';
 
+/// 공통 API를 하나의 거래소 어댑터에 연결하는 클라이언트입니다.
 abstract base class GeneratedClient<A extends Adapter> {
+  /// [adapter]를 사용하는 클라이언트를 만듭니다.
   GeneratedClient(this.adapter)
     : _native = NativeClientDelegate.fromAdapter(adapter);
 
+  /// 이 클라이언트가 호출할 거래소 어댑터입니다.
   final A adapter;
   final NativeClientDelegate _native;
 
+  /// 연결된 거래소입니다.
   Exchange get exchange => _native.exchange;
 
+  /// [feature]를 연결된 거래소에서 지원하는지 확인합니다.
   bool supports(Feature feature) => _native.supports(feature);
 
+  /// 거래소가 제공하는 시장 목록을 반환합니다.
   Future<List<MarketInfo>> markets(MarketKind kind) => _native.markets(kind);
 
   /// 최근 체결을 최신순으로 반환하며, `limit`은 요청할 최대 개수입니다.
@@ -28,6 +35,7 @@ abstract base class GeneratedClient<A extends Adapter> {
   Future<OrderBook> orderBook(Market market, [int? depth]) async =>
       _native.orderBook(market, checkedUint32(depth, field: 'depth'));
 
+  /// 한 시장의 최신 가격 요약을 반환합니다.
   Future<Ticker> ticker(Market market) => _native.ticker(market);
 
   /// [CandleRequest] 조건에 맞는 캔들을 오래된 순서로 반환합니다.
@@ -49,45 +57,209 @@ abstract base class GeneratedClient<A extends Adapter> {
     return _native.subscribe(subscription, config);
   }
 
+  /// 인증된 계정의 자산 잔고를 반환합니다.
   Future<List<Balance>> balances() => _native.balances();
 
+  /// 한 시장에서 현재 적용되는 주문 규칙을 반환합니다.
+  Future<OrderRules> orderRules(Market market) => _native.orderRules(market);
+
+  /// 자산의 거래소별 입출금 네트워크를 반환합니다.
+  Future<List<AssetNetwork>> assetNetworks(String asset) =>
+      _native.assetNetworks(asset);
+
+  /// 계정에 등록된 입금 주소 목록을 반환합니다.
+  Future<List<DepositAddressEntry>> depositAddresses() =>
+      _native.depositAddresses();
+
+  /// 자산과 네트워크의 입금 주소를 조회합니다.
+  Future<DepositAddress> depositAddress(DepositAddressRequest request) =>
+      _native.depositAddress(request);
+
+  /// 자산과 네트워크의 입금 주소 발급을 요청합니다.
+  Future<DepositAddress> createDepositAddress(DepositAddressRequest request) =>
+      _native.createDepositAddress(request);
+
+  /// 출금 전에 수수료와 제약을 조회합니다.
+  Future<WithdrawalQuote> prepareWithdrawal(WithdrawRequest request) =>
+      _native.prepareWithdrawal(request);
+
+  /// 출금 요청을 제출합니다. 이 메서드는 금융 쓰기 작업입니다.
+  Future<Withdrawal> withdraw(WithdrawRequest request) =>
+      _native.withdraw(request);
+
+  /// 거래소 전송 식별자로 입금 상태를 조회합니다.
+  Future<Deposit> deposit(TransferLookupRequest request) async {
+    _validateTransferLookupRequest(request);
+    return _native.deposit(request);
+  }
+
+  /// 거래소 전송 식별자로 출금 상태를 조회합니다.
+  Future<Withdrawal> withdrawal(TransferLookupRequest request) async {
+    _validateTransferLookupRequest(request);
+    return _native.withdrawal(request);
+  }
+
+  /// 아직 취소 가능한 출금 요청을 취소합니다.
+  Future<void> cancelWithdrawal(String withdrawalId) =>
+      _native.cancelWithdrawal(withdrawalId);
+
+  /// 페이지 단위의 입금 이력을 반환합니다.
+  Future<Page<Deposit>> deposits(TransferHistoryRequest request) async {
+    checkedUint32(request.limit, field: 'limit');
+    return _native.deposits(request);
+  }
+
+  /// 페이지 단위의 출금 이력을 반환합니다.
+  Future<Page<Withdrawal>> withdrawals(TransferHistoryRequest request) async {
+    checkedUint32(request.limit, field: 'limit');
+    return _native.withdrawals(request);
+  }
+
+  /// 모든 시장의 열려 있는 주문을 반환합니다.
   Future<List<Order>> openOrders() => _native.openOrders();
 
+  /// 지정한 시장의 열려 있는 주문을 반환합니다.
   Future<List<Order>> openOrdersOn(Market market) => _native.openOrders(market);
 
+  /// 거래소 주문 식별자로 한 주문을 조회합니다.
+  Future<Order> order(Market market, String orderId) =>
+      _native.order(market, orderId);
+
+  /// 클라이언트 주문 식별자로 한 주문을 조회합니다.
+  Future<Order> orderByClientId(Market market, String clientId) =>
+      _native.orderByClientId(market, clientId);
+
+  /// 여러 주문 식별자로 주문을 조회합니다.
+  Future<List<Order>> ordersByIds(OrderLookupRequest request) async {
+    if (request.ids.isEmpty || request.ids.length > 100) {
+      throw InvalidRequestError(
+        field: 'ids',
+        detail:
+            'an order lookup requires 1 to 100 identifiers, not ${request.ids.length}',
+      );
+    }
+    if (request.ids.any((id) => id.trim().isEmpty)) {
+      throw const InvalidRequestError(
+        field: 'ids',
+        detail: 'order identifiers must not be empty',
+      );
+    }
+    return _native.ordersByIds(request);
+  }
+
+  /// 페이지 단위의 주문 이력을 반환합니다.
+  Future<Page<Order>> orderHistory(OrderHistoryRequest request) =>
+      _native.orderHistory(request);
+
+  /// 기본 연결 설정으로 비공개 계정 이벤트를 구독합니다.
   Future<AccountStream> subscribeAccount() =>
       subscribeAccountWith(defaultStreamConfig());
 
+  /// 지정한 연결 설정으로 비공개 계정 이벤트를 구독합니다.
   Future<AccountStream> subscribeAccountWith(StreamConfig config) async {
     validateStreamConfigIntegers(config);
     return _native.subscribeAccount(config);
   }
 
+  /// 주문을 제출합니다. 이 메서드는 금융 쓰기 작업입니다.
   Future<Order> placeOrder(OrderRequest request) => _native.placeOrder(request);
 
-  Future<Order> cancelOrder(Market market, String orderId) =>
+  /// 거래소 주문 식별자로 주문을 취소합니다.
+  Future<void> cancelOrder(Market market, String orderId) =>
       _native.cancelOrder(market, orderId);
 
+  /// 클라이언트 주문 식별자로 주문을 취소합니다.
+  Future<void> cancelOrderByClientId(Market market, String clientId) =>
+      _native.cancelOrderByClientId(market, clientId);
+
+  /// 여러 주문 취소를 요청하고 항목별 결과를 반환합니다.
+  Future<CancelOrdersResult> cancelOrders(CancelOrdersRequest request) async {
+    if (request.ids.isEmpty) {
+      throw const InvalidRequestError(
+        field: 'ids',
+        detail: 'a batch cancellation requires at least one identifier',
+      );
+    }
+    if (request.ids.any((id) => id.trim().isEmpty)) {
+      throw const InvalidRequestError(
+        field: 'ids',
+        detail: 'order identifiers must not be empty',
+      );
+    }
+    return _native.cancelOrders(request);
+  }
+
+  /// 열려 있는 파생상품 포지션을 반환합니다.
   Future<List<Position>> positions() async =>
       _openPositions(await _native.positions());
 
   Future<List<Position>> positionsOn(Market market) async =>
       _openPositions(await _native.positions(market));
 
+  /// 계정의 증거금 상태를 반환합니다.
   Future<MarginSummary> marginSummary() => _native.marginSummary();
 
+  /// 페이지 단위의 펀딩비율 이력을 반환합니다.
   Future<Page<FundingRate>> fundingRates(HistoryRequest request) async {
     checkedUint32(request.limit, field: 'limit');
     return _native.fundingRates(request);
   }
 
+  /// 페이지 단위의 실제 펀딩 지급 이력을 반환합니다.
   Future<Page<FundingPayment>> fundingPayments(HistoryRequest request) async {
     checkedUint32(request.limit, field: 'limit');
     return _native.fundingPayments(request);
   }
 
+  /// 포지션의 증거금 설정을 변경합니다. 이 메서드는 금융 쓰기 작업입니다.
   Future<void> setMargin(MarginRequest request) => _native.setMargin(request);
+
+  Future<TransferPlan> prepareTransferTo(
+    GeneratedClient<Adapter> destination,
+    ExchangeTransferRequest request,
+  ) => _native.prepareTransferTo(destination._native, request);
+
+  Future<TransferPlan> prepareTransferToChain(ChainTransferRequest request) =>
+      _native.prepareTransferToChain(request);
+
+  Future<Withdrawal> executeTransfer(TransferPlan plan) =>
+      _native.executeTransfer(plan);
 
   static List<Position> _openPositions(List<Position> positions) =>
       positions.where((position) => !position.isFlat).toList(growable: false);
+}
+
+void _validateTransferLookupRequest(TransferLookupRequest request) {
+  if (request.asset.trim().isEmpty) {
+    throw const InvalidRequestError(
+      field: 'asset',
+      detail: 'asset must not be empty',
+    );
+  }
+  final id = request.id;
+  final txId = request.txId;
+  if (id == null && txId == null) {
+    throw const InvalidRequestError(
+      field: 'reference',
+      detail: 'set either an exchange transfer ID or a transaction ID',
+    );
+  }
+  if (id != null && txId != null) {
+    throw const InvalidRequestError(
+      field: 'reference',
+      detail: 'set exactly one of the exchange transfer ID or transaction ID',
+    );
+  }
+  if (id != null && id.trim().isEmpty) {
+    throw const InvalidRequestError(
+      field: 'id',
+      detail: 'exchange transfer ID must not be empty',
+    );
+  }
+  if (txId != null && txId.trim().isEmpty) {
+    throw const InvalidRequestError(
+      field: 'tx_id',
+      detail: 'transaction ID must not be empty',
+    );
+  }
 }

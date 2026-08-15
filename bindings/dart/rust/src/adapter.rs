@@ -9,10 +9,14 @@ use maxt_bindings_common::{
 };
 
 use crate::convert::{
-    NativeError, WireBalance, WireCandle, WireCandleRequest, WireExchange, WireFeature,
-    WireFundingPaymentPage, WireFundingRatePage, WireHistoryRequest, WireMarginRequest,
-    WireMarginSummary, WireMarket, WireMarketInfo, WireMarketKind, WireOrder, WireOrderBook,
-    WireOrderRequest, WirePosition, WireTicker, WireTrade,
+    NativeError, WireAssetNetwork, WireBalance, WireCancelOrdersRequest, WireCancelOrdersResult,
+    WireCandle, WireCandleRequest, WireDeposit, WireDepositAddress, WireDepositAddressEntry,
+    WireDepositAddressRequest, WireDepositPage, WireExchange, WireFeature, WireFundingPaymentPage,
+    WireFundingRatePage, WireHistoryRequest, WireMarginRequest, WireMarginSummary, WireMarket,
+    WireMarketInfo, WireMarketKind, WireOrder, WireOrderBook, WireOrderHistoryRequest,
+    WireOrderLookupRequest, WireOrderPage, WireOrderRequest, WireOrderRules, WirePosition,
+    WireTicker, WireTrade, WireTransferHistoryRequest, WireTransferLookupRequest,
+    WireWithdrawRequest, WireWithdrawal, WireWithdrawalPage, WireWithdrawalQuote,
 };
 use crate::stream::{
     AccountStreamSink, CancelCallback, CancelFuture, MarketStreamSink, account_stream_channel,
@@ -24,34 +28,48 @@ mod generated_dispatch;
 /// Dart Adapter가 받을 market feed입니다.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireFeed {
+    /// 최근 체결 feed입니다.
     Trades,
+    /// 호가 스냅샷 feed입니다.
     OrderBook,
+    /// ticker 요약 feed입니다.
     Ticker,
+    /// 지정 간격의 캔들 feed입니다.
     Candles(crate::convert::WireInterval),
 }
 
 /// Dart Adapter가 받을 owned subscription입니다.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireSubscription {
+    /// 하나 이상이어야 하는 대상 시장입니다.
     pub markets: Vec<WireMarket>,
+    /// 하나 이상이어야 하는 구독 feed입니다.
     pub feeds: Vec<WireFeed>,
 }
 
 /// Dart Adapter가 받을 overflow 정책입니다.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireOverflow {
+    /// 소비자가 따라올 때까지 producer를 대기시킵니다.
     Backpressure,
+    /// 버퍼가 차면 새 이벤트를 버립니다.
     DropNewest,
 }
 
 /// Dart Adapter가 받을 owned stream 설정입니다.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireStreamConfig {
+    /// 재연결 시도 횟수 제한입니다. null이면 제한하지 않습니다.
     pub max_reconnect_attempts: Option<u32>,
+    /// 첫 재연결 전 대기 시간(밀리초)입니다.
     pub initial_reconnect_delay_ms: u64,
+    /// 재연결 대기 시간의 최대값(밀리초)입니다.
     pub max_reconnect_delay_ms: u64,
+    /// 연결이 유휴 상태로 허용되는 최대 시간(밀리초)입니다.
     pub idle_timeout_ms: u64,
+    /// 이벤트 버퍼 크기입니다.
     pub buffer_size: usize,
+    /// 버퍼가 찼을 때의 동작입니다.
     pub overflow: WireOverflow,
 }
 
@@ -115,8 +133,46 @@ pub enum AdapterCall {
     Candles { request: WireCandleRequest },
     /// 계정 잔고를 요청합니다.
     Balances,
+    /// 시장별 주문 규칙을 요청합니다.
+    OrderRules { market: WireMarket },
+    /// 자산별 입출금 네트워크를 요청합니다.
+    AssetNetworks { asset: String },
+    /// 계정의 전체 입금 주소를 요청합니다.
+    DepositAddresses,
+    /// 입금 주소를 요청합니다.
+    DepositAddress { request: WireDepositAddressRequest },
+    /// 입금 주소 생성을 요청합니다.
+    CreateDepositAddress { request: WireDepositAddressRequest },
+    /// 출금 조건 검사를 요청합니다.
+    PrepareWithdrawal { request: WireWithdrawRequest },
+    /// 출금 제출을 요청합니다.
+    Withdraw { request: WireWithdrawRequest },
+    /// 입금 조회를 요청합니다.
+    Deposit { request: WireTransferLookupRequest },
+    /// 출금 조회를 요청합니다.
+    Withdrawal { request: WireTransferLookupRequest },
+    /// 출금 취소를 요청합니다.
+    CancelWithdrawal { withdrawal_id: String },
+    /// 입금 이력을 요청합니다.
+    Deposits { request: WireTransferHistoryRequest },
+    /// 출금 이력을 요청합니다.
+    Withdrawals { request: WireTransferHistoryRequest },
     /// 미체결 주문을 요청합니다.
     OpenOrders { market: Option<WireMarket> },
+    /// 거래소 주문 ID로 주문을 요청합니다.
+    Order {
+        market: WireMarket,
+        order_id: String,
+    },
+    /// client ID로 주문을 요청합니다.
+    OrderByClientId {
+        market: WireMarket,
+        client_id: String,
+    },
+    /// 여러 주문 ID로 주문을 요청합니다.
+    OrdersByIds { request: WireOrderLookupRequest },
+    /// 종료 주문 이력을 요청합니다.
+    OrderHistory { request: WireOrderHistoryRequest },
     /// 주문을 제출합니다.
     PlaceOrder { request: WireOrderRequest },
     /// 주문을 취소합니다.
@@ -124,6 +180,13 @@ pub enum AdapterCall {
         market: WireMarket,
         order_id: String,
     },
+    /// client ID로 주문을 취소합니다.
+    CancelOrderByClientId {
+        market: WireMarket,
+        client_id: String,
+    },
+    /// 여러 주문을 취소합니다.
+    CancelOrders { request: WireCancelOrdersRequest },
     /// 미결제 포지션을 요청합니다.
     Positions { market: Option<WireMarket> },
     /// 계정 증거금 요약을 요청합니다.
@@ -167,12 +230,40 @@ pub enum AdapterReply {
     Candles(Vec<WireCandle>),
     /// 잔고 응답입니다.
     Balances(Vec<WireBalance>),
+    /// 시장별 주문 규칙 응답입니다.
+    OrderRules(WireOrderRules),
+    /// 자산별 네트워크 응답입니다.
+    AssetNetworks(Vec<WireAssetNetwork>),
+    /// 계정의 전체 입금 주소 응답입니다.
+    DepositAddresses(Vec<WireDepositAddressEntry>),
+    /// 입금 주소 응답입니다.
+    DepositAddress(WireDepositAddress),
+    /// 입금 주소 생성 응답입니다.
+    CreateDepositAddress(WireDepositAddress),
+    /// 출금 조건 응답입니다.
+    PrepareWithdrawal(WireWithdrawalQuote),
+    /// 출금 접수 응답입니다.
+    Withdraw(WireWithdrawal),
+    /// 입금 조회 응답입니다.
+    Deposit(WireDeposit),
+    /// 출금 조회 응답입니다.
+    Withdrawal(WireWithdrawal),
+    /// 입금 이력 응답입니다.
+    Deposits(WireDepositPage),
+    /// 출금 이력 응답입니다.
+    Withdrawals(WireWithdrawalPage),
     /// 미체결 주문 응답입니다.
     OpenOrders(Vec<WireOrder>),
+    /// 단건 주문 응답입니다.
+    Order(WireOrder),
+    /// 다건 주문 응답입니다.
+    OrdersByIds(Vec<WireOrder>),
+    /// 종료 주문 이력 응답입니다.
+    OrderHistory(WireOrderPage),
     /// 주문 제출 응답입니다.
     PlaceOrder(WireOrder),
-    /// 주문 취소 응답입니다.
-    CancelOrder(WireOrder),
+    /// 다건 주문 취소 응답입니다.
+    CancelOrders(WireCancelOrdersResult),
     /// 포지션 응답입니다.
     Positions(Vec<WirePosition>),
     /// 증거금 요약 응답입니다.
@@ -194,9 +285,23 @@ impl AdapterReply {
             Self::Ticker(_) => "Ticker",
             Self::Candles(_) => "Candles",
             Self::Balances(_) => "Balances",
+            Self::OrderRules(_) => "OrderRules",
+            Self::AssetNetworks(_) => "AssetNetworks",
+            Self::DepositAddresses(_) => "DepositAddresses",
+            Self::DepositAddress(_) => "DepositAddress",
+            Self::CreateDepositAddress(_) => "CreateDepositAddress",
+            Self::PrepareWithdrawal(_) => "PrepareWithdrawal",
+            Self::Withdraw(_) => "Withdraw",
+            Self::Deposit(_) => "Deposit",
+            Self::Withdrawal(_) => "Withdrawal",
+            Self::Deposits(_) => "Deposits",
+            Self::Withdrawals(_) => "Withdrawals",
             Self::OpenOrders(_) => "OpenOrders",
+            Self::Order(_) => "Order",
+            Self::OrdersByIds(_) => "OrdersByIds",
+            Self::OrderHistory(_) => "OrderHistory",
             Self::PlaceOrder(_) => "PlaceOrder",
-            Self::CancelOrder(_) => "CancelOrder",
+            Self::CancelOrders(_) => "CancelOrders",
             Self::Positions(_) => "Positions",
             Self::MarginSummary(_) => "MarginSummary",
             Self::FundingRates(_) => "FundingRates",
@@ -313,9 +418,24 @@ enum ExpectedReply {
     Ticker,
     Candles,
     Balances,
+    OrderRules,
+    AssetNetworks,
+    DepositAddresses,
+    DepositAddress,
+    CreateDepositAddress,
+    PrepareWithdrawal,
+    Withdraw,
+    Deposit,
+    Withdrawal,
+    Deposits,
+    Withdrawals,
     OpenOrders,
+    Order,
+    OrderByClientId,
+    OrdersByIds,
+    OrderHistory,
     PlaceOrder,
-    CancelOrder,
+    CancelOrders,
     Positions,
     MarginSummary,
     FundingRates,
@@ -332,9 +452,24 @@ impl ExpectedReply {
             Self::Ticker => "Ticker",
             Self::Candles => "Candles",
             Self::Balances => "Balances",
+            Self::OrderRules => "OrderRules",
+            Self::AssetNetworks => "AssetNetworks",
+            Self::DepositAddresses => "DepositAddresses",
+            Self::DepositAddress => "DepositAddress",
+            Self::CreateDepositAddress => "CreateDepositAddress",
+            Self::PrepareWithdrawal => "PrepareWithdrawal",
+            Self::Withdraw => "Withdraw",
+            Self::Deposit => "Deposit",
+            Self::Withdrawal => "Withdrawal",
+            Self::Deposits => "Deposits",
+            Self::Withdrawals => "Withdrawals",
             Self::OpenOrders => "OpenOrders",
+            Self::Order => "Order",
+            Self::OrderByClientId => "OrderByClientId",
+            Self::OrdersByIds => "OrdersByIds",
+            Self::OrderHistory => "OrderHistory",
             Self::PlaceOrder => "PlaceOrder",
-            Self::CancelOrder => "CancelOrder",
+            Self::CancelOrders => "CancelOrders",
             Self::Positions => "Positions",
             Self::MarginSummary => "MarginSummary",
             Self::FundingRates => "FundingRates",
@@ -400,17 +535,71 @@ impl AdapterReply {
             (ExpectedReply::Balances, Self::Balances(values)) => {
                 convert_vec(values, "Balances").map(CommonAdapterReply::Balances)
             }
+            (ExpectedReply::OrderRules, Self::OrderRules(value)) => value
+                .try_into()
+                .map(Box::new)
+                .map(CommonAdapterReply::OrderRules)
+                .map_err(|error| invalid_reply("OrderRules", error)),
+            (ExpectedReply::AssetNetworks, Self::AssetNetworks(values)) => {
+                convert_vec(values, "AssetNetworks").map(CommonAdapterReply::AssetNetworks)
+            }
+            (ExpectedReply::DepositAddresses, Self::DepositAddresses(values)) => {
+                convert_vec(values, "DepositAddresses").map(CommonAdapterReply::DepositAddresses)
+            }
+            (ExpectedReply::DepositAddress, Self::DepositAddress(value)) => value
+                .try_into()
+                .map(CommonAdapterReply::DepositAddress)
+                .map_err(|error| invalid_reply("DepositAddress", error)),
+            (ExpectedReply::CreateDepositAddress, Self::CreateDepositAddress(value)) => value
+                .try_into()
+                .map(CommonAdapterReply::CreateDepositAddress)
+                .map_err(|error| invalid_reply("CreateDepositAddress", error)),
+            (ExpectedReply::PrepareWithdrawal, Self::PrepareWithdrawal(value)) => value
+                .try_into()
+                .map(CommonAdapterReply::WithdrawalQuote)
+                .map_err(|error| invalid_reply("PrepareWithdrawal", error)),
+            (ExpectedReply::Withdraw, Self::Withdraw(value)) => value
+                .try_into()
+                .map(CommonAdapterReply::Withdrawal)
+                .map_err(|error| invalid_reply("Withdraw", error)),
+            (ExpectedReply::Deposit, Self::Deposit(value)) => value
+                .try_into()
+                .map(CommonAdapterReply::Deposit)
+                .map_err(|error| invalid_reply("Deposit", error)),
+            (ExpectedReply::Withdrawal, Self::Withdrawal(value)) => value
+                .try_into()
+                .map(CommonAdapterReply::LookupWithdrawal)
+                .map_err(|error| invalid_reply("Withdrawal", error)),
+            (ExpectedReply::Deposits, Self::Deposits(value)) => value
+                .try_into()
+                .map(CommonAdapterReply::Deposits)
+                .map_err(|error| invalid_reply("Deposits", error)),
+            (ExpectedReply::Withdrawals, Self::Withdrawals(value)) => value
+                .try_into()
+                .map(CommonAdapterReply::Withdrawals)
+                .map_err(|error| invalid_reply("Withdrawals", error)),
             (ExpectedReply::OpenOrders, Self::OpenOrders(values)) => {
                 convert_vec(values, "OpenOrders").map(CommonAdapterReply::OpenOrders)
             }
+            (ExpectedReply::Order | ExpectedReply::OrderByClientId, Self::Order(value)) => value
+                .try_into()
+                .map(CommonAdapterReply::Order)
+                .map_err(|error| invalid_reply("Order", error)),
+            (ExpectedReply::OrdersByIds, Self::OrdersByIds(values)) => {
+                convert_vec(values, "OrdersByIds").map(CommonAdapterReply::OrdersByIds)
+            }
+            (ExpectedReply::OrderHistory, Self::OrderHistory(value)) => value
+                .try_into()
+                .map(CommonAdapterReply::OrderHistory)
+                .map_err(|error| invalid_reply("OrderHistory", error)),
             (ExpectedReply::PlaceOrder, Self::PlaceOrder(value)) => value
                 .try_into()
                 .map(CommonAdapterReply::PlaceOrder)
                 .map_err(|error| invalid_reply("PlaceOrder", error)),
-            (ExpectedReply::CancelOrder, Self::CancelOrder(value)) => value
+            (ExpectedReply::CancelOrders, Self::CancelOrders(value)) => value
                 .try_into()
-                .map(CommonAdapterReply::CancelOrder)
-                .map_err(|error| invalid_reply("CancelOrder", error)),
+                .map(CommonAdapterReply::CancelOrdersResult)
+                .map_err(|error| invalid_reply("CancelOrders", error)),
             (ExpectedReply::Positions, Self::Positions(values)) => {
                 convert_vec(values, "Positions").map(CommonAdapterReply::Positions)
             }
@@ -696,8 +885,9 @@ mod tests {
                             AdapterReply::PlaceOrder(wire_order("placed", request.market))
                         }
                         AdapterCall::CancelOrder { market, order_id } => {
+                            assert_eq!(market.base, "BTC");
                             assert_eq!(order_id, "order-1");
-                            AdapterReply::CancelOrder(wire_order("cancelled", market))
+                            AdapterReply::Unit
                         }
                         other => panic!("unexpected call: {other:?}"),
                     };
@@ -725,15 +915,11 @@ mod tests {
             adapter.inner.place_order(&request).await.unwrap().id,
             "placed",
         );
-        assert_eq!(
-            adapter
-                .inner
-                .cancel_order(&market, "order-1")
-                .await
-                .unwrap()
-                .id,
-            "cancelled",
-        );
+        adapter
+            .inner
+            .cancel_order(&market, "order-1")
+            .await
+            .unwrap();
     }
 
     fn wire_order(id: &str, market: crate::convert::WireMarket) -> WireOrder {

@@ -1359,6 +1359,2040 @@ String toString() {
 
 
 /// @nodoc
+mixin _$WireBinanceAccountStreamItem {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBinanceAccountStreamItem);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireBinanceAccountStreamItem()';
+}
+
+
+}
+
+/// @nodoc
+class $WireBinanceAccountStreamItemCopyWith<$Res>  {
+$WireBinanceAccountStreamItemCopyWith(WireBinanceAccountStreamItem _, $Res Function(WireBinanceAccountStreamItem) __);
+}
+
+
+/// Adds pattern-matching-related methods to [WireBinanceAccountStreamItem].
+extension WireBinanceAccountStreamItemPatterns on WireBinanceAccountStreamItem {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( WireBinanceAccountStreamItem_Event value)?  event,TResult Function( WireBinanceAccountStreamItem_Error value)?  error,TResult Function( WireBinanceAccountStreamItem_End value)?  end,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case WireBinanceAccountStreamItem_Event() when event != null:
+return event(_that);case WireBinanceAccountStreamItem_Error() when error != null:
+return error(_that);case WireBinanceAccountStreamItem_End() when end != null:
+return end(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( WireBinanceAccountStreamItem_Event value)  event,required TResult Function( WireBinanceAccountStreamItem_Error value)  error,required TResult Function( WireBinanceAccountStreamItem_End value)  end,}){
+final _that = this;
+switch (_that) {
+case WireBinanceAccountStreamItem_Event():
+return event(_that);case WireBinanceAccountStreamItem_Error():
+return error(_that);case WireBinanceAccountStreamItem_End():
+return end(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( WireBinanceAccountStreamItem_Event value)?  event,TResult? Function( WireBinanceAccountStreamItem_Error value)?  error,TResult? Function( WireBinanceAccountStreamItem_End value)?  end,}){
+final _that = this;
+switch (_that) {
+case WireBinanceAccountStreamItem_Event() when event != null:
+return event(_that);case WireBinanceAccountStreamItem_Error() when error != null:
+return error(_that);case WireBinanceAccountStreamItem_End() when end != null:
+return end(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( WireBinanceAccountStreamEvent field0)?  event,TResult Function( NativeError field0)?  error,TResult Function()?  end,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case WireBinanceAccountStreamItem_Event() when event != null:
+return event(_that.field0);case WireBinanceAccountStreamItem_Error() when error != null:
+return error(_that.field0);case WireBinanceAccountStreamItem_End() when end != null:
+return end();case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( WireBinanceAccountStreamEvent field0)  event,required TResult Function( NativeError field0)  error,required TResult Function()  end,}) {final _that = this;
+switch (_that) {
+case WireBinanceAccountStreamItem_Event():
+return event(_that.field0);case WireBinanceAccountStreamItem_Error():
+return error(_that.field0);case WireBinanceAccountStreamItem_End():
+return end();}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( WireBinanceAccountStreamEvent field0)?  event,TResult? Function( NativeError field0)?  error,TResult? Function()?  end,}) {final _that = this;
+switch (_that) {
+case WireBinanceAccountStreamItem_Event() when event != null:
+return event(_that.field0);case WireBinanceAccountStreamItem_Error() when error != null:
+return error(_that.field0);case WireBinanceAccountStreamItem_End() when end != null:
+return end();case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class WireBinanceAccountStreamItem_Event extends WireBinanceAccountStreamItem {
+  const WireBinanceAccountStreamItem_Event(this.field0): super._();
+
+
+ final  WireBinanceAccountStreamEvent field0;
+
+/// Create a copy of WireBinanceAccountStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireBinanceAccountStreamItem_EventCopyWith<WireBinanceAccountStreamItem_Event> get copyWith => _$WireBinanceAccountStreamItem_EventCopyWithImpl<WireBinanceAccountStreamItem_Event>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBinanceAccountStreamItem_Event&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireBinanceAccountStreamItem.event(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireBinanceAccountStreamItem_EventCopyWith<$Res> implements $WireBinanceAccountStreamItemCopyWith<$Res> {
+  factory $WireBinanceAccountStreamItem_EventCopyWith(WireBinanceAccountStreamItem_Event value, $Res Function(WireBinanceAccountStreamItem_Event) _then) = _$WireBinanceAccountStreamItem_EventCopyWithImpl;
+@useResult
+$Res call({
+ WireBinanceAccountStreamEvent field0
+});
+
+
+$WireBinanceAccountStreamEventCopyWith<$Res> get field0;
+
+}
+/// @nodoc
+class _$WireBinanceAccountStreamItem_EventCopyWithImpl<$Res>
+    implements $WireBinanceAccountStreamItem_EventCopyWith<$Res> {
+  _$WireBinanceAccountStreamItem_EventCopyWithImpl(this._self, this._then);
+
+  final WireBinanceAccountStreamItem_Event _self;
+  final $Res Function(WireBinanceAccountStreamItem_Event) _then;
+
+/// Create a copy of WireBinanceAccountStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireBinanceAccountStreamItem_Event(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireBinanceAccountStreamEvent,
+  ));
+}
+
+/// Create a copy of WireBinanceAccountStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$WireBinanceAccountStreamEventCopyWith<$Res> get field0 {
+
+  return $WireBinanceAccountStreamEventCopyWith<$Res>(_self.field0, (value) {
+    return _then(_self.copyWith(field0: value));
+  });
+}
+}
+
+/// @nodoc
+
+
+class WireBinanceAccountStreamItem_Error extends WireBinanceAccountStreamItem {
+  const WireBinanceAccountStreamItem_Error(this.field0): super._();
+
+
+ final  NativeError field0;
+
+/// Create a copy of WireBinanceAccountStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireBinanceAccountStreamItem_ErrorCopyWith<WireBinanceAccountStreamItem_Error> get copyWith => _$WireBinanceAccountStreamItem_ErrorCopyWithImpl<WireBinanceAccountStreamItem_Error>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBinanceAccountStreamItem_Error&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireBinanceAccountStreamItem.error(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireBinanceAccountStreamItem_ErrorCopyWith<$Res> implements $WireBinanceAccountStreamItemCopyWith<$Res> {
+  factory $WireBinanceAccountStreamItem_ErrorCopyWith(WireBinanceAccountStreamItem_Error value, $Res Function(WireBinanceAccountStreamItem_Error) _then) = _$WireBinanceAccountStreamItem_ErrorCopyWithImpl;
+@useResult
+$Res call({
+ NativeError field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireBinanceAccountStreamItem_ErrorCopyWithImpl<$Res>
+    implements $WireBinanceAccountStreamItem_ErrorCopyWith<$Res> {
+  _$WireBinanceAccountStreamItem_ErrorCopyWithImpl(this._self, this._then);
+
+  final WireBinanceAccountStreamItem_Error _self;
+  final $Res Function(WireBinanceAccountStreamItem_Error) _then;
+
+/// Create a copy of WireBinanceAccountStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireBinanceAccountStreamItem_Error(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as NativeError,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireBinanceAccountStreamItem_End extends WireBinanceAccountStreamItem {
+  const WireBinanceAccountStreamItem_End(): super._();
+
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBinanceAccountStreamItem_End);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireBinanceAccountStreamItem.end()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+mixin _$WireBinanceMarketStreamItem {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBinanceMarketStreamItem);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireBinanceMarketStreamItem()';
+}
+
+
+}
+
+/// @nodoc
+class $WireBinanceMarketStreamItemCopyWith<$Res>  {
+$WireBinanceMarketStreamItemCopyWith(WireBinanceMarketStreamItem _, $Res Function(WireBinanceMarketStreamItem) __);
+}
+
+
+/// Adds pattern-matching-related methods to [WireBinanceMarketStreamItem].
+extension WireBinanceMarketStreamItemPatterns on WireBinanceMarketStreamItem {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( WireBinanceMarketStreamItem_Event value)?  event,TResult Function( WireBinanceMarketStreamItem_Error value)?  error,TResult Function( WireBinanceMarketStreamItem_End value)?  end,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case WireBinanceMarketStreamItem_Event() when event != null:
+return event(_that);case WireBinanceMarketStreamItem_Error() when error != null:
+return error(_that);case WireBinanceMarketStreamItem_End() when end != null:
+return end(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( WireBinanceMarketStreamItem_Event value)  event,required TResult Function( WireBinanceMarketStreamItem_Error value)  error,required TResult Function( WireBinanceMarketStreamItem_End value)  end,}){
+final _that = this;
+switch (_that) {
+case WireBinanceMarketStreamItem_Event():
+return event(_that);case WireBinanceMarketStreamItem_Error():
+return error(_that);case WireBinanceMarketStreamItem_End():
+return end(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( WireBinanceMarketStreamItem_Event value)?  event,TResult? Function( WireBinanceMarketStreamItem_Error value)?  error,TResult? Function( WireBinanceMarketStreamItem_End value)?  end,}){
+final _that = this;
+switch (_that) {
+case WireBinanceMarketStreamItem_Event() when event != null:
+return event(_that);case WireBinanceMarketStreamItem_Error() when error != null:
+return error(_that);case WireBinanceMarketStreamItem_End() when end != null:
+return end(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( WireBinanceMarketEvent field0)?  event,TResult Function( NativeError field0)?  error,TResult Function()?  end,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case WireBinanceMarketStreamItem_Event() when event != null:
+return event(_that.field0);case WireBinanceMarketStreamItem_Error() when error != null:
+return error(_that.field0);case WireBinanceMarketStreamItem_End() when end != null:
+return end();case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( WireBinanceMarketEvent field0)  event,required TResult Function( NativeError field0)  error,required TResult Function()  end,}) {final _that = this;
+switch (_that) {
+case WireBinanceMarketStreamItem_Event():
+return event(_that.field0);case WireBinanceMarketStreamItem_Error():
+return error(_that.field0);case WireBinanceMarketStreamItem_End():
+return end();}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( WireBinanceMarketEvent field0)?  event,TResult? Function( NativeError field0)?  error,TResult? Function()?  end,}) {final _that = this;
+switch (_that) {
+case WireBinanceMarketStreamItem_Event() when event != null:
+return event(_that.field0);case WireBinanceMarketStreamItem_Error() when error != null:
+return error(_that.field0);case WireBinanceMarketStreamItem_End() when end != null:
+return end();case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class WireBinanceMarketStreamItem_Event extends WireBinanceMarketStreamItem {
+  const WireBinanceMarketStreamItem_Event(this.field0): super._();
+
+
+ final  WireBinanceMarketEvent field0;
+
+/// Create a copy of WireBinanceMarketStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireBinanceMarketStreamItem_EventCopyWith<WireBinanceMarketStreamItem_Event> get copyWith => _$WireBinanceMarketStreamItem_EventCopyWithImpl<WireBinanceMarketStreamItem_Event>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBinanceMarketStreamItem_Event&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireBinanceMarketStreamItem.event(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireBinanceMarketStreamItem_EventCopyWith<$Res> implements $WireBinanceMarketStreamItemCopyWith<$Res> {
+  factory $WireBinanceMarketStreamItem_EventCopyWith(WireBinanceMarketStreamItem_Event value, $Res Function(WireBinanceMarketStreamItem_Event) _then) = _$WireBinanceMarketStreamItem_EventCopyWithImpl;
+@useResult
+$Res call({
+ WireBinanceMarketEvent field0
+});
+
+
+$WireBinanceMarketEventCopyWith<$Res> get field0;
+
+}
+/// @nodoc
+class _$WireBinanceMarketStreamItem_EventCopyWithImpl<$Res>
+    implements $WireBinanceMarketStreamItem_EventCopyWith<$Res> {
+  _$WireBinanceMarketStreamItem_EventCopyWithImpl(this._self, this._then);
+
+  final WireBinanceMarketStreamItem_Event _self;
+  final $Res Function(WireBinanceMarketStreamItem_Event) _then;
+
+/// Create a copy of WireBinanceMarketStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireBinanceMarketStreamItem_Event(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireBinanceMarketEvent,
+  ));
+}
+
+/// Create a copy of WireBinanceMarketStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$WireBinanceMarketEventCopyWith<$Res> get field0 {
+
+  return $WireBinanceMarketEventCopyWith<$Res>(_self.field0, (value) {
+    return _then(_self.copyWith(field0: value));
+  });
+}
+}
+
+/// @nodoc
+
+
+class WireBinanceMarketStreamItem_Error extends WireBinanceMarketStreamItem {
+  const WireBinanceMarketStreamItem_Error(this.field0): super._();
+
+
+ final  NativeError field0;
+
+/// Create a copy of WireBinanceMarketStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireBinanceMarketStreamItem_ErrorCopyWith<WireBinanceMarketStreamItem_Error> get copyWith => _$WireBinanceMarketStreamItem_ErrorCopyWithImpl<WireBinanceMarketStreamItem_Error>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBinanceMarketStreamItem_Error&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireBinanceMarketStreamItem.error(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireBinanceMarketStreamItem_ErrorCopyWith<$Res> implements $WireBinanceMarketStreamItemCopyWith<$Res> {
+  factory $WireBinanceMarketStreamItem_ErrorCopyWith(WireBinanceMarketStreamItem_Error value, $Res Function(WireBinanceMarketStreamItem_Error) _then) = _$WireBinanceMarketStreamItem_ErrorCopyWithImpl;
+@useResult
+$Res call({
+ NativeError field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireBinanceMarketStreamItem_ErrorCopyWithImpl<$Res>
+    implements $WireBinanceMarketStreamItem_ErrorCopyWith<$Res> {
+  _$WireBinanceMarketStreamItem_ErrorCopyWithImpl(this._self, this._then);
+
+  final WireBinanceMarketStreamItem_Error _self;
+  final $Res Function(WireBinanceMarketStreamItem_Error) _then;
+
+/// Create a copy of WireBinanceMarketStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireBinanceMarketStreamItem_Error(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as NativeError,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireBinanceMarketStreamItem_End extends WireBinanceMarketStreamItem {
+  const WireBinanceMarketStreamItem_End(): super._();
+
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBinanceMarketStreamItem_End);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireBinanceMarketStreamItem.end()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+mixin _$WireBithumbAccountStreamItem {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBithumbAccountStreamItem);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireBithumbAccountStreamItem()';
+}
+
+
+}
+
+/// @nodoc
+class $WireBithumbAccountStreamItemCopyWith<$Res>  {
+$WireBithumbAccountStreamItemCopyWith(WireBithumbAccountStreamItem _, $Res Function(WireBithumbAccountStreamItem) __);
+}
+
+
+/// Adds pattern-matching-related methods to [WireBithumbAccountStreamItem].
+extension WireBithumbAccountStreamItemPatterns on WireBithumbAccountStreamItem {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( WireBithumbAccountStreamItem_Event value)?  event,TResult Function( WireBithumbAccountStreamItem_Error value)?  error,TResult Function( WireBithumbAccountStreamItem_End value)?  end,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case WireBithumbAccountStreamItem_Event() when event != null:
+return event(_that);case WireBithumbAccountStreamItem_Error() when error != null:
+return error(_that);case WireBithumbAccountStreamItem_End() when end != null:
+return end(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( WireBithumbAccountStreamItem_Event value)  event,required TResult Function( WireBithumbAccountStreamItem_Error value)  error,required TResult Function( WireBithumbAccountStreamItem_End value)  end,}){
+final _that = this;
+switch (_that) {
+case WireBithumbAccountStreamItem_Event():
+return event(_that);case WireBithumbAccountStreamItem_Error():
+return error(_that);case WireBithumbAccountStreamItem_End():
+return end(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( WireBithumbAccountStreamItem_Event value)?  event,TResult? Function( WireBithumbAccountStreamItem_Error value)?  error,TResult? Function( WireBithumbAccountStreamItem_End value)?  end,}){
+final _that = this;
+switch (_that) {
+case WireBithumbAccountStreamItem_Event() when event != null:
+return event(_that);case WireBithumbAccountStreamItem_Error() when error != null:
+return error(_that);case WireBithumbAccountStreamItem_End() when end != null:
+return end(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( WireBithumbAccountEvent field0)?  event,TResult Function( NativeError field0)?  error,TResult Function()?  end,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case WireBithumbAccountStreamItem_Event() when event != null:
+return event(_that.field0);case WireBithumbAccountStreamItem_Error() when error != null:
+return error(_that.field0);case WireBithumbAccountStreamItem_End() when end != null:
+return end();case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( WireBithumbAccountEvent field0)  event,required TResult Function( NativeError field0)  error,required TResult Function()  end,}) {final _that = this;
+switch (_that) {
+case WireBithumbAccountStreamItem_Event():
+return event(_that.field0);case WireBithumbAccountStreamItem_Error():
+return error(_that.field0);case WireBithumbAccountStreamItem_End():
+return end();}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( WireBithumbAccountEvent field0)?  event,TResult? Function( NativeError field0)?  error,TResult? Function()?  end,}) {final _that = this;
+switch (_that) {
+case WireBithumbAccountStreamItem_Event() when event != null:
+return event(_that.field0);case WireBithumbAccountStreamItem_Error() when error != null:
+return error(_that.field0);case WireBithumbAccountStreamItem_End() when end != null:
+return end();case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class WireBithumbAccountStreamItem_Event extends WireBithumbAccountStreamItem {
+  const WireBithumbAccountStreamItem_Event(this.field0): super._();
+
+
+ final  WireBithumbAccountEvent field0;
+
+/// Create a copy of WireBithumbAccountStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireBithumbAccountStreamItem_EventCopyWith<WireBithumbAccountStreamItem_Event> get copyWith => _$WireBithumbAccountStreamItem_EventCopyWithImpl<WireBithumbAccountStreamItem_Event>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBithumbAccountStreamItem_Event&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireBithumbAccountStreamItem.event(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireBithumbAccountStreamItem_EventCopyWith<$Res> implements $WireBithumbAccountStreamItemCopyWith<$Res> {
+  factory $WireBithumbAccountStreamItem_EventCopyWith(WireBithumbAccountStreamItem_Event value, $Res Function(WireBithumbAccountStreamItem_Event) _then) = _$WireBithumbAccountStreamItem_EventCopyWithImpl;
+@useResult
+$Res call({
+ WireBithumbAccountEvent field0
+});
+
+
+$WireBithumbAccountEventCopyWith<$Res> get field0;
+
+}
+/// @nodoc
+class _$WireBithumbAccountStreamItem_EventCopyWithImpl<$Res>
+    implements $WireBithumbAccountStreamItem_EventCopyWith<$Res> {
+  _$WireBithumbAccountStreamItem_EventCopyWithImpl(this._self, this._then);
+
+  final WireBithumbAccountStreamItem_Event _self;
+  final $Res Function(WireBithumbAccountStreamItem_Event) _then;
+
+/// Create a copy of WireBithumbAccountStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireBithumbAccountStreamItem_Event(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireBithumbAccountEvent,
+  ));
+}
+
+/// Create a copy of WireBithumbAccountStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$WireBithumbAccountEventCopyWith<$Res> get field0 {
+
+  return $WireBithumbAccountEventCopyWith<$Res>(_self.field0, (value) {
+    return _then(_self.copyWith(field0: value));
+  });
+}
+}
+
+/// @nodoc
+
+
+class WireBithumbAccountStreamItem_Error extends WireBithumbAccountStreamItem {
+  const WireBithumbAccountStreamItem_Error(this.field0): super._();
+
+
+ final  NativeError field0;
+
+/// Create a copy of WireBithumbAccountStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireBithumbAccountStreamItem_ErrorCopyWith<WireBithumbAccountStreamItem_Error> get copyWith => _$WireBithumbAccountStreamItem_ErrorCopyWithImpl<WireBithumbAccountStreamItem_Error>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBithumbAccountStreamItem_Error&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireBithumbAccountStreamItem.error(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireBithumbAccountStreamItem_ErrorCopyWith<$Res> implements $WireBithumbAccountStreamItemCopyWith<$Res> {
+  factory $WireBithumbAccountStreamItem_ErrorCopyWith(WireBithumbAccountStreamItem_Error value, $Res Function(WireBithumbAccountStreamItem_Error) _then) = _$WireBithumbAccountStreamItem_ErrorCopyWithImpl;
+@useResult
+$Res call({
+ NativeError field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireBithumbAccountStreamItem_ErrorCopyWithImpl<$Res>
+    implements $WireBithumbAccountStreamItem_ErrorCopyWith<$Res> {
+  _$WireBithumbAccountStreamItem_ErrorCopyWithImpl(this._self, this._then);
+
+  final WireBithumbAccountStreamItem_Error _self;
+  final $Res Function(WireBithumbAccountStreamItem_Error) _then;
+
+/// Create a copy of WireBithumbAccountStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireBithumbAccountStreamItem_Error(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as NativeError,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireBithumbAccountStreamItem_End extends WireBithumbAccountStreamItem {
+  const WireBithumbAccountStreamItem_End(): super._();
+
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBithumbAccountStreamItem_End);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireBithumbAccountStreamItem.end()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+mixin _$WireBithumbMarketStreamItem {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBithumbMarketStreamItem);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireBithumbMarketStreamItem()';
+}
+
+
+}
+
+/// @nodoc
+class $WireBithumbMarketStreamItemCopyWith<$Res>  {
+$WireBithumbMarketStreamItemCopyWith(WireBithumbMarketStreamItem _, $Res Function(WireBithumbMarketStreamItem) __);
+}
+
+
+/// Adds pattern-matching-related methods to [WireBithumbMarketStreamItem].
+extension WireBithumbMarketStreamItemPatterns on WireBithumbMarketStreamItem {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( WireBithumbMarketStreamItem_Event value)?  event,TResult Function( WireBithumbMarketStreamItem_Error value)?  error,TResult Function( WireBithumbMarketStreamItem_End value)?  end,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case WireBithumbMarketStreamItem_Event() when event != null:
+return event(_that);case WireBithumbMarketStreamItem_Error() when error != null:
+return error(_that);case WireBithumbMarketStreamItem_End() when end != null:
+return end(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( WireBithumbMarketStreamItem_Event value)  event,required TResult Function( WireBithumbMarketStreamItem_Error value)  error,required TResult Function( WireBithumbMarketStreamItem_End value)  end,}){
+final _that = this;
+switch (_that) {
+case WireBithumbMarketStreamItem_Event():
+return event(_that);case WireBithumbMarketStreamItem_Error():
+return error(_that);case WireBithumbMarketStreamItem_End():
+return end(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( WireBithumbMarketStreamItem_Event value)?  event,TResult? Function( WireBithumbMarketStreamItem_Error value)?  error,TResult? Function( WireBithumbMarketStreamItem_End value)?  end,}){
+final _that = this;
+switch (_that) {
+case WireBithumbMarketStreamItem_Event() when event != null:
+return event(_that);case WireBithumbMarketStreamItem_Error() when error != null:
+return error(_that);case WireBithumbMarketStreamItem_End() when end != null:
+return end(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( WireBithumbMarketEvent field0)?  event,TResult Function( NativeError field0)?  error,TResult Function()?  end,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case WireBithumbMarketStreamItem_Event() when event != null:
+return event(_that.field0);case WireBithumbMarketStreamItem_Error() when error != null:
+return error(_that.field0);case WireBithumbMarketStreamItem_End() when end != null:
+return end();case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( WireBithumbMarketEvent field0)  event,required TResult Function( NativeError field0)  error,required TResult Function()  end,}) {final _that = this;
+switch (_that) {
+case WireBithumbMarketStreamItem_Event():
+return event(_that.field0);case WireBithumbMarketStreamItem_Error():
+return error(_that.field0);case WireBithumbMarketStreamItem_End():
+return end();}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( WireBithumbMarketEvent field0)?  event,TResult? Function( NativeError field0)?  error,TResult? Function()?  end,}) {final _that = this;
+switch (_that) {
+case WireBithumbMarketStreamItem_Event() when event != null:
+return event(_that.field0);case WireBithumbMarketStreamItem_Error() when error != null:
+return error(_that.field0);case WireBithumbMarketStreamItem_End() when end != null:
+return end();case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class WireBithumbMarketStreamItem_Event extends WireBithumbMarketStreamItem {
+  const WireBithumbMarketStreamItem_Event(this.field0): super._();
+
+
+ final  WireBithumbMarketEvent field0;
+
+/// Create a copy of WireBithumbMarketStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireBithumbMarketStreamItem_EventCopyWith<WireBithumbMarketStreamItem_Event> get copyWith => _$WireBithumbMarketStreamItem_EventCopyWithImpl<WireBithumbMarketStreamItem_Event>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBithumbMarketStreamItem_Event&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireBithumbMarketStreamItem.event(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireBithumbMarketStreamItem_EventCopyWith<$Res> implements $WireBithumbMarketStreamItemCopyWith<$Res> {
+  factory $WireBithumbMarketStreamItem_EventCopyWith(WireBithumbMarketStreamItem_Event value, $Res Function(WireBithumbMarketStreamItem_Event) _then) = _$WireBithumbMarketStreamItem_EventCopyWithImpl;
+@useResult
+$Res call({
+ WireBithumbMarketEvent field0
+});
+
+
+$WireBithumbMarketEventCopyWith<$Res> get field0;
+
+}
+/// @nodoc
+class _$WireBithumbMarketStreamItem_EventCopyWithImpl<$Res>
+    implements $WireBithumbMarketStreamItem_EventCopyWith<$Res> {
+  _$WireBithumbMarketStreamItem_EventCopyWithImpl(this._self, this._then);
+
+  final WireBithumbMarketStreamItem_Event _self;
+  final $Res Function(WireBithumbMarketStreamItem_Event) _then;
+
+/// Create a copy of WireBithumbMarketStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireBithumbMarketStreamItem_Event(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireBithumbMarketEvent,
+  ));
+}
+
+/// Create a copy of WireBithumbMarketStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$WireBithumbMarketEventCopyWith<$Res> get field0 {
+
+  return $WireBithumbMarketEventCopyWith<$Res>(_self.field0, (value) {
+    return _then(_self.copyWith(field0: value));
+  });
+}
+}
+
+/// @nodoc
+
+
+class WireBithumbMarketStreamItem_Error extends WireBithumbMarketStreamItem {
+  const WireBithumbMarketStreamItem_Error(this.field0): super._();
+
+
+ final  NativeError field0;
+
+/// Create a copy of WireBithumbMarketStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireBithumbMarketStreamItem_ErrorCopyWith<WireBithumbMarketStreamItem_Error> get copyWith => _$WireBithumbMarketStreamItem_ErrorCopyWithImpl<WireBithumbMarketStreamItem_Error>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBithumbMarketStreamItem_Error&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireBithumbMarketStreamItem.error(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireBithumbMarketStreamItem_ErrorCopyWith<$Res> implements $WireBithumbMarketStreamItemCopyWith<$Res> {
+  factory $WireBithumbMarketStreamItem_ErrorCopyWith(WireBithumbMarketStreamItem_Error value, $Res Function(WireBithumbMarketStreamItem_Error) _then) = _$WireBithumbMarketStreamItem_ErrorCopyWithImpl;
+@useResult
+$Res call({
+ NativeError field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireBithumbMarketStreamItem_ErrorCopyWithImpl<$Res>
+    implements $WireBithumbMarketStreamItem_ErrorCopyWith<$Res> {
+  _$WireBithumbMarketStreamItem_ErrorCopyWithImpl(this._self, this._then);
+
+  final WireBithumbMarketStreamItem_Error _self;
+  final $Res Function(WireBithumbMarketStreamItem_Error) _then;
+
+/// Create a copy of WireBithumbMarketStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireBithumbMarketStreamItem_Error(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as NativeError,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireBithumbMarketStreamItem_End extends WireBithumbMarketStreamItem {
+  const WireBithumbMarketStreamItem_End(): super._();
+
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBithumbMarketStreamItem_End);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireBithumbMarketStreamItem.end()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+mixin _$WireHyperliquidAccountStreamItem {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireHyperliquidAccountStreamItem);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireHyperliquidAccountStreamItem()';
+}
+
+
+}
+
+/// @nodoc
+class $WireHyperliquidAccountStreamItemCopyWith<$Res>  {
+$WireHyperliquidAccountStreamItemCopyWith(WireHyperliquidAccountStreamItem _, $Res Function(WireHyperliquidAccountStreamItem) __);
+}
+
+
+/// Adds pattern-matching-related methods to [WireHyperliquidAccountStreamItem].
+extension WireHyperliquidAccountStreamItemPatterns on WireHyperliquidAccountStreamItem {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( WireHyperliquidAccountStreamItem_Event value)?  event,TResult Function( WireHyperliquidAccountStreamItem_Error value)?  error,TResult Function( WireHyperliquidAccountStreamItem_End value)?  end,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case WireHyperliquidAccountStreamItem_Event() when event != null:
+return event(_that);case WireHyperliquidAccountStreamItem_Error() when error != null:
+return error(_that);case WireHyperliquidAccountStreamItem_End() when end != null:
+return end(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( WireHyperliquidAccountStreamItem_Event value)  event,required TResult Function( WireHyperliquidAccountStreamItem_Error value)  error,required TResult Function( WireHyperliquidAccountStreamItem_End value)  end,}){
+final _that = this;
+switch (_that) {
+case WireHyperliquidAccountStreamItem_Event():
+return event(_that);case WireHyperliquidAccountStreamItem_Error():
+return error(_that);case WireHyperliquidAccountStreamItem_End():
+return end(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( WireHyperliquidAccountStreamItem_Event value)?  event,TResult? Function( WireHyperliquidAccountStreamItem_Error value)?  error,TResult? Function( WireHyperliquidAccountStreamItem_End value)?  end,}){
+final _that = this;
+switch (_that) {
+case WireHyperliquidAccountStreamItem_Event() when event != null:
+return event(_that);case WireHyperliquidAccountStreamItem_Error() when error != null:
+return error(_that);case WireHyperliquidAccountStreamItem_End() when end != null:
+return end(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( WireHyperliquidAccountEvent field0)?  event,TResult Function( NativeError field0)?  error,TResult Function()?  end,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case WireHyperliquidAccountStreamItem_Event() when event != null:
+return event(_that.field0);case WireHyperliquidAccountStreamItem_Error() when error != null:
+return error(_that.field0);case WireHyperliquidAccountStreamItem_End() when end != null:
+return end();case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( WireHyperliquidAccountEvent field0)  event,required TResult Function( NativeError field0)  error,required TResult Function()  end,}) {final _that = this;
+switch (_that) {
+case WireHyperliquidAccountStreamItem_Event():
+return event(_that.field0);case WireHyperliquidAccountStreamItem_Error():
+return error(_that.field0);case WireHyperliquidAccountStreamItem_End():
+return end();}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( WireHyperliquidAccountEvent field0)?  event,TResult? Function( NativeError field0)?  error,TResult? Function()?  end,}) {final _that = this;
+switch (_that) {
+case WireHyperliquidAccountStreamItem_Event() when event != null:
+return event(_that.field0);case WireHyperliquidAccountStreamItem_Error() when error != null:
+return error(_that.field0);case WireHyperliquidAccountStreamItem_End() when end != null:
+return end();case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class WireHyperliquidAccountStreamItem_Event extends WireHyperliquidAccountStreamItem {
+  const WireHyperliquidAccountStreamItem_Event(this.field0): super._();
+
+
+ final  WireHyperliquidAccountEvent field0;
+
+/// Create a copy of WireHyperliquidAccountStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireHyperliquidAccountStreamItem_EventCopyWith<WireHyperliquidAccountStreamItem_Event> get copyWith => _$WireHyperliquidAccountStreamItem_EventCopyWithImpl<WireHyperliquidAccountStreamItem_Event>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireHyperliquidAccountStreamItem_Event&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireHyperliquidAccountStreamItem.event(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireHyperliquidAccountStreamItem_EventCopyWith<$Res> implements $WireHyperliquidAccountStreamItemCopyWith<$Res> {
+  factory $WireHyperliquidAccountStreamItem_EventCopyWith(WireHyperliquidAccountStreamItem_Event value, $Res Function(WireHyperliquidAccountStreamItem_Event) _then) = _$WireHyperliquidAccountStreamItem_EventCopyWithImpl;
+@useResult
+$Res call({
+ WireHyperliquidAccountEvent field0
+});
+
+
+$WireHyperliquidAccountEventCopyWith<$Res> get field0;
+
+}
+/// @nodoc
+class _$WireHyperliquidAccountStreamItem_EventCopyWithImpl<$Res>
+    implements $WireHyperliquidAccountStreamItem_EventCopyWith<$Res> {
+  _$WireHyperliquidAccountStreamItem_EventCopyWithImpl(this._self, this._then);
+
+  final WireHyperliquidAccountStreamItem_Event _self;
+  final $Res Function(WireHyperliquidAccountStreamItem_Event) _then;
+
+/// Create a copy of WireHyperliquidAccountStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireHyperliquidAccountStreamItem_Event(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireHyperliquidAccountEvent,
+  ));
+}
+
+/// Create a copy of WireHyperliquidAccountStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$WireHyperliquidAccountEventCopyWith<$Res> get field0 {
+
+  return $WireHyperliquidAccountEventCopyWith<$Res>(_self.field0, (value) {
+    return _then(_self.copyWith(field0: value));
+  });
+}
+}
+
+/// @nodoc
+
+
+class WireHyperliquidAccountStreamItem_Error extends WireHyperliquidAccountStreamItem {
+  const WireHyperliquidAccountStreamItem_Error(this.field0): super._();
+
+
+ final  NativeError field0;
+
+/// Create a copy of WireHyperliquidAccountStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireHyperliquidAccountStreamItem_ErrorCopyWith<WireHyperliquidAccountStreamItem_Error> get copyWith => _$WireHyperliquidAccountStreamItem_ErrorCopyWithImpl<WireHyperliquidAccountStreamItem_Error>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireHyperliquidAccountStreamItem_Error&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireHyperliquidAccountStreamItem.error(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireHyperliquidAccountStreamItem_ErrorCopyWith<$Res> implements $WireHyperliquidAccountStreamItemCopyWith<$Res> {
+  factory $WireHyperliquidAccountStreamItem_ErrorCopyWith(WireHyperliquidAccountStreamItem_Error value, $Res Function(WireHyperliquidAccountStreamItem_Error) _then) = _$WireHyperliquidAccountStreamItem_ErrorCopyWithImpl;
+@useResult
+$Res call({
+ NativeError field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireHyperliquidAccountStreamItem_ErrorCopyWithImpl<$Res>
+    implements $WireHyperliquidAccountStreamItem_ErrorCopyWith<$Res> {
+  _$WireHyperliquidAccountStreamItem_ErrorCopyWithImpl(this._self, this._then);
+
+  final WireHyperliquidAccountStreamItem_Error _self;
+  final $Res Function(WireHyperliquidAccountStreamItem_Error) _then;
+
+/// Create a copy of WireHyperliquidAccountStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireHyperliquidAccountStreamItem_Error(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as NativeError,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireHyperliquidAccountStreamItem_End extends WireHyperliquidAccountStreamItem {
+  const WireHyperliquidAccountStreamItem_End(): super._();
+
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireHyperliquidAccountStreamItem_End);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireHyperliquidAccountStreamItem.end()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+mixin _$WireHyperliquidMarketStreamItem {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireHyperliquidMarketStreamItem);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireHyperliquidMarketStreamItem()';
+}
+
+
+}
+
+/// @nodoc
+class $WireHyperliquidMarketStreamItemCopyWith<$Res>  {
+$WireHyperliquidMarketStreamItemCopyWith(WireHyperliquidMarketStreamItem _, $Res Function(WireHyperliquidMarketStreamItem) __);
+}
+
+
+/// Adds pattern-matching-related methods to [WireHyperliquidMarketStreamItem].
+extension WireHyperliquidMarketStreamItemPatterns on WireHyperliquidMarketStreamItem {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( WireHyperliquidMarketStreamItem_Event value)?  event,TResult Function( WireHyperliquidMarketStreamItem_Error value)?  error,TResult Function( WireHyperliquidMarketStreamItem_End value)?  end,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case WireHyperliquidMarketStreamItem_Event() when event != null:
+return event(_that);case WireHyperliquidMarketStreamItem_Error() when error != null:
+return error(_that);case WireHyperliquidMarketStreamItem_End() when end != null:
+return end(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( WireHyperliquidMarketStreamItem_Event value)  event,required TResult Function( WireHyperliquidMarketStreamItem_Error value)  error,required TResult Function( WireHyperliquidMarketStreamItem_End value)  end,}){
+final _that = this;
+switch (_that) {
+case WireHyperliquidMarketStreamItem_Event():
+return event(_that);case WireHyperliquidMarketStreamItem_Error():
+return error(_that);case WireHyperliquidMarketStreamItem_End():
+return end(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( WireHyperliquidMarketStreamItem_Event value)?  event,TResult? Function( WireHyperliquidMarketStreamItem_Error value)?  error,TResult? Function( WireHyperliquidMarketStreamItem_End value)?  end,}){
+final _that = this;
+switch (_that) {
+case WireHyperliquidMarketStreamItem_Event() when event != null:
+return event(_that);case WireHyperliquidMarketStreamItem_Error() when error != null:
+return error(_that);case WireHyperliquidMarketStreamItem_End() when end != null:
+return end(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( WireHyperliquidMarketEvent field0)?  event,TResult Function( NativeError field0)?  error,TResult Function()?  end,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case WireHyperliquidMarketStreamItem_Event() when event != null:
+return event(_that.field0);case WireHyperliquidMarketStreamItem_Error() when error != null:
+return error(_that.field0);case WireHyperliquidMarketStreamItem_End() when end != null:
+return end();case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( WireHyperliquidMarketEvent field0)  event,required TResult Function( NativeError field0)  error,required TResult Function()  end,}) {final _that = this;
+switch (_that) {
+case WireHyperliquidMarketStreamItem_Event():
+return event(_that.field0);case WireHyperliquidMarketStreamItem_Error():
+return error(_that.field0);case WireHyperliquidMarketStreamItem_End():
+return end();}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( WireHyperliquidMarketEvent field0)?  event,TResult? Function( NativeError field0)?  error,TResult? Function()?  end,}) {final _that = this;
+switch (_that) {
+case WireHyperliquidMarketStreamItem_Event() when event != null:
+return event(_that.field0);case WireHyperliquidMarketStreamItem_Error() when error != null:
+return error(_that.field0);case WireHyperliquidMarketStreamItem_End() when end != null:
+return end();case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class WireHyperliquidMarketStreamItem_Event extends WireHyperliquidMarketStreamItem {
+  const WireHyperliquidMarketStreamItem_Event(this.field0): super._();
+
+
+ final  WireHyperliquidMarketEvent field0;
+
+/// Create a copy of WireHyperliquidMarketStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireHyperliquidMarketStreamItem_EventCopyWith<WireHyperliquidMarketStreamItem_Event> get copyWith => _$WireHyperliquidMarketStreamItem_EventCopyWithImpl<WireHyperliquidMarketStreamItem_Event>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireHyperliquidMarketStreamItem_Event&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireHyperliquidMarketStreamItem.event(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireHyperliquidMarketStreamItem_EventCopyWith<$Res> implements $WireHyperliquidMarketStreamItemCopyWith<$Res> {
+  factory $WireHyperliquidMarketStreamItem_EventCopyWith(WireHyperliquidMarketStreamItem_Event value, $Res Function(WireHyperliquidMarketStreamItem_Event) _then) = _$WireHyperliquidMarketStreamItem_EventCopyWithImpl;
+@useResult
+$Res call({
+ WireHyperliquidMarketEvent field0
+});
+
+
+$WireHyperliquidMarketEventCopyWith<$Res> get field0;
+
+}
+/// @nodoc
+class _$WireHyperliquidMarketStreamItem_EventCopyWithImpl<$Res>
+    implements $WireHyperliquidMarketStreamItem_EventCopyWith<$Res> {
+  _$WireHyperliquidMarketStreamItem_EventCopyWithImpl(this._self, this._then);
+
+  final WireHyperliquidMarketStreamItem_Event _self;
+  final $Res Function(WireHyperliquidMarketStreamItem_Event) _then;
+
+/// Create a copy of WireHyperliquidMarketStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireHyperliquidMarketStreamItem_Event(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireHyperliquidMarketEvent,
+  ));
+}
+
+/// Create a copy of WireHyperliquidMarketStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$WireHyperliquidMarketEventCopyWith<$Res> get field0 {
+
+  return $WireHyperliquidMarketEventCopyWith<$Res>(_self.field0, (value) {
+    return _then(_self.copyWith(field0: value));
+  });
+}
+}
+
+/// @nodoc
+
+
+class WireHyperliquidMarketStreamItem_Error extends WireHyperliquidMarketStreamItem {
+  const WireHyperliquidMarketStreamItem_Error(this.field0): super._();
+
+
+ final  NativeError field0;
+
+/// Create a copy of WireHyperliquidMarketStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireHyperliquidMarketStreamItem_ErrorCopyWith<WireHyperliquidMarketStreamItem_Error> get copyWith => _$WireHyperliquidMarketStreamItem_ErrorCopyWithImpl<WireHyperliquidMarketStreamItem_Error>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireHyperliquidMarketStreamItem_Error&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireHyperliquidMarketStreamItem.error(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireHyperliquidMarketStreamItem_ErrorCopyWith<$Res> implements $WireHyperliquidMarketStreamItemCopyWith<$Res> {
+  factory $WireHyperliquidMarketStreamItem_ErrorCopyWith(WireHyperliquidMarketStreamItem_Error value, $Res Function(WireHyperliquidMarketStreamItem_Error) _then) = _$WireHyperliquidMarketStreamItem_ErrorCopyWithImpl;
+@useResult
+$Res call({
+ NativeError field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireHyperliquidMarketStreamItem_ErrorCopyWithImpl<$Res>
+    implements $WireHyperliquidMarketStreamItem_ErrorCopyWith<$Res> {
+  _$WireHyperliquidMarketStreamItem_ErrorCopyWithImpl(this._self, this._then);
+
+  final WireHyperliquidMarketStreamItem_Error _self;
+  final $Res Function(WireHyperliquidMarketStreamItem_Error) _then;
+
+/// Create a copy of WireHyperliquidMarketStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireHyperliquidMarketStreamItem_Error(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as NativeError,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireHyperliquidMarketStreamItem_End extends WireHyperliquidMarketStreamItem {
+  const WireHyperliquidMarketStreamItem_End(): super._();
+
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireHyperliquidMarketStreamItem_End);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireHyperliquidMarketStreamItem.end()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
 mixin _$WireMarketEvent {
 
 
@@ -2163,6 +4197,684 @@ int get hashCode => runtimeType.hashCode;
 @override
 String toString() {
   return 'WireMarketStreamItem.end()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+mixin _$WireUpbitAccountStreamItem {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitAccountStreamItem);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireUpbitAccountStreamItem()';
+}
+
+
+}
+
+/// @nodoc
+class $WireUpbitAccountStreamItemCopyWith<$Res>  {
+$WireUpbitAccountStreamItemCopyWith(WireUpbitAccountStreamItem _, $Res Function(WireUpbitAccountStreamItem) __);
+}
+
+
+/// Adds pattern-matching-related methods to [WireUpbitAccountStreamItem].
+extension WireUpbitAccountStreamItemPatterns on WireUpbitAccountStreamItem {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( WireUpbitAccountStreamItem_Event value)?  event,TResult Function( WireUpbitAccountStreamItem_Error value)?  error,TResult Function( WireUpbitAccountStreamItem_End value)?  end,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case WireUpbitAccountStreamItem_Event() when event != null:
+return event(_that);case WireUpbitAccountStreamItem_Error() when error != null:
+return error(_that);case WireUpbitAccountStreamItem_End() when end != null:
+return end(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( WireUpbitAccountStreamItem_Event value)  event,required TResult Function( WireUpbitAccountStreamItem_Error value)  error,required TResult Function( WireUpbitAccountStreamItem_End value)  end,}){
+final _that = this;
+switch (_that) {
+case WireUpbitAccountStreamItem_Event():
+return event(_that);case WireUpbitAccountStreamItem_Error():
+return error(_that);case WireUpbitAccountStreamItem_End():
+return end(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( WireUpbitAccountStreamItem_Event value)?  event,TResult? Function( WireUpbitAccountStreamItem_Error value)?  error,TResult? Function( WireUpbitAccountStreamItem_End value)?  end,}){
+final _that = this;
+switch (_that) {
+case WireUpbitAccountStreamItem_Event() when event != null:
+return event(_that);case WireUpbitAccountStreamItem_Error() when error != null:
+return error(_that);case WireUpbitAccountStreamItem_End() when end != null:
+return end(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( WireUpbitAccountStreamEvent field0)?  event,TResult Function( NativeError field0)?  error,TResult Function()?  end,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case WireUpbitAccountStreamItem_Event() when event != null:
+return event(_that.field0);case WireUpbitAccountStreamItem_Error() when error != null:
+return error(_that.field0);case WireUpbitAccountStreamItem_End() when end != null:
+return end();case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( WireUpbitAccountStreamEvent field0)  event,required TResult Function( NativeError field0)  error,required TResult Function()  end,}) {final _that = this;
+switch (_that) {
+case WireUpbitAccountStreamItem_Event():
+return event(_that.field0);case WireUpbitAccountStreamItem_Error():
+return error(_that.field0);case WireUpbitAccountStreamItem_End():
+return end();}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( WireUpbitAccountStreamEvent field0)?  event,TResult? Function( NativeError field0)?  error,TResult? Function()?  end,}) {final _that = this;
+switch (_that) {
+case WireUpbitAccountStreamItem_Event() when event != null:
+return event(_that.field0);case WireUpbitAccountStreamItem_Error() when error != null:
+return error(_that.field0);case WireUpbitAccountStreamItem_End() when end != null:
+return end();case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class WireUpbitAccountStreamItem_Event extends WireUpbitAccountStreamItem {
+  const WireUpbitAccountStreamItem_Event(this.field0): super._();
+
+
+ final  WireUpbitAccountStreamEvent field0;
+
+/// Create a copy of WireUpbitAccountStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireUpbitAccountStreamItem_EventCopyWith<WireUpbitAccountStreamItem_Event> get copyWith => _$WireUpbitAccountStreamItem_EventCopyWithImpl<WireUpbitAccountStreamItem_Event>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitAccountStreamItem_Event&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireUpbitAccountStreamItem.event(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireUpbitAccountStreamItem_EventCopyWith<$Res> implements $WireUpbitAccountStreamItemCopyWith<$Res> {
+  factory $WireUpbitAccountStreamItem_EventCopyWith(WireUpbitAccountStreamItem_Event value, $Res Function(WireUpbitAccountStreamItem_Event) _then) = _$WireUpbitAccountStreamItem_EventCopyWithImpl;
+@useResult
+$Res call({
+ WireUpbitAccountStreamEvent field0
+});
+
+
+$WireUpbitAccountStreamEventCopyWith<$Res> get field0;
+
+}
+/// @nodoc
+class _$WireUpbitAccountStreamItem_EventCopyWithImpl<$Res>
+    implements $WireUpbitAccountStreamItem_EventCopyWith<$Res> {
+  _$WireUpbitAccountStreamItem_EventCopyWithImpl(this._self, this._then);
+
+  final WireUpbitAccountStreamItem_Event _self;
+  final $Res Function(WireUpbitAccountStreamItem_Event) _then;
+
+/// Create a copy of WireUpbitAccountStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireUpbitAccountStreamItem_Event(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireUpbitAccountStreamEvent,
+  ));
+}
+
+/// Create a copy of WireUpbitAccountStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$WireUpbitAccountStreamEventCopyWith<$Res> get field0 {
+
+  return $WireUpbitAccountStreamEventCopyWith<$Res>(_self.field0, (value) {
+    return _then(_self.copyWith(field0: value));
+  });
+}
+}
+
+/// @nodoc
+
+
+class WireUpbitAccountStreamItem_Error extends WireUpbitAccountStreamItem {
+  const WireUpbitAccountStreamItem_Error(this.field0): super._();
+
+
+ final  NativeError field0;
+
+/// Create a copy of WireUpbitAccountStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireUpbitAccountStreamItem_ErrorCopyWith<WireUpbitAccountStreamItem_Error> get copyWith => _$WireUpbitAccountStreamItem_ErrorCopyWithImpl<WireUpbitAccountStreamItem_Error>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitAccountStreamItem_Error&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireUpbitAccountStreamItem.error(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireUpbitAccountStreamItem_ErrorCopyWith<$Res> implements $WireUpbitAccountStreamItemCopyWith<$Res> {
+  factory $WireUpbitAccountStreamItem_ErrorCopyWith(WireUpbitAccountStreamItem_Error value, $Res Function(WireUpbitAccountStreamItem_Error) _then) = _$WireUpbitAccountStreamItem_ErrorCopyWithImpl;
+@useResult
+$Res call({
+ NativeError field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireUpbitAccountStreamItem_ErrorCopyWithImpl<$Res>
+    implements $WireUpbitAccountStreamItem_ErrorCopyWith<$Res> {
+  _$WireUpbitAccountStreamItem_ErrorCopyWithImpl(this._self, this._then);
+
+  final WireUpbitAccountStreamItem_Error _self;
+  final $Res Function(WireUpbitAccountStreamItem_Error) _then;
+
+/// Create a copy of WireUpbitAccountStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireUpbitAccountStreamItem_Error(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as NativeError,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireUpbitAccountStreamItem_End extends WireUpbitAccountStreamItem {
+  const WireUpbitAccountStreamItem_End(): super._();
+
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitAccountStreamItem_End);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireUpbitAccountStreamItem.end()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+mixin _$WireUpbitMarketStreamItem {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitMarketStreamItem);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireUpbitMarketStreamItem()';
+}
+
+
+}
+
+/// @nodoc
+class $WireUpbitMarketStreamItemCopyWith<$Res>  {
+$WireUpbitMarketStreamItemCopyWith(WireUpbitMarketStreamItem _, $Res Function(WireUpbitMarketStreamItem) __);
+}
+
+
+/// Adds pattern-matching-related methods to [WireUpbitMarketStreamItem].
+extension WireUpbitMarketStreamItemPatterns on WireUpbitMarketStreamItem {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( WireUpbitMarketStreamItem_Event value)?  event,TResult Function( WireUpbitMarketStreamItem_Error value)?  error,TResult Function( WireUpbitMarketStreamItem_End value)?  end,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case WireUpbitMarketStreamItem_Event() when event != null:
+return event(_that);case WireUpbitMarketStreamItem_Error() when error != null:
+return error(_that);case WireUpbitMarketStreamItem_End() when end != null:
+return end(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( WireUpbitMarketStreamItem_Event value)  event,required TResult Function( WireUpbitMarketStreamItem_Error value)  error,required TResult Function( WireUpbitMarketStreamItem_End value)  end,}){
+final _that = this;
+switch (_that) {
+case WireUpbitMarketStreamItem_Event():
+return event(_that);case WireUpbitMarketStreamItem_Error():
+return error(_that);case WireUpbitMarketStreamItem_End():
+return end(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( WireUpbitMarketStreamItem_Event value)?  event,TResult? Function( WireUpbitMarketStreamItem_Error value)?  error,TResult? Function( WireUpbitMarketStreamItem_End value)?  end,}){
+final _that = this;
+switch (_that) {
+case WireUpbitMarketStreamItem_Event() when event != null:
+return event(_that);case WireUpbitMarketStreamItem_Error() when error != null:
+return error(_that);case WireUpbitMarketStreamItem_End() when end != null:
+return end(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( WireUpbitMarketStreamEvent field0)?  event,TResult Function( NativeError field0)?  error,TResult Function()?  end,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case WireUpbitMarketStreamItem_Event() when event != null:
+return event(_that.field0);case WireUpbitMarketStreamItem_Error() when error != null:
+return error(_that.field0);case WireUpbitMarketStreamItem_End() when end != null:
+return end();case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( WireUpbitMarketStreamEvent field0)  event,required TResult Function( NativeError field0)  error,required TResult Function()  end,}) {final _that = this;
+switch (_that) {
+case WireUpbitMarketStreamItem_Event():
+return event(_that.field0);case WireUpbitMarketStreamItem_Error():
+return error(_that.field0);case WireUpbitMarketStreamItem_End():
+return end();}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( WireUpbitMarketStreamEvent field0)?  event,TResult? Function( NativeError field0)?  error,TResult? Function()?  end,}) {final _that = this;
+switch (_that) {
+case WireUpbitMarketStreamItem_Event() when event != null:
+return event(_that.field0);case WireUpbitMarketStreamItem_Error() when error != null:
+return error(_that.field0);case WireUpbitMarketStreamItem_End() when end != null:
+return end();case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class WireUpbitMarketStreamItem_Event extends WireUpbitMarketStreamItem {
+  const WireUpbitMarketStreamItem_Event(this.field0): super._();
+
+
+ final  WireUpbitMarketStreamEvent field0;
+
+/// Create a copy of WireUpbitMarketStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireUpbitMarketStreamItem_EventCopyWith<WireUpbitMarketStreamItem_Event> get copyWith => _$WireUpbitMarketStreamItem_EventCopyWithImpl<WireUpbitMarketStreamItem_Event>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitMarketStreamItem_Event&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireUpbitMarketStreamItem.event(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireUpbitMarketStreamItem_EventCopyWith<$Res> implements $WireUpbitMarketStreamItemCopyWith<$Res> {
+  factory $WireUpbitMarketStreamItem_EventCopyWith(WireUpbitMarketStreamItem_Event value, $Res Function(WireUpbitMarketStreamItem_Event) _then) = _$WireUpbitMarketStreamItem_EventCopyWithImpl;
+@useResult
+$Res call({
+ WireUpbitMarketStreamEvent field0
+});
+
+
+$WireUpbitMarketStreamEventCopyWith<$Res> get field0;
+
+}
+/// @nodoc
+class _$WireUpbitMarketStreamItem_EventCopyWithImpl<$Res>
+    implements $WireUpbitMarketStreamItem_EventCopyWith<$Res> {
+  _$WireUpbitMarketStreamItem_EventCopyWithImpl(this._self, this._then);
+
+  final WireUpbitMarketStreamItem_Event _self;
+  final $Res Function(WireUpbitMarketStreamItem_Event) _then;
+
+/// Create a copy of WireUpbitMarketStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireUpbitMarketStreamItem_Event(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireUpbitMarketStreamEvent,
+  ));
+}
+
+/// Create a copy of WireUpbitMarketStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$WireUpbitMarketStreamEventCopyWith<$Res> get field0 {
+
+  return $WireUpbitMarketStreamEventCopyWith<$Res>(_self.field0, (value) {
+    return _then(_self.copyWith(field0: value));
+  });
+}
+}
+
+/// @nodoc
+
+
+class WireUpbitMarketStreamItem_Error extends WireUpbitMarketStreamItem {
+  const WireUpbitMarketStreamItem_Error(this.field0): super._();
+
+
+ final  NativeError field0;
+
+/// Create a copy of WireUpbitMarketStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireUpbitMarketStreamItem_ErrorCopyWith<WireUpbitMarketStreamItem_Error> get copyWith => _$WireUpbitMarketStreamItem_ErrorCopyWithImpl<WireUpbitMarketStreamItem_Error>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitMarketStreamItem_Error&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireUpbitMarketStreamItem.error(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireUpbitMarketStreamItem_ErrorCopyWith<$Res> implements $WireUpbitMarketStreamItemCopyWith<$Res> {
+  factory $WireUpbitMarketStreamItem_ErrorCopyWith(WireUpbitMarketStreamItem_Error value, $Res Function(WireUpbitMarketStreamItem_Error) _then) = _$WireUpbitMarketStreamItem_ErrorCopyWithImpl;
+@useResult
+$Res call({
+ NativeError field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireUpbitMarketStreamItem_ErrorCopyWithImpl<$Res>
+    implements $WireUpbitMarketStreamItem_ErrorCopyWith<$Res> {
+  _$WireUpbitMarketStreamItem_ErrorCopyWithImpl(this._self, this._then);
+
+  final WireUpbitMarketStreamItem_Error _self;
+  final $Res Function(WireUpbitMarketStreamItem_Error) _then;
+
+/// Create a copy of WireUpbitMarketStreamItem
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireUpbitMarketStreamItem_Error(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as NativeError,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireUpbitMarketStreamItem_End extends WireUpbitMarketStreamItem {
+  const WireUpbitMarketStreamItem_End(): super._();
+
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitMarketStreamItem_End);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireUpbitMarketStreamItem.end()';
 }
 
 

@@ -97,6 +97,11 @@ int? checkedUint32(int? value, {required String field}) {
   return value;
 }
 
+int checkedRequiredUint32(int value, {required String field}) {
+  validateUnsigned(value, field: field, max: _uint32Max);
+  return value;
+}
+
 StreamConfig _streamConfigFromWire(native_adapter.WireStreamConfig value) =>
     StreamConfig(
       maxReconnectAttempts: value.maxReconnectAttempts,
@@ -169,6 +174,7 @@ wire.WireOrderRequest _orderRequestToWire(OrderRequest value) =>
           ? null
           : _timeInForceToWire(value.timeInForce!),
       reduceOnly: value.reduceOnly,
+      clientId: value.clientId,
     );
 
 OrderRequest _orderRequestFromWire(wire.WireOrderRequest value) {
@@ -189,11 +195,26 @@ OrderRequest _orderRequestFromWire(wire.WireOrderRequest value) {
         value.price ?? (throw StateError('native limit order has no price')),
       ),
     ),
+    OrderType.best => OrderRequest.best(
+      market,
+      side,
+      size,
+      _timeInForceFromWire(
+        value.timeInForce ??
+            (throw StateError('native best order has no time in force')),
+      ),
+    ),
   };
   if (value.timeInForce != null) {
     request = request.withTimeInForce(_timeInForceFromWire(value.timeInForce!));
   }
-  return value.reduceOnly ? request.asReduceOnly() : request;
+  if (value.reduceOnly) {
+    request = request.asReduceOnly();
+  }
+  if (value.clientId != null) {
+    request = request.withClientId(value.clientId!);
+  }
+  return request;
 }
 
 wire.WireMarginRequest _marginRequestToWire(MarginRequest value) =>
@@ -301,6 +322,46 @@ Stream<StreamItem<AccountEvent>> _nativeAccountItems(
       case native_stream.WireAccountStreamItem_Error(:final field0):
         yield StreamItem.error(_nativeError(field0));
       case native_stream.WireAccountStreamItem_End():
+        return;
+    }
+  }
+}
+
+Stream<StreamItem<HyperliquidMarketEvent>> _nativeHyperliquidMarketItems(
+  native_stream.NativeHyperliquidMarketSubscription subscription,
+) async* {
+  while (true) {
+    final item = await _nativeFuture(
+      () => native.nativeHyperliquidMarketSubscriptionNext(
+        subscription: subscription,
+      ),
+    );
+    switch (item) {
+      case native_stream.WireHyperliquidMarketStreamItem_Event(:final field0):
+        yield StreamItem.event(_hyperliquidMarketEventFromWire(field0));
+      case native_stream.WireHyperliquidMarketStreamItem_Error(:final field0):
+        yield StreamItem.error(_nativeError(field0));
+      case native_stream.WireHyperliquidMarketStreamItem_End():
+        return;
+    }
+  }
+}
+
+Stream<StreamItem<HyperliquidAccountEvent>> _nativeHyperliquidAccountItems(
+  native_stream.NativeHyperliquidAccountSubscription subscription,
+) async* {
+  while (true) {
+    final item = await _nativeFuture(
+      () => native.nativeHyperliquidAccountSubscriptionNext(
+        subscription: subscription,
+      ),
+    );
+    switch (item) {
+      case native_stream.WireHyperliquidAccountStreamItem_Event(:final field0):
+        yield StreamItem.event(_hyperliquidAccountEventFromWire(field0));
+      case native_stream.WireHyperliquidAccountStreamItem_Error(:final field0):
+        yield StreamItem.error(_nativeError(field0));
+      case native_stream.WireHyperliquidAccountStreamItem_End():
         return;
     }
   }

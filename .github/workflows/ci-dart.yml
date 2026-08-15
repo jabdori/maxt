@@ -72,7 +72,7 @@ jobs:
       - run: command -v flutter_rust_bridge_codegen >/dev/null || cargo install flutter_rust_bridge_codegen --version 2.12.0 --locked
       - run: |
           flutter_rust_bridge_codegen generate
-          perl -pi -e 's/[ \t]+$//' lib/src/rust/*.freezed.dart
+          find lib/src/rust -name '*.freezed.dart' -exec perl -pi -e 's/[ \t]+$//' {} +
           cargo fmt --manifest-path rust/Cargo.toml
           git diff --exit-code -- lib/src/rust rust/src/frb_generated.rs
       - run: dart format --output=none --set-exit-if-changed .

@@ -7,13 +7,11 @@ impl NativeClient {
         py: Python<'py>,
         kind: &Bound<'_, PyAny>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let kind = market_kind_from_wire(kind)?;
+        let kind = crate::convert::market_kind_from_wire(kind)?;
         let core = self.core();
-        operation(
-            py,
-            async move { core.markets(kind).await },
-            |py, values| list_to_wire(py, &values, market_info_to_wire),
-        )
+        operation(py, async move { core.markets(kind).await }, |py, values| {
+            crate::convert::list_to_wire(py, &values, crate::convert::market_info_to_wire)
+        })
     }
 
     #[pyo3(signature = (market, limit=None))]
@@ -23,12 +21,12 @@ impl NativeClient {
         market: &Bound<'_, PyAny>,
         limit: Option<u32>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let market = market_from_wire(market)?;
+        let market = crate::convert::market_from_wire(market)?;
         let core = self.core();
         operation(
             py,
             async move { core.trades(&market, limit).await },
-            |py, values| list_to_wire(py, &values, trade_to_wire),
+            |py, values| crate::convert::list_to_wire(py, &values, crate::convert::trade_to_wire),
         )
     }
 
@@ -39,12 +37,12 @@ impl NativeClient {
         market: &Bound<'_, PyAny>,
         depth: Option<u32>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let market = market_from_wire(market)?;
+        let market = crate::convert::market_from_wire(market)?;
         let core = self.core();
         operation(
             py,
             async move { core.order_book(&market, depth).await },
-            |py, value| order_book_to_wire(py, &value),
+            |py, value| crate::convert::order_book_to_wire(py, &value),
         )
     }
 
@@ -53,12 +51,12 @@ impl NativeClient {
         py: Python<'py>,
         market: &Bound<'_, PyAny>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let market = market_from_wire(market)?;
+        let market = crate::convert::market_from_wire(market)?;
         let core = self.core();
         operation(
             py,
             async move { core.ticker(&market).await },
-            |py, value| ticker_to_wire(py, &value),
+            |py, value| crate::convert::ticker_to_wire(py, &value),
         )
     }
 
@@ -67,12 +65,12 @@ impl NativeClient {
         py: Python<'py>,
         request: &Bound<'_, PyAny>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let request = candle_request_from_wire(request)?;
+        let request = crate::convert::candle_request_from_wire(request)?;
         let core = self.core();
         operation(
             py,
             async move { core.candles(&request).await },
-            |py, values| list_to_wire(py, &values, candle_to_wire),
+            |py, values| crate::convert::list_to_wire(py, &values, crate::convert::candle_to_wire),
         )
     }
 
@@ -82,8 +80,8 @@ impl NativeClient {
         subscription: &Bound<'_, PyAny>,
         config: &Bound<'_, PyAny>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let subscription = subscription_from_wire(subscription)?;
-        let config = stream_config_from_wire(config)?;
+        let subscription = crate::convert::subscription_from_wire(subscription)?;
+        let config = crate::convert::stream_config_from_wire(config)?;
         let core = self.core();
         operation(
             py,
@@ -101,28 +99,183 @@ impl NativeClient {
         self.subscribe(py, subscription, config)
     }
 
-    fn balances<'py>(
+    fn balances<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let core = self.core();
+        operation(py, async move { core.balances().await }, |py, values| {
+            crate::convert::list_to_wire(py, &values, crate::convert::balance_to_wire)
+        })
+    }
+
+    fn order_rules<'py>(
         &self,
         py: Python<'py>,
+        market: &Bound<'_, PyAny>,
     ) -> PyResult<Bound<'py, PyAny>> {
+        let market = crate::convert::market_from_wire(market)?;
         let core = self.core();
         operation(
             py,
-            async move { core.balances().await },
-            |py, values| list_to_wire(py, &values, balance_to_wire),
+            async move { core.order_rules(&market).await },
+            |py, value| crate::convert::order_rules_to_wire(py, &value),
         )
     }
 
-    fn open_orders<'py>(
+    fn asset_networks<'py>(&self, py: Python<'py>, asset: String) -> PyResult<Bound<'py, PyAny>> {
+        let core = self.core();
+        operation(
+            py,
+            async move { core.asset_networks(&asset).await },
+            |py, values| {
+                crate::convert::list_to_wire(py, &values, crate::convert::asset_network_to_wire)
+            },
+        )
+    }
+
+    fn deposit_addresses<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let core = self.core();
+        operation(
+            py,
+            async move { core.deposit_addresses().await },
+            |py, values| {
+                crate::convert::list_to_wire(
+                    py,
+                    &values,
+                    crate::convert::deposit_address_entry_to_wire,
+                )
+            },
+        )
+    }
+
+    fn deposit_address<'py>(
         &self,
         py: Python<'py>,
+        request: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::deposit_address_request_from_wire(request)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.deposit_address(&request).await },
+            |py, value| crate::convert::deposit_address_to_wire(py, &value),
+        )
+    }
+
+    fn create_deposit_address<'py>(
+        &self,
+        py: Python<'py>,
+        request: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::deposit_address_request_from_wire(request)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.create_deposit_address(&request).await },
+            |py, value| crate::convert::deposit_address_to_wire(py, &value),
+        )
+    }
+
+    fn prepare_withdrawal<'py>(
+        &self,
+        py: Python<'py>,
+        request: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::withdraw_request_from_wire(request)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.prepare_withdrawal(&request).await },
+            |py, value| crate::convert::withdrawal_quote_to_wire(py, &value),
+        )
+    }
+
+    fn withdraw<'py>(
+        &self,
+        py: Python<'py>,
+        request: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::withdraw_request_from_wire(request)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.withdraw(&request).await },
+            |py, value| crate::convert::withdrawal_to_wire(py, &value),
+        )
+    }
+
+    fn deposit<'py>(
+        &self,
+        py: Python<'py>,
+        request: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::transfer_lookup_request_from_wire(request)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.deposit(&request).await },
+            |py, value| crate::convert::deposit_to_wire(py, &value),
+        )
+    }
+
+    fn withdrawal<'py>(
+        &self,
+        py: Python<'py>,
+        request: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::transfer_lookup_request_from_wire(request)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.withdrawal(&request).await },
+            |py, value| crate::convert::withdrawal_to_wire(py, &value),
+        )
+    }
+
+    fn cancel_withdrawal<'py>(
+        &self,
+        py: Python<'py>,
+        withdrawal_id: String,
     ) -> PyResult<Bound<'py, PyAny>> {
         let core = self.core();
         operation(
             py,
-            async move { core.open_orders().await },
-            |py, values| list_to_wire(py, &values, order_to_wire),
+            async move { core.cancel_withdrawal(&withdrawal_id).await },
+            |py, ()| Ok(py.None()),
         )
+    }
+
+    fn deposits<'py>(
+        &self,
+        py: Python<'py>,
+        request: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::transfer_history_request_from_wire(request)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.deposits(&request).await },
+            |py, value| crate::convert::deposits_page_to_wire(py, &value),
+        )
+    }
+
+    fn withdrawals<'py>(
+        &self,
+        py: Python<'py>,
+        request: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::transfer_history_request_from_wire(request)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.withdrawals(&request).await },
+            |py, value| crate::convert::withdrawals_page_to_wire(py, &value),
+        )
+    }
+
+    fn open_orders<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let core = self.core();
+        operation(py, async move { core.open_orders().await }, |py, values| {
+            crate::convert::list_to_wire(py, &values, crate::convert::order_to_wire)
+        })
     }
 
     fn open_orders_on<'py>(
@@ -130,12 +283,70 @@ impl NativeClient {
         py: Python<'py>,
         market: &Bound<'_, PyAny>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let market = market_from_wire(market)?;
+        let market = crate::convert::market_from_wire(market)?;
         let core = self.core();
         operation(
             py,
             async move { core.open_orders_on(&market).await },
-            |py, values| list_to_wire(py, &values, order_to_wire),
+            |py, values| crate::convert::list_to_wire(py, &values, crate::convert::order_to_wire),
+        )
+    }
+
+    fn order<'py>(
+        &self,
+        py: Python<'py>,
+        market: &Bound<'_, PyAny>,
+        order_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let market = crate::convert::market_from_wire(market)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.order(&market, &order_id).await },
+            |py, value| crate::convert::order_to_wire(py, &value),
+        )
+    }
+
+    fn order_by_client_id<'py>(
+        &self,
+        py: Python<'py>,
+        market: &Bound<'_, PyAny>,
+        client_id: String,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let market = crate::convert::market_from_wire(market)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.order_by_client_id(&market, &client_id).await },
+            |py, value| crate::convert::order_to_wire(py, &value),
+        )
+    }
+
+    fn orders_by_ids<'py>(
+        &self,
+        py: Python<'py>,
+        request: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::order_lookup_request_from_wire(request)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.orders_by_ids(&request).await },
+            |py, values| crate::convert::list_to_wire(py, &values, crate::convert::order_to_wire),
+        )
+    }
+
+    fn order_history<'py>(
+        &self,
+        py: Python<'py>,
+        request: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::order_history_request_from_wire(request)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.order_history(&request).await },
+            |py, value| crate::convert::order_history_page_to_wire(py, &value),
         )
     }
 
@@ -144,7 +355,7 @@ impl NativeClient {
         py: Python<'py>,
         config: &Bound<'_, PyAny>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let config = stream_config_from_wire(config)?;
+        let config = crate::convert::stream_config_from_wire(config)?;
         let core = self.core();
         operation(
             py,
@@ -166,12 +377,12 @@ impl NativeClient {
         py: Python<'py>,
         request: &Bound<'_, PyAny>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let request = order_request_from_wire(request)?;
+        let request = crate::convert::order_request_from_wire(request)?;
         let core = self.core();
         operation(
             py,
             async move { core.place_order(&request).await },
-            |py, value| order_to_wire(py, &value),
+            |py, value| crate::convert::order_to_wire(py, &value),
         )
     }
 
@@ -181,25 +392,49 @@ impl NativeClient {
         market: &Bound<'_, PyAny>,
         order_id: String,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let market = market_from_wire(market)?;
+        let market = crate::convert::market_from_wire(market)?;
         let core = self.core();
         operation(
             py,
             async move { core.cancel_order(&market, &order_id).await },
-            |py, value| order_to_wire(py, &value),
+            |py, ()| Ok(py.None()),
         )
     }
 
-    fn positions<'py>(
+    fn cancel_order_by_client_id<'py>(
         &self,
         py: Python<'py>,
+        market: &Bound<'_, PyAny>,
+        client_id: String,
     ) -> PyResult<Bound<'py, PyAny>> {
+        let market = crate::convert::market_from_wire(market)?;
         let core = self.core();
         operation(
             py,
-            async move { core.positions().await },
-            |py, values| list_to_wire(py, &values, position_to_wire),
+            async move { core.cancel_order_by_client_id(&market, &client_id).await },
+            |py, ()| Ok(py.None()),
         )
+    }
+
+    fn cancel_orders<'py>(
+        &self,
+        py: Python<'py>,
+        request: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let request = crate::convert::cancel_orders_request_from_wire(request)?;
+        let core = self.core();
+        operation(
+            py,
+            async move { core.cancel_orders(&request).await },
+            |py, value| crate::convert::cancel_orders_result_to_wire(py, &value),
+        )
+    }
+
+    fn positions<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let core = self.core();
+        operation(py, async move { core.positions().await }, |py, values| {
+            crate::convert::list_to_wire(py, &values, crate::convert::position_to_wire)
+        })
     }
 
     fn positions_on<'py>(
@@ -207,24 +442,23 @@ impl NativeClient {
         py: Python<'py>,
         market: &Bound<'_, PyAny>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let market = market_from_wire(market)?;
+        let market = crate::convert::market_from_wire(market)?;
         let core = self.core();
         operation(
             py,
             async move { core.positions_on(&market).await },
-            |py, values| list_to_wire(py, &values, position_to_wire),
+            |py, values| {
+                crate::convert::list_to_wire(py, &values, crate::convert::position_to_wire)
+            },
         )
     }
 
-    fn margin_summary<'py>(
-        &self,
-        py: Python<'py>,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn margin_summary<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let core = self.core();
         operation(
             py,
             async move { core.margin_summary().await },
-            |py, value| margin_summary_to_wire(py, &value),
+            |py, value| crate::convert::margin_summary_to_wire(py, &value),
         )
     }
 
@@ -233,12 +467,12 @@ impl NativeClient {
         py: Python<'py>,
         request: &Bound<'_, PyAny>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let request = history_request_from_wire(request)?;
+        let request = crate::convert::history_request_from_wire(request)?;
         let core = self.core();
         operation(
             py,
             async move { core.funding_rates(&request).await },
-            |py, value| funding_rates_page_to_wire(py, &value),
+            |py, value| crate::convert::funding_rates_page_to_wire(py, &value),
         )
     }
 
@@ -247,12 +481,12 @@ impl NativeClient {
         py: Python<'py>,
         request: &Bound<'_, PyAny>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let request = history_request_from_wire(request)?;
+        let request = crate::convert::history_request_from_wire(request)?;
         let core = self.core();
         operation(
             py,
             async move { core.funding_payments(&request).await },
-            |py, value| funding_payments_page_to_wire(py, &value),
+            |py, value| crate::convert::funding_payments_page_to_wire(py, &value),
         )
     }
 
@@ -261,7 +495,7 @@ impl NativeClient {
         py: Python<'py>,
         request: &Bound<'_, PyAny>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let request = margin_request_from_wire(request)?;
+        let request = crate::convert::margin_request_from_wire(request)?;
         let core = self.core();
         operation(
             py,
@@ -269,5 +503,4 @@ impl NativeClient {
             |py, ()| Ok(py.None()),
         )
     }
-
 }

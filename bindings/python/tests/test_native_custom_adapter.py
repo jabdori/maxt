@@ -13,11 +13,19 @@ from maxt import (
     Adapter,
     AdapterError,
     Balance,
+    CancelOrdersRequest,
+    CancelOrdersResult,
+    CancelledOrder,
     Candle,
     CandleRequest,
     Client,
     Cursor,
     DecodeError,
+    Deposit,
+    DepositAddress,
+    DepositAddressEntry,
+    DepositAddressRequest,
+    DepositStatus,
     Exchange,
     Feature,
     Feed,
@@ -36,10 +44,19 @@ from maxt import (
     MarketKind,
     MarketStatus,
     MarketStream,
+    Network,
     Order,
+    OrderAccount,
     OrderBook,
+    OrderHistoryRequest,
+    OrderCancelFailure,
+    OrderIdKind,
+    OrderLookupRequest,
+    OrderOption,
     OrderRequest,
+    OrderRules,
     OrderStatus,
+    OrderType,
     Page,
     Position,
     Side,
@@ -49,7 +66,13 @@ from maxt import (
     StreamEvent,
     Subscription,
     Ticker,
+    TimeInForce,
     Trade,
+    TransferError,
+    TransferErrorKind,
+    TransferLookupRequest,
+    Withdrawal,
+    WithdrawalStatus,
 )
 
 
@@ -83,7 +106,78 @@ class NativeReplayAdapter(Adapter):
             "trade-1",
         )
         self.balance = Balance("usdt", Decimal("100.2500"), Decimal("2.5000"))
-        self.order = Order(
+        self.sample_deposit_address = DepositAddress(
+            Exchange.BINANCE,
+            "BTC",
+            Network.BITCOIN,
+            "bc1qcustomadapter",
+            "memo-7",
+        )
+        self.sample_deposit_addresses = [
+            DepositAddressEntry(
+                Exchange.BINANCE,
+                "XRP",
+                memo="tag-7",
+            )
+        ]
+        self.sample_deposit = Deposit(
+            "deposit-1",
+            "BTC",
+            Network.BITCOIN,
+            None,
+            Decimal("0.5000"),
+            "bc1qcustomadapter",
+            None,
+            DepositStatus.COMPLETED,
+            "completed",
+            "tx-deposit-1",
+            1_700_000_000_123_456_793,
+        )
+        self.sample_withdrawal = Withdrawal(
+            "withdrawal-1",
+            "BTC",
+            Network.BITCOIN,
+            None,
+            Decimal("0.2500"),
+            Decimal("0.0005"),
+            None,
+            WithdrawalStatus.PENDING,
+            "pending",
+            "tx-withdrawal-1",
+            1_700_000_000_123_456_794,
+        )
+        self.rules = OrderRules(
+            market=market,
+            market_name="BTC/USDT",
+            status=MarketStatus.ACTIVE,
+            buy_fee_rate=Decimal("0.001"),
+            sell_fee_rate=Decimal("0.001"),
+            maker_buy_fee_rate=Decimal("0.0005"),
+            maker_sell_fee_rate=Decimal("0.0005"),
+            sides=[Side.BUY, Side.SELL],
+            buy_options=[
+                OrderOption("limit_ioc", OrderType.LIMIT, TimeInForce.IMMEDIATE_OR_CANCEL)
+            ],
+            sell_options=[OrderOption("future_order")],
+            buy_price_unit=Decimal("0.1"),
+            sell_price_unit=Decimal("0.1"),
+            minimum_buy_total=Decimal("10"),
+            minimum_sell_total=Decimal("10"),
+            maximum_total=Decimal("1000000"),
+            quote_account=OrderAccount(
+                self.balance,
+                Decimal("0"),
+                False,
+                "USDT",
+            ),
+            base_account=OrderAccount(
+                Balance("btc", Decimal("1"), Decimal("0.1")),
+                Decimal("50000"),
+                False,
+                "USDT",
+            ),
+        )
+        self.sample_order = Order(
             "order-1",
             market,
             Side.BUY,
@@ -164,17 +258,68 @@ class NativeReplayAdapter(Adapter):
         self.received.append(("balances",))
         return [self.balance]
 
+    async def order_rules(self, market: Market) -> OrderRules:
+        self.received.append(("order_rules", market))
+        return self.rules
+
+    async def deposit_address(self, request: DepositAddressRequest) -> DepositAddress:
+        self.received.append(("deposit_address", request))
+        return self.sample_deposit_address
+
+    async def deposit_addresses(self) -> list[DepositAddressEntry]:
+        self.received.append(("deposit_addresses",))
+        return self.sample_deposit_addresses
+
+    async def create_deposit_address(
+        self, request: DepositAddressRequest
+    ) -> DepositAddress:
+        self.received.append(("create_deposit_address", request))
+        return self.sample_deposit_address
+
+    async def deposit(self, request: TransferLookupRequest) -> Deposit:
+        self.received.append(("deposit", request))
+        return self.sample_deposit
+
+    async def withdrawal(self, request: TransferLookupRequest) -> Withdrawal:
+        self.received.append(("withdrawal", request))
+        return self.sample_withdrawal
+
+    async def cancel_withdrawal(self, withdrawal_id: str) -> None:
+        self.received.append(("cancel_withdrawal", withdrawal_id))
+
     async def open_orders(self, market=None) -> list[Order]:
         self.received.append(("open_orders", market))
-        return [self.order]
+        return [self.sample_order]
+
+    async def order(self, market: Market, order_id: str) -> Order:
+        self.received.append(("order", market, order_id))
+        return self.sample_order
+
+    async def order_by_client_id(self, market: Market, client_id: str) -> Order:
+        self.received.append(("order_by_client_id", market, client_id))
+        return self.sample_order
+
+    async def orders_by_ids(self, request: OrderLookupRequest) -> list[Order]:
+        self.received.append(("orders_by_ids", request))
+        return [self.sample_order]
+
+    async def order_history(self, request: OrderHistoryRequest) -> Page[Order]:
+        self.received.append(("order_history", request))
+        return Page([self.sample_order], Cursor("order-next"))
 
     async def place_order(self, request: OrderRequest) -> Order:
         self.received.append(("place_order", request))
-        return self.order
+        return self.sample_order
 
-    async def cancel_order(self, market: Market, order_id: str) -> Order:
+    async def cancel_order(self, market: Market, order_id: str) -> None:
         self.received.append(("cancel_order", market, order_id))
-        return self.order
+
+    async def cancel_orders(self, request: CancelOrdersRequest) -> CancelOrdersResult:
+        self.received.append(("cancel_orders", request))
+        return CancelOrdersResult(
+            [CancelledOrder("order-1", "client-1", self.market, 1_700_000_000_123_456_795)],
+            [OrderCancelFailure(None, "missing-1", None, "order_not_found", "not found")],
+        )
 
     async def positions(self, market=None) -> list[Position]:
         self.received.append(("positions", market))
@@ -239,7 +384,7 @@ class NativeReplayAdapter(Adapter):
         async def replay():
             yield StreamEvent(AccountEvent.balance(self.balance))
             yield StreamError(DecodeError("recorded corrupt account frame"))
-            yield StreamEvent(AccountEvent.order(self.order))
+            yield StreamEvent(AccountEvent.order(self.sample_order))
 
         return AccountStream(replay())
 
@@ -247,6 +392,11 @@ class NativeReplayAdapter(Adapter):
 class UnknownFieldErrorAdapter(NativeReplayAdapter):
     async def ticker(self, market: Market) -> Ticker:
         raise InvalidRequestError("custom_field", "bad")
+
+
+class TransferFailureAdapter(NativeReplayAdapter):
+    async def ticker(self, market: Market) -> Ticker:
+        raise TransferError(TransferErrorKind.NETWORK_MISMATCH, "bad chain")
 
 
 class CloseFailureSource:
@@ -332,6 +482,19 @@ class NativeCustomAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(raised.exception.field, "custom_field")
         self.assertEqual(raised.exception.detail, "bad")
 
+    async def test_custom_transfer_error_kind_survives_rust(self) -> None:
+        market = Market.perpetual(Exchange.BINANCE, "BTC", "USDT")
+        client = Client(TransferFailureAdapter(market))
+
+        with self.assertRaises(TransferError) as raised:
+            await client.ticker(market)
+
+        self.assertEqual(
+            raised.exception.transfer_kind,
+            TransferErrorKind.NETWORK_MISMATCH,
+        )
+        self.assertEqual(raised.exception.detail, "bad chain")
+
     async def test_source_close_errors_cross_rust_without_unraisable_output(self) -> None:
         market = Market.perpetual(Exchange.BINANCE, "BTC", "USDT")
         adapter = CloseFailureAdapter(market)
@@ -376,12 +539,30 @@ class NativeCustomAdapterTests(unittest.IsolatedAsyncioTestCase):
         client = Client(adapter)
         candle_request = CandleRequest(market, Interval.MIN1, limit=1)
         history_request = HistoryRequest(market, limit=1)
+        order_history_request = OrderHistoryRequest(
+            market,
+            [OrderStatus.FILLED],
+            cursor=Cursor("order-in"),
+            limit=1,
+        )
+        order_lookup_request = OrderLookupRequest(
+            OrderIdKind.EXCHANGE,
+            ["order-1", "order-2"],
+            market,
+        )
+        cancel_orders_request = CancelOrdersRequest(
+            OrderIdKind.CLIENT,
+            ["client-1", "missing-1"],
+        )
         order_request = OrderRequest.limit_order(
             market,
             Side.BUY,
             Size.base(Decimal("1.0000")),
             Decimal("50000.0100"),
         )
+        deposit_address_request = DepositAddressRequest("BTC", Network.BITCOIN)
+        deposit_lookup_request = TransferLookupRequest(asset="BTC", id="deposit-1")
+        withdrawal_lookup_request = TransferLookupRequest(asset="BTC", tx_id="tx-withdrawal-1")
         margin_request = MarginRequest(market, Decimal("5"), MarginMode.CROSS)
 
         self.assertIs(client.adapter, adapter)
@@ -393,10 +574,49 @@ class NativeCustomAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await client.ticker(market)).last_price, Decimal("50000.01"))
         self.assertEqual((await client.candles(candle_request))[0].volume, Decimal("12.5000"))
         self.assertEqual((await client.balances())[0].total(), Decimal("102.7500"))
+        deposit_address_entry = (await client.deposit_addresses())[0]
+        self.assertEqual(deposit_address_entry.asset, "XRP")
+        self.assertIsNone(deposit_address_entry.network)
+        self.assertIsNone(deposit_address_entry.address)
+        self.assertEqual(deposit_address_entry.memo, "tag-7")
+        self.assertEqual(
+            (await client.deposit_address(deposit_address_request)).memo,
+            "memo-7",
+        )
+        self.assertEqual(
+            (await client.create_deposit_address(deposit_address_request)).memo,
+            "memo-7",
+        )
+        self.assertEqual((await client.deposit(deposit_lookup_request)).id, "deposit-1")
+        self.assertEqual(
+            (await client.withdrawal(withdrawal_lookup_request)).id,
+            "withdrawal-1",
+        )
+        self.assertIsNone(await client.cancel_withdrawal("withdrawal-1"))
+        rules = await client.order_rules(market)
+        self.assertEqual(rules.market_name, "BTC/USDT")
+        self.assertEqual(rules.base_account.balance.asset, "BTC")
+        self.assertEqual(rules.buy_options[0].time_in_force, TimeInForce.IMMEDIATE_OR_CANCEL)
+        self.assertIsNone(rules.sell_options[0].order_type)
         self.assertEqual((await client.open_orders())[0].id, "order-1")
         self.assertEqual((await client.open_orders_on(market))[0].id, "order-1")
+        self.assertEqual((await client.order(market, "order-1")).id, "order-1")
+        self.assertEqual(
+            (await client.order_by_client_id(market, "client-1")).id,
+            "order-1",
+        )
+        self.assertEqual(
+            (await client.orders_by_ids(order_lookup_request))[0].id,
+            "order-1",
+        )
+        order_history = await client.order_history(order_history_request)
+        self.assertEqual(order_history.items[0].id, "order-1")
+        self.assertEqual(order_history.next, Cursor("order-next"))
         self.assertEqual((await client.place_order(order_request)).id, "order-1")
-        self.assertEqual((await client.cancel_order(market, "order-1")).id, "order-1")
+        self.assertIsNone(await client.cancel_order(market, "order-1"))
+        cancel_result = await client.cancel_orders(cancel_orders_request)
+        self.assertEqual(cancel_result.cancelled[0].order_id, "order-1")
+        self.assertEqual(cancel_result.failed[0].code, "order_not_found")
         self.assertEqual(await client.positions(), [adapter.position])
         self.assertEqual(await client.positions_on(market), [adapter.position])
         self.assertEqual((await client.margin_summary()).equity, Decimal("1000.00"))
@@ -413,6 +633,39 @@ class NativeCustomAdapterTests(unittest.IsolatedAsyncioTestCase):
         placed = next(call[1] for call in adapter.received if call[0] == "place_order")
         self.assertEqual(placed.to_wire(), order_request.to_wire())
         self.assertIsNot(placed, order_request)
+        received_history = next(
+            call[1] for call in adapter.received if call[0] == "order_history"
+        )
+        self.assertEqual(received_history.to_wire(), order_history_request.to_wire())
+        received_lookup = next(
+            call[1] for call in adapter.received if call[0] == "orders_by_ids"
+        )
+        self.assertEqual(received_lookup.to_wire(), order_lookup_request.to_wire())
+        received_cancel = next(
+            call[1] for call in adapter.received if call[0] == "cancel_orders"
+        )
+        self.assertEqual(received_cancel.to_wire(), cancel_orders_request.to_wire())
+        received_created_address = next(
+            call[1]
+            for call in adapter.received
+            if call[0] == "create_deposit_address"
+        )
+        self.assertEqual(
+            received_created_address.to_wire(), deposit_address_request.to_wire()
+        )
+        received_deposit_lookup = next(
+            call[1] for call in adapter.received if call[0] == "deposit"
+        )
+        self.assertEqual(
+            received_deposit_lookup.to_wire(), deposit_lookup_request.to_wire()
+        )
+        received_withdrawal_lookup = next(
+            call[1] for call in adapter.received if call[0] == "withdrawal"
+        )
+        self.assertEqual(
+            received_withdrawal_lookup.to_wire(), withdrawal_lookup_request.to_wire()
+        )
+        self.assertIn(("cancel_withdrawal", "withdrawal-1"), adapter.received)
 
     async def test_market_and_account_stream_items_cross_rust(self) -> None:
         market = Market.perpetual(Exchange.BINANCE, "BTC", "USDT")

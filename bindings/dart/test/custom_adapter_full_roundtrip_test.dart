@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 final class FullContractAdapter extends AdapterBase {
   FullContractAdapter(this.market, this.timestamp) {
-    order = Order(
+    sampleOrder = Order(
       id: 'order-1',
       market: market,
       side: Side.buy,
@@ -17,15 +17,25 @@ final class FullContractAdapter extends AdapterBase {
 
   final Market market;
   final Timestamp timestamp;
-  late final Order order;
+  late final Order sampleOrder;
 
   MarketKind? requestedKind;
   int? orderBookDepth;
   CandleRequest? candleRequest;
+  Market? orderRulesMarket;
+  int depositAddressesCount = 0;
+  DepositAddressRequest? createdDepositAddressRequest;
   Market? openOrdersMarket;
+  (Market, String)? requestedOrder;
+  (Market, String)? requestedClientOrder;
+  OrderLookupRequest? orderLookupRequest;
+  int orderLookupCount = 0;
+  OrderHistoryRequest? orderHistoryRequest;
   StreamConfig? accountConfig;
   OrderRequest? placedRequest;
   (Market, String)? cancelledOrder;
+  CancelOrdersRequest? cancelOrdersRequest;
+  int cancelOrdersCount = 0;
   Market? positionsMarket;
   HistoryRequest? rateRequest;
   HistoryRequest? paymentRequest;
@@ -42,7 +52,9 @@ final class FullContractAdapter extends AdapterBase {
     Feature.ticker,
     Feature.candles,
     Feature.balances,
+    Feature.depositAddresses,
     Feature.openOrders,
+    Feature.orderHistory,
     Feature.accountStream,
     Feature.trading,
     Feature.positions,
@@ -127,9 +139,109 @@ final class FullContractAdapter extends AdapterBase {
   ];
 
   @override
+  Future<OrderRules> orderRules(Market market) async {
+    orderRulesMarket = market;
+    return OrderRules(
+      market: market,
+      marketName: 'BTC/USDT',
+      status: MarketStatus.active,
+      buyFeeRate: Decimal.parse('0.001'),
+      sellFeeRate: Decimal.parse('0.001'),
+      makerBuyFeeRate: Decimal.parse('0.0005'),
+      makerSellFeeRate: Decimal.parse('0.0005'),
+      sides: const [Side.buy, Side.sell],
+      buyOptions: const [
+        OrderOption(
+          providerId: 'limit_ioc',
+          orderType: OrderType.limit,
+          timeInForce: TimeInForce.immediateOrCancel,
+        ),
+      ],
+      sellOptions: const [OrderOption(providerId: 'future_order')],
+      buyPriceUnit: Decimal.parse('0.1'),
+      sellPriceUnit: Decimal.parse('0.1'),
+      minimumBuyTotal: Decimal.parse('10'),
+      minimumSellTotal: Decimal.parse('10'),
+      maximumTotal: Decimal.parse('1000000'),
+      quoteAccount: OrderAccount(
+        balance: Balance(
+          asset: 'usdt',
+          available: Decimal.parse('1000'),
+          locked: Decimal.parse('2.5'),
+        ),
+        averageBuyPrice: Decimal.zero,
+        averageBuyPriceModified: false,
+        averageBuyPriceUnit: 'USDT',
+      ),
+      baseAccount: OrderAccount(
+        balance: Balance(
+          asset: 'btc',
+          available: Decimal.one,
+          locked: Decimal.parse('0.1'),
+        ),
+        averageBuyPrice: Decimal.parse('50000'),
+        averageBuyPriceModified: false,
+        averageBuyPriceUnit: 'USDT',
+      ),
+    );
+  }
+
+  @override
+  Future<List<DepositAddressEntry>> depositAddresses() async {
+    depositAddressesCount++;
+    return [
+      DepositAddressEntry(
+        exchange: exchange,
+        asset: 'XRP',
+        address: null,
+        memo: 'tag-7',
+      ),
+    ];
+  }
+
+  @override
+  Future<DepositAddress> createDepositAddress(
+    DepositAddressRequest request,
+  ) async {
+    createdDepositAddressRequest = request;
+    return DepositAddress(
+      exchange: exchange,
+      asset: request.asset,
+      network: request.network,
+      address: null,
+      memo: null,
+    );
+  }
+
+  @override
   Future<List<Order>> openOrders([Market? market]) async {
     openOrdersMarket = market;
-    return [order];
+    return [sampleOrder];
+  }
+
+  @override
+  Future<Order> order(Market market, String orderId) async {
+    requestedOrder = (market, orderId);
+    return sampleOrder;
+  }
+
+  @override
+  Future<Order> orderByClientId(Market market, String clientId) async {
+    requestedClientOrder = (market, clientId);
+    return sampleOrder;
+  }
+
+  @override
+  Future<List<Order>> ordersByIds(OrderLookupRequest request) async {
+    orderLookupCount++;
+    orderLookupRequest = request;
+    return [sampleOrder];
+  }
+
+  @override
+  Future<Page<Order>> orderHistory(OrderHistoryRequest request) async {
+    orderHistoryRequest = request;
+    return Page(items: [sampleOrder], next: const Cursor('order-next'));
   }
 
   @override
@@ -147,7 +259,7 @@ final class FullContractAdapter extends AdapterBase {
           ),
         ),
         const StreamItem<AccountEvent>.error(DecodeError('손상된 계정 프레임')),
-        StreamItem.event(AccountEvent.order(order)),
+        StreamItem.event(AccountEvent.order(sampleOrder)),
       ]),
       onClose: () async => accountCloseCount++,
     );
@@ -156,13 +268,35 @@ final class FullContractAdapter extends AdapterBase {
   @override
   Future<Order> placeOrder(OrderRequest request) async {
     placedRequest = request;
-    return order;
+    return sampleOrder;
   }
 
   @override
-  Future<Order> cancelOrder(Market market, String orderId) async {
+  Future<void> cancelOrder(Market market, String orderId) async {
     cancelledOrder = (market, orderId);
-    return order;
+  }
+
+  @override
+  Future<CancelOrdersResult> cancelOrders(CancelOrdersRequest request) async {
+    cancelOrdersCount++;
+    cancelOrdersRequest = request;
+    return CancelOrdersResult(
+      cancelled: [
+        CancelledOrder(
+          orderId: 'order-1',
+          clientId: 'client-1',
+          market: market,
+          cancelledAt: timestamp,
+        ),
+      ],
+      failed: const [
+        OrderCancelFailure(
+          clientId: 'missing-1',
+          code: 'order_not_found',
+          message: 'not found',
+        ),
+      ],
+    );
   }
 
   @override
@@ -281,11 +415,74 @@ void main() {
     expect(balance.asset, 'USDT');
     expect(balance.available, Decimal.parse('1000.00000001'));
 
+    final rules = await client.orderRules(market);
+    expect(rules.marketName, 'BTC/USDT');
+    expect(rules.baseAccount.balance.asset, 'BTC');
+    expect(rules.buyOptions.single.timeInForce, TimeInForce.immediateOrCancel);
+    expect(rules.sellOptions.single.orderType, isNull);
+    expect(adapter.orderRulesMarket, market);
+
+    final depositAddressEntry = (await client.depositAddresses()).single;
+    expect(depositAddressEntry.asset, 'XRP');
+    expect(depositAddressEntry.network, isNull);
+    expect(depositAddressEntry.address, isNull);
+    expect(depositAddressEntry.memo, 'tag-7');
+    expect(adapter.depositAddressesCount, 1);
+
+    final depositAddressRequest = DepositAddressRequest(
+      asset: 'BTC',
+      network: Network.bitcoin,
+    );
+    final pendingAddress = await client.createDepositAddress(
+      depositAddressRequest,
+    );
+    expect(pendingAddress.address, isNull);
+    expect(adapter.createdDepositAddressRequest?.asset, 'BTC');
+    expect(adapter.createdDepositAddressRequest?.network, Network.bitcoin);
+
     final openOrder = (await client.openOrdersOn(market)).single;
     expect(openOrder.id, 'order-1');
     expect(openOrder.createdAt, timestamp);
     expect(openOrder.price, Decimal.parse('123.4500'));
     expect(adapter.openOrdersMarket, market);
+
+    expect((await client.order(market, 'order-1')).id, 'order-1');
+    expect(adapter.requestedOrder, (market, 'order-1'));
+    expect((await client.orderByClientId(market, 'client-1')).id, 'order-1');
+    expect(adapter.requestedClientOrder, (market, 'client-1'));
+    final orderLookupRequest = OrderLookupRequest(
+      kind: OrderIdKind.exchange,
+      ids: const ['order-1', 'order-2'],
+      market: market,
+    );
+    expect((await client.ordersByIds(orderLookupRequest)).single.id, 'order-1');
+    expect(adapter.orderLookupRequest?.kind, OrderIdKind.exchange);
+    expect(adapter.orderLookupRequest?.ids, const ['order-1', 'order-2']);
+    expect(adapter.orderLookupRequest?.market, market);
+    await expectLater(
+      client.ordersByIds(
+        const OrderLookupRequest(kind: OrderIdKind.exchange, ids: []),
+      ),
+      throwsA(
+        isA<InvalidRequestError>().having(
+          (error) => error.field,
+          'field',
+          'ids',
+        ),
+      ),
+    );
+    expect(adapter.orderLookupCount, 1);
+    final orderHistoryRequest = OrderHistoryRequest(
+      market: market,
+      statuses: const [OrderStatus.filled],
+      cursor: const Cursor('order-in'),
+      limit: 4,
+    );
+    final orderHistory = await client.orderHistory(orderHistoryRequest);
+    expect(orderHistory.items.single.id, 'order-1');
+    expect(orderHistory.next, const Cursor('order-next'));
+    expect(adapter.orderHistoryRequest?.statuses, const [OrderStatus.filled]);
+    expect(adapter.orderHistoryRequest?.cursor, const Cursor('order-in'));
 
     final orderRequest = OrderRequest.limit(
       market,
@@ -301,8 +498,24 @@ void main() {
     expect(adapter.placedRequest?.timeInForce, TimeInForce.postOnly);
     expect(adapter.placedRequest?.reduceOnly, isTrue);
 
-    expect((await client.cancelOrder(market, 'order-1')).id, 'order-1');
+    await client.cancelOrder(market, 'order-1');
     expect(adapter.cancelledOrder, (market, 'order-1'));
+    final cancelRequest = CancelOrdersRequest(
+      kind: OrderIdKind.client,
+      ids: const ['client-1', 'missing-1'],
+    );
+    final cancelResult = await client.cancelOrders(cancelRequest);
+    expect(cancelResult.cancelled.single.orderId, 'order-1');
+    expect(cancelResult.cancelled.single.cancelledAt, timestamp);
+    expect(cancelResult.failed.single.code, 'order_not_found');
+    expect(adapter.cancelOrdersRequest?.ids, const ['client-1', 'missing-1']);
+    await expectLater(
+      client.cancelOrders(
+        const CancelOrdersRequest(kind: OrderIdKind.exchange, ids: []),
+      ),
+      throwsA(isA<InvalidRequestError>()),
+    );
+    expect(adapter.cancelOrdersCount, 1);
 
     final position = (await client.positionsOn(market)).single;
     expect(position.quantity, Decimal.parse('0.500'));

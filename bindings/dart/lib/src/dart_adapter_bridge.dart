@@ -5,6 +5,11 @@ abstract interface class NativeHandleProvider {
   native.NativeClient get nativeHandle;
 }
 
+native.NativeClient? _nativeHandle(Adapter adapter) => switch (adapter) {
+  NativeHandleProvider(:final nativeHandle) => nativeHandle,
+  _ => null,
+};
+
 /// 공개 [Client]가 모든 공통 호출을 Rust로 보내는 package 내부 delegate입니다.
 final class NativeClientDelegate extends GeneratedNativeDelegate {
   NativeClientDelegate._({
@@ -75,6 +80,379 @@ final class NativeClientDelegate extends GeneratedNativeDelegate {
         ? _accountStreamWithCleanupError(stream)
         : stream;
   }
+
+  Future<TransferPlan> prepareTransferTo(
+    NativeClientDelegate destination,
+    ExchangeTransferRequest request,
+  ) async {
+    final source = await delegateAdapter;
+    final target = await destination.delegateAdapter;
+    final sourceHandle = _nativeHandle(source);
+    final targetHandle = _nativeHandle(target);
+    if (sourceHandle != null && targetHandle != null) {
+      return _nativeFuture(
+        () => sourceHandle.prepareTransferTo(
+          destination: targetHandle,
+          request: _exchangeTransferRequestToWire(request),
+        ),
+      ).then(_transferPlanFromWire);
+    }
+    return _prepareExchangeTransfer(source, target, request);
+  }
+
+  Future<TransferPlan> prepareTransferToChain(
+    ChainTransferRequest request,
+  ) async {
+    final source = await delegateAdapter;
+    final sourceHandle = _nativeHandle(source);
+    if (sourceHandle != null) {
+      return _nativeFuture(
+        () => sourceHandle.prepareTransferToChain(
+          request: _chainTransferRequestToWire(request),
+        ),
+      ).then(_transferPlanFromWire);
+    }
+    return _prepareChainTransfer(source, request);
+  }
+
+  Future<Withdrawal> executeTransfer(TransferPlan plan) async {
+    final source = await delegateAdapter;
+    final sourceHandle = _nativeHandle(source);
+    if (sourceHandle != null) {
+      return _nativeFuture(
+        () => sourceHandle.executeTransfer(plan: _transferPlanToWire(plan)),
+      ).then(_withdrawalFromWire);
+    }
+    return _executeTransfer(source, plan);
+  }
+}
+
+const int _defaultTransferPlanLifetimeNanoseconds = 60000000000;
+
+Future<TransferPlan> _prepareExchangeTransfer(
+  Adapter source,
+  Adapter destination,
+  ExchangeTransferRequest request,
+) async {
+  final asset = request.asset;
+  if (asset.isEmpty) {
+    throw const InvalidRequestError(
+      field: 'asset',
+      detail: 'asset must not be empty',
+    );
+  }
+  _validatePositiveAmount(request.amount);
+  final requestedSource = request.sourceNetwork;
+  final requestedDestination = request.destinationNetwork;
+  if (requestedSource != null &&
+      requestedDestination != null &&
+      !_sameChain(requestedSource, requestedDestination)) {
+    throw TransferError(
+      kind: TransferErrorKind.networkMismatch,
+      detail:
+          'source network $requestedSource differs from destination network '
+          '$requestedDestination',
+    );
+  }
+
+  final sourceNetworks = await source.assetNetworks(asset);
+  final destinationNetworks = await destination.assetNetworks(asset);
+  final (sourceNetwork, destinationNetwork) = _selectNetworks(
+    sourceNetworks,
+    requestedSource,
+    destinationNetworks,
+    requestedDestination,
+  );
+  _validateTransferAmount(
+    request.amount,
+    sourceNetwork.minimumWithdrawal,
+    sourceNetwork.maximumWithdrawal,
+  );
+
+  final address = await destination.depositAddress(
+    DepositAddressRequest(asset: asset, network: destinationNetwork.network),
+  );
+  if (address.exchange != destination.exchange ||
+      address.asset != asset ||
+      !_sameChain(address.network, sourceNetwork.network)) {
+    throw AdapterError(
+      '${destination.exchange.displayName} returned a deposit destination '
+      'that does not match $asset on ${sourceNetwork.network}',
+    );
+  }
+  if (destinationNetwork.memoRequired && address.memo == null) {
+    throw TransferError(
+      kind: TransferErrorKind.memoRequired,
+      detail:
+          '${destination.exchange.displayName} $asset deposits on '
+          '${destinationNetwork.network} require a memo or tag',
+    );
+  }
+  final destinationAddress = address.address;
+  if (destinationAddress == null) {
+    throw TransferError(
+      kind: TransferErrorKind.destinationUnavailable,
+      detail:
+          '${destination.exchange.displayName} has not issued a $asset '
+          'deposit address on ${destinationNetwork.network} yet',
+    );
+  }
+
+  final withdrawal = WithdrawRequest(
+    asset: asset,
+    network: sourceNetwork.network,
+    amount: request.amount,
+    destination: TransferDestination.exchange(
+      ExchangeDestination(
+        exchange: address.exchange,
+        asset: address.asset,
+        network: address.network,
+        address: destinationAddress,
+        memo: address.memo,
+      ),
+    ),
+    clientId: _uuidV4(),
+  );
+  final quote = await source.prepareWithdrawal(withdrawal);
+  _validateTransferQuote(request.amount, quote);
+  return _transferPlan(
+    source.exchange,
+    destination.exchange,
+    withdrawal,
+    quote,
+  );
+}
+
+Future<TransferPlan> _prepareChainTransfer(
+  Adapter source,
+  ChainTransferRequest request,
+) async {
+  final asset = request.asset;
+  if (asset.isEmpty) {
+    throw const InvalidRequestError(
+      field: 'asset',
+      detail: 'asset must not be empty',
+    );
+  }
+  if (asset != request.destination.asset) {
+    throw TransferError(
+      kind: TransferErrorKind.assetMismatch,
+      detail:
+          'source asset $asset differs from destination asset '
+          '${request.destination.asset}',
+    );
+  }
+  final requestedNetwork = request.sourceNetwork;
+  if (requestedNetwork != null &&
+      !_sameChain(requestedNetwork, request.destination.network)) {
+    throw TransferError(
+      kind: TransferErrorKind.networkMismatch,
+      detail:
+          'source network $requestedNetwork differs from destination network '
+          '${request.destination.network}',
+    );
+  }
+  _validatePositiveAmount(request.amount);
+
+  final networks = await source.assetNetworks(asset);
+  final sourceNetwork = networks
+      .where(
+        (candidate) =>
+            candidate.withdrawalEnabled &&
+            _sameChain(candidate.network, request.destination.network),
+      )
+      .firstOrNull;
+  if (sourceNetwork == null) {
+    throw TransferError(
+      kind: TransferErrorKind.networkUnavailable,
+      detail:
+          '${request.destination.network} is not enabled for $asset withdrawal',
+    );
+  }
+  _validateTransferAmount(
+    request.amount,
+    sourceNetwork.minimumWithdrawal,
+    sourceNetwork.maximumWithdrawal,
+  );
+  final withdrawal = WithdrawRequest(
+    asset: asset,
+    network: sourceNetwork.network,
+    amount: request.amount,
+    destination: TransferDestination.chain(request.destination),
+    clientId: _uuidV4(),
+  );
+  final quote = await source.prepareWithdrawal(withdrawal);
+  _validateTransferQuote(request.amount, quote);
+  return _transferPlan(source.exchange, null, withdrawal, quote);
+}
+
+Future<Withdrawal> _executeTransfer(Adapter source, TransferPlan plan) {
+  if (source.exchange != plan.source) {
+    throw InvalidRequestError(
+      field: 'plan.source',
+      detail:
+          'plan belongs to ${plan.source.displayName}, not '
+          '${source.exchange.displayName}',
+    );
+  }
+  if (Timestamp.now().compareTo(plan.expiresAt) >= 0) {
+    throw TransferError(
+      kind: TransferErrorKind.planExpired,
+      detail: 'plan expired at ${plan.expiresAt.nanosecondsSinceEpoch}',
+    );
+  }
+  return source.withdraw(plan.request);
+}
+
+(AssetNetwork, AssetNetwork) _selectNetworks(
+  List<AssetNetwork> source,
+  Network? requestedSource,
+  List<AssetNetwork> destination,
+  Network? requestedDestination,
+) {
+  final requested = requestedSource ?? requestedDestination;
+  if (requested != null) {
+    final sourceNetwork = source
+        .where(
+          (candidate) =>
+              candidate.withdrawalEnabled &&
+              _sameChain(candidate.network, requested),
+        )
+        .firstOrNull;
+    final destinationNetwork = destination
+        .where(
+          (candidate) =>
+              candidate.depositEnabled &&
+              _sameChain(candidate.network, requested),
+        )
+        .firstOrNull;
+    if (sourceNetwork != null && destinationNetwork != null) {
+      return (sourceNetwork, destinationNetwork);
+    }
+    throw TransferError(
+      kind: TransferErrorKind.networkUnavailable,
+      detail: '$requested is not enabled for both withdrawal and deposit',
+    );
+  }
+
+  final matches = <(AssetNetwork, AssetNetwork)>[];
+  for (final sourceNetwork in source.where(
+    (candidate) => candidate.withdrawalEnabled,
+  )) {
+    final destinationNetwork = destination
+        .where(
+          (candidate) =>
+              candidate.depositEnabled &&
+              _sameChain(candidate.network, sourceNetwork.network),
+        )
+        .firstOrNull;
+    if (destinationNetwork != null &&
+        !matches.any(
+          (match) => _sameChain(match.$1.network, sourceNetwork.network),
+        )) {
+      matches.add((sourceNetwork, destinationNetwork));
+    }
+  }
+  return switch (matches.length) {
+    0 => throw const TransferError(
+      kind: TransferErrorKind.networkMismatch,
+      detail: 'source and destination have no enabled network in common',
+    ),
+    1 => matches.single,
+    _ => throw const TransferError(
+      kind: TransferErrorKind.ambiguousNetwork,
+      detail: 'more than one enabled network is shared; select one explicitly',
+    ),
+  };
+}
+
+void _validatePositiveAmount(Decimal amount) {
+  if (amount <= Decimal.zero) {
+    throw const TransferError(
+      kind: TransferErrorKind.amountOutOfRange,
+      detail: 'amount must be greater than zero',
+    );
+  }
+}
+
+void _validateTransferAmount(
+  Decimal amount,
+  Decimal? minimum,
+  Decimal? maximum,
+) {
+  if (minimum != null && amount < minimum) {
+    throw TransferError(
+      kind: TransferErrorKind.amountOutOfRange,
+      detail: 'amount $amount is below minimum $minimum',
+    );
+  }
+  if (maximum != null && amount > maximum) {
+    throw TransferError(
+      kind: TransferErrorKind.amountOutOfRange,
+      detail: 'amount $amount exceeds maximum $maximum',
+    );
+  }
+}
+
+void _validateTransferQuote(Decimal amount, WithdrawalQuote quote) {
+  _validateTransferAmount(amount, quote.minimumAmount, quote.maximumAmount);
+  if (quote.addressAllowed == false) {
+    throw const TransferError(
+      kind: TransferErrorKind.addressNotAllowed,
+      detail: 'destination address is not allowed by the source account',
+    );
+  }
+  if (quote.travelRule is TravelRuleRequirementRequired) {
+    throw const TransferError(
+      kind: TransferErrorKind.travelRuleRequired,
+      detail: 'provider-specific Travel Rule data or consent is required',
+    );
+  }
+  final fee = quote.fee;
+  if (fee != null && fee >= amount) {
+    throw const TransferError(
+      kind: TransferErrorKind.amountOutOfRange,
+      detail: 'withdrawal fee must be smaller than the amount',
+    );
+  }
+}
+
+TransferPlan _transferPlan(
+  Exchange source,
+  Exchange? destination,
+  WithdrawRequest request,
+  WithdrawalQuote quote,
+) {
+  final createdAt = Timestamp.now();
+  final expiresAt =
+      quote.expiresAt ??
+      Timestamp.fromNanoseconds(
+        createdAt.nanosecondsSinceEpoch +
+            BigInt.from(_defaultTransferPlanLifetimeNanoseconds),
+      );
+  return TransferPlan(
+    source: source,
+    destination: destination,
+    request: request,
+    quote: quote,
+    createdAt: createdAt,
+    expiresAt: expiresAt,
+  );
+}
+
+bool _sameChain(Network left, Network right) =>
+    !left.isOther && !right.isOther && left.providerName == right.providerName;
+
+String _uuidV4() {
+  final bytes = List<int>.generate(16, (_) => Random.secure().nextInt(256));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  final hex = bytes
+      .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
+      .join();
+  return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
+      '${hex.substring(12, 16)}-${hex.substring(16, 20)}-'
+      '${hex.substring(20)}';
 }
 
 MarketStream _marketStreamWithCleanupError(MarketStream stream) {
@@ -197,12 +575,130 @@ final class DartAdapterBridge {
         values.map(_balanceToWire).toList(growable: false),
       ),
     ),
+    native_adapter.AdapterCall_OrderRules(:final market) =>
+      adapter
+          .orderRules(_marketFromWire(market))
+          .then(
+            (value) => native_adapter.AdapterReply.orderRules(
+              _orderRulesToWire(value),
+            ),
+          ),
+    native_adapter.AdapterCall_AssetNetworks(:final asset) =>
+      adapter
+          .assetNetworks(asset)
+          .then(
+            (values) => native_adapter.AdapterReply.assetNetworks(
+              values.map(_assetNetworkToWire).toList(growable: false),
+            ),
+          ),
+    native_adapter.AdapterCall_DepositAddresses() =>
+      adapter.depositAddresses().then(
+        (values) => native_adapter.AdapterReply.depositAddresses(
+          values.map(_depositAddressEntryToWire).toList(growable: false),
+        ),
+      ),
+    native_adapter.AdapterCall_DepositAddress(:final request) =>
+      adapter
+          .depositAddress(_depositAddressRequestFromWire(request))
+          .then(
+            (value) => native_adapter.AdapterReply.depositAddress(
+              _depositAddressToWire(value),
+            ),
+          ),
+    native_adapter.AdapterCall_CreateDepositAddress(:final request) =>
+      adapter
+          .createDepositAddress(_depositAddressRequestFromWire(request))
+          .then(
+            (value) => native_adapter.AdapterReply.createDepositAddress(
+              _depositAddressToWire(value),
+            ),
+          ),
+    native_adapter.AdapterCall_PrepareWithdrawal(:final request) =>
+      adapter
+          .prepareWithdrawal(_withdrawRequestFromWire(request))
+          .then(
+            (value) => native_adapter.AdapterReply.prepareWithdrawal(
+              _withdrawalQuoteToWire(value),
+            ),
+          ),
+    native_adapter.AdapterCall_Withdraw(:final request) =>
+      adapter
+          .withdraw(_withdrawRequestFromWire(request))
+          .then(
+            (value) =>
+                native_adapter.AdapterReply.withdraw(_withdrawalToWire(value)),
+          ),
+    native_adapter.AdapterCall_Deposit(:final request) =>
+      adapter
+          .deposit(_transferLookupRequestFromWire(request))
+          .then(
+            (value) =>
+                native_adapter.AdapterReply.deposit(_depositToWire(value)),
+          ),
+    native_adapter.AdapterCall_Withdrawal(:final request) =>
+      adapter
+          .withdrawal(_transferLookupRequestFromWire(request))
+          .then(
+            (value) => native_adapter.AdapterReply.withdrawal(
+              _withdrawalToWire(value),
+            ),
+          ),
+    native_adapter.AdapterCall_CancelWithdrawal(:final withdrawalId) =>
+      adapter
+          .cancelWithdrawal(withdrawalId)
+          .then((_) => const native_adapter.AdapterReply.unit()),
+    native_adapter.AdapterCall_Deposits(:final request) =>
+      adapter
+          .deposits(_transferHistoryRequestFromWire(request))
+          .then(
+            (value) =>
+                native_adapter.AdapterReply.deposits(_depositPageToWire(value)),
+          ),
+    native_adapter.AdapterCall_Withdrawals(:final request) =>
+      adapter
+          .withdrawals(_transferHistoryRequestFromWire(request))
+          .then(
+            (value) => native_adapter.AdapterReply.withdrawals(
+              _withdrawalPageToWire(value),
+            ),
+          ),
     native_adapter.AdapterCall_OpenOrders(:final market) =>
       adapter
           .openOrders(market == null ? null : _marketFromWire(market))
           .then(
             (values) => native_adapter.AdapterReply.openOrders(
               values.map(_orderToWire).toList(growable: false),
+            ),
+          ),
+    native_adapter.AdapterCall_Order(:final market, :final orderId) =>
+      adapter
+          .order(_marketFromWire(market), orderId)
+          .then(
+            (value) => native_adapter.AdapterReply.order(_orderToWire(value)),
+          ),
+    native_adapter.AdapterCall_OrderByClientId(
+      :final market,
+      :final clientId,
+    ) =>
+      adapter
+          .orderByClientId(_marketFromWire(market), clientId)
+          .then(
+            (value) => native_adapter.AdapterReply.order(_orderToWire(value)),
+          ),
+    native_adapter.AdapterCall_OrdersByIds(:final request) =>
+      adapter
+          .ordersByIds(_orderLookupRequestFromWire(request))
+          .then(
+            (values) => native_adapter.AdapterReply.ordersByIds(
+              values.map(_orderToWire).toList(growable: false),
+            ),
+          ),
+    native_adapter.AdapterCall_OrderHistory(:final request) =>
+      adapter
+          .orderHistory(_orderHistoryRequestFromWire(request))
+          .then(
+            (value) => native_adapter.AdapterReply.orderHistory(
+              _orderPageToWire(value),
             ),
           ),
     native_adapter.AdapterCall_PlaceOrder(:final request) =>
@@ -215,9 +711,21 @@ final class DartAdapterBridge {
     native_adapter.AdapterCall_CancelOrder(:final market, :final orderId) =>
       adapter
           .cancelOrder(_marketFromWire(market), orderId)
+          .then((_) => const native_adapter.AdapterReply.unit()),
+    native_adapter.AdapterCall_CancelOrderByClientId(
+      :final market,
+      :final clientId,
+    ) =>
+      adapter
+          .cancelOrderByClientId(_marketFromWire(market), clientId)
+          .then((_) => const native_adapter.AdapterReply.unit()),
+    native_adapter.AdapterCall_CancelOrders(:final request) =>
+      adapter
+          .cancelOrders(_cancelOrdersRequestFromWire(request))
           .then(
-            (value) =>
-                native_adapter.AdapterReply.cancelOrder(_orderToWire(value)),
+            (value) => native_adapter.AdapterReply.cancelOrders(
+              _cancelOrdersResultToWire(value),
+            ),
           ),
     native_adapter.AdapterCall_Positions(:final market) =>
       adapter
@@ -461,9 +969,29 @@ final class DartAdapterBridge {
     native_adapter.AdapterCall_Ticker() => Feature.ticker,
     native_adapter.AdapterCall_Candles() => Feature.candles,
     native_adapter.AdapterCall_Balances() => Feature.balances,
+    native_adapter.AdapterCall_OrderRules() => Feature.trading,
+    native_adapter.AdapterCall_AssetNetworks() => Feature.assetNetworks,
+    native_adapter.AdapterCall_DepositAddresses() => Feature.depositAddresses,
+    native_adapter.AdapterCall_DepositAddress() => Feature.depositAddresses,
+    native_adapter.AdapterCall_CreateDepositAddress() =>
+      Feature.depositAddresses,
+    native_adapter.AdapterCall_PrepareWithdrawal() => Feature.withdrawalQuotes,
+    native_adapter.AdapterCall_Withdraw() => Feature.withdrawals,
+    native_adapter.AdapterCall_Deposit() => Feature.depositLookup,
+    native_adapter.AdapterCall_Withdrawal() => Feature.withdrawalLookup,
+    native_adapter.AdapterCall_CancelWithdrawal() =>
+      Feature.withdrawalCancellation,
+    native_adapter.AdapterCall_Deposits() => Feature.depositHistory,
+    native_adapter.AdapterCall_Withdrawals() => Feature.withdrawalHistory,
     native_adapter.AdapterCall_OpenOrders() => Feature.openOrders,
+    native_adapter.AdapterCall_Order() ||
+    native_adapter.AdapterCall_OrderByClientId() ||
+    native_adapter.AdapterCall_OrdersByIds() ||
+    native_adapter.AdapterCall_OrderHistory() => Feature.orderHistory,
     native_adapter.AdapterCall_PlaceOrder() ||
-    native_adapter.AdapterCall_CancelOrder() => Feature.trading,
+    native_adapter.AdapterCall_CancelOrder() ||
+    native_adapter.AdapterCall_CancelOrderByClientId() ||
+    native_adapter.AdapterCall_CancelOrders() => Feature.trading,
     native_adapter.AdapterCall_Positions() => Feature.positions,
     native_adapter.AdapterCall_MarginSummary() => Feature.margin,
     native_adapter.AdapterCall_FundingRates() => Feature.fundingRates,

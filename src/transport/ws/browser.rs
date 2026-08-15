@@ -61,6 +61,12 @@ impl Socket {
             HeartbeatFrame::Ping => Ok(()),
         }
     }
+
+    pub(super) async fn send_text(&mut self, text: &str) -> Result<()> {
+        self.socket
+            .send_with_str(text)
+            .map_err(|error| js_error("could not send browser WebSocket operation", error))
+    }
 }
 
 impl Drop for Socket {

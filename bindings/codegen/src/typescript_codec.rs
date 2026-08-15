@@ -1,4 +1,4 @@
-use maxt_bindings_common::schema::{Field, Schema, Type};
+use maxt_bindings_common::schema::{ApiType, Field, Schema, TaggedUnion, Type};
 
 use crate::typescript_contract::{HEADER, lower_camel};
 
@@ -20,15 +20,38 @@ function identifier<T extends { readonly id: string }>(
   return value;
 }
 
-function unsignedInteger(value: string, field: string): number {
+function unsignedInteger(value: string, field: string): bigint {
   if (!/^\d+$/.test(value)) {
     throw new InvalidRequestError(field, "must be an unsigned decimal integer");
   }
-  const parsed = Number(value);
-  if (!Number.isSafeInteger(parsed)) {
-    throw new InvalidRequestError(field, "exceeds the JavaScript safe integer range");
+  const parsed = BigInt(value);
+  if (parsed > 18_446_744_073_709_551_615n) {
+    throw new InvalidRequestError(field, "exceeds the Rust u64 range");
   }
   return parsed;
+}
+
+function safeUnsignedInteger(value: string, field: string): number {
+  const parsed = unsignedInteger(value, field);
+  if (parsed > BigInt(Number.MAX_SAFE_INTEGER)) {
+    throw new InvalidRequestError(field, "exceeds the JavaScript safe integer range");
+  }
+  return Number(parsed);
+}
+
+export function checkedU32(value: number, field: string): number {
+  if (!Number.isSafeInteger(value) || value < 0 || value > 4_294_967_295) {
+    throw new InvalidRequestError(field, "must be a non-negative safe integer within the u32 range");
+  }
+  return value;
+}
+
+export function checkedOptionalU32(value: number | null, field: string): number | null {
+  return value === null ? null : checkedU32(value, field);
+}
+
+function assertNever(value: never): never {
+  throw new InvalidRequestError("kind", `unknown tagged union variant: ${String(value)}`);
 }
 
 export function unwrapOutcome<T>(outcome: NativeOutcome<T>): T {
@@ -40,28 +63,87 @@ export function unwrapOutcome<T>(outcome: NativeOutcome<T>): T {
     );
 
     for name in schema.models {
-        let record = schema
+        if let Some(record) = schema
             .records
             .iter()
             .find(|record| record.name == format!("{name}Wire"))
-            .unwrap_or_else(|| panic!("model {name} has no wire record"));
-        output.push_str(&render_model(name, &record.fields));
+        {
+            output.push_str(&render_model(schema, name, &record.fields));
+        } else if let Some(union) = schema
+            .unions
+            .iter()
+            .find(|union| union.name == format!("{name}Wire"))
+        {
+            output.push_str(&render_union_model(schema, name, union));
+        } else {
+            panic!("model {name} has no wire record or tagged union");
+        }
     }
     output.push_str(SPECIAL_CODECS);
+    output.push_str(&render_provider_stream_item_codecs(schema));
+    output.truncate(output.trim_end().len());
+    output.push('\n');
     output
 }
 
-fn render_model(name: &str, fields: &[Field]) -> String {
+fn render_provider_stream_item_codecs(schema: &Schema) -> String {
+    let mut entries = Vec::new();
+    for provider in schema.providers {
+        for method in provider.methods {
+            let event = match method.result {
+                ApiType::ProviderMarketStream(event) | ApiType::ProviderAccountStream(event) => {
+                    event
+                }
+                _ => continue,
+            };
+            let stream = provider_stream_type(event);
+            if !entries.iter().any(|(existing, _)| *existing == stream) {
+                entries.push((stream, event));
+            }
+        }
+    }
+    entries
+        .into_iter()
+        .map(|(stream, event)| {
+            let function = lower_camel(&stream);
+            format!(
+                "export function {function}ItemFromWire(value: Wire.{stream}ItemWire): StreamItem<Model.{event}> {{\n  return value.kind === \"error\"\n    ? new StreamError(errorFromWire(value.error))\n    : new StreamEvent({}FromWire(value.event));\n}}\n\n",
+                lower_camel(event)
+            )
+        })
+        .collect()
+}
+
+fn provider_stream_type(event: &str) -> String {
+    let base = event.strip_suffix("Event").unwrap_or(event);
+    if base.ends_with("Stream") {
+        base.to_owned()
+    } else {
+        format!("{base}Stream")
+    }
+}
+
+fn render_model(schema: &Schema, name: &str, fields: &[Field]) -> String {
     match name {
         "OrderRequest" => return ORDER_REQUEST_CODEC.to_owned(),
+        "OrderHistoryRequest" => return ORDER_HISTORY_REQUEST_CODEC.to_owned(),
         "HistoryRequest" => return HISTORY_REQUEST_CODEC.to_owned(),
+        "TransferHistoryRequest" => return TRANSFER_HISTORY_REQUEST_CODEC.to_owned(),
         "StreamConfig" => return STREAM_CONFIG_CODEC.to_owned(),
         _ => {}
     }
     let function = lower_camel(name);
+    let allowed = fields
+        .iter()
+        .map(|field| format!("\"{}\"", snake_to_camel(field.name)))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let unexpected_checks = format!(
+        "  for (const key of Object.keys(value)) {{\n    if (![{allowed}].includes(key)) {{\n      throw new InvalidRequestError(\"{function}.\" + key, \"{name} does not accept \" + key);\n    }}\n  }}\n"
+    );
     let arguments = fields
         .iter()
-        .map(|field| from_expression(&field.ty, &format!("value.{}", field.name), field.name))
+        .map(|field| record_from_expression(schema, field, &format!("value.{}", field.name)))
         .collect::<Vec<_>>()
         .join(", ");
     let values = fields
@@ -71,12 +153,93 @@ fn render_model(name: &str, fields: &[Field]) -> String {
             format!(
                 "    {}: {},\n",
                 field.name,
-                to_expression(&field.ty, &format!("value.{property}"))
+                record_to_expression(field, &format!("value.{property}"))
             )
         })
         .collect::<String>();
     format!(
-        "export function {function}FromWire(value: Wire.{name}Wire): Model.{name} {{\n  return new Model.{name}({arguments});\n}}\n\nexport function {function}ToWire(value: Model.{name}): Wire.{name}Wire {{\n  return {{\n{values}  }};\n}}\n\n"
+        "export function {function}FromWire(value: Wire.{name}Wire): Model.{name} {{\n  return new Model.{name}({arguments});\n}}\n\nexport function {function}ToWire(value: Model.{name}): Wire.{name}Wire {{\n{unexpected_checks}  return {{\n{values}  }};\n}}\n\n"
+    )
+}
+
+fn record_from_expression(schema: &Schema, field: &Field, value: &str) -> String {
+    if field.name == "cursor" {
+        return format!("{value} === null ? null : new Model.Cursor({value})");
+    }
+    from_expression(schema, &field.ty, value, field.name)
+}
+
+fn record_to_expression(field: &Field, value: &str) -> String {
+    if field.name == "cursor" {
+        return format!("{value} === null ? null : {value}.value");
+    }
+    to_expression(&field.ty, value)
+}
+
+fn render_union_model(schema: &Schema, name: &str, union: &TaggedUnion) -> String {
+    let function = lower_camel(name);
+    let from_arms = union
+        .variants
+        .iter()
+        .map(|variant| {
+            let fields = variant
+                .fields
+                .iter()
+                .map(|field| {
+                    format!(
+                        ", {}: {}",
+                        snake_to_camel(field.name),
+                        from_expression(
+                            schema,
+                            &field.ty,
+                            &format!("value.{}", field.name),
+                            field.name,
+                        )
+                    )
+                })
+                .collect::<String>();
+            format!(
+                "    case \"{}\": return Object.freeze({{ kind: \"{}\"{fields} }});\n",
+                variant.name, variant.name
+            )
+        })
+        .collect::<String>();
+    let to_arms = union
+        .variants
+        .iter()
+        .map(|variant| {
+            let allowed = std::iter::once("\"kind\"".to_owned())
+                .chain(
+                    variant
+                        .fields
+                        .iter()
+                        .map(|field| format!("\"{}\"", snake_to_camel(field.name))),
+                )
+                .collect::<Vec<_>>()
+                .join(", ");
+            let unexpected_checks = format!(
+                "      for (const key of Object.keys(value)) {{\n        if (![{allowed}].includes(key)) {{\n          throw new InvalidRequestError(\"{function}.\" + key, \"{name}.{} does not accept \" + key);\n        }}\n      }}\n",
+                variant.name,
+            );
+            let fields = variant
+                .fields
+                .iter()
+                .map(|field| {
+                    format!(
+                        ", {}: {}",
+                        field.name,
+                        to_expression(&field.ty, &format!("value.{}", snake_to_camel(field.name)),)
+                    )
+                })
+                .collect::<String>();
+            format!(
+                "    case \"{}\": {{\n{unexpected_checks}      return {{ kind: \"{}\"{fields} }};\n    }}\n",
+                variant.name, variant.name,
+            )
+        })
+        .collect::<String>();
+    format!(
+        "export function {function}FromWire(value: Wire.{name}Wire): Model.{name} {{\n  switch (value.kind) {{\n{from_arms}  }}\n  return assertNever(value);\n}}\n\nexport function {function}ToWire(value: Model.{name}): Wire.{name}Wire {{\n  switch (value.kind) {{\n{to_arms}  }}\n  return assertNever(value);\n}}\n\n"
     )
 }
 
@@ -96,19 +259,16 @@ fn snake_to_camel(value: &str) -> String {
     output
 }
 
-fn from_expression(ty: &Type, value: &str, field: &str) -> String {
+fn from_expression(schema: &Schema, ty: &Type, value: &str, field: &str) -> String {
     match ty {
         Type::String | Type::Boolean | Type::Number => value.to_owned(),
         Type::UnsignedInteger => format!("unsignedInteger({value}, \"{field}\")"),
         Type::Decimal => format!("Model.Decimal.parse({value})"),
         Type::Timestamp => format!("Model.Timestamp.fromNanoseconds(BigInt({value}))"),
-        Type::Identifier(name) => {
-            if *name == "HyperliquidLedgerKind" {
-                format!("Model.HyperliquidLedgerKind.other({value})")
-            } else {
-                format!("identifier(Model.{name}.values, {value}, \"{field}\")")
-            }
-        }
+        Type::Identifier(name) => match schema.identifier(name) {
+            Some(identifier) if identifier.open => format!("Model.{name}.other({value})"),
+            _ => format!("identifier(Model.{name}.values, {value}, \"{field}\")"),
+        },
         Type::Named(name) if name.ends_with("Wire") => {
             format!(
                 "{}FromWire({value})",
@@ -118,18 +278,20 @@ fn from_expression(ty: &Type, value: &str, field: &str) -> String {
         Type::Named(_) => value.to_owned(),
         Type::Optional(inner) => format!(
             "{value} === null ? null : {}",
-            from_expression(inner, value, field)
+            from_expression(schema, inner, value, field)
         ),
         Type::List(inner) => format!(
             "{value}.map((item) => {})",
-            from_expression(inner, "item", field)
+            from_expression(schema, inner, "item", field)
         ),
         Type::Tuple(items) => format!(
             "[{}]",
             items
                 .iter()
                 .enumerate()
-                .map(|(index, item)| from_expression(item, &format!("{value}[{index}]"), field))
+                .map(|(index, item)| {
+                    from_expression(schema, item, &format!("{value}[{index}]"), field)
+                })
                 .collect::<Vec<_>>()
                 .join(", ")
         ),
@@ -175,6 +337,7 @@ const ORDER_REQUEST_CODEC: &str = r#"export function orderRequestFromWire(value:
       ? null
       : identifier(Model.TimeInForce.values, value.time_in_force, "time_in_force"),
     reduceOnly: value.reduce_only,
+    clientId: value.client_id,
   };
   const market = marketFromWire(value.market);
   const side = identifier(Model.Side.values, value.side, "side");
@@ -183,6 +346,9 @@ const ORDER_REQUEST_CODEC: &str = r#"export function orderRequestFromWire(value:
   }
   if (value.order_type === Model.OrderType.Limit.id && value.price !== null) {
     return Model.OrderRequest.limit(market, side, size, Model.Decimal.parse(value.price), options);
+  }
+  if (value.order_type === Model.OrderType.Best.id && value.price === null && options.timeInForce !== null) {
+    return Model.OrderRequest.best(market, side, size, options.timeInForce, options);
   }
   throw new InvalidRequestError("order_type", "invalid order request");
 }
@@ -195,7 +361,7 @@ export function orderRequestToWire(value: Model.OrderRequest): Wire.OrderRequest
       value: value.size.value.toString(),
     },
     price: value.price?.toString() ?? null, time_in_force: value.timeInForce?.id ?? null,
-    reduce_only: value.reduceOnly,
+    reduce_only: value.reduceOnly, client_id: value.clientId,
   };
 }
 
@@ -204,10 +370,10 @@ export function orderRequestToWire(value: Model.OrderRequest): Wire.OrderRequest
 const STREAM_CONFIG_CODEC: &str = r#"export function streamConfigFromWire(value: Wire.StreamConfigWire): Model.StreamConfig {
   return new Model.StreamConfig({
     maxReconnectAttempts: value.max_reconnect_attempts,
-    initialReconnectDelayMs: unsignedInteger(value.initial_reconnect_delay_ms, "initial_reconnect_delay_ms"),
-    maxReconnectDelayMs: unsignedInteger(value.max_reconnect_delay_ms, "max_reconnect_delay_ms"),
-    idleTimeoutMs: unsignedInteger(value.idle_timeout_ms, "idle_timeout_ms"),
-    bufferSize: unsignedInteger(value.buffer_size, "buffer_size"),
+    initialReconnectDelayMs: safeUnsignedInteger(value.initial_reconnect_delay_ms, "initial_reconnect_delay_ms"),
+    maxReconnectDelayMs: safeUnsignedInteger(value.max_reconnect_delay_ms, "max_reconnect_delay_ms"),
+    idleTimeoutMs: safeUnsignedInteger(value.idle_timeout_ms, "idle_timeout_ms"),
+    bufferSize: safeUnsignedInteger(value.buffer_size, "buffer_size"),
     overflow: identifier(Model.Overflow.values, value.overflow, "overflow"),
   });
 }
@@ -239,6 +405,50 @@ export function historyRequestToWire(value: Model.HistoryRequest): Wire.HistoryR
     market: marketToWire(value.market),
     from: value.from?.nanosecondsSinceEpoch.toString() ?? null,
     to: value.to?.nanosecondsSinceEpoch.toString() ?? null,
+    cursor: value.cursor?.value ?? null,
+    limit: value.limit,
+  };
+}
+
+"#;
+
+const ORDER_HISTORY_REQUEST_CODEC: &str = r#"export function orderHistoryRequestFromWire(value: Wire.OrderHistoryRequestWire): Model.OrderHistoryRequest {
+  return new Model.OrderHistoryRequest(
+    value.market === null ? null : marketFromWire(value.market),
+    value.statuses.map((status) => identifier(Model.OrderStatus.values, status, "statuses")),
+    value.from === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.from)),
+    value.to === null ? null : Model.Timestamp.fromNanoseconds(BigInt(value.to)),
+    value.cursor === null ? null : new Model.Cursor(value.cursor),
+    value.limit,
+  );
+}
+
+export function orderHistoryRequestToWire(value: Model.OrderHistoryRequest): Wire.OrderHistoryRequestWire {
+  return {
+    market: value.market === null ? null : marketToWire(value.market),
+    statuses: value.statuses.map((status) => status.id),
+    from: value.from?.nanosecondsSinceEpoch.toString() ?? null,
+    to: value.to?.nanosecondsSinceEpoch.toString() ?? null,
+    cursor: value.cursor?.value ?? null,
+    limit: value.limit,
+  };
+}
+
+"#;
+
+const TRANSFER_HISTORY_REQUEST_CODEC: &str = r#"export function transferHistoryRequestFromWire(value: Wire.TransferHistoryRequestWire): Model.TransferHistoryRequest {
+  return new Model.TransferHistoryRequest(
+    value.asset,
+    value.network === null ? null : Model.Network.other(value.network),
+    value.cursor === null ? null : new Model.Cursor(value.cursor),
+    value.limit,
+  );
+}
+
+export function transferHistoryRequestToWire(value: Model.TransferHistoryRequest): Wire.TransferHistoryRequestWire {
+  return {
+    asset: value.asset,
+    network: value.network?.id ?? null,
     cursor: value.cursor?.value ?? null,
     limit: value.limit,
   };
@@ -346,3 +556,28 @@ export function stringifyWire(value: unknown): string {
   return JSON.stringify(value);
 }
 "#;
+
+#[cfg(test)]
+mod tests {
+    use maxt_bindings_common::schema::binding_schema;
+
+    use super::render;
+
+    #[test]
+    fn unsigned_integers_preserve_typescript_bigints() {
+        let output = render(&binding_schema());
+
+        assert!(output.contains("function unsignedInteger(value: string, field: string): bigint"));
+        assert!(output.contains(
+            "minimum_deposit_confirmations: value.minimumDepositConfirmations.toString(),"
+        ));
+        assert!(!output.contains("Number(value);"));
+        assert!(output.contains("for (const key of Object.keys(value))"));
+        assert!(output.contains(
+            "upbitBatchCancelScope.\" + key, \"UpbitBatchCancelScope.all does not accept \" + key"
+        ));
+        assert!(output.contains(
+            "upbitBatchCancelRequest.\" + key, \"UpbitBatchCancelRequest does not accept \" + key"
+        ));
+    }
+}

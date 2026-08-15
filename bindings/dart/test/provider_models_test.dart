@@ -46,11 +46,70 @@ void main() {
       sizeDecimals: 5,
       priceDecimals: 1,
     );
+    final markPrice = BinanceMarkPrice(
+      market: Market.perpetual(Exchange.binance, 'BTC', 'USDT'),
+      markPrice: Decimal.parse('50001.25'),
+      indexPrice: Decimal.parse('50000.75'),
+      lastFundingRate: Decimal.parse('0.0001'),
+      interestRate: Decimal.parse('0.0001'),
+      nextFundingTime: Timestamp.fromSeconds(1700000000),
+      time: Timestamp.fromSeconds(1700000000),
+    );
+    final openInterest = BinanceOpenInterest(
+      market: markPrice.market,
+      openInterest: Decimal.parse('1234.5'),
+      time: markPrice.time,
+    );
+    final mid = HyperliquidMidPrice(
+      market: Market.perpetual(Exchange.hyperliquid, 'BTC', 'USDC'),
+      price: Decimal.parse('50000.5'),
+    );
     final alert = BithumbMarketAlert(
       market: Market.spot(Exchange.bithumb, 'BTC', 'KRW'),
       kind: 'PRICE_DIFFERENCE',
       step: BithumbAlertStep.warning,
       endsAt: Timestamp.fromNanoseconds(BigInt.parse("1700000000123456789")),
+    );
+    final notice = BithumbNotice(
+      categories: ['입출금'],
+      title: '네트워크 점검 안내',
+      url: 'https://feed.bithumb.com/notice/1654458',
+      publishedAt: Timestamp.fromNanoseconds(
+        BigInt.parse('1700000000123456790'),
+      ),
+      modifiedAt: Timestamp.fromNanoseconds(
+        BigInt.parse('1700000000123456791'),
+      ),
+    );
+    final fee = BithumbAssetFee(
+      displayName: '비트코인',
+      asset: 'btc',
+      networks: [
+        BithumbNetworkFee(
+          network: Network.bitcoin,
+          providerName: 'Bitcoin',
+          depositFee: Decimal.zero,
+          minimumDeposit: Decimal.zero,
+          withdrawalFee: WithdrawalFee.fixed(Decimal.parse('0.0002')),
+          minimumWithdrawal: Decimal.parse('0.001'),
+        ),
+      ],
+    );
+    final apiKey = BithumbApiKey(
+      accessKey: 'example-access-key-1',
+      expiresAt: Timestamp.fromSeconds(1812672000),
+    );
+    final pendingOrders = BithumbPendingOrdersRequest(
+      market: Market.spot(Exchange.bithumb, 'BTC', 'KRW'),
+      state: BithumbPendingOrderState.watch,
+      limit: 25,
+      orderBy: BithumbOrderDirection.ascending,
+      cursor: Cursor('page+/=='),
+    );
+    const twapOrders = BithumbTwapOrdersRequest(
+      state: BithumbTwapState.progress,
+      limit: 25,
+      orderBy: BithumbTwapOrderDirection.ascending,
     );
     final ledger = HyperliquidLedgerEntry(
       kind: HyperliquidLedgerKind.other('futureKind'),
@@ -60,12 +119,124 @@ void main() {
     );
 
     expect(context.midPrice.toString(), '12345678901234567890.00000001');
+    expect(markPrice.markPrice, Decimal.parse('50001.25'));
+    expect(openInterest.openInterest, Decimal.parse('1234.5'));
+    expect(mid.price, Decimal.parse('50000.5'));
     expect(
       alert.endsAt.nanosecondsSinceEpoch,
       BigInt.parse('1700000000123456789'),
     );
     expect(ledger.kind.isOther, isTrue);
     expect(ledger.amount.toString(), '0.000000000000000001');
+    expect(notice.categories, ['입출금']);
+    expect(
+      notice.modifiedAt.nanosecondsSinceEpoch,
+      BigInt.parse('1700000000123456791'),
+    );
+    expect(fee.asset, 'BTC');
+    expect(fee.networks.single.withdrawalFee, isA<WithdrawalFeeFixed>());
+    expect(apiKey.accessKey, 'example-access-key-1');
+    expect(apiKey.expiresAt, Timestamp.fromSeconds(1812672000));
+    expect(pendingOrders.state, BithumbPendingOrderState.watch);
+    expect(pendingOrders.orderBy, BithumbOrderDirection.ascending);
+    expect(pendingOrders.cursor?.value, 'page+/==');
+    expect(twapOrders.uuids, isEmpty);
+    expect(twapOrders.state, BithumbTwapState.progress);
+    expect(twapOrders.orderBy, BithumbTwapOrderDirection.ascending);
     expect(market.kind, MarketKind.perpetual);
+  });
+
+  test('Upbit 연간 캔들과 호가 정책은 지역별 필드를 잃지 않는다', () {
+    final market = Market.spot(Exchange.upbit, 'BTC', 'KRW');
+    final annual = UpbitYearCandle(
+      market: market,
+      openTime: Timestamp.fromSeconds(1767225600),
+      koreaOpenTime: Timestamp.fromSeconds(1767225600),
+      timestamp: Timestamp.fromNanoseconds(BigInt.parse('1786467753786000000')),
+      open: Decimal.parse('128000000.00000000'),
+      high: Decimal.parse('143050000.00000000'),
+      low: Decimal.parse('88770000.00000000'),
+      close: Decimal.parse('89587000.00000000'),
+      volume: Decimal.parse('348666.78732189'),
+      quoteVolume: Decimal.parse('37189906239683.17623000'),
+      firstDayOfPeriod: '2026-01-01',
+    );
+    final policy = UpbitOrderBookInstrument(
+      market: market,
+      quoteCurrency: 'KRW',
+      tickSize: Decimal.parse('1000'),
+      supportedLevels: [Decimal.zero, Decimal.parse('10000')],
+    );
+    final deposit = UpbitDepositInfo(
+      asset: 'btc',
+      network: Network.bitcoin,
+      providerNetwork: 'BTC',
+      isDepositPossible: true,
+      minimumDepositAmount: Decimal.parse('0.0005'),
+      minimumDepositConfirmations: BigInt.parse('18446744073709551615'),
+      decimalPrecision: BigInt.parse('18446744073709551615'),
+    );
+
+    expect(annual.koreaOpenTime, annual.openTime);
+    expect(annual.quoteVolume.toString(), '37189906239683.17623000');
+    expect(policy.supportedLevels, [Decimal.zero, Decimal.parse('10000')]);
+    expect(deposit.asset, 'BTC');
+    expect(deposit.minimumDepositAmount, Decimal.parse('0.0005'));
+    expect(
+      deposit.minimumDepositConfirmations,
+      BigInt.parse('18446744073709551615'),
+    );
+    expect(deposit.decimalPrecision, BigInt.parse('18446744073709551615'));
+    expect(deposit.depositImpossibleReason, isNull);
+
+    final cancellation = UpbitBatchCancelRequest(
+      scope: UpbitBatchCancelScope.quoteCurrencies(values: ['KRW']),
+      excludedPairs: [market],
+      side: Side.buy,
+      count: 20,
+      orderBy: UpbitOrderDirection.ascending,
+    );
+    expect(cancellation.scope, isA<UpbitBatchCancelScopeQuoteCurrencies>());
+    expect(cancellation.excludedPairs, [market]);
+    expect(cancellation.count, 20);
+  });
+
+  test('이번 제공자 기능의 식별자·원본 응답·큰 ID를 보존한다', () {
+    final aggregateMarket = Market.perpetual(Exchange.binance, 'BTC', 'USDT');
+    final replacement = UpbitCancelAndNewOrderRequest(
+      previousOrder: UpbitOrderReference.uuid('previous-order'),
+      newOrder: UpbitCancelAndNewOrder.limit(
+        volume: UpbitOrderVolume.amount(Decimal.parse('0.01')),
+        price: Decimal.parse('50000'),
+        timeInForce: TimeInForce.postOnly,
+      ),
+      newSmpType: UpbitSmpType.cancelMaker,
+    );
+    final accepted = BithumbBatchOrder(
+      orderId: 'order-1',
+      market: Market.spot(Exchange.bithumb, 'BTC', 'KRW'),
+      side: Side.buy,
+      orderType: OrderType.limit,
+      timeInForce: 'post_only',
+      stpType: 'cancel_maker',
+    );
+    final aggregate = BinanceAggregateTrade(
+      market: aggregateMarket,
+      aggregateId: BigInt.parse('18446744073709551614'),
+      firstTradeId: BigInt.parse('18446744073709551600'),
+      lastTradeId: BigInt.parse('18446744073709551614'),
+      timestamp: Timestamp.fromSeconds(1700000000),
+      price: Decimal.parse('50000.25'),
+      quantity: Decimal.parse('0.01'),
+      takerSide: Side.buy,
+      rawJson: '{}',
+    );
+
+    expect(replacement.previousOrder, isA<UpbitOrderReferenceUuid>());
+    expect(replacement.newSmpType, UpbitSmpType.cancelMaker);
+    expect(accepted.timeInForce, 'post_only');
+    expect(accepted.stpType, 'cancel_maker');
+    expect(aggregate.aggregateId, BigInt.parse('18446744073709551614'));
+    expect(aggregate.lastTradeId, BigInt.parse('18446744073709551614'));
   });
 }

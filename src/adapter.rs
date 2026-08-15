@@ -5,12 +5,17 @@ use std::pin::Pin;
 
 use crate::error::{Error, Result};
 use crate::feature::Feature;
-use crate::request::{CandleRequest, HistoryRequest, MarginRequest, OrderRequest};
+use crate::request::{
+    CancelOrdersRequest, CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest,
+    OrderHistoryRequest, OrderLookupRequest, OrderRequest, TransferHistoryRequest,
+    TransferLookupRequest, WithdrawRequest,
+};
 use crate::stream::{AccountStream, MarketStream};
 use crate::types::{
-    Balance, Candle, Exchange, Feed, FundingPayment, FundingRate, MarginSummary, Market,
-    MarketInfo, MarketKind, Order, OrderBook, Page, Position, StreamConfig, Subscription, Ticker,
-    Trade,
+    AssetNetwork, Balance, CancelOrdersResult, Candle, Deposit, DepositAddress,
+    DepositAddressEntry, Exchange, Feed, FundingPayment, FundingRate, MarginSummary, Market,
+    MarketInfo, MarketKind, Order, OrderBook, OrderRules, Page, Position, StreamConfig,
+    Subscription, Ticker, Trade, Withdrawal, WithdrawalQuote,
 };
 
 /// A boxed future used to keep [`Adapter`] dyn-compatible.
@@ -106,10 +111,124 @@ pub trait Adapter: Send + Sync + 'static {
         unsupported(self.exchange(), Feature::Balances)
     }
 
+    /// Reads current order fees, limits, supported combinations, and balances.
+    fn order_rules(&self, market: &Market) -> BoxFuture<'_, Result<OrderRules>> {
+        let _ = market;
+        unsupported(self.exchange(), Feature::Trading)
+    }
+
+    /// Reads live transfer rules for one asset.
+    fn asset_networks(&self, asset: &str) -> BoxFuture<'_, Result<Vec<AssetNetwork>>> {
+        let _ = asset;
+        unsupported(self.exchange(), Feature::AssetNetworks)
+    }
+
+    /// Lists all exchange-issued deposit addresses for this account.
+    ///
+    /// A provider can omit network metadata, and an address can be absent
+    /// while issuance is still pending.
+    fn deposit_addresses(&self) -> BoxFuture<'_, Result<Vec<DepositAddressEntry>>> {
+        unsupported(self.exchange(), Feature::DepositAddresses)
+    }
+
+    /// Reads an exchange-issued deposit address.
+    fn deposit_address(
+        &self,
+        request: &DepositAddressRequest,
+    ) -> BoxFuture<'_, Result<DepositAddress>> {
+        let _ = request;
+        unsupported(self.exchange(), Feature::DepositAddresses)
+    }
+
+    /// Requests creation of an exchange-issued deposit address.
+    ///
+    /// Some exchanges generate addresses asynchronously. In that case the
+    /// returned address is `None`; callers should poll [`Self::deposit_address`]
+    /// until the address is issued.
+    fn create_deposit_address(
+        &self,
+        request: &DepositAddressRequest,
+    ) -> BoxFuture<'_, Result<DepositAddress>> {
+        let _ = request;
+        unsupported(self.exchange(), Feature::DepositAddresses)
+    }
+
+    /// Performs live source-account checks without submitting a withdrawal.
+    fn prepare_withdrawal(
+        &self,
+        request: &WithdrawRequest,
+    ) -> BoxFuture<'_, Result<WithdrawalQuote>> {
+        let _ = request;
+        unsupported(self.exchange(), Feature::WithdrawalQuotes)
+    }
+
+    /// Submits one withdrawal without automatic retry.
+    fn withdraw(&self, request: &WithdrawRequest) -> BoxFuture<'_, Result<Withdrawal>> {
+        let _ = request;
+        unsupported(self.exchange(), Feature::Withdrawals)
+    }
+
+    /// Looks up one deposit by exchange UUID or transaction ID.
+    fn deposit(&self, request: &TransferLookupRequest) -> BoxFuture<'_, Result<Deposit>> {
+        let _ = request;
+        unsupported(self.exchange(), Feature::DepositLookup)
+    }
+
+    /// Looks up one withdrawal by exchange UUID or transaction ID.
+    fn withdrawal(&self, request: &TransferLookupRequest) -> BoxFuture<'_, Result<Withdrawal>> {
+        let _ = request;
+        unsupported(self.exchange(), Feature::WithdrawalLookup)
+    }
+
+    /// Cancels a withdrawal that the exchange still permits to be cancelled.
+    fn cancel_withdrawal(&self, withdrawal_id: &str) -> BoxFuture<'_, Result<()>> {
+        let _ = withdrawal_id;
+        unsupported(self.exchange(), Feature::WithdrawalCancellation)
+    }
+
+    /// Reads one page of deposit history.
+    fn deposits(&self, request: &TransferHistoryRequest) -> BoxFuture<'_, Result<Page<Deposit>>> {
+        let _ = request;
+        unsupported(self.exchange(), Feature::DepositHistory)
+    }
+
+    /// Reads one page of withdrawal history.
+    fn withdrawals(
+        &self,
+        request: &TransferHistoryRequest,
+    ) -> BoxFuture<'_, Result<Page<Withdrawal>>> {
+        let _ = request;
+        unsupported(self.exchange(), Feature::WithdrawalHistory)
+    }
+
     /// Reads the account's open orders, optionally narrowed to one market.
     fn open_orders(&self, market: Option<&Market>) -> BoxFuture<'_, Result<Vec<Order>>> {
         let _ = market;
         unsupported(self.exchange(), Feature::OpenOrders)
+    }
+
+    /// Reads one order by the exchange's own identifier.
+    fn order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<Order>> {
+        let _ = (market, order_id);
+        unsupported(self.exchange(), Feature::OrderHistory)
+    }
+
+    /// Reads one order by the caller-assigned identifier supplied at placement.
+    fn order_by_client_id(&self, market: &Market, client_id: &str) -> BoxFuture<'_, Result<Order>> {
+        let _ = (market, client_id);
+        unsupported(self.exchange(), Feature::OrderHistory)
+    }
+
+    /// Looks up up to 100 orders by exchange or caller-assigned identifiers.
+    fn orders_by_ids(&self, request: &OrderLookupRequest) -> BoxFuture<'_, Result<Vec<Order>>> {
+        let _ = request;
+        unsupported(self.exchange(), Feature::OrderHistory)
+    }
+
+    /// Reads one newest-first page of completed or cancelled orders.
+    fn order_history(&self, request: &OrderHistoryRequest) -> BoxFuture<'_, Result<Page<Order>>> {
+        let _ = request;
+        unsupported(self.exchange(), Feature::OrderHistory)
     }
 
     /// Opens a live private account subscription.
@@ -128,8 +247,27 @@ pub trait Adapter: Send + Sync + 'static {
     }
 
     /// Cancels an order by the exchange's own identifier.
-    fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<Order>> {
+    fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<()>> {
         let _ = (market, order_id);
+        unsupported(self.exchange(), Feature::Trading)
+    }
+
+    /// Cancels an order by the caller-assigned identifier supplied at placement.
+    fn cancel_order_by_client_id(
+        &self,
+        market: &Market,
+        client_id: &str,
+    ) -> BoxFuture<'_, Result<()>> {
+        let _ = (market, client_id);
+        unsupported(self.exchange(), Feature::Trading)
+    }
+
+    /// Cancels multiple orders and returns every per-order outcome.
+    fn cancel_orders(
+        &self,
+        request: &CancelOrdersRequest,
+    ) -> BoxFuture<'_, Result<CancelOrdersResult>> {
+        let _ = request;
         unsupported(self.exchange(), Feature::Trading)
     }
 
@@ -222,8 +360,84 @@ impl Adapter for Box<dyn Adapter> {
         (**self).balances()
     }
 
+    fn order_rules(&self, market: &Market) -> BoxFuture<'_, Result<OrderRules>> {
+        (**self).order_rules(market)
+    }
+
+    fn asset_networks(&self, asset: &str) -> BoxFuture<'_, Result<Vec<AssetNetwork>>> {
+        (**self).asset_networks(asset)
+    }
+
+    fn deposit_addresses(&self) -> BoxFuture<'_, Result<Vec<DepositAddressEntry>>> {
+        (**self).deposit_addresses()
+    }
+
+    fn deposit_address(
+        &self,
+        request: &DepositAddressRequest,
+    ) -> BoxFuture<'_, Result<DepositAddress>> {
+        (**self).deposit_address(request)
+    }
+
+    fn create_deposit_address(
+        &self,
+        request: &DepositAddressRequest,
+    ) -> BoxFuture<'_, Result<DepositAddress>> {
+        (**self).create_deposit_address(request)
+    }
+
+    fn prepare_withdrawal(
+        &self,
+        request: &WithdrawRequest,
+    ) -> BoxFuture<'_, Result<WithdrawalQuote>> {
+        (**self).prepare_withdrawal(request)
+    }
+
+    fn withdraw(&self, request: &WithdrawRequest) -> BoxFuture<'_, Result<Withdrawal>> {
+        (**self).withdraw(request)
+    }
+
+    fn deposit(&self, request: &TransferLookupRequest) -> BoxFuture<'_, Result<Deposit>> {
+        (**self).deposit(request)
+    }
+
+    fn withdrawal(&self, request: &TransferLookupRequest) -> BoxFuture<'_, Result<Withdrawal>> {
+        (**self).withdrawal(request)
+    }
+
+    fn cancel_withdrawal(&self, withdrawal_id: &str) -> BoxFuture<'_, Result<()>> {
+        (**self).cancel_withdrawal(withdrawal_id)
+    }
+
+    fn deposits(&self, request: &TransferHistoryRequest) -> BoxFuture<'_, Result<Page<Deposit>>> {
+        (**self).deposits(request)
+    }
+
+    fn withdrawals(
+        &self,
+        request: &TransferHistoryRequest,
+    ) -> BoxFuture<'_, Result<Page<Withdrawal>>> {
+        (**self).withdrawals(request)
+    }
+
     fn open_orders(&self, market: Option<&Market>) -> BoxFuture<'_, Result<Vec<Order>>> {
         (**self).open_orders(market)
+    }
+
+    fn order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<Order>> {
+        (**self).order(market, order_id)
+    }
+
+    fn order_by_client_id(&self, market: &Market, client_id: &str) -> BoxFuture<'_, Result<Order>> {
+        (**self).order_by_client_id(market, client_id)
+    }
+
+    fn orders_by_ids(&self, request: &OrderLookupRequest) -> BoxFuture<'_, Result<Vec<Order>>> {
+        (**self).orders_by_ids(request)
+    }
+
+    fn order_history(&self, request: &OrderHistoryRequest) -> BoxFuture<'_, Result<Page<Order>>> {
+        (**self).order_history(request)
     }
 
     fn subscribe_account(&self, config: &StreamConfig) -> BoxFuture<'_, Result<AccountStream>> {
@@ -234,8 +448,23 @@ impl Adapter for Box<dyn Adapter> {
         (**self).place_order(request)
     }
 
-    fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<Order>> {
+    fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<()>> {
         (**self).cancel_order(market, order_id)
+    }
+
+    fn cancel_order_by_client_id(
+        &self,
+        market: &Market,
+        client_id: &str,
+    ) -> BoxFuture<'_, Result<()>> {
+        (**self).cancel_order_by_client_id(market, client_id)
+    }
+
+    fn cancel_orders(
+        &self,
+        request: &CancelOrdersRequest,
+    ) -> BoxFuture<'_, Result<CancelOrdersResult>> {
+        (**self).cancel_orders(request)
     }
 
     fn positions(&self, market: Option<&Market>) -> BoxFuture<'_, Result<Vec<Position>>> {

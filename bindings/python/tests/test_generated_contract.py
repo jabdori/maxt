@@ -2,6 +2,7 @@ from dataclasses import fields, is_dataclass
 from inspect import iscoroutinefunction
 from typing import get_type_hints
 
+import maxt
 from maxt import (
     Adapter,
     AdapterError,
@@ -15,12 +16,14 @@ from maxt import (
     Feature,
     HyperliquidAdapter,
     InvalidRequestError,
+    TransferError,
     TransportError,
     UnsupportedError,
     UpbitAdapter,
 )
 from maxt._generated_contract import (
     ADAPTER_OPERATIONS,
+    CLIENT_COMPOSITIONS,
     CLIENT_MEMBERS,
     ERROR_VARIANTS,
     EXCHANGES,
@@ -30,7 +33,7 @@ from maxt._generated_contract import (
 from maxt._generated_api import _GeneratedAdapterApi, _GeneratedClientApi
 from maxt._generated_delegate import _GeneratedNativeClientDelegateApi
 from maxt._generated_wire import ERROR_FIELDS, IDENTIFIER_VARIANTS, RECORD_FIELDS
-from maxt import _generated_identifiers, models
+from maxt import _generated_identifiers, _generated_models, models
 
 
 def test_generated_exchange_and_feature_inventories_match_public_models() -> None:
@@ -53,7 +56,7 @@ def test_generated_api_inventories_match_public_classes() -> None:
         for name, value in _GeneratedAdapterApi.__dict__.items()
         if iscoroutinefunction(value)
     }
-    assert set(ADAPTER_OPERATIONS) == {
+    assert set(ADAPTER_OPERATIONS) | set(CLIENT_COMPOSITIONS) == {
         name
         for name, value in _GeneratedNativeClientDelegateApi.__dict__.items()
         if iscoroutinefunction(value) and not name.startswith("_")
@@ -73,15 +76,24 @@ def test_generated_api_inventories_match_public_classes() -> None:
         "hyperliquid": (HyperliquidAdapter, {"testnet"}),
     }
     for exchange, (adapter, factories) in providers.items():
+        provider_layers = (
+            layer
+            for layer in adapter.__mro__
+            if layer is adapter or layer.__name__.endswith("ProviderMethods")
+        )
         members = {
             name
-            for name in adapter.__dict__
-            if not name.startswith("_") and name not in factories
+            for layer in provider_layers
+            for name, value in layer.__dict__.items()
+            if not name.startswith("_")
+            and name not in factories
+            and (iscoroutinefunction(value) or isinstance(value, property))
         }
         assert set(PROVIDER_METHODS[exchange]) == members
 
     errors = (
         InvalidRequestError,
+        TransferError,
         UnsupportedError,
         AdapterError,
         AuthError,
@@ -103,6 +115,15 @@ def test_generated_runtime_annotations_resolve() -> None:
                 get_type_hints(value)
 
 
+def test_deposit_address_entry_is_publicly_exported() -> None:
+    for name in ("DepositAddressEntry",):
+        generated = getattr(_generated_models, name)
+        assert getattr(models, name) is generated
+        assert getattr(maxt, name) is generated
+        assert name in models.__all__
+        assert name in maxt.__all__
+
+
 def test_generated_wire_fields_match_public_models_and_errors() -> None:
     compared = 0
     for name, schema_fields in RECORD_FIELDS.items():
@@ -118,6 +139,7 @@ def test_generated_wire_fields_match_public_models_and_errors() -> None:
 
     errors = (
         InvalidRequestError,
+        TransferError,
         UnsupportedError,
         AdapterError,
         AuthError,

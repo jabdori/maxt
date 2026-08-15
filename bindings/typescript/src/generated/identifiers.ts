@@ -30,7 +30,18 @@ export class Feature extends StringValue {
   static readonly TickerStream = new Feature("ticker_stream");
   static readonly CandleStream = new Feature("candle_stream");
   static readonly Balances = new Feature("balances");
+  static readonly AssetNetworks = new Feature("asset_networks");
+  static readonly DepositAddresses = new Feature("deposit_addresses");
+  static readonly DepositHistory = new Feature("deposit_history");
+  static readonly DepositLookup = new Feature("deposit_lookup");
+  static readonly TravelRule = new Feature("travel_rule");
+  static readonly WithdrawalQuotes = new Feature("withdrawal_quotes");
+  static readonly Withdrawals = new Feature("withdrawals");
+  static readonly WithdrawalHistory = new Feature("withdrawal_history");
+  static readonly WithdrawalLookup = new Feature("withdrawal_lookup");
+  static readonly WithdrawalCancellation = new Feature("withdrawal_cancellation");
   static readonly OpenOrders = new Feature("open_orders");
+  static readonly OrderHistory = new Feature("order_history");
   static readonly AccountStream = new Feature("account_stream");
   static readonly Trading = new Feature("trading");
   static readonly Positions = new Feature("positions");
@@ -50,7 +61,18 @@ export class Feature extends StringValue {
     Feature.TickerStream,
     Feature.CandleStream,
     Feature.Balances,
+    Feature.AssetNetworks,
+    Feature.DepositAddresses,
+    Feature.DepositHistory,
+    Feature.DepositLookup,
+    Feature.TravelRule,
+    Feature.WithdrawalQuotes,
+    Feature.Withdrawals,
+    Feature.WithdrawalHistory,
+    Feature.WithdrawalLookup,
+    Feature.WithdrawalCancellation,
     Feature.OpenOrders,
+    Feature.OrderHistory,
     Feature.AccountStream,
     Feature.Trading,
     Feature.Positions,
@@ -63,8 +85,10 @@ export class Feature extends StringValue {
   private constructor(id: string) {
     super(id);
     this.needsCredentials = new Set([
-      "balances", "open_orders", "account_stream", "trading", "positions", "margin",
-      "funding_payments", "margin_config", "reduce_only_orders",
+      "balances", "open_orders", "order_history", "account_stream", "trading", "positions", "margin",
+      "funding_payments", "margin_config", "reduce_only_orders", "asset_networks",
+      "deposit_addresses", "deposit_history", "deposit_lookup", "travel_rule", "withdrawal_quotes", "withdrawals",
+      "withdrawal_history", "withdrawal_lookup", "withdrawal_cancellation",
     ]).has(id);
     this.isDerivativesOnly = new Set([
       "positions", "margin", "funding_rates", "funding_payments", "margin_config",
@@ -117,11 +141,13 @@ export class Interval extends StringValue {
   static readonly Min1 = new Interval("min1", 60);
   static readonly Min3 = new Interval("min3", 180);
   static readonly Min5 = new Interval("min5", 300);
+  static readonly Min10 = new Interval("min10", 600);
   static readonly Min15 = new Interval("min15", 900);
   static readonly Min30 = new Interval("min30", 1800);
   static readonly Hour1 = new Interval("hour1", 3600);
   static readonly Hour2 = new Interval("hour2", 7200);
   static readonly Hour4 = new Interval("hour4", 14400);
+  static readonly Hour6 = new Interval("hour6", 21600);
   static readonly Hour8 = new Interval("hour8", 28800);
   static readonly Hour12 = new Interval("hour12", 43200);
   static readonly Day1 = new Interval("day1", 86400);
@@ -133,11 +159,13 @@ export class Interval extends StringValue {
     Interval.Min1,
     Interval.Min3,
     Interval.Min5,
+    Interval.Min10,
     Interval.Min15,
     Interval.Min30,
     Interval.Hour1,
     Interval.Hour2,
     Interval.Hour4,
+    Interval.Hour6,
     Interval.Hour8,
     Interval.Hour12,
     Interval.Day1,
@@ -189,12 +217,24 @@ export class OrderStatus extends StringValue {
   readonly isLive: boolean;
 }
 
+export class OrderIdKind extends StringValue {
+  static readonly Exchange = new OrderIdKind("exchange");
+  static readonly Client = new OrderIdKind("client");
+  static readonly values: readonly OrderIdKind[] = Object.freeze([
+    OrderIdKind.Exchange,
+    OrderIdKind.Client,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
 export class OrderType extends StringValue {
   static readonly Market = new OrderType("market");
   static readonly Limit = new OrderType("limit");
+  static readonly Best = new OrderType("best");
   static readonly values: readonly OrderType[] = Object.freeze([
     OrderType.Market,
     OrderType.Limit,
+    OrderType.Best,
   ]);
   private constructor(id: string) { super(id); Object.freeze(this); }
 }
@@ -237,6 +277,86 @@ export class UpbitRegion extends StringValue {
   private constructor(id: string) { super(id); Object.freeze(this); }
 }
 
+export class UpbitOrderDirection extends StringValue {
+  static readonly Ascending = new UpbitOrderDirection("asc");
+  static readonly Descending = new UpbitOrderDirection("desc");
+  static readonly values: readonly UpbitOrderDirection[] = Object.freeze([
+    UpbitOrderDirection.Ascending,
+    UpbitOrderDirection.Descending,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class UpbitClosedOrderState extends StringValue {
+  static readonly Done = new UpbitClosedOrderState("done");
+  static readonly Cancel = new UpbitClosedOrderState("cancel");
+  static readonly values: readonly UpbitClosedOrderState[] = Object.freeze([
+    UpbitClosedOrderState.Done,
+    UpbitClosedOrderState.Cancel,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class UpbitSmpType extends StringValue {
+  static readonly CancelMaker = new UpbitSmpType("cancel_maker");
+  static readonly CancelTaker = new UpbitSmpType("cancel_taker");
+  static readonly Reduce = new UpbitSmpType("reduce");
+  static readonly values: readonly UpbitSmpType[] = Object.freeze([
+    UpbitSmpType.CancelMaker,
+    UpbitSmpType.CancelTaker,
+    UpbitSmpType.Reduce,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class UpbitKrwTwoFactorType extends StringValue {
+  static readonly Kakao = new UpbitKrwTwoFactorType("kakao");
+  static readonly Naver = new UpbitKrwTwoFactorType("naver");
+  static readonly Hana = new UpbitKrwTwoFactorType("hana");
+  static readonly values: readonly UpbitKrwTwoFactorType[] = Object.freeze([
+    UpbitKrwTwoFactorType.Kakao,
+    UpbitKrwTwoFactorType.Naver,
+    UpbitKrwTwoFactorType.Hana,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class UpbitPocketTransferState extends StringValue {
+  static readonly Submitted = new UpbitPocketTransferState("submitted");
+  static readonly Processing = new UpbitPocketTransferState("processing");
+  static readonly Done = new UpbitPocketTransferState("done");
+  static readonly Failed = new UpbitPocketTransferState("failed");
+  static readonly values: readonly UpbitPocketTransferState[] = Object.freeze([
+    UpbitPocketTransferState.Submitted,
+    UpbitPocketTransferState.Processing,
+    UpbitPocketTransferState.Done,
+    UpbitPocketTransferState.Failed,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class UpbitPocketTransferDirection extends StringValue {
+  static readonly Incoming = new UpbitPocketTransferDirection("in");
+  static readonly Outgoing = new UpbitPocketTransferDirection("out");
+  static readonly All = new UpbitPocketTransferDirection("all");
+  static readonly values: readonly UpbitPocketTransferDirection[] = Object.freeze([
+    UpbitPocketTransferDirection.Incoming,
+    UpbitPocketTransferDirection.Outgoing,
+    UpbitPocketTransferDirection.All,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class UpbitPocketTransferOrder extends StringValue {
+  static readonly Ascending = new UpbitPocketTransferOrder("asc");
+  static readonly Descending = new UpbitPocketTransferOrder("desc");
+  static readonly values: readonly UpbitPocketTransferOrder[] = Object.freeze([
+    UpbitPocketTransferOrder.Ascending,
+    UpbitPocketTransferOrder.Descending,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
 export class BithumbAlertStep extends StringValue {
   static readonly Caution = new BithumbAlertStep("caution");
   static readonly Warning = new BithumbAlertStep("warning");
@@ -251,12 +371,88 @@ export class BithumbAlertStep extends StringValue {
   private constructor(id: string) { super(id); Object.freeze(this); }
 }
 
+export class BithumbPendingOrderState extends StringValue {
+  static readonly Wait = new BithumbPendingOrderState("wait");
+  static readonly Watch = new BithumbPendingOrderState("watch");
+  static readonly values: readonly BithumbPendingOrderState[] = Object.freeze([
+    BithumbPendingOrderState.Wait,
+    BithumbPendingOrderState.Watch,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class BithumbClosedOrderState extends StringValue {
+  static readonly Done = new BithumbClosedOrderState("done");
+  static readonly Cancel = new BithumbClosedOrderState("cancel");
+  static readonly values: readonly BithumbClosedOrderState[] = Object.freeze([
+    BithumbClosedOrderState.Done,
+    BithumbClosedOrderState.Cancel,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class BithumbOrderDirection extends StringValue {
+  static readonly Ascending = new BithumbOrderDirection("asc");
+  static readonly Descending = new BithumbOrderDirection("desc");
+  static readonly values: readonly BithumbOrderDirection[] = Object.freeze([
+    BithumbOrderDirection.Ascending,
+    BithumbOrderDirection.Descending,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class BithumbOrderListState extends StringValue {
+  static readonly Wait = new BithumbOrderListState("wait");
+  static readonly Watch = new BithumbOrderListState("watch");
+  static readonly Done = new BithumbOrderListState("done");
+  static readonly Cancel = new BithumbOrderListState("cancel");
+  static readonly values: readonly BithumbOrderListState[] = Object.freeze([
+    BithumbOrderListState.Wait,
+    BithumbOrderListState.Watch,
+    BithumbOrderListState.Done,
+    BithumbOrderListState.Cancel,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class BithumbTwapState extends StringValue {
+  static readonly Progress = new BithumbTwapState("progress");
+  static readonly Done = new BithumbTwapState("done");
+  static readonly Cancel = new BithumbTwapState("cancel");
+  static readonly values: readonly BithumbTwapState[] = Object.freeze([
+    BithumbTwapState.Progress,
+    BithumbTwapState.Done,
+    BithumbTwapState.Cancel,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class BithumbTwapOrderDirection extends StringValue {
+  static readonly Ascending = new BithumbTwapOrderDirection("asc");
+  static readonly Descending = new BithumbTwapOrderDirection("desc");
+  static readonly values: readonly BithumbTwapOrderDirection[] = Object.freeze([
+    BithumbTwapOrderDirection.Ascending,
+    BithumbTwapOrderDirection.Descending,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
 export class BinanceMarket extends StringValue {
   static readonly Spot = new BinanceMarket("spot");
   static readonly UsdMFutures = new BinanceMarket("usd_m");
   static readonly values: readonly BinanceMarket[] = Object.freeze([
     BinanceMarket.Spot,
     BinanceMarket.UsdMFutures,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class BinanceC2cTradeType extends StringValue {
+  static readonly Buy = new BinanceC2cTradeType("BUY");
+  static readonly Sell = new BinanceC2cTradeType("SELL");
+  static readonly values: readonly BinanceC2cTradeType[] = Object.freeze([
+    BinanceC2cTradeType.Buy,
+    BinanceC2cTradeType.Sell,
   ]);
   private constructor(id: string) { super(id); Object.freeze(this); }
 }
@@ -302,4 +498,105 @@ export class ExchangeErrorKind extends StringValue {
   private constructor(id: string) { super(id); this.retryable = id === "rate_limited" || id === "unavailable"; Object.freeze(this); }
   private readonly retryable: boolean;
   isRetryable(): boolean { return this.retryable; }
+}
+
+export class Network extends StringValue {
+  static readonly Bitcoin = new Network("bitcoin");
+  static readonly Ethereum = new Network("ethereum");
+  static readonly Arbitrum = new Network("arbitrum");
+  static readonly BnbSmartChain = new Network("bnb_smart_chain");
+  static readonly Tron = new Network("tron");
+  static readonly Solana = new Network("solana");
+  static readonly Polygon = new Network("polygon");
+  static readonly Base = new Network("base");
+  static readonly Optimism = new Network("optimism");
+  static readonly AvalancheC = new Network("avalanche_c");
+  static readonly XrpLedger = new Network("xrp_ledger");
+  static readonly Stellar = new Network("stellar");
+  static readonly Cosmos = new Network("cosmos");
+  static readonly Aptos = new Network("aptos");
+  static readonly Sui = new Network("sui");
+  static readonly Ton = new Network("ton");
+  static readonly Near = new Network("near");
+  static readonly Polkadot = new Network("polkadot");
+  static readonly values: readonly Network[] = Object.freeze([
+    Network.Bitcoin,
+    Network.Ethereum,
+    Network.Arbitrum,
+    Network.BnbSmartChain,
+    Network.Tron,
+    Network.Solana,
+    Network.Polygon,
+    Network.Base,
+    Network.Optimism,
+    Network.AvalancheC,
+    Network.XrpLedger,
+    Network.Stellar,
+    Network.Cosmos,
+    Network.Aptos,
+    Network.Sui,
+    Network.Ton,
+    Network.Near,
+    Network.Polkadot,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+  static other(value: string): Network { return this.values.find((item) => item.id === value) ?? new Network(value); }
+}
+
+export class WithdrawalStatus extends StringValue {
+  static readonly Pending = new WithdrawalStatus("pending");
+  static readonly Processing = new WithdrawalStatus("processing");
+  static readonly Completed = new WithdrawalStatus("completed");
+  static readonly Cancelled = new WithdrawalStatus("cancelled");
+  static readonly Failed = new WithdrawalStatus("failed");
+  static readonly Unknown = new WithdrawalStatus("unknown");
+  static readonly values: readonly WithdrawalStatus[] = Object.freeze([
+    WithdrawalStatus.Pending,
+    WithdrawalStatus.Processing,
+    WithdrawalStatus.Completed,
+    WithdrawalStatus.Cancelled,
+    WithdrawalStatus.Failed,
+    WithdrawalStatus.Unknown,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class DepositStatus extends StringValue {
+  static readonly Pending = new DepositStatus("pending");
+  static readonly Completed = new DepositStatus("completed");
+  static readonly Failed = new DepositStatus("failed");
+  static readonly Unknown = new DepositStatus("unknown");
+  static readonly values: readonly DepositStatus[] = Object.freeze([
+    DepositStatus.Pending,
+    DepositStatus.Completed,
+    DepositStatus.Failed,
+    DepositStatus.Unknown,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
+}
+
+export class TransferErrorKind extends StringValue {
+  static readonly AssetMismatch = new TransferErrorKind("asset_mismatch");
+  static readonly NetworkMismatch = new TransferErrorKind("network_mismatch");
+  static readonly AmbiguousNetwork = new TransferErrorKind("ambiguous_network");
+  static readonly NetworkUnavailable = new TransferErrorKind("network_unavailable");
+  static readonly MemoRequired = new TransferErrorKind("memo_required");
+  static readonly DestinationUnavailable = new TransferErrorKind("destination_unavailable");
+  static readonly AddressNotAllowed = new TransferErrorKind("address_not_allowed");
+  static readonly TravelRuleRequired = new TransferErrorKind("travel_rule_required");
+  static readonly AmountOutOfRange = new TransferErrorKind("amount_out_of_range");
+  static readonly PlanExpired = new TransferErrorKind("plan_expired");
+  static readonly values: readonly TransferErrorKind[] = Object.freeze([
+    TransferErrorKind.AssetMismatch,
+    TransferErrorKind.NetworkMismatch,
+    TransferErrorKind.AmbiguousNetwork,
+    TransferErrorKind.NetworkUnavailable,
+    TransferErrorKind.MemoRequired,
+    TransferErrorKind.DestinationUnavailable,
+    TransferErrorKind.AddressNotAllowed,
+    TransferErrorKind.TravelRuleRequired,
+    TransferErrorKind.AmountOutOfRange,
+    TransferErrorKind.PlanExpired,
+  ]);
+  private constructor(id: string) { super(id); Object.freeze(this); }
 }

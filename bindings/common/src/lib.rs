@@ -5,6 +5,10 @@ mod foreign;
 
 #[cfg(feature = "codegen")]
 #[doc(hidden)]
+pub mod coverage;
+
+#[cfg(feature = "codegen")]
+#[doc(hidden)]
 pub mod schema;
 
 pub use contract::{AdapterCall, AdapterReply, ForeignDispatcher};

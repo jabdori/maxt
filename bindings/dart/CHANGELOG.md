@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.3.3
+
+- Reissued 0.3.2 after formatting the release test source with the pinned Dart
+  SDK.
+
+## 0.3.2
+
+- Reissued 0.3.1 after aligning release code generation with the pinned Rust
+  formatter.
+
+## 0.3.1
+
+- Reissued 0.3.0 with the same Travel Rule and KRW transfer APIs after GitHub
+  Actions skipped the multi-tag push event.
+
+## 0.3.0
+
+- Added Upbit Travel Rule VASP lookup and verification APIs for Korea and Singapore.
+- Added Bithumb KRW transfer history and transfer request APIs.
+- Generated the matching Dart, Flutter Native, and WebAssembly API surfaces.
+
 ## 0.2.2
 
 - Fixed release validation by installing and selecting the bridge's pinned

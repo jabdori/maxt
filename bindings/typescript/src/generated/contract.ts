@@ -71,6 +71,145 @@ export interface BalanceWire {
   readonly locked: DecimalWire;
 }
 
+export interface OrderAccountWire {
+  readonly balance: BalanceWire;
+  readonly average_buy_price: DecimalWire;
+  readonly average_buy_price_modified: boolean;
+  readonly average_buy_price_unit: string | null;
+}
+
+export interface OrderOptionWire {
+  readonly provider_id: string;
+  readonly order_type: string | null;
+  readonly time_in_force: string | null;
+}
+
+export interface OrderRulesWire {
+  readonly market: MarketWire;
+  readonly market_name: string;
+  readonly status: string;
+  readonly buy_fee_rate: DecimalWire;
+  readonly sell_fee_rate: DecimalWire;
+  readonly maker_buy_fee_rate: DecimalWire;
+  readonly maker_sell_fee_rate: DecimalWire;
+  readonly sides: readonly string[];
+  readonly buy_options: readonly OrderOptionWire[];
+  readonly sell_options: readonly OrderOptionWire[];
+  readonly buy_price_unit: DecimalWire | null;
+  readonly sell_price_unit: DecimalWire | null;
+  readonly minimum_buy_total: DecimalWire;
+  readonly minimum_sell_total: DecimalWire;
+  readonly maximum_total: DecimalWire;
+  readonly quote_account: OrderAccountWire;
+  readonly base_account: OrderAccountWire;
+}
+
+export interface AssetNetworkWire {
+  readonly exchange: string;
+  readonly asset: string;
+  readonly network: string;
+  readonly provider_id: string;
+  readonly deposit_enabled: boolean;
+  readonly withdrawal_enabled: boolean;
+  readonly withdrawal_fee: WithdrawalFeeWire | null;
+  readonly minimum_withdrawal: DecimalWire | null;
+  readonly maximum_withdrawal: DecimalWire | null;
+  readonly memo_required: boolean;
+}
+
+export interface DepositAddressWire {
+  readonly exchange: string;
+  readonly asset: string;
+  readonly network: string;
+  readonly address: string | null;
+  readonly memo: string | null;
+}
+
+export interface DepositAddressEntryWire {
+  readonly exchange: string;
+  readonly asset: string;
+  readonly network: string | null;
+  readonly provider_network: string | null;
+  readonly address: string | null;
+  readonly memo: string | null;
+}
+
+export interface ExchangeDestinationWire {
+  readonly exchange: string;
+  readonly asset: string;
+  readonly network: string;
+  readonly address: string;
+  readonly memo: string | null;
+}
+
+export interface ChainDestinationWire {
+  readonly asset: string;
+  readonly network: string;
+  readonly address: string;
+  readonly memo: string | null;
+}
+
+export interface ExchangeTransferRequestWire {
+  readonly asset: string;
+  readonly source_network: string | null;
+  readonly destination_network: string | null;
+  readonly amount: DecimalWire;
+}
+
+export interface ChainTransferRequestWire {
+  readonly asset: string;
+  readonly source_network: string | null;
+  readonly destination: ChainDestinationWire;
+  readonly amount: DecimalWire;
+}
+
+export interface WithdrawalQuoteWire {
+  readonly fee: DecimalWire | null;
+  readonly expected_receive: DecimalWire | null;
+  readonly minimum_amount: DecimalWire | null;
+  readonly maximum_amount: DecimalWire | null;
+  readonly address_allowed: boolean | null;
+  readonly travel_rule: TravelRuleRequirementWire;
+  readonly expires_at: TimestampWire | null;
+}
+
+export interface TransferPlanWire {
+  readonly source: string;
+  readonly destination: string | null;
+  readonly request: WithdrawRequestWire;
+  readonly quote: WithdrawalQuoteWire;
+  readonly created_at: TimestampWire;
+  readonly expires_at: TimestampWire;
+}
+
+export interface WithdrawalWire {
+  readonly id: string;
+  readonly asset: string;
+  readonly network: string | null;
+  readonly provider_network: string | null;
+  readonly amount: DecimalWire;
+  readonly fee: DecimalWire | null;
+  readonly destination: TransferDestinationWire | null;
+  readonly status: string;
+  readonly provider_status: string;
+  readonly tx_id: string | null;
+  readonly created_at: TimestampWire | null;
+}
+
+export interface DepositWire {
+  readonly id: string;
+  readonly asset: string;
+  readonly network: string | null;
+  readonly provider_network: string | null;
+  readonly amount: DecimalWire;
+  readonly address: string | null;
+  readonly memo: string | null;
+  readonly status: string;
+  readonly provider_status: string;
+  readonly tx_id: string | null;
+  readonly created_at: TimestampWire | null;
+}
+
 export interface OrderWire {
   readonly id: string;
   readonly market: MarketWire;
@@ -80,6 +219,26 @@ export interface OrderWire {
   readonly remaining_quantity: DecimalWire;
   readonly price: DecimalWire | null;
   readonly created_at: TimestampWire | null;
+}
+
+export interface CancelledOrderWire {
+  readonly order_id: string;
+  readonly client_id: string | null;
+  readonly market: MarketWire | null;
+  readonly cancelled_at: TimestampWire | null;
+}
+
+export interface OrderCancelFailureWire {
+  readonly order_id: string | null;
+  readonly client_id: string | null;
+  readonly market: MarketWire | null;
+  readonly code: string | null;
+  readonly message: string | null;
+}
+
+export interface CancelOrdersResultWire {
+  readonly cancelled: readonly CancelledOrderWire[];
+  readonly failed: readonly OrderCancelFailureWire[];
 }
 
 export interface PositionWire {
@@ -132,6 +291,54 @@ export interface OrderRequestWire {
   readonly price: DecimalWire | null;
   readonly time_in_force: string | null;
   readonly reduce_only: boolean;
+  readonly client_id: string | null;
+}
+
+export interface OrderHistoryRequestWire {
+  readonly market: MarketWire | null;
+  readonly statuses: readonly string[];
+  readonly from: TimestampWire | null;
+  readonly to: TimestampWire | null;
+  readonly cursor: string | null;
+  readonly limit: number | null;
+}
+
+export interface OrderLookupRequestWire {
+  readonly kind: string;
+  readonly ids: readonly string[];
+  readonly market: MarketWire | null;
+}
+
+export interface CancelOrdersRequestWire {
+  readonly kind: string;
+  readonly ids: readonly string[];
+}
+
+export interface DepositAddressRequestWire {
+  readonly asset: string;
+  readonly network: string;
+  readonly amount: DecimalWire | null;
+}
+
+export interface WithdrawRequestWire {
+  readonly asset: string;
+  readonly network: string;
+  readonly amount: DecimalWire;
+  readonly destination: TransferDestinationWire;
+  readonly client_id: string | null;
+}
+
+export interface TransferLookupRequestWire {
+  readonly asset: string;
+  readonly id: string | null;
+  readonly tx_id: string | null;
+}
+
+export interface TransferHistoryRequestWire {
+  readonly asset: string | null;
+  readonly network: string | null;
+  readonly cursor: string | null;
+  readonly limit: number | null;
 }
 
 export interface StreamConfigWire {
@@ -172,10 +379,760 @@ export interface UpbitMarketEventWire {
   readonly cautions: readonly string[];
 }
 
+export interface UpbitListedSubscriptionWire {
+  readonly feed_type: string;
+  readonly markets: readonly MarketWire[];
+  readonly level: DecimalWire | null;
+}
+
+export interface UpbitSubscriptionListWire {
+  readonly ticket: string;
+  readonly subscriptions: readonly UpbitListedSubscriptionWire[];
+}
+
+export interface UpbitOrderResponseWire {
+  readonly common: OrderWire;
+  readonly order_type: string | null;
+  readonly volume: DecimalWire | null;
+  readonly reserved_fee: DecimalWire | null;
+  readonly remaining_fee: DecimalWire | null;
+  readonly paid_fee: DecimalWire | null;
+  readonly locked: DecimalWire | null;
+  readonly trades_count: number | null;
+  readonly prevented_volume: DecimalWire | null;
+  readonly prevented_locked: DecimalWire | null;
+  readonly time_in_force: string | null;
+  readonly identifier: string | null;
+  readonly smp_type: string | null;
+  readonly raw_json: string;
+}
+
+export interface UpbitDepositResponseWire {
+  readonly common: DepositWire;
+  readonly raw_json: string;
+}
+
+export interface UpbitWithdrawalResponseWire {
+  readonly common: WithdrawalWire;
+  readonly raw_json: string;
+}
+
+export interface UpbitCancelWithdrawalResponseWire {
+  readonly withdrawal_id: string;
+  readonly raw_json: string;
+}
+
+export interface UpbitCancelOrdersResponseWire {
+  readonly common: CancelOrdersResultWire;
+  readonly raw_json: string;
+}
+
+export interface UpbitCancelAndNewOrderDetailResultWire {
+  readonly common: UpbitCancelAndNewOrderResultWire;
+  readonly previous_order: UpbitOrderResponseWire;
+  readonly raw_json: string;
+}
+
+export interface UpbitTradeStreamEventWire {
+  readonly common: TradeWire;
+  readonly previous_closing_price: DecimalWire | null;
+  readonly change: string | null;
+  readonly change_price: DecimalWire | null;
+  readonly best_ask_price: DecimalWire | null;
+  readonly best_ask_size: DecimalWire | null;
+  readonly best_bid_price: DecimalWire | null;
+  readonly best_bid_size: DecimalWire | null;
+  readonly raw_json: string;
+}
+
+export interface UpbitOrderBookStreamEventWire {
+  readonly common: OrderBookWire;
+  readonly total_ask_size: DecimalWire | null;
+  readonly total_bid_size: DecimalWire | null;
+  readonly level: DecimalWire | null;
+  readonly stream_type: string | null;
+  readonly raw_json: string;
+}
+
+export interface UpbitTickerStreamEventWire {
+  readonly common: TickerWire;
+  readonly change_direction: string | null;
+  readonly market_state: string | null;
+  readonly trading_suspended: boolean | null;
+  readonly delisting_date: string | null;
+  readonly market_warning: string | null;
+  readonly raw_json: string;
+}
+
+export interface UpbitCandleStreamEventWire {
+  readonly common: CandleWire;
+  readonly stream_type: string | null;
+  readonly published_at: TimestampWire | null;
+  readonly raw_json: string;
+}
+
+export interface UpbitAssetStreamEventWire {
+  readonly balances: readonly BalanceWire[];
+  readonly asset_uuid: string | null;
+  readonly asset_timestamp: TimestampWire | null;
+  readonly published_at: TimestampWire | null;
+  readonly raw_json: string;
+}
+
+export interface UpbitOrderStreamEventWire {
+  readonly common: OrderWire;
+  readonly order_type: string | null;
+  readonly trade_uuid: string | null;
+  readonly time_in_force: string | null;
+  readonly trade_timestamp: TimestampWire | null;
+  readonly trade_fee: DecimalWire | null;
+  readonly is_maker: boolean | null;
+  readonly raw_json: string;
+}
+
+export interface UpbitYearCandleWire {
+  readonly market: MarketWire;
+  readonly open_time: TimestampWire;
+  readonly korea_open_time: TimestampWire | null;
+  readonly timestamp: TimestampWire;
+  readonly open: DecimalWire;
+  readonly high: DecimalWire;
+  readonly low: DecimalWire;
+  readonly close: DecimalWire;
+  readonly volume: DecimalWire;
+  readonly quote_volume: DecimalWire;
+  readonly first_day_of_period: string;
+}
+
+export interface UpbitOrderBookInstrumentWire {
+  readonly market: MarketWire;
+  readonly quote_currency: string;
+  readonly tick_size: DecimalWire;
+  readonly supported_levels: readonly DecimalWire[];
+}
+
+export interface UpbitOrderDetailRequestWire {
+  readonly market: MarketWire;
+  readonly uuid: string | null;
+  readonly identifier: string | null;
+}
+
+export interface UpbitOrderDetailTradeWire {
+  readonly market: MarketWire;
+  readonly uuid: string;
+  readonly price: DecimalWire;
+  readonly volume: DecimalWire;
+  readonly funds: DecimalWire;
+  readonly trend: string;
+  readonly created_at: TimestampWire;
+  readonly side: string;
+}
+
+export interface UpbitOrderDetailWire {
+  readonly market: MarketWire;
+  readonly uuid: string;
+  readonly side: string;
+  readonly order_type: string;
+  readonly price: DecimalWire | null;
+  readonly state: string;
+  readonly created_at: TimestampWire;
+  readonly volume: DecimalWire | null;
+  readonly remaining_volume: DecimalWire;
+  readonly executed_volume: DecimalWire;
+  readonly reserved_fee: DecimalWire;
+  readonly remaining_fee: DecimalWire;
+  readonly paid_fee: DecimalWire;
+  readonly locked: DecimalWire;
+  readonly trades_count: number;
+  readonly prevented_volume: DecimalWire;
+  readonly prevented_locked: DecimalWire;
+  readonly time_in_force: string | null;
+  readonly identifier: string | null;
+  readonly smp_type: string | null;
+  readonly trades: readonly UpbitOrderDetailTradeWire[];
+}
+
+export interface UpbitClosedOrdersRequestWire {
+  readonly market: MarketWire | null;
+  readonly state: string | null;
+  readonly states: readonly string[];
+  readonly start_time: TimestampWire | null;
+  readonly end_time: TimestampWire | null;
+  readonly limit: number | null;
+  readonly order_by: string | null;
+}
+
+export interface UpbitClosedOrderWire {
+  readonly market: MarketWire;
+  readonly uuid: string;
+  readonly side: string;
+  readonly ord_type: string;
+  readonly state: string;
+  readonly created_at: TimestampWire;
+  readonly volume: DecimalWire | null;
+  readonly price: DecimalWire | null;
+  readonly remaining_volume: DecimalWire;
+  readonly executed_volume: DecimalWire;
+  readonly executed_funds: DecimalWire | null;
+  readonly reserved_fee: DecimalWire;
+  readonly remaining_fee: DecimalWire;
+  readonly paid_fee: DecimalWire;
+  readonly locked: DecimalWire;
+  readonly trades_count: number;
+  readonly prevented_volume: DecimalWire;
+  readonly prevented_locked: DecimalWire;
+  readonly time_in_force: string | null;
+  readonly identifier: string | null;
+  readonly smp_type: string | null;
+}
+
+export interface UpbitDepositInfoWire {
+  readonly asset: string;
+  readonly network: string | null;
+  readonly provider_network: string | null;
+  readonly is_deposit_possible: boolean;
+  readonly deposit_impossible_reason: string | null;
+  readonly minimum_deposit_amount: DecimalWire;
+  readonly minimum_deposit_confirmations: string;
+  readonly decimal_precision: string;
+}
+
+export interface UpbitWithdrawalAddressWire {
+  readonly currency: string;
+  readonly net_type: string;
+  readonly network_name: string;
+  readonly withdraw_address: string;
+  readonly secondary_address: string | null;
+  readonly beneficiary_name: string | null;
+  readonly beneficiary_company_name: string | null;
+  readonly beneficiary_type: string | null;
+  readonly exchange_name: string | null;
+  readonly wallet_type: string | null;
+  readonly raw_json: string;
+}
+
+export interface UpbitTravelRuleVaspWire {
+  readonly vasp_name: string;
+  readonly vasp_uuid: string;
+  readonly depositable: boolean;
+  readonly withdrawable: boolean;
+}
+
+export interface UpbitTravelRuleVerificationWire {
+  readonly deposit_uuid: string;
+  readonly deposit_state: string;
+  readonly verification_result: string;
+}
+
+export interface UpbitBatchCancelRequestWire {
+  readonly scope: UpbitBatchCancelScopeWire;
+  readonly excluded_pairs: readonly MarketWire[] | null;
+  readonly side: string | null;
+  readonly count: number | null;
+  readonly order_by: string | null;
+}
+
+export interface UpbitCancelAndNewOrderRequestWire {
+  readonly previous_order: UpbitOrderReferenceWire;
+  readonly new_order: UpbitCancelAndNewOrderWire;
+  readonly new_identifier: string | null;
+  readonly new_smp_type: string | null;
+}
+
+export interface UpbitCancelAndNewOrderResultWire {
+  readonly previous_order: OrderWire;
+  readonly new_order_uuid: string | null;
+  readonly new_order_identifier: string | null;
+}
+
+export interface UpbitKrwTransferRequestWire {
+  readonly amount: DecimalWire;
+  readonly two_factor_type: string;
+}
+
+export interface UpbitKrwDepositWire {
+  readonly transfer_type: string;
+  readonly uuid: string;
+  readonly currency: string;
+  readonly net_type: string | null;
+  readonly txid: string;
+  readonly state: string;
+  readonly created_at: TimestampWire;
+  readonly done_at: TimestampWire | null;
+  readonly amount: DecimalWire;
+  readonly fee: DecimalWire;
+  readonly transaction_type: string;
+}
+
+export interface UpbitKrwWithdrawalWire {
+  readonly transfer_type: string;
+  readonly uuid: string;
+  readonly currency: string;
+  readonly net_type: string | null;
+  readonly txid: string | null;
+  readonly state: string;
+  readonly created_at: TimestampWire;
+  readonly done_at: TimestampWire | null;
+  readonly amount: DecimalWire;
+  readonly fee: DecimalWire;
+  readonly transaction_type: string;
+  readonly is_cancelable: boolean | null;
+}
+
+export interface UpbitApiKeyWire {
+  readonly access_key: string;
+  readonly expires_at: TimestampWire;
+}
+
+export interface UpbitPocketWire {
+  readonly uuid: string;
+  readonly name: string;
+  readonly kind: string;
+}
+
+export interface UpbitPocketApiKeyWire {
+  readonly access_key: string;
+  readonly permissions: readonly string[];
+  readonly allowed_ips: readonly string[];
+  readonly created_at: TimestampWire;
+  readonly expired_at: TimestampWire;
+}
+
+export interface UpbitPocketApiKeyGroupWire {
+  readonly uuid: string;
+  readonly keys: readonly UpbitPocketApiKeyWire[];
+}
+
+export interface UpbitPocketApiKeysRequestWire {
+  readonly uuids: readonly string[];
+  readonly include_expired: boolean;
+}
+
+export interface UpbitPocketBalanceWire {
+  readonly currency: string;
+  readonly balance: DecimalWire;
+  readonly locked: DecimalWire;
+  readonly avg_buy_price: DecimalWire;
+  readonly avg_buy_price_modified: boolean;
+  readonly unit_currency: string;
+}
+
+export interface UpbitPocketTransferQueryWire {
+  readonly from: string | null;
+  readonly to: string | null;
+  readonly direction: string | null;
+  readonly states: readonly string[];
+  readonly uuids: readonly string[];
+  readonly identifiers: readonly string[];
+  readonly start_time: TimestampWire | null;
+  readonly end_time: TimestampWire | null;
+  readonly currency: string | null;
+  readonly limit: number | null;
+  readonly order_by: string | null;
+}
+
+export interface UpbitPocketUniversalTransferRequestWire {
+  readonly from: string | null;
+  readonly to: string;
+  readonly currency: string;
+  readonly amount: DecimalWire;
+  readonly identifier: string | null;
+}
+
+export interface UpbitPocketTransferRequestWire {
+  readonly to: string;
+  readonly currency: string;
+  readonly amount: DecimalWire;
+  readonly identifier: string | null;
+}
+
+export interface UpbitPocketTransferWire {
+  readonly uuid: string;
+  readonly identifier: string | null;
+  readonly from: string;
+  readonly to: string;
+  readonly state: string;
+  readonly currency: string;
+  readonly amount: DecimalWire;
+  readonly created_at: TimestampWire;
+}
+
 export interface BithumbMarketAlertWire {
   readonly kind: string;
   readonly step: string;
   readonly ends_at: TimestampWire;
+}
+
+export interface BithumbNoticeWire {
+  readonly categories: readonly string[];
+  readonly title: string;
+  readonly url: string;
+  readonly published_at: TimestampWire;
+  readonly modified_at: TimestampWire;
+}
+
+export interface BithumbAssetFeeWire {
+  readonly display_name: string;
+  readonly asset: string;
+  readonly networks: readonly BithumbNetworkFeeWire[];
+}
+
+export interface BithumbApiKeyWire {
+  readonly access_key: string;
+  readonly expires_at: TimestampWire;
+}
+
+export interface BithumbKrwWithdrawalsRequestWire {
+  readonly state: string | null;
+  readonly uuids: readonly string[];
+  readonly txids: readonly string[];
+  readonly page: number | null;
+  readonly limit: number | null;
+  readonly order_by: string | null;
+}
+
+export interface BithumbKrwDepositsRequestWire {
+  readonly state: string | null;
+  readonly uuids: readonly string[];
+  readonly txids: readonly string[];
+  readonly page: number | null;
+  readonly limit: number | null;
+  readonly order_by: string | null;
+}
+
+export interface BithumbKrwTransferRequestWire {
+  readonly amount: DecimalWire;
+}
+
+export interface BithumbKrwWithdrawalWire {
+  readonly transfer_type: string;
+  readonly uuid: string;
+  readonly currency: string;
+  readonly net_type: string | null;
+  readonly txid: string | null;
+  readonly state: string;
+  readonly created_at: TimestampWire | null;
+  readonly done_at: TimestampWire | null;
+  readonly amount: DecimalWire;
+  readonly fee: DecimalWire;
+  readonly transaction_type: string | null;
+}
+
+export interface BithumbKrwDepositWire {
+  readonly transfer_type: string;
+  readonly uuid: string;
+  readonly currency: string;
+  readonly net_type: string | null;
+  readonly txid: string | null;
+  readonly state: string;
+  readonly created_at: TimestampWire | null;
+  readonly done_at: TimestampWire | null;
+  readonly amount: DecimalWire;
+  readonly fee: DecimalWire;
+  readonly transaction_type: string | null;
+}
+
+export interface BithumbPendingOrdersRequestWire {
+  readonly market: MarketWire | null;
+  readonly state: string | null;
+  readonly limit: number | null;
+  readonly order_by: string | null;
+  readonly cursor: string | null;
+}
+
+export interface BithumbClosedOrdersRequestWire {
+  readonly market: MarketWire | null;
+  readonly state: string | null;
+  readonly states: readonly string[];
+  readonly start_time: TimestampWire | null;
+  readonly end_time: TimestampWire | null;
+  readonly limit: number | null;
+  readonly order_by: string | null;
+  readonly cursor: string | null;
+}
+
+export interface BithumbClosedOrderWire {
+  readonly order_id: string;
+  readonly side: string;
+  readonly order_type: string;
+  readonly price: DecimalWire | null;
+  readonly state: string;
+  readonly market: MarketWire;
+  readonly created_at: TimestampWire | null;
+  readonly volume: DecimalWire;
+  readonly remaining_volume: DecimalWire;
+  readonly reserved_fee: DecimalWire;
+  readonly remaining_fee: DecimalWire;
+  readonly paid_fee: DecimalWire;
+  readonly locked: DecimalWire;
+  readonly executed_volume: DecimalWire;
+  readonly executed_funds: DecimalWire;
+  readonly trades_count: number;
+  readonly client_order_id: string | null;
+  readonly stp_type: string | null;
+  readonly time_in_force: string | null;
+  readonly cancel_type: string | null;
+  readonly canceling_order_id: string | null;
+}
+
+export interface BithumbTwapOrdersRequestWire {
+  readonly market: MarketWire | null;
+  readonly uuids: readonly string[];
+  readonly state: string | null;
+  readonly cursor: string | null;
+  readonly limit: number | null;
+  readonly order_by: string | null;
+}
+
+export interface BithumbBatchOrdersRequestWire {
+  readonly orders: readonly OrderRequestWire[];
+}
+
+export interface BithumbBatchOrderWire {
+  readonly order_id: string;
+  readonly client_order_id: string | null;
+  readonly market: MarketWire;
+  readonly side: string;
+  readonly order_type: string;
+  readonly time_in_force: string | null;
+  readonly stp_type: string | null;
+  readonly created_at: TimestampWire | null;
+}
+
+export interface BithumbBatchOrderFailureWire {
+  readonly client_order_id: string | null;
+  readonly time_in_force: string | null;
+  readonly code: string;
+  readonly message: string;
+}
+
+export interface BithumbBatchOrdersResultWire {
+  readonly outcomes: readonly BithumbBatchOrderOutcomeWire[];
+  readonly raw_json: string;
+}
+
+export interface BithumbOrderBookSnapshotWire {
+  readonly common: OrderBookWire;
+  readonly total_ask_size: DecimalWire | null;
+  readonly total_bid_size: DecimalWire | null;
+  readonly level: DecimalWire | null;
+  readonly raw_json: string;
+}
+
+export interface BithumbOrderResponseWire {
+  readonly common: OrderWire;
+  readonly raw_json: string;
+}
+
+export interface BithumbOrdersResponseWire {
+  readonly common: readonly OrderWire[];
+  readonly raw_json: string;
+}
+
+export interface BithumbCancelOrderResponseWire {
+  readonly order_id: string;
+  readonly raw_json: string;
+}
+
+export interface BithumbCancelOrdersResponseWire {
+  readonly common: CancelOrdersResultWire;
+  readonly raw_json: string;
+}
+
+export interface BithumbDepositResponseWire {
+  readonly common: DepositWire;
+  readonly raw_json: string;
+}
+
+export interface BithumbWithdrawalResponseWire {
+  readonly common: WithdrawalWire;
+  readonly raw_json: string;
+}
+
+export interface BithumbCancelWithdrawalResponseWire {
+  readonly withdrawal_id: string;
+  readonly raw_json: string;
+}
+
+export interface BithumbTradeEventWire {
+  readonly common: TradeWire;
+  readonly previous_closing_price: DecimalWire | null;
+  readonly change: string | null;
+  readonly change_price: DecimalWire | null;
+  readonly published_at: TimestampWire | null;
+  readonly stream_type: string | null;
+  readonly raw_json: string;
+}
+
+export interface BithumbOrderBookEventWire {
+  readonly common: OrderBookWire;
+  readonly total_ask_size: DecimalWire | null;
+  readonly total_bid_size: DecimalWire | null;
+  readonly level: DecimalWire | null;
+  readonly stream_type: string | null;
+  readonly raw_json: string;
+}
+
+export interface BithumbTickerEventWire {
+  readonly common: TickerWire;
+  readonly change_direction: string | null;
+  readonly market_state: string | null;
+  readonly trading_suspended: boolean | null;
+  readonly market_warning: string | null;
+  readonly stream_type: string | null;
+  readonly raw_json: string;
+}
+
+export interface BithumbAssetEventWire {
+  readonly balances: readonly BalanceWire[];
+  readonly asset_timestamp: TimestampWire | null;
+  readonly published_at: TimestampWire | null;
+  readonly raw_json: string;
+}
+
+export interface BithumbOrderEventWire {
+  readonly common: OrderWire;
+  readonly client_order_id: string | null;
+  readonly order_type: string | null;
+  readonly state: string | null;
+  readonly time_in_force: string | null;
+  readonly order_amount: DecimalWire | null;
+  readonly trade_id: string | null;
+  readonly trade_price: DecimalWire | null;
+  readonly trade_quantity: DecimalWire | null;
+  readonly trade_amount: DecimalWire | null;
+  readonly trade_timestamp: TimestampWire | null;
+  readonly executed_amount: DecimalWire | null;
+  readonly paid_fee: DecimalWire | null;
+  readonly remaining_fee: DecimalWire | null;
+  readonly raw_json: string;
+}
+
+export interface BithumbTwapOrderRequestWire {
+  readonly market: MarketWire;
+  readonly side: string;
+  readonly volume: DecimalWire | null;
+  readonly price: DecimalWire | null;
+  readonly duration: number;
+  readonly frequency: number;
+}
+
+export interface BithumbTwapOrderWire {
+  readonly id: string;
+  readonly side: string;
+  readonly price: DecimalWire;
+  readonly state: string;
+  readonly market: MarketWire;
+  readonly created_at: TimestampWire;
+  readonly volume: DecimalWire;
+  readonly finished_at: TimestampWire | null;
+  readonly total_order_count: number;
+  readonly total_trades_count: number;
+  readonly progress_count: number;
+  readonly total_executed_amount: DecimalWire;
+  readonly total_executed_volume: DecimalWire;
+  readonly avg_trade_price: DecimalWire;
+  readonly wallet_id: string | null;
+  readonly canceled_at: TimestampWire | null;
+  readonly cancel_type: string | null;
+}
+
+export interface BithumbNetworkFeeWire {
+  readonly network: string;
+  readonly provider_name: string;
+  readonly deposit_fee: DecimalWire;
+  readonly minimum_deposit: DecimalWire;
+  readonly withdrawal_fee: WithdrawalFeeWire;
+  readonly minimum_withdrawal: DecimalWire;
+}
+
+export interface BithumbWithdrawalAddressWire {
+  readonly currency: string;
+  readonly net_type: string;
+  readonly network_name: string | null;
+  readonly withdraw_address: string;
+  readonly secondary_address: string | null;
+  readonly exchange_name: string | null;
+  readonly owner_type: string | null;
+  readonly owner_ko_name: string | null;
+  readonly owner_en_name: string | null;
+  readonly owner_corp_ko_name: string | null;
+  readonly owner_corp_en_name: string | null;
+}
+
+export interface BithumbOrderDetailRequestWire {
+  readonly market: MarketWire;
+  readonly uuid: string | null;
+  readonly client_order_id: string | null;
+}
+
+export interface BithumbOrderDetailTradeWire {
+  readonly market: MarketWire;
+  readonly uuid: string;
+  readonly price: DecimalWire;
+  readonly volume: DecimalWire;
+  readonly funds: DecimalWire;
+  readonly side: string;
+  readonly created_at: TimestampWire;
+}
+
+export interface BithumbOrderDetailWire {
+  readonly uuid: string;
+  readonly client_order_id: string | null;
+  readonly side: string;
+  readonly order_type: string;
+  readonly price: DecimalWire;
+  readonly state: string;
+  readonly market: MarketWire;
+  readonly created_at: TimestampWire;
+  readonly volume: DecimalWire;
+  readonly remaining_volume: DecimalWire;
+  readonly reserved_fee: DecimalWire;
+  readonly remaining_fee: DecimalWire;
+  readonly paid_fee: DecimalWire;
+  readonly locked: DecimalWire;
+  readonly executed_volume: DecimalWire;
+  readonly executed_funds: DecimalWire;
+  readonly trades_count: number;
+  readonly trades: readonly BithumbOrderDetailTradeWire[];
+  readonly stp_type: string | null;
+  readonly cancel_type: string | null;
+  readonly canceling_uuid: string | null;
+  readonly time_in_force: string | null;
+}
+
+export interface BithumbOrderListRequestWire {
+  readonly market: MarketWire | null;
+  readonly state: string | null;
+  readonly states: readonly string[];
+  readonly uuids: readonly string[];
+  readonly client_order_ids: readonly string[];
+  readonly page: number | null;
+  readonly limit: number | null;
+  readonly order_by: string | null;
+}
+
+export interface BithumbOrderListItemWire {
+  readonly uuid: string;
+  readonly client_order_id: string | null;
+  readonly side: string;
+  readonly order_type: string;
+  readonly price: DecimalWire;
+  readonly state: string;
+  readonly market: MarketWire;
+  readonly created_at: TimestampWire;
+  readonly volume: DecimalWire;
+  readonly remaining_volume: DecimalWire;
+  readonly reserved_fee: DecimalWire;
+  readonly remaining_fee: DecimalWire;
+  readonly paid_fee: DecimalWire;
+  readonly locked: DecimalWire;
+  readonly executed_volume: DecimalWire;
+  readonly executed_funds: DecimalWire;
+  readonly trades_count: number;
+  readonly stp_type: string | null;
+  readonly time_in_force: string | null;
+  readonly raw_json: string;
 }
 
 export interface BinanceSymbolFiltersWire {
@@ -198,6 +1155,485 @@ export interface BinanceSpotOrderDetailWire {
   readonly updated_at: TimestampWire | null;
 }
 
+export interface BinanceSpotAveragePriceWire {
+  readonly market: MarketWire;
+  readonly minutes: number;
+  readonly price: DecimalWire;
+  readonly close_time: TimestampWire;
+}
+
+export interface BinanceDepositHistoryRequestWire {
+  readonly coin: string | null;
+  readonly status: number | null;
+  readonly start_time: TimestampWire | null;
+  readonly end_time: TimestampWire | null;
+  readonly offset: string | null;
+  readonly limit: number | null;
+  readonly tx_id: string | null;
+  readonly include_source: boolean;
+}
+
+export interface BinanceWithdrawHistoryRequestWire {
+  readonly coin: string | null;
+  readonly withdraw_order_id: string | null;
+  readonly status: number | null;
+  readonly offset: string | null;
+  readonly limit: number | null;
+  readonly id_list: readonly string[];
+  readonly start_time: TimestampWire | null;
+  readonly end_time: TimestampWire | null;
+}
+
+export interface BinanceSpotCommissionRatesWire {
+  readonly maker: DecimalWire;
+  readonly taker: DecimalWire;
+  readonly buyer: DecimalWire;
+  readonly seller: DecimalWire;
+}
+
+export interface BinanceSpotAccountBalanceWire {
+  readonly asset: string;
+  readonly free: DecimalWire;
+  readonly locked: DecimalWire;
+}
+
+export interface BinanceSpotAccountInformationWire {
+  readonly maker_commission: string;
+  readonly taker_commission: string;
+  readonly buyer_commission: string;
+  readonly seller_commission: string;
+  readonly commission_rates: BinanceSpotCommissionRatesWire;
+  readonly can_trade: boolean;
+  readonly can_withdraw: boolean;
+  readonly can_deposit: boolean;
+  readonly update_time: TimestampWire;
+  readonly account_type: string;
+  readonly balances: readonly BinanceSpotAccountBalanceWire[];
+  readonly permissions: readonly string[];
+  readonly uid: string | null;
+  readonly raw_json: string;
+}
+
+export interface BinanceSpotCancelledOrderWire {
+  readonly symbol: string | null;
+  readonly original_client_order_id: string | null;
+  readonly order_id: string | null;
+  readonly client_order_id: string | null;
+  readonly status: string | null;
+  readonly price: DecimalWire | null;
+  readonly original_quantity: DecimalWire | null;
+  readonly executed_quantity: DecimalWire | null;
+  readonly cumulative_quote_quantity: DecimalWire | null;
+  readonly transact_time: TimestampWire | null;
+  readonly order_list_id: string | null;
+  readonly contingency_type: string | null;
+  readonly list_status_type: string | null;
+  readonly list_order_status: string | null;
+  readonly list_client_order_id: string | null;
+  readonly transaction_time: TimestampWire | null;
+  readonly raw_json: string;
+}
+
+export interface BinanceSpotCancelAllOpenOrdersWire {
+  readonly reports: readonly BinanceSpotCancelledOrderWire[];
+  readonly raw_json: string;
+}
+
+export interface BinanceExchangeSymbolWire {
+  readonly symbol: string;
+  readonly status: string;
+  readonly base_asset: string;
+  readonly quote_asset: string;
+  readonly contract_type: string | null;
+  readonly margin_asset: string | null;
+  readonly raw_json: string;
+}
+
+export interface BinanceExchangeInfoWire {
+  readonly venue: string;
+  readonly timezone: string | null;
+  readonly server_time: TimestampWire | null;
+  readonly symbols: readonly BinanceExchangeSymbolWire[];
+  readonly raw_json: string;
+}
+
+export interface BinanceUsdMAccountAssetWire {
+  readonly asset: string;
+  readonly wallet_balance: DecimalWire;
+  readonly unrealized_profit: DecimalWire;
+  readonly margin_balance: DecimalWire;
+  readonly maintenance_margin: DecimalWire;
+  readonly initial_margin: DecimalWire;
+  readonly position_initial_margin: DecimalWire;
+  readonly open_order_initial_margin: DecimalWire;
+  readonly cross_wallet_balance: DecimalWire;
+  readonly cross_unrealized_profit: DecimalWire;
+  readonly available_balance: DecimalWire;
+  readonly max_withdraw_amount: DecimalWire;
+  readonly update_time: TimestampWire;
+}
+
+export interface BinanceUsdMAccountPositionWire {
+  readonly symbol: string;
+  readonly position_side: string;
+  readonly position_amount: DecimalWire;
+  readonly unrealized_profit: DecimalWire;
+  readonly isolated_margin: DecimalWire;
+  readonly notional: DecimalWire;
+  readonly isolated_wallet: DecimalWire;
+  readonly initial_margin: DecimalWire;
+  readonly maintenance_margin: DecimalWire;
+  readonly update_time: TimestampWire;
+}
+
+export interface BinanceUsdMAccountInformationWire {
+  readonly total_initial_margin: DecimalWire;
+  readonly total_maintenance_margin: DecimalWire;
+  readonly total_wallet_balance: DecimalWire;
+  readonly total_unrealized_profit: DecimalWire;
+  readonly total_margin_balance: DecimalWire;
+  readonly total_position_initial_margin: DecimalWire;
+  readonly total_open_order_initial_margin: DecimalWire;
+  readonly total_cross_wallet_balance: DecimalWire;
+  readonly total_cross_unrealized_profit: DecimalWire;
+  readonly available_balance: DecimalWire;
+  readonly max_withdraw_amount: DecimalWire;
+  readonly assets: readonly BinanceUsdMAccountAssetWire[];
+  readonly positions: readonly BinanceUsdMAccountPositionWire[];
+  readonly raw_json: string;
+}
+
+export interface BinanceUsdMPositionInformationWire {
+  readonly symbol: string;
+  readonly position_side: string;
+  readonly position_amount: DecimalWire;
+  readonly entry_price: DecimalWire;
+  readonly break_even_price: DecimalWire;
+  readonly mark_price: DecimalWire;
+  readonly unrealized_profit: DecimalWire;
+  readonly liquidation_price: DecimalWire;
+  readonly isolated_margin: DecimalWire;
+  readonly notional: DecimalWire;
+  readonly margin_asset: string;
+  readonly isolated_wallet: DecimalWire;
+  readonly initial_margin: DecimalWire;
+  readonly maintenance_margin: DecimalWire;
+  readonly position_initial_margin: DecimalWire;
+  readonly open_order_initial_margin: DecimalWire;
+  readonly adl: string;
+  readonly bid_notional: DecimalWire;
+  readonly ask_notional: DecimalWire;
+  readonly update_time: TimestampWire;
+  readonly raw_json: string;
+}
+
+export interface BinanceCoinNetworkInformationWire {
+  readonly network: string;
+  readonly deposit_enabled: boolean;
+  readonly withdraw_enabled: boolean;
+  readonly busy: boolean;
+  readonly withdrawal_integer_multiple: DecimalWire | null;
+  readonly withdrawal_fee: DecimalWire | null;
+  readonly minimum_withdrawal: DecimalWire | null;
+  readonly maximum_withdrawal: DecimalWire | null;
+  readonly withdrawal_tag: boolean | null;
+  readonly is_default: boolean | null;
+  readonly minimum_confirmations: string | null;
+  readonly unlock_confirmations: string | null;
+  readonly contract_address: string | null;
+  readonly raw_json: string;
+}
+
+export interface BinanceCoinInformationWire {
+  readonly coin: string;
+  readonly deposit_all_enabled: boolean;
+  readonly withdraw_all_enabled: boolean;
+  readonly name: string | null;
+  readonly free: DecimalWire | null;
+  readonly locked: DecimalWire | null;
+  readonly freeze: DecimalWire | null;
+  readonly withdrawing: DecimalWire | null;
+  readonly is_legal_money: boolean | null;
+  readonly trading: boolean | null;
+  readonly networks: readonly BinanceCoinNetworkInformationWire[];
+  readonly raw_json: string;
+}
+
+export interface BinanceApiKeyPermissionsWire {
+  readonly ip_restrict: boolean;
+  readonly create_time: TimestampWire | null;
+  readonly enable_reading: boolean;
+  readonly enable_withdrawals: boolean;
+  readonly enable_internal_transfer: boolean;
+  readonly enable_margin: boolean;
+  readonly enable_spot_and_margin_trading: boolean;
+  readonly enable_futures: boolean;
+  readonly permits_universal_transfer: boolean;
+  readonly enable_vanilla_options: boolean;
+  readonly enable_fix_api_trade: boolean;
+  readonly enable_fix_read_only: boolean;
+  readonly enable_portfolio_margin_trading: boolean;
+  readonly raw_json: string;
+}
+
+export interface BinanceDepositHistoryEntryWire {
+  readonly id: string;
+  readonly amount: DecimalWire;
+  readonly coin: string;
+  readonly network: string;
+  readonly status: number;
+  readonly address: string | null;
+  readonly address_tag: string | null;
+  readonly tx_id: string | null;
+  readonly insert_time: TimestampWire;
+  readonly complete_time: TimestampWire | null;
+  readonly transfer_type: number | null;
+  readonly source_address: string | null;
+  readonly raw_json: string;
+}
+
+export interface BinanceDepositHistoryWire {
+  readonly entries: readonly BinanceDepositHistoryEntryWire[];
+  readonly raw_json: string;
+}
+
+export interface BinanceQuestionnaireRequirementsWire {
+  readonly questionnaire_country_code: string;
+  readonly raw_json: string;
+}
+
+export interface BinanceWithdrawalAddressWire {
+  readonly address: string;
+  readonly address_tag: string | null;
+  readonly coin: string;
+  readonly network: string;
+  readonly white_status: boolean;
+  readonly name: string | null;
+  readonly origin: string | null;
+  readonly origin_type: string | null;
+  readonly raw_json: string;
+}
+
+export interface BinanceWithdrawHistoryEntryWire {
+  readonly id: string;
+  readonly amount: DecimalWire;
+  readonly transaction_fee: DecimalWire;
+  readonly coin: string;
+  readonly status: number;
+  readonly address: string | null;
+  readonly tx_id: string | null;
+  readonly apply_time: string | null;
+  readonly network: string | null;
+  readonly withdraw_order_id: string | null;
+  readonly info: string | null;
+  readonly transfer_type: number | null;
+  readonly confirm_no: number | null;
+  readonly wallet_type: number | null;
+  readonly tx_key: string | null;
+  readonly complete_time: string | null;
+  readonly raw_json: string;
+}
+
+export interface BinanceWithdrawHistoryWire {
+  readonly entries: readonly BinanceWithdrawHistoryEntryWire[];
+  readonly raw_json: string;
+}
+
+export interface BinanceMarkPriceWire {
+  readonly market: MarketWire;
+  readonly mark_price: DecimalWire;
+  readonly index_price: DecimalWire;
+  readonly estimated_settle_price: DecimalWire | null;
+  readonly last_funding_rate: DecimalWire;
+  readonly interest_rate: DecimalWire;
+  readonly next_funding_time: TimestampWire;
+  readonly time: TimestampWire;
+}
+
+export interface BinanceOpenInterestWire {
+  readonly market: MarketWire;
+  readonly open_interest: DecimalWire;
+  readonly time: TimestampWire;
+}
+
+export interface BinanceAggregateTradesRequestWire {
+  readonly market: MarketWire;
+  readonly from_id: string | null;
+  readonly start_time: TimestampWire | null;
+  readonly end_time: TimestampWire | null;
+  readonly limit: number | null;
+}
+
+export interface BinanceAggregateTradeWire {
+  readonly market: MarketWire;
+  readonly aggregate_id: string;
+  readonly first_trade_id: string;
+  readonly last_trade_id: string;
+  readonly timestamp: TimestampWire;
+  readonly price: DecimalWire;
+  readonly quantity: DecimalWire;
+  readonly normal_quantity: DecimalWire | null;
+  readonly best_price_match: boolean | null;
+  readonly taker_side: string;
+  readonly raw_json: string;
+}
+
+export interface BinanceOrderResponseWire {
+  readonly order: OrderWire;
+  readonly client_order_id: string | null;
+  readonly order_list_id: string | null;
+  readonly order_type: string | null;
+  readonly time_in_force: string | null;
+  readonly cumulative_quote_quantity: DecimalWire | null;
+  readonly cumulative_quantity: DecimalWire | null;
+  readonly cumulative_quote: DecimalWire | null;
+  readonly average_price: DecimalWire | null;
+  readonly reduce_only: boolean | null;
+  readonly close_position: boolean | null;
+  readonly position_side: string | null;
+  readonly stop_price: DecimalWire | null;
+  readonly working_type: string | null;
+  readonly price_protect: boolean | null;
+  readonly original_type: string | null;
+  readonly price_match: string | null;
+  readonly self_trade_prevention_mode: string | null;
+  readonly good_till_date: TimestampWire | null;
+  readonly raw_json: string;
+}
+
+export interface BinanceTradeEventWire {
+  readonly common: TradeWire;
+  readonly event_time: TimestampWire | null;
+  readonly trade_time: TimestampWire | null;
+  readonly buyer_is_maker: boolean | null;
+  readonly best_price_match: boolean | null;
+  readonly raw_json: string;
+}
+
+export interface BinanceOrderBookEventWire {
+  readonly common: OrderBookWire;
+  readonly event_time: TimestampWire | null;
+  readonly transaction_time: TimestampWire | null;
+  readonly first_update_id: string | null;
+  readonly final_update_id: string | null;
+  readonly previous_final_update_id: string | null;
+  readonly last_update_id: string | null;
+  readonly raw_json: string;
+}
+
+export interface BinanceTickerEventWire {
+  readonly common: TickerWire;
+  readonly event_time: TimestampWire | null;
+  readonly close_time: TimestampWire | null;
+  readonly first_trade_id: string | null;
+  readonly last_trade_id: string | null;
+  readonly trade_count: string | null;
+  readonly raw_json: string;
+}
+
+export interface BinanceCandleEventWire {
+  readonly common: CandleWire;
+  readonly close_time: TimestampWire | null;
+  readonly first_trade_id: string | null;
+  readonly last_trade_id: string | null;
+  readonly trade_count: string | null;
+  readonly taker_buy_base_volume: DecimalWire | null;
+  readonly taker_buy_quote_volume: DecimalWire | null;
+  readonly raw_json: string;
+}
+
+export interface BinanceBalanceStreamEventWire {
+  readonly common: BalanceWire;
+  readonly event_type: string;
+  readonly event_time: TimestampWire | null;
+  readonly transaction_time: TimestampWire | null;
+  readonly raw_json: string;
+}
+
+export interface BinanceOrderStreamEventWire {
+  readonly common: OrderWire;
+  readonly event_type: string;
+  readonly event_time: TimestampWire | null;
+  readonly transaction_time: TimestampWire | null;
+  readonly raw_json: string;
+}
+
+export interface BinanceRawAccountEventWire {
+  readonly event_type: string;
+  readonly event_time: TimestampWire | null;
+  readonly transaction_time: TimestampWire | null;
+  readonly raw_json: string;
+}
+
+export interface BinanceAccountTradeWire {
+  readonly market: MarketWire;
+  readonly id: string;
+  readonly order_id: string;
+  readonly timestamp: TimestampWire;
+  readonly side: string;
+  readonly maker: boolean;
+  readonly best_match: boolean | null;
+  readonly order_list_id: string | null;
+  readonly price: DecimalWire;
+  readonly quantity: DecimalWire;
+  readonly quote_quantity: DecimalWire | null;
+  readonly commission: DecimalWire;
+  readonly commission_asset: string;
+  readonly realized_pnl: DecimalWire | null;
+  readonly position_side: string | null;
+  readonly pair: string | null;
+  readonly base_quantity: DecimalWire | null;
+  readonly margin_asset: string | null;
+}
+
+export interface BinanceTestOrderRequestWire {
+  readonly order: OrderRequestWire;
+  readonly compute_commission_rates: boolean;
+}
+
+export interface BinanceTestOrderWire {
+  readonly response_json: string;
+}
+
+export interface BinanceC2cTradeHistoryRequestWire {
+  readonly trade_type: string;
+  readonly start_timestamp: TimestampWire | null;
+  readonly end_timestamp: TimestampWire | null;
+  readonly page: number | null;
+  readonly rows: number | null;
+  readonly recv_window: string | null;
+}
+
+export interface BinanceC2cTradeWire {
+  readonly order_number: string | null;
+  readonly adv_no: string | null;
+  readonly trade_type: string | null;
+  readonly asset: string | null;
+  readonly fiat: string | null;
+  readonly fiat_symbol: string | null;
+  readonly amount: DecimalWire | null;
+  readonly total_price: DecimalWire | null;
+  readonly unit_price: DecimalWire | null;
+  readonly order_status: string | null;
+  readonly created_at: TimestampWire | null;
+  readonly commission: DecimalWire | null;
+  readonly counterparty_nickname: string | null;
+  readonly pay_method_name: string | null;
+  readonly additional_kyc_verify: number | null;
+  readonly taker_commission_rate: DecimalWire | null;
+  readonly taker_commission: DecimalWire | null;
+  readonly taker_amount: DecimalWire | null;
+  readonly advertisement_role: string | null;
+}
+
+export interface BinanceC2cTradeHistoryPageWire {
+  readonly code: string | null;
+  readonly message: string | null;
+  readonly data: readonly BinanceC2cTradeWire[] | null;
+  readonly total: string | null;
+  readonly success: boolean | null;
+}
+
 export interface BinanceListenKeyWire {
   readonly id: string;
   readonly value: string;
@@ -213,6 +1649,211 @@ export interface HyperliquidLedgerEntryWire {
   readonly counterparty: string | null;
 }
 
+export interface HyperliquidCandleSnapshotWire {
+  readonly coin: string;
+  readonly market: MarketWire;
+  readonly interval: string;
+  readonly open_time: TimestampWire;
+  readonly close_time: TimestampWire;
+  readonly open: DecimalWire;
+  readonly high: DecimalWire;
+  readonly low: DecimalWire;
+  readonly close: DecimalWire;
+  readonly volume: DecimalWire;
+  readonly trade_count: string | null;
+  readonly raw_json: string;
+}
+
+export interface HyperliquidBookLevelWire {
+  readonly price: DecimalWire;
+  readonly size: DecimalWire;
+  readonly order_count: string | null;
+}
+
+export interface HyperliquidL2BookWire {
+  readonly coin: string;
+  readonly market: MarketWire;
+  readonly time: TimestampWire;
+  readonly bids: readonly HyperliquidBookLevelWire[];
+  readonly asks: readonly HyperliquidBookLevelWire[];
+  readonly raw_json: string;
+}
+
+export interface HyperliquidRecentTradeWire {
+  readonly coin: string;
+  readonly market: MarketWire;
+  readonly side: string;
+  readonly price: DecimalWire;
+  readonly size: DecimalWire;
+  readonly time: TimestampWire;
+  readonly trade_id: string;
+  readonly hash: string | null;
+  readonly users: readonly string[];
+  readonly raw_json: string;
+}
+
+export interface HyperliquidTradeEventWire {
+  readonly common: TradeWire;
+  readonly provider: HyperliquidRecentTradeWire;
+}
+
+export interface HyperliquidOrderBookEventWire {
+  readonly common: OrderBookWire;
+  readonly provider: HyperliquidL2BookWire;
+}
+
+export interface HyperliquidCandleEventWire {
+  readonly common: CandleWire;
+  readonly provider: HyperliquidCandleSnapshotWire;
+}
+
+export interface HyperliquidAssetContextEventWire {
+  readonly common: TickerWire;
+  readonly coin: string;
+  readonly mid_price: DecimalWire | null;
+  readonly mark_price: DecimalWire | null;
+  readonly previous_day_price: DecimalWire | null;
+  readonly day_base_volume: DecimalWire | null;
+  readonly day_notional_volume: DecimalWire | null;
+  readonly oracle_price: DecimalWire | null;
+  readonly funding_rate: DecimalWire | null;
+  readonly open_interest: DecimalWire | null;
+  readonly circulating_supply: DecimalWire | null;
+  readonly total_supply: DecimalWire | null;
+  readonly raw_json: string;
+}
+
+export interface HyperliquidOrderUpdateWire {
+  readonly common: OrderWire;
+  readonly coin: string;
+  readonly side: string;
+  readonly limit_price: DecimalWire;
+  readonly remaining_size: DecimalWire;
+  readonly original_size: DecimalWire;
+  readonly order_id: string;
+  readonly accepted_at: TimestampWire;
+  readonly client_order_id: string | null;
+  readonly status: string;
+  readonly status_at: TimestampWire | null;
+  readonly raw_json: string;
+}
+
+export interface HyperliquidSpotStateBalanceWire {
+  readonly common: BalanceWire;
+  readonly provider: HyperliquidSpotBalanceWire;
+}
+
+export interface HyperliquidSpotStateEventWire {
+  readonly user: string;
+  readonly balances: readonly HyperliquidSpotStateBalanceWire[];
+  readonly raw_json: string;
+}
+
+export interface HyperliquidFundingHistoryEntryWire {
+  readonly coin: string;
+  readonly market: MarketWire;
+  readonly funding_rate: DecimalWire;
+  readonly premium: DecimalWire | null;
+  readonly time: TimestampWire;
+  readonly raw_json: string;
+}
+
+export interface HyperliquidUserFundingWire {
+  readonly kind: string | null;
+  readonly coin: string;
+  readonly market: MarketWire;
+  readonly usdc: DecimalWire;
+  readonly funding_rate: DecimalWire;
+  readonly position_size: DecimalWire | null;
+  readonly sample_count: string | null;
+  readonly hash: string;
+  readonly time: TimestampWire;
+  readonly raw_json: string;
+}
+
+export interface HyperliquidSpotBalanceWire {
+  readonly coin: string;
+  readonly token: number | null;
+  readonly total: DecimalWire;
+  readonly hold: DecimalWire;
+  readonly entry_notional: DecimalWire | null;
+  readonly raw_json: string;
+}
+
+export interface HyperliquidSpotClearinghouseStateWire {
+  readonly balances: readonly HyperliquidSpotBalanceWire[];
+  readonly raw_json: string;
+}
+
+export interface HyperliquidEvmContractWire {
+  readonly address: string;
+  readonly extra_wei_decimals: number;
+}
+
+export interface HyperliquidSpotTokenWire {
+  readonly name: string;
+  readonly size_decimals: number;
+  readonly wei_decimals: number | null;
+  readonly index: number;
+  readonly token_id: string | null;
+  readonly is_canonical: boolean | null;
+  readonly evm_contract: HyperliquidEvmContractWire | null;
+  readonly full_name: string | null;
+  readonly deployer_trading_fee_share: DecimalWire | null;
+  readonly raw_json: string;
+}
+
+export interface HyperliquidSpotPairWire {
+  readonly name: string;
+  readonly tokens: readonly number[];
+  readonly index: number;
+  readonly is_canonical: boolean | null;
+  readonly raw_json: string;
+}
+
+export interface HyperliquidSpotMetaWire {
+  readonly tokens: readonly HyperliquidSpotTokenWire[];
+  readonly universe: readonly HyperliquidSpotPairWire[];
+  readonly raw_json: string;
+}
+
+export interface HyperliquidSpotAssetContextWire {
+  readonly coin: string | null;
+  readonly mid_price: DecimalWire | null;
+  readonly mark_price: DecimalWire | null;
+  readonly previous_day_price: DecimalWire | null;
+  readonly day_base_volume: DecimalWire | null;
+  readonly day_notional_volume: DecimalWire | null;
+  readonly circulating_supply: DecimalWire | null;
+  readonly total_supply: DecimalWire | null;
+  readonly raw_json: string;
+}
+
+export interface HyperliquidSpotMetaAndAssetContextsWire {
+  readonly meta: HyperliquidSpotMetaWire;
+  readonly contexts: readonly HyperliquidSpotAssetContextWire[];
+  readonly raw_json: string;
+}
+
+export interface HyperliquidMidPriceWire {
+  readonly market: MarketWire;
+  readonly price: DecimalWire;
+}
+
+export interface HyperliquidAllMidsWire {
+  readonly mids: readonly HyperliquidMidPriceWire[];
+  readonly raw_json: string;
+}
+
+export interface HyperliquidProviderResponseWire {
+  readonly raw_json: string;
+}
+
+export interface HyperliquidOrderActionResponseWire {
+  readonly common: OrderWire;
+  readonly raw_json: string;
+}
+
 export interface HyperliquidAssetContextWire {
   readonly mid_price: DecimalWire | null;
   readonly mark_price: DecimalWire | null;
@@ -221,6 +1862,130 @@ export interface HyperliquidAssetContextWire {
   readonly open_interest: DecimalWire | null;
   readonly size_decimals: number;
   readonly price_decimals: number;
+}
+
+export interface HyperliquidUserRateLimitWire {
+  readonly cumulative_volume: DecimalWire;
+  readonly requests_used: string;
+  readonly requests_cap: string;
+  readonly requests_surplus: string;
+}
+
+export interface HyperliquidReferrerWire {
+  readonly address: string;
+  readonly code: string;
+}
+
+export interface HyperliquidReferralWire {
+  readonly referred_by: HyperliquidReferrerWire | null;
+  readonly cumulative_volume: DecimalWire;
+  readonly unclaimed_rewards: DecimalWire;
+  readonly claimed_rewards: DecimalWire;
+  readonly builder_rewards: DecimalWire;
+  readonly referrer_state_json: string;
+  readonly reward_history_json: string;
+  readonly token_to_state_json: string;
+}
+
+export interface HyperliquidDailyVolumeWire {
+  readonly date: string;
+  readonly user_cross: DecimalWire;
+  readonly user_add: DecimalWire;
+  readonly exchange: DecimalWire;
+}
+
+export interface HyperliquidUserFeesWire {
+  readonly daily_volumes: readonly HyperliquidDailyVolumeWire[];
+  readonly fee_schedule_json: string;
+  readonly user_cross_rate: DecimalWire;
+  readonly user_add_rate: DecimalWire;
+  readonly user_spot_cross_rate: DecimalWire | null;
+  readonly user_spot_add_rate: DecimalWire | null;
+  readonly active_referral_discount: DecimalWire | null;
+  readonly details_json: string;
+}
+
+export interface HyperliquidUserFillWire {
+  readonly coin: string;
+  readonly price: DecimalWire;
+  readonly size: DecimalWire;
+  readonly side: string;
+  readonly time: TimestampWire;
+  readonly start_position: DecimalWire;
+  readonly direction: string;
+  readonly closed_pnl: DecimalWire;
+  readonly hash: string;
+  readonly order_id: string;
+  readonly crossed: boolean;
+  readonly fee: DecimalWire;
+  readonly builder_fee: DecimalWire | null;
+  readonly trade_id: string;
+  readonly fee_token: string;
+  readonly twap_id: string | null;
+  readonly raw_json: string;
+}
+
+export interface HyperliquidOpenOrderWire {
+  readonly coin: string;
+  readonly limit_price: DecimalWire;
+  readonly order_id: string;
+  readonly side: string;
+  readonly size: DecimalWire;
+  readonly timestamp: TimestampWire;
+  readonly raw_json: string;
+}
+
+export interface HyperliquidOrderDetailWire {
+  readonly coin: string;
+  readonly side: string;
+  readonly limit_price: DecimalWire;
+  readonly size: DecimalWire;
+  readonly order_id: string;
+  readonly timestamp: TimestampWire;
+  readonly trigger_condition: string;
+  readonly is_trigger: boolean;
+  readonly trigger_price: DecimalWire;
+  readonly children_json: string;
+  readonly is_position_tpsl: boolean;
+  readonly reduce_only: boolean;
+  readonly order_type: string;
+  readonly original_size: DecimalWire;
+  readonly time_in_force: string | null;
+  readonly client_order_id: string | null;
+  readonly raw_json: string;
+}
+
+export interface HyperliquidOrderInfoWire {
+  readonly order: HyperliquidOrderDetailWire;
+  readonly status: string;
+  readonly status_timestamp: TimestampWire;
+  readonly raw_json: string;
+}
+
+export interface HyperliquidPortfolioPointWire {
+  readonly time: TimestampWire;
+  readonly value: DecimalWire;
+}
+
+export interface HyperliquidPortfolioPeriodWire {
+  readonly period: string;
+  readonly account_value_history: readonly HyperliquidPortfolioPointWire[];
+  readonly pnl_history: readonly HyperliquidPortfolioPointWire[];
+  readonly volume: DecimalWire;
+}
+
+export interface HyperliquidSubAccountWire {
+  readonly name: string;
+  readonly user: string;
+  readonly master: string;
+  readonly perpetual_state_json: string;
+  readonly spot_state_json: string;
+}
+
+export interface HyperliquidVaultEquityWire {
+  readonly vault_address: string;
+  readonly equity: DecimalWire;
+  readonly locked_until: TimestampWire | null;
 }
 
 export interface UpbitOptionsWire {
@@ -251,15 +2016,116 @@ export interface NativeStreamReferenceWire {
   readonly kind: string;
 }
 
+export type UpbitBatchCancelScopeWire =
+  | { readonly kind: "all"; }
+  | { readonly kind: "quote_currencies"; readonly values: readonly string[]; }
+  | { readonly kind: "pairs"; readonly values: readonly MarketWire[]; };
+
+export type UpbitOrderReferenceWire =
+  | { readonly kind: "uuid"; readonly value: string; }
+  | { readonly kind: "identifier"; readonly value: string; };
+
+export type UpbitOrderVolumeWire =
+  | { readonly kind: "amount"; readonly value: DecimalWire; }
+  | { readonly kind: "remain_only"; };
+
+export type UpbitCancelAndNewOrderWire =
+  | { readonly kind: "limit"; readonly volume: UpbitOrderVolumeWire; readonly price: DecimalWire; readonly time_in_force: string | null; }
+  | { readonly kind: "market_buy"; readonly price: DecimalWire; }
+  | { readonly kind: "market_sell"; readonly volume: UpbitOrderVolumeWire; }
+  | { readonly kind: "best_buy"; readonly price: DecimalWire; readonly time_in_force: string; }
+  | { readonly kind: "best_sell"; readonly volume: UpbitOrderVolumeWire; readonly time_in_force: string; };
+
+export type HyperliquidUserRoleWire =
+  | { readonly kind: "user"; }
+  | { readonly kind: "agent"; readonly user: string | null; }
+  | { readonly kind: "vault"; }
+  | { readonly kind: "sub_account"; readonly master: string | null; }
+  | { readonly kind: "missing"; }
+  | { readonly kind: "other"; readonly role: string; readonly data_json: string | null; };
+
+export type HyperliquidOrderReferenceWire =
+  | { readonly kind: "order_id"; readonly value: string; }
+  | { readonly kind: "client_order_id"; readonly value: string; };
+
+export type HyperliquidOrderStatusResponseWire =
+  | { readonly kind: "order"; readonly value: HyperliquidOrderInfoWire; }
+  | { readonly kind: "unknown_order"; }
+  | { readonly kind: "other"; readonly status: string; readonly raw_json: string; };
+
+export type BithumbBatchOrderOutcomeWire =
+  | { readonly kind: "accepted"; readonly value: BithumbBatchOrderWire; }
+  | { readonly kind: "rejected"; readonly value: BithumbBatchOrderFailureWire; };
+
 export type SizeWire =
   | { readonly kind: "base"; readonly value: DecimalWire; }
   | { readonly kind: "quote"; readonly value: DecimalWire; };
+
+export type WithdrawalFeeWire =
+  | { readonly kind: "fixed"; readonly value: DecimalWire; }
+  | { readonly kind: "rate"; readonly rate: DecimalWire; readonly minimum: DecimalWire | null; readonly maximum: DecimalWire | null; };
+
+export type TransferDestinationWire =
+  | { readonly kind: "exchange"; readonly value: ExchangeDestinationWire; }
+  | { readonly kind: "chain"; readonly value: ChainDestinationWire; };
+
+export type TravelRuleRequirementWire =
+  | { readonly kind: "not_required"; }
+  | { readonly kind: "required"; readonly consent_url: string | null; };
 
 export type FeedWire =
   | { readonly kind: "trades"; }
   | { readonly kind: "order_book"; }
   | { readonly kind: "ticker"; }
   | { readonly kind: "candles"; readonly interval: string; };
+
+export type HyperliquidMarketEventWire =
+  | { readonly kind: "trade"; readonly value: HyperliquidTradeEventWire; }
+  | { readonly kind: "order_book"; readonly value: HyperliquidOrderBookEventWire; }
+  | { readonly kind: "asset_context"; readonly value: HyperliquidAssetContextEventWire; }
+  | { readonly kind: "candle"; readonly value: HyperliquidCandleEventWire; }
+  | { readonly kind: "reconnected"; };
+
+export type HyperliquidAccountEventWire =
+  | { readonly kind: "order_update"; readonly value: HyperliquidOrderUpdateWire; }
+  | { readonly kind: "spot_state"; readonly value: HyperliquidSpotStateEventWire; }
+  | { readonly kind: "reconnected"; };
+
+export type UpbitMarketStreamEventWire =
+  | { readonly kind: "trade"; readonly value: UpbitTradeStreamEventWire; }
+  | { readonly kind: "order_book"; readonly value: UpbitOrderBookStreamEventWire; }
+  | { readonly kind: "ticker"; readonly value: UpbitTickerStreamEventWire; }
+  | { readonly kind: "candle"; readonly value: UpbitCandleStreamEventWire; }
+  | { readonly kind: "reconnected"; };
+
+export type UpbitAccountStreamEventWire =
+  | { readonly kind: "asset"; readonly value: UpbitAssetStreamEventWire; }
+  | { readonly kind: "order"; readonly value: UpbitOrderStreamEventWire; }
+  | { readonly kind: "reconnected"; };
+
+export type BithumbMarketEventWire =
+  | { readonly kind: "trade"; readonly value: BithumbTradeEventWire; }
+  | { readonly kind: "order_book"; readonly value: BithumbOrderBookEventWire; }
+  | { readonly kind: "ticker"; readonly value: BithumbTickerEventWire; }
+  | { readonly kind: "reconnected"; };
+
+export type BithumbAccountEventWire =
+  | { readonly kind: "asset"; readonly value: BithumbAssetEventWire; }
+  | { readonly kind: "order"; readonly value: BithumbOrderEventWire; }
+  | { readonly kind: "reconnected"; };
+
+export type BinanceMarketEventWire =
+  | { readonly kind: "trade"; readonly value: BinanceTradeEventWire; }
+  | { readonly kind: "order_book"; readonly value: BinanceOrderBookEventWire; }
+  | { readonly kind: "ticker"; readonly value: BinanceTickerEventWire; }
+  | { readonly kind: "candle"; readonly value: BinanceCandleEventWire; }
+  | { readonly kind: "reconnected"; };
+
+export type BinanceAccountStreamEventWire =
+  | { readonly kind: "balance"; readonly value: BinanceBalanceStreamEventWire; }
+  | { readonly kind: "order"; readonly value: BinanceOrderStreamEventWire; }
+  | { readonly kind: "other"; readonly value: BinanceRawAccountEventWire; }
+  | { readonly kind: "reconnected"; };
 
 export type MarketEventWire =
   | { readonly kind: "trade"; readonly trade: TradeWire; }
@@ -281,8 +2147,41 @@ export type AccountStreamItemWire =
   | { readonly kind: "event"; readonly event: AccountEventWire; }
   | { readonly kind: "error"; readonly error: ErrorWire; };
 
+export type HyperliquidMarketStreamItemWire =
+  | { readonly kind: "event"; readonly event: HyperliquidMarketEventWire; }
+  | { readonly kind: "error"; readonly error: ErrorWire; };
+
+export type HyperliquidAccountStreamItemWire =
+  | { readonly kind: "event"; readonly event: HyperliquidAccountEventWire; }
+  | { readonly kind: "error"; readonly error: ErrorWire; };
+
+export type UpbitMarketStreamItemWire =
+  | { readonly kind: "event"; readonly event: UpbitMarketStreamEventWire; }
+  | { readonly kind: "error"; readonly error: ErrorWire; };
+
+export type UpbitAccountStreamItemWire =
+  | { readonly kind: "event"; readonly event: UpbitAccountStreamEventWire; }
+  | { readonly kind: "error"; readonly error: ErrorWire; };
+
+export type BithumbMarketStreamItemWire =
+  | { readonly kind: "event"; readonly event: BithumbMarketEventWire; }
+  | { readonly kind: "error"; readonly error: ErrorWire; };
+
+export type BithumbAccountStreamItemWire =
+  | { readonly kind: "event"; readonly event: BithumbAccountEventWire; }
+  | { readonly kind: "error"; readonly error: ErrorWire; };
+
+export type BinanceMarketStreamItemWire =
+  | { readonly kind: "event"; readonly event: BinanceMarketEventWire; }
+  | { readonly kind: "error"; readonly error: ErrorWire; };
+
+export type BinanceAccountStreamItemWire =
+  | { readonly kind: "event"; readonly event: BinanceAccountStreamEventWire; }
+  | { readonly kind: "error"; readonly error: ErrorWire; };
+
 export type ErrorWire =
   | { readonly kind: "invalid_request"; readonly field: string; readonly detail: string; }
+  | { readonly kind: "transfer"; readonly transfer_kind: string; readonly detail: string; }
   | { readonly kind: "unsupported"; readonly feature: string; readonly exchange: string; readonly detail: string; }
   | { readonly kind: "adapter"; readonly detail: string; }
   | { readonly kind: "auth"; readonly detail: string; }
@@ -298,10 +2197,28 @@ export type AdapterCallWire =
   | { readonly kind: "candles"; readonly request: CandleRequestWire; }
   | { readonly kind: "subscribe"; readonly stream_id: string; readonly subscription: SubscriptionWire; readonly config: StreamConfigWire; }
   | { readonly kind: "balances"; }
+  | { readonly kind: "order_rules"; readonly market: MarketWire; }
+  | { readonly kind: "asset_networks"; readonly asset: string; }
+  | { readonly kind: "deposit_addresses"; }
+  | { readonly kind: "deposit_address"; readonly request: DepositAddressRequestWire; }
+  | { readonly kind: "create_deposit_address"; readonly request: DepositAddressRequestWire; }
+  | { readonly kind: "prepare_withdrawal"; readonly request: WithdrawRequestWire; }
+  | { readonly kind: "withdraw"; readonly request: WithdrawRequestWire; }
+  | { readonly kind: "deposit"; readonly request: TransferLookupRequestWire; }
+  | { readonly kind: "withdrawal"; readonly request: TransferLookupRequestWire; }
+  | { readonly kind: "cancel_withdrawal"; readonly withdrawal_id: string; }
+  | { readonly kind: "deposits"; readonly request: TransferHistoryRequestWire; }
+  | { readonly kind: "withdrawals"; readonly request: TransferHistoryRequestWire; }
   | { readonly kind: "open_orders"; readonly market: MarketWire | null; }
+  | { readonly kind: "order"; readonly market: MarketWire; readonly order_id: string; }
+  | { readonly kind: "order_by_client_id"; readonly market: MarketWire; readonly client_id: string; }
+  | { readonly kind: "orders_by_ids"; readonly request: OrderLookupRequestWire; }
+  | { readonly kind: "order_history"; readonly request: OrderHistoryRequestWire; }
   | { readonly kind: "subscribe_account"; readonly stream_id: string; readonly config: StreamConfigWire; }
   | { readonly kind: "place_order"; readonly request: OrderRequestWire; }
   | { readonly kind: "cancel_order"; readonly market: MarketWire; readonly order_id: string; }
+  | { readonly kind: "cancel_order_by_client_id"; readonly market: MarketWire; readonly client_id: string; }
+  | { readonly kind: "cancel_orders"; readonly request: CancelOrdersRequestWire; }
   | { readonly kind: "positions"; readonly market: MarketWire | null; }
   | { readonly kind: "margin_summary"; }
   | { readonly kind: "funding_rates"; readonly request: HistoryRequestWire; }
@@ -316,10 +2233,24 @@ export type AdapterReplyWire =
   | { readonly kind: "candles"; readonly value: readonly CandleWire[]; }
   | { readonly kind: "market_stream"; readonly stream_id: string; }
   | { readonly kind: "balances"; readonly value: readonly BalanceWire[]; }
+  | { readonly kind: "order_rules"; readonly value: OrderRulesWire; }
+  | { readonly kind: "asset_networks"; readonly value: readonly AssetNetworkWire[]; }
+  | { readonly kind: "deposit_addresses"; readonly value: readonly DepositAddressEntryWire[]; }
+  | { readonly kind: "deposit_address"; readonly value: DepositAddressWire; }
+  | { readonly kind: "create_deposit_address"; readonly value: DepositAddressWire; }
+  | { readonly kind: "withdrawal_quote"; readonly value: WithdrawalQuoteWire; }
+  | { readonly kind: "withdrawal"; readonly value: WithdrawalWire; }
+  | { readonly kind: "deposit"; readonly value: DepositWire; }
+  | { readonly kind: "withdrawal_lookup"; readonly value: WithdrawalWire; }
+  | { readonly kind: "deposits"; readonly value: PageWire<DepositWire>; }
+  | { readonly kind: "withdrawals"; readonly value: PageWire<WithdrawalWire>; }
   | { readonly kind: "open_orders"; readonly value: readonly OrderWire[]; }
+  | { readonly kind: "order"; readonly value: OrderWire; }
+  | { readonly kind: "orders_by_ids"; readonly value: readonly OrderWire[]; }
+  | { readonly kind: "order_history"; readonly value: PageWire<OrderWire>; }
   | { readonly kind: "account_stream"; readonly stream_id: string; }
   | { readonly kind: "place_order"; readonly value: OrderWire; }
-  | { readonly kind: "cancel_order"; readonly value: OrderWire; }
+  | { readonly kind: "cancel_orders"; readonly value: CancelOrdersResultWire; }
   | { readonly kind: "positions"; readonly value: readonly PositionWire[]; }
   | { readonly kind: "margin_summary"; readonly value: MarginSummaryWire; }
   | { readonly kind: "funding_rates"; readonly value: PageWire<FundingRateWire>; }
@@ -327,16 +2258,16 @@ export type AdapterReplyWire =
   | { readonly kind: "unit"; };
 
 export const EXCHANGES = ["upbit", "bithumb", "binance", "hyperliquid"] as const;
-export const NATIVE_API_VERSION = 1 as const;
-export const FEATURES = ["markets", "trades", "order_book", "ticker", "candles", "trade_stream", "order_book_stream", "ticker_stream", "candle_stream", "balances", "open_orders", "account_stream", "trading", "positions", "margin", "funding_rates", "funding_payments", "margin_config", "reduce_only_orders"] as const;
-export const ERROR_VARIANTS = ["InvalidRequest", "Unsupported", "Adapter", "Auth", "Exchange", "Transport", "Decode"] as const;
-export const ADAPTER_OPERATIONS = ["markets", "trades", "orderBook", "ticker", "candles", "subscribe", "balances", "openOrders", "subscribeAccount", "placeOrder", "cancelOrder", "positions", "marginSummary", "fundingRates", "fundingPayments", "setMargin"] as const;
-export const CLIENT_MEMBERS = ["exchange", "supports", "adapter", "markets", "trades", "orderBook", "ticker", "candles", "subscribe", "subscribeWith", "balances", "openOrders", "openOrdersOn", "subscribeAccount", "subscribeAccountWith", "placeOrder", "cancelOrder", "positions", "positionsOn", "marginSummary", "fundingRates", "fundingPayments", "setMargin"] as const;
+export const NATIVE_API_VERSION = 31 as const;
+export const FEATURES = ["markets", "trades", "order_book", "ticker", "candles", "trade_stream", "order_book_stream", "ticker_stream", "candle_stream", "balances", "asset_networks", "deposit_addresses", "deposit_history", "deposit_lookup", "travel_rule", "withdrawal_quotes", "withdrawals", "withdrawal_history", "withdrawal_lookup", "withdrawal_cancellation", "open_orders", "order_history", "account_stream", "trading", "positions", "margin", "funding_rates", "funding_payments", "margin_config", "reduce_only_orders"] as const;
+export const ERROR_VARIANTS = ["InvalidRequest", "Transfer", "Unsupported", "Adapter", "Auth", "Exchange", "Transport", "Decode"] as const;
+export const ADAPTER_OPERATIONS = ["markets", "trades", "orderBook", "ticker", "candles", "subscribe", "balances", "orderRules", "assetNetworks", "depositAddresses", "depositAddress", "createDepositAddress", "prepareWithdrawal", "withdraw", "deposit", "withdrawal", "cancelWithdrawal", "deposits", "withdrawals", "openOrders", "order", "orderByClientId", "ordersByIds", "orderHistory", "subscribeAccount", "placeOrder", "cancelOrder", "cancelOrderByClientId", "cancelOrders", "positions", "marginSummary", "fundingRates", "fundingPayments", "setMargin"] as const;
+export const CLIENT_MEMBERS = ["exchange", "supports", "adapter", "markets", "trades", "orderBook", "ticker", "candles", "subscribe", "subscribeWith", "balances", "orderRules", "assetNetworks", "depositAddresses", "depositAddress", "createDepositAddress", "prepareWithdrawal", "withdraw", "deposit", "withdrawal", "cancelWithdrawal", "deposits", "withdrawals", "prepareTransferTo", "prepareTransferToChain", "executeTransfer", "openOrders", "openOrdersOn", "order", "orderByClientId", "ordersByIds", "orderHistory", "subscribeAccount", "subscribeAccountWith", "placeOrder", "cancelOrder", "cancelOrderByClientId", "cancelOrders", "positions", "positionsOn", "marginSummary", "fundingRates", "fundingPayments", "setMargin"] as const;
 export const PROVIDER_METHODS = {
-  upbit: ["region", "orderBooks", "tickers", "marketEvents"],
-  bithumb: ["marketWarnings", "marketAlerts"],
-  binance: ["venue", "spotSymbolFilters", "spotOrder", "usdMCreateListenKey", "usdMKeepaliveListenKey", "usdMCloseListenKey"],
-  hyperliquid: ["isTestnet", "nonFundingLedger", "assetContext"],
+  upbit: ["region", "orderBooks", "orderBooksAtLevel", "tickers", "tickersByQuote", "yearCandles", "orderbookInstruments", "marketEvents", "listSubscriptions", "testOrder", "orderDetail", "closedOrders", "depositInfo", "withdrawalAddresses", "travelRuleVasps", "verifyTravelRuleByUuid", "verifyTravelRuleByTxid", "batchCancelOpenOrders", "cancelAndNewOrder", "depositKrw", "withdrawKrw", "apiKeys", "listPockets", "listPocketApiKeys", "subPocketBalances", "universalTransfer", "universalTransfers", "subPocketTransfer", "subPocketTransfers", "subscribeDetailed", "subscribeDetailedWith", "subscribeDetailedAccount", "subscribeDetailedAccountWith", "testOrderDetail", "placeOrderDetail", "cancelOrderDetail", "cancelOrderByClientIdDetail", "ordersByIdsDetail", "cancelOrdersDetail", "depositDetail", "withdrawalDetail", "cancelWithdrawalDetail", "cancelAndNewOrderDetail"],
+  bithumb: ["marketWarnings", "marketAlerts", "notices", "transferFees", "apiKeys", "krwWithdrawals", "withdrawKrw", "krwDeposits", "depositKrw", "pendingOrders", "closedOrders", "batchOrders", "twapOrders", "createTwapOrder", "cancelTwapOrder", "withdrawalAddresses", "orderDetail", "orderList", "orderBookSnapshot", "subscribeDetailed", "subscribeDetailedWith", "subscribeDetailedAccount", "subscribeDetailedAccountWith", "ordersByIdsDetail", "placeOrderDetail", "cancelOrderDetail", "cancelOrderByClientIdDetail", "cancelOrdersDetail", "depositDetail", "withdrawalDetail", "cancelWithdrawalDetail"],
+  binance: ["venue", "spotSymbolFilters", "spotOrder", "spotAveragePrice", "spotAccountInformation", "spotCancelAllOpenOrders", "spotExchangeInfo", "usdMAccountInformation", "usdMExchangeInfo", "usdMPositionInformation", "allCoinsInformation", "apiKeyPermissions", "depositHistory", "questionnaireRequirements", "withdrawAddressList", "withdrawHistory", "markPrice", "markPrices", "openInterest", "aggregateTrades", "accountTrades", "c2cTradeHistory", "testOrder", "cancelAllOpenOrders", "usdMCreateListenKey", "usdMKeepaliveListenKey", "usdMCloseListenKey", "placeOrderDetail", "cancelOrderDetail", "cancelOrderByClientIdDetail", "subscribeDetailed", "subscribeDetailedWith", "subscribeDetailedAccount", "subscribeDetailedAccountWith"],
+  hyperliquid: ["isTestnet", "allMids", "subscribeDetailed", "subscribeDetailedWith", "subscribeDetailedAccount", "subscribeDetailedAccountWith", "userFills", "userFillsByTime", "basicOpenOrders", "orderStatus", "historicalOrders", "nonFundingLedger", "assetContext", "candleSnapshot", "l2Book", "recentTrades", "fundingHistory", "userFunding", "spotClearinghouseState", "spotMeta", "spotMetaAndAssetContexts", "userRateLimit", "userRole", "referral", "userFees", "portfolio", "subAccounts", "userVaultEquities", "allMidsDetail", "perpetualMeta", "perpetualMetaAndAssetContexts", "clearinghouseStateDetail", "frontendOpenOrdersDetail", "placeOrderDetail", "cancelOrderDetail"],
 } as const;
 export const PROVIDER_CONSTRUCTORS = {
   upbit: ["constructor", "withRegion"],
@@ -344,13 +2275,13 @@ export const PROVIDER_CONSTRUCTORS = {
   binance: ["spot", "usdMFutures"],
   hyperliquid: ["constructor", "testnet"],
 } as const;
-export const IDENTIFIERS = ["Exchange", "Feature", "MarketKind", "MarketStatus", "Side", "Interval", "Overflow", "MarginMode", "OrderStatus", "OrderType", "TimeInForce", "SizeKind", "UpbitRegion", "BithumbAlertStep", "BinanceMarket", "HyperliquidLedgerKind", "ExchangeErrorKind"] as const;
-export const MODELS = ["Market", "MarketInfo", "Trade", "Level", "OrderBook", "Ticker", "Candle", "Balance", "Order", "Position", "MarginSummary", "FundingRate", "FundingPayment", "CandleRequest", "OrderRequest", "StreamConfig", "Subscription", "HistoryRequest", "MarginRequest", "UpbitMarketEvent", "BithumbMarketAlert", "BinanceSymbolFilters", "BinanceSpotOrderDetail", "HyperliquidLedgerEntry", "HyperliquidAssetContext"] as const;
+export const IDENTIFIERS = ["Exchange", "Feature", "MarketKind", "MarketStatus", "Side", "Interval", "Overflow", "MarginMode", "OrderStatus", "OrderIdKind", "OrderType", "TimeInForce", "SizeKind", "UpbitRegion", "UpbitOrderDirection", "UpbitClosedOrderState", "UpbitSmpType", "UpbitKrwTwoFactorType", "UpbitPocketTransferState", "UpbitPocketTransferDirection", "UpbitPocketTransferOrder", "BithumbAlertStep", "BithumbPendingOrderState", "BithumbClosedOrderState", "BithumbOrderDirection", "BithumbOrderListState", "BithumbTwapState", "BithumbTwapOrderDirection", "BinanceMarket", "BinanceC2cTradeType", "HyperliquidLedgerKind", "ExchangeErrorKind", "Network", "WithdrawalStatus", "DepositStatus", "TransferErrorKind"] as const;
+export const MODELS = ["Market", "MarketInfo", "Trade", "Level", "OrderBook", "Ticker", "Candle", "Balance", "OrderAccount", "OrderOption", "OrderRules", "AssetNetwork", "DepositAddress", "DepositAddressEntry", "ExchangeDestination", "ChainDestination", "ExchangeTransferRequest", "ChainTransferRequest", "TransferDestination", "WithdrawalFee", "TravelRuleRequirement", "WithdrawalQuote", "TransferPlan", "Withdrawal", "Deposit", "Order", "CancelledOrder", "OrderCancelFailure", "CancelOrdersResult", "Position", "MarginSummary", "FundingRate", "FundingPayment", "CandleRequest", "OrderRequest", "OrderLookupRequest", "CancelOrdersRequest", "OrderHistoryRequest", "DepositAddressRequest", "WithdrawRequest", "TransferLookupRequest", "TransferHistoryRequest", "StreamConfig", "Subscription", "HistoryRequest", "MarginRequest", "UpbitMarketEvent", "UpbitListedSubscription", "UpbitSubscriptionList", "UpbitOrderResponse", "UpbitDepositResponse", "UpbitWithdrawalResponse", "UpbitCancelWithdrawalResponse", "UpbitCancelOrdersResponse", "UpbitCancelAndNewOrderDetailResult", "UpbitTradeStreamEvent", "UpbitOrderBookStreamEvent", "UpbitTickerStreamEvent", "UpbitCandleStreamEvent", "UpbitAssetStreamEvent", "UpbitOrderStreamEvent", "UpbitMarketStreamEvent", "UpbitAccountStreamEvent", "UpbitYearCandle", "UpbitOrderBookInstrument", "UpbitOrderDetailRequest", "UpbitOrderDetailTrade", "UpbitOrderDetail", "UpbitClosedOrdersRequest", "UpbitClosedOrder", "UpbitDepositInfo", "UpbitWithdrawalAddress", "UpbitTravelRuleVasp", "UpbitTravelRuleVerification", "UpbitBatchCancelScope", "UpbitBatchCancelRequest", "UpbitOrderReference", "UpbitOrderVolume", "UpbitCancelAndNewOrder", "UpbitCancelAndNewOrderRequest", "UpbitCancelAndNewOrderResult", "UpbitKrwTransferRequest", "UpbitKrwDeposit", "UpbitKrwWithdrawal", "UpbitApiKey", "UpbitPocket", "UpbitPocketApiKey", "UpbitPocketApiKeyGroup", "UpbitPocketApiKeysRequest", "UpbitPocketBalance", "UpbitPocketTransferQuery", "UpbitPocketUniversalTransferRequest", "UpbitPocketTransferRequest", "UpbitPocketTransfer", "BithumbMarketAlert", "BithumbNotice", "BithumbApiKey", "BithumbKrwWithdrawalsRequest", "BithumbKrwDepositsRequest", "BithumbKrwTransferRequest", "BithumbKrwWithdrawal", "BithumbKrwDeposit", "BithumbPendingOrdersRequest", "BithumbClosedOrdersRequest", "BithumbClosedOrder", "BithumbBatchOrdersRequest", "BithumbBatchOrder", "BithumbBatchOrderFailure", "BithumbBatchOrderOutcome", "BithumbBatchOrdersResult", "BithumbOrderBookSnapshot", "BithumbOrderResponse", "BithumbOrdersResponse", "BithumbCancelOrderResponse", "BithumbCancelOrdersResponse", "BithumbDepositResponse", "BithumbWithdrawalResponse", "BithumbCancelWithdrawalResponse", "BithumbTradeEvent", "BithumbOrderBookEvent", "BithumbTickerEvent", "BithumbAssetEvent", "BithumbOrderEvent", "BithumbMarketEvent", "BithumbAccountEvent", "BithumbTwapOrdersRequest", "BithumbTwapOrderRequest", "BithumbTwapOrder", "BithumbAssetFee", "BithumbNetworkFee", "BithumbWithdrawalAddress", "BithumbOrderDetailRequest", "BithumbOrderDetailTrade", "BithumbOrderDetail", "BithumbOrderListRequest", "BithumbOrderListItem", "BinanceSymbolFilters", "BinanceSpotOrderDetail", "BinanceDepositHistoryRequest", "BinanceWithdrawHistoryRequest", "BinanceSpotAccountInformation", "BinanceSpotCommissionRates", "BinanceSpotAccountBalance", "BinanceSpotCancelAllOpenOrders", "BinanceSpotCancelledOrder", "BinanceUsdMAccountInformation", "BinanceUsdMAccountAsset", "BinanceUsdMAccountPosition", "BinanceUsdMPositionInformation", "BinanceExchangeInfo", "BinanceExchangeSymbol", "BinanceCoinInformation", "BinanceCoinNetworkInformation", "BinanceApiKeyPermissions", "BinanceDepositHistory", "BinanceDepositHistoryEntry", "BinanceQuestionnaireRequirements", "BinanceWithdrawalAddress", "BinanceWithdrawHistory", "BinanceWithdrawHistoryEntry", "BinanceSpotAveragePrice", "BinanceMarkPrice", "BinanceOpenInterest", "BinanceAggregateTradesRequest", "BinanceAggregateTrade", "BinanceOrderResponse", "BinanceTradeEvent", "BinanceOrderBookEvent", "BinanceTickerEvent", "BinanceCandleEvent", "BinanceBalanceStreamEvent", "BinanceOrderStreamEvent", "BinanceRawAccountEvent", "BinanceMarketEvent", "BinanceAccountStreamEvent", "BinanceAccountTrade", "BinanceTestOrderRequest", "BinanceTestOrder", "BinanceC2cTradeHistoryRequest", "BinanceC2cTrade", "BinanceC2cTradeHistoryPage", "HyperliquidLedgerEntry", "HyperliquidCandleSnapshot", "HyperliquidBookLevel", "HyperliquidL2Book", "HyperliquidRecentTrade", "HyperliquidTradeEvent", "HyperliquidOrderBookEvent", "HyperliquidCandleEvent", "HyperliquidAssetContextEvent", "HyperliquidOrderUpdate", "HyperliquidSpotStateBalance", "HyperliquidSpotStateEvent", "HyperliquidMarketEvent", "HyperliquidAccountEvent", "HyperliquidFundingHistoryEntry", "HyperliquidUserFunding", "HyperliquidSpotBalance", "HyperliquidSpotClearinghouseState", "HyperliquidEvmContract", "HyperliquidSpotToken", "HyperliquidSpotPair", "HyperliquidSpotMeta", "HyperliquidSpotAssetContext", "HyperliquidSpotMetaAndAssetContexts", "HyperliquidMidPrice", "HyperliquidAllMids", "HyperliquidProviderResponse", "HyperliquidOrderActionResponse", "HyperliquidAssetContext", "HyperliquidUserRateLimit", "HyperliquidUserRole", "HyperliquidReferral", "HyperliquidReferrer", "HyperliquidUserFees", "HyperliquidUserFill", "HyperliquidOrderReference", "HyperliquidOpenOrder", "HyperliquidOrderDetail", "HyperliquidOrderInfo", "HyperliquidOrderStatusResponse", "HyperliquidDailyVolume", "HyperliquidPortfolioPeriod", "HyperliquidPortfolioPoint", "HyperliquidSubAccount", "HyperliquidVaultEquity"] as const;
 export const RAW_NATIVE_EXPORTS = ["NATIVE_API_VERSION", "NativeClient", "createCustomClient", "NativeUpbit", "createUpbit", "NativeBithumb", "createBithumb", "NativeBinance", "createBinance", "NativeHyperliquid", "createHyperliquid"] as const;
-export const RAW_NATIVE_CLIENT_MEMBERS = ["exchange", "supports", "markets", "trades", "orderBook", "ticker", "candles", "subscribe", "subscribeWith", "balances", "openOrders", "openOrdersOn", "subscribeAccount", "subscribeAccountWith", "placeOrder", "cancelOrder", "positions", "positionsOn", "marginSummary", "fundingRates", "fundingPayments", "setMargin", "streamNext", "streamClose"] as const;
+export const RAW_NATIVE_CLIENT_MEMBERS = ["exchange", "supports", "markets", "trades", "orderBook", "ticker", "candles", "subscribe", "subscribeWith", "balances", "orderRules", "assetNetworks", "depositAddresses", "depositAddress", "createDepositAddress", "prepareWithdrawal", "withdraw", "deposit", "withdrawal", "cancelWithdrawal", "deposits", "withdrawals", "openOrders", "openOrdersOn", "order", "orderByClientId", "ordersByIds", "orderHistory", "subscribeAccount", "subscribeAccountWith", "placeOrder", "cancelOrder", "cancelOrderByClientId", "cancelOrders", "positions", "positionsOn", "marginSummary", "fundingRates", "fundingPayments", "setMargin", "prepareTransferTo", "prepareTransferToChain", "executeTransfer", "streamNext", "streamClose"] as const;
 export const RAW_PROVIDER_MEMBERS = {
-  upbit: ["client", "region", "orderBooks", "tickers", "marketEvents"],
-  bithumb: ["client", "marketWarnings", "marketAlerts"],
-  binance: ["client", "venue", "spotSymbolFilters", "spotOrder", "usdMCreateListenKey", "usdMKeepaliveListenKey", "usdMCloseListenKey"],
-  hyperliquid: ["client", "isTestnet", "nonFundingLedger", "assetContext"],
+  upbit: ["client", "region", "orderBooks", "orderBooksAtLevel", "tickers", "tickersByQuote", "yearCandles", "orderbookInstruments", "marketEvents", "listSubscriptions", "testOrder", "orderDetail", "closedOrders", "depositInfo", "withdrawalAddresses", "travelRuleVasps", "verifyTravelRuleByUuid", "verifyTravelRuleByTxid", "batchCancelOpenOrders", "cancelAndNewOrder", "depositKrw", "withdrawKrw", "apiKeys", "listPockets", "listPocketApiKeys", "subPocketBalances", "universalTransfer", "universalTransfers", "subPocketTransfer", "subPocketTransfers", "subscribeDetailed", "subscribeDetailedWith", "subscribeDetailedAccount", "subscribeDetailedAccountWith", "testOrderDetail", "placeOrderDetail", "cancelOrderDetail", "cancelOrderByClientIdDetail", "ordersByIdsDetail", "cancelOrdersDetail", "depositDetail", "withdrawalDetail", "cancelWithdrawalDetail", "cancelAndNewOrderDetail", "streamNext", "streamClose"],
+  bithumb: ["client", "marketWarnings", "marketAlerts", "notices", "transferFees", "apiKeys", "krwWithdrawals", "withdrawKrw", "krwDeposits", "depositKrw", "pendingOrders", "closedOrders", "batchOrders", "twapOrders", "createTwapOrder", "cancelTwapOrder", "withdrawalAddresses", "orderDetail", "orderList", "orderBookSnapshot", "subscribeDetailed", "subscribeDetailedWith", "subscribeDetailedAccount", "subscribeDetailedAccountWith", "ordersByIdsDetail", "placeOrderDetail", "cancelOrderDetail", "cancelOrderByClientIdDetail", "cancelOrdersDetail", "depositDetail", "withdrawalDetail", "cancelWithdrawalDetail", "streamNext", "streamClose"],
+  binance: ["client", "venue", "spotSymbolFilters", "spotOrder", "spotAveragePrice", "spotAccountInformation", "spotCancelAllOpenOrders", "spotExchangeInfo", "usdMAccountInformation", "usdMExchangeInfo", "usdMPositionInformation", "allCoinsInformation", "apiKeyPermissions", "depositHistory", "questionnaireRequirements", "withdrawAddressList", "withdrawHistory", "markPrice", "markPrices", "openInterest", "aggregateTrades", "accountTrades", "c2cTradeHistory", "testOrder", "cancelAllOpenOrders", "usdMCreateListenKey", "usdMKeepaliveListenKey", "usdMCloseListenKey", "placeOrderDetail", "cancelOrderDetail", "cancelOrderByClientIdDetail", "subscribeDetailed", "subscribeDetailedWith", "subscribeDetailedAccount", "subscribeDetailedAccountWith", "streamNext", "streamClose"],
+  hyperliquid: ["client", "isTestnet", "allMids", "subscribeDetailed", "subscribeDetailedWith", "subscribeDetailedAccount", "subscribeDetailedAccountWith", "userFills", "userFillsByTime", "basicOpenOrders", "orderStatus", "historicalOrders", "nonFundingLedger", "assetContext", "candleSnapshot", "l2Book", "recentTrades", "fundingHistory", "userFunding", "spotClearinghouseState", "spotMeta", "spotMetaAndAssetContexts", "userRateLimit", "userRole", "referral", "userFees", "portfolio", "subAccounts", "userVaultEquities", "allMidsDetail", "perpetualMeta", "perpetualMetaAndAssetContexts", "clearinghouseStateDetail", "frontendOpenOrdersDetail", "placeOrderDetail", "cancelOrderDetail", "streamNext", "streamClose"],
 } as const;

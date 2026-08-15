@@ -2,6 +2,20 @@ import 'package:maxt/maxt.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('best 주문은 체결 조건과 client ID를 보존한다', () {
+    final request = OrderRequest.best(
+      Market.spot(Exchange.bithumb, 'BTC', 'KRW'),
+      Side.buy,
+      Size.quote(Decimal.parse('10000')),
+      TimeInForce.immediateOrCancel,
+    ).withClientId('client-1');
+
+    expect(request.orderType, OrderType.best);
+    expect(request.timeInForce, TimeInForce.immediateOrCancel);
+    expect(request.clientId, 'client-1');
+    expect(request.price, isNull);
+  });
+
   test('Decimal은 double 없이 정확한 문자열과 수치 동등성을 보존한다', () {
     final value = Decimal.parse('123456789012345678.1234567800');
 
@@ -197,11 +211,13 @@ void main() {
         Interval.min1: 60,
         Interval.min3: 180,
         Interval.min5: 300,
+        Interval.min10: 600,
         Interval.min15: 900,
         Interval.min30: 1800,
         Interval.hour1: 3600,
         Interval.hour2: 7200,
         Interval.hour4: 14400,
+        Interval.hour6: 21600,
         Interval.hour8: 28800,
         Interval.hour12: 43200,
         Interval.day1: 86400,
@@ -290,6 +306,22 @@ void main() {
       expect(balance.asset, expected, reason: input);
       expect(margin.asset, expected, reason: input);
     }
+  });
+
+  test('지갑 요청은 자산을 정규화하고 알려지지 않은 네트워크 값을 보존한다', () {
+    final deposit = DepositAddressRequest(
+      asset: 'eth',
+      network: Network.arbitrum,
+    );
+    final history = TransferHistoryRequest(
+      asset: 'btc',
+      network: Network.other('provider-chain'),
+    );
+
+    expect(deposit.asset, 'ETH');
+    expect(history.asset, 'BTC');
+    expect(history.network?.providerName, 'provider-chain');
+    expect(history.network?.isOther, isTrue);
   });
 
   test('비 ASCII 자산 식별자는 시장 동등성과 구독 중복 제거에서 구분한다', () {

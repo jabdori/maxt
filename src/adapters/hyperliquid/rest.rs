@@ -11,19 +11,24 @@ use serde_json::{Value, json};
 use crate::adapters::candles as candle_pages;
 use crate::error::{Error, Result};
 use crate::feature::Feature;
-use crate::request::{CandleRequest, HistoryRequest, MarginRequest, OrderRequest};
+use crate::request::{
+    CandleRequest, HistoryRequest, MarginRequest, OrderRequest, TransferHistoryRequest,
+};
 use crate::transport::{HttpRequest, HttpTransport};
 use crate::types::{
-    Balance, Candle, Cursor, FundingPayment, FundingRate, Interval, MarginMode, MarginSummary,
-    Market, MarketInfo, MarketKind, Order, OrderBook, OrderStatus, OrderType, Page, Position, Size,
-    TimeInForce, Timestamp, Trade,
+    Balance, Candle, Cursor, Deposit, FundingPayment, FundingRate, Interval, MarginMode,
+    MarginSummary, Market, MarketInfo, MarketKind, Order, OrderBook, OrderStatus, OrderType, Page,
+    Position, Size, TimeInForce, Timestamp, Trade, Withdrawal,
 };
 
-use super::HyperliquidNetwork;
 use super::native;
 use super::parse::{self, Asset, EXCHANGE, Universe};
 use super::sign::{
     self, CancelAction, LeverageAction, LimitKind, OrderAction, OrderKind, OrderWire,
+};
+use super::{
+    HyperliquidAllMids, HyperliquidNetwork, HyperliquidOrderActionResponse,
+    HyperliquidProviderResponse,
 };
 
 pub(crate) const INFO_PATH: &str = "/info";
@@ -59,6 +64,11 @@ pub(crate) fn meta_request() -> HttpRequest {
 
 pub(crate) fn spot_meta_request() -> HttpRequest {
     info(json!({ "type": "spotMeta" }))
+}
+
+/// Builds the default-universe `allMids` request.
+pub(crate) fn all_mids_request() -> HttpRequest {
+    info(json!({ "type": "allMids" }))
 }
 
 /// Builds the metadata-plus-context request used for ticker summaries.
@@ -122,6 +132,59 @@ pub(crate) fn open_orders_request(user: &str) -> HttpRequest {
     info(json!({ "type": "frontendOpenOrders", "user": user }))
 }
 
+/// Builds Hyperliquid's compact `openOrders` request.
+pub(crate) fn basic_open_orders_request(user: &str) -> HttpRequest {
+    user_info_request("openOrders", user)
+}
+
+/// Builds an `orderStatus` request after validating its provider identifier.
+pub(crate) fn order_status_request(
+    user: &str,
+    reference: &native::HyperliquidOrderReference,
+) -> Result<HttpRequest> {
+    validate_order_reference(reference)?;
+    let oid = match reference {
+        native::HyperliquidOrderReference::OrderId(order_id) => json!(order_id),
+        native::HyperliquidOrderReference::ClientOrderId(client_order_id) => json!(client_order_id),
+    };
+
+    Ok(info(
+        json!({ "type": "orderStatus", "user": user, "oid": oid }),
+    ))
+}
+
+pub(crate) fn validate_order_reference(
+    reference: &native::HyperliquidOrderReference,
+) -> Result<()> {
+    match reference {
+        native::HyperliquidOrderReference::OrderId(_) => Ok(()),
+        native::HyperliquidOrderReference::ClientOrderId(client_order_id) => {
+            validate_client_order_id(client_order_id)
+        }
+    }
+}
+
+/// Builds Hyperliquid's documented recent historical-orders request.
+pub(crate) fn historical_orders_request(user: &str) -> HttpRequest {
+    user_info_request("historicalOrders", user)
+}
+
+fn validate_client_order_id(client_order_id: &str) -> Result<()> {
+    let digits = client_order_id.strip_prefix("0x").ok_or_else(|| {
+        Error::invalid_request(
+            "client_order_id",
+            "a Hyperliquid client order id needs a `0x` prefix",
+        )
+    })?;
+    if digits.len() != 32 || !digits.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return Err(Error::invalid_request(
+            "client_order_id",
+            "a Hyperliquid client order id is exactly 16 bytes of hexadecimal",
+        ));
+    }
+    Ok(())
+}
+
 pub(crate) fn funding_history_request(
     native: &str,
     start_ms: i64,
@@ -145,6 +208,85 @@ pub(crate) fn user_funding_request(user: &str, start_ms: i64, end_ms: Option<i64
 
 pub(crate) fn ledger_request(user: &str, start_ms: i64, end_ms: Option<i64>) -> HttpRequest {
     time_ranged("userNonFundingLedgerUpdates", user, start_ms, end_ms)
+}
+
+pub(crate) fn user_rate_limit_request(user: &str) -> HttpRequest {
+    user_info_request("userRateLimit", user)
+}
+
+pub(crate) fn user_role_request(user: &str) -> HttpRequest {
+    user_info_request("userRole", user)
+}
+
+pub(crate) fn referral_request(user: &str) -> HttpRequest {
+    user_info_request("referral", user)
+}
+
+pub(crate) fn user_fees_request(user: &str) -> HttpRequest {
+    user_info_request("userFees", user)
+}
+
+pub(crate) fn portfolio_request(user: &str) -> HttpRequest {
+    user_info_request("portfolio", user)
+}
+
+pub(crate) fn sub_accounts_request(user: &str) -> HttpRequest {
+    user_info_request("subAccounts", user)
+}
+
+pub(crate) fn user_vault_equities_request(user: &str) -> HttpRequest {
+    user_info_request("userVaultEquities", user)
+}
+
+/// Builds the documented most-recent account fills request.
+pub(crate) fn user_fills_request(user: &str, aggregate_by_time: bool) -> HttpRequest {
+    info(json!({
+        "type": "userFills",
+        "user": user,
+        "aggregateByTime": aggregate_by_time,
+    }))
+}
+
+/// Builds the documented time-ranged account fills request.
+pub(crate) fn user_fills_by_time_request(
+    user: &str,
+    start_ms: i64,
+    end_ms: Option<i64>,
+    aggregate_by_time: bool,
+) -> HttpRequest {
+    let mut body = json!({
+        "type": "userFillsByTime",
+        "user": user,
+        "startTime": start_ms,
+        "aggregateByTime": aggregate_by_time,
+    });
+    if let Some(end_ms) = end_ms {
+        body["endTime"] = json!(end_ms);
+    }
+
+    info(body)
+}
+
+fn user_fills_by_time_range_request(
+    user: &str,
+    from: Timestamp,
+    to: Option<Timestamp>,
+    aggregate_by_time: bool,
+) -> HttpRequest {
+    user_fills_by_time_request(
+        user,
+        // `startTime` is inclusive. Round up so a nanosecond-precise caller
+        // boundary never admits an older whole-millisecond fill.
+        crate::adapters::inclusive_millis_at_or_after(from),
+        // `endTime` is also inclusive in Hyperliquid's API, so flooring
+        // preserves the last whole millisecond within the caller boundary.
+        to.map(Timestamp::as_millis),
+        aggregate_by_time,
+    )
+}
+
+fn user_info_request(request_type: &str, user: &str) -> HttpRequest {
+    info(json!({ "type": request_type, "user": user }))
 }
 
 fn time_ranged(request_type: &str, user: &str, start_ms: i64, end_ms: Option<i64>) -> HttpRequest {
@@ -188,6 +330,83 @@ pub(crate) async fn universe(http: &HttpTransport) -> Result<Universe> {
 
 pub(crate) fn markets(universe: &Universe, kind: MarketKind) -> Vec<MarketInfo> {
     universe.of_kind(kind).map(parse::market_info).collect()
+}
+
+/// Reads current mids with the complete provider map retained as JSON.
+pub(crate) async fn all_mids_detail(
+    http: &HttpTransport,
+    universe: &Universe,
+) -> Result<HyperliquidAllMids> {
+    let body = post(http, &all_mids_request()).await?;
+    let value: Value = parse::json(&body)?;
+    all_mids_detail_from_value(&value, universe)
+}
+
+pub(crate) fn all_mids_detail_from_value(
+    value: &Value,
+    universe: &Universe,
+) -> Result<HyperliquidAllMids> {
+    Ok(HyperliquidAllMids {
+        mids: parse::all_mids(value, universe)?,
+        raw_json: serde_json::to_string(value).map_err(|error| {
+            Error::decode(format!("could not preserve Hyperliquid allMids: {error}"))
+        })?,
+    })
+}
+
+/// Reads the complete perpetual `meta` response without narrowing its schema.
+pub(crate) async fn perpetual_meta(http: &HttpTransport) -> Result<HyperliquidProviderResponse> {
+    provider_response(http, meta_request(), "meta").await
+}
+
+/// Reads the complete perpetual `metaAndAssetCtxs` response without narrowing it.
+pub(crate) async fn perpetual_meta_and_asset_contexts(
+    http: &HttpTransport,
+) -> Result<HyperliquidProviderResponse> {
+    provider_response(
+        http,
+        asset_contexts_request(MarketKind::Perpetual),
+        "metaAndAssetCtxs",
+    )
+    .await
+}
+
+/// Reads the complete `clearinghouseState` response without narrowing it.
+pub(crate) async fn clearinghouse_state(
+    http: &HttpTransport,
+    user: &str,
+) -> Result<HyperliquidProviderResponse> {
+    provider_response(http, perp_state_request(user), "clearinghouseState").await
+}
+
+/// Reads the complete `frontendOpenOrders` response without narrowing it.
+pub(crate) async fn frontend_open_orders(
+    http: &HttpTransport,
+    user: &str,
+) -> Result<HyperliquidProviderResponse> {
+    provider_response(http, open_orders_request(user), "frontendOpenOrders").await
+}
+
+async fn provider_response(
+    http: &HttpTransport,
+    request: HttpRequest,
+    operation: &str,
+) -> Result<HyperliquidProviderResponse> {
+    let body = post(http, &request).await?;
+    provider_response_from_body(body, operation)
+}
+
+fn provider_response_from_body(
+    body: String,
+    operation: &str,
+) -> Result<HyperliquidProviderResponse> {
+    let _: Value = parse::json(&body)?;
+    if body.trim().is_empty() {
+        return Err(Error::decode(format!(
+            "Hyperliquid {operation} response was empty"
+        )));
+    }
+    Ok(HyperliquidProviderResponse { raw_json: body })
 }
 
 pub(crate) async fn order_book(
@@ -369,6 +588,43 @@ pub(crate) async fn candles(
     .await
 }
 
+/// Reads one raw `candleSnapshot` window with Hyperliquid's trade count intact.
+pub(crate) async fn candle_snapshot(
+    http: &HttpTransport,
+    universe: &Universe,
+    native: &str,
+    interval: &str,
+    start_ms: i64,
+    end_ms: Option<i64>,
+) -> Result<Vec<native::HyperliquidCandleSnapshot>> {
+    let body = post(http, &candles_request(native, interval, start_ms, end_ms)).await?;
+    let raw: Vec<Value> = parse::json(&body)?;
+    native::candle_snapshots(&raw, universe)
+}
+
+/// Reads one raw `l2Book` response with each level's order count intact.
+pub(crate) async fn l2_book(
+    http: &HttpTransport,
+    universe: &Universe,
+    market: &Market,
+) -> Result<native::HyperliquidL2Book> {
+    let native = universe.native_symbol(market)?;
+    let body = post(http, &book_request(native)).await?;
+    native::l2_book(&parse::json(&body)?, universe)
+}
+
+/// Reads `recentTrades` with transaction hashes and participant addresses intact.
+pub(crate) async fn recent_trades(
+    http: &HttpTransport,
+    universe: &Universe,
+    market: &Market,
+) -> Result<Vec<native::HyperliquidRecentTrade>> {
+    let native = universe.native_symbol(market)?;
+    let body = post(http, &trades_request(native, None)?).await?;
+    let raw: Vec<Value> = parse::json(&body)?;
+    native::recent_trades(&raw, universe)
+}
+
 /// Duration used for Hyperliquid `1M` request windows.
 const MONTH_MS: i64 = 30 * 24 * 60 * 60 * 1_000;
 
@@ -423,6 +679,29 @@ pub(crate) async fn balances(http: &HttpTransport, user: &str) -> Result<Vec<Bal
         .collect()
 }
 
+/// Reads the raw spot clearinghouse state with token index and entry notional intact.
+pub(crate) async fn spot_clearinghouse_state(
+    http: &HttpTransport,
+    user: &str,
+) -> Result<native::HyperliquidSpotClearinghouseState> {
+    let body = post(http, &spot_state_request(user)).await?;
+    native::spot_clearinghouse_state(&parse::json(&body)?)
+}
+
+/// Reads `spotMeta` without narrowing provider token and pair metadata.
+pub(crate) async fn spot_meta(http: &HttpTransport) -> Result<native::HyperliquidSpotMeta> {
+    let body = post(http, &spot_meta_request()).await?;
+    native::spot_meta(&parse::json(&body)?)
+}
+
+/// Reads `spotMetaAndAssetCtxs` without narrowing provider spot context fields.
+pub(crate) async fn spot_meta_and_asset_contexts(
+    http: &HttpTransport,
+) -> Result<native::HyperliquidSpotMetaAndAssetContexts> {
+    let body = post(http, &asset_contexts_request(MarketKind::Spot)).await?;
+    native::spot_meta_and_asset_contexts(&parse::json(&body)?)
+}
+
 pub(crate) async fn open_orders(
     http: &HttpTransport,
     universe: &Universe,
@@ -470,6 +749,123 @@ pub(crate) async fn margin_summary(http: &HttpTransport, user: &str) -> Result<M
     parse::margin_summary(&parse::json(&body)?)
 }
 
+pub(crate) async fn user_rate_limit(
+    http: &HttpTransport,
+    user: &str,
+) -> Result<native::HyperliquidUserRateLimit> {
+    let body = post(http, &user_rate_limit_request(user)).await?;
+
+    native::user_rate_limit(&parse::json(&body)?)
+}
+
+pub(crate) async fn user_role(
+    http: &HttpTransport,
+    user: &str,
+) -> Result<native::HyperliquidUserRole> {
+    let body = post(http, &user_role_request(user)).await?;
+
+    native::user_role(&parse::json(&body)?)
+}
+
+pub(crate) async fn referral(
+    http: &HttpTransport,
+    user: &str,
+) -> Result<native::HyperliquidReferral> {
+    let body = post(http, &referral_request(user)).await?;
+
+    native::referral(&parse::json(&body)?)
+}
+
+pub(crate) async fn user_fees(
+    http: &HttpTransport,
+    user: &str,
+) -> Result<native::HyperliquidUserFees> {
+    let body = post(http, &user_fees_request(user)).await?;
+
+    native::user_fees(&parse::json(&body)?)
+}
+
+pub(crate) async fn portfolio(
+    http: &HttpTransport,
+    user: &str,
+) -> Result<Vec<native::HyperliquidPortfolioPeriod>> {
+    let body = post(http, &portfolio_request(user)).await?;
+
+    native::portfolio(&parse::json(&body)?)
+}
+
+pub(crate) async fn sub_accounts(
+    http: &HttpTransport,
+    user: &str,
+) -> Result<Vec<native::HyperliquidSubAccount>> {
+    let body = post(http, &sub_accounts_request(user)).await?;
+
+    native::sub_accounts(&parse::json(&body)?)
+}
+
+pub(crate) async fn user_vault_equities(
+    http: &HttpTransport,
+    user: &str,
+) -> Result<Vec<native::HyperliquidVaultEquity>> {
+    let body = post(http, &user_vault_equities_request(user)).await?;
+
+    native::vault_equities(&parse::json(&body)?)
+}
+
+pub(crate) async fn user_fills(
+    http: &HttpTransport,
+    user: &str,
+    aggregate_by_time: bool,
+) -> Result<Vec<native::HyperliquidUserFill>> {
+    let body = post(http, &user_fills_request(user, aggregate_by_time)).await?;
+
+    native::user_fills(&parse::json(&body)?)
+}
+
+pub(crate) async fn user_fills_by_time(
+    http: &HttpTransport,
+    user: &str,
+    from: Timestamp,
+    to: Option<Timestamp>,
+    aggregate_by_time: bool,
+) -> Result<Vec<native::HyperliquidUserFill>> {
+    let body = post(
+        http,
+        &user_fills_by_time_range_request(user, from, to, aggregate_by_time),
+    )
+    .await?;
+
+    native::user_fills(&parse::json(&body)?)
+}
+
+pub(crate) async fn basic_open_orders(
+    http: &HttpTransport,
+    user: &str,
+) -> Result<Vec<native::HyperliquidOpenOrder>> {
+    let body = post(http, &basic_open_orders_request(user)).await?;
+
+    native::basic_open_orders(&parse::json(&body)?)
+}
+
+pub(crate) async fn order_status(
+    http: &HttpTransport,
+    user: &str,
+    reference: &native::HyperliquidOrderReference,
+) -> Result<native::HyperliquidOrderStatusResponse> {
+    let body = post(http, &order_status_request(user, reference)?).await?;
+
+    native::order_status(&parse::json(&body)?)
+}
+
+pub(crate) async fn historical_orders(
+    http: &HttpTransport,
+    user: &str,
+) -> Result<Vec<native::HyperliquidOrderInfo>> {
+    let body = post(http, &historical_orders_request(user)).await?;
+
+    native::historical_orders(&parse::json(&body)?)
+}
+
 // ---------------------------------------------------------------------------
 // History
 // ---------------------------------------------------------------------------
@@ -513,6 +909,28 @@ pub(crate) async fn funding_rates(
     )
 }
 
+/// Reads raw market funding observations with the provider premium intact.
+pub(crate) async fn funding_history(
+    http: &HttpTransport,
+    universe: &Universe,
+    market: &Market,
+    from: Timestamp,
+    to: Option<Timestamp>,
+) -> Result<Vec<native::HyperliquidFundingHistoryEntry>> {
+    let asset = perpetual_asset(universe, market, Feature::FundingRates)?;
+    let body = post(
+        http,
+        &funding_history_request(
+            &asset.native,
+            from.as_millis(),
+            to.map(Timestamp::as_millis),
+        ),
+    )
+    .await?;
+    let raw: Vec<Value> = parse::json(&body)?;
+    native::funding_history(&raw, universe)
+}
+
 /// Reads funding amounts charged or credited to the configured account.
 pub(crate) async fn funding_payments(
     http: &HttpTransport,
@@ -551,6 +969,23 @@ pub(crate) async fn funding_payments(
     )
 }
 
+/// Reads account funding with provider position-size and sample data intact.
+pub(crate) async fn user_funding(
+    http: &HttpTransport,
+    universe: &Universe,
+    user: &str,
+    from: Timestamp,
+    to: Option<Timestamp>,
+) -> Result<Vec<native::HyperliquidUserFunding>> {
+    let body = post(
+        http,
+        &user_funding_request(user, from.as_millis(), to.map(Timestamp::as_millis)),
+    )
+    .await?;
+    let raw: Vec<Value> = parse::json(&body)?;
+    native::user_funding(&raw, universe)
+}
+
 /// Reads account-wide non-funding ledger entries.
 pub(crate) async fn ledger(
     http: &HttpTransport,
@@ -566,19 +1001,103 @@ pub(crate) async fn ledger(
         Some(cursor) => parse::cursor_start_ms(cursor)?,
         None => from.map(Timestamp::as_millis).unwrap_or(0),
     };
-    let body = post(
-        http,
-        &ledger_request(user, start_ms, to.map(Timestamp::as_millis)),
-    )
-    .await?;
-
-    let raw: Vec<parse::RawLedgerUpdate> = parse::json(&body)?;
+    let raw = raw_ledger(http, user, start_ms, to.map(Timestamp::as_millis)).await?;
     let items = native::ledger_entries(&raw)?
         .into_iter()
         .zip(raw.iter().map(|entry| entry.time))
         .collect();
 
     page(items, newest(raw.iter().map(|entry| entry.time)), limit)
+}
+
+/// Reads one common deposit-history page from the account-wide ledger.
+pub(crate) async fn deposits(
+    http: &HttpTransport,
+    user: &str,
+    request: &TransferHistoryRequest,
+) -> Result<Page<Deposit>> {
+    let raw = transfer_ledger(http, user, request).await?;
+    let mut items = native::deposits(&raw)?;
+    filter_asset(&mut items, request.asset.as_deref(), |deposit| {
+        &deposit.asset
+    });
+
+    page(
+        items,
+        newest(raw.iter().map(|entry| entry.time)),
+        request.limit,
+    )
+}
+
+/// Reads one common withdrawal-history page from the account-wide ledger.
+pub(crate) async fn withdrawals(
+    http: &HttpTransport,
+    user: &str,
+    request: &TransferHistoryRequest,
+) -> Result<Page<Withdrawal>> {
+    let raw = transfer_ledger(http, user, request).await?;
+    let mut items = native::withdrawals(&raw)?;
+    filter_asset(&mut items, request.asset.as_deref(), |withdrawal| {
+        &withdrawal.asset
+    });
+
+    page(
+        items,
+        newest(raw.iter().map(|entry| entry.time)),
+        request.limit,
+    )
+}
+
+async fn transfer_ledger(
+    http: &HttpTransport,
+    user: &str,
+    request: &TransferHistoryRequest,
+) -> Result<Vec<parse::RawLedgerUpdate>> {
+    validate_page_limit(request.limit)?;
+    let start_ms = request
+        .cursor
+        .as_ref()
+        .map(parse::cursor_start_ms)
+        .transpose()?
+        .unwrap_or(0);
+
+    raw_ledger(http, user, start_ms, None).await
+}
+
+async fn raw_ledger(
+    http: &HttpTransport,
+    user: &str,
+    start_ms: i64,
+    end_ms: Option<i64>,
+) -> Result<Vec<parse::RawLedgerUpdate>> {
+    let body = post(http, &ledger_request(user, start_ms, end_ms)).await?;
+
+    parse::json(&body)
+}
+
+fn filter_asset<T>(items: &mut Vec<(T, i64)>, requested: Option<&str>, asset: impl Fn(&T) -> &str) {
+    if let Some(requested) = requested {
+        items.retain(|(item, _)| asset(item).eq_ignore_ascii_case(requested));
+    }
+}
+
+/// Validates the transfer-history fields Hyperliquid can honor.
+pub(crate) fn validate_transfer_history(
+    request: &TransferHistoryRequest,
+    feature: Feature,
+) -> Result<()> {
+    validate_page_limit(request.limit)?;
+    if let Some(network) = &request.network {
+        return Err(Error::unsupported(
+            feature,
+            EXCHANGE,
+            format!(
+                "userNonFundingLedgerUpdates does not identify a network, so `{network}` cannot be filtered safely"
+            ),
+        ));
+    }
+
+    Ok(())
 }
 
 /// Returns the greatest entry time and whether the provider page was full.
@@ -706,6 +1225,22 @@ pub(crate) async fn place_order(
     request: &OrderRequest,
     nonce: u64,
 ) -> Result<Order> {
+    Ok(
+        place_order_detail(http, universe, private_key, network, request, nonce)
+            .await?
+            .common,
+    )
+}
+
+/// Builds and signs an order while preserving the full action response.
+pub(crate) async fn place_order_detail(
+    http: &HttpTransport,
+    universe: &Universe,
+    private_key: &str,
+    network: HyperliquidNetwork,
+    request: &OrderRequest,
+    nonce: u64,
+) -> Result<HyperliquidOrderActionResponse> {
     let asset = universe.asset(&request.market)?;
     let wire = order_wire(asset, request)?;
     let action = OrderAction::new(wire.clone());
@@ -715,25 +1250,28 @@ pub(crate) async fn place_order(
     let (id, status) = parse::order_ack_id(&parse::action_response(&response)?)?;
 
     let size = parse::decimal(&wire.s, "size")?;
-    Ok(Order {
-        id,
-        market: request.market.clone(),
-        side: request.side,
-        status,
-        // The acknowledgement exposes only resting versus filled status.
-        filled_quantity: if status == OrderStatus::Filled {
-            size
-        } else {
-            Decimal::ZERO
+    Ok(HyperliquidOrderActionResponse {
+        common: Order {
+            id,
+            market: request.market.clone(),
+            side: request.side,
+            status,
+            // The acknowledgement exposes only resting versus filled status.
+            filled_quantity: if status == OrderStatus::Filled {
+                size
+            } else {
+                Decimal::ZERO
+            },
+            remaining_quantity: if status == OrderStatus::Filled {
+                Decimal::ZERO
+            } else {
+                size
+            },
+            price: request.price,
+            // The acknowledgement has no exchange timestamp.
+            created_at: None,
         },
-        remaining_quantity: if status == OrderStatus::Filled {
-            Decimal::ZERO
-        } else {
-            size
-        },
-        price: request.price,
-        // The acknowledgement has no exchange timestamp.
-        created_at: None,
+        raw_json: response,
     })
 }
 
@@ -746,6 +1284,13 @@ pub(crate) fn order_wire(asset: &Asset, request: &OrderRequest) -> Result<OrderW
             EXCHANGE,
             "hyperliquid has no market order type; send an immediate-or-cancel limit \
              order priced through the book instead",
+        ));
+    }
+    if request.client_id.is_some() {
+        return Err(Error::unsupported(
+            Feature::Trading,
+            EXCHANGE,
+            "hyperliquid client order ids require the provider-specific cloid contract",
         ));
     }
     let Size::Base(size) = request.size else {
@@ -885,7 +1430,30 @@ pub(crate) async fn cancel_order(
     market: &Market,
     order_id: &str,
     nonce: u64,
-) -> Result<Order> {
+) -> Result<()> {
+    cancel_order_detail(
+        http,
+        universe,
+        private_key,
+        network,
+        market,
+        order_id,
+        nonce,
+    )
+    .await
+    .map(|_| ())
+}
+
+/// Cancels one order while preserving the full action response.
+pub(crate) async fn cancel_order_detail(
+    http: &HttpTransport,
+    universe: &Universe,
+    private_key: &str,
+    network: HyperliquidNetwork,
+    market: &Market,
+    order_id: &str,
+    nonce: u64,
+) -> Result<HyperliquidProviderResponse> {
     let asset = universe.asset(market)?;
     let oid: u64 = order_id.parse().map_err(|_| {
         Error::invalid_request(
@@ -899,18 +1467,7 @@ pub(crate) async fn cancel_order(
     let response = post(http, &HttpRequest::post(EXCHANGE_PATH).json_body(body)).await?;
     let accepted = parse::action_response(&response)?;
     cancel_ack(&accepted)?;
-
-    Ok(Order {
-        id: order_id.to_string(),
-        market: market.clone(),
-        // The cancel acknowledgement provides no order fields beyond its verdict.
-        side: crate::types::Side::Buy,
-        status: OrderStatus::Cancelled,
-        filled_quantity: Decimal::ZERO,
-        remaining_quantity: Decimal::ZERO,
-        price: None,
-        created_at: None,
-    })
+    Ok(HyperliquidProviderResponse { raw_json: response })
 }
 
 /// Reads the per-cancel verdict inside a successful action envelope.
@@ -993,16 +1550,19 @@ pub(crate) async fn set_margin(
     Ok(())
 }
 
-/// Builds the millisecond nonce used by a signed action.
-pub(crate) fn nonce(now: Timestamp) -> u64 {
-    u64::try_from(now.as_millis()).unwrap_or(0)
-}
-
 #[cfg(test)]
 mod tests {
     use super::super::parse::tests::{btc_perp, universe};
     use super::*;
     use crate::types::{Exchange, Side};
+
+    #[test]
+    fn provider_response_keeps_unmodeled_fields_verbatim() {
+        let body = r#"{"unmodeled":{"futureField":true}}"#.to_string();
+        let response = provider_response_from_body(body.clone(), "meta").expect("a response");
+
+        assert_eq!(response.raw_json, body);
+    }
 
     /// Spot context fixture whose metadata and context arrays are not aligned.
     const SPOT_ASSET_CTXS: &str = r#"[
@@ -1096,6 +1656,7 @@ mod tests {
         for (request, expected) in [
             (meta_request(), "meta"),
             (spot_meta_request(), "spotMeta"),
+            (all_mids_request(), "allMids"),
             (
                 asset_contexts_request(MarketKind::Perpetual),
                 "metaAndAssetCtxs",
@@ -1112,10 +1673,181 @@ mod tests {
             (spot_state_request("0xabc"), "spotClearinghouseState"),
             (perp_state_request("0xabc"), "clearinghouseState"),
             (open_orders_request("0xabc"), "frontendOpenOrders"),
+            (basic_open_orders_request("0xabc"), "openOrders"),
+            (
+                order_status_request(
+                    "0xabc",
+                    &native::HyperliquidOrderReference::order_id(u64::MAX),
+                )
+                .expect("u64 order id"),
+                "orderStatus",
+            ),
+            (historical_orders_request("0xabc"), "historicalOrders"),
+            (
+                funding_history_request("BTC", 1_681_222_254_710, None),
+                "fundingHistory",
+            ),
+            (
+                user_funding_request("0xabc", 1_681_222_254_710, None),
+                "userFunding",
+            ),
+            (user_rate_limit_request("0xabc"), "userRateLimit"),
+            (user_role_request("0xabc"), "userRole"),
+            (referral_request("0xabc"), "referral"),
+            (user_fees_request("0xabc"), "userFees"),
+            (portfolio_request("0xabc"), "portfolio"),
+            (sub_accounts_request("0xabc"), "subAccounts"),
+            (user_vault_equities_request("0xabc"), "userVaultEquities"),
+            (user_fills_request("0xabc", false), "userFills"),
+            (
+                user_fills_by_time_request("0xabc", 1_681_222_254_710, None, true),
+                "userFillsByTime",
+            ),
+            (
+                ledger_request("0xabc", 1_681_222_254_710, None),
+                "userNonFundingLedgerUpdates",
+            ),
         ] {
             assert_eq!(request.target(), INFO_PATH, "{expected}");
             assert_eq!(body_of(&request)["type"], expected);
         }
+
+        assert!(body_of(&all_mids_request()).get("dex").is_none());
+
+        let ledger = body_of(&ledger_request("0xabc", 1_681_222_254_710, None));
+        assert_eq!(ledger["user"], "0xabc");
+        assert_eq!(ledger["startTime"], 1_681_222_254_710_i64);
+        assert!(ledger["endTime"].is_null());
+
+        let funding = body_of(&funding_history_request("BTC", 1_681_222_254_710, None));
+        assert_eq!(funding["coin"], "BTC");
+        assert_eq!(funding["startTime"], 1_681_222_254_710_i64);
+        assert!(funding["endTime"].is_null());
+    }
+
+    #[test]
+    fn every_account_info_read_names_the_configured_user() {
+        for request in [
+            user_funding_request("0xabc", 1_681_222_254_710, None),
+            user_rate_limit_request("0xabc"),
+            user_role_request("0xabc"),
+            referral_request("0xabc"),
+            user_fees_request("0xabc"),
+            portfolio_request("0xabc"),
+            sub_accounts_request("0xabc"),
+            user_vault_equities_request("0xabc"),
+            user_fills_request("0xabc", false),
+            user_fills_by_time_request("0xabc", 1_681_222_254_710, None, true),
+            basic_open_orders_request("0xabc"),
+            order_status_request("0xabc", &native::HyperliquidOrderReference::order_id(1))
+                .expect("order status"),
+            historical_orders_request("0xabc"),
+        ] {
+            let body = body_of(&request);
+
+            assert_eq!(request.target(), INFO_PATH);
+            assert_eq!(body["user"], "0xabc");
+            assert!(body["type"].is_string());
+        }
+    }
+
+    #[test]
+    fn user_fill_requests_keep_the_documented_filter_shape() {
+        let recent = body_of(&user_fills_request("0xabc", true));
+        assert_eq!(
+            recent,
+            json!({
+                "type": "userFills",
+                "user": "0xabc",
+                "aggregateByTime": true,
+            })
+        );
+
+        let ranged = body_of(&user_fills_by_time_request(
+            "0xabc",
+            1_681_222_254_710,
+            Some(1_681_222_254_999),
+            false,
+        ));
+        assert_eq!(
+            ranged,
+            json!({
+                "type": "userFillsByTime",
+                "user": "0xabc",
+                "startTime": 1_681_222_254_710_i64,
+                "endTime": 1_681_222_254_999_i64,
+                "aggregateByTime": false,
+            })
+        );
+    }
+
+    #[test]
+    fn order_query_requests_match_the_documented_json_shapes() {
+        assert_eq!(
+            body_of(&basic_open_orders_request("0xabc")),
+            json!({"type":"openOrders", "user":"0xabc"})
+        );
+        assert_eq!(
+            body_of(
+                &order_status_request(
+                    "0xabc",
+                    &native::HyperliquidOrderReference::order_id(u64::MAX),
+                )
+                .expect("maximum order id")
+            ),
+            json!({"type":"orderStatus", "user":"0xabc", "oid":u64::MAX})
+        );
+        assert_eq!(
+            body_of(
+                &order_status_request(
+                    "0xabc",
+                    &native::HyperliquidOrderReference::client_order_id(
+                        "0x0123456789abcdef0123456789ABCDEF",
+                    ),
+                )
+                .expect("16-byte client order id")
+            ),
+            json!({
+                "type":"orderStatus",
+                "user":"0xabc",
+                "oid":"0x0123456789abcdef0123456789ABCDEF"
+            })
+        );
+        assert_eq!(
+            body_of(&historical_orders_request("0xabc")),
+            json!({"type":"historicalOrders", "user":"0xabc"})
+        );
+    }
+
+    #[test]
+    fn client_order_ids_must_be_exactly_sixteen_bytes_of_prefixed_hex() {
+        for invalid in [
+            "0123456789abcdef0123456789abcdef",
+            "0x0123456789abcdef0123456789abcde",
+            "0x0123456789abcdef0123456789abcdef0",
+            "0x0123456789abcdef0123456789abcdeg",
+        ] {
+            let result = order_status_request(
+                "0xabc",
+                &native::HyperliquidOrderReference::client_order_id(invalid),
+            );
+            assert!(
+                matches!(&result, Err(Error::InvalidRequest { field, .. }) if *field == "client_order_id"),
+                "{invalid} was accepted: {result:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn user_fill_time_range_rounds_only_the_inclusive_start_up_to_a_millisecond() {
+        let from = Timestamp::from_nanos(1_681_222_254_710_000_001);
+        let to = Timestamp::from_nanos(1_681_222_254_999_999_999);
+
+        let request = user_fills_by_time_range_request("0xabc", from, Some(to), false);
+        let body = body_of(&request);
+
+        assert_eq!(body["startTime"], 1_681_222_254_711_i64);
+        assert_eq!(body["endTime"], 1_681_222_254_999_i64);
     }
 
     #[test]
@@ -1771,13 +2503,5 @@ mod tests {
         )
         .expect("an accepted envelope");
         assert!(cancel_ack(&succeeded).is_ok());
-    }
-
-    #[test]
-    fn a_nonce_is_the_millisecond_clock_hyperliquid_checks_against_its_own() {
-        assert_eq!(
-            nonce(Timestamp::from_millis(1_700_000_000_123)),
-            1_700_000_000_123
-        );
     }
 }

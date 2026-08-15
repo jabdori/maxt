@@ -1,29 +1,44 @@
 use std::fmt;
 
+pub mod generated_models;
 mod generated_shape_guard;
 
+pub use generated_models::*;
+
 use maxt::adapters::{
-    BinanceSpotOrderDetail, BinanceSymbolFilters, BithumbAlertStep, BithumbMarketAlert,
-    HyperliquidAssetContext, HyperliquidLedgerEntry, HyperliquidLedgerKind, UpbitMarketEvent,
+    BinanceC2cTradeType, BinanceSpotOrderDetail, BinanceSymbolFilters, BithumbAlertStep,
+    BithumbClosedOrderState, BithumbMarketAlert, BithumbOrderDirection, BithumbOrderListState,
+    BithumbPendingOrderState, BithumbTwapOrderDirection, BithumbTwapState, HyperliquidAssetContext,
+    HyperliquidLedgerEntry, HyperliquidLedgerKind, UpbitMarketEvent, UpbitOrderDirection,
+    UpbitPocketTransferDirection, UpbitPocketTransferOrder, UpbitPocketTransferState,
 };
 use maxt::{
     Balance, Candle, CandleRequest, Cursor, Decimal, Error, Exchange, ExchangeErrorKind, Feature,
     FundingPayment, FundingRate, HistoryRequest, Interval, Level, MarginMode, MarginRequest,
-    MarginSummary, Market, MarketInfo, MarketKind, MarketStatus, Order, OrderBook, OrderRequest,
-    OrderStatus, OrderType, Page, Position, Side, Size, Ticker, TimeInForce, Timestamp, Trade,
+    MarginSummary, Market, MarketInfo, MarketKind, MarketStatus, Order, OrderBook, OrderIdKind,
+    OrderRequest, OrderStatus, OrderType, Page, Position, Side, Size, Ticker, TimeInForce,
+    Timestamp, Trade, TransferErrorKind, UpbitKrwTwoFactorType, UpbitSmpType,
 };
 
+/// Dart와 Rust 사이에서 거래소를 식별하는 값입니다.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireExchange {
+    /// Upbit입니다.
     Upbit,
+    /// Bithumb입니다.
     Bithumb,
+    /// Binance입니다.
     Binance,
+    /// Hyperliquid입니다.
     Hyperliquid,
 }
 
+/// Dart와 Rust 사이에서 시장 종류를 식별하는 값입니다.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireMarketKind {
+    /// 현물 시장입니다.
     Spot,
+    /// 무기한 선물 시장입니다.
     Perpetual,
 }
 
@@ -35,9 +50,12 @@ pub enum WireMarketStatus {
     Unknown,
 }
 
+/// 주문·체결 방향입니다.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireSide {
+    /// 매수입니다.
     Buy,
+    /// 매도입니다.
     Sell,
 }
 
@@ -47,11 +65,13 @@ pub enum WireInterval {
     Min1,
     Min3,
     Min5,
+    Min10,
     Min15,
     Min30,
     Hour1,
     Hour2,
     Hour4,
+    Hour6,
     Hour8,
     Hour12,
     Day1,
@@ -72,7 +92,18 @@ pub enum WireFeature {
     TickerStream,
     CandleStream,
     Balances,
+    AssetNetworks,
+    DepositAddresses,
+    DepositHistory,
+    DepositLookup,
+    TravelRule,
+    WithdrawalQuotes,
+    Withdrawals,
+    WithdrawalHistory,
+    WithdrawalLookup,
+    WithdrawalCancellation,
     OpenOrders,
+    OrderHistory,
     AccountStream,
     Trading,
     Positions,
@@ -87,6 +118,7 @@ pub enum WireFeature {
 pub enum WireOrderType {
     Market,
     Limit,
+    Best,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -109,6 +141,12 @@ pub enum WireOrderStatus {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireOrderIdKind {
+    Exchange,
+    Client,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireMarginMode {
     Cross,
     Isolated,
@@ -120,17 +158,25 @@ pub enum WireSizeKind {
     Quote,
 }
 
+/// 수량이 기준 통화인지 견적 통화인지와 그 정확한 십진 문자열입니다.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireSize {
+    /// 수량 단위입니다.
     pub kind: WireSizeKind,
+    /// 반올림하지 않은 십진 문자열입니다.
     pub value: String,
 }
 
+/// 거래소·시장 종류·기준 통화·견적 통화로 구성된 시장 식별자입니다.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireMarket {
+    /// 시장을 제공하는 거래소입니다.
     pub exchange: WireExchange,
+    /// 현물 또는 무기한 선물 시장입니다.
     pub kind: WireMarketKind,
+    /// 기준 통화입니다.
     pub base: String,
+    /// 견적 통화입니다.
     pub quote: String,
 }
 
@@ -282,6 +328,7 @@ pub struct WireOrderRequest {
     pub price: Option<String>,
     pub time_in_force: Option<WireTimeInForce>,
     pub reduce_only: bool,
+    pub client_id: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -319,6 +366,108 @@ pub enum WireBithumbAlertStep {
     Warning,
     Danger,
     Unknown,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireBithumbPendingOrderState {
+    Wait,
+    Watch,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireBithumbClosedOrderState {
+    Done,
+    Cancel,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireBithumbOrderDirection {
+    Ascending,
+    Descending,
+}
+
+/// Bithumb 주문 목록 조회에 사용할 주문 상태입니다.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireBithumbOrderListState {
+    Wait,
+    Watch,
+    Done,
+    Cancel,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireBithumbTwapState {
+    Progress,
+    Done,
+    Cancel,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireBithumbTwapOrderDirection {
+    Ascending,
+    Descending,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireUpbitOrderDirection {
+    Ascending,
+    Descending,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireUpbitSmpType {
+    CancelMaker,
+    CancelTaker,
+    Reduce,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireUpbitKrwTwoFactorType {
+    Kakao,
+    Naver,
+    Hana,
+}
+
+/// Upbit 포켓 이전의 처리 상태입니다.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireUpbitPocketTransferState {
+    /// 요청이 접수됐습니다.
+    Submitted,
+    /// 이전을 처리 중입니다.
+    Processing,
+    /// 이전이 완료됐습니다.
+    Done,
+    /// 이전이 실패했습니다.
+    Failed,
+}
+
+/// 포켓 이전 이력의 입출금 방향 필터입니다.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireUpbitPocketTransferDirection {
+    /// 들어온 이전만 조회합니다.
+    Incoming,
+    /// 나간 이전만 조회합니다.
+    Outgoing,
+    /// 양방향 이전을 조회합니다.
+    All,
+}
+
+/// 포켓 이전 이력의 시간 정렬 순서입니다.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireUpbitPocketTransferOrder {
+    /// 오래된 이전부터 반환합니다.
+    Ascending,
+    /// 최신 이전부터 반환합니다.
+    Descending,
+}
+
+/// Binance C2C 거래 방향입니다.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireBinanceC2cTradeType {
+    /// C2C 매수입니다.
+    Buy,
+    /// C2C 매도입니다.
+    Sell,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -398,12 +547,27 @@ pub struct WireHyperliquidAssetContext {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NativeErrorKind {
     InvalidRequest,
+    Transfer,
     Unsupported,
     Adapter,
     Auth,
     Exchange,
     Transport,
     Decode,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WireTransferErrorKind {
+    AssetMismatch,
+    NetworkMismatch,
+    AmbiguousNetwork,
+    NetworkUnavailable,
+    MemoRequired,
+    DestinationUnavailable,
+    AddressNotAllowed,
+    TravelRuleRequired,
+    AmountOutOfRange,
+    PlanExpired,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -420,6 +584,7 @@ pub struct NativeError {
     pub message: String,
     pub detail: Option<String>,
     pub field: Option<String>,
+    pub transfer_kind: Option<WireTransferErrorKind>,
     pub feature: Option<WireFeature>,
     pub exchange: Option<String>,
     pub code: Option<String>,
@@ -437,6 +602,7 @@ impl NativeError {
             message: format!("invalid request: `{field}`: {detail}"),
             detail: Some(detail),
             field: Some(field.to_owned()),
+            transfer_kind: None,
             feature: None,
             exchange: None,
             code: None,
@@ -565,11 +731,13 @@ impl From<Interval> for WireInterval {
             Interval::Min1 => Self::Min1,
             Interval::Min3 => Self::Min3,
             Interval::Min5 => Self::Min5,
+            Interval::Min10 => Self::Min10,
             Interval::Min15 => Self::Min15,
             Interval::Min30 => Self::Min30,
             Interval::Hour1 => Self::Hour1,
             Interval::Hour2 => Self::Hour2,
             Interval::Hour4 => Self::Hour4,
+            Interval::Hour6 => Self::Hour6,
             Interval::Hour8 => Self::Hour8,
             Interval::Hour12 => Self::Hour12,
             Interval::Day1 => Self::Day1,
@@ -588,11 +756,13 @@ impl From<WireInterval> for Interval {
             WireInterval::Min1 => Self::Min1,
             WireInterval::Min3 => Self::Min3,
             WireInterval::Min5 => Self::Min5,
+            WireInterval::Min10 => Self::Min10,
             WireInterval::Min15 => Self::Min15,
             WireInterval::Min30 => Self::Min30,
             WireInterval::Hour1 => Self::Hour1,
             WireInterval::Hour2 => Self::Hour2,
             WireInterval::Hour4 => Self::Hour4,
+            WireInterval::Hour6 => Self::Hour6,
             WireInterval::Hour8 => Self::Hour8,
             WireInterval::Hour12 => Self::Hour12,
             WireInterval::Day1 => Self::Day1,
@@ -616,7 +786,18 @@ impl From<Feature> for WireFeature {
             Feature::TickerStream => Self::TickerStream,
             Feature::CandleStream => Self::CandleStream,
             Feature::Balances => Self::Balances,
+            Feature::AssetNetworks => Self::AssetNetworks,
+            Feature::DepositAddresses => Self::DepositAddresses,
+            Feature::DepositHistory => Self::DepositHistory,
+            Feature::DepositLookup => Self::DepositLookup,
+            Feature::TravelRule => Self::TravelRule,
+            Feature::WithdrawalQuotes => Self::WithdrawalQuotes,
+            Feature::Withdrawals => Self::Withdrawals,
+            Feature::WithdrawalHistory => Self::WithdrawalHistory,
+            Feature::WithdrawalLookup => Self::WithdrawalLookup,
+            Feature::WithdrawalCancellation => Self::WithdrawalCancellation,
             Feature::OpenOrders => Self::OpenOrders,
+            Feature::OrderHistory => Self::OrderHistory,
             Feature::AccountStream => Self::AccountStream,
             Feature::Trading => Self::Trading,
             Feature::Positions => Self::Positions,
@@ -643,7 +824,18 @@ impl From<WireFeature> for Feature {
             WireFeature::TickerStream => Self::TickerStream,
             WireFeature::CandleStream => Self::CandleStream,
             WireFeature::Balances => Self::Balances,
+            WireFeature::AssetNetworks => Self::AssetNetworks,
+            WireFeature::DepositAddresses => Self::DepositAddresses,
+            WireFeature::DepositHistory => Self::DepositHistory,
+            WireFeature::DepositLookup => Self::DepositLookup,
+            WireFeature::TravelRule => Self::TravelRule,
+            WireFeature::WithdrawalQuotes => Self::WithdrawalQuotes,
+            WireFeature::Withdrawals => Self::Withdrawals,
+            WireFeature::WithdrawalHistory => Self::WithdrawalHistory,
+            WireFeature::WithdrawalLookup => Self::WithdrawalLookup,
+            WireFeature::WithdrawalCancellation => Self::WithdrawalCancellation,
             WireFeature::OpenOrders => Self::OpenOrders,
+            WireFeature::OrderHistory => Self::OrderHistory,
             WireFeature::AccountStream => Self::AccountStream,
             WireFeature::Trading => Self::Trading,
             WireFeature::Positions => Self::Positions,
@@ -672,6 +864,7 @@ impl From<WireOrderType> for OrderType {
         match value {
             WireOrderType::Market => Self::Market,
             WireOrderType::Limit => Self::Limit,
+            WireOrderType::Best => Self::Best,
         }
     }
 }
@@ -701,6 +894,24 @@ impl From<WireOrderStatus> for OrderStatus {
             WireOrderStatus::Cancelled => Self::Cancelled,
             WireOrderStatus::Rejected => Self::Rejected,
             WireOrderStatus::Unknown => Self::Unknown,
+        }
+    }
+}
+
+impl From<OrderIdKind> for WireOrderIdKind {
+    fn from(value: OrderIdKind) -> Self {
+        match value {
+            OrderIdKind::Exchange => Self::Exchange,
+            OrderIdKind::Client => Self::Client,
+        }
+    }
+}
+
+impl From<WireOrderIdKind> for OrderIdKind {
+    fn from(value: WireOrderIdKind) -> Self {
+        match value {
+            WireOrderIdKind::Exchange => Self::Exchange,
+            WireOrderIdKind::Client => Self::Client,
         }
     }
 }
@@ -790,6 +1001,7 @@ impl From<OrderType> for WireOrderType {
         match value {
             OrderType::Market => Self::Market,
             OrderType::Limit => Self::Limit,
+            OrderType::Best => Self::Best,
             _ => unreachable!("새 maxt order type에는 새 Dart wire variant가 필요합니다"),
         }
     }
@@ -1010,6 +1222,7 @@ impl TryFrom<WireOrderRequest> for OrderRequest {
         let market = value.market.into();
         let side = value.side.into();
         let size = value.size.try_into()?;
+        let time_in_force = value.time_in_force.map(Into::into);
         let mut request = match (value.order_type, value.price) {
             (WireOrderType::Market, None) => Self::market(market, side, size),
             (WireOrderType::Market, Some(_)) => {
@@ -1027,12 +1240,32 @@ impl TryFrom<WireOrderRequest> for OrderRequest {
                     "a limit order requires a price",
                 ));
             }
+            (WireOrderType::Best, None) => Self::best(
+                market,
+                side,
+                size,
+                time_in_force.ok_or_else(|| {
+                    NativeError::invalid_request(
+                        "time_in_force",
+                        "a best order requires a time in force",
+                    )
+                })?,
+            ),
+            (WireOrderType::Best, Some(_)) => {
+                return Err(NativeError::invalid_request(
+                    "price",
+                    "a best order must not have a caller-selected price",
+                ));
+            }
         };
-        if let Some(time_in_force) = value.time_in_force {
-            request = request.time_in_force(time_in_force.into());
+        if let Some(time_in_force) = time_in_force {
+            request = request.time_in_force(time_in_force);
         }
         if value.reduce_only {
             request = request.reduce_only();
+        }
+        if let Some(client_id) = value.client_id {
+            request = request.client_id(client_id);
         }
         Ok(request)
     }
@@ -1048,6 +1281,7 @@ impl From<OrderRequest> for WireOrderRequest {
             price: decimal_option_to_wire(value.price),
             time_in_force: value.time_in_force.map(Into::into),
             reduce_only: value.reduce_only,
+            client_id: value.client_id,
         }
     }
 }
@@ -1129,6 +1363,256 @@ impl From<BithumbAlertStep> for WireBithumbAlertStep {
             BithumbAlertStep::Danger => Self::Danger,
             BithumbAlertStep::Unknown => Self::Unknown,
             _ => Self::Unknown,
+        }
+    }
+}
+
+impl From<BithumbPendingOrderState> for WireBithumbPendingOrderState {
+    fn from(value: BithumbPendingOrderState) -> Self {
+        match value {
+            BithumbPendingOrderState::Wait => Self::Wait,
+            BithumbPendingOrderState::Watch => Self::Watch,
+        }
+    }
+}
+
+impl From<WireBithumbPendingOrderState> for BithumbPendingOrderState {
+    fn from(value: WireBithumbPendingOrderState) -> Self {
+        match value {
+            WireBithumbPendingOrderState::Wait => Self::Wait,
+            WireBithumbPendingOrderState::Watch => Self::Watch,
+        }
+    }
+}
+
+impl From<BithumbClosedOrderState> for WireBithumbClosedOrderState {
+    fn from(value: BithumbClosedOrderState) -> Self {
+        match value {
+            BithumbClosedOrderState::Done => Self::Done,
+            BithumbClosedOrderState::Cancel => Self::Cancel,
+        }
+    }
+}
+
+impl From<WireBithumbClosedOrderState> for BithumbClosedOrderState {
+    fn from(value: WireBithumbClosedOrderState) -> Self {
+        match value {
+            WireBithumbClosedOrderState::Done => Self::Done,
+            WireBithumbClosedOrderState::Cancel => Self::Cancel,
+        }
+    }
+}
+
+impl From<BithumbOrderDirection> for WireBithumbOrderDirection {
+    fn from(value: BithumbOrderDirection) -> Self {
+        match value {
+            BithumbOrderDirection::Ascending => Self::Ascending,
+            BithumbOrderDirection::Descending => Self::Descending,
+        }
+    }
+}
+
+impl From<WireBithumbOrderDirection> for BithumbOrderDirection {
+    fn from(value: WireBithumbOrderDirection) -> Self {
+        match value {
+            WireBithumbOrderDirection::Ascending => Self::Ascending,
+            WireBithumbOrderDirection::Descending => Self::Descending,
+        }
+    }
+}
+
+impl From<BithumbOrderListState> for WireBithumbOrderListState {
+    fn from(value: BithumbOrderListState) -> Self {
+        match value {
+            BithumbOrderListState::Wait => Self::Wait,
+            BithumbOrderListState::Watch => Self::Watch,
+            BithumbOrderListState::Done => Self::Done,
+            BithumbOrderListState::Cancel => Self::Cancel,
+        }
+    }
+}
+
+impl From<WireBithumbOrderListState> for BithumbOrderListState {
+    fn from(value: WireBithumbOrderListState) -> Self {
+        match value {
+            WireBithumbOrderListState::Wait => Self::Wait,
+            WireBithumbOrderListState::Watch => Self::Watch,
+            WireBithumbOrderListState::Done => Self::Done,
+            WireBithumbOrderListState::Cancel => Self::Cancel,
+        }
+    }
+}
+
+impl From<BithumbTwapState> for WireBithumbTwapState {
+    fn from(value: BithumbTwapState) -> Self {
+        match value {
+            BithumbTwapState::Progress => Self::Progress,
+            BithumbTwapState::Done => Self::Done,
+            BithumbTwapState::Cancel => Self::Cancel,
+        }
+    }
+}
+
+impl From<WireBithumbTwapState> for BithumbTwapState {
+    fn from(value: WireBithumbTwapState) -> Self {
+        match value {
+            WireBithumbTwapState::Progress => Self::Progress,
+            WireBithumbTwapState::Done => Self::Done,
+            WireBithumbTwapState::Cancel => Self::Cancel,
+        }
+    }
+}
+
+impl From<BithumbTwapOrderDirection> for WireBithumbTwapOrderDirection {
+    fn from(value: BithumbTwapOrderDirection) -> Self {
+        match value {
+            BithumbTwapOrderDirection::Ascending => Self::Ascending,
+            BithumbTwapOrderDirection::Descending => Self::Descending,
+        }
+    }
+}
+
+impl From<WireBithumbTwapOrderDirection> for BithumbTwapOrderDirection {
+    fn from(value: WireBithumbTwapOrderDirection) -> Self {
+        match value {
+            WireBithumbTwapOrderDirection::Ascending => Self::Ascending,
+            WireBithumbTwapOrderDirection::Descending => Self::Descending,
+        }
+    }
+}
+
+impl From<UpbitOrderDirection> for WireUpbitOrderDirection {
+    fn from(value: UpbitOrderDirection) -> Self {
+        match value {
+            UpbitOrderDirection::Ascending => Self::Ascending,
+            UpbitOrderDirection::Descending => Self::Descending,
+        }
+    }
+}
+
+impl From<WireUpbitOrderDirection> for UpbitOrderDirection {
+    fn from(value: WireUpbitOrderDirection) -> Self {
+        match value {
+            WireUpbitOrderDirection::Ascending => Self::Ascending,
+            WireUpbitOrderDirection::Descending => Self::Descending,
+        }
+    }
+}
+
+impl From<UpbitSmpType> for WireUpbitSmpType {
+    fn from(value: UpbitSmpType) -> Self {
+        match value {
+            UpbitSmpType::CancelMaker => Self::CancelMaker,
+            UpbitSmpType::CancelTaker => Self::CancelTaker,
+            UpbitSmpType::Reduce => Self::Reduce,
+        }
+    }
+}
+
+impl From<WireUpbitSmpType> for UpbitSmpType {
+    fn from(value: WireUpbitSmpType) -> Self {
+        match value {
+            WireUpbitSmpType::CancelMaker => Self::CancelMaker,
+            WireUpbitSmpType::CancelTaker => Self::CancelTaker,
+            WireUpbitSmpType::Reduce => Self::Reduce,
+        }
+    }
+}
+
+impl From<UpbitKrwTwoFactorType> for WireUpbitKrwTwoFactorType {
+    fn from(value: UpbitKrwTwoFactorType) -> Self {
+        match value {
+            UpbitKrwTwoFactorType::Kakao => Self::Kakao,
+            UpbitKrwTwoFactorType::Naver => Self::Naver,
+            UpbitKrwTwoFactorType::Hana => Self::Hana,
+        }
+    }
+}
+
+impl From<WireUpbitKrwTwoFactorType> for UpbitKrwTwoFactorType {
+    fn from(value: WireUpbitKrwTwoFactorType) -> Self {
+        match value {
+            WireUpbitKrwTwoFactorType::Kakao => Self::Kakao,
+            WireUpbitKrwTwoFactorType::Naver => Self::Naver,
+            WireUpbitKrwTwoFactorType::Hana => Self::Hana,
+        }
+    }
+}
+
+impl From<UpbitPocketTransferState> for WireUpbitPocketTransferState {
+    fn from(value: UpbitPocketTransferState) -> Self {
+        match value {
+            UpbitPocketTransferState::Submitted => Self::Submitted,
+            UpbitPocketTransferState::Processing => Self::Processing,
+            UpbitPocketTransferState::Done => Self::Done,
+            UpbitPocketTransferState::Failed => Self::Failed,
+        }
+    }
+}
+
+impl From<WireUpbitPocketTransferState> for UpbitPocketTransferState {
+    fn from(value: WireUpbitPocketTransferState) -> Self {
+        match value {
+            WireUpbitPocketTransferState::Submitted => Self::Submitted,
+            WireUpbitPocketTransferState::Processing => Self::Processing,
+            WireUpbitPocketTransferState::Done => Self::Done,
+            WireUpbitPocketTransferState::Failed => Self::Failed,
+        }
+    }
+}
+
+impl From<UpbitPocketTransferDirection> for WireUpbitPocketTransferDirection {
+    fn from(value: UpbitPocketTransferDirection) -> Self {
+        match value {
+            UpbitPocketTransferDirection::Incoming => Self::Incoming,
+            UpbitPocketTransferDirection::Outgoing => Self::Outgoing,
+            UpbitPocketTransferDirection::All => Self::All,
+        }
+    }
+}
+
+impl From<WireUpbitPocketTransferDirection> for UpbitPocketTransferDirection {
+    fn from(value: WireUpbitPocketTransferDirection) -> Self {
+        match value {
+            WireUpbitPocketTransferDirection::Incoming => Self::Incoming,
+            WireUpbitPocketTransferDirection::Outgoing => Self::Outgoing,
+            WireUpbitPocketTransferDirection::All => Self::All,
+        }
+    }
+}
+
+impl From<UpbitPocketTransferOrder> for WireUpbitPocketTransferOrder {
+    fn from(value: UpbitPocketTransferOrder) -> Self {
+        match value {
+            UpbitPocketTransferOrder::Ascending => Self::Ascending,
+            UpbitPocketTransferOrder::Descending => Self::Descending,
+        }
+    }
+}
+
+impl From<WireUpbitPocketTransferOrder> for UpbitPocketTransferOrder {
+    fn from(value: WireUpbitPocketTransferOrder) -> Self {
+        match value {
+            WireUpbitPocketTransferOrder::Ascending => Self::Ascending,
+            WireUpbitPocketTransferOrder::Descending => Self::Descending,
+        }
+    }
+}
+
+impl From<BinanceC2cTradeType> for WireBinanceC2cTradeType {
+    fn from(value: BinanceC2cTradeType) -> Self {
+        match value {
+            BinanceC2cTradeType::Buy => Self::Buy,
+            BinanceC2cTradeType::Sell => Self::Sell,
+        }
+    }
+}
+
+impl From<WireBinanceC2cTradeType> for BinanceC2cTradeType {
+    fn from(value: WireBinanceC2cTradeType) -> Self {
+        match value {
+            WireBinanceC2cTradeType::Buy => Self::Buy,
+            WireBinanceC2cTradeType::Sell => Self::Sell,
         }
     }
 }
@@ -1476,6 +1960,41 @@ impl From<WireExchangeErrorKind> for ExchangeErrorKind {
     }
 }
 
+impl From<TransferErrorKind> for WireTransferErrorKind {
+    fn from(value: TransferErrorKind) -> Self {
+        match value {
+            TransferErrorKind::AssetMismatch => Self::AssetMismatch,
+            TransferErrorKind::NetworkMismatch => Self::NetworkMismatch,
+            TransferErrorKind::AmbiguousNetwork => Self::AmbiguousNetwork,
+            TransferErrorKind::NetworkUnavailable => Self::NetworkUnavailable,
+            TransferErrorKind::MemoRequired => Self::MemoRequired,
+            TransferErrorKind::DestinationUnavailable => Self::DestinationUnavailable,
+            TransferErrorKind::AddressNotAllowed => Self::AddressNotAllowed,
+            TransferErrorKind::TravelRuleRequired => Self::TravelRuleRequired,
+            TransferErrorKind::AmountOutOfRange => Self::AmountOutOfRange,
+            TransferErrorKind::PlanExpired => Self::PlanExpired,
+            _ => unreachable!("new transfer errors require a Dart wire variant"),
+        }
+    }
+}
+
+impl From<WireTransferErrorKind> for TransferErrorKind {
+    fn from(value: WireTransferErrorKind) -> Self {
+        match value {
+            WireTransferErrorKind::AssetMismatch => Self::AssetMismatch,
+            WireTransferErrorKind::NetworkMismatch => Self::NetworkMismatch,
+            WireTransferErrorKind::AmbiguousNetwork => Self::AmbiguousNetwork,
+            WireTransferErrorKind::NetworkUnavailable => Self::NetworkUnavailable,
+            WireTransferErrorKind::MemoRequired => Self::MemoRequired,
+            WireTransferErrorKind::DestinationUnavailable => Self::DestinationUnavailable,
+            WireTransferErrorKind::AddressNotAllowed => Self::AddressNotAllowed,
+            WireTransferErrorKind::TravelRuleRequired => Self::TravelRuleRequired,
+            WireTransferErrorKind::AmountOutOfRange => Self::AmountOutOfRange,
+            WireTransferErrorKind::PlanExpired => Self::PlanExpired,
+        }
+    }
+}
+
 impl From<Error> for NativeError {
     fn from(value: Error) -> Self {
         let message = value.to_string();
@@ -1486,6 +2005,7 @@ impl From<Error> for NativeError {
             message,
             detail: None,
             field: None,
+            transfer_kind: None,
             feature: None,
             exchange: None,
             code: None,
@@ -1498,6 +2018,11 @@ impl From<Error> for NativeError {
             Error::InvalidRequest { field, detail } => {
                 error.kind = NativeErrorKind::InvalidRequest;
                 error.field = Some(field.to_owned());
+                error.detail = Some(detail);
+            }
+            Error::Transfer { kind, detail } => {
+                error.kind = NativeErrorKind::Transfer;
+                error.transfer_kind = Some(kind.into());
                 error.detail = Some(detail);
             }
             Error::Unsupported {
@@ -1569,6 +2094,7 @@ impl TryFrom<NativeError> for Error {
             message,
             detail,
             field,
+            transfer_kind,
             feature,
             exchange,
             code,
@@ -1583,6 +2109,15 @@ impl TryFrom<NativeError> for Error {
                 let field = field
                     .ok_or_else(|| Error::adapter("foreign invalid-request error has no field"))?;
                 Ok(Error::InvalidRequest { field, detail })
+            }
+            NativeErrorKind::Transfer => {
+                let kind = transfer_kind.ok_or_else(|| {
+                    Error::adapter("foreign transfer error has no transfer category")
+                })?;
+                Ok(Error::Transfer {
+                    kind: kind.into(),
+                    detail,
+                })
             }
             NativeErrorKind::Unsupported => {
                 let feature = feature
@@ -1690,6 +2225,7 @@ mod tests {
             price: None,
             time_in_force: None,
             reduce_only: false,
+            client_id: None,
         };
 
         let error = OrderRequest::try_from(request).unwrap_err();

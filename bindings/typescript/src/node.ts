@@ -31,6 +31,8 @@ export { initialize, type InitializeOptions } from "./native.js";
 export {
   AccountStream,
   AsyncStream,
+  HyperliquidAccountStream,
+  HyperliquidMarketStream,
   MarketStream,
   StreamError,
   StreamEvent,

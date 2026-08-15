@@ -36,6 +36,7 @@ void main() {
 
   test('공급자 전용 u32 인자를 native 호출 전에 범위 검증한다', () async {
     final upbit = UpbitAdapter();
+    final bithumb = BithumbAdapter();
     final hyperliquid = HyperliquidAdapter();
     final cases =
         <({String field, Future<Object?> Function(int value) invoke})>[
@@ -47,10 +48,29 @@ void main() {
             field: 'limit',
             invoke: (value) => hyperliquid.nonFundingLedger(limit: value),
           ),
+          (
+            field: 'limit',
+            invoke: (value) => bithumb.pendingOrders(
+              BithumbPendingOrdersRequest(limit: value),
+            ),
+          ),
+          (
+            field: 'duration',
+            invoke: (value) => bithumb.createTwapOrder(
+              BithumbTwapOrderRequest(
+                market: Market.spot(Exchange.bithumb, 'BTC', 'KRW'),
+                side: Side.buy,
+                price: Decimal.one,
+                duration: value,
+                frequency: 30,
+              ),
+            ),
+          ),
+          (field: 'count', invoke: (value) => bithumb.notices(value)),
         ];
 
     for (final testCase in cases) {
-      for (final value in [-1, 4294967296]) {
+      for (final value in [-1, 4294967296, 4294967297]) {
         await expectLater(
           testCase.invoke(value),
           throwsA(
@@ -63,6 +83,88 @@ void main() {
         );
       }
     }
+  });
+
+  test('Bithumb 수수료 조회는 빈 자산 코드를 native 호출 전에 거절한다', () async {
+    await expectLater(
+      BithumbAdapter().transferFees(' '),
+      throwsA(
+        isA<InvalidRequestError>().having(
+          (error) => error.field,
+          'field',
+          'currency',
+        ),
+      ),
+    );
+  });
+
+  test('Bithumb API 키 목록은 자격증명 없이 네트워크 요청 전에 거절한다', () async {
+    await expectLater(
+      BithumbAdapter().apiKeys(),
+      throwsA(isA<AuthenticationError>()),
+    );
+  });
+
+  test('Bithumb TWAP 조회는 자격증명 없이 네트워크 요청 전에 거절한다', () async {
+    await expectLater(
+      BithumbAdapter().twapOrders(const BithumbTwapOrdersRequest()),
+      throwsA(isA<AuthenticationError>()),
+    );
+  });
+
+  test('Binance USD-M 가격 조회는 Spot 어댑터에서 네트워크 전에 거절한다', () async {
+    await expectLater(
+      BinanceAdapter.spot().markPrices(),
+      throwsA(isA<UnsupportedError>()),
+    );
+  });
+
+  test('Upbit 호가 묶음 단위는 Decimal로 native 경계까지 전달한다', () async {
+    final upbit = UpbitAdapter();
+    final market = Market.spot(Exchange.upbit, 'BTC', 'KRW');
+
+    await expectLater(
+      upbit.orderBooksAtLevel([market], Decimal.parse('-1')),
+      throwsA(
+        isA<InvalidRequestError>().having(
+          (error) => error.field,
+          'field',
+          'level',
+        ),
+      ),
+    );
+  });
+
+  test('Upbit 테스트 주문은 자격증명 없이 네트워크 요청 전에 거절한다', () async {
+    final market = Market.spot(Exchange.upbit, 'BTC', 'KRW');
+
+    await expectLater(
+      UpbitAdapter().testOrder(
+        OrderRequest.limit(
+          market,
+          Side.buy,
+          Size.base(Decimal.parse('0.01')),
+          Decimal.parse('100000000'),
+        ),
+      ),
+      throwsA(isA<AuthenticationError>()),
+    );
+  });
+
+  test('Upbit 입금 가능 정보는 자격증명 없이 네트워크 요청 전에 거절한다', () async {
+    await expectLater(
+      UpbitAdapter().depositInfo('BTC', Network.bitcoin),
+      throwsA(isA<AuthenticationError>()),
+    );
+  });
+
+  test('Upbit 조건부 일괄 취소는 자격증명 없이 네트워크 요청 전에 거절한다', () async {
+    await expectLater(
+      UpbitAdapter().batchCancelOpenOrders(
+        const UpbitBatchCancelRequest(scope: UpbitBatchCancelScope.all()),
+      ),
+      throwsA(isA<AuthenticationError>()),
+    );
   });
 
   test('built-in Adapter는 빈 구독을 native 호출 전에 거절한다', () async {

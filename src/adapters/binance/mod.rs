@@ -4,32 +4,753 @@ mod parse;
 mod private;
 mod rest;
 mod stream;
+mod wallet;
 
+#[cfg(test)]
+mod execution_checklist;
+
+use std::fmt;
+use std::pin::Pin;
 use std::sync::OnceLock;
+use std::task::{Context, Poll};
+
+use futures_core::Stream;
+use rust_decimal::Decimal;
 
 use crate::adapter::{Adapter, BoxFuture};
 use crate::error::{Error, Result};
 use crate::feature::Feature;
-use crate::request::{CandleRequest, HistoryRequest, MarginRequest, OrderRequest};
-use crate::stream::{AccountStream, MarketStream};
+use crate::request::{
+    CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest, OrderRequest,
+    TransferHistoryRequest, WithdrawRequest,
+};
+use crate::stream::{AccountStream, MarketStream, TypedStream};
 use crate::transport::{HttpRequest, HttpTransport};
 use crate::types::{
-    Balance, Candle, Cursor, Exchange, FundingPayment, FundingRate, Interval, MarginSummary,
-    Market, MarketInfo, MarketKind, MarketStatus, Order, OrderBook, Page, Position, StreamConfig,
-    Subscription, Ticker, Timestamp, Trade,
+    AssetNetwork, Balance, Candle, Cursor, Deposit, DepositAddress, Exchange, FundingPayment,
+    FundingRate, Interval, MarginSummary, Market, MarketInfo, MarketKind, MarketStatus, Order,
+    OrderBook, Page, Position, Side, StreamConfig, Subscription, Ticker, Timestamp, Trade,
+    Withdrawal, WithdrawalQuote,
 };
 
-pub use private::{BinanceListenKey, BinanceSpotOrderDetail};
-pub use rest::BinanceSymbolFilters;
+#[allow(unused_imports)]
+pub use private::{
+    BinanceAccountTrade, BinanceC2cTrade, BinanceC2cTradeHistoryPage, BinanceListenKey,
+    BinanceOrderResponse, BinanceSpotAccountBalance, BinanceSpotAccountInformation,
+    BinanceSpotCancelAllOpenOrders, BinanceSpotCancelledOrder, BinanceSpotCommissionRates,
+    BinanceSpotOrderDetail, BinanceTestOrder, BinanceUsdMAccountAsset,
+    BinanceUsdMAccountInformation, BinanceUsdMAccountPosition, BinanceUsdMPositionInformation,
+};
+#[allow(unused_imports)]
+pub use rest::{BinanceExchangeInfo, BinanceExchangeSymbol, BinanceSymbolFilters};
+#[allow(unused_imports)]
+pub use wallet::{
+    BinanceApiKeyPermissions, BinanceCoinInformation, BinanceCoinNetworkInformation,
+    BinanceDepositHistory, BinanceDepositHistoryEntry, BinanceQuestionnaireRequirements,
+    BinanceWithdrawHistory, BinanceWithdrawHistoryEntry, BinanceWithdrawalAddress,
+};
+
+/// The C2C side filter Binance accepts.
+///
+/// Binance's C2C history endpoint accepts these two uppercase values only.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum BinanceC2cTradeType {
+    /// C2C orders that bought the crypto asset.
+    Buy,
+    /// C2C orders that sold the crypto asset.
+    Sell,
+}
+
+impl BinanceC2cTradeType {
+    pub(crate) const fn code(self) -> &'static str {
+        match self {
+            Self::Buy => "BUY",
+            Self::Sell => "SELL",
+        }
+    }
+}
+
+/// Filters one numbered page of Binance C2C order history.
+///
+/// Leaving both timestamp bounds unset preserves Binance's documented default:
+/// the most recent 30 days. When both are set, their inclusive span may be at
+/// most 30 days. C2C uses one-based page numbers rather than a cursor.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BinanceC2cTradeHistoryRequest {
+    /// Required C2C order side filter.
+    pub trade_type: BinanceC2cTradeType,
+    /// Inclusive lower timestamp bound.
+    pub start_timestamp: Option<Timestamp>,
+    /// Inclusive upper timestamp bound.
+    pub end_timestamp: Option<Timestamp>,
+    /// One-based result page; `None` sends Binance's documented default of 1.
+    pub page: Option<u32>,
+    /// Result rows; `None` sends Binance's documented default of 100.
+    pub rows: Option<u32>,
+    /// Signed-request receive window in milliseconds, up to 60,000.
+    pub recv_window: Option<u64>,
+}
+
+impl BinanceC2cTradeHistoryRequest {
+    /// Starts a C2C-history request for the required trade side.
+    pub fn new(trade_type: BinanceC2cTradeType) -> Self {
+        Self {
+            trade_type,
+            start_timestamp: None,
+            end_timestamp: None,
+            page: None,
+            rows: None,
+            recv_window: None,
+        }
+    }
+
+    /// Sets the inclusive lower timestamp bound.
+    #[must_use]
+    pub fn start_timestamp(mut self, start_timestamp: Timestamp) -> Self {
+        self.start_timestamp = Some(start_timestamp);
+        self
+    }
+
+    /// Sets the inclusive upper timestamp bound.
+    #[must_use]
+    pub fn end_timestamp(mut self, end_timestamp: Timestamp) -> Self {
+        self.end_timestamp = Some(end_timestamp);
+        self
+    }
+
+    /// Selects Binance's one-based result page.
+    #[must_use]
+    pub fn page(mut self, page: u32) -> Self {
+        self.page = Some(page);
+        self
+    }
+
+    /// Selects the number of C2C orders returned in the page.
+    #[must_use]
+    pub fn rows(mut self, rows: u32) -> Self {
+        self.rows = Some(rows);
+        self
+    }
+
+    /// Sets the signed-request receive window in milliseconds.
+    #[must_use]
+    pub fn recv_window(mut self, recv_window: u64) -> Self {
+        self.recv_window = Some(recv_window);
+        self
+    }
+}
+
+/// A Binance test-order request.
+///
+/// This keeps Spot's optional commission-rate calculation out of the common
+/// [`OrderRequest`] contract. Binance documents the option only for Spot;
+/// requesting it from a USD-M adapter is rejected before a request is sent.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BinanceTestOrderRequest {
+    /// The order to validate.
+    pub order: OrderRequest,
+    /// Ask Spot to include the commission-rate response object.
+    pub compute_commission_rates: bool,
+}
+
+impl BinanceTestOrderRequest {
+    /// Starts a test-order request without commission-rate calculation.
+    pub fn new(order: OrderRequest) -> Self {
+        Self {
+            order,
+            compute_commission_rates: false,
+        }
+    }
+
+    /// Requests Spot's commission-rate calculation response.
+    #[must_use]
+    pub fn compute_commission_rates(mut self) -> Self {
+        self.compute_commission_rates = true;
+        self
+    }
+}
+
+/// A request for Binance compressed aggregate trades.
+///
+/// `from_id` selects an inclusive aggregate-trade cursor. `start_time` and
+/// `end_time` select inclusive millisecond time bounds. Spot accepts each time
+/// bound independently and has no fixed time-window cap. USD-M permits a
+/// paired window shorter than one hour and does not allow it with `from_id`.
+/// The endpoint returns one page; use the last aggregate ID plus one as the
+/// next `from_id` when walking by ID.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BinanceAggregateTradesRequest {
+    /// The Spot or USD-M perpetual market to query.
+    pub market: Market,
+    /// Inclusive Binance aggregate-trade ID to start at.
+    pub from_id: Option<u64>,
+    /// Inclusive lower time bound.
+    pub start_time: Option<Timestamp>,
+    /// Inclusive upper time bound.
+    pub end_time: Option<Timestamp>,
+    /// Number of aggregate trades, from 1 through 1,000. `None` uses Binance's
+    /// documented default of 500.
+    pub limit: Option<u32>,
+}
+
+impl BinanceAggregateTradesRequest {
+    /// Starts a request for one Spot or USD-M perpetual market.
+    pub fn new(market: Market) -> Self {
+        Self {
+            market,
+            from_id: None,
+            start_time: None,
+            end_time: None,
+            limit: None,
+        }
+    }
+
+    /// Starts at an inclusive Binance aggregate-trade ID.
+    #[must_use]
+    pub fn with_from_id(mut self, from_id: u64) -> Self {
+        self.from_id = Some(from_id);
+        self
+    }
+
+    /// Sets the inclusive lower time bound.
+    #[must_use]
+    pub fn start_time(mut self, start_time: Timestamp) -> Self {
+        self.start_time = Some(start_time);
+        self
+    }
+
+    /// Sets the inclusive upper time bound.
+    #[must_use]
+    pub fn end_time(mut self, end_time: Timestamp) -> Self {
+        self.end_time = Some(end_time);
+        self
+    }
+
+    /// Sets the page size from 1 through 1,000.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+}
+
+/// Filters Binance Wallet SAPI deposit-history records.
+///
+/// All timestamps are sent as Binance millisecond values. Leaving a field
+/// unset leaves Binance's documented default in effect; this provider request
+/// deliberately does not turn the Wallet endpoint into the common cursor API.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct BinanceDepositHistoryRequest {
+    /// Restricts records to one asset code.
+    pub coin: Option<String>,
+    /// Binance's provider-specific deposit status code.
+    pub status: Option<u32>,
+    /// Inclusive lower creation-time bound.
+    pub start_time: Option<Timestamp>,
+    /// Inclusive upper creation-time bound.
+    pub end_time: Option<Timestamp>,
+    /// Zero-based result offset.
+    pub offset: Option<u64>,
+    /// Result count from 1 through 1,000.
+    pub limit: Option<u32>,
+    /// Restricts records to one transaction hash.
+    pub tx_id: Option<String>,
+    /// Requests Binance's source-address field when it is available.
+    pub include_source: bool,
+}
+
+impl BinanceDepositHistoryRequest {
+    /// Starts a request with Binance's default filters.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Restricts the history to one asset.
+    #[must_use]
+    pub fn coin(mut self, coin: impl Into<String>) -> Self {
+        self.coin = Some(coin.into());
+        self
+    }
+
+    /// Restricts the history to a Binance deposit status code.
+    #[must_use]
+    pub fn status(mut self, status: u32) -> Self {
+        self.status = Some(status);
+        self
+    }
+
+    /// Sets the inclusive lower creation-time bound.
+    #[must_use]
+    pub fn start_time(mut self, start_time: Timestamp) -> Self {
+        self.start_time = Some(start_time);
+        self
+    }
+
+    /// Sets the inclusive upper creation-time bound.
+    #[must_use]
+    pub fn end_time(mut self, end_time: Timestamp) -> Self {
+        self.end_time = Some(end_time);
+        self
+    }
+
+    /// Sets Binance's zero-based result offset.
+    #[must_use]
+    pub fn offset(mut self, offset: u64) -> Self {
+        self.offset = Some(offset);
+        self
+    }
+
+    /// Sets the result count from 1 through 1,000.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+
+    /// Restricts the history to one transaction hash.
+    #[must_use]
+    pub fn tx_id(mut self, tx_id: impl Into<String>) -> Self {
+        self.tx_id = Some(tx_id.into());
+        self
+    }
+
+    /// Requests source-address data when Binance provides it.
+    #[must_use]
+    pub fn include_source(mut self) -> Self {
+        self.include_source = true;
+        self
+    }
+}
+
+/// Filters Binance Wallet SAPI withdrawal-history records.
+///
+/// All timestamps are sent as Binance millisecond values. The Wallet endpoint
+/// has provider-specific status and ID-list semantics, so they remain explicit
+/// rather than being collapsed into [`TransferHistoryRequest`].
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct BinanceWithdrawHistoryRequest {
+    /// Restricts records to one asset code.
+    pub coin: Option<String>,
+    /// Restricts records to the caller's withdrawal order identifier.
+    pub withdraw_order_id: Option<String>,
+    /// Binance's provider-specific withdrawal status code.
+    pub status: Option<u32>,
+    /// Zero-based result offset.
+    pub offset: Option<u64>,
+    /// Result count from 1 through 1,000.
+    pub limit: Option<u32>,
+    /// Binance withdrawal identifiers, sent as the endpoint's comma-separated `idList`.
+    pub id_list: Vec<String>,
+    /// Inclusive lower apply-time bound.
+    pub start_time: Option<Timestamp>,
+    /// Inclusive upper apply-time bound.
+    pub end_time: Option<Timestamp>,
+}
+
+impl BinanceWithdrawHistoryRequest {
+    /// Starts a request with Binance's default filters.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Restricts the history to one asset.
+    #[must_use]
+    pub fn coin(mut self, coin: impl Into<String>) -> Self {
+        self.coin = Some(coin.into());
+        self
+    }
+
+    /// Restricts the history to the caller's withdrawal order identifier.
+    #[must_use]
+    pub fn withdraw_order_id(mut self, withdraw_order_id: impl Into<String>) -> Self {
+        self.withdraw_order_id = Some(withdraw_order_id.into());
+        self
+    }
+
+    /// Restricts the history to a Binance withdrawal status code.
+    #[must_use]
+    pub fn status(mut self, status: u32) -> Self {
+        self.status = Some(status);
+        self
+    }
+
+    /// Sets Binance's zero-based result offset.
+    #[must_use]
+    pub fn offset(mut self, offset: u64) -> Self {
+        self.offset = Some(offset);
+        self
+    }
+
+    /// Sets the result count from 1 through 1,000.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+
+    /// Supplies Binance withdrawal identifiers for its `idList` filter.
+    #[must_use]
+    pub fn id_list(mut self, id_list: impl IntoIterator<Item = impl Into<String>>) -> Self {
+        self.id_list = id_list.into_iter().map(Into::into).collect();
+        self
+    }
+
+    /// Sets the inclusive lower apply-time bound.
+    #[must_use]
+    pub fn start_time(mut self, start_time: Timestamp) -> Self {
+        self.start_time = Some(start_time);
+        self
+    }
+
+    /// Sets the inclusive upper apply-time bound.
+    #[must_use]
+    pub fn end_time(mut self, end_time: Timestamp) -> Self {
+        self.end_time = Some(end_time);
+        self
+    }
+}
+
+/// One Binance compressed aggregate trade.
+///
+/// Binance combines market fills that occur within 100 ms at the same price
+/// and taking side. `first_trade_id` and `last_trade_id` preserve the covered
+/// individual-fill range; this is not interchangeable with [`Trade`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BinanceAggregateTrade {
+    /// The Spot or USD-M perpetual market.
+    pub market: Market,
+    /// Binance's aggregate-trade identifier.
+    pub aggregate_id: u64,
+    /// The first individual trade ID covered by this aggregate.
+    pub first_trade_id: u64,
+    /// The last individual trade ID covered by this aggregate.
+    pub last_trade_id: u64,
+    /// Execution time of the aggregate, in milliseconds at the provider.
+    pub timestamp: Timestamp,
+    /// Aggregate execution price, in the quote asset.
+    pub price: Decimal,
+    /// Aggregate quantity, in the base asset. RPI fills may be included on
+    /// venues that provide them.
+    pub quantity: Decimal,
+    /// Quantity excluding RPI fills when Binance provides the optional `nq`
+    /// field.
+    pub normal_quantity: Option<Decimal>,
+    /// Spot's optional best-price-match marker (`M`). USD-M does not publish
+    /// this field.
+    pub best_price_match: Option<bool>,
+    /// The side that took liquidity. Binance's `m` field identifies the maker
+    /// as the buyer, so it is inverted here.
+    pub taker_side: Side,
+    /// Complete provider payload for this aggregate trade.
+    pub raw_json: String,
+}
+
+/// A full-fidelity Binance public market subscription.
+///
+/// It keeps the same transport, reconnection, buffering, and close semantics
+/// as [`MarketStream`] while yielding Binance's native event details.
+pub struct BinanceMarketStream {
+    inner: TypedStream<BinanceMarketEvent>,
+}
+
+impl BinanceMarketStream {
+    pub(crate) fn new_with_close<F, Fut>(
+        inner: impl Stream<Item = Result<BinanceMarketEvent>> + Send + 'static,
+        close: F,
+    ) -> Self
+    where
+        F: FnOnce() -> Fut + Send + 'static,
+        Fut: std::future::Future<Output = Result<()>> + Send + 'static,
+    {
+        Self {
+            inner: TypedStream::new_with_close(inner, close),
+        }
+    }
+
+    /// Stops this subscription and waits for its sockets to close.
+    pub async fn close(&mut self) -> Result<()> {
+        self.inner.close().await
+    }
+}
+
+impl Stream for BinanceMarketStream {
+    type Item = Result<BinanceMarketEvent>;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        Pin::new(&mut self.inner).poll_next(cx)
+    }
+}
+
+impl fmt::Debug for BinanceMarketStream {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("BinanceMarketStream")
+            .finish_non_exhaustive()
+    }
+}
+
+/// A full-fidelity Binance private account subscription.
+///
+/// It keeps the same authentication, listen-key refresh, reconnection,
+/// buffering, and close behavior as [`AccountStream`] while retaining events
+/// outside the portable account model. Construct it with
+/// [`BinanceAdapter::subscribe_detailed_account`].
+pub struct BinanceAccountStream {
+    inner: TypedStream<BinanceAccountStreamEvent>,
+}
+
+impl BinanceAccountStream {
+    pub(crate) fn new_with_close<F, Fut>(
+        inner: impl Stream<Item = Result<BinanceAccountStreamEvent>> + Send + 'static,
+        close: F,
+    ) -> Self
+    where
+        F: FnOnce() -> Fut + Send + 'static,
+        Fut: std::future::Future<Output = Result<()>> + Send + 'static,
+    {
+        Self {
+            inner: TypedStream::new_with_close(inner, close),
+        }
+    }
+
+    /// Stops this subscription and waits for its socket and key refresher to close.
+    pub async fn close(&mut self) -> Result<()> {
+        self.inner.close().await
+    }
+}
+
+impl Stream for BinanceAccountStream {
+    type Item = Result<BinanceAccountStreamEvent>;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        Pin::new(&mut self.inner).poll_next(cx)
+    }
+}
+
+impl fmt::Debug for BinanceAccountStream {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("BinanceAccountStream")
+            .finish_non_exhaustive()
+    }
+}
+
+/// One Binance-specific account-stream event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum BinanceAccountStreamEvent {
+    /// One portable balance projection and its provider envelope.
+    Balance(BinanceBalanceStreamEvent),
+    /// One portable order projection and its provider envelope.
+    Order(BinanceOrderStreamEvent),
+    /// A Binance account event with no portable equivalent.
+    Other(BinanceRawAccountEvent),
+    /// The underlying WebSocket reconnected.
+    Reconnected,
+}
+
+/// A Binance account balance event with provider metadata.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceBalanceStreamEvent {
+    /// Portable balance projection.
+    pub common: Balance,
+    /// Binance event name, such as `outboundAccountPosition`.
+    pub event_type: String,
+    /// Provider event time, when present.
+    pub event_time: Option<Timestamp>,
+    /// Provider transaction time, when present.
+    pub transaction_time: Option<Timestamp>,
+    /// Complete provider frame encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A Binance account order event with provider metadata.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceOrderStreamEvent {
+    /// Portable order projection.
+    pub common: Order,
+    /// Binance event name, such as `executionReport`.
+    pub event_type: String,
+    /// Provider event time, when present.
+    pub event_time: Option<Timestamp>,
+    /// Provider transaction time, when present.
+    pub transaction_time: Option<Timestamp>,
+    /// Complete provider frame encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A Binance account event that has no portable account-event projection.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceRawAccountEvent {
+    /// Binance event name.
+    pub event_type: String,
+    /// Provider event time, when present.
+    pub event_time: Option<Timestamp>,
+    /// Provider transaction time, when present.
+    pub transaction_time: Option<Timestamp>,
+    /// Complete provider frame encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A native Binance public market event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum BinanceMarketEvent {
+    /// One individual Spot trade.
+    Trade(BinanceTradeEvent),
+    /// One partial-depth update or snapshot.
+    OrderBook(BinanceOrderBookEvent),
+    /// One 24-hour ticker update.
+    Ticker(BinanceTickerEvent),
+    /// One candlestick update.
+    Candle(BinanceCandleEvent),
+    /// One underlying socket reconnected.
+    Reconnected,
+}
+
+/// A Binance individual Spot trade together with native stream fields.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceTradeEvent {
+    /// Portable trade projection used by the common stream API.
+    pub common: Trade,
+    /// Binance's event timestamp.
+    pub event_time: Option<Timestamp>,
+    /// Binance's execution timestamp.
+    pub trade_time: Option<Timestamp>,
+    /// Whether Binance identifies the buyer as the maker.
+    pub buyer_is_maker: Option<bool>,
+    /// Spot's best-price-match marker.
+    pub best_price_match: Option<bool>,
+    /// Complete provider payload for this event.
+    pub raw_json: String,
+}
+
+/// A Binance depth event together with native update sequencing fields.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceOrderBookEvent {
+    /// Portable order-book projection used by the common stream API.
+    pub common: OrderBook,
+    /// Binance's event timestamp, when emitted by the venue.
+    pub event_time: Option<Timestamp>,
+    /// Binance's transaction timestamp, when emitted by the venue.
+    pub transaction_time: Option<Timestamp>,
+    /// First update identifier in a diff-depth range.
+    pub first_update_id: Option<u64>,
+    /// Final update identifier in a diff-depth range.
+    pub final_update_id: Option<u64>,
+    /// Previous final update identifier in a diff-depth range.
+    pub previous_final_update_id: Option<u64>,
+    /// Spot partial-depth snapshot identifier.
+    pub last_update_id: Option<u64>,
+    /// Complete provider payload for this event.
+    pub raw_json: String,
+}
+
+/// A Binance 24-hour ticker update with native metadata.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceTickerEvent {
+    /// Portable ticker projection used by the common stream API.
+    pub common: Ticker,
+    /// Binance's event timestamp.
+    pub event_time: Option<Timestamp>,
+    /// Close timestamp of the rolling window.
+    pub close_time: Option<Timestamp>,
+    /// First trade identifier in the rolling window.
+    pub first_trade_id: Option<u64>,
+    /// Last trade identifier in the rolling window.
+    pub last_trade_id: Option<u64>,
+    /// Number of trades in the rolling window.
+    pub trade_count: Option<u64>,
+    /// Complete provider payload for this event.
+    pub raw_json: String,
+}
+
+/// A Binance candlestick update with native aggregation fields.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceCandleEvent {
+    /// Portable candle projection used by the common stream API.
+    pub common: Candle,
+    /// Inclusive close timestamp of the candle window.
+    pub close_time: Option<Timestamp>,
+    /// First trade identifier in the candle.
+    pub first_trade_id: Option<u64>,
+    /// Last trade identifier in the candle.
+    pub last_trade_id: Option<u64>,
+    /// Number of trades in the candle.
+    pub trade_count: Option<u64>,
+    /// Taker-buy base volume, when Binance publishes it.
+    pub taker_buy_base_volume: Option<Decimal>,
+    /// Taker-buy quote volume, when Binance publishes it.
+    pub taker_buy_quote_volume: Option<Decimal>,
+    /// Complete provider payload for this event.
+    pub raw_json: String,
+}
+
+/// Binance Spot's current average price for one market.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceSpotAveragePrice {
+    /// The Spot market this snapshot describes.
+    pub market: Market,
+    /// Binance's averaging interval, in minutes.
+    pub minutes: u32,
+    /// The average price, in the quote asset.
+    pub price: Decimal,
+    /// The last trade time included in the average.
+    pub close_time: Timestamp,
+}
+
+/// Binance USD-M's current mark-price snapshot for one perpetual market.
+///
+/// Binance returns the funding and index context alongside the mark price from
+/// `GET /fapi/v1/premiumIndex`. The values are provider-specific and therefore
+/// remain on [`BinanceAdapter`] until the common API has a matching contract.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BinanceMarkPrice {
+    /// The perpetual market this snapshot describes.
+    pub market: Market,
+    /// Binance's liquidation-reference mark price, in the quote asset.
+    pub mark_price: Decimal,
+    /// The underlying index price, in the quote asset.
+    pub index_price: Decimal,
+    /// Estimated settlement price, when Binance publishes a meaningful value.
+    pub estimated_settle_price: Option<Decimal>,
+    /// The latest funding rate as a signed ratio.
+    pub last_funding_rate: Decimal,
+    /// Binance's fixed interest rate component as a signed ratio.
+    pub interest_rate: Decimal,
+    /// When the next funding payment is scheduled.
+    pub next_funding_time: Timestamp,
+    /// When Binance produced this snapshot.
+    pub time: Timestamp,
+}
+
+/// Binance USD-M's current open interest for one perpetual market.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BinanceOpenInterest {
+    /// The perpetual market this snapshot describes.
+    pub market: Market,
+    /// Open contracts, denominated in the base asset.
+    pub open_interest: Decimal,
+    /// When Binance recorded the open-interest value.
+    pub time: Timestamp,
+}
 
 pub(crate) const SPOT_REST_BASE_URL: &str = "https://api.binance.com";
+/// Wallet SAPI is account-wide and always lives on the Spot API host.
+pub(crate) const WALLET_REST_BASE_URL: &str = SPOT_REST_BASE_URL;
 pub(crate) const SPOT_WEBSOCKET_URL: &str = "wss://stream.binance.com:9443/stream";
 /// The Spot WebSocket API used for signed account subscriptions.
 pub(crate) const SPOT_WEBSOCKET_API_URL: &str = "wss://ws-api.binance.com:443/ws-api/v3";
 pub(crate) const USD_M_REST_BASE_URL: &str = "https://fapi.binance.com";
-/// The USD-M entry point for trades and order books.
+/// The USD-M entry point for order books.
 pub(crate) const USD_M_PUBLIC_WEBSOCKET_URL: &str = "wss://fstream.binance.com/public/stream";
-/// The USD-M entry point for tickers and candles.
+/// The USD-M entry point for regular market feeds.
 pub(crate) const USD_M_MARKET_WEBSOCKET_URL: &str = "wss://fstream.binance.com/market/stream";
 
 /// The header every authenticated Binance request carries its API key in.
@@ -90,11 +811,19 @@ impl BinanceMarket {
             (_, Interval::Min1) => "1m",
             (_, Interval::Min3) => "3m",
             (_, Interval::Min5) => "5m",
+            (_, Interval::Min10) => {
+                return Err(Error::unsupported(
+                    Feature::Candles,
+                    EXCHANGE,
+                    "Binance publishes no ten-minute candles",
+                ));
+            }
             (_, Interval::Min15) => "15m",
             (_, Interval::Min30) => "30m",
             (_, Interval::Hour1) => "1h",
             (_, Interval::Hour2) => "2h",
             (_, Interval::Hour4) => "4h",
+            (_, Interval::Hour6) => "6h",
             (_, Interval::Hour8) => "8h",
             (_, Interval::Hour12) => "12h",
             (_, Interval::Day1) => "1d",
@@ -117,6 +846,8 @@ pub struct BinanceAdapter {
     /// Built on first use so the constructors stay infallible, and shared from
     /// then on so connections are reused across calls.
     http: OnceLock<HttpTransport>,
+    /// Wallet SAPI never follows the selected trading venue to `fapi.binance.com`.
+    wallet_http: OnceLock<HttpTransport>,
 }
 
 #[derive(Debug, Clone)]
@@ -141,6 +872,7 @@ impl BinanceAdapter {
             venue,
             credentials: None,
             http: OnceLock::new(),
+            wallet_http: OnceLock::new(),
         }
     }
 
@@ -185,9 +917,27 @@ impl BinanceAdapter {
         Ok(self.http.get_or_init(|| transport))
     }
 
+    /// The account-wide Wallet SAPI transport.
+    pub(crate) fn wallet_http(&self) -> Result<&HttpTransport> {
+        if let Some(transport) = self.wallet_http.get() {
+            return Ok(transport);
+        }
+        let transport = HttpTransport::new(WALLET_REST_BASE_URL)?;
+        Ok(self.wallet_http.get_or_init(|| transport))
+    }
+
     /// Sends a request and returns the body, or Binance's own verdict.
     pub(crate) async fn send(&self, request: HttpRequest) -> Result<String> {
         let response = self.http()?.send(&request).await?;
+        if response.is_success() {
+            return Ok(response.body);
+        }
+        Err(exchange_error(response.status, &response.body))
+    }
+
+    /// Sends one Wallet SAPI request without automatic retry.
+    pub(crate) async fn send_wallet(&self, request: HttpRequest) -> Result<String> {
+        let response = self.wallet_http()?.send(&request).await?;
         if response.is_success() {
             return Ok(response.body);
         }
@@ -258,6 +1008,231 @@ impl BinanceAdapter {
         private::spot_order(self, market, order_id).await
     }
 
+    /// Creates one Binance order and returns its provider-specific response.
+    ///
+    /// [`Adapter::place_order`] keeps the portable order projection. Use this
+    /// method when the Binance-only execution, position, or order-list fields
+    /// from the create response are needed.
+    pub async fn place_order_detail(&self, request: &OrderRequest) -> Result<BinanceOrderResponse> {
+        private::place_order_detail(self, request).await
+    }
+
+    /// Cancels one Binance order by exchange identifier and returns the full
+    /// provider response.
+    pub async fn cancel_order_detail(
+        &self,
+        market: &Market,
+        order_id: &str,
+    ) -> Result<BinanceOrderResponse> {
+        private::cancel_order_detail(self, market, order_id).await
+    }
+
+    /// Cancels one Binance order by client identifier and returns the full
+    /// provider response.
+    pub async fn cancel_order_by_client_id_detail(
+        &self,
+        market: &Market,
+        client_id: &str,
+    ) -> Result<BinanceOrderResponse> {
+        private::cancel_order_by_client_id_detail(self, market, client_id).await
+    }
+
+    /// Reads one page of signed account trades for Spot or USD-M.
+    ///
+    /// Binance supplies an ID-based continuation, but this provider method
+    /// does not manufacture a cursor until it can carry that ID safely. A
+    /// full page therefore has no `next` cursor; use the returned trade ID to
+    /// make a provider-specific follow-up when that API is added.
+    pub async fn account_trades(
+        &self,
+        request: &HistoryRequest,
+    ) -> Result<Page<BinanceAccountTrade>> {
+        private::account_trades(self, request).await
+    }
+
+    /// Reads one numbered page of the configured account's C2C order history.
+    ///
+    /// This is a Spot/Funding Wallet SAPI operation. Binance returns its own
+    /// `code`, `message`, `data`, `total`, and `success` envelope, so this
+    /// provider method preserves that envelope instead of inventing a common
+    /// cursor. Increment [`BinanceC2cTradeHistoryRequest::page`] while the
+    /// requested page and row count have not covered `total`.
+    pub async fn c2c_trade_history(
+        &self,
+        request: &BinanceC2cTradeHistoryRequest,
+    ) -> Result<BinanceC2cTradeHistoryPage> {
+        private::c2c_trade_history(self, request).await
+    }
+
+    /// Validates an order without sending it to Binance's matching engine.
+    ///
+    /// Spot ordinarily returns `{}`; requesting its commission-rate calculation
+    /// instead returns a commission object. USD-M returns an order-shaped object.
+    /// The canonical JSON response preserves every successful object shape.
+    pub async fn test_order(&self, request: &BinanceTestOrderRequest) -> Result<BinanceTestOrder> {
+        private::test_order(self, request).await
+    }
+
+    /// Cancels every open order for one market in one provider call.
+    ///
+    /// Spot returns cancellation reports while USD-M returns an acknowledgement,
+    /// so the common result is deliberately a successful unit result rather
+    /// than an incomplete order list.
+    pub async fn cancel_all_open_orders(&self, market: &Market) -> Result<()> {
+        private::cancel_all_open_orders(self, market).await
+    }
+
+    /// Reads Spot's signed account-information response without discarding
+    /// commissions, permissions, or provider-only account flags.
+    pub async fn spot_account_information(&self) -> Result<BinanceSpotAccountInformation> {
+        private::spot_account_information(self).await
+    }
+
+    /// Cancels every Spot open order for one market and preserves Binance's
+    /// cancellation reports.
+    pub async fn spot_cancel_all_open_orders(
+        &self,
+        market: &Market,
+    ) -> Result<BinanceSpotCancelAllOpenOrders> {
+        private::spot_cancel_all_open_orders(self, market).await
+    }
+
+    /// Reads Spot's complete exchange-information listing, including symbols
+    /// and provider-specific raw filter data.
+    pub async fn spot_exchange_info(&self) -> Result<BinanceExchangeInfo> {
+        rest::exchange_info(self, BinanceMarket::Spot).await
+    }
+
+    /// Reads USD-M account information, including the asset and position
+    /// figures that do not fit the common balance or margin contracts.
+    pub async fn usd_m_account_information(&self) -> Result<BinanceUsdMAccountInformation> {
+        private::usd_m_account_information(self).await
+    }
+
+    /// Reads USD-M's complete exchange-information listing, without dropping
+    /// dated contracts from Binance's provider response.
+    pub async fn usd_m_exchange_info(&self) -> Result<BinanceExchangeInfo> {
+        rest::exchange_info(self, BinanceMarket::UsdMFutures).await
+    }
+
+    /// Reads USD-M position-risk information with Binance's margin and risk
+    /// fields preserved for every returned position.
+    pub async fn usd_m_position_information(
+        &self,
+        market: Option<&Market>,
+    ) -> Result<Vec<BinanceUsdMPositionInformation>> {
+        private::usd_m_position_information(self, market).await
+    }
+
+    /// Reads all Wallet SAPI coin and network configuration entries.
+    pub async fn all_coins_information(&self) -> Result<Vec<BinanceCoinInformation>> {
+        wallet::all_coins_information(self).await
+    }
+
+    /// Reads the configured API key's Wallet SAPI permission flags.
+    pub async fn api_key_permissions(&self) -> Result<BinanceApiKeyPermissions> {
+        wallet::api_key_permissions(self).await
+    }
+
+    /// Reads Wallet SAPI deposit history without reducing provider status,
+    /// pagination, or time fields to the common transfer-history model.
+    pub async fn deposit_history(
+        &self,
+        request: &BinanceDepositHistoryRequest,
+    ) -> Result<BinanceDepositHistory> {
+        wallet::deposit_history(self, request).await
+    }
+
+    /// Reads the Wallet SAPI Travel Rule questionnaire requirement.
+    pub async fn questionnaire_requirements(&self) -> Result<BinanceQuestionnaireRequirements> {
+        wallet::questionnaire_requirements(self).await
+    }
+
+    /// Reads registered Wallet SAPI withdrawal addresses and their whitelist state.
+    pub async fn withdraw_address_list(&self) -> Result<Vec<BinanceWithdrawalAddress>> {
+        wallet::withdraw_address_list(self).await
+    }
+
+    /// Reads Wallet SAPI withdrawal history without reducing provider status,
+    /// pagination, or time fields to the common transfer-history model.
+    pub async fn withdraw_history(
+        &self,
+        request: &BinanceWithdrawHistoryRequest,
+    ) -> Result<BinanceWithdrawHistory> {
+        wallet::withdraw_history(self, request).await
+    }
+
+    /// Reads Binance Spot's current average price for one market.
+    ///
+    /// This public endpoint needs no credentials. A USD-M adapter or a
+    /// non-Spot market is rejected before a request is sent.
+    pub async fn spot_average_price(&self, market: &Market) -> Result<BinanceSpotAveragePrice> {
+        rest::spot_average_price(self, market).await
+    }
+
+    /// Reads the current USD-M mark price and funding context for one market.
+    pub async fn mark_price(&self, market: &Market) -> Result<BinanceMarkPrice> {
+        rest::mark_price(self, market).await
+    }
+
+    /// Reads current USD-M mark prices for every listed perpetual market.
+    ///
+    /// This keeps Binance's symbol-omitted `/fapi/v1/premiumIndex` response
+    /// visible instead of silently discarding the array form.
+    pub async fn mark_prices(&self) -> Result<Vec<BinanceMarkPrice>> {
+        rest::mark_prices(self).await
+    }
+
+    /// Reads the current USD-M open interest for one market.
+    pub async fn open_interest(&self, market: &Market) -> Result<BinanceOpenInterest> {
+        rest::open_interest(self, market).await
+    }
+
+    /// Reads one page of Spot or USD-M compressed aggregate trades.
+    ///
+    /// This is Binance's 100 ms/same-price/same-taking-side aggregation, not a
+    /// list of individual fills. The endpoint is public and needs no key.
+    pub async fn aggregate_trades(
+        &self,
+        request: &BinanceAggregateTradesRequest,
+    ) -> Result<Vec<BinanceAggregateTrade>> {
+        rest::aggregate_trades(self, request).await
+    }
+
+    /// Subscribes to Binance market data without discarding native stream
+    /// fields such as update ranges, trade counts, and event timestamps.
+    pub async fn subscribe_detailed(
+        &self,
+        subscription: &Subscription,
+    ) -> Result<BinanceMarketStream> {
+        self.subscribe_detailed_with(subscription, &crate::client::default_stream_config())
+            .await
+    }
+
+    /// Subscribes to detailed Binance market data with explicit reconnect and
+    /// buffering policy.
+    pub async fn subscribe_detailed_with(
+        &self,
+        subscription: &Subscription,
+        config: &StreamConfig,
+    ) -> Result<BinanceMarketStream> {
+        stream::subscribe_detailed(self, subscription, config).await
+    }
+
+    /// Subscribes to Binance account updates without discarding native events.
+    pub async fn subscribe_detailed_account(&self) -> Result<BinanceAccountStream> {
+        self.subscribe_detailed_account_with(&crate::client::default_stream_config())
+            .await
+    }
+
+    /// Subscribes to detailed Binance account updates with explicit stream settings.
+    pub async fn subscribe_detailed_account_with(
+        &self,
+        config: &StreamConfig,
+    ) -> Result<BinanceAccountStream> {
+        stream::subscribe_detailed_account(self, config).await
+    }
+
     /// Creates or extends the account's USD-M user-data listen key.
     ///
     /// [`Client::subscribe_account`](crate::Client::subscribe_account) manages
@@ -269,17 +1244,17 @@ impl BinanceAdapter {
 
     /// Extends the USD-M listen key owned by the configured API key.
     ///
-    /// Binance's keepalive endpoint does not accept the listen key as a
-    /// parameter; `key` identifies the caller's stream but is not sent.
-    pub async fn usd_m_keepalive_listen_key(&self, key: &BinanceListenKey) -> Result<()> {
+    /// Binance's endpoint extends the active key owned by the configured API
+    /// key and accepts no listen-key parameter.
+    pub async fn usd_m_keepalive_listen_key(&self) -> Result<()> {
         self.check_usd_m("listen keys")?;
-        private::keepalive_listen_key(self, key).await
+        private::keepalive_listen_key(self).await
     }
 
-    /// Closes a USD-M listen key.
-    pub async fn usd_m_close_listen_key(&self, key: &BinanceListenKey) -> Result<()> {
+    /// Closes the active USD-M listen key owned by the configured API key.
+    pub async fn usd_m_close_listen_key(&self) -> Result<()> {
         self.check_usd_m("listen keys")?;
-        private::close_listen_key(self, key).await
+        private::close_listen_key(self).await
     }
 
     fn check_usd_m(&self, what: &str) -> Result<()> {
@@ -413,6 +1388,19 @@ impl Adapter for BinanceAdapter {
     }
 
     fn supports(&self, feature: Feature) -> bool {
+        if matches!(
+            feature,
+            Feature::OrderHistory
+                | Feature::DepositLookup
+                | Feature::TravelRule
+                | Feature::WithdrawalLookup
+                | Feature::WithdrawalCancellation
+        ) {
+            return false;
+        }
+        if wallet::is_wallet_feature(feature) && self.venue != BinanceMarket::Spot {
+            return false;
+        }
         if feature.is_derivatives_only() && self.venue == BinanceMarket::Spot {
             return false;
         }
@@ -465,6 +1453,45 @@ impl Adapter for BinanceAdapter {
         Box::pin(async move { private::balances(self).await })
     }
 
+    fn asset_networks(&self, asset: &str) -> BoxFuture<'_, Result<Vec<AssetNetwork>>> {
+        let asset = asset.to_string();
+        Box::pin(async move { wallet::asset_networks(self, &asset).await })
+    }
+
+    fn deposit_address(
+        &self,
+        request: &DepositAddressRequest,
+    ) -> BoxFuture<'_, Result<DepositAddress>> {
+        let request = request.clone();
+        Box::pin(async move { wallet::deposit_address(self, &request).await })
+    }
+
+    fn prepare_withdrawal(
+        &self,
+        request: &WithdrawRequest,
+    ) -> BoxFuture<'_, Result<WithdrawalQuote>> {
+        let request = request.clone();
+        Box::pin(async move { wallet::prepare_withdrawal(self, &request).await })
+    }
+
+    fn withdraw(&self, request: &WithdrawRequest) -> BoxFuture<'_, Result<Withdrawal>> {
+        let request = request.clone();
+        Box::pin(async move { wallet::withdraw(self, &request).await })
+    }
+
+    fn deposits(&self, request: &TransferHistoryRequest) -> BoxFuture<'_, Result<Page<Deposit>>> {
+        let request = request.clone();
+        Box::pin(async move { wallet::deposits(self, &request).await })
+    }
+
+    fn withdrawals(
+        &self,
+        request: &TransferHistoryRequest,
+    ) -> BoxFuture<'_, Result<Page<Withdrawal>>> {
+        let request = request.clone();
+        Box::pin(async move { wallet::withdrawals(self, &request).await })
+    }
+
     fn open_orders(&self, market: Option<&Market>) -> BoxFuture<'_, Result<Vec<Order>>> {
         let market = market.cloned();
         Box::pin(async move { private::open_orders(self, market.as_ref()).await })
@@ -475,10 +1502,20 @@ impl Adapter for BinanceAdapter {
         Box::pin(async move { private::place_order(self, &request).await })
     }
 
-    fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<Order>> {
+    fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<()>> {
         let market = market.clone();
         let order_id = order_id.to_string();
         Box::pin(async move { private::cancel_order(self, &market, &order_id).await })
+    }
+
+    fn cancel_order_by_client_id(
+        &self,
+        market: &Market,
+        client_id: &str,
+    ) -> BoxFuture<'_, Result<()>> {
+        let market = market.clone();
+        let client_id = client_id.to_string();
+        Box::pin(async move { private::cancel_order_by_client_id(self, &market, &client_id).await })
     }
 
     fn positions(&self, market: Option<&Market>) -> BoxFuture<'_, Result<Vec<Position>>> {

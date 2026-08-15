@@ -1,6 +1,6 @@
 [package]
 name = "maxt"
-version = "0.1.0"
+version = "0.2.1"
 edition = "2024"
 rust-version = "1.85"
 license = "MIT"
@@ -30,7 +30,7 @@ k256 = { version = "0.13", features = ["ecdsa", "sha256"] }
 rust_decimal = { version = "1", default-features = false, features = ["std", "serde-str"] }
 rmp-serde = "1"
 serde = { version = "1", features = ["derive"] }
-serde_json = { version = "1", features = ["arbitrary_precision"] }
+serde_json = { version = "1", features = ["arbitrary_precision", "preserve_order"] }
 sha2 = "0.11"
 sha3 = "0.12"
 
@@ -51,6 +51,7 @@ tokio = { version = "1", default-features = false, features = ["macros", "rt", "
 uuid = { version = "1", features = ["js", "v4"] }
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
+web-time = "1"
 web-sys = { version = "0.3", features = ["BinaryType", "Event", "MessageEvent", "WebSocket"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]

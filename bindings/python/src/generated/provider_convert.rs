@@ -6,7 +6,9 @@ fn bithumb_alert_step_to_wire(value: BithumbAlertStep) -> PyResult<&'static str>
         BithumbAlertStep::Warning => Ok("warning"),
         BithumbAlertStep::Danger => Ok("danger"),
         BithumbAlertStep::Unknown => Ok("unknown"),
-        _ => Err(PyValueError::new_err("maxt binding contract does not map a new BithumbAlertStep variant")),
+        _ => Err(PyValueError::new_err(
+            "maxt binding contract does not map a new BithumbAlertStep variant",
+        )),
     }
 }
 
@@ -23,7 +25,9 @@ fn hyperliquid_ledger_kind_to_wire(value: &HyperliquidLedgerKind) -> PyResult<&s
         HyperliquidLedgerKind::VaultDistribution => Ok("vault_distribution"),
         HyperliquidLedgerKind::Liquidation => Ok("liquidation"),
         HyperliquidLedgerKind::Other(value) => Ok(value),
-        _ => Err(PyValueError::new_err("maxt binding contract does not map a new HyperliquidLedgerKind variant")),
+        _ => Err(PyValueError::new_err(
+            "maxt binding contract does not map a new HyperliquidLedgerKind variant",
+        )),
     }
 }
 
@@ -59,6 +63,19 @@ fn binance_spot_order_to_wire(
     )
 }
 
+fn binance_spot_average_price_to_wire(
+    py: Python<'_>,
+    value: &maxt::adapters::BinanceSpotAveragePrice,
+) -> PyResult<Py<PyAny>> {
+    provider_dict!(
+        py,
+        "market" => market_to_wire(py, &value.market)?,
+        "minutes" => value.minutes,
+        "price" => decimal_to_wire(value.price),
+        "close_time" => timestamp_to_wire(value.close_time),
+    )
+}
+
 fn hyperliquid_ledger_entry_to_wire(
     py: Python<'_>,
     value: &maxt::adapters::HyperliquidLedgerEntry,
@@ -91,6 +108,71 @@ fn hyperliquid_asset_context_to_wire(
     )
 }
 
+fn upbit_travel_rule_vasp_to_wire(
+    py: Python<'_>,
+    value: &maxt::adapters::UpbitTravelRuleVasp,
+) -> PyResult<Py<PyAny>> {
+    provider_dict!(
+        py,
+        "vasp_name" => &value.vasp_name,
+        "vasp_uuid" => &value.vasp_uuid,
+        "depositable" => value.depositable,
+        "withdrawable" => value.withdrawable,
+    )
+}
+
+fn upbit_travel_rule_verification_to_wire(
+    py: Python<'_>,
+    value: &maxt::adapters::UpbitTravelRuleVerification,
+) -> PyResult<Py<PyAny>> {
+    provider_dict!(
+        py,
+        "deposit_uuid" => &value.deposit_uuid,
+        "deposit_state" => &value.deposit_state,
+        "verification_result" => &value.verification_result,
+    )
+}
+
+fn bithumb_krw_withdrawal_to_wire(
+    py: Python<'_>,
+    value: &maxt::adapters::BithumbKrwWithdrawal,
+) -> PyResult<Py<PyAny>> {
+    provider_dict!(
+        py,
+        "transfer_type" => &value.transfer_type,
+        "uuid" => &value.uuid,
+        "currency" => &value.currency,
+        "net_type" => &value.net_type,
+        "txid" => &value.txid,
+        "state" => &value.state,
+        "created_at" => value.created_at.map(timestamp_to_wire),
+        "done_at" => value.done_at.map(timestamp_to_wire),
+        "amount" => decimal_to_wire(value.amount),
+        "fee" => decimal_to_wire(value.fee),
+        "transaction_type" => &value.transaction_type,
+    )
+}
+
+fn bithumb_krw_deposit_to_wire(
+    py: Python<'_>,
+    value: &maxt::adapters::BithumbKrwDeposit,
+) -> PyResult<Py<PyAny>> {
+    provider_dict!(
+        py,
+        "transfer_type" => &value.transfer_type,
+        "uuid" => &value.uuid,
+        "currency" => &value.currency,
+        "net_type" => &value.net_type,
+        "txid" => &value.txid,
+        "state" => &value.state,
+        "created_at" => value.created_at.map(timestamp_to_wire),
+        "done_at" => value.done_at.map(timestamp_to_wire),
+        "amount" => decimal_to_wire(value.amount),
+        "fee" => decimal_to_wire(value.fee),
+        "transaction_type" => &value.transaction_type,
+    )
+}
+
 fn upbit_market_event_to_wire(
     py: Python<'_>,
     value: &(Market, UpbitMarketEvent),
@@ -103,10 +185,7 @@ fn upbit_market_event_to_wire(
     )
 }
 
-fn bithumb_market_warning_to_wire(
-    py: Python<'_>,
-    value: &(Market, String),
-) -> PyResult<Py<PyAny>> {
+fn bithumb_market_warning_to_wire(py: Python<'_>, value: &(Market, String)) -> PyResult<Py<PyAny>> {
     provider_dict!(
         py,
         "market" => market_to_wire(py, &value.0)?,
@@ -135,5 +214,27 @@ fn hyperliquid_ledger_page_to_wire(
         py,
         "items" => list_to_wire(py, &value.items, hyperliquid_ledger_entry_to_wire)?,
         "next" => value.next.as_ref().map(Cursor::as_str),
+    )
+}
+fn upbit_subscription_list_to_wire(
+    py: Python<'_>,
+    value: &maxt::adapters::UpbitSubscriptionList,
+) -> PyResult<Py<PyAny>> {
+    provider_dict!(
+        py,
+        "ticket" => &value.ticket,
+        "subscriptions" => list_to_wire(py, &value.subscriptions, upbit_listed_subscription_to_wire)?,
+    )
+}
+
+fn upbit_listed_subscription_to_wire(
+    py: Python<'_>,
+    value: &maxt::adapters::UpbitListedSubscription,
+) -> PyResult<Py<PyAny>> {
+    provider_dict!(
+        py,
+        "feed_type" => &value.feed_type,
+        "markets" => list_to_wire(py, &value.markets, market_to_wire)?,
+        "level" => value.level.map(decimal_to_wire),
     )
 }

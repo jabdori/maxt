@@ -2,6 +2,8 @@
 
 use std::cmp::Reverse;
 
+use rust_decimal::Decimal;
+
 use crate::adapters::candles as candle_pages;
 use crate::error::{Error, Result};
 use crate::feature::Feature;
@@ -12,6 +14,7 @@ use crate::types::{
 };
 
 use super::parse::{self, EXCHANGE};
+use super::{UpbitOrderBookInstrument, UpbitYearCandle};
 
 /// Upbit returns at most this many trade ticks per call.
 const MAX_TRADE_COUNT: u32 = 500;
@@ -32,7 +35,7 @@ fn encode(raw: &str) -> String {
         .collect()
 }
 
-fn query(params: &[(&str, String)]) -> String {
+pub(super) fn query(params: &[(&str, String)]) -> String {
     params
         .iter()
         .map(|(key, value)| format!("{key}={}", encode(value)))
@@ -61,6 +64,33 @@ pub(crate) fn trades_request(market: &Market, limit: Option<u32>) -> Result<Http
 }
 
 pub(crate) fn order_book_request(markets: &[Market], depth: Option<u32>) -> Result<HttpRequest> {
+    order_book_request_with_level(markets, None, depth)
+}
+
+/// Builds an Upbit Korea aggregated-orderbook request.
+///
+/// The provider accepts `0` for an unaggregated book. Positive values are live
+/// market metadata and should come from `orderbook_instruments`.
+pub(crate) fn order_book_with_level_request(
+    markets: &[Market],
+    level: Decimal,
+    depth: Option<u32>,
+) -> Result<HttpRequest> {
+    if level < Decimal::ZERO {
+        return Err(Error::invalid_request(
+            "level",
+            "Upbit order-book aggregation level must be zero or positive",
+        ));
+    }
+
+    order_book_request_with_level(markets, Some(level), depth)
+}
+
+fn order_book_request_with_level(
+    markets: &[Market],
+    level: Option<Decimal>,
+    depth: Option<u32>,
+) -> Result<HttpRequest> {
     if markets.is_empty() {
         return Err(Error::invalid_request(
             "markets",
@@ -74,6 +104,9 @@ pub(crate) fn order_book_request(markets: &[Market], depth: Option<u32>) -> Resu
         .collect::<Result<Vec<_>>>()?
         .join(",");
     let mut params = vec![("markets", codes)];
+    if let Some(level) = level {
+        params.push(("level", level.normalize().to_string()));
+    }
     if let Some(depth) = depth {
         if !(1..=MAX_BOOK_DEPTH).contains(&depth) {
             return Err(Error::invalid_request(
@@ -104,17 +137,96 @@ pub(crate) fn ticker_request(markets: &[Market]) -> Result<HttpRequest> {
     Ok(HttpRequest::get("/v1/ticker").query(query(&[("markets", codes)])))
 }
 
+pub(crate) fn tickers_by_quote_request(quote_currencies: &[String]) -> Result<HttpRequest> {
+    let currencies = quote_currencies_parameter(quote_currencies, "quote_currencies")?;
+
+    Ok(HttpRequest::get("/v1/ticker/all").query(query(&[("quote_currencies", currencies)])))
+}
+
+pub(crate) fn quote_currencies_parameter(
+    quote_currencies: &[String],
+    field: &'static str,
+) -> Result<String> {
+    if quote_currencies.is_empty() {
+        return Err(Error::invalid_request(
+            field,
+            "name at least one quote currency",
+        ));
+    }
+
+    Ok(quote_currencies
+        .iter()
+        .map(|currency| {
+            let currency = currency.trim().to_ascii_uppercase();
+            if currency.is_empty()
+                || !currency
+                    .bytes()
+                    .all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit())
+            {
+                return Err(Error::invalid_request(
+                    field,
+                    "quote currencies must contain only uppercase ASCII letters and digits",
+                ));
+            }
+            Ok(currency)
+        })
+        .collect::<Result<Vec<_>>>()?
+        .join(","))
+}
+
+pub(crate) fn year_candles_request(
+    market: &Market,
+    to: Option<Timestamp>,
+    count: Option<u32>,
+) -> Result<HttpRequest> {
+    let mut params = vec![("market", parse::native_symbol(market)?)];
+    if let Some(to) = to {
+        params.push(("to", parse::to_cursor(to)?));
+    }
+    if let Some(count) = count {
+        if !(1..=MAX_CANDLE_COUNT).contains(&count) {
+            return Err(Error::invalid_request(
+                "count",
+                format!(
+                    "upbit serves 1 to {MAX_CANDLE_COUNT} yearly candles per call, not {count}"
+                ),
+            ));
+        }
+        params.push(("count", count.to_string()));
+    }
+
+    Ok(HttpRequest::get("/v1/candles/years").query(query(&params)))
+}
+
+pub(crate) fn orderbook_instruments_request(markets: &[Market]) -> Result<HttpRequest> {
+    if markets.is_empty() {
+        return Err(Error::invalid_request(
+            "markets",
+            "name at least one market",
+        ));
+    }
+
+    let codes = markets
+        .iter()
+        .map(parse::native_symbol)
+        .collect::<Result<Vec<_>>>()?
+        .join(",");
+
+    Ok(HttpRequest::get("/v1/orderbook/instruments").query(query(&[("markets", codes)])))
+}
+
 /// Returns the candle endpoint for an interval exposed by `maxt`.
 ///
-/// Upbit also provides 10-minute and yearly candles, but [`Interval`] has no
-/// corresponding variants. Other unmapped intervals are not available from
-/// Upbit. One-second history is limited to the most recent three months.
+/// Upbit also provides yearly candles, but [`Interval`] has no corresponding
+/// variant. Other unmapped intervals are not available from Upbit. One-second
+/// history is limited to the most recent three months.
 pub(crate) fn candle_path(interval: Interval) -> Option<&'static str> {
     Some(match interval {
         Interval::Sec1 => "/v1/candles/seconds",
         Interval::Min1 => "/v1/candles/minutes/1",
         Interval::Min3 => "/v1/candles/minutes/3",
         Interval::Min5 => "/v1/candles/minutes/5",
+        Interval::Min10 => "/v1/candles/minutes/10",
         Interval::Min15 => "/v1/candles/minutes/15",
         Interval::Min30 => "/v1/candles/minutes/30",
         Interval::Hour1 => "/v1/candles/minutes/60",
@@ -220,11 +332,66 @@ pub(crate) async fn order_books(
         .collect()
 }
 
+pub(crate) async fn order_books_at_level(
+    http: &HttpTransport,
+    markets: &[Market],
+    level: Decimal,
+    depth: Option<u32>,
+) -> Result<Vec<OrderBook>> {
+    let body = send(http, &order_book_with_level_request(markets, level, depth)?).await?;
+    parse::json::<Vec<parse::RawOrderBook>>(&body)?
+        .iter()
+        .map(parse::order_book)
+        .collect()
+}
+
 pub(crate) async fn tickers(http: &HttpTransport, markets: &[Market]) -> Result<Vec<Ticker>> {
     let body = send(http, &ticker_request(markets)?).await?;
     parse::json::<Vec<parse::RawTicker>>(&body)?
         .iter()
         .map(parse::ticker)
+        .collect()
+}
+
+pub(crate) async fn tickers_by_quote(
+    http: &HttpTransport,
+    quote_currencies: &[String],
+) -> Result<Vec<Ticker>> {
+    let body = send(http, &tickers_by_quote_request(quote_currencies)?).await?;
+    parse::json::<Vec<parse::RawTicker>>(&body)?
+        .iter()
+        .map(parse::ticker)
+        .collect()
+}
+
+pub(crate) async fn year_candles(
+    http: &HttpTransport,
+    market: &Market,
+    to: Option<Timestamp>,
+    count: Option<u32>,
+) -> Result<Vec<UpbitYearCandle>> {
+    let body = send(http, &year_candles_request(market, to, count)?).await?;
+    oldest_first_year_candles(&parse::json::<Vec<parse::RawYearCandle>>(&body)?)
+}
+
+/// Upbit responds newest first; keep candle history consistent with `Client`.
+fn oldest_first_year_candles(raw: &[parse::RawYearCandle]) -> Result<Vec<UpbitYearCandle>> {
+    let mut candles = raw
+        .iter()
+        .map(parse::year_candle)
+        .collect::<Result<Vec<_>>>()?;
+    candles.sort_by_key(|candle| candle.open_time);
+    Ok(candles)
+}
+
+pub(crate) async fn orderbook_instruments(
+    http: &HttpTransport,
+    markets: &[Market],
+) -> Result<Vec<UpbitOrderBookInstrument>> {
+    let body = send(http, &orderbook_instruments_request(markets)?).await?;
+    parse::json::<Vec<parse::RawOrderBookInstrument>>(&body)?
+        .iter()
+        .map(parse::orderbook_instrument)
         .collect()
 }
 
@@ -291,8 +458,48 @@ mod tests {
             "/v1/orderbook?markets=KRW-BTC&count=5"
         );
         assert_eq!(
+            order_book_with_level_request(&[btc_krw()], Decimal::new(1_000_000, 1), Some(2),)
+                .expect("a valid aggregation level")
+                .target(),
+            "/v1/orderbook?markets=KRW-BTC&level=100000&count=2"
+        );
+        assert_eq!(
+            order_book_with_level_request(&[btc_krw()], Decimal::new(10, 2), None)
+                .expect("a valid fractional aggregation level")
+                .target(),
+            "/v1/orderbook?markets=KRW-BTC&level=0.1"
+        );
+        assert_eq!(
+            order_book_with_level_request(&[btc_krw()], Decimal::ZERO, None)
+                .expect("the documented unaggregated level")
+                .target(),
+            "/v1/orderbook?markets=KRW-BTC&level=0"
+        );
+        assert_eq!(
             ticker_request(&[btc_krw()]).expect("a market").target(),
             "/v1/ticker?markets=KRW-BTC"
+        );
+        assert_eq!(
+            tickers_by_quote_request(&["KRW".to_owned()])
+                .expect("a quote currency")
+                .target(),
+            "/v1/ticker/all?quote_currencies=KRW"
+        );
+        assert_eq!(
+            year_candles_request(
+                &btc_krw(),
+                Some(Timestamp::from_secs(1_499_040_000)),
+                Some(2),
+            )
+            .expect("a documented candle request")
+            .target(),
+            "/v1/candles/years?market=KRW-BTC&to=2017-07-03T00%3A00%3A00Z&count=2"
+        );
+        assert_eq!(
+            orderbook_instruments_request(&[btc_krw()])
+                .expect("a market")
+                .target(),
+            "/v1/orderbook/instruments?markets=KRW-BTC"
         );
     }
 
@@ -313,6 +520,7 @@ mod tests {
             (Interval::Min1, "/v1/candles/minutes/1"),
             (Interval::Min3, "/v1/candles/minutes/3"),
             (Interval::Min5, "/v1/candles/minutes/5"),
+            (Interval::Min10, "/v1/candles/minutes/10"),
             (Interval::Min15, "/v1/candles/minutes/15"),
             (Interval::Min30, "/v1/candles/minutes/30"),
             (Interval::Hour1, "/v1/candles/minutes/60"),
@@ -339,6 +547,7 @@ mod tests {
         // Unavailable intervals must not be substituted with nearby intervals.
         for interval in [
             Interval::Hour2,
+            Interval::Hour6,
             Interval::Hour8,
             Interval::Hour12,
             Interval::Day3,
@@ -383,6 +592,7 @@ mod tests {
             Interval::Min1,
             Interval::Min3,
             Interval::Min5,
+            Interval::Min10,
             Interval::Min15,
             Interval::Min30,
             Interval::Hour1,
@@ -457,6 +667,34 @@ mod tests {
             order_book_request(&[], None),
             Err(Error::InvalidRequest { field, .. }) if field == "markets"
         ));
+        assert!(matches!(
+            tickers_by_quote_request(&[]),
+            Err(Error::InvalidRequest { field, .. }) if field == "quote_currencies"
+        ));
+        assert!(matches!(
+            orderbook_instruments_request(&[]),
+            Err(Error::InvalidRequest { field, .. }) if field == "markets"
+        ));
+        assert!(matches!(
+            order_book_with_level_request(&[btc_krw()], Decimal::new(-1, 0), None),
+            Err(Error::InvalidRequest { field, .. }) if field == "level"
+        ));
+    }
+
+    #[test]
+    fn quote_currency_and_year_candle_limits_are_validated_before_transport() {
+        assert!(matches!(
+            tickers_by_quote_request(&["KRW&markets=BTC".to_owned()]),
+            Err(Error::InvalidRequest { field, .. }) if field == "quote_currencies"
+        ));
+        assert!(matches!(
+            year_candles_request(&btc_krw(), None, Some(0)),
+            Err(Error::InvalidRequest { field, .. }) if field == "count"
+        ));
+        assert!(matches!(
+            year_candles_request(&btc_krw(), None, Some(MAX_CANDLE_COUNT + 1)),
+            Err(Error::InvalidRequest { field, .. }) if field == "count"
+        ));
     }
 
     #[test]
@@ -517,6 +755,33 @@ mod tests {
                 .iter()
                 .map(|trade| trade.timestamp.as_millis())
                 .collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn yearly_candles_are_reordered_oldest_first() {
+        let raw: Vec<parse::RawYearCandle> = parse::json(
+            r#"[
+              {"market":"KRW-BTC","candle_date_time_utc":"2026-01-01T00:00:00",
+               "timestamp":1767225600000,"opening_price":2,"high_price":2,"low_price":2,
+               "trade_price":2,"candle_acc_trade_volume":2,"candle_acc_trade_price":2,
+               "first_day_of_period":"2026-01-01"},
+              {"market":"KRW-BTC","candle_date_time_utc":"2025-01-01T00:00:00",
+               "timestamp":1735689600000,"opening_price":1,"high_price":1,"low_price":1,
+               "trade_price":1,"candle_acc_trade_volume":1,"candle_acc_trade_price":1,
+               "first_day_of_period":"2025-01-01"}
+            ]"#,
+        )
+        .expect("a newest-first yearly payload");
+
+        let candles = oldest_first_year_candles(&raw).expect("yearly candles");
+
+        assert_eq!(
+            candles
+                .iter()
+                .map(|candle| candle.first_day_of_period.as_str())
+                .collect::<Vec<_>>(),
+            ["2025-01-01", "2026-01-01"]
         );
     }
 

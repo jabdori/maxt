@@ -1,0 +1,52 @@
+# Upbit Global official API catalog snapshot
+# scope: Global
+# source_catalog: https://global-docs.upbit.com/llms.txt
+# source_detail: https://global-docs.upbit.com/reference/*.md
+# columns: official_product	interface	method	path_or_message	operation_id	lifecycle
+Quotation	Http	GET	/v1/market/all	list-trading-pairs	documented_active
+Quotation	Http	GET	/v1/candles/seconds	list-candles-seconds	documented_active
+Quotation	Http	GET	/v1/candles/minutes/{unit}	list-candles-minutes	documented_active
+Quotation	Http	GET	/v1/candles/days	list-candles-days	documented_active
+Quotation	Http	GET	/v1/candles/weeks	list-candles-weeks	documented_active
+Quotation	Http	GET	/v1/candles/months	list-candles-months	documented_active
+Quotation	Http	GET	/v1/candles/years	list-candles-years	documented_active
+Quotation	Http	GET	/v1/trades/ticks	list-pair-trades	documented_active
+Quotation	Http	GET	/v1/ticker	list-tickers	documented_active
+Quotation	Http	GET	/v1/ticker/all	list-quote-tickers	documented_active
+Quotation	Http	GET	/v1/orderbook	list-orderbooks	documented_active
+Quotation	Http	GET	/v1/orderbook/instruments	list-orderbook-instruments	documented_active
+Quotation	WebSocketStream	SUBSCRIBE	type=ticker	ticker	documented_active
+Quotation	WebSocketStream	SUBSCRIBE	type=trade	trade	documented_active
+Quotation	WebSocketStream	SUBSCRIBE	type=orderbook	orderbook	documented_active
+Quotation	WebSocketStream	SUBSCRIBE	type=candle.{unit}	candle.{unit}	documented_active
+Quotation	WebSocketRequest	LIST_SUBSCRIPTIONS	method=LIST_SUBSCRIPTIONS	LIST_SUBSCRIPTIONS	documented_active
+Exchange	Http	GET	/v1/accounts	get-balance	documented_active
+Exchange	Http	GET	/v1/orders/chance	available-order-information	documented_active
+Exchange	Http	POST	/v1/orders	new-order	documented_active
+Exchange	Http	POST	/v1/orders/test	order-test	documented_active
+Exchange	Http	GET	/v1/order	get-order	documented_active
+Exchange	Http	GET	/v1/orders/uuids	list-orders-by-ids	documented_active
+Exchange	Http	GET	/v1/orders/open	list-open-orders	documented_active
+Exchange	Http	GET	/v1/orders/closed	list-closed-orders	documented_active
+Exchange	Http	DELETE	/v1/order	cancel-order	documented_active
+Exchange	Http	DELETE	/v1/orders/uuids	cancel-orders-by-ids	documented_active
+Exchange	Http	DELETE	/v1/orders/open	batch-cancel-orders	documented_active
+Exchange	Http	POST	/v1/orders/cancel_and_new	cancel-and-new-order	documented_active
+Exchange	WebSocketStream	SUBSCRIBE	type=myOrder	myOrder	documented_active
+Exchange	WebSocketStream	SUBSCRIBE	type=myAsset	myAsset	documented_active
+Deposits and withdrawals	Http	GET	/v1/status/wallet	get-service-status	documented_active
+Deposits and withdrawals	Http	GET	/v1/withdraws/chance	available-withdrawal-information	documented_active
+Deposits and withdrawals	Http	GET	/v1/withdraws/coin_addresses	list-withdrawal-addresses	documented_active
+Deposits and withdrawals	Http	POST	/v1/withdraws/coin	withdraw	documented_active
+Deposits and withdrawals	Http	GET	/v1/withdraw	get-withdrawal	documented_active
+Deposits and withdrawals	Http	GET	/v1/withdraws	list-withdrawals	documented_active
+Deposits and withdrawals	Http	DELETE	/v1/withdraws/coin	cancel-withdrawal	documented_active
+Deposits and withdrawals	Http	GET	/v1/deposits/chance/coin	available-deposit-information	documented_active
+Deposits and withdrawals	Http	POST	/v1/deposits/generate_coin_address	create-deposit-address	documented_active
+Deposits and withdrawals	Http	GET	/v1/deposits/coin_address	get-deposit-address	documented_active
+Deposits and withdrawals	Http	GET	/v1/deposits/coin_addresses	list-deposit-addresses	documented_active
+Deposits and withdrawals	Http	GET	/v1/deposit	get-deposit	documented_active
+Deposits and withdrawals	Http	GET	/v1/deposits	list-deposits	documented_active
+Travel Rule	Http	GET	/v1/travel_rule/vasps	list-travelrule-vasps	documented_active
+Travel Rule	Http	POST	/v1/travel_rule/deposit/uuid	verify-travelrule-by-uuid	documented_active
+Travel Rule	Http	POST	/v1/travel_rule/deposit/txid	verify-travelrule-by-txid	documented_active

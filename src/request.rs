@@ -2,9 +2,194 @@
 
 use rust_decimal::Decimal;
 
+use crate::error::{Error, Result};
 use crate::types::{
-    Cursor, Interval, MarginMode, Market, OrderType, Side, Size, TimeInForce, Timestamp,
+    Cursor, Interval, MarginMode, Market, Network, OrderStatus, OrderType, Side, Size, TimeInForce,
+    Timestamp, TransferDestination,
 };
+
+/// Selects one deposit address for an asset and network.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DepositAddressRequest {
+    /// Asset symbol, uppercase.
+    pub asset: String,
+    /// Canonical network.
+    pub network: Network,
+    /// Amount required by address-per-payment networks such as Lightning.
+    pub amount: Option<Decimal>,
+}
+
+impl DepositAddressRequest {
+    /// Builds a deposit-address request.
+    pub fn new(asset: impl Into<String>, network: Network) -> Self {
+        Self {
+            asset: asset.into().to_ascii_uppercase(),
+            network,
+            amount: None,
+        }
+    }
+
+    /// Sets the amount for networks that issue an address or invoice per payment.
+    #[must_use]
+    pub fn amount(mut self, amount: Decimal) -> Self {
+        self.amount = Some(amount);
+        self
+    }
+}
+
+/// A withdrawal to an exchange-issued or direct on-chain destination.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WithdrawRequest {
+    /// Asset symbol, uppercase.
+    pub asset: String,
+    /// Canonical source and destination network.
+    pub network: Network,
+    /// Amount before provider fees.
+    pub amount: Decimal,
+    /// Destination address and optional memo.
+    pub destination: TransferDestination,
+    /// Caller idempotency identifier, when the provider supports one.
+    pub client_id: Option<String>,
+}
+
+impl WithdrawRequest {
+    /// Builds a withdrawal request.
+    pub fn new(
+        asset: impl Into<String>,
+        network: Network,
+        amount: Decimal,
+        destination: TransferDestination,
+    ) -> Self {
+        Self {
+            asset: asset.into().to_ascii_uppercase(),
+            network,
+            amount,
+            destination,
+            client_id: None,
+        }
+    }
+
+    /// Sets a caller-controlled idempotency identifier.
+    #[must_use]
+    pub fn client_id(mut self, client_id: impl Into<String>) -> Self {
+        self.client_id = Some(client_id.into());
+        self
+    }
+}
+
+/// Identifies one deposit or withdrawal by the exchange UUID or transaction ID.
+///
+/// Both currently supported exchanges require the asset symbol for a precise
+/// lookup. Exactly one reference is required; this deliberately never falls
+/// back to the provider's newest transfer.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TransferLookupRequest {
+    /// Asset symbol, uppercase.
+    pub asset: String,
+    /// Exchange-issued transfer UUID, when used as the reference.
+    pub id: Option<String>,
+    /// On-chain transaction ID, when used as the reference.
+    pub tx_id: Option<String>,
+}
+
+impl TransferLookupRequest {
+    /// Looks up one transfer by its exchange-issued UUID.
+    pub fn by_id(asset: impl Into<String>, id: impl Into<String>) -> Self {
+        Self {
+            asset: asset.into().to_ascii_uppercase(),
+            id: Some(id.into()),
+            tx_id: None,
+        }
+    }
+
+    /// Looks up one transfer by its on-chain transaction ID.
+    pub fn by_tx_id(asset: impl Into<String>, tx_id: impl Into<String>) -> Self {
+        Self {
+            asset: asset.into().to_ascii_uppercase(),
+            id: None,
+            tx_id: Some(tx_id.into()),
+        }
+    }
+
+    /// Validates that this request identifies exactly one transfer.
+    pub fn validate(&self) -> Result<()> {
+        self.reference().map(|_| ())
+    }
+
+    pub(crate) fn reference(&self) -> Result<(&'static str, &str)> {
+        if self.asset.trim().is_empty() {
+            return Err(Error::invalid_request("asset", "asset must not be empty"));
+        }
+        match (&self.id, &self.tx_id) {
+            (Some(id), None) if !id.trim().is_empty() => Ok(("uuid", id)),
+            (None, Some(tx_id)) if !tx_id.trim().is_empty() => Ok(("txid", tx_id)),
+            (None, None) => Err(Error::invalid_request(
+                "reference",
+                "set either an exchange transfer ID or a transaction ID",
+            )),
+            (Some(_), Some(_)) => Err(Error::invalid_request(
+                "reference",
+                "set exactly one of the exchange transfer ID or transaction ID",
+            )),
+            (Some(_), None) => Err(Error::invalid_request(
+                "id",
+                "exchange transfer ID must not be empty",
+            )),
+            (None, Some(_)) => Err(Error::invalid_request(
+                "tx_id",
+                "transaction ID must not be empty",
+            )),
+        }
+    }
+}
+
+/// One page of deposit or withdrawal history.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct TransferHistoryRequest {
+    /// Optional asset filter.
+    pub asset: Option<String>,
+    /// Optional canonical network filter.
+    pub network: Option<Network>,
+    /// Provider cursor returned by a previous page.
+    pub cursor: Option<Cursor>,
+    /// Target page size.
+    pub limit: Option<u32>,
+}
+
+impl TransferHistoryRequest {
+    /// Starts an unfiltered history request.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Filters by asset.
+    #[must_use]
+    pub fn asset(mut self, asset: impl Into<String>) -> Self {
+        self.asset = Some(asset.into().to_ascii_uppercase());
+        self
+    }
+
+    /// Filters by network.
+    #[must_use]
+    pub fn network(mut self, network: Network) -> Self {
+        self.network = Some(network);
+        self
+    }
+
+    /// Resumes from a provider cursor.
+    #[must_use]
+    pub fn cursor(mut self, cursor: Cursor) -> Self {
+        self.cursor = Some(cursor);
+        self
+    }
+
+    /// Sets the target page size.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+}
 
 /// Which candles to read.
 ///
@@ -73,20 +258,20 @@ impl CandleRequest {
 
 /// An order to place.
 ///
-/// Build it with [`OrderRequest::market`] or [`OrderRequest::limit`], which
-/// keep price and size in step. A market order has no price, and a limit order
-/// always has one.
+/// Build it with [`OrderRequest::market`], [`OrderRequest::limit`], or
+/// [`OrderRequest::best`], which keep price and size in step. Only a limit
+/// order carries a caller-selected price.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OrderRequest {
     /// The market to trade.
     pub market: Market,
     /// Buy or sell.
     pub side: Side,
-    /// Market or limit.
+    /// Market, limit, or exchange-priced best.
     pub order_type: OrderType,
     /// How much, in base or quote terms.
     pub size: Size,
-    /// The limit price. Always `None` for market orders.
+    /// The limit price. `None` for market and best orders.
     pub price: Option<Decimal>,
     /// How long the order stays live. `None` leaves it to the exchange default.
     pub time_in_force: Option<TimeInForce>,
@@ -94,6 +279,8 @@ pub struct OrderRequest {
     ///
     /// Derivatives only. Set it with [`OrderRequest::reduce_only`].
     pub reduce_only: bool,
+    /// Caller-assigned order identifier, when the exchange supports one.
+    pub client_id: Option<String>,
 }
 
 impl OrderRequest {
@@ -107,6 +294,7 @@ impl OrderRequest {
             price: None,
             time_in_force: None,
             reduce_only: false,
+            client_id: None,
         }
     }
 
@@ -120,6 +308,24 @@ impl OrderRequest {
             price: Some(price),
             time_in_force: None,
             reduce_only: false,
+            client_id: None,
+        }
+    }
+
+    /// An order priced from the best opposing quote at submission time.
+    ///
+    /// Exchanges that support this shape require immediate-or-cancel or
+    /// fill-or-kill. The accepted size unit is exchange-specific.
+    pub fn best(market: Market, side: Side, size: Size, time_in_force: TimeInForce) -> Self {
+        Self {
+            market,
+            side,
+            order_type: OrderType::Best,
+            size,
+            price: None,
+            time_in_force: Some(time_in_force),
+            reduce_only: false,
+            client_id: None,
         }
     }
 
@@ -137,6 +343,163 @@ impl OrderRequest {
     #[must_use]
     pub fn reduce_only(mut self) -> Self {
         self.reduce_only = true;
+        self
+    }
+
+    /// Sets the caller-assigned order identifier.
+    #[must_use]
+    pub fn client_id(mut self, client_id: impl Into<String>) -> Self {
+        self.client_id = Some(client_id.into());
+        self
+    }
+}
+
+/// Which identifier namespace to use for a multi-order lookup.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum OrderIdKind {
+    /// Identifiers assigned by the exchange.
+    Exchange,
+    /// Identifiers supplied by the caller when placing orders.
+    Client,
+}
+
+/// Looks up up to 100 orders by one identifier namespace.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OrderLookupRequest {
+    /// Exchange-assigned or caller-assigned identifiers.
+    pub kind: OrderIdKind,
+    /// One to 100 identifiers. Missing orders may be omitted by the provider.
+    pub ids: Vec<String>,
+    /// Optional market filter.
+    pub market: Option<Market>,
+}
+
+impl OrderLookupRequest {
+    /// Looks up exchange-assigned order identifiers.
+    pub fn exchange(ids: impl IntoIterator<Item = impl Into<String>>) -> Self {
+        Self {
+            kind: OrderIdKind::Exchange,
+            ids: ids.into_iter().map(Into::into).collect(),
+            market: None,
+        }
+    }
+
+    /// Looks up caller-assigned order identifiers.
+    pub fn client(ids: impl IntoIterator<Item = impl Into<String>>) -> Self {
+        Self {
+            kind: OrderIdKind::Client,
+            ids: ids.into_iter().map(Into::into).collect(),
+            market: None,
+        }
+    }
+
+    /// Filters the lookup by market.
+    #[must_use]
+    pub fn market(mut self, market: Market) -> Self {
+        self.market = Some(market);
+        self
+    }
+}
+
+/// Orders to cancel by one identifier namespace.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CancelOrdersRequest {
+    /// Exchange-assigned or caller-assigned identifiers.
+    pub kind: OrderIdKind,
+    /// Identifiers to cancel. Provider batch limits differ.
+    pub ids: Vec<String>,
+}
+
+impl CancelOrdersRequest {
+    /// Cancels orders by exchange-assigned identifiers.
+    pub fn exchange(ids: impl IntoIterator<Item = impl Into<String>>) -> Self {
+        Self {
+            kind: OrderIdKind::Exchange,
+            ids: ids.into_iter().map(Into::into).collect(),
+        }
+    }
+
+    /// Cancels orders by caller-assigned identifiers.
+    pub fn client(ids: impl IntoIterator<Item = impl Into<String>>) -> Self {
+        Self {
+            kind: OrderIdKind::Client,
+            ids: ids.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+/// One newest-first page of completed or cancelled orders.
+///
+/// Leave [`OrderHistoryRequest::statuses`] empty to include both completed and
+/// cancelled orders. Providers reject any status that is not final.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct OrderHistoryRequest {
+    /// Optional market filter.
+    pub market: Option<Market>,
+    /// Final statuses to include. Empty means all final statuses.
+    pub statuses: Vec<OrderStatus>,
+    /// Oldest creation time to include.
+    pub from: Option<Timestamp>,
+    /// Newest creation-time boundary, exclusive.
+    pub to: Option<Timestamp>,
+    /// Provider cursor returned by a previous page.
+    pub cursor: Option<Cursor>,
+    /// Target page size.
+    pub limit: Option<u32>,
+}
+
+impl OrderHistoryRequest {
+    /// Starts an unfiltered final-order history request.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Filters by market.
+    #[must_use]
+    pub fn market(mut self, market: Market) -> Self {
+        self.market = Some(market);
+        self
+    }
+
+    /// Filters by one final status.
+    #[must_use]
+    pub fn status(mut self, status: OrderStatus) -> Self {
+        self.statuses = vec![status];
+        self
+    }
+
+    /// Filters by final statuses.
+    #[must_use]
+    pub fn statuses(mut self, statuses: impl IntoIterator<Item = OrderStatus>) -> Self {
+        self.statuses = statuses.into_iter().collect();
+        self
+    }
+
+    /// Sets the inclusive creation-time lower bound.
+    #[must_use]
+    pub fn from(mut self, from: Timestamp) -> Self {
+        self.from = Some(from);
+        self
+    }
+
+    /// Sets the exclusive creation-time upper bound.
+    #[must_use]
+    pub fn to(mut self, to: Timestamp) -> Self {
+        self.to = Some(to);
+        self
+    }
+
+    /// Resumes from a cursor returned by a previous page.
+    #[must_use]
+    pub fn cursor(mut self, cursor: Cursor) -> Self {
+        self.cursor = Some(cursor);
+        self
+    }
+
+    /// Sets the target page size.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
         self
     }
 }
@@ -260,7 +623,7 @@ mod tests {
     }
 
     #[test]
-    fn market_orders_carry_no_price_and_limit_orders_always_do() {
+    fn constructors_keep_price_and_client_id_in_their_explicit_fields() {
         let market_order =
             OrderRequest::market(btc_krw(), Side::Buy, Size::Quote(Decimal::from(10_000)));
         let limit_order = OrderRequest::limit(
@@ -269,11 +632,21 @@ mod tests {
             Size::Base(Decimal::new(1, 2)),
             Decimal::from(100_000_000),
         );
+        let best_order = OrderRequest::best(
+            btc_krw(),
+            Side::Buy,
+            Size::Quote(Decimal::from(10_000)),
+            TimeInForce::ImmediateOrCancel,
+        )
+        .client_id("client-1");
 
         assert_eq!(market_order.order_type, OrderType::Market);
         assert_eq!(market_order.price, None);
         assert_eq!(limit_order.order_type, OrderType::Limit);
         assert_eq!(limit_order.price, Some(Decimal::from(100_000_000)));
+        assert_eq!(best_order.order_type, OrderType::Best);
+        assert_eq!(best_order.price, None);
+        assert_eq!(best_order.client_id.as_deref(), Some("client-1"));
     }
 
     #[test]
@@ -312,5 +685,39 @@ mod tests {
         assert_eq!(leverage_only.margin_mode, None);
         assert_eq!(mode_only.leverage, None);
         assert_eq!(mode_only.margin_mode, Some(MarginMode::Isolated));
+    }
+
+    #[test]
+    fn transfer_lookup_requires_one_nonempty_reference() {
+        assert_eq!(
+            TransferLookupRequest::by_id("btc", "deposit-1")
+                .reference()
+                .expect("exchange ID"),
+            ("uuid", "deposit-1")
+        );
+        assert_eq!(
+            TransferLookupRequest::by_tx_id("btc", "tx-1")
+                .reference()
+                .expect("transaction ID"),
+            ("txid", "tx-1")
+        );
+        assert!(
+            TransferLookupRequest {
+                asset: "BTC".to_string(),
+                id: Some("deposit-1".to_string()),
+                tx_id: Some("tx-1".to_string()),
+            }
+            .reference()
+            .is_err()
+        );
+        assert!(
+            TransferLookupRequest {
+                asset: "BTC".to_string(),
+                id: None,
+                tx_id: None,
+            }
+            .validate()
+            .is_err()
+        );
     }
 }

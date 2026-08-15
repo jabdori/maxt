@@ -2,60 +2,167 @@
 
 part of 'adapters.dart';
 
+/// 다른 [Adapter] 구현에 공통 호출을 위임하는 기본 클래스입니다.
 abstract base class GeneratedNativeDelegate extends AdapterBase {
+  /// 실제 호출을 처리할 어댑터입니다.
   Future<Adapter> get delegateAdapter;
 
+  /// 거래소가 제공하는 시장 목록을 반환합니다.
   @override
   Future<List<MarketInfo>> markets(MarketKind kind) async =>
       (await delegateAdapter).markets(kind);
 
+  /// 최근 체결을 최신순으로 반환하며, `limit`은 요청할 최대 개수입니다.
   @override
   Future<List<Trade>> trades(Market market, [int? limit]) async =>
       (await delegateAdapter).trades(market, limit);
 
+  /// 호가창 스냅샷을 반환하며, `depth`는 매수·매도 각 측의 최대 단계 수입니다.
   @override
   Future<OrderBook> orderBook(Market market, [int? depth]) async =>
       (await delegateAdapter).orderBook(market, depth);
 
+  /// 한 시장의 최신 가격 요약을 반환합니다.
   @override
   Future<Ticker> ticker(Market market) async =>
       (await delegateAdapter).ticker(market);
 
+  /// [CandleRequest] 조건에 맞는 캔들을 오래된 순서로 반환합니다.
   @override
   Future<List<Candle>> candles(CandleRequest request) async =>
       (await delegateAdapter).candles(request);
 
+  /// 인증된 계정의 자산 잔고를 반환합니다.
   @override
   Future<List<Balance>> balances() async => (await delegateAdapter).balances();
 
+  /// 한 시장에서 현재 적용되는 주문 규칙을 반환합니다.
+  @override
+  Future<OrderRules> orderRules(Market market) async =>
+      (await delegateAdapter).orderRules(market);
+
+  /// 자산의 거래소별 입출금 네트워크를 반환합니다.
+  @override
+  Future<List<AssetNetwork>> assetNetworks(String asset) async =>
+      (await delegateAdapter).assetNetworks(asset);
+
+  /// 계정에 등록된 입금 주소 목록을 반환합니다.
+  @override
+  Future<List<DepositAddressEntry>> depositAddresses() async =>
+      (await delegateAdapter).depositAddresses();
+
+  /// 자산과 네트워크의 입금 주소를 조회합니다.
+  @override
+  Future<DepositAddress> depositAddress(DepositAddressRequest request) async =>
+      (await delegateAdapter).depositAddress(request);
+
+  /// 자산과 네트워크의 입금 주소 발급을 요청합니다.
+  @override
+  Future<DepositAddress> createDepositAddress(
+    DepositAddressRequest request,
+  ) async => (await delegateAdapter).createDepositAddress(request);
+
+  /// 출금 전에 수수료와 제약을 조회합니다.
+  @override
+  Future<WithdrawalQuote> prepareWithdrawal(WithdrawRequest request) async =>
+      (await delegateAdapter).prepareWithdrawal(request);
+
+  /// 출금 요청을 제출합니다. 이 메서드는 금융 쓰기 작업입니다.
+  @override
+  Future<Withdrawal> withdraw(WithdrawRequest request) async =>
+      (await delegateAdapter).withdraw(request);
+
+  /// 거래소 전송 식별자로 입금 상태를 조회합니다.
+  @override
+  Future<Deposit> deposit(TransferLookupRequest request) async =>
+      (await delegateAdapter).deposit(request);
+
+  /// 거래소 전송 식별자로 출금 상태를 조회합니다.
+  @override
+  Future<Withdrawal> withdrawal(TransferLookupRequest request) async =>
+      (await delegateAdapter).withdrawal(request);
+
+  /// 아직 취소 가능한 출금 요청을 취소합니다.
+  @override
+  Future<void> cancelWithdrawal(String withdrawalId) async =>
+      (await delegateAdapter).cancelWithdrawal(withdrawalId);
+
+  /// 페이지 단위의 입금 이력을 반환합니다.
+  @override
+  Future<Page<Deposit>> deposits(TransferHistoryRequest request) async =>
+      (await delegateAdapter).deposits(request);
+
+  /// 페이지 단위의 출금 이력을 반환합니다.
+  @override
+  Future<Page<Withdrawal>> withdrawals(TransferHistoryRequest request) async =>
+      (await delegateAdapter).withdrawals(request);
+
+  /// 열려 있는 주문을 반환합니다.
   @override
   Future<List<Order>> openOrders([Market? market]) async =>
       (await delegateAdapter).openOrders(market);
 
+  /// 거래소 주문 식별자로 한 주문을 조회합니다.
+  @override
+  Future<Order> order(Market market, String orderId) async =>
+      (await delegateAdapter).order(market, orderId);
+
+  /// 클라이언트 주문 식별자로 한 주문을 조회합니다.
+  @override
+  Future<Order> orderByClientId(Market market, String clientId) async =>
+      (await delegateAdapter).orderByClientId(market, clientId);
+
+  /// 여러 주문 식별자로 주문을 조회합니다.
+  @override
+  Future<List<Order>> ordersByIds(OrderLookupRequest request) async =>
+      (await delegateAdapter).ordersByIds(request);
+
+  /// 페이지 단위의 주문 이력을 반환합니다.
+  @override
+  Future<Page<Order>> orderHistory(OrderHistoryRequest request) async =>
+      (await delegateAdapter).orderHistory(request);
+
+  /// 주문을 제출합니다. 이 메서드는 금융 쓰기 작업입니다.
   @override
   Future<Order> placeOrder(OrderRequest request) async =>
       (await delegateAdapter).placeOrder(request);
 
+  /// 거래소 주문 식별자로 주문을 취소합니다.
   @override
-  Future<Order> cancelOrder(Market market, String orderId) async =>
+  Future<void> cancelOrder(Market market, String orderId) async =>
       (await delegateAdapter).cancelOrder(market, orderId);
 
+  /// 클라이언트 주문 식별자로 주문을 취소합니다.
+  @override
+  Future<void> cancelOrderByClientId(Market market, String clientId) async =>
+      (await delegateAdapter).cancelOrderByClientId(market, clientId);
+
+  /// 여러 주문 취소를 요청하고 항목별 결과를 반환합니다.
+  @override
+  Future<CancelOrdersResult> cancelOrders(CancelOrdersRequest request) async =>
+      (await delegateAdapter).cancelOrders(request);
+
+  /// 열려 있는 파생상품 포지션을 반환합니다.
   @override
   Future<List<Position>> positions([Market? market]) async =>
       (await delegateAdapter).positions(market);
 
+  /// 계정의 증거금 상태를 반환합니다.
   @override
   Future<MarginSummary> marginSummary() async =>
       (await delegateAdapter).marginSummary();
 
+  /// 페이지 단위의 펀딩비율 이력을 반환합니다.
   @override
   Future<Page<FundingRate>> fundingRates(HistoryRequest request) async =>
       (await delegateAdapter).fundingRates(request);
 
+  /// 페이지 단위의 실제 펀딩 지급 이력을 반환합니다.
   @override
   Future<Page<FundingPayment>> fundingPayments(HistoryRequest request) async =>
       (await delegateAdapter).fundingPayments(request);
 
+  /// 포지션의 증거금 설정을 변경합니다. 이 메서드는 금융 쓰기 작업입니다.
   @override
   Future<void> setMargin(MarginRequest request) async =>
       (await delegateAdapter).setMargin(request);

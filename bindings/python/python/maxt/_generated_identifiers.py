@@ -37,7 +37,18 @@ class Feature(str, Enum):
     TICKER_STREAM = "ticker_stream"
     CANDLE_STREAM = "candle_stream"
     BALANCES = "balances"
+    ASSET_NETWORKS = "asset_networks"
+    DEPOSIT_ADDRESSES = "deposit_addresses"
+    DEPOSIT_HISTORY = "deposit_history"
+    DEPOSIT_LOOKUP = "deposit_lookup"
+    TRAVEL_RULE = "travel_rule"
+    WITHDRAWAL_QUOTES = "withdrawal_quotes"
+    WITHDRAWALS = "withdrawals"
+    WITHDRAWAL_HISTORY = "withdrawal_history"
+    WITHDRAWAL_LOOKUP = "withdrawal_lookup"
+    WITHDRAWAL_CANCELLATION = "withdrawal_cancellation"
     OPEN_ORDERS = "open_orders"
+    ORDER_HISTORY = "order_history"
     ACCOUNT_STREAM = "account_stream"
     TRADING = "trading"
     POSITIONS = "positions"
@@ -50,7 +61,18 @@ class Feature(str, Enum):
     def needs_credentials(self) -> bool:
         return self.value in {
             "balances",
+            "asset_networks",
+            "deposit_addresses",
+            "deposit_history",
+            "deposit_lookup",
+            "travel_rule",
+            "withdrawal_quotes",
+            "withdrawals",
+            "withdrawal_history",
+            "withdrawal_lookup",
+            "withdrawal_cancellation",
             "open_orders",
+            "order_history",
             "account_stream",
             "trading",
             "positions",
@@ -99,11 +121,13 @@ class Interval(str, Enum):
     MIN1 = "min1"
     MIN3 = "min3"
     MIN5 = "min5"
+    MIN10 = "min10"
     MIN15 = "min15"
     MIN30 = "min30"
     HOUR1 = "hour1"
     HOUR2 = "hour2"
     HOUR4 = "hour4"
+    HOUR6 = "hour6"
     HOUR8 = "hour8"
     HOUR12 = "hour12"
     DAY1 = "day1"
@@ -187,9 +211,15 @@ class OrderStatus(str, Enum):
         return self.value in {"accepted", "open", "partially_filled"}
 
 
+class OrderIdKind(str, Enum):
+    EXCHANGE = "exchange"
+    CLIENT = "client"
+
+
 class OrderType(str, Enum):
     MARKET = "market"
     LIMIT = "limit"
+    BEST = "best"
 
 
 class TimeInForce(str, Enum):
@@ -211,6 +241,46 @@ class UpbitRegion(str, Enum):
     THAILAND = "thailand"
 
 
+class UpbitOrderDirection(str, Enum):
+    ASCENDING = "asc"
+    DESCENDING = "desc"
+
+
+class UpbitClosedOrderState(str, Enum):
+    DONE = "done"
+    CANCEL = "cancel"
+
+
+class UpbitSmpType(str, Enum):
+    CANCEL_MAKER = "cancel_maker"
+    CANCEL_TAKER = "cancel_taker"
+    REDUCE = "reduce"
+
+
+class UpbitKrwTwoFactorType(str, Enum):
+    KAKAO = "kakao"
+    NAVER = "naver"
+    HANA = "hana"
+
+
+class UpbitPocketTransferState(str, Enum):
+    SUBMITTED = "submitted"
+    PROCESSING = "processing"
+    DONE = "done"
+    FAILED = "failed"
+
+
+class UpbitPocketTransferDirection(str, Enum):
+    INCOMING = "in"
+    OUTGOING = "out"
+    ALL = "all"
+
+
+class UpbitPocketTransferOrder(str, Enum):
+    ASCENDING = "asc"
+    DESCENDING = "desc"
+
+
 class BithumbAlertStep(str, Enum):
     CAUTION = "caution"
     WARNING = "warning"
@@ -218,9 +288,47 @@ class BithumbAlertStep(str, Enum):
     UNKNOWN = "unknown"
 
 
+class BithumbPendingOrderState(str, Enum):
+    WAIT = "wait"
+    WATCH = "watch"
+
+
+class BithumbClosedOrderState(str, Enum):
+    DONE = "done"
+    CANCEL = "cancel"
+
+
+class BithumbOrderDirection(str, Enum):
+    ASCENDING = "asc"
+    DESCENDING = "desc"
+
+
+class BithumbOrderListState(str, Enum):
+    WAIT = "wait"
+    WATCH = "watch"
+    DONE = "done"
+    CANCEL = "cancel"
+
+
+class BithumbTwapState(str, Enum):
+    PROGRESS = "progress"
+    DONE = "done"
+    CANCEL = "cancel"
+
+
+class BithumbTwapOrderDirection(str, Enum):
+    ASCENDING = "asc"
+    DESCENDING = "desc"
+
+
 class BinanceMarket(str, Enum):
     SPOT = "spot"
     USD_M_FUTURES = "usd_m"
+
+
+class BinanceC2cTradeType(str, Enum):
+    BUY = "BUY"
+    SELL = "SELL"
 
 
 class HyperliquidLedgerKind(str, Enum):
@@ -259,6 +367,70 @@ class ExchangeErrorKind(str, Enum):
     def is_retryable(self) -> bool:
         return self.value in {"rate_limited", "unavailable"}
 
+
+class Network(str, Enum):
+    BITCOIN = "bitcoin"
+    ETHEREUM = "ethereum"
+    ARBITRUM = "arbitrum"
+    BNB_SMART_CHAIN = "bnb_smart_chain"
+    TRON = "tron"
+    SOLANA = "solana"
+    POLYGON = "polygon"
+    BASE = "base"
+    OPTIMISM = "optimism"
+    AVALANCHE_C = "avalanche_c"
+    XRP_LEDGER = "xrp_ledger"
+    STELLAR = "stellar"
+    COSMOS = "cosmos"
+    APTOS = "aptos"
+    SUI = "sui"
+    TON = "ton"
+    NEAR = "near"
+    POLKADOT = "polkadot"
+
+    @classmethod
+    def other(cls, value: str) -> Network:
+        return cls(value)
+
+    @classmethod
+    def _missing_(cls, value: object) -> Network:
+        if not isinstance(value, str):
+            raise ValueError(value)
+        member = str.__new__(cls, value)
+        member._name_ = "OTHER"
+        member._value_ = value
+        cls._value2member_map_[value] = member
+        return member
+
+
+class WithdrawalStatus(str, Enum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+    FAILED = "failed"
+    UNKNOWN = "unknown"
+
+
+class DepositStatus(str, Enum):
+    PENDING = "pending"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    UNKNOWN = "unknown"
+
+
+class TransferErrorKind(str, Enum):
+    ASSET_MISMATCH = "asset_mismatch"
+    NETWORK_MISMATCH = "network_mismatch"
+    AMBIGUOUS_NETWORK = "ambiguous_network"
+    NETWORK_UNAVAILABLE = "network_unavailable"
+    MEMO_REQUIRED = "memo_required"
+    DESTINATION_UNAVAILABLE = "destination_unavailable"
+    ADDRESS_NOT_ALLOWED = "address_not_allowed"
+    TRAVEL_RULE_REQUIRED = "travel_rule_required"
+    AMOUNT_OUT_OF_RANGE = "amount_out_of_range"
+    PLAN_EXPIRED = "plan_expired"
+
 Exchange.__module__ = "maxt.models"
 Feature.__module__ = "maxt.models"
 MarketKind.__module__ = "maxt.models"
@@ -268,14 +440,33 @@ Interval.__module__ = "maxt.models"
 Overflow.__module__ = "maxt.models"
 MarginMode.__module__ = "maxt.models"
 OrderStatus.__module__ = "maxt.models"
+OrderIdKind.__module__ = "maxt.models"
 OrderType.__module__ = "maxt.models"
 TimeInForce.__module__ = "maxt.models"
 SizeKind.__module__ = "maxt.models"
 UpbitRegion.__module__ = "maxt.models"
+UpbitOrderDirection.__module__ = "maxt.models"
+UpbitClosedOrderState.__module__ = "maxt.models"
+UpbitSmpType.__module__ = "maxt.models"
+UpbitKrwTwoFactorType.__module__ = "maxt.models"
+UpbitPocketTransferState.__module__ = "maxt.models"
+UpbitPocketTransferDirection.__module__ = "maxt.models"
+UpbitPocketTransferOrder.__module__ = "maxt.models"
 BithumbAlertStep.__module__ = "maxt.models"
+BithumbPendingOrderState.__module__ = "maxt.models"
+BithumbClosedOrderState.__module__ = "maxt.models"
+BithumbOrderDirection.__module__ = "maxt.models"
+BithumbOrderListState.__module__ = "maxt.models"
+BithumbTwapState.__module__ = "maxt.models"
+BithumbTwapOrderDirection.__module__ = "maxt.models"
 BinanceMarket.__module__ = "maxt.models"
+BinanceC2cTradeType.__module__ = "maxt.models"
 HyperliquidLedgerKind.__module__ = "maxt.models"
 ExchangeErrorKind.__module__ = "maxt._api"
+Network.__module__ = "maxt.models"
+WithdrawalStatus.__module__ = "maxt.models"
+DepositStatus.__module__ = "maxt.models"
+TransferErrorKind.__module__ = "maxt.models"
 
 __all__ = [
     "Exchange",
@@ -287,12 +478,31 @@ __all__ = [
     "Overflow",
     "MarginMode",
     "OrderStatus",
+    "OrderIdKind",
     "OrderType",
     "TimeInForce",
     "SizeKind",
     "UpbitRegion",
+    "UpbitOrderDirection",
+    "UpbitClosedOrderState",
+    "UpbitSmpType",
+    "UpbitKrwTwoFactorType",
+    "UpbitPocketTransferState",
+    "UpbitPocketTransferDirection",
+    "UpbitPocketTransferOrder",
     "BithumbAlertStep",
+    "BithumbPendingOrderState",
+    "BithumbClosedOrderState",
+    "BithumbOrderDirection",
+    "BithumbOrderListState",
+    "BithumbTwapState",
+    "BithumbTwapOrderDirection",
     "BinanceMarket",
+    "BinanceC2cTradeType",
     "HyperliquidLedgerKind",
     "ExchangeErrorKind",
+    "Network",
+    "WithdrawalStatus",
+    "DepositStatus",
+    "TransferErrorKind",
 ]

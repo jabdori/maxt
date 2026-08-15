@@ -118,7 +118,7 @@ class RecordingAdapter(Adapter):
         return await self._record("place_order", request)
 
     async def cancel_order(self, market, order_id):
-        return await self._record("cancel_order", market, order_id)
+        await self._record("cancel_order", market, order_id)
 
     async def margin_summary(self):
         return await self._record("margin_summary")
@@ -210,7 +210,7 @@ class ClientContractTests(unittest.IsolatedAsyncioTestCase):
             "subscribe_account",
         )
         self.assertEqual(await client.place_order(request), "place_order")
-        self.assertEqual(await client.cancel_order(market, "42"), "cancel_order")
+        self.assertIsNone(await client.cancel_order(market, "42"))
         self.assertEqual(await client.margin_summary(), "margin_summary")
         self.assertEqual(await client.funding_rates(request), "funding_rates")
         self.assertEqual(await client.funding_payments(request), "funding_payments")

@@ -2,10 +2,13 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use maxt::{
-    AccountStream, Adapter, Balance, BoxFuture, Candle, CandleRequest, Exchange, Feature,
-    FundingPayment, FundingRate, HistoryRequest, MarginRequest, MarginSummary, Market, MarketInfo,
-    MarketKind, MarketStream, Order, OrderBook, OrderRequest, Page, Position, Result, StreamConfig,
-    Subscription, Ticker, Trade,
+    AccountStream, Adapter, AssetNetwork, Balance, BoxFuture, CancelOrdersRequest,
+    CancelOrdersResult, Candle, CandleRequest, Deposit, DepositAddress, DepositAddressEntry,
+    DepositAddressRequest, Exchange, Feature, FundingPayment, FundingRate, HistoryRequest,
+    MarginRequest, MarginSummary, Market, MarketInfo, MarketKind, MarketStream, Order, OrderBook,
+    OrderHistoryRequest, OrderLookupRequest, OrderRequest, OrderRules, Page, Position, Result,
+    StreamConfig, Subscription, Ticker, Trade, TransferHistoryRequest, TransferLookupRequest,
+    WithdrawRequest, Withdrawal, WithdrawalQuote,
 };
 
 use crate::{AdapterCall, AdapterReply, ForeignDispatcher};
@@ -143,6 +146,150 @@ impl Adapter for ForeignAdapter {
         )
     }
 
+    fn order_rules(&self, market: &Market) -> BoxFuture<'_, Result<OrderRules>> {
+        let future = self.dispatcher.dispatch(AdapterCall::OrderRules {
+            market: market.clone(),
+        });
+        Box::pin(async move {
+            match future.await? {
+                AdapterReply::OrderRules(value) => Ok(*value),
+                reply => Err(unexpected_reply("OrderRules", &reply)),
+            }
+        })
+    }
+
+    fn asset_networks(&self, asset: &str) -> BoxFuture<'_, Result<Vec<AssetNetwork>>> {
+        dispatch!(
+            self,
+            AdapterCall::AssetNetworks {
+                asset: asset.to_owned(),
+            },
+            AdapterReply::AssetNetworks,
+            "AssetNetworks"
+        )
+    }
+
+    fn deposit_addresses(&self) -> BoxFuture<'_, Result<Vec<DepositAddressEntry>>> {
+        dispatch!(
+            self,
+            AdapterCall::DepositAddresses,
+            AdapterReply::DepositAddresses,
+            "DepositAddresses"
+        )
+    }
+
+    fn deposit_address(
+        &self,
+        request: &DepositAddressRequest,
+    ) -> BoxFuture<'_, Result<DepositAddress>> {
+        dispatch!(
+            self,
+            AdapterCall::DepositAddress {
+                request: request.clone(),
+            },
+            AdapterReply::DepositAddress,
+            "DepositAddress"
+        )
+    }
+
+    fn create_deposit_address(
+        &self,
+        request: &DepositAddressRequest,
+    ) -> BoxFuture<'_, Result<DepositAddress>> {
+        dispatch!(
+            self,
+            AdapterCall::CreateDepositAddress {
+                request: request.clone(),
+            },
+            AdapterReply::CreateDepositAddress,
+            "CreateDepositAddress"
+        )
+    }
+
+    fn prepare_withdrawal(
+        &self,
+        request: &WithdrawRequest,
+    ) -> BoxFuture<'_, Result<WithdrawalQuote>> {
+        dispatch!(
+            self,
+            AdapterCall::PrepareWithdrawal {
+                request: request.clone(),
+            },
+            AdapterReply::WithdrawalQuote,
+            "WithdrawalQuote"
+        )
+    }
+
+    fn withdraw(&self, request: &WithdrawRequest) -> BoxFuture<'_, Result<Withdrawal>> {
+        dispatch!(
+            self,
+            AdapterCall::Withdraw {
+                request: request.clone(),
+            },
+            AdapterReply::Withdrawal,
+            "Withdrawal"
+        )
+    }
+
+    fn deposit(&self, request: &TransferLookupRequest) -> BoxFuture<'_, Result<Deposit>> {
+        dispatch!(
+            self,
+            AdapterCall::Deposit {
+                request: request.clone(),
+            },
+            AdapterReply::Deposit,
+            "Deposit"
+        )
+    }
+
+    fn withdrawal(&self, request: &TransferLookupRequest) -> BoxFuture<'_, Result<Withdrawal>> {
+        dispatch!(
+            self,
+            AdapterCall::Withdrawal {
+                request: request.clone(),
+            },
+            AdapterReply::LookupWithdrawal,
+            "LookupWithdrawal"
+        )
+    }
+
+    fn cancel_withdrawal(&self, withdrawal_id: &str) -> BoxFuture<'_, Result<()>> {
+        let future = self.dispatcher.dispatch(AdapterCall::CancelWithdrawal {
+            withdrawal_id: withdrawal_id.to_owned(),
+        });
+        Box::pin(async move {
+            match future.await? {
+                AdapterReply::Unit => Ok(()),
+                reply => Err(unexpected_reply("Unit", &reply)),
+            }
+        })
+    }
+
+    fn deposits(&self, request: &TransferHistoryRequest) -> BoxFuture<'_, Result<Page<Deposit>>> {
+        dispatch!(
+            self,
+            AdapterCall::Deposits {
+                request: request.clone(),
+            },
+            AdapterReply::Deposits,
+            "Deposits"
+        )
+    }
+
+    fn withdrawals(
+        &self,
+        request: &TransferHistoryRequest,
+    ) -> BoxFuture<'_, Result<Page<Withdrawal>>> {
+        dispatch!(
+            self,
+            AdapterCall::Withdrawals {
+                request: request.clone(),
+            },
+            AdapterReply::Withdrawals,
+            "Withdrawals"
+        )
+    }
+
     fn open_orders(&self, market: Option<&Market>) -> BoxFuture<'_, Result<Vec<Order>>> {
         dispatch!(
             self,
@@ -151,6 +298,52 @@ impl Adapter for ForeignAdapter {
             },
             AdapterReply::OpenOrders,
             "OpenOrders"
+        )
+    }
+
+    fn order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<Order>> {
+        dispatch!(
+            self,
+            AdapterCall::Order {
+                market: market.clone(),
+                order_id: order_id.to_owned(),
+            },
+            AdapterReply::Order,
+            "Order"
+        )
+    }
+
+    fn order_by_client_id(&self, market: &Market, client_id: &str) -> BoxFuture<'_, Result<Order>> {
+        dispatch!(
+            self,
+            AdapterCall::OrderByClientId {
+                market: market.clone(),
+                client_id: client_id.to_owned(),
+            },
+            AdapterReply::Order,
+            "Order"
+        )
+    }
+
+    fn orders_by_ids(&self, request: &OrderLookupRequest) -> BoxFuture<'_, Result<Vec<Order>>> {
+        dispatch!(
+            self,
+            AdapterCall::OrdersByIds {
+                request: request.clone(),
+            },
+            AdapterReply::OrdersByIds,
+            "OrdersByIds"
+        )
+    }
+
+    fn order_history(&self, request: &OrderHistoryRequest) -> BoxFuture<'_, Result<Page<Order>>> {
+        dispatch!(
+            self,
+            AdapterCall::OrderHistory {
+                request: request.clone(),
+            },
+            AdapterReply::OrderHistory,
+            "OrderHistory"
         )
     }
 
@@ -176,15 +369,49 @@ impl Adapter for ForeignAdapter {
         )
     }
 
-    fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<Order>> {
+    fn cancel_order(&self, market: &Market, order_id: &str) -> BoxFuture<'_, Result<()>> {
+        let future = self.dispatcher.dispatch(AdapterCall::CancelOrder {
+            market: market.clone(),
+            order_id: order_id.to_owned(),
+        });
+        Box::pin(async move {
+            match future.await? {
+                AdapterReply::Unit => Ok(()),
+                reply => Err(unexpected_reply("Unit", &reply)),
+            }
+        })
+    }
+
+    fn cancel_order_by_client_id(
+        &self,
+        market: &Market,
+        client_id: &str,
+    ) -> BoxFuture<'_, Result<()>> {
+        let future = self
+            .dispatcher
+            .dispatch(AdapterCall::CancelOrderByClientId {
+                market: market.clone(),
+                client_id: client_id.to_owned(),
+            });
+        Box::pin(async move {
+            match future.await? {
+                AdapterReply::Unit => Ok(()),
+                reply => Err(unexpected_reply("Unit", &reply)),
+            }
+        })
+    }
+
+    fn cancel_orders(
+        &self,
+        request: &CancelOrdersRequest,
+    ) -> BoxFuture<'_, Result<CancelOrdersResult>> {
         dispatch!(
             self,
-            AdapterCall::CancelOrder {
-                market: market.clone(),
-                order_id: order_id.to_owned(),
+            AdapterCall::CancelOrders {
+                request: request.clone(),
             },
-            AdapterReply::CancelOrder,
-            "CancelOrder"
+            AdapterReply::CancelOrdersResult,
+            "CancelOrdersResult"
         )
     }
 

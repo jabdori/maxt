@@ -202,14 +202,8 @@ impl Adapter for Fictional {
         })
     }
 
-    fn cancel_order(&self, _market: &Market, order_id: &str) -> BoxFuture<'_, Result<Order>> {
-        let id = order_id.to_string();
-        Box::pin(async move {
-            Ok(Order {
-                status: OrderStatus::Cancelled,
-                ..Self::order(&id)
-            })
-        })
+    fn cancel_order(&self, _market: &Market, _order_id: &str) -> BoxFuture<'_, Result<()>> {
+        Box::pin(async { Ok(()) })
     }
 
     fn set_margin(&self, request: &MarginRequest) -> BoxFuture<'_, Result<()>> {
@@ -400,11 +394,10 @@ async fn an_outside_adapter_can_answer_and_refuse_the_order_calls() {
         .unwrap();
     assert_eq!(placed.side, Side::Sell);
 
-    let cancelled = client
+    client
         .cancel_order(&Fictional::market(), "order-1")
         .await
         .unwrap();
-    assert_eq!(cancelled.status, OrderStatus::Cancelled);
 
     client
         .set_margin(&MarginRequest::new(Fictional::market()).leverage(Decimal::from(3)))

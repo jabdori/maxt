@@ -12,9 +12,13 @@ use crate::error::{Error, Result};
 use crate::types::{
     AccountEvent, Balance, Candle, Exchange, Interval, Level, Market, MarketEvent, MarketInfo,
     MarketKind, MarketStatus, Order, OrderBook, OrderStatus, Side, Ticker, Timestamp, Trade,
+    WithdrawalFee,
 };
 
-use super::{BithumbAlertStep, BithumbMarketAlert};
+use super::{
+    BithumbAlertStep, BithumbApiKey, BithumbAssetFee, BithumbMarketAlert, BithumbNetworkFee,
+    BithumbNotice, network_from_provider,
+};
 
 /// Exchange identifier used in adapter errors.
 pub(crate) const EXCHANGE: &str = Exchange::Bithumb.id();
@@ -40,7 +44,7 @@ pub(crate) fn native_symbol(market: &Market) -> Result<String> {
 }
 
 /// Parses a response market code, reporting malformed payloads as decode errors.
-fn market_field(value: &Value, name: &'static str) -> Result<Market> {
+pub(crate) fn market_field(value: &Value, name: &'static str) -> Result<Market> {
     let symbol = text(value, name)?;
     split_symbol(symbol)
         .ok_or_else(|| Error::decode(format!("`{name}` is not a market code: `{symbol}`")))
@@ -84,17 +88,21 @@ pub(crate) fn exchange_error(status: u16, body: &str) -> Error {
                 Some(Value::Number(name)) => name.to_string(),
                 _ => "bithumb_error".to_string(),
             };
-            Error::exchange_http(
-                EXCHANGE,
-                status,
-                code,
-                error
-                    .get("message")
-                    .and_then(Value::as_str)
-                    .unwrap_or(body)
-                    .trim()
-                    .to_string(),
-            )
+            let mut message = error
+                .get("message")
+                .and_then(Value::as_str)
+                .unwrap_or(body)
+                .trim()
+                .to_string();
+            if code == "travel_rule_consent_required" {
+                if let Some(exchange) = error.get("exchange_name").and_then(Value::as_str) {
+                    message.push_str(&format!("; exchange_name={exchange}"));
+                }
+                if let Some(url) = error.get("consent_url").and_then(Value::as_str) {
+                    message.push_str(&format!("; consent_url={url}"));
+                }
+            }
+            Error::exchange_http(EXCHANGE, status, code, message)
         }
         None => Error::exchange_http(EXCHANGE, status, "bithumb_error", body.trim().to_string()),
     }
@@ -187,7 +195,7 @@ fn millis_opt(value: &Value, name: &'static str) -> Result<Option<Timestamp>> {
 }
 
 /// Parses the side spellings used by public REST, private REST, and WebSocket.
-fn side(value: &Value, name: &'static str) -> Result<Side> {
+pub(crate) fn side(value: &Value, name: &'static str) -> Result<Side> {
     match text(value, name)? {
         "BID" | "bid" | "buy" => Ok(Side::Buy),
         "ASK" | "ask" | "sell" => Ok(Side::Sell),
@@ -267,22 +275,125 @@ pub(crate) fn market_alerts(value: &Value) -> Result<Vec<(Market, BithumbMarketA
                         "DANGER" => BithumbAlertStep::Danger,
                         _ => BithumbAlertStep::Unknown,
                     },
-                    ends_at: alert_end(text(entry, "end_date")?)?,
+                    ends_at: kst_timestamp(text(entry, "end_date")?, "end_date")?,
                 },
             ))
         })
         .collect()
 }
 
-/// Parses a zone-less KST alert expiry and converts it to UTC.
-fn alert_end(raw: &str) -> Result<Timestamp> {
+/// Parses a zone-less KST wall-clock value and converts it to UTC.
+fn kst_timestamp(raw: &str, field: &'static str) -> Result<Timestamp> {
     const KST_OFFSET_SECS: i64 = 9 * 3_600;
 
     chrono::NaiveDateTime::parse_from_str(raw, "%Y-%m-%d %H:%M:%S")
         .map(|naive| {
             Timestamp::from_secs(naive.and_utc().timestamp().saturating_sub(KST_OFFSET_SECS))
         })
-        .map_err(|err| Error::decode(format!("`end_date` is not a Korean wall clock: {err}")))
+        .map_err(|err| Error::decode(format!("`{field}` is not a Korean wall clock: {err}")))
+}
+
+/// Parses `/v1/notices`, preserving Bithumb's documented newest-first order.
+pub(crate) fn notices(value: &Value) -> Result<Vec<BithumbNotice>> {
+    entries(value)?
+        .iter()
+        .map(|entry| {
+            let categories = entries(field(entry, "categories")?)?
+                .iter()
+                .map(|category| {
+                    category
+                        .as_str()
+                        .map(str::to_owned)
+                        .ok_or_else(|| Error::decode("`categories` contains a non-string"))
+                })
+                .collect::<Result<Vec<_>>>()?;
+            Ok(BithumbNotice {
+                categories,
+                title: text(entry, "title")?.to_owned(),
+                url: text(entry, "pc_url")?.to_owned(),
+                published_at: kst_timestamp(text(entry, "published_at")?, "published_at")?,
+                modified_at: kst_timestamp(text(entry, "modified_at")?, "modified_at")?,
+            })
+        })
+        .collect()
+}
+
+/// Parses `/v1/api_keys` and keeps Bithumb's API-key identifier and expiry.
+pub(crate) fn api_keys(value: &Value) -> Result<Vec<BithumbApiKey>> {
+    entries(value)?
+        .iter()
+        .map(|entry| {
+            let access_key = text(entry, "access_key")?.to_owned();
+            if access_key.trim().is_empty() {
+                return Err(Error::decode("`access_key` must not be empty"));
+            }
+            let expires_at = offset_time(text(entry, "expire_at")?).ok_or_else(|| {
+                Error::decode("`expire_at` is not an RFC 3339 timestamp with an offset")
+            })?;
+            Ok(BithumbApiKey {
+                access_key,
+                expires_at,
+            })
+        })
+        .collect()
+}
+
+/// Parses `/v2/fee/inout/{currency}` without losing Bithumb's fee formula.
+pub(crate) fn transfer_fees(value: &Value) -> Result<Vec<BithumbAssetFee>> {
+    entries(value)?
+        .iter()
+        .map(|entry| {
+            let asset = text(entry, "currency")?.trim().to_ascii_uppercase();
+            if asset.is_empty()
+                || !asset
+                    .bytes()
+                    .all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit())
+            {
+                return Err(Error::decode("`currency` is not a Bithumb asset code"));
+            }
+            let networks = entries(field(entry, "networks")?)?
+                .iter()
+                .map(|network| {
+                    let provider_name = text(network, "net_name")?.trim().to_owned();
+                    if provider_name.is_empty() {
+                        return Err(Error::decode("`net_name` must not be empty"));
+                    }
+                    Ok(BithumbNetworkFee {
+                        network: network_from_provider(&provider_name),
+                        provider_name,
+                        deposit_fee: dec(network, "deposit_fee_quantity")?,
+                        minimum_deposit: dec(network, "deposit_minimum_quantity")?,
+                        withdrawal_fee: withdrawal_fee(network)?,
+                        minimum_withdrawal: dec(network, "withdraw_minimum_quantity")?,
+                    })
+                })
+                .collect::<Result<Vec<_>>>()?;
+            Ok(BithumbAssetFee {
+                display_name: text(entry, "name")?.to_owned(),
+                asset,
+                networks,
+            })
+        })
+        .collect()
+}
+
+fn withdrawal_fee(value: &Value) -> Result<WithdrawalFee> {
+    let fixed = dec_opt(value, "withdraw_fee_quantity")?;
+    let rate = dec_opt(value, "withdraw_rate")?;
+    match (fixed, rate) {
+        (Some(value), None) => Ok(WithdrawalFee::Fixed(value)),
+        (None, Some(rate)) => Ok(WithdrawalFee::Rate {
+            rate,
+            minimum: dec_opt(value, "withdraw_fee_min")?,
+            maximum: dec_opt(value, "withdraw_fee_max")?,
+        }),
+        (None, None) => Err(Error::decode(
+            "Bithumb transfer fee has neither a fixed amount nor a rate",
+        )),
+        (Some(_), Some(_)) => Err(Error::decode(
+            "Bithumb transfer fee has both a fixed amount and a rate",
+        )),
+    }
 }
 
 /// Parses `/v1/trades/ticks` and returns a stable newest-first order.
@@ -493,7 +604,13 @@ pub(crate) fn order(entry: &Value) -> Result<Order> {
     let remaining_quantity = dec(entry, "remaining_volume")?;
 
     Ok(Order {
-        id: text(entry, "uuid")?.to_string(),
+        id: entry
+            .get("uuid")
+            .or_else(|| entry.get("order_id"))
+            .and_then(Value::as_str)
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| Error::decode("missing `uuid` or `order_id`"))?
+            .to_string(),
         market: market_field(entry, "market")?,
         side: side(entry, "side")?,
         status: rest_order_status(text(entry, "state")?, filled_quantity),
@@ -519,14 +636,14 @@ fn rest_order_status(state: &str, filled: Decimal) -> OrderStatus {
 }
 
 /// Parses an RFC 3339 timestamp with its explicit offset.
-fn offset_time(raw: &str) -> Option<Timestamp> {
+pub(crate) fn offset_time(raw: &str) -> Option<Timestamp> {
     chrono::DateTime::parse_from_rfc3339(raw)
         .ok()
         .and_then(|parsed| parsed.timestamp_nanos_opt())
         .map(Timestamp::from_nanos)
 }
 
-/// Parses a minimal placement or cancellation acknowledgement.
+/// Parses a minimal placement acknowledgement.
 pub(crate) fn order_ack(
     entry: &Value,
     market: Market,
@@ -666,6 +783,7 @@ fn frame_error(error: &Value) -> Error {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Network;
 
     // Shape reference: https://apidocs.bithumb.com/reference/거래-대상-목록-조회.md
     const MARKET_LIST: &str = r#"[
@@ -720,6 +838,61 @@ mod tests {
         "warning_type": "DEPOSIT_AMOUNT_SUDDEN_FLUCTUATION",
         "warning_step": "DANGER",
         "end_date": "2026-07-31 07:04:59"
+      }
+    ]"#;
+
+    // Shape reference: https://apidocs.bithumb.com/reference/공지사항-조회.md
+    const NOTICES: &str = r#"[
+      {
+        "categories": ["입출금", "점검"],
+        "title": "네트워크 점검 안내",
+        "pc_url": "https://feed.bithumb.com/notice/1654458",
+        "published_at": "2026-08-11 18:00:00",
+        "modified_at": "2026-08-11 16:24:36"
+      }
+    ]"#;
+
+    // Shape reference: https://apidocs.bithumb.com/reference/입출금-수수료-조회.md
+    const TRANSFER_FEES: &str = r#"[
+      {
+        "name": "비트코인",
+        "currency": "BTC",
+        "networks": [
+          {
+            "net_name": "Bitcoin",
+            "deposit_fee_quantity": "0",
+            "deposit_minimum_quantity": "0",
+            "withdraw_fee_quantity": "0.0002",
+            "withdraw_rate": null,
+            "withdraw_fee_min": null,
+            "withdraw_fee_max": null,
+            "withdraw_minimum_quantity": "0.001"
+          }
+        ]
+      },
+      {
+        "name": "토큰",
+        "currency": "TOKEN",
+        "networks": [
+          {
+            "net_name": "Arbitrum One",
+            "deposit_fee_quantity": "0.01",
+            "deposit_minimum_quantity": "2",
+            "withdraw_fee_quantity": null,
+            "withdraw_rate": "0.01",
+            "withdraw_fee_min": "1",
+            "withdraw_fee_max": "100",
+            "withdraw_minimum_quantity": "10"
+          }
+        ]
+      }
+    ]"#;
+
+    // Shape reference: https://apidocs.bithumb.com/reference/api-키-리스트-조회.md
+    const API_KEYS: &str = r#"[
+      {
+        "access_key": "example-access-key-1",
+        "expire_at": "2027-06-11T09:00:00+09:00"
       }
     ]"#;
 
@@ -1219,6 +1392,53 @@ mod tests {
     }
 
     #[test]
+    fn notices_keep_categories_urls_and_korean_wall_clock_timestamps() {
+        let notices = notices(&parsed(NOTICES)).expect("notices parse");
+
+        assert_eq!(notices.len(), 1);
+        assert_eq!(notices[0].categories, ["입출금", "점검"]);
+        assert_eq!(notices[0].title, "네트워크 점검 안내");
+        assert_eq!(notices[0].url, "https://feed.bithumb.com/notice/1654458");
+        assert_eq!(notices[0].published_at, Timestamp::from_secs(1_786_438_800));
+        assert_eq!(notices[0].modified_at, Timestamp::from_secs(1_786_433_076));
+    }
+
+    #[test]
+    fn api_keys_keep_the_identifier_and_offset_expiry() {
+        let keys = api_keys(&parsed(API_KEYS)).expect("API keys parse");
+
+        assert_eq!(keys.len(), 1);
+        assert_eq!(keys[0].access_key, "example-access-key-1");
+        assert_eq!(keys[0].expires_at, Timestamp::from_secs(1_812_672_000));
+    }
+
+    #[test]
+    fn transfer_fees_keep_fixed_and_rate_formulae_per_network() {
+        let fees = transfer_fees(&parsed(TRANSFER_FEES)).expect("fee catalog parses");
+
+        assert_eq!(fees.len(), 2);
+        assert_eq!(fees[0].display_name, "비트코인");
+        assert_eq!(fees[0].asset, "BTC");
+        assert_eq!(fees[0].networks[0].network, Network::Bitcoin);
+        assert_eq!(fees[0].networks[0].provider_name, "Bitcoin");
+        assert_eq!(fees[0].networks[0].deposit_fee, Decimal::ZERO);
+        assert_eq!(fees[0].networks[0].minimum_withdrawal, exact("0.001"));
+        assert_eq!(
+            fees[0].networks[0].withdrawal_fee,
+            WithdrawalFee::Fixed(exact("0.0002"))
+        );
+        assert_eq!(fees[1].networks[0].network, Network::Arbitrum);
+        assert_eq!(
+            fees[1].networks[0].withdrawal_fee,
+            WithdrawalFee::Rate {
+                rate: exact("0.01"),
+                minimum: Some(Decimal::ONE),
+                maximum: Some(Decimal::from(100)),
+            }
+        );
+    }
+
+    #[test]
     fn a_market_under_two_criteria_keeps_both_rows_at_their_own_steps() {
         let alerts = market_alerts(&parsed(MARKET_ALERTS)).expect("alerts parse");
         let obsr: Vec<_> = alerts
@@ -1609,6 +1829,21 @@ mod tests {
         };
         assert_eq!(code, "404");
         assert_eq!(message, "Code not found");
+    }
+
+    #[test]
+    fn travel_rule_consent_error_preserves_the_provider_url_and_exchange() {
+        let error = exchange_error(
+            422,
+            r#"{"error":{"name":"travel_rule_consent_required","message":"동의 필요","consent_url":"https://example.bithumb.com/consent/abc","exchange_name":"Upbit"}}"#,
+        );
+
+        let Error::Exchange { code, message, .. } = error else {
+            panic!("expected an exchange error");
+        };
+        assert_eq!(code, "travel_rule_consent_required");
+        assert!(message.contains("exchange_name=Upbit"));
+        assert!(message.contains("consent_url=https://example.bithumb.com/consent/abc"));
     }
 
     #[test]

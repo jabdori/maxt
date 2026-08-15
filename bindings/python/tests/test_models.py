@@ -5,6 +5,11 @@ import maxt
 import maxt.models as maxt_models
 from maxt import (
     Balance,
+    BithumbClosedOrdersRequest,
+    CancelOrdersRequest,
+    CancelOrdersResult,
+    CancelledOrder,
+    ChainDestination,
     Candle,
     CandleRequest,
     Decimal as MaxtDecimal,
@@ -13,6 +18,11 @@ from maxt import (
     FundingPayment,
     FundingRate,
     HistoryRequest,
+    HyperliquidOpenOrder,
+    HyperliquidOrderDetail,
+    HyperliquidOrderInfo,
+    HyperliquidOrderReference,
+    HyperliquidOrderStatusResponse,
     Interval,
     Level,
     MarketEvent,
@@ -23,9 +33,17 @@ from maxt import (
     MarginSummary,
     MarginMode,
     MarginRequest,
+    Network,
     Order,
+    OrderAccount,
     OrderBook,
+    OrderHistoryRequest,
+    OrderCancelFailure,
+    OrderIdKind,
+    OrderLookupRequest,
+    OrderOption,
     OrderRequest,
+    OrderRules,
     OrderStatus,
     OrderType,
     Position,
@@ -37,17 +55,95 @@ from maxt import (
     Trade,
     Size,
     StreamConfig,
+    TransferDestination,
+    TransferHistoryRequest,
+    TravelRuleRequirement,
+    WithdrawalFee,
+    WithdrawRequest,
 )
 from maxt.models import _model_from_wire, _model_to_wire
 
 
 class WireModelTests(unittest.TestCase):
+    def test_bithumb_closed_orders_defaults_to_all_final_states(self) -> None:
+        request = BithumbClosedOrdersRequest()
+        another = BithumbClosedOrdersRequest()
+
+        self.assertIsNone(request.market)
+        self.assertIsNone(request.state)
+        self.assertEqual(request.states, [])
+        self.assertIsNot(request.states, another.states)
+
     def test_wire_conversion_helpers_are_not_public(self) -> None:
         for name in ("_model_from_wire", "_model_to_wire"):
             with self.subTest(name=name):
                 self.assertNotIn(name, maxt.__all__)
                 self.assertFalse(hasattr(maxt, name))
                 self.assertNotIn(name, maxt_models.__all__)
+
+    def test_hyperliquid_order_unions_and_models_decode_losslessly(self) -> None:
+        reference = HyperliquidOrderReference.client_order_id(
+            "0x0123456789abcdef0123456789abcdef"
+        )
+        self.assertEqual(reference.to_wire(), {
+            "kind": "client_order_id",
+            "value": "0x0123456789abcdef0123456789abcdef",
+        })
+        detail_wire = {
+            "coin": "ETH",
+            "side": "B",
+            "limit_price": "3500.2500",
+            "size": "0.1000",
+            "order_id": 42,
+            "timestamp": 1_700_000_000_000_000_013,
+            "trigger_condition": "N/A",
+            "is_trigger": False,
+            "trigger_price": "0",
+            "children_json": "[]",
+            "is_position_tpsl": False,
+            "reduce_only": True,
+            "order_type": "Limit",
+            "original_size": "0.1000",
+            "time_in_force": "Gtc",
+            "client_order_id": reference.value,
+            "raw_json": '{"oid":42}',
+        }
+        info_wire = {
+            "order": detail_wire,
+            "status": "open",
+            "status_timestamp": 1_700_000_000_000_000_014,
+            "raw_json": '{"status":"open"}',
+        }
+
+        open_order = HyperliquidOpenOrder.from_wire({
+            "coin": "ETH",
+            "limit_price": "3500.2500",
+            "order_id": 42,
+            "side": "B",
+            "size": "0.1000",
+            "timestamp": 1_700_000_000_000_000_013,
+            "raw_json": '{"coin":"ETH"}',
+        })
+        detail = HyperliquidOrderDetail.from_wire(detail_wire)
+        info = HyperliquidOrderInfo.from_wire(info_wire)
+        response = HyperliquidOrderStatusResponse.from_wire(
+            {"kind": "order", "value": info_wire}
+        )
+
+        self.assertEqual(open_order.limit_price, Decimal("3500.2500"))
+        self.assertTrue(detail.reduce_only)
+        self.assertEqual(info.order.client_order_id, reference.value)
+        self.assertEqual(response.value, info)
+        self.assertEqual(
+            HyperliquidOrderStatusResponse.from_wire({"kind": "unknown_order"}).kind,
+            "unknown_order",
+        )
+        self.assertEqual(
+            HyperliquidOrderStatusResponse.from_wire(
+                {"kind": "other", "status": "future", "raw_json": "{}"}
+            ).status,
+            "future",
+        )
 
     def test_enum_helpers_match_the_rust_value_types(self) -> None:
         self.assertEqual(
@@ -63,7 +159,18 @@ class WireModelTests(unittest.TestCase):
             {feature for feature in Feature if feature.needs_credentials()},
             {
                 Feature.BALANCES,
+                Feature.ASSET_NETWORKS,
+                Feature.DEPOSIT_ADDRESSES,
+                Feature.DEPOSIT_HISTORY,
+                Feature.DEPOSIT_LOOKUP,
+                Feature.TRAVEL_RULE,
+                Feature.WITHDRAWAL_QUOTES,
+                Feature.WITHDRAWALS,
+                Feature.WITHDRAWAL_HISTORY,
+                Feature.WITHDRAWAL_LOOKUP,
+                Feature.WITHDRAWAL_CANCELLATION,
                 Feature.OPEN_ORDERS,
+                Feature.ORDER_HISTORY,
                 Feature.ACCOUNT_STREAM,
                 Feature.TRADING,
                 Feature.POSITIONS,
@@ -89,6 +196,63 @@ class WireModelTests(unittest.TestCase):
         self.assertIs(Side.BUY.flip(), Side.SELL)
         self.assertIs(Side.SELL.flip(), Side.BUY)
 
+    def test_order_history_request_defaults_to_all_final_orders(self) -> None:
+        request = OrderHistoryRequest()
+
+        self.assertIsNone(request.market)
+        self.assertEqual(request.statuses, [])
+
+    def test_order_lookup_request_preserves_identifier_namespace(self) -> None:
+        market = Market.spot(Exchange.UPBIT, "BTC", "KRW")
+        request = OrderLookupRequest(OrderIdKind.EXCHANGE, ["order-1", "order-2"], market)
+
+        self.assertEqual(
+            request.to_wire(),
+            {
+                "kind": "exchange",
+                "ids": ["order-1", "order-2"],
+                "market": market.to_wire(),
+            },
+        )
+
+    def test_batch_cancel_models_preserve_partial_failures(self) -> None:
+        request = CancelOrdersRequest(OrderIdKind.CLIENT, ["client-1"])
+        result = CancelOrdersResult(
+            [CancelledOrder("order-1", "client-1", None, 123)],
+            [OrderCancelFailure(None, "missing-1", None, "not_found", "missing")],
+        )
+
+        self.assertEqual(request.to_wire(), {"kind": "client", "ids": ["client-1"]})
+        self.assertEqual(result.to_wire()["failed"][0]["code"], "not_found")
+
+    def test_order_rules_preserve_known_and_future_provider_options(self) -> None:
+        market = Market.spot(Exchange.UPBIT, "BTC", "KRW")
+        rules = OrderRules(
+            market,
+            "BTC/KRW",
+            MarketStatus.ACTIVE,
+            Decimal("0.001"),
+            Decimal("0.001"),
+            Decimal("0.0005"),
+            Decimal("0.0005"),
+            [Side.BUY, Side.SELL],
+            [OrderOption("limit_ioc", OrderType.LIMIT, TimeInForce.IMMEDIATE_OR_CANCEL)],
+            [OrderOption("future_order")],
+            None,
+            None,
+            Decimal("5000"),
+            Decimal("5000"),
+            Decimal("1000000000"),
+            OrderAccount(Balance("krw", Decimal("10000"), Decimal("0")), Decimal("0"), False, "KRW"),
+            OrderAccount(Balance("btc", Decimal("1"), Decimal("0")), Decimal("95000000"), False, "KRW"),
+        )
+
+        wire = rules.to_wire()
+        self.assertEqual(wire["quote_account"]["balance"]["asset"], "KRW")
+        self.assertEqual(wire["buy_options"][0]["time_in_force"], "immediate_or_cancel")
+        self.assertIsNone(wire["sell_options"][0]["order_type"])
+        self.assertIsNone(wire["buy_price_unit"])
+
     def test_intervals_report_fixed_lengths_and_advance_without_overflow(self) -> None:
         self.assertEqual(
             {interval: interval.as_secs() for interval in Interval},
@@ -97,11 +261,13 @@ class WireModelTests(unittest.TestCase):
                 Interval.MIN1: 60,
                 Interval.MIN3: 180,
                 Interval.MIN5: 300,
+                Interval.MIN10: 600,
                 Interval.MIN15: 900,
                 Interval.MIN30: 1_800,
                 Interval.HOUR1: 3_600,
                 Interval.HOUR2: 7_200,
                 Interval.HOUR4: 14_400,
+                Interval.HOUR6: 21_600,
                 Interval.HOUR8: 28_800,
                 Interval.HOUR12: 43_200,
                 Interval.DAY1: 86_400,
@@ -446,6 +612,13 @@ class WireModelTests(unittest.TestCase):
             Decimal("50000.2500"),
             time_in_force=TimeInForce.POST_ONLY,
         )
+        best_order = OrderRequest.best_order(
+            Market.spot(Exchange.BITHUMB, "BTC", "KRW"),
+            Side.BUY,
+            Size.quote(Decimal("10000")),
+            TimeInForce.IMMEDIATE_OR_CANCEL,
+            client_id="client-1",
+        )
         margin = MarginRequest(
             market,
             leverage=Decimal("3.0"),
@@ -463,11 +636,58 @@ class WireModelTests(unittest.TestCase):
                 "price": None,
                 "time_in_force": None,
                 "reduce_only": True,
+                "client_id": None,
             },
         )
         self.assertEqual(limit_order.to_wire()["price"], "50000.2500")
         self.assertEqual(limit_order.to_wire()["time_in_force"], "post_only")
+        self.assertEqual(best_order.to_wire()["order_type"], "best")
+        self.assertEqual(best_order.to_wire()["client_id"], "client-1")
         self.assertEqual(margin.to_wire()["leverage"], "3.0")
+
+        with self.assertRaisesRegex(ValueError, "time_in_force"):
+            OrderRequest(
+                Market.spot(Exchange.UPBIT, "BTC", "KRW"),
+                Side.BUY,
+                OrderType.BEST,
+                Size.quote(Decimal("10000")),
+            )
+
+    def test_generated_wallet_models_round_trip_tagged_values(self) -> None:
+        destination = TransferDestination.chain(
+            ChainDestination("éth", Network.ARBITRUM, "0xabc")
+        )
+        request = WithdrawRequest(
+            "eth",
+            Network.ARBITRUM,
+            Decimal("1.25"),
+            destination,
+        )
+
+        self.assertEqual(request.asset, "ETH")
+        self.assertEqual(
+            request.to_wire()["destination"],
+            {
+                "kind": "chain",
+                "value": {
+                    "asset": "éTH",
+                    "network": "arbitrum",
+                    "address": "0xabc",
+                    "memo": None,
+                },
+            },
+        )
+        history = TransferHistoryRequest(asset="btc", network=Network.other("custom"))
+        self.assertEqual(history.asset, "BTC")
+        self.assertEqual(history.network.value, "custom")
+        fee = WithdrawalFee.from_wire(
+            {"kind": "rate", "rate": "0.01", "minimum": None, "maximum": "1"}
+        )
+        self.assertEqual(fee.to_wire()["maximum"], "1")
+        self.assertEqual(
+            TravelRuleRequirement.required("https://example.test").to_wire()["kind"],
+            "required",
+        )
 
 
 if __name__ == "__main__":

@@ -1,14 +1,17 @@
 use std::collections::HashMap;
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use futures_core::Stream;
 use futures_util::StreamExt;
 use maxt::{AccountStream, Error, MarketStream};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{Value, json};
 use tokio::sync::{Mutex, OnceCell, watch};
 
-use crate::convert::{account_stream_item, market_stream_item};
+use crate::convert::{WireError, account_stream_item, market_stream_item};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -44,6 +47,25 @@ impl NativeStreamRegistry {
         stream: AccountStream,
     ) -> maxt::Result<WireStreamHandle> {
         self.insert(NativeStream::Account(stream), "account").await
+    }
+
+    /// Registers a provider-specific stream without teaching this shared
+    /// runtime about an exchange's event enum.
+    pub(crate) async fn insert_provider<S, E>(
+        &self,
+        stream: S,
+        kind: &'static str,
+        item: fn(maxt::Result<E>) -> maxt::Result<Value>,
+    ) -> maxt::Result<WireStreamHandle>
+    where
+        S: Stream<Item = maxt::Result<E>> + ProviderStreamClose + Send + Unpin + 'static,
+        E: Send + 'static,
+    {
+        self.insert(
+            NativeStream::Provider(Box::new(TypedProviderStream { stream, item })),
+            kind,
+        )
+        .await
     }
 
     async fn insert(
@@ -147,6 +169,9 @@ impl NativeSubscription {
                 item.map(market_stream_item)
                     .map(serde_json::to_value)
                     .transpose()
+                    .map_err(|error| {
+                        Error::adapter(format!("could not serialize stream item: {error}"))
+                    })
             }
             NativeStream::Account(stream) => {
                 let item = tokio::select! {
@@ -157,9 +182,18 @@ impl NativeSubscription {
                 item.map(account_stream_item)
                     .map(serde_json::to_value)
                     .transpose()
+                    .map_err(|error| {
+                        Error::adapter(format!("could not serialize stream item: {error}"))
+                    })
             }
-        }
-        .map_err(|error| Error::adapter(format!("could not serialize stream item: {error}")))?;
+            NativeStream::Provider(stream) => {
+                tokio::select! {
+                    biased;
+                    _ = closed.changed() => return Ok(None),
+                    item = stream.next() => item,
+                }
+            }
+        }?;
         if item.is_none() {
             inner.take();
         }
@@ -183,6 +217,7 @@ impl NativeSubscription {
         let result = match inner.as_mut() {
             Some(NativeStream::Market(stream)) => stream.close().await,
             Some(NativeStream::Account(stream)) => stream.close().await,
+            Some(NativeStream::Provider(stream)) => stream.close().await,
             None => Ok(()),
         };
         inner.take();
@@ -193,10 +228,72 @@ impl NativeSubscription {
 enum NativeStream {
     Market(MarketStream),
     Account(AccountStream),
+    Provider(Box<dyn ProviderStream>),
+}
+
+/// The six exchange-specific detailed stream types all share this one native
+/// lifecycle. Generated code supplies only the strongly typed event converter.
+pub(crate) trait ProviderStreamClose {
+    fn close_provider(
+        &mut self,
+    ) -> Pin<Box<dyn Future<Output = maxt::Result<()>> + Send + '_>>;
+}
+
+trait ProviderStream: Send {
+    fn next(
+        &mut self,
+    ) -> Pin<Box<dyn Future<Output = maxt::Result<Option<Value>>> + Send + '_>>;
+
+    fn close(&mut self) -> Pin<Box<dyn Future<Output = maxt::Result<()>> + Send + '_>>;
+}
+
+struct TypedProviderStream<S, E> {
+    stream: S,
+    item: fn(maxt::Result<E>) -> maxt::Result<Value>,
+}
+
+impl<S, E> ProviderStream for TypedProviderStream<S, E>
+where
+    S: Stream<Item = maxt::Result<E>> + ProviderStreamClose + Send + Unpin + 'static,
+    E: Send + 'static,
+{
+    fn next(
+        &mut self,
+    ) -> Pin<Box<dyn Future<Output = maxt::Result<Option<Value>>> + Send + '_>> {
+        Box::pin(async move {
+            match self.stream.next().await {
+                Some(item) => (self.item)(item).map(Some),
+                None => Ok(None),
+            }
+        })
+    }
+
+    fn close(&mut self) -> Pin<Box<dyn Future<Output = maxt::Result<()>> + Send + '_>> {
+        self.stream.close_provider()
+    }
+}
+
+fn error_item(error: Error) -> Value {
+    json!({"kind": "error", "error": WireError::from(error)})
+}
+
+/// Converts a typed provider event into the JSON envelope shared by all
+/// TypeScript detailed streams.
+pub(crate) fn provider_stream_item<E, W>(item: maxt::Result<E>) -> maxt::Result<Value>
+where
+    W: TryFrom<E, Error = Error> + Serialize,
+{
+    match item {
+        Ok(event) => serde_json::to_value(W::try_from(event)?)
+            .map(|event| json!({"kind": "event", "event": event}))
+            .map_err(|error| Error::adapter(format!("could not serialize provider stream item: {error}"))),
+        Err(error) => Ok(error_item(error)),
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::collections::VecDeque;
     use std::pin::Pin;
     use std::sync::Arc;
     use std::sync::atomic::{AtomicBool, Ordering};
@@ -206,9 +303,71 @@ mod tests {
     use futures_core::Stream;
     use futures_util::stream;
     use maxt::{AccountEvent, AccountStream, Error, MarketEvent, MarketStream};
+    use serde::Serialize;
     use tokio::sync::oneshot;
 
     use super::*;
+
+    struct ProviderFixture {
+        events: VecDeque<maxt::Result<String>>,
+    }
+
+    impl Stream for ProviderFixture {
+        type Item = maxt::Result<String>;
+
+        fn poll_next(
+            mut self: Pin<&mut Self>,
+            _cx: &mut Context<'_>,
+        ) -> Poll<Option<Self::Item>> {
+            Poll::Ready(self.events.pop_front())
+        }
+    }
+
+    impl ProviderStreamClose for ProviderFixture {
+        fn close_provider(
+            &mut self,
+        ) -> Pin<Box<dyn Future<Output = maxt::Result<()>> + Send + '_>> {
+            Box::pin(async { Ok(()) })
+        }
+    }
+
+    #[derive(Serialize)]
+    struct ProviderWire(String);
+
+    impl TryFrom<String> for ProviderWire {
+        type Error = Error;
+
+        fn try_from(value: String) -> Result<Self, Self::Error> {
+            Ok(Self(value))
+        }
+    }
+
+    #[tokio::test]
+    async fn generated_provider_streams_share_one_registry_lifecycle() {
+        let registry = NativeStreamRegistry::default();
+        let handle = registry
+            .insert_provider(
+                ProviderFixture {
+                    events: VecDeque::from([
+                        Ok("first".to_owned()),
+                        Err(Error::Transport {
+                            detail: "temporary".to_owned(),
+                        }),
+                        Ok("last".to_owned()),
+                    ]),
+                },
+                "provider",
+                provider_stream_item::<String, ProviderWire>,
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(handle.kind, "provider");
+        assert_eq!(registry.next(&handle.id).await.unwrap().unwrap()["kind"], "event");
+        assert_eq!(registry.next(&handle.id).await.unwrap().unwrap()["kind"], "error");
+        assert_eq!(registry.next(&handle.id).await.unwrap().unwrap()["kind"], "event");
+        assert!(registry.next(&handle.id).await.unwrap().is_none());
+    }
 
     #[tokio::test]
     async fn registry_keeps_errors_non_terminal_and_removes_natural_end() {

@@ -15,11 +15,126 @@ void _generatedProviderGuard({
   UpbitAdapter.withRegion(_generatedProviderValue<UpbitRegion>());
   upbit.region;
   upbit.orderBooks(_generatedProviderValue<List<Market>>());
+  upbit.orderBooksAtLevel(
+    _generatedProviderValue<List<Market>>(),
+    _generatedProviderValue<Decimal>(),
+  );
   upbit.tickers(_generatedProviderValue<List<Market>>());
+  upbit.tickersByQuote(_generatedProviderValue<List<String>>());
+  upbit.yearCandles(
+    _generatedProviderValue<Market>(),
+    _generatedProviderValue<Timestamp?>(),
+  );
+  upbit.orderbookInstruments(_generatedProviderValue<List<Market>>());
   upbit.marketEvents();
+  upbit.listSubscriptions(_generatedProviderValue<Subscription>());
+  upbit.testOrder(_generatedProviderValue<OrderRequest>());
+  upbit.orderDetail(_generatedProviderValue<UpbitOrderDetailRequest>());
+  upbit.closedOrders(_generatedProviderValue<UpbitClosedOrdersRequest>());
+  upbit.depositInfo(
+    _generatedProviderValue<String>(),
+    _generatedProviderValue<Network>(),
+  );
+  upbit.withdrawalAddresses();
+  upbit.travelRuleVasps();
+  upbit.verifyTravelRuleByUuid(
+    _generatedProviderValue<String>(),
+    _generatedProviderValue<String>(),
+  );
+  upbit.verifyTravelRuleByTxid(
+    _generatedProviderValue<String>(),
+    _generatedProviderValue<String>(),
+    _generatedProviderValue<String>(),
+    _generatedProviderValue<String>(),
+  );
+  upbit.batchCancelOpenOrders(
+    _generatedProviderValue<UpbitBatchCancelRequest>(),
+  );
+  upbit.cancelAndNewOrder(
+    _generatedProviderValue<UpbitCancelAndNewOrderRequest>(),
+  );
+  upbit.depositKrw(_generatedProviderValue<UpbitKrwTransferRequest>());
+  upbit.withdrawKrw(_generatedProviderValue<UpbitKrwTransferRequest>());
+  upbit.apiKeys();
+  upbit.listPockets();
+  upbit.listPocketApiKeys(_generatedProviderValue<UpbitPocketApiKeysRequest>());
+  upbit.subPocketBalances(_generatedProviderValue<String>());
+  upbit.universalTransfer(
+    _generatedProviderValue<UpbitPocketUniversalTransferRequest>(),
+  );
+  upbit.universalTransfers(_generatedProviderValue<UpbitPocketTransferQuery>());
+  upbit.subPocketTransfer(
+    _generatedProviderValue<UpbitPocketTransferRequest>(),
+  );
+  upbit.subPocketTransfers(_generatedProviderValue<UpbitPocketTransferQuery>());
+  upbit.subscribeDetailed(_generatedProviderValue<Subscription>());
+  upbit.subscribeDetailedWith(
+    _generatedProviderValue<Subscription>(),
+    _generatedProviderValue<StreamConfig>(),
+  );
+  upbit.subscribeDetailedAccount();
+  upbit.subscribeDetailedAccountWith(_generatedProviderValue<StreamConfig>());
+  upbit.testOrderDetail(_generatedProviderValue<OrderRequest>());
+  upbit.placeOrderDetail(_generatedProviderValue<OrderRequest>());
+  upbit.cancelOrderDetail(
+    _generatedProviderValue<Market>(),
+    _generatedProviderValue<String>(),
+  );
+  upbit.cancelOrderByClientIdDetail(
+    _generatedProviderValue<Market>(),
+    _generatedProviderValue<String>(),
+  );
+  upbit.ordersByIdsDetail(_generatedProviderValue<OrderLookupRequest>());
+  upbit.cancelOrdersDetail(_generatedProviderValue<CancelOrdersRequest>());
+  upbit.depositDetail(_generatedProviderValue<TransferLookupRequest>());
+  upbit.withdrawalDetail(_generatedProviderValue<TransferLookupRequest>());
+  upbit.cancelWithdrawalDetail(_generatedProviderValue<String>());
+  upbit.cancelAndNewOrderDetail(
+    _generatedProviderValue<UpbitCancelAndNewOrderRequest>(),
+  );
   BithumbAdapter();
   bithumb.marketWarnings();
   bithumb.marketAlerts();
+  bithumb.notices();
+  bithumb.transferFees(_generatedProviderValue<String>());
+  bithumb.apiKeys();
+  bithumb.krwWithdrawals(
+    _generatedProviderValue<BithumbKrwWithdrawalsRequest>(),
+  );
+  bithumb.withdrawKrw(_generatedProviderValue<BithumbKrwTransferRequest>());
+  bithumb.krwDeposits(_generatedProviderValue<BithumbKrwDepositsRequest>());
+  bithumb.depositKrw(_generatedProviderValue<BithumbKrwTransferRequest>());
+  bithumb.pendingOrders(_generatedProviderValue<BithumbPendingOrdersRequest>());
+  bithumb.closedOrders(_generatedProviderValue<BithumbClosedOrdersRequest>());
+  bithumb.batchOrders(_generatedProviderValue<BithumbBatchOrdersRequest>());
+  bithumb.twapOrders(_generatedProviderValue<BithumbTwapOrdersRequest>());
+  bithumb.createTwapOrder(_generatedProviderValue<BithumbTwapOrderRequest>());
+  bithumb.cancelTwapOrder(_generatedProviderValue<String>());
+  bithumb.withdrawalAddresses();
+  bithumb.orderDetail(_generatedProviderValue<BithumbOrderDetailRequest>());
+  bithumb.orderList(_generatedProviderValue<BithumbOrderListRequest>());
+  bithumb.orderBookSnapshot(_generatedProviderValue<Market>());
+  bithumb.subscribeDetailed(_generatedProviderValue<Subscription>());
+  bithumb.subscribeDetailedWith(
+    _generatedProviderValue<Subscription>(),
+    _generatedProviderValue<StreamConfig>(),
+  );
+  bithumb.subscribeDetailedAccount();
+  bithumb.subscribeDetailedAccountWith(_generatedProviderValue<StreamConfig>());
+  bithumb.ordersByIdsDetail(_generatedProviderValue<OrderLookupRequest>());
+  bithumb.placeOrderDetail(_generatedProviderValue<OrderRequest>());
+  bithumb.cancelOrderDetail(
+    _generatedProviderValue<Market>(),
+    _generatedProviderValue<String>(),
+  );
+  bithumb.cancelOrderByClientIdDetail(
+    _generatedProviderValue<Market>(),
+    _generatedProviderValue<String>(),
+  );
+  bithumb.cancelOrdersDetail(_generatedProviderValue<CancelOrdersRequest>());
+  bithumb.depositDetail(_generatedProviderValue<TransferLookupRequest>());
+  bithumb.withdrawalDetail(_generatedProviderValue<TransferLookupRequest>());
+  bithumb.cancelWithdrawalDetail(_generatedProviderValue<String>());
   BinanceAdapter.spot();
   BinanceAdapter.usdMFutures();
   binance.venue;
@@ -28,12 +143,108 @@ void _generatedProviderGuard({
     _generatedProviderValue<Market>(),
     _generatedProviderValue<String>(),
   );
+  binance.spotAveragePrice(_generatedProviderValue<Market>());
+  binance.spotAccountInformation();
+  binance.spotCancelAllOpenOrders(_generatedProviderValue<Market>());
+  binance.spotExchangeInfo();
+  binance.usdMAccountInformation();
+  binance.usdMExchangeInfo();
+  binance.usdMPositionInformation();
+  binance.allCoinsInformation();
+  binance.apiKeyPermissions();
+  binance.depositHistory(
+    _generatedProviderValue<BinanceDepositHistoryRequest>(),
+  );
+  binance.questionnaireRequirements();
+  binance.withdrawAddressList();
+  binance.withdrawHistory(
+    _generatedProviderValue<BinanceWithdrawHistoryRequest>(),
+  );
+  binance.markPrice(_generatedProviderValue<Market>());
+  binance.markPrices();
+  binance.openInterest(_generatedProviderValue<Market>());
+  binance.aggregateTrades(
+    _generatedProviderValue<BinanceAggregateTradesRequest>(),
+  );
+  binance.accountTrades(_generatedProviderValue<HistoryRequest>());
+  binance.c2cTradeHistory(
+    _generatedProviderValue<BinanceC2cTradeHistoryRequest>(),
+  );
+  binance.testOrder(_generatedProviderValue<BinanceTestOrderRequest>());
+  binance.cancelAllOpenOrders(_generatedProviderValue<Market>());
   binance.usdMCreateListenKey();
-  binance.usdMKeepaliveListenKey(_generatedProviderValue<BinanceListenKey>());
-  binance.usdMCloseListenKey(_generatedProviderValue<BinanceListenKey>());
+  binance.usdMKeepaliveListenKey();
+  binance.usdMCloseListenKey();
+  binance.placeOrderDetail(_generatedProviderValue<OrderRequest>());
+  binance.cancelOrderDetail(
+    _generatedProviderValue<Market>(),
+    _generatedProviderValue<String>(),
+  );
+  binance.cancelOrderByClientIdDetail(
+    _generatedProviderValue<Market>(),
+    _generatedProviderValue<String>(),
+  );
+  binance.subscribeDetailed(_generatedProviderValue<Subscription>());
+  binance.subscribeDetailedWith(
+    _generatedProviderValue<Subscription>(),
+    _generatedProviderValue<StreamConfig>(),
+  );
+  binance.subscribeDetailedAccount();
+  binance.subscribeDetailedAccountWith(_generatedProviderValue<StreamConfig>());
   HyperliquidAdapter();
   HyperliquidAdapter.testnet();
   hyperliquid.isTestnet;
+  hyperliquid.allMids();
+  hyperliquid.subscribeDetailed(_generatedProviderValue<Subscription>());
+  hyperliquid.subscribeDetailedWith(
+    _generatedProviderValue<Subscription>(),
+    _generatedProviderValue<StreamConfig>(),
+  );
+  hyperliquid.subscribeDetailedAccount();
+  hyperliquid.subscribeDetailedAccountWith(
+    _generatedProviderValue<StreamConfig>(),
+  );
+  hyperliquid.userFills(_generatedProviderValue<bool>());
+  hyperliquid.userFillsByTime(
+    _generatedProviderValue<Timestamp>(),
+    _generatedProviderValue<Timestamp?>(),
+    _generatedProviderValue<bool>(),
+  );
+  hyperliquid.basicOpenOrders();
+  hyperliquid.orderStatus(_generatedProviderValue<HyperliquidOrderReference>());
+  hyperliquid.historicalOrders();
   hyperliquid.nonFundingLedger();
   hyperliquid.assetContext(_generatedProviderValue<Market>());
+  hyperliquid.candleSnapshot(
+    _generatedProviderValue<Market>(),
+    _generatedProviderValue<String>(),
+    _generatedProviderValue<Timestamp>(),
+  );
+  hyperliquid.l2Book(_generatedProviderValue<Market>());
+  hyperliquid.recentTrades(_generatedProviderValue<Market>());
+  hyperliquid.fundingHistory(
+    _generatedProviderValue<Market>(),
+    _generatedProviderValue<Timestamp>(),
+  );
+  hyperliquid.userFunding(_generatedProviderValue<Timestamp>());
+  hyperliquid.spotClearinghouseState();
+  hyperliquid.spotMeta();
+  hyperliquid.spotMetaAndAssetContexts();
+  hyperliquid.userRateLimit();
+  hyperliquid.userRole();
+  hyperliquid.referral();
+  hyperliquid.userFees();
+  hyperliquid.portfolio();
+  hyperliquid.subAccounts();
+  hyperliquid.userVaultEquities();
+  hyperliquid.allMidsDetail();
+  hyperliquid.perpetualMeta();
+  hyperliquid.perpetualMetaAndAssetContexts();
+  hyperliquid.clearinghouseStateDetail();
+  hyperliquid.frontendOpenOrdersDetail();
+  hyperliquid.placeOrderDetail(_generatedProviderValue<OrderRequest>());
+  hyperliquid.cancelOrderDetail(
+    _generatedProviderValue<Market>(),
+    _generatedProviderValue<String>(),
+  );
 }

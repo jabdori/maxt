@@ -44,6 +44,7 @@ jobs:
       - run: cargo fmt -p maxt -p maxt-bindings-common -p maxt-bindings-codegen --check
       - run: cargo run -p maxt-bindings-codegen --no-default-features --features rust --locked -- rust --check
       - run: cargo test -p maxt-bindings-common --features codegen --test schema_inventory --locked
+      - run: cargo test -p maxt-bindings-common --features codegen --test coverage_inventory --locked
       - run: cargo clippy -p maxt -p maxt-bindings-common --all-targets --locked -- -D warnings
       - run: cargo clippy -p maxt-bindings-codegen --no-default-features --features rust --all-targets --locked -- -D warnings
       - run: cargo clippy -p maxt --lib --locked -- -D warnings -D clippy::unwrap_used -D clippy::expect_used -D clippy::panic

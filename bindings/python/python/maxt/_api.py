@@ -5,9 +5,9 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from importlib import import_module
 from inspect import isawaitable
-from typing import Any, AsyncIterator, Generic, Literal, Optional, TypeVar, Union
+from typing import Any, AsyncIterator, Generic, Literal, Optional, TypeVar, Union, cast
 
-from ._generated_identifiers import ExchangeErrorKind
+from ._generated_identifiers import ExchangeErrorKind, TransferErrorKind
 from ._generated_wire import ERROR_FIELDS
 from .models import (
     AccountEvent,
@@ -19,6 +19,8 @@ from .models import (
     FundingPayment,
     FundingRate,
     HistoryRequest,
+    HyperliquidAccountEvent,
+    HyperliquidMarketEvent,
     MarginRequest,
     MarginSummary,
     Market,
@@ -63,6 +65,15 @@ class InvalidRequestError(MaxtError):
         self.field = field
         self.detail = detail
         super().__init__(f"invalid request: `{field}`: {detail}")
+
+
+class TransferError(MaxtError):
+    kind = "transfer"
+
+    def __init__(self, transfer_kind: TransferErrorKind, detail: str) -> None:
+        self.transfer_kind = transfer_kind
+        self.detail = detail
+        super().__init__(f"transfer {transfer_kind.value}: {detail}")
 
 
 class DecodeError(MaxtError):
@@ -133,7 +144,11 @@ def _load_native() -> Any:
 def _error_from_wire(value: dict[str, Any]) -> MaxtError:
     kind_value = value.get("kind")
     kind = kind_value if isinstance(kind_value, str) else None
-    expected_fields = ERROR_FIELDS.get(kind) if kind is not None else None
+    expected_fields = (
+        cast(dict[str, dict[str, str]], ERROR_FIELDS).get(kind)
+        if kind is not None
+        else None
+    )
     if expected_fields is not None:
         present = set(value)
         if kind == "exchange" and "provider_message" in present:
@@ -150,6 +165,11 @@ def _error_from_wire(value: dict[str, Any]) -> MaxtError:
             )
     if kind == "invalid_request":
         return InvalidRequestError(value["field"], value["detail"])
+    if kind == "transfer":
+        return TransferError(
+            TransferErrorKind(value["transfer_kind"]),
+            value["detail"],
+        )
     if kind == "unsupported":
         return UnsupportedError(
             Feature(value["feature"]),
@@ -261,6 +281,18 @@ class AccountStream(AsyncStream[T]):
     pass
 
 
+class HyperliquidMarketStream(
+    MarketStream[Union[StreamEvent[HyperliquidMarketEvent], StreamError]]
+):
+    """Full-fidelity Hyperliquid market subscription."""
+
+
+class HyperliquidAccountStream(
+    AccountStream[Union[StreamEvent[HyperliquidAccountEvent], StreamError]]
+):
+    """Full-fidelity Hyperliquid account subscription."""
+
+
 from ._generated_api import _GeneratedAdapterApi, _GeneratedClientApi
 
 
@@ -337,6 +369,8 @@ __all__ = [
     "DecodeError",
     "ExchangeError",
     "ExchangeErrorKind",
+    "HyperliquidAccountStream",
+    "HyperliquidMarketStream",
     "InvalidRequestError",
     "MarketStream",
     "MaxtError",

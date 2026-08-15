@@ -15,7 +15,10 @@ use crate::types::{
     AccountEvent, Candle, Feed, Interval, Market, MarketEvent, Subscription, Timestamp,
 };
 
-use super::parse::{self, EXCHANGE, Universe};
+use super::{
+    native::{self, HyperliquidAccountEvent, HyperliquidCandleEvent, HyperliquidMarketEvent},
+    parse::{self, EXCHANGE, Universe},
+};
 
 /// Application-level heartbeat used by public and private sockets.
 /// Hyperliquid answers `{"method":"ping"}` with a `pong` channel frame.
@@ -169,6 +172,106 @@ impl Decoder {
     }
 }
 
+/// Stateful decoder for one full-fidelity public WebSocket connection.
+///
+/// It shares the common stream's candle settlement rules while retaining the
+/// native fields in every emitted event.
+#[derive(Debug, Default)]
+pub(crate) struct DetailedDecoder {
+    /// Latest forming native candle per market and interval.
+    latest: HashMap<(Market, Interval), HyperliquidCandleEvent>,
+}
+
+impl DetailedDecoder {
+    /// Decodes one public frame without narrowing provider-native fields.
+    pub(crate) fn decode(
+        &mut self,
+        frame: &str,
+        universe: &Universe,
+        at: Timestamp,
+    ) -> Result<Vec<HyperliquidMarketEvent>> {
+        let (channel, data) = split(frame)?;
+
+        Ok(match channel.as_str() {
+            "trades" => one_or_many_values(&data)
+                .iter()
+                .map(|value| {
+                    let raw = read::<parse::RawTrade>(value)?;
+                    native::stream_trade(&raw, universe, value).map(HyperliquidMarketEvent::Trade)
+                })
+                .collect::<Result<Vec<_>>>()?,
+            "l2Book" => {
+                let raw = read::<parse::RawBook>(&data)?;
+                vec![HyperliquidMarketEvent::OrderBook(
+                    native::stream_order_book(&raw, universe, &data)?,
+                )]
+            }
+            "candle" => one_or_many_values(&data)
+                .iter()
+                .map(|value| {
+                    let raw = read::<parse::RawCandle>(value)?;
+                    native::stream_candle(&raw, universe, value, at)
+                })
+                .collect::<Result<Vec<_>>>()?
+                .into_iter()
+                .flat_map(|candle| self.candle(candle))
+                .collect(),
+            "activeAssetCtx" | "activeSpotAssetCtx" => {
+                let raw: RawActiveAssetCtx = read(&data)?;
+                vec![HyperliquidMarketEvent::AssetContext(
+                    native::stream_asset_context(&raw.coin, &raw.ctx, universe, &data, at)?,
+                )]
+            }
+            "subscriptionResponse" | "pong" => Vec::new(),
+            "error" => return Err(channel_error(&data)),
+            other => {
+                return Err(Error::decode(format!(
+                    "unexpected hyperliquid channel `{other}`"
+                )));
+            }
+        })
+    }
+
+    /// Clears native candle state after a connection gap.
+    pub(crate) fn reconnected(&mut self) {
+        self.latest.clear();
+    }
+
+    fn candle(&mut self, forming: HyperliquidCandleEvent) -> Vec<HyperliquidMarketEvent> {
+        let HyperliquidCandleEvent { common, provider } = forming;
+        let forming = HyperliquidCandleEvent {
+            common: Candle {
+                closed: false,
+                ..common
+            },
+            provider,
+        };
+        let key = (forming.common.market.clone(), forming.common.interval);
+
+        let settled = match self.latest.get(&key) {
+            Some(held) if forming.common.open_time < held.common.open_time => return Vec::new(),
+            Some(held) if forming.common.open_time > held.common.open_time => {
+                let HyperliquidCandleEvent { common, provider } = held.clone();
+                Some(HyperliquidCandleEvent {
+                    common: Candle {
+                        closed: true,
+                        ..common
+                    },
+                    provider,
+                })
+            }
+            _ => None,
+        };
+        self.latest.insert(key, forming.clone());
+
+        settled
+            .into_iter()
+            .chain([forming])
+            .map(HyperliquidMarketEvent::Candle)
+            .collect()
+    }
+}
+
 /// Decodes one private frame into zero or more account events.
 pub(crate) fn decode_account(frame: &str, universe: &Universe) -> Result<Vec<AccountEvent>> {
     let (channel, data) = split(frame)?;
@@ -184,6 +287,38 @@ pub(crate) fn decode_account(frame: &str, universe: &Universe) -> Result<Vec<Acc
             .iter()
             .map(|raw| parse::balance(raw).map(AccountEvent::Balance))
             .collect::<Result<Vec<_>>>()?,
+        "subscriptionResponse" | "pong" => Vec::new(),
+        "error" => return Err(channel_error(&data)),
+        other => {
+            return Err(Error::decode(format!(
+                "unexpected hyperliquid channel `{other}`"
+            )));
+        }
+    })
+}
+
+/// Decodes one private frame without narrowing provider-native fields.
+pub(crate) fn decode_detailed_account(
+    frame: &str,
+    universe: &Universe,
+) -> Result<Vec<HyperliquidAccountEvent>> {
+    let (channel, data) = split(frame)?;
+
+    Ok(match channel.as_str() {
+        "orderUpdates" => one_or_many_values(&data)
+            .iter()
+            .map(|value| {
+                let raw = read::<parse::RawStreamOrder>(value)?;
+                native::stream_order_update(&raw, universe, value)
+                    .map(HyperliquidAccountEvent::OrderUpdate)
+            })
+            .collect::<Result<Vec<_>>>()?,
+        "spotState" => {
+            let raw = read::<parse::RawStreamSpotState>(&data)?;
+            vec![HyperliquidAccountEvent::SpotState(
+                native::stream_spot_state(&raw, &data)?,
+            )]
+        }
         "subscriptionResponse" | "pong" => Vec::new(),
         "error" => return Err(channel_error(&data)),
         other => {
@@ -226,6 +361,13 @@ fn one_or_many<T: for<'de> Deserialize<'de>>(data: &Value) -> Result<Vec<T>> {
     match data {
         Value::Array(_) => read(data),
         _ => read(data).map(|single| vec![single]),
+    }
+}
+
+fn one_or_many_values(data: &Value) -> Vec<Value> {
+    match data {
+        Value::Array(values) => values.clone(),
+        value => vec![value.clone()],
     }
 }
 
@@ -301,14 +443,14 @@ mod tests {
       "data": {
         "coin": "BTC",
         "ctx": {
-          "dayNtlVlm": "1169046.29406",
-          "prevDayPx": "15.322",
-          "markPx": "14.3161",
-          "midPx": "14.314",
-          "funding": "0.0000125",
-          "openInterest": "688.11",
-          "oraclePx": "14.325",
-          "dayBaseVlm": "81584.5"
+          "dayNtlVlm": 1169046.29406,
+          "prevDayPx": 15.322,
+          "markPx": 14.3161,
+          "midPx": 14.314,
+          "funding": 0.0000125,
+          "openInterest": 688.11,
+          "oraclePx": 14.325,
+          "dayBaseVlm": 81584.5
         }
       }
     }"#;
@@ -324,7 +466,8 @@ mod tests {
             "sz": "0.4",
             "oid": 91490942,
             "timestamp": 1681247412573,
-            "origSz": "1.0"
+            "origSz": "1.0",
+            "cloid": "0x00000000000000000000000000000001"
           },
           "status": "open",
           "statusTimestamp": 1681247412573
@@ -338,7 +481,7 @@ mod tests {
         "user": "0x14791697260e4c9a71f18484c9f997b308e59325",
         "spotState": {
           "balances": [
-            {"coin": "PURR", "token": 1, "hold": "3.0", "total": "2000.0"}
+            {"coin": "PURR", "token": 1, "hold": "3.0", "total": "2000.0", "entryNtl": "100.0"}
           ]
         }
       }
@@ -351,6 +494,15 @@ mod tests {
     /// Decodes a self-contained frame with fresh state.
     fn decode(frame: &str, universe: &Universe, at: Timestamp) -> Result<Vec<MarketEvent>> {
         Decoder::default().decode(frame, universe, at)
+    }
+
+    /// Decodes a self-contained provider stream frame with fresh state.
+    fn decode_detailed(
+        frame: &str,
+        universe: &Universe,
+        at: Timestamp,
+    ) -> Result<Vec<HyperliquidMarketEvent>> {
+        DetailedDecoder::default().decode(frame, universe, at)
     }
 
     fn subscription() -> Subscription {
@@ -632,6 +784,47 @@ mod tests {
     }
 
     #[test]
+    fn detailed_market_events_preserve_native_fields_alongside_common_projections() {
+        let universe = universe();
+
+        let events = decode_detailed(TRADES, &universe, at()).expect("a trade frame");
+        let [HyperliquidMarketEvent::Trade(trade)] = events.as_slice() else {
+            panic!("expected one detailed trade event: {events:?}");
+        };
+        assert_eq!(trade.common.market, btc_perp());
+        assert_eq!(
+            trade.provider.hash.as_deref(),
+            Some("0xa166e3fa63c25663024b03f2e0da011a00307e4017465df020210d3d432e7cb8")
+        );
+        assert_eq!(trade.provider.users.len(), 2);
+
+        let events = decode_detailed(L2_BOOK, &universe, at()).expect("an L2 frame");
+        let [HyperliquidMarketEvent::OrderBook(book)] = events.as_slice() else {
+            panic!("expected one detailed order-book event: {events:?}");
+        };
+        assert_eq!(book.common.market, btc_perp());
+        assert_eq!(book.provider.bids[0].order_count, Some(17));
+
+        let events = decode_detailed(CANDLE, &universe, at()).expect("a candle frame");
+        let [HyperliquidMarketEvent::Candle(candle)] = events.as_slice() else {
+            panic!("expected one detailed candle event: {events:?}");
+        };
+        assert!(!candle.common.closed);
+        assert_eq!(candle.provider.trade_count, Some(12));
+
+        let events = decode_detailed(ACTIVE_ASSET_CTX, &universe, at()).expect("a context frame");
+        let [HyperliquidMarketEvent::AssetContext(context)] = events.as_slice() else {
+            panic!("expected one detailed asset-context event: {events:?}");
+        };
+        assert_eq!(context.common.market, btc_perp());
+        assert_eq!(context.funding_rate, Some(Decimal::new(125, 7)));
+        assert_eq!(
+            context.day_notional_volume,
+            Some(Decimal::new(116_904_629_406, 5))
+        );
+    }
+
+    #[test]
     fn an_acknowledgement_or_a_keepalive_is_not_reported_as_market_data() {
         let universe = universe();
 
@@ -750,5 +943,34 @@ mod tests {
         assert_eq!(balance.asset, "PURR");
         assert_eq!(balance.available, Decimal::new(1_997, 0));
         assert_eq!(balance.locked, Decimal::new(3, 0));
+    }
+
+    #[test]
+    fn detailed_account_events_preserve_provider_status_and_entry_notional() {
+        let events = decode_detailed_account(ORDER_UPDATES, &universe()).expect("an order frame");
+        let [HyperliquidAccountEvent::OrderUpdate(order)] = events.as_slice() else {
+            panic!("expected one detailed order update: {events:?}");
+        };
+        assert_eq!(order.common.id, "91490942");
+        assert_eq!(order.status, "open");
+        assert_eq!(
+            order.client_order_id.as_deref(),
+            Some("0x00000000000000000000000000000001")
+        );
+        assert_eq!(
+            order.status_at,
+            Some(Timestamp::from_millis(1_681_247_412_573))
+        );
+
+        let events = decode_detailed_account(SPOT_STATE, &universe()).expect("a spot-state frame");
+        let [HyperliquidAccountEvent::SpotState(state)] = events.as_slice() else {
+            panic!("expected one detailed spot-state event: {events:?}");
+        };
+        assert_eq!(state.user, "0x14791697260e4c9a71f18484c9f997b308e59325");
+        assert_eq!(state.balances[0].common.asset, "PURR");
+        assert_eq!(
+            state.balances[0].provider.entry_notional,
+            Some(Decimal::from(100))
+        );
     }
 }

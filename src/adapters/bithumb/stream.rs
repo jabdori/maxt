@@ -5,16 +5,21 @@
 use std::time::Duration;
 
 use futures_util::StreamExt;
+use rust_decimal::Decimal;
 use serde_json::{Map, Value};
 
 use crate::error::{Error, Result};
 use crate::feature::Feature;
 use crate::stream::{AccountStream, MarketStream};
 use crate::transport::{Heartbeat, HeartbeatFrame, WsCommand, WsConnect, connect};
-use crate::types::{AccountEvent, Feed, MarketEvent, StreamConfig, Subscription};
+use crate::types::{AccountEvent, Feed, MarketEvent, StreamConfig, Subscription, Timestamp};
 
 use super::parse::{self, EXCHANGE};
-use super::{BithumbCredentials, PRIVATE_WEBSOCKET_URL, WEBSOCKET_URL, private};
+use super::{
+    BithumbAccountEvent, BithumbAccountStream, BithumbAssetEvent, BithumbCredentials,
+    BithumbMarketEvent, BithumbMarketStream, BithumbOrderBookEvent, BithumbOrderEvent,
+    BithumbTickerEvent, BithumbTradeEvent, PRIVATE_WEBSOCKET_URL, WEBSOCKET_URL, private,
+};
 
 /// Bithumb frame format with full field names.
 const FRAME_FORMAT: &str = "DEFAULT";
@@ -119,6 +124,29 @@ pub(crate) async fn subscribe(
     ))
 }
 
+/// Opens a public market-data subscription that retains Bithumb-specific fields.
+pub(crate) async fn subscribe_detailed(
+    subscription: &Subscription,
+    config: &StreamConfig,
+) -> Result<BithumbMarketStream> {
+    let session = connect(
+        WsConnect {
+            url: WEBSOCKET_URL.to_string(),
+            headers: None,
+            subscribe: WsConnect::fixed(vec![subscribe_frame(subscription, &ticket())?]),
+            heartbeat: Some(HEARTBEAT),
+        },
+        config,
+    )
+    .await?;
+    let close = session.close_handle();
+
+    Ok(BithumbMarketStream::new_with_close(
+        session.filter_map(|item| std::future::ready(detailed_market_item(item))),
+        move || async move { close.close().await },
+    ))
+}
+
 /// Builds a private connection that signs a fresh JWT for each handshake.
 fn account_connect(credentials: &BithumbCredentials, ticket: &str) -> Result<WsConnect> {
     let credentials = credentials.clone();
@@ -151,6 +179,20 @@ pub(crate) async fn subscribe_account(
     ))
 }
 
+/// Opens a private account subscription that retains Bithumb-specific fields.
+pub(crate) async fn subscribe_detailed_account(
+    credentials: &BithumbCredentials,
+    config: &StreamConfig,
+) -> Result<BithumbAccountStream> {
+    let session = connect(account_connect(credentials, &ticket())?, config).await?;
+    let close = session.close_handle();
+
+    Ok(BithumbAccountStream::new_with_close(
+        session.flat_map(|item| futures_util::stream::iter(detailed_account_items(item))),
+        move || async move { close.close().await },
+    ))
+}
+
 fn ticket() -> String {
     uuid::Uuid::new_v4().to_string()
 }
@@ -162,6 +204,18 @@ fn market_item(item: Result<WsCommand>) -> Option<Result<MarketEvent>> {
         Ok(WsCommand::Text(text)) => decode(&text).transpose(),
         Ok(WsCommand::Binary(bytes)) => match utf8(&bytes) {
             Ok(text) => decode(&text).transpose(),
+            Err(err) => Some(Err(err)),
+        },
+    }
+}
+
+fn detailed_market_item(item: Result<WsCommand>) -> Option<Result<BithumbMarketEvent>> {
+    match item {
+        Err(err) => Some(Err(err)),
+        Ok(WsCommand::Reconnected) => Some(Ok(BithumbMarketEvent::Reconnected)),
+        Ok(WsCommand::Text(text)) => decode_detailed(&text).transpose(),
+        Ok(WsCommand::Binary(bytes)) => match utf8(&bytes) {
+            Ok(text) => decode_detailed(&text).transpose(),
             Err(err) => Some(Err(err)),
         },
     }
@@ -179,6 +233,22 @@ fn account_items(item: Result<WsCommand>) -> Vec<Result<AccountEvent>> {
     }
 }
 
+fn detailed_account_items(item: Result<WsCommand>) -> Vec<Result<BithumbAccountEvent>> {
+    match item {
+        Err(err) => vec![Err(err)],
+        Ok(WsCommand::Reconnected) => vec![Ok(BithumbAccountEvent::Reconnected)],
+        Ok(WsCommand::Text(text)) => decode_detailed_account(&text)
+            .map(|events| events.into_iter().map(Ok).collect())
+            .unwrap_or_else(|err| vec![Err(err)]),
+        Ok(WsCommand::Binary(bytes)) => match utf8(&bytes) {
+            Ok(text) => decode_detailed_account(&text)
+                .map(|events| events.into_iter().map(Ok).collect())
+                .unwrap_or_else(|err| vec![Err(err)]),
+            Err(err) => vec![Err(err)],
+        },
+    }
+}
+
 /// Decodes one public frame; status frames return `Ok(None)`.
 pub(crate) fn decode(frame: &str) -> Result<Option<MarketEvent>> {
     let object = frame_object(frame)?;
@@ -187,6 +257,53 @@ pub(crate) fn decode(frame: &str) -> Result<Option<MarketEvent>> {
     }
 
     parse::market_event(&Value::Object(object))
+}
+
+/// Decodes one public frame without discarding Bithumb's provider fields.
+pub(crate) fn decode_detailed(frame: &str) -> Result<Option<BithumbMarketEvent>> {
+    let object = frame_object(frame)?;
+    if object.get("status").and_then(Value::as_str).is_some() {
+        return Ok(None);
+    }
+    let value = Value::Object(object);
+    let Some(common) = parse::market_event(&value)? else {
+        return Ok(None);
+    };
+    let raw_json = json(&value)?;
+
+    Ok(Some(match common {
+        MarketEvent::Trade(common) => BithumbMarketEvent::Trade(BithumbTradeEvent {
+            previous_closing_price: optional_decimal(&value, "prev_closing_price")?,
+            change: optional_text(&value, "change")?,
+            change_price: optional_decimal(&value, "change_price")?,
+            published_at: optional_millis(&value, "timestamp")?,
+            stream_type: optional_text(&value, "stream_type")?,
+            common,
+            raw_json,
+        }),
+        MarketEvent::OrderBook(common) => BithumbMarketEvent::OrderBook(BithumbOrderBookEvent {
+            total_ask_size: optional_decimal(&value, "total_ask_size")?,
+            total_bid_size: optional_decimal(&value, "total_bid_size")?,
+            level: optional_decimal(&value, "level")?,
+            stream_type: optional_text(&value, "stream_type")?,
+            common,
+            raw_json,
+        }),
+        MarketEvent::Ticker(common) => BithumbMarketEvent::Ticker(BithumbTickerEvent {
+            change_direction: optional_text(&value, "change")?,
+            market_state: optional_text(&value, "market_state")?,
+            trading_suspended: optional_bool(&value, "is_trading_suspended")?,
+            market_warning: optional_text(&value, "market_warning")?,
+            stream_type: optional_text(&value, "stream_type")?,
+            common,
+            raw_json,
+        }),
+        MarketEvent::Candle(_) | MarketEvent::Reconnected => {
+            return Err(Error::decode(
+                "Bithumb sent an unsupported market event for a detailed stream",
+            ));
+        }
+    }))
 }
 
 /// Decodes one private frame into zero or more account events.
@@ -201,6 +318,93 @@ pub(crate) fn decode_account(frame: &str) -> Vec<Result<AccountEvent>> {
     match events {
         Ok(events) => events.into_iter().map(Ok).collect(),
         Err(err) => vec![Err(err)],
+    }
+}
+
+/// Decodes one private frame without discarding Bithumb's provider fields.
+pub(crate) fn decode_detailed_account(frame: &str) -> Result<Vec<BithumbAccountEvent>> {
+    let object = frame_object(frame)?;
+    if object.get("status").and_then(Value::as_str).is_some() {
+        return Ok(Vec::new());
+    }
+    let value = Value::Object(object);
+    let raw_json = json(&value)?;
+
+    match value.get("type").and_then(Value::as_str) {
+        Some("myAsset") => {
+            let balances = parse::account_events(&value)?
+                .into_iter()
+                .filter_map(|event| match event {
+                    AccountEvent::Balance(balance) => Some(balance),
+                    AccountEvent::Order(_) | AccountEvent::Reconnected => None,
+                })
+                .collect();
+            Ok(vec![BithumbAccountEvent::Asset(BithumbAssetEvent {
+                asset_timestamp: optional_millis(&value, "asset_timestamp")?,
+                published_at: optional_millis(&value, "timestamp")?,
+                balances,
+                raw_json,
+            })])
+        }
+        Some("myOrder") => {
+            let mut events = parse::account_events(&value)?;
+            let Some(AccountEvent::Order(common)) = events.pop() else {
+                return Err(Error::decode("Bithumb myOrder frame carried no order"));
+            };
+            Ok(vec![BithumbAccountEvent::Order(BithumbOrderEvent {
+                client_order_id: optional_text(&value, "client_order_id")?,
+                order_type: optional_text(&value, "order_type")?,
+                state: optional_text(&value, "state")?,
+                time_in_force: optional_text(&value, "time_in_force")?,
+                order_amount: optional_decimal(&value, "order_amount")?,
+                trade_id: optional_text(&value, "trade_id")?,
+                trade_price: optional_decimal(&value, "trade_price")?,
+                trade_quantity: optional_decimal(&value, "trade_quantity")?,
+                trade_amount: optional_decimal(&value, "trade_amount")?,
+                trade_timestamp: optional_millis(&value, "trade_timestamp")?,
+                executed_amount: optional_decimal(&value, "executed_amount")?,
+                paid_fee: optional_decimal(&value, "paid_fee")?,
+                remaining_fee: optional_decimal(&value, "remaining_fee")?,
+                common,
+                raw_json,
+            })])
+        }
+        Some(_) | None => Ok(Vec::new()),
+    }
+}
+
+fn json(value: &Value) -> Result<String> {
+    serde_json::to_string(value)
+        .map_err(|err| Error::decode(format!("could not preserve Bithumb frame: {err}")))
+}
+
+fn optional_decimal(value: &Value, name: &'static str) -> Result<Option<Decimal>> {
+    match value.get(name) {
+        None | Some(Value::Null) => Ok(None),
+        Some(_) => parse::dec(value, name).map(Some),
+    }
+}
+
+fn optional_millis(value: &Value, name: &'static str) -> Result<Option<Timestamp>> {
+    match value.get(name) {
+        None | Some(Value::Null) => Ok(None),
+        Some(_) => parse::millis(value, name).map(Some),
+    }
+}
+
+fn optional_text(value: &Value, name: &'static str) -> Result<Option<String>> {
+    match value.get(name) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(text)) => Ok(Some(text.clone())),
+        Some(_) => Err(Error::decode(format!("`{name}` is not a string"))),
+    }
+}
+
+fn optional_bool(value: &Value, name: &'static str) -> Result<Option<bool>> {
+    match value.get(name) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::Bool(value)) => Ok(Some(*value)),
+        Some(_) => Err(Error::decode(format!("`{name}` is not a boolean"))),
     }
 }
 
@@ -259,6 +463,58 @@ mod tests {
       ],
       "asset_timestamp": 1727052537592,
       "timestamp": 1727052537687
+    }"#;
+
+    const ORDER_BOOK: &str = r#"{
+      "type": "orderbook",
+      "code": "KRW-BTC",
+      "total_ask_size": "3.4",
+      "total_bid_size": "5.6",
+      "level": "0",
+      "orderbook_units": [
+        { "ask_price": "101", "ask_size": "2", "bid_price": "99", "bid_size": "3" }
+      ],
+      "timestamp": 1785397747576054,
+      "stream_type": "SNAPSHOT"
+    }"#;
+
+    const TICKER: &str = r#"{
+      "type": "ticker",
+      "code": "KRW-BTC",
+      "trade_price": "100",
+      "timestamp": 1785397735276,
+      "change": "RISE",
+      "market_state": "ACTIVE",
+      "is_trading_suspended": false,
+      "market_warning": "NONE",
+      "stream_type": "REALTIME"
+    }"#;
+
+    const MY_ORDER: &str = r#"{
+      "type": "myOrder",
+      "code": "KRW-BTC",
+      "order_id": "order-1",
+      "client_order_id": "client-1",
+      "side": "buy",
+      "order_type": "limit",
+      "state": "trade",
+      "time_in_force": "post_only",
+      "order_price": "100",
+      "order_quantity": "2",
+      "order_amount": "200",
+      "order_timestamp": 1727052318074,
+      "timestamp": 1727052318369,
+      "trade_id": "trade-1",
+      "trade_price": "101",
+      "trade_quantity": "1",
+      "trade_amount": "101",
+      "trade_timestamp": 1727052318148,
+      "executed_quantity": "1",
+      "remaining_quantity": "1",
+      "executed_amount": "101",
+      "paid_fee": "0.1",
+      "remaining_fee": "0.1",
+      "future_field": "kept"
     }"#;
 
     fn credentials() -> BithumbCredentials {
@@ -441,6 +697,61 @@ mod tests {
 
         assert_eq!(events.len(), 2);
         assert!(events.iter().all(Result::is_ok));
+    }
+
+    #[test]
+    fn detailed_market_events_keep_native_fields_and_the_original_frame() {
+        let Some(BithumbMarketEvent::Trade(trade)) =
+            decode_detailed(TRADE).expect("a detailed trade frame")
+        else {
+            panic!("expected a detailed trade");
+        };
+        assert_eq!(trade.common.id.as_deref(), Some("17819173230000000"));
+        assert_eq!(trade.change.as_deref(), Some("RISE"));
+        assert!(trade.raw_json.contains("prev_closing_price"));
+
+        let Some(BithumbMarketEvent::OrderBook(book)) =
+            decode_detailed(ORDER_BOOK).expect("a detailed order book")
+        else {
+            panic!("expected a detailed order book");
+        };
+        assert_eq!(book.total_ask_size.expect("ask size").to_string(), "3.4");
+        assert_eq!(book.stream_type.as_deref(), Some("SNAPSHOT"));
+
+        let Some(BithumbMarketEvent::Ticker(ticker)) =
+            decode_detailed(TICKER).expect("a detailed ticker")
+        else {
+            panic!("expected a detailed ticker");
+        };
+        assert_eq!(ticker.market_state.as_deref(), Some("ACTIVE"));
+        assert_eq!(ticker.trading_suspended, Some(false));
+        assert!(ticker.raw_json.contains("market_warning"));
+    }
+
+    #[test]
+    fn detailed_account_events_keep_provider_metadata_and_the_original_frame() {
+        let assets = decode_detailed_account(MY_ASSET).expect("a detailed asset frame");
+        let [BithumbAccountEvent::Asset(asset)] = assets.as_slice() else {
+            panic!("expected one detailed asset event: {assets:?}");
+        };
+        assert_eq!(asset.balances.len(), 2);
+        assert_eq!(
+            asset.asset_timestamp,
+            Some(Timestamp::from_millis(1_727_052_537_592))
+        );
+
+        let orders = decode_detailed_account(MY_ORDER).expect("a detailed order frame");
+        let [BithumbAccountEvent::Order(order)] = orders.as_slice() else {
+            panic!("expected one detailed order event: {orders:?}");
+        };
+        assert_eq!(order.common.id, "order-1");
+        assert_eq!(order.client_order_id.as_deref(), Some("client-1"));
+        assert_eq!(order.trade_id.as_deref(), Some("trade-1"));
+        assert_eq!(
+            order.executed_amount.expect("executed amount").to_string(),
+            "101"
+        );
+        assert!(order.raw_json.contains("future_field"));
     }
 
     #[test]

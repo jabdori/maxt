@@ -4,6 +4,7 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import 'convert.dart';
+import 'convert/generated_models.dart';
 import 'frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
@@ -42,9 +43,85 @@ sealed class AdapterCall with _$AdapterCall {
   /// 계정 잔고를 요청합니다.
   const factory AdapterCall.balances() = AdapterCall_Balances;
 
+  /// 시장별 주문 규칙을 요청합니다.
+  const factory AdapterCall.orderRules({required WireMarket market}) =
+      AdapterCall_OrderRules;
+
+  /// 자산별 입출금 네트워크를 요청합니다.
+  const factory AdapterCall.assetNetworks({required String asset}) =
+      AdapterCall_AssetNetworks;
+
+  /// 계정의 전체 입금 주소를 요청합니다.
+  const factory AdapterCall.depositAddresses() = AdapterCall_DepositAddresses;
+
+  /// 입금 주소를 요청합니다.
+  const factory AdapterCall.depositAddress({
+    required WireDepositAddressRequest request,
+  }) = AdapterCall_DepositAddress;
+
+  /// 입금 주소 생성을 요청합니다.
+  const factory AdapterCall.createDepositAddress({
+    required WireDepositAddressRequest request,
+  }) = AdapterCall_CreateDepositAddress;
+
+  /// 출금 조건 검사를 요청합니다.
+  const factory AdapterCall.prepareWithdrawal({
+    required WireWithdrawRequest request,
+  }) = AdapterCall_PrepareWithdrawal;
+
+  /// 출금 제출을 요청합니다.
+  const factory AdapterCall.withdraw({required WireWithdrawRequest request}) =
+      AdapterCall_Withdraw;
+
+  /// 입금 조회를 요청합니다.
+  const factory AdapterCall.deposit({
+    required WireTransferLookupRequest request,
+  }) = AdapterCall_Deposit;
+
+  /// 출금 조회를 요청합니다.
+  const factory AdapterCall.withdrawal({
+    required WireTransferLookupRequest request,
+  }) = AdapterCall_Withdrawal;
+
+  /// 출금 취소를 요청합니다.
+  const factory AdapterCall.cancelWithdrawal({required String withdrawalId}) =
+      AdapterCall_CancelWithdrawal;
+
+  /// 입금 이력을 요청합니다.
+  const factory AdapterCall.deposits({
+    required WireTransferHistoryRequest request,
+  }) = AdapterCall_Deposits;
+
+  /// 출금 이력을 요청합니다.
+  const factory AdapterCall.withdrawals({
+    required WireTransferHistoryRequest request,
+  }) = AdapterCall_Withdrawals;
+
   /// 미체결 주문을 요청합니다.
   const factory AdapterCall.openOrders({WireMarket? market}) =
       AdapterCall_OpenOrders;
+
+  /// 거래소 주문 ID로 주문을 요청합니다.
+  const factory AdapterCall.order({
+    required WireMarket market,
+    required String orderId,
+  }) = AdapterCall_Order;
+
+  /// client ID로 주문을 요청합니다.
+  const factory AdapterCall.orderByClientId({
+    required WireMarket market,
+    required String clientId,
+  }) = AdapterCall_OrderByClientId;
+
+  /// 여러 주문 ID로 주문을 요청합니다.
+  const factory AdapterCall.ordersByIds({
+    required WireOrderLookupRequest request,
+  }) = AdapterCall_OrdersByIds;
+
+  /// 종료 주문 이력을 요청합니다.
+  const factory AdapterCall.orderHistory({
+    required WireOrderHistoryRequest request,
+  }) = AdapterCall_OrderHistory;
 
   /// 주문을 제출합니다.
   const factory AdapterCall.placeOrder({required WireOrderRequest request}) =
@@ -55,6 +132,17 @@ sealed class AdapterCall with _$AdapterCall {
     required WireMarket market,
     required String orderId,
   }) = AdapterCall_CancelOrder;
+
+  /// client ID로 주문을 취소합니다.
+  const factory AdapterCall.cancelOrderByClientId({
+    required WireMarket market,
+    required String clientId,
+  }) = AdapterCall_CancelOrderByClientId;
+
+  /// 여러 주문을 취소합니다.
+  const factory AdapterCall.cancelOrders({
+    required WireCancelOrdersRequest request,
+  }) = AdapterCall_CancelOrders;
 
   /// 미결제 포지션을 요청합니다.
   const factory AdapterCall.positions({WireMarket? market}) =
@@ -124,17 +212,72 @@ sealed class AdapterReply with _$AdapterReply {
   const factory AdapterReply.balances(List<WireBalance> field0) =
       AdapterReply_Balances;
 
+  /// 시장별 주문 규칙 응답입니다.
+  const factory AdapterReply.orderRules(WireOrderRules field0) =
+      AdapterReply_OrderRules;
+
+  /// 자산별 네트워크 응답입니다.
+  const factory AdapterReply.assetNetworks(List<WireAssetNetwork> field0) =
+      AdapterReply_AssetNetworks;
+
+  /// 계정의 전체 입금 주소 응답입니다.
+  const factory AdapterReply.depositAddresses(
+    List<WireDepositAddressEntry> field0,
+  ) = AdapterReply_DepositAddresses;
+
+  /// 입금 주소 응답입니다.
+  const factory AdapterReply.depositAddress(WireDepositAddress field0) =
+      AdapterReply_DepositAddress;
+
+  /// 입금 주소 생성 응답입니다.
+  const factory AdapterReply.createDepositAddress(WireDepositAddress field0) =
+      AdapterReply_CreateDepositAddress;
+
+  /// 출금 조건 응답입니다.
+  const factory AdapterReply.prepareWithdrawal(WireWithdrawalQuote field0) =
+      AdapterReply_PrepareWithdrawal;
+
+  /// 출금 접수 응답입니다.
+  const factory AdapterReply.withdraw(WireWithdrawal field0) =
+      AdapterReply_Withdraw;
+
+  /// 입금 조회 응답입니다.
+  const factory AdapterReply.deposit(WireDeposit field0) = AdapterReply_Deposit;
+
+  /// 출금 조회 응답입니다.
+  const factory AdapterReply.withdrawal(WireWithdrawal field0) =
+      AdapterReply_Withdrawal;
+
+  /// 입금 이력 응답입니다.
+  const factory AdapterReply.deposits(WireDepositPage field0) =
+      AdapterReply_Deposits;
+
+  /// 출금 이력 응답입니다.
+  const factory AdapterReply.withdrawals(WireWithdrawalPage field0) =
+      AdapterReply_Withdrawals;
+
   /// 미체결 주문 응답입니다.
   const factory AdapterReply.openOrders(List<WireOrder> field0) =
       AdapterReply_OpenOrders;
+
+  /// 단건 주문 응답입니다.
+  const factory AdapterReply.order(WireOrder field0) = AdapterReply_Order;
+
+  /// 다건 주문 응답입니다.
+  const factory AdapterReply.ordersByIds(List<WireOrder> field0) =
+      AdapterReply_OrdersByIds;
+
+  /// 종료 주문 이력 응답입니다.
+  const factory AdapterReply.orderHistory(WireOrderPage field0) =
+      AdapterReply_OrderHistory;
 
   /// 주문 제출 응답입니다.
   const factory AdapterReply.placeOrder(WireOrder field0) =
       AdapterReply_PlaceOrder;
 
-  /// 주문 취소 응답입니다.
-  const factory AdapterReply.cancelOrder(WireOrder field0) =
-      AdapterReply_CancelOrder;
+  /// 다건 주문 취소 응답입니다.
+  const factory AdapterReply.cancelOrders(WireCancelOrdersResult field0) =
+      AdapterReply_CancelOrders;
 
   /// 포지션 응답입니다.
   const factory AdapterReply.positions(List<WirePosition> field0) =
@@ -172,22 +315,46 @@ sealed class AdapterResult with _$AdapterResult {
 sealed class WireFeed with _$WireFeed {
   const WireFeed._();
 
+  /// 최근 체결 feed입니다.
   const factory WireFeed.trades() = WireFeed_Trades;
+
+  /// 호가 스냅샷 feed입니다.
   const factory WireFeed.orderBook() = WireFeed_OrderBook;
+
+  /// ticker 요약 feed입니다.
   const factory WireFeed.ticker() = WireFeed_Ticker;
+
+  /// 지정 간격의 캔들 feed입니다.
   const factory WireFeed.candles(WireInterval field0) = WireFeed_Candles;
 }
 
 /// Dart Adapter가 받을 overflow 정책입니다.
-enum WireOverflow { backpressure, dropNewest }
+enum WireOverflow {
+  /// 소비자가 따라올 때까지 producer를 대기시킵니다.
+  backpressure,
+
+  /// 버퍼가 차면 새 이벤트를 버립니다.
+  dropNewest,
+}
 
 /// Dart Adapter가 받을 owned stream 설정입니다.
 class WireStreamConfig {
+  /// 재연결 시도 횟수 제한입니다. null이면 제한하지 않습니다.
   final int? maxReconnectAttempts;
+
+  /// 첫 재연결 전 대기 시간(밀리초)입니다.
   final BigInt initialReconnectDelayMs;
+
+  /// 재연결 대기 시간의 최대값(밀리초)입니다.
   final BigInt maxReconnectDelayMs;
+
+  /// 연결이 유휴 상태로 허용되는 최대 시간(밀리초)입니다.
   final BigInt idleTimeoutMs;
+
+  /// 이벤트 버퍼 크기입니다.
   final BigInt bufferSize;
+
+  /// 버퍼가 찼을 때의 동작입니다.
   final WireOverflow overflow;
 
   const WireStreamConfig({
@@ -223,7 +390,10 @@ class WireStreamConfig {
 
 /// Dart Adapter가 받을 owned subscription입니다.
 class WireSubscription {
+  /// 하나 이상이어야 하는 대상 시장입니다.
   final List<WireMarket> markets;
+
+  /// 하나 이상이어야 하는 구독 feed입니다.
   final List<WireFeed> feeds;
 
   const WireSubscription({required this.markets, required this.feeds});

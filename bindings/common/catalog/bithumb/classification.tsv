@@ -1,0 +1,51 @@
+# Bithumb official API exposure classification
+# source_catalog: manifest.tsv
+# coverage_bridge: coverage.tsv
+# columns: official_product	interface	method	path_or_message	operation_id	lifecycle	exposure
+Quotation	Http	GET	/v1/market/all	listTradingPairs	documented_active	common_and_provider
+Quotation	Http	GET	/v1/candles/minutes/{unit}	listMinuteCandles	documented_active	common_existing
+Quotation	Http	GET	/v1/candles/days	listDayCandles	documented_active	common_existing
+Quotation	Http	GET	/v1/candles/weeks	listWeekCandles	documented_active	common_existing
+Quotation	Http	GET	/v1/candles/months	listMonthCandles	documented_active	common_existing
+Quotation	Http	GET	/v1/trades/ticks	listRecentTrades	documented_active	common_existing
+Quotation	Http	GET	/v1/ticker	getTicker	documented_active	common_existing
+Quotation	Http	GET	/v1/orderbook	getOrderBook	documented_active	common_and_provider
+Quotation	Http	GET	/v1/market/virtual_asset_warning	listMarketWarnings	documented_active	provider_typed
+Quotation	Http	GET	/v1/notices	listNotices	documented_active	provider_typed
+Quotation	Http	GET	/v2/fee/inout/{currency}	getDepositWithdrawalFee	documented_active	provider_typed
+Quotation	WebSocketStream	SUBSCRIBE	type=ticker	ticker	documented_active	common_and_provider
+Quotation	WebSocketStream	SUBSCRIBE	type=trade	trade	documented_active	common_and_provider
+Quotation	WebSocketStream	SUBSCRIBE	type=orderbook	orderbook	documented_active	common_and_provider
+Exchange	Http	GET	/v1/accounts	getAccounts	documented_active	common_existing
+Exchange	Http	GET	/v1/orders/chance	getOrderChance	documented_active	common_existing
+Exchange	Http	GET	/v1/orders	listOrders	documented_active	common_and_provider
+Exchange	Http	GET	/v1/order	getOrder	documented_active	common_and_provider
+Exchange	Http	POST	/v2/orders/search	searchOrders	documented_active	common_and_provider
+Exchange	Http	GET	/v2/orders/pending	listPendingOrders	documented_active	provider_typed
+Exchange	Http	GET	/v2/orders/history	listClosedOrders	documented_active	common_and_provider
+Exchange	Http	POST	/v2/orders	createOrder	documented_active	common_and_provider
+Exchange	Http	DELETE	/v2/order	cancelOrder	documented_active	common_and_provider
+Exchange	Http	POST	/v2/orders/batch	createBatchOrders	documented_active	provider_typed
+Exchange	Http	POST	/v2/orders/cancel	cancelBatchOrders	documented_active	common_and_provider
+Exchange	WebSocketStream	SUBSCRIBE	type=myOrder	myOrder	documented_active	common_and_provider
+Exchange	WebSocketStream	SUBSCRIBE	type=myAsset	myAsset	documented_active	common_and_provider
+Deposits and withdrawals	Http	GET	/v1/status/wallet	getWalletStatus	documented_active	common_existing
+Deposits and withdrawals	Http	GET	/v1/deposits/coin_addresses	listDepositAddresses	documented_active	common_existing
+Deposits and withdrawals	Http	GET	/v1/deposits/coin_address	getDepositAddress	documented_active	common_existing
+Deposits and withdrawals	Http	POST	/v1/deposits/generate_coin_address	createDepositAddress	documented_active	common_existing
+Deposits and withdrawals	Http	GET	/v1/withdraws/chance	getWithdrawalChance	documented_active	common_existing
+Deposits and withdrawals	Http	GET	/v1/withdraws/coin_addresses	listWithdrawalAddresses	documented_active	provider_typed
+Deposits and withdrawals	Http	POST	/v1/withdraws/coin	createCoinWithdrawal	documented_active	common_existing
+Deposits and withdrawals	Http	GET	/v1/withdraw	getWithdrawal	documented_active	common_and_provider
+Deposits and withdrawals	Http	DELETE	/v1/withdraws/coin	cancelCoinWithdrawal	documented_active	common_and_provider
+Deposits and withdrawals	Http	GET	/v1/deposits	listDeposits	documented_active	common_existing
+Deposits and withdrawals	Http	GET	/v1/deposit	getDeposit	documented_active	common_and_provider
+Deposits and withdrawals	Http	GET	/v1/withdraws	listWithdrawals	documented_active	common_existing
+Deposits and withdrawals	Http	GET	/v1/api_keys	listApiKeys	documented_active	provider_typed
+TWAP	Http	GET	/v1/twap	listTwapOrders	documented_active	provider_typed
+TWAP	Http	POST	/v1/twap	createTwapOrder	documented_active	provider_typed
+TWAP	Http	DELETE	/v1/twap	cancelTwapOrder	documented_active	provider_typed
+KRW deposits and withdrawals	Http	GET	/v1/withdraws/krw	listKrwWithdrawals	documented_active	provider_typed
+KRW deposits and withdrawals	Http	POST	/v1/withdraws/krw	createKrwWithdrawal	documented_active	provider_typed
+KRW deposits and withdrawals	Http	GET	/v1/deposits/krw	listKrwDeposits	documented_active	provider_typed
+KRW deposits and withdrawals	Http	POST	/v1/deposits/krw	createKrwDeposit	documented_active	provider_typed

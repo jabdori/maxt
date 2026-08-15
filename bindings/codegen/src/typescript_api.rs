@@ -1,5 +1,6 @@
 use maxt_bindings_common::schema::{
-    ApiType, Argument, Operation, Provider, ProviderMethod, ProviderMethodKind, Schema,
+    ApiType, Argument, ClientComposition, Operation, Provider, ProviderMethod, ProviderMethodKind,
+    Schema, uses_generated_native_provider_bridge,
 };
 
 use crate::typescript_contract::{HEADER, lower_camel};
@@ -11,7 +12,7 @@ pub(crate) fn render(schema: &Schema) -> String {
 import {{ AdapterError, MaxtError, UnsupportedError, errorFromWire, errorToWire }} from "../errors.js";
 import * as Model from "../models.js";
 import {{ ensureInitialized, getBackend }} from "../native.js";
-import {{ AccountStream, MarketStream, StreamError }} from "../stream.js";
+import {{ AccountStream, AsyncStream, HyperliquidAccountStream, HyperliquidMarketStream, MarketStream, StreamError, type StreamItem }} from "../stream.js";
 import * as Codec from "./codec.js";
 import type * as Wire from "./contract.js";
 
@@ -35,6 +36,13 @@ export interface RawNativeClient {{
                 raw_parameters(method.arguments)
             ));
         }
+    }
+    for method in schema.client_compositions {
+        output.push_str(&format!(
+            "  {}({}): Promise<unknown>;\n",
+            method.language_name,
+            raw_parameters(method.arguments)
+        ));
     }
     output.push_str(
         "  streamNext(id: string): Promise<unknown>;\n  streamClose(id: string): Promise<unknown>;\n}\n\n",
@@ -76,6 +84,7 @@ export interface RawNativeModule {
 }
 
 export interface NativeClientHandle {
+  raw(): RawNativeClient;
   exchange(): string;
   supports(feature: string): boolean;
 "#,
@@ -89,6 +98,14 @@ export interface NativeClientHandle {
                 native_result_type(operation.result, schema)
             ));
         }
+    }
+    for method in schema.client_compositions {
+        output.push_str(&format!(
+            "  {}({}): Promise<NativeOutcome<{}>>;\n",
+            method.language_name,
+            wire_parameters(method.arguments, schema),
+            native_result_type(method.result, schema)
+        ));
     }
     output.push_str("}\n\n");
     output.push_str(
@@ -119,6 +136,7 @@ export interface NativeClientHandle {
     output.push_str(JSON_BACKEND_HELPERS);
     render_json_backend(&mut output, schema);
     output.push_str(ADAPTER_STREAMS);
+    render_provider_stream_classes(&mut output, schema);
     render_adapter(&mut output, schema);
     output.push_str(CUSTOM_CALLBACKS_PREFIX);
     render_dispatch(&mut output, schema);
@@ -137,16 +155,66 @@ fn raw_handle_name(provider: &Provider) -> String {
     format!("Raw{}", provider.native_handle)
 }
 
+fn provider_stream_type(event: &str) -> String {
+    let base = event.strip_suffix("Event").unwrap_or(event);
+    if base.ends_with("Stream") {
+        base.to_owned()
+    } else {
+        format!("{base}Stream")
+    }
+}
+
+fn provider_stream_item_wire(event: &str) -> String {
+    format!("{}ItemWire", provider_stream_type(event))
+}
+
+fn generated_provider_stream_types(schema: &Schema) -> Vec<(&'static str, &'static str)> {
+    let mut entries = Vec::new();
+    for provider in schema.providers {
+        for method in provider.methods.iter().filter(|method| {
+            uses_generated_native_provider_bridge(provider.exchange, method.rust_name)
+        }) {
+            let event = match method.result {
+                ApiType::ProviderMarketStream(event) | ApiType::ProviderAccountStream(event) => {
+                    event
+                }
+                _ => continue,
+            };
+            if !entries.iter().any(|(_, existing)| *existing == event) {
+                entries.push((provider.exchange, event));
+            }
+        }
+    }
+    entries
+}
+
+fn render_provider_stream_classes(output: &mut String, schema: &Schema) {
+    for (exchange, event) in generated_provider_stream_types(schema) {
+        let stream = provider_stream_type(event);
+        output.push_str(&format!(
+            "/** Full-fidelity {exchange} subscription events. */\nexport class {stream} extends AsyncStream<StreamItem<Model.{event}>> {{}}\n\n"
+        ));
+    }
+}
+
 fn raw_parameters(arguments: &[Argument]) -> String {
     arguments
         .iter()
-        .map(|argument| format!("{}: string", argument.name))
+        .map(|argument| {
+            let ty = if matches!(argument.ty, ApiType::Client) {
+                "RawNativeClient"
+            } else {
+                "string"
+            };
+            format!("{}: {ty}", argument.name)
+        })
         .collect::<Vec<_>>()
         .join(", ")
 }
 
 fn public_type(ty: ApiType) -> String {
     match ty {
+        ApiType::Client => "Client<Adapter>".to_owned(),
         ApiType::String => "string".to_owned(),
         ApiType::Boolean => "boolean".to_owned(),
         ApiType::Number => "number".to_owned(),
@@ -154,7 +222,7 @@ fn public_type(ty: ApiType) -> String {
         ApiType::OptionalString => "string | null".to_owned(),
         ApiType::OptionalNumber => "number | null".to_owned(),
         ApiType::OptionalNamed(name) => format!("Model.{name} | null"),
-        ApiType::List(name) => format!("readonly Model.{name}[]"),
+        ApiType::List(name) => format!("readonly {}[]", named_public_type(name)),
         ApiType::PairList(left, right) => format!(
             "readonly (readonly [{}, {}])[]",
             named_public_type(left),
@@ -164,6 +232,9 @@ fn public_type(ty: ApiType) -> String {
         ApiType::Handle(name) | ApiType::HandleToken(name) => name.to_owned(),
         ApiType::MarketStream => "MarketStream".to_owned(),
         ApiType::AccountStream => "AccountStream".to_owned(),
+        ApiType::ProviderMarketStream(event) | ApiType::ProviderAccountStream(event) => {
+            provider_stream_type(event)
+        }
         ApiType::Unit => "void".to_owned(),
     }
 }
@@ -185,6 +256,9 @@ fn wire_named_type(name: &str, schema: &Schema) -> String {
     if matches!(name, "Cursor") {
         return "string".to_owned();
     }
+    if matches!(name, "Decimal") {
+        return "string".to_owned();
+    }
     if schema.has_identifier(name) {
         return "string".to_owned();
     }
@@ -193,6 +267,7 @@ fn wire_named_type(name: &str, schema: &Schema) -> String {
 
 fn wire_type(ty: ApiType, schema: &Schema) -> String {
     match ty {
+        ApiType::Client => "NativeClientHandle".to_owned(),
         ApiType::String => "string".to_owned(),
         ApiType::Boolean => "boolean".to_owned(),
         ApiType::Number => "number".to_owned(),
@@ -211,6 +286,12 @@ fn wire_type(ty: ApiType, schema: &Schema) -> String {
         ApiType::HandleToken(_) => "string".to_owned(),
         ApiType::MarketStream => "NativeStreamHandle<Wire.MarketStreamItemWire>".to_owned(),
         ApiType::AccountStream => "NativeStreamHandle<Wire.AccountStreamItemWire>".to_owned(),
+        ApiType::ProviderMarketStream(event) | ApiType::ProviderAccountStream(event) => {
+            format!(
+                "NativeStreamHandle<Wire.{}>",
+                provider_stream_item_wire(event)
+            )
+        }
         ApiType::Unit => "null".to_owned(),
     }
 }
@@ -260,6 +341,16 @@ fn render_raw_provider(output: &mut String, provider: &Provider) {
             )),
         }
     }
+    if provider.methods.iter().any(|method| {
+        matches!(
+            method.result,
+            ApiType::ProviderMarketStream(_) | ApiType::ProviderAccountStream(_)
+        )
+    }) {
+        output.push_str(
+            "  streamNext(id: string): Promise<unknown>;\n  streamClose(id: string): Promise<unknown>;\n",
+        );
+    }
     output.push_str("}\n\n");
 }
 
@@ -300,26 +391,60 @@ fn render_json_backend(output: &mut String, schema: &Schema) {
             "    {}(options) {{\n      const handle = callFactory(() => raw.{}(Codec.stringifyWire(options)));\n      return {{\n        client: () => wrapJsonClient(handle.client()),\n",
             provider.exchange, provider.native_factory
         ));
+        let has_provider_stream = provider.methods.iter().any(|method| {
+            matches!(
+                method.result,
+                ApiType::ProviderMarketStream(_) | ApiType::ProviderAccountStream(_)
+            )
+        });
+        if has_provider_stream {
+            output.push_str(
+                "        streamNext: (id: string) => handle.streamNext(Codec.stringifyWire(id)),\n        streamClose: (id: string) => handle.streamClose(Codec.stringifyWire(id)),\n",
+            );
+        }
         for method in provider.methods {
             match method.kind {
                 ProviderMethodKind::Property => output.push_str(&format!(
                     "        {}: () => handle.{}(),\n",
                     method.name, method.name
                 )),
-                ProviderMethodKind::Async => output.push_str(&format!(
-                    "        {}: ({}) => handle.{}({}) as Promise<NativeOutcome<{}>>,\n",
-                    method.name,
-                    wire_parameters(method.arguments, schema),
-                    method.name,
-                    json_arguments(method.arguments),
-                    native_result_type(method.result, schema)
-                )),
+                ProviderMethodKind::Async => {
+                    if matches!(
+                        method.result,
+                        ApiType::ProviderMarketStream(_) | ApiType::ProviderAccountStream(_)
+                    ) {
+                        let item = match method.result {
+                            ApiType::ProviderMarketStream(event)
+                            | ApiType::ProviderAccountStream(event) => {
+                                format!("Wire.{}", provider_stream_item_wire(event))
+                            }
+                            _ => unreachable!(),
+                        };
+                        output.push_str(&format!(
+                            "        async {}({}) {{\n          const outcome = await handle.{}({}) as NativeOutcome<Wire.NativeStreamReferenceWire>;\n          return outcome.ok ? {{ ok: true, value: {{\n            next: () => handle.streamNext(Codec.stringifyWire(outcome.value.id)) as Promise<NativeOutcome<{} | null>>,\n            close: () => handle.streamClose(Codec.stringifyWire(outcome.value.id)) as Promise<NativeOutcome<null>>,\n          }} }} : outcome;\n        }},\n",
+                            method.name,
+                            wire_parameters(method.arguments, schema),
+                            method.name,
+                            json_arguments(method.arguments),
+                            item
+                        ));
+                    } else {
+                        output.push_str(&format!(
+                            "        {}: ({}) => handle.{}({}) as Promise<NativeOutcome<{}>>,\n",
+                            method.name,
+                            wire_parameters(method.arguments, schema),
+                            method.name,
+                            json_arguments(method.arguments),
+                            native_result_type(method.result, schema)
+                        ));
+                    }
+                }
             }
         }
         output.push_str("      };\n    },\n");
     }
     output.push_str("  };\n}\n\n");
-    output.push_str("function wrapJsonClient(raw: RawNativeClient): NativeClientHandle {\n  const stream = <I>(reference: Wire.NativeStreamReferenceWire): NativeStreamHandle<I> => ({\n    next: () => raw.streamNext(Codec.stringifyWire(reference.id)) as Promise<NativeOutcome<I | null>>,\n    close: () => raw.streamClose(Codec.stringifyWire(reference.id)) as Promise<NativeOutcome<null>>,\n  });\n  return {\n    exchange: () => raw.exchange(),\n    supports: (feature) => raw.supports(feature),\n");
+    output.push_str("function wrapJsonClient(raw: RawNativeClient): NativeClientHandle {\n  const stream = <I>(reference: Wire.NativeStreamReferenceWire): NativeStreamHandle<I> => ({\n    next: () => raw.streamNext(Codec.stringifyWire(reference.id)) as Promise<NativeOutcome<I | null>>,\n    close: () => raw.streamClose(Codec.stringifyWire(reference.id)) as Promise<NativeOutcome<null>>,\n  });\n  return {\n    raw: () => raw,\n    exchange: () => raw.exchange(),\n    supports: (feature) => raw.supports(feature),\n");
     for operation in schema.adapter_operations {
         for method in operation.client_methods {
             let result = native_result_type(operation.result, schema);
@@ -352,13 +477,29 @@ fn render_json_backend(output: &mut String, schema: &Schema) {
             }
         }
     }
+    for method in schema.client_compositions {
+        output.push_str(&format!(
+            "    {}: ({}) => raw.{}({}) as Promise<NativeOutcome<{}>>,\n",
+            method.language_name,
+            wire_parameters(method.arguments, schema),
+            method.language_name,
+            json_arguments(method.arguments),
+            native_result_type(method.result, schema)
+        ));
+    }
     output.push_str("  };\n}\n\n");
 }
 
 fn json_arguments(arguments: &[Argument]) -> String {
     arguments
         .iter()
-        .map(|argument| format!("Codec.stringifyWire({})", argument.name))
+        .map(|argument| {
+            if matches!(argument.ty, ApiType::Client) {
+                format!("{}.raw()", argument.name)
+            } else {
+                format!("Codec.stringifyWire({})", argument.name)
+            }
+        })
         .collect::<Vec<_>>()
         .join(", ")
 }
@@ -392,10 +533,28 @@ fn dispatch_arm(operation: &Operation) -> String {
         "candles" => "        case \"candles\": return ok({ kind: \"candles\", value: (await this.adapter.candles(Codec.candleRequestFromWire(call.request))).map(Codec.candleToWire) });\n".to_owned(),
         "subscribe" => "        case \"subscribe\": { this.#streams.begin(call.stream_id); try { const value = await this.adapter.subscribe(Codec.subscriptionFromWire(call.subscription), Codec.streamConfigFromWire(call.config)); await this.#streams.register(call.stream_id, value); return ok({ kind: \"market_stream\", stream_id: call.stream_id }); } catch (error) { this.#streams.abort(call.stream_id); throw error; } }\n".to_owned(),
         "balances" => "        case \"balances\": return ok({ kind: \"balances\", value: (await this.adapter.balances()).map(Codec.balanceToWire) });\n".to_owned(),
+        "order_rules" => "        case \"order_rules\": return ok({ kind: \"order_rules\", value: Codec.orderRulesToWire(await this.adapter.orderRules(Codec.marketFromWire(call.market))) });\n".to_owned(),
+        "asset_networks" => "        case \"asset_networks\": return ok({ kind: \"asset_networks\", value: (await this.adapter.assetNetworks(call.asset)).map(Codec.assetNetworkToWire) });\n".to_owned(),
+        "deposit_addresses" => "        case \"deposit_addresses\": return ok({ kind: \"deposit_addresses\", value: (await this.adapter.depositAddresses()).map(Codec.depositAddressEntryToWire) });\n".to_owned(),
+        "deposit_address" => "        case \"deposit_address\": return ok({ kind: \"deposit_address\", value: Codec.depositAddressToWire(await this.adapter.depositAddress(Codec.depositAddressRequestFromWire(call.request))) });\n".to_owned(),
+        "create_deposit_address" => "        case \"create_deposit_address\": return ok({ kind: \"create_deposit_address\", value: Codec.depositAddressToWire(await this.adapter.createDepositAddress(Codec.depositAddressRequestFromWire(call.request))) });\n".to_owned(),
+        "prepare_withdrawal" => "        case \"prepare_withdrawal\": return ok({ kind: \"withdrawal_quote\", value: Codec.withdrawalQuoteToWire(await this.adapter.prepareWithdrawal(Codec.withdrawRequestFromWire(call.request))) });\n".to_owned(),
+        "withdraw" => "        case \"withdraw\": return ok({ kind: \"withdrawal\", value: Codec.withdrawalToWire(await this.adapter.withdraw(Codec.withdrawRequestFromWire(call.request))) });\n".to_owned(),
+        "deposit" => "        case \"deposit\": return ok({ kind: \"deposit\", value: Codec.depositToWire(await this.adapter.deposit(Codec.transferLookupRequestFromWire(call.request))) });\n".to_owned(),
+        "withdrawal" => "        case \"withdrawal\": return ok({ kind: \"withdrawal_lookup\", value: Codec.withdrawalToWire(await this.adapter.withdrawal(Codec.transferLookupRequestFromWire(call.request))) });\n".to_owned(),
+        "cancel_withdrawal" => "        case \"cancel_withdrawal\": await this.adapter.cancelWithdrawal(call.withdrawal_id); return ok({ kind: \"unit\" });\n".to_owned(),
+        "deposits" => "        case \"deposits\": { const value = await this.adapter.deposits(Codec.transferHistoryRequestFromWire(call.request)); return ok({ kind: \"deposits\", value: { items: value.items.map(Codec.depositToWire), next: value.next?.value ?? null } }); }\n".to_owned(),
+        "withdrawals" => "        case \"withdrawals\": { const value = await this.adapter.withdrawals(Codec.transferHistoryRequestFromWire(call.request)); return ok({ kind: \"withdrawals\", value: { items: value.items.map(Codec.withdrawalToWire), next: value.next?.value ?? null } }); }\n".to_owned(),
         "open_orders" => "        case \"open_orders\": return ok({ kind: \"open_orders\", value: (await this.adapter.openOrders(call.market === null ? null : Codec.marketFromWire(call.market))).map(Codec.orderToWire) });\n".to_owned(),
+        "order" => "        case \"order\": return ok({ kind: \"order\", value: Codec.orderToWire(await this.adapter.order(Codec.marketFromWire(call.market), call.order_id)) });\n".to_owned(),
+        "order_by_client_id" => "        case \"order_by_client_id\": return ok({ kind: \"order\", value: Codec.orderToWire(await this.adapter.orderByClientId(Codec.marketFromWire(call.market), call.client_id)) });\n".to_owned(),
+        "orders_by_ids" => "        case \"orders_by_ids\": return ok({ kind: \"orders_by_ids\", value: (await this.adapter.ordersByIds(Codec.orderLookupRequestFromWire(call.request))).map(Codec.orderToWire) });\n".to_owned(),
+        "order_history" => "        case \"order_history\": { const value = await this.adapter.orderHistory(Codec.orderHistoryRequestFromWire(call.request)); return ok({ kind: \"order_history\", value: { items: value.items.map(Codec.orderToWire), next: value.next?.value ?? null } }); }\n".to_owned(),
         "subscribe_account" => "        case \"subscribe_account\": { this.#streams.begin(call.stream_id); try { const value = await this.adapter.subscribeAccount(Codec.streamConfigFromWire(call.config)); await this.#streams.register(call.stream_id, value); return ok({ kind: \"account_stream\", stream_id: call.stream_id }); } catch (error) { this.#streams.abort(call.stream_id); throw error; } }\n".to_owned(),
         "place_order" => "        case \"place_order\": return ok({ kind: \"place_order\", value: Codec.orderToWire(await this.adapter.placeOrder(Codec.orderRequestFromWire(call.request))) });\n".to_owned(),
-        "cancel_order" => "        case \"cancel_order\": return ok({ kind: \"cancel_order\", value: Codec.orderToWire(await this.adapter.cancelOrder(Codec.marketFromWire(call.market), call.order_id)) });\n".to_owned(),
+        "cancel_order" => "        case \"cancel_order\": await this.adapter.cancelOrder(Codec.marketFromWire(call.market), call.order_id); return ok({ kind: \"unit\" });\n".to_owned(),
+        "cancel_order_by_client_id" => "        case \"cancel_order_by_client_id\": await this.adapter.cancelOrderByClientId(Codec.marketFromWire(call.market), call.client_id); return ok({ kind: \"unit\" });\n".to_owned(),
+        "cancel_orders" => "        case \"cancel_orders\": return ok({ kind: \"cancel_orders\", value: Codec.cancelOrdersResultToWire(await this.adapter.cancelOrders(Codec.cancelOrdersRequestFromWire(call.request))) });\n".to_owned(),
         "positions" => "        case \"positions\": return ok({ kind: \"positions\", value: (await this.adapter.positions(call.market === null ? null : Codec.marketFromWire(call.market))).map(Codec.positionToWire) });\n".to_owned(),
         "margin_summary" => "        case \"margin_summary\": return ok({ kind: \"margin_summary\", value: Codec.marginSummaryToWire(await this.adapter.marginSummary()) });\n".to_owned(),
         "funding_rates" => "        case \"funding_rates\": { const value = await this.adapter.fundingRates(Codec.historyRequestFromWire(call.request)); return ok({ kind: \"funding_rates\", value: { items: value.items.map(Codec.fundingRateToWire), next: value.next?.value ?? null } }); }\n".to_owned(),
@@ -418,7 +577,30 @@ fn render_client(output: &mut String, schema: &Schema) {
             ));
         }
     }
+    for method in schema.client_compositions {
+        output.push_str(&render_composed_client_method(method, schema));
+    }
     output.push_str("}\n\n");
+}
+
+fn render_composed_client_method(method: &ClientComposition, schema: &Schema) -> String {
+    let encoded = method
+        .arguments
+        .iter()
+        .map(|argument| encode_argument(argument, schema))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let call = format!("this.#native.{}({encoded})", method.language_name);
+    let ApiType::Named(model) = method.result else {
+        panic!("composed Client methods currently return one model")
+    };
+    format!(
+        "  async {}({}): Promise<{}> {{\n    await ensureInitialized();\n    return Codec.{}FromWire(Codec.unwrapOutcome(await {call}));\n  }}\n\n",
+        method.language_name,
+        public_parameters(method.arguments),
+        public_type(method.result),
+        lower_camel(model),
+    )
 }
 
 fn render_client_method(
@@ -466,9 +648,13 @@ fn render_client_method(
 fn encode_argument(argument: &Argument, schema: &Schema) -> String {
     let name = argument.name;
     match argument.ty {
+        ApiType::Client => format!("{name}.#native"),
+        ApiType::Number => format!("Codec.checkedU32({name}, \"{name}\")"),
+        ApiType::OptionalNumber => format!("Codec.checkedOptionalU32({name}, \"{name}\")"),
         ApiType::Named(value) if schema.has_identifier(value) => format!("{name}.id"),
         ApiType::Named("Timestamp") => format!("{name}.nanosecondsSinceEpoch.toString()"),
         ApiType::Named("Cursor") => format!("{name}.value"),
+        ApiType::Named("Decimal") => format!("{name}.toString()"),
         ApiType::Named("BinanceListenKey") => format!("{name}.id"),
         ApiType::HandleToken(_) => format!("{name}.id"),
         ApiType::Named(value) => format!("Codec.{}ToWire({name})", lower_camel(value)),
@@ -480,6 +666,7 @@ fn encode_argument(argument: &Argument, schema: &Schema) -> String {
             "{name} === null ? null : Codec.{}ToWire({name})",
             lower_camel(value)
         ),
+        ApiType::List("String") => name.to_owned(),
         ApiType::List(value) => format!("{name}.map(Codec.{}ToWire)", lower_camel(value)),
         _ => name.to_owned(),
     }
@@ -618,17 +805,46 @@ fn render_provider_method(provider: &Provider, method: &ProviderMethod, schema: 
             "return Codec.pageFromWire(Codec.unwrapOutcome(await {call}), Codec.{}FromWire);",
             lower_camel(model)
         ),
+        ApiType::String => format!("return Codec.unwrapOutcome(await {call});"),
         ApiType::Unit => format!("Codec.unwrapOutcome(await {call});"),
         ApiType::Handle(model) => format!(
             "const value = Codec.unwrapOutcome(await {call}); return new {model}(value.id, value.value);"
+        ),
+        ApiType::ProviderMarketStream(event) => format!(
+            "const handle = Codec.unwrapOutcome(await {call}); return new {}(nativeItems(handle, Codec.{}ItemFromWire), async () => {{ Codec.unwrapOutcome(await handle.close()); }});",
+            provider_stream_type(event),
+            lower_camel(&provider_stream_type(event)),
+        ),
+        ApiType::ProviderAccountStream(event) => format!(
+            "const handle = Codec.unwrapOutcome(await {call}); return new {}(nativeItems(handle, Codec.{}ItemFromWire), async () => {{ Codec.unwrapOutcome(await handle.close()); }});",
+            provider_stream_type(event),
+            lower_camel(&provider_stream_type(event)),
         ),
         _ => panic!(
             "unsupported provider result {}.{}",
             provider.exchange, method.name
         ),
     };
+    let documentation = match (provider.exchange, method.rust_name) {
+        ("upbit", "list_subscriptions") => {
+            "  /** Returns subscriptions on the one active Upbit connection matching the selector. Call subscribe first, keep that stream running, and pass the same selector; no or multiple matches fail instead of querying a different socket. */\n"
+        }
+        ("upbit", "test_order") => {
+            "  /** Validates an Upbit order without creating it. The returned dry-run ID cannot be queried or cancelled, and its status is not a live order. */\n"
+        }
+        ("upbit", "travel_rule_vasps") => {
+            "  /** Lists VASPs available for Upbit Korea or Singapore Travel Rule verification. */\n"
+        }
+        ("upbit", "verify_travel_rule_by_uuid") | ("upbit", "verify_travel_rule_by_txid") => {
+            "  /** Submits an Upbit Korea or Singapore Travel Rule verification request. This is a financial write. */\n"
+        }
+        ("bithumb", "withdraw_krw") | ("bithumb", "deposit_krw") => {
+            "  /** Submits a Bithumb KRW transfer request. This is a financial write. */\n"
+        }
+        _ => "",
+    };
     format!(
-        "  async {}({}): Promise<{}> {{ await ensureInitialized(); {} }}\n",
+        "{documentation}  async {}({}): Promise<{}> {{ await ensureInitialized(); {} }}\n",
         method.name,
         public_parameters(method.arguments),
         public_type(method.result),
@@ -653,6 +869,7 @@ function isWireError(value: unknown): value is Wire.ErrorWire {
   if (!isObject(value) || typeof value.kind !== "string") return false;
   switch (value.kind) {
     case "invalid_request": return typeof value.field === "string" && typeof value.detail === "string";
+    case "transfer": return typeof value.transfer_kind === "string" && typeof value.detail === "string";
     case "unsupported": return typeof value.feature === "string" && typeof value.exchange === "string" && typeof value.detail === "string";
     case "adapter": case "auth": case "transport": case "decode": return typeof value.detail === "string";
     case "exchange": return typeof value.exchange === "string" && typeof value.code === "string" && typeof value.message === "string" && (value.status === null || typeof value.status === "number") && typeof value.exchange_kind === "string";

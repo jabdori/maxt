@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from ._api import AccountStream, MarketStream, StreamError, StreamEvent
 from .models import *  # noqa: F403
@@ -33,8 +33,56 @@ class _GeneratedAdapterApi:
     async def balances(self) -> list[Balance]:
         raise self._unsupported(Feature.BALANCES)
 
+    async def order_rules(self, market: Market) -> OrderRules:
+        raise self._unsupported(Feature.TRADING)
+
+    async def asset_networks(self, asset: str) -> list[AssetNetwork]:
+        raise self._unsupported(Feature.ASSET_NETWORKS)
+
+    async def deposit_addresses(self) -> list[DepositAddressEntry]:
+        raise self._unsupported(Feature.DEPOSIT_ADDRESSES)
+
+    async def deposit_address(self, request: DepositAddressRequest) -> DepositAddress:
+        raise self._unsupported(Feature.DEPOSIT_ADDRESSES)
+
+    async def create_deposit_address(self, request: DepositAddressRequest) -> DepositAddress:
+        raise self._unsupported(Feature.DEPOSIT_ADDRESSES)
+
+    async def prepare_withdrawal(self, request: WithdrawRequest) -> WithdrawalQuote:
+        raise self._unsupported(Feature.WITHDRAWAL_QUOTES)
+
+    async def withdraw(self, request: WithdrawRequest) -> Withdrawal:
+        raise self._unsupported(Feature.WITHDRAWALS)
+
+    async def deposit(self, request: TransferLookupRequest) -> Deposit:
+        raise self._unsupported(Feature.DEPOSIT_LOOKUP)
+
+    async def withdrawal(self, request: TransferLookupRequest) -> Withdrawal:
+        raise self._unsupported(Feature.WITHDRAWAL_LOOKUP)
+
+    async def cancel_withdrawal(self, withdrawal_id: str) -> None:
+        raise self._unsupported(Feature.WITHDRAWAL_CANCELLATION)
+
+    async def deposits(self, request: TransferHistoryRequest) -> Page[Deposit]:
+        raise self._unsupported(Feature.DEPOSIT_HISTORY)
+
+    async def withdrawals(self, request: TransferHistoryRequest) -> Page[Withdrawal]:
+        raise self._unsupported(Feature.WITHDRAWAL_HISTORY)
+
     async def open_orders(self, market: Optional[Market] = None) -> list[Order]:
         raise self._unsupported(Feature.OPEN_ORDERS)
+
+    async def order(self, market: Market, order_id: str) -> Order:
+        raise self._unsupported(Feature.ORDER_HISTORY)
+
+    async def order_by_client_id(self, market: Market, client_id: str) -> Order:
+        raise self._unsupported(Feature.ORDER_HISTORY)
+
+    async def orders_by_ids(self, request: OrderLookupRequest) -> list[Order]:
+        raise self._unsupported(Feature.ORDER_HISTORY)
+
+    async def order_history(self, request: OrderHistoryRequest) -> Page[Order]:
+        raise self._unsupported(Feature.ORDER_HISTORY)
 
     async def subscribe_account(self, config: StreamConfig) -> AccountStream[Union[StreamEvent[AccountEvent], StreamError]]:
         raise self._unsupported(Feature.ACCOUNT_STREAM)
@@ -42,7 +90,13 @@ class _GeneratedAdapterApi:
     async def place_order(self, request: OrderRequest) -> Order:
         raise self._unsupported(Feature.TRADING)
 
-    async def cancel_order(self, market: Market, order_id: str) -> Order:
+    async def cancel_order(self, market: Market, order_id: str) -> None:
+        raise self._unsupported(Feature.TRADING)
+
+    async def cancel_order_by_client_id(self, market: Market, client_id: str) -> None:
+        raise self._unsupported(Feature.TRADING)
+
+    async def cancel_orders(self, request: CancelOrdersRequest) -> CancelOrdersResult:
         raise self._unsupported(Feature.TRADING)
 
     async def positions(self, market: Optional[Market] = None) -> list[Position]:
@@ -62,7 +116,7 @@ class _GeneratedAdapterApi:
 
 
 class _GeneratedClientApi:
-    _delegate: _GeneratedAdapterApi
+    _delegate: Any
 
     async def markets(self, kind: MarketKind) -> list[MarketInfo]:
         return await self._delegate.markets(kind)
@@ -88,11 +142,59 @@ class _GeneratedClientApi:
     async def balances(self) -> list[Balance]:
         return await self._delegate.balances()
 
+    async def order_rules(self, market: Market) -> OrderRules:
+        return await self._delegate.order_rules(market)
+
+    async def asset_networks(self, asset: str) -> list[AssetNetwork]:
+        return await self._delegate.asset_networks(asset)
+
+    async def deposit_addresses(self) -> list[DepositAddressEntry]:
+        return await self._delegate.deposit_addresses()
+
+    async def deposit_address(self, request: DepositAddressRequest) -> DepositAddress:
+        return await self._delegate.deposit_address(request)
+
+    async def create_deposit_address(self, request: DepositAddressRequest) -> DepositAddress:
+        return await self._delegate.create_deposit_address(request)
+
+    async def prepare_withdrawal(self, request: WithdrawRequest) -> WithdrawalQuote:
+        return await self._delegate.prepare_withdrawal(request)
+
+    async def withdraw(self, request: WithdrawRequest) -> Withdrawal:
+        return await self._delegate.withdraw(request)
+
+    async def deposit(self, request: TransferLookupRequest) -> Deposit:
+        return await self._delegate.deposit(request)
+
+    async def withdrawal(self, request: TransferLookupRequest) -> Withdrawal:
+        return await self._delegate.withdrawal(request)
+
+    async def cancel_withdrawal(self, withdrawal_id: str) -> None:
+        return await self._delegate.cancel_withdrawal(withdrawal_id)
+
+    async def deposits(self, request: TransferHistoryRequest) -> Page[Deposit]:
+        return await self._delegate.deposits(request)
+
+    async def withdrawals(self, request: TransferHistoryRequest) -> Page[Withdrawal]:
+        return await self._delegate.withdrawals(request)
+
     async def open_orders(self) -> list[Order]:
         return await self._delegate.open_orders(None)
 
     async def open_orders_on(self, market: Market) -> list[Order]:
         return await self._delegate.open_orders(market)
+
+    async def order(self, market: Market, order_id: str) -> Order:
+        return await self._delegate.order(market, order_id)
+
+    async def order_by_client_id(self, market: Market, client_id: str) -> Order:
+        return await self._delegate.order_by_client_id(market, client_id)
+
+    async def orders_by_ids(self, request: OrderLookupRequest) -> list[Order]:
+        return await self._delegate.orders_by_ids(request)
+
+    async def order_history(self, request: OrderHistoryRequest) -> Page[Order]:
+        return await self._delegate.order_history(request)
 
     async def subscribe_account(self) -> AccountStream[Union[StreamEvent[AccountEvent], StreamError]]:
         return await self.subscribe_account_with(StreamConfig())
@@ -103,8 +205,14 @@ class _GeneratedClientApi:
     async def place_order(self, request: OrderRequest) -> Order:
         return await self._delegate.place_order(request)
 
-    async def cancel_order(self, market: Market, order_id: str) -> Order:
+    async def cancel_order(self, market: Market, order_id: str) -> None:
         return await self._delegate.cancel_order(market, order_id)
+
+    async def cancel_order_by_client_id(self, market: Market, client_id: str) -> None:
+        return await self._delegate.cancel_order_by_client_id(market, client_id)
+
+    async def cancel_orders(self, request: CancelOrdersRequest) -> CancelOrdersResult:
+        return await self._delegate.cancel_orders(request)
 
     async def positions(self) -> list[Position]:
         return [row for row in await self._delegate.positions(None) if not row.is_flat()]
@@ -123,6 +231,15 @@ class _GeneratedClientApi:
 
     async def set_margin(self, request: MarginRequest) -> None:
         return await self._delegate.set_margin(request)
+
+    async def prepare_transfer_to(self, destination: _GeneratedClientApi, request: ExchangeTransferRequest) -> TransferPlan:
+        return await self._delegate.prepare_transfer_to(destination._delegate, request)
+
+    async def prepare_transfer_to_chain(self, request: ChainTransferRequest) -> TransferPlan:
+        return await self._delegate.prepare_transfer_to_chain(request)
+
+    async def execute_transfer(self, plan: TransferPlan) -> Withdrawal:
+        return await self._delegate.execute_transfer(plan)
 
 
 __all__ = ["_GeneratedAdapterApi", "_GeneratedClientApi"]

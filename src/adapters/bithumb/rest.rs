@@ -11,7 +11,10 @@ use crate::types::{
     Candle, Interval, Market, MarketInfo, MarketKind, OrderBook, Ticker, Timestamp, Trade,
 };
 
-use super::parse::{self, EXCHANGE};
+use super::{
+    BithumbOrderBookSnapshot,
+    parse::{self, EXCHANGE},
+};
 
 /// Maximum recent trades in one Bithumb response.
 const MAX_TRADE_COUNT: u32 = 500;
@@ -19,6 +22,8 @@ const MAX_TRADE_COUNT: u32 = 500;
 const MAX_BOOK_DEPTH: u32 = 30;
 /// Maximum candles in one Bithumb response.
 const MAX_CANDLE_COUNT: u32 = 200;
+/// Maximum notices in one Bithumb response.
+const MAX_NOTICE_COUNT: u32 = 20;
 
 /// Percent-encodes one query value.
 fn encode(raw: &str) -> String {
@@ -48,6 +53,37 @@ pub(crate) fn markets_request() -> HttpRequest {
 /// Builds the separate alert-system request (경보제).
 pub(crate) fn market_alerts_request() -> HttpRequest {
     HttpRequest::get("/v1/market/virtual_asset_warning")
+}
+
+/// Builds Bithumb's public exchange-notice request.
+pub(crate) fn notices_request(count: Option<u32>) -> Result<HttpRequest> {
+    let mut request = HttpRequest::get("/v1/notices");
+    if let Some(count) = count {
+        if !(1..=MAX_NOTICE_COUNT).contains(&count) {
+            return Err(Error::invalid_request(
+                "count",
+                format!("bithumb serves 1 to {MAX_NOTICE_COUNT} notices per call, not {count}"),
+            ));
+        }
+        request = request.query(format!("count={count}"));
+    }
+    Ok(request)
+}
+
+/// Builds Bithumb's public transfer-fee catalog request.
+pub(crate) fn transfer_fees_request(currency: &str) -> Result<HttpRequest> {
+    let currency = currency.trim();
+    if currency.is_empty() {
+        return Err(Error::invalid_request(
+            "currency",
+            "currency must not be empty",
+        ));
+    }
+    let currency = currency.to_ascii_uppercase();
+    Ok(HttpRequest::get(format!(
+        "/v2/fee/inout/{}",
+        encode(&currency)
+    )))
 }
 
 pub(crate) fn trades_request(market: &Market, limit: Option<u32>) -> Result<HttpRequest> {
@@ -88,13 +124,12 @@ pub(crate) fn ticker_request(market: &Market) -> Result<HttpRequest> {
 }
 
 /// Returns the endpoint for an interval supported by both Bithumb and `Interval`.
-///
-/// Bithumb also serves ten-minute candles, which `Interval` cannot represent.
 pub(crate) fn candle_path(interval: Interval) -> Option<&'static str> {
     Some(match interval {
         Interval::Min1 => "/v1/candles/minutes/1",
         Interval::Min3 => "/v1/candles/minutes/3",
         Interval::Min5 => "/v1/candles/minutes/5",
+        Interval::Min10 => "/v1/candles/minutes/10",
         Interval::Min15 => "/v1/candles/minutes/15",
         Interval::Min30 => "/v1/candles/minutes/30",
         Interval::Hour1 => "/v1/candles/minutes/60",
@@ -189,6 +224,20 @@ pub(crate) async fn market_alerts(
     parse::market_alerts(&send(http, &market_alerts_request()).await?)
 }
 
+pub(crate) async fn notices(
+    http: &HttpTransport,
+    count: Option<u32>,
+) -> Result<Vec<super::BithumbNotice>> {
+    parse::notices(&send(http, &notices_request(count)?).await?)
+}
+
+pub(crate) async fn transfer_fees(
+    http: &HttpTransport,
+    currency: &str,
+) -> Result<Vec<super::BithumbAssetFee>> {
+    parse::transfer_fees(&send(http, &transfer_fees_request(currency)?).await?)
+}
+
 pub(crate) async fn trades(
     http: &HttpTransport,
     market: &Market,
@@ -202,11 +251,46 @@ pub(crate) async fn order_book(
     market: &Market,
     depth: Option<u32>,
 ) -> Result<OrderBook> {
+    order_book_snapshot(http, market, depth)
+        .await
+        .map(|snapshot| snapshot.common)
+}
+
+/// Reads one order-book snapshot with Bithumb's provider aggregate fields.
+pub(crate) async fn order_book_snapshot(
+    http: &HttpTransport,
+    market: &Market,
+    depth: Option<u32>,
+) -> Result<BithumbOrderBookSnapshot> {
     let body = send(http, &order_book_request(market, depth)?).await?;
     let entry = only(&body, market)?;
-    let timestamp = parse::millis(entry, "timestamp")?;
+    order_book_snapshot_from_entry(entry, market.clone(), depth)
+}
 
-    parse::order_book(entry, market.clone(), timestamp, depth)
+pub(crate) fn order_book_snapshot_from_entry(
+    entry: &Value,
+    market: Market,
+    depth: Option<u32>,
+) -> Result<BithumbOrderBookSnapshot> {
+    let timestamp = parse::millis(entry, "timestamp")?;
+    let common = parse::order_book(entry, market, timestamp, depth)?;
+    Ok(BithumbOrderBookSnapshot {
+        total_ask_size: optional_decimal(entry, "total_ask_size")?,
+        total_bid_size: optional_decimal(entry, "total_bid_size")?,
+        level: optional_decimal(entry, "level")?,
+        raw_json: serde_json::to_string(entry).map_err(|error| {
+            Error::decode(format!("could not preserve Bithumb order book: {error}"))
+        })?,
+        common,
+    })
+}
+
+fn optional_decimal(entry: &Value, field: &'static str) -> Result<Option<rust_decimal::Decimal>> {
+    entry
+        .get(field)
+        .filter(|value| !value.is_null())
+        .map(|_| parse::dec(entry, field))
+        .transpose()
 }
 
 pub(crate) async fn ticker(http: &HttpTransport, market: &Market) -> Result<Ticker> {
@@ -266,6 +350,30 @@ mod tests {
     fn public_requests_target_the_documented_paths() {
         assert_eq!(markets_request().target(), "/v1/market/all?isDetails=true");
         assert_eq!(
+            notices_request(None)
+                .expect("the documented default")
+                .target(),
+            "/v1/notices"
+        );
+        assert_eq!(
+            notices_request(Some(20))
+                .expect("the documented maximum")
+                .target(),
+            "/v1/notices?count=20"
+        );
+        assert_eq!(
+            transfer_fees_request("btc")
+                .expect("one asset fee catalog")
+                .target(),
+            "/v2/fee/inout/BTC"
+        );
+        assert_eq!(
+            transfer_fees_request("ALL")
+                .expect("complete fee catalog")
+                .target(),
+            "/v2/fee/inout/ALL"
+        );
+        assert_eq!(
             trades_request(&btc_krw(), Some(10))
                 .expect("a valid limit")
                 .target(),
@@ -284,6 +392,35 @@ mod tests {
     }
 
     #[test]
+    fn order_book_snapshot_keeps_bithumb_aggregate_fields() {
+        let entry = serde_json::json!({
+            "market": "KRW-BTC",
+            "timestamp": 1_785_397_720_965_i64,
+            "total_ask_size": "3.4",
+            "total_bid_size": "5.6",
+            "level": "0",
+            "orderbook_units": [
+                {"ask_price":"101","ask_size":"2","bid_price":"99","bid_size":"3"}
+            ],
+            "futureField": "kept"
+        });
+        let snapshot = order_book_snapshot_from_entry(&entry, btc_krw(), None)
+            .expect("a provider order-book snapshot");
+
+        assert_eq!(
+            snapshot.total_ask_size.expect("ask total").to_string(),
+            "3.4"
+        );
+        assert_eq!(
+            snapshot.total_bid_size.expect("bid total").to_string(),
+            "5.6"
+        );
+        assert_eq!(snapshot.level.expect("level").to_string(), "0");
+        assert_eq!(snapshot.common.bids.len(), 1);
+        assert!(snapshot.raw_json.contains("\"futureField\":\"kept\""));
+    }
+
+    #[test]
     fn each_interval_reaches_the_endpoint_that_serves_it() {
         // Shape references: https://apidocs.bithumb.com/reference/분minute-캔들-조회.md
         // and https://apidocs.bithumb.com/reference/월month-캔들-조회.md
@@ -291,6 +428,7 @@ mod tests {
             (Interval::Min1, "/v1/candles/minutes/1"),
             (Interval::Min3, "/v1/candles/minutes/3"),
             (Interval::Min5, "/v1/candles/minutes/5"),
+            (Interval::Min10, "/v1/candles/minutes/10"),
             (Interval::Min15, "/v1/candles/minutes/15"),
             (Interval::Min30, "/v1/candles/minutes/30"),
             (Interval::Hour1, "/v1/candles/minutes/60"),
@@ -317,6 +455,7 @@ mod tests {
         for interval in [
             Interval::Sec1,
             Interval::Hour2,
+            Interval::Hour6,
             Interval::Hour8,
             Interval::Hour12,
             Interval::Day3,
@@ -400,6 +539,17 @@ mod tests {
             Err(Error::InvalidRequest { field, .. }) if field == "depth"
         ));
         assert!(order_book_request(&btc_krw(), Some(30)).is_ok());
+        for count in [0, 21, u32::MAX] {
+            assert!(matches!(
+                notices_request(Some(count)),
+                Err(Error::InvalidRequest { field, .. }) if field == "count"
+            ));
+        }
+        assert!(notices_request(Some(MAX_NOTICE_COUNT)).is_ok());
+        assert!(matches!(
+            transfer_fees_request("  "),
+            Err(Error::InvalidRequest { field, .. }) if field == "currency"
+        ));
     }
 
     #[test]
@@ -407,6 +557,7 @@ mod tests {
         assert_eq!(MAX_TRADE_COUNT, 500);
         assert_eq!(MAX_BOOK_DEPTH, 30);
         assert_eq!(MAX_CANDLE_COUNT, 200);
+        assert_eq!(MAX_NOTICE_COUNT, 20);
     }
 
     #[test]

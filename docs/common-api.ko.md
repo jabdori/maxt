@@ -6,18 +6,31 @@
 `Client::adapter()`가 반환한 `A`에서 호출합니다. 런타임에 거래소를 선택하려면
 `Client<Box<dyn Adapter>>`를 사용합니다.
 
-## API 영역
+## 접근 설정
 
-인증 정보는 `Client::new(adapter)` 호출 전에 어댑터에 설정합니다.
+공개 REST, 시장 스트림, 지원되는 공개 펀딩 이력 호출은 내장 어댑터를 별도 계정 설정
+없이 만들어 사용할 수 있습니다. 아래의 비공개 영역은 계정 범위 또는 변경 작업이며,
+필요한 설정은 거래소마다 다릅니다.
+
+- Binance, Upbit, Bithumb은 각 거래소의 인증 정보 쌍을 사용합니다.
+- Hyperliquid는 계좌 조회에 공개 조회 주소를, 서명 작업에 로컬 signer를 사용합니다.
+  `with_wallet(address, private_key)`는 두 설정을 함께 적용합니다.
+
+`Client::new(adapter)` 전에 어댑터를 설정하세요. `supports(feature)`는 현재 설정한
+어댑터가 기능을 제공하는지 알려 주지만, 요청 검증, 시장·지역 선택, 거래소 권한은
+여전히 별도로 적용됩니다. 생성자는 [거래소 지원](providers.ko.md), 세부 요구 사항은
+각 거래소 레퍼런스를 참고하세요.
+
+## API 영역
 
 | 영역 | 메서드 |
 | --- | --- |
 | Client | `exchange`, `supports`, `adapter`, `into_adapter` |
 | 공개 REST | `markets`, `trades`, `order_book`, `ticker`, `candles`, `funding_rates` |
 | 공개 스트림 | `subscribe`, `subscribe_with` |
-| 비공개 조회 | `balances`, `open_orders`, `open_orders_on`, `positions`, `positions_on`, `margin_summary`, `funding_payments` |
+| 비공개 조회 | `balances`, `order_rules`, `asset_networks`, `deposit_addresses`, `deposit_address`, `deposit`, `withdrawal`, `deposits`, `withdrawals`, `open_orders`, `open_orders_on`, `order`, `order_by_client_id`, `orders_by_ids`, `order_history`, `positions`, `positions_on`, `margin_summary`, `funding_payments` |
 | 비공개 스트림 | `subscribe_account`, `subscribe_account_with` |
-| 비공개 변경 | `place_order`, `cancel_order`, `set_margin` |
+| 비공개 변경 | `create_deposit_address`, `withdraw`, `cancel_withdrawal`, `place_order`, `cancel_order`, `cancel_order_by_client_id`, `cancel_orders`, `set_margin` |
 
 공개 REST와 시장 스트림에는 인증 정보가 필요하지 않습니다. 거래소별
 `MarketKind`와 기능 지원 범위는 [거래소 지원](providers.ko.md)을 참고하세요.
@@ -143,7 +156,8 @@
 
 ## 기능 확인
 
-`Client::supports(feature)`는 네트워크 I/O를 수행하지 않습니다.
+`Client::supports(feature)`는 네트워크 I/O를 수행하지 않습니다. `false`는 필요한
+어댑터 설정이 없거나 작업이 구조적으로 미지원이라는 뜻입니다.
 
 | 상태 | 계약 |
 | --- | --- |
@@ -173,15 +187,59 @@
 | 타입·메서드 | 계약 |
 | --- | --- |
 | `open_orders*` | 특정 시점의 스냅샷; 거래소의 모든 페이지 순회는 보장하지 않음 |
+| `order_rules(market)` | Upbit·Bithumb의 현재 수수료, 주문 한도, 지원 주문 조합, 호가 자산(quote)·기초 자산(base)의 잔고와 평균 매수가; Bithumb은 매수·매도 가격 단위도 제공 |
+| `order(market, order_id)` | 거래소 주문 ID로 주문 1건 조회 |
+| `order_by_client_id(market, client_id)` | 주문 생성 시 지정한 ID로 주문 1건 조회 |
+| `orders_by_ids(request)` | 거래소 주문 ID 또는 사용자 지정 ID 중 한 종류를 최대 100개 조회; 찾지 못한 ID는 결과에서 빠질 수 있음 |
+| `order_history(request)` | 체결 완료 또는 취소 주문을 최신순 `Page<Order>`로 조회 |
+| `cancel_orders(request)` | 여러 주문을 비원자적으로 취소; 성공 목록과 실패 목록을 함께 반환하며 거래소별 최대 건수가 다름 |
+| `OrderOption::provider_id` | 거래소 원문 값; 새 값은 maxt가 의미를 추가할 때까지 `order_type == None` |
 | `OrderRequest::size` | `Size::Base` 또는 `Size::Quote` |
-| 주문 정밀도 | `MarketInfo`에 공통 호가 단위(tick size), 수량 단위(lot size), 최소 명목가치(minimum notional) 없음 |
-| `cancel_order` | 체결과 경합 가능; 반환된 `Order`는 거래소 응답이며 최종 체결 상태가 없을 수 있음 |
+| 주문 정밀도 | `MarketInfo`에 공통 호가 단위(tick size), 수량 단위(lot size), 최소 명목가치(minimum notional) 없음; Bithumb의 활성 매수·매도 가격 단위는 `OrderRules`에서 제공하며 Upbit의 deprecated `price_unit`은 제외 |
+| `cancel_order`, `cancel_order_by_client_id` | 유효한 거래소 응답 후 `()` 반환; 체결과의 경합 결과는 주문 조회로 확인 |
 | `positions*` | `position.quantity == 0` 행 제거 |
 | `MarginSummary` | 거래소 미제공 값은 `None` |
 | `FundingPayment::amount < 0` | 계좌가 funding 지급 |
 
 주문 값은 `Decimal`로 구성합니다. 지원 주문 형식과 검증 규칙은 거래소별
 계약입니다.
+
+## 자산 입출금
+
+| 메서드 | 계약 |
+| --- | --- |
+| `asset_networks(asset)` | 자산 하나의 현재 입금·출금 가능 상태, 거래소 네트워크 ID, 수수료, 한도 |
+| `deposit_addresses()` | 거래소가 반환한 계정 전체 입금 주소 항목을 조회합니다. 거래소가 `network`, `provider_network`를 주지 않을 수 있고 주소 발급 대기 중에는 `address`가 없을 수 있으므로, 목록 항목이 항상 전송 가능한 목적지를 뜻하지는 않습니다 |
+| `deposit_address(request)` | 자산·네트워크 하나의 기존 입금 주소 조회; `address == None`이면 거래소가 아직 주소를 발급하지 않은 상태 |
+| `create_deposit_address(request)` | Upbit·Bithumb에서 입금 주소 발급 요청; Upbit의 비동기 발급 중에는 `address == None`을 반환할 수 있음 |
+| `deposit(request)`, `withdrawal(request)` | Upbit·Bithumb에서 자산과 거래소 ID 또는 온체인 트랜잭션 ID 하나로 입출금 한 건 조회; 참조값을 생략해 최신 항목을 조회하는 동작은 하지 않음 |
+| `deposits(request)`, `withdrawals(request)` | 최신순 입출금 이력 페이지; 거래소 ID와 원본 상태를 보존 |
+| `withdraw(request)` | 자동 재시도 없이 출금 한 건 접수; 성공은 거래소가 요청을 접수했다는 뜻이며 목적지 입금 완료를 뜻하지 않음 |
+| `cancel_withdrawal(withdrawal_id)` | Upbit·Bithumb에 출금 취소를 한 번 요청; `()`는 거래소가 취소 요청을 접수했다는 뜻뿐이므로 최종 상태는 `withdrawal(request)`로 다시 조회 |
+
+`create_deposit_address()`는 polling 또는 재시도를 수행하지 않습니다. 전송을 준비하기 전에는
+자산과 네트워크를 지정한 `deposit_address()`로 비동기 발급 상태를 확인하세요. Upbit·Bithumb의 이 API는 자산과
+네트워크만 받으므로, 해당 어댑터는 `DepositAddressRequest::amount`를 네트워크 I/O 전에
+거절합니다. endpoint별 지원 및 검증 상태는 생성된 [coverage 레퍼런스](../bindings/common/generated/api.md)를 참고하세요.
+
+`TransferLookupRequest`에는 자산과 `id` 또는 `tx_id` 중 정확히 하나가 필요합니다.
+조회와 취소는 전송 오류 뒤 결과를 알 수 없으므로 자동 재시도하지 않습니다.
+
+### `OrderHistoryRequest`
+
+| 필드·상태 | 계약 |
+| --- | --- |
+| `market` | 선택 시장 필터 |
+| `statuses` | `Filled`, `Cancelled` 또는 둘 다; 빈 목록은 둘 다 조회; 다른 상태는 네트워크 요청 전에 거절 |
+| `from` | 생성 시각 하한, 포함 |
+| `to` | 생성 시각 상한, 미포함; `from`보다 뒤여야 함 |
+| 조회 구간 | 두 경계를 모두 지정하면 최대 7일 |
+| `cursor` | 거래소가 반환한 불투명 커서; 같은 어댑터에 변경 없이 전달 |
+| `limit` | `1..=1_000`; 기본값 `100` |
+| 정렬 | 최신순 |
+
+연속 조회 커서를 제공하지 않는 거래소는 `Page::next == None`을 반환하고 입력
+`cursor`를 거절합니다.
 
 ### `HistoryRequest`
 
@@ -209,6 +267,9 @@
 
 `Client::adapter()`가 반환한 `&A`에서 거래소 전용 일괄 조회(batch), 원본
 context, alert, ledger 메서드를 호출합니다. 목록은 거래소별 레퍼런스를 참고하세요.
+
+기록된 endpoint의 매핑과 구현·검증 상태는 생성된
+[endpoint 지원 레퍼런스](../bindings/common/generated/api.md)를 참고하세요.
 
 ## 외부 어댑터
 

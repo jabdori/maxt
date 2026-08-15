@@ -4,6 +4,7 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import 'convert.dart';
+import 'convert/generated_models.dart';
 import 'frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
@@ -18,17 +19,50 @@ abstract class MarketStreamSink implements RustOpaqueInterface {}
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeAccountSubscription>>
 abstract class NativeAccountSubscription implements RustOpaqueInterface {}
 
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeBinanceAccountSubscription>>
+abstract class NativeBinanceAccountSubscription
+    implements RustOpaqueInterface {}
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeBinanceMarketSubscription>>
+abstract class NativeBinanceMarketSubscription implements RustOpaqueInterface {}
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeBithumbAccountSubscription>>
+abstract class NativeBithumbAccountSubscription
+    implements RustOpaqueInterface {}
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeBithumbMarketSubscription>>
+abstract class NativeBithumbMarketSubscription implements RustOpaqueInterface {}
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeHyperliquidAccountSubscription>>
+abstract class NativeHyperliquidAccountSubscription
+    implements RustOpaqueInterface {}
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeHyperliquidMarketSubscription>>
+abstract class NativeHyperliquidMarketSubscription
+    implements RustOpaqueInterface {}
+
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeMarketSubscription>>
 abstract class NativeMarketSubscription implements RustOpaqueInterface {}
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeUpbitAccountSubscription>>
+abstract class NativeUpbitAccountSubscription implements RustOpaqueInterface {}
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeUpbitMarketSubscription>>
+abstract class NativeUpbitMarketSubscription implements RustOpaqueInterface {}
 
 @freezed
 sealed class AccountStreamItem with _$AccountStreamItem {
   const AccountStreamItem._();
 
+  /// 정상 계정 이벤트입니다.
   const factory AccountStreamItem.event(WireAccountEvent field0) =
       AccountStreamItem_Event;
+
+  /// 스트림을 끝내지 않는 오류입니다.
   const factory AccountStreamItem.error(NativeError field0) =
       AccountStreamItem_Error;
+
+  /// 계정 스트림의 자연 종료를 나타냅니다.
   const factory AccountStreamItem.end() = AccountStreamItem_End;
 }
 
@@ -36,10 +70,15 @@ sealed class AccountStreamItem with _$AccountStreamItem {
 sealed class MarketStreamItem with _$MarketStreamItem {
   const MarketStreamItem._();
 
+  /// 정상 시장 이벤트입니다.
   const factory MarketStreamItem.event(WireMarketEvent field0) =
       MarketStreamItem_Event;
+
+  /// 스트림을 끝내지 않는 오류입니다.
   const factory MarketStreamItem.error(NativeError field0) =
       MarketStreamItem_Error;
+
+  /// 시장 스트림의 자연 종료를 나타냅니다.
   const factory MarketStreamItem.end() = MarketStreamItem_End;
 }
 
@@ -47,10 +86,15 @@ sealed class MarketStreamItem with _$MarketStreamItem {
 sealed class WireAccountEvent with _$WireAccountEvent {
   const WireAccountEvent._();
 
+  /// 계정 잔고 이벤트입니다.
   const factory WireAccountEvent.balance(WireBalance field0) =
       WireAccountEvent_Balance;
+
+  /// 계정 주문 이벤트입니다.
   const factory WireAccountEvent.order(WireOrder field0) =
       WireAccountEvent_Order;
+
+  /// 재연결 뒤 수신이 재개됐음을 알립니다.
   const factory WireAccountEvent.reconnected() = WireAccountEvent_Reconnected;
 }
 
@@ -58,24 +102,128 @@ sealed class WireAccountEvent with _$WireAccountEvent {
 sealed class WireAccountStreamItem with _$WireAccountStreamItem {
   const WireAccountStreamItem._();
 
+  /// 정상 계정 이벤트입니다.
   const factory WireAccountStreamItem.event(WireAccountEvent field0) =
       WireAccountStreamItem_Event;
+
+  /// 스트림을 끝내지 않는 오류입니다.
   const factory WireAccountStreamItem.error(NativeError field0) =
       WireAccountStreamItem_Error;
+
+  /// 계정 스트림의 자연 종료 또는 명시적 close를 나타냅니다.
   const factory WireAccountStreamItem.end() = WireAccountStreamItem_End;
+}
+
+@freezed
+sealed class WireBinanceAccountStreamItem with _$WireBinanceAccountStreamItem {
+  const WireBinanceAccountStreamItem._();
+
+  const factory WireBinanceAccountStreamItem.event(
+    WireBinanceAccountStreamEvent field0,
+  ) = WireBinanceAccountStreamItem_Event;
+  const factory WireBinanceAccountStreamItem.error(NativeError field0) =
+      WireBinanceAccountStreamItem_Error;
+  const factory WireBinanceAccountStreamItem.end() =
+      WireBinanceAccountStreamItem_End;
+}
+
+@freezed
+sealed class WireBinanceMarketStreamItem with _$WireBinanceMarketStreamItem {
+  const WireBinanceMarketStreamItem._();
+
+  const factory WireBinanceMarketStreamItem.event(
+    WireBinanceMarketEvent field0,
+  ) = WireBinanceMarketStreamItem_Event;
+  const factory WireBinanceMarketStreamItem.error(NativeError field0) =
+      WireBinanceMarketStreamItem_Error;
+  const factory WireBinanceMarketStreamItem.end() =
+      WireBinanceMarketStreamItem_End;
+}
+
+@freezed
+sealed class WireBithumbAccountStreamItem with _$WireBithumbAccountStreamItem {
+  const WireBithumbAccountStreamItem._();
+
+  const factory WireBithumbAccountStreamItem.event(
+    WireBithumbAccountEvent field0,
+  ) = WireBithumbAccountStreamItem_Event;
+  const factory WireBithumbAccountStreamItem.error(NativeError field0) =
+      WireBithumbAccountStreamItem_Error;
+  const factory WireBithumbAccountStreamItem.end() =
+      WireBithumbAccountStreamItem_End;
+}
+
+@freezed
+sealed class WireBithumbMarketStreamItem with _$WireBithumbMarketStreamItem {
+  const WireBithumbMarketStreamItem._();
+
+  const factory WireBithumbMarketStreamItem.event(
+    WireBithumbMarketEvent field0,
+  ) = WireBithumbMarketStreamItem_Event;
+  const factory WireBithumbMarketStreamItem.error(NativeError field0) =
+      WireBithumbMarketStreamItem_Error;
+  const factory WireBithumbMarketStreamItem.end() =
+      WireBithumbMarketStreamItem_End;
+}
+
+@freezed
+sealed class WireHyperliquidAccountStreamItem
+    with _$WireHyperliquidAccountStreamItem {
+  const WireHyperliquidAccountStreamItem._();
+
+  /// 정상 Hyperliquid 계정 이벤트입니다.
+  const factory WireHyperliquidAccountStreamItem.event(
+    WireHyperliquidAccountEvent field0,
+  ) = WireHyperliquidAccountStreamItem_Event;
+
+  /// 스트림을 끝내지 않는 오류입니다.
+  const factory WireHyperliquidAccountStreamItem.error(NativeError field0) =
+      WireHyperliquidAccountStreamItem_Error;
+
+  /// 자연 종료 또는 명시적 close를 나타냅니다.
+  const factory WireHyperliquidAccountStreamItem.end() =
+      WireHyperliquidAccountStreamItem_End;
+}
+
+@freezed
+sealed class WireHyperliquidMarketStreamItem
+    with _$WireHyperliquidMarketStreamItem {
+  const WireHyperliquidMarketStreamItem._();
+
+  /// 정상 Hyperliquid 시장 이벤트입니다.
+  const factory WireHyperliquidMarketStreamItem.event(
+    WireHyperliquidMarketEvent field0,
+  ) = WireHyperliquidMarketStreamItem_Event;
+
+  /// 스트림을 끝내지 않는 오류입니다.
+  const factory WireHyperliquidMarketStreamItem.error(NativeError field0) =
+      WireHyperliquidMarketStreamItem_Error;
+
+  /// 자연 종료 또는 명시적 close를 나타냅니다.
+  const factory WireHyperliquidMarketStreamItem.end() =
+      WireHyperliquidMarketStreamItem_End;
 }
 
 @freezed
 sealed class WireMarketEvent with _$WireMarketEvent {
   const WireMarketEvent._();
 
+  /// 시장 체결 이벤트입니다.
   const factory WireMarketEvent.trade(WireTrade field0) = WireMarketEvent_Trade;
+
+  /// 시장 호가 스냅샷 이벤트입니다.
   const factory WireMarketEvent.orderBook(WireOrderBook field0) =
       WireMarketEvent_OrderBook;
+
+  /// 시장 ticker 이벤트입니다.
   const factory WireMarketEvent.ticker(WireTicker field0) =
       WireMarketEvent_Ticker;
+
+  /// 시장 캔들 이벤트입니다.
   const factory WireMarketEvent.candle(WireCandle field0) =
       WireMarketEvent_Candle;
+
+  /// 재연결 뒤 수신이 재개됐음을 알립니다.
   const factory WireMarketEvent.reconnected() = WireMarketEvent_Reconnected;
 }
 
@@ -83,9 +231,39 @@ sealed class WireMarketEvent with _$WireMarketEvent {
 sealed class WireMarketStreamItem with _$WireMarketStreamItem {
   const WireMarketStreamItem._();
 
+  /// 정상 시장 이벤트입니다.
   const factory WireMarketStreamItem.event(WireMarketEvent field0) =
       WireMarketStreamItem_Event;
+
+  /// 스트림을 끝내지 않는 오류입니다.
   const factory WireMarketStreamItem.error(NativeError field0) =
       WireMarketStreamItem_Error;
+
+  /// 시장 스트림의 자연 종료 또는 명시적 close를 나타냅니다.
   const factory WireMarketStreamItem.end() = WireMarketStreamItem_End;
+}
+
+@freezed
+sealed class WireUpbitAccountStreamItem with _$WireUpbitAccountStreamItem {
+  const WireUpbitAccountStreamItem._();
+
+  const factory WireUpbitAccountStreamItem.event(
+    WireUpbitAccountStreamEvent field0,
+  ) = WireUpbitAccountStreamItem_Event;
+  const factory WireUpbitAccountStreamItem.error(NativeError field0) =
+      WireUpbitAccountStreamItem_Error;
+  const factory WireUpbitAccountStreamItem.end() =
+      WireUpbitAccountStreamItem_End;
+}
+
+@freezed
+sealed class WireUpbitMarketStreamItem with _$WireUpbitMarketStreamItem {
+  const WireUpbitMarketStreamItem._();
+
+  const factory WireUpbitMarketStreamItem.event(
+    WireUpbitMarketStreamEvent field0,
+  ) = WireUpbitMarketStreamItem_Event;
+  const factory WireUpbitMarketStreamItem.error(NativeError field0) =
+      WireUpbitMarketStreamItem_Error;
+  const factory WireUpbitMarketStreamItem.end() = WireUpbitMarketStreamItem_End;
 }

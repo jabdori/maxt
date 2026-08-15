@@ -3,19 +3,202 @@
 //! One connection can carry multiple markets and feed types.
 
 use std::collections::HashMap;
+use std::sync::Mutex;
 use std::time::Duration;
 
+use rust_decimal::Decimal;
 use serde_json::{Map, Value};
+use tokio::sync::oneshot;
 
 use crate::error::{Error, Result};
 use crate::feature::Feature;
-use crate::transport::{Heartbeat, HeartbeatFrame};
+use crate::transport::{Heartbeat, HeartbeatFrame, WsSendHandle};
 use crate::types::{Candle, Feed, Interval, Market, MarketEvent, Subscription, Timestamp};
 
 use super::parse::{self, EXCHANGE, RawStreamCandle};
+use super::{
+    UpbitCandleStreamEvent, UpbitMarketStreamEvent, UpbitOrderBookStreamEvent,
+    UpbitTickerStreamEvent, UpbitTradeStreamEvent,
+};
 
 /// Full-name JSON frame format.
 const FRAME_FORMAT: &str = "DEFAULT";
+
+/// One subscription returned by Upbit's `LIST_SUBSCRIPTIONS` operation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ListedSubscription {
+    /// Upbit's WebSocket data type, such as `ticker` or `orderbook`.
+    pub feed_type: String,
+    /// Markets carried by this data type; account-wide items have no markets.
+    pub markets: Vec<Market>,
+    /// Order-book aggregation level when one was requested.
+    pub level: Option<Decimal>,
+}
+
+/// Upbit's response to one `LIST_SUBSCRIPTIONS` request.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SubscriptionList {
+    /// Ticket that correlated the request and response.
+    pub ticket: String,
+    /// Data types confirmed by Upbit on the queried active connection.
+    pub subscriptions: Vec<ListedSubscription>,
+}
+
+/// Coordinates one `LIST_SUBSCRIPTIONS` request on an existing connection.
+///
+/// The socket lifecycle itself remains shared transport code. Upbit alone owns
+/// the operation's response shape and correlation ticket.
+pub(crate) struct SubscriptionControl {
+    send: WsSendHandle,
+    pending: Mutex<Option<PendingSubscriptionList>>,
+}
+
+struct PendingSubscriptionList {
+    ticket: String,
+    response: oneshot::Sender<Result<SubscriptionList>>,
+}
+
+impl SubscriptionControl {
+    pub(crate) fn new(send: WsSendHandle) -> Self {
+        Self {
+            send,
+            pending: Mutex::new(None),
+        }
+    }
+
+    /// Sends the documented operation through this exact active connection.
+    pub(crate) async fn list_subscriptions(&self) -> Result<SubscriptionList> {
+        let ticket = uuid::Uuid::new_v4().to_string();
+        let mut connection_epoch = self.send.connection_epoch();
+        let (response, received) = oneshot::channel();
+        {
+            let mut pending = self.pending.lock().expect("Upbit operation mutex poisoned");
+            if pending.is_some() {
+                return Err(Error::adapter(
+                    "an Upbit LIST_SUBSCRIPTIONS request is already waiting on this connection",
+                ));
+            }
+            *pending = Some(PendingSubscriptionList {
+                ticket: ticket.clone(),
+                response,
+            });
+        }
+
+        let guard = PendingGuard {
+            control: self,
+            ticket: ticket.clone(),
+            active: true,
+        };
+        self.send
+            .send_text(list_subscriptions_frame(&ticket)?)
+            .await?;
+        let result = tokio::select! {
+            biased;
+            changed = connection_epoch.changed() => {
+                match changed {
+                    Ok(()) => Err(Error::transport(
+                        "Upbit WebSocket reconnected before answering LIST_SUBSCRIPTIONS",
+                    )),
+                    Err(_) => Err(Error::transport(
+                        "Upbit WebSocket closed before answering LIST_SUBSCRIPTIONS",
+                    )),
+                }
+            }
+            result = received => result.map_err(|_| {
+                Error::transport("Upbit WebSocket closed before answering LIST_SUBSCRIPTIONS")
+            })?,
+        };
+        guard.disarm();
+        result
+    }
+
+    /// Consumes an operation reply so it is never decoded as market data.
+    pub(crate) fn handle_frame(&self, frame: &str) -> bool {
+        let Ok(object) = frame_object(frame) else {
+            return false;
+        };
+        let listed = object.get("method").and_then(Value::as_str) == Some("LIST_SUBSCRIPTIONS");
+        let mut pending = self.pending.lock().expect("Upbit operation mutex poisoned");
+        if !listed && !(pending.is_some() && object.contains_key("error")) {
+            return false;
+        }
+        let Some(waiting) = pending.as_ref() else {
+            return listed;
+        };
+        if listed
+            && object
+                .get("ticket")
+                .and_then(Value::as_str)
+                .is_some_and(|ticket| ticket != waiting.ticket)
+        {
+            // A cancelled earlier call can still receive its reply after a
+            // later query has started. It must not fail that newer query.
+            return true;
+        }
+        let waiting = pending
+            .take()
+            .expect("a checked Upbit pending operation is still present");
+        let expected_ticket = waiting.ticket.clone();
+        let result = reserialize(&object)
+            .and_then(|frame| subscription_list(&frame))
+            .and_then(|result| {
+                if result.ticket == expected_ticket {
+                    Ok(result)
+                } else {
+                    Err(Error::decode(format!(
+                        "Upbit subscription-list ticket `{}` does not match request `{}`",
+                        result.ticket, expected_ticket
+                    )))
+                }
+            });
+        let _ = waiting.response.send(result);
+        true
+    }
+
+    /// A reconnect cannot return a reply to an operation sent on the old socket.
+    pub(crate) fn fail_pending(&self) {
+        let pending = self
+            .pending
+            .lock()
+            .expect("Upbit operation mutex poisoned")
+            .take();
+        if let Some(pending) = pending {
+            let _ = pending.response.send(Err(Error::transport(
+                "Upbit WebSocket reconnected before answering LIST_SUBSCRIPTIONS",
+            )));
+        }
+    }
+
+    fn clear(&self, ticket: &str) {
+        let mut pending = self.pending.lock().expect("Upbit operation mutex poisoned");
+        if pending
+            .as_ref()
+            .is_some_and(|pending| pending.ticket == ticket)
+        {
+            pending.take();
+        }
+    }
+}
+
+struct PendingGuard<'a> {
+    control: &'a SubscriptionControl,
+    ticket: String,
+    active: bool,
+}
+
+impl PendingGuard<'_> {
+    fn disarm(mut self) {
+        self.active = false;
+    }
+}
+
+impl Drop for PendingGuard<'_> {
+    fn drop(&mut self) {
+        if self.active {
+            self.control.clear(&self.ticket);
+        }
+    }
+}
 
 /// Sends text `PING` every 15 seconds and waits at least 60 seconds for traffic.
 pub(crate) const HEARTBEAT: Heartbeat = Heartbeat {
@@ -56,6 +239,94 @@ pub(crate) fn subscribe_frame(subscription: &Subscription, ticket: &str) -> Resu
         .map_err(|err| Error::decode(format!("could not build Upbit subscribe frame: {err}")))
 }
 
+/// Builds the operation frame that asks an active connection what it carries.
+pub(crate) fn list_subscriptions_frame(ticket: &str) -> Result<String> {
+    if ticket.trim().is_empty() {
+        return Err(Error::invalid_request(
+            "ticket",
+            "an Upbit subscription-list request needs a ticket",
+        ));
+    }
+
+    serde_json::to_string(&serde_json::json!([
+        { "ticket": ticket },
+        { "method": "LIST_SUBSCRIPTIONS" },
+        { "format": FRAME_FORMAT }
+    ]))
+    .map_err(|err| Error::decode(format!("could not build Upbit operation frame: {err}")))
+}
+
+/// Decodes Upbit's full-name `LIST_SUBSCRIPTIONS` response.
+pub(crate) fn subscription_list(frame: &str) -> Result<SubscriptionList> {
+    let object = frame_object(frame)?;
+    if let Some(error) = object.get("error") {
+        return Err(frame_error(error));
+    }
+    if object.get("method").and_then(Value::as_str) != Some("LIST_SUBSCRIPTIONS") {
+        return Err(Error::decode(
+            "Upbit subscription-list response has no `LIST_SUBSCRIPTIONS` method".to_string(),
+        ));
+    }
+
+    let ticket = required_text(&object, "ticket")?;
+    let subscriptions = object
+        .get("result")
+        .and_then(Value::as_array)
+        .ok_or_else(|| Error::decode("Upbit subscription-list response has no `result` array"))?
+        .iter()
+        .map(|entry| {
+            let entry = entry
+                .as_object()
+                .ok_or_else(|| Error::decode("Upbit subscription-list result is not an object"))?;
+            let feed_type = required_text(entry, "type")?;
+            let markets = entry
+                .get("codes")
+                .map(|codes| {
+                    codes
+                        .as_array()
+                        .ok_or_else(|| {
+                            Error::decode("Upbit subscription-list `codes` is not an array")
+                        })?
+                        .iter()
+                        .map(|code| {
+                            code.as_str()
+                                .ok_or_else(|| {
+                                    Error::decode("Upbit subscription-list market code is not text")
+                                })
+                                .and_then(parse::market_from_native_symbol)
+                        })
+                        .collect()
+                })
+                .transpose()?
+                .unwrap_or_default();
+            let level = entry
+                .get("level")
+                .map(|level| parse::decimal_text(&level.to_string(), "level"))
+                .transpose()?;
+
+            Ok(ListedSubscription {
+                feed_type,
+                markets,
+                level,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    Ok(SubscriptionList {
+        ticket,
+        subscriptions,
+    })
+}
+
+fn required_text(object: &Map<String, Value>, field: &'static str) -> Result<String> {
+    object
+        .get(field)
+        .and_then(Value::as_str)
+        .filter(|value| !value.trim().is_empty())
+        .map(str::to_string)
+        .ok_or_else(|| Error::decode(format!("Upbit subscription-list `{field}` is missing")))
+}
+
 /// The `type` Upbit expects for a feed.
 fn feed_type(feed: Feed) -> Result<String> {
     Ok(match feed {
@@ -81,14 +352,14 @@ fn feed_type(feed: Feed) -> Result<String> {
 
 /// Returns the WebSocket candle type for an interval exposed by `maxt`.
 ///
-/// Upbit also streams 10-minute candles, but [`Interval`] has no matching
-/// variant. Daily and longer candles are REST-only.
+/// Daily and longer candles are REST-only.
 fn candle_type(interval: Interval) -> Option<&'static str> {
     Some(match interval {
         Interval::Sec1 => "candle.1s",
         Interval::Min1 => "candle.1m",
         Interval::Min3 => "candle.3m",
         Interval::Min5 => "candle.5m",
+        Interval::Min10 => "candle.10m",
         Interval::Min15 => "candle.15m",
         Interval::Min30 => "candle.30m",
         Interval::Hour1 => "candle.60m",
@@ -103,6 +374,7 @@ fn candle_interval(frame_type: &str) -> Option<Interval> {
         "candle.1m" => Interval::Min1,
         "candle.3m" => Interval::Min3,
         "candle.5m" => Interval::Min5,
+        "candle.10m" => Interval::Min10,
         "candle.15m" => Interval::Min15,
         "candle.30m" => Interval::Min30,
         "candle.60m" => Interval::Hour1,
@@ -233,6 +505,196 @@ impl Decoder {
     }
 }
 
+/// Decodes one public connection while retaining Upbit-specific fields.
+///
+/// Candle completion state mirrors [`Decoder`] so a settled candle keeps the
+/// provider frame that originally described that candle.
+#[derive(Debug, Default)]
+pub(crate) struct DetailedDecoder {
+    latest: HashMap<(Market, Interval), UpbitCandleStreamEvent>,
+    settled: HashMap<(Market, Interval), Timestamp>,
+}
+
+impl DetailedDecoder {
+    pub(crate) fn decode(&mut self, frame: &str) -> Result<Vec<UpbitMarketStreamEvent>> {
+        self.decode_at(frame, Timestamp::now())
+    }
+
+    fn decode_at(&mut self, frame: &str, now: Timestamp) -> Result<Vec<UpbitMarketStreamEvent>> {
+        let object = frame_object(frame)?;
+        if let Some(error) = object.get("error") {
+            return Err(frame_error(error));
+        }
+        if object.get("status").and_then(Value::as_str) == Some("UP") {
+            return Ok(Vec::new());
+        }
+        let Some(frame_type) = object.get("type").and_then(Value::as_str) else {
+            return Err(Error::decode("Upbit frame carries no `type`"));
+        };
+        let frame_type = frame_type.to_owned();
+        let raw_json = reserialize(&object)?;
+        let value = Value::Object(object);
+
+        let event = match frame_type.as_str() {
+            "trade" => {
+                let common = parse::stream_trade(&parse::json(&raw_json)?)?;
+                UpbitMarketStreamEvent::Trade(UpbitTradeStreamEvent {
+                    previous_closing_price: optional_decimal(&value, "prev_closing_price")?,
+                    change: optional_text(&value, "change")?,
+                    change_price: optional_decimal(&value, "change_price")?,
+                    best_ask_price: optional_decimal(&value, "best_ask_price")?,
+                    best_ask_size: optional_decimal(&value, "best_ask_size")?,
+                    best_bid_price: optional_decimal(&value, "best_bid_price")?,
+                    best_bid_size: optional_decimal(&value, "best_bid_size")?,
+                    common,
+                    raw_json,
+                })
+            }
+            "orderbook" => {
+                let common = parse::stream_order_book(&parse::json(&raw_json)?)?;
+                UpbitMarketStreamEvent::OrderBook(UpbitOrderBookStreamEvent {
+                    total_ask_size: optional_decimal(&value, "total_ask_size")?,
+                    total_bid_size: optional_decimal(&value, "total_bid_size")?,
+                    level: optional_decimal(&value, "level")?,
+                    stream_type: optional_text(&value, "stream_type")?,
+                    common,
+                    raw_json,
+                })
+            }
+            "ticker" => {
+                let common = parse::stream_ticker(&parse::json(&raw_json)?)?;
+                UpbitMarketStreamEvent::Ticker(UpbitTickerStreamEvent {
+                    change_direction: optional_text(&value, "change")?,
+                    market_state: optional_text(&value, "market_state")?,
+                    trading_suspended: optional_bool(&value, "is_trading_suspended")?,
+                    delisting_date: optional_text(&value, "delisting_date")?,
+                    market_warning: optional_text(&value, "market_warning")?,
+                    common,
+                    raw_json,
+                })
+            }
+            candle if candle.starts_with("candle.") => {
+                let interval = candle_interval(candle).ok_or_else(|| {
+                    Error::decode(format!("upbit sent an unmapped candle feed `{candle}`"))
+                })?;
+                let raw: RawStreamCandle = parse::json(&raw_json)?;
+                let forming = UpbitCandleStreamEvent {
+                    common: parse::stream_candle(&raw, interval)?,
+                    stream_type: raw.stream_type,
+                    published_at: optional_millis(&value, "timestamp")?,
+                    raw_json,
+                };
+                return self.candle(forming, now);
+            }
+            other => {
+                return Err(Error::decode(format!(
+                    "unexpected Upbit frame type `{other}`"
+                )));
+            }
+        };
+
+        Ok(vec![event])
+    }
+
+    fn candle(
+        &mut self,
+        forming: UpbitCandleStreamEvent,
+        now: Timestamp,
+    ) -> Result<Vec<UpbitMarketStreamEvent>> {
+        let snapshot = forming.stream_type.as_deref() == Some(SNAPSHOT);
+        let key = (forming.common.market.clone(), forming.common.interval);
+
+        if self
+            .settled
+            .get(&key)
+            .is_some_and(|settled| forming.common.open_time <= *settled)
+        {
+            return Ok(Vec::new());
+        }
+        if self
+            .latest
+            .get(&key)
+            .is_some_and(|held| forming.common.open_time < held.common.open_time)
+        {
+            return Ok(Vec::new());
+        }
+
+        if snapshot && parse::has_ended(forming.common.open_time, forming.common.interval, now) {
+            self.latest.remove(&key);
+            self.settled.insert(key, forming.common.open_time);
+            return Ok(vec![UpbitMarketStreamEvent::Candle(
+                UpbitCandleStreamEvent {
+                    common: Candle {
+                        closed: true,
+                        ..forming.common
+                    },
+                    ..forming
+                },
+            )]);
+        }
+
+        let settled = self
+            .latest
+            .insert(key.clone(), forming.clone())
+            .filter(|_| !snapshot)
+            .filter(|held| held.common.open_time < forming.common.open_time)
+            .map(|held| {
+                self.settled.insert(key, held.common.open_time);
+                UpbitMarketStreamEvent::Candle(UpbitCandleStreamEvent {
+                    common: Candle {
+                        closed: true,
+                        ..held.common
+                    },
+                    ..held
+                })
+            });
+
+        Ok(settled
+            .into_iter()
+            .chain([UpbitMarketStreamEvent::Candle(forming)])
+            .collect())
+    }
+}
+
+fn optional_decimal(value: &Value, name: &'static str) -> Result<Option<Decimal>> {
+    match value.get(name) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::Number(number)) => parse::decimal(number, name).map(Some),
+        Some(Value::String(text)) => parse::decimal_text(text, name).map(Some),
+        Some(_) => Err(Error::decode(format!("`{name}` is not a number"))),
+    }
+}
+
+fn optional_millis(value: &Value, name: &'static str) -> Result<Option<Timestamp>> {
+    match value.get(name) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::Number(number)) => number
+            .as_i64()
+            .ok_or_else(|| Error::decode(format!("`{name}` is not an i64 millisecond timestamp")))
+            .and_then(|millis| parse::millis(millis, name))
+            .map(Some),
+        Some(_) => Err(Error::decode(format!(
+            "`{name}` is not a millisecond timestamp"
+        ))),
+    }
+}
+
+fn optional_text(value: &Value, name: &'static str) -> Result<Option<String>> {
+    match value.get(name) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(text)) => Ok(Some(text.clone())),
+        Some(_) => Err(Error::decode(format!("`{name}` is not a string"))),
+    }
+}
+
+fn optional_bool(value: &Value, name: &'static str) -> Result<Option<bool>> {
+    match value.get(name) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::Bool(value)) => Ok(Some(*value)),
+        Some(_) => Err(Error::decode(format!("`{name}` is not a boolean"))),
+    }
+}
+
 /// Unwraps a frame to its object.
 ///
 /// Upbit sends bare objects, but wraps them in a single-element list on some
@@ -285,6 +747,8 @@ pub(crate) fn frame_error(error: &Value) -> Error {
 mod tests {
     use super::*;
     use crate::types::{Exchange, Market, Side, Timestamp};
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures_util::{SinkExt, StreamExt};
     use rust_decimal::Decimal;
 
     // Representative public trade frame.
@@ -464,6 +928,255 @@ mod tests {
         assert_eq!(value[2]["type"], "candle.1m");
         assert_eq!(value[3]["format"], "DEFAULT");
         assert_eq!(value.as_array().expect("a list").len(), 4);
+    }
+
+    #[test]
+    fn list_subscriptions_uses_the_documented_operation_frame() {
+        let frame = list_subscriptions_frame("ticket-1").expect("a valid operation frame");
+        assert_eq!(
+            serde_json::from_str::<Value>(&frame).expect("valid JSON"),
+            serde_json::json!([
+                {"ticket": "ticket-1"},
+                {"method": "LIST_SUBSCRIPTIONS"},
+                {"format": "DEFAULT"}
+            ])
+        );
+        assert!(matches!(
+            list_subscriptions_frame("  "),
+            Err(Error::InvalidRequest { field, .. }) if field == "ticket"
+        ));
+    }
+
+    #[test]
+    fn list_subscriptions_preserves_codes_levels_and_account_wide_items() {
+        let response = subscription_list(
+            r#"{
+                "method":"LIST_SUBSCRIPTIONS",
+                "result":[
+                    {"type":"ticker","codes":["KRW-BTC"]},
+                    {"type":"orderbook","codes":["KRW-BTC","BTC-ETH"],"level":1000.5},
+                    {"type":"myAsset"}
+                ],
+                "ticket":"ticket-1"
+            }"#,
+        )
+        .expect("the official response shape");
+
+        assert_eq!(response.ticket, "ticket-1");
+        assert_eq!(response.subscriptions[0].feed_type, "ticker");
+        assert_eq!(
+            response.subscriptions[0].markets,
+            [Market::spot(Exchange::Upbit, "BTC", "KRW")]
+        );
+        assert_eq!(response.subscriptions[1].feed_type, "orderbook");
+        assert_eq!(
+            response.subscriptions[1].level,
+            Some(Decimal::new(10_005, 1))
+        );
+        assert_eq!(
+            response.subscriptions[1].markets[1],
+            Market::spot(Exchange::Upbit, "ETH", "BTC")
+        );
+        assert!(response.subscriptions[2].markets.is_empty());
+    }
+
+    #[test]
+    fn list_subscriptions_rejects_a_different_operation_or_malformed_result() {
+        for frame in [
+            r#"{"method":"OTHER","result":[],"ticket":"t"}"#,
+            r#"{"method":"LIST_SUBSCRIPTIONS","ticket":"t"}"#,
+            r#"{"method":"LIST_SUBSCRIPTIONS","result":[{"type":"ticker","codes":[1]}],"ticket":"t"}"#,
+        ] {
+            assert!(matches!(
+                subscription_list(frame),
+                Err(Error::Decode { .. })
+            ));
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    #[tokio::test]
+    async fn list_subscriptions_uses_the_already_open_connection() {
+        use tokio::sync::mpsc;
+        use tokio_tungstenite::tungstenite::Message;
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("a free local port");
+        let address = listener.local_addr().expect("the local address");
+        let (frames, mut received) = mpsc::channel(2);
+        let (complete, wait_for_complete) = oneshot::channel();
+        tokio::spawn(async move {
+            let mut wait_for_complete = Some(wait_for_complete);
+            let Ok((stream, _)) = listener.accept().await else {
+                return;
+            };
+            let Ok(mut socket) = tokio_tungstenite::accept_async(stream).await else {
+                return;
+            };
+            for index in 0..2 {
+                let Some(Ok(Message::Text(frame))) = socket.next().await else {
+                    return;
+                };
+                let frame = frame.to_string();
+                if frames.send(frame.clone()).await.is_err() {
+                    return;
+                }
+                if index == 1 {
+                    let ticket = serde_json::from_str::<Value>(&frame)
+                        .ok()
+                        .and_then(|value| value[0]["ticket"].as_str().map(str::to_owned));
+                    let Some(ticket) = ticket else {
+                        return;
+                    };
+                    let _ = socket
+                        .send(Message::Text(
+                            serde_json::json!({
+                                "method": "LIST_SUBSCRIPTIONS",
+                                "result": [{"type": "ticker", "codes": ["KRW-BTC"]}],
+                                "ticket": ticket,
+                            })
+                            .to_string()
+                            .into(),
+                        ))
+                        .await;
+                    let _ = wait_for_complete
+                        .take()
+                        .expect("only one operation response")
+                        .await;
+                }
+            }
+        });
+
+        let mut session = crate::transport::ws::connect(
+            crate::transport::WsConnect {
+                url: format!("ws://{address}"),
+                headers: None,
+                subscribe: crate::transport::WsConnect::fixed(vec![
+                    subscribe_frame(
+                        &Subscription::new()
+                            .market(Market::spot(Exchange::Upbit, "BTC", "KRW"))
+                            .feed(Feed::Ticker),
+                        "initial-ticket",
+                    )
+                    .expect("the initial subscription frame"),
+                ]),
+                heartbeat: None,
+            },
+            &crate::types::StreamConfig {
+                max_reconnect_attempts: Some(0),
+                ..crate::types::StreamConfig::default()
+            },
+        )
+        .await
+        .expect("the initial connection");
+        let control = std::sync::Arc::new(SubscriptionControl::new(session.send_handle()));
+        let query = {
+            let control = std::sync::Arc::clone(&control);
+            tokio::spawn(async move { control.list_subscriptions().await })
+        };
+
+        let initial = received.recv().await.expect("the initial frame");
+        assert!(initial.contains("initial-ticket"));
+        let operation = received.recv().await.expect("the operation frame");
+        let operation = serde_json::from_str::<Value>(&operation).expect("the operation JSON");
+        assert_eq!(operation[1]["method"], "LIST_SUBSCRIPTIONS");
+        assert_eq!(operation[2]["format"], "DEFAULT");
+
+        while let Some(command) = session.next().await {
+            let crate::transport::WsCommand::Text(frame) = command.expect("the response frame")
+            else {
+                continue;
+            };
+            if control.handle_frame(&frame) {
+                break;
+            }
+        }
+        let result = query
+            .await
+            .expect("the query task")
+            .expect("the operation response");
+        assert_eq!(
+            result.ticket,
+            operation[0]["ticket"]
+                .as_str()
+                .expect("the operation ticket")
+        );
+        assert_eq!(result.subscriptions[0].feed_type, "ticker");
+        let _ = complete.send(());
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    #[tokio::test]
+    async fn list_subscriptions_fails_when_its_socket_reconnects() {
+        use tokio::sync::mpsc;
+        use tokio_tungstenite::tungstenite::Message;
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("a free local port");
+        let address = listener.local_addr().expect("the local address");
+        let (ready, mut initial_subscribed) = mpsc::channel(1);
+        tokio::spawn(async move {
+            let Ok((stream, _)) = listener.accept().await else {
+                return;
+            };
+            let Ok(mut socket) = tokio_tungstenite::accept_async(stream).await else {
+                return;
+            };
+            let Some(Ok(Message::Text(_))) = socket.next().await else {
+                return;
+            };
+            if ready.send(()).await.is_err() {
+                return;
+            }
+            // The operation is accepted on this socket, then the exchange
+            // closes it before replying. A reply from the next socket cannot
+            // answer this request.
+            let Some(Ok(Message::Text(_))) = socket.next().await else {
+                return;
+            };
+            let _ = socket.close(None).await;
+
+            let Ok((stream, _)) = listener.accept().await else {
+                return;
+            };
+            let Ok(mut socket) = tokio_tungstenite::accept_async(stream).await else {
+                return;
+            };
+            let _ = socket.next().await;
+            std::future::pending::<()>().await;
+        });
+
+        let session = crate::transport::ws::connect(
+            crate::transport::WsConnect {
+                url: format!("ws://{address}"),
+                headers: None,
+                subscribe: crate::transport::WsConnect::fixed(vec!["subscribe".to_owned()]),
+                heartbeat: None,
+            },
+            &crate::types::StreamConfig {
+                initial_reconnect_delay_ms: 1,
+                max_reconnect_delay_ms: 1,
+                idle_timeout_ms: 60_000,
+                ..crate::types::StreamConfig::default()
+            },
+        )
+        .await
+        .expect("the initial connection");
+        let close = session.close_handle();
+        let control = SubscriptionControl::new(session.send_handle());
+        initial_subscribed
+            .recv()
+            .await
+            .expect("the server received the initial subscription");
+
+        let error = tokio::time::timeout(Duration::from_secs(5), control.list_subscriptions())
+            .await
+            .expect("the reconnect boundary is reported")
+            .expect_err("the original socket was replaced");
+        assert!(matches!(error, Error::Transport { .. }), "{error}");
+        close.close().await.expect("the session closes");
     }
 
     #[test]
@@ -770,6 +1483,60 @@ mod tests {
         let wrapped = format!("[{TRADE}]");
 
         assert!(matches!(one(&wrapped), MarketEvent::Trade(_)));
+    }
+
+    #[test]
+    fn detailed_events_keep_native_fields_and_each_candle_owning_frame() {
+        let mut decoder = DetailedDecoder::default();
+
+        let trades = decoder.decode(TRADE).expect("a detailed trade frame");
+        let [UpbitMarketStreamEvent::Trade(trade)] = trades.as_slice() else {
+            panic!("expected one detailed trade");
+        };
+        assert_eq!(trade.change.as_deref(), Some("RISE"));
+        assert_eq!(
+            trade.best_ask_price.expect("best ask").to_string(),
+            "32293000"
+        );
+        assert!(trade.raw_json.contains("best_bid_size"));
+
+        let books = decoder.decode(ORDER_BOOK).expect("a detailed order book");
+        let [UpbitMarketStreamEvent::OrderBook(book)] = books.as_slice() else {
+            panic!("expected one detailed order book");
+        };
+        assert_eq!(
+            book.total_ask_size.expect("ask total").to_string(),
+            "0.68780013"
+        );
+
+        let tickers = decoder.decode(TICKER).expect("a detailed ticker");
+        let [UpbitMarketStreamEvent::Ticker(ticker)] = tickers.as_slice() else {
+            panic!("expected one detailed ticker");
+        };
+        assert_eq!(ticker.market_state.as_deref(), Some("ACTIVE"));
+        assert_eq!(ticker.trading_suspended, Some(false));
+        assert!(ticker.raw_json.contains("highest_52_week_price"));
+
+        let _ = decoder
+            .decode_at(
+                CANDLE_LAST_OF_ITS_MINUTE,
+                Timestamp::from_secs(MINUTE_0746 + 30),
+            )
+            .expect("a first candle");
+        let candles = decoder
+            .decode_at(CANDLE_NEXT_MINUTE, Timestamp::from_secs(MINUTE_0747 + 30))
+            .expect("a later candle");
+        let [
+            UpbitMarketStreamEvent::Candle(settled),
+            UpbitMarketStreamEvent::Candle(forming),
+        ] = candles.as_slice()
+        else {
+            panic!("expected a settled and a forming candle: {candles:?}");
+        };
+        assert!(settled.common.closed);
+        assert!(settled.raw_json.contains("07:46:00"));
+        assert!(!forming.common.closed);
+        assert!(forming.raw_json.contains("07:47:00"));
     }
 
     #[test]

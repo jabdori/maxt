@@ -4,28 +4,42 @@
 //! operations remain on the concrete types in [`adapters`], and unavailable
 //! operations return [`Error::Unsupported`].
 //!
-//! # Getting started
+//! # Quick start: Binance Spot
 //!
-//! Pick an adapter, wrap it in a [`Client`], and call the common API.
+//! Pick an adapter, wrap it in a [`Client`], and call the common API. This
+//! credential-free example reads Binance Spot `BTC/USDT`; it does not submit
+//! an order.
 //!
 //! ```no_run
-//! use maxt::{Client, Exchange, Market, adapters::UpbitAdapter};
+//! use maxt::{Client, Exchange, Market, adapters::BinanceAdapter};
 //!
 //! # async fn run() -> maxt::Result<()> {
-//! let client = Client::new(UpbitAdapter::new());
-//! let book = client
-//!     .order_book(&Market::spot(Exchange::Upbit, "BTC", "KRW"), Some(5))
-//!     .await?;
+//! let client = Client::new(BinanceAdapter::spot());
+//! let market = Market::spot(Exchange::Binance, "BTC", "USDT");
+//! let ticker = client.ticker(&market).await?;
+//! let average = client.adapter().spot_average_price(&market).await?;
 //!
-//! if let Some(spread) = book.spread() {
-//!     println!("spread: {spread}");
-//! }
+//! println!("last price: {}", ticker.last_price);
+//! println!("{}-minute average: {}", average.minutes, average.price);
 //! # Ok(())
 //! # }
 //! ```
 //!
+//! [`Client::ticker`] is a common operation. [`BinanceAdapter::spot_average_price`]
+//! is a provider-specific operation, so it remains on [`Client::adapter`].
 //! Public market data needs no credentials. Account and order operations do;
 //! each adapter documents the credential form it accepts.
+//!
+//! # Supported adapter boundaries
+//!
+//! - [`BinanceAdapter`](adapters::BinanceAdapter): Spot and USD-M perpetual futures.
+//! - [`UpbitAdapter`](adapters::UpbitAdapter): Spot across its supported regions.
+//! - [`BithumbAdapter`](adapters::BithumbAdapter): Spot and KRW account APIs.
+//! - [`HyperliquidAdapter`](adapters::HyperliquidAdapter): Spot and perpetual futures.
+//!
+//! Provider-only fields and endpoints remain on the concrete adapter. Check
+//! [`Client::supports`] before an optional common operation when the configured
+//! adapter or its credentials can vary at runtime.
 //!
 //! # Main types
 //!
@@ -45,20 +59,92 @@ mod request;
 mod stream;
 mod transport;
 mod types;
+mod wallet;
 
 pub mod adapters;
 
 pub use adapter::{Adapter, BoxFuture};
+pub use adapters::{
+    BinanceAccountStream, BinanceAccountStreamEvent, BinanceAccountTrade, BinanceAggregateTrade,
+    BinanceAggregateTradesRequest, BinanceApiKeyPermissions, BinanceBalanceStreamEvent,
+    BinanceC2cTrade, BinanceC2cTradeHistoryPage, BinanceC2cTradeHistoryRequest,
+    BinanceC2cTradeType, BinanceCandleEvent, BinanceCoinInformation, BinanceCoinNetworkInformation,
+    BinanceDepositHistory, BinanceDepositHistoryEntry, BinanceDepositHistoryRequest,
+    BinanceExchangeInfo, BinanceExchangeSymbol, BinanceMarkPrice, BinanceMarketEvent,
+    BinanceMarketStream, BinanceOpenInterest, BinanceOrderBookEvent, BinanceOrderResponse,
+    BinanceOrderStreamEvent, BinanceQuestionnaireRequirements, BinanceRawAccountEvent,
+    BinanceSpotAccountBalance, BinanceSpotAccountInformation, BinanceSpotAveragePrice,
+    BinanceSpotCancelAllOpenOrders, BinanceSpotCancelledOrder, BinanceSpotCommissionRates,
+    BinanceTestOrder, BinanceTestOrderRequest, BinanceTickerEvent, BinanceTradeEvent,
+    BinanceUsdMAccountAsset, BinanceUsdMAccountInformation, BinanceUsdMAccountPosition,
+    BinanceUsdMPositionInformation, BinanceWithdrawHistory, BinanceWithdrawHistoryEntry,
+    BinanceWithdrawHistoryRequest, BinanceWithdrawalAddress, BithumbAccountEvent,
+    BithumbAccountStream, BithumbApiKey, BithumbAssetEvent, BithumbAssetFee, BithumbBatchOrder,
+    BithumbBatchOrderFailure, BithumbBatchOrderOutcome, BithumbBatchOrdersRequest,
+    BithumbBatchOrdersResult, BithumbCancelOrderResponse, BithumbCancelOrdersResponse,
+    BithumbCancelWithdrawalResponse, BithumbClosedOrder, BithumbClosedOrderState,
+    BithumbClosedOrdersRequest, BithumbDepositResponse, BithumbKrwDeposit,
+    BithumbKrwDepositsRequest, BithumbKrwTransferRequest, BithumbKrwWithdrawal,
+    BithumbKrwWithdrawalsRequest, BithumbMarketEvent, BithumbMarketStream, BithumbNetworkFee,
+    BithumbNotice, BithumbOrderBookEvent, BithumbOrderBookSnapshot, BithumbOrderDetail,
+    BithumbOrderDetailRequest, BithumbOrderDetailTrade, BithumbOrderDirection, BithumbOrderEvent,
+    BithumbOrderListItem, BithumbOrderListRequest, BithumbOrderListState, BithumbOrderResponse,
+    BithumbOrdersResponse, BithumbPendingOrderState, BithumbPendingOrdersRequest,
+    BithumbTickerEvent, BithumbTradeEvent, BithumbTwapOrder, BithumbTwapOrderDirection,
+    BithumbTwapOrderRequest, BithumbTwapOrdersRequest, BithumbTwapState, BithumbWithdrawalAddress,
+    BithumbWithdrawalResponse, HyperliquidAccountEvent, HyperliquidAccountStream,
+    HyperliquidAllMids, HyperliquidAssetContext, HyperliquidAssetContextEvent,
+    HyperliquidBookLevel, HyperliquidCandleEvent, HyperliquidCandleSnapshot,
+    HyperliquidDailyVolume, HyperliquidEvmContract, HyperliquidFundingHistoryEntry,
+    HyperliquidL2Book, HyperliquidMarketEvent, HyperliquidMarketStream, HyperliquidMidPrice,
+    HyperliquidOpenOrder, HyperliquidOrderActionResponse, HyperliquidOrderBookEvent,
+    HyperliquidOrderDetail, HyperliquidOrderInfo, HyperliquidOrderReference,
+    HyperliquidOrderStatusResponse, HyperliquidOrderUpdate, HyperliquidPortfolioPeriod,
+    HyperliquidPortfolioPoint, HyperliquidProviderResponse, HyperliquidRecentTrade,
+    HyperliquidReferral, HyperliquidReferrer, HyperliquidSpotAssetContext, HyperliquidSpotBalance,
+    HyperliquidSpotClearinghouseState, HyperliquidSpotMeta, HyperliquidSpotMetaAndAssetContexts,
+    HyperliquidSpotPair, HyperliquidSpotStateBalance, HyperliquidSpotStateEvent,
+    HyperliquidSpotToken, HyperliquidSubAccount, HyperliquidTradeEvent, HyperliquidUserFees,
+    HyperliquidUserFill, HyperliquidUserFunding, HyperliquidUserRateLimit, HyperliquidUserRole,
+    HyperliquidVaultEquity, UpbitAccountStream, UpbitAccountStreamEvent, UpbitApiKey,
+    UpbitAssetStreamEvent, UpbitBatchCancelRequest, UpbitBatchCancelScope, UpbitCancelAndNewOrder,
+    UpbitCancelAndNewOrderDetailResult, UpbitCancelAndNewOrderRequest,
+    UpbitCancelAndNewOrderResult, UpbitCancelOrdersResponse, UpbitCancelWithdrawalResponse,
+    UpbitCandleStreamEvent, UpbitClosedOrder, UpbitClosedOrderState, UpbitClosedOrdersRequest,
+    UpbitDepositInfo, UpbitDepositResponse, UpbitKrwDeposit, UpbitKrwTransferRequest,
+    UpbitKrwTwoFactorType, UpbitKrwWithdrawal, UpbitListedSubscription, UpbitMarketEvent,
+    UpbitMarketStream, UpbitMarketStreamEvent, UpbitOrderBookInstrument, UpbitOrderBookStreamEvent,
+    UpbitOrderDetail, UpbitOrderDetailRequest, UpbitOrderDetailTrade, UpbitOrderDirection,
+    UpbitOrderReference, UpbitOrderResponse, UpbitOrderStreamEvent, UpbitOrderVolume, UpbitPocket,
+    UpbitPocketApiKey, UpbitPocketApiKeyGroup, UpbitPocketApiKeysRequest, UpbitPocketBalance,
+    UpbitPocketTransfer, UpbitPocketTransferDirection, UpbitPocketTransferOrder,
+    UpbitPocketTransferQuery, UpbitPocketTransferRequest, UpbitPocketTransferState,
+    UpbitPocketUniversalTransferRequest, UpbitSmpType, UpbitSubscriptionList,
+    UpbitTickerStreamEvent, UpbitTradeStreamEvent, UpbitTravelRuleVasp,
+    UpbitTravelRuleVerification, UpbitWithdrawalAddress, UpbitWithdrawalResponse, UpbitYearCandle,
+};
 pub use client::Client;
-pub use error::{Error, ExchangeErrorKind, Result};
+pub use error::{Error, ExchangeErrorKind, Result, TransferErrorKind};
 pub use feature::Feature;
-pub use request::{CandleRequest, HistoryRequest, MarginRequest, OrderRequest};
+pub use request::{
+    CancelOrdersRequest, CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest,
+    OrderHistoryRequest, OrderIdKind, OrderLookupRequest, OrderRequest, TransferHistoryRequest,
+    TransferLookupRequest, WithdrawRequest,
+};
 pub use stream::{AccountStream, MarketStream};
 pub use types::{
-    AccountEvent, Balance, Candle, Cursor, Exchange, Feed, FundingPayment, FundingRate, Interval,
-    Level, MarginMode, MarginSummary, Market, MarketEvent, MarketInfo, MarketKind, MarketStatus,
-    Order, OrderBook, OrderStatus, OrderType, Overflow, Page, Position, Side, Size, StreamConfig,
-    Subscription, Ticker, TimeInForce, Timestamp, Trade,
+    AccountEvent, AssetNetwork, Balance, CancelOrdersResult, CancelledOrder, Candle,
+    ChainDestination, ChainTransferRequest, Cursor, Deposit, DepositAddress, DepositAddressEntry,
+    DepositStatus, Exchange, ExchangeDestination, ExchangeTransferRequest, Feed, FundingPayment,
+    FundingRate, Interval, Level, MarginMode, MarginSummary, Market, MarketEvent, MarketInfo,
+    MarketKind, MarketStatus, Network, Order, OrderAccount, OrderBook, OrderCancelFailure,
+    OrderOption, OrderRules, OrderStatus, OrderType, Overflow, Page, Position, Side, Size,
+    StreamConfig, Subscription, Ticker, TimeInForce, Timestamp, Trade, TransferDestination,
+    TravelRuleRequirement, Withdrawal, WithdrawalFee, WithdrawalQuote, WithdrawalStatus,
+};
+pub use wallet::{
+    PreparedTransfer, TransferPlan, Wallet, execute_transfer_plan, prepare_chain_transfer,
+    prepare_exchange_transfer,
 };
 
 /// The exact decimal type used for every price, quantity, and amount.

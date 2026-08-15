@@ -17,6 +17,8 @@ use crate::types::{
     Timestamp, Trade,
 };
 
+use super::HyperliquidMidPrice;
+
 pub(crate) const EXCHANGE: &str = Exchange::Hyperliquid.id();
 
 /// Settlement asset for default perpetuals and account-wide USDC values.
@@ -61,7 +63,32 @@ pub(crate) struct RawSpotToken {
     pub(crate) name: String,
     #[serde(rename = "szDecimals")]
     pub(crate) sz_decimals: u32,
+    #[serde(rename = "weiDecimals", default)]
+    pub(crate) wei_decimals: Option<u32>,
     pub(crate) index: u32,
+    #[serde(rename = "tokenId", default)]
+    pub(crate) token_id: Option<String>,
+    #[serde(rename = "isCanonical", default)]
+    pub(crate) is_canonical: Option<bool>,
+    #[serde(rename = "evmContract", default)]
+    pub(crate) evm_contract: Option<RawEvmContract>,
+    #[serde(rename = "fullName", default)]
+    pub(crate) full_name: Option<String>,
+    #[serde(
+        rename = "deployerTradingFeeShare",
+        default,
+        deserialize_with = "optional_number_or_string"
+    )]
+    pub(crate) deployer_trading_fee_share: Option<String>,
+}
+
+/// EVM contract information returned for a spot token when available.
+#[derive(Debug, Deserialize)]
+pub(crate) struct RawEvmContract {
+    #[serde(default)]
+    pub(crate) address: Option<String>,
+    #[serde(rename = "evm_extra_wei_decimals", default)]
+    pub(crate) extra_wei_decimals: Option<u32>,
 }
 
 /// One spot pair. `tokens` indexes into [`RawSpotMeta::tokens`], base first.
@@ -70,6 +97,8 @@ pub(crate) struct RawSpotPair {
     pub(crate) name: String,
     pub(crate) tokens: [u32; 2],
     pub(crate) index: u32,
+    #[serde(rename = "isCanonical", default)]
+    pub(crate) is_canonical: Option<bool>,
 }
 
 /// The `l2Book` response, and the `l2Book` stream frame's `data`.
@@ -85,6 +114,8 @@ pub(crate) struct RawBook {
 pub(crate) struct RawLevel {
     pub(crate) px: String,
     pub(crate) sz: String,
+    #[serde(default)]
+    pub(crate) n: Option<u64>,
 }
 
 /// One `candleSnapshot` item or `candle` stream item.
@@ -109,6 +140,8 @@ pub(crate) struct RawCandle {
     pub(crate) close: String,
     #[serde(rename = "v", deserialize_with = "number_or_string")]
     pub(crate) volume: String,
+    #[serde(rename = "n", default, deserialize_with = "optional_u64")]
+    pub(crate) trade_count: Option<u64>,
 }
 
 /// One entry of the `trades` stream frame.
@@ -121,6 +154,10 @@ pub(crate) struct RawTrade {
     pub(crate) sz: String,
     pub(crate) time: i64,
     pub(crate) tid: Number,
+    #[serde(default)]
+    pub(crate) hash: Option<String>,
+    #[serde(default)]
+    pub(crate) users: Vec<String>,
 }
 
 /// One context from `metaAndAssetCtxs` or `spotMetaAndAssetCtxs`.
@@ -132,24 +169,64 @@ pub(crate) struct RawAssetCtx {
     /// Native market name supplied by spot contexts.
     #[serde(default)]
     pub(crate) coin: Option<String>,
-    #[serde(rename = "midPx", default)]
+    #[serde(
+        rename = "midPx",
+        default,
+        deserialize_with = "optional_number_or_string"
+    )]
     pub(crate) mid_px: Option<String>,
-    #[serde(rename = "markPx", default)]
+    #[serde(
+        rename = "markPx",
+        default,
+        deserialize_with = "optional_number_or_string"
+    )]
     pub(crate) mark_px: Option<String>,
-    #[serde(rename = "prevDayPx", default)]
+    #[serde(
+        rename = "prevDayPx",
+        default,
+        deserialize_with = "optional_number_or_string"
+    )]
     pub(crate) prev_day_px: Option<String>,
-    #[serde(rename = "dayBaseVlm", default)]
+    #[serde(
+        rename = "dayBaseVlm",
+        default,
+        deserialize_with = "optional_number_or_string"
+    )]
     pub(crate) day_base_volume: Option<String>,
-    #[serde(rename = "dayNtlVlm", default)]
+    #[serde(
+        rename = "dayNtlVlm",
+        default,
+        deserialize_with = "optional_number_or_string"
+    )]
     pub(crate) day_notional_volume: Option<String>,
     /// The external price funding is computed against. Perpetuals only.
-    #[serde(rename = "oraclePx", default)]
+    #[serde(
+        rename = "oraclePx",
+        default,
+        deserialize_with = "optional_number_or_string"
+    )]
     pub(crate) oracle_px: Option<String>,
     /// The current funding rate. Perpetuals only.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "optional_number_or_string")]
     pub(crate) funding: Option<String>,
-    #[serde(rename = "openInterest", default)]
+    #[serde(
+        rename = "openInterest",
+        default,
+        deserialize_with = "optional_number_or_string"
+    )]
     pub(crate) open_interest: Option<String>,
+    #[serde(
+        rename = "circulatingSupply",
+        default,
+        deserialize_with = "optional_number_or_string"
+    )]
+    pub(crate) circulating_supply: Option<String>,
+    #[serde(
+        rename = "totalSupply",
+        default,
+        deserialize_with = "optional_number_or_string"
+    )]
+    pub(crate) total_supply: Option<String>,
 }
 
 /// The `spotClearinghouseState` response.
@@ -163,8 +240,16 @@ pub(crate) struct RawSpotState {
 #[derive(Debug, Deserialize)]
 pub(crate) struct RawSpotBalance {
     pub(crate) coin: String,
+    #[serde(default)]
+    pub(crate) token: Option<u32>,
     pub(crate) hold: String,
     pub(crate) total: String,
+    #[serde(
+        rename = "entryNtl",
+        default,
+        deserialize_with = "optional_number_or_string"
+    )]
+    pub(crate) entry_notional: Option<String>,
 }
 
 /// The `clearinghouseState` response: perpetual positions and account margin.
@@ -236,19 +321,29 @@ pub(crate) struct RawUserFunding {
 
 #[derive(Debug, Deserialize)]
 pub(crate) struct RawFundingDelta {
+    #[serde(rename = "type", default)]
+    pub(crate) kind: Option<String>,
     pub(crate) coin: String,
     /// Signed USDC amount. Negative means the account paid funding.
     pub(crate) usdc: String,
     #[serde(rename = "fundingRate")]
     pub(crate) funding_rate: String,
+    #[serde(default)]
+    pub(crate) szi: Option<String>,
+    #[serde(rename = "nSamples", default, deserialize_with = "optional_u64")]
+    pub(crate) sample_count: Option<u64>,
 }
 
 /// One entry of `fundingHistory`.
 /// This is a market-rate observation, not an account funding payment.
 #[derive(Debug, Deserialize)]
 pub(crate) struct RawFundingHistory {
+    #[serde(default)]
+    pub(crate) coin: Option<String>,
     #[serde(rename = "fundingRate")]
     pub(crate) funding_rate: String,
+    #[serde(default, deserialize_with = "optional_number_or_string")]
+    pub(crate) premium: Option<String>,
     pub(crate) time: i64,
 }
 
@@ -268,6 +363,8 @@ pub(crate) struct RawLedgerUpdate {
 pub(crate) struct RawStreamOrder {
     pub(crate) order: RawStreamOrderBody,
     pub(crate) status: String,
+    #[serde(rename = "statusTimestamp", default)]
+    pub(crate) status_timestamp: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -281,11 +378,14 @@ pub(crate) struct RawStreamOrderBody {
     pub(crate) orig_sz: String,
     pub(crate) oid: u64,
     pub(crate) timestamp: i64,
+    #[serde(default)]
+    pub(crate) cloid: Option<String>,
 }
 
 /// The `spotState` private stream frame's `data`.
 #[derive(Debug, Deserialize)]
 pub(crate) struct RawStreamSpotState {
+    pub(crate) user: String,
     #[serde(rename = "spotState")]
     pub(crate) spot_state: RawSpotState,
 }
@@ -315,6 +415,50 @@ where
         Value::Number(number) => Ok(number.to_string()),
         other => Err(D::Error::custom(format!(
             "expected a number or a string, got {other}"
+        ))),
+    }
+}
+
+/// Reads an optional decimal spelling which Hyperliquid may return as a JSON
+/// number, a decimal string, or `null`.
+fn optional_number_or_string<'de, D>(
+    deserializer: D,
+) -> std::result::Result<Option<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de::Error as _;
+
+    match Option::<Value>::deserialize(deserializer)? {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(value)) => Ok(Some(value)),
+        Some(Value::Number(value)) => Ok(Some(value.to_string())),
+        Some(other) => Err(D::Error::custom(format!(
+            "expected a number, a string, or null, got {other}"
+        ))),
+    }
+}
+
+/// Reads an optional unsigned number which Hyperliquid may spell as a JSON
+/// number, a numeric string, or `null`.
+fn optional_u64<'de, D>(deserializer: D) -> std::result::Result<Option<u64>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de::Error as _;
+
+    match Option::<Value>::deserialize(deserializer)? {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::Number(value)) => value
+            .as_u64()
+            .ok_or_else(|| D::Error::custom("expected an unsigned integer"))
+            .map(Some),
+        Some(Value::String(value)) => value
+            .parse()
+            .map(Some)
+            .map_err(|_| D::Error::custom("expected an unsigned integer")),
+        Some(other) => Err(D::Error::custom(format!(
+            "expected an unsigned integer, got {other}"
         ))),
     }
 }
@@ -356,11 +500,13 @@ pub(crate) fn interval_name(interval: Interval) -> Option<&'static str> {
         Interval::Min1 => "1m",
         Interval::Min3 => "3m",
         Interval::Min5 => "5m",
+        Interval::Min10 => return None,
         Interval::Min15 => "15m",
         Interval::Min30 => "30m",
         Interval::Hour1 => "1h",
         Interval::Hour2 => "2h",
         Interval::Hour4 => "4h",
+        Interval::Hour6 => return None,
         Interval::Hour8 => "8h",
         Interval::Hour12 => "12h",
         Interval::Day1 => "1d",
@@ -395,6 +541,13 @@ pub(crate) fn interval_from_name(raw: &str) -> Option<Interval> {
 /// Reads a successful body, reporting a shape change as [`Error::Decode`].
 pub(crate) fn json<T: for<'de> Deserialize<'de>>(body: &str) -> Result<T> {
     serde_json::from_str(body)
+        .map_err(|err| Error::decode(format!("unreadable Hyperliquid response: {err}")))
+}
+
+/// Reads a successful JSON value, retaining the original value for a
+/// provider-specific contract's `raw_json` field.
+pub(crate) fn value<T: for<'de> Deserialize<'de>>(value: &Value) -> Result<T> {
+    serde_json::from_value(value.clone())
         .map_err(|err| Error::decode(format!("unreadable Hyperliquid response: {err}")))
 }
 
@@ -640,6 +793,38 @@ pub(crate) fn market_info(asset: &Asset) -> MarketInfo {
         korean_name: None,
         english_name: None,
     }
+}
+
+/// Maps an `allMids` object into the default markets known by this adapter.
+/// Unknown keys are ignored so a newly listed HIP-3 asset cannot break the
+/// default-universe read before this adapter learns its metadata.
+pub(crate) fn all_mids(raw: &Value, universe: &Universe) -> Result<Vec<HyperliquidMidPrice>> {
+    let raw = raw
+        .as_object()
+        .ok_or_else(|| Error::decode("hyperliquid allMids response is not an object"))?;
+    let mut mids = Vec::with_capacity(raw.len());
+
+    for (native, value) in raw {
+        let Ok(market) = universe.market_from_native_symbol(native) else {
+            continue;
+        };
+        let text = value
+            .as_str()
+            .map(str::to_owned)
+            .or_else(|| value.as_number().map(ToString::to_string))
+            .ok_or_else(|| {
+                Error::decode(format!(
+                    "hyperliquid allMids value for `{native}` is not a number"
+                ))
+            })?;
+
+        mids.push(HyperliquidMidPrice {
+            market: market.clone(),
+            price: decimal(&text, native)?,
+        });
+    }
+
+    Ok(mids)
 }
 
 pub(crate) fn order_book(raw: &RawBook, universe: &Universe) -> Result<OrderBook> {
@@ -970,6 +1155,13 @@ pub(crate) mod tests {
       ]
     }"#;
 
+    // https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#retrieve-mids-for-all-coins
+    pub(crate) const ALL_MIDS: &str = r#"{
+      "BTC": "113376.5",
+      "ETH": "3000.5",
+      "@107": "53.6865"
+    }"#;
+
     // https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#l2-book-snapshot
     pub(crate) const L2_BOOK: &str = r#"{
       "coin": "BTC",
@@ -1109,6 +1301,7 @@ pub(crate) mod tests {
         "delta": {
           "coin": "ETH",
           "fundingRate": "0.0000125",
+          "nSamples": 24,
           "szi": "49.1477",
           "type": "funding",
           "usdc": "-0.0568"
@@ -1221,6 +1414,44 @@ pub(crate) mod tests {
             "1386929.37231066771348207123"
         );
         assert_eq!(decimal_of("-0.00022196"), Decimal::new(-22_196, 8));
+    }
+
+    #[test]
+    fn all_mids_resolve_perpetual_and_indexed_spot_symbols() {
+        let mids = all_mids(
+            &json(ALL_MIDS).expect("official allMids payload"),
+            &universe(),
+        )
+        .expect("all mids");
+
+        assert_eq!(mids.len(), 3);
+        assert_eq!(mids[0].market, btc_perp());
+        assert_eq!(mids[0].price, decimal_of("113376.5"));
+        assert_eq!(
+            mids[2],
+            HyperliquidMidPrice {
+                market: Market::spot(Exchange::Hyperliquid, "HYPE", "USDC"),
+                price: decimal_of("53.6865"),
+            }
+        );
+    }
+
+    #[test]
+    fn all_mids_ignore_unlisted_dex_keys_but_reject_invalid_known_values() {
+        let mut raw: Value = json(ALL_MIDS).expect("official allMids payload");
+        raw["xyz:XYZ100"] = Value::String("1.0".to_string());
+        assert_eq!(
+            all_mids(&raw, &universe())
+                .expect("unknown DEX is ignored")
+                .len(),
+            3
+        );
+
+        raw["BTC"] = Value::String("not-a-price".to_string());
+        assert!(matches!(
+            all_mids(&raw, &universe()),
+            Err(Error::Decode { .. })
+        ));
     }
 
     #[test]
@@ -1579,5 +1810,6 @@ pub(crate) mod tests {
             decimal_of("0.0000125")
         );
         assert_eq!(raw[0].delta.coin, "ETH");
+        assert_eq!(raw[0].delta.sample_count, Some(24));
     }
 }

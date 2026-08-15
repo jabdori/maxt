@@ -84,8 +84,30 @@ define_features! {
     CandleStream => ("candle_stream", "streaming candles"),
     /// Reading account balances.
     Balances => ("balances", "reading balances"),
+    /// Reading live asset and network transfer rules.
+    AssetNetworks => ("asset_networks", "reading asset networks"),
+    /// Reading exchange-issued deposit addresses.
+    DepositAddresses => ("deposit_addresses", "reading deposit addresses"),
+    /// Reading deposit history.
+    DepositHistory => ("deposit_history", "reading deposit history"),
+    /// Looking up one deposit.
+    DepositLookup => ("deposit_lookup", "looking up deposits"),
+    /// Verifying a deposit through a provider's Travel Rule service.
+    TravelRule => ("travel_rule", "verifying Travel Rule deposits"),
+    /// Checking a withdrawal before submitting it.
+    WithdrawalQuotes => ("withdrawal_quotes", "checking withdrawals"),
+    /// Submitting withdrawals.
+    Withdrawals => ("withdrawals", "submitting withdrawals"),
+    /// Reading withdrawal history.
+    WithdrawalHistory => ("withdrawal_history", "reading withdrawal history"),
+    /// Looking up one withdrawal.
+    WithdrawalLookup => ("withdrawal_lookup", "looking up withdrawals"),
+    /// Cancelling a pending withdrawal.
+    WithdrawalCancellation => ("withdrawal_cancellation", "cancelling withdrawals"),
     /// Reading open orders.
     OpenOrders => ("open_orders", "reading open orders"),
+    /// Reading one order or final-order history.
+    OrderHistory => ("order_history", "reading order history"),
     /// Streaming account balance and order updates.
     AccountStream => ("account_stream", "streaming account updates"),
     /// Placing and cancelling orders.
@@ -124,7 +146,18 @@ impl Feature {
             | Self::CandleStream
             | Self::FundingRates => false,
             Self::Balances
+            | Self::AssetNetworks
+            | Self::DepositAddresses
+            | Self::DepositHistory
+            | Self::DepositLookup
+            | Self::TravelRule
+            | Self::WithdrawalQuotes
+            | Self::Withdrawals
+            | Self::WithdrawalHistory
+            | Self::WithdrawalLookup
+            | Self::WithdrawalCancellation
             | Self::OpenOrders
+            | Self::OrderHistory
             | Self::AccountStream
             | Self::Trading
             | Self::Positions
@@ -179,9 +212,14 @@ mod tests {
     fn everything_touching_an_account_needs_credentials() {
         for feature in [
             Feature::Balances,
+            Feature::DepositLookup,
+            Feature::TravelRule,
             Feature::OpenOrders,
+            Feature::OrderHistory,
             Feature::AccountStream,
             Feature::Trading,
+            Feature::WithdrawalLookup,
+            Feature::WithdrawalCancellation,
             Feature::Positions,
             Feature::Margin,
             Feature::FundingPayments,

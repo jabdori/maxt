@@ -3,12 +3,12 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use maxt::{
-    AccountEvent, Adapter, Balance, BoxFuture, Candle, CandleRequest, Cursor, Decimal, Error,
-    Exchange, ExchangeErrorKind, Feature, Feed, FundingPayment, FundingRate, HistoryRequest,
+    AccountEvent, Adapter, BoxFuture, CancelOrdersRequest, Candle, CandleRequest, Cursor, Decimal,
+    Error, Exchange, ExchangeErrorKind, Feature, Feed, FundingPayment, FundingRate, HistoryRequest,
     Interval, Level, MarginMode, MarginRequest, MarginSummary, Market, MarketEvent, MarketInfo,
-    MarketKind, MarketStatus, Order, OrderBook, OrderRequest, OrderStatus, OrderType, Overflow,
-    Page, Position, Result, Side, Size, StreamConfig, Subscription, Ticker, TimeInForce, Timestamp,
-    Trade,
+    MarketKind, MarketStatus, Order, OrderBook, OrderHistoryRequest, OrderRequest, OrderStatus,
+    OrderType, Overflow, Page, Position, Result, Side, Size, StreamConfig, Subscription, Ticker,
+    TimeInForce, Timestamp, Trade,
 };
 use maxt_bindings_common::{AdapterCall, AdapterReply, ForeignAdapter, ForeignDispatcher};
 use pyo3::IntoPyObjectExt;
@@ -16,9 +16,10 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAnyMethods, PyDict, PyList, PyTracebackMethods, PyTuple};
 
 use crate::convert::{
-    decimal_from_wire, decimal_to_wire, exchange_from_wire, feature_from_wire, interval_from_wire,
-    margin_mode_from_wire, market_from_wire, market_to_wire, optional, required, side_from_wire,
-    text, timestamp_to_wire, wire_object,
+    balance_from_wire, decimal_from_wire, decimal_to_wire, exchange_from_wire, feature_from_wire,
+    interval_from_wire, list_from_wire, margin_mode_from_wire, market_from_wire, market_to_wire,
+    optional, required, side_from_wire, text, timestamp_to_wire, transfer_error_kind_from_wire,
+    wire_object,
 };
 
 macro_rules! wire_dict {
@@ -153,6 +154,7 @@ fn order_request_object(py: Python<'_>, value: &OrderRequest) -> PyResult<Py<PyA
     let order_type = match value.order_type {
         OrderType::Market => "market",
         OrderType::Limit => "limit",
+        OrderType::Best => "best",
         _ => return Err(binding_contract("OrderType")),
     };
     let (size_kind, size_value) = match value.size {
@@ -175,8 +177,25 @@ fn order_request_object(py: Python<'_>, value: &OrderRequest) -> PyResult<Py<PyA
         "price" => value.price.map(decimal_to_wire),
         "time_in_force" => time_in_force,
         "reduce_only" => value.reduce_only,
+        "client_id" => &value.client_id,
     )?;
     model_object(py, "OrderRequest", wire)
+}
+
+fn order_history_request_object(
+    py: Python<'_>,
+    value: &OrderHistoryRequest,
+) -> PyResult<Py<PyAny>> {
+    let wire = crate::convert::order_history_request_to_wire(py, value)?;
+    model_object(py, "OrderHistoryRequest", wire)
+}
+
+fn cancel_orders_request_object(
+    py: Python<'_>,
+    value: &CancelOrdersRequest,
+) -> PyResult<Py<PyAny>> {
+    let wire = crate::convert::cancel_orders_request_to_wire(py, value)?;
+    model_object(py, "CancelOrdersRequest", wire)
 }
 
 fn history_request_object(py: Python<'_>, value: &HistoryRequest) -> PyResult<Py<PyAny>> {
@@ -216,11 +235,13 @@ fn interval_to_wire(value: Interval) -> PyResult<&'static str> {
         Interval::Min1 => Ok("min1"),
         Interval::Min3 => Ok("min3"),
         Interval::Min5 => Ok("min5"),
+        Interval::Min10 => Ok("min10"),
         Interval::Min15 => Ok("min15"),
         Interval::Min30 => Ok("min30"),
         Interval::Hour1 => Ok("hour1"),
         Interval::Hour2 => Ok("hour2"),
         Interval::Hour4 => Ok("hour4"),
+        Interval::Hour6 => Ok("hour6"),
         Interval::Hour8 => Ok("hour8"),
         Interval::Hour12 => Ok("hour12"),
         Interval::Day1 => Ok("day1"),
@@ -267,6 +288,9 @@ fn decode_reply(
     reply: ReplyKind,
     value: &Bound<'_, PyAny>,
 ) -> PyResult<AdapterReply> {
+    if let Some(result) = decode_generated_reply(reply, value) {
+        return result;
+    }
     match reply {
         ReplyKind::Markets => {
             list_from_wire(value, market_info_from_wire).map(AdapterReply::Markets)
@@ -282,11 +306,19 @@ fn decode_reply(
         ReplyKind::OpenOrders => {
             list_from_wire(value, order_from_wire).map(AdapterReply::OpenOrders)
         }
+        ReplyKind::Order | ReplyKind::OrderByClientId => {
+            order_from_wire(value).map(AdapterReply::Order)
+        }
+        ReplyKind::OrdersByIds => {
+            list_from_wire(value, order_from_wire).map(AdapterReply::OrdersByIds)
+        }
+        ReplyKind::OrderHistory => {
+            page_from_wire(value, order_from_wire).map(AdapterReply::OrderHistory)
+        }
         ReplyKind::AccountStream => {
             crate::stream::account_stream_from_python(value).map(AdapterReply::AccountStream)
         }
         ReplyKind::PlaceOrder => order_from_wire(value).map(AdapterReply::PlaceOrder),
-        ReplyKind::CancelOrder => order_from_wire(value).map(AdapterReply::CancelOrder),
         ReplyKind::Positions => {
             list_from_wire(value, position_from_wire).map(AdapterReply::Positions)
         }
@@ -301,19 +333,26 @@ fn decode_reply(
         }
         ReplyKind::Unit if value.is_none() => Ok(AdapterReply::Unit),
         ReplyKind::Unit => Err(pyo3::exceptions::PyTypeError::new_err(
-            "Adapter.set_margin must return None",
+            "unit adapter methods must return None",
+        )),
+        _ => Err(pyo3::exceptions::PyRuntimeError::new_err(
+            "generated adapter reply decoder returned no result",
         )),
     }
 }
 
-fn list_from_wire<T>(
+fn page_from_wire<T>(
     value: &Bound<'_, PyAny>,
     parse: fn(&Bound<'_, PyAny>) -> PyResult<T>,
-) -> PyResult<Vec<T>> {
-    value
-        .try_iter()?
-        .map(|item| parse(&item?))
-        .collect::<PyResult<Vec<_>>>()
+) -> PyResult<Page<T>> {
+    let value = wire_object(value)?;
+    let value = value.cast::<PyDict>()?;
+    Ok(Page {
+        items: list_from_wire(&required(value, "items")?, parse)?,
+        next: optional(value, "next")?
+            .map(|value| value.extract::<String>().map(Cursor::new))
+            .transpose()?,
+    })
 }
 
 fn market_info_from_wire(value: &Bound<'_, PyAny>) -> PyResult<MarketInfo> {
@@ -408,18 +447,6 @@ fn candle_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Candle> {
     })
 }
 
-fn balance_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Balance> {
-    let value = wire_object(value)?;
-    let value = value.cast::<PyDict>()?;
-    Ok(Balance {
-        asset: required(value, "asset")?
-            .extract::<String>()?
-            .to_ascii_uppercase(),
-        available: decimal_from_wire(&required(value, "available")?, "available")?,
-        locked: decimal_from_wire(&required(value, "locked")?, "locked")?,
-    })
-}
-
 fn order_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Order> {
     let value = wire_object(value)?;
     let value = value.cast::<PyDict>()?;
@@ -505,20 +532,6 @@ fn funding_rates_page_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Page<Fundi
 
 fn funding_payments_page_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Page<FundingPayment>> {
     page_from_wire(value, funding_payment_from_wire)
-}
-
-fn page_from_wire<T>(
-    value: &Bound<'_, PyAny>,
-    parse: fn(&Bound<'_, PyAny>) -> PyResult<T>,
-) -> PyResult<Page<T>> {
-    let value = wire_object(value)?;
-    let value = value.cast::<PyDict>()?;
-    Ok(Page {
-        items: list_from_wire(&required(value, "items")?, parse)?,
-        next: optional(value, "next")?
-            .map(|value| value.extract::<String>().map(Cursor::new))
-            .transpose()?,
-    })
 }
 
 fn timestamp_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Timestamp> {
@@ -661,6 +674,10 @@ fn known_error_value(py: Python<'_>, value: &Bound<'_, PyAny>) -> PyResult<Optio
                 detail: required(wire, "detail")?.extract()?,
             }
         }
+        "transfer" => Error::Transfer {
+            kind: transfer_error_kind_from_wire(&required(wire, "transfer_kind")?)?,
+            detail: required(wire, "detail")?.extract()?,
+        },
         "unsupported" => Error::Unsupported {
             feature: feature_from_wire(&required(wire, "feature")?)?,
             exchange: exchange_from_wire(&required(wire, "exchange")?)?.id(),
@@ -951,7 +968,7 @@ class Fixture:
 
     async def cancel_order(self, market, order_id):
         assert market == MARKET and order_id == "order-1"
-        return Order(order_id, MARKET, Side.BUY, OrderStatus.CANCELLED, Decimal("0"), Decimal("1"), None, None)
+        return None
 
     async def positions(self, market):
         assert market == MARKET
@@ -994,14 +1011,10 @@ class Fixture:
                     adapter.place_order(&request).await.map_err(to_runtime)?.id,
                     "order-1"
                 );
-                assert_eq!(
-                    adapter
-                        .cancel_order(&market, "order-1")
-                        .await
-                        .map_err(to_runtime)?
-                        .status,
-                    OrderStatus::Cancelled
-                );
+                adapter
+                    .cancel_order(&market, "order-1")
+                    .await
+                    .map_err(to_runtime)?;
 
                 let positions = adapter.positions(Some(&market)).await.map_err(to_runtime)?;
                 assert_eq!(positions[0].leverage, Some(Decimal::from(3)));

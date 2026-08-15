@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.1
+
+- Reissued 0.2.0 with the same Travel Rule and KRW transfer APIs after GitHub
+  Actions skipped the multi-tag push event.
+
+## 0.2.0
+
+- Added Upbit Travel Rule VASP lookup and verification for Korea and Singapore.
+- Added Bithumb KRW deposit and withdrawal history plus transfer requests.
+- Generated the matching Rust, Python, Dart/Flutter, Node.js, and browser WASM APIs from the shared schema.
+
 ## 0.1.0 - 2026-08-02
 
 - Common typed API for market data, accounts, orders, and streams.

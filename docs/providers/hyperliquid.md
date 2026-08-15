@@ -31,6 +31,7 @@ may use that name or `@{index}`. Use the returned `MarketInfo::native_symbol`.
 | `order_book(market, depth)` | `l2Book` | `depth: 1..=20`; at most `depth` levels per side; local truncation |
 | `ticker(market)` | `metaAndAssetCtxs`, `spotMetaAndAssetCtxs` | Reference-price summary |
 | `funding_rates(request)` | `fundingHistory` | Public; Perpetual only; provider page `<= 500` |
+| `all_mids()` | `POST /info` with `{"type":"allMids"}` | Public; default perpetual DEX and first-DEX Spot mids; empty books use the last trade price as fallback |
 
 | `HistoryRequest` field or state | Contract |
 | --- | --- |
@@ -83,17 +84,42 @@ Use `trades` or `Feed::Trades` for execution prices and times.
 The adapter sends `{"method":"ping"}` every 15 seconds. `l2Book.nSigFigs` and
 `l2Book.mantissa` are not exposed.
 
-## Private and provider-specific APIs
+### Full-fidelity Hyperliquid streams
 
-Configure private calls with `.with_wallet(address, private_key)`. Wallet values
-are validated on the first private call; `Client::supports` treats the feature
-as configured as soon as a wallet is present. The private key is used only for
-local signing and is redacted from `Debug`.
+The portable `Client::subscribe()` and `Client::subscribe_account()` APIs keep
+their normalized event contracts. When an application needs the documented
+Hyperliquid-only fields, call the concrete adapter methods instead:
 
-| Market | Private features |
-| --- | --- |
-| Spot | Balances, open orders, place/cancel order, account stream |
-| Perpetual | Spot features plus positions, margin summary/configuration, funding payments, and reduce-only orders |
+| Method | Result | Requirement |
+| --- | --- | --- |
+| `subscribe_detailed(&subscription)` | `HyperliquidMarketStream` | Public market subscription |
+| `subscribe_detailed_with(&subscription, &config)` | `HyperliquidMarketStream` | Same subscription with explicit reconnect and buffer settings |
+| `subscribe_detailed_account()` | `HyperliquidAccountStream` | Configured query address; no local signer |
+| `subscribe_detailed_account_with(&config)` | `HyperliquidAccountStream` | Same account subscription with explicit connection settings |
+
+Each detailed event contains a normalized `common` value and its
+Hyperliquid-native value. Market events retain trade `hash` and `users`,
+L2-level `n`, asset-context values, and candle trade counts. Account events
+retain order status, status timestamp, client order ID, and Spot
+`entryNotional` balances. `raw_json` preserves the source frame for
+forward-compatible fields.
+
+## Account configuration and provider-specific APIs
+
+Public market data and market streams need no account configuration.
+Hyperliquid separates its public account-query address from its local signer:
+
+| Configuration | Spot | Perpetual |
+| --- | --- | --- |
+| `.with_query_address(address)` | Balances, open orders, and account stream | Spot reads plus positions, margin summary, and funding payments |
+| `.with_signer(private_key)` | Place and cancel orders | Spot actions plus margin configuration and reduce-only orders |
+| `.with_wallet(address, private_key)` | Configures both rows | Configures both rows |
+
+The address is sent to Hyperliquid's account-query APIs without a local
+signature. The private key is used only for local signing and is redacted from
+`Debug`. Values are validated by the first dependent call; `Client::supports`
+checks whether the relevant address or signer was configured, not whether the
+provider will accept the request.
 
 `positions()` returns all open perpetual positions;
 `positions_on(spot) == Ok(vec![])`.
@@ -118,7 +144,36 @@ Access the following provider-specific methods through `Client::adapter()`:
 | Method | Contract |
 | --- | --- |
 | `asset_context(&market)` | Mid, mark, oracle, funding, open interest, and order precision |
-| `non_funding_ledger(from, to, cursor, limit)` | Deposits, withdrawals, transfers, and liquidations; funding excluded; wallet required; provider page `<= 500` |
+| `candle_snapshot(&market, interval, from, to)` | Public `POST /info` `candleSnapshot` read that preserves the provider trade count and raw fields. Fixture-verified only. |
+| `l2_book(&market)`, `recent_trades(&market)` | Public `l2Book` and `recentTrades` reads that preserve per-level order counts, trade hashes, and participant data. Fixture-verified only. |
+| `funding_history(&market, from, to)` | Public `fundingHistory` read that preserves the provider premium index. Fixture-verified only. |
+| `user_funding(from, to)`, `spot_clearinghouse_state()` | Unsigned, configured-address reads that preserve funding position/sample fields and Spot entry-notional balances. Fixture-verified only. |
+| `spot_meta()`, `spot_meta_and_asset_contexts()` | Public Spot metadata reads that preserve token, pair, EVM, and supply/context fields. Fixture-verified only. |
+| `basic_open_orders()` | Public-address-bound, unsigned `POST /info` `openOrders` read. This compact provider response is deliberately separate from the common open-order surface, which uses Hyperliquid's richer `frontendOpenOrders` response. Fixture-verified only |
+| `order_status(reference)` | Public-address-bound, unsigned `POST /info` `orderStatus` read. `reference` accepts a numeric server `oid` or a `0x`-prefixed 32-hex-character client order ID. `unknownOid` is the normal `HyperliquidOrderStatusResponse::UnknownOrder` result; future top-level statuses retain their status string and raw JSON. Fixture-verified only |
+| `historical_orders()` | Public-address-bound, unsigned `POST /info` `historicalOrders` read of up to the latest 2,000 orders. Detailed orders retain Hyperliquid trigger, time-in-force, reduce-only, client-ID, status, and raw JSON fields. Fixture-verified only |
+| `user_fills(aggregate_by_time)` | Public-address-bound, unsigned `POST /info` `userFills` read. A configured query address is required; `aggregate_by_time` selects Hyperliquid's partial-fill aggregation. Preserves execution, account-position, fee, order, direction, and raw provider data instead of widening common `Trade`. Fixture-verified only |
+| `user_fills_by_time(from, to, aggregate_by_time)` | Public-address-bound, unsigned `POST /info` `userFillsByTime` read with required `from` and optional `to`. Both provider millisecond boundaries are inclusive; caller boundaries are rounded so the returned range stays within the requested nanosecond range. Shares `aggregate_by_time` and raw-field preservation with `user_fills`. Fixture-verified only |
+| `non_funding_ledger(from, to, cursor, limit)` | Deposits, withdrawals, transfers, and liquidations; funding excluded; configured public query address required, with no signature; provider page `<= 500` |
+| `user_rate_limit()` | Public `POST /info` `userRateLimit` read for the configured address; cumulative volume plus current request use, cap, and surplus |
+| `user_role()` | Public `userRole` read; recognized roles are typed and an unknown provider role is retained |
+| `referral()` | Public `referral` read; stable balances are typed and provider-owned referral state remains JSON text |
+| `user_fees()` | Public `userFees` read; current account rates and daily volumes are typed while the provider fee schedule remains JSON text |
+| `portfolio()` | Public `portfolio` read; account-value and PnL histories by provider period |
+| `sub_accounts()` | Public `subAccounts` read; a provider `null` means an empty list |
+| `user_vault_equities()` | Public `userVaultEquities` read; current vault equity positions |
+
+`all_mids()` is a public, read-only snapshot and is fixture-verified; live reads
+have not been verified. The provider's default empty `dex` selects the first
+perpetual DEX, and Spot mids are included only for that DEX. If a book is empty,
+Hyperliquid uses the last trade price.
+
+All address-scoped Info reads above, including the three order-query methods,
+require a valid public address configured through `with_query_address(...)` or
+`with_wallet(...)`. They use no API key, private key, or local signature; a
+missing or invalid address fails before a network request. They are
+fixture-verified only; live reads have not been verified. See Hyperliquid's
+[official Info endpoint](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint).
 
 | `non_funding_ledger` field or state | Contract |
 | --- | --- |
@@ -150,6 +205,9 @@ HIP-3, outcome assets, `Sec1`, market orders, `FOK`, `l2Book.nSigFigs`, and
 
 - [API overview](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api)
 - [Info endpoint](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)
+- [Account-scoped Info reads](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)
+- [User fills (`userFills`, `userFillsByTime`)](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)
+- [All mids (`allMids`)](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)
 - [Perpetual info](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals)
 - [Spot info](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/spot)
 - [WebSocket subscriptions](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/subscriptions)

@@ -17,8 +17,18 @@ from typing import (
 )
 
 from ._generated_identifiers import (
+    BinanceC2cTradeType,
     BinanceMarket,
+    UpbitKrwTwoFactorType,
+    UpbitSmpType,
     BithumbAlertStep,
+    BithumbClosedOrderState,
+    BithumbOrderDirection,
+    BithumbOrderListState,
+    BithumbPendingOrderState,
+    BithumbTwapOrderDirection,
+    BithumbTwapState,
+    DepositStatus,
     Exchange,
     Feature,
     HyperliquidLedgerKind,
@@ -26,13 +36,22 @@ from ._generated_identifiers import (
     MarginMode,
     MarketKind,
     MarketStatus,
+    Network,
+    OrderIdKind,
     OrderStatus,
     OrderType,
     Overflow,
     Side,
     SizeKind,
     TimeInForce,
+    TransferErrorKind,
+    UpbitOrderDirection,
+    UpbitClosedOrderState,
+    UpbitPocketTransferDirection,
+    UpbitPocketTransferOrder,
+    UpbitPocketTransferState,
     UpbitRegion,
+    WithdrawalStatus,
 )
 from ._generated_wire import RECORD_FIELDS
 
@@ -48,12 +67,14 @@ def _ascii_upper(value: str) -> str:
 
 
 class WireModel:
+    __wire_strict__: ClassVar[bool] = False
+
     def to_wire(self) -> dict[str, Any]:
         return _model_to_wire(self)
 
     @classmethod
     def from_wire(cls, value: dict[str, Any]) -> Any:
-        return _decode_dataclass(cls, value)
+        return _decode_dataclass(cls, value, strict=cls.__wire_strict__)
 
 
 @dataclass(frozen=True)
@@ -211,12 +232,17 @@ class OrderRequest(WireModel):
     price: Optional[Decimal] = None
     time_in_force: Optional[TimeInForce] = None
     reduce_only: bool = False
+    client_id: Optional[str] = None
 
     def __post_init__(self) -> None:
         if self.order_type is OrderType.MARKET and self.price is not None:
             raise ValueError("market orders must not include price")
         if self.order_type is OrderType.LIMIT and self.price is None:
             raise ValueError("limit orders require price")
+        if self.order_type is OrderType.BEST and self.price is not None:
+            raise ValueError("best orders must not include price")
+        if self.order_type is OrderType.BEST and self.time_in_force is None:
+            raise ValueError("best orders require time_in_force")
 
     @classmethod
     def market_order(
@@ -227,6 +253,7 @@ class OrderRequest(WireModel):
         *,
         time_in_force: Optional[TimeInForce] = None,
         reduce_only: bool = False,
+        client_id: Optional[str] = None,
     ) -> OrderRequest:
         return cls(
             market,
@@ -235,6 +262,7 @@ class OrderRequest(WireModel):
             size,
             time_in_force=time_in_force,
             reduce_only=reduce_only,
+            client_id=client_id,
         )
 
     @classmethod
@@ -247,6 +275,7 @@ class OrderRequest(WireModel):
         *,
         time_in_force: Optional[TimeInForce] = None,
         reduce_only: bool = False,
+        client_id: Optional[str] = None,
     ) -> OrderRequest:
         return cls(
             market,
@@ -256,6 +285,28 @@ class OrderRequest(WireModel):
             price,
             time_in_force,
             reduce_only,
+            client_id,
+        )
+
+    @classmethod
+    def best_order(
+        cls,
+        market: Market,
+        side: Side,
+        size: Size,
+        time_in_force: TimeInForce,
+        *,
+        reduce_only: bool = False,
+        client_id: Optional[str] = None,
+    ) -> OrderRequest:
+        return cls(
+            market,
+            side,
+            OrderType.BEST,
+            size,
+            time_in_force=time_in_force,
+            reduce_only=reduce_only,
+            client_id=client_id,
         )
 
 
@@ -531,9 +582,18 @@ def _decimal_to_wire(value: Decimal) -> str:
     return format(value, "f")
 
 
-def _decode_dataclass(model_type: Any, value: dict[str, Any]) -> Any:
+def _decode_dataclass(
+    model_type: Any,
+    value: dict[str, Any],
+    *,
+    strict: bool = False,
+) -> Any:
     hints = get_type_hints(model_type)
     model_fields = _schema_fields(model_type)
+    allowed = {wire_name for _, wire_name, _ in model_fields}
+    unexpected = set(value).difference(allowed)
+    if strict and unexpected:
+        raise ValueError(f"{model_type.__name__} does not accept {next(iter(unexpected))}")
     return model_type(
         **{
             item.name: _decode_value(
@@ -588,6 +648,8 @@ def _decode_value(expected: Any, value: Any) -> Any:
         )
     if expected is Decimal:
         return Decimal(value)
+    if expected is Cursor:
+        return Cursor(value)
     if isinstance(expected, type) and issubclass(expected, Enum):
         return expected(value)
     if isinstance(expected, type) and issubclass(expected, WireModel):
@@ -602,6 +664,8 @@ def _model_to_wire(value: Any) -> Any:
         return _decimal_to_wire(value)
     if isinstance(value, Enum):
         return value.value
+    if isinstance(value, WireModel) and getattr(type(value), "_wire_union", False):
+        return value.to_wire()
     if is_dataclass(value):
         return {
             wire_name: _model_to_wire(getattr(value, item.name))
@@ -617,16 +681,13 @@ def _model_to_wire(value: Any) -> Any:
 
 
 def _model_from_wire(type_name: str, value: dict[str, Any]) -> Any:
-    page_types: dict[str, type[WireModel]] = {
-        "FundingRatePage": FundingRate,
-        "FundingPaymentPage": FundingPayment,
-    }
-    if type_name in page_types:
-        item_type = page_types[type_name]
-        return Page(
-            [item_type.from_wire(item) for item in value["items"]],
-            Cursor(value["next"]) if value.get("next") is not None else None,
-        )
+    if type_name.endswith("Page"):
+        item_type = globals().get(type_name.removesuffix("Page"))
+        if isinstance(item_type, type) and issubclass(item_type, WireModel):
+            return Page(
+                [item_type.from_wire(item) for item in value["items"]],
+                Cursor(value["next"]) if value.get("next") is not None else None,
+            )
     model_type = globals().get(type_name)
     if type_name not in RECORD_FIELDS or not isinstance(model_type, type):
         raise ValueError(f"unknown maxt model: {type_name}")
@@ -635,19 +696,263 @@ def _model_from_wire(type_name: str, value: dict[str, Any]) -> Any:
     return model_type.from_wire(value)
 
 
-__all__ = [
+from ._generated_models import (  # noqa: E402
+    AssetNetwork,
+    BinanceAccountTrade,
+    BinanceAggregateTrade,
+    BinanceAggregateTradesRequest,
+    BinanceC2cTrade,
+    BinanceC2cTradeHistoryPage,
+    BinanceC2cTradeHistoryRequest,
+    BinanceMarkPrice,
+    BinanceOpenInterest,
+    BinanceSpotAveragePrice,
+    BinanceDepositHistoryRequest,
+    BinanceWithdrawHistoryRequest,
+    BinanceSpotAccountInformation,
+    BinanceSpotCommissionRates,
+    BinanceSpotAccountBalance,
+    BinanceSpotCancelAllOpenOrders,
+    BinanceSpotCancelledOrder,
+    BinanceUsdMAccountInformation,
+    BinanceUsdMAccountAsset,
+    BinanceUsdMAccountPosition,
+    BinanceUsdMPositionInformation,
+    BinanceExchangeInfo,
+    BinanceExchangeSymbol,
+    BinanceCoinInformation,
+    BinanceCoinNetworkInformation,
+    BinanceApiKeyPermissions,
+    BinanceDepositHistory,
+    BinanceDepositHistoryEntry,
+    BinanceQuestionnaireRequirements,
+    BinanceWithdrawalAddress,
+    BinanceWithdrawHistory,
+    BinanceWithdrawHistoryEntry,
+    BinanceTestOrder,
+    BinanceTestOrderRequest,
+    BithumbApiKey,
+    BithumbAssetFee,
+    BithumbBatchOrder,
+    BithumbBatchOrderFailure,
+    BithumbBatchOrderOutcome,
+    BithumbBatchOrdersRequest,
+    BithumbBatchOrdersResult,
+    BithumbClosedOrder,
+    BithumbClosedOrdersRequest,
+    BithumbOrderDetail,
+    BithumbOrderDetailRequest,
+    BithumbOrderDetailTrade,
+    BithumbOrderListItem,
+    BithumbOrderListRequest,
+    BithumbKrwDeposit,
+    BithumbKrwDepositsRequest,
+    BithumbKrwTransferRequest,
+    BithumbKrwWithdrawal,
+    BithumbKrwWithdrawalsRequest,
+    BithumbNetworkFee,
+    BithumbNotice,
+    BithumbPendingOrdersRequest,
+    BithumbTwapOrder,
+    BithumbTwapOrderRequest,
+    BithumbTwapOrdersRequest,
+    BithumbWithdrawalAddress,
+    CancelOrdersRequest,
+    CancelOrdersResult,
+    CancelledOrder,
+    ChainDestination,
+    ChainTransferRequest,
+    Deposit,
+    DepositAddress,
+    DepositAddressEntry,
+    DepositAddressRequest,
+    ExchangeDestination,
+    ExchangeTransferRequest,
+    OrderAccount,
+    OrderOption,
+    OrderRules,
+    OrderHistoryRequest,
+    OrderCancelFailure,
+    OrderLookupRequest,
+    TransferDestination,
+    TransferLookupRequest,
+    TransferHistoryRequest,
+    TransferPlan,
+    TravelRuleRequirement,
+    HyperliquidMidPrice,
+    HyperliquidCandleSnapshot,
+    HyperliquidBookLevel,
+    HyperliquidL2Book,
+    HyperliquidRecentTrade,
+    HyperliquidTradeEvent,
+    HyperliquidOrderBookEvent,
+    HyperliquidCandleEvent,
+    HyperliquidAssetContextEvent,
+    HyperliquidOrderUpdate,
+    HyperliquidSpotStateBalance,
+    HyperliquidSpotStateEvent,
+    HyperliquidMarketEvent,
+    HyperliquidAccountEvent,
+    HyperliquidFundingHistoryEntry,
+    HyperliquidUserFunding,
+    HyperliquidSpotBalance,
+    HyperliquidSpotClearinghouseState,
+    HyperliquidEvmContract,
+    HyperliquidSpotToken,
+    HyperliquidSpotPair,
+    HyperliquidSpotMeta,
+    HyperliquidSpotAssetContext,
+    HyperliquidSpotMetaAndAssetContexts,
+    HyperliquidOpenOrder,
+    HyperliquidOrderDetail,
+    HyperliquidOrderInfo,
+    HyperliquidOrderReference,
+    HyperliquidOrderStatusResponse,
+    HyperliquidDailyVolume,
+    HyperliquidPortfolioPeriod,
+    HyperliquidPortfolioPoint,
+    HyperliquidReferral,
+    HyperliquidReferrer,
+    HyperliquidSubAccount,
+    HyperliquidUserFees,
+    HyperliquidUserFill,
+    HyperliquidUserRateLimit,
+    HyperliquidUserRole,
+    HyperliquidVaultEquity,
+    UpbitOrderBookInstrument,
+    UpbitListedSubscription,
+    UpbitSubscriptionList,
+    UpbitClosedOrder,
+    UpbitClosedOrdersRequest,
+    UpbitOrderDetail,
+    UpbitOrderDetailRequest,
+    UpbitOrderDetailTrade,
+    UpbitPocket,
+    UpbitPocketApiKey,
+    UpbitPocketApiKeyGroup,
+    UpbitPocketApiKeysRequest,
+    UpbitPocketBalance,
+    UpbitPocketTransfer,
+    UpbitPocketTransferQuery,
+    UpbitPocketTransferRequest,
+    UpbitPocketUniversalTransferRequest,
+    UpbitBatchCancelRequest,
+    UpbitBatchCancelScope,
+    UpbitCancelAndNewOrder,
+    UpbitCancelAndNewOrderRequest,
+    UpbitCancelAndNewOrderResult,
+    UpbitDepositInfo,
+    UpbitWithdrawalAddress,
+    UpbitApiKey,
+    UpbitKrwDeposit,
+    UpbitKrwTransferRequest,
+    UpbitKrwWithdrawal,
+    UpbitTravelRuleVasp,
+    UpbitTravelRuleVerification,
+    UpbitOrderReference,
+    UpbitOrderVolume,
+    UpbitYearCandle,
+    Withdrawal,
+    WithdrawalFee,
+    WithdrawalQuote,
+    WithdrawRequest,
+)
+from . import _generated_provider_models as _generated_provider_models  # noqa: E402
+from ._generated_provider_models import *  # noqa: E402,F403
+
+
+__all__: list[str] = [
     "AccountEvent",
+    "AssetNetwork",
+    "CancelOrdersRequest",
+    "CancelOrdersResult",
+    "CancelledOrder",
+    "BinanceAccountTrade",
     "BinanceMarket",
+    "BinanceAggregateTrade",
+    "BinanceAggregateTradesRequest",
+    "BinanceC2cTrade",
+    "BinanceC2cTradeHistoryPage",
+    "BinanceC2cTradeHistoryRequest",
+    "BinanceC2cTradeType",
+    "BinanceMarkPrice",
+    "BinanceOpenInterest",
+    "BinanceSpotAveragePrice",
+    "BinanceDepositHistoryRequest",
+    "BinanceWithdrawHistoryRequest",
+    "BinanceSpotAccountInformation",
+    "BinanceSpotCommissionRates",
+    "BinanceSpotAccountBalance",
+    "BinanceSpotCancelAllOpenOrders",
+    "BinanceSpotCancelledOrder",
+    "BinanceUsdMAccountInformation",
+    "BinanceUsdMAccountAsset",
+    "BinanceUsdMAccountPosition",
+    "BinanceUsdMPositionInformation",
+    "BinanceExchangeInfo",
+    "BinanceExchangeSymbol",
+    "BinanceCoinInformation",
+    "BinanceCoinNetworkInformation",
+    "BinanceApiKeyPermissions",
+    "BinanceDepositHistory",
+    "BinanceDepositHistoryEntry",
+    "BinanceQuestionnaireRequirements",
+    "BinanceWithdrawalAddress",
+    "BinanceWithdrawHistory",
+    "BinanceWithdrawHistoryEntry",
     "BinanceSpotOrderDetail",
     "BinanceSymbolFilters",
+    "BinanceTestOrder",
+    "BinanceTestOrderRequest",
     "BithumbAlertStep",
+    "BithumbApiKey",
+    "BithumbAssetFee",
+    "BithumbBatchOrder",
+    "BithumbBatchOrderFailure",
+    "BithumbBatchOrderOutcome",
+    "BithumbBatchOrdersRequest",
+    "BithumbBatchOrdersResult",
+    "BithumbClosedOrder",
+    "BithumbClosedOrderState",
+    "BithumbClosedOrdersRequest",
+    "BithumbOrderDetail",
+    "BithumbOrderDetailRequest",
+    "BithumbOrderDetailTrade",
+    "BithumbOrderListItem",
+    "BithumbOrderListRequest",
+    "BithumbKrwDeposit",
+    "BithumbKrwDepositsRequest",
+    "BithumbKrwTransferRequest",
+    "BithumbKrwWithdrawal",
+    "BithumbKrwWithdrawalsRequest",
     "BithumbMarketAlert",
+    "BithumbNetworkFee",
+    "BithumbNotice",
+    "BithumbOrderDirection",
+    "BithumbOrderListState",
+    "BithumbPendingOrderState",
+    "BithumbPendingOrdersRequest",
+    "BithumbTwapOrderDirection",
+    "BithumbTwapState",
+    "BithumbTwapOrder",
+    "BithumbTwapOrderRequest",
+    "BithumbTwapOrdersRequest",
+    "BithumbWithdrawalAddress",
     "Candle",
     "CandleRequest",
+    "ChainDestination",
+    "ChainTransferRequest",
     "Balance",
     "Cursor",
     "Decimal",
+    "Deposit",
+    "DepositAddress",
+    "DepositAddressEntry",
+    "DepositAddressRequest",
+    "DepositStatus",
     "Exchange",
+    "ExchangeDestination",
+    "ExchangeTransferRequest",
     "Feed",
     "Feature",
     "FundingPayment",
@@ -655,6 +960,46 @@ __all__ = [
     "HyperliquidAssetContext",
     "HyperliquidLedgerEntry",
     "HyperliquidLedgerKind",
+    "HyperliquidMidPrice",
+    "HyperliquidCandleSnapshot",
+    "HyperliquidBookLevel",
+    "HyperliquidL2Book",
+    "HyperliquidRecentTrade",
+    "HyperliquidTradeEvent",
+    "HyperliquidOrderBookEvent",
+    "HyperliquidCandleEvent",
+    "HyperliquidAssetContextEvent",
+    "HyperliquidOrderUpdate",
+    "HyperliquidSpotStateBalance",
+    "HyperliquidSpotStateEvent",
+    "HyperliquidMarketEvent",
+    "HyperliquidAccountEvent",
+    "HyperliquidFundingHistoryEntry",
+    "HyperliquidUserFunding",
+    "HyperliquidSpotBalance",
+    "HyperliquidSpotClearinghouseState",
+    "HyperliquidEvmContract",
+    "HyperliquidSpotToken",
+    "HyperliquidSpotPair",
+    "HyperliquidSpotMeta",
+    "HyperliquidSpotAssetContext",
+    "HyperliquidSpotMetaAndAssetContexts",
+    "HyperliquidOpenOrder",
+    "HyperliquidOrderDetail",
+    "HyperliquidOrderInfo",
+    "HyperliquidOrderReference",
+    "HyperliquidOrderStatusResponse",
+    "HyperliquidDailyVolume",
+    "HyperliquidPortfolioPeriod",
+    "HyperliquidPortfolioPoint",
+    "HyperliquidReferral",
+    "HyperliquidReferrer",
+    "HyperliquidSubAccount",
+    "HyperliquidUserFees",
+    "HyperliquidUserFill",
+    "HyperliquidUserRateLimit",
+    "HyperliquidUserRole",
+    "HyperliquidVaultEquity",
     "HistoryRequest",
     "Interval",
     "Level",
@@ -663,12 +1008,20 @@ __all__ = [
     "MarketInfo",
     "MarketKind",
     "MarketStatus",
+    "Network",
     "MarginMode",
     "MarginRequest",
     "MarginSummary",
     "Overflow",
     "Order",
+    "OrderAccount",
     "OrderBook",
+    "OrderOption",
+    "OrderRules",
+    "OrderHistoryRequest",
+    "OrderCancelFailure",
+    "OrderIdKind",
+    "OrderLookupRequest",
     "OrderRequest",
     "OrderStatus",
     "OrderType",
@@ -683,6 +1036,59 @@ __all__ = [
     "Ticker",
     "TimeInForce",
     "Trade",
+    "TransferDestination",
+    "TransferLookupRequest",
+    "TransferErrorKind",
+    "UpbitOrderDirection",
+    "UpbitClosedOrderState",
+    "TransferHistoryRequest",
+    "TransferPlan",
+    "TravelRuleRequirement",
     "UpbitMarketEvent",
+    "UpbitDepositInfo",
+    "UpbitWithdrawalAddress",
+    "UpbitApiKey",
+    "UpbitKrwDeposit",
+    "UpbitKrwTransferRequest",
+    "UpbitKrwTwoFactorType",
+    "UpbitKrwWithdrawal",
+    "UpbitTravelRuleVasp",
+    "UpbitTravelRuleVerification",
+    "UpbitBatchCancelRequest",
+    "UpbitBatchCancelScope",
+    "UpbitCancelAndNewOrder",
+    "UpbitCancelAndNewOrderRequest",
+    "UpbitCancelAndNewOrderResult",
+    "UpbitOrderBookInstrument",
+    "UpbitListedSubscription",
+    "UpbitSubscriptionList",
+    "UpbitClosedOrder",
+    "UpbitClosedOrdersRequest",
+    "UpbitOrderDetail",
+    "UpbitOrderDetailRequest",
+    "UpbitOrderDetailTrade",
+    "UpbitPocket",
+    "UpbitPocketApiKey",
+    "UpbitPocketApiKeyGroup",
+    "UpbitPocketApiKeysRequest",
+    "UpbitPocketBalance",
+    "UpbitPocketTransfer",
+    "UpbitPocketTransferDirection",
+    "UpbitPocketTransferOrder",
+    "UpbitPocketTransferQuery",
+    "UpbitPocketTransferRequest",
+    "UpbitPocketTransferState",
+    "UpbitPocketUniversalTransferRequest",
+    "UpbitOrderReference",
+    "UpbitOrderVolume",
+    "UpbitSmpType",
     "UpbitRegion",
+    "UpbitYearCandle",
+    "Withdrawal",
+    "WithdrawalFee",
+    "WithdrawalQuote",
+    "WithdrawalStatus",
+    "WithdrawRequest",
 ]
+
+__all__.extend(_generated_provider_models.__all__)

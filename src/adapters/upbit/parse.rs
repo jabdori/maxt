@@ -11,7 +11,10 @@ use rust_decimal::Decimal;
 use serde::Deserialize;
 use serde_json::Number;
 
-use super::UpbitMarketEvent;
+use super::{
+    UpbitClosedOrder, UpbitMarketEvent, UpbitOrderBookInstrument, UpbitOrderDetail,
+    UpbitOrderDetailTrade, UpbitYearCandle,
+};
 use crate::error::{Error, Result};
 use crate::types::{
     Balance, Candle, Exchange, Interval, Level, Market, MarketInfo, MarketKind, MarketStatus,
@@ -115,6 +118,35 @@ pub(crate) struct RawCandle {
     pub(crate) unit: Option<u32>,
 }
 
+/// One entry of `GET /v1/candles/years`.
+#[derive(Debug, Deserialize)]
+pub(crate) struct RawYearCandle {
+    pub(crate) market: String,
+    pub(crate) candle_date_time_utc: String,
+    /// Korea sends this field; regional deployments can omit it.
+    #[serde(default)]
+    pub(crate) candle_date_time_kst: Option<String>,
+    pub(crate) opening_price: Number,
+    pub(crate) high_price: Number,
+    pub(crate) low_price: Number,
+    pub(crate) trade_price: Number,
+    pub(crate) timestamp: i64,
+    pub(crate) candle_acc_trade_price: Number,
+    pub(crate) candle_acc_trade_volume: Number,
+    pub(crate) first_day_of_period: String,
+}
+
+/// One entry of `GET /v1/orderbook/instruments`.
+#[derive(Debug, Deserialize)]
+pub(crate) struct RawOrderBookInstrument {
+    pub(crate) market: String,
+    pub(crate) quote_currency: String,
+    pub(crate) tick_size: String,
+    /// Global Upbit regions currently omit this Korea-only aggregation data.
+    #[serde(default)]
+    pub(crate) supported_levels: Vec<String>,
+}
+
 /// One entry of `GET /v1/accounts`. Upbit sends account figures as strings.
 #[derive(Debug, Deserialize)]
 pub(crate) struct RawBalance {
@@ -130,13 +162,115 @@ pub(crate) struct RawOrder {
     pub(crate) market: String,
     pub(crate) uuid: String,
     pub(crate) side: String,
+    #[serde(default)]
+    pub(crate) ord_type: Option<String>,
     pub(crate) state: String,
+    #[serde(default)]
+    pub(crate) price: Option<String>,
+    #[serde(default)]
+    pub(crate) volume: Option<String>,
+    pub(crate) remaining_volume: String,
+    pub(crate) executed_volume: String,
+    #[serde(default)]
+    pub(crate) reserved_fee: Option<String>,
+    #[serde(default)]
+    pub(crate) remaining_fee: Option<String>,
+    #[serde(default)]
+    pub(crate) paid_fee: Option<String>,
+    #[serde(default)]
+    pub(crate) locked: Option<String>,
+    #[serde(default)]
+    pub(crate) trades_count: Option<u32>,
+    #[serde(default)]
+    pub(crate) prevented_volume: Option<String>,
+    #[serde(default)]
+    pub(crate) prevented_locked: Option<String>,
+    #[serde(default)]
+    pub(crate) time_in_force: Option<String>,
+    #[serde(default)]
+    pub(crate) identifier: Option<String>,
+    #[serde(default)]
+    pub(crate) smp_type: Option<String>,
+    #[serde(default)]
+    pub(crate) created_at: Option<String>,
+}
+
+/// Full `GET /v1/order` payload. The common order parser intentionally reads
+/// only its normalized subset; this shape retains provider-only detail.
+#[derive(Debug, Deserialize)]
+pub(crate) struct RawOrderDetail {
+    pub(crate) market: String,
+    pub(crate) uuid: String,
+    pub(crate) side: String,
+    pub(crate) ord_type: String,
+    #[serde(default)]
+    pub(crate) price: Option<String>,
+    pub(crate) state: String,
+    pub(crate) created_at: String,
+    #[serde(default)]
+    pub(crate) volume: Option<String>,
+    pub(crate) remaining_volume: String,
+    pub(crate) executed_volume: String,
+    pub(crate) reserved_fee: String,
+    pub(crate) remaining_fee: String,
+    pub(crate) paid_fee: String,
+    pub(crate) locked: String,
+    pub(crate) trades_count: u32,
+    pub(crate) prevented_volume: String,
+    pub(crate) prevented_locked: String,
+    #[serde(default)]
+    pub(crate) time_in_force: Option<String>,
+    #[serde(default)]
+    pub(crate) identifier: Option<String>,
+    #[serde(default)]
+    pub(crate) smp_type: Option<String>,
+    #[serde(default)]
+    pub(crate) trades: Vec<RawOrderDetailTrade>,
+}
+
+/// One summary returned by `GET /v1/orders/closed`.
+#[derive(Debug, Deserialize)]
+pub(crate) struct RawClosedOrder {
+    pub(crate) market: String,
+    pub(crate) uuid: String,
+    pub(crate) side: String,
+    pub(crate) ord_type: String,
+    pub(crate) state: String,
+    pub(crate) created_at: String,
+    #[serde(default)]
+    pub(crate) volume: Option<String>,
     #[serde(default)]
     pub(crate) price: Option<String>,
     pub(crate) remaining_volume: String,
     pub(crate) executed_volume: String,
     #[serde(default)]
-    pub(crate) created_at: Option<String>,
+    pub(crate) executed_funds: Option<String>,
+    pub(crate) reserved_fee: String,
+    pub(crate) remaining_fee: String,
+    pub(crate) paid_fee: String,
+    pub(crate) locked: String,
+    pub(crate) trades_count: u32,
+    pub(crate) prevented_volume: String,
+    pub(crate) prevented_locked: String,
+    #[serde(default)]
+    pub(crate) time_in_force: Option<String>,
+    #[serde(default)]
+    pub(crate) identifier: Option<String>,
+    #[serde(default)]
+    pub(crate) smp_type: Option<String>,
+}
+
+/// One provider fill returned by `GET /v1/order`.
+#[derive(Debug, Deserialize)]
+pub(crate) struct RawOrderDetailTrade {
+    pub(crate) market: String,
+    pub(crate) uuid: String,
+    pub(crate) price: String,
+    pub(crate) volume: String,
+    pub(crate) funds: String,
+    pub(crate) trend: String,
+    pub(crate) created_at: String,
+    pub(crate) side: String,
 }
 
 /// Upbit's error body. Every REST failure uses this shape.
@@ -147,8 +281,26 @@ struct RawErrorEnvelope {
 
 #[derive(Debug, Deserialize)]
 struct RawError {
-    name: String,
+    name: RawErrorName,
     message: String,
+}
+
+/// Upbit deployments send `error.name` as either text or a numeric HTTP-like
+/// code. Keep both forms as the provider's error code.
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+enum RawErrorName {
+    Text(String),
+    Number(Number),
+}
+
+impl RawErrorName {
+    fn into_string(self) -> String {
+        match self {
+            Self::Text(name) => name,
+            Self::Number(name) => name.to_string(),
+        }
+    }
 }
 
 /// A `trade` frame from the public WebSocket.
@@ -272,6 +424,19 @@ pub(crate) fn candle_open_time(raw: &str) -> Result<Timestamp> {
         })
 }
 
+/// Parses Upbit's Korea Standard Time candle opening field.
+fn candle_korea_open_time(raw: &str) -> Result<Timestamp> {
+    const KST_OFFSET_SECS: i64 = 9 * 3_600;
+
+    NaiveDateTime::parse_from_str(raw, "%Y-%m-%dT%H:%M:%S")
+        .map(|naive| Timestamp::from_secs(naive.and_utc().timestamp() - KST_OFFSET_SECS))
+        .map_err(|err| {
+            Error::decode(format!(
+                "`candle_date_time_kst` is not a Korea Standard Time datetime: {raw} ({err})"
+            ))
+        })
+}
+
 /// Formats an exclusive candle `to` cursor at second resolution.
 ///
 /// A sub-second value is rounded up so a candle opening before the caller's
@@ -329,7 +494,7 @@ pub(crate) fn exchange_error(status: u16, body: &str) -> Error {
         Ok(envelope) => Error::exchange_http(
             EXCHANGE,
             status,
-            envelope.error.name,
+            envelope.error.name.into_string(),
             envelope.error.message,
         ),
         Err(_) => Error::exchange_http(EXCHANGE, status, "unknown", body.trim()),
@@ -593,6 +758,51 @@ pub(crate) fn candle(raw: &RawCandle, interval: Interval, now: Timestamp) -> Res
     )
 }
 
+/// Maps an Upbit yearly candle without pretending its interval is common.
+pub(crate) fn year_candle(raw: &RawYearCandle) -> Result<UpbitYearCandle> {
+    Ok(UpbitYearCandle {
+        market: market_from_native_symbol(&raw.market)?,
+        open_time: candle_open_time(&raw.candle_date_time_utc)?,
+        korea_open_time: raw
+            .candle_date_time_kst
+            .as_deref()
+            .map(candle_korea_open_time)
+            .transpose()?,
+        timestamp: millis(raw.timestamp, "timestamp")?,
+        open: decimal(&raw.opening_price, "opening_price")?,
+        high: decimal(&raw.high_price, "high_price")?,
+        low: decimal(&raw.low_price, "low_price")?,
+        close: decimal(&raw.trade_price, "trade_price")?,
+        volume: decimal(&raw.candle_acc_trade_volume, "candle_acc_trade_volume")?,
+        quote_volume: decimal(&raw.candle_acc_trade_price, "candle_acc_trade_price")?,
+        first_day_of_period: raw.first_day_of_period.clone(),
+    })
+}
+
+/// Maps a tick-size and aggregation-policy response.
+pub(crate) fn orderbook_instrument(
+    raw: &RawOrderBookInstrument,
+) -> Result<UpbitOrderBookInstrument> {
+    let market = market_from_native_symbol(&raw.market)?;
+    if raw.quote_currency != market.quote {
+        return Err(Error::decode(format!(
+            "`quote_currency` {} does not match market {}",
+            raw.quote_currency, raw.market
+        )));
+    }
+
+    Ok(UpbitOrderBookInstrument {
+        market,
+        quote_currency: raw.quote_currency.clone(),
+        tick_size: decimal_text(&raw.tick_size, "tick_size")?,
+        supported_levels: raw
+            .supported_levels
+            .iter()
+            .map(|level| decimal_text(level, "supported_levels"))
+            .collect::<Result<Vec<_>>>()?,
+    })
+}
+
 /// Returns whether a candle window has ended at `now`.
 ///
 /// [`Interval::advance`] handles fixed and calendar-month boundaries.
@@ -662,6 +872,7 @@ pub(crate) fn minute_unit(interval: Interval) -> Option<u32> {
         Interval::Min1 => Some(1),
         Interval::Min3 => Some(3),
         Interval::Min5 => Some(5),
+        Interval::Min10 => Some(10),
         Interval::Min15 => Some(15),
         Interval::Min30 => Some(30),
         Interval::Hour1 => Some(60),
@@ -706,6 +917,142 @@ pub(crate) fn order(raw: &RawOrder) -> Result<Order> {
     })
 }
 
+/// Converts a create, test, cancel, or list response without discarding
+/// Upbit-only order fields that the common order model cannot name.
+pub(crate) fn order_response(
+    raw: &RawOrder,
+    raw_json: &serde_json::Value,
+) -> Result<super::UpbitOrderResponse> {
+    Ok(super::UpbitOrderResponse {
+        common: order(raw)?,
+        order_type: raw.ord_type.clone(),
+        volume: optional_order_decimal(raw.volume.as_deref(), "volume")?,
+        reserved_fee: optional_order_decimal(raw.reserved_fee.as_deref(), "reserved_fee")?,
+        remaining_fee: optional_order_decimal(raw.remaining_fee.as_deref(), "remaining_fee")?,
+        paid_fee: optional_order_decimal(raw.paid_fee.as_deref(), "paid_fee")?,
+        locked: optional_order_decimal(raw.locked.as_deref(), "locked")?,
+        trades_count: raw.trades_count,
+        prevented_volume: optional_order_decimal(
+            raw.prevented_volume.as_deref(),
+            "prevented_volume",
+        )?,
+        prevented_locked: optional_order_decimal(
+            raw.prevented_locked.as_deref(),
+            "prevented_locked",
+        )?,
+        time_in_force: raw.time_in_force.clone(),
+        identifier: raw.identifier.clone(),
+        smp_type: raw.smp_type.clone(),
+        raw_json: serde_json::to_string(raw_json)
+            .map_err(|error| Error::decode(format!("could not preserve Upbit order: {error}")))?,
+    })
+}
+
+fn optional_order_decimal(value: Option<&str>, field: &'static str) -> Result<Option<Decimal>> {
+    value.map(|value| decimal_text(value, field)).transpose()
+}
+
+/// Converts the complete single-order payload without discarding Upbit-only
+/// fee, self-match-prevention, and fill information.
+pub(crate) fn order_detail(raw: RawOrderDetail) -> Result<UpbitOrderDetail> {
+    let trades = raw
+        .trades
+        .into_iter()
+        .map(order_detail_trade)
+        .collect::<Result<Vec<_>>>()?;
+    if trades.len() != usize::try_from(raw.trades_count).unwrap_or(usize::MAX) {
+        return Err(Error::decode(
+            "Upbit order detail disagrees about `trades_count` and the `trades` array",
+        ));
+    }
+
+    Ok(UpbitOrderDetail {
+        market: market_from_native_symbol(&raw.market)?,
+        uuid: required_text(raw.uuid, "uuid")?,
+        side: required_text(raw.side, "side")?,
+        order_type: required_text(raw.ord_type, "ord_type")?,
+        price: optional_decimal(raw.price, "price")?,
+        state: required_text(raw.state, "state")?,
+        created_at: created_at(&raw.created_at)?,
+        volume: optional_decimal(raw.volume, "volume")?,
+        remaining_volume: decimal_text(&raw.remaining_volume, "remaining_volume")?,
+        executed_volume: decimal_text(&raw.executed_volume, "executed_volume")?,
+        reserved_fee: decimal_text(&raw.reserved_fee, "reserved_fee")?,
+        remaining_fee: decimal_text(&raw.remaining_fee, "remaining_fee")?,
+        paid_fee: decimal_text(&raw.paid_fee, "paid_fee")?,
+        locked: decimal_text(&raw.locked, "locked")?,
+        trades_count: raw.trades_count,
+        prevented_volume: decimal_text(&raw.prevented_volume, "prevented_volume")?,
+        prevented_locked: decimal_text(&raw.prevented_locked, "prevented_locked")?,
+        time_in_force: optional_text(raw.time_in_force, "time_in_force")?,
+        identifier: optional_text(raw.identifier, "identifier")?,
+        smp_type: optional_text(raw.smp_type, "smp_type")?,
+        trades,
+    })
+}
+
+/// Converts one closed-order summary without requiring a detail-only trades list.
+pub(crate) fn closed_order(raw: RawClosedOrder) -> Result<UpbitClosedOrder> {
+    Ok(UpbitClosedOrder {
+        market: market_from_native_symbol(&raw.market)?,
+        uuid: required_text(raw.uuid, "uuid")?,
+        side: required_text(raw.side, "side")?,
+        ord_type: required_text(raw.ord_type, "ord_type")?,
+        state: required_text(raw.state, "state")?,
+        created_at: created_at(&raw.created_at)?,
+        volume: optional_decimal(raw.volume, "volume")?,
+        price: optional_decimal(raw.price, "price")?,
+        remaining_volume: decimal_text(&raw.remaining_volume, "remaining_volume")?,
+        executed_volume: decimal_text(&raw.executed_volume, "executed_volume")?,
+        executed_funds: optional_decimal(raw.executed_funds, "executed_funds")?,
+        reserved_fee: decimal_text(&raw.reserved_fee, "reserved_fee")?,
+        remaining_fee: decimal_text(&raw.remaining_fee, "remaining_fee")?,
+        paid_fee: decimal_text(&raw.paid_fee, "paid_fee")?,
+        locked: decimal_text(&raw.locked, "locked")?,
+        trades_count: raw.trades_count,
+        prevented_volume: decimal_text(&raw.prevented_volume, "prevented_volume")?,
+        prevented_locked: decimal_text(&raw.prevented_locked, "prevented_locked")?,
+        time_in_force: optional_text(raw.time_in_force, "time_in_force")?,
+        identifier: optional_text(raw.identifier, "identifier")?,
+        smp_type: optional_text(raw.smp_type, "smp_type")?,
+    })
+}
+
+fn order_detail_trade(raw: RawOrderDetailTrade) -> Result<UpbitOrderDetailTrade> {
+    Ok(UpbitOrderDetailTrade {
+        market: market_from_native_symbol(&raw.market)?,
+        uuid: required_text(raw.uuid, "trade.uuid")?,
+        price: decimal_text(&raw.price, "trade.price")?,
+        volume: decimal_text(&raw.volume, "trade.volume")?,
+        funds: decimal_text(&raw.funds, "trade.funds")?,
+        trend: required_text(raw.trend, "trade.trend")?,
+        created_at: created_at(&raw.created_at)?,
+        side: required_text(raw.side, "trade.side")?,
+    })
+}
+
+fn required_text(value: String, field: &'static str) -> Result<String> {
+    if value.trim().is_empty() {
+        Err(Error::decode(format!("`{field}` is missing or empty")))
+    } else {
+        Ok(value)
+    }
+}
+
+fn optional_text(value: Option<String>, field: &'static str) -> Result<Option<String>> {
+    match value {
+        None => Ok(None),
+        Some(value) if value.trim().is_empty() => Err(Error::decode(format!(
+            "`{field}` must not be empty when present"
+        ))),
+        Some(value) => Ok(Some(value)),
+    }
+}
+
+fn optional_decimal(value: Option<String>, field: &'static str) -> Result<Option<Decimal>> {
+    value.map(|value| decimal_text(&value, field)).transpose()
+}
+
 pub(crate) fn stream_order(raw: &RawStreamOrder) -> Result<Order> {
     let filled = decimal(&raw.executed_volume, "executed_volume")?;
     let remaining = decimal(&raw.remaining_volume, "remaining_volume")?;
@@ -726,16 +1073,23 @@ pub(crate) fn stream_order(raw: &RawStreamOrder) -> Result<Order> {
     })
 }
 
-/// Reads `created_at`, which REST orders carry as an offset datetime in the
-/// region's local zone.
+/// Reads `created_at`, which REST orders normally carry with an explicit
+/// offset. Upbit's Global Test Order example omits its documented `+00:00`,
+/// so that exact offset-free form is interpreted as UTC.
 fn created_at(raw: &str) -> Result<Timestamp> {
-    DateTime::parse_from_rfc3339(raw)
-        .map(|at| Timestamp::from_secs(at.timestamp()))
-        .map_err(|err| {
-            Error::decode(format!(
-                "`created_at` is not an RFC 3339 datetime: {raw} ({err})"
-            ))
-        })
+    let nanos = match DateTime::parse_from_rfc3339(raw) {
+        Ok(parsed) => parsed.timestamp_nanos_opt(),
+        Err(rfc3339_error) => NaiveDateTime::parse_from_str(raw, "%Y-%m-%dT%H:%M:%S")
+            .map(|naive| naive.and_utc().timestamp_nanos_opt())
+            .map_err(|naive_error| {
+                Error::decode(format!(
+                    "`created_at` is neither an RFC 3339 datetime nor Upbit's offset-free UTC form: {raw} ({rfc3339_error}; {naive_error})"
+                ))
+            })?,
+    };
+    nanos
+        .map(Timestamp::from_nanos)
+        .ok_or_else(|| Error::decode(format!("`created_at` is outside timestamp range: {raw}")))
 }
 
 #[cfg(test)]
@@ -871,6 +1225,39 @@ mod tests {
       }
     ]"#;
 
+    // Korea includes the KST opening field for yearly candles.
+    const YEAR_CANDLES: &str = r#"[
+      {
+        "market": "KRW-BTC",
+        "candle_date_time_utc": "2026-01-01T00:00:00",
+        "candle_date_time_kst": "2026-01-01T09:00:00",
+        "opening_price": 128000000.00000000,
+        "high_price": 143050000.00000000,
+        "low_price": 88770000.00000000,
+        "trade_price": 89587000.00000000,
+        "timestamp": 1786467753786,
+        "candle_acc_trade_price": 37189906239683.17623000,
+        "candle_acc_trade_volume": 348666.78732189,
+        "first_day_of_period": "2026-01-01"
+      }
+    ]"#;
+
+    // Korea includes supported aggregation levels; global deployments can omit
+    // the field entirely.
+    const ORDERBOOK_INSTRUMENTS: &str = r#"[
+      {
+        "market": "KRW-BTC",
+        "quote_currency": "KRW",
+        "tick_size": "1000",
+        "supported_levels": ["0", "10000", "100000"]
+      },
+      {
+        "market": "SGD-BTC",
+        "quote_currency": "SGD",
+        "tick_size": "1"
+      }
+    ]"#;
+
     // Representative week-candle payload.
     const WEEK_CANDLES: &str = r#"[
       {
@@ -943,6 +1330,20 @@ mod tests {
       }
     ]"#;
 
+    // Global Test Order's current successful example omits the documented UTC offset.
+    const TEST_ORDER_RESPONSE: &str = r#"{
+      "uuid": "d098ceaf-6811-4df8-97f2-b7e01aefc03f",
+      "side": "bid",
+      "ord_type": "limit",
+      "price": "153559.00",
+      "state": "wait",
+      "market": "SGD-BTC",
+      "created_at": "2025-07-04T15:00:00",
+      "volume": "1.0",
+      "remaining_volume": "1.0",
+      "executed_volume": "0.0"
+    }"#;
+
     // Representative private account payload used only by offline parsing tests.
     const ACCOUNTS: &str = r#"[
       {
@@ -958,6 +1359,7 @@ mod tests {
     // Representative exchange error envelope.
     const ERROR_BODY: &str =
         r#"{"error":{"name":"invalid_access_key","message":"Invalid access key"}}"#;
+    const NUMERIC_ERROR_BODY: &str = r#"{"error":{"name":404,"message":"Code not found"}}"#;
 
     fn decimal_of(text: &str) -> Decimal {
         decimal_text(text, "test").expect("test literal is a decimal")
@@ -1268,6 +1670,47 @@ mod tests {
     }
 
     #[test]
+    fn yearly_candles_keep_the_upbit_specific_interval_and_korea_time() {
+        let raw: Vec<RawYearCandle> = json(YEAR_CANDLES).expect("a live yearly candle payload");
+        let candle = year_candle(&raw[0]).expect("a yearly candle");
+
+        assert_eq!(candle.market, Market::spot(Exchange::Upbit, "BTC", "KRW"));
+        assert_eq!(candle.open_time, Timestamp::from_secs(1_767_225_600));
+        assert_eq!(candle.korea_open_time, Some(candle.open_time));
+        assert_eq!(candle.close, decimal_of("89587000.00000000"));
+        assert_eq!(candle.volume, decimal_of("348666.78732189"));
+        assert_eq!(candle.first_day_of_period, "2026-01-01");
+    }
+
+    #[test]
+    fn orderbook_instruments_keep_region_specific_aggregation_metadata() {
+        let raw: Vec<RawOrderBookInstrument> =
+            json(ORDERBOOK_INSTRUMENTS).expect("official policy payloads");
+        let korea = orderbook_instrument(&raw[0]).expect("a Korea policy");
+        let global = orderbook_instrument(&raw[1]).expect("a global policy");
+
+        assert_eq!(korea.tick_size, decimal_of("1000"));
+        assert_eq!(
+            korea.supported_levels,
+            [decimal_of("0"), decimal_of("10000"), decimal_of("100000")]
+        );
+        assert_eq!(global.market, Market::spot(Exchange::Upbit, "BTC", "SGD"));
+        assert_eq!(global.supported_levels, Vec::<Decimal>::new());
+    }
+
+    #[test]
+    fn an_instrument_whose_quote_disagrees_with_its_market_is_rejected() {
+        let raw: RawOrderBookInstrument =
+            json(r#"{"market":"KRW-BTC","quote_currency":"BTC","tick_size":"1000"}"#)
+                .expect("a response shape");
+
+        assert!(matches!(
+            orderbook_instrument(&raw),
+            Err(Error::Decode { .. })
+        ));
+    }
+
+    #[test]
     fn a_minute_candle_whose_unit_contradicts_the_endpoint_is_rejected() {
         let raw: Vec<RawCandle> = json(MINUTE_CANDLES).expect("official minute candle payload");
         let error =
@@ -1350,6 +1793,17 @@ mod tests {
     }
 
     #[test]
+    fn a_numeric_error_name_is_kept_as_the_exchange_code() {
+        let error = exchange_error(404, NUMERIC_ERROR_BODY);
+
+        assert!(matches!(
+            &error,
+            Error::Exchange { exchange: "upbit", code, message, status: Some(404), .. }
+                if code == "404" && message == "Code not found"
+        ));
+    }
+
+    #[test]
     fn a_non_json_failure_keeps_its_body_instead_of_a_parse_complaint() {
         let error = exchange_error(429, "  Too many API requests.  ");
 
@@ -1397,6 +1851,24 @@ mod tests {
         assert_eq!(order.remaining_quantity, decimal_of("0.0001"));
         // 2024-06-13T10:28:36+09:00 is 01:28:36 UTC.
         assert_eq!(order.created_at, Some(Timestamp::from_secs(1_718_242_116)));
+    }
+
+    #[test]
+    fn rest_order_time_keeps_subsecond_precision() {
+        assert_eq!(
+            created_at("2024-06-13T10:28:36.123456789+09:00").expect("an offset time"),
+            Timestamp::from_nanos(1_718_242_116_123_456_789)
+        );
+    }
+
+    #[test]
+    fn test_order_accepts_the_global_example_without_an_offset() {
+        let raw: RawOrder = json(TEST_ORDER_RESPONSE).expect("official test-order payload");
+        let order = order(&raw).expect("test order");
+
+        assert_eq!(order.id, "d098ceaf-6811-4df8-97f2-b7e01aefc03f");
+        assert_eq!(order.status, OrderStatus::Open);
+        assert_eq!(order.created_at, Some(Timestamp::from_secs(1_751_641_200)));
     }
 
     #[test]

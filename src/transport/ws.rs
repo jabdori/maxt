@@ -13,7 +13,7 @@ use std::time::Duration;
 use futures_core::Stream;
 #[cfg(all(test, not(target_arch = "wasm32")))]
 use futures_util::{SinkExt, StreamExt};
-use tokio::sync::{mpsc, watch};
+use tokio::sync::{mpsc, oneshot, watch};
 #[cfg(all(test, not(target_arch = "wasm32")))]
 use tokio_tungstenite::tungstenite::Message;
 
@@ -107,6 +107,48 @@ pub(crate) struct WsCloseHandle {
     completed: watch::Receiver<bool>,
 }
 
+/// Sends one provider operation frame through an existing WebSocket session.
+///
+/// This stays crate-private: providers own their request/response protocols,
+/// while the shared session only owns socket writes and lifecycle handling.
+#[derive(Clone)]
+pub(crate) struct WsSendHandle {
+    sender: mpsc::Sender<WsOutbound>,
+    connection_epoch: watch::Receiver<u64>,
+}
+
+impl WsSendHandle {
+    /// Observes reconnects for an operation tied to this exact socket.
+    pub(crate) fn connection_epoch(&self) -> watch::Receiver<u64> {
+        self.connection_epoch.clone()
+    }
+
+    /// Waits until the lifecycle task has written `text` to the active socket.
+    pub(crate) async fn send_text(&self, text: String) -> Result<()> {
+        let (sent, received) = oneshot::channel();
+        let connection_epoch = *self.connection_epoch.borrow();
+        self.sender
+            .send(WsOutbound {
+                text,
+                connection_epoch,
+                sent,
+            })
+            .await
+            .map_err(|_| {
+                Error::transport("WebSocket session closed before sending an operation")
+            })?;
+        received
+            .await
+            .map_err(|_| Error::transport("WebSocket session stopped while sending an operation"))?
+    }
+}
+
+struct WsOutbound {
+    text: String,
+    connection_epoch: u64,
+    sent: oneshot::Sender<Result<()>>,
+}
+
 impl WsCloseHandle {
     fn signal(&self) {
         self.cancel.send_if_modified(|cancelled| {
@@ -151,11 +193,17 @@ async fn wait_for_cancel(cancelled: &mut watch::Receiver<bool>) {
 pub(crate) struct WsSession {
     events: mpsc::Receiver<Result<WsCommand>>,
     close: WsCloseHandle,
+    send: WsSendHandle,
 }
 
 impl WsSession {
     pub(crate) fn close_handle(&self) -> WsCloseHandle {
         self.close.clone()
+    }
+
+    /// Returns the internal operation sender for this exact socket session.
+    pub(crate) fn send_handle(&self) -> WsSendHandle {
+        self.send.clone()
     }
 }
 
@@ -193,6 +241,8 @@ pub(crate) async fn connect(connect: WsConnect, config: &StreamConfig) -> Result
 
 async fn connect_inner(connect: WsConnect, config: &StreamConfig) -> Result<WsSession> {
     let (sender, events) = mpsc::channel(config.buffer_size.max(1));
+    let (outbound, requests) = mpsc::channel(1);
+    let (connection_epoch, current_epoch) = watch::channel(0_u64);
     let (close, cancelled, completed) = close_channels();
     let config = config.clone();
 
@@ -200,11 +250,27 @@ async fn connect_inner(connect: WsConnect, config: &StreamConfig) -> Result<WsSe
     let socket = open(&connect, &config).await?;
 
     platform::spawn(async move {
-        run(connect, config, socket, sender, cancelled).await;
+        run(
+            connect,
+            config,
+            socket,
+            sender,
+            requests,
+            connection_epoch,
+            cancelled,
+        )
+        .await;
         completed.send_replace(true);
     });
 
-    Ok(WsSession { events, close })
+    Ok(WsSession {
+        events,
+        close,
+        send: WsSendHandle {
+            sender: outbound,
+            connection_epoch: current_epoch,
+        },
+    })
 }
 
 async fn open(connect: &WsConnect, config: &StreamConfig) -> Result<Socket> {
@@ -241,6 +307,8 @@ async fn run(
     config: StreamConfig,
     mut socket: Socket,
     sender: mpsc::Sender<Result<WsCommand>>,
+    mut requests: mpsc::Receiver<WsOutbound>,
+    connection_epoch: watch::Sender<u64>,
     mut cancelled: watch::Receiver<bool>,
 ) {
     let idle_timeout = idle_timeout(&config, connect.heartbeat.as_ref());
@@ -253,6 +321,7 @@ async fn run(
     let mut pump_cancelled = cancelled.clone();
 
     loop {
+        let current_epoch = *connection_epoch.borrow();
         let pumped = tokio::select! {
             biased;
             () = wait_for_cancel(&mut cancelled) => return,
@@ -263,6 +332,8 @@ async fn run(
                 &connect,
                 &config,
                 std::mem::take(&mut reconnected),
+                &mut requests,
+                current_epoch,
                 &mut pump_cancelled,
             ) => pumped,
         };
@@ -328,6 +399,7 @@ async fn run(
             match reopened {
                 Ok(reopened) => {
                     socket = reopened;
+                    connection_epoch.send_modify(|epoch| *epoch += 1);
                     reconnected = true;
                     break;
                 }
@@ -368,6 +440,8 @@ async fn pump(
     connect: &WsConnect,
     config: &StreamConfig,
     reconnected: bool,
+    requests: &mut mpsc::Receiver<WsOutbound>,
+    connection_epoch: u64,
     cancelled: &mut watch::Receiver<bool>,
 ) -> Pump {
     // The first heartbeat is one full interval after the handshake.
@@ -386,6 +460,8 @@ async fn pump(
             Ok(WsCommand::Reconnected),
             config.overflow,
             &mut pulse,
+            requests,
+            connection_epoch,
         )
         .await
         {
@@ -408,6 +484,27 @@ async fn pump(
                     return Pump::Disconnected { carried };
                 }
                 continue;
+            }
+            request = requests.recv() => {
+                let Some(request) = request else {
+                    continue;
+                };
+                if request.connection_epoch != connection_epoch {
+                    let _ = request.sent.send(Err(Error::transport(
+                        "WebSocket reconnected before sending an operation",
+                    )));
+                    continue;
+                }
+                match socket.send_text(&request.text).await {
+                    Ok(()) => {
+                        let _ = request.sent.send(Ok(()));
+                        continue;
+                    }
+                    Err(error) => {
+                        let _ = request.sent.send(Err(error));
+                        return Pump::Disconnected { carried };
+                    }
+                }
             }
             next = socket.next() => next,
         };
@@ -436,6 +533,8 @@ async fn pump(
                 Ok(WsCommand::Reconnected),
                 config.overflow,
                 &mut pulse,
+                requests,
+                connection_epoch,
             )
             .await
             {
@@ -451,7 +550,17 @@ async fn pump(
             }
         }
 
-        match hand_over(socket, sender, Ok(event), config.overflow, &mut pulse).await {
+        match hand_over(
+            socket,
+            sender,
+            Ok(event),
+            config.overflow,
+            &mut pulse,
+            requests,
+            connection_epoch,
+        )
+        .await
+        {
             Handover::Delivered | Handover::Dropped => {}
             Handover::ConsumerGone => return Pump::ConsumerGone,
             Handover::SocketDead => return Pump::Disconnected { carried },
@@ -484,6 +593,8 @@ async fn hand_over(
     event: Result<WsCommand>,
     overflow: Overflow,
     pulse: &mut Option<Pulse>,
+    requests: &mut mpsc::Receiver<WsOutbound>,
+    connection_epoch: u64,
 ) -> Handover {
     if !matches!(overflow, Overflow::Backpressure) {
         return match deliver(sender, event, overflow).await {
@@ -514,6 +625,22 @@ async fn hand_over(
                         Err(_) => Handover::ConsumerGone,
                     };
                 }
+            }
+            request = requests.recv() => {
+                let Some(request) = request else {
+                    continue;
+                };
+                if request.connection_epoch != connection_epoch {
+                    let _ = request.sent.send(Err(Error::transport(
+                        "WebSocket reconnected before sending an operation",
+                    )));
+                    continue;
+                }
+                if let Err(error) = socket.send_text(&request.text).await {
+                    let _ = request.sent.send(Err(error));
+                    return Handover::SocketDead;
+                }
+                let _ = request.sent.send(Ok(()));
             }
         }
     }
@@ -865,6 +992,37 @@ mod tests {
         }
 
         assert_eq!(seen, ["subscribe 0", "subscribe 1", "subscribe 2"]);
+    }
+
+    #[tokio::test]
+    async fn an_operation_frame_uses_the_existing_socket() {
+        let (address, mut received) = one_shot_server(true).await;
+        let session = connect(
+            WsConnect {
+                url: format!("ws://{address}"),
+                headers: None,
+                subscribe: WsConnect::fixed(vec!["subscribe".to_owned()]),
+                heartbeat: None,
+            },
+            &config(),
+        )
+        .await
+        .expect("the initial connection");
+
+        session
+            .send_handle()
+            .send_text("LIST_SUBSCRIPTIONS".to_owned())
+            .await
+            .expect("the operation frame is written");
+
+        assert!(matches!(
+            tokio::time::timeout(Duration::from_secs(5), received.recv()).await,
+            Ok(Some(Message::Text(text))) if text == "subscribe"
+        ));
+        assert!(matches!(
+            tokio::time::timeout(Duration::from_secs(5), received.recv()).await,
+            Ok(Some(Message::Text(text))) if text == "LIST_SUBSCRIPTIONS"
+        ));
     }
 
     #[tokio::test]
@@ -1600,6 +1758,7 @@ mod tests {
             HeartbeatFrame::Ping,
             tokio::time::interval(Duration::from_millis(1)),
         ));
+        let (_outbound, mut requests) = mpsc::channel(1);
 
         let handed = tokio::spawn(async move {
             hand_over(
@@ -1608,6 +1767,8 @@ mod tests {
                 Ok(WsCommand::Text("read before the socket died".into())),
                 Overflow::Backpressure,
                 &mut pulse,
+                &mut requests,
+                0,
             )
             .await
         });
@@ -1645,6 +1806,7 @@ mod tests {
             HeartbeatFrame::Ping,
             tokio::time::interval(Duration::from_millis(1)),
         ));
+        let (_outbound, mut requests) = mpsc::channel(1);
 
         let handed = tokio::spawn(async move {
             hand_over(
@@ -1653,6 +1815,8 @@ mod tests {
                 Ok(WsCommand::Text("nobody left to read it".into())),
                 Overflow::Backpressure,
                 &mut pulse,
+                &mut requests,
+                0,
             )
             .await
         });

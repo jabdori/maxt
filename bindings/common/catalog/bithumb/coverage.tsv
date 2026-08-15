@@ -1,0 +1,51 @@
+# Bithumb curated coverage-to-official catalog bridge
+# local_source: bindings/common/src/coverage.rs OPERATIONS (47 Bithumb rows)
+# official_source: manifest.tsv
+# columns: local_product	local_operation_id	official_product	official_interface	official_method	official_path_or_message	official_operation_id	mapping_note
+quotation	markets	Quotation	Http	GET	/v1/market/all	listTradingPairs	exact
+quotation	candles_minutes	Quotation	Http	GET	/v1/candles/minutes/{unit}	listMinuteCandles	exact
+quotation	candles_days	Quotation	Http	GET	/v1/candles/days	listDayCandles	exact
+quotation	candles_weeks	Quotation	Http	GET	/v1/candles/weeks	listWeekCandles	exact
+quotation	candles_months	Quotation	Http	GET	/v1/candles/months	listMonthCandles	exact
+quotation	trades_ticks	Quotation	Http	GET	/v1/trades/ticks	listRecentTrades	exact
+quotation	ticker	Quotation	Http	GET	/v1/ticker	getTicker	exact
+quotation	orderbook	Quotation	Http	GET	/v1/orderbook	getOrderBook	exact
+quotation	virtual_asset_warning	Quotation	Http	GET	/v1/market/virtual_asset_warning	listMarketWarnings	exact
+quotation	notices	Quotation	Http	GET	/v1/notices	listNotices	exact
+quotation	inout_fee	Quotation	Http	GET	/v2/fee/inout/{currency}	getDepositWithdrawalFee	exact
+quotation	ticker_stream	Quotation	WebSocketStream	SUBSCRIBE	type=ticker	ticker	local_message_omits_type_prefix
+quotation	trade_stream	Quotation	WebSocketStream	SUBSCRIBE	type=trade	trade	local_message_omits_type_prefix
+quotation	orderbook_stream	Quotation	WebSocketStream	SUBSCRIBE	type=orderbook	orderbook	local_message_omits_type_prefix
+exchange	balances	Exchange	Http	GET	/v1/accounts	getAccounts	exact
+exchange	available_order_info	Exchange	Http	GET	/v1/orders/chance	getOrderChance	exact
+exchange	orders	Exchange	Http	GET	/v1/orders	listOrders	exact
+exchange	get_order	Exchange	Http	GET	/v1/order	getOrder	exact
+exchange	orders_by_ids	Exchange	Http	POST	/v2/orders/search	searchOrders	exact
+exchange	pending_orders	Exchange	Http	GET	/v2/orders/pending	listPendingOrders	exact
+exchange	closed_orders	Exchange	Http	GET	/v2/orders/history	listClosedOrders	common order_history; provider closed_orders
+exchange	new_order	Exchange	Http	POST	/v2/orders	createOrder	exact
+exchange	batch_orders	Exchange	Http	POST	/v2/orders/batch	createBatchOrders	exact
+exchange	cancel_order	Exchange	Http	DELETE	/v2/order	cancelOrder	exact
+exchange	cancel_orders	Exchange	Http	POST	/v2/orders/cancel	cancelBatchOrders	exact
+exchange	my_order_stream	Exchange	WebSocketStream	SUBSCRIBE	type=myOrder	myOrder	local_message_omits_type_prefix
+exchange	my_asset_stream	Exchange	WebSocketStream	SUBSCRIBE	type=myAsset	myAsset	local_message_omits_type_prefix
+wallet	wallet_status	Deposits and withdrawals	Http	GET	/v1/status/wallet	getWalletStatus	official_product_is_deposits_and_withdrawals
+wallet	deposit_addresses	Deposits and withdrawals	Http	GET	/v1/deposits/coin_addresses	listDepositAddresses	official_product_is_deposits_and_withdrawals
+wallet	deposit_address	Deposits and withdrawals	Http	GET	/v1/deposits/coin_address	getDepositAddress	official_product_is_deposits_and_withdrawals
+wallet	create_deposit_address	Deposits and withdrawals	Http	POST	/v1/deposits/generate_coin_address	createDepositAddress	official_product_is_deposits_and_withdrawals
+wallet	withdraw_chance	Deposits and withdrawals	Http	GET	/v1/withdraws/chance	getWithdrawalChance	official_product_is_deposits_and_withdrawals
+wallet	withdraw_addresses	Deposits and withdrawals	Http	GET	/v1/withdraws/coin_addresses	listWithdrawalAddresses	provider withdrawal_addresses; common prepare_withdrawal separately composes chance and allowlist checks
+wallet	withdraw_coin	Deposits and withdrawals	Http	POST	/v1/withdraws/coin	createCoinWithdrawal	official_product_is_deposits_and_withdrawals
+wallet	withdrawal	Deposits and withdrawals	Http	GET	/v1/withdraw	getWithdrawal	official_product_is_deposits_and_withdrawals
+wallet	cancel_withdrawal	Deposits and withdrawals	Http	DELETE	/v1/withdraws/coin	cancelCoinWithdrawal	official_product_is_deposits_and_withdrawals
+wallet	deposits	Deposits and withdrawals	Http	GET	/v1/deposits	listDeposits	official_product_is_deposits_and_withdrawals
+wallet	deposit	Deposits and withdrawals	Http	GET	/v1/deposit	getDeposit	official_product_is_deposits_and_withdrawals
+wallet	withdrawals	Deposits and withdrawals	Http	GET	/v1/withdraws	listWithdrawals	official_product_is_deposits_and_withdrawals
+wallet	api_keys	Deposits and withdrawals	Http	GET	/v1/api_keys	listApiKeys	official_product_is_deposits_and_withdrawals
+twap	twap	TWAP	Http	GET	/v1/twap	listTwapOrders	exact
+twap	create_twap	TWAP	Http	POST	/v1/twap	createTwapOrder	exact
+twap	cancel_twap	TWAP	Http	DELETE	/v1/twap	cancelTwapOrder	exact
+krw	withdrawals	KRW deposits and withdrawals	Http	GET	/v1/withdraws/krw	listKrwWithdrawals	official_product_is_krw_deposits_and_withdrawals
+krw	withdraw	KRW deposits and withdrawals	Http	POST	/v1/withdraws/krw	createKrwWithdrawal	official_product_is_krw_deposits_and_withdrawals
+krw	deposits	KRW deposits and withdrawals	Http	GET	/v1/deposits/krw	listKrwDeposits	official_product_is_krw_deposits_and_withdrawals
+krw	deposit	KRW deposits and withdrawals	Http	POST	/v1/deposits/krw	createKrwDeposit	official_product_is_krw_deposits_and_withdrawals

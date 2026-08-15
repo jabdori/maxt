@@ -178,7 +178,38 @@ fn decode_reply(
             )))
         }
         WireAdapterReply::Balances { value } => wire_vec(value).map(AdapterReply::Balances),
+        WireAdapterReply::OrderRules { value } => (*value)
+            .try_into()
+            .map(Box::new)
+            .map(AdapterReply::OrderRules),
+        WireAdapterReply::AssetNetworks { value } => {
+            wire_vec(value).map(AdapterReply::AssetNetworks)
+        }
+        WireAdapterReply::DepositAddresses { value } => {
+            wire_vec(value).map(AdapterReply::DepositAddresses)
+        }
+        WireAdapterReply::DepositAddress { value } => {
+            value.try_into().map(AdapterReply::DepositAddress)
+        }
+        WireAdapterReply::CreateDepositAddress { value } => {
+            value.try_into().map(AdapterReply::CreateDepositAddress)
+        }
+        WireAdapterReply::WithdrawalQuote { value } => {
+            value.try_into().map(AdapterReply::WithdrawalQuote)
+        }
+        WireAdapterReply::Withdrawal { value } => value.try_into().map(AdapterReply::Withdrawal),
+        WireAdapterReply::Deposit { value } => value.try_into().map(AdapterReply::Deposit),
+        WireAdapterReply::WithdrawalLookup { value } => {
+            value.try_into().map(AdapterReply::LookupWithdrawal)
+        }
+        WireAdapterReply::Deposits { value } => value.try_into().map(AdapterReply::Deposits),
+        WireAdapterReply::Withdrawals { value } => value.try_into().map(AdapterReply::Withdrawals),
         WireAdapterReply::OpenOrders { value } => wire_vec(value).map(AdapterReply::OpenOrders),
+        WireAdapterReply::Order { value } => value.try_into().map(AdapterReply::Order),
+        WireAdapterReply::OrdersByIds { value } => wire_vec(value).map(AdapterReply::OrdersByIds),
+        WireAdapterReply::OrderHistory { value } => {
+            value.try_into().map(AdapterReply::OrderHistory)
+        }
         WireAdapterReply::AccountStream {
             stream_id: returned,
         } => {
@@ -188,7 +219,9 @@ fn decode_reply(
             )))
         }
         WireAdapterReply::PlaceOrder { value } => value.try_into().map(AdapterReply::PlaceOrder),
-        WireAdapterReply::CancelOrder { value } => value.try_into().map(AdapterReply::CancelOrder),
+        WireAdapterReply::CancelOrders { value } => {
+            value.try_into().map(AdapterReply::CancelOrdersResult)
+        }
         WireAdapterReply::Positions { value } => wire_vec(value).map(AdapterReply::Positions),
         WireAdapterReply::MarginSummary { value } => {
             value.try_into().map(AdapterReply::MarginSummary)

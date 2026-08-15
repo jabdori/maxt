@@ -9,15 +9,30 @@ enum ReplyKind {
     Candles,
     MarketStream,
     Balances,
+    OrderRules,
+    AssetNetworks,
+    DepositAddresses,
+    DepositAddress,
+    CreateDepositAddress,
+    PrepareWithdrawal,
+    Withdraw,
+    Deposit,
+    Withdrawal,
+    Unit,
+    Deposits,
+    Withdrawals,
     OpenOrders,
+    Order,
+    OrderByClientId,
+    OrdersByIds,
+    OrderHistory,
     AccountStream,
     PlaceOrder,
-    CancelOrder,
+    CancelOrders,
     Positions,
     MarginSummary,
     FundingRates,
     FundingPayments,
-    Unit,
 }
 
 fn prepare_call(
@@ -33,18 +48,12 @@ fn prepare_call(
         ),
         AdapterCall::Trades { market, limit } => (
             "trades",
-            vec![
-                market_object(py, &market)?,
-                limit.into_py_any(py)?,
-            ],
+            vec![market_object(py, &market)?, limit.into_py_any(py)?],
             ReplyKind::Trades,
         ),
         AdapterCall::OrderBook { market, depth } => (
             "order_book",
-            vec![
-                market_object(py, &market)?,
-                depth.into_py_any(py)?,
-            ],
+            vec![market_object(py, &market)?, depth.into_py_any(py)?],
             ReplyKind::OrderBook,
         ),
         AdapterCall::Ticker { market } => (
@@ -57,7 +66,10 @@ fn prepare_call(
             vec![candle_request_object(py, &request)?],
             ReplyKind::Candles,
         ),
-        AdapterCall::Subscribe { subscription, config } => (
+        AdapterCall::Subscribe {
+            subscription,
+            config,
+        } => (
             "subscribe",
             vec![
                 subscription_object(py, &subscription)?,
@@ -66,10 +78,122 @@ fn prepare_call(
             ReplyKind::MarketStream,
         ),
         AdapterCall::Balances => ("balances", vec![], ReplyKind::Balances),
+        AdapterCall::OrderRules { market } => (
+            "order_rules",
+            vec![market_object(py, &market)?],
+            ReplyKind::OrderRules,
+        ),
+        AdapterCall::AssetNetworks { asset } => (
+            "asset_networks",
+            vec![asset.into_py_any(py)?],
+            ReplyKind::AssetNetworks,
+        ),
+        AdapterCall::DepositAddresses => ("deposit_addresses", vec![], ReplyKind::DepositAddresses),
+        AdapterCall::DepositAddress { request } => (
+            "deposit_address",
+            vec![model_object(
+                py,
+                "DepositAddressRequest",
+                crate::convert::deposit_address_request_to_wire(py, &request)?,
+            )?],
+            ReplyKind::DepositAddress,
+        ),
+        AdapterCall::CreateDepositAddress { request } => (
+            "create_deposit_address",
+            vec![model_object(
+                py,
+                "DepositAddressRequest",
+                crate::convert::deposit_address_request_to_wire(py, &request)?,
+            )?],
+            ReplyKind::CreateDepositAddress,
+        ),
+        AdapterCall::PrepareWithdrawal { request } => (
+            "prepare_withdrawal",
+            vec![model_object(
+                py,
+                "WithdrawRequest",
+                crate::convert::withdraw_request_to_wire(py, &request)?,
+            )?],
+            ReplyKind::PrepareWithdrawal,
+        ),
+        AdapterCall::Withdraw { request } => (
+            "withdraw",
+            vec![model_object(
+                py,
+                "WithdrawRequest",
+                crate::convert::withdraw_request_to_wire(py, &request)?,
+            )?],
+            ReplyKind::Withdraw,
+        ),
+        AdapterCall::Deposit { request } => (
+            "deposit",
+            vec![model_object(
+                py,
+                "TransferLookupRequest",
+                crate::convert::transfer_lookup_request_to_wire(py, &request)?,
+            )?],
+            ReplyKind::Deposit,
+        ),
+        AdapterCall::Withdrawal { request } => (
+            "withdrawal",
+            vec![model_object(
+                py,
+                "TransferLookupRequest",
+                crate::convert::transfer_lookup_request_to_wire(py, &request)?,
+            )?],
+            ReplyKind::Withdrawal,
+        ),
+        AdapterCall::CancelWithdrawal { withdrawal_id } => (
+            "cancel_withdrawal",
+            vec![withdrawal_id.into_py_any(py)?],
+            ReplyKind::Unit,
+        ),
+        AdapterCall::Deposits { request } => (
+            "deposits",
+            vec![model_object(
+                py,
+                "TransferHistoryRequest",
+                crate::convert::transfer_history_request_to_wire(py, &request)?,
+            )?],
+            ReplyKind::Deposits,
+        ),
+        AdapterCall::Withdrawals { request } => (
+            "withdrawals",
+            vec![model_object(
+                py,
+                "TransferHistoryRequest",
+                crate::convert::transfer_history_request_to_wire(py, &request)?,
+            )?],
+            ReplyKind::Withdrawals,
+        ),
         AdapterCall::OpenOrders { market } => (
             "open_orders",
             vec![optional_market_object(py, market.as_ref())?],
             ReplyKind::OpenOrders,
+        ),
+        AdapterCall::Order { market, order_id } => (
+            "order",
+            vec![market_object(py, &market)?, order_id.into_py_any(py)?],
+            ReplyKind::Order,
+        ),
+        AdapterCall::OrderByClientId { market, client_id } => (
+            "order_by_client_id",
+            vec![market_object(py, &market)?, client_id.into_py_any(py)?],
+            ReplyKind::OrderByClientId,
+        ),
+        AdapterCall::OrdersByIds { request } => (
+            "orders_by_ids",
+            vec![model_object(
+                py,
+                "OrderLookupRequest",
+                crate::convert::order_lookup_request_to_wire(py, &request)?,
+            )?],
+            ReplyKind::OrdersByIds,
+        ),
+        AdapterCall::OrderHistory { request } => (
+            "order_history",
+            vec![order_history_request_object(py, &request)?],
+            ReplyKind::OrderHistory,
         ),
         AdapterCall::SubscribeAccount { config } => (
             "subscribe_account",
@@ -83,11 +207,18 @@ fn prepare_call(
         ),
         AdapterCall::CancelOrder { market, order_id } => (
             "cancel_order",
-            vec![
-                market_object(py, &market)?,
-                order_id.into_py_any(py)?,
-            ],
-            ReplyKind::CancelOrder,
+            vec![market_object(py, &market)?, order_id.into_py_any(py)?],
+            ReplyKind::Unit,
+        ),
+        AdapterCall::CancelOrderByClientId { market, client_id } => (
+            "cancel_order_by_client_id",
+            vec![market_object(py, &market)?, client_id.into_py_any(py)?],
+            ReplyKind::Unit,
+        ),
+        AdapterCall::CancelOrders { request } => (
+            "cancel_orders",
+            vec![cancel_orders_request_object(py, &request)?],
+            ReplyKind::CancelOrders,
         ),
         AdapterCall::Positions { market } => (
             "positions",
@@ -120,4 +251,57 @@ fn prepare_call(
     let awaitable = object.bind(py).call_method(method, args, None)?;
     let future = pyo3_async_runtimes::tokio::into_future(awaitable)?;
     Ok((reply, Box::pin(future)))
+}
+
+fn decode_generated_reply(
+    reply: ReplyKind,
+    value: &Bound<'_, PyAny>,
+) -> Option<PyResult<AdapterReply>> {
+    match reply {
+        ReplyKind::OrderRules => Some(
+            crate::convert::order_rules_from_wire(value)
+                .map(Box::new)
+                .map(AdapterReply::OrderRules),
+        ),
+        ReplyKind::AssetNetworks => Some(
+            list_from_wire(value, crate::convert::asset_network_from_wire)
+                .map(AdapterReply::AssetNetworks),
+        ),
+        ReplyKind::DepositAddresses => Some(
+            list_from_wire(value, crate::convert::deposit_address_entry_from_wire)
+                .map(AdapterReply::DepositAddresses),
+        ),
+        ReplyKind::DepositAddress => {
+            Some(crate::convert::deposit_address_from_wire(value).map(AdapterReply::DepositAddress))
+        }
+        ReplyKind::CreateDepositAddress => Some(
+            crate::convert::deposit_address_from_wire(value)
+                .map(AdapterReply::CreateDepositAddress),
+        ),
+        ReplyKind::PrepareWithdrawal => Some(
+            crate::convert::withdrawal_quote_from_wire(value).map(AdapterReply::WithdrawalQuote),
+        ),
+        ReplyKind::Withdraw => {
+            Some(crate::convert::withdrawal_from_wire(value).map(AdapterReply::Withdrawal))
+        }
+        ReplyKind::Deposit => {
+            Some(crate::convert::deposit_from_wire(value).map(AdapterReply::Deposit))
+        }
+        ReplyKind::Withdrawal => {
+            Some(crate::convert::withdrawal_from_wire(value).map(AdapterReply::LookupWithdrawal))
+        }
+        ReplyKind::Unit => Some(Ok(AdapterReply::Unit)),
+        ReplyKind::Deposits => Some(
+            page_from_wire(value, crate::convert::deposit_from_wire).map(AdapterReply::Deposits),
+        ),
+        ReplyKind::Withdrawals => Some(
+            page_from_wire(value, crate::convert::withdrawal_from_wire)
+                .map(AdapterReply::Withdrawals),
+        ),
+        ReplyKind::CancelOrders => Some(
+            crate::convert::cancel_orders_result_from_wire(value)
+                .map(AdapterReply::CancelOrdersResult),
+        ),
+        _ => None,
+    }
 }

@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'models.dart';
 
+part 'generated_provider_streams.dart';
+
 /// 스트림에서 전달되는 이벤트 또는 스트림을 종료하지 않는 오류입니다.
 sealed class StreamItem<T> {
   const StreamItem();
@@ -143,10 +145,30 @@ final class _ManagedSubscription<T> implements StreamSubscription<T> {
 
 /// 시장 데이터 구독 스트림입니다.
 final class MarketStream extends _CloseableStream<MarketEvent> {
+  /// 내부 어댑터 이벤트 소스로 시장 스트림을 만듭니다.
+  ///
+  /// 일반 애플리케이션에서는 [Client.subscribe]가 이 스트림을 반환합니다.
   MarketStream(super.source, {super.onClose});
 }
 
 /// 비공개 계정 구독 스트림입니다.
 final class AccountStream extends _CloseableStream<AccountEvent> {
+  /// 내부 어댑터 이벤트 소스로 계정 스트림을 만듭니다.
+  ///
+  /// 일반 애플리케이션에서는 [Client.subscribeAccount]가 이 스트림을 반환합니다.
   AccountStream(super.source, {super.onClose});
+}
+
+/// Hyperliquid 원본 시장 필드를 함께 보존하는 단일 구독 스트림입니다.
+final class HyperliquidMarketStream
+    extends _CloseableStream<HyperliquidMarketEvent> {
+  /// 내부 Hyperliquid 이벤트 소스로 스트림을 만듭니다.
+  HyperliquidMarketStream(super.source, {super.onClose});
+}
+
+/// Hyperliquid 원본 계정 필드를 함께 보존하는 단일 구독 스트림입니다.
+final class HyperliquidAccountStream
+    extends _CloseableStream<HyperliquidAccountEvent> {
+  /// 내부 Hyperliquid 이벤트 소스로 스트림을 만듭니다.
+  HyperliquidAccountStream(super.source, {super.onClose});
 }

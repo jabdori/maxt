@@ -5,13 +5,98 @@
 
 import 'adapter.dart';
 import 'convert.dart';
+import 'convert/generated_models.dart';
 import 'frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'stream.dart';
 
 // These functions are ignored because they are not marked as `pub`: `as_adapter`, `binance`, `built_in`, `credential_pair`, `from_adapter`, `from_built_in`, `provider_mismatch`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `BuiltInAdapter`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `balances`, `cancel_order`, `candles`, `clone`, `clone`, `eq`, `eq`, `exchange`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`, `from`, `funding_payments`, `funding_rates`, `margin_summary`, `markets`, `open_orders`, `order_book`, `place_order`, `positions`, `set_margin`, `subscribe_account`, `subscribe`, `supports`, `ticker`, `trades`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `asset_networks`, `balances`, `cancel_order_by_client_id`, `cancel_order`, `cancel_orders`, `cancel_withdrawal`, `candles`, `clone`, `clone`, `create_deposit_address`, `deposit_address`, `deposit_addresses`, `deposit`, `deposits`, `eq`, `eq`, `exchange`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`, `from`, `funding_payments`, `funding_rates`, `margin_summary`, `markets`, `open_orders`, `order_book`, `order_by_client_id`, `order_history`, `order_rules`, `order`, `orders_by_ids`, `place_order`, `positions`, `prepare_withdrawal`, `set_margin`, `subscribe_account`, `subscribe`, `supports`, `ticker`, `trades`, `withdraw`, `withdrawal`, `withdrawals`
+
+/// 제공자 원본 스트림에서 다음 event/error/end 항목을 읽습니다.
+Future<WireUpbitMarketStreamItem> nativeUpbitMarketSubscriptionNext({
+  required NativeUpbitMarketSubscription subscription,
+}) => MaxtRustLib.instance.api.crateApiNativeUpbitMarketSubscriptionNext(
+  subscription: subscription,
+);
+
+/// 제공자 원본 스트림을 닫고 정리가 끝날 때까지 기다립니다.
+Future<void> nativeUpbitMarketSubscriptionClose({
+  required NativeUpbitMarketSubscription subscription,
+}) => MaxtRustLib.instance.api.crateApiNativeUpbitMarketSubscriptionClose(
+  subscription: subscription,
+);
+
+/// 제공자 원본 스트림에서 다음 event/error/end 항목을 읽습니다.
+Future<WireUpbitAccountStreamItem> nativeUpbitAccountSubscriptionNext({
+  required NativeUpbitAccountSubscription subscription,
+}) => MaxtRustLib.instance.api.crateApiNativeUpbitAccountSubscriptionNext(
+  subscription: subscription,
+);
+
+/// 제공자 원본 스트림을 닫고 정리가 끝날 때까지 기다립니다.
+Future<void> nativeUpbitAccountSubscriptionClose({
+  required NativeUpbitAccountSubscription subscription,
+}) => MaxtRustLib.instance.api.crateApiNativeUpbitAccountSubscriptionClose(
+  subscription: subscription,
+);
+
+/// 제공자 원본 스트림에서 다음 event/error/end 항목을 읽습니다.
+Future<WireBithumbMarketStreamItem> nativeBithumbMarketSubscriptionNext({
+  required NativeBithumbMarketSubscription subscription,
+}) => MaxtRustLib.instance.api.crateApiNativeBithumbMarketSubscriptionNext(
+  subscription: subscription,
+);
+
+/// 제공자 원본 스트림을 닫고 정리가 끝날 때까지 기다립니다.
+Future<void> nativeBithumbMarketSubscriptionClose({
+  required NativeBithumbMarketSubscription subscription,
+}) => MaxtRustLib.instance.api.crateApiNativeBithumbMarketSubscriptionClose(
+  subscription: subscription,
+);
+
+/// 제공자 원본 스트림에서 다음 event/error/end 항목을 읽습니다.
+Future<WireBithumbAccountStreamItem> nativeBithumbAccountSubscriptionNext({
+  required NativeBithumbAccountSubscription subscription,
+}) => MaxtRustLib.instance.api.crateApiNativeBithumbAccountSubscriptionNext(
+  subscription: subscription,
+);
+
+/// 제공자 원본 스트림을 닫고 정리가 끝날 때까지 기다립니다.
+Future<void> nativeBithumbAccountSubscriptionClose({
+  required NativeBithumbAccountSubscription subscription,
+}) => MaxtRustLib.instance.api.crateApiNativeBithumbAccountSubscriptionClose(
+  subscription: subscription,
+);
+
+/// 제공자 원본 스트림에서 다음 event/error/end 항목을 읽습니다.
+Future<WireBinanceMarketStreamItem> nativeBinanceMarketSubscriptionNext({
+  required NativeBinanceMarketSubscription subscription,
+}) => MaxtRustLib.instance.api.crateApiNativeBinanceMarketSubscriptionNext(
+  subscription: subscription,
+);
+
+/// 제공자 원본 스트림을 닫고 정리가 끝날 때까지 기다립니다.
+Future<void> nativeBinanceMarketSubscriptionClose({
+  required NativeBinanceMarketSubscription subscription,
+}) => MaxtRustLib.instance.api.crateApiNativeBinanceMarketSubscriptionClose(
+  subscription: subscription,
+);
+
+/// 제공자 원본 스트림에서 다음 event/error/end 항목을 읽습니다.
+Future<WireBinanceAccountStreamItem> nativeBinanceAccountSubscriptionNext({
+  required NativeBinanceAccountSubscription subscription,
+}) => MaxtRustLib.instance.api.crateApiNativeBinanceAccountSubscriptionNext(
+  subscription: subscription,
+);
+
+/// 제공자 원본 스트림을 닫고 정리가 끝날 때까지 기다립니다.
+Future<void> nativeBinanceAccountSubscriptionClose({
+  required NativeBinanceAccountSubscription subscription,
+}) => MaxtRustLib.instance.api.crateApiNativeBinanceAccountSubscriptionClose(
+  subscription: subscription,
+);
 
 /// 설치된 Dart/Rust 경계의 버전입니다.
 String bridgeVersion() => MaxtRustLib.instance.api.crateApiBridgeVersion();
@@ -70,6 +155,37 @@ Future<void> nativeAccountSubscriptionClose({
   subscription: subscription,
 );
 
+/// 네이티브 Hyperliquid 시장 구독에서 다음 event/error/end 항목을 읽습니다.
+Future<WireHyperliquidMarketStreamItem>
+nativeHyperliquidMarketSubscriptionNext({
+  required NativeHyperliquidMarketSubscription subscription,
+}) => MaxtRustLib.instance.api.crateApiNativeHyperliquidMarketSubscriptionNext(
+  subscription: subscription,
+);
+
+/// 네이티브 Hyperliquid 계정 구독에서 다음 event/error/end 항목을 읽습니다.
+Future<WireHyperliquidAccountStreamItem>
+nativeHyperliquidAccountSubscriptionNext({
+  required NativeHyperliquidAccountSubscription subscription,
+}) => MaxtRustLib.instance.api.crateApiNativeHyperliquidAccountSubscriptionNext(
+  subscription: subscription,
+);
+
+/// 네이티브 Hyperliquid 시장 구독을 중단하고 원본 Rust stream 정리를 기다립니다.
+Future<void> nativeHyperliquidMarketSubscriptionClose({
+  required NativeHyperliquidMarketSubscription subscription,
+}) => MaxtRustLib.instance.api.crateApiNativeHyperliquidMarketSubscriptionClose(
+  subscription: subscription,
+);
+
+/// 네이티브 Hyperliquid 계정 구독을 중단하고 원본 Rust stream 정리를 기다립니다.
+Future<void> nativeHyperliquidAccountSubscriptionClose({
+  required NativeHyperliquidAccountSubscription subscription,
+}) =>
+    MaxtRustLib.instance.api.crateApiNativeHyperliquidAccountSubscriptionClose(
+      subscription: subscription,
+    );
+
 /// Dart callback을 공통 Adapter 구현으로 등록합니다.
 Future<DartAdapter> registerDartAdapter({
   required WireExchange exchange,
@@ -83,7 +199,79 @@ Future<DartAdapter> registerDartAdapter({
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeClient>>
 abstract class NativeClient implements RustOpaqueInterface {
+  Future<List<WireAssetNetwork>> assetNetworks({required String asset});
+
   Future<List<WireBalance>> balances();
+
+  /// Binance 계정 체결 페이지를 반환합니다.
+  ///
+  /// 전체 페이지여도 일반 cursor를 만들지 않으므로 다음 조회에는 제공자 체결 ID를
+  /// 사용해야 합니다.
+  Future<WireBinanceAccountTradePage> binanceAccountTrades({
+    required WireHistoryRequest request,
+  });
+
+  /// Binance USD-M의 가격·방향 기준 집계 체결을 반환합니다.
+  ///
+  /// 개별 체결 목록이 아니며 공개 API라 자격증명이 필요 없습니다.
+  Future<List<WireBinanceAggregateTrade>> binanceAggregateTrades({
+    required WireBinanceAggregateTradesRequest request,
+  });
+
+  /// Binance Wallet 코인·네트워크 설정을 반환합니다.
+  Future<List<WireBinanceCoinInformation>> binanceAllCoinsInformation();
+
+  /// Binance API 키의 권한 상태를 반환합니다.
+  Future<WireBinanceApiKeyPermissions> binanceApiKeyPermissions();
+
+  /// Binance Spot Funding Wallet의 C2C 거래 이력 응답을 그대로 반환합니다.
+  ///
+  /// `page`를 증가시켜 조회하며, 일반 cursor를 만들지 않고 제공자 envelope을 보존합니다.
+  Future<WireBinanceC2cTradeHistoryPage> binanceC2CTradeHistory({
+    required WireBinanceC2cTradeHistoryRequest request,
+  });
+
+  /// 한 Binance 시장의 모든 미체결 주문을 취소합니다.
+  ///
+  /// Spot과 USD-M의 응답 형태가 달라 성공 여부만 반환합니다.
+  Future<void> binanceCancelAllOpenOrders({required WireMarket market});
+
+  /// Binance 전용 API인 `cancelOrderByClientIdDetail`를 호출합니다.
+  Future<WireBinanceOrderResponse> binanceCancelOrderByClientIdDetail({
+    required WireMarket market,
+    required String clientId,
+  });
+
+  /// Binance 전용 API인 `cancelOrderDetail`를 호출합니다.
+  Future<WireBinanceOrderResponse> binanceCancelOrderDetail({
+    required WireMarket market,
+    required String orderId,
+  });
+
+  /// Binance 입금 이력을 반환합니다.
+  Future<WireBinanceDepositHistory> binanceDepositHistory({
+    required WireBinanceDepositHistoryRequest request,
+  });
+
+  /// 한 Binance USD-M 시장의 현재 mark price와 펀딩 정보를 반환합니다.
+  Future<WireBinanceMarkPrice> binanceMarkPrice({required WireMarket market});
+
+  /// 모든 Binance USD-M 영구 시장의 현재 mark price를 반환합니다.
+  Future<List<WireBinanceMarkPrice>> binanceMarkPrices();
+
+  /// 한 Binance USD-M 시장의 현재 미결제약정을 반환합니다.
+  Future<WireBinanceOpenInterest> binanceOpenInterest({
+    required WireMarket market,
+  });
+
+  /// Binance 전용 API인 `placeOrderDetail`를 호출합니다.
+  Future<WireBinanceOrderResponse> binancePlaceOrderDetail({
+    required WireOrderRequest request,
+  });
+
+  /// Binance Travel Rule 설문 국가 요구사항을 반환합니다.
+  Future<WireBinanceQuestionnaireRequirements>
+  binanceQuestionnaireRequirements();
 
   /// Binance Spot의 선택적 자격증명을 구성합니다.
   static NativeClient binanceSpot({String? apiKey, String? secretKey}) =>
@@ -92,18 +280,76 @@ abstract class NativeClient implements RustOpaqueInterface {
         secretKey: secretKey,
       );
 
+  /// Binance Spot 계정의 권한·수수료·잔고 정보를 반환합니다.
+  Future<WireBinanceSpotAccountInformation> binanceSpotAccountInformation();
+
+  /// 한 Binance Spot 시장의 현재 평균 가격을 반환합니다.
+  Future<WireBinanceSpotAveragePrice> binanceSpotAveragePrice({
+    required WireMarket market,
+  });
+
+  /// Binance Spot 시장의 모든 미체결 주문을 취소하고 보고서를 반환합니다.
+  Future<WireBinanceSpotCancelAllOpenOrders> binanceSpotCancelAllOpenOrders({
+    required WireMarket market,
+  });
+
+  /// Binance Spot 거래소 메타데이터를 반환합니다.
+  Future<WireBinanceExchangeInfo> binanceSpotExchangeInfo();
+
+  /// 숫자 주문 ID로 Binance Spot 주문 상세를 반환합니다.
+  ///
+  /// 체결·취소 주문도 포함하며 USD-M Futures handle에서는 지원되지 않습니다.
   Future<WireBinanceSpotOrderDetail> binanceSpotOrder({
     required WireMarket market,
     required String orderId,
   });
 
+  /// 한 Binance Spot 시장의 가격·수량·명목가 제약을 반환합니다.
+  ///
+  /// USD-M Futures handle에서는 지원되지 않습니다.
   Future<WireBinanceSymbolFilters> binanceSpotSymbolFilters({
     required WireMarket market,
   });
 
-  Future<void> binanceUsdMCloseListenKey({required WireBinanceListenKey key});
+  /// Binance 전용 API인 `subscribeDetailed`를 호출합니다.
+  Future<NativeBinanceMarketSubscription> binanceSubscribeDetailed({
+    required WireSubscription subscription,
+  });
 
+  /// Binance 전용 API인 `subscribeDetailedAccount`를 호출합니다.
+  Future<NativeBinanceAccountSubscription> binanceSubscribeDetailedAccount();
+
+  /// Binance 전용 API인 `subscribeDetailedAccountWith`를 호출합니다.
+  Future<NativeBinanceAccountSubscription> binanceSubscribeDetailedAccountWith({
+    required WireStreamConfig config,
+  });
+
+  /// Binance 전용 API인 `subscribeDetailedWith`를 호출합니다.
+  Future<NativeBinanceMarketSubscription> binanceSubscribeDetailedWith({
+    required WireSubscription subscription,
+    required WireStreamConfig config,
+  });
+
+  /// Binance 주문을 실제 생성 없이 검증합니다.
+  ///
+  /// Spot은 보통 빈 객체를, USD-M은 주문 형태 객체를 반환할 수 있습니다.
+  Future<WireBinanceTestOrder> binanceTestOrder({
+    required WireBinanceTestOrderRequest request,
+  });
+
+  /// Binance USD-M 계정의 마진·자산·포지션 정보를 반환합니다.
+  Future<WireBinanceUsdMAccountInformation> binanceUsdMAccountInformation();
+
+  /// 현재 API 키가 소유한 Binance USD-M listen key를 닫습니다.
+  Future<void> binanceUsdMCloseListenKey();
+
+  /// Binance USD-M 사용자 데이터 스트림 listen key를 생성합니다.
+  ///
+  /// 일반적으로 [subscribe_account]가 이 수명을 관리합니다.
   Future<WireBinanceListenKey> binanceUsdMCreateListenKey();
+
+  /// Binance USD-M 거래소 메타데이터를 반환합니다.
+  Future<WireBinanceExchangeInfo> binanceUsdMExchangeInfo();
 
   /// Binance USD-M의 선택적 자격증명을 구성합니다.
   static NativeClient binanceUsdMFutures({String? apiKey, String? secretKey}) =>
@@ -112,11 +358,23 @@ abstract class NativeClient implements RustOpaqueInterface {
         secretKey: secretKey,
       );
 
-  Future<void> binanceUsdMKeepaliveListenKey({
-    required WireBinanceListenKey key,
-  });
+  /// 현재 API 키가 소유한 Binance USD-M listen key를 연장합니다.
+  Future<void> binanceUsdMKeepaliveListenKey();
 
+  /// Binance USD-M 포지션 위험 정보를 반환합니다.
+  Future<List<WireBinanceUsdMPositionInformation>>
+  binanceUsdMPositionInformation({WireMarket? market});
+
+  /// Binance handle이면 선택된 제품군을, 아니면 null을 반환합니다.
   WireBinanceVenue? binanceVenue();
+
+  /// Binance에 등록된 출금 주소 목록을 반환합니다.
+  Future<List<WireBinanceWithdrawalAddress>> binanceWithdrawAddressList();
+
+  /// Binance 출금 이력을 반환합니다.
+  Future<WireBinanceWithdrawHistory> binanceWithdrawHistory({
+    required WireBinanceWithdrawHistoryRequest request,
+  });
 
   /// Bithumb의 선택적 자격증명을 구성합니다.
   static NativeClient bithumb({String? accessKey, String? secretKey}) =>
@@ -125,18 +383,211 @@ abstract class NativeClient implements RustOpaqueInterface {
         secretKey: secretKey,
       );
 
-  Future<List<WireBithumbMarketAlert>> bithumbMarketAlerts();
+  /// 이 Bithumb 계정에 등록된 API 키 정보를 반환합니다.
+  Future<List<WireBithumbApiKey>> bithumbApiKeys();
 
-  Future<List<WireBithumbMarketWarning>> bithumbMarketWarnings();
+  /// 최대 20개 Bithumb 주문을 함께 제출하고 항목별 결과를 반환합니다.
+  ///
+  /// 이는 금융 쓰기이며 HTTP 성공이어도 일부 항목은 거절될 수 있습니다.
+  Future<WireBithumbBatchOrdersResult> bithumbBatchOrders({
+    required WireBithumbBatchOrdersRequest request,
+  });
 
-  Future<WireOrder> cancelOrder({
+  /// Bithumb 전용 API인 `cancelOrderByClientIdDetail`를 호출합니다.
+  Future<WireBithumbCancelOrderResponse> bithumbCancelOrderByClientIdDetail({
+    required WireMarket market,
+    required String clientId,
+  });
+
+  /// Bithumb 전용 API인 `cancelOrderDetail`를 호출합니다.
+  Future<WireBithumbCancelOrderResponse> bithumbCancelOrderDetail({
     required WireMarket market,
     required String orderId,
   });
 
+  /// Bithumb 전용 API인 `cancelOrdersDetail`를 호출합니다.
+  Future<WireBithumbCancelOrdersResponse> bithumbCancelOrdersDetail({
+    required WireCancelOrdersRequest request,
+  });
+
+  /// Bithumb TWAP 주문을 취소하고 취소된 식별자를 반환합니다.
+  Future<String> bithumbCancelTwapOrder({required String algoOrderId});
+
+  /// Bithumb 전용 API인 `cancelWithdrawalDetail`를 호출합니다.
+  Future<WireBithumbCancelWithdrawalResponse> bithumbCancelWithdrawalDetail({
+    required String withdrawalId,
+  });
+
+  /// 조건에 맞는 Bithumb 종료 주문 페이지를 반환합니다.
+  Future<WireBithumbClosedOrderPage> bithumbClosedOrders({
+    required WireBithumbClosedOrdersRequest request,
+  });
+
+  /// Bithumb TWAP 주문을 생성하고 제공자 주문 식별자를 반환합니다.
+  ///
+  /// 이는 금융 쓰기 요청입니다.
+  Future<String> bithumbCreateTwapOrder({
+    required WireBithumbTwapOrderRequest request,
+  });
+
+  /// Bithumb 전용 API인 `depositDetail`를 호출합니다.
+  Future<WireBithumbDepositResponse> bithumbDepositDetail({
+    required WireTransferLookupRequest request,
+  });
+
+  /// Bithumb 원화 입금을 요청합니다.
+  ///
+  /// 이는 금융 쓰기이며 은행 계좌와 2차 인증 조건은 제공자 측에서 확인합니다.
+  Future<WireBithumbKrwDeposit> bithumbDepositKrw({
+    required WireBithumbKrwTransferRequest request,
+  });
+
+  /// Bithumb 원화 입금 이력을 반환합니다.
+  Future<List<WireBithumbKrwDeposit>> bithumbKrwDeposits({
+    required WireBithumbKrwDepositsRequest request,
+  });
+
+  /// Bithumb 원화 출금 이력을 반환합니다.
+  Future<List<WireBithumbKrwWithdrawal>> bithumbKrwWithdrawals({
+    required WireBithumbKrwWithdrawalsRequest request,
+  });
+
+  /// Bithumb에서 활성화한 시장별 경보를 반환합니다.
+  Future<List<WireBithumbMarketAlert>> bithumbMarketAlerts();
+
+  /// Bithumb 시장별 원본 투자 유의 플래그를 반환합니다.
+  ///
+  /// 유의 종목도 거래 가능할 수 있으며 공통 시장 상태와는 별개입니다.
+  Future<List<WireBithumbMarketWarning>> bithumbMarketWarnings();
+
+  /// 최신 Bithumb 거래소 공지를 먼저 반환합니다.
+  ///
+  /// `count`는 1부터 20까지이며 생략하면 Bithumb 기본값을 사용합니다.
+  Future<List<WireBithumbNotice>> bithumbNotices({int? count});
+
+  /// Bithumb 전용 API인 `orderBookSnapshot`를 호출합니다.
+  Future<WireBithumbOrderBookSnapshot> bithumbOrderBookSnapshot({
+    required WireMarket market,
+    int? depth,
+  });
+
+  /// 체결·수수료·STP 등 Bithumb 전용 상세를 포함한 한 주문을 반환합니다.
+  ///
+  /// UUID와 client 주문 ID를 모두 주면 Bithumb는 UUID를 우선하며, 요청 시장은
+  /// 반환 주문과 로컬에서 대조합니다.
+  Future<WireBithumbOrderDetail> bithumbOrderDetail({
+    required WireBithumbOrderDetailRequest request,
+  });
+
+  /// 상태·식별자·페이지 조건에 맞는 Bithumb 주문 목록을 반환합니다.
+  ///
+  /// `state`와 `states`는 함께 설정할 수 없으며, UUID 목록은 client 주문 ID 목록보다
+  /// 우선합니다.
+  Future<List<WireBithumbOrderListItem>> bithumbOrderList({
+    required WireBithumbOrderListRequest request,
+  });
+
+  /// Bithumb 전용 API인 `ordersByIdsDetail`를 호출합니다.
+  Future<WireBithumbOrdersResponse> bithumbOrdersByIdsDetail({
+    required WireOrderLookupRequest request,
+  });
+
+  /// Bithumb `wait` 또는 `watch` 상태 주문 페이지를 반환합니다.
+  Future<WireOrderPage> bithumbPendingOrders({
+    required WireBithumbPendingOrdersRequest request,
+  });
+
+  /// Bithumb 전용 API인 `placeOrderDetail`를 호출합니다.
+  Future<WireBithumbOrderResponse> bithumbPlaceOrderDetail({
+    required WireOrderRequest request,
+  });
+
+  /// Bithumb 전용 API인 `subscribeDetailed`를 호출합니다.
+  Future<NativeBithumbMarketSubscription> bithumbSubscribeDetailed({
+    required WireSubscription subscription,
+  });
+
+  /// Bithumb 전용 API인 `subscribeDetailedAccount`를 호출합니다.
+  Future<NativeBithumbAccountSubscription> bithumbSubscribeDetailedAccount();
+
+  /// Bithumb 전용 API인 `subscribeDetailedAccountWith`를 호출합니다.
+  Future<NativeBithumbAccountSubscription> bithumbSubscribeDetailedAccountWith({
+    required WireStreamConfig config,
+  });
+
+  /// Bithumb 전용 API인 `subscribeDetailedWith`를 호출합니다.
+  Future<NativeBithumbMarketSubscription> bithumbSubscribeDetailedWith({
+    required WireSubscription subscription,
+    required WireStreamConfig config,
+  });
+
+  /// 한 자산 또는 `ALL`에 대한 Bithumb 전송 수수료 규칙을 반환합니다.
+  ///
+  /// 계정별 출금 가능 여부와 한도는 이 응답에 포함되지 않습니다.
+  Future<List<WireBithumbAssetFee>> bithumbTransferFees({
+    required String currency,
+  });
+
+  /// Bithumb TWAP 주문 페이지를 반환합니다.
+  Future<WireBithumbTwapOrderPage> bithumbTwapOrders({
+    required WireBithumbTwapOrdersRequest request,
+  });
+
+  /// Bithumb 원화 출금을 요청합니다.
+  ///
+  /// 이는 금융 쓰기이며 등록 계좌와 제공자 측 2차 인증이 필요할 수 있습니다.
+  Future<WireBithumbKrwWithdrawal> bithumbWithdrawKrw({
+    required WireBithumbKrwTransferRequest request,
+  });
+
+  /// 이 계정에 등록된 Bithumb 출금 주소 정보를 반환합니다.
+  ///
+  /// 이는 출금 견적이나 사전 검증 결과가 아니라 제공자 등록 주소 목록입니다.
+  Future<List<WireBithumbWithdrawalAddress>> bithumbWithdrawalAddresses();
+
+  /// Bithumb 전용 API인 `withdrawalDetail`를 호출합니다.
+  Future<WireBithumbWithdrawalResponse> bithumbWithdrawalDetail({
+    required WireTransferLookupRequest request,
+  });
+
+  Future<void> cancelOrder({
+    required WireMarket market,
+    required String orderId,
+  });
+
+  Future<void> cancelOrderByClientId({
+    required WireMarket market,
+    required String clientId,
+  });
+
+  Future<WireCancelOrdersResult> cancelOrders({
+    required WireCancelOrdersRequest request,
+  });
+
+  Future<void> cancelWithdrawal({required String withdrawalId});
+
   Future<List<WireCandle>> candles({required WireCandleRequest request});
 
+  Future<WireDepositAddress> createDepositAddress({
+    required WireDepositAddressRequest request,
+  });
+
+  Future<WireDeposit> deposit({required WireTransferLookupRequest request});
+
+  Future<WireDepositAddress> depositAddress({
+    required WireDepositAddressRequest request,
+  });
+
+  Future<List<WireDepositAddressEntry>> depositAddresses();
+
+  Future<WireDepositPage> deposits({
+    required WireTransferHistoryRequest request,
+  });
+
+  /// 이 native handle이 연결한 거래소를 반환합니다.
   WireExchange exchange();
+
+  Future<WireWithdrawal> executeTransfer({required WireTransferPlan plan});
 
   /// Dart에서 구현한 Adapter를 공통 native Client로 감쌉니다.
   static NativeClient fromDartAdapter({required DartAdapter adapter}) =>
@@ -163,10 +614,58 @@ abstract class NativeClient implements RustOpaqueInterface {
     privateKey: privateKey,
   );
 
+  /// 기본 Hyperliquid 현물·영구 시장의 현재 중간 가격을 반환합니다.
+  ///
+  /// HIP-3 DEX 시장은 이 adapter의 시장 표에 포함되지 않습니다.
+  Future<List<WireHyperliquidMidPrice>> hyperliquidAllMids();
+
+  /// Hyperliquid 전용 API인 `allMidsDetail`를 호출합니다.
+  Future<WireHyperliquidAllMids> hyperliquidAllMidsDetail();
+
+  /// 한 Hyperliquid 시장의 현재 가격·펀딩·정밀도 정보를 반환합니다.
   Future<WireHyperliquidAssetContext> hyperliquidAssetContext({
     required WireMarket market,
   });
 
+  /// 구성된 Hyperliquid 주소의 간략한 현재 미체결 주문을 반환합니다.
+  Future<List<WireHyperliquidOpenOrder>> hyperliquidBasicOpenOrders();
+
+  /// Hyperliquid 전용 API인 `cancelOrderDetail`를 호출합니다.
+  Future<WireHyperliquidProviderResponse> hyperliquidCancelOrderDetail({
+    required WireMarket market,
+    required String orderId,
+  });
+
+  /// Hyperliquid 캔들 snapshot과 거래 건수를 반환합니다.
+  Future<List<WireHyperliquidCandleSnapshot>> hyperliquidCandleSnapshot({
+    required WireMarket market,
+    required String interval,
+    required PlatformInt64 fromNs,
+    PlatformInt64? toNs,
+  });
+
+  /// Hyperliquid 전용 API인 `clearinghouseStateDetail`를 호출합니다.
+  Future<WireHyperliquidProviderResponse> hyperliquidClearinghouseStateDetail();
+
+  /// Hyperliquid 전용 API인 `frontendOpenOrdersDetail`를 호출합니다.
+  Future<WireHyperliquidProviderResponse> hyperliquidFrontendOpenOrdersDetail();
+
+  /// Hyperliquid 펀딩 이력과 premium 값을 반환합니다.
+  Future<List<WireHyperliquidFundingHistoryEntry>> hyperliquidFundingHistory({
+    required WireMarket market,
+    required PlatformInt64 fromNs,
+    PlatformInt64? toNs,
+  });
+
+  /// 구성된 Hyperliquid 주소의 최근 주문 이력을 반환합니다.
+  Future<List<WireHyperliquidOrderInfo>> hyperliquidHistoricalOrders();
+
+  /// Hyperliquid L2 호가와 레벨별 주문 수를 반환합니다.
+  Future<WireHyperliquidL2Book> hyperliquidL2Book({required WireMarket market});
+
+  /// 구성된 Hyperliquid 계정의 비펀딩 원장 페이지를 반환합니다.
+  ///
+  /// 주소만 필요하고 서명은 사용하지 않으며, cursor와 시간 범위는 제공자 기준입니다.
   Future<WireHyperliquidLedgerPage> hyperliquidNonFundingLedger({
     PlatformInt64? fromNs,
     PlatformInt64? toNs,
@@ -174,6 +673,109 @@ abstract class NativeClient implements RustOpaqueInterface {
     int? limit,
   });
 
+  /// 서버 주문 ID 또는 클라이언트 주문 ID로 Hyperliquid 주문 상태를 반환합니다.
+  ///
+  /// 주소 검증은 adapter가 먼저 수행하므로, 잘못된 클라이언트 주문 ID보다 누락된
+  /// 주소 오류가 우선 반환됩니다.
+  Future<WireHyperliquidOrderStatusResponse> hyperliquidOrderStatus({
+    required WireHyperliquidOrderReference reference,
+  });
+
+  /// Hyperliquid 전용 API인 `perpetualMeta`를 호출합니다.
+  Future<WireHyperliquidProviderResponse> hyperliquidPerpetualMeta();
+
+  /// Hyperliquid 전용 API인 `perpetualMetaAndAssetContexts`를 호출합니다.
+  Future<WireHyperliquidProviderResponse>
+  hyperliquidPerpetualMetaAndAssetContexts();
+
+  /// Hyperliquid 전용 API인 `placeOrderDetail`를 호출합니다.
+  Future<WireHyperliquidOrderActionResponse> hyperliquidPlaceOrderDetail({
+    required WireOrderRequest request,
+  });
+
+  /// 구성된 Hyperliquid 주소의 제공자 기간별 포트폴리오 이력을 반환합니다.
+  Future<List<WireHyperliquidPortfolioPeriod>> hyperliquidPortfolio();
+
+  /// Hyperliquid 최근 체결과 hash·참여자 정보를 반환합니다.
+  Future<List<WireHyperliquidRecentTrade>> hyperliquidRecentTrades({
+    required WireMarket market,
+  });
+
+  /// 구성된 Hyperliquid 주소의 추천 프로그램 상태를 반환합니다.
+  Future<WireHyperliquidReferral> hyperliquidReferral();
+
+  /// Hyperliquid Spot 계정 잔고 상태를 반환합니다.
+  Future<WireHyperliquidSpotClearinghouseState>
+  hyperliquidSpotClearinghouseState();
+
+  /// Hyperliquid Spot 토큰·페어 메타데이터를 반환합니다.
+  Future<WireHyperliquidSpotMeta> hyperliquidSpotMeta();
+
+  /// Hyperliquid Spot 메타데이터와 asset context를 함께 반환합니다.
+  Future<WireHyperliquidSpotMetaAndAssetContexts>
+  hyperliquidSpotMetaAndAssetContexts();
+
+  /// 구성된 Hyperliquid 주소의 서브 계정을 반환합니다.
+  ///
+  /// 제공자가 계정이 없음을 null로 보내면 빈 목록으로 반환합니다.
+  Future<List<WireHyperliquidSubAccount>> hyperliquidSubAccounts();
+
+  /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 Hyperliquid 원본 시장 구독을 반환합니다.
+  Future<NativeHyperliquidMarketSubscription> hyperliquidSubscribeDetailed({
+    required WireSubscription subscription,
+  });
+
+  /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 Hyperliquid 원본 계정 구독을 반환합니다.
+  Future<NativeHyperliquidAccountSubscription>
+  hyperliquidSubscribeDetailedAccount();
+
+  /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 설정형 Hyperliquid 원본 계정 구독을 반환합니다.
+  Future<NativeHyperliquidAccountSubscription>
+  hyperliquidSubscribeDetailedAccountWith({required WireStreamConfig config});
+
+  /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 설정형 Hyperliquid 원본 시장 구독을 반환합니다.
+  Future<NativeHyperliquidMarketSubscription> hyperliquidSubscribeDetailedWith({
+    required WireSubscription subscription,
+    required WireStreamConfig config,
+  });
+
+  /// 구성된 Hyperliquid 주소의 제공자 수수료 일정을 반환합니다.
+  ///
+  /// 제공자가 확장할 수 있는 세부 tier 정보도 보존합니다.
+  Future<WireHyperliquidUserFees> hyperliquidUserFees();
+
+  /// 구성된 Hyperliquid 주소의 최근 체결을 반환합니다.
+  Future<List<WireHyperliquidUserFill>> hyperliquidUserFills({
+    required bool aggregateByTime,
+  });
+
+  /// 구성된 Hyperliquid 주소의 지정 시간 범위 체결을 반환합니다.
+  Future<List<WireHyperliquidUserFill>> hyperliquidUserFillsByTime({
+    required PlatformInt64 fromNs,
+    PlatformInt64? toNs,
+    required bool aggregateByTime,
+  });
+
+  /// Hyperliquid 계정 펀딩 항목을 반환합니다.
+  Future<List<WireHyperliquidUserFunding>> hyperliquidUserFunding({
+    required PlatformInt64 fromNs,
+    PlatformInt64? toNs,
+  });
+
+  /// 구성된 Hyperliquid 주소의 현재 Info API 요청 한도를 반환합니다.
+  ///
+  /// 이는 주소만 필요한 공개 계정 조회입니다.
+  Future<WireHyperliquidUserRateLimit> hyperliquidUserRateLimit();
+
+  /// 구성된 Hyperliquid 주소의 제공자 역할을 반환합니다.
+  ///
+  /// 알 수 없는 역할 이름은 raw 값으로 보존됩니다.
+  Future<WireHyperliquidUserRole> hyperliquidUserRole();
+
+  /// 구성된 Hyperliquid 주소의 현재 vault 지분을 반환합니다.
+  Future<List<WireHyperliquidVaultEquity>> hyperliquidUserVaultEquities();
+
+  /// Hyperliquid handle이면 testnet 여부를, 아니면 null을 반환합니다.
   bool? isTestnet();
 
   Future<WireMarginSummary> marginSummary();
@@ -182,11 +784,44 @@ abstract class NativeClient implements RustOpaqueInterface {
 
   Future<List<WireOrder>> openOrders({WireMarket? market});
 
+  Future<WireOrder> order({
+    required WireMarket market,
+    required String orderId,
+  });
+
   Future<WireOrderBook> orderBook({required WireMarket market, int? depth});
+
+  Future<WireOrder> orderByClientId({
+    required WireMarket market,
+    required String clientId,
+  });
+
+  Future<WireOrderPage> orderHistory({
+    required WireOrderHistoryRequest request,
+  });
+
+  Future<WireOrderRules> orderRules({required WireMarket market});
+
+  Future<List<WireOrder>> ordersByIds({
+    required WireOrderLookupRequest request,
+  });
 
   Future<WireOrder> placeOrder({required WireOrderRequest request});
 
   Future<List<WirePosition>> positions({WireMarket? market});
+
+  Future<WireTransferPlan> prepareTransferTo({
+    required NativeClient destination,
+    required WireExchangeTransferRequest request,
+  });
+
+  Future<WireTransferPlan> prepareTransferToChain({
+    required WireChainTransferRequest request,
+  });
+
+  Future<WireWithdrawalQuote> prepareWithdrawal({
+    required WireWithdrawRequest request,
+  });
 
   Future<void> setMargin({required WireMarginRequest request});
 
@@ -201,6 +836,7 @@ abstract class NativeClient implements RustOpaqueInterface {
     required WireStreamConfig config,
   });
 
+  /// 이 native handle이 지정한 공통 기능을 지원하는지 반환합니다.
   bool supports({required WireFeature feature});
 
   Future<WireTicker> ticker({required WireMarket market});
@@ -218,23 +854,289 @@ abstract class NativeClient implements RustOpaqueInterface {
     secretKey: secretKey,
   );
 
+  /// 이 Upbit Korea 계정에 등록된 API 키 식별자와 만료 시각을 반환합니다.
+  ///
+  /// 비밀 키 자료는 반환하지 않습니다.
+  Future<List<WireUpbitApiKey>> upbitApiKeys();
+
+  /// 조건에 맞는 Upbit 대기 주문을 한 요청으로 취소합니다.
+  ///
+  /// 반환값은 취소 완료와 상태 변경으로 취소하지 못한 주문을 구분합니다.
+  Future<WireCancelOrdersResult> upbitBatchCancelOpenOrders({
+    required WireUpbitBatchCancelRequest request,
+  });
+
+  /// Upbit 주문을 취소하고 대체 주문을 요청합니다.
+  ///
+  /// 이전 주문이 먼저 체결되면 성공 응답이어도 대체 주문이 없을 수 있습니다.
+  Future<WireUpbitCancelAndNewOrderResult> upbitCancelAndNewOrder({
+    required WireUpbitCancelAndNewOrderRequest request,
+  });
+
+  /// Upbit 전용 API인 `cancelAndNewOrderDetail`를 호출합니다.
+  Future<WireUpbitCancelAndNewOrderDetailResult> upbitCancelAndNewOrderDetail({
+    required WireUpbitCancelAndNewOrderRequest request,
+  });
+
+  /// Upbit 전용 API인 `cancelOrderByClientIdDetail`를 호출합니다.
+  Future<WireUpbitOrderResponse> upbitCancelOrderByClientIdDetail({
+    required WireMarket market,
+    required String clientId,
+  });
+
+  /// Upbit 전용 API인 `cancelOrderDetail`를 호출합니다.
+  Future<WireUpbitOrderResponse> upbitCancelOrderDetail({
+    required WireMarket market,
+    required String orderId,
+  });
+
+  /// Upbit 전용 API인 `cancelOrdersDetail`를 호출합니다.
+  Future<WireUpbitCancelOrdersResponse> upbitCancelOrdersDetail({
+    required WireCancelOrdersRequest request,
+  });
+
+  /// Upbit 전용 API인 `cancelWithdrawalDetail`를 호출합니다.
+  Future<WireUpbitCancelWithdrawalResponse> upbitCancelWithdrawalDetail({
+    required String withdrawalId,
+  });
+
+  /// 조건에 맞는 Upbit 종료 주문 목록을 반환합니다.
+  Future<List<WireUpbitClosedOrder>> upbitClosedOrders({
+    required WireUpbitClosedOrdersRequest request,
+  });
+
+  /// Upbit 전용 API인 `depositDetail`를 호출합니다.
+  Future<WireUpbitDepositResponse> upbitDepositDetail({
+    required WireTransferLookupRequest request,
+  });
+
+  /// 한 자산·네트워크의 Upbit 입금 가능 정보를 반환합니다.
+  ///
+  /// 이 정보는 실시간 서비스 상태가 아니며 몇 분 지연될 수 있습니다.
+  Future<WireUpbitDepositInfo> upbitDepositInfo({
+    required String asset,
+    required String network,
+  });
+
+  /// Upbit Korea 등록 계좌에서 원화 입금을 요청합니다.
+  ///
+  /// 이는 Korea 지역 전용 금융 쓰기입니다.
+  Future<WireUpbitKrwDeposit> upbitDepositKrw({
+    required WireUpbitKrwTransferRequest request,
+  });
+
+  /// Upbit Korea 포켓별 API 키를 반환합니다.
+  ///
+  /// 요청은 포켓 UUID와 만료 키 포함 여부를 선택적으로 제한합니다.
+  Future<List<WireUpbitPocketApiKeyGroup>> upbitListPocketApiKeys({
+    required WireUpbitPocketApiKeysRequest request,
+  });
+
+  /// Upbit Korea API 키가 볼 수 있는 포켓 목록을 반환합니다.
+  Future<List<WireUpbitPocket>> upbitListPockets();
+
+  /// 일치하는 활성 Upbit 연결이 실제로 구독한 항목을 반환합니다.
+  ///
+  /// 먼저 같은 선택자(selector)로 구독을 시작하고 반환된 stream을 계속 실행해야 합니다.
+  Future<WireUpbitSubscriptionList> upbitListSubscriptions({
+    required WireSubscription subscription,
+  });
+
+  /// Upbit 시장의 투자 경고·주의 정보를 반환합니다.
   Future<List<WireUpbitMarketEvent>> upbitMarketEvents();
 
+  /// 여러 Upbit 현물 시장의 호가 스냅샷을 반환합니다.
+  ///
+  /// `depth`는 각 매수·매도 측의 최대 단계 수입니다.
   Future<List<WireOrderBook>> upbitOrderBooks({
     required List<WireMarket> markets,
     int? depth,
   });
 
+  /// 지정 가격 단위로 묶은 Upbit 호가 스냅샷을 반환합니다.
+  ///
+  /// 가격 단위는 해당 시장의 현재 지원 단위여야 합니다.
+  Future<List<WireOrderBook>> upbitOrderBooksAtLevel({
+    required List<WireMarket> markets,
+    required String level,
+    int? depth,
+  });
+
+  /// 체결·수수료·자전거래 방지 정보를 포함한 Upbit 주문 상세를 반환합니다.
+  ///
+  /// UUID와 사용자 주문 식별자를 모두 주면 Upbit는 UUID를 우선합니다.
+  Future<WireUpbitOrderDetail> upbitOrderDetail({
+    required WireUpbitOrderDetailRequest request,
+  });
+
+  /// 지정한 Upbit 시장의 현재 호가 단위와 지원 가격 단위를 반환합니다.
+  Future<List<WireUpbitOrderBookInstrument>> upbitOrderbookInstruments({
+    required List<WireMarket> markets,
+  });
+
+  /// Upbit 전용 API인 `ordersByIdsDetail`를 호출합니다.
+  Future<List<WireUpbitOrderResponse>> upbitOrdersByIdsDetail({
+    required WireOrderLookupRequest request,
+  });
+
+  /// Upbit 전용 API인 `placeOrderDetail`를 호출합니다.
+  Future<WireUpbitOrderResponse> upbitPlaceOrderDetail({
+    required WireOrderRequest request,
+  });
+
+  /// Upbit handle이면 선택된 지역을, 아니면 null을 반환합니다.
   WireUpbitRegion? upbitRegion();
 
+  /// 한 Upbit Korea 서브 포켓의 자산 잔고를 반환합니다.
+  Future<List<WireUpbitPocketBalance>> upbitSubPocketBalances({
+    required String pocketUuid,
+  });
+
+  /// 현재 Upbit Korea 서브 포켓에서 다른 포켓으로 자산 이전을 요청합니다.
+  ///
+  /// 이는 금융 쓰기이며 현재 OpenAPI 계약상 대상 포켓 `to`가 필수입니다.
+  Future<WireUpbitPocketTransfer> upbitSubPocketTransfer({
+    required WireUpbitPocketTransferRequest request,
+  });
+
+  /// 현재 Upbit Korea 서브 포켓의 이전 이력을 반환합니다.
+  Future<List<WireUpbitPocketTransfer>> upbitSubPocketTransfers({
+    required WireUpbitPocketTransferQuery request,
+  });
+
+  /// Upbit 전용 API인 `subscribeDetailed`를 호출합니다.
+  Future<NativeUpbitMarketSubscription> upbitSubscribeDetailed({
+    required WireSubscription subscription,
+  });
+
+  /// Upbit 전용 API인 `subscribeDetailedAccount`를 호출합니다.
+  Future<NativeUpbitAccountSubscription> upbitSubscribeDetailedAccount();
+
+  /// Upbit 전용 API인 `subscribeDetailedAccountWith`를 호출합니다.
+  Future<NativeUpbitAccountSubscription> upbitSubscribeDetailedAccountWith({
+    required WireStreamConfig config,
+  });
+
+  /// Upbit 전용 API인 `subscribeDetailedWith`를 호출합니다.
+  Future<NativeUpbitMarketSubscription> upbitSubscribeDetailedWith({
+    required WireSubscription subscription,
+    required WireStreamConfig config,
+  });
+
+  /// Upbit 주문을 실제 제출 없이 검증합니다.
+  ///
+  /// 반환된 주문 ID와 상태는 실주문을 뜻하지 않아 조회·취소에 사용할 수 없습니다.
+  Future<WireOrder> upbitTestOrder({required WireOrderRequest request});
+
+  /// Upbit 전용 API인 `testOrderDetail`를 호출합니다.
+  Future<WireUpbitOrderResponse> upbitTestOrderDetail({
+    required WireOrderRequest request,
+  });
+
+  /// 지정한 Upbit 현물 시장의 ticker 요약을 반환합니다.
   Future<List<WireTicker>> upbitTickers({required List<WireMarket> markets});
+
+  /// 하나 이상의 호가 통화로 Upbit ticker를 조회합니다.
+  Future<List<WireTicker>> upbitTickersByQuote({
+    required List<String> quoteCurrencies,
+  });
+
+  /// Upbit Korea 또는 Singapore의 Travel Rule 검증 가능 VASP를 반환합니다.
+  Future<List<WireUpbitTravelRuleVasp>> upbitTravelRuleVasps();
+
+  /// Upbit Korea 메인 포켓 간 자산 이전을 요청합니다.
+  ///
+  /// 이는 금융 쓰기이며 현재 OpenAPI 계약상 대상 포켓 `to`가 필수입니다.
+  Future<WireUpbitPocketTransfer> upbitUniversalTransfer({
+    required WireUpbitPocketUniversalTransferRequest request,
+  });
+
+  /// Upbit Korea 메인 포켓 이전 이력을 반환합니다.
+  Future<List<WireUpbitPocketTransfer>> upbitUniversalTransfers({
+    required WireUpbitPocketTransferQuery request,
+  });
+
+  /// 거래 ID로 Upbit Travel Rule 검증을 요청합니다.
+  ///
+  /// 이는 금융 쓰기 요청이며 동일 입금에 대한 반복 요청 제한은 Upbit가 적용합니다.
+  Future<WireUpbitTravelRuleVerification> upbitVerifyTravelRuleByTxid({
+    required String txid,
+    required String vaspUuid,
+    required String currency,
+    required String netType,
+  });
+
+  /// 입금 UUID로 Upbit Travel Rule 검증을 요청합니다.
+  ///
+  /// 이는 금융 쓰기 요청이며 동일 입금에 대한 반복 요청 제한은 Upbit가 적용합니다.
+  Future<WireUpbitTravelRuleVerification> upbitVerifyTravelRuleByUuid({
+    required String depositUuid,
+    required String vaspUuid,
+  });
+
+  /// Upbit Korea 등록 계좌로 원화 출금을 요청합니다.
+  ///
+  /// 이는 Korea 지역 전용 금융 쓰기이며 출금 안전 잠금으로 거절될 수 있습니다.
+  Future<WireUpbitKrwWithdrawal> upbitWithdrawKrw({
+    required WireUpbitKrwTransferRequest request,
+  });
+
+  /// Upbit 계정에 등록된 출금 허용 주소 목록을 반환합니다.
+  Future<List<WireUpbitWithdrawalAddress>> upbitWithdrawalAddresses();
+
+  /// Upbit 전용 API인 `withdrawalDetail`를 호출합니다.
+  Future<WireUpbitWithdrawalResponse> upbitWithdrawalDetail({
+    required WireTransferLookupRequest request,
+  });
+
+  /// 한 Upbit 시장의 연간 캔들을 오래된 순서로 반환합니다.
+  ///
+  /// `count`는 1부터 200까지이며, `toNs`는 포함되지 않는 종료 시각입니다.
+  Future<List<WireUpbitYearCandle>> upbitYearCandles({
+    required WireMarket market,
+    PlatformInt64? toNs,
+    int? count,
+  });
+
+  Future<WireWithdrawal> withdraw({required WireWithdrawRequest request});
+
+  Future<WireWithdrawal> withdrawal({
+    required WireTransferLookupRequest request,
+  });
+
+  Future<WireWithdrawalPage> withdrawals({
+    required WireTransferHistoryRequest request,
+  });
 }
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WireBinanceListenKey>>
 abstract class WireBinanceListenKey implements RustOpaqueInterface {
+  /// 소유 중인 Binance listen key 문자열을 반환합니다.
   String get value;
 }
 
-enum WireBinanceVenue { spot, usdMFutures }
+/// Dart에서 구성한 Binance 제품군입니다.
+enum WireBinanceVenue {
+  /// Binance Spot API입니다.
+  spot,
 
-enum WireUpbitRegion { korea, singapore, indonesia, thailand }
+  /// Binance USD-M Futures API입니다.
+  usdMFutures,
+}
+
+/// Dart에서 Upbit API 지역을 선택할 때 쓰는 값입니다.
+///
+/// 포켓과 원화 입출금 API는 `Korea`에서만 사용할 수 있습니다.
+enum WireUpbitRegion {
+  /// 대한민국 Upbit API입니다.
+  korea,
+
+  /// 싱가포르 Upbit API입니다.
+  singapore,
+
+  /// 인도네시아 Upbit API입니다.
+  indonesia,
+
+  /// 태국 Upbit API입니다.
+  thailand,
+}

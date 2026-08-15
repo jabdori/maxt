@@ -1,7 +1,6 @@
 use maxt::{
-    CandleRequest, Cursor, Decimal, Feed, FundingPayment, FundingRate, HistoryRequest,
-    MarginRequest, Market, OrderRequest, OrderType, Overflow, Page, Size, StreamConfig,
-    Subscription, Timestamp,
+    Balance, CandleRequest, Cursor, Decimal, Feed, HistoryRequest, MarginRequest, Market,
+    OrderRequest, OrderType, Overflow, Page, Size, StreamConfig, Subscription, Timestamp,
 };
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
@@ -36,6 +35,21 @@ pub(crate) fn decimal_to_wire(value: Decimal) -> String {
 
 pub(crate) fn timestamp_to_wire(value: Timestamp) -> i64 {
     value.as_nanos()
+}
+
+pub(crate) fn u32_from_wire(value: &Bound<'_, PyAny>, field: &str) -> PyResult<u32> {
+    let value = value.extract::<u64>().map_err(|_| {
+        core_error(maxt::Error::InvalidRequest {
+            field: field.to_owned(),
+            detail: "must be an unsigned 32-bit integer".to_owned(),
+        })
+    })?;
+    u32::try_from(value).map_err(|_| {
+        core_error(maxt::Error::InvalidRequest {
+            field: field.to_owned(),
+            detail: "must be an unsigned 32-bit integer".to_owned(),
+        })
+    })
 }
 
 fn invalid(field: &str, value: &str) -> PyErr {
@@ -77,6 +91,24 @@ pub(crate) fn optional<'py>(
     Ok(dict.get_item(name)?.filter(|value| !value.is_none()))
 }
 
+pub(crate) fn only_fields(dict: &Bound<'_, PyDict>, allowed: &[&str], field: &str) -> PyResult<()> {
+    for (key, _) in dict.iter() {
+        let key = key.extract::<String>().map_err(|_| {
+            core_error(maxt::Error::InvalidRequest {
+                field: field.to_owned(),
+                detail: "wire object keys must be strings".to_owned(),
+            })
+        })?;
+        if !allowed.contains(&key.as_str()) {
+            return Err(core_error(maxt::Error::InvalidRequest {
+                field: field.to_owned(),
+                detail: format!("does not accept `{key}`"),
+            }));
+        }
+    }
+    Ok(())
+}
+
 pub(crate) fn text(value: &Bound<'_, PyAny>) -> PyResult<String> {
     if let Ok(value) = value.extract::<String>() {
         return Ok(value);
@@ -87,6 +119,18 @@ pub(crate) fn text(value: &Bound<'_, PyAny>) -> PyResult<String> {
 pub(crate) fn decimal_from_wire(value: &Bound<'_, PyAny>, field: &str) -> PyResult<Decimal> {
     let value = text(value)?;
     maxt::parse_decimal_exact(&value).map_err(|_| invalid(field, &value))
+}
+
+pub(crate) fn balance_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Balance> {
+    let value = wire_object(value)?;
+    let value = value.cast::<PyDict>()?;
+    Ok(Balance {
+        asset: required(value, "asset")?
+            .extract::<String>()?
+            .to_ascii_uppercase(),
+        available: decimal_from_wire(&required(value, "available")?, "available")?,
+        locked: decimal_from_wire(&required(value, "locked")?, "locked")?,
+    })
 }
 
 pub(crate) fn market_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Market> {
@@ -199,6 +243,53 @@ fn size_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Size> {
     }
 }
 
+pub(crate) fn size_to_wire(py: Python<'_>, value: &Size) -> PyResult<Py<PyAny>> {
+    match value {
+        Size::Base(value) => wire_dict!(py, "kind" => "base", "value" => decimal_to_wire(*value)),
+        Size::Quote(value) => wire_dict!(py, "kind" => "quote", "value" => decimal_to_wire(*value)),
+        _ => Err(binding_contract("Size")),
+    }
+}
+
+pub(crate) fn order_from_wire(value: &Bound<'_, PyAny>) -> PyResult<maxt::Order> {
+    let value = wire_object(value)?;
+    let value = value.cast::<PyDict>()?;
+    Ok(maxt::Order {
+        id: required(value, "id")?.extract()?,
+        market: market_from_wire(&required(value, "market")?)?,
+        side: side_from_wire(&required(value, "side")?)?,
+        status: order_status_from_wire(&required(value, "status")?)?,
+        filled_quantity: decimal_from_wire(
+            &required(value, "filled_quantity")?,
+            "filled_quantity",
+        )?,
+        remaining_quantity: decimal_from_wire(
+            &required(value, "remaining_quantity")?,
+            "remaining_quantity",
+        )?,
+        price: optional(value, "price")?
+            .map(|value| decimal_from_wire(&value, "price"))
+            .transpose()?,
+        created_at: optional(value, "created_at")?
+            .map(|value| value.extract().map(Timestamp::from_nanos))
+            .transpose()?,
+    })
+}
+
+pub(crate) fn order_request_to_wire(py: Python<'_>, value: &OrderRequest) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "market" => market_to_wire(py, &value.market)?,
+        "side" => side_to_wire(value.side)?,
+        "order_type" => order_type_to_wire(value.order_type)?,
+        "size" => size_to_wire(py, &value.size)?,
+        "price" => value.price.map(decimal_to_wire),
+        "time_in_force" => value.time_in_force.map(time_in_force_to_wire).transpose()?,
+        "reduce_only" => value.reduce_only,
+        "client_id" => &value.client_id,
+    )
+}
+
 pub(crate) fn order_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<OrderRequest> {
     let value = wire_object(value)?;
     let dict = value.cast::<PyDict>()?;
@@ -209,9 +300,19 @@ pub(crate) fn order_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Orde
     let price = optional(dict, "price")?
         .map(|value| decimal_from_wire(&value, "price"))
         .transpose()?;
+    let time_in_force = optional(dict, "time_in_force")?
+        .map(|value| time_in_force_from_wire(&value))
+        .transpose()?;
     let mut request = match (order_type, price) {
         (OrderType::Market, None) => OrderRequest::market(market, side, size),
         (OrderType::Limit, Some(price)) => OrderRequest::limit(market, side, size, price),
+        (OrderType::Best, None) => OrderRequest::best(
+            market,
+            side,
+            size,
+            time_in_force
+                .ok_or_else(|| PyValueError::new_err("best orders require time_in_force"))?,
+        ),
         (OrderType::Market, Some(_)) => {
             return Err(PyValueError::new_err(
                 "market orders must not include price",
@@ -222,8 +323,8 @@ pub(crate) fn order_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Orde
         }
         _ => return Err(PyValueError::new_err("unsupported order type")),
     };
-    if let Some(time_in_force) = optional(dict, "time_in_force")? {
-        request = request.time_in_force(time_in_force_from_wire(&time_in_force)?);
+    if let Some(time_in_force) = time_in_force {
+        request = request.time_in_force(time_in_force);
     }
     if optional(dict, "reduce_only")?
         .map(|value| value.extract::<bool>())
@@ -231,6 +332,9 @@ pub(crate) fn order_request_from_wire(value: &Bound<'_, PyAny>) -> PyResult<Orde
         .unwrap_or(false)
     {
         request = request.reduce_only();
+    }
+    if let Some(client_id) = optional(dict, "client_id")? {
+        request = request.client_id(client_id.extract::<String>()?);
     }
     Ok(request)
 }
@@ -277,6 +381,27 @@ pub(crate) fn list_to_wire<T>(
         .map(|value| convert(py, value))
         .collect::<PyResult<Vec<_>>>()?;
     Ok(PyList::new(py, values)?.into_any().unbind())
+}
+
+pub(crate) fn list_from_wire<T>(
+    value: &Bound<'_, PyAny>,
+    parse: fn(&Bound<'_, PyAny>) -> PyResult<T>,
+) -> PyResult<Vec<T>> {
+    value
+        .try_iter()?
+        .map(|item| parse(&item?))
+        .collect::<PyResult<Vec<_>>>()
+}
+
+pub(crate) fn bithumb_twap_order_page_to_wire(
+    py: Python<'_>,
+    value: &Page<maxt::BithumbTwapOrder>,
+) -> PyResult<Py<PyAny>> {
+    wire_dict!(
+        py,
+        "items" => list_to_wire(py, &value.items, bithumb_twap_order_to_wire)?,
+        "next" => value.next.as_ref().map(Cursor::as_str),
+    )
 }
 
 #[cfg(test)]
@@ -364,11 +489,13 @@ mod tests {
             ("min1", Interval::Min1),
             ("min3", Interval::Min3),
             ("min5", Interval::Min5),
+            ("min10", Interval::Min10),
             ("min15", Interval::Min15),
             ("min30", Interval::Min30),
             ("hour1", Interval::Hour1),
             ("hour2", Interval::Hour2),
             ("hour4", Interval::Hour4),
+            ("hour6", Interval::Hour6),
             ("hour8", Interval::Hour8),
             ("hour12", Interval::Hour12),
             ("day1", Interval::Day1),

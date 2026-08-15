@@ -13,6 +13,7 @@ abstract interface class Adapter implements GeneratedAdapterContract {}
 /// 구현하지 않은 메서드가 [UnsupportedError]를 반환하는 기본 클래스입니다.
 abstract base class AdapterBase extends GeneratedAdapterDefaults
     implements Adapter {
+  /// 지원하지 않는 기본 구독 호출을 검증한 뒤 오류로 완료합니다.
   @override
   Future<MarketStream> subscribe(
     Subscription subscription,

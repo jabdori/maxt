@@ -1,0 +1,1063 @@
+# Binance official API catalog snapshot
+# source_catalog: https://developers.binance.com/en/docs/llms.txt
+# source_detail: https://developers.binance.com/en/docs/llms-full.txt
+# source_catalog_sha256: 44fa6608f682b03358e5b7f53d25e791f5eea4d790bff91db86b95151116fc8e
+# source_detail_sha256: 2edabba856125f393ea3e5b7f53d25e791f5eea4d790bff91db86b95151116fc8e
+# exposure: local public-surface classification; see README.md
+# columns: official_product	interface	method	path_or_message	operation_id	authentication	risk	lifecycle	exposure
+Algo Trading REST	Http	DELETE	/sapi/v1/algo/futures/order	cancelAlgoOrderFutureAlgo	TRADE	FinancialWrite	documented_active	provider_typed
+Algo Trading REST	Http	GET	/sapi/v1/algo/futures/openOrders	queryCurrentAlgoOpenOrdersFutureAlgo	USER_DATA	Read	documented_active	provider_typed
+Algo Trading REST	Http	GET	/sapi/v1/algo/futures/historicalOrders	queryHistoricalAlgoOrdersFutureAlgo	USER_DATA	Read	documented_active	provider_typed
+Algo Trading REST	Http	GET	/sapi/v1/algo/futures/subOrders	querySubOrdersFutureAlgo	USER_DATA	Read	documented_active	provider_typed
+Algo Trading REST	Http	POST	/sapi/v1/algo/futures/newOrderTwap	timeWeightedAveragePriceFutureAlgo	TRADE	FinancialWrite	documented_active	provider_typed
+Algo Trading REST	Http	POST	/sapi/v1/algo/futures/newOrderVp	volumeParticipationFutureAlgo	TRADE	FinancialWrite	documented_active	provider_typed
+Algo Trading REST	Http	DELETE	/sapi/v1/algo/spot/order	cancelAlgoOrderSpotAlgo	TRADE	FinancialWrite	documented_active	provider_typed
+Algo Trading REST	Http	GET	/sapi/v1/algo/spot/openOrders	queryCurrentAlgoOpenOrdersSpotAlgo	USER_DATA	Read	documented_active	provider_typed
+Algo Trading REST	Http	GET	/sapi/v1/algo/spot/historicalOrders	queryHistoricalAlgoOrdersSpotAlgo	USER_DATA	Read	documented_active	provider_typed
+Algo Trading REST	Http	GET	/sapi/v1/algo/spot/subOrders	querySubOrdersSpotAlgo	USER_DATA	Read	documented_active	provider_typed
+Algo Trading REST	Http	POST	/sapi/v1/algo/spot/newOrderTwap	timeWeightedAveragePriceSpotAlgo	TRADE	FinancialWrite	documented_active	provider_typed
+Alpha Trading REST	Http	GET	/bapi/defi/v1/public/alpha-trade/agg-trades	aggregatedTrades	Public	Read	documented_active	provider_typed
+Alpha Trading REST	Http	GET	/bapi/defi/v1/public/alpha-trade/fullDepth	fullDepth	Public	Read	documented_active	provider_typed
+Alpha Trading REST	Http	GET	/bapi/defi/v1/public/alpha-trade/get-exchange-info	getExchangeInfo	Public	Read	documented_active	provider_typed
+Alpha Trading REST	Http	GET	/bapi/defi/v1/public/alpha-trade/klines	klines	Public	Read	documented_active	provider_typed
+Alpha Trading REST	Http	GET	/bapi/defi/v1/public/alpha-trade/ticker	ticker	Public	Read	documented_active	provider_typed
+Alpha Trading REST	Http	GET	/bapi/defi/v1/public/wallet-direct/buw/wallet/cex/alpha/all/token/list	tokenList	Public	Read	documented_active	provider_typed
+Alpha WebSocket Market Streams	WebSocketStream	POST	/{symbol}@aggTrade	aggregateTradeStream	Public	Read	documented_active	provider_typed
+Alpha WebSocket Market Streams	WebSocketStream	POST	/!bookTicker	allBookTickerStream	Public	Read	documented_active	provider_typed
+Alpha WebSocket Market Streams	WebSocketStream	POST	/!miniTicker@arr	allMiniTickerStream	Public	Read	documented_active	provider_typed
+Alpha WebSocket Market Streams	WebSocketStream	POST	/!ticker@arr	allTickerStream	Public	Read	documented_active	provider_typed
+Alpha WebSocket Market Streams	WebSocketStream	POST	/came@allTokens@ticker24	allTokens24hTickerStream	Public	Read	documented_active	provider_typed
+Alpha WebSocket Market Streams	WebSocketStream	POST	/{symbol}@bookTicker	bookTickerStream	Public	Read	documented_active	provider_typed
+Alpha WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth{levels}@{interval}	partialDepthStream	Public	Read	documented_active	provider_typed
+Alpha WebSocket Market Streams	WebSocketStream	POST	/{symbol}@fulldepth@{interval}	fullDepthStream	Public	Read	documented_active	provider_typed
+Alpha WebSocket Market Streams	WebSocketStream	POST	/{symbol}@kline_{interval}	klineStream	Public	Read	documented_active	provider_typed
+Alpha WebSocket Market Streams	WebSocketStream	POST	/came@{contractAddress}@{chainId}@kline_{interval}	contractKlineStream	Public	Read	documented_active	provider_typed
+Alpha WebSocket Market Streams	WebSocketStream	POST	/{symbol}@miniTicker	miniTickerStream	Public	Read	documented_active	provider_typed
+Alpha WebSocket Market Streams	WebSocketStream	POST	/{symbol}@ticker	tickerStream	Public	Read	documented_active	provider_typed
+Alpha WebSocket Market Streams	WebSocketStream	POST	/{symbol}@trade	tradeStream	Public	Read	documented_active	provider_typed
+Stocks Trading REST	Http	GET	/sapi/v1/equity/market/exchangeInfo	exchangeInfo	MARKET_DATA	Read	documented_active	platform_limited
+Stocks Trading REST	Http	GET	/sapi/v1/equity/market/tokenized-assets	tokenizedAssets	MARKET_DATA	Read	documented_active	platform_limited
+Stocks Trading REST	Http	GET	/sapi/v1/equity/market/quote	latestQuote	MARKET_DATA	Read	documented_active	platform_limited
+Stocks Trading REST	Http	POST	/sapi/v1/equity/order/place	placeEquityOrder	TRADE	FinancialWrite	documented_active	platform_limited
+Stocks Trading REST	Http	POST	/sapi/v1/equity/order/cancel	cancelEquityOrder	TRADE	FinancialWrite	documented_active	platform_limited
+Stocks Trading REST	Http	POST	/sapi/v1/equity/order/cancel-all	cancelAllEquityOrders	TRADE	FinancialWrite	documented_active	platform_limited
+Stocks Trading REST	Http	GET	/sapi/v1/equity/order/open-orders	currentOpenOrders	USER_DATA	Read	documented_active	platform_limited
+Stocks Trading REST	Http	GET	/sapi/v1/equity/order/history	equityOrderHistory	USER_DATA	Read	documented_active	platform_limited
+Stocks Trading REST	Http	GET	/sapi/v1/equity/order/detail	equityOrderDetail	USER_DATA	Read	documented_active	platform_limited
+Stocks Trading REST	Http	GET	/sapi/v1/equity/trade/history	equityTradeHistory	USER_DATA	Read	documented_active	platform_limited
+Stocks Trading REST	Http	POST	/sapi/v1/equity/tokenized/mint	tokenizedMint	TRADE	FinancialWrite	documented_active	platform_limited
+Stocks Trading REST	Http	POST	/sapi/v1/equity/tokenized/redeem	tokenizedRedeem	TRADE	FinancialWrite	documented_active	platform_limited
+Stocks Trading REST	Http	GET	/sapi/v1/equity/tokenized/convert-status	tokenizedConvertStatus	USER_DATA	Read	documented_active	platform_limited
+Stocks Trading REST	Http	GET	/sapi/v1/equity/tokenized/history	tokenizedConvertHistory	USER_DATA	Read	documented_active	platform_limited
+Stocks Trading REST	Http	POST	/sapi/v1/equity/account/disclaimer	signUsEquityDisclaimer	TRADE	FinancialWrite	documented_active	platform_limited
+Stocks Trading REST	Http	POST	/sapi/v1/equity/listenKey	createRenewListenKey	USER_STREAM	AccountWrite	documented_active	platform_limited
+Stocks Trading WebSocket Streams	WebSocketStream	POST	/price	priceStream	Public	Read	documented_active	platform_limited
+Stocks Trading WebSocket Streams	WebSocketStream	POST	/{symbol}@quote	quoteStream	Public	Read	documented_active	platform_limited
+Stocks Trading WebSocket Streams	WebSocketStream	POST	/{symbol}@kline_{interval}	klineStream	Public	Read	documented_active	platform_limited
+Stocks Trading WebSocket Streams	WebSocketStream	POST	/calendar	calendarStream	Public	Read	documented_active	platform_limited
+Stocks Trading WebSocket Streams	WebSocketStream	POST	/{symbol}@tradability	tradabilityStream	Public	Read	documented_active	platform_limited
+Stocks Trading WebSocket Streams	WebSocketStream	POST	/{symbol}@tradingStatus	tradingStatusStream	Public	Read	documented_active	platform_limited
+Stocks Trading WebSocket Streams	WebSocketStream	POST	/{listenKey}@orderReport	orderReportStream	Public	Read	documented_active	platform_limited
+C2C REST	Http	GET	/sapi/v1/c2c/orderMatch/listUserOrderHistory	getC2CTradeHistory	USER_DATA	Read	documented_active	provider_typed
+Convert REST	Http	GET	/sapi/v1/convert/exchangeInfo	listAllConvertPairs	Public	Read	documented_active	provider_typed
+Convert REST	Http	GET	/sapi/v1/convert/assetInfo	queryOrderQuantityPrecisionPerAsset	USER_DATA	Read	documented_active	provider_typed
+Convert REST	Http	POST	/sapi/v1/convert/acceptQuote	acceptQuote	TRADE	FinancialWrite	documented_active	provider_typed
+Convert REST	Http	POST	/sapi/v1/convert/limit/cancelOrder	cancelLimitOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Convert REST	Http	GET	/sapi/v1/convert/tradeFlow	getConvertTradeHistory	USER_DATA	Read	documented_active	provider_typed
+Convert REST	Http	GET	/sapi/v1/convert/orderStatus	orderStatus	USER_DATA	Read	documented_active	provider_typed
+Convert REST	Http	POST	/sapi/v1/convert/limit/placeOrder	placeLimitOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Convert REST	Http	GET	/sapi/v1/convert/limit/queryOpenOrders	queryLimitOpenOrders	USER_DATA	Read	documented_active	provider_typed
+Convert REST	Http	POST	/sapi/v1/convert/getQuote	sendQuoteRequest	TRADE	FinancialWrite	documented_active	provider_typed
+Copy Trading REST	Http	GET	/sapi/v1/copyTrading/futures/userStatus	getFuturesLeadTraderStatus	TRADE	FinancialWrite	documented_active	platform_limited
+Copy Trading REST	Http	GET	/sapi/v1/copyTrading/futures/leadSymbol	getFuturesLeadTradingSymbolWhitelist	USER_DATA	Read	documented_active	platform_limited
+Crypto Loan REST	Http	GET	/sapi/v2/loan/flexible/repay/rate	checkCollateralRepayRate	USER_DATA	Read	documented_active	provider_typed
+Crypto Loan REST	Http	POST	/sapi/v2/loan/flexible/adjust/ltv	flexibleLoanAdjustLtv	TRADE	FinancialWrite	documented_active	provider_typed
+Crypto Loan REST	Http	POST	/sapi/v2/loan/flexible/borrow	flexibleLoanBorrow	TRADE	FinancialWrite	documented_active	provider_typed
+Crypto Loan REST	Http	POST	/sapi/v2/loan/flexible/repay	flexibleLoanRepay	TRADE	FinancialWrite	documented_active	provider_typed
+Crypto Loan REST	Http	GET	/sapi/v2/loan/flexible/loanable/data	getFlexibleLoanAssetsData	USER_DATA	Read	documented_active	provider_typed
+Crypto Loan REST	Http	GET	/sapi/v2/loan/flexible/borrow/history	getFlexibleLoanBorrowHistory	USER_DATA	Read	documented_active	provider_typed
+Crypto Loan REST	Http	GET	/sapi/v2/loan/flexible/collateral/data	getFlexibleLoanCollateralAssetsData	USER_DATA	Read	documented_active	provider_typed
+Crypto Loan REST	Http	GET	/sapi/v2/loan/interestRateHistory	getFlexibleLoanInterestRateHistory	USER_DATA	Read	documented_active	provider_typed
+Crypto Loan REST	Http	GET	/sapi/v2/loan/flexible/liquidation/history	getFlexibleLoanLiquidationHistory	USER_DATA	Read	documented_active	provider_typed
+Crypto Loan REST	Http	GET	/sapi/v2/loan/flexible/ltv/adjustment/history	getFlexibleLoanLtvAdjustmentHistory	USER_DATA	Read	documented_active	provider_typed
+Crypto Loan REST	Http	GET	/sapi/v2/loan/flexible/ongoing/orders	getFlexibleLoanOngoingOrders	USER_DATA	Read	documented_active	provider_typed
+Crypto Loan REST	Http	GET	/sapi/v2/loan/flexible/repay/history	getFlexibleLoanRepaymentHistory	USER_DATA	Read	documented_active	provider_typed
+Crypto Loan REST	Http	GET	/sapi/v1/loan/income	getCryptoLoansIncomeHistory	USER_DATA	Read	documented_active	provider_typed
+Crypto Loan REST	Http	GET	/sapi/v1/loan/borrow/history	getLoanBorrowHistory	USER_DATA	Read	documented_active	provider_typed
+Crypto Loan REST	Http	GET	/sapi/v1/loan/ltv/adjustment/history	getLoanLtvAdjustmentHistory	USER_DATA	Read	documented_active	provider_typed
+Crypto Loan REST	Http	GET	/sapi/v1/loan/repay/history	getLoanRepaymentHistory	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/account	accountInformation	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/balance	futuresAccountBalance	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/positionSide/dual	getCurrentPositionMode	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/order/asyn	getDownloadIdForFuturesOrderHistory	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/trade/asyn	getDownloadIdForFuturesTradeHistory	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/income/asyn	getDownloadIdForFuturesTransactionHistory	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/order/asyn/id	getFuturesOrderHistoryDownloadLinkById	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/trade/asyn/id	getFuturesTradeDownloadLinkById	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/income/asyn/id	getFuturesTransactionHistoryDownloadLinkById	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/income	getIncomeHistory	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/leverageBracket	notionalBracketForPair	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v2/leverageBracket	notionalBracketForSymbol	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/commissionRate	userCommissionRate	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	POST	/dapi/v1/positionSide/dual	changePositionMode	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/userTrades	accountTradeList	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/allOrders	allOrders	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	POST	/dapi/v1/countdownCancelAll	autoCancelAllOpenOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (COIN-M) REST	Http	DELETE	/dapi/v1/allOpenOrders	cancelAllOpenOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (COIN-M) REST	Http	PUT	/dapi/v1/batchOrders	modifyMultipleOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (COIN-M) REST	Http	POST	/dapi/v1/batchOrders	placeMultipleOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (COIN-M) REST	Http	DELETE	/dapi/v1/batchOrders	cancelMultipleOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/order	queryOrder	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	PUT	/dapi/v1/order	modifyOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (COIN-M) REST	Http	POST	/dapi/v1/order	newOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (COIN-M) REST	Http	DELETE	/dapi/v1/order	cancelOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (COIN-M) REST	Http	POST	/dapi/v1/leverage	changeInitialLeverage	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (COIN-M) REST	Http	POST	/dapi/v1/marginType	changeMarginType	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/openOrders	currentAllOpenOrders	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/orderAmendment	getOrderModifyHistory	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/positionMargin/history	getPositionMarginChangeHistory	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (COIN-M) REST	Http	POST	/dapi/v1/positionMargin	modifyIsolatedPositionMargin	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/adlQuantile	positionAdlQuantileEstimation	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/positionRisk	positionInformation	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/openOrder	queryCurrentOpenOrder	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/forceOrders	usersForceOrders	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/futures/data/basis	basis	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/time	checkServerTime	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/aggTrades	compressedAggregateTradesList	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/continuousKlines	continuousContractKlineCandlestickData	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/exchangeInfo	exchangeInformation	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/fundingRate	getFundingRateHistoryOfPerpetualFutures	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/fundingInfo	getFundingRateInfo	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/premiumIndex	indexPriceAndMarkPrice	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/indexPriceKlines	indexPriceKlineCandlestickData	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/klines	klineCandlestickData	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/futures/data/globalLongShortAccountRatio	longShortRatio	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/markPriceKlines	markPriceKlineCandlestickData	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/historicalTrades	oldTradesLookup	MARKET_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/openInterest	openInterest	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/futures/data/openInterestHist	openInterestStatistics	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/depth	orderBook	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/premiumIndexKlines	premiumIndexKlineData	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/constituents	queryIndexPriceConstituents	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/trades	recentTradesList	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/ticker/bookTicker	symbolOrderBookTicker	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/ticker/price	symbolPriceTicker	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/futures/data/takerBuySellVol	takerBuySellVolume	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/ping	testConnectivity	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/dapi/v1/ticker/24hr	ticker24hrPriceChangeStatistics	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/futures/data/topLongShortAccountRatio	topTraderLongShortRatioAccounts	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	GET	/futures/data/topLongShortPositionRatio	topTraderLongShortRatioPositions	Public	Read	documented_active	provider_typed
+Futures (COIN-M) REST	Http	PUT	/dapi/v1/listenKey	keepaliveUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Futures (COIN-M) REST	Http	POST	/dapi/v1/listenKey	startUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Futures (COIN-M) REST	Http	DELETE	/dapi/v1/listenKey	closeUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Futures (COIN-M) WebSocket	WebSocketRequest	POST	/account.status	accountInformation	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) WebSocket	WebSocketRequest	POST	/account.balance	futuresAccountBalance	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) WebSocket	WebSocketRequest	POST	/order.cancel	cancelOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (COIN-M) WebSocket	WebSocketRequest	POST	/order.modify	modifyOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (COIN-M) WebSocket	WebSocketRequest	POST	/order.place	newOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (COIN-M) WebSocket	WebSocketRequest	POST	/account.position	positionInformation	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) WebSocket	WebSocketRequest	POST	/order.status	queryOrder	USER_DATA	Read	documented_active	provider_typed
+Futures (COIN-M) WebSocket	WebSocketRequest	POST	/userDataStream.stop	closeUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Futures (COIN-M) WebSocket	WebSocketRequest	POST	/userDataStream.ping	keepaliveUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Futures (COIN-M) WebSocket	WebSocketRequest	POST	/userDataStream.start	startUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Futures (COIN-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@aggTrade	aggregateTradeStreams	Public	Read	documented_active	provider_typed
+Futures (COIN-M) WebSocket Market Streams	WebSocketStream	POST	/!bookTicker	allBookTickersStream	Public	Read	documented_active	provider_typed
+Futures (COIN-M) WebSocket Market Streams	WebSocketStream	POST	/!forceOrder@arr	allMarketLiquidationOrderStreams	Public	Read	documented_active	provider_typed
+Futures (COIN-M) WebSocket Market Streams	WebSocketStream	POST	/!miniTicker@arr	allMarketMiniTickersStream	Public	Read	documented_active	provider_typed
+Futures (COIN-M) WebSocket Market Streams	WebSocketStream	POST	/!ticker@arr	allMarketTickersStreams	Public	Read	documented_active	provider_typed
+Futures (COIN-M) WebSocket Market Streams	WebSocketStream	POST	/{pair}_{contractType}@continuousKline_{interval}	continuousContractKlineCandlestickStreams	Public	Read	documented_active	provider_typed
+Futures (COIN-M) WebSocket Market Streams	WebSocketStream	POST	/!contractInfo	contractInfoStream	Public	Read	documented_active	provider_typed
+Futures (COIN-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth@{updateSpeed}	diffBookDepthStreams	Public	Read	documented_active	provider_typed
+Futures (COIN-M) WebSocket Market Streams	WebSocketStream	POST	/{pair}@indexPriceKline_{interval}	indexKlineCandlestickStreams	Public	Read	documented_active	provider_typed
+Futures (COIN-M) WebSocket Market Streams	WebSocketStream	POST	/{pair}@indexPrice@{updateSpeed}	indexPriceStream	Public	Read	documented_active	provider_typed
+Futures (COIN-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@bookTicker	individualSymbolBookTickerStreams	Public	Read	documented_active	provider_typed
+Futures (COIN-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@miniTicker	individualSymbolMiniTickerStream	Public	Read	documented_active	provider_typed
+Futures (COIN-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@ticker	individualSymbolTickerStreams	Public	Read	documented_active	provider_typed
+Futures (COIN-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@kline_{interval}	klineCandlestickStreams	Public	Read	documented_active	provider_typed
+Futures (COIN-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@forceOrder	marketLiquidationOrderStreams	Public	Read	documented_active	provider_typed
+Futures (COIN-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@markPriceKline_{interval}	markPriceKlineCandlestickStreams	Public	Read	documented_active	provider_typed
+Futures (COIN-M) WebSocket Market Streams	WebSocketStream	POST	/{pair}@markPrice@{updateSpeed}	markPriceOfAllSymbolsOfAPair	Public	Read	documented_active	provider_typed
+Futures (COIN-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@markPrice@{updateSpeed}	markPriceStream	Public	Read	documented_active	provider_typed
+Futures (COIN-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth{levels}@{updateSpeed}	partialBookDepthStreams	Public	Read	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/bill	accountFundingFlow	USER_DATA	Read	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/marginAccount	optionMarginAccountInformation	USER_DATA	Read	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/time	checkServerTime	Public	Read	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/exchangeInfo	exchangeInformation	Public	Read	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/exerciseHistory	historicalExerciseRecords	Public	Read	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/index	indexPrice	Public	Read	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/klines	klineCandlestickData	Public	Read	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/openInterest	openInterest	Public	Read	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/mark	optionMarkPrice	Public	Read	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/depth	orderBook	Public	Read	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/blockTrades	recentBlockTradesList	Public	Read	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/trades	recentTradesList	Public	Read	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/ping	testConnectivity	Public	Read	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/ticker	ticker24hrPriceChangeStatistics	Public	Read	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/block/order/execute	queryBlockTradeDetails	USER_DATA	Read	documented_active	provider_typed
+Options REST	Http	POST	/eapi/v1/block/order/execute	acceptBlockTradeOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/block/user-trades	accountBlockTradeList	USER_DATA	Read	documented_active	provider_typed
+Options REST	Http	PUT	/eapi/v1/block/order/create	extendBlockTradeOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Options REST	Http	POST	/eapi/v1/block/order/create	newBlockTradeOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Options REST	Http	DELETE	/eapi/v1/block/order/create	cancelBlockTradeOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/block/order/orders	queryBlockTradeOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Options REST	Http	POST	/eapi/v1/countdownCancelAllHeartBeat	autoCancelAllOpenOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/countdownCancelAll	getAutoCancelAllOpenOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Options REST	Http	POST	/eapi/v1/countdownCancelAll	setAutoCancelAllOpenOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/mmp	getMarketMakerProtectionConfig	TRADE	FinancialWrite	documented_active	provider_typed
+Options REST	Http	POST	/eapi/v1/mmpReset	resetMarketMakerProtectionConfig	TRADE	FinancialWrite	documented_active	provider_typed
+Options REST	Http	POST	/eapi/v1/mmpSet	setMarketMakerProtectionConfig	TRADE	FinancialWrite	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/userTrades	accountTradeList	USER_DATA	Read	documented_active	provider_typed
+Options REST	Http	DELETE	/eapi/v1/allOpenOrdersByUnderlying	cancelAllOptionOrdersByUnderlying	TRADE	FinancialWrite	documented_active	provider_typed
+Options REST	Http	DELETE	/eapi/v1/allOpenOrders	cancelAllOptionOrdersOnSpecificSymbol	TRADE	FinancialWrite	documented_active	provider_typed
+Options REST	Http	POST	/eapi/v1/batchOrders	placeMultipleOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Options REST	Http	DELETE	/eapi/v1/batchOrders	cancelMultipleOptionOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/order	querySingleOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Options REST	Http	POST	/eapi/v1/order	newOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Options REST	Http	DELETE	/eapi/v1/order	cancelOptionOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/position	optionPositionInformation	USER_DATA	Read	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/openOrders	queryCurrentOpenOptionOrders	USER_DATA	Read	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/historyOrders	queryOptionOrderHistory	TRADE	FinancialWrite	documented_active	provider_typed
+Options REST	Http	POST	/eapi/v1/stock/contract	tradfiOptionsContract	USER_DATA	Read	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/commission	userCommission	USER_DATA	Read	documented_active	provider_typed
+Options REST	Http	GET	/eapi/v1/exerciseRecord	userExerciseRecord	USER_DATA	Read	documented_active	provider_typed
+Options REST	Http	PUT	/eapi/v1/listenKey	keepaliveUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Options REST	Http	POST	/eapi/v1/listenKey	startUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Options REST	Http	DELETE	/eapi/v1/listenKey	closeUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Options WebSocket Market Streams	WebSocketStream	POST	/!index@arr	indexPriceStreams	Public	Read	documented_active	provider_typed
+Options WebSocket Market Streams	WebSocketStream	POST	/{symbol}@kline_{interval}	klineCandlestickStreams	Public	Read	documented_active	provider_typed
+Options WebSocket Market Streams	WebSocketStream	POST	/{underlying}@optionMarkPrice	optionMarkPrice	Public	Read	documented_active	provider_typed
+Options WebSocket Market Streams	WebSocketStream	POST	/!optionSymbol	newSymbolInfo	Public	Read	documented_active	provider_typed
+Options WebSocket Market Streams	WebSocketStream	POST	/{underlying}@openInterest@{expirationDate}	openInterest	Public	Read	documented_active	provider_typed
+Options WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth@{updateSpeed}	diffBookDepthStreams	Public	Read	documented_active	provider_typed
+Options WebSocket Market Streams	WebSocketStream	POST	/{symbol}@bookTicker	individualSymbolBookTickerStreams	Public	Read	documented_active	provider_typed
+Options WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth{level}@{updateSpeed}	partialBookDepthStreams	Public	Read	documented_active	provider_typed
+Options WebSocket Market Streams	WebSocketStream	POST	/{symbol}@optionTicker{expirationDate}	hour24Ticker	Public	Read	documented_active	provider_typed
+Options WebSocket Market Streams	WebSocketStream	POST	/{symbol}@optionTrade	tradeStreams	Public	Read	documented_active	provider_typed
+Portfolio Margin Pro REST	Http	POST	/sapi/v1/portfolio/bnb-transfer	bnbTransfer	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	GET	/sapi/v1/portfolio/repay-futures-switch	getAutoRepayFuturesStatus	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	POST	/sapi/v1/portfolio/repay-futures-switch	changeAutoRepayFuturesStatus	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	POST	/sapi/v1/portfolio/auto-collection	fundAutoCollection	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	POST	/sapi/v1/portfolio/asset-collection	fundCollectionByAsset	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	GET	/sapi/v1/portfolio/delta-mode	getDeltaModeStatus	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	POST	/sapi/v1/portfolio/delta-mode	switchDeltaMode	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	GET	/sapi/v1/portfolio/balance	getPortfolioMarginProAccountBalance	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	GET	/sapi/v1/portfolio/account	getPortfolioMarginProAccountInfo	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	GET	/sapi/v2/portfolio/account	getPortfolioMarginProSpanAccountInfo	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	GET	/sapi/v1/portfolio/earn-asset-balance	getTransferableEarnAssetBalanceForPortfolioMargin	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	POST	/sapi/v1/portfolio/repay	portfolioMarginProBankruptcyLoanRepay	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	GET	/sapi/v1/portfolio/pmLoan	queryPortfolioMarginProBankruptcyLoanAmount	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	GET	/sapi/v1/portfolio/pmloan-history	queryPortfolioMarginProBankruptcyLoanRepayHistory	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	GET	/sapi/v1/portfolio/interest-history	queryPortfolioMarginProNegativeBalanceInterestHistory	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	POST	/sapi/v1/portfolio/repay-futures-negative-balance	repayFuturesNegativeBalance	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	POST	/sapi/v1/portfolio/earn-asset-transfer	transferLdusdtRwusdForPortfolioMargin	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	GET	/sapi/v1/portfolio/margin-call-level	getMarginCallLevel	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	POST	/sapi/v1/portfolio/margin-call-level	setMarginCallLevel	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	DELETE	/sapi/v1/portfolio/margin-call-level	deleteMarginCallLevel	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	GET	/sapi/v1/portfolio/margin-asset-leverage	getPortfolioMarginAssetLeverage	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	GET	/sapi/v1/portfolio/collateralRate	portfolioMarginCollateralRate	MARKET_DATA	Read	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	GET	/sapi/v2/portfolio/collateralRate	portfolioMarginProTieredCollateralRate	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin Pro REST	Http	GET	/sapi/v1/portfolio/asset-index-price	queryPortfolioMarginAssetIndexPrice	MARKET_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/balance	accountBalance	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/account	accountInformation	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	POST	/papi/v1/bnb-transfer	bnbTransfer	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/repay-futures-switch	getAutoRepayFuturesStatus	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	POST	/papi/v1/repay-futures-switch	changeAutoRepayFuturesStatus	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	POST	/papi/v1/cm/leverage	changeCmInitialLeverage	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/cm/positionSide/dual	getCmCurrentPositionMode	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	POST	/papi/v1/cm/positionSide/dual	changeCmPositionMode	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	POST	/papi/v1/um/leverage	changeUmInitialLeverage	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/positionSide/dual	getUmCurrentPositionMode	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	POST	/papi/v1/um/positionSide/dual	changeUmPositionMode	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/cm/leverageBracket	cmNotionalAndLeverageBrackets	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	POST	/papi/v1/auto-collection	fundAutoCollection	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	POST	/papi/v1/asset-collection	fundCollectionByAsset	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/cm/account	getCmAccountDetail	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/cm/income	getCmIncomeHistory	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/order/asyn	getDownloadIdForUmFuturesOrderHistory	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/trade/asyn	getDownloadIdForUmFuturesTradeHistory	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/income/asyn	getDownloadIdForUmFuturesTransactionHistory	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/margin/marginInterestHistory	getMarginBorrowLoanInterestHistory	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/account	getUmAccountDetail	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v2/um/account	getUmAccountDetailV2	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/order/asyn/id	getUmFuturesOrderDownloadLinkById	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/trade/asyn/id	getUmFuturesTradeDownloadLinkById	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/income/asyn/id	getUmFuturesTransactionDownloadLinkById	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/income	getUmIncomeHistory	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/cm/commissionRate	getUserCommissionRateForCm	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/commissionRate	getUserCommissionRateForUm	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/margin/maxBorrowable	marginMaxBorrow	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/apiTradingStatus	portfolioMarginUmTradingQuantitativeRulesIndicators	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/cm/positionRisk	queryCmPositionInformation	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/margin/marginLoan	queryMarginLoanRecord	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/margin/maxWithdraw	queryMarginMaxWithdraw	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/margin/repayLoan	queryMarginRepayRecord	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/portfolio/interest-history	queryPortfolioMarginNegativeBalanceInterestHistory	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/positionRisk	queryUmPositionInformation	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/portfolio/negative-balance-exchange-record	queryUserNegativeBalanceAutoExchangeRecord	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/rateLimit/order	queryUserRateLimit	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	POST	/papi/v1/repay-futures-negative-balance	repayFuturesNegativeBalance	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/accountConfig	umFuturesAccountConfiguration	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/symbolConfig	umFuturesSymbolConfiguration	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/leverageBracket	umNotionalAndLeverageBrackets	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/ping	testConnectivity	Public	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	DELETE	/papi/v1/cm/conditional/allOpenOrders	cancelAllCmOpenConditionalOrders	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	DELETE	/papi/v1/cm/allOpenOrders	cancelAllCmOpenOrders	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	DELETE	/papi/v1/um/conditional/allOpenOrders	cancelAllUmOpenConditionalOrders	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	DELETE	/papi/v1/um/allOpenOrders	cancelAllUmOpenOrders	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	POST	/papi/v1/cm/conditional/order	newCmConditionalOrder	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	DELETE	/papi/v1/cm/conditional/order	cancelCmConditionalOrder	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/cm/order	queryCmOrder	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	PUT	/papi/v1/cm/order	modifyCmOrder	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	POST	/papi/v1/cm/order	newCmOrder	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	DELETE	/papi/v1/cm/order	cancelCmOrder	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	DELETE	/papi/v1/margin/allOpenOrders	cancelMarginAccountAllOpenOrdersOnASymbol	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/margin/orderList	queryMarginAccountsOco	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	DELETE	/papi/v1/margin/orderList	cancelMarginAccountOcoOrders	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/margin/order	queryMarginAccountOrder	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	POST	/papi/v1/margin/order	newMarginOrder	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	DELETE	/papi/v1/margin/order	cancelMarginAccountOrder	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	POST	/papi/v1/um/conditional/order	newUmConditionalOrder	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	DELETE	/papi/v1/um/conditional/order	cancelUmConditionalOrder	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/order	queryUmOrder	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	PUT	/papi/v1/um/order	modifyUmOrder	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	POST	/papi/v1/um/order	newUmOrder	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	DELETE	/papi/v1/um/order	cancelUmOrder	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/cm/userTrades	cmAccountTradeList	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/cm/adlQuantile	cmPositionAdlQuantileEstimation	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/feeBurn	getUmFuturesBnbBurnStatus	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	POST	/papi/v1/um/feeBurn	toggleBnbBurnOnUmFuturesTrade	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	POST	/papi/v1/marginLoan	marginAccountBorrow	MARGIN	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	POST	/papi/v1/margin/order/oco	marginAccountNewOco	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	POST	/papi/v1/repayLoan	marginAccountRepay	MARGIN	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	POST	/papi/v1/margin/repay-debt	marginAccountRepayDebt	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/margin/myTrades	marginAccountTradeList	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/cm/conditional/allOrders	queryAllCmConditionalOrders	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/cm/allOrders	queryAllCmOrders	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/cm/conditional/openOrders	queryAllCurrentCmOpenConditionalOrders	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/cm/openOrders	queryAllCurrentCmOpenOrders	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/conditional/openOrders	queryAllCurrentUmOpenConditionalOrders	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/openOrders	queryAllCurrentUmOpenOrders	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/margin/allOrders	queryAllMarginAccountOrders	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/conditional/allOrders	queryAllUmConditionalOrders	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/allOrders	queryAllUmOrders	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/cm/conditional/orderHistory	queryCmConditionalOrderHistory	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/cm/orderAmendment	queryCmModifyOrderHistory	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/cm/conditional/openOrder	queryCurrentCmOpenConditionalOrder	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/cm/openOrder	queryCurrentCmOpenOrder	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/margin/openOrders	queryCurrentMarginOpenOrder	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/conditional/openOrder	queryCurrentUmOpenConditionalOrder	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/openOrder	queryCurrentUmOpenOrder	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/margin/allOrderList	queryMarginAccountsAllOco	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/margin/openOrderList	queryMarginAccountsOpenOco	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/conditional/orderHistory	queryUmConditionalOrderHistory	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/orderAmendment	queryUmModifyOrderHistory	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/cm/forceOrders	queryUsersCmForceOrders	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/margin/forceOrders	queryUsersMarginForceOrders	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/forceOrders	queryUsersUmForceOrders	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/userTrades	umAccountTradeList	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/adlQuantile	umPositionAdlQuantileEstimation	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	POST	/papi/v1/um/algo/order	newUmAlgoOrder	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	DELETE	/papi/v1/um/algo/order	cancelUmAlgoOrder	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	DELETE	/papi/v1/um/algo/allOpenOrders	cancelAllUmAlgoOpenOrders	TRADE	FinancialWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/algo/algoOrder	queryCurrentUmOpenAlgoOrder	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/algo/openAlgoOrders	queryAllCurrentUmOpenAlgoOrders	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	GET	/papi/v1/um/algo/allAlgoOrders	queryUmAlgoOrderHistory	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	POST	/papi/v1/um/stock/contract	futuresTradfiPerpsContract	USER_DATA	Read	documented_active	platform_limited
+Portfolio Margin REST	Http	PUT	/papi/v1/listenKey	keepaliveUserDataStream	USER_STREAM	AccountWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	POST	/papi/v1/listenKey	startUserDataStream	USER_STREAM	AccountWrite	documented_active	platform_limited
+Portfolio Margin REST	Http	DELETE	/papi/v1/listenKey	closeUserDataStream	USER_STREAM	AccountWrite	documented_active	platform_limited
+Futures (USD-M) REST	Http	GET	/fapi/v2/account	accountInformationV2	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v3/account	accountInformationV3	USER_DATA	Read	documented_active	common_and_provider
+Futures (USD-M) REST	Http	GET	/fapi/v2/balance	futuresAccountBalanceV2	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v3/balance	futuresAccountBalanceV3	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/accountConfig	futuresAccountConfiguration	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/apiTradingStatus	futuresTradingQuantitativeRulesIndicators	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/feeBurn	getBnbBurnStatus	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/feeBurn	toggleBnbBurnOnFuturesTrade	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/multiAssetsMargin	getCurrentMultiAssetsMode	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/positionSide/dual	getCurrentPositionMode	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/order/asyn	getDownloadIdForFuturesOrderHistory	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/trade/asyn	getDownloadIdForFuturesTradeHistory	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/income/asyn	getDownloadIdForFuturesTransactionHistory	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/order/asyn/id	getFuturesOrderHistoryDownloadLinkById	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/trade/asyn/id	getFuturesTradeDownloadLinkById	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/income/asyn/id	getFuturesTransactionHistoryDownloadLinkById	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/income	getIncomeHistory	USER_DATA	Read	documented_active	common_existing
+Futures (USD-M) REST	Http	GET	/fapi/v1/leverageBracket	notionalAndLeverageBrackets	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/rateLimit/order	queryUserRateLimit	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/symbolConfig	symbolConfiguration	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/commissionRate	userCommissionRate	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/multiAssetsMargin	changeMultiAssetsMode	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/positionSide/dual	changePositionMode	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/userTrades	accountTradeList	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/allOrders	allOrders	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/countdownCancelAll	autoCancelAllOpenOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/algoOrder	queryAlgoOrder	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/algoOrder	newAlgoOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	DELETE	/fapi/v1/algoOrder	cancelAlgoOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	DELETE	/fapi/v1/algoOpenOrders	cancelAllAlgoOpenOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	DELETE	/fapi/v1/allOpenOrders	cancelAllOpenOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	PUT	/fapi/v1/batchOrders	modifyMultipleOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/batchOrders	placeMultipleOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	DELETE	/fapi/v1/batchOrders	cancelMultipleOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/order	queryOrder	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	PUT	/fapi/v1/order	modifyOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/order	newOrder	TRADE	FinancialWrite	documented_active	common_and_provider
+Futures (USD-M) REST	Http	DELETE	/fapi/v1/order	cancelOrder	TRADE	FinancialWrite	documented_active	common_and_provider
+Futures (USD-M) REST	Http	POST	/fapi/v1/leverage	changeInitialLeverage	TRADE	FinancialWrite	documented_active	common_existing
+Futures (USD-M) REST	Http	POST	/fapi/v1/marginType	changeMarginType	TRADE	FinancialWrite	documented_active	common_existing
+Futures (USD-M) REST	Http	GET	/fapi/v1/openAlgoOrders	currentAllAlgoOpenOrders	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/openOrders	currentAllOpenOrders	USER_DATA	Read	documented_active	common_existing
+Futures (USD-M) REST	Http	POST	/fapi/v1/stock/contract	futuresTradfiPerpsContract	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/orderAmendment	getOrderModifyHistory	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/positionMargin/history	getPositionMarginChangeHistory	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/positionMargin	modifyIsolatedPositionMargin	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/adlQuantile	positionAdlQuantileEstimation	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v2/positionRisk	positionInformationV2	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v3/positionRisk	positionInformationV3	USER_DATA	Read	documented_active	common_and_provider
+Futures (USD-M) REST	Http	GET	/fapi/v1/allAlgoOrders	queryAllAlgoOrders	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/openOrder	queryCurrentOpenOrder	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/order/test	testOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/forceOrders	usersForceOrders	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/convert/acceptQuote	acceptTheOfferedQuote	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/convert/exchangeInfo	listAllConvertPairs	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/convert/orderStatus	orderStatus	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/convert/getQuote	sendQuoteRequest	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/symbolAdlRisk	adlRisk	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/futures/data/basis	basis	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/time	checkServerTime	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/indexInfo	compositeIndexSymbolInformation	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/aggTrades	compressedAggregateTradesList	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/continuousKlines	continuousContractKlineCandlestickData	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/exchangeInfo	exchangeInformation	Public	Read	documented_active	common_and_provider
+Futures (USD-M) REST	Http	GET	/fapi/v1/fundingRate	getFundingRateHistory	Public	Read	documented_active	common_existing
+Futures (USD-M) REST	Http	GET	/fapi/v1/fundingInfo	getFundingRateInfo	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/indexPriceKlines	indexPriceKlineCandlestickData	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/klines	klineCandlestickData	Public	Read	documented_active	common_existing
+Futures (USD-M) REST	Http	GET	/futures/data/globalLongShortAccountRatio	longShortRatio	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/premiumIndex	markPrice	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/markPriceKlines	markPriceKlineCandlestickData	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/assetIndex	assetIndex	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/historicalTrades	oldTradesLookup	MARKET_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/openInterest	openInterest	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/futures/data/openInterestHist	openInterestStatistics	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/depth	orderBook	Public	Read	documented_active	common_existing
+Futures (USD-M) REST	Http	GET	/fapi/v1/premiumIndexKlines	premiumIndexKlineData	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/futures/data/delivery-price	quarterlyContractSettlementPrice	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/constituents	queryIndexPriceConstituents	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/insuranceBalance	queryInsuranceFundBalanceSnapshot	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/trades	recentTradesList	Public	Read	documented_active	common_existing
+Futures (USD-M) REST	Http	GET	/fapi/v1/rpiDepth	rpiOrderBook	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/ticker/bookTicker	symbolOrderBookTicker	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/ticker/price	symbolPriceTicker	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v2/ticker/price	symbolPriceTickerV2	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/futures/data/takerlongshortRatio	takerBuySellVolume	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/ping	testConnectivity	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/ticker/24hr	ticker24hrPriceChangeStatistics	Public	Read	documented_active	common_existing
+Futures (USD-M) REST	Http	GET	/futures/data/topLongShortAccountRatio	topTraderLongShortRatioAccounts	MARKET_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/futures/data/topLongShortPositionRatio	topTraderLongShortRatioPositions	MARKET_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/tradingSchedule	tradingSchedule	Public	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	GET	/fapi/v1/pmAccountInfo	classicPortfolioMarginAccountInformation	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) REST	Http	PUT	/fapi/v1/listenKey	keepaliveUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	POST	/fapi/v1/listenKey	startUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Futures (USD-M) REST	Http	DELETE	/fapi/v1/listenKey	closeUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/account.status	accountInformation	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/v2/account.status	accountInformationV2	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/account.balance	futuresAccountBalance	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/v2/account.balance	futuresAccountBalanceV2	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/depth	orderBook	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/ticker.book	symbolOrderBookTicker	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/ticker.price	symbolPriceTicker	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/algoOrder.cancel	cancelAlgoOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/order.cancel	cancelOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/order.modify	modifyOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/algoOrder.place	newAlgoOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/order.place	newOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/account.position	positionInformation	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/v2/account.position	positionInformationV2	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/order.status	queryOrder	USER_DATA	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/userDataStream.stop	closeUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/userDataStream.ping	keepaliveUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Futures (USD-M) WebSocket	WebSocketRequest	POST	/userDataStream.start	startUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@aggTrade	aggregateTradeStreams	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/!forceOrder@arr	allMarketLiquidationOrderStreams	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/!miniTicker@arr	allMarketMiniTickersStream	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/!ticker@arr	allMarketTickersStreams	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@compositeIndex	compositeIndexSymbolInformationStreams	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{pair}_{contractType}@continuousKline_{interval}	continuousContractKlineCandlestickStreams	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/!contractInfo	contractInfoStream	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@miniTicker	individualSymbolMiniTickerStream	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@ticker	individualSymbolTickerStreams	Public	Read	documented_active	common_and_provider
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@kline_{interval}	klineCandlestickStreams	Public	Read	documented_active	common_and_provider
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@forceOrder	liquidationOrderStreams	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@markPrice@{updateSpeed}	markPriceStream	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/!markPrice@arr@{updateSpeed}	markPriceStreamForAllMarket	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/!assetIndex@arr	assetIndex	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/tradingSession	tradingSessionStream	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/!bookTicker	allBookTickersStream	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth@{updateSpeed}	diffBookDepthStreams	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@bookTicker	individualSymbolBookTickerStreams	Public	Read	documented_active	provider_typed
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth{levels}@{updateSpeed}	partialBookDepthStreams	Public	Read	documented_active	common_and_provider
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@rpiDepth@500ms	rpiDiffBookDepthStreams	Public	Read	documented_active	provider_typed
+Discount Buy REST	Http	GET	/sapi/v1/accumulator/product/list	getDiscountBuyProductList	Public	Read	documented_active	provider_typed
+Discount Buy REST	Http	GET	/sapi/v1/accumulator/product/sum-holding	checkDiscountBuyAccounts	USER_DATA	Read	documented_active	provider_typed
+Discount Buy REST	Http	GET	/sapi/v1/accumulator/product/position/list	getDiscountBuyPositions	USER_DATA	Read	documented_active	provider_typed
+Discount Buy REST	Http	POST	/sapi/v1/accumulator/product/subscribe	subscribeDiscountBuyProducts	USER_DATA	Read	documented_active	provider_typed
+Dual Investment REST	Http	GET	/sapi/v1/dci/product/list	getDualInvestmentProductList	Public	Read	documented_active	provider_typed
+Dual Investment REST	Http	POST	/sapi/v1/dci/product/auto_compound/edit-status	changeAutoCompoundStatus	USER_DATA	Read	documented_active	provider_typed
+Dual Investment REST	Http	GET	/sapi/v1/dci/product/accounts	checkDualInvestmentAccounts	USER_DATA	Read	documented_active	provider_typed
+Dual Investment REST	Http	GET	/sapi/v1/dci/product/positions	getDualInvestmentPositions	USER_DATA	Read	documented_active	provider_typed
+Dual Investment REST	Http	POST	/sapi/v1/dci/product/subscribe	subscribeDualInvestmentProducts	USER_DATA	Read	documented_active	provider_typed
+Exchange Link REST	Http	POST	/sapi/v1/broker/subAccountApi/permission	changeSubAccountApiPermission	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	GET	/sapi/v1/broker/subAccount	querySubAccount	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	POST	/sapi/v1/broker/subAccount	createASubAccount	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	DELETE	/sapi/v1/broker/subAccount	deleteSubAccount	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	GET	/sapi/v1/broker/subAccountApi	querySubAccountApiKey	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	POST	/sapi/v1/broker/subAccountApi	createApiKeyForSubAccount	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	DELETE	/sapi/v1/broker/subAccountApi	deleteSubAccountApiKey	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	DELETE	/sapi/v1/broker/subAccountApi/ipRestriction/ipList	deleteIpRestrictionForSubAccountApiKey	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	POST	/sapi/v1/broker/subAccount/futures	enableFuturesForSubAccount	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	POST	/sapi/v1/broker/subAccount/bnbBurn/marginInterest	enableOrDisableBnbBurnForSubAccountMarginInterest	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	POST	/sapi/v1/broker/subAccount/bnbBurn/spot	enableOrDisableBnbBurnForSubAccountSpotAndMargin	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	POST	/sapi/v1/broker/subAccountApi/permission/universalTransfer	enableUniversalTransferPermissionForSubAccountApiKey	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	GET	/sapi/v1/broker/subAccount/bnbBurn/status	getBnbBurnStatusForSubAccount	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	GET	/sapi/v1/broker/subAccountApi/ipRestriction	getIpRestrictionForSubAccountApiKey	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	GET	/sapi/v1/broker/info	linkAccountInformation	USER_DATA	Read	documented_active	platform_limited
+Exchange Link REST	Http	POST	/sapi/v2/broker/subAccountApi/ipRestriction	updateIpRestrictionForSubAccountApiKey	USER_DATA	Read	documented_active	platform_limited
+Exchange Link REST	Http	POST	/sapi/v1/broker/futures/accountTransfer	futuresTransferForLinkSubAccount	USER_DATA	Read	documented_active	platform_limited
+Exchange Link REST	Http	GET	/sapi/v1/broker/subAccount/depositHist	getSubAccountDepositHistory	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	GET	/sapi/v2/broker/subAccount/depositHist	getSubAccountDepositHistoryV2	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	GET	/sapi/v3/broker/subAccount/futuresSummary	querySubAccountFuturesAssetInfo	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	GET	/sapi/v1/broker/subAccount/marginSummary	querySubAccountMarginAssetInfo	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	GET	/sapi/v1/broker/subAccount/spotSummary	querySubAccountSpotAssetInfo	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	GET	/sapi/v1/broker/transfer/futures	querySubAccountTransferHistoryFutures	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	POST	/sapi/v1/broker/transfer/futures	subAccountTransferFutures	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	GET	/sapi/v1/broker/transfer	querySubAccountTransferHistorySpot	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	POST	/sapi/v1/broker/transfer	subAccountTransferSpot	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	GET	/sapi/v1/broker/universalTransfer	queryUniversalTransferHistory	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	POST	/sapi/v1/broker/universalTransfer	universalTransfer	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	GET	/sapi/v1/broker/subAccountApi/commission/coinFutures	querySubAccountCoinFuturesCommissionAdjustment	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	POST	/sapi/v1/broker/subAccountApi/commission/coinFutures	changeSubAccountCoinFuturesCommissionAdjustment	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	POST	/sapi/v1/broker/subAccountApi/commission	changeSubAccountCommission	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	GET	/sapi/v1/broker/subAccountApi/commission/futures	querySubAccountUsdtFuturesCommissionAdjustment	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	POST	/sapi/v1/broker/subAccountApi/commission/futures	changeSubAccountUsdtFuturesCommissionAdjustment	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	GET	/sapi/v1/broker/rebate/recentRecord	querySpotCommissionRebateRecentRecord	Public	Read	documented_active	platform_limited
+Exchange Link REST	Http	GET	/sapi/v1/broker/rebate/futures/recentRecord	queryBrokerFuturesCommissionRebateRecord	Public	Read	documented_active	platform_limited
+Fiat REST	Http	POST	/sapi/v1/fiat/deposit	deposit	TRADE	FinancialWrite	documented_active	provider_typed
+Fiat REST	Http	POST	/sapi/v2/fiat/withdraw	fiatWithdraw	TRADE	FinancialWrite	documented_active	provider_typed
+Fiat REST	Http	GET	/sapi/v1/fiat/orders	getFiatDepositWithdrawHistory	USER_DATA	Read	documented_active	provider_typed
+Fiat REST	Http	GET	/sapi/v1/fiat/payments	getFiatPaymentsHistory	USER_DATA	Read	documented_active	provider_typed
+Fiat REST	Http	GET	/sapi/v1/fiat/get-order-detail	getOrderDetail	USER_DATA	Read	documented_active	provider_typed
+Fund Account REST	Http	GET	/sapi/v1/vip/fund-info/fund-info-basic-info	queryFundInfoForFundManager	Public	Read	documented_active	platform_limited
+Fund Account REST	Http	GET	/sapi/v1/vip/fund-info/fund-nav-info	queryFundNavHistory	Public	Read	documented_active	platform_limited
+Fund Account REST	Http	GET	/sapi/v1/vip/fund-info/fund-investor-his-info	queryInvestorOperationHistory	Public	Read	documented_active	platform_limited
+Fund Account REST	Http	GET	/sapi/v1/capital-connect/redemption/calendar	redemptionCalendar	Public	Read	documented_active	platform_limited
+Gift Card REST	Http	POST	/sapi/v1/giftcard/buyCode	createADualTokenGiftCard	TRADE	FinancialWrite	documented_active	provider_typed
+Gift Card REST	Http	POST	/sapi/v1/giftcard/createCode	createASingleTokenGiftCard	USER_DATA	Read	documented_active	provider_typed
+Gift Card REST	Http	GET	/sapi/v1/giftcard/cryptography/rsa-public-key	fetchRsaPublicKey	USER_DATA	Read	documented_active	provider_typed
+Gift Card REST	Http	GET	/sapi/v1/giftcard/buyCode/token-limit	fetchTokenLimit	USER_DATA	Read	documented_active	provider_typed
+Gift Card REST	Http	POST	/sapi/v1/giftcard/redeemCode	redeemABinanceGiftCard	USER_DATA	Read	documented_active	provider_typed
+Gift Card REST	Http	GET	/sapi/v1/giftcard/verify	verifyBinanceGiftCardByGiftCardNumber	USER_DATA	Read	documented_active	provider_typed
+Institutional Loan REST	Http	POST	/sapi/v1/margin/loan-group/edit-member	addCollateralAccounts	TRADE	FinancialWrite	documented_active	platform_limited
+Institutional Loan REST	Http	GET	/sapi/v1/margin/loan-group	queryOneRiskUnitDetail	USER_DATA	Read	documented_active	platform_limited
+Institutional Loan REST	Http	DELETE	/sapi/v1/margin/loan-group	closeRiskUnit	TRADE	FinancialWrite	documented_active	platform_limited
+Institutional Loan REST	Http	GET	/sapi/v1/margin/loan-groups/closed	queryClosedRiskUnitRecord	USER_DATA	Read	documented_active	platform_limited
+Institutional Loan REST	Http	GET	/sapi/v1/margin/loan-groups/activated	queryActiveRiskUnits	USER_DATA	Read	documented_active	platform_limited
+Institutional Loan REST	Http	GET	/sapi/v1/margin/loan-group/ltv-details	queryRiskUnitDetails	USER_DATA	Read	documented_active	platform_limited
+Institutional Loan REST	Http	POST	/sapi/v1/margin/loan-group/borrow	riskUnitBorrow	TRADE	FinancialWrite	documented_active	platform_limited
+Institutional Loan REST	Http	GET	/sapi/v1/margin/loan-group/borrow-repay	riskUnitBorrowRepayRecords	USER_DATA	Read	documented_active	platform_limited
+Institutional Loan REST	Http	GET	/sapi/v1/margin/loan-group/interest-history	riskUnitInterestHistory	USER_DATA	Read	documented_active	platform_limited
+Institutional Loan REST	Http	POST	/sapi/v1/margin/loan-group/repay	riskUnitRepay	TRADE	FinancialWrite	documented_active	platform_limited
+Institutional Loan REST	Http	GET	/sapi/v1/margin/loan-group/interest-rebate-balance	queryInterestRebateBalance	USER_DATA	Read	documented_active	platform_limited
+Institutional Loan REST	Http	GET	/sapi/v1/margin/loan-group/interest-rebate-balance/records	queryInterestRebateBalanceRecords	USER_DATA	Read	documented_active	platform_limited
+Institutional Loan REST	Http	GET	/sapi/v1/margin/loan-group/max-borrowable	queryLoanGroupMaxBorrowable	USER_DATA	Read	documented_active	platform_limited
+Institutional Loan REST	Http	GET	/sapi/v1/margin/loan-group/force-liquidation	getRiskUnitForceLiquidationRecord	USER_DATA	Read	documented_active	platform_limited
+Institutional Loan REST	Http	GET	/sapi/v1/margin/loan-group/force-liquidation-transfer-record	queryRiskUnitForcedLiquidationTransferRecords	USER_DATA	Read	documented_active	platform_limited
+Institutional Loan REST	Http	POST	/sapi/v1/margin/loan-group/transfer-out	riskUnitTransfer	TRADE	FinancialWrite	documented_active	platform_limited
+KYC SaaS REST	Http	POST	/bapi/ekyc/v2/public/ekyc/customer/check-kyc-status	checkKycStatus	Public	Read	documented_active	platform_limited
+KYC SaaS REST	Http	POST	/bapi/ekyc/v2/public/ekyc/customer/inner-query-kyc-status	queryKycStatusByBrokerSubAccountId	Public	Read	documented_active	platform_limited
+KYC SaaS REST	Http	POST	/bapi/ekyc/v2/public/ekyc/customer/query-kyc-info	queryKycStatusByEntityCustomerId	Public	Read	documented_active	platform_limited
+KYC SaaS REST	Http	POST	/bapi/ekyc/v2/public/ekyc/customer/query-linked-accounts	queryLinkedAccountsInfo	Public	Read	documented_active	platform_limited
+KYC SaaS REST	Http	POST	/bapi/ekyc/v2/public/ekyc/customer/query-share-data-status	queryShareKycInfoStatusApi	Public	Read	documented_active	platform_limited
+KYC SaaS REST	Http	POST	/bapi/ekyc/v2/public/ekyc/customer/page-query-rfi-records	kycRfiRecordsQueryApi	Public	Read	documented_active	platform_limited
+KYC SaaS REST	Http	POST	/bapi/ekyc/v2/public/ekyc/customer/submit-rfi-record	kycRfiRecordSubmitApi	Public	Read	documented_active	platform_limited
+KYC SaaS REST	Http	POST	/bapi/ekyc/v2/public/ekyc/customer/query-submit-rfi-result	queryKycRfiRecordSubmitResultApi	Public	Read	documented_active	platform_limited
+KYC SaaS REST	Http	POST	/bapi/ekyc/v2/public/ekyc/customer/share-kyc-data	kycSharing	Public	Read	documented_active	platform_limited
+KYC SaaS REST	Http	POST	/bapi/ekyc/v2/public/ekyc/customer/add-account-info-list	linkMultipleAccounts	Public	Read	documented_active	platform_limited
+KYC SaaS REST	Http	POST	/bapi/ekyc/v2/public/ekyc/customer/refused-kyc-data	refusedUserKycData	Public	Read	documented_active	platform_limited
+KYC SaaS REST	Http	POST	/bapi/ekyc/v2/public/ekyc/customer/unlink-kyc-data	unlinkUserKycData	Public	Read	documented_active	platform_limited
+Link and Trade REST	Http	POST	/v1/api-key/create	createApiKeyForUser	Public	Read	documented_active	platform_limited
+Link and Trade REST	Http	GET	/v1/api-key/user-status	getUserStatus	Public	Read	documented_active	platform_limited
+Link and Trade REST	Http	GET	/papi/v1/apiReferral/userCustomization	getUserCustomizeId	Public	Read	documented_active	platform_limited
+Link and Trade REST	Http	POST	/papi/v1/apiReferral/userCustomization	customizeIdForPapiClient	USER_DATA	Read	documented_active	platform_limited
+Link and Trade REST	Http	GET	/fapi/v1/apiReferral/userCustomization	getUsersCustomizeId	USER_DATA	Read	documented_active	platform_limited
+Link and Trade REST	Http	POST	/fapi/v1/apiReferral/userCustomization	customizeIdForFuturesClient	USER_DATA	Read	documented_active	platform_limited
+Link and Trade REST	Http	GET	/fapi/v1/apiReferral/customization	getFuturesClientEmailCustomizedId	USER_DATA	Read	documented_active	platform_limited
+Link and Trade REST	Http	POST	/fapi/v1/apiReferral/customization	partnerCustomizeIdForFuturesClient	USER_DATA	Read	documented_active	platform_limited
+Link and Trade REST	Http	GET	/fapi/v1/income	getIncomeHistory	USER_DATA	Read	documented_active	platform_limited
+Link and Trade REST	Http	GET	/fapi/v1/apiReferral/overview	getRebateDataOverview	USER_DATA	Read	documented_active	platform_limited
+Link and Trade REST	Http	GET	/fapi/v1/apiReferral/rebateVol	getRebateVolume	USER_DATA	Read	documented_active	platform_limited
+Link and Trade REST	Http	GET	/fapi/v1/apiReferral/traderSummary	getTraderDetail	USER_DATA	Read	documented_active	platform_limited
+Link and Trade REST	Http	GET	/fapi/v1/apiReferral/traderNum	getTraderNumber	USER_DATA	Read	documented_active	platform_limited
+Link and Trade REST	Http	GET	/fapi/v1/apiReferral/tradeVol	getUserTradeVolume	USER_DATA	Read	documented_active	platform_limited
+Link and Trade REST	Http	GET	/papi/v1/apiReferral/ifNewUser	queryPapiClientNewUserStatus	USER_DATA	Read	documented_active	platform_limited
+Link and Trade REST	Http	GET	/fapi/v1/apiReferral/ifNewUser	queryFuturesClientNewUserStatus	USER_DATA	Read	documented_active	platform_limited
+Link and Trade REST	Http	GET	/sapi/v1/apiReferral/userCustomization	getUserSCustomizeId	USER_DATA	Read	documented_active	platform_limited
+Link and Trade REST	Http	POST	/sapi/v1/apiReferral/userCustomization	customizeIdForSpotClient	USER_DATA	Read	documented_active	platform_limited
+Link and Trade REST	Http	GET	/sapi/v1/apiReferral/customization	getClientEmailCustomizedId	USER_DATA	Read	documented_active	platform_limited
+Link and Trade REST	Http	POST	/sapi/v1/apiReferral/customization	partnerCustomizeIdForClient	USER_DATA	Read	documented_active	platform_limited
+Link and Trade REST	Http	GET	/sapi/v1/apiReferral/ifNewUser	queryClientIfTheNewUser	USER_DATA	Read	documented_active	platform_limited
+Link and Trade REST	Http	GET	/sapi/v1/apiReferral/kickback/recentRecord	queryRebateRecentRecord	Public	Read	documented_active	platform_limited
+Link and Trade REST	Http	GET	/sapi/v1/apiReferral/rebate/recentRecord	queryPartnerRebateRecentRecord	Public	Read	documented_active	platform_limited
+Link Plus REST	Http	POST	/sapi/v1/vip/link-plus/subgroups/{groupId}/accounts	addAccountsToSubGroups	Public	Read	documented_active	platform_limited
+Link Plus REST	Http	POST	/sapi/v1/vip/link-plus/subgroups	createNewSubGroups	Public	Read	documented_active	platform_limited
+Link Plus REST	Http	GET	/sapi/v1/vip/link-plus/overview	queryLinkPlusOverview	Public	Read	documented_active	platform_limited
+Link Plus REST	Http	GET	/sapi/v1/vip/liquidity-programs/subgroups/overview	queryLiquidityProgramOverviewForSubGroups	Public	Read	documented_active	platform_limited
+Link Plus REST	Http	GET	/sapi/v1/vip/liquidity-programs/subgroups/performance	queryLiquidityProgramPerformanceForSubGroups	Public	Read	documented_active	platform_limited
+Link Plus REST	Http	GET	/sapi/v1/vip/liquidity-programs/subgroups/weekly-result	queryLiquidityProgramWeeklyResultsForSubGroups	Public	Read	documented_active	platform_limited
+Link Plus REST	Http	GET	/sapi/v1/vip/link-plus/subgroups/detail	querySubGroupsDetails	Public	Read	documented_active	platform_limited
+Link Plus REST	Http	PUT	/sapi/v1/vip/link-plus/subgroups/{groupId}/name	updateNameOfSubGroups	Public	Read	documented_active	platform_limited
+Margin REST	Http	POST	/sapi/v1/margin/max-leverage	adjustCrossMarginMaxLeverage	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/isolated/account	queryIsolatedMarginAccountInfo	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	POST	/sapi/v1/margin/isolated/account	enableIsolatedMarginAccount	TRADE	FinancialWrite	documented_active	provider_typed
+Margin REST	Http	DELETE	/sapi/v1/margin/isolated/account	disableIsolatedMarginAccount	TRADE	FinancialWrite	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/bnbBurn	getBnbBurnStatus	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/tradeCoeff	getSummaryOfMarginAccount	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/capital-flow	queryCrossIsolatedMarginCapitalFlow	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/account	queryCrossMarginAccountDetails	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/crossMarginData	queryCrossMarginFeeData	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/isolated/accountLimit	queryEnabledIsolatedMarginAccountLimit	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/isolatedMarginData	queryIsolatedMarginFeeData	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/next-hourly-interest-rate	getFutureHourlyInterestRate	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/interestHistory	getInterestHistory	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/borrow-repay	queryBorrowRepayRecordsInMarginAccount	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	POST	/sapi/v1/margin/borrow-repay	marginAccountBorrowRepay	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/interestRateHistory	queryMarginInterestRateHistory	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/maxBorrowable	queryMaxBorrow	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/crossMarginCollateralRatio	crossMarginCollateralRatio	MARKET_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/allPairs	getAllCrossMarginPairs	MARKET_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/isolated/allPairs	getAllIsolatedMarginSymbol	MARKET_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/allAssets	getAllMarginAssets	MARKET_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/delist-schedule	getDelistSchedule	MARKET_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/limit-price-pairs	getLimitPricePairs	MARKET_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/list-schedule	getListSchedule	MARKET_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/risk-based-liquidation-ratio	getMarginAssetRiskBasedLiquidationRatio	MARKET_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/restricted-asset	getMarginRestrictedAssets	MARKET_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/isolatedMarginTier	queryIsolatedMarginTierData	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/leverageBracket	queryLiabilityCoinLeverageBracketInCrossMarginProMode	MARKET_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/available-inventory	queryMarginAvailableInventory	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/priceIndex	queryMarginPriceindex	MARKET_DATA	Read	documented_active	provider_typed
+Margin REST	Http	PUT	/sapi/v1/margin/listen-key	keepaliveUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Margin REST	Http	POST	/sapi/v1/margin/listen-key	startUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Margin REST	Http	DELETE	/sapi/v1/margin/listen-key	closeUserDataStream	USER_STREAM	AccountWrite	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/apiKey	querySpecialKey	TRADE	FinancialWrite	documented_active	provider_typed
+Margin REST	Http	POST	/sapi/v1/margin/apiKey	createSpecialKey	TRADE	FinancialWrite	documented_active	provider_typed
+Margin REST	Http	DELETE	/sapi/v1/margin/apiKey	deleteSpecialKey	TRADE	FinancialWrite	documented_active	provider_typed
+Margin REST	Http	PUT	/sapi/v1/margin/apiKey/ip	editIpForSpecialKey	TRADE	FinancialWrite	documented_active	provider_typed
+Margin REST	Http	POST	/sapi/v1/margin/exit-special-key-mode	exitSpecialKeyMode	TRADE	FinancialWrite	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/forceLiquidationRec	getForceLiquidationRecord	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/exchange-small-liability	getSmallLiabilityExchangeCoinList	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	POST	/sapi/v1/margin/exchange-small-liability	smallLiabilityExchange	MARGIN	FinancialWrite	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/exchange-small-liability-history	getSmallLiabilityExchangeHistory	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/openOrders	queryMarginAccountsOpenOrders	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	DELETE	/sapi/v1/margin/openOrders	marginAccountCancelAllOpenOrdersOnASymbol	TRADE	FinancialWrite	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/orderList	queryMarginAccountsOco	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	DELETE	/sapi/v1/margin/orderList	marginAccountCancelOco	TRADE	FinancialWrite	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/order	queryMarginAccountsOrder	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	POST	/sapi/v1/margin/order	marginAccountNewOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Margin REST	Http	DELETE	/sapi/v1/margin/order	marginAccountCancelOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Margin REST	Http	POST	/sapi/v1/margin/order/oco	marginAccountNewOco	TRADE	FinancialWrite	documented_active	provider_typed
+Margin REST	Http	POST	/sapi/v1/margin/order/oto	marginAccountNewOto	TRADE	FinancialWrite	documented_active	provider_typed
+Margin REST	Http	POST	/sapi/v1/margin/order/otoco	marginAccountNewOtoco	TRADE	FinancialWrite	documented_active	provider_typed
+Margin REST	Http	POST	/sapi/v1/margin/manual-liquidation	marginManualLiquidation	TRADE	FinancialWrite	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/rateLimit/order	queryCurrentMarginOrderCountUsage	TRADE	FinancialWrite	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/allOrderList	queryMarginAccountsAllOco	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/allOrders	queryMarginAccountsAllOrders	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/openOrderList	queryMarginAccountsOpenOco	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/myTrades	queryMarginAccountsTradeList	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/myPreventedMatches	queryPreventedMatches	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/api-key-list	querySpecialKeyList	TRADE	FinancialWrite	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/liquidation-loan	queryLiquidationLoan	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	POST	/sapi/v1/margin/liquidation-loan/repay	liquidationLoanRepay	MARGIN	FinancialWrite	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/liquidation-loan/repay-history	queryLiquidationLoanRepayHistory	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/transfer	getCrossMarginTransferHistory	USER_DATA	Read	documented_active	provider_typed
+Margin REST	Http	GET	/sapi/v1/margin/maxTransferable	queryMaxTransferOutAmount	USER_DATA	Read	documented_active	provider_typed
+Mining REST	Http	GET	/sapi/v1/mining/statistics/user/list	accountList	USER_DATA	Read	documented_active	provider_typed
+Mining REST	Http	GET	/sapi/v1/mining/pub/algoList	acquiringAlgorithm	MARKET_DATA	Read	documented_active	provider_typed
+Mining REST	Http	GET	/sapi/v1/mining/pub/coinList	acquiringCoinname	MARKET_DATA	Read	documented_active	provider_typed
+Mining REST	Http	POST	/sapi/v1/mining/hash-transfer/config/cancel	cancelHashrateResaleConfiguration	USER_DATA	Read	documented_active	provider_typed
+Mining REST	Http	GET	/sapi/v1/mining/payment/list	earningsList	USER_DATA	Read	documented_active	provider_typed
+Mining REST	Http	GET	/sapi/v1/mining/payment/other	extraBonusList	USER_DATA	Read	documented_active	provider_typed
+Mining REST	Http	GET	/sapi/v1/mining/hash-transfer/profit/details	hashrateResaleDetail	USER_DATA	Read	documented_active	provider_typed
+Mining REST	Http	GET	/sapi/v1/mining/hash-transfer/config/details/list	hashrateResaleList	USER_DATA	Read	documented_active	provider_typed
+Mining REST	Http	POST	/sapi/v1/mining/hash-transfer/config	hashrateResaleRequest	USER_DATA	Read	documented_active	provider_typed
+Mining REST	Http	GET	/sapi/v1/mining/payment/uid	miningAccountEarning	USER_DATA	Read	documented_active	provider_typed
+Mining REST	Http	GET	/sapi/v1/mining/worker/detail	requestForDetailMinerList	USER_DATA	Read	documented_active	provider_typed
+Mining REST	Http	GET	/sapi/v1/mining/worker/list	requestForMinerList	USER_DATA	Read	documented_active	provider_typed
+Mining REST	Http	GET	/sapi/v1/mining/statistics/user/status	statisticList	USER_DATA	Read	documented_active	provider_typed
+Binance Pay REST	Http	GET	/sapi/v1/pay/transactions	getPayTradeHistory	Public	Read	documented_active	provider_typed
+Rebate REST	Http	GET	/sapi/v1/rebate/taxQuery	getSpotRebateHistoryRecords	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/bfusd/account	getBfusdAccount	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/bfusd/quota	getBfusdQuotaDetails	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/bfusd/history/rateHistory	getBfusdRateHistory	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/bfusd/history/redemptionHistory	getBfusdRedemptionHistory	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/bfusd/history/rewardsHistory	getBfusdRewardsHistory	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/bfusd/history/subscriptionHistory	getBfusdSubscriptionHistory	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	POST	/sapi/v1/bfusd/redeem	redeemBfusd	TRADE	FinancialWrite	documented_active	provider_typed
+Simple Earn REST	Http	POST	/sapi/v1/bfusd/subscribe	subscribeBfusd	TRADE	FinancialWrite	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/simple-earn/flexible/history/collateralRecord	getCollateralRecord	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/simple-earn/flexible/personalLeftQuota	getFlexiblePersonalLeftQuota	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/simple-earn/flexible/position	getFlexibleProductPosition	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/simple-earn/flexible/history/redemptionRecord	getFlexibleRedemptionRecord	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/simple-earn/flexible/history/rewardsRecord	getFlexibleRewardsHistory	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/simple-earn/flexible/subscriptionPreview	getFlexibleSubscriptionPreview	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/simple-earn/flexible/history/subscriptionRecord	getFlexibleSubscriptionRecord	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/simple-earn/locked/personalLeftQuota	getLockedPersonalLeftQuota	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/simple-earn/locked/position	getLockedProductPosition	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/simple-earn/locked/history/redemptionRecord	getLockedRedemptionRecord	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/simple-earn/locked/history/rewardsRecord	getLockedRewardsHistory	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/simple-earn/locked/subscriptionPreview	getLockedSubscriptionPreview	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/simple-earn/locked/history/subscriptionRecord	getLockedSubscriptionRecord	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/simple-earn/flexible/history/rateHistory	getRateHistory	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/simple-earn/flexible/list	getSimpleEarnFlexibleProductList	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/simple-earn/locked/list	getSimpleEarnLockedProductList	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	POST	/sapi/v1/simple-earn/flexible/redeem	redeemFlexibleProduct	TRADE	FinancialWrite	documented_active	provider_typed
+Simple Earn REST	Http	POST	/sapi/v1/simple-earn/locked/redeem	redeemLockedProduct	TRADE	FinancialWrite	documented_active	provider_typed
+Simple Earn REST	Http	POST	/sapi/v1/simple-earn/flexible/setAutoSubscribe	setFlexibleAutoSubscribe	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	POST	/sapi/v1/simple-earn/locked/setAutoSubscribe	setLockedAutoSubscribe	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	POST	/sapi/v1/simple-earn/locked/setRedeemOption	setLockedProductRedeemOption	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/simple-earn/account	simpleAccount	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	POST	/sapi/v1/simple-earn/flexible/subscribe	subscribeFlexibleProduct	TRADE	FinancialWrite	documented_active	provider_typed
+Simple Earn REST	Http	POST	/sapi/v1/simple-earn/locked/subscribe	subscribeLockedProduct	TRADE	FinancialWrite	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/rwusd/account	getRwusdAccount	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/rwusd/quota	getRwusdQuotaDetails	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/rwusd/history/rateHistory	getRwusdRateHistory	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/rwusd/history/redemptionHistory	getRwusdRedemptionHistory	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/rwusd/history/rewardsHistory	getRwusdRewardsHistory	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/rwusd/history/subscriptionHistory	getRwusdSubscriptionHistory	USER_DATA	Read	documented_active	provider_typed
+Simple Earn REST	Http	POST	/sapi/v1/rwusd/redeem	redeemRwusd	TRADE	FinancialWrite	documented_active	provider_typed
+Simple Earn REST	Http	POST	/sapi/v1/rwusd/subscribe	subscribeRwusd	TRADE	FinancialWrite	documented_active	provider_typed
+Simple Earn REST	Http	GET	/sapi/v1/earn/arena/activities	getYieldArenaActivities	USER_DATA	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/account/commission	accountCommission	USER_DATA	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/allOrderList	allOrderList	USER_DATA	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/allOrders	allOrders	USER_DATA	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/account	getAccount	USER_DATA	Read	documented_active	common_and_provider
+Spot REST	Http	GET	/api/v3/openOrders	getOpenOrders	USER_DATA	Read	documented_active	common_existing
+Spot REST	Http	GET	/api/v3/order	getOrder	USER_DATA	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/orderList	getOrderList	USER_DATA	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/myAllocations	myAllocations	USER_DATA	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/myFilters	myFilters	USER_DATA	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/myPreventedMatches	myPreventedMatches	USER_DATA	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/myTrades	myTrades	USER_DATA	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/openOrderList	openOrderList	USER_DATA	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/order/amendments	orderAmendments	USER_DATA	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/rateLimit/order	rateLimitOrder	USER_DATA	Read	documented_active	provider_typed
+Spot REST	Http	DELETE	/api/v3/openOrders	deleteOpenOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Spot REST	Http	POST	/api/v3/order	newOrder	TRADE	FinancialWrite	documented_active	common_and_provider
+Spot REST	Http	DELETE	/api/v3/order	deleteOrder	TRADE	FinancialWrite	documented_active	common_and_provider
+Spot REST	Http	DELETE	/api/v3/orderList	deleteOrderList	TRADE	FinancialWrite	documented_active	provider_typed
+Spot REST	Http	PUT	/api/v3/order/amend/keepPriority	orderAmendKeepPriority	TRADE	FinancialWrite	documented_active	provider_typed
+Spot REST	Http	POST	/api/v3/order/cancelReplace	orderCancelReplace	TRADE	FinancialWrite	documented_active	provider_typed
+Spot REST	Http	POST	/api/v3/orderList/oco	orderListOco	TRADE	FinancialWrite	documented_active	provider_typed
+Spot REST	Http	POST	/api/v3/orderList/opo	orderListOpo	TRADE	FinancialWrite	documented_active	provider_typed
+Spot REST	Http	POST	/api/v3/orderList/opoco	orderListOpoco	TRADE	FinancialWrite	documented_active	provider_typed
+Spot REST	Http	POST	/api/v3/orderList/oto	orderListOto	TRADE	FinancialWrite	documented_active	provider_typed
+Spot REST	Http	POST	/api/v3/orderList/otoco	orderListOtoco	TRADE	FinancialWrite	documented_active	provider_typed
+Spot REST	Http	POST	/api/v3/order/oco	orderOco	TRADE	FinancialWrite	deprecated	deprecated_excluded
+Spot REST	Http	POST	/api/v3/order/test	orderTest	TRADE	FinancialWrite	documented_active	provider_typed
+Spot REST	Http	POST	/api/v3/sor/order	sorOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Spot REST	Http	POST	/api/v3/sor/order/test	sorOrderTest	TRADE	FinancialWrite	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/exchangeInfo	exchangeInfo	Public	Read	documented_active	common_and_provider
+Spot REST	Http	GET	/api/v3/executionRules	executionRules	Public	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/ping	ping	Public	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/time	time	Public	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/aggTrades	aggTrades	Public	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/avgPrice	avgPrice	Public	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/depth	depth	Public	Read	documented_active	common_existing
+Spot REST	Http	GET	/api/v3/trades	getTrades	Public	Read	documented_active	common_existing
+Spot REST	Http	GET	/api/v3/historicalTrades	historicalTrades	Public	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/historicalBlockTrades	historicalBlockTrades	MARKET_DATA	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/klines	klines	Public	Read	documented_active	common_existing
+Spot REST	Http	GET	/api/v3/ticker	ticker	Public	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/ticker/24hr	ticker24hr	Public	Read	documented_active	common_existing
+Spot REST	Http	GET	/api/v3/ticker/bookTicker	tickerBookTicker	Public	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/ticker/price	tickerPrice	Public	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/ticker/tradingDay	tickerTradingDay	Public	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/uiKlines	uiKlines	Public	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/referencePrice	referencePrice	Public	Read	documented_active	provider_typed
+Spot REST	Http	GET	/api/v3/referencePrice/calculation	referencePriceCalculation	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/account.commission	accountCommission	USER_DATA	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/account.rateLimits.orders	accountRateLimitsOrders	USER_DATA	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/account.status	accountStatus	USER_DATA	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/allOrderLists	allOrderLists	USER_DATA	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/allOrders	allOrders	USER_DATA	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/myAllocations	myAllocations	USER_DATA	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/myFilters	myFilters	USER_DATA	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/myPreventedMatches	myPreventedMatches	USER_DATA	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/myTrades	myTrades	USER_DATA	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/openOrderLists.status	openOrderListsStatus	USER_DATA	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/openOrders.status	openOrdersStatus	USER_DATA	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/order.amendments	orderAmendments	USER_DATA	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/orderList.status	orderListStatus	USER_DATA	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/order.status	orderStatus	USER_DATA	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/session.logon	sessionLogon	USER_DATA	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/session.logout	sessionLogout	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/session.status	sessionStatus	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/exchangeInfo	exchangeInfo	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/executionRules	executionRules	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/ping	ping	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/time	time	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/avgPrice	avgPrice	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/depth	depth	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/klines	klines	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/ticker	ticker	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/ticker.24hr	ticker24hr	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/ticker.book	tickerBook	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/ticker.price	tickerPrice	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/ticker.tradingDay	tickerTradingDay	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/trades.aggregate	tradesAggregate	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/trades.historical	tradesHistorical	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/blockTrades.historical	blockTradesHistorical	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/trades.recent	tradesRecent	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/uiKlines	uiKlines	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/referencePrice	referencePrice	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/referencePrice.calculation	referencePriceCalculation	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/openOrders.cancelAll	openOrdersCancelAll	TRADE	FinancialWrite	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/order.amend.keepPriority	orderAmendKeepPriority	TRADE	FinancialWrite	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/order.cancel	orderCancel	TRADE	FinancialWrite	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/order.cancelReplace	orderCancelReplace	TRADE	FinancialWrite	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/orderList.cancel	orderListCancel	TRADE	FinancialWrite	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/orderList.place	orderListPlace	TRADE	FinancialWrite	deprecated	deprecated_excluded
+Spot WebSocket	WebSocketRequest	POST	/orderList.place.oco	orderListPlaceOco	TRADE	FinancialWrite	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/orderList.place.opo	orderListPlaceOpo	TRADE	FinancialWrite	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/orderList.place.opoco	orderListPlaceOpoco	TRADE	FinancialWrite	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/orderList.place.oto	orderListPlaceOto	TRADE	FinancialWrite	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/orderList.place.otoco	orderListPlaceOtoco	TRADE	FinancialWrite	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/order.place	orderPlace	TRADE	FinancialWrite	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/order.test	orderTest	TRADE	FinancialWrite	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/sor.order.place	sorOrderPlace	TRADE	FinancialWrite	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/sor.order.test	sorOrderTest	TRADE	FinancialWrite	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/session.subscriptions	sessionSubscriptions	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/userDataStream.subscribe	userDataStreamSubscribe	Public	Read	documented_active	provider_typed
+Spot WebSocket	WebSocketRequest	POST	/userDataStream.subscribe.signature	userDataStreamSubscribeSignature	USER_STREAM	AccountWrite	documented_active	common_and_provider
+Spot WebSocket	WebSocketRequest	POST	/userDataStream.unsubscribe	userDataStreamUnsubscribe	Public	Read	documented_active	provider_typed
+Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@aggTrade	aggTrade	Public	Read	documented_active	provider_typed
+Spot WebSocket Market Streams	WebSocketStream	POST	/!ticker_{windowSize}@arr	allMarketRollingWindowTicker	Public	Read	documented_active	provider_typed
+Spot WebSocket Market Streams	WebSocketStream	POST	/!miniTicker@arr	allMiniTicker	Public	Read	documented_active	provider_typed
+Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@avgPrice	avgPrice	Public	Read	documented_active	provider_typed
+Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@bookTicker	bookTicker	Public	Read	documented_active	provider_typed
+Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth@{updateSpeed}	diffBookDepth	Public	Read	documented_active	provider_typed
+Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@kline_{interval}	kline	Public	Read	documented_active	common_and_provider
+Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@kline_{interval}@+08:00	klineOffset	Public	Read	documented_active	provider_typed
+Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@miniTicker	miniTicker	Public	Read	documented_active	provider_typed
+Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth{levels}@{updateSpeed}	partialBookDepth	Public	Read	documented_active	common_and_provider
+Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@referencePrice	referencePrice	Public	Read	documented_active	provider_typed
+Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@ticker_{windowSize}	rollingWindowTicker	Public	Read	documented_active	provider_typed
+Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@ticker	ticker	Public	Read	documented_active	common_and_provider
+Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@trade	trade	Public	Read	documented_active	common_and_provider
+Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@blockTrade	blockTrade	Public	Read	documented_active	provider_typed
+Spot Block Matching REST	Http	POST	/sapi/v1/block-match/order/cancel	orderCancel	TRADE	FinancialWrite	documented_active	provider_typed
+Spot Block Matching REST	Http	POST	/sapi/v1/block-match/order/extend	orderExtend	TRADE	FinancialWrite	documented_active	provider_typed
+Spot Block Matching REST	Http	POST	/sapi/v1/block-match/order/place	orderPlace	TRADE	FinancialWrite	documented_active	provider_typed
+Spot Block Matching REST	Http	POST	/sapi/v1/block-match/order/take	orderTake	TRADE	FinancialWrite	documented_active	provider_typed
+Spot Block Matching REST	Http	GET	/sapi/v1/block-match/order/query-open-order	queryOpenOrder	USER_DATA	Read	documented_active	provider_typed
+Spot Block Matching REST	Http	GET	/sapi/v1/block-match/order/query-order-history	queryOrderHistory	USER_DATA	Read	documented_active	provider_typed
+Spot Block Matching REST	Http	POST	/sapi/v1/block-match/symbols	symbols	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v2/eth-staking/account	ethStakingAccount	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/eth-staking/eth/quota	getCurrentEthStakingQuota	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/eth-staking/eth/history/redemptionHistory	getEthRedemptionHistory	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/eth-staking/eth/history/stakingHistory	getEthStakingHistory	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/eth-staking/eth/history/rateHistory	getWbethRateHistory	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/eth-staking/eth/history/wbethRewardsHistory	getWbethRewardsHistory	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/eth-staking/wbeth/history/unwrapHistory	getWbethUnwrapHistory	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/eth-staking/wbeth/history/wrapHistory	getWbethWrapHistory	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	POST	/sapi/v1/eth-staking/eth/redeem	redeemEth	TRADE	FinancialWrite	documented_active	provider_typed
+Staking REST	Http	POST	/sapi/v2/eth-staking/eth/stake	subscribeEthStaking	TRADE	FinancialWrite	documented_active	provider_typed
+Staking REST	Http	POST	/sapi/v1/eth-staking/wbeth/wrap	wrapBeth	TRADE	FinancialWrite	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/onchain-yields/locked/personalLeftQuota	getOnChainYieldsLockedPersonalLeftQuota	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/onchain-yields/locked/list	getOnChainYieldsLockedProductList	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/onchain-yields/locked/position	getOnChainYieldsLockedProductPosition	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/onchain-yields/locked/history/redemptionRecord	getOnChainYieldsLockedRedemptionRecord	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/onchain-yields/locked/history/rewardsRecord	getOnChainYieldsLockedRewardsHistory	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/onchain-yields/locked/subscriptionPreview	getOnChainYieldsLockedSubscriptionPreview	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/onchain-yields/locked/history/subscriptionRecord	getOnChainYieldsLockedSubscriptionRecord	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/onchain-yields/account	onChainYieldsAccount	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	POST	/sapi/v1/onchain-yields/locked/redeem	redeemOnChainYieldsLockedProduct	TRADE	FinancialWrite	documented_active	provider_typed
+Staking REST	Http	POST	/sapi/v1/onchain-yields/locked/setAutoSubscribe	setOnChainYieldsLockedAutoSubscribe	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	POST	/sapi/v1/onchain-yields/locked/setRedeemOption	setOnChainYieldsLockedProductRedeemOption	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	POST	/sapi/v1/onchain-yields/locked/subscribe	subscribeOnChainYieldsLockedProduct	TRADE	FinancialWrite	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/soft-staking/list	getSoftStakingProductList	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/soft-staking/history/rewardsRecord	getSoftStakingRewardsHistory	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/soft-staking/set	setSoftStaking	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	POST	/sapi/v1/sol-staking/sol/claim	claimBoostRewards	TRADE	FinancialWrite	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/sol-staking/sol/history/rateHistory	getBnsolRateHistory	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/sol-staking/sol/history/bnsolRewardsHistory	getBnsolRewardsHistory	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/sol-staking/sol/history/boostRewardsHistory	getBoostRewardsHistory	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/sol-staking/sol/history/redemptionHistory	getSolRedemptionHistory	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/sol-staking/sol/history/stakingHistory	getSolStakingHistory	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/sol-staking/sol/quota	getSolStakingQuotaDetails	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/sol-staking/sol/history/unclaimedRewards	getUnclaimedRewards	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	POST	/sapi/v1/sol-staking/sol/redeem	redeemSol	TRADE	FinancialWrite	documented_active	provider_typed
+Staking REST	Http	GET	/sapi/v1/sol-staking/account	solStakingAccount	USER_DATA	Read	documented_active	provider_typed
+Staking REST	Http	POST	/sapi/v1/sol-staking/sol/stake	subscribeSolStaking	TRADE	FinancialWrite	documented_active	provider_typed
+Sub Account REST	Http	POST	/sapi/v1/sub-account/virtualSubAccount	createAVirtualSubAccount	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	POST	/sapi/v1/sub-account/futures/enable	enableFuturesForSubAccount	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	POST	/sapi/v1/sub-account/eoptions/enable	enableOptionsForSubAccount	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/sub-account/futures/positionRisk	getFuturesPositionRiskOfSubAccount	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v2/sub-account/futures/positionRisk	getFuturesPositionRiskOfSubAccountV2	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/sub-account/status	getSubAccountsStatusOnMarginOrFutures	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/sub-account/list	querySubAccountList	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/sub-account/transaction-statistics	querySubAccountTransactionStatistics	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	POST	/sapi/v2/sub-account/subAccountApi/ipRestriction	addIpRestrictionForSubAccountApiKey	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/sub-account/subAccountApi	querySubAccountApiKey	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	POST	/sapi/v1/sub-account/subAccountApi	createSubAccountApiKey	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	DELETE	/sapi/v1/sub-account/subAccountApi	deleteSubAccountApiKey	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	DELETE	/sapi/v1/sub-account/subAccountApi/ipRestriction/ipList	deleteIpListForASubAccountApiKey	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/sub-account/subAccountApi/ipRestriction	getIpRestrictionForASubAccountApiKey	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	POST	/sapi/v1/sub-account/subAccountApiPermission	modifySubAccountApiKeyPermission	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	POST	/sapi/v1/sub-account/futures/transfer	futuresTransferForSubAccount	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/sub-account/futures/account	getDetailOnSubAccountsFuturesAccount	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v2/sub-account/futures/account	getDetailOnSubAccountsFuturesAccountV2	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/sub-account/margin/account	getDetailOnSubAccountsMarginAccount	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/sub-account/futures/move-position	getMovePositionHistoryForSubAccount	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	POST	/sapi/v1/sub-account/futures/move-position	movePositionForSubAccount	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/capital/deposit/subAddress	getSubAccountDepositAddress	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/capital/deposit/subHisrec	getSubAccountDepositHistory	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/sub-account/futures/accountSummary	getSummaryOfSubAccountsFuturesAccount	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v2/sub-account/futures/accountSummary	getSummaryOfSubAccountsFuturesAccountV2	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/sub-account/margin/accountSummary	getSummaryOfSubAccountsMarginAccount	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	POST	/sapi/v1/sub-account/margin/transfer	marginTransferForSubAccount	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v3/sub-account/assets	querySubAccountAssets	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v4/sub-account/assets	querySubAccountAssetsAssetManagement	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/sub-account/futures/internalTransfer	querySubAccountFuturesAssetTransferHistory	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	POST	/sapi/v1/sub-account/futures/internalTransfer	subAccountFuturesAssetTransfer	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/sub-account/spotSummary	querySubAccountSpotAssetsSummary	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/sub-account/sub/transfer/history	querySubAccountSpotAssetTransferHistory	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/sub-account/universalTransfer	queryUniversalTransferHistory	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	POST	/sapi/v1/sub-account/universalTransfer	universalTransfer	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/sub-account/transfer/subUserHistory	subAccountTransferHistory	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	POST	/sapi/v1/sub-account/transfer/subToMaster	transferToMaster	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	POST	/sapi/v1/sub-account/transfer/subToSub	transferToSubAccountOfSameMaster	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	POST	/sapi/v1/managed-subaccount/deposit	depositAssetsIntoTheManagedSubAccount	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/managed-subaccount/deposit/address	getManagedSubAccountDepositAddress	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/managed-subaccount/asset	queryManagedSubAccountAssetDetails	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/managed-subaccount/fetch-future-asset	queryManagedSubAccountFuturesAssetDetails	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/managed-subaccount/info	queryManagedSubAccountList	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/managed-subaccount/marginAsset	queryManagedSubAccountMarginAssetDetails	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/managed-subaccount/accountSnapshot	queryManagedSubAccountSnapshot	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/managed-subaccount/queryTransLogForInvestor	queryManagedSubAccountTransferLogMasterAccountInvestor	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/managed-subaccount/queryTransLogForTradeParent	queryManagedSubAccountTransferLogMasterAccountTrading	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	GET	/sapi/v1/managed-subaccount/query-trans-log	queryManagedSubAccountTransferLogSubAccountTrading	USER_DATA	Read	documented_active	platform_limited
+Sub Account REST	Http	POST	/sapi/v1/managed-subaccount/withdraw	withdrawlAssetsFromTheManagedSubAccount	USER_DATA	Read	documented_active	platform_limited
+VIP Loan REST	Http	GET	/sapi/v1/loan/vip/request/interestRate	getBorrowInterestRate	USER_DATA	Read	documented_active	platform_limited
+VIP Loan REST	Http	GET	/sapi/v1/loan/vip/collateral/data	getCollateralAssetData	USER_DATA	Read	documented_active	platform_limited
+VIP Loan REST	Http	GET	/sapi/v1/loan/vip/loanable/data	getLoanableAssetsData	USER_DATA	Read	documented_active	platform_limited
+VIP Loan REST	Http	GET	/sapi/v1/loan/vip/interestRateHistory	getVIPLoanInterestRateHistory	USER_DATA	Read	documented_active	platform_limited
+VIP Loan REST	Http	GET	/sapi/v1/loan/vip/fixed/market	queryVIPLoanFixedRateMarket	USER_DATA	Read	documented_active	platform_limited
+VIP Loan REST	Http	POST	/sapi/v1/loan/vip/borrow	vipLoanBorrow	TRADE	FinancialWrite	documented_active	platform_limited
+VIP Loan REST	Http	POST	/sapi/v1/loan/vip/fixed/borrow	vipLoanFixedRateBorrow	TRADE	FinancialWrite	documented_active	platform_limited
+VIP Loan REST	Http	POST	/sapi/v1/loan/vip/renew	vipLoanRenew	TRADE	FinancialWrite	documented_active	platform_limited
+VIP Loan REST	Http	POST	/sapi/v1/loan/vip/repay	vipLoanRepay	TRADE	FinancialWrite	documented_active	platform_limited
+VIP Loan REST	Http	GET	/sapi/v1/loan/vip/collateral/account	checkVIPLoanCollateralAccount	USER_DATA	Read	documented_active	platform_limited
+VIP Loan REST	Http	GET	/sapi/v1/loan/vip/accruedInterest	getVIPLoanAccruedInterest	USER_DATA	Read	documented_active	platform_limited
+VIP Loan REST	Http	GET	/sapi/v1/loan/vip/ongoing/orders	getVIPLoanOngoingOrders	USER_DATA	Read	documented_active	platform_limited
+VIP Loan REST	Http	GET	/sapi/v1/loan/vip/repay/history	getVIPLoanRepaymentHistory	USER_DATA	Read	documented_active	platform_limited
+VIP Loan REST	Http	GET	/sapi/v1/loan/vip/request/data	queryApplicationStatus	USER_DATA	Read	documented_active	platform_limited
+VIP Service REST	Http	GET	/sapi/v1/vip/vip-portal/futures/ip-whitelists	queryFuturesIpWhitelists	Public	Read	documented_active	platform_limited
+VIP Service REST	Http	POST	/sapi/v1/vip/vip-portal/futures/ip-whitelists	addFuturesIpWhitelists	Public	Read	documented_active	platform_limited
+VIP Service REST	Http	DELETE	/sapi/v1/vip/vip-portal/futures/ip-whitelists	removeFuturesIpWhitelists	Public	Read	documented_active	platform_limited
+VIP Service REST	Http	GET	/sapi/v1/vip/vip-portal/futures/rate-limits/ips	queryFuturesIpRateLimits	Public	Read	documented_active	platform_limited
+VIP Service REST	Http	GET	/sapi/v1/vip/vip-portal/futures/rate-limits/ips/pages	queryFuturesIpRateLimitsWithPagination	Public	Read	documented_active	platform_limited
+VIP Service REST	Http	GET	/sapi/v1/vip/vip-portal/futures/rate-limits/orders	queryFuturesUserorderRateLimits	Public	Read	documented_active	platform_limited
+VIP Service REST	Http	GET	/sapi/v1/vip/vip-portal/futures/rate-limits/orders/pages	queryFuturesUserorderRateLimitsWithPagination	Public	Read	documented_active	platform_limited
+VIP Service REST	Http	GET	/sapi/v1/vip/liquidity-programs/overview	queryLiquidityProgramOverview	Public	Read	documented_active	platform_limited
+VIP Service REST	Http	GET	/sapi/v1/vip/liquidity-programs/performance	queryLiquidityProgramPerformance	Public	Read	documented_active	platform_limited
+VIP Service REST	Http	GET	/sapi/v1/vip/liquidity-programs/weekly-result	queryLiquidityProgramWeeklyResults	Public	Read	documented_active	platform_limited
+VIP Service REST	Http	GET	/sapi/v1/commission/queryCommissionFee	querySymbolCommissionFee	Public	Read	documented_active	platform_limited
+VIP CAAS REST	Http	GET	/sapi/v1/vip/caas/commission/fee-groups	queryFeeGroups	USER_DATA	Read	documented_active	platform_limited
+VIP CAAS REST	Http	POST	/sapi/v1/vip/caas/commission/fee-groups	createFeeGroup	TRADE	FinancialWrite	documented_active	platform_limited
+VIP CAAS REST	Http	DELETE	/sapi/v1/vip/caas/commission/fee-groups	deleteFeeGroup	TRADE	FinancialWrite	documented_active	platform_limited
+VIP CAAS REST	Http	PUT	/sapi/v1/vip/caas/commission/fee-groups/commission	updateFeeGroupCommission	TRADE	FinancialWrite	documented_active	platform_limited
+VIP CAAS REST	Http	GET	/sapi/v1/vip/caas/commission/fee-groups/members	queryFeeGroupMembers	USER_DATA	Read	documented_active	platform_limited
+VIP CAAS REST	Http	POST	/sapi/v1/vip/caas/commission/fee-groups/members	assignMembersToFeeGroup	TRADE	FinancialWrite	documented_active	platform_limited
+VIP CAAS REST	Http	DELETE	/sapi/v1/vip/caas/commission/fee-groups/members	unassignMembersFromFeeGroup	TRADE	FinancialWrite	documented_active	platform_limited
+VIP CAAS REST	Http	GET	/sapi/v1/vip/caas/commission/member-fee-group	queryOneMembersFeeGroup	USER_DATA	Read	documented_active	platform_limited
+VIP CAAS REST	Http	GET	/sapi/v1/vip/caas/commission/markup-trade-aggregations	queryMarkupTradeCommissionAggregationReportings	USER_DATA	Read	documented_active	platform_limited
+VIP CAAS REST	Http	GET	/sapi/v1/vip/caas/commission/markup-trade-details	queryMarkupTradeDetailReportings	USER_DATA	Read	documented_active	platform_limited
+Wallet REST	Http	GET	/sapi/v1/account/apiTradingStatus	accountApiTradingStatus	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v1/account/info	accountInfo	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v1/account/status	accountStatus	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v1/accountSnapshot	dailyAccountSnapshot	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	POST	/sapi/v1/account/disableFastWithdrawSwitch	disableFastWithdrawSwitch	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	POST	/sapi/v1/account/enableFastWithdrawSwitch	enableFastWithdrawSwitch	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v1/account/apiRestrictions	getApiKeyPermission	USER_DATA	Read	documented_active	common_and_provider
+Wallet REST	Http	GET	/sapi/v1/asset/assetDetail	assetDetail	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v1/asset/assetDividend	assetDividendRecord	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	POST	/sapi/v1/asset/dust-convert/convert	dustConvert	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	POST	/sapi/v1/asset/dust-convert/query-convertible-assets	dustConvertibleAssets	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v1/asset/dribblet	dustlog	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	POST	/sapi/v1/asset/dust	dustTransfer	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	POST	/sapi/v1/asset/get-funding-asset	fundingWallet	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v1/spot/asset/tags	getSpotAssetTags	MARKET_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	POST	/sapi/v1/asset/dust-btc	getAssetsThatCanBeConvertedIntoBnb	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v1/asset/ledger-transfer/cloud-mining/queryByPage	getCloudMiningPaymentAndRefundHistory	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v1/spot/open-symbol-list	getOpenSymbolList	MARKET_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v1/asset/custody/transfer-history	queryUserDelegationHistory	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v1/asset/transfer	queryUserUniversalTransferHistory	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	POST	/sapi/v1/asset/transfer	userUniversalTransfer	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v1/asset/wallet/balance	queryUserWalletBalance	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	POST	/sapi/v1/bnbBurn	toggleBnbBurnOnSpotTradeAndMarginInterest	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v1/asset/tradeFee	tradeFee	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	POST	/sapi/v3/asset/getUserAsset	userAsset	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v1/capital/config/getall	allCoinsInformation	USER_DATA	Read	documented_active	common_and_provider
+Wallet REST	Http	GET	/sapi/v1/capital/deposit/address	depositAddress	USER_DATA	Read	documented_active	common_existing
+Wallet REST	Http	GET	/sapi/v1/capital/deposit/hisrec	depositHistory	USER_DATA	Read	documented_active	common_and_provider
+Wallet REST	Http	GET	/sapi/v1/capital/deposit/address/list	fetchDepositAddressListWithNetwork	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v1/capital/withdraw/address/list	fetchWithdrawAddressList	USER_DATA	Read	documented_active	common_and_provider
+Wallet REST	Http	GET	/sapi/v1/capital/withdraw/quota	fetchWithdrawQuota	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	POST	/sapi/v1/capital/deposit/credit-apply	oneClickArrivalDepositApply	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	POST	/sapi/v1/capital/withdraw/apply	withdraw	USER_DATA	Read	documented_active	common_existing
+Wallet REST	Http	GET	/sapi/v1/capital/withdraw/history	withdrawHistory	USER_DATA	Read	documented_active	common_and_provider
+Wallet REST	Http	GET	/sapi/v1/spot/delist-schedule	getSymbolsDelistScheduleForSpot	MARKET_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v1/system/status	systemStatus	Public	Read	documented_active	provider_typed
+Wallet REST	Http	POST	/sapi/v1/localentity/broker/withdraw/apply	brokerWithdraw	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v1/localentity/questionnaire-requirements	checkQuestionnaireRequirements	USER_DATA	Read	documented_active	common_and_provider
+Wallet REST	Http	GET	/sapi/v1/localentity/country/list	getCountryList	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v1/localentity/deposit/history	depositHistoryTravelRule	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v2/localentity/deposit/history	depositHistoryV2	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v1/addressVerify/list	fetchAddressVerificationList	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v1/localentity/region/list	getRegionList	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	PUT	/sapi/v1/localentity/broker/deposit/provide-info	submitDepositQuestionnaire	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	PUT	/sapi/v1/localentity/deposit/provide-info	submitDepositQuestionnaireTravelRule	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	PUT	/sapi/v2/localentity/deposit/provide-info	submitDepositQuestionnaireV2	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v1/localentity/vasp	vaspList	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v1/localentity/withdraw/history	withdrawHistoryV1	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	GET	/sapi/v2/localentity/withdraw/history	withdrawHistoryV2	USER_DATA	Read	documented_active	provider_typed
+Wallet REST	Http	POST	/sapi/v1/localentity/withdraw/apply	withdrawTravelRule	USER_DATA	Read	documented_active	provider_typed
+Prediction Trading REST	Http	GET	/sapi/v1/w3w/wallet/prediction/category/list	listPredictionCategories	Public	Read	documented_active	provider_typed
+Prediction Trading REST	Http	GET	/sapi/v1/w3w/wallet/prediction/market/list	listPredictionMarkets	Public	Read	documented_active	provider_typed
+Prediction Trading REST	Http	GET	/sapi/v1/w3w/wallet/prediction/market/search	marketSearch	Public	Read	documented_active	provider_typed
+Prediction Trading REST	Http	GET	/sapi/v1/w3w/wallet/prediction/market/detail	getMarketDetail	Public	Read	documented_active	provider_typed
+Prediction Trading REST	Http	GET	/sapi/v1/w3w/wallet/prediction/order-book	queryOrderBook	Public	Read	documented_active	provider_typed
+Prediction Trading REST	Http	GET	/sapi/v1/w3w/wallet/prediction/order-book/last-trade-price	queryLastTradePrice	Public	Read	documented_active	provider_typed
+Prediction Trading REST	Http	GET	/sapi/v1/w3w/wallet/prediction/wallet/list	listPredictionWallets	USER_DATA	Read	documented_active	provider_typed
+Prediction Trading REST	Http	GET	/sapi/v1/w3w/wallet/prediction/pnl/portfolio	getPortfolio	USER_DATA	Read	documented_active	provider_typed
+Prediction Trading REST	Http	GET	/sapi/v1/w3w/wallet/prediction/quota/limit/status	getQuotaStatus	USER_DATA	Read	documented_active	provider_typed
+Prediction Trading REST	Http	GET	/sapi/v1/w3w/wallet/prediction/balance/payment-options	queryPaymentOptionBalances	USER_DATA	Read	documented_active	provider_typed
+Prediction Trading REST	Http	POST	/sapi/v1/w3w/wallet/prediction/trade/get-quote	getQuote	TRADE	FinancialWrite	documented_active	provider_typed
+Prediction Trading REST	Http	POST	/sapi/v1/w3w/wallet/prediction/trade/place-order-bundle	placeOrder	TRADE	FinancialWrite	documented_active	provider_typed
+Prediction Trading REST	Http	POST	/sapi/v1/w3w/wallet/prediction/trade/batch-cancel	batchCancelOrders	TRADE	FinancialWrite	documented_active	provider_typed
+Prediction Trading REST	Http	GET	/sapi/v1/w3w/wallet/prediction/order/list	queryActiveOrders	USER_DATA	Read	documented_active	provider_typed
+Prediction Trading REST	Http	GET	/sapi/v1/w3w/wallet/prediction/order/history	queryOrderHistory	USER_DATA	Read	documented_active	provider_typed
+Prediction Trading REST	Http	GET	/sapi/v1/w3w/wallet/prediction/position/list	queryPositions	USER_DATA	Read	documented_active	provider_typed
+Prediction Trading REST	Http	GET	/sapi/v1/w3w/wallet/prediction/position/filter	queryPositionsByFilter	USER_DATA	Read	documented_active	provider_typed
+Prediction Trading REST	Http	GET	/sapi/v1/w3w/wallet/prediction/position/token	getPositionByToken	USER_DATA	Read	documented_active	provider_typed
+Prediction Trading REST	Http	GET	/sapi/v1/w3w/wallet/prediction/pnl/query	queryPnL	USER_DATA	Read	documented_active	provider_typed
+Prediction Trading REST	Http	GET	/sapi/v1/w3w/wallet/prediction/position/settled-history	querySettledPositionHistory	USER_DATA	Read	documented_active	provider_typed
+Prediction Trading REST	Http	POST	/sapi/v1/w3w/wallet/prediction/batch-redeem	batchRedeem	TRADE	FinancialWrite	documented_active	provider_typed
+Prediction Trading REST	Http	GET	/sapi/v1/w3w/wallet/prediction/redeem/status	getRedeemStatus	USER_DATA	Read	documented_active	provider_typed
+Prediction Trading REST	Http	POST	/sapi/v1/w3w/wallet/prediction/transfer/inbound	createInboundTransfer	TRADE	FinancialWrite	documented_active	provider_typed
+Prediction Trading REST	Http	POST	/sapi/v1/w3w/wallet/prediction/transfer/outbound	createOutboundTransfer	TRADE	FinancialWrite	documented_active	provider_typed
+Prediction Trading REST	Http	GET	/sapi/v1/w3w/wallet/prediction/transfer/list	queryTransferList	USER_DATA	Read	documented_active	provider_typed
+Prediction Trading REST	Http	GET	/sapi/v1/w3w/wallet/prediction/transfer/status	queryTransferStatus	USER_DATA	Read	documented_active	provider_typed
+# end of snapshot

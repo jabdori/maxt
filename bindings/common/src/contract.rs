@@ -1,8 +1,10 @@
 use maxt::{
-    AccountStream, Balance, BoxFuture, Candle, CandleRequest, FundingPayment, FundingRate,
-    HistoryRequest, MarginRequest, MarginSummary, Market, MarketInfo, MarketKind, MarketStream,
-    Order, OrderBook, OrderRequest, Page, Position, Result, StreamConfig, Subscription, Ticker,
-    Trade,
+    AccountStream, AssetNetwork, Balance, BoxFuture, CancelOrdersRequest, CancelOrdersResult,
+    Candle, CandleRequest, Deposit, DepositAddress, DepositAddressEntry, DepositAddressRequest,
+    FundingPayment, FundingRate, HistoryRequest, MarginRequest, MarginSummary, Market, MarketInfo,
+    MarketKind, MarketStream, Order, OrderBook, OrderHistoryRequest, OrderLookupRequest,
+    OrderRequest, OrderRules, Page, Position, Result, StreamConfig, Subscription, Ticker, Trade,
+    TransferHistoryRequest, TransferLookupRequest, WithdrawRequest, Withdrawal, WithdrawalQuote,
 };
 
 /// An owned call across a language binding boundary.
@@ -47,10 +49,91 @@ pub enum AdapterCall {
     },
     /// Reads account balances.
     Balances,
+    /// Reads dynamic order rules for one market.
+    OrderRules {
+        /// The market to inspect.
+        market: Market,
+    },
+    /// Reads live asset-network rules.
+    AssetNetworks {
+        /// Asset symbol.
+        asset: String,
+    },
+    /// Lists all deposit addresses.
+    DepositAddresses,
+    /// Reads one deposit address.
+    DepositAddress {
+        /// Complete address request.
+        request: DepositAddressRequest,
+    },
+    /// Requests creation of one deposit address.
+    CreateDepositAddress {
+        /// Complete address request.
+        request: DepositAddressRequest,
+    },
+    /// Checks one withdrawal without submitting it.
+    PrepareWithdrawal {
+        /// Complete withdrawal request.
+        request: WithdrawRequest,
+    },
+    /// Submits one withdrawal.
+    Withdraw {
+        /// Complete withdrawal request.
+        request: WithdrawRequest,
+    },
+    /// Looks up one deposit.
+    Deposit {
+        /// Complete transfer lookup request.
+        request: TransferLookupRequest,
+    },
+    /// Looks up one withdrawal.
+    Withdrawal {
+        /// Complete transfer lookup request.
+        request: TransferLookupRequest,
+    },
+    /// Cancels one pending withdrawal.
+    CancelWithdrawal {
+        /// Exchange-issued withdrawal identifier.
+        withdrawal_id: String,
+    },
+    /// Reads deposit history.
+    Deposits {
+        /// Complete history request.
+        request: TransferHistoryRequest,
+    },
+    /// Reads withdrawal history.
+    Withdrawals {
+        /// Complete history request.
+        request: TransferHistoryRequest,
+    },
     /// Reads open orders, optionally for one market.
     OpenOrders {
         /// The optional market filter.
         market: Option<Market>,
+    },
+    /// Reads one order by exchange identifier.
+    Order {
+        /// The order's market.
+        market: Market,
+        /// The exchange's identifier.
+        order_id: String,
+    },
+    /// Reads one order by caller-assigned identifier.
+    OrderByClientId {
+        /// The order's market.
+        market: Market,
+        /// The caller-assigned identifier.
+        client_id: String,
+    },
+    /// Looks up multiple orders by one identifier namespace.
+    OrdersByIds {
+        /// Complete lookup request.
+        request: OrderLookupRequest,
+    },
+    /// Reads final-order history.
+    OrderHistory {
+        /// Complete history request.
+        request: OrderHistoryRequest,
     },
     /// Opens an account stream.
     SubscribeAccount {
@@ -68,6 +151,18 @@ pub enum AdapterCall {
         market: Market,
         /// The exchange's order identifier.
         order_id: String,
+    },
+    /// Cancels an order by its caller-assigned identifier.
+    CancelOrderByClientId {
+        /// The order's market.
+        market: Market,
+        /// The caller-assigned identifier.
+        client_id: String,
+    },
+    /// Cancels multiple orders by one identifier namespace.
+    CancelOrders {
+        /// Complete batch-cancellation request.
+        request: CancelOrdersRequest,
     },
     /// Reads open positions, optionally for one market.
     Positions {
@@ -111,14 +206,42 @@ pub enum AdapterReply {
     MarketStream(MarketStream),
     /// Result of [`AdapterCall::Balances`].
     Balances(Vec<Balance>),
+    /// Result of [`AdapterCall::OrderRules`].
+    OrderRules(Box<OrderRules>),
+    /// Result of [`AdapterCall::AssetNetworks`].
+    AssetNetworks(Vec<AssetNetwork>),
+    /// Result of [`AdapterCall::DepositAddresses`].
+    DepositAddresses(Vec<DepositAddressEntry>),
+    /// Result of [`AdapterCall::DepositAddress`].
+    DepositAddress(DepositAddress),
+    /// Result of [`AdapterCall::CreateDepositAddress`].
+    CreateDepositAddress(DepositAddress),
+    /// Result of [`AdapterCall::PrepareWithdrawal`].
+    WithdrawalQuote(WithdrawalQuote),
+    /// Result of [`AdapterCall::Withdraw`].
+    Withdrawal(Withdrawal),
+    /// Result of [`AdapterCall::Deposit`].
+    Deposit(Deposit),
+    /// Result of [`AdapterCall::Withdrawal`].
+    LookupWithdrawal(Withdrawal),
+    /// Result of [`AdapterCall::Deposits`].
+    Deposits(Page<Deposit>),
+    /// Result of [`AdapterCall::Withdrawals`].
+    Withdrawals(Page<Withdrawal>),
     /// Result of [`AdapterCall::OpenOrders`].
     OpenOrders(Vec<Order>),
+    /// Result of [`AdapterCall::Order`] or [`AdapterCall::OrderByClientId`].
+    Order(Order),
+    /// Result of [`AdapterCall::OrdersByIds`].
+    OrdersByIds(Vec<Order>),
+    /// Result of [`AdapterCall::OrderHistory`].
+    OrderHistory(Page<Order>),
     /// Result of [`AdapterCall::SubscribeAccount`].
     AccountStream(AccountStream),
     /// Result of [`AdapterCall::PlaceOrder`].
     PlaceOrder(Order),
-    /// Result of [`AdapterCall::CancelOrder`].
-    CancelOrder(Order),
+    /// Result of [`AdapterCall::CancelOrders`].
+    CancelOrdersResult(CancelOrdersResult),
     /// Result of [`AdapterCall::Positions`].
     Positions(Vec<Position>),
     /// Result of [`AdapterCall::MarginSummary`].
@@ -147,10 +270,24 @@ impl AdapterReply {
             Self::Candles(_) => "Candles",
             Self::MarketStream(_) => "MarketStream",
             Self::Balances(_) => "Balances",
+            Self::OrderRules(_) => "OrderRules",
+            Self::AssetNetworks(_) => "AssetNetworks",
+            Self::DepositAddresses(_) => "DepositAddresses",
+            Self::DepositAddress(_) => "DepositAddress",
+            Self::CreateDepositAddress(_) => "CreateDepositAddress",
+            Self::WithdrawalQuote(_) => "WithdrawalQuote",
+            Self::Withdrawal(_) => "Withdrawal",
+            Self::Deposit(_) => "Deposit",
+            Self::LookupWithdrawal(_) => "LookupWithdrawal",
+            Self::Deposits(_) => "Deposits",
+            Self::Withdrawals(_) => "Withdrawals",
             Self::OpenOrders(_) => "OpenOrders",
+            Self::Order(_) => "Order",
+            Self::OrdersByIds(_) => "OrdersByIds",
+            Self::OrderHistory(_) => "OrderHistory",
             Self::AccountStream(_) => "AccountStream",
             Self::PlaceOrder(_) => "PlaceOrder",
-            Self::CancelOrder(_) => "CancelOrder",
+            Self::CancelOrdersResult(_) => "CancelOrdersResult",
             Self::Positions(_) => "Positions",
             Self::MarginSummary(_) => "MarginSummary",
             Self::FundingRates(_) => "FundingRates",

@@ -8,18 +8,28 @@
 use std::cmp::Reverse;
 
 use rust_decimal::Decimal;
+use serde::Deserialize;
 
-use crate::adapters::{candles as candle_pages, inclusive_millis_before};
+use crate::adapters::{
+    candles as candle_pages, inclusive_millis_at_or_after, inclusive_millis_before,
+};
 use crate::error::{Error, Result};
 use crate::feature::Feature;
 use crate::request::CandleRequest;
 use crate::transport::HttpRequest;
 use crate::types::{Candle, Market, MarketInfo, MarketKind, OrderBook, Ticker, Timestamp, Trade};
 
-use super::{BinanceAdapter, BinanceMarket, EXCHANGE, now_millis, parse};
+use super::{
+    BinanceAdapter, BinanceAggregateTrade, BinanceAggregateTradesRequest, BinanceMarkPrice,
+    BinanceMarket, BinanceOpenInterest, BinanceSpotAveragePrice, EXCHANGE, now_millis, parse,
+};
 
 /// The most recent trades either venue will return in one call.
 const MAX_TRADE_LIMIT: u32 = 1_000;
+/// Binance's maximum number of compressed aggregate trades in one response.
+const MAX_AGGREGATE_TRADE_LIMIT: u32 = 1_000;
+/// USD-M restricts paired aggregate-trade time bounds to less than one hour.
+const USD_M_AGGREGATE_TRADE_WINDOW_MILLIS: i64 = 60 * 60 * 1_000;
 
 /// The largest spot depth Binance returns in one response.
 const MAX_SPOT_DEPTH: u32 = 5_000;
@@ -30,6 +40,70 @@ const USD_M_DEPTHS: &[u32] = &[5, 10, 20, 50, 100, 500, 1_000];
 /// The candles each venue will return in one call. USD-M serves more.
 const MAX_SPOT_CANDLES: u32 = 1_000;
 const MAX_USD_M_CANDLES: u32 = 1_500;
+
+/// Binance's full `exchangeInfo` response for one selected trading venue.
+///
+/// The common market list intentionally normalizes perpetual contracts only.
+/// This provider contract retains every listed symbol and its original JSON so
+/// callers can use Binance-only filters and contract metadata.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceExchangeInfo {
+    /// The Binance venue that produced this listing.
+    pub venue: BinanceMarket,
+    /// Binance's declared exchange time zone when the endpoint provides one.
+    pub timezone: Option<String>,
+    /// Server timestamp published by Binance when the endpoint provides one.
+    pub server_time: Option<Timestamp>,
+    /// Every symbol in Binance's response, including USD-M dated contracts.
+    pub symbols: Vec<BinanceExchangeSymbol>,
+    /// Complete compact JSON response for forward-compatible provider fields.
+    pub raw_json: String,
+}
+
+/// One symbol entry from Binance's `exchangeInfo` response.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceExchangeSymbol {
+    /// Binance's native symbol, for example `BTCUSDT`.
+    pub symbol: String,
+    /// Binance's provider-specific trading status.
+    pub status: String,
+    /// Base asset code published by Binance.
+    pub base_asset: String,
+    /// Quote asset code published by Binance.
+    pub quote_asset: String,
+    /// USD-M contract type, such as `PERPETUAL`, when Binance provides it.
+    pub contract_type: Option<String>,
+    /// USD-M margin asset when Binance provides it.
+    pub margin_asset: Option<String>,
+    /// Complete compact JSON entry, including provider-specific filters.
+    pub raw_json: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawProviderExchangeInfo {
+    #[serde(default)]
+    timezone: Option<String>,
+    #[serde(default)]
+    server_time: Option<i64>,
+    #[serde(default)]
+    symbols: Vec<RawProviderExchangeSymbol>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawProviderExchangeSymbol {
+    symbol: String,
+    status: String,
+    base_asset: String,
+    quote_asset: String,
+    #[serde(default)]
+    contract_type: Option<String>,
+    #[serde(default)]
+    margin_asset: Option<String>,
+}
 
 impl BinanceMarket {
     /// The prefix this venue's public endpoints hang off.
@@ -103,6 +177,81 @@ pub(super) fn trades_request(
     )
 }
 
+/// Builds one Spot or USD-M compressed aggregate-trade request.
+pub(super) fn aggregate_trades_request(
+    adapter: &BinanceAdapter,
+    request: &BinanceAggregateTradesRequest,
+) -> Result<HttpRequest> {
+    let limit = request.limit.unwrap_or(500);
+    if !(1..=MAX_AGGREGATE_TRADE_LIMIT).contains(&limit) {
+        return Err(Error::invalid_request(
+            "limit",
+            format!(
+                "binance serves 1 to {MAX_AGGREGATE_TRADE_LIMIT} aggregate trades per call, not {limit}"
+            ),
+        ));
+    }
+    if adapter.venue() == BinanceMarket::UsdMFutures
+        && request.from_id.is_some()
+        && (request.start_time.is_some() || request.end_time.is_some())
+    {
+        return Err(Error::invalid_request(
+            "from_id",
+            "Binance aggregate trades use either from_id or start/end time bounds, not both",
+        ));
+    }
+    if request
+        .from_id
+        .is_some_and(|from_id| from_id > i64::MAX as u64)
+    {
+        return Err(Error::invalid_request(
+            "from_id",
+            "Binance aggregate trade IDs must fit the documented signed 64-bit range",
+        ));
+    }
+    let start_millis = request.start_time.map(inclusive_millis_at_or_after);
+    let end_millis = request.end_time.map(inclusive_millis_at_or_before);
+    if let (Some(start), Some(end)) = (start_millis, end_millis) {
+        if end < start {
+            return Err(Error::invalid_request(
+                "end_time",
+                "must not precede start_time",
+            ));
+        }
+        if adapter.venue() == BinanceMarket::UsdMFutures
+            && end - start >= USD_M_AGGREGATE_TRADE_WINDOW_MILLIS
+        {
+            return Err(Error::invalid_request(
+                "end_time",
+                "Binance aggregate trade time windows must be shorter than one hour",
+            ));
+        }
+    }
+
+    let mut params = vec![("symbol", adapter.symbol(&request.market)?)];
+    if let Some(from_id) = request.from_id {
+        params.push(("fromId", from_id.to_string()));
+    }
+    if let Some(start) = start_millis {
+        params.push(("startTime", start.to_string()));
+    }
+    if let Some(end) = end_millis {
+        params.push(("endTime", end.to_string()));
+    }
+    // Sending the documented default is explicit and keeps generated clients'
+    // request snapshots stable across Binance default changes.
+    params.push(("limit", limit.to_string()));
+
+    Ok(
+        HttpRequest::get(format!("{}/aggTrades", adapter.venue().public_prefix()))
+            .query(query(&params)),
+    )
+}
+
+fn inclusive_millis_at_or_before(value: Timestamp) -> i64 {
+    value.as_nanos().div_euclid(1_000_000)
+}
+
 pub(super) fn order_book_request(
     adapter: &BinanceAdapter,
     market: &Market,
@@ -138,6 +287,63 @@ pub(super) fn ticker_request(adapter: &BinanceAdapter, market: &Market) -> Resul
         HttpRequest::get(format!("{}/ticker/24hr", adapter.venue().public_prefix()))
             .query(query(&params)),
     )
+}
+
+pub(super) fn spot_average_price_request(
+    adapter: &BinanceAdapter,
+    market: &Market,
+) -> Result<HttpRequest> {
+    if adapter.venue() != BinanceMarket::Spot {
+        return Err(Error::unsupported(
+            Feature::Ticker,
+            EXCHANGE,
+            "average price is available on the Spot adapter only",
+        ));
+    }
+    let params = [("symbol", adapter.symbol(market)?)];
+    Ok(HttpRequest::get("/api/v3/avgPrice").query(query(&params)))
+}
+
+fn check_usd_m_market_data(adapter: &BinanceAdapter, what: &str) -> Result<()> {
+    if adapter.venue() == BinanceMarket::UsdMFutures {
+        return Ok(());
+    }
+    Err(Error::unsupported(
+        Feature::FundingRates,
+        EXCHANGE,
+        format!("{what} is available on the USD-M futures adapter only"),
+    ))
+}
+
+pub(super) fn mark_price_request(adapter: &BinanceAdapter, market: &Market) -> Result<HttpRequest> {
+    check_usd_m_market_data(adapter, "mark price")?;
+    let params = [("symbol", adapter.symbol(market)?)];
+    Ok(HttpRequest::get(format!(
+        "{}/premiumIndex",
+        BinanceMarket::UsdMFutures.public_prefix()
+    ))
+    .query(query(&params)))
+}
+
+pub(super) fn mark_prices_request(adapter: &BinanceAdapter) -> Result<HttpRequest> {
+    check_usd_m_market_data(adapter, "mark prices")?;
+    Ok(HttpRequest::get(format!(
+        "{}/premiumIndex",
+        BinanceMarket::UsdMFutures.public_prefix()
+    )))
+}
+
+pub(super) fn open_interest_request(
+    adapter: &BinanceAdapter,
+    market: &Market,
+) -> Result<HttpRequest> {
+    check_usd_m_market_data(adapter, "open interest")?;
+    let params = [("symbol", adapter.symbol(market)?)];
+    Ok(HttpRequest::get(format!(
+        "{}/openInterest",
+        BinanceMarket::UsdMFutures.public_prefix()
+    ))
+    .query(query(&params)))
 }
 
 /// One page of candles, ending at `cursor` and reaching at most `count` back.
@@ -186,6 +392,75 @@ pub(super) async fn markets(adapter: &BinanceAdapter, kind: MarketKind) -> Resul
         .collect())
 }
 
+/// Reads the complete provider listing for one explicitly selected venue.
+pub(super) async fn exchange_info(
+    adapter: &BinanceAdapter,
+    expected_venue: BinanceMarket,
+) -> Result<BinanceExchangeInfo> {
+    if adapter.venue() != expected_venue {
+        return Err(Error::unsupported(
+            Feature::Markets,
+            EXCHANGE,
+            match expected_venue {
+                BinanceMarket::Spot => {
+                    "Spot exchange information requires an adapter built with `spot`"
+                }
+                BinanceMarket::UsdMFutures => {
+                    "USD-M exchange information requires an adapter built with `usd_m_futures`"
+                }
+            },
+        ));
+    }
+
+    let body = adapter.send(markets_request(expected_venue)).await?;
+    exchange_info_from_body(expected_venue, &body)
+}
+
+fn exchange_info_from_body(venue: BinanceMarket, body: &str) -> Result<BinanceExchangeInfo> {
+    let response: serde_json::Value = parse::json(body, "exchangeInfo")?;
+    if !response.is_object() {
+        return Err(Error::decode(
+            "Binance exchangeInfo response is not an object",
+        ));
+    }
+    let raw: RawProviderExchangeInfo = serde_json::from_value(response.clone())
+        .map_err(|error| Error::decode(format!("unreadable exchangeInfo: {error}")))?;
+    let symbols = response
+        .get("symbols")
+        .and_then(serde_json::Value::as_array)
+        .ok_or_else(|| Error::decode("Binance exchangeInfo response has no symbol array"))?;
+    if raw.symbols.len() != symbols.len() {
+        return Err(Error::decode(
+            "Binance exchangeInfo symbols could not be paired with raw entries",
+        ));
+    }
+
+    let symbols = raw
+        .symbols
+        .into_iter()
+        .zip(symbols)
+        .map(|(symbol, raw_json)| {
+            Ok(BinanceExchangeSymbol {
+                symbol: symbol.symbol,
+                status: symbol.status,
+                base_asset: symbol.base_asset,
+                quote_asset: symbol.quote_asset,
+                contract_type: symbol.contract_type,
+                margin_asset: symbol.margin_asset,
+                raw_json: parse::canonical_json(raw_json, "exchangeInfo symbol")?,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    Ok(BinanceExchangeInfo {
+        venue,
+        timezone: raw.timezone,
+        server_time: raw.server_time.map(parse::millis),
+        symbols,
+        raw_json: parse::canonical_json(&response, "exchangeInfo")?,
+    })
+}
+
 pub(super) async fn trades(
     adapter: &BinanceAdapter,
     market: &Market,
@@ -196,6 +471,24 @@ pub(super) async fn trades(
         .await?;
 
     newest_first(market, parse::json(&body, "trades")?)
+}
+
+pub(super) async fn aggregate_trades(
+    adapter: &BinanceAdapter,
+    request: &BinanceAggregateTradesRequest,
+) -> Result<Vec<BinanceAggregateTrade>> {
+    let body = adapter
+        .send(aggregate_trades_request(adapter, request)?)
+        .await?;
+    let values: Vec<serde_json::Value> = parse::json(&body, "aggregate trades")?;
+    values
+        .iter()
+        .map(|value| {
+            let raw = serde_json::from_value::<parse::RawAggregateTrade>(value.clone())
+                .map_err(|error| Error::decode(format!("unreadable aggregate trade: {error}")))?;
+            parse::aggregate_trade(&request.market, &raw, value)
+        })
+        .collect()
 }
 
 /// Puts a trades payload in the order the common API promises.
@@ -228,6 +521,59 @@ pub(super) async fn ticker(adapter: &BinanceAdapter, market: &Market) -> Result<
     let body = adapter.send(ticker_request(adapter, market)?).await?;
     let raw: parse::RawTicker = parse::json(&body, "ticker")?;
     parse::ticker(market, &raw)
+}
+
+pub(super) async fn spot_average_price(
+    adapter: &BinanceAdapter,
+    market: &Market,
+) -> Result<BinanceSpotAveragePrice> {
+    let body = adapter
+        .send(spot_average_price_request(adapter, market)?)
+        .await?;
+    let raw: parse::RawSpotAveragePrice = parse::json(&body, "average price")?;
+    parse::spot_average_price(market, &raw)
+}
+
+pub(super) async fn mark_price(
+    adapter: &BinanceAdapter,
+    market: &Market,
+) -> Result<BinanceMarkPrice> {
+    let body = adapter.send(mark_price_request(adapter, market)?).await?;
+    let raw: parse::RawMarkPrice = parse::json(&body, "mark price")?;
+    parse::mark_price(market, &raw)
+}
+
+pub(super) async fn mark_prices(adapter: &BinanceAdapter) -> Result<Vec<BinanceMarkPrice>> {
+    let request = mark_prices_request(adapter)?;
+    let markets = markets(adapter, MarketKind::Perpetual).await?;
+    let body = adapter.send(request).await?;
+    let raw: Vec<parse::RawMarkPrice> = parse::json(&body, "mark prices")?;
+    mark_price_list(&markets, &raw)
+}
+
+fn mark_price_list(
+    markets: &[MarketInfo],
+    raw: &[parse::RawMarkPrice],
+) -> Result<Vec<BinanceMarkPrice>> {
+    raw.iter()
+        .filter_map(|entry| {
+            markets
+                .iter()
+                .find(|market| market.native_symbol == entry.symbol)
+                .map(|market| parse::mark_price(&market.market, entry))
+        })
+        .collect()
+}
+
+pub(super) async fn open_interest(
+    adapter: &BinanceAdapter,
+    market: &Market,
+) -> Result<BinanceOpenInterest> {
+    let body = adapter
+        .send(open_interest_request(adapter, market)?)
+        .await?;
+    let raw: parse::RawOpenInterest = parse::json(&body, "open interest")?;
+    parse::open_interest(market, &raw)
 }
 
 /// Reads candles, oldest first, paging when one response cannot hold the
@@ -357,7 +703,7 @@ pub(super) async fn spot_symbol_filters(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{Exchange, Interval};
+    use crate::types::{Exchange, Interval, MarketStatus};
 
     fn spot() -> BinanceAdapter {
         BinanceAdapter::spot()
@@ -403,11 +749,272 @@ mod tests {
                 .target(),
             "/api/v3/ticker/24hr?symbol=BTCUSDT"
         );
+        let authenticated_spot = spot().with_credentials("key", "secret");
+        let average_price =
+            spot_average_price_request(&authenticated_spot, &btc_usdt()).expect("a Spot market");
+        assert_eq!(average_price.method, crate::transport::HttpMethod::Get);
+        assert_eq!(average_price.target(), "/api/v3/avgPrice?symbol=BTCUSDT");
+        assert!(average_price.headers.is_empty());
+        assert_eq!(average_price.body, None);
         assert_eq!(
             order_book_request(&spot(), &btc_usdt(), Some(100))
                 .expect("a valid depth")
                 .target(),
             "/api/v3/depth?symbol=BTCUSDT&limit=100"
+        );
+        assert_eq!(
+            mark_price_request(&perp(), &btc_usdt_perp())
+                .expect("a USD-M market")
+                .target(),
+            "/fapi/v1/premiumIndex?symbol=BTCUSDT"
+        );
+        assert_eq!(
+            mark_prices_request(&perp())
+                .expect("a USD-M adapter")
+                .target(),
+            "/fapi/v1/premiumIndex"
+        );
+        assert_eq!(
+            open_interest_request(&perp(), &btc_usdt_perp())
+                .expect("a USD-M market")
+                .target(),
+            "/fapi/v1/openInterest?symbol=BTCUSDT"
+        );
+    }
+
+    #[test]
+    fn provider_exchange_info_keeps_every_symbol_and_raw_filter_data() {
+        let listing = exchange_info_from_body(
+            BinanceMarket::UsdMFutures,
+            r#"{
+              "timezone":"UTC","serverTime":1700000000000,
+              "symbols":[
+                {"symbol":"BTCUSDT","status":"TRADING","baseAsset":"BTC","quoteAsset":"USDT","contractType":"PERPETUAL","marginAsset":"USDT","filters":[{"filterType":"PRICE_FILTER"}]},
+                {"symbol":"BTCUSDT_240628","status":"TRADING","baseAsset":"BTC","quoteAsset":"USDT","contractType":"CURRENT_QUARTER","marginAsset":"USDT","filters":[{"filterType":"PRICE_FILTER"}]}
+              ],"exchangeFilters":[{"futureField":true}]
+            }"#,
+        )
+        .expect("official-shaped exchangeInfo response");
+
+        assert_eq!(listing.symbols.len(), 2);
+        assert_eq!(
+            listing.symbols[1].contract_type.as_deref(),
+            Some("CURRENT_QUARTER")
+        );
+        assert!(listing.symbols[0].raw_json.contains("filters"));
+        assert!(listing.raw_json.contains("exchangeFilters"));
+    }
+
+    #[test]
+    fn aggregate_trades_select_the_venue_path_and_preserve_query_order() {
+        let request = BinanceAggregateTradesRequest::new(btc_usdt_perp())
+            .with_from_id(26129)
+            .limit(50);
+        assert_eq!(
+            aggregate_trades_request(&perp(), &request)
+                .expect("a valid aggregate-trade request")
+                .target(),
+            "/fapi/v1/aggTrades?symbol=BTCUSDT&fromId=26129&limit=50"
+        );
+
+        let timed = BinanceAggregateTradesRequest::new(btc_usdt_perp())
+            .start_time(Timestamp::from_nanos(1_623_319_461_670_500_000))
+            .end_time(Timestamp::from_nanos(1_623_319_462_670_499_999));
+        assert_eq!(
+            aggregate_trades_request(&perp(), &timed)
+                .expect("a valid time window")
+                .target(),
+            "/fapi/v1/aggTrades?symbol=BTCUSDT&startTime=1623319461671&endTime=1623319462670&limit=500"
+        );
+
+        let spot_timed = BinanceAggregateTradesRequest::new(btc_usdt())
+            .with_from_id(26129)
+            .start_time(Timestamp::from_millis(1_623_319_461_670))
+            .end_time(Timestamp::from_millis(1_623_322_461_670));
+        assert_eq!(
+            aggregate_trades_request(&spot(), &spot_timed)
+                .expect("a valid Spot aggregate-trade request")
+                .target(),
+            "/api/v3/aggTrades?symbol=BTCUSDT&fromId=26129&startTime=1623319461670&endTime=1623322461670&limit=500"
+        );
+    }
+
+    #[test]
+    fn aggregate_trades_apply_venue_specific_validation_before_network() {
+        let spot_wide_window = BinanceAggregateTradesRequest::new(btc_usdt())
+            .start_time(Timestamp::from_millis(1_000))
+            .end_time(Timestamp::from_millis(3_601_000));
+        assert!(aggregate_trades_request(&spot(), &spot_wide_window).is_ok());
+
+        let spot_mixed = BinanceAggregateTradesRequest::new(btc_usdt())
+            .with_from_id(10)
+            .start_time(Timestamp::from_millis(1_000));
+        assert!(aggregate_trades_request(&spot(), &spot_mixed).is_ok());
+
+        let usd_m_mixed = BinanceAggregateTradesRequest::new(btc_usdt_perp())
+            .with_from_id(10)
+            .start_time(Timestamp::from_millis(1_000));
+        assert!(matches!(
+            aggregate_trades_request(&perp(), &usd_m_mixed),
+            Err(Error::InvalidRequest { field, .. }) if field == "from_id"
+        ));
+
+        let usd_m_wide_window = BinanceAggregateTradesRequest::new(btc_usdt_perp())
+            .start_time(Timestamp::from_millis(1_000))
+            .end_time(Timestamp::from_millis(3_601_000));
+        assert!(matches!(
+            aggregate_trades_request(&perp(), &usd_m_wide_window),
+            Err(Error::InvalidRequest { field, .. }) if field == "end_time"
+        ));
+
+        let rounded_under_one_hour = BinanceAggregateTradesRequest::new(btc_usdt_perp())
+            .start_time(Timestamp::from_nanos(500_000))
+            .end_time(Timestamp::from_nanos(3_600_000_500_000));
+        assert_eq!(
+            aggregate_trades_request(&perp(), &rounded_under_one_hour)
+                .expect("a window shorter than one hour on the wire")
+                .target(),
+            "/fapi/v1/aggTrades?symbol=BTCUSDT&startTime=1&endTime=3600000&limit=500"
+        );
+
+        let one_hour_on_the_wire = BinanceAggregateTradesRequest::new(btc_usdt_perp())
+            .start_time(Timestamp::from_nanos(500_000))
+            .end_time(Timestamp::from_nanos(3_600_001_000_000));
+        assert!(matches!(
+            aggregate_trades_request(&perp(), &one_hour_on_the_wire),
+            Err(Error::InvalidRequest { field, .. }) if field == "end_time"
+        ));
+
+        let out_of_range =
+            BinanceAggregateTradesRequest::new(btc_usdt_perp()).with_from_id(i64::MAX as u64 + 1);
+        assert!(matches!(
+            aggregate_trades_request(&perp(), &out_of_range),
+            Err(Error::InvalidRequest { field, .. }) if field == "from_id"
+        ));
+
+        for request in [
+            BinanceAggregateTradesRequest::new(btc_usdt_perp()).limit(0),
+            BinanceAggregateTradesRequest::new(btc_usdt_perp()).limit(1_001),
+        ] {
+            assert!(matches!(
+                aggregate_trades_request(&perp(), &request),
+                Err(Error::InvalidRequest { .. })
+            ));
+        }
+    }
+
+    #[test]
+    fn aggregate_trades_parse_spot_fields_without_normal_quantity() {
+        let values: Vec<serde_json::Value> = parse::json(
+            r#"[{"a":26129,"p":"0.01633102","q":"4.70443515",
+                "f":27781,"l":27784,"T":1498793709153,"m":true,"M":true}]"#,
+            "aggregate trades",
+        )
+        .expect("official aggregate-trade payload");
+        let raw = serde_json::from_value::<parse::RawAggregateTrade>(values[0].clone())
+            .expect("aggregate trade fields");
+        let trade = parse::aggregate_trade(&btc_usdt(), &raw, &values[0]).expect("aggregate trade");
+
+        assert_eq!(trade.aggregate_id, 26129);
+        assert_eq!(trade.first_trade_id, 27781);
+        assert_eq!(trade.last_trade_id, 27784);
+        assert_eq!(trade.quantity.to_string(), "4.70443515");
+        assert_eq!(trade.normal_quantity, None);
+        assert_eq!(trade.best_price_match, Some(true));
+        assert_eq!(trade.taker_side, crate::types::Side::Sell);
+        assert_eq!(
+            trade.raw_json,
+            r#"{"a":26129,"p":"0.01633102","q":"4.70443515","f":27781,"l":27784,"T":1498793709153,"m":true,"M":true}"#
+        );
+    }
+
+    #[test]
+    fn aggregate_trades_parse_usd_m_fields_without_spot_marker() {
+        let values: Vec<serde_json::Value> = parse::json(
+            r#"[{"a":26130,"p":"0.01633103","q":"1.2","nq":"1.00000000",
+                "f":27785,"l":27785,"T":1498793709253,"m":false}]"#,
+            "aggregate trades",
+        )
+        .expect("official aggregate-trade payload");
+        let raw = serde_json::from_value::<parse::RawAggregateTrade>(values[0].clone())
+            .expect("aggregate trade fields");
+        let trade =
+            parse::aggregate_trade(&btc_usdt_perp(), &raw, &values[0]).expect("aggregate trade");
+
+        assert_eq!(trade.normal_quantity.expect("nq").to_string(), "1.00000000");
+        assert_eq!(trade.best_price_match, None);
+        assert_eq!(trade.taker_side, crate::types::Side::Buy);
+
+        let invalid = parse::RawAggregateTrade {
+            aggregate_id: 1,
+            price: "1".to_owned(),
+            quantity: "1".to_owned(),
+            normal_quantity: None,
+            first_trade_id: 3,
+            last_trade_id: 2,
+            time: 0,
+            is_buyer_maker: false,
+            best_price_match: None,
+        };
+        assert!(matches!(
+            parse::aggregate_trade(&btc_usdt(), &invalid, &values[0]),
+            Err(Error::Decode { .. })
+        ));
+    }
+
+    #[test]
+    fn mark_price_and_open_interest_are_usd_m_only() {
+        assert!(matches!(
+            mark_price_request(&spot(), &btc_usdt()),
+            Err(Error::Unsupported { feature, .. }) if feature == Feature::FundingRates
+        ));
+        assert!(matches!(
+            mark_prices_request(&spot()),
+            Err(Error::Unsupported { feature, .. }) if feature == Feature::FundingRates
+        ));
+        assert!(matches!(
+            open_interest_request(&spot(), &btc_usdt()),
+            Err(Error::Unsupported { feature, .. }) if feature == Feature::FundingRates
+        ));
+    }
+
+    #[test]
+    fn mark_price_list_keeps_only_exchange_info_perpetuals() {
+        let raw: Vec<parse::RawMarkPrice> = parse::json(
+            r#"[
+              {"symbol":"BTCUSDT","markPrice":"1","indexPrice":"1","estimatedSettlePrice":"0","lastFundingRate":"0","interestRate":"0","nextFundingTime":0,"time":0},
+              {"symbol":"BTCU","markPrice":"1","indexPrice":"1","estimatedSettlePrice":"0","lastFundingRate":"0","interestRate":"0","nextFundingTime":0,"time":0},
+              {"symbol":"TRADIFIUSDT","markPrice":"1","indexPrice":"1","estimatedSettlePrice":"0","lastFundingRate":"0","interestRate":"0","nextFundingTime":0,"time":0},
+              {"symbol":"BTCUSDT_260925","markPrice":"1","indexPrice":"1","estimatedSettlePrice":"0","lastFundingRate":"0","interestRate":"0","nextFundingTime":0,"time":0}
+            ]"#,
+            "mark prices",
+        )
+        .expect("Binance mark-price array");
+        let markets = vec![
+            MarketInfo {
+                market: btc_usdt_perp(),
+                native_symbol: "BTCUSDT".to_owned(),
+                status: MarketStatus::Active,
+                korean_name: None,
+                english_name: None,
+            },
+            MarketInfo {
+                market: Market::perpetual(Exchange::Binance, "BTC", "U"),
+                native_symbol: "BTCU".to_owned(),
+                status: MarketStatus::Active,
+                korean_name: None,
+                english_name: None,
+            },
+        ];
+
+        let prices = mark_price_list(&markets, &raw).expect("perpetual prices");
+
+        assert_eq!(
+            prices.iter().map(|price| &price.market).collect::<Vec<_>>(),
+            vec![
+                &btc_usdt_perp(),
+                &Market::perpetual(Exchange::Binance, "BTC", "U")
+            ]
         );
     }
 
@@ -534,6 +1141,35 @@ mod tests {
         assert!(
             order_book_request(&spot(), &Market::spot(Exchange::Upbit, "BTC", "KRW"), None)
                 .is_err()
+        );
+        assert!(matches!(
+            spot_average_price_request(&perp(), &btc_usdt_perp()),
+            Err(Error::Unsupported {
+                feature: Feature::Ticker,
+                ..
+            })
+        ));
+        assert!(matches!(
+            spot_average_price_request(&spot(), &btc_usdt_perp()),
+            Err(Error::InvalidRequest { field, .. }) if field == "market"
+        ));
+    }
+
+    #[test]
+    fn spot_average_price_preserves_the_server_window_price_and_close_time() {
+        let raw: parse::RawSpotAveragePrice = parse::json(
+            r#"{"mins":7,"price":"9.357518340000000000","closeTime":1694061154503}"#,
+            "average price",
+        )
+        .expect("official average-price payload");
+        let average = parse::spot_average_price(&btc_usdt(), &raw).expect("average price");
+
+        assert_eq!(average.market, btc_usdt());
+        assert_eq!(average.minutes, 7);
+        assert_eq!(average.price.to_string(), "9.357518340000000000");
+        assert_eq!(
+            average.close_time,
+            Timestamp::from_millis(1_694_061_154_503)
         );
     }
 

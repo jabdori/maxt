@@ -56,10 +56,74 @@ class _GeneratedNativeClientDelegateApi:
         value = await self._call(self._client.balances)
         return [_model_from_wire("Balance", item) for item in value]
 
+    async def order_rules(self, market: Market) -> OrderRules:
+        value = await self._call(self._client.order_rules, market)
+        return _model_from_wire("OrderRules", value)
+
+    async def asset_networks(self, asset: str) -> list[AssetNetwork]:
+        value = await self._call(self._client.asset_networks, asset)
+        return [_model_from_wire("AssetNetwork", item) for item in value]
+
+    async def deposit_addresses(self) -> list[DepositAddressEntry]:
+        value = await self._call(self._client.deposit_addresses)
+        return [_model_from_wire("DepositAddressEntry", item) for item in value]
+
+    async def deposit_address(self, request: DepositAddressRequest) -> DepositAddress:
+        value = await self._call(self._client.deposit_address, request)
+        return _model_from_wire("DepositAddress", value)
+
+    async def create_deposit_address(self, request: DepositAddressRequest) -> DepositAddress:
+        value = await self._call(self._client.create_deposit_address, request)
+        return _model_from_wire("DepositAddress", value)
+
+    async def prepare_withdrawal(self, request: WithdrawRequest) -> WithdrawalQuote:
+        value = await self._call(self._client.prepare_withdrawal, request)
+        return _model_from_wire("WithdrawalQuote", value)
+
+    async def withdraw(self, request: WithdrawRequest) -> Withdrawal:
+        value = await self._call(self._client.withdraw, request)
+        return _model_from_wire("Withdrawal", value)
+
+    async def deposit(self, request: TransferLookupRequest) -> Deposit:
+        value = await self._call(self._client.deposit, request)
+        return _model_from_wire("Deposit", value)
+
+    async def withdrawal(self, request: TransferLookupRequest) -> Withdrawal:
+        value = await self._call(self._client.withdrawal, request)
+        return _model_from_wire("Withdrawal", value)
+
+    async def cancel_withdrawal(self, withdrawal_id: str) -> None:
+        await self._call(self._client.cancel_withdrawal, withdrawal_id)
+        return None
+
+    async def deposits(self, request: TransferHistoryRequest) -> Page[Deposit]:
+        value = await self._call(self._client.deposits, request)
+        return _model_from_wire("DepositPage", value)
+
+    async def withdrawals(self, request: TransferHistoryRequest) -> Page[Withdrawal]:
+        value = await self._call(self._client.withdrawals, request)
+        return _model_from_wire("WithdrawalPage", value)
+
     async def open_orders(self, market: Optional[Market] = None) -> list[Order]:
         method = self._client.open_orders if market is None else self._client.open_orders_on
         value = await self._call(method, *(() if market is None else (market,)))
         return [_model_from_wire("Order", item) for item in value]
+
+    async def order(self, market: Market, order_id: str) -> Order:
+        value = await self._call(self._client.order, market, order_id)
+        return _model_from_wire("Order", value)
+
+    async def order_by_client_id(self, market: Market, client_id: str) -> Order:
+        value = await self._call(self._client.order_by_client_id, market, client_id)
+        return _model_from_wire("Order", value)
+
+    async def orders_by_ids(self, request: OrderLookupRequest) -> list[Order]:
+        value = await self._call(self._client.orders_by_ids, request)
+        return [_model_from_wire("Order", item) for item in value]
+
+    async def order_history(self, request: OrderHistoryRequest) -> Page[Order]:
+        value = await self._call(self._client.order_history, request)
+        return _model_from_wire("OrderPage", value)
 
     async def subscribe_account(self, config: StreamConfig) -> AccountStream[Union[StreamEvent[AccountEvent], StreamError]]:
         value = await self._call(self._client.subscribe_account, config)
@@ -69,9 +133,17 @@ class _GeneratedNativeClientDelegateApi:
         value = await self._call(self._client.place_order, request)
         return _model_from_wire("Order", value)
 
-    async def cancel_order(self, market: Market, order_id: str) -> Order:
-        value = await self._call(self._client.cancel_order, market, order_id)
-        return _model_from_wire("Order", value)
+    async def cancel_order(self, market: Market, order_id: str) -> None:
+        await self._call(self._client.cancel_order, market, order_id)
+        return None
+
+    async def cancel_order_by_client_id(self, market: Market, client_id: str) -> None:
+        await self._call(self._client.cancel_order_by_client_id, market, client_id)
+        return None
+
+    async def cancel_orders(self, request: CancelOrdersRequest) -> CancelOrdersResult:
+        value = await self._call(self._client.cancel_orders, request)
+        return _model_from_wire("CancelOrdersResult", value)
 
     async def positions(self, market: Optional[Market] = None) -> list[Position]:
         method = self._client.positions if market is None else self._client.positions_on
@@ -93,6 +165,18 @@ class _GeneratedNativeClientDelegateApi:
     async def set_margin(self, request: MarginRequest) -> None:
         await self._call(self._client.set_margin, request)
         return None
+
+    async def prepare_transfer_to(self, destination: _GeneratedNativeClientDelegateApi, request: ExchangeTransferRequest) -> TransferPlan:
+        value = await self._call(self._client.prepare_transfer_to, destination._client, request)
+        return _model_from_wire("TransferPlan", value)
+
+    async def prepare_transfer_to_chain(self, request: ChainTransferRequest) -> TransferPlan:
+        value = await self._call(self._client.prepare_transfer_to_chain, request)
+        return _model_from_wire("TransferPlan", value)
+
+    async def execute_transfer(self, plan: TransferPlan) -> Withdrawal:
+        value = await self._call(self._client.execute_transfer, plan)
+        return _model_from_wire("Withdrawal", value)
 
 
 __all__ = ["_GeneratedNativeClientDelegateApi"]

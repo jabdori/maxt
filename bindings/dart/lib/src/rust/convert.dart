@@ -11,6 +11,7 @@ class NativeError implements FrbException {
   final String message;
   final String? detail;
   final String? field;
+  final WireTransferErrorKind? transferKind;
   final WireFeature? feature;
   final String? exchange;
   final String? code;
@@ -24,6 +25,7 @@ class NativeError implements FrbException {
     required this.message,
     this.detail,
     this.field,
+    this.transferKind,
     this.feature,
     this.exchange,
     this.code,
@@ -39,6 +41,7 @@ class NativeError implements FrbException {
       message.hashCode ^
       detail.hashCode ^
       field.hashCode ^
+      transferKind.hashCode ^
       feature.hashCode ^
       exchange.hashCode ^
       code.hashCode ^
@@ -56,6 +59,7 @@ class NativeError implements FrbException {
           message == other.message &&
           detail == other.detail &&
           field == other.field &&
+          transferKind == other.transferKind &&
           feature == other.feature &&
           exchange == other.exchange &&
           code == other.code &&
@@ -67,6 +71,7 @@ class NativeError implements FrbException {
 
 enum NativeErrorKind {
   invalidRequest,
+  transfer,
   unsupported,
   adapter,
   auth,
@@ -97,6 +102,15 @@ class WireBalance {
           asset == other.asset &&
           available == other.available &&
           locked == other.locked;
+}
+
+/// Binance C2C 거래 방향입니다.
+enum WireBinanceC2cTradeType {
+  /// C2C 매수입니다.
+  buy,
+
+  /// C2C 매도입니다.
+  sell,
 }
 
 class WireBinanceSpotOrderDetail {
@@ -187,6 +201,8 @@ class WireBinanceSymbolFilters {
 
 enum WireBithumbAlertStep { caution, warning, danger, unknown }
 
+enum WireBithumbClosedOrderState { done, cancel }
+
 class WireBithumbMarketAlert {
   final WireMarket market;
   final String kind;
@@ -232,6 +248,17 @@ class WireBithumbMarketWarning {
           market == other.market &&
           warning == other.warning;
 }
+
+enum WireBithumbOrderDirection { ascending, descending }
+
+/// Bithumb 주문 목록 조회에 사용할 주문 상태입니다.
+enum WireBithumbOrderListState { wait, watch, done, cancel }
+
+enum WireBithumbPendingOrderState { wait, watch }
+
+enum WireBithumbTwapOrderDirection { ascending, descending }
+
+enum WireBithumbTwapState { progress, done, cancel }
 
 class WireCandle {
   final WireMarket market;
@@ -323,7 +350,20 @@ class WireCandleRequest {
           limit == other.limit;
 }
 
-enum WireExchange { upbit, bithumb, binance, hyperliquid }
+/// Dart와 Rust 사이에서 거래소를 식별하는 값입니다.
+enum WireExchange {
+  /// Upbit입니다.
+  upbit,
+
+  /// Bithumb입니다.
+  bithumb,
+
+  /// Binance입니다.
+  binance,
+
+  /// Hyperliquid입니다.
+  hyperliquid,
+}
 
 enum WireExchangeErrorKind { rejected, rateLimited, unavailable, unknown }
 
@@ -338,7 +378,18 @@ enum WireFeature {
   tickerStream,
   candleStream,
   balances,
+  assetNetworks,
+  depositAddresses,
+  depositHistory,
+  depositLookup,
+  travelRule,
+  withdrawalQuotes,
+  withdrawals,
+  withdrawalHistory,
+  withdrawalLookup,
+  withdrawalCancellation,
   openOrders,
+  orderHistory,
   accountStream,
   trading,
   positions,
@@ -613,11 +664,13 @@ enum WireInterval {
   min1,
   min3,
   min5,
+  min10,
   min15,
   min30,
   hour1,
   hour2,
   hour4,
+  hour6,
   hour8,
   hour12,
   day1,
@@ -701,10 +754,18 @@ class WireMarginSummary {
           availableBalance == other.availableBalance;
 }
 
+/// 거래소·시장 종류·기준 통화·견적 통화로 구성된 시장 식별자입니다.
 class WireMarket {
+  /// 시장을 제공하는 거래소입니다.
   final WireExchange exchange;
+
+  /// 현물 또는 무기한 선물 시장입니다.
   final WireMarketKind kind;
+
+  /// 기준 통화입니다.
   final String base;
+
+  /// 견적 통화입니다.
   final String quote;
 
   const WireMarket({
@@ -764,7 +825,14 @@ class WireMarketInfo {
           englishName == other.englishName;
 }
 
-enum WireMarketKind { spot, perpetual }
+/// Dart와 Rust 사이에서 시장 종류를 식별하는 값입니다.
+enum WireMarketKind {
+  /// 현물 시장입니다.
+  spot,
+
+  /// 무기한 선물 시장입니다.
+  perpetual,
+}
 
 enum WireMarketStatus { active, paused, delisted, unknown }
 
@@ -843,6 +911,8 @@ class WireOrderBook {
           asks == other.asks;
 }
 
+enum WireOrderIdKind { exchange, client }
+
 class WireOrderRequest {
   final WireMarket market;
   final WireSide side;
@@ -851,6 +921,7 @@ class WireOrderRequest {
   final String? price;
   final WireTimeInForce? timeInForce;
   final bool reduceOnly;
+  final String? clientId;
 
   const WireOrderRequest({
     required this.market,
@@ -860,6 +931,7 @@ class WireOrderRequest {
     this.price,
     this.timeInForce,
     required this.reduceOnly,
+    this.clientId,
   });
 
   @override
@@ -870,7 +942,8 @@ class WireOrderRequest {
       size.hashCode ^
       price.hashCode ^
       timeInForce.hashCode ^
-      reduceOnly.hashCode;
+      reduceOnly.hashCode ^
+      clientId.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -883,7 +956,8 @@ class WireOrderRequest {
           size == other.size &&
           price == other.price &&
           timeInForce == other.timeInForce &&
-          reduceOnly == other.reduceOnly;
+          reduceOnly == other.reduceOnly &&
+          clientId == other.clientId;
 }
 
 enum WireOrderStatus {
@@ -896,7 +970,7 @@ enum WireOrderStatus {
   unknown,
 }
 
-enum WireOrderType { market, limit }
+enum WireOrderType { market, limit, best }
 
 class WirePosition {
   final WireMarket market;
@@ -949,10 +1023,21 @@ class WirePosition {
           marginMode == other.marginMode;
 }
 
-enum WireSide { buy, sell }
+/// 주문·체결 방향입니다.
+enum WireSide {
+  /// 매수입니다.
+  buy,
 
+  /// 매도입니다.
+  sell,
+}
+
+/// 수량이 기준 통화인지 견적 통화인지와 그 정확한 십진 문자열입니다.
 class WireSize {
+  /// 수량 단위입니다.
   final WireSizeKind kind;
+
+  /// 반올림하지 않은 십진 문자열입니다.
   final String value;
 
   const WireSize({required this.kind, required this.value});
@@ -1072,6 +1157,21 @@ class WireTrade {
           id == other.id;
 }
 
+enum WireTransferErrorKind {
+  assetMismatch,
+  networkMismatch,
+  ambiguousNetwork,
+  networkUnavailable,
+  memoRequired,
+  destinationUnavailable,
+  addressNotAllowed,
+  travelRuleRequired,
+  amountOutOfRange,
+  planExpired,
+}
+
+enum WireUpbitKrwTwoFactorType { kakao, naver, hana }
+
 class WireUpbitMarketEvent {
   final WireMarket market;
   final bool warning;
@@ -1095,3 +1195,43 @@ class WireUpbitMarketEvent {
           warning == other.warning &&
           cautions == other.cautions;
 }
+
+enum WireUpbitOrderDirection { ascending, descending }
+
+/// 포켓 이전 이력의 입출금 방향 필터입니다.
+enum WireUpbitPocketTransferDirection {
+  /// 들어온 이전만 조회합니다.
+  incoming,
+
+  /// 나간 이전만 조회합니다.
+  outgoing,
+
+  /// 양방향 이전을 조회합니다.
+  all,
+}
+
+/// 포켓 이전 이력의 시간 정렬 순서입니다.
+enum WireUpbitPocketTransferOrder {
+  /// 오래된 이전부터 반환합니다.
+  ascending,
+
+  /// 최신 이전부터 반환합니다.
+  descending,
+}
+
+/// Upbit 포켓 이전의 처리 상태입니다.
+enum WireUpbitPocketTransferState {
+  /// 요청이 접수됐습니다.
+  submitted,
+
+  /// 이전을 처리 중입니다.
+  processing,
+
+  /// 이전이 완료됐습니다.
+  done,
+
+  /// 이전이 실패했습니다.
+  failed,
+}
+
+enum WireUpbitSmpType { cancelMaker, cancelTaker, reduce }

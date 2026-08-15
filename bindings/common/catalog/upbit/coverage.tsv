@@ -1,0 +1,61 @@
+# Upbit curated coverage-to-official catalog bridge
+# local_source: bindings/common/src/coverage.rs OPERATIONS (57 Upbit rows)
+# official_sources: manifest.tsv (47 Global rows), korea.tsv (10 Korea-only rows)
+# columns: local_product	local_operation_id	official_product	official_interface	official_method	official_path_or_message	official_operation_id	mapping_note
+quotation	markets	Quotation	Http	GET	/v1/market/all	list-trading-pairs	exact
+quotation	candles_seconds	Quotation	Http	GET	/v1/candles/seconds	list-candles-seconds	exact
+quotation	candles_minutes	Quotation	Http	GET	/v1/candles/minutes/{unit}	list-candles-minutes	exact
+quotation	candles_days	Quotation	Http	GET	/v1/candles/days	list-candles-days	exact
+quotation	candles_weeks	Quotation	Http	GET	/v1/candles/weeks	list-candles-weeks	exact
+quotation	candles_months	Quotation	Http	GET	/v1/candles/months	list-candles-months	exact
+quotation	candles_years	Quotation	Http	GET	/v1/candles/years	list-candles-years	exact
+quotation	trades_ticks	Quotation	Http	GET	/v1/trades/ticks	list-pair-trades	exact
+quotation	ticker	Quotation	Http	GET	/v1/ticker	list-tickers	exact
+quotation	tickers_by_quote	Quotation	Http	GET	/v1/ticker/all	list-quote-tickers	exact
+quotation	orderbook	Quotation	Http	GET	/v1/orderbook	list-orderbooks	exact
+quotation	orderbook_instruments	Quotation	Http	GET	/v1/orderbook/instruments	list-orderbook-instruments	exact
+quotation	ticker_stream	Quotation	WebSocketStream	SUBSCRIBE	type=ticker	ticker	local_message_omits_type_prefix
+quotation	trade_stream	Quotation	WebSocketStream	SUBSCRIBE	type=trade	trade	local_message_omits_type_prefix
+quotation	orderbook_stream	Quotation	WebSocketStream	SUBSCRIBE	type=orderbook	orderbook	local_message_omits_type_prefix
+quotation	candle_stream	Quotation	WebSocketStream	SUBSCRIBE	type=candle.{unit}	candle.{unit}	local_message_omits_type_prefix
+quotation	list_subscriptions	Quotation	WebSocketRequest	LIST_SUBSCRIPTIONS	method=LIST_SUBSCRIPTIONS	LIST_SUBSCRIPTIONS	local_message_omits_method_prefix
+exchange	balances	Exchange	Http	GET	/v1/accounts	get-balance	exact
+exchange	available_order_info	Exchange	Http	GET	/v1/orders/chance	available-order-information	exact
+exchange	test_order	Exchange	Http	POST	/v1/orders/test	order-test	exact
+exchange	open_orders	Exchange	Http	GET	/v1/orders/open	list-open-orders	exact
+exchange	get_order	Exchange	Http	GET	/v1/order	get-order	exact
+exchange	orders_by_ids	Exchange	Http	GET	/v1/orders/uuids	list-orders-by-ids	exact
+exchange	closed_orders	Exchange	Http	GET	/v1/orders/closed	list-closed-orders	exact
+exchange	new_order	Exchange	Http	POST	/v1/orders	new-order	exact
+exchange	cancel_order	Exchange	Http	DELETE	/v1/order	cancel-order	exact
+exchange	cancel_orders_by_ids	Exchange	Http	DELETE	/v1/orders/uuids	cancel-orders-by-ids	exact
+exchange	batch_cancel_open_orders	Exchange	Http	DELETE	/v1/orders/open	batch-cancel-orders	exact
+exchange	cancel_and_new_order	Exchange	Http	POST	/v1/orders/cancel_and_new	cancel-and-new-order	exact
+exchange	my_order_stream	Exchange	WebSocketStream	SUBSCRIBE	type=myOrder	myOrder	local_message_omits_type_prefix
+exchange	my_asset_stream	Exchange	WebSocketStream	SUBSCRIBE	type=myAsset	myAsset	local_message_omits_type_prefix
+wallet	wallet_status	Deposits and withdrawals	Http	GET	/v1/status/wallet	get-service-status	official_product_is_deposits_and_withdrawals
+wallet	deposit_chance	Deposits and withdrawals	Http	GET	/v1/deposits/chance/coin	available-deposit-information	official_product_is_deposits_and_withdrawals
+wallet	deposit_addresses	Deposits and withdrawals	Http	GET	/v1/deposits/coin_addresses	list-deposit-addresses	official_product_is_deposits_and_withdrawals
+wallet	deposit_address	Deposits and withdrawals	Http	GET	/v1/deposits/coin_address	get-deposit-address	official_product_is_deposits_and_withdrawals
+wallet	create_deposit_address	Deposits and withdrawals	Http	POST	/v1/deposits/generate_coin_address	create-deposit-address	official_product_is_deposits_and_withdrawals
+wallet	withdraw_chance	Deposits and withdrawals	Http	GET	/v1/withdraws/chance	available-withdrawal-information	official_product_is_deposits_and_withdrawals
+wallet	withdraw_addresses	Deposits and withdrawals	Http	GET	/v1/withdraws/coin_addresses	list-withdrawal-addresses	official_product_is_deposits_and_withdrawals
+wallet	withdraw_coin	Deposits and withdrawals	Http	POST	/v1/withdraws/coin	withdraw	official_product_is_deposits_and_withdrawals
+wallet	withdrawal	Deposits and withdrawals	Http	GET	/v1/withdraw	get-withdrawal	official_product_is_deposits_and_withdrawals
+wallet	cancel_withdrawal	Deposits and withdrawals	Http	DELETE	/v1/withdraws/coin	cancel-withdrawal	official_product_is_deposits_and_withdrawals
+wallet	deposits	Deposits and withdrawals	Http	GET	/v1/deposits	list-deposits	official_product_is_deposits_and_withdrawals
+wallet	deposit	Deposits and withdrawals	Http	GET	/v1/deposit	get-deposit	official_product_is_deposits_and_withdrawals
+wallet	withdrawals	Deposits and withdrawals	Http	GET	/v1/withdraws	list-withdrawals	official_product_is_deposits_and_withdrawals
+travel_rule	travel_rule_vasps	Travel Rule	Http	GET	/v1/travel_rule/vasps	list-travelrule-vasps	exact
+travel_rule	travel_rule_verify_uuid	Travel Rule	Http	POST	/v1/travel_rule/deposit/uuid	verify-travelrule-by-uuid	exact
+travel_rule	travel_rule_verify_txid	Travel Rule	Http	POST	/v1/travel_rule/deposit/txid	verify-travelrule-by-txid	exact
+wallet	deposit_krw	Korea deposits and withdrawals	Http	POST	/v1/deposits/krw	deposit-krw	official_product_is_korea_deposits_and_withdrawals
+wallet	withdraw_krw	Korea deposits and withdrawals	Http	POST	/v1/withdraws/krw	withdraw-krw	official_product_is_korea_deposits_and_withdrawals
+wallet	api_keys	Korea deposits and withdrawals	Http	GET	/v1/api_keys	list-api-keys	official_product_is_korea_deposits_and_withdrawals
+pockets	list_pockets	Korea pockets	Http	GET	/v1/pockets	list-pockets	official_product_is_korea_pockets
+pockets	list_pocket_api_keys	Korea pockets	Http	GET	/v1/pockets/api_keys	list-pocket-api-keys	official_product_is_korea_pockets
+pockets	sub_pocket_balances	Korea pockets	Http	GET	/v1/pockets/assets	get-sub-pocket-balance	official_product_is_korea_pockets
+pockets	universal_transfer	Korea pockets	Http	POST	/v1/pockets/universal_transfers	universal-transfer	official_product_is_korea_pockets
+pockets	universal_transfers	Korea pockets	Http	GET	/v1/pockets/universal_transfers	list-universal-transfers	official_product_is_korea_pockets
+pockets	sub_pocket_transfer	Korea pockets	Http	POST	/v1/pockets/transfers	transfer	official_product_is_korea_pockets
+pockets	sub_pocket_transfers	Korea pockets	Http	GET	/v1/pockets/transfers	list-transfers	official_product_is_korea_pockets

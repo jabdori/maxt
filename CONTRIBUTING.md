@@ -165,6 +165,8 @@ adapters. See [External adapters](docs/common-api.md#external-adapters).
 - Write for developers and state contracts with identifiers and operators.
 - Define common behavior once in `docs/common-api.md`; keep provider limits and
   native mappings in the provider reference.
+- Write public source comments, generated API documentation templates, and
+  published examples in English. Put Korean explanations in `*.ko.md` files.
 - Keep English and Korean documents structurally equivalent. Translate meaning,
   not sentence order.
 

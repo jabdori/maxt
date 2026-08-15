@@ -57,11 +57,10 @@ Future<void> main() async {
 }
 ```
 
-The checked-in [public Binance example](example/main.dart) keeps
-network access opt-in. Run its public read explicitly:
+Run the checked-in [public Binance example](example/main.dart):
 
 ```sh
-dart run -DMAXT_RUN_PUBLIC_READ=true example/main.dart
+dart run example/main.dart
 ```
 
 Use `Client` for common calls and `client.adapter` for provider-specific calls.

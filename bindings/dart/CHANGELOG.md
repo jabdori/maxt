@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.2
+
+- Made the bundled Binance public-market example perform its documented read on a normal run.
+
 ## 0.4.1
 
 - Added the pub.dev-recognized `example/main.dart` Binance public-market

@@ -57,11 +57,10 @@ Future<void> main() async {
 }
 ```
 
-저장소의 [Binance 공개 시세 예제](example/main.dart)는 네트워크 접근을
-명시적으로 켠 경우에만 수행합니다.
+저장소의 [Binance 공개 시세 예제](example/main.dart)를 실행합니다.
 
 ```sh
-dart run -DMAXT_RUN_PUBLIC_READ=true example/main.dart
+dart run example/main.dart
 ```
 
 공통 호출은 `Client`, 거래소 전용 호출은 `client.adapter`에서 사용합니다. 정리한

@@ -1,6 +1,6 @@
 [package]
 name = "maxt-bindings-common"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2024"
 rust-version = "1.85"
 license = "MIT"
@@ -19,7 +19,7 @@ path = "src/bin/generate_audit_ledger.rs"
 required-features = ["codegen"]
 
 [dependencies]
-maxt = { version = "=0.3.1", path = "../.." }
+maxt = { version = "=0.3.2", path = "../.." }
 
 [dev-dependencies]
 futures-util = { version = "0.3", default-features = false, features = ["std"] }

@@ -1,4 +1,5 @@
 /target/
+/docs/adr/
 /docs/superpowers/
 /.env
 /.env.*

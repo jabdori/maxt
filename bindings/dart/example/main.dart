@@ -1,23 +1,8 @@
 import 'package:maxt/maxt.dart';
 
-/// Reads one public Binance Spot quote only when this value is `true`.
-///
-/// The default run does not initialize a native library or connect to the
-/// network. Enable the live public read explicitly:
-///
-/// ```sh
-/// dart run -DMAXT_RUN_PUBLIC_READ=true example/main.dart
-/// ```
-const _runPublicRead = bool.fromEnvironment('MAXT_RUN_PUBLIC_READ');
-
 Future<void> main() async {
   final market = Market.spot(Exchange.binance, 'BTC', 'USDT');
   print('Prepared public market: $market');
-
-  if (!_runPublicRead) {
-    print('Set MAXT_RUN_PUBLIC_READ=true to perform the public read.');
-    return;
-  }
 
   try {
     await Maxt.initialize();

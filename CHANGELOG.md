@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2
+
+- Removed internal architecture-decision links from published package documentation.
+
 ## 0.3.1
 
 - Standardized public Rust API documentation comments in English.

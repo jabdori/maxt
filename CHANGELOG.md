@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+- Added full-fidelity provider APIs and generated language bindings for the
+  fixed Upbit, Bithumb, Binance, and Hyperliquid coverage batch.
+- Added provider-specific stream boundaries and connection-scoped Upbit
+  subscription inspection.
+
 ## 0.2.1
 
 - Reissued 0.2.0 with the same Travel Rule and KRW transfer APIs after GitHub

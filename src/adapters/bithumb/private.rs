@@ -235,10 +235,7 @@ pub(crate) fn order_list_request(
             "Bithumb accepts either `state` or `states`, not both",
         ));
     }
-    if request
-        .states
-        .iter()
-        .any(|state| *state == BithumbOrderListState::Watch)
+    if request.states.contains(&BithumbOrderListState::Watch)
         && request
             .states
             .iter()

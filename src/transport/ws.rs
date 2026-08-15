@@ -433,6 +433,7 @@ enum Pump {
     Cancelled,
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn pump(
     socket: &mut Socket,
     sender: &mpsc::Sender<Result<WsCommand>>,

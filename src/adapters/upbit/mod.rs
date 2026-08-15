@@ -76,7 +76,7 @@ impl ActiveSubscriptions {
     fn register(&self, subscription: SubscriptionKey, control: &Arc<stream::SubscriptionControl>) {
         self.connections
             .lock()
-            .expect("Upbit active-subscription mutex poisoned")
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
             .entry(subscription)
             .or_default()
             .push(Arc::downgrade(control));
@@ -88,7 +88,7 @@ impl ActiveSubscriptions {
             let mut connections = self
                 .connections
                 .lock()
-                .expect("Upbit active-subscription mutex poisoned");
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
             let Some(controls) = connections.get_mut(&key) else {
                 return Err(Error::invalid_request(
                     "subscription",

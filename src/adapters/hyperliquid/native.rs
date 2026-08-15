@@ -236,6 +236,7 @@ pub enum HyperliquidMarketEvent {
 
 /// A full-fidelity Hyperliquid account stream event.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(clippy::large_enum_variant)]
 #[non_exhaustive]
 pub enum HyperliquidAccountEvent {
     /// A native order-status update.

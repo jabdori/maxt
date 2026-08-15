@@ -72,7 +72,10 @@ impl SubscriptionControl {
         let mut connection_epoch = self.send.connection_epoch();
         let (response, received) = oneshot::channel();
         {
-            let mut pending = self.pending.lock().expect("Upbit operation mutex poisoned");
+            let mut pending = self
+                .pending
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
             if pending.is_some() {
                 return Err(Error::adapter(
                     "an Upbit LIST_SUBSCRIPTIONS request is already waiting on this connection",
@@ -118,7 +121,10 @@ impl SubscriptionControl {
             return false;
         };
         let listed = object.get("method").and_then(Value::as_str) == Some("LIST_SUBSCRIPTIONS");
-        let mut pending = self.pending.lock().expect("Upbit operation mutex poisoned");
+        let mut pending = self
+            .pending
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         if !listed && !(pending.is_some() && object.contains_key("error")) {
             return false;
         }
@@ -135,9 +141,9 @@ impl SubscriptionControl {
             // later query has started. It must not fail that newer query.
             return true;
         }
-        let waiting = pending
-            .take()
-            .expect("a checked Upbit pending operation is still present");
+        let Some(waiting) = pending.take() else {
+            return listed;
+        };
         let expected_ticket = waiting.ticket.clone();
         let result = reserialize(&object)
             .and_then(|frame| subscription_list(&frame))
@@ -160,7 +166,7 @@ impl SubscriptionControl {
         let pending = self
             .pending
             .lock()
-            .expect("Upbit operation mutex poisoned")
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
             .take();
         if let Some(pending) = pending {
             let _ = pending.response.send(Err(Error::transport(
@@ -170,7 +176,10 @@ impl SubscriptionControl {
     }
 
     fn clear(&self, ticket: &str) {
-        let mut pending = self.pending.lock().expect("Upbit operation mutex poisoned");
+        let mut pending = self
+            .pending
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         if pending
             .as_ref()
             .is_some_and(|pending| pending.ticket == ticket)

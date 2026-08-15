@@ -2900,7 +2900,7 @@ mod tests {
         assert_eq!(spot_page.items[0].side, Side::Buy);
         assert_eq!(
             spot_page.items[0].quote_quantity,
-            Some(Decimal::new(4_800_001_2, 6))
+            Some(Decimal::new(48_000_012, 6))
         );
         assert_eq!(spot_page.items[0].pair, None);
         assert_eq!(spot_page.items[0].best_match, Some(true));

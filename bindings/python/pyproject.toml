@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "maxt"
-version = "0.2.2"
+version = "0.3.0"
 description = "Async Python API for Upbit, Bithumb, Binance, and Hyperliquid market data, accounts, and orders"
 readme = "README.md"
 requires-python = ">=3.9"

@@ -2113,6 +2113,7 @@ pub(crate) struct WireHyperliquidOrderInfo {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[allow(clippy::large_enum_variant)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub(crate) enum WireHyperliquidOrderStatusResponse {
     Order { value: WireHyperliquidOrderInfo },

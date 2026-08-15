@@ -435,6 +435,7 @@ pub enum BithumbMarketEvent {
 
 /// One Bithumb-specific private account event.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(clippy::large_enum_variant)]
 #[non_exhaustive]
 pub enum BithumbAccountEvent {
     /// A balance update with the provider timestamps retained.

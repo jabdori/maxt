@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.0
+
+- Added generated provider APIs, models, native dispatch, and provider stream
+  support for the fixed exchange coverage batch.
+
 ## 0.3.3
 
 - Reissued 0.3.2 after formatting the release test source with the pinned Dart

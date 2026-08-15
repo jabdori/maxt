@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0
+
+- Added generated provider APIs, models, native dispatch, and provider stream
+  support for the fixed exchange coverage batch.
+
 ## 0.2.2
 
 - Reissued 0.2.1 after restoring npm lockfile metadata required by `npm ci`.

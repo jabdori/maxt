@@ -880,7 +880,7 @@ pub(super) async fn withdraw_address_list(
 }
 
 fn withdraw_address_list_from_body(body: &str) -> Result<Vec<BinanceWithdrawalAddress>> {
-    let response: serde_json::Value = parse::json(&body, "capital/withdraw/address/list")?;
+    let response: serde_json::Value = parse::json(body, "capital/withdraw/address/list")?;
     let entries = response.as_array().ok_or_else(|| {
         Error::decode("Binance capital/withdraw/address/list response is not an array")
     })?;
@@ -918,7 +918,7 @@ pub(super) async fn questionnaire_requirements(
 }
 
 fn questionnaire_requirements_from_body(body: &str) -> Result<BinanceQuestionnaireRequirements> {
-    let response: serde_json::Value = parse::json(&body, "localentity/questionnaire-requirements")?;
+    let response: serde_json::Value = parse::json(body, "localentity/questionnaire-requirements")?;
     if !response.is_object() {
         return Err(Error::decode(
             "Binance questionnaire-requirements response is not an object",

@@ -99,6 +99,7 @@ pub enum WireAccountStreamItem {
 
 /// Hyperliquid 원본 시장 스트림의 event/error/end 항목입니다.
 #[derive(Debug)]
+#[allow(clippy::large_enum_variant)]
 pub enum WireHyperliquidMarketStreamItem {
     /// 정상 Hyperliquid 시장 이벤트입니다.
     Event(WireHyperliquidMarketEvent),
@@ -110,6 +111,7 @@ pub enum WireHyperliquidMarketStreamItem {
 
 /// Hyperliquid 원본 계정 스트림의 event/error/end 항목입니다.
 #[derive(Debug)]
+#[allow(clippy::large_enum_variant)]
 pub enum WireHyperliquidAccountStreamItem {
     /// 정상 Hyperliquid 계정 이벤트입니다.
     Event(WireHyperliquidAccountEvent),

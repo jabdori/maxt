@@ -424,7 +424,7 @@ fn render_union(schema: &Schema, name: &str, variants: &[Variant]) -> String {
         .map(|variant| render_union_arm(schema, name, variant))
         .collect::<String>();
     format!(
-        "#[derive(Debug, Clone, PartialEq, Eq, Serialize)]\n#[serde(tag = \"kind\", rename_all = \"snake_case\")]\npub(crate) enum Wire{name} {{\n{declarations}}}\n\nimpl TryFrom<maxt::{name}> for Wire{name} {{\n    type Error = Error;\n\n    fn try_from(value: maxt::{name}) -> Result<Self, Self::Error> {{\n        match value {{\n{arms}            _ => Err(Error::adapter(\"new {name} variant requires a generated TypeScript wire variant\")),\n        }}\n    }}\n}}\n\n"
+        "#[derive(Debug, Clone, PartialEq, Eq, Serialize)]\n#[allow(clippy::large_enum_variant)]\n#[serde(tag = \"kind\", rename_all = \"snake_case\")]\npub(crate) enum Wire{name} {{\n{declarations}}}\n\nimpl TryFrom<maxt::{name}> for Wire{name} {{\n    type Error = Error;\n\n    fn try_from(value: maxt::{name}) -> Result<Self, Self::Error> {{\n        match value {{\n{arms}            _ => Err(Error::adapter(\"new {name} variant requires a generated TypeScript wire variant\")),\n        }}\n    }}\n}}\n\n"
     )
 }
 

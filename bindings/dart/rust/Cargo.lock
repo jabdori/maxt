@@ -1153,7 +1153,7 @@ checksum = "0ceec5bc11778974d1bcb055b18002eba7f4b3518b6a0081b3af5f21666da9ad"
 
 [[package]]
 name = "maxt"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "base64",
  "chrono",
@@ -1186,14 +1186,14 @@ dependencies = [
 
 [[package]]
 name = "maxt-bindings-common"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "maxt",
 ]
 
 [[package]]
 name = "maxt_dart_bridge"
-version = "0.3.3"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "flutter_rust_bridge",

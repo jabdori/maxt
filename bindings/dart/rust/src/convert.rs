@@ -1,5 +1,6 @@
 use std::fmt;
 
+#[allow(clippy::large_enum_variant, clippy::result_large_err)]
 pub mod generated_models;
 mod generated_shape_guard;
 

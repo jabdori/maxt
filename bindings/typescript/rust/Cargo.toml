@@ -1,6 +1,6 @@
 [package]
 name = "maxt-typescript"
-version = "0.2.2"
+version = "0.3.0"
 edition = "2024"
 rust-version = "1.88"
 publish = false
@@ -12,8 +12,8 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 futures-core = "0.3"
 futures-util = { version = "0.3", default-features = false, features = ["std"] }
-maxt = { version = "=0.2.1", path = "../../.." }
-maxt-bindings-common = { version = "=0.2.1", path = "../../common" }
+maxt = { version = "=0.3.0", path = "../../.." }
+maxt-bindings-common = { version = "=0.3.0", path = "../../common" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["sync"] }

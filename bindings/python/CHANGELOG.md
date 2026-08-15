@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0
+
+- Added generated provider APIs, models, and native dispatch for the fixed
+  Upbit, Bithumb, Binance, and Hyperliquid coverage batch.
+
 ## 0.2.2
 
 - Reissued 0.2.1 after fixing generated native conversion code for the release

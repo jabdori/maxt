@@ -11,10 +11,10 @@ String _asciiUpper(String value) => String.fromCharCodes(
 );
 
 extension ExchangeName on Exchange {
-  /// 로그와 오류에 쓰는 안정적인 소문자 식별자입니다.
+  /// Stable lowercase identifier used in logs and errors.
   String get id => name;
 
-  /// 사용자에게 표시할 거래소 이름입니다.
+  /// Human-readable exchange name.
   String get displayName => switch (this) {
     Exchange.upbit => 'Upbit',
     Exchange.bithumb => 'Bithumb',
@@ -24,7 +24,7 @@ extension ExchangeName on Exchange {
 }
 
 extension FeatureProperties on Feature {
-  /// 이 기능이 인증 정보를 요구하는지 여부입니다.
+  /// Whether this feature requires credentials.
   bool get needsCredentials => switch (this) {
     Feature.markets ||
     Feature.trades ||
@@ -39,7 +39,7 @@ extension FeatureProperties on Feature {
     _ => true,
   };
 
-  /// 이 기능이 파생상품 시장에서만 의미가 있는지 여부입니다.
+  /// Whether this feature is meaningful only for derivative markets.
   bool get isDerivativesOnly => switch (this) {
     Feature.positions ||
     Feature.margin ||
@@ -51,15 +51,15 @@ extension FeatureProperties on Feature {
   };
 }
 
-/// 부동소수점 변환 없이 문자열을 보존하는 정확한 소수입니다.
+/// Exact decimal that preserves its string representation without floating-point conversion.
 ///
-/// 절댓값 계수(coefficient)는 96-bit이고 소수 자릿수(scale)는 0~28입니다.
+/// The absolute coefficient is 96-bit and the scale is in the range 0 through 28.
 final class Decimal implements Comparable<Decimal> {
   Decimal._(this._value, this._coefficient, this._scale);
 
-  /// 일반 표기법이나 과학 표기법의 유한 소수를 반올림 없이 읽습니다.
+  /// Parses a finite decimal in plain or scientific notation without rounding.
   ///
-  /// maxt Decimal 범위를 벗어나면 [FormatException]을 던집니다.
+  /// Throws [FormatException] when the value is outside the maxt Decimal range.
   factory Decimal.parse(String value) {
     final match = _pattern.firstMatch(value);
     if (match == null) {
@@ -126,14 +126,14 @@ final class Decimal implements Comparable<Decimal> {
 
   bool get isZero => _coefficient == BigInt.zero;
 
-  /// 두 값을 더합니다.
+  /// Adds two values.
   ///
-  /// 정밀도를 줄이면 half-even으로 반올림하고, 범위를 넘으면 [RangeError]를 던집니다.
+  /// Rounds half-even when reducing precision and throws [RangeError] on overflow.
   Decimal operator +(Decimal other) => _addOrSubtract(other, subtract: false);
 
-  /// 다른 값을 뺍니다.
+  /// Subtracts another value.
   ///
-  /// 정밀도를 줄이면 half-even으로 반올림하고, 범위를 넘으면 [RangeError]를 던집니다.
+  /// Rounds half-even when reducing precision and throws [RangeError] on overflow.
   Decimal operator -(Decimal other) => _addOrSubtract(other, subtract: true);
 
   bool operator <(Decimal other) => compareTo(other) < 0;
@@ -319,13 +319,13 @@ final class Decimal implements Comparable<Decimal> {
   static BigInt _pow10(int exponent) => _ten.pow(exponent);
 }
 
-/// Unix epoch 기준 UTC 나노초로 표현한 시각입니다.
+/// Point in time represented as UTC nanoseconds since the Unix epoch.
 final class Timestamp implements Comparable<Timestamp> {
   Timestamp._(this.nanosecondsSinceEpoch);
 
-  /// Unix epoch 기준 나노초에서 시각을 만듭니다.
+  /// Creates a timestamp from nanoseconds since the Unix epoch.
   ///
-  /// 64비트 부호 있는 정수(i64) 범위를 벗어나면 [RangeError]를 던집니다.
+  /// Throws [RangeError] when the value is outside the signed 64-bit (`i64`) range.
   factory Timestamp.fromNanoseconds(Object nanoseconds) {
     final value = switch (nanoseconds) {
       int value => BigInt.from(value),
@@ -342,25 +342,25 @@ final class Timestamp implements Comparable<Timestamp> {
     return Timestamp._(value);
   }
 
-  /// Unix epoch 기준 마이크로초에서 시각을 만듭니다.
+  /// Creates a timestamp from microseconds since the Unix epoch.
   ///
-  /// 나노초 변환 결과가 i64 범위를 벗어나면 최솟값 또는 최댓값으로 포화합니다.
+  /// Saturates to the nearest `i64` bound when nanosecond conversion overflows.
   factory Timestamp.fromMicroseconds(int microseconds) =>
       _fromScaled(microseconds, 1000);
 
-  /// Unix epoch 기준 밀리초에서 시각을 만듭니다.
+  /// Creates a timestamp from milliseconds since the Unix epoch.
   ///
-  /// 나노초 변환 결과가 i64 범위를 벗어나면 최솟값 또는 최댓값으로 포화합니다.
+  /// Saturates to the nearest `i64` bound when nanosecond conversion overflows.
   factory Timestamp.fromMilliseconds(int milliseconds) =>
       _fromScaled(milliseconds, 1000000);
 
-  /// Unix epoch 기준 초에서 시각을 만듭니다.
+  /// Creates a timestamp from seconds since the Unix epoch.
   ///
-  /// 나노초 변환 결과가 i64 범위를 벗어나면 최솟값 또는 최댓값으로 포화합니다.
+  /// Saturates to the nearest `i64` bound when nanosecond conversion overflows.
   factory Timestamp.fromSeconds(int seconds) =>
       _fromScaled(seconds, 1000000000);
 
-  /// 현재 시스템 시각입니다.
+  /// Current system time.
   factory Timestamp.now() {
     final microseconds = DateTime.now().microsecondsSinceEpoch;
     return microseconds <= 0 ? zero : _fromScaled(microseconds, 1000);
@@ -372,11 +372,11 @@ final class Timestamp implements Comparable<Timestamp> {
 
   final BigInt nanosecondsSinceEpoch;
 
-  /// Unix epoch 기준 밀리초를 `0` 방향으로 절삭한 값입니다.
+  /// Milliseconds since the Unix epoch, truncated toward `0`.
   int get millisecondsSinceEpoch =>
       (nanosecondsSinceEpoch ~/ BigInt.from(1000000)).toInt();
 
-  /// Unix epoch 기준 초를 `0` 방향으로 절삭한 값입니다.
+  /// Seconds since the Unix epoch, truncated toward `0`.
   int get secondsSinceEpoch =>
       (nanosecondsSinceEpoch ~/ BigInt.from(1000000000)).toInt();
 
@@ -411,7 +411,7 @@ extension MarketKindProperties on MarketKind {
   bool get isDerivative => this == MarketKind.perpetual;
 }
 
-/// 하나의 거래소 시장을 식별합니다.
+/// Identifies one exchange market.
 final class Market {
   Market(Exchange exchange, MarketKind kind, String base, String quote)
     : exchange = exchange,
@@ -447,7 +447,7 @@ final class Market {
 }
 
 extension IntervalProperties on Interval {
-  /// 고정된 구간의 초 단위 길이입니다. 달력 월인 [Interval.month1]은 `null`입니다.
+  /// Duration in seconds for a fixed interval; calendar month [Interval.month1] is `null`.
   int? get seconds => switch (this) {
     Interval.sec1 => 1,
     Interval.min1 => 60,
@@ -468,15 +468,15 @@ extension IntervalProperties on Interval {
     Interval.month1 => null,
   };
 
-  /// [at]에서 [count]개 구간만큼 이동한 시각입니다.
+  /// Moves [count] intervals from [at].
   ///
-  /// 고정 구간은 초 단위 길이만큼 나노초를 정확히 이동합니다.
-  /// [Interval.month1]은 UTC 달력 월을 사용하고, 대상 월에 없는 일자는
-  /// 말일로 보정합니다. 이 보정 때문에 역방향 이동이 원래 시각을 복원하지 못할 수
-  /// 있습니다.
+  /// Fixed intervals move by their exact duration in nanoseconds.
+  /// [Interval.month1] uses UTC calendar months and clamps a missing day to
+  /// the last day of the destination month, so reversing a move may not
+  /// restore the original timestamp.
   ///
-  /// 거래소별 캔들 시작 격자(provider candle grid)는 적용하지 않습니다.
-  /// 결과를 [Timestamp]로 표현할 수 없으면 `null`입니다.
+  /// It does not apply an exchange-specific provider candle grid.
+  /// Returns `null` when the result cannot be represented as [Timestamp].
   Timestamp? advance(Timestamp at, int count) {
     final countBigInt = BigInt.from(count);
 
@@ -529,11 +529,11 @@ extension IntervalProperties on Interval {
   }
 }
 
-/// 캔들 이력 조회 조건입니다.
+/// Conditions for querying candle history.
 ///
-/// 캔들 시작 시각이 [from] 이상이고 [to] 미만인 범위를 조회하며, 결과는 오래된
-/// 순서입니다. [limit]은 [from]이 있으면 가장 오래된 캔들부터, 없으면 가장 최신
-/// 캔들부터 선택합니다.
+/// Queries candles whose opening time is at least [from] and before [to],
+/// returning them oldest first. With [from], [limit] selects the oldest
+/// candles; without it, it selects the newest candles.
 final class CandleRequest {
   const CandleRequest(
     this.market,
@@ -550,7 +550,7 @@ final class CandleRequest {
   final int? limit;
 }
 
-/// 스트림 연결과 버퍼 설정입니다.
+/// Stream connection and buffering configuration.
 final class StreamConfig {
   const StreamConfig({
     this.maxReconnectAttempts,
@@ -589,7 +589,7 @@ final class StreamConfig {
   );
 }
 
-/// 시장 목록의 한 항목입니다.
+/// One entry in a market list.
 final class MarketInfo {
   MarketInfo({
     required this.market,
@@ -610,7 +610,7 @@ extension SideProperties on Side {
   Side get flipped => this == Side.buy ? Side.sell : Side.buy;
 }
 
-/// 하나의 체결입니다.
+/// One trade execution.
 final class Trade {
   Trade({
     required this.market,
@@ -629,7 +629,7 @@ final class Trade {
   final String? id;
 }
 
-/// 호가창의 한 가격 단계입니다.
+/// One price level in an order book.
 final class Level {
   Level({required this.price, required this.quantity});
 
@@ -637,7 +637,7 @@ final class Level {
   final Decimal quantity;
 }
 
-/// 호가창 스냅샷입니다.
+/// Order-book snapshot.
 final class OrderBook {
   OrderBook({
     required this.market,
@@ -655,20 +655,19 @@ final class OrderBook {
   Level? get bestBid => bids.firstOrNull;
   Level? get bestAsk => asks.firstOrNull;
 
-  /// 최우선 매도 가격에서 최우선 매수 가격을 뺀 값입니다.
+  /// Best ask price minus best bid price.
   ///
-  /// 한쪽 호가가 비면 `null`이며, 교차 호가창은 음수를 반환합니다.
+  /// Returns `null` when either side is empty; a crossed book returns a negative value.
   Decimal? get spread {
     final bid = bestBid;
     final ask = bestAsk;
     return bid == null || ask == null ? null : ask.price - bid.price;
   }
 
-  /// 최우선 매수·매도 가격의 중간값입니다. 한쪽 호가가 비면 `null`입니다.
+  /// Midpoint of the best bid and ask prices, or `null` when either side is empty.
   ///
-  /// 계산 과정에서 [Decimal] 정밀도를 줄여야 하면 가장 가까운 짝수로
-  /// 반올림(half-even)합니다. 두 가격의 합이 [Decimal] 범위를 넘으면
-  /// [RangeError]를 던집니다.
+  /// Uses half-even rounding if [Decimal] precision must be reduced and throws
+  /// [RangeError] when the sum is outside the [Decimal] range.
   Decimal? get midPrice {
     final bid = bestBid;
     final ask = bestAsk;
@@ -676,7 +675,7 @@ final class OrderBook {
   }
 }
 
-/// 한 시장의 공급자 시세 요약입니다.
+/// Provider price summary for one market.
 final class Ticker {
   Ticker({
     required this.market,
@@ -703,7 +702,7 @@ final class Ticker {
   final Decimal? quoteVolume;
 }
 
-/// 하나의 시가·고가·저가·종가·거래량 캔들입니다.
+/// One open-high-low-close-volume candle.
 final class Candle {
   Candle({
     required this.market,
@@ -730,7 +729,7 @@ final class Candle {
   final bool closed;
 }
 
-/// 한 자산의 사용 가능·잠금 잔고입니다.
+/// Available and locked balances for one asset.
 final class Balance {
   Balance({
     required String asset,
@@ -742,14 +741,14 @@ final class Balance {
   final Decimal available;
   final Decimal locked;
 
-  /// 사용 가능한 잔고와 잠긴 잔고의 합입니다.
+  /// Sum of the available and locked balances.
   ///
-  /// 합산 과정에서 정밀도를 줄여야 하면 가장 가까운 짝수로 반올림(half-even)하고,
-  /// 합이 [Decimal] 범위를 넘으면 [RangeError]를 던집니다.
+  /// Uses half-even rounding if addition reduces precision and throws
+  /// [RangeError] when the sum is outside the [Decimal] range.
   Decimal get total => available + locked;
 }
 
-/// 주문 수량의 기준 자산을 구분합니다.
+/// Distinguishes whether an order size is denominated in base or quote asset.
 sealed class Size {
   const Size(this.value);
 
@@ -776,7 +775,7 @@ extension OrderStatusProperties on OrderStatus {
   };
 }
 
-/// 거래소가 보고한 주문입니다.
+/// Order reported by an exchange.
 final class Order {
   Order({
     required this.id,
@@ -799,7 +798,7 @@ final class Order {
   final Timestamp? createdAt;
 }
 
-/// 하나의 파생상품 포지션입니다.
+/// One derivative position.
 final class Position {
   Position({
     required this.market,
@@ -826,7 +825,7 @@ final class Position {
   bool get isFlat => quantity.isZero;
 }
 
-/// 계정 전체 증거금 상태입니다.
+/// Account-wide margin summary.
 final class MarginSummary {
   MarginSummary({
     required String asset,
@@ -841,7 +840,7 @@ final class MarginSummary {
   final Decimal? availableBalance;
 }
 
-/// 한 시점의 펀딩 비율입니다.
+/// Funding rate at one point in time.
 final class FundingRate {
   FundingRate({
     required this.market,
@@ -856,7 +855,7 @@ final class FundingRate {
   final Decimal? markPrice;
 }
 
-/// 계정에 실제 반영된 펀딩 지급 내역입니다.
+/// Funding payment actually applied to an account.
 final class FundingPayment {
   FundingPayment({
     required this.market,
@@ -873,7 +872,7 @@ final class FundingPayment {
   final String? id;
 }
 
-/// 페이지 이력의 불투명한 재개 위치입니다.
+/// Opaque resume position for paginated history.
 final class Cursor {
   const Cursor(this.value);
 
@@ -889,7 +888,7 @@ final class Cursor {
   int get hashCode => value.hashCode;
 }
 
-/// 페이지 단위 이력 결과입니다.
+/// Paginated history result.
 final class Page<T> {
   Page({required Iterable<T> items, this.next})
     : items = List.unmodifiable(items);
@@ -900,7 +899,7 @@ final class Page<T> {
   bool get hasMore => next != null;
 }
 
-/// 시장가, 지정가 또는 최유리 지정가 주문 요청입니다.
+/// Market, limit, or best-limit order request.
 final class OrderRequest {
   const OrderRequest._({
     required this.market,
@@ -1000,11 +999,12 @@ final class OrderRequest {
   );
 }
 
-/// 페이지 단위 이력 조회 조건입니다.
+/// Conditions for querying paginated history.
 ///
-/// 항목 시각이 [from] 이상이고 [to] 미만인 범위를 조회합니다. [cursor]가 있으면
-/// [from]을 무시하고 이전 페이지의 다음 지점부터 이어집니다. [limit]은 목표 페이지
-/// 크기이며, 같은 시각의 항목을 나누지 않으므로 실제 개수는 더 적거나 많을 수 있습니다.
+/// Queries entries whose timestamp is at least [from] and before [to]. With
+/// [cursor], [from] is ignored and querying resumes after the previous page.
+/// [limit] is a target page size; the actual count can differ to avoid splitting
+/// entries with the same timestamp.
 final class HistoryRequest {
   const HistoryRequest(
     this.market, {
@@ -1021,7 +1021,7 @@ final class HistoryRequest {
   final int? limit;
 }
 
-/// 한 시장의 레버리지 또는 증거금 방식 변경 요청입니다.
+/// Request to change leverage or margin mode for one market.
 final class MarginRequest {
   const MarginRequest(this.market, {this.leverage, this.marginMode});
 
@@ -1030,10 +1030,10 @@ final class MarginRequest {
   final MarginMode? marginMode;
 }
 
-/// 스트림에서 구독할 시장 데이터 종류입니다.
+/// Kind of market data to subscribe to in a stream.
 enum FeedKind { trades, orderBook, ticker, candles }
 
-/// 스트림 피드와 캔들 구간을 함께 식별합니다.
+/// Identifies a stream feed and, for candles, its interval.
 final class Feed {
   const Feed._(this.kind, [this.interval]);
 
@@ -1053,7 +1053,7 @@ final class Feed {
   int get hashCode => Object.hash(kind, interval);
 }
 
-/// 모든 시장과 모든 피드의 곱집합을 구독합니다.
+/// Subscribes to the Cartesian product of all selected markets and feeds.
 final class Subscription {
   Subscription({
     Iterable<Market> markets = const [],
@@ -1074,94 +1074,94 @@ final class Subscription {
       Subscription(markets: markets, feeds: [...feeds, feed]);
 }
 
-/// 시장 스트림에서 전달되는 이벤트입니다.
+/// Event delivered by a market stream.
 sealed class MarketEvent {
   const MarketEvent();
 
-  /// 한 건의 체결 이벤트입니다.
+  /// Single trade event.
   const factory MarketEvent.trade(Trade value) = TradeMarketEvent;
 
-  /// 최신 호가창 스냅샷 이벤트입니다.
+  /// Latest order-book snapshot event.
   const factory MarketEvent.orderBook(OrderBook value) = OrderBookMarketEvent;
 
-  /// 현재가 요약 이벤트입니다.
+  /// Current price summary event.
   const factory MarketEvent.ticker(Ticker value) = TickerMarketEvent;
 
-  /// 생성·갱신·마감된 캔들 이벤트입니다.
+  /// Created, updated, or closed candle event.
   const factory MarketEvent.candle(Candle value) = CandleMarketEvent;
 
-  /// 연결이 복구되었으며, 단절 중 이벤트가 유실되었음을 알립니다.
+  /// Indicates reconnection; events may have been lost while disconnected.
   const factory MarketEvent.reconnected() = ReconnectedMarketEvent;
 }
 
 final class TradeMarketEvent extends MarketEvent {
-  /// [value]에 한 건의 체결을 담아 만듭니다.
+  /// Creates an event containing one trade in [value].
   const TradeMarketEvent(this.value);
 
-  /// 거래소가 보낸 체결 정보입니다.
+  /// Trade information sent by the exchange.
   final Trade value;
 }
 
 final class OrderBookMarketEvent extends MarketEvent {
-  /// [value]에 최신 호가창 스냅샷을 담아 만듭니다.
+  /// Creates an event containing the latest order-book snapshot in [value].
   const OrderBookMarketEvent(this.value);
 
-  /// 거래소가 보낸 호가창 스냅샷입니다.
+  /// Order-book snapshot sent by the exchange.
   final OrderBook value;
 }
 
 final class TickerMarketEvent extends MarketEvent {
-  /// [value]에 현재가 요약을 담아 만듭니다.
+  /// Creates an event containing the current price summary in [value].
   const TickerMarketEvent(this.value);
 
-  /// 거래소가 보낸 현재가 요약입니다.
+  /// Current price summary sent by the exchange.
   final Ticker value;
 }
 
 final class CandleMarketEvent extends MarketEvent {
-  /// [value]에 캔들 갱신 정보를 담아 만듭니다.
+  /// Creates an event containing the candle update in [value].
   const CandleMarketEvent(this.value);
 
-  /// 거래소가 보낸 캔들 정보입니다.
+  /// Candle information sent by the exchange.
   final Candle value;
 }
 
 final class ReconnectedMarketEvent extends MarketEvent {
-  /// 연결 복구 알림을 만듭니다.
+  /// Creates a reconnection notification.
   const ReconnectedMarketEvent();
 }
 
-/// 비공개 계정 스트림에서 전달되는 이벤트입니다.
+/// Event delivered by a private account stream.
 sealed class AccountEvent {
   const AccountEvent();
 
-  /// 잔고가 변경된 계정 이벤트입니다.
+  /// Account event reporting a balance change.
   const factory AccountEvent.balance(Balance value) = BalanceAccountEvent;
 
-  /// 주문 생성·체결·취소 상태를 알리는 계정 이벤트입니다.
+  /// Account event reporting order creation, fill, or cancellation state.
   const factory AccountEvent.order(Order value) = OrderAccountEvent;
 
-  /// 계정 스트림 연결이 복구되었으며 상태 재조회가 필요함을 알립니다.
+  /// Indicates the account stream reconnected and state must be refreshed.
   const factory AccountEvent.reconnected() = ReconnectedAccountEvent;
 }
 
 final class BalanceAccountEvent extends AccountEvent {
-  /// [value]에 변경된 잔고를 담아 만듭니다.
+  /// Creates an event containing the changed balance in [value].
   const BalanceAccountEvent(this.value);
 
-  /// 거래소가 보낸 최신 잔고입니다.
+  /// Latest balance sent by the exchange.
   final Balance value;
 }
 
 final class OrderAccountEvent extends AccountEvent {
-  /// [value]에 변경된 주문을 담아 만듭니다.
+  /// Creates an event containing the changed order in [value].
   const OrderAccountEvent(this.value);
 
-  /// 거래소가 보낸 최신 주문 상태입니다.
+  /// Latest order state sent by the exchange.
   final Order value;
 }
 
 final class ReconnectedAccountEvent extends AccountEvent {
-  /// 계정 연결 복구 알림을 만듭니다.
+  /// Creates an account reconnection notification.
   const ReconnectedAccountEvent();
 }

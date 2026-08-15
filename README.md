@@ -90,7 +90,7 @@ code: `cargo run --example public_rest -- upbit BTC KRW`.
 | --- | --- | --- |
 | Rust | This README and [Getting started](docs/getting-started.md) | [`examples/public_rest.rs`](examples/public_rest.rs) |
 | Python | [Python package guide](bindings/python/README.md) | [`bindings/python/examples/binance_public_ticker.py`](bindings/python/examples/binance_public_ticker.py) |
-| Dart / Flutter | [Dart package guide](bindings/dart/README.md) | [`bindings/dart/example/public_ticker.dart`](bindings/dart/example/public_ticker.dart) |
+| Dart / Flutter | [Dart package guide](bindings/dart/README.md) | [`bindings/dart/example/main.dart`](bindings/dart/example/main.dart) |
 | TypeScript | [TypeScript package guide](bindings/typescript/README.md) | [`bindings/typescript/examples/binance-public-ticker.mjs`](bindings/typescript/examples/binance-public-ticker.mjs) |
 
 The Dart package supports Android, iOS, Linux, macOS, Windows, and Web. The

@@ -2,33 +2,33 @@
 
 part of 'stream.dart';
 
-/// Upbit 원본 이벤트를 보존하는 단일 구독 스트림입니다.
+/// A single-subscription stream that preserves Upbit-native events.
 final class UpbitMarketStream extends _CloseableStream<UpbitMarketStreamEvent> {
   UpbitMarketStream(super.source, {super.onClose});
 }
 
-/// Upbit 원본 이벤트를 보존하는 단일 구독 스트림입니다.
+/// A single-subscription stream that preserves Upbit-native events.
 final class UpbitAccountStream
     extends _CloseableStream<UpbitAccountStreamEvent> {
   UpbitAccountStream(super.source, {super.onClose});
 }
 
-/// Bithumb 원본 이벤트를 보존하는 단일 구독 스트림입니다.
+/// A single-subscription stream that preserves Bithumb-native events.
 final class BithumbMarketStream extends _CloseableStream<BithumbMarketEvent> {
   BithumbMarketStream(super.source, {super.onClose});
 }
 
-/// Bithumb 원본 이벤트를 보존하는 단일 구독 스트림입니다.
+/// A single-subscription stream that preserves Bithumb-native events.
 final class BithumbAccountStream extends _CloseableStream<BithumbAccountEvent> {
   BithumbAccountStream(super.source, {super.onClose});
 }
 
-/// Binance 원본 이벤트를 보존하는 단일 구독 스트림입니다.
+/// A single-subscription stream that preserves Binance-native events.
 final class BinanceMarketStream extends _CloseableStream<BinanceMarketEvent> {
   BinanceMarketStream(super.source, {super.onClose});
 }
 
-/// Binance 원본 이벤트를 보존하는 단일 구독 스트림입니다.
+/// A single-subscription stream that preserves Binance-native events.
 final class BinanceAccountStream
     extends _CloseableStream<BinanceAccountStreamEvent> {
   BinanceAccountStream(super.source, {super.onClose});

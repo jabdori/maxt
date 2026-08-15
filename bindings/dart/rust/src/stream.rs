@@ -27,97 +27,97 @@ const CANCELLED: u8 = 2;
 pub(crate) type CancelFuture = Pin<Box<dyn Future<Output = Result<()>> + Send + 'static>>;
 pub(crate) type CancelCallback = Arc<dyn Fn(String) -> CancelFuture + Send + Sync>;
 
-/// Dart에서 전달할 수 있는 시장 stream event입니다.
+/// Market-stream event that can be delivered to Dart.
 #[derive(Debug)]
 pub enum WireMarketEvent {
-    /// 시장 체결 이벤트입니다.
+    /// Market trade event.
     Trade(WireTrade),
-    /// 시장 호가 스냅샷 이벤트입니다.
+    /// Market order-book snapshot event.
     OrderBook(WireOrderBook),
-    /// 시장 ticker 이벤트입니다.
+    /// Market ticker event.
     Ticker(WireTicker),
-    /// 시장 캔들 이벤트입니다.
+    /// Market candle event.
     Candle(WireCandle),
-    /// 재연결 뒤 수신이 재개됐음을 알립니다.
+    /// Indicates that receipt resumed after reconnection.
     Reconnected,
 }
 
-/// Dart에서 전달할 수 있는 계정 stream event입니다.
+/// Account-stream event that can be delivered to Dart.
 #[derive(Debug)]
 pub enum WireAccountEvent {
-    /// 계정 잔고 이벤트입니다.
+    /// Account balance event.
     Balance(WireBalance),
-    /// 계정 주문 이벤트입니다.
+    /// Account order event.
     Order(WireOrder),
-    /// 재연결 뒤 수신이 재개됐음을 알립니다.
+    /// Indicates that receipt resumed after reconnection.
     Reconnected,
 }
 
-/// 시장 stream sink에 넣는 tagged item입니다.
+/// Tagged item sent to a market-stream sink.
 #[derive(Debug)]
 pub enum MarketStreamItem {
-    /// 정상 시장 이벤트입니다.
+    /// Normal market event.
     Event(WireMarketEvent),
-    /// 스트림을 끝내지 않는 오류입니다.
+    /// Non-terminal stream error.
     Error(NativeError),
-    /// 시장 스트림의 자연 종료를 나타냅니다.
+    /// Natural end of the market stream.
     End,
 }
 
-/// 계정 stream sink에 넣는 tagged item입니다.
+/// Tagged item sent to an account-stream sink.
 #[derive(Debug)]
 pub enum AccountStreamItem {
-    /// 정상 계정 이벤트입니다.
+    /// Normal account event.
     Event(WireAccountEvent),
-    /// 스트림을 끝내지 않는 오류입니다.
+    /// Non-terminal stream error.
     Error(NativeError),
-    /// 계정 스트림의 자연 종료를 나타냅니다.
+    /// Natural end of the account stream.
     End,
 }
 
-/// Rust market subscription에서 Dart가 한 항목씩 읽는 tagged item입니다.
+/// Tagged item read by Dart from a Rust market subscription.
 #[derive(Debug)]
 pub enum WireMarketStreamItem {
-    /// 정상 시장 이벤트입니다.
+    /// Normal market event.
     Event(WireMarketEvent),
-    /// 스트림을 끝내지 않는 오류입니다.
+    /// Non-terminal stream error.
     Error(NativeError),
-    /// 시장 스트림의 자연 종료 또는 명시적 close를 나타냅니다.
+    /// Natural end or explicit close of the market stream.
     End,
 }
 
-/// Rust account subscription에서 Dart가 한 항목씩 읽는 tagged item입니다.
+/// Tagged item read by Dart from a Rust account subscription.
 #[derive(Debug)]
 pub enum WireAccountStreamItem {
-    /// 정상 계정 이벤트입니다.
+    /// Normal account event.
     Event(WireAccountEvent),
-    /// 스트림을 끝내지 않는 오류입니다.
+    /// Non-terminal stream error.
     Error(NativeError),
-    /// 계정 스트림의 자연 종료 또는 명시적 close를 나타냅니다.
+    /// Natural end or explicit close of the account stream.
     End,
 }
 
-/// Hyperliquid 원본 시장 스트림의 event/error/end 항목입니다.
+/// Event, error, or end item from a Hyperliquid-native market stream.
 #[derive(Debug)]
 #[allow(clippy::large_enum_variant)]
 pub enum WireHyperliquidMarketStreamItem {
-    /// 정상 Hyperliquid 시장 이벤트입니다.
+    /// Normal Hyperliquid market event.
     Event(WireHyperliquidMarketEvent),
-    /// 스트림을 끝내지 않는 오류입니다.
+    /// Non-terminal stream error.
     Error(NativeError),
-    /// 자연 종료 또는 명시적 close를 나타냅니다.
+    /// Natural end or explicit close.
     End,
 }
 
-/// Hyperliquid 원본 계정 스트림의 event/error/end 항목입니다.
+/// Event, error, or end item from a Hyperliquid-native account stream.
 #[derive(Debug)]
 #[allow(clippy::large_enum_variant)]
 pub enum WireHyperliquidAccountStreamItem {
-    /// 정상 Hyperliquid 계정 이벤트입니다.
+    /// Normal Hyperliquid account event.
     Event(WireHyperliquidAccountEvent),
-    /// 스트림을 끝내지 않는 오류입니다.
+    /// Non-terminal stream error.
     Error(NativeError),
-    /// 자연 종료 또는 명시적 close를 나타냅니다.
+    /// Natural end or explicit close.
     End,
 }
 
@@ -384,7 +384,7 @@ where
     }
 }
 
-/// Rust 시장 구독의 수명과 비종료 오류를 Dart에 보존하는 handle입니다.
+/// Handle that preserves Rust market-subscription lifetime and non-terminal errors for Dart.
 #[flutter_rust_bridge::frb(opaque)]
 pub struct NativeMarketSubscription {
     inner: NativeSubscription<WireMarketStreamItem>,
@@ -397,24 +397,24 @@ impl NativeMarketSubscription {
         }
     }
 
-    /// 다음 event/error를 반환하며, 자연 종료 또는 `close` 뒤에는 `End`를 반환합니다.
+    /// Returns the next event or error, and `End` after natural completion or `close`.
     pub async fn next(&self) -> WireMarketStreamItem {
         self.inner.next().await.unwrap_or(WireMarketStreamItem::End)
     }
 
-    /// 전달 작업을 중단하고 원본 Rust stream이 drop될 때까지 기다립니다.
+    /// Stops delivery and waits for the source Rust stream to be dropped.
     pub async fn close(&self) -> std::result::Result<(), NativeError> {
         self.inner.close().await.map_err(Into::into)
     }
 }
 
-/// Rust 계정 구독의 수명과 비종료 오류를 Dart에 보존하는 handle입니다.
+/// Handle that preserves Rust account-subscription lifetime and non-terminal errors for Dart.
 #[flutter_rust_bridge::frb(opaque)]
 pub struct NativeAccountSubscription {
     inner: NativeSubscription<WireAccountStreamItem>,
 }
 
-/// Hyperliquid 원본 시장 구독의 수명과 비종료 오류를 Dart에 보존하는 handle입니다.
+/// Handle that preserves Hyperliquid-native market subscription lifetime and non-terminal errors for Dart.
 #[flutter_rust_bridge::frb(opaque)]
 pub struct NativeHyperliquidMarketSubscription {
     inner: NativeSubscription<WireHyperliquidMarketStreamItem>,
@@ -427,7 +427,7 @@ impl NativeHyperliquidMarketSubscription {
         }
     }
 
-    /// 다음 event/error를 반환하며, 자연 종료 또는 `close` 뒤에는 `End`를 반환합니다.
+    /// Returns the next event or error, and `End` after natural completion or `close`.
     pub async fn next(&self) -> WireHyperliquidMarketStreamItem {
         self.inner
             .next()
@@ -435,13 +435,13 @@ impl NativeHyperliquidMarketSubscription {
             .unwrap_or(WireHyperliquidMarketStreamItem::End)
     }
 
-    /// 전달 작업을 중단하고 원본 Rust stream이 drop될 때까지 기다립니다.
+    /// Stops delivery and waits for the source Rust stream to be dropped.
     pub async fn close(&self) -> std::result::Result<(), NativeError> {
         self.inner.close().await.map_err(Into::into)
     }
 }
 
-/// Hyperliquid 원본 계정 구독의 수명과 비종료 오류를 Dart에 보존하는 handle입니다.
+/// Handle that preserves Hyperliquid-native account subscription lifetime and non-terminal errors for Dart.
 #[flutter_rust_bridge::frb(opaque)]
 pub struct NativeHyperliquidAccountSubscription {
     inner: NativeSubscription<WireHyperliquidAccountStreamItem>,
@@ -454,7 +454,7 @@ impl NativeHyperliquidAccountSubscription {
         }
     }
 
-    /// 다음 event/error를 반환하며, 자연 종료 또는 `close` 뒤에는 `End`를 반환합니다.
+    /// Returns the next event or error, and `End` after natural completion or `close`.
     pub async fn next(&self) -> WireHyperliquidAccountStreamItem {
         self.inner
             .next()
@@ -462,7 +462,7 @@ impl NativeHyperliquidAccountSubscription {
             .unwrap_or(WireHyperliquidAccountStreamItem::End)
     }
 
-    /// 전달 작업을 중단하고 원본 Rust stream이 drop될 때까지 기다립니다.
+    /// Stops delivery and waits for the source Rust stream to be dropped.
     pub async fn close(&self) -> std::result::Result<(), NativeError> {
         self.inner.close().await.map_err(Into::into)
     }
@@ -475,7 +475,7 @@ impl NativeAccountSubscription {
         }
     }
 
-    /// 다음 event/error를 반환하며, 자연 종료 또는 `close` 뒤에는 `End`를 반환합니다.
+    /// Returns the next event or error, and `End` after natural completion or `close`.
     pub async fn next(&self) -> WireAccountStreamItem {
         self.inner
             .next()
@@ -483,7 +483,7 @@ impl NativeAccountSubscription {
             .unwrap_or(WireAccountStreamItem::End)
     }
 
-    /// 전달 작업을 중단하고 원본 Rust stream이 drop될 때까지 기다립니다.
+    /// Stops delivery and waits for the source Rust stream to be dropped.
     pub async fn close(&self) -> std::result::Result<(), NativeError> {
         self.inner.close().await.map_err(Into::into)
     }
@@ -648,7 +648,7 @@ impl<T> StreamState<T> {
     }
 }
 
-/// Dart market subscription이 Rust로 event를 보내는 sink입니다.
+/// Sink through which a Dart market subscription sends events to Rust.
 #[flutter_rust_bridge::frb(opaque)]
 pub struct MarketStreamSink {
     id: String,
@@ -664,7 +664,7 @@ impl fmt::Debug for MarketStreamSink {
 }
 
 impl MarketStreamSink {
-    /// event와 error를 항목으로 보내며 `End`만 stream을 종료합니다.
+    /// Sends events and errors as items; only `End` terminates the stream.
     pub async fn add(&self, item: MarketStreamItem) -> bool {
         match item {
             MarketStreamItem::Event(WireMarketEvent::Reconnected) => {
@@ -687,7 +687,7 @@ impl Drop for MarketStreamSink {
     }
 }
 
-/// Dart account subscription이 Rust로 event를 보내는 sink입니다.
+/// Sink through which a Dart account subscription sends events to Rust.
 #[flutter_rust_bridge::frb(opaque)]
 pub struct AccountStreamSink {
     id: String,
@@ -703,7 +703,7 @@ impl fmt::Debug for AccountStreamSink {
 }
 
 impl AccountStreamSink {
-    /// event와 error를 항목으로 보내며 `End`만 stream을 종료합니다.
+    /// Sends events and errors as items; only `End` terminates the stream.
     pub async fn add(&self, item: AccountStreamItem) -> bool {
         match item {
             AccountStreamItem::Event(WireAccountEvent::Reconnected) => {

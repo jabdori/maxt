@@ -31,13 +31,13 @@ pub use crate::stream::{
     WireMarketEvent, WireMarketStreamItem,
 };
 
-/// 설치된 Dart/Rust 경계의 버전입니다.
+/// Version of the installed Dart/Rust boundary.
 #[flutter_rust_bridge::frb(sync)]
 pub fn bridge_version() -> String {
     env!("CARGO_PKG_VERSION").to_owned()
 }
 
-/// 브라우저 HTTP와 WebSocket 요청에 사용할 relay origin을 설정합니다.
+/// Configures the relay origin for browser HTTP and WebSocket requests.
 #[flutter_rust_bridge::frb(sync)]
 pub fn configure_browser_relay(relay_url: String) -> Result<(), NativeError> {
     #[cfg(target_arch = "wasm32")]
@@ -51,80 +51,80 @@ pub fn configure_browser_relay(relay_url: String) -> Result<(), NativeError> {
     }
 }
 
-/// Dart 네이티브 스트림 종료 테스트용으로 대기 중인 구독을 만듭니다.
+/// Creates a pending subscription for Dart native-stream termination tests.
 #[doc(hidden)]
 #[flutter_rust_bridge::frb(sync)]
 pub fn pending_market_subscription_for_test() -> NativeMarketSubscription {
     crate::stream::pending_market_subscription_for_test()
 }
 
-/// Dart Adapter가 만든 시장 스트림에 한 항목을 전달합니다.
+/// Delivers one item to a market stream created by a Dart Adapter.
 pub async fn market_stream_sink_add(sink: &MarketStreamSink, item: MarketStreamItem) -> bool {
     sink.add(item).await
 }
 
-/// Dart Adapter가 만든 계정 스트림에 한 항목을 전달합니다.
+/// Delivers one item to an account stream created by a Dart Adapter.
 pub async fn account_stream_sink_add(sink: &AccountStreamSink, item: AccountStreamItem) -> bool {
     sink.add(item).await
 }
 
-/// 네이티브 시장 구독에서 다음 event/error/end 항목을 읽습니다.
+/// Reads the next event, error, or end item from a native market subscription.
 pub async fn native_market_subscription_next(
     subscription: &NativeMarketSubscription,
 ) -> WireMarketStreamItem {
     subscription.next().await
 }
 
-/// 네이티브 계정 구독에서 다음 event/error/end 항목을 읽습니다.
+/// Reads the next event, error, or end item from a native account subscription.
 pub async fn native_account_subscription_next(
     subscription: &NativeAccountSubscription,
 ) -> WireAccountStreamItem {
     subscription.next().await
 }
 
-/// 네이티브 시장 구독을 중단하고 원본 Rust stream 정리를 기다립니다.
+/// Stops a native market subscription and waits for source Rust stream cleanup.
 pub async fn native_market_subscription_close(
     subscription: &NativeMarketSubscription,
 ) -> Result<(), NativeError> {
     subscription.close().await
 }
 
-/// 네이티브 계정 구독을 중단하고 원본 Rust stream 정리를 기다립니다.
+/// Stops a native account subscription and waits for source Rust stream cleanup.
 pub async fn native_account_subscription_close(
     subscription: &NativeAccountSubscription,
 ) -> Result<(), NativeError> {
     subscription.close().await
 }
 
-/// 네이티브 Hyperliquid 시장 구독에서 다음 event/error/end 항목을 읽습니다.
+/// Reads the next event, error, or end item from a native Hyperliquid market subscription.
 pub async fn native_hyperliquid_market_subscription_next(
     subscription: &NativeHyperliquidMarketSubscription,
 ) -> WireHyperliquidMarketStreamItem {
     subscription.next().await
 }
 
-/// 네이티브 Hyperliquid 계정 구독에서 다음 event/error/end 항목을 읽습니다.
+/// Reads the next event, error, or end item from a native Hyperliquid account subscription.
 pub async fn native_hyperliquid_account_subscription_next(
     subscription: &NativeHyperliquidAccountSubscription,
 ) -> WireHyperliquidAccountStreamItem {
     subscription.next().await
 }
 
-/// 네이티브 Hyperliquid 시장 구독을 중단하고 원본 Rust stream 정리를 기다립니다.
+/// Stops a native Hyperliquid market subscription and waits for source Rust stream cleanup.
 pub async fn native_hyperliquid_market_subscription_close(
     subscription: &NativeHyperliquidMarketSubscription,
 ) -> Result<(), NativeError> {
     subscription.close().await
 }
 
-/// 네이티브 Hyperliquid 계정 구독을 중단하고 원본 Rust stream 정리를 기다립니다.
+/// Stops a native Hyperliquid account subscription and waits for source Rust stream cleanup.
 pub async fn native_hyperliquid_account_subscription_close(
     subscription: &NativeHyperliquidAccountSubscription,
 ) -> Result<(), NativeError> {
     subscription.close().await
 }
 
-/// Dart callback을 공통 Adapter 구현으로 등록합니다.
+/// Registers a Dart callback as a common Adapter implementation.
 pub fn register_dart_adapter(
     exchange: WireExchange,
     features: Vec<WireFeature>,
@@ -136,27 +136,27 @@ pub fn register_dart_adapter(
     crate::adapter::register_dart_adapter(exchange, features, dispatcher)
 }
 
-/// Dart에서 Upbit API 지역을 선택할 때 쓰는 값입니다.
+/// Value used to select an Upbit API region from Dart.
 ///
-/// 포켓과 원화 입출금 API는 `Korea`에서만 사용할 수 있습니다.
+/// Pocket and KRW transfer APIs are available only in `Korea`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireUpbitRegion {
-    /// 대한민국 Upbit API입니다.
+    /// Upbit Korea API.
     Korea,
-    /// 싱가포르 Upbit API입니다.
+    /// Upbit Singapore API.
     Singapore,
-    /// 인도네시아 Upbit API입니다.
+    /// Upbit Indonesia API.
     Indonesia,
-    /// 태국 Upbit API입니다.
+    /// Upbit Thailand API.
     Thailand,
 }
 
-/// Dart에서 구성한 Binance 제품군입니다.
+/// Binance venue configured from Dart.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireBinanceVenue {
-    /// Binance Spot API입니다.
+    /// Binance Spot API.
     Spot,
-    /// Binance USD-M Futures API입니다.
+    /// Binance USD-M Futures API.
     UsdMFutures,
 }
 
@@ -454,7 +454,7 @@ impl Adapter for BuiltInAdapter {
     }
 }
 
-/// Dart의 공통 Client와 제공자별 Adapter가 공유하는 native handle입니다.
+/// Native handle shared by Dart's common Client and provider-specific Adapters.
 #[flutter_rust_bridge::frb(opaque)]
 pub struct NativeClient {
     adapter: Arc<dyn Adapter>,
@@ -478,7 +478,7 @@ impl NativeClient {
         }
     }
 
-    /// Dart에서 구현한 Adapter를 공통 native Client로 감쌉니다.
+    /// Wraps a Dart-implemented Adapter as a common native Client.
     #[flutter_rust_bridge::frb(sync)]
     pub fn from_dart_adapter(adapter: DartAdapter) -> Self {
         Self::from_adapter(adapter.into_adapter())
@@ -493,7 +493,7 @@ impl NativeClient {
             })
     }
 
-    /// Upbit의 지역과 선택적 자격증명을 구성합니다.
+    /// Configures an Upbit region and optional credentials.
     #[flutter_rust_bridge::frb(sync)]
     pub fn upbit(
         region: WireUpbitRegion,
@@ -509,7 +509,7 @@ impl NativeClient {
         Ok(Self::from_built_in(BuiltInAdapter::Upbit(adapter)))
     }
 
-    /// Bithumb의 선택적 자격증명을 구성합니다.
+    /// Configures optional Bithumb credentials.
     #[flutter_rust_bridge::frb(sync)]
     pub fn bithumb(
         access_key: Option<String>,
@@ -524,7 +524,7 @@ impl NativeClient {
         Ok(Self::from_built_in(BuiltInAdapter::Bithumb(adapter)))
     }
 
-    /// Binance Spot의 선택적 자격증명을 구성합니다.
+    /// Configures optional Binance Spot credentials.
     #[flutter_rust_bridge::frb(sync)]
     pub fn binance_spot(
         api_key: Option<String>,
@@ -533,7 +533,7 @@ impl NativeClient {
         Self::binance(BinanceAdapter::spot(), api_key, secret_key).map_err(Into::into)
     }
 
-    /// Binance USD-M의 선택적 자격증명을 구성합니다.
+    /// Configures optional Binance USD-M credentials.
     #[flutter_rust_bridge::frb(sync)]
     pub fn binance_usd_m_futures(
         api_key: Option<String>,
@@ -555,7 +555,7 @@ impl NativeClient {
         Ok(Self::from_built_in(BuiltInAdapter::Binance(adapter)))
     }
 
-    /// Hyperliquid mainnet/testnet과 선택적 지갑을 구성합니다.
+    /// Configures Hyperliquid mainnet or testnet and an optional wallet.
     #[flutter_rust_bridge::frb(sync)]
     pub fn hyperliquid(
         testnet: bool,
@@ -576,19 +576,19 @@ impl NativeClient {
         Ok(Self::from_built_in(BuiltInAdapter::Hyperliquid(adapter)))
     }
 
-    /// 이 native handle이 연결한 거래소를 반환합니다.
+    /// Returns the exchange connected by this native handle.
     #[flutter_rust_bridge::frb(sync)]
     pub fn exchange(&self) -> WireExchange {
         self.adapter.exchange().into()
     }
 
-    /// 이 native handle이 지정한 공통 기능을 지원하는지 반환합니다.
+    /// Returns whether this native handle supports a common feature.
     #[flutter_rust_bridge::frb(sync)]
     pub fn supports(&self, feature: WireFeature) -> bool {
         self.adapter.supports(feature.into())
     }
 
-    /// Upbit handle이면 선택된 지역을, 아니면 null을 반환합니다.
+    /// Returns the selected region for an Upbit handle, otherwise null.
     #[flutter_rust_bridge::frb(sync)]
     pub fn upbit_region(&self) -> Option<WireUpbitRegion> {
         match self.built_in.as_deref()? {
@@ -597,7 +597,7 @@ impl NativeClient {
         }
     }
 
-    /// Binance handle이면 선택된 제품군을, 아니면 null을 반환합니다.
+    /// Returns the selected venue for a Binance handle, otherwise null.
     #[flutter_rust_bridge::frb(sync)]
     pub fn binance_venue(&self) -> Option<WireBinanceVenue> {
         match self.built_in.as_deref()? {
@@ -606,7 +606,7 @@ impl NativeClient {
         }
     }
 
-    /// Hyperliquid handle이면 testnet 여부를, 아니면 null을 반환합니다.
+    /// Returns whether a Hyperliquid handle uses testnet, otherwise null.
     #[flutter_rust_bridge::frb(sync)]
     pub fn is_testnet(&self) -> Option<bool> {
         match self.built_in.as_deref()? {
@@ -615,7 +615,7 @@ impl NativeClient {
         }
     }
 
-    /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 시장 구독을 반환합니다.
+    /// Returns a market subscription that Dart can read item by item after connecting.
     pub async fn subscribe(
         &self,
         subscription: WireSubscription,
@@ -630,7 +630,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 계정 구독을 반환합니다.
+    /// Returns an account subscription that Dart can read item by item after connecting.
     pub async fn subscribe_account(
         &self,
         config: WireStreamConfig,
@@ -643,7 +643,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 Hyperliquid 원본 시장 구독을 반환합니다.
+    /// Returns a Hyperliquid-native market subscription that Dart can read after connecting.
     pub async fn hyperliquid_subscribe_detailed(
         &self,
         subscription: WireSubscription,
@@ -660,7 +660,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 설정형 Hyperliquid 원본 시장 구독을 반환합니다.
+    /// Returns a configured Hyperliquid-native market subscription that Dart can read after connecting.
     pub async fn hyperliquid_subscribe_detailed_with(
         &self,
         subscription: WireSubscription,
@@ -679,7 +679,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 Hyperliquid 원본 계정 구독을 반환합니다.
+    /// Returns a Hyperliquid-native account subscription that Dart can read after connecting.
     pub async fn hyperliquid_subscribe_detailed_account(
         &self,
     ) -> Result<NativeHyperliquidAccountSubscription, NativeError> {
@@ -694,7 +694,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 초기 연결을 마친 뒤 Dart가 한 항목씩 읽을 수 있는 설정형 Hyperliquid 원본 계정 구독을 반환합니다.
+    /// Returns a configured Hyperliquid-native account subscription that Dart can read after connecting.
     pub async fn hyperliquid_subscribe_detailed_account_with(
         &self,
         config: WireStreamConfig,
@@ -711,9 +711,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 여러 Upbit 현물 시장의 호가 스냅샷을 반환합니다.
+    /// Returns order-book snapshots for multiple Upbit Spot markets.
     ///
-    /// `depth`는 각 매수·매도 측의 최대 단계 수입니다.
+    /// `depth` is the maximum number of levels on each bid and ask side.
     pub async fn upbit_order_books(
         &self,
         markets: Vec<WireMarket>,
@@ -731,9 +731,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 지정 가격 단위로 묶은 Upbit 호가 스냅샷을 반환합니다.
+    /// Returns Upbit order-book snapshots grouped by a specified price unit.
     ///
-    /// 가격 단위는 해당 시장의 현재 지원 단위여야 합니다.
+    /// The price unit must be currently supported by each market.
     pub async fn upbit_order_books_at_level(
         &self,
         markets: Vec<WireMarket>,
@@ -753,7 +753,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 지정한 Upbit 현물 시장의 ticker 요약을 반환합니다.
+    /// Returns the ticker summary for a specified Upbit Spot market.
     pub async fn upbit_tickers(
         &self,
         markets: Vec<WireMarket>,
@@ -770,7 +770,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 하나 이상의 호가 통화로 Upbit ticker를 조회합니다.
+    /// Queries Upbit tickers for one or more quote assets.
     pub async fn upbit_tickers_by_quote(
         &self,
         quote_currencies: Vec<String>,
@@ -786,9 +786,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 한 Upbit 시장의 연간 캔들을 오래된 순서로 반환합니다.
+    /// Returns yearly candles for one Upbit market, oldest first.
     ///
-    /// `count`는 1부터 200까지이며, `toNs`는 포함되지 않는 종료 시각입니다.
+    /// `count` is 1 through 200 and `toNs` is an exclusive end time.
     pub async fn upbit_year_candles(
         &self,
         market: WireMarket,
@@ -810,7 +810,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 지정한 Upbit 시장의 현재 호가 단위와 지원 가격 단위를 반환합니다.
+    /// Returns the current order-book unit and supported price units for an Upbit market.
     pub async fn upbit_orderbook_instruments(
         &self,
         markets: Vec<WireMarket>,
@@ -827,7 +827,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit 시장의 투자 경고·주의 정보를 반환합니다.
+    /// Returns investment-warning and caution information for Upbit markets.
     pub async fn upbit_market_events(&self) -> Result<Vec<WireUpbitMarketEvent>, NativeError> {
         let adapter = match self.built_in("upbit_market_events")? {
             BuiltInAdapter::Upbit(adapter) => adapter,
@@ -840,9 +840,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 일치하는 활성 Upbit 연결이 실제로 구독한 항목을 반환합니다.
+    /// Returns items actually subscribed by a matching active Upbit connection.
     ///
-    /// 먼저 같은 선택자(selector)로 구독을 시작하고 반환된 stream을 계속 실행해야 합니다.
+    /// Start a subscription with the same selector first and keep its returned stream running.
     pub async fn upbit_list_subscriptions(
         &self,
         subscription: WireSubscription,
@@ -858,7 +858,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit 계정에 등록된 출금 허용 주소 목록을 반환합니다.
+    /// Returns withdrawal allowlist addresses registered on the Upbit account.
     pub async fn upbit_withdrawal_addresses(
         &self,
     ) -> Result<Vec<WireUpbitWithdrawalAddress>, NativeError> {
@@ -873,9 +873,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit 주문을 실제 제출 없이 검증합니다.
+    /// Validates an Upbit order without submitting it.
     ///
-    /// 반환된 주문 ID와 상태는 실주문을 뜻하지 않아 조회·취소에 사용할 수 없습니다.
+    /// Returned order ID and status do not represent a live order and cannot be queried or cancelled.
     pub async fn upbit_test_order(
         &self,
         request: WireOrderRequest,
@@ -892,9 +892,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 체결·수수료·자전거래 방지 정보를 포함한 Upbit 주문 상세를 반환합니다.
+    /// Returns Upbit order details including fills, fees, and self-match prevention information.
     ///
-    /// UUID와 사용자 주문 식별자를 모두 주면 Upbit는 UUID를 우선합니다.
+    /// When both UUID and client order identifier are supplied, Upbit prioritizes UUID.
     pub async fn upbit_order_detail(
         &self,
         request: WireUpbitOrderDetailRequest,
@@ -911,7 +911,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 조건에 맞는 Upbit 종료 주문 목록을 반환합니다.
+    /// Returns closed Upbit orders that match the request.
     pub async fn upbit_closed_orders(
         &self,
         request: WireUpbitClosedOrdersRequest,
@@ -928,9 +928,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 한 자산·네트워크의 Upbit 입금 가능 정보를 반환합니다.
+    /// Returns Upbit deposit availability for one asset and network.
     ///
-    /// 이 정보는 실시간 서비스 상태가 아니며 몇 분 지연될 수 있습니다.
+    /// This information is not real-time service state and can lag by minutes.
     pub async fn upbit_deposit_info(
         &self,
         asset: String,
@@ -948,7 +948,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit Korea 또는 Singapore의 Travel Rule 검증 가능 VASP를 반환합니다.
+    /// Returns Travel Rule VASPs eligible for verification in Upbit Korea or Singapore.
     pub async fn upbit_travel_rule_vasps(
         &self,
     ) -> Result<Vec<WireUpbitTravelRuleVasp>, NativeError> {
@@ -963,9 +963,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 입금 UUID로 Upbit Travel Rule 검증을 요청합니다.
+    /// Requests Upbit Travel Rule verification by deposit UUID.
     ///
-    /// 이는 금융 쓰기 요청이며 동일 입금에 대한 반복 요청 제한은 Upbit가 적용합니다.
+    /// This is a financial write; Upbit limits repeated requests for the same deposit.
     pub async fn upbit_verify_travel_rule_by_uuid(
         &self,
         deposit_uuid: String,
@@ -982,9 +982,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 거래 ID로 Upbit Travel Rule 검증을 요청합니다.
+    /// Requests Upbit Travel Rule verification by transaction ID.
     ///
-    /// 이는 금융 쓰기 요청이며 동일 입금에 대한 반복 요청 제한은 Upbit가 적용합니다.
+    /// This is a financial write; Upbit limits repeated requests for the same deposit.
     pub async fn upbit_verify_travel_rule_by_txid(
         &self,
         txid: String,
@@ -1003,9 +1003,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 조건에 맞는 Upbit 대기 주문을 한 요청으로 취소합니다.
+    /// Cancels matching pending Upbit orders in one request.
     ///
-    /// 반환값은 취소 완료와 상태 변경으로 취소하지 못한 주문을 구분합니다.
+    /// The result distinguishes completed cancellations from orders no longer cancellable after state changes.
     pub async fn upbit_batch_cancel_open_orders(
         &self,
         request: WireUpbitBatchCancelRequest,
@@ -1022,9 +1022,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit 주문을 취소하고 대체 주문을 요청합니다.
+    /// Cancels an Upbit order and requests its replacement.
     ///
-    /// 이전 주문이 먼저 체결되면 성공 응답이어도 대체 주문이 없을 수 있습니다.
+    /// A successful response can omit the replacement when the original order fills first.
     pub async fn upbit_cancel_and_new_order(
         &self,
         request: WireUpbitCancelAndNewOrderRequest,
@@ -1041,9 +1041,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit Korea 등록 계좌에서 원화 입금을 요청합니다.
+    /// Requests a KRW deposit from a registered Upbit Korea account.
     ///
-    /// 이는 Korea 지역 전용 금융 쓰기입니다.
+    /// This is a Korea-region-only financial write.
     pub async fn upbit_deposit_krw(
         &self,
         request: WireUpbitKrwTransferRequest,
@@ -1060,9 +1060,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit Korea 등록 계좌로 원화 출금을 요청합니다.
+    /// Requests a KRW withdrawal to a registered Upbit Korea account.
     ///
-    /// 이는 Korea 지역 전용 금융 쓰기이며 출금 안전 잠금으로 거절될 수 있습니다.
+    /// This Korea-only financial write can be rejected by a withdrawal safety lock.
     pub async fn upbit_withdraw_krw(
         &self,
         request: WireUpbitKrwTransferRequest,
@@ -1079,9 +1079,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 이 Upbit Korea 계정에 등록된 API 키 식별자와 만료 시각을 반환합니다.
+    /// Returns API-key identifiers and expiration times registered for this Upbit Korea account.
     ///
-    /// 비밀 키 자료는 반환하지 않습니다.
+    /// Secret-key material is never returned.
     pub async fn upbit_api_keys(&self) -> Result<Vec<WireUpbitApiKey>, NativeError> {
         let adapter = match self.built_in("upbit_api_keys")? {
             BuiltInAdapter::Upbit(adapter) => adapter,
@@ -1094,7 +1094,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit Korea API 키가 볼 수 있는 포켓 목록을 반환합니다.
+    /// Returns pockets visible to the Upbit Korea API key.
     pub async fn upbit_list_pockets(&self) -> Result<Vec<WireUpbitPocket>, NativeError> {
         let adapter = match self.built_in("upbit_list_pockets")? {
             BuiltInAdapter::Upbit(adapter) => adapter,
@@ -1107,9 +1107,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit Korea 포켓별 API 키를 반환합니다.
+    /// Returns API keys for an Upbit Korea pocket.
     ///
-    /// 요청은 포켓 UUID와 만료 키 포함 여부를 선택적으로 제한합니다.
+    /// The request can filter by pocket UUID and whether to include expired keys.
     pub async fn upbit_list_pocket_api_keys(
         &self,
         request: WireUpbitPocketApiKeysRequest,
@@ -1126,7 +1126,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 한 Upbit Korea 서브 포켓의 자산 잔고를 반환합니다.
+    /// Returns asset balances for one Upbit Korea sub-pocket.
     pub async fn upbit_sub_pocket_balances(
         &self,
         pocket_uuid: String,
@@ -1142,9 +1142,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit Korea 메인 포켓 간 자산 이전을 요청합니다.
+    /// Requests an asset transfer between Upbit Korea main pockets.
     ///
-    /// 이는 금융 쓰기이며 현재 OpenAPI 계약상 대상 포켓 `to`가 필수입니다.
+    /// This financial write requires destination pocket `to` under the current OpenAPI contract.
     pub async fn upbit_universal_transfer(
         &self,
         request: WireUpbitPocketUniversalTransferRequest,
@@ -1161,7 +1161,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit Korea 메인 포켓 이전 이력을 반환합니다.
+    /// Returns Upbit Korea main-pocket transfer history.
     pub async fn upbit_universal_transfers(
         &self,
         request: WireUpbitPocketTransferQuery,
@@ -1178,9 +1178,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 현재 Upbit Korea 서브 포켓에서 다른 포켓으로 자산 이전을 요청합니다.
+    /// Requests an asset transfer from the current Upbit Korea sub-pocket to another pocket.
     ///
-    /// 이는 금융 쓰기이며 현재 OpenAPI 계약상 대상 포켓 `to`가 필수입니다.
+    /// This financial write requires destination pocket `to` under the current OpenAPI contract.
     pub async fn upbit_sub_pocket_transfer(
         &self,
         request: WireUpbitPocketTransferRequest,
@@ -1197,7 +1197,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 현재 Upbit Korea 서브 포켓의 이전 이력을 반환합니다.
+    /// Returns transfer history for the current Upbit Korea sub-pocket.
     pub async fn upbit_sub_pocket_transfers(
         &self,
         request: WireUpbitPocketTransferQuery,
@@ -1214,9 +1214,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb 시장별 원본 투자 유의 플래그를 반환합니다.
+    /// Returns native investment-caution flags for Bithumb markets.
     ///
-    /// 유의 종목도 거래 가능할 수 있으며 공통 시장 상태와는 별개입니다.
+    /// A caution-marked market can still trade; this is separate from common market status.
     pub async fn bithumb_market_warnings(
         &self,
     ) -> Result<Vec<WireBithumbMarketWarning>, NativeError> {
@@ -1231,7 +1231,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb에서 활성화한 시장별 경보를 반환합니다.
+    /// Returns market-specific alerts enabled by Bithumb.
     pub async fn bithumb_market_alerts(&self) -> Result<Vec<WireBithumbMarketAlert>, NativeError> {
         let adapter = match self.built_in("bithumb_market_alerts")? {
             BuiltInAdapter::Bithumb(adapter) => adapter,
@@ -1244,9 +1244,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 최신 Bithumb 거래소 공지를 먼저 반환합니다.
+    /// Returns the newest Bithumb exchange notices first.
     ///
-    /// `count`는 1부터 20까지이며 생략하면 Bithumb 기본값을 사용합니다.
+    /// `count` is 1 through 20; omission uses the Bithumb default.
     pub async fn bithumb_notices(
         &self,
         count: Option<u32>,
@@ -1262,9 +1262,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 한 자산 또는 `ALL`에 대한 Bithumb 전송 수수료 규칙을 반환합니다.
+    /// Returns Bithumb transfer-fee rules for one asset or `ALL`.
     ///
-    /// 계정별 출금 가능 여부와 한도는 이 응답에 포함되지 않습니다.
+    /// This response does not include account-specific withdrawal availability or limits.
     pub async fn bithumb_transfer_fees(
         &self,
         currency: String,
@@ -1280,7 +1280,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 이 Bithumb 계정에 등록된 API 키 정보를 반환합니다.
+    /// Returns API-key information registered on this Bithumb account.
     pub async fn bithumb_api_keys(&self) -> Result<Vec<WireBithumbApiKey>, NativeError> {
         let adapter = match self.built_in("bithumb_api_keys")? {
             BuiltInAdapter::Bithumb(adapter) => adapter,
@@ -1293,9 +1293,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 이 계정에 등록된 Bithumb 출금 주소 정보를 반환합니다.
+    /// Returns Bithumb withdrawal-address information registered on this account.
     ///
-    /// 이는 출금 견적이나 사전 검증 결과가 아니라 제공자 등록 주소 목록입니다.
+    /// This is a provider-registered address list, not a withdrawal quote or preflight result.
     pub async fn bithumb_withdrawal_addresses(
         &self,
     ) -> Result<Vec<WireBithumbWithdrawalAddress>, NativeError> {
@@ -1310,10 +1310,10 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 체결·수수료·STP 등 Bithumb 전용 상세를 포함한 한 주문을 반환합니다.
+    /// Returns one order with Bithumb-specific details such as fills, fees, and STP.
     ///
-    /// UUID와 client 주문 ID를 모두 주면 Bithumb는 UUID를 우선하며, 요청 시장은
-    /// 반환 주문과 로컬에서 대조합니다.
+    /// When UUID and client order ID are both supplied, Bithumb prioritizes UUID;
+    /// the requested market is checked locally against the returned order.
     pub async fn bithumb_order_detail(
         &self,
         request: WireBithumbOrderDetailRequest,
@@ -1330,10 +1330,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 상태·식별자·페이지 조건에 맞는 Bithumb 주문 목록을 반환합니다.
+    /// Returns Bithumb orders matching state, identifier, and page conditions.
     ///
-    /// `state`와 `states`는 함께 설정할 수 없으며, UUID 목록은 client 주문 ID 목록보다
-    /// 우선합니다.
+    /// `state` and `states` are mutually exclusive; UUIDs take priority over client order IDs.
     pub async fn bithumb_order_list(
         &self,
         request: WireBithumbOrderListRequest,
@@ -1350,7 +1349,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb 원화 출금 이력을 반환합니다.
+    /// Returns Bithumb KRW withdrawal history.
     pub async fn bithumb_krw_withdrawals(
         &self,
         request: WireBithumbKrwWithdrawalsRequest,
@@ -1367,9 +1366,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb 원화 출금을 요청합니다.
+    /// Requests a Bithumb KRW withdrawal.
     ///
-    /// 이는 금융 쓰기이며 등록 계좌와 제공자 측 2차 인증이 필요할 수 있습니다.
+    /// This financial write can require a registered account and provider-side second factor.
     pub async fn bithumb_withdraw_krw(
         &self,
         request: WireBithumbKrwTransferRequest,
@@ -1386,7 +1385,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb 원화 입금 이력을 반환합니다.
+    /// Returns Bithumb KRW deposit history.
     pub async fn bithumb_krw_deposits(
         &self,
         request: WireBithumbKrwDepositsRequest,
@@ -1403,9 +1402,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb 원화 입금을 요청합니다.
+    /// Requests a Bithumb KRW deposit.
     ///
-    /// 이는 금융 쓰기이며 은행 계좌와 2차 인증 조건은 제공자 측에서 확인합니다.
+    /// This financial write validates bank-account and second-factor requirements at the provider.
     pub async fn bithumb_deposit_krw(
         &self,
         request: WireBithumbKrwTransferRequest,
@@ -1422,7 +1421,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb `wait` 또는 `watch` 상태 주문 페이지를 반환합니다.
+    /// Returns a Bithumb page of orders in `wait` or `watch` state.
     pub async fn bithumb_pending_orders(
         &self,
         request: WireBithumbPendingOrdersRequest,
@@ -1439,7 +1438,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 조건에 맞는 Bithumb 종료 주문 페이지를 반환합니다.
+    /// Returns a page of closed Bithumb orders matching the request.
     pub async fn bithumb_closed_orders(
         &self,
         request: WireBithumbClosedOrdersRequest,
@@ -1456,9 +1455,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 최대 20개 Bithumb 주문을 함께 제출하고 항목별 결과를 반환합니다.
+    /// Submits up to 20 Bithumb orders together and returns per-item results.
     ///
-    /// 이는 금융 쓰기이며 HTTP 성공이어도 일부 항목은 거절될 수 있습니다.
+    /// This is a financial write; some items can be rejected despite HTTP success.
     pub async fn bithumb_batch_orders(
         &self,
         request: WireBithumbBatchOrdersRequest,
@@ -1475,7 +1474,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb TWAP 주문 페이지를 반환합니다.
+    /// Returns a page of Bithumb TWAP orders.
     pub async fn bithumb_twap_orders(
         &self,
         request: WireBithumbTwapOrdersRequest,
@@ -1492,9 +1491,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb TWAP 주문을 생성하고 제공자 주문 식별자를 반환합니다.
+    /// Creates a Bithumb TWAP order and returns its provider order identifier.
     ///
-    /// 이는 금융 쓰기 요청입니다.
+    /// This is a financial write request.
     pub async fn bithumb_create_twap_order(
         &self,
         request: WireBithumbTwapOrderRequest,
@@ -1510,7 +1509,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb TWAP 주문을 취소하고 취소된 식별자를 반환합니다.
+    /// Cancels a Bithumb TWAP order and returns its cancelled identifier.
     pub async fn bithumb_cancel_twap_order(
         &self,
         algo_order_id: String,
@@ -1525,9 +1524,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 한 Binance Spot 시장의 가격·수량·명목가 제약을 반환합니다.
+    /// Returns price, quantity, and notional constraints for one Binance Spot market.
     ///
-    /// USD-M Futures handle에서는 지원되지 않습니다.
+    /// Not supported by a USD-M Futures handle.
     pub async fn binance_spot_symbol_filters(
         &self,
         market: WireMarket,
@@ -1543,9 +1542,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 숫자 주문 ID로 Binance Spot 주문 상세를 반환합니다.
+    /// Returns Binance Spot order details by numeric order ID.
     ///
-    /// 체결·취소 주문도 포함하며 USD-M Futures handle에서는 지원되지 않습니다.
+    /// Includes filled and cancelled orders; not supported by a USD-M Futures handle.
     pub async fn binance_spot_order(
         &self,
         market: WireMarket,
@@ -1562,7 +1561,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 한 Binance Spot 시장의 현재 평균 가격을 반환합니다.
+    /// Returns the current average price for one Binance Spot market.
     pub async fn binance_spot_average_price(
         &self,
         market: WireMarket,
@@ -1578,7 +1577,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance Spot 계정의 권한·수수료·잔고 정보를 반환합니다.
+    /// Returns permissions, commissions, and balances for a Binance Spot account.
     pub async fn binance_spot_account_information(
         &self,
     ) -> Result<WireBinanceSpotAccountInformation, NativeError> {
@@ -1593,7 +1592,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance Spot 시장의 모든 미체결 주문을 취소하고 보고서를 반환합니다.
+    /// Cancels all open orders in a Binance Spot market and returns a report.
     pub async fn binance_spot_cancel_all_open_orders(
         &self,
         market: WireMarket,
@@ -1609,7 +1608,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance Spot 거래소 메타데이터를 반환합니다.
+    /// Returns Binance Spot exchange metadata.
     pub async fn binance_spot_exchange_info(&self) -> Result<WireBinanceExchangeInfo, NativeError> {
         let adapter = match self.built_in("binance_spot_exchange_info")? {
             BuiltInAdapter::Binance(adapter) => adapter,
@@ -1622,7 +1621,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance USD-M 계정의 마진·자산·포지션 정보를 반환합니다.
+    /// Returns margin, asset, and position information for a Binance USD-M account.
     pub async fn binance_usd_m_account_information(
         &self,
     ) -> Result<WireBinanceUsdMAccountInformation, NativeError> {
@@ -1637,7 +1636,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance USD-M 거래소 메타데이터를 반환합니다.
+    /// Returns Binance USD-M exchange metadata.
     pub async fn binance_usd_m_exchange_info(
         &self,
     ) -> Result<WireBinanceExchangeInfo, NativeError> {
@@ -1652,7 +1651,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance USD-M 포지션 위험 정보를 반환합니다.
+    /// Returns Binance USD-M position risk information.
     pub async fn binance_usd_m_position_information(
         &self,
         market: Option<WireMarket>,
@@ -1669,7 +1668,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance Wallet 코인·네트워크 설정을 반환합니다.
+    /// Returns Binance Wallet coin and network configuration.
     pub async fn binance_all_coins_information(
         &self,
     ) -> Result<Vec<WireBinanceCoinInformation>, NativeError> {
@@ -1684,7 +1683,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance API 키의 권한 상태를 반환합니다.
+    /// Returns permission state for the Binance API key.
     pub async fn binance_api_key_permissions(
         &self,
     ) -> Result<WireBinanceApiKeyPermissions, NativeError> {
@@ -1699,7 +1698,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance 입금 이력을 반환합니다.
+    /// Returns Binance deposit history.
     pub async fn binance_deposit_history(
         &self,
         request: WireBinanceDepositHistoryRequest,
@@ -1716,7 +1715,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance Travel Rule 설문 국가 요구사항을 반환합니다.
+    /// Returns Binance Travel Rule questionnaire country requirements.
     pub async fn binance_questionnaire_requirements(
         &self,
     ) -> Result<WireBinanceQuestionnaireRequirements, NativeError> {
@@ -1731,7 +1730,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance에 등록된 출금 주소 목록을 반환합니다.
+    /// Returns withdrawal addresses registered with Binance.
     pub async fn binance_withdraw_address_list(
         &self,
     ) -> Result<Vec<WireBinanceWithdrawalAddress>, NativeError> {
@@ -1746,7 +1745,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance 출금 이력을 반환합니다.
+    /// Returns Binance withdrawal history.
     pub async fn binance_withdraw_history(
         &self,
         request: WireBinanceWithdrawHistoryRequest,
@@ -1763,7 +1762,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 한 Binance USD-M 시장의 현재 mark price와 펀딩 정보를 반환합니다.
+    /// Returns current mark price and funding information for one Binance USD-M market.
     pub async fn binance_mark_price(
         &self,
         market: WireMarket,
@@ -1779,7 +1778,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 모든 Binance USD-M 영구 시장의 현재 mark price를 반환합니다.
+    /// Returns current mark prices for all Binance USD-M perpetual markets.
     pub async fn binance_mark_prices(&self) -> Result<Vec<WireBinanceMarkPrice>, NativeError> {
         let adapter = match self.built_in("binance_mark_prices")? {
             BuiltInAdapter::Binance(adapter) => adapter,
@@ -1792,7 +1791,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 한 Binance USD-M 시장의 현재 미결제약정을 반환합니다.
+    /// Returns current open interest for one Binance USD-M market.
     pub async fn binance_open_interest(
         &self,
         market: WireMarket,
@@ -1808,9 +1807,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance USD-M의 가격·방향 기준 집계 체결을 반환합니다.
+    /// Returns price- and direction-aggregated Binance USD-M trades.
     ///
-    /// 개별 체결 목록이 아니며 공개 API라 자격증명이 필요 없습니다.
+    /// This is not an individual-trade list and needs no credentials because it is public.
     pub async fn binance_aggregate_trades(
         &self,
         request: WireBinanceAggregateTradesRequest,
@@ -1827,10 +1826,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance 계정 체결 페이지를 반환합니다.
+    /// Returns a page of Binance account trades.
     ///
-    /// 전체 페이지여도 일반 cursor를 만들지 않으므로 다음 조회에는 제공자 체결 ID를
-    /// 사용해야 합니다.
+    /// It does not create a common cursor, even for a full page; use the provider trade ID to continue.
     pub async fn binance_account_trades(
         &self,
         request: WireHistoryRequest,
@@ -1847,9 +1845,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance Spot Funding Wallet의 C2C 거래 이력 응답을 그대로 반환합니다.
+    /// Returns the Binance Spot Funding Wallet C2C trade-history response unchanged.
     ///
-    /// `page`를 증가시켜 조회하며, 일반 cursor를 만들지 않고 제공자 envelope을 보존합니다.
+    /// Increase `page` to continue; this preserves the provider envelope rather than creating a common cursor.
     pub async fn binance_c_2_c_trade_history(
         &self,
         request: WireBinanceC2cTradeHistoryRequest,
@@ -1866,9 +1864,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance 주문을 실제 생성 없이 검증합니다.
+    /// Validates a Binance order without creating it.
     ///
-    /// Spot은 보통 빈 객체를, USD-M은 주문 형태 객체를 반환할 수 있습니다.
+    /// Spot commonly returns an empty object; USD-M can return an order-shaped object.
     pub async fn binance_test_order(
         &self,
         request: WireBinanceTestOrderRequest,
@@ -1885,9 +1883,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 한 Binance 시장의 모든 미체결 주문을 취소합니다.
+    /// Cancels all open orders in one Binance market.
     ///
-    /// Spot과 USD-M의 응답 형태가 달라 성공 여부만 반환합니다.
+    /// Spot and USD-M response shapes differ, so only success is returned.
     pub async fn binance_cancel_all_open_orders(
         &self,
         market: WireMarket,
@@ -1902,9 +1900,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance USD-M 사용자 데이터 스트림 listen key를 생성합니다.
+    /// Creates a Binance USD-M user-data-stream listen key.
     ///
-    /// 일반적으로 [subscribe_account]가 이 수명을 관리합니다.
+    /// [subscribe_account] normally manages this lifecycle.
     pub async fn binance_usd_m_create_listen_key(
         &self,
     ) -> Result<WireBinanceListenKey, NativeError> {
@@ -1919,7 +1917,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 현재 API 키가 소유한 Binance USD-M listen key를 연장합니다.
+    /// Extends the Binance USD-M listen key owned by the current API key.
     pub async fn binance_usd_m_keepalive_listen_key(&self) -> Result<(), NativeError> {
         let adapter = match self.built_in("binance_usd_m_keepalive_listen_key")? {
             BuiltInAdapter::Binance(adapter) => adapter,
@@ -1931,7 +1929,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 현재 API 키가 소유한 Binance USD-M listen key를 닫습니다.
+    /// Closes the Binance USD-M listen key owned by the current API key.
     pub async fn binance_usd_m_close_listen_key(&self) -> Result<(), NativeError> {
         let adapter = match self.built_in("binance_usd_m_close_listen_key")? {
             BuiltInAdapter::Binance(adapter) => adapter,
@@ -1940,9 +1938,9 @@ impl NativeClient {
         adapter.usd_m_close_listen_key().await.map_err(Into::into)
     }
 
-    /// 구성된 Hyperliquid 계정의 비펀딩 원장 페이지를 반환합니다.
+    /// Returns a page of non-funding ledger entries for the configured Hyperliquid account.
     ///
-    /// 주소만 필요하고 서명은 사용하지 않으며, cursor와 시간 범위는 제공자 기준입니다.
+    /// It needs only an address, does not use a signature, and keeps provider cursor and time-range semantics.
     pub async fn hyperliquid_non_funding_ledger(
         &self,
         from_ns: Option<i64>,
@@ -1967,7 +1965,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 구성된 Hyperliquid 주소의 최근 체결을 반환합니다.
+    /// Returns recent fills for the configured Hyperliquid address.
     pub async fn hyperliquid_user_fills(
         &self,
         aggregate_by_time: bool,
@@ -1983,7 +1981,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 구성된 Hyperliquid 주소의 지정 시간 범위 체결을 반환합니다.
+    /// Returns fills in a specified time range for the configured Hyperliquid address.
     pub async fn hyperliquid_user_fills_by_time(
         &self,
         from_ns: i64,
@@ -2005,7 +2003,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 구성된 Hyperliquid 주소의 간략한 현재 미체결 주문을 반환합니다.
+    /// Returns compact current open orders for the configured Hyperliquid address.
     pub async fn hyperliquid_basic_open_orders(
         &self,
     ) -> Result<Vec<WireHyperliquidOpenOrder>, NativeError> {
@@ -2020,10 +2018,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 서버 주문 ID 또는 클라이언트 주문 ID로 Hyperliquid 주문 상태를 반환합니다.
+    /// Returns Hyperliquid order status by server order ID or client order ID.
     ///
-    /// 주소 검증은 adapter가 먼저 수행하므로, 잘못된 클라이언트 주문 ID보다 누락된
-    /// 주소 오류가 우선 반환됩니다.
+    /// The adapter validates the address first, so a missing-address error is returned before an invalid client order ID.
     pub async fn hyperliquid_order_status(
         &self,
         reference: WireHyperliquidOrderReference,
@@ -2040,7 +2037,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 구성된 Hyperliquid 주소의 최근 주문 이력을 반환합니다.
+    /// Returns recent order history for the configured Hyperliquid address.
     pub async fn hyperliquid_historical_orders(
         &self,
     ) -> Result<Vec<WireHyperliquidOrderInfo>, NativeError> {
@@ -2055,7 +2052,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 한 Hyperliquid 시장의 현재 가격·펀딩·정밀도 정보를 반환합니다.
+    /// Returns current price, funding, and precision information for one Hyperliquid market.
     pub async fn hyperliquid_asset_context(
         &self,
         market: WireMarket,
@@ -2071,7 +2068,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Hyperliquid 캔들 snapshot과 거래 건수를 반환합니다.
+    /// Returns a Hyperliquid candle snapshot and trade count.
     pub async fn hyperliquid_candle_snapshot(
         &self,
         market: WireMarket,
@@ -2095,7 +2092,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Hyperliquid L2 호가와 레벨별 주문 수를 반환합니다.
+    /// Returns Hyperliquid L2 book data and order count per level.
     pub async fn hyperliquid_l2_book(
         &self,
         market: WireMarket,
@@ -2111,7 +2108,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Hyperliquid 최근 체결과 hash·참여자 정보를 반환합니다.
+    /// Returns recent Hyperliquid fills with hash and participant information.
     pub async fn hyperliquid_recent_trades(
         &self,
         market: WireMarket,
@@ -2127,7 +2124,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Hyperliquid 펀딩 이력과 premium 값을 반환합니다.
+    /// Returns Hyperliquid funding history and premium values.
     pub async fn hyperliquid_funding_history(
         &self,
         market: WireMarket,
@@ -2149,7 +2146,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Hyperliquid 계정 펀딩 항목을 반환합니다.
+    /// Returns funding entries for the Hyperliquid account.
     pub async fn hyperliquid_user_funding(
         &self,
         from_ns: i64,
@@ -2169,7 +2166,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Hyperliquid Spot 계정 잔고 상태를 반환합니다.
+    /// Returns Hyperliquid Spot account balance state.
     pub async fn hyperliquid_spot_clearinghouse_state(
         &self,
     ) -> Result<WireHyperliquidSpotClearinghouseState, NativeError> {
@@ -2184,7 +2181,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Hyperliquid Spot 토큰·페어 메타데이터를 반환합니다.
+    /// Returns Hyperliquid Spot token and pair metadata.
     pub async fn hyperliquid_spot_meta(&self) -> Result<WireHyperliquidSpotMeta, NativeError> {
         let adapter = match self.built_in("hyperliquid_spot_meta")? {
             BuiltInAdapter::Hyperliquid(adapter) => adapter,
@@ -2197,7 +2194,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Hyperliquid Spot 메타데이터와 asset context를 함께 반환합니다.
+    /// Returns Hyperliquid Spot metadata together with asset contexts.
     pub async fn hyperliquid_spot_meta_and_asset_contexts(
         &self,
     ) -> Result<WireHyperliquidSpotMetaAndAssetContexts, NativeError> {
@@ -2212,9 +2209,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 기본 Hyperliquid 현물·영구 시장의 현재 중간 가격을 반환합니다.
+    /// Returns current mid prices for default Hyperliquid Spot and perpetual markets.
     ///
-    /// HIP-3 DEX 시장은 이 adapter의 시장 표에 포함되지 않습니다.
+    /// HIP-3 DEX markets are not included in this adapter's market table.
     pub async fn hyperliquid_all_mids(&self) -> Result<Vec<WireHyperliquidMidPrice>, NativeError> {
         let adapter = match self.built_in("hyperliquid_all_mids")? {
             BuiltInAdapter::Hyperliquid(adapter) => adapter,
@@ -2227,9 +2224,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 구성된 Hyperliquid 주소의 현재 Info API 요청 한도를 반환합니다.
+    /// Returns the current Info API request limit for the configured Hyperliquid address.
     ///
-    /// 이는 주소만 필요한 공개 계정 조회입니다.
+    /// This is a public account read that requires only an address.
     pub async fn hyperliquid_user_rate_limit(
         &self,
     ) -> Result<WireHyperliquidUserRateLimit, NativeError> {
@@ -2244,9 +2241,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 구성된 Hyperliquid 주소의 제공자 역할을 반환합니다.
+    /// Returns provider roles for the configured Hyperliquid address.
     ///
-    /// 알 수 없는 역할 이름은 raw 값으로 보존됩니다.
+    /// Unknown role names are preserved as raw values.
     pub async fn hyperliquid_user_role(&self) -> Result<WireHyperliquidUserRole, NativeError> {
         let adapter = match self.built_in("hyperliquid_user_role")? {
             BuiltInAdapter::Hyperliquid(adapter) => adapter,
@@ -2259,7 +2256,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 구성된 Hyperliquid 주소의 추천 프로그램 상태를 반환합니다.
+    /// Returns referral-program state for the configured Hyperliquid address.
     pub async fn hyperliquid_referral(&self) -> Result<WireHyperliquidReferral, NativeError> {
         let adapter = match self.built_in("hyperliquid_referral")? {
             BuiltInAdapter::Hyperliquid(adapter) => adapter,
@@ -2268,9 +2265,9 @@ impl NativeClient {
         adapter.referral().await.map(Into::into).map_err(Into::into)
     }
 
-    /// 구성된 Hyperliquid 주소의 제공자 수수료 일정을 반환합니다.
+    /// Returns provider fee schedule for the configured Hyperliquid address.
     ///
-    /// 제공자가 확장할 수 있는 세부 tier 정보도 보존합니다.
+    /// Also preserves detailed tier information that the provider can extend.
     pub async fn hyperliquid_user_fees(&self) -> Result<WireHyperliquidUserFees, NativeError> {
         let adapter = match self.built_in("hyperliquid_user_fees")? {
             BuiltInAdapter::Hyperliquid(adapter) => adapter,
@@ -2283,7 +2280,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 구성된 Hyperliquid 주소의 제공자 기간별 포트폴리오 이력을 반환합니다.
+    /// Returns provider period-based portfolio history for the configured Hyperliquid address.
     pub async fn hyperliquid_portfolio(
         &self,
     ) -> Result<Vec<WireHyperliquidPortfolioPeriod>, NativeError> {
@@ -2298,9 +2295,9 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 구성된 Hyperliquid 주소의 서브 계정을 반환합니다.
+    /// Returns subaccounts for the configured Hyperliquid address.
     ///
-    /// 제공자가 계정이 없음을 null로 보내면 빈 목록으로 반환합니다.
+    /// Returns an empty list when the provider sends null for no account.
     pub async fn hyperliquid_sub_accounts(
         &self,
     ) -> Result<Vec<WireHyperliquidSubAccount>, NativeError> {
@@ -2315,7 +2312,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// 구성된 Hyperliquid 주소의 현재 vault 지분을 반환합니다.
+    /// Returns current vault equity for the configured Hyperliquid address.
     pub async fn hyperliquid_user_vault_equities(
         &self,
     ) -> Result<Vec<WireHyperliquidVaultEquity>, NativeError> {
@@ -2331,14 +2328,14 @@ impl NativeClient {
     }
 }
 
-/// Binance listen key의 Rust 수명을 유지하면서 공개 값을 읽는 handle입니다.
+/// Handle that reads a public value while retaining the Rust lifetime of a Binance listen key.
 #[flutter_rust_bridge::frb(opaque)]
 pub struct WireBinanceListenKey {
     inner: BinanceListenKey,
 }
 
 impl WireBinanceListenKey {
-    /// 소유 중인 Binance listen key 문자열을 반환합니다.
+    /// Returns the owned Binance listen-key string.
     #[flutter_rust_bridge::frb(sync, getter)]
     pub fn value(&self) -> String {
         self.inner.as_str().to_owned()

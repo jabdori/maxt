@@ -3042,7 +3042,7 @@ export class Subscription {
     const uniqueMarkets: Market[] = [];
     const feedKeys = new Set<string>();
     for (const market of markets) {
-      // ponytail: 구독 목록은 작습니다. 규모가 문제가 되면 구조 키 Map으로 교체합니다.
+      // ponytail: subscription lists are small; use a structural-key Map if scale becomes a problem.
       const duplicate = uniqueMarkets.some((existing) =>
         existing.exchange === market.exchange
         && existing.kind === market.kind

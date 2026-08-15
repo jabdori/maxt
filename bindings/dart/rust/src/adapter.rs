@@ -25,51 +25,51 @@ use crate::stream::{
 
 mod generated_dispatch;
 
-/// Dart Adapter가 받을 market feed입니다.
+/// Market feed received by a Dart Adapter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireFeed {
-    /// 최근 체결 feed입니다.
+    /// Recent-trades feed.
     Trades,
-    /// 호가 스냅샷 feed입니다.
+    /// Order-book snapshot feed.
     OrderBook,
-    /// ticker 요약 feed입니다.
+    /// Ticker-summary feed.
     Ticker,
-    /// 지정 간격의 캔들 feed입니다.
+    /// Candle feed for a specified interval.
     Candles(crate::convert::WireInterval),
 }
 
-/// Dart Adapter가 받을 owned subscription입니다.
+/// Owned subscription received by a Dart Adapter.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireSubscription {
-    /// 하나 이상이어야 하는 대상 시장입니다.
+    /// Target markets; at least one is required.
     pub markets: Vec<WireMarket>,
-    /// 하나 이상이어야 하는 구독 feed입니다.
+    /// Requested feeds; at least one is required.
     pub feeds: Vec<WireFeed>,
 }
 
-/// Dart Adapter가 받을 overflow 정책입니다.
+/// Overflow policy received by a Dart Adapter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireOverflow {
-    /// 소비자가 따라올 때까지 producer를 대기시킵니다.
+    /// Wait for the consumer to catch up.
     Backpressure,
-    /// 버퍼가 차면 새 이벤트를 버립니다.
+    /// Drop new events when the buffer is full.
     DropNewest,
 }
 
-/// Dart Adapter가 받을 owned stream 설정입니다.
+/// Owned stream configuration received by a Dart Adapter.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireStreamConfig {
-    /// 재연결 시도 횟수 제한입니다. null이면 제한하지 않습니다.
+    /// Reconnection-attempt limit; null means unlimited.
     pub max_reconnect_attempts: Option<u32>,
-    /// 첫 재연결 전 대기 시간(밀리초)입니다.
+    /// Delay before the first reconnection attempt, in milliseconds.
     pub initial_reconnect_delay_ms: u64,
-    /// 재연결 대기 시간의 최대값(밀리초)입니다.
+    /// Maximum reconnection delay, in milliseconds.
     pub max_reconnect_delay_ms: u64,
-    /// 연결이 유휴 상태로 허용되는 최대 시간(밀리초)입니다.
+    /// Maximum allowed idle connection time, in milliseconds.
     pub idle_timeout_ms: u64,
-    /// 이벤트 버퍼 크기입니다.
+    /// Event buffer size.
     pub buffer_size: usize,
-    /// 버퍼가 찼을 때의 동작입니다.
+    /// Behavior when the buffer is full.
     pub overflow: WireOverflow,
 }
 
@@ -111,168 +111,168 @@ impl From<StreamConfig> for WireStreamConfig {
     }
 }
 
-/// Dart에 전달되는 owned Adapter 호출입니다.
+/// Owned Adapter call delivered to Dart.
 #[derive(Debug)]
 #[flutter_rust_bridge::frb(non_opaque)]
 pub enum AdapterCall {
-    /// 한 종류의 시장 목록을 요청합니다.
+    /// Requests markets of one kind.
     Markets { kind: WireMarketKind },
-    /// 최근 체결을 요청합니다.
+    /// Requests recent trades.
     Trades {
         market: WireMarket,
         limit: Option<u32>,
     },
-    /// 호가 스냅샷을 요청합니다.
+    /// Requests an order-book snapshot.
     OrderBook {
         market: WireMarket,
         depth: Option<u32>,
     },
-    /// ticker 요약을 요청합니다.
+    /// Requests a ticker summary.
     Ticker { market: WireMarket },
-    /// 과거 candle을 요청합니다.
+    /// Requests historical candles.
     Candles { request: WireCandleRequest },
-    /// 계정 잔고를 요청합니다.
+    /// Requests account balances.
     Balances,
-    /// 시장별 주문 규칙을 요청합니다.
+    /// Requests market-specific order rules.
     OrderRules { market: WireMarket },
-    /// 자산별 입출금 네트워크를 요청합니다.
+    /// Requests deposit and withdrawal networks for an asset.
     AssetNetworks { asset: String },
-    /// 계정의 전체 입금 주소를 요청합니다.
+    /// Requests all account deposit addresses.
     DepositAddresses,
-    /// 입금 주소를 요청합니다.
+    /// Requests a deposit address.
     DepositAddress { request: WireDepositAddressRequest },
-    /// 입금 주소 생성을 요청합니다.
+    /// Requests deposit-address creation.
     CreateDepositAddress { request: WireDepositAddressRequest },
-    /// 출금 조건 검사를 요청합니다.
+    /// Requests withdrawal-condition validation.
     PrepareWithdrawal { request: WireWithdrawRequest },
-    /// 출금 제출을 요청합니다.
+    /// Requests withdrawal submission.
     Withdraw { request: WireWithdrawRequest },
-    /// 입금 조회를 요청합니다.
+    /// Requests a deposit lookup.
     Deposit { request: WireTransferLookupRequest },
-    /// 출금 조회를 요청합니다.
+    /// Requests a withdrawal lookup.
     Withdrawal { request: WireTransferLookupRequest },
-    /// 출금 취소를 요청합니다.
+    /// Requests withdrawal cancellation.
     CancelWithdrawal { withdrawal_id: String },
-    /// 입금 이력을 요청합니다.
+    /// Requests deposit history.
     Deposits { request: WireTransferHistoryRequest },
-    /// 출금 이력을 요청합니다.
+    /// Requests withdrawal history.
     Withdrawals { request: WireTransferHistoryRequest },
-    /// 미체결 주문을 요청합니다.
+    /// Requests open orders.
     OpenOrders { market: Option<WireMarket> },
-    /// 거래소 주문 ID로 주문을 요청합니다.
+    /// Requests an order by exchange order ID.
     Order {
         market: WireMarket,
         order_id: String,
     },
-    /// client ID로 주문을 요청합니다.
+    /// Requests an order by client ID.
     OrderByClientId {
         market: WireMarket,
         client_id: String,
     },
-    /// 여러 주문 ID로 주문을 요청합니다.
+    /// Requests orders by multiple order IDs.
     OrdersByIds { request: WireOrderLookupRequest },
-    /// 종료 주문 이력을 요청합니다.
+    /// Requests closed-order history.
     OrderHistory { request: WireOrderHistoryRequest },
-    /// 주문을 제출합니다.
+    /// Submits an order.
     PlaceOrder { request: WireOrderRequest },
-    /// 주문을 취소합니다.
+    /// Cancels an order.
     CancelOrder {
         market: WireMarket,
         order_id: String,
     },
-    /// client ID로 주문을 취소합니다.
+    /// Cancels an order by client ID.
     CancelOrderByClientId {
         market: WireMarket,
         client_id: String,
     },
-    /// 여러 주문을 취소합니다.
+    /// Cancels multiple orders.
     CancelOrders { request: WireCancelOrdersRequest },
-    /// 미결제 포지션을 요청합니다.
+    /// Requests open positions.
     Positions { market: Option<WireMarket> },
-    /// 계정 증거금 요약을 요청합니다.
+    /// Requests account margin summary.
     MarginSummary,
-    /// 펀딩 비율 이력을 요청합니다.
+    /// Requests funding-rate history.
     FundingRates { request: WireHistoryRequest },
-    /// 펀딩 지급 이력을 요청합니다.
+    /// Requests funding-payment history.
     FundingPayments { request: WireHistoryRequest },
-    /// 레버리지 또는 증거금 모드를 설정합니다.
+    /// Sets leverage or margin mode.
     SetMargin { request: WireMarginRequest },
-    /// Dart market subscription을 시작합니다.
+    /// Starts a Dart market subscription.
     Subscribe {
         stream_id: String,
         subscription: WireSubscription,
         config: WireStreamConfig,
         sink: MarketStreamSink,
     },
-    /// Dart account subscription을 시작합니다.
+    /// Starts a Dart account subscription.
     SubscribeAccount {
         stream_id: String,
         config: WireStreamConfig,
         sink: AccountStreamSink,
     },
-    /// Rust consumer가 먼저 닫은 Dart subscription을 취소합니다.
+    /// Cancels a Dart subscription already closed by the Rust consumer.
     CancelStream { stream_id: String },
 }
 
-/// Dart dispatcher가 반환하는 Adapter 응답입니다.
+/// Adapter reply returned by a Dart dispatcher.
 #[derive(Debug)]
 #[flutter_rust_bridge::frb(non_opaque)]
 pub enum AdapterReply {
-    /// 시장 목록 응답입니다.
+    /// Market-list reply.
     Markets(Vec<WireMarketInfo>),
-    /// 최근 체결 응답입니다.
+    /// Recent-trades reply.
     Trades(Vec<WireTrade>),
-    /// 호가 스냅샷 응답입니다.
+    /// Order-book snapshot reply.
     OrderBook(WireOrderBook),
-    /// ticker 응답입니다.
+    /// Ticker reply.
     Ticker(WireTicker),
-    /// candle 응답입니다.
+    /// Candle reply.
     Candles(Vec<WireCandle>),
-    /// 잔고 응답입니다.
+    /// Balance reply.
     Balances(Vec<WireBalance>),
-    /// 시장별 주문 규칙 응답입니다.
+    /// Market-specific order-rules reply.
     OrderRules(WireOrderRules),
-    /// 자산별 네트워크 응답입니다.
+    /// Asset-network reply.
     AssetNetworks(Vec<WireAssetNetwork>),
-    /// 계정의 전체 입금 주소 응답입니다.
+    /// All-account-deposit-addresses reply.
     DepositAddresses(Vec<WireDepositAddressEntry>),
-    /// 입금 주소 응답입니다.
+    /// Deposit-address reply.
     DepositAddress(WireDepositAddress),
-    /// 입금 주소 생성 응답입니다.
+    /// Deposit-address-creation reply.
     CreateDepositAddress(WireDepositAddress),
-    /// 출금 조건 응답입니다.
+    /// Withdrawal-condition reply.
     PrepareWithdrawal(WireWithdrawalQuote),
-    /// 출금 접수 응답입니다.
+    /// Withdrawal-submission reply.
     Withdraw(WireWithdrawal),
-    /// 입금 조회 응답입니다.
+    /// Deposit-lookup reply.
     Deposit(WireDeposit),
-    /// 출금 조회 응답입니다.
+    /// Withdrawal-lookup reply.
     Withdrawal(WireWithdrawal),
-    /// 입금 이력 응답입니다.
+    /// Deposit-history reply.
     Deposits(WireDepositPage),
-    /// 출금 이력 응답입니다.
+    /// Withdrawal-history reply.
     Withdrawals(WireWithdrawalPage),
-    /// 미체결 주문 응답입니다.
+    /// Open-orders reply.
     OpenOrders(Vec<WireOrder>),
-    /// 단건 주문 응답입니다.
+    /// Single-order reply.
     Order(WireOrder),
-    /// 다건 주문 응답입니다.
+    /// Multiple-orders reply.
     OrdersByIds(Vec<WireOrder>),
-    /// 종료 주문 이력 응답입니다.
+    /// Closed-order-history reply.
     OrderHistory(WireOrderPage),
-    /// 주문 제출 응답입니다.
+    /// Order-submission reply.
     PlaceOrder(WireOrder),
-    /// 다건 주문 취소 응답입니다.
+    /// Multiple-order-cancellation reply.
     CancelOrders(WireCancelOrdersResult),
-    /// 포지션 응답입니다.
+    /// Positions reply.
     Positions(Vec<WirePosition>),
-    /// 증거금 요약 응답입니다.
+    /// Margin-summary reply.
     MarginSummary(WireMarginSummary),
-    /// 펀딩 비율 페이지 응답입니다.
+    /// Funding-rate page reply.
     FundingRates(WireFundingRatePage),
-    /// 펀딩 지급 페이지 응답입니다.
+    /// Funding-payment page reply.
     FundingPayments(WireFundingPaymentPage),
-    /// 값이 없는 성공 응답입니다.
+    /// Successful reply with no value.
     Unit,
 }
 
@@ -311,13 +311,13 @@ impl AdapterReply {
     }
 }
 
-/// Dart dispatcher의 구조화된 성공 또는 오류입니다.
+/// Structured success or error returned by a Dart dispatcher.
 #[derive(Debug)]
 #[flutter_rust_bridge::frb(non_opaque)]
 pub enum AdapterResult {
-    /// 정상 Adapter 응답입니다.
+    /// Successful Adapter reply.
     Success(AdapterReply),
-    /// `maxt::Error` 의미를 보존하는 오류입니다.
+    /// Error preserving `maxt::Error` semantics.
     Error(NativeError),
 }
 
@@ -644,7 +644,7 @@ fn structured_error(error: NativeError) -> Error {
     Error::try_from(error).unwrap_or_else(|error| error)
 }
 
-/// Dart 구현을 Rust `Adapter`로 등록합니다.
+/// Registers a Dart implementation as a Rust `Adapter`.
 pub fn register_dart_adapter(
     exchange: WireExchange,
     features: Vec<WireFeature>,
@@ -662,7 +662,7 @@ pub fn register_dart_adapter(
     }
 }
 
-/// Dart 구현을 소유하는 Rust Adapter handle입니다.
+/// Rust Adapter handle that owns a Dart implementation.
 #[flutter_rust_bridge::frb(opaque)]
 pub struct DartAdapter {
     inner: ForeignAdapter,

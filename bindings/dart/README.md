@@ -57,11 +57,11 @@ Future<void> main() async {
 }
 ```
 
-The checked-in [public Binance example](example/public_ticker.dart) keeps
+The checked-in [public Binance example](example/main.dart) keeps
 network access opt-in. Run its public read explicitly:
 
 ```sh
-dart run -DMAXT_RUN_PUBLIC_READ=true example/public_ticker.dart
+dart run -DMAXT_RUN_PUBLIC_READ=true example/main.dart
 ```
 
 Use `Client` for common calls and `client.adapter` for provider-specific calls.
@@ -392,7 +392,7 @@ See the [common data and pagination contracts](../../docs/common-api.md) and
 
 ## Documentation and examples
 
-- [Runnable Binance public-ticker example](example/public_ticker.dart)
+- [Runnable Binance public-ticker example](example/main.dart)
 - Generate local API documentation with `dart doc`.
 - [Repository getting started guide](../../docs/getting-started.md)
 - [Provider reference](../../docs/providers.md)

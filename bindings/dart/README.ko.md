@@ -46,8 +46,8 @@ Future<void> main() async {
     final market = Market.spot(Exchange.binance, 'BTC', 'USDT');
     final client = Client(BinanceAdapter.spot());
 
-    final ticker = await client.ticker(market); // 공통 API
-    final average = await client.adapter.spotAveragePrice(market); // Binance 전용 API
+    final ticker = await client.ticker(market); // common API
+    final average = await client.adapter.spotAveragePrice(market); // Binance-specific API
 
     print(ticker.lastPrice);
     print('${average.minutes}분 평균: ${average.price}');
@@ -57,11 +57,11 @@ Future<void> main() async {
 }
 ```
 
-저장소의 [Binance 공개 시세 예제](example/public_ticker.dart)는 네트워크 접근을
+저장소의 [Binance 공개 시세 예제](example/main.dart)는 네트워크 접근을
 명시적으로 켠 경우에만 수행합니다.
 
 ```sh
-dart run -DMAXT_RUN_PUBLIC_READ=true example/public_ticker.dart
+dart run -DMAXT_RUN_PUBLIC_READ=true example/main.dart
 ```
 
 공통 호출은 `Client`, 거래소 전용 호출은 `client.adapter`에서 사용합니다. 정리한
@@ -374,7 +374,7 @@ try {
 
 ## 문서와 예제
 
-- [실행 가능한 Binance 공개 시세 예제](example/public_ticker.dart)
+- [실행 가능한 Binance 공개 시세 예제](example/main.dart)
 - 로컬 API 문서는 `dart doc`으로 생성합니다.
 - [저장소 시작하기](../../docs/getting-started.ko.md)
 - [거래소 reference](../../docs/providers.ko.md)

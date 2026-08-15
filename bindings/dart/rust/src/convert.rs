@@ -21,25 +21,25 @@ use maxt::{
     Timestamp, Trade, TransferErrorKind, UpbitKrwTwoFactorType, UpbitSmpType,
 };
 
-/// Dart와 Rust 사이에서 거래소를 식별하는 값입니다.
+/// Exchange identifier shared between Dart and Rust.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireExchange {
-    /// Upbit입니다.
+    /// Upbit.
     Upbit,
-    /// Bithumb입니다.
+    /// Bithumb.
     Bithumb,
-    /// Binance입니다.
+    /// Binance.
     Binance,
-    /// Hyperliquid입니다.
+    /// Hyperliquid.
     Hyperliquid,
 }
 
-/// Dart와 Rust 사이에서 시장 종류를 식별하는 값입니다.
+/// Market-kind identifier shared between Dart and Rust.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireMarketKind {
-    /// 현물 시장입니다.
+    /// Spot market.
     Spot,
-    /// 무기한 선물 시장입니다.
+    /// Perpetual futures market.
     Perpetual,
 }
 
@@ -51,12 +51,12 @@ pub enum WireMarketStatus {
     Unknown,
 }
 
-/// 주문·체결 방향입니다.
+/// Order or trade direction.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireSide {
-    /// 매수입니다.
+    /// Buy.
     Buy,
-    /// 매도입니다.
+    /// Sell.
     Sell,
 }
 
@@ -159,25 +159,25 @@ pub enum WireSizeKind {
     Quote,
 }
 
-/// 수량이 기준 통화인지 견적 통화인지와 그 정확한 십진 문자열입니다.
+/// Whether a quantity is in the base or quote asset and its exact decimal string.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireSize {
-    /// 수량 단위입니다.
+    /// Quantity unit.
     pub kind: WireSizeKind,
-    /// 반올림하지 않은 십진 문자열입니다.
+    /// Decimal string without rounding.
     pub value: String,
 }
 
-/// 거래소·시장 종류·기준 통화·견적 통화로 구성된 시장 식별자입니다.
+/// Market identifier composed of exchange, market kind, base asset, and quote asset.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireMarket {
-    /// 시장을 제공하는 거래소입니다.
+    /// Exchange that provides the market.
     pub exchange: WireExchange,
-    /// 현물 또는 무기한 선물 시장입니다.
+    /// Spot or perpetual futures market.
     pub kind: WireMarketKind,
-    /// 기준 통화입니다.
+    /// Base asset.
     pub base: String,
-    /// 견적 통화입니다.
+    /// Quote asset.
     pub quote: String,
 }
 
@@ -387,7 +387,7 @@ pub enum WireBithumbOrderDirection {
     Descending,
 }
 
-/// Bithumb 주문 목록 조회에 사용할 주문 상태입니다.
+/// Order state used to query a Bithumb order list.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireBithumbOrderListState {
     Wait,
@@ -429,45 +429,45 @@ pub enum WireUpbitKrwTwoFactorType {
     Hana,
 }
 
-/// Upbit 포켓 이전의 처리 상태입니다.
+/// Processing state of an Upbit pocket transfer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireUpbitPocketTransferState {
-    /// 요청이 접수됐습니다.
+    /// Request accepted.
     Submitted,
-    /// 이전을 처리 중입니다.
+    /// Transfer is processing.
     Processing,
-    /// 이전이 완료됐습니다.
+    /// Transfer completed.
     Done,
-    /// 이전이 실패했습니다.
+    /// Transfer failed.
     Failed,
 }
 
-/// 포켓 이전 이력의 입출금 방향 필터입니다.
+/// Direction filter for pocket transfer history.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireUpbitPocketTransferDirection {
-    /// 들어온 이전만 조회합니다.
+    /// Query incoming transfers only.
     Incoming,
-    /// 나간 이전만 조회합니다.
+    /// Query outgoing transfers only.
     Outgoing,
-    /// 양방향 이전을 조회합니다.
+    /// Query transfers in both directions.
     All,
 }
 
-/// 포켓 이전 이력의 시간 정렬 순서입니다.
+/// Chronological sort order for pocket transfer history.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireUpbitPocketTransferOrder {
-    /// 오래된 이전부터 반환합니다.
+    /// Return oldest transfers first.
     Ascending,
-    /// 최신 이전부터 반환합니다.
+    /// Return newest transfers first.
     Descending,
 }
 
-/// Binance C2C 거래 방향입니다.
+/// Binance C2C trade direction.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireBinanceC2cTradeType {
-    /// C2C 매수입니다.
+    /// C2C buy.
     Buy,
-    /// C2C 매도입니다.
+    /// C2C sell.
     Sell,
 }
 

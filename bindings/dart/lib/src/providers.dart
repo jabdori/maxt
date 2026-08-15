@@ -1,6 +1,6 @@
 import 'models.dart';
 
-/// 한 Upbit 시장의 투자 경고·주의 정보입니다.
+/// Investment warning and caution information for one Upbit market.
 final class UpbitMarketEvent {
   UpbitMarketEvent({
     required this.market,
@@ -13,7 +13,7 @@ final class UpbitMarketEvent {
   final List<String> cautions;
 }
 
-/// 한 Bithumb 시장의 원본 투자 유의 플래그입니다.
+/// Native investment-caution flag for one Bithumb market.
 final class BithumbMarketWarning {
   const BithumbMarketWarning({required this.market, required this.warning});
 
@@ -21,7 +21,7 @@ final class BithumbMarketWarning {
   final String warning;
 }
 
-/// 한 Bithumb 시장의 활성 경보입니다.
+/// Active alert for one Bithumb market.
 final class BithumbMarketAlert {
   const BithumbMarketAlert({
     required this.market,
@@ -36,7 +36,7 @@ final class BithumbMarketAlert {
   final Timestamp endsAt;
 }
 
-/// 한 Binance 현물 심볼의 가격·수량·명목가 제약입니다.
+/// Price, quantity, and notional constraints for one Binance Spot symbol.
 final class BinanceSymbolFilters {
   const BinanceSymbolFilters({
     required this.symbol,
@@ -59,7 +59,7 @@ final class BinanceSymbolFilters {
   final Decimal? minNotional;
 }
 
-/// Binance 현물 주문의 공급자 전용 상세 정보입니다.
+/// Provider-specific details for a Binance Spot order.
 final class BinanceSpotOrderDetail {
   const BinanceSpotOrderDetail({
     required this.order,
@@ -78,7 +78,7 @@ final class BinanceSpotOrderDetail {
   final Timestamp? updatedAt;
 }
 
-/// Hyperliquid 계정 전체의 비펀딩 원장 항목입니다.
+/// Non-funding ledger entry for an entire Hyperliquid account.
 final class HyperliquidLedgerEntry {
   const HyperliquidLedgerEntry({
     required this.kind,
@@ -99,7 +99,7 @@ final class HyperliquidLedgerEntry {
   final String? counterparty;
 }
 
-/// Hyperliquid 시장의 현재 가격·펀딩·주문 정밀도 정보입니다.
+/// Current price, funding, and order-precision information for a Hyperliquid market.
 final class HyperliquidAssetContext {
   const HyperliquidAssetContext({
     required this.sizeDecimals,

@@ -116,11 +116,12 @@ pub enum OperationMapping {
         /// Exchange-specific typed service operations.
         provider: &'static [&'static str],
     },
-    /// 별도 플랫폼·프로토콜 typed service operation.
+    /// Typed service operation that belongs to a separate platform or protocol boundary.
     ///
-    /// 이는 lifecycle 및 구현 상태와 독립된 공개 경계입니다. 활성 operation을 manifest 또는
-    /// 구현 감사 범위에서 제외한다는 뜻은 아니지만, 일반 거래소 `Adapter`의 구현 범위에는
-    /// 넣지 않습니다. 지원을 결정하면 이 service 경계에서 구현합니다.
+    /// This public boundary is independent of lifecycle and implementation status.
+    /// It does not exclude an active operation from the manifest or implementation
+    /// audit, but it is not implemented by the general exchange `Adapter`. When
+    /// supported, it is implemented at this service boundary.
     PlatformLimited {
         /// Service method.
         service: &'static str,
@@ -129,10 +130,11 @@ pub enum OperationMapping {
     },
 }
 
-/// 현재 coverage에 연결된 operation의 구현 상태.
+/// Implementation status of an operation connected to current coverage.
 ///
-/// 이 값은 공식 manifest의 lifecycle 또는 exposure와 별개입니다. 아직 coverage bridge가
-/// 없는 공식 행의 Rust 구현 상태는 이 값만으로 추론할 수 없습니다.
+/// This is independent of lifecycle and exposure in the official manifest. It
+/// cannot determine Rust implementation status for an official row without a
+/// coverage bridge.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Implementation {
     /// Catalogued but not implemented.

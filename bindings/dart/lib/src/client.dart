@@ -1,11 +1,10 @@
 import 'adapter.dart';
 import 'generated_client.dart';
 
-/// 하나의 거래소 어댑터를 공통 API로 노출합니다.
+/// Exposes one exchange adapter through the common API.
 ///
-/// 생성하기 전에 `await Maxt.initialize()`로 native 런타임을
-/// 초기화해야 합니다.
+/// Initialize the native runtime with `await Maxt.initialize()` before creating it.
 final class Client<A extends Adapter> extends GeneratedClient<A> {
-  /// [adapter]의 공통 API를 노출하는 클라이언트를 만듭니다.
+  /// Creates a client that exposes the common API of [adapter].
   Client(super.adapter);
 }

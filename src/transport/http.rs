@@ -154,7 +154,7 @@ impl HttpTransport {
     /// error decoding by the adapter.
     pub(crate) async fn send(&self, request: &HttpRequest) -> Result<HttpResponse> {
         #[cfg(target_arch = "wasm32")]
-        // ponytail: 브라우저 Fetch는 스레드 고정입니다. 스레드형 wasm 지원 시 비동기 계약을 분리합니다.
+        // ponytail: browser Fetch is thread-affine; split the async contract if threaded wasm support is needed.
         return send_wrapper::SendWrapper::new(self.send_inner(request)).await;
 
         #[cfg(not(target_arch = "wasm32"))]

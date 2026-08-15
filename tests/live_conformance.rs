@@ -320,7 +320,7 @@ async fn observe(venue: &Venue, feed: Feed) -> Tally {
     tally
 }
 
-/// Runs one `Feed` × exchange pair and judges it.
+/// Runs and evaluates one `Feed` × exchange pair.
 async fn stream_row(venue: &Venue, feed: Feed) -> Row {
     let tally = observe(venue, feed).await;
     let mut faults: Vec<String> = Vec::new();

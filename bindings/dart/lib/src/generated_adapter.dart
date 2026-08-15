@@ -4,124 +4,124 @@ import 'errors.dart';
 import 'models.dart';
 import 'stream.dart';
 
-/// 거래소 구현이 제공하는 공통 시장·계정 API입니다.
+/// Common market and account APIs provided by an exchange implementation.
 abstract interface class GeneratedAdapterContract {
-  /// 이 어댑터가 연결된 거래소입니다.
+  /// The exchange this adapter is connected to.
   Exchange get exchange;
 
-  /// 이 어댑터에서 사용할 수 있는 공통 기능 집합입니다.
+  /// The common features available from this adapter.
   Set<Feature> get features;
 
-  /// [feature]를 이 거래소에서 호출할 수 있는지 확인합니다.
+  /// Whether [feature] can be called on this exchange.
   bool supports(Feature feature);
 
-  /// 거래소가 제공하는 시장 목록을 반환합니다.
+  /// Returns the markets provided by the exchange.
   Future<List<MarketInfo>> markets(MarketKind kind);
 
-  /// 최근 체결을 최신순으로 반환하며, `limit`은 요청할 최대 개수입니다.
+  /// Returns recent trades newest first; `limit` is the maximum requested count.
   Future<List<Trade>> trades(Market market, [int? limit]);
 
-  /// 호가창 스냅샷을 반환하며, `depth`는 매수·매도 각 측의 최대 단계 수입니다.
+  /// Returns an order-book snapshot; `depth` limits levels on each side.
   Future<OrderBook> orderBook(Market market, [int? depth]);
 
-  /// 한 시장의 최신 가격 요약을 반환합니다.
+  /// Returns the latest price summary for one market.
   Future<Ticker> ticker(Market market);
 
-  /// [CandleRequest] 조건에 맞는 캔들을 오래된 순서로 반환합니다.
+  /// Returns candles matching [CandleRequest], oldest first.
   Future<List<Candle>> candles(CandleRequest request);
 
-  /// 시장 데이터를 구독합니다. 사용 후 [CloseableStream.close]를 호출해야 합니다.
+  /// Subscribes to market data. Call [CloseableStream.close] when finished.
   Future<MarketStream> subscribe(
     Subscription subscription,
     StreamConfig config,
   );
 
-  /// 인증된 계정의 자산 잔고를 반환합니다.
+  /// Returns asset balances for the authenticated account.
   Future<List<Balance>> balances();
 
-  /// 한 시장에서 현재 적용되는 주문 규칙을 반환합니다.
+  /// Returns the current order rules for one market.
   Future<OrderRules> orderRules(Market market);
 
-  /// 자산의 거래소별 입출금 네트워크를 반환합니다.
+  /// Returns exchange-specific deposit and withdrawal networks for an asset.
   Future<List<AssetNetwork>> assetNetworks(String asset);
 
-  /// 계정에 등록된 입금 주소 목록을 반환합니다.
+  /// Returns deposit addresses registered for the account.
   Future<List<DepositAddressEntry>> depositAddresses();
 
-  /// 자산과 네트워크의 입금 주소를 조회합니다.
+  /// Looks up a deposit address for an asset and network.
   Future<DepositAddress> depositAddress(DepositAddressRequest request);
 
-  /// 자산과 네트워크의 입금 주소 발급을 요청합니다.
+  /// Requests issuance of a deposit address for an asset and network.
   Future<DepositAddress> createDepositAddress(DepositAddressRequest request);
 
-  /// 출금 전에 수수료와 제약을 조회합니다.
+  /// Looks up fees and constraints before a withdrawal.
   Future<WithdrawalQuote> prepareWithdrawal(WithdrawRequest request);
 
-  /// 출금 요청을 제출합니다. 이 메서드는 금융 쓰기 작업입니다.
+  /// Submits a withdrawal request. This is a financial write.
   Future<Withdrawal> withdraw(WithdrawRequest request);
 
-  /// 거래소 전송 식별자로 입금 상태를 조회합니다.
+  /// Looks up a deposit by its exchange transfer ID.
   Future<Deposit> deposit(TransferLookupRequest request);
 
-  /// 거래소 전송 식별자로 출금 상태를 조회합니다.
+  /// Looks up a withdrawal by its exchange transfer ID.
   Future<Withdrawal> withdrawal(TransferLookupRequest request);
 
-  /// 아직 취소 가능한 출금 요청을 취소합니다.
+  /// Cancels a withdrawal request that is still cancellable.
   Future<void> cancelWithdrawal(String withdrawalId);
 
-  /// 페이지 단위의 입금 이력을 반환합니다.
+  /// Returns paginated deposit history.
   Future<Page<Deposit>> deposits(TransferHistoryRequest request);
 
-  /// 페이지 단위의 출금 이력을 반환합니다.
+  /// Returns paginated withdrawal history.
   Future<Page<Withdrawal>> withdrawals(TransferHistoryRequest request);
 
-  /// 열려 있는 주문을 반환합니다.
+  /// Returns open orders.
   Future<List<Order>> openOrders([Market? market]);
 
-  /// 거래소 주문 식별자로 한 주문을 조회합니다.
+  /// Looks up an order by its exchange order ID.
   Future<Order> order(Market market, String orderId);
 
-  /// 클라이언트 주문 식별자로 한 주문을 조회합니다.
+  /// Looks up an order by its client order ID.
   Future<Order> orderByClientId(Market market, String clientId);
 
-  /// 여러 주문 식별자로 주문을 조회합니다.
+  /// Looks up multiple orders by their IDs.
   Future<List<Order>> ordersByIds(OrderLookupRequest request);
 
-  /// 페이지 단위의 주문 이력을 반환합니다.
+  /// Returns paginated order history.
   Future<Page<Order>> orderHistory(OrderHistoryRequest request);
 
-  /// 비공개 계정 이벤트를 구독합니다. 사용 후 [CloseableStream.close]를 호출해야 합니다.
+  /// Subscribes to private account events. Call [CloseableStream.close] when finished.
   Future<AccountStream> subscribeAccount(StreamConfig config);
 
-  /// 주문을 제출합니다. 이 메서드는 금융 쓰기 작업입니다.
+  /// Submits an order. This is a financial write.
   Future<Order> placeOrder(OrderRequest request);
 
-  /// 거래소 주문 식별자로 주문을 취소합니다.
+  /// Cancels an order by its exchange order ID.
   Future<void> cancelOrder(Market market, String orderId);
 
-  /// 클라이언트 주문 식별자로 주문을 취소합니다.
+  /// Cancels an order by its client order ID.
   Future<void> cancelOrderByClientId(Market market, String clientId);
 
-  /// 여러 주문 취소를 요청하고 항목별 결과를 반환합니다.
+  /// Requests cancellation of multiple orders and returns per-item results.
   Future<CancelOrdersResult> cancelOrders(CancelOrdersRequest request);
 
-  /// 열려 있는 파생상품 포지션을 반환합니다.
+  /// Returns open derivative positions.
   Future<List<Position>> positions([Market? market]);
 
-  /// 계정의 증거금 상태를 반환합니다.
+  /// Returns the account margin summary.
   Future<MarginSummary> marginSummary();
 
-  /// 페이지 단위의 펀딩비율 이력을 반환합니다.
+  /// Returns paginated funding-rate history.
   Future<Page<FundingRate>> fundingRates(HistoryRequest request);
 
-  /// 페이지 단위의 실제 펀딩 지급 이력을 반환합니다.
+  /// Returns paginated actual funding-payment history.
   Future<Page<FundingPayment>> fundingPayments(HistoryRequest request);
 
-  /// 포지션의 증거금 설정을 변경합니다. 이 메서드는 금융 쓰기 작업입니다.
+  /// Changes a position margin configuration. This is a financial write.
   Future<void> setMargin(MarginRequest request);
 }
 
-/// 지원하지 않는 공통 기능을 [UnsupportedError]로 처리하는 기본 구현입니다.
+/// Default implementation that reports unsupported common features with [UnsupportedError].
 abstract base class GeneratedAdapterDefaults
     implements GeneratedAdapterContract {
   Future<T> _unsupported<T>(Feature feature) => Future<T>.error(

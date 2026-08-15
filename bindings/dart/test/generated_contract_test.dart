@@ -124,8 +124,8 @@ void main() {
     };
     expect(actualClient.keys, clientMembers);
 
-    // 생성된 `_generatedProviderGuard`가 모든 공개 provider 메서드 호출을
-    // 정적으로 검사한다. 이 테스트는 스키마가 모든 거래소 목록을 생성했는지 확인한다.
+    // The generated `_generatedProviderGuard` statically checks every public
+    // provider method call. This test verifies that the schema generates all exchange lists.
     expect(providerMethods.keys, exchanges);
     expect(
       providerMethods.values.every((methods) => methods.isNotEmpty),

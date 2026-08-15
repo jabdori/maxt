@@ -1,8 +1,8 @@
-//! 공식 catalog 전체와 현재 공개 계약을 한 번에 감사하는 Cargo 도구입니다.
+//! Cargo tool that audits the complete official catalog and current public contracts.
 //!
-//! 이 도구는 Rust `OPERATIONS`/`binding_schema()`와 고정 TSV를 사용합니다. 기계적으로
-//! 확인할 수 있는 연결 근거와 사람이 검토한 감사 결과를 분리하며, Rust 소스를 정규식으로
-//! 재해석하지 않습니다.
+//! It uses Rust `OPERATIONS`/`binding_schema()` and pinned TSV files. It keeps
+//! mechanically verifiable connection evidence separate from human-reviewed
+//! audit results and does not reinterpret Rust source using regular expressions.
 
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -27,8 +27,8 @@ const REVIEW_INPUT: &str = include_str!(concat!(
     "/catalog/audit/reviews.tsv"
 ));
 
-// 하나의 공식 operation이 여러 provider surface를 공급하거나 같은 구독의 설정
-// overload를 제공하는 명시적 감사 alias입니다.
+// Explicit audit alias for one official operation that supplies multiple provider
+// surfaces or configuration overloads for the same subscription.
 const PROVIDER_AUDIT_ALIASES: &[(Exchange, &str, &str)] = &[
     (
         Exchange::Hyperliquid,

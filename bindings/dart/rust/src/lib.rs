@@ -1,5 +1,5 @@
 pub mod api;
-#[allow(clippy::result_large_err)] // 생성 코드는 공개 오류 정보를 값으로 직렬화합니다.
+#[allow(clippy::result_large_err)] // Generated code serializes public error information by value.
 mod frb_generated; /* AUTO INJECTED BY flutter_rust_bridge. This line may not be accurate, and you can change it according to your needs. */
 
 use std::ffi::{CString, c_char};
@@ -11,14 +11,14 @@ mod stream;
 
 static NATIVE_LIBRARY_PATH: OnceLock<Option<CString>> = OnceLock::new();
 
-/// Native Assets가 standalone Dart 프로세스에 라이브러리를 먼저 적재하도록 하는 심벌입니다.
+/// Symbol that lets Native Assets load the library before a standalone Dart process starts.
 #[unsafe(no_mangle)]
 pub extern "C" fn maxt_dart_bridge_force_load() {}
 
-/// 현재 심벌을 포함하는 동적 라이브러리의 경로를 반환합니다.
+/// Returns the path of the dynamic library containing this symbol.
 ///
-/// 반환 포인터는 프로세스가 종료될 때까지 유효하며 해제하면 안 됩니다. 경로를 확인할
-/// 수 없으면 null을 반환합니다.
+/// The returned pointer remains valid until process exit and must not be freed.
+/// Returns null when the path cannot be determined.
 #[unsafe(no_mangle)]
 pub extern "C" fn maxt_dart_bridge_library_path() -> *const c_char {
     NATIVE_LIBRARY_PATH
@@ -35,18 +35,18 @@ fn discover_native_library_path() -> Option<CString> {
     let mut info = MaybeUninit::<libc::Dl_info>::uninit();
     let address = maxt_dart_bridge_library_path as *const () as *const libc::c_void;
 
-    // SAFETY: `info`는 dladdr가 성공했을 때 초기화되며, 함수 주소는 현재 모듈에 속합니다.
+    // SAFETY: successful dladdr initializes `info`, and the function address belongs to this module.
     if unsafe { libc::dladdr(address, info.as_mut_ptr()) } == 0 {
         return None;
     }
 
-    // SAFETY: 성공한 dladdr 호출은 `info`와 null 종료 경로를 초기화합니다.
+    // SAFETY: a successful dladdr call initializes `info` and a null-terminated path.
     let path = unsafe { info.assume_init().dli_fname };
     if path.is_null() {
         return None;
     }
 
-    // Native Assets 경로는 UTF-8이지만, 손상된 플랫폼 경로가 FFI 경계를 넘지 않게 합니다.
+    // Native Assets paths are UTF-8, but reject malformed platform paths before the FFI boundary.
     CString::new(unsafe { CStr::from_ptr(path) }.to_string_lossy().as_bytes()).ok()
 }
 
@@ -62,7 +62,7 @@ fn discover_native_library_path() -> Option<CString> {
     let flags =
         GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
 
-    // SAFETY: FROM_ADDRESS 플래그에서는 두 번째 인자를 모듈 내부 주소로 해석합니다.
+    // SAFETY: the FROM_ADDRESS flag interprets the second argument as an address in this module.
     if unsafe { GetModuleHandleExW(flags, address, &mut module) } == 0 {
         return None;
     }
@@ -70,7 +70,7 @@ fn discover_native_library_path() -> Option<CString> {
     let mut capacity = 260;
     while capacity <= 32_768 {
         let mut path = vec![0_u16; capacity];
-        // SAFETY: 버퍼는 `capacity`개의 UTF-16 코드 단위를 쓸 수 있습니다.
+        // SAFETY: the buffer can hold `capacity` UTF-16 code units.
         let length = unsafe { GetModuleFileNameW(module, path.as_mut_ptr(), capacity as u32) };
         if length == 0 {
             return None;
@@ -101,7 +101,7 @@ mod tests {
 
         assert!(!first.is_null());
         assert_eq!(first, second);
-        // SAFETY: 공개 함수 계약상 반환 포인터는 프로세스가 종료될 때까지 유효합니다.
+        // SAFETY: the public function contract keeps the returned pointer valid until process exit.
         assert!(!unsafe { CStr::from_ptr(first) }.to_bytes().is_empty());
     }
 }

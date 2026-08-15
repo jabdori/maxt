@@ -163,13 +163,13 @@ impl UpbitRegion {
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 #[non_exhaustive]
 pub struct UpbitMarketEvent {
-    /// Whether Upbit marks the listing with an investment warning (`유의 종목`).
+    /// Whether Upbit marks the listing with an investment warning.
     ///
     /// [`Client::markets`](crate::Client::markets) maps this to
     /// [`MarketStatus::Unknown`](crate::MarketStatus::Unknown). The value does
     /// not state whether new orders are currently accepted.
     pub warning: bool,
-    /// Active investment-caution (`주의 종목`) criteria, sorted by Upbit's
+    /// Active investment-caution criteria, sorted by Upbit's
     /// criterion name.
     ///
     /// These criteria do not change [`MarketStatus`](crate::MarketStatus).
@@ -817,28 +817,28 @@ pub struct UpbitCancelOrdersResponse {
     pub raw_json: String,
 }
 
-/// Upbit가 반환한 한 자산·네트워크의 입금 가능 정보입니다.
+/// Deposit-availability information for one asset and network returned by Upbit.
 ///
-/// `network`과 `provider_network`은 응답의 `net_type`을 그대로 보존합니다.
-/// Upbit는 이 필드를 null로 반환할 수 있으므로, 요청에 사용한 네트워크로
-/// 임의 보정하지 않습니다. 이 정보는 실시간 상태가 아니며 몇 분 지연될 수 있습니다.
+/// `network` and `provider_network` preserve the response `net_type` exactly.
+/// Upbit may return this field as null, so it is not synthesized from the
+/// requested network. This information is not real-time and may lag by minutes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UpbitDepositInfo {
-    /// 대문자로 정규화한 자산 코드입니다.
+    /// Uppercase-normalized asset code.
     pub asset: String,
-    /// Upbit가 응답에 포함한 정규화 네트워크입니다.
+    /// Normalized network included by Upbit in the response.
     pub network: Option<Network>,
-    /// Upbit가 응답에 포함한 원본 네트워크 식별자입니다.
+    /// Original network identifier included by Upbit in the response.
     pub provider_network: Option<String>,
-    /// 현재 입금 가능 여부입니다.
+    /// Whether deposits are currently available.
     pub is_deposit_possible: bool,
-    /// 입금이 불가능할 때 Upbit가 제공한 사유입니다.
+    /// Reason supplied by Upbit when deposits are unavailable.
     pub deposit_impossible_reason: Option<String>,
-    /// Upbit가 처리하는 최소 입금 수량입니다.
+    /// Minimum deposit quantity processed by Upbit.
     pub minimum_deposit_amount: Decimal,
-    /// 입금 반영에 필요한 최소 블록 확인 수입니다.
+    /// Minimum block confirmations required for deposit crediting.
     pub minimum_deposit_confirmations: u64,
-    /// 입금 수량에 적용하는 소수 자릿수입니다.
+    /// Decimal precision applied to deposit quantities.
     pub decimal_precision: u64,
 }
 
@@ -1906,9 +1906,9 @@ impl UpbitAdapter {
         private::closed_orders(self.credentials()?, self.http()?, request).await
     }
 
-    /// 한 자산·네트워크의 Upbit 입금 가능 정보를 조회합니다.
+    /// Queries Upbit deposit availability for one asset and network.
     ///
-    /// Upbit의 응답은 실시간 서비스 상태를 보장하지 않으며 몇 분 지연될 수 있습니다.
+    /// Upbit's response does not guarantee real-time service state and may lag by minutes.
     pub async fn deposit_info(&self, asset: &str, network: &Network) -> Result<UpbitDepositInfo> {
         wallet::deposit_info(self.credentials()?, self.http()?, asset, network).await
     }

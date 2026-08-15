@@ -578,18 +578,18 @@ pub(crate) fn network_from_provider(raw: &str) -> Network {
     }
 }
 
-/// Severity of a Bithumb market alert (경보제), ordered from least to most severe.
+/// Severity of a Bithumb market alert, ordered from least to most severe.
 ///
 /// This is separate from the `CAUTION` investment-warning flag returned by
 /// [`BithumbAdapter::market_warnings`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[non_exhaustive]
 pub enum BithumbAlertStep {
-    /// Caution (주의), the lowest alert level.
+    /// Caution, the lowest alert level.
     Caution,
-    /// Warning (경고), the middle alert level.
+    /// Warning, the middle alert level.
     Warning,
-    /// Danger (위험), the highest documented alert level.
+    /// Danger, the highest documented alert level.
     Danger,
     /// An unrecognized level, ordered above [`Self::Danger`] so thresholds surface it.
     Unknown,
@@ -1456,7 +1456,7 @@ impl BithumbAdapter {
 
     /// Returns every listed market with its raw investment-warning flag.
     ///
-    /// The value is `NONE` or `CAUTION` (유의 종목). A warned market remains
+    /// The value is `NONE` or `CAUTION`. A warned market remains
     /// tradable and maps to [`MarketStatus::Unknown`](crate::MarketStatus::Unknown).
     /// This flag is separate from [`Self::market_alerts`].
     pub async fn market_warnings(&self) -> Result<Vec<(Market, String)>> {

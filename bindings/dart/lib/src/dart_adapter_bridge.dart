@@ -1,6 +1,6 @@
 part of 'adapters.dart';
 
-/// 생성된 native client handle을 제공하는 package 내부 계약입니다.
+/// Package-internal contract that provides a generated native-client handle.
 abstract interface class NativeHandleProvider {
   native.NativeClient get nativeHandle;
 }
@@ -10,7 +10,7 @@ native.NativeClient? _nativeHandle(Adapter adapter) => switch (adapter) {
   _ => null,
 };
 
-/// 공개 [Client]가 모든 공통 호출을 Rust로 보내는 package 내부 delegate입니다.
+/// Package-internal delegate through which public [Client] sends common calls to Rust.
 final class NativeClientDelegate extends GeneratedNativeDelegate {
   NativeClientDelegate._({
     required this.exchange,
@@ -494,7 +494,7 @@ final class _NativeDelegateAdapter extends _NativeAdapterBase {
   _NativeDelegateAdapter(super.handle);
 }
 
-/// Dart [Adapter]를 Rust ForeignAdapter로 등록하는 package 내부 브리지입니다.
+/// Package-internal bridge that registers a Dart [Adapter] as a Rust ForeignAdapter.
 final class DartAdapterBridge {
   DartAdapterBridge(this.adapter);
 
@@ -794,7 +794,7 @@ final class DartAdapterBridge {
       try {
         await _endMarket(call.sink);
       } catch (_) {
-        // 초기 오류를 sink 정리 오류로 대체하지 않습니다.
+        // Do not replace the original error with a sink-cleanup error.
       } finally {
         streams.forgetPending(call.streamId);
       }
@@ -820,7 +820,7 @@ final class DartAdapterBridge {
       try {
         await _endAccount(call.sink);
       } catch (_) {
-        // 초기 오류를 sink 정리 오류로 대체하지 않습니다.
+        // Do not replace the original error with a sink-cleanup error.
       } finally {
         streams.forgetPending(call.streamId);
       }
@@ -860,7 +860,7 @@ final class DartAdapterBridge {
     try {
       await _endMarket(sink);
     } catch (_) {
-      // 닫힌 native sink에서는 End를 전달할 수 없습니다.
+      // A closed native sink cannot receive End.
     }
   }
 
@@ -899,7 +899,7 @@ final class DartAdapterBridge {
     try {
       await _endAccount(sink);
     } catch (_) {
-      // 닫힌 native sink에서는 End를 전달할 수 없습니다.
+      // A closed native sink cannot receive End.
     }
   }
 
@@ -916,7 +916,7 @@ final class DartAdapterBridge {
         ),
       );
     } catch (_) {
-      // 닫힌 native sink에서는 추가 오류를 전달할 수 없습니다.
+      // A closed native sink cannot receive another error.
     }
   }
 
@@ -936,7 +936,7 @@ final class DartAdapterBridge {
         ),
       );
     } catch (_) {
-      // 닫힌 native sink에서는 추가 오류를 전달할 수 없습니다.
+      // A closed native sink cannot receive another error.
     }
   }
 

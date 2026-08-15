@@ -50,7 +50,7 @@ pub(crate) fn markets_request() -> HttpRequest {
     HttpRequest::get("/v1/market/all").query("isDetails=true")
 }
 
-/// Builds the separate alert-system request (경보제).
+/// Builds the separate alert-system request.
 pub(crate) fn market_alerts_request() -> HttpRequest {
     HttpRequest::get("/v1/market/virtual_asset_warning")
 }

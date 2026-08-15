@@ -247,7 +247,7 @@ fn render_dart_model_union(
                 }
             };
             let declaration = format!("{signature} = {result};");
-            let doc = format!("  /// [{name}]의 `{constructor}` 변형을 만듭니다.\n");
+            let doc = format!("  /// Creates the `{constructor}` variant of [{name}].\n");
             if declaration.lines().count() > 1 || declaration.chars().count() <= 80 {
                 format!("{doc}{declaration}\n")
             } else {
@@ -262,10 +262,10 @@ fn render_dart_model_union(
             let constructor = dart_name(&suffix);
             match variant.fields.as_slice() {
                 [] => format!(
-                    "\n/// [{name}]의 `{constructor}` 변형입니다.\nfinal class {name}{suffix} extends {name} {{\n  /// `{constructor}` 변형을 만듭니다.\n  const {name}{suffix}();\n}}\n"
+                    "\n/// The `{constructor}` variant of [{name}].\nfinal class {name}{suffix} extends {name} {{\n  /// Creates the `{constructor}` variant.\n  const {name}{suffix}();\n}}\n"
                 ),
                 [field] if field.name == "value" => format!(
-                    "\n/// [{name}]의 `{constructor}` 변형입니다.\nfinal class {name}{suffix} extends {name} {{\n  /// [value]를 담은 `{constructor}` 변형을 만듭니다.\n  const {name}{suffix}(this.value);\n\n{}  final {} value;\n}}\n",
+                    "\n/// The `{constructor}` variant of [{name}].\nfinal class {name}{suffix} extends {name} {{\n  /// Creates the `{constructor}` variant with [value].\n  const {name}{suffix}(this.value);\n\n{}  final {} value;\n}}\n",
                     dart_field_doc(name, field),
                     dart_schema_type(field),
                 ),
@@ -307,37 +307,40 @@ fn render_dart_model_union(
                         })
                         .collect::<String>();
                     format!(
-                        "\n/// [{name}]의 `{constructor}` 변형입니다.\nfinal class {name}{suffix} extends {name} {{\n  /// `{constructor}` 변형의 값을 만듭니다.\n{class_constructor}\n{declarations}}}\n"
+                        "\n/// The `{constructor}` variant of [{name}].\nfinal class {name}{suffix} extends {name} {{\n  /// Creates the values for the `{constructor}` variant.\n{class_constructor}\n{declarations}}}\n"
                     )
                 }
             }
         })
         .collect::<String>();
     format!(
-        "\n{}sealed class {name} {{\n  /// 변형 클래스가 공통으로 사용하는 기본 생성자입니다.\n  const {name}();\n\n{factories}}}\n{classes}",
+        "\n{}sealed class {name} {{\n  /// Base constructor shared by all variants.\n  const {name}();\n\n{factories}}}\n{classes}",
         dart_model_doc(name),
     )
 }
 
 fn dart_model_doc(name: &str) -> String {
     let description = if name.ends_with("Request") {
-        "거래소 API 요청에 전달하는 입력값"
+        "an input model passed to an exchange API request"
     } else if name.ends_with("Result") {
-        "거래소 API 작업의 결과"
+        "the result model of an exchange API operation"
     } else if name.ends_with("Page") {
-        "거래소 API가 반환한 페이지 응답"
+        "a paginated response model returned by an exchange API"
     } else {
-        "거래소 API와 주고받는 구조화된 데이터"
+        "a structured data model exchanged with an exchange API"
     };
-    format!("/// {description} 모델인 [{name}]입니다.\n")
+    format!("/// [{name}] is {description}.\n")
 }
 
 fn dart_constructor_doc(name: &str) -> String {
-    format!("  /// [{name}]의 값을 만듭니다.\n")
+    format!("  /// Creates a [{name}] value.\n")
 }
 
 fn dart_field_doc(_model: &str, field: &Field) -> String {
-    format!("  /// 거래소 API의 `{}` 값입니다.\n", field.name)
+    format!(
+        "  /// The `{}` value used by the exchange API.\n",
+        field.name
+    )
 }
 
 fn dart_schema_type(field: &Field) -> String {
@@ -1211,20 +1214,20 @@ pub(crate) fn render_adapter_api(schema: &Schema) -> String {
          import 'errors.dart';\n\
          import 'models.dart';\n\
          import 'stream.dart';\n\n\
-         /// 거래소 구현이 제공하는 공통 시장·계정 API입니다.\n\
+         /// Common market and account APIs provided by an exchange implementation.\n\
          abstract interface class GeneratedAdapterContract {\n\
-         \x20 /// 이 어댑터가 연결된 거래소입니다.\n\
+         \x20 /// The exchange this adapter is connected to.\n\
          \x20 Exchange get exchange;\n\n\
-         \x20 /// 이 어댑터에서 사용할 수 있는 공통 기능 집합입니다.\n\
+         \x20 /// The common features available from this adapter.\n\
          \x20 Set<Feature> get features;\n\n\
-         \x20 /// [feature]를 이 거래소에서 호출할 수 있는지 확인합니다.\n\
+         \x20 /// Whether [feature] can be called on this exchange.\n\
          \x20 bool supports(Feature feature);\n",
     );
     for operation in schema.adapter_operations {
         output.push('\n');
         render_method_declaration(&mut output, operation);
     }
-    output.push_str("}\n\n/// 지원하지 않는 공통 기능을 [UnsupportedError]로 처리하는 기본 구현입니다.\nabstract base class GeneratedAdapterDefaults\n    implements GeneratedAdapterContract {\n  Future<T> _unsupported<T>(Feature feature) => Future<T>.error(\n    UnsupportedError(\n      feature: feature,\n      exchange: exchange,\n      detail: '${exchange.id} has no endpoint for ${feature.wireName}',\n    ),\n  );\n\n  @override\n  bool supports(Feature feature) => features.contains(feature);\n");
+    output.push_str("}\n\n/// Default implementation that reports unsupported common features with [UnsupportedError].\nabstract base class GeneratedAdapterDefaults\n    implements GeneratedAdapterContract {\n  Future<T> _unsupported<T>(Feature feature) => Future<T>.error(\n    UnsupportedError(\n      feature: feature,\n      exchange: exchange,\n      detail: '${exchange.id} has no endpoint for ${feature.wireName}',\n    ),\n  );\n\n  @override\n  bool supports(Feature feature) => features.contains(feature);\n");
     for operation in schema
         .adapter_operations
         .iter()
@@ -1247,17 +1250,17 @@ pub(crate) fn render_client_api(schema: &Schema) -> String {
          import 'models.dart';\n\
          import 'runtime.dart';\n\
          import 'stream.dart';\n\n\
-         /// 공통 API를 하나의 거래소 어댑터에 연결하는 클라이언트입니다.\n\
+         /// Client that binds common APIs to one exchange adapter.\n\
          abstract base class GeneratedClient<A extends Adapter> {\n\
-         \x20 /// [adapter]를 사용하는 클라이언트를 만듭니다.\n\
+         \x20 /// Creates a client that uses [adapter].\n\
          \x20 GeneratedClient(this.adapter)\n\
          \x20   : _native = NativeClientDelegate.fromAdapter(adapter);\n\n\
-         \x20 /// 이 클라이언트가 호출할 거래소 어댑터입니다.\n\
+         \x20 /// The exchange adapter used by this client.\n\
          \x20 final A adapter;\n\
          \x20 final NativeClientDelegate _native;\n\n\
-         \x20 /// 연결된 거래소입니다.\n\
+         \x20 /// The connected exchange.\n\
          \x20 Exchange get exchange => _native.exchange;\n\n\
-         \x20 /// [feature]를 연결된 거래소에서 지원하는지 확인합니다.\n\
+         \x20 /// Whether the connected exchange supports [feature].\n\
          \x20 bool supports(Feature feature) => _native.supports(feature);\n",
     );
     for operation in schema.adapter_operations {
@@ -1338,7 +1341,7 @@ pub(crate) fn render_native_provider_methods(schema: &Schema) -> String {
         let exchange_pascal = pascal_case(exchange);
         let kind = if account { "Account" } else { "Market" };
         output.push_str(&format!(
-            "\n/// 제공자 원본 스트림에서 다음 event/error/end 항목을 읽습니다.\npub async fn native_{}_{}_subscription_next(\n    subscription: &Native{}{}Subscription,\n) -> Wire{}Item {{\n    subscription.next().await\n}}\n\n/// 제공자 원본 스트림을 닫고 정리가 끝날 때까지 기다립니다.\npub async fn native_{}_{}_subscription_close(\n    subscription: &Native{}{}Subscription,\n) -> Result<(), NativeError> {{\n    subscription.close().await\n}}\n",
+            "\n/// Reads the next event, error, or end item from a provider-native stream.\npub async fn native_{}_{}_subscription_next(\n    subscription: &Native{}{}Subscription,\n) -> Wire{}Item {{\n    subscription.next().await\n}}\n\n/// Closes a provider-native stream and waits for cleanup.\npub async fn native_{}_{}_subscription_close(\n    subscription: &Native{}{}Subscription,\n) -> Result<(), NativeError> {{\n    subscription.close().await\n}}\n",
             exchange,
             if account { "account" } else { "market" },
             exchange_pascal,
@@ -1397,7 +1400,7 @@ fn render_dart_native_provider_method(provider: &Provider, method: &ProviderMeth
         .join(", ");
     let result = dart_native_provider_result(provider, method);
     format!(
-        "    /// {} 전용 API인 `{}`를 호출합니다.\n    pub async fn {}(\n        &self,\n{signature}    ) -> Result<{}, NativeError> {{\n{setup}        let adapter = match self.built_in(\"{}_{}\")? {{\n            BuiltInAdapter::{}(adapter) => adapter,\n            _ => return Err(provider_mismatch(\"{}\")),\n        }};\n        adapter\n            .{}({call_arguments})\n            .await\n{result}    }}\n\n",
+        "    /// Calls the {}-specific `{}` API.\n    pub async fn {}(\n        &self,\n{signature}    ) -> Result<{}, NativeError> {{\n{setup}        let adapter = match self.built_in(\"{}_{}\")? {{\n            BuiltInAdapter::{}(adapter) => adapter,\n            _ => return Err(provider_mismatch(\"{}\")),\n        }};\n        adapter\n            .{}({call_arguments})\n            .await\n{result}    }}\n\n",
         provider_display_name(provider.exchange),
         method.name,
         format!("{}_{}", provider.exchange, method.rust_name),
@@ -1705,7 +1708,7 @@ pub(crate) fn render_provider_methods(schema: &Schema) -> String {
     );
     for provider in schema.providers {
         output.push_str(&format!(
-            "\n/// {} 전용 API 확장입니다.\nextension {}GeneratedMethods on {} {{\n",
+            "\n/// {}-specific API extension.\nextension {}GeneratedMethods on {} {{\n",
             provider_display_name(provider.exchange),
             provider.adapter,
             provider.adapter
@@ -1756,7 +1759,7 @@ fn render_generated_provider_method(provider: &Provider, method: &ProviderMethod
                     .join(", ")
             );
             format!(
-                "  /// {} 전용 API인 `{}`를 호출합니다.\n  Future<{}> {}({}) => _nativeFuture(\n    () => {call},\n  ).then({});\n",
+                "  /// Calls the {}-specific `{}` API.\n  Future<{}> {}({}) => _nativeFuture(\n    () => {call},\n  ).then({});\n",
                 provider_display_name(provider.exchange),
                 method.name,
                 dart_type(method.result),
@@ -1778,13 +1781,13 @@ fn render_generated_provider_stream_method(
     let method_name = method.name;
     if method.rust_name == "subscribe_detailed" {
         return format!(
-            "  /// {} 원본 필드를 보존하는 시장 스트림을 엽니다.\n  Future<{stream}> {method_name}(\n    Subscription subscription,\n  ) => subscribeDetailedWith(subscription, defaultStreamConfig());\n",
+            "  /// Opens a market stream that preserves {}-native fields.\n  Future<{stream}> {method_name}(\n    Subscription subscription,\n  ) => subscribeDetailedWith(subscription, defaultStreamConfig());\n",
             provider_display_name(provider.exchange),
         );
     }
     if method.rust_name == "subscribe_detailed_account" {
         return format!(
-            "  /// {} 원본 필드를 보존하는 계정 스트림을 엽니다.\n  Future<{stream}> {method_name}() =>\n      subscribeDetailedAccountWith(defaultStreamConfig());\n",
+            "  /// Opens an account stream that preserves {}-native fields.\n  Future<{stream}> {method_name}() =>\n      subscribeDetailedAccountWith(defaultStreamConfig());\n",
             provider_display_name(provider.exchange),
         );
     }
@@ -1811,9 +1814,9 @@ fn render_generated_provider_stream_method(
         ""
     };
     format!(
-        "  /// {} 원본 필드를 보존하는 {} 스트림을 엽니다.\n  Future<{stream}> {method_name}({arguments}) async {{\n{config_check}    final handle = await _nativeFuture(\n      () => _handle.{native_call}({call_arguments}),\n    );\n    return {stream}(\n      {items}(handle),\n      onClose: () => _nativeFuture(\n        () => {close}(subscription: handle),\n      ),\n    );\n  }}\n",
+        "  /// Opens a {} stream that preserves {}-native fields.\n  Future<{stream}> {method_name}({arguments}) async {{\n{config_check}    final handle = await _nativeFuture(\n      () => _handle.{native_call}({call_arguments}),\n    );\n    return {stream}(\n      {items}(handle),\n      onClose: () => _nativeFuture(\n        () => {close}(subscription: handle),\n      ),\n    );\n  }}\n",
         provider_display_name(provider.exchange),
-        if account { "계정" } else { "시장" },
+        if account { "account" } else { "market" },
     )
 }
 
@@ -1842,7 +1845,7 @@ pub(crate) fn render_provider_stream_types(schema: &Schema) -> String {
     for (exchange, event, _) in generated_provider_stream_entries(schema) {
         let stream = provider_stream_type(event);
         output.push_str(&format!(
-            "/// {} 원본 이벤트를 보존하는 단일 구독 스트림입니다.\nfinal class {stream} extends _CloseableStream<{event}> {{\n  {stream}(super.source, {{super.onClose}});\n}}\n\n",
+            "/// A single-subscription stream that preserves {}-native events.\nfinal class {stream} extends _CloseableStream<{event}> {{\n  {stream}(super.source, {{super.onClose}});\n}}\n\n",
             pascal_case(exchange),
         ));
     }
@@ -1936,7 +1939,7 @@ fn generated_provider_stream_entries(schema: &Schema) -> Vec<(&'static str, &'st
 
 pub(crate) fn render_delegate_methods(schema: &Schema) -> String {
     let mut output = String::from(
-        "// Generated by `cargo run -p maxt-bindings-codegen`. Do not edit.\n\npart of 'adapters.dart';\n\n/// 다른 [Adapter] 구현에 공통 호출을 위임하는 기본 클래스입니다.\nabstract base class GeneratedNativeDelegate extends AdapterBase {\n  /// 실제 호출을 처리할 어댑터입니다.\n  Future<Adapter> get delegateAdapter;\n",
+        "// Generated by `cargo run -p maxt-bindings-codegen`. Do not edit.\n\npart of 'adapters.dart';\n\n/// Base class that delegates common calls to another [Adapter] implementation.\nabstract base class GeneratedNativeDelegate extends AdapterBase {\n  /// The adapter that performs the actual call.\n  Future<Adapter> get delegateAdapter;\n",
     );
     for operation in schema.adapter_operations.iter().filter(|operation| {
         !matches!(
@@ -2595,7 +2598,7 @@ fn provider_method_source(exchange: &str, method: &str) -> String {
         source.to_owned()
     } else {
         format!(
-            "  /// {} 전용 API인 `{method}`를 호출합니다.\n{source}",
+            "  /// Calls the {}-specific `{method}` API.\n{source}",
             provider_display_name(exchange)
         )
     }
@@ -3490,49 +3493,57 @@ fn render_composed_client_method(method: &ClientComposition) -> String {
 
 fn adapter_doc(name: &str) -> Option<&'static str> {
     match name {
-        "markets" => Some("  /// 거래소가 제공하는 시장 목록을 반환합니다.\n"),
-        "trades" => {
-            Some("  /// 최근 체결을 최신순으로 반환하며, `limit`은 요청할 최대 개수입니다.\n")
+        "markets" => Some("  /// Returns the markets provided by the exchange.\n"),
+        "trades" => Some(
+            "  /// Returns recent trades newest first; `limit` is the maximum requested count.\n",
+        ),
+        "orderBook" => {
+            Some("  /// Returns an order-book snapshot; `depth` limits levels on each side.\n")
         }
-        "orderBook" => Some(
-            "  /// 호가창 스냅샷을 반환하며, `depth`는 매수·매도 각 측의 최대 단계 수입니다.\n",
-        ),
-        "candles" => Some("  /// [CandleRequest] 조건에 맞는 캔들을 오래된 순서로 반환합니다.\n"),
-        "ticker" => Some("  /// 한 시장의 최신 가격 요약을 반환합니다.\n"),
-        "subscribe" => Some(
-            "  /// 시장 데이터를 구독합니다. 사용 후 [CloseableStream.close]를 호출해야 합니다.\n",
-        ),
-        "balances" => Some("  /// 인증된 계정의 자산 잔고를 반환합니다.\n"),
-        "orderRules" => Some("  /// 한 시장에서 현재 적용되는 주문 규칙을 반환합니다.\n"),
-        "assetNetworks" => Some("  /// 자산의 거래소별 입출금 네트워크를 반환합니다.\n"),
-        "depositAddresses" => Some("  /// 계정에 등록된 입금 주소 목록을 반환합니다.\n"),
-        "depositAddress" => Some("  /// 자산과 네트워크의 입금 주소를 조회합니다.\n"),
-        "createDepositAddress" => Some("  /// 자산과 네트워크의 입금 주소 발급을 요청합니다.\n"),
-        "prepareWithdrawal" => Some("  /// 출금 전에 수수료와 제약을 조회합니다.\n"),
-        "withdraw" => Some("  /// 출금 요청을 제출합니다. 이 메서드는 금융 쓰기 작업입니다.\n"),
-        "deposit" => Some("  /// 거래소 전송 식별자로 입금 상태를 조회합니다.\n"),
-        "withdrawal" => Some("  /// 거래소 전송 식별자로 출금 상태를 조회합니다.\n"),
-        "cancelWithdrawal" => Some("  /// 아직 취소 가능한 출금 요청을 취소합니다.\n"),
-        "deposits" => Some("  /// 페이지 단위의 입금 이력을 반환합니다.\n"),
-        "withdrawals" => Some("  /// 페이지 단위의 출금 이력을 반환합니다.\n"),
-        "openOrders" => Some("  /// 열려 있는 주문을 반환합니다.\n"),
-        "order" => Some("  /// 거래소 주문 식별자로 한 주문을 조회합니다.\n"),
-        "orderByClientId" => Some("  /// 클라이언트 주문 식별자로 한 주문을 조회합니다.\n"),
-        "ordersByIds" => Some("  /// 여러 주문 식별자로 주문을 조회합니다.\n"),
-        "orderHistory" => Some("  /// 페이지 단위의 주문 이력을 반환합니다.\n"),
+        "candles" => Some("  /// Returns candles matching [CandleRequest], oldest first.\n"),
+        "ticker" => Some("  /// Returns the latest price summary for one market.\n"),
+        "subscribe" => {
+            Some("  /// Subscribes to market data. Call [CloseableStream.close] when finished.\n")
+        }
+        "balances" => Some("  /// Returns asset balances for the authenticated account.\n"),
+        "orderRules" => Some("  /// Returns the current order rules for one market.\n"),
+        "assetNetworks" => {
+            Some("  /// Returns exchange-specific deposit and withdrawal networks for an asset.\n")
+        }
+        "depositAddresses" => Some("  /// Returns deposit addresses registered for the account.\n"),
+        "depositAddress" => Some("  /// Looks up a deposit address for an asset and network.\n"),
+        "createDepositAddress" => {
+            Some("  /// Requests issuance of a deposit address for an asset and network.\n")
+        }
+        "prepareWithdrawal" => Some("  /// Looks up fees and constraints before a withdrawal.\n"),
+        "withdraw" => Some("  /// Submits a withdrawal request. This is a financial write.\n"),
+        "deposit" => Some("  /// Looks up a deposit by its exchange transfer ID.\n"),
+        "withdrawal" => Some("  /// Looks up a withdrawal by its exchange transfer ID.\n"),
+        "cancelWithdrawal" => {
+            Some("  /// Cancels a withdrawal request that is still cancellable.\n")
+        }
+        "deposits" => Some("  /// Returns paginated deposit history.\n"),
+        "withdrawals" => Some("  /// Returns paginated withdrawal history.\n"),
+        "openOrders" => Some("  /// Returns open orders.\n"),
+        "order" => Some("  /// Looks up an order by its exchange order ID.\n"),
+        "orderByClientId" => Some("  /// Looks up an order by its client order ID.\n"),
+        "ordersByIds" => Some("  /// Looks up multiple orders by their IDs.\n"),
+        "orderHistory" => Some("  /// Returns paginated order history.\n"),
         "subscribeAccount" => Some(
-            "  /// 비공개 계정 이벤트를 구독합니다. 사용 후 [CloseableStream.close]를 호출해야 합니다.\n",
+            "  /// Subscribes to private account events. Call [CloseableStream.close] when finished.\n",
         ),
-        "placeOrder" => Some("  /// 주문을 제출합니다. 이 메서드는 금융 쓰기 작업입니다.\n"),
-        "cancelOrder" => Some("  /// 거래소 주문 식별자로 주문을 취소합니다.\n"),
-        "cancelOrderByClientId" => Some("  /// 클라이언트 주문 식별자로 주문을 취소합니다.\n"),
-        "cancelOrders" => Some("  /// 여러 주문 취소를 요청하고 항목별 결과를 반환합니다.\n"),
-        "positions" => Some("  /// 열려 있는 파생상품 포지션을 반환합니다.\n"),
-        "marginSummary" => Some("  /// 계정의 증거금 상태를 반환합니다.\n"),
-        "fundingRates" => Some("  /// 페이지 단위의 펀딩비율 이력을 반환합니다.\n"),
-        "fundingPayments" => Some("  /// 페이지 단위의 실제 펀딩 지급 이력을 반환합니다.\n"),
+        "placeOrder" => Some("  /// Submits an order. This is a financial write.\n"),
+        "cancelOrder" => Some("  /// Cancels an order by its exchange order ID.\n"),
+        "cancelOrderByClientId" => Some("  /// Cancels an order by its client order ID.\n"),
+        "cancelOrders" => {
+            Some("  /// Requests cancellation of multiple orders and returns per-item results.\n")
+        }
+        "positions" => Some("  /// Returns open derivative positions.\n"),
+        "marginSummary" => Some("  /// Returns the account margin summary.\n"),
+        "fundingRates" => Some("  /// Returns paginated funding-rate history.\n"),
+        "fundingPayments" => Some("  /// Returns paginated actual funding-payment history.\n"),
         "setMargin" => {
-            Some("  /// 포지션의 증거금 설정을 변경합니다. 이 메서드는 금융 쓰기 작업입니다.\n")
+            Some("  /// Changes a position margin configuration. This is a financial write.\n")
         }
         _ => None,
     }
@@ -3571,14 +3582,20 @@ fn client_doc(name: &str) -> Option<&'static str> {
         | "fundingRates"
         | "fundingPayments"
         | "setMargin" => adapter_doc(name),
-        "openOrders" => Some("  /// 모든 시장의 열려 있는 주문을 반환합니다.\n"),
-        "openOrdersOn" => Some("  /// 지정한 시장의 열려 있는 주문을 반환합니다.\n"),
-        "subscribe" => Some("  /// 기본 연결 설정으로 시장 데이터를 구독합니다.\n"),
-        "subscribeWith" => Some("  /// 지정한 연결 설정으로 시장 데이터를 구독합니다.\n"),
-        "subscribeAccount" => Some("  /// 기본 연결 설정으로 비공개 계정 이벤트를 구독합니다.\n"),
-        "subscribeAccountWith" => {
-            Some("  /// 지정한 연결 설정으로 비공개 계정 이벤트를 구독합니다.\n")
+        "openOrders" => Some("  /// Returns open orders across all markets.\n"),
+        "openOrdersOn" => Some("  /// Returns open orders for one market.\n"),
+        "subscribe" => {
+            Some("  /// Subscribes to market data using the default connection configuration.\n")
         }
+        "subscribeWith" => {
+            Some("  /// Subscribes to market data using the supplied connection configuration.\n")
+        }
+        "subscribeAccount" => Some(
+            "  /// Subscribes to private account events using the default connection configuration.\n",
+        ),
+        "subscribeAccountWith" => Some(
+            "  /// Subscribes to private account events using the supplied connection configuration.\n",
+        ),
         _ => None,
     }
 }
@@ -3649,7 +3666,7 @@ fn render_closed_identifier(
         .collect::<Vec<_>>()
         .join(", ");
     output.push_str(&format!(
-        "/// 거래소 API가 사용하는 `{}` 식별자입니다.\n",
+        "/// `{}` identifier used by an exchange API.\n",
         identifier.name
     ));
     let declaration = format!("enum {} {{ {variants} }}", identifier.name);
@@ -3659,7 +3676,7 @@ fn render_closed_identifier(
         output.push_str(&format!("enum {} {{\n", identifier.name));
         for variant in identifier.variants {
             output.push_str(&format!(
-                "  /// 거래소 wire 값 `{}`입니다.\n",
+                "  /// Exchange wire value `{}`.\n",
                 variant.wire_name
             ));
             output.push_str(&format!("  {},\n", dart_name(variant.rust_name)));
@@ -3667,7 +3684,7 @@ fn render_closed_identifier(
         output.push_str("}\n");
     }
     output.push_str(&format!(
-        "\n/// 이 식별자를 거래소 wire 이름으로 변환합니다.\nextension {}WireName on {} {{\n  /// 거래소 API에 전달하는 wire 이름입니다.\n  String get wireName => switch (this) {{\n",
+        "\n/// Converts this identifier to its exchange wire name.\nextension {}WireName on {} {{\n  /// Wire name sent to the exchange API.\n  String get wireName => switch (this) {{\n",
         identifier.name, identifier.name
     ));
     for variant in identifier.variants {
@@ -3686,7 +3703,7 @@ fn render_open_identifier(
     identifier: &maxt_bindings_common::schema::Identifier,
 ) {
     output.push_str(&format!(
-        "/// 거래소가 확장할 수 있는 `{}` 식별자입니다.\nfinal class {} {{\n  const {}._(this.providerName, [this._isOther = false]);\n\n",
+        "/// Extensible `{}` identifier supplied by an exchange.\nfinal class {} {{\n  const {}._(this.providerName, [this._isOther = false]);\n\n",
         identifier.name,
         identifier.name, identifier.name
     ));
@@ -3697,7 +3714,7 @@ fn render_open_identifier(
             identifier.name, variant.wire_name
         );
         output.push_str(&format!(
-            "  /// 거래소 wire 값 `{}`입니다.\n",
+            "  /// Exchange wire value `{}`.\n",
             variant.wire_name
         ));
         if declaration.chars().count() <= 80 {
@@ -3713,7 +3730,7 @@ fn render_open_identifier(
         "  factory {}.other(String providerName) => {}._(providerName, true);",
         identifier.name, identifier.name
     );
-    output.push_str("\n  /// 알려지지 않은 거래소 wire 값을 보존합니다.\n");
+    output.push_str("\n  /// Preserves an unknown exchange wire value.\n");
     if factory.chars().count() <= 80 {
         output.push_str(&format!("{factory}\n"));
     } else {
@@ -3723,7 +3740,7 @@ fn render_open_identifier(
         ));
     }
     output.push_str(&format!(
-        "\n  /// 거래소가 보낸 원래 이름입니다.\n  final String providerName;\n  final bool _isOther;\n\n  /// 미리 정의되지 않은 거래소 값인지 여부입니다.\n  bool get isOther => _isOther;\n\n  @override\n  bool operator ==(Object other) =>\n      other is {} &&\n      _isOther == other._isOther &&\n      providerName == other.providerName;\n\n  @override\n  int get hashCode => Object.hash(_isOther, providerName);\n\n  @override\n  String toString() => providerName;\n}}\n",
+        "\n  /// Original name sent by the exchange.\n  final String providerName;\n  final bool _isOther;\n\n  /// Whether this is not a predefined exchange value.\n  bool get isOther => _isOther;\n\n  @override\n  bool operator ==(Object other) =>\n      other is {} &&\n      _isOther == other._isOther &&\n      providerName == other.providerName;\n\n  @override\n  int get hashCode => Object.hash(_isOther, providerName);\n\n  @override\n  String toString() => providerName;\n}}\n",
         identifier.name
     ));
 }
@@ -3771,13 +3788,13 @@ mod tests {
     fn identifiers_are_rendered_from_the_schema() {
         let output = render_identifiers(&binding_schema());
 
-        assert!(output.contains("/// 거래소 API가 사용하는 `BinanceMarket` 식별자입니다."));
+        assert!(output.contains("/// `BinanceMarket` identifier used by an exchange API."));
         assert!(output.contains("enum BinanceMarket { spot, usdMFutures }"));
-        assert!(output.contains("/// 이 식별자를 거래소 wire 이름으로 변환합니다."));
+        assert!(output.contains("/// Converts this identifier to its exchange wire name."));
         assert!(output.contains("BinanceMarket.usdMFutures => 'usd_m'"));
-        assert!(
-            output.contains("/// 거래소가 확장할 수 있는 `HyperliquidLedgerKind` 식별자입니다.")
-        );
+        assert!(output.contains(
+            "/// Extensible `HyperliquidLedgerKind` identifier supplied by an exchange."
+        ));
         assert!(output.contains("final class HyperliquidLedgerKind"));
         assert!(output.contains("static const vaultDistribution"));
         assert!(output.contains("'vault_distribution'"));
@@ -3788,13 +3805,11 @@ mod tests {
     fn order_history_model_defaults_to_all_final_orders() {
         let output = render_models(&binding_schema());
 
-        assert!(
-            output.contains(
-                "/// 거래소 API 요청에 전달하는 입력값 모델인 [OrderHistoryRequest]입니다."
-            )
-        );
-        assert!(output.contains("/// [OrderHistoryRequest]의 값을 만듭니다."));
-        assert!(output.contains("/// 거래소 API의 `statuses` 값입니다."));
+        assert!(output.contains(
+            "/// [OrderHistoryRequest] is an input model passed to an exchange API request."
+        ));
+        assert!(output.contains("/// Creates a [OrderHistoryRequest] value."));
+        assert!(output.contains("/// The `statuses` value used by the exchange API."));
         assert!(output.contains(
             "const OrderHistoryRequest({\n    this.market,\n    this.statuses = const [],"
         ));
@@ -3893,10 +3908,8 @@ mod tests {
         assert!(client.contains("set exactly one of the exchange transfer ID or transaction ID"));
         assert!(client.contains("field: 'tx_id'"));
         assert!(converters.contains("checkedUint32(value.limit, field: 'limit')"));
-        assert!(adapter.contains("/// 거래소가 제공하는 시장 목록을 반환합니다."));
-        assert!(
-            client.contains("/// 공통 API를 하나의 거래소 어댑터에 연결하는 클라이언트입니다.")
-        );
+        assert!(adapter.contains("/// Returns the markets provided by the exchange."));
+        assert!(client.contains("/// Client that binds common APIs to one exchange adapter."));
     }
 
     #[test]
@@ -3978,8 +3991,8 @@ mod tests {
                 assert!(output.contains(method.name));
             }
         }
-        assert!(output.contains("/// Binance 전용 API 확장입니다."));
-        assert!(output.contains("/// Binance 전용 API인 `c2c_trade_history`를 호출합니다."));
+        assert!(output.contains("/// Binance-specific API extension."));
+        assert!(output.contains("/// Calls the Binance-specific `c2c_trade_history` API."));
     }
 
     #[test]

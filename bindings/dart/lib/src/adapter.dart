@@ -3,17 +3,16 @@ import 'generated_adapter.dart';
 import 'models.dart';
 import 'stream.dart';
 
-/// 사용자 정의 거래소 어댑터의 공개 계약입니다.
+/// Public contract for a custom exchange adapter.
 ///
-/// 일반적인 구현은 [AdapterBase]를 확장하고 [exchange]와 [features]만
-/// 필수로 제공합니다. 선택 기능의 기본 메서드는 [UnsupportedError]를
-/// 반환합니다.
+/// A typical implementation extends [AdapterBase] and only must provide
+/// [exchange] and [features]. Default optional methods return [UnsupportedError].
 abstract interface class Adapter implements GeneratedAdapterContract {}
 
-/// 구현하지 않은 메서드가 [UnsupportedError]를 반환하는 기본 클래스입니다.
+/// Base class whose unimplemented methods return [UnsupportedError].
 abstract base class AdapterBase extends GeneratedAdapterDefaults
     implements Adapter {
-  /// 지원하지 않는 기본 구독 호출을 검증한 뒤 오류로 완료합니다.
+  /// Validates an unsupported base subscription call before completing with an error.
   @override
   Future<MarketStream> subscribe(
     Subscription subscription,

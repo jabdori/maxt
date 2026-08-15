@@ -8,47 +8,47 @@ import 'models.dart';
 import 'runtime.dart';
 import 'stream.dart';
 
-/// 공통 API를 하나의 거래소 어댑터에 연결하는 클라이언트입니다.
+/// Client that binds common APIs to one exchange adapter.
 abstract base class GeneratedClient<A extends Adapter> {
-  /// [adapter]를 사용하는 클라이언트를 만듭니다.
+  /// Creates a client that uses [adapter].
   GeneratedClient(this.adapter)
     : _native = NativeClientDelegate.fromAdapter(adapter);
 
-  /// 이 클라이언트가 호출할 거래소 어댑터입니다.
+  /// The exchange adapter used by this client.
   final A adapter;
   final NativeClientDelegate _native;
 
-  /// 연결된 거래소입니다.
+  /// The connected exchange.
   Exchange get exchange => _native.exchange;
 
-  /// [feature]를 연결된 거래소에서 지원하는지 확인합니다.
+  /// Whether the connected exchange supports [feature].
   bool supports(Feature feature) => _native.supports(feature);
 
-  /// 거래소가 제공하는 시장 목록을 반환합니다.
+  /// Returns the markets provided by the exchange.
   Future<List<MarketInfo>> markets(MarketKind kind) => _native.markets(kind);
 
-  /// 최근 체결을 최신순으로 반환하며, `limit`은 요청할 최대 개수입니다.
+  /// Returns recent trades newest first; `limit` is the maximum requested count.
   Future<List<Trade>> trades(Market market, [int? limit]) async =>
       _native.trades(market, checkedUint32(limit, field: 'limit'));
 
-  /// 호가창 스냅샷을 반환하며, `depth`는 매수·매도 각 측의 최대 단계 수입니다.
+  /// Returns an order-book snapshot; `depth` limits levels on each side.
   Future<OrderBook> orderBook(Market market, [int? depth]) async =>
       _native.orderBook(market, checkedUint32(depth, field: 'depth'));
 
-  /// 한 시장의 최신 가격 요약을 반환합니다.
+  /// Returns the latest price summary for one market.
   Future<Ticker> ticker(Market market) => _native.ticker(market);
 
-  /// [CandleRequest] 조건에 맞는 캔들을 오래된 순서로 반환합니다.
+  /// Returns candles matching [CandleRequest], oldest first.
   Future<List<Candle>> candles(CandleRequest request) async {
     checkedUint32(request.limit, field: 'limit');
     return _native.candles(request);
   }
 
-  /// 기본 연결 설정으로 시장 데이터를 구독합니다.
+  /// Subscribes to market data using the default connection configuration.
   Future<MarketStream> subscribe(Subscription subscription) =>
       subscribeWith(subscription, defaultStreamConfig());
 
-  /// 지정한 연결 설정으로 시장 데이터를 구독합니다.
+  /// Subscribes to market data using the supplied connection configuration.
   Future<MarketStream> subscribeWith(
     Subscription subscription,
     StreamConfig config,
@@ -57,79 +57,79 @@ abstract base class GeneratedClient<A extends Adapter> {
     return _native.subscribe(subscription, config);
   }
 
-  /// 인증된 계정의 자산 잔고를 반환합니다.
+  /// Returns asset balances for the authenticated account.
   Future<List<Balance>> balances() => _native.balances();
 
-  /// 한 시장에서 현재 적용되는 주문 규칙을 반환합니다.
+  /// Returns the current order rules for one market.
   Future<OrderRules> orderRules(Market market) => _native.orderRules(market);
 
-  /// 자산의 거래소별 입출금 네트워크를 반환합니다.
+  /// Returns exchange-specific deposit and withdrawal networks for an asset.
   Future<List<AssetNetwork>> assetNetworks(String asset) =>
       _native.assetNetworks(asset);
 
-  /// 계정에 등록된 입금 주소 목록을 반환합니다.
+  /// Returns deposit addresses registered for the account.
   Future<List<DepositAddressEntry>> depositAddresses() =>
       _native.depositAddresses();
 
-  /// 자산과 네트워크의 입금 주소를 조회합니다.
+  /// Looks up a deposit address for an asset and network.
   Future<DepositAddress> depositAddress(DepositAddressRequest request) =>
       _native.depositAddress(request);
 
-  /// 자산과 네트워크의 입금 주소 발급을 요청합니다.
+  /// Requests issuance of a deposit address for an asset and network.
   Future<DepositAddress> createDepositAddress(DepositAddressRequest request) =>
       _native.createDepositAddress(request);
 
-  /// 출금 전에 수수료와 제약을 조회합니다.
+  /// Looks up fees and constraints before a withdrawal.
   Future<WithdrawalQuote> prepareWithdrawal(WithdrawRequest request) =>
       _native.prepareWithdrawal(request);
 
-  /// 출금 요청을 제출합니다. 이 메서드는 금융 쓰기 작업입니다.
+  /// Submits a withdrawal request. This is a financial write.
   Future<Withdrawal> withdraw(WithdrawRequest request) =>
       _native.withdraw(request);
 
-  /// 거래소 전송 식별자로 입금 상태를 조회합니다.
+  /// Looks up a deposit by its exchange transfer ID.
   Future<Deposit> deposit(TransferLookupRequest request) async {
     _validateTransferLookupRequest(request);
     return _native.deposit(request);
   }
 
-  /// 거래소 전송 식별자로 출금 상태를 조회합니다.
+  /// Looks up a withdrawal by its exchange transfer ID.
   Future<Withdrawal> withdrawal(TransferLookupRequest request) async {
     _validateTransferLookupRequest(request);
     return _native.withdrawal(request);
   }
 
-  /// 아직 취소 가능한 출금 요청을 취소합니다.
+  /// Cancels a withdrawal request that is still cancellable.
   Future<void> cancelWithdrawal(String withdrawalId) =>
       _native.cancelWithdrawal(withdrawalId);
 
-  /// 페이지 단위의 입금 이력을 반환합니다.
+  /// Returns paginated deposit history.
   Future<Page<Deposit>> deposits(TransferHistoryRequest request) async {
     checkedUint32(request.limit, field: 'limit');
     return _native.deposits(request);
   }
 
-  /// 페이지 단위의 출금 이력을 반환합니다.
+  /// Returns paginated withdrawal history.
   Future<Page<Withdrawal>> withdrawals(TransferHistoryRequest request) async {
     checkedUint32(request.limit, field: 'limit');
     return _native.withdrawals(request);
   }
 
-  /// 모든 시장의 열려 있는 주문을 반환합니다.
+  /// Returns open orders across all markets.
   Future<List<Order>> openOrders() => _native.openOrders();
 
-  /// 지정한 시장의 열려 있는 주문을 반환합니다.
+  /// Returns open orders for one market.
   Future<List<Order>> openOrdersOn(Market market) => _native.openOrders(market);
 
-  /// 거래소 주문 식별자로 한 주문을 조회합니다.
+  /// Looks up an order by its exchange order ID.
   Future<Order> order(Market market, String orderId) =>
       _native.order(market, orderId);
 
-  /// 클라이언트 주문 식별자로 한 주문을 조회합니다.
+  /// Looks up an order by its client order ID.
   Future<Order> orderByClientId(Market market, String clientId) =>
       _native.orderByClientId(market, clientId);
 
-  /// 여러 주문 식별자로 주문을 조회합니다.
+  /// Looks up multiple orders by their IDs.
   Future<List<Order>> ordersByIds(OrderLookupRequest request) async {
     if (request.ids.isEmpty || request.ids.length > 100) {
       throw InvalidRequestError(
@@ -147,32 +147,32 @@ abstract base class GeneratedClient<A extends Adapter> {
     return _native.ordersByIds(request);
   }
 
-  /// 페이지 단위의 주문 이력을 반환합니다.
+  /// Returns paginated order history.
   Future<Page<Order>> orderHistory(OrderHistoryRequest request) =>
       _native.orderHistory(request);
 
-  /// 기본 연결 설정으로 비공개 계정 이벤트를 구독합니다.
+  /// Subscribes to private account events using the default connection configuration.
   Future<AccountStream> subscribeAccount() =>
       subscribeAccountWith(defaultStreamConfig());
 
-  /// 지정한 연결 설정으로 비공개 계정 이벤트를 구독합니다.
+  /// Subscribes to private account events using the supplied connection configuration.
   Future<AccountStream> subscribeAccountWith(StreamConfig config) async {
     validateStreamConfigIntegers(config);
     return _native.subscribeAccount(config);
   }
 
-  /// 주문을 제출합니다. 이 메서드는 금융 쓰기 작업입니다.
+  /// Submits an order. This is a financial write.
   Future<Order> placeOrder(OrderRequest request) => _native.placeOrder(request);
 
-  /// 거래소 주문 식별자로 주문을 취소합니다.
+  /// Cancels an order by its exchange order ID.
   Future<void> cancelOrder(Market market, String orderId) =>
       _native.cancelOrder(market, orderId);
 
-  /// 클라이언트 주문 식별자로 주문을 취소합니다.
+  /// Cancels an order by its client order ID.
   Future<void> cancelOrderByClientId(Market market, String clientId) =>
       _native.cancelOrderByClientId(market, clientId);
 
-  /// 여러 주문 취소를 요청하고 항목별 결과를 반환합니다.
+  /// Requests cancellation of multiple orders and returns per-item results.
   Future<CancelOrdersResult> cancelOrders(CancelOrdersRequest request) async {
     if (request.ids.isEmpty) {
       throw const InvalidRequestError(
@@ -189,29 +189,29 @@ abstract base class GeneratedClient<A extends Adapter> {
     return _native.cancelOrders(request);
   }
 
-  /// 열려 있는 파생상품 포지션을 반환합니다.
+  /// Returns open derivative positions.
   Future<List<Position>> positions() async =>
       _openPositions(await _native.positions());
 
   Future<List<Position>> positionsOn(Market market) async =>
       _openPositions(await _native.positions(market));
 
-  /// 계정의 증거금 상태를 반환합니다.
+  /// Returns the account margin summary.
   Future<MarginSummary> marginSummary() => _native.marginSummary();
 
-  /// 페이지 단위의 펀딩비율 이력을 반환합니다.
+  /// Returns paginated funding-rate history.
   Future<Page<FundingRate>> fundingRates(HistoryRequest request) async {
     checkedUint32(request.limit, field: 'limit');
     return _native.fundingRates(request);
   }
 
-  /// 페이지 단위의 실제 펀딩 지급 이력을 반환합니다.
+  /// Returns paginated actual funding-payment history.
   Future<Page<FundingPayment>> fundingPayments(HistoryRequest request) async {
     checkedUint32(request.limit, field: 'limit');
     return _native.fundingPayments(request);
   }
 
-  /// 포지션의 증거금 설정을 변경합니다. 이 메서드는 금융 쓰기 작업입니다.
+  /// Changes a position margin configuration. This is a financial write.
   Future<void> setMargin(MarginRequest request) => _native.setMargin(request);
 
   Future<TransferPlan> prepareTransferTo(

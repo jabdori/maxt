@@ -9,7 +9,7 @@ pub use crate::stream::{
 };
 
 impl NativeClient {
-    /// Upbit 전용 API인 `subscribeDetailed`를 호출합니다.
+    /// Calls the Upbit-specific `subscribeDetailed` API.
     pub async fn upbit_subscribe_detailed(
         &self,
         subscription: WireSubscription,
@@ -26,7 +26,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit 전용 API인 `subscribeDetailedWith`를 호출합니다.
+    /// Calls the Upbit-specific `subscribeDetailedWith` API.
     pub async fn upbit_subscribe_detailed_with(
         &self,
         subscription: WireSubscription,
@@ -45,7 +45,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit 전용 API인 `subscribeDetailedAccount`를 호출합니다.
+    /// Calls the Upbit-specific `subscribeDetailedAccount` API.
     pub async fn upbit_subscribe_detailed_account(
         &self,
     ) -> Result<NativeUpbitAccountSubscription, NativeError> {
@@ -60,7 +60,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit 전용 API인 `subscribeDetailedAccountWith`를 호출합니다.
+    /// Calls the Upbit-specific `subscribeDetailedAccountWith` API.
     pub async fn upbit_subscribe_detailed_account_with(
         &self,
         config: WireStreamConfig,
@@ -77,7 +77,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit 전용 API인 `testOrderDetail`를 호출합니다.
+    /// Calls the Upbit-specific `testOrderDetail` API.
     pub async fn upbit_test_order_detail(
         &self,
         request: WireOrderRequest,
@@ -94,7 +94,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit 전용 API인 `placeOrderDetail`를 호출합니다.
+    /// Calls the Upbit-specific `placeOrderDetail` API.
     pub async fn upbit_place_order_detail(
         &self,
         request: WireOrderRequest,
@@ -111,7 +111,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit 전용 API인 `cancelOrderDetail`를 호출합니다.
+    /// Calls the Upbit-specific `cancelOrderDetail` API.
     pub async fn upbit_cancel_order_detail(
         &self,
         market: WireMarket,
@@ -129,7 +129,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit 전용 API인 `cancelOrderByClientIdDetail`를 호출합니다.
+    /// Calls the Upbit-specific `cancelOrderByClientIdDetail` API.
     pub async fn upbit_cancel_order_by_client_id_detail(
         &self,
         market: WireMarket,
@@ -147,7 +147,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit 전용 API인 `ordersByIdsDetail`를 호출합니다.
+    /// Calls the Upbit-specific `ordersByIdsDetail` API.
     pub async fn upbit_orders_by_ids_detail(
         &self,
         request: WireOrderLookupRequest,
@@ -164,7 +164,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit 전용 API인 `cancelOrdersDetail`를 호출합니다.
+    /// Calls the Upbit-specific `cancelOrdersDetail` API.
     pub async fn upbit_cancel_orders_detail(
         &self,
         request: WireCancelOrdersRequest,
@@ -181,7 +181,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit 전용 API인 `depositDetail`를 호출합니다.
+    /// Calls the Upbit-specific `depositDetail` API.
     pub async fn upbit_deposit_detail(
         &self,
         request: WireTransferLookupRequest,
@@ -198,7 +198,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit 전용 API인 `withdrawalDetail`를 호출합니다.
+    /// Calls the Upbit-specific `withdrawalDetail` API.
     pub async fn upbit_withdrawal_detail(
         &self,
         request: WireTransferLookupRequest,
@@ -215,7 +215,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit 전용 API인 `cancelWithdrawalDetail`를 호출합니다.
+    /// Calls the Upbit-specific `cancelWithdrawalDetail` API.
     pub async fn upbit_cancel_withdrawal_detail(
         &self,
         withdrawal_id: String,
@@ -231,7 +231,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Upbit 전용 API인 `cancelAndNewOrderDetail`를 호출합니다.
+    /// Calls the Upbit-specific `cancelAndNewOrderDetail` API.
     pub async fn upbit_cancel_and_new_order_detail(
         &self,
         request: WireUpbitCancelAndNewOrderRequest,
@@ -248,7 +248,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb 전용 API인 `orderBookSnapshot`를 호출합니다.
+    /// Calls the Bithumb-specific `orderBookSnapshot` API.
     pub async fn bithumb_order_book_snapshot(
         &self,
         market: WireMarket,
@@ -266,7 +266,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb 전용 API인 `subscribeDetailed`를 호출합니다.
+    /// Calls the Bithumb-specific `subscribeDetailed` API.
     pub async fn bithumb_subscribe_detailed(
         &self,
         subscription: WireSubscription,
@@ -283,7 +283,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb 전용 API인 `subscribeDetailedWith`를 호출합니다.
+    /// Calls the Bithumb-specific `subscribeDetailedWith` API.
     pub async fn bithumb_subscribe_detailed_with(
         &self,
         subscription: WireSubscription,
@@ -302,7 +302,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb 전용 API인 `subscribeDetailedAccount`를 호출합니다.
+    /// Calls the Bithumb-specific `subscribeDetailedAccount` API.
     pub async fn bithumb_subscribe_detailed_account(
         &self,
     ) -> Result<NativeBithumbAccountSubscription, NativeError> {
@@ -317,7 +317,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb 전용 API인 `subscribeDetailedAccountWith`를 호출합니다.
+    /// Calls the Bithumb-specific `subscribeDetailedAccountWith` API.
     pub async fn bithumb_subscribe_detailed_account_with(
         &self,
         config: WireStreamConfig,
@@ -334,7 +334,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb 전용 API인 `ordersByIdsDetail`를 호출합니다.
+    /// Calls the Bithumb-specific `ordersByIdsDetail` API.
     pub async fn bithumb_orders_by_ids_detail(
         &self,
         request: WireOrderLookupRequest,
@@ -351,7 +351,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb 전용 API인 `placeOrderDetail`를 호출합니다.
+    /// Calls the Bithumb-specific `placeOrderDetail` API.
     pub async fn bithumb_place_order_detail(
         &self,
         request: WireOrderRequest,
@@ -368,7 +368,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb 전용 API인 `cancelOrderDetail`를 호출합니다.
+    /// Calls the Bithumb-specific `cancelOrderDetail` API.
     pub async fn bithumb_cancel_order_detail(
         &self,
         market: WireMarket,
@@ -386,7 +386,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb 전용 API인 `cancelOrderByClientIdDetail`를 호출합니다.
+    /// Calls the Bithumb-specific `cancelOrderByClientIdDetail` API.
     pub async fn bithumb_cancel_order_by_client_id_detail(
         &self,
         market: WireMarket,
@@ -404,7 +404,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb 전용 API인 `cancelOrdersDetail`를 호출합니다.
+    /// Calls the Bithumb-specific `cancelOrdersDetail` API.
     pub async fn bithumb_cancel_orders_detail(
         &self,
         request: WireCancelOrdersRequest,
@@ -421,7 +421,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb 전용 API인 `depositDetail`를 호출합니다.
+    /// Calls the Bithumb-specific `depositDetail` API.
     pub async fn bithumb_deposit_detail(
         &self,
         request: WireTransferLookupRequest,
@@ -438,7 +438,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb 전용 API인 `withdrawalDetail`를 호출합니다.
+    /// Calls the Bithumb-specific `withdrawalDetail` API.
     pub async fn bithumb_withdrawal_detail(
         &self,
         request: WireTransferLookupRequest,
@@ -455,7 +455,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Bithumb 전용 API인 `cancelWithdrawalDetail`를 호출합니다.
+    /// Calls the Bithumb-specific `cancelWithdrawalDetail` API.
     pub async fn bithumb_cancel_withdrawal_detail(
         &self,
         withdrawal_id: String,
@@ -471,7 +471,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance 전용 API인 `placeOrderDetail`를 호출합니다.
+    /// Calls the Binance-specific `placeOrderDetail` API.
     pub async fn binance_place_order_detail(
         &self,
         request: WireOrderRequest,
@@ -488,7 +488,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance 전용 API인 `cancelOrderDetail`를 호출합니다.
+    /// Calls the Binance-specific `cancelOrderDetail` API.
     pub async fn binance_cancel_order_detail(
         &self,
         market: WireMarket,
@@ -506,7 +506,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance 전용 API인 `cancelOrderByClientIdDetail`를 호출합니다.
+    /// Calls the Binance-specific `cancelOrderByClientIdDetail` API.
     pub async fn binance_cancel_order_by_client_id_detail(
         &self,
         market: WireMarket,
@@ -524,7 +524,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance 전용 API인 `subscribeDetailed`를 호출합니다.
+    /// Calls the Binance-specific `subscribeDetailed` API.
     pub async fn binance_subscribe_detailed(
         &self,
         subscription: WireSubscription,
@@ -541,7 +541,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance 전용 API인 `subscribeDetailedWith`를 호출합니다.
+    /// Calls the Binance-specific `subscribeDetailedWith` API.
     pub async fn binance_subscribe_detailed_with(
         &self,
         subscription: WireSubscription,
@@ -560,7 +560,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance 전용 API인 `subscribeDetailedAccount`를 호출합니다.
+    /// Calls the Binance-specific `subscribeDetailedAccount` API.
     pub async fn binance_subscribe_detailed_account(
         &self,
     ) -> Result<NativeBinanceAccountSubscription, NativeError> {
@@ -575,7 +575,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Binance 전용 API인 `subscribeDetailedAccountWith`를 호출합니다.
+    /// Calls the Binance-specific `subscribeDetailedAccountWith` API.
     pub async fn binance_subscribe_detailed_account_with(
         &self,
         config: WireStreamConfig,
@@ -592,7 +592,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Hyperliquid 전용 API인 `allMidsDetail`를 호출합니다.
+    /// Calls the Hyperliquid-specific `allMidsDetail` API.
     pub async fn hyperliquid_all_mids_detail(&self) -> Result<WireHyperliquidAllMids, NativeError> {
         let adapter = match self.built_in("hyperliquid_all_mids_detail")? {
             BuiltInAdapter::Hyperliquid(adapter) => adapter,
@@ -605,7 +605,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Hyperliquid 전용 API인 `perpetualMeta`를 호출합니다.
+    /// Calls the Hyperliquid-specific `perpetualMeta` API.
     pub async fn hyperliquid_perpetual_meta(
         &self,
     ) -> Result<WireHyperliquidProviderResponse, NativeError> {
@@ -620,7 +620,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Hyperliquid 전용 API인 `perpetualMetaAndAssetContexts`를 호출합니다.
+    /// Calls the Hyperliquid-specific `perpetualMetaAndAssetContexts` API.
     pub async fn hyperliquid_perpetual_meta_and_asset_contexts(
         &self,
     ) -> Result<WireHyperliquidProviderResponse, NativeError> {
@@ -635,7 +635,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Hyperliquid 전용 API인 `clearinghouseStateDetail`를 호출합니다.
+    /// Calls the Hyperliquid-specific `clearinghouseStateDetail` API.
     pub async fn hyperliquid_clearinghouse_state_detail(
         &self,
     ) -> Result<WireHyperliquidProviderResponse, NativeError> {
@@ -650,7 +650,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Hyperliquid 전용 API인 `frontendOpenOrdersDetail`를 호출합니다.
+    /// Calls the Hyperliquid-specific `frontendOpenOrdersDetail` API.
     pub async fn hyperliquid_frontend_open_orders_detail(
         &self,
     ) -> Result<WireHyperliquidProviderResponse, NativeError> {
@@ -665,7 +665,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Hyperliquid 전용 API인 `placeOrderDetail`를 호출합니다.
+    /// Calls the Hyperliquid-specific `placeOrderDetail` API.
     pub async fn hyperliquid_place_order_detail(
         &self,
         request: WireOrderRequest,
@@ -682,7 +682,7 @@ impl NativeClient {
             .map_err(Into::into)
     }
 
-    /// Hyperliquid 전용 API인 `cancelOrderDetail`를 호출합니다.
+    /// Calls the Hyperliquid-specific `cancelOrderDetail` API.
     pub async fn hyperliquid_cancel_order_detail(
         &self,
         market: WireMarket,
@@ -701,84 +701,84 @@ impl NativeClient {
     }
 }
 
-/// 제공자 원본 스트림에서 다음 event/error/end 항목을 읽습니다.
+/// Reads the next event, error, or end item from a provider-native stream.
 pub async fn native_upbit_market_subscription_next(
     subscription: &NativeUpbitMarketSubscription,
 ) -> WireUpbitMarketStreamItem {
     subscription.next().await
 }
 
-/// 제공자 원본 스트림을 닫고 정리가 끝날 때까지 기다립니다.
+/// Closes a provider-native stream and waits for cleanup.
 pub async fn native_upbit_market_subscription_close(
     subscription: &NativeUpbitMarketSubscription,
 ) -> Result<(), NativeError> {
     subscription.close().await
 }
 
-/// 제공자 원본 스트림에서 다음 event/error/end 항목을 읽습니다.
+/// Reads the next event, error, or end item from a provider-native stream.
 pub async fn native_upbit_account_subscription_next(
     subscription: &NativeUpbitAccountSubscription,
 ) -> WireUpbitAccountStreamItem {
     subscription.next().await
 }
 
-/// 제공자 원본 스트림을 닫고 정리가 끝날 때까지 기다립니다.
+/// Closes a provider-native stream and waits for cleanup.
 pub async fn native_upbit_account_subscription_close(
     subscription: &NativeUpbitAccountSubscription,
 ) -> Result<(), NativeError> {
     subscription.close().await
 }
 
-/// 제공자 원본 스트림에서 다음 event/error/end 항목을 읽습니다.
+/// Reads the next event, error, or end item from a provider-native stream.
 pub async fn native_bithumb_market_subscription_next(
     subscription: &NativeBithumbMarketSubscription,
 ) -> WireBithumbMarketStreamItem {
     subscription.next().await
 }
 
-/// 제공자 원본 스트림을 닫고 정리가 끝날 때까지 기다립니다.
+/// Closes a provider-native stream and waits for cleanup.
 pub async fn native_bithumb_market_subscription_close(
     subscription: &NativeBithumbMarketSubscription,
 ) -> Result<(), NativeError> {
     subscription.close().await
 }
 
-/// 제공자 원본 스트림에서 다음 event/error/end 항목을 읽습니다.
+/// Reads the next event, error, or end item from a provider-native stream.
 pub async fn native_bithumb_account_subscription_next(
     subscription: &NativeBithumbAccountSubscription,
 ) -> WireBithumbAccountStreamItem {
     subscription.next().await
 }
 
-/// 제공자 원본 스트림을 닫고 정리가 끝날 때까지 기다립니다.
+/// Closes a provider-native stream and waits for cleanup.
 pub async fn native_bithumb_account_subscription_close(
     subscription: &NativeBithumbAccountSubscription,
 ) -> Result<(), NativeError> {
     subscription.close().await
 }
 
-/// 제공자 원본 스트림에서 다음 event/error/end 항목을 읽습니다.
+/// Reads the next event, error, or end item from a provider-native stream.
 pub async fn native_binance_market_subscription_next(
     subscription: &NativeBinanceMarketSubscription,
 ) -> WireBinanceMarketStreamItem {
     subscription.next().await
 }
 
-/// 제공자 원본 스트림을 닫고 정리가 끝날 때까지 기다립니다.
+/// Closes a provider-native stream and waits for cleanup.
 pub async fn native_binance_market_subscription_close(
     subscription: &NativeBinanceMarketSubscription,
 ) -> Result<(), NativeError> {
     subscription.close().await
 }
 
-/// 제공자 원본 스트림에서 다음 event/error/end 항목을 읽습니다.
+/// Reads the next event, error, or end item from a provider-native stream.
 pub async fn native_binance_account_subscription_next(
     subscription: &NativeBinanceAccountSubscription,
 ) -> WireBinanceAccountStreamItem {
     subscription.next().await
 }
 
-/// 제공자 원본 스트림을 닫고 정리가 끝날 때까지 기다립니다.
+/// Closes a provider-native stream and waits for cleanup.
 pub async fn native_binance_account_subscription_close(
     subscription: &NativeBinanceAccountSubscription,
 ) -> Result<(), NativeError> {

@@ -22,7 +22,7 @@ external void _forceLoadNativeAsset();
 )
 external Pointer<Utf8> _nativeLibraryPath();
 
-/// maxt 네이티브 런타임의 생명 주기를 관리합니다.
+/// Manages the lifecycle of the maxt native runtime.
 abstract final class Maxt {
   static Future<void>? _initialization;
   static bool _initialized = false;
@@ -30,10 +30,10 @@ abstract final class Maxt {
   static String? _relayUrl;
   static bool? _allowInsecureBrowserCredentials;
 
-  /// 현재 격리 실행 환경(isolate)에서 네이티브 런타임 초기화가 완료됐는지 나타냅니다.
+  /// Whether native runtime initialization completed in this isolate.
   static bool get isInitialized => _initialized;
 
-  /// 현재 isolate에서 네이티브 런타임을 한 번 초기화합니다.
+  /// Initializes the native runtime once in the current isolate.
   static Future<void> initialize({
     String? relayUrl,
     bool allowInsecureBrowserCredentials = false,
@@ -83,10 +83,9 @@ abstract final class Maxt {
     return ExternalLibrary.open(path);
   }
 
-  /// 현재 isolate의 네이티브 런타임 자원을 정리합니다.
+  /// Releases native runtime resources for the current isolate.
   ///
-  /// isolate 종료 시 한 번 호출합니다. 종료 후 같은 isolate에서 다시 초기화할 수
-  /// 없습니다.
+  /// Call once when the isolate exits. It cannot be initialized again afterward.
   static Future<void> dispose() async {
     final initialization = _initialization;
     if (initialization == null || _disposed) return;
@@ -98,5 +97,5 @@ abstract final class Maxt {
   }
 }
 
-/// 네이티브 플랫폼에서는 브라우저 인증 정보 정책을 적용하지 않습니다.
+/// Browser credential policy does not apply on native platforms.
 void validateBrowserCredentials(String? first, String? second) {}

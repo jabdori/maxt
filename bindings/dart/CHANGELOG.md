@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.1
+
+- Added the pub.dev-recognized `example/main.dart` Binance public-market
+  example and standardized its code comments and output in English.
+
 ## 0.4.0
 
 - Added generated provider APIs, models, native dispatch, and provider stream

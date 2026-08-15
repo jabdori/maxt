@@ -8,7 +8,7 @@ StreamConfig defaultStreamConfig() =>
     const StreamConfig(overflow: Overflow.dropNewest);
 bool get bridgeCustomAdapters => false;
 
-/// maxt WebAssembly 런타임의 생명 주기를 관리합니다.
+/// Manages the lifecycle of the maxt WebAssembly runtime.
 abstract final class Maxt {
   static Future<void>? _initialization;
   static bool _initialized = false;
@@ -16,10 +16,10 @@ abstract final class Maxt {
   static String? _relayUrl;
   static bool? _allowInsecureBrowserCredentials;
 
-  /// WebAssembly 런타임 초기화가 완료됐는지 나타냅니다.
+  /// Whether WebAssembly runtime initialization has completed.
   static bool get isInitialized => _initialized;
 
-  /// 현재 브라우저 실행 환경에서 WebAssembly 런타임을 한 번 초기화합니다.
+  /// Initializes the WebAssembly runtime once in the current browser context.
   static Future<void> initialize({
     String? relayUrl,
     bool allowInsecureBrowserCredentials = false,
@@ -62,7 +62,7 @@ abstract final class Maxt {
     _initialized = true;
   }
 
-  /// 현재 브라우저의 WebAssembly 런타임 자원을 정리합니다.
+  /// Releases WebAssembly runtime resources in the current browser context.
   static Future<void> dispose() async {
     final initialization = _initialization;
     if (initialization == null || _disposed) return;
@@ -74,7 +74,7 @@ abstract final class Maxt {
   }
 }
 
-/// 브라우저에서 인증 정보를 사용하기 위한 명시적 보안 설정을 검사합니다.
+/// Validates the explicit security opt-in required for browser credentials.
 void validateBrowserCredentials(String? first, String? second) {
   if (first == null && second == null) return;
   if (Maxt._allowInsecureBrowserCredentials != true) {

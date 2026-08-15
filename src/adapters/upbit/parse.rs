@@ -570,7 +570,7 @@ fn check_code_part(field: &'static str, value: &str) -> Result<()> {
 // Raw to domain
 // ---------------------------------------------------------------------------
 
-/// Returns the listing's investment-warning flag (`유의 종목`).
+/// Returns the listing's investment-warning flag.
 ///
 /// Korea sends `market_event.warning`; other regions send the legacy
 /// `market_warning` value.
@@ -581,7 +581,7 @@ fn warned(raw: &RawMarket) -> bool {
     }
 }
 
-/// Returns active investment-caution (`주의 종목`) criterion names.
+/// Returns active investment-caution criterion names.
 ///
 /// Regions without `market_event` return an empty list.
 fn cautions(raw: &RawMarket) -> Vec<String> {

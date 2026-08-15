@@ -88,7 +88,7 @@ cargo run --example public_rest
 | --- | --- | --- |
 | Rust | 이 README와 [시작하기](docs/getting-started.ko.md) | [`examples/public_rest.rs`](examples/public_rest.rs) |
 | Python | [Python 패키지 안내](bindings/python/README.ko.md) | [`bindings/python/examples/binance_public_ticker.py`](bindings/python/examples/binance_public_ticker.py) |
-| Dart / Flutter | [Dart 패키지 안내](bindings/dart/README.ko.md) | [`bindings/dart/example/public_ticker.dart`](bindings/dart/example/public_ticker.dart) |
+| Dart / Flutter | [Dart 패키지 안내](bindings/dart/README.ko.md) | [`bindings/dart/example/main.dart`](bindings/dart/example/main.dart) |
 | TypeScript | [TypeScript 패키지 안내](bindings/typescript/README.ko.md) | [`bindings/typescript/examples/binance-public-ticker.mjs`](bindings/typescript/examples/binance-public-ticker.mjs) |
 
 Dart 패키지는 Android, iOS, Linux, macOS, Windows, Web을 지원합니다. TypeScript

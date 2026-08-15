@@ -2,9 +2,9 @@
 
 part of 'adapters.dart';
 
-/// Upbit 전용 API 확장입니다.
+/// Upbit-specific API extension.
 extension UpbitAdapterGeneratedMethods on UpbitAdapter {
-  /// Upbit 전용 API인 `order_books`를 호출합니다.
+  /// Calls the Upbit-specific `order_books` API.
   Future<List<OrderBook>> orderBooks(List<Market> markets, [int? depth]) =>
       _nativeFuture(
         () => _handle.upbitOrderBooks(
@@ -15,7 +15,7 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
         (values) => values.map(_orderBookFromWire).toList(growable: false),
       );
 
-  /// Upbit 전용 API인 `order_books_at_level`를 호출합니다.
+  /// Calls the Upbit-specific `order_books_at_level` API.
   Future<List<OrderBook>> orderBooksAtLevel(
     List<Market> markets,
     Decimal level, [
@@ -28,20 +28,20 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
     ),
   ).then((values) => values.map(_orderBookFromWire).toList(growable: false));
 
-  /// Upbit 전용 API인 `tickers`를 호출합니다.
+  /// Calls the Upbit-specific `tickers` API.
   Future<List<Ticker>> tickers(List<Market> markets) => _nativeFuture(
     () => _handle.upbitTickers(
       markets: markets.map(_marketToWire).toList(growable: false),
     ),
   ).then((values) => values.map(_tickerFromWire).toList(growable: false));
 
-  /// Upbit 전용 API인 `tickers_by_quote`를 호출합니다.
+  /// Calls the Upbit-specific `tickers_by_quote` API.
   Future<List<Ticker>> tickersByQuote(List<String> quoteCurrencies) =>
       _nativeFuture(
         () => _handle.upbitTickersByQuote(quoteCurrencies: quoteCurrencies),
       ).then((values) => values.map(_tickerFromWire).toList(growable: false));
 
-  /// Upbit 전용 API인 `year_candles`를 호출합니다.
+  /// Calls the Upbit-specific `year_candles` API.
   Future<List<UpbitYearCandle>> yearCandles(
     Market market, [
     Timestamp? to,
@@ -60,7 +60,7 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
             values.map(_upbitYearCandleFromWire).toList(growable: false),
       );
 
-  /// Upbit 전용 API인 `orderbook_instruments`를 호출합니다.
+  /// Calls the Upbit-specific `orderbook_instruments` API.
   Future<List<UpbitOrderBookInstrument>> orderbookInstruments(
     List<Market> markets,
   ) =>
@@ -74,7 +74,7 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
             .toList(growable: false),
       );
 
-  /// Upbit 전용 API인 `market_events`를 호출합니다.
+  /// Calls the Upbit-specific `market_events` API.
   Future<List<UpbitMarketEvent>> marketEvents() =>
       _nativeFuture(_handle.upbitMarketEvents).then(
         (values) =>
@@ -101,7 +101,7 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
     () => _handle.upbitTestOrder(request: _orderRequestToWire(request)),
   ).then(_orderFromWire);
 
-  /// Upbit 전용 API인 `order_detail`를 호출합니다.
+  /// Calls the Upbit-specific `order_detail` API.
   Future<UpbitOrderDetail> orderDetail(UpbitOrderDetailRequest request) =>
       _nativeFuture(
         () => _handle.upbitOrderDetail(
@@ -109,7 +109,7 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
         ),
       ).then(_upbitOrderDetailFromWire);
 
-  /// Upbit 전용 API인 `closed_orders`를 호출합니다.
+  /// Calls the Upbit-specific `closed_orders` API.
   Future<List<UpbitClosedOrder>> closedOrders(
     UpbitClosedOrdersRequest request,
   ) =>
@@ -221,17 +221,17 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
         ),
       ).then(_upbitKrwWithdrawalFromWire);
 
-  /// Upbit 전용 API인 `api_keys`를 호출합니다.
+  /// Calls the Upbit-specific `api_keys` API.
   Future<List<UpbitApiKey>> apiKeys() => _nativeFuture(
     _handle.upbitApiKeys,
   ).then((values) => values.map(_upbitApiKeyFromWire).toList(growable: false));
 
-  /// Upbit 전용 API인 `list_pockets`를 호출합니다.
+  /// Calls the Upbit-specific `list_pockets` API.
   Future<List<UpbitPocket>> listPockets() => _nativeFuture(
     _handle.upbitListPockets,
   ).then((values) => values.map(_upbitPocketFromWire).toList(growable: false));
 
-  /// Upbit 전용 API인 `list_pocket_api_keys`를 호출합니다.
+  /// Calls the Upbit-specific `list_pocket_api_keys` API.
   Future<List<UpbitPocketApiKeyGroup>> listPocketApiKeys(
     UpbitPocketApiKeysRequest request,
   ) =>
@@ -244,7 +244,7 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
             values.map(_upbitPocketApiKeyGroupFromWire).toList(growable: false),
       );
 
-  /// Upbit 전용 API인 `sub_pocket_balances`를 호출합니다.
+  /// Calls the Upbit-specific `sub_pocket_balances` API.
   Future<List<UpbitPocketBalance>> subPocketBalances(String pocketUuid) =>
       _nativeFuture(
         () => _handle.upbitSubPocketBalances(pocketUuid: pocketUuid),
@@ -253,7 +253,7 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
             values.map(_upbitPocketBalanceFromWire).toList(growable: false),
       );
 
-  /// Upbit 전용 API인 `universal_transfer`를 호출합니다.
+  /// Calls the Upbit-specific `universal_transfer` API.
   Future<UpbitPocketTransfer> universalTransfer(
     UpbitPocketUniversalTransferRequest request,
   ) => _nativeFuture(
@@ -262,7 +262,7 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
     ),
   ).then(_upbitPocketTransferFromWire);
 
-  /// Upbit 전용 API인 `universal_transfers`를 호출합니다.
+  /// Calls the Upbit-specific `universal_transfers` API.
   Future<List<UpbitPocketTransfer>> universalTransfers(
     UpbitPocketTransferQuery request,
   ) =>
@@ -275,7 +275,7 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
             values.map(_upbitPocketTransferFromWire).toList(growable: false),
       );
 
-  /// Upbit 전용 API인 `sub_pocket_transfer`를 호출합니다.
+  /// Calls the Upbit-specific `sub_pocket_transfer` API.
   Future<UpbitPocketTransfer> subPocketTransfer(
     UpbitPocketTransferRequest request,
   ) => _nativeFuture(
@@ -284,7 +284,7 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
     ),
   ).then(_upbitPocketTransferFromWire);
 
-  /// Upbit 전용 API인 `sub_pocket_transfers`를 호출합니다.
+  /// Calls the Upbit-specific `sub_pocket_transfers` API.
   Future<List<UpbitPocketTransfer>> subPocketTransfers(
     UpbitPocketTransferQuery request,
   ) =>
@@ -297,11 +297,11 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
             values.map(_upbitPocketTransferFromWire).toList(growable: false),
       );
 
-  /// Upbit 원본 필드를 보존하는 시장 스트림을 엽니다.
+  /// Opens a market stream that preserves Upbit-native fields.
   Future<UpbitMarketStream> subscribeDetailed(Subscription subscription) =>
       subscribeDetailedWith(subscription, defaultStreamConfig());
 
-  /// Upbit 원본 필드를 보존하는 시장 스트림을 엽니다.
+  /// Opens a Upbit stream that preserves market-native fields.
   Future<UpbitMarketStream> subscribeDetailedWith(
     Subscription subscription,
     StreamConfig config,
@@ -321,11 +321,11 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
     );
   }
 
-  /// Upbit 원본 필드를 보존하는 계정 스트림을 엽니다.
+  /// Opens an account stream that preserves Upbit-native fields.
   Future<UpbitAccountStream> subscribeDetailedAccount() =>
       subscribeDetailedAccountWith(defaultStreamConfig());
 
-  /// Upbit 원본 필드를 보존하는 계정 스트림을 엽니다.
+  /// Opens a Upbit stream that preserves account-native fields.
   Future<UpbitAccountStream> subscribeDetailedAccountWith(
     StreamConfig config,
   ) async {
@@ -343,14 +343,14 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
     );
   }
 
-  /// Upbit 전용 API인 `testOrderDetail`를 호출합니다.
+  /// Calls the Upbit-specific `testOrderDetail` API.
   Future<UpbitOrderResponse> testOrderDetail(OrderRequest request) =>
       _nativeFuture(
         () =>
             _handle.upbitTestOrderDetail(request: _orderRequestToWire(request)),
       ).then(_upbitOrderResponseFromWire);
 
-  /// Upbit 전용 API인 `placeOrderDetail`를 호출합니다.
+  /// Calls the Upbit-specific `placeOrderDetail` API.
   Future<UpbitOrderResponse> placeOrderDetail(OrderRequest request) =>
       _nativeFuture(
         () => _handle.upbitPlaceOrderDetail(
@@ -358,7 +358,7 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
         ),
       ).then(_upbitOrderResponseFromWire);
 
-  /// Upbit 전용 API인 `cancelOrderDetail`를 호출합니다.
+  /// Calls the Upbit-specific `cancelOrderDetail` API.
   Future<UpbitOrderResponse> cancelOrderDetail(Market market, String orderId) =>
       _nativeFuture(
         () => _handle.upbitCancelOrderDetail(
@@ -367,7 +367,7 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
         ),
       ).then(_upbitOrderResponseFromWire);
 
-  /// Upbit 전용 API인 `cancelOrderByClientIdDetail`를 호출합니다.
+  /// Calls the Upbit-specific `cancelOrderByClientIdDetail` API.
   Future<UpbitOrderResponse> cancelOrderByClientIdDetail(
     Market market,
     String clientId,
@@ -378,7 +378,7 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
     ),
   ).then(_upbitOrderResponseFromWire);
 
-  /// Upbit 전용 API인 `ordersByIdsDetail`를 호출합니다.
+  /// Calls the Upbit-specific `ordersByIdsDetail` API.
   Future<List<UpbitOrderResponse>> ordersByIdsDetail(
     OrderLookupRequest request,
   ) =>
@@ -391,7 +391,7 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
             values.map(_upbitOrderResponseFromWire).toList(growable: false),
       );
 
-  /// Upbit 전용 API인 `cancelOrdersDetail`를 호출합니다.
+  /// Calls the Upbit-specific `cancelOrdersDetail` API.
   Future<UpbitCancelOrdersResponse> cancelOrdersDetail(
     CancelOrdersRequest request,
   ) => _nativeFuture(
@@ -400,7 +400,7 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
     ),
   ).then(_upbitCancelOrdersResponseFromWire);
 
-  /// Upbit 전용 API인 `depositDetail`를 호출합니다.
+  /// Calls the Upbit-specific `depositDetail` API.
   Future<UpbitDepositResponse> depositDetail(TransferLookupRequest request) =>
       _nativeFuture(
         () => _handle.upbitDepositDetail(
@@ -408,7 +408,7 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
         ),
       ).then(_upbitDepositResponseFromWire);
 
-  /// Upbit 전용 API인 `withdrawalDetail`를 호출합니다.
+  /// Calls the Upbit-specific `withdrawalDetail` API.
   Future<UpbitWithdrawalResponse> withdrawalDetail(
     TransferLookupRequest request,
   ) => _nativeFuture(
@@ -417,14 +417,14 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
     ),
   ).then(_upbitWithdrawalResponseFromWire);
 
-  /// Upbit 전용 API인 `cancelWithdrawalDetail`를 호출합니다.
+  /// Calls the Upbit-specific `cancelWithdrawalDetail` API.
   Future<UpbitCancelWithdrawalResponse> cancelWithdrawalDetail(
     String withdrawalId,
   ) => _nativeFuture(
     () => _handle.upbitCancelWithdrawalDetail(withdrawalId: withdrawalId),
   ).then(_upbitCancelWithdrawalResponseFromWire);
 
-  /// Upbit 전용 API인 `cancelAndNewOrderDetail`를 호출합니다.
+  /// Calls the Upbit-specific `cancelAndNewOrderDetail` API.
   Future<UpbitCancelAndNewOrderDetailResult> cancelAndNewOrderDetail(
     UpbitCancelAndNewOrderRequest request,
   ) => _nativeFuture(
@@ -434,23 +434,23 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
   ).then(_upbitCancelAndNewOrderDetailResultFromWire);
 }
 
-/// Bithumb 전용 API 확장입니다.
+/// Bithumb-specific API extension.
 extension BithumbAdapterGeneratedMethods on BithumbAdapter {
-  /// Bithumb 전용 API인 `market_warnings`를 호출합니다.
+  /// Calls the Bithumb-specific `market_warnings` API.
   Future<List<BithumbMarketWarning>> marketWarnings() =>
       _nativeFuture(_handle.bithumbMarketWarnings).then(
         (values) =>
             values.map(_bithumbMarketWarningFromWire).toList(growable: false),
       );
 
-  /// Bithumb 전용 API인 `market_alerts`를 호출합니다.
+  /// Calls the Bithumb-specific `market_alerts` API.
   Future<List<BithumbMarketAlert>> marketAlerts() =>
       _nativeFuture(_handle.bithumbMarketAlerts).then(
         (values) =>
             values.map(_bithumbMarketAlertFromWire).toList(growable: false),
       );
 
-  /// Bithumb 전용 API인 `notices`를 호출합니다.
+  /// Calls the Bithumb-specific `notices` API.
   Future<List<BithumbNotice>> notices([int? count]) =>
       _nativeFuture(
         () =>
@@ -459,20 +459,20 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
         (values) => values.map(_bithumbNoticeFromWire).toList(growable: false),
       );
 
-  /// Bithumb 전용 API인 `transfer_fees`를 호출합니다.
+  /// Calls the Bithumb-specific `transfer_fees` API.
   Future<List<BithumbAssetFee>> transferFees(String currency) =>
       _nativeFuture(() => _handle.bithumbTransferFees(currency: currency)).then(
         (values) =>
             values.map(_bithumbAssetFeeFromWire).toList(growable: false),
       );
 
-  /// Bithumb 전용 API인 `api_keys`를 호출합니다.
+  /// Calls the Bithumb-specific `api_keys` API.
   Future<List<BithumbApiKey>> apiKeys() =>
       _nativeFuture(_handle.bithumbApiKeys).then(
         (values) => values.map(_bithumbApiKeyFromWire).toList(growable: false),
       );
 
-  /// Bithumb 전용 API인 `krw_withdrawals`를 호출합니다.
+  /// Calls the Bithumb-specific `krw_withdrawals` API.
   Future<List<BithumbKrwWithdrawal>> krwWithdrawals(
     BithumbKrwWithdrawalsRequest request,
   ) =>
@@ -493,7 +493,7 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
         ),
       ).then(_bithumbKrwWithdrawalFromWire);
 
-  /// Bithumb 전용 API인 `krw_deposits`를 호출합니다.
+  /// Calls the Bithumb-specific `krw_deposits` API.
   Future<List<BithumbKrwDeposit>> krwDeposits(
     BithumbKrwDepositsRequest request,
   ) =>
@@ -514,7 +514,7 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
         ),
       ).then(_bithumbKrwDepositFromWire);
 
-  /// Bithumb 전용 API인 `pending_orders`를 호출합니다.
+  /// Calls the Bithumb-specific `pending_orders` API.
   Future<Page<Order>> pendingOrders(BithumbPendingOrdersRequest request) =>
       _nativeFuture(
         () => _handle.bithumbPendingOrders(
@@ -522,7 +522,7 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
         ),
       ).then(_orderPageFromWire);
 
-  /// Bithumb 전용 API인 `closed_orders`를 호출합니다.
+  /// Calls the Bithumb-specific `closed_orders` API.
   Future<Page<BithumbClosedOrder>> closedOrders(
     BithumbClosedOrdersRequest request,
   ) => _nativeFuture(
@@ -540,7 +540,7 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
     ),
   ).then(_bithumbBatchOrdersResultFromWire);
 
-  /// Bithumb 전용 API인 `twap_orders`를 호출합니다.
+  /// Calls the Bithumb-specific `twap_orders` API.
   Future<Page<BithumbTwapOrder>> twapOrders(BithumbTwapOrdersRequest request) =>
       _nativeFuture(
         () => _handle.bithumbTwapOrders(
@@ -561,7 +561,7 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
     () => _handle.bithumbCancelTwapOrder(algoOrderId: algoOrderId),
   );
 
-  /// Bithumb 전용 API인 `withdrawal_addresses`를 호출합니다.
+  /// Calls the Bithumb-specific `withdrawal_addresses` API.
   Future<List<BithumbWithdrawalAddress>> withdrawalAddresses() =>
       _nativeFuture(_handle.bithumbWithdrawalAddresses).then(
         (values) => values
@@ -569,7 +569,7 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
             .toList(growable: false),
       );
 
-  /// Bithumb 전용 API인 `order_detail`를 호출합니다.
+  /// Calls the Bithumb-specific `order_detail` API.
   Future<BithumbOrderDetail> orderDetail(BithumbOrderDetailRequest request) =>
       _nativeFuture(
         () => _handle.bithumbOrderDetail(
@@ -577,7 +577,7 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
         ),
       ).then(_bithumbOrderDetailFromWire);
 
-  /// Bithumb 전용 API인 `order_list`를 호출합니다.
+  /// Calls the Bithumb-specific `order_list` API.
   Future<List<BithumbOrderListItem>> orderList(
     BithumbOrderListRequest request,
   ) =>
@@ -590,7 +590,7 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
             values.map(_bithumbOrderListItemFromWire).toList(growable: false),
       );
 
-  /// Bithumb 전용 API인 `orderBookSnapshot`를 호출합니다.
+  /// Calls the Bithumb-specific `orderBookSnapshot` API.
   Future<BithumbOrderBookSnapshot> orderBookSnapshot(
     Market market, [
     int? depth,
@@ -601,11 +601,11 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
     ),
   ).then(_bithumbOrderBookSnapshotFromWire);
 
-  /// Bithumb 원본 필드를 보존하는 시장 스트림을 엽니다.
+  /// Opens a market stream that preserves Bithumb-native fields.
   Future<BithumbMarketStream> subscribeDetailed(Subscription subscription) =>
       subscribeDetailedWith(subscription, defaultStreamConfig());
 
-  /// Bithumb 원본 필드를 보존하는 시장 스트림을 엽니다.
+  /// Opens a Bithumb stream that preserves market-native fields.
   Future<BithumbMarketStream> subscribeDetailedWith(
     Subscription subscription,
     StreamConfig config,
@@ -625,11 +625,11 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
     );
   }
 
-  /// Bithumb 원본 필드를 보존하는 계정 스트림을 엽니다.
+  /// Opens an account stream that preserves Bithumb-native fields.
   Future<BithumbAccountStream> subscribeDetailedAccount() =>
       subscribeDetailedAccountWith(defaultStreamConfig());
 
-  /// Bithumb 원본 필드를 보존하는 계정 스트림을 엽니다.
+  /// Opens a Bithumb stream that preserves account-native fields.
   Future<BithumbAccountStream> subscribeDetailedAccountWith(
     StreamConfig config,
   ) async {
@@ -648,7 +648,7 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
     );
   }
 
-  /// Bithumb 전용 API인 `ordersByIdsDetail`를 호출합니다.
+  /// Calls the Bithumb-specific `ordersByIdsDetail` API.
   Future<BithumbOrdersResponse> ordersByIdsDetail(OrderLookupRequest request) =>
       _nativeFuture(
         () => _handle.bithumbOrdersByIdsDetail(
@@ -656,7 +656,7 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
         ),
       ).then(_bithumbOrdersResponseFromWire);
 
-  /// Bithumb 전용 API인 `placeOrderDetail`를 호출합니다.
+  /// Calls the Bithumb-specific `placeOrderDetail` API.
   Future<BithumbOrderResponse> placeOrderDetail(OrderRequest request) =>
       _nativeFuture(
         () => _handle.bithumbPlaceOrderDetail(
@@ -664,7 +664,7 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
         ),
       ).then(_bithumbOrderResponseFromWire);
 
-  /// Bithumb 전용 API인 `cancelOrderDetail`를 호출합니다.
+  /// Calls the Bithumb-specific `cancelOrderDetail` API.
   Future<BithumbCancelOrderResponse> cancelOrderDetail(
     Market market,
     String orderId,
@@ -675,7 +675,7 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
     ),
   ).then(_bithumbCancelOrderResponseFromWire);
 
-  /// Bithumb 전용 API인 `cancelOrderByClientIdDetail`를 호출합니다.
+  /// Calls the Bithumb-specific `cancelOrderByClientIdDetail` API.
   Future<BithumbCancelOrderResponse> cancelOrderByClientIdDetail(
     Market market,
     String clientId,
@@ -686,7 +686,7 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
     ),
   ).then(_bithumbCancelOrderResponseFromWire);
 
-  /// Bithumb 전용 API인 `cancelOrdersDetail`를 호출합니다.
+  /// Calls the Bithumb-specific `cancelOrdersDetail` API.
   Future<BithumbCancelOrdersResponse> cancelOrdersDetail(
     CancelOrdersRequest request,
   ) => _nativeFuture(
@@ -695,7 +695,7 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
     ),
   ).then(_bithumbCancelOrdersResponseFromWire);
 
-  /// Bithumb 전용 API인 `depositDetail`를 호출합니다.
+  /// Calls the Bithumb-specific `depositDetail` API.
   Future<BithumbDepositResponse> depositDetail(TransferLookupRequest request) =>
       _nativeFuture(
         () => _handle.bithumbDepositDetail(
@@ -703,7 +703,7 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
         ),
       ).then(_bithumbDepositResponseFromWire);
 
-  /// Bithumb 전용 API인 `withdrawalDetail`를 호출합니다.
+  /// Calls the Bithumb-specific `withdrawalDetail` API.
   Future<BithumbWithdrawalResponse> withdrawalDetail(
     TransferLookupRequest request,
   ) => _nativeFuture(
@@ -712,7 +712,7 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
     ),
   ).then(_bithumbWithdrawalResponseFromWire);
 
-  /// Bithumb 전용 API인 `cancelWithdrawalDetail`를 호출합니다.
+  /// Calls the Bithumb-specific `cancelWithdrawalDetail` API.
   Future<BithumbCancelWithdrawalResponse> cancelWithdrawalDetail(
     String withdrawalId,
   ) => _nativeFuture(
@@ -720,15 +720,15 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
   ).then(_bithumbCancelWithdrawalResponseFromWire);
 }
 
-/// Binance 전용 API 확장입니다.
+/// Binance-specific API extension.
 extension BinanceAdapterGeneratedMethods on BinanceAdapter {
-  /// Binance 전용 API인 `spot_symbol_filters`를 호출합니다.
+  /// Calls the Binance-specific `spot_symbol_filters` API.
   Future<BinanceSymbolFilters> spotSymbolFilters(Market market) =>
       _nativeFuture(
         () => _handle.binanceSpotSymbolFilters(market: _marketToWire(market)),
       ).then(_binanceSymbolFiltersFromWire);
 
-  /// Binance 전용 API인 `spot_order`를 호출합니다.
+  /// Calls the Binance-specific `spot_order` API.
   Future<BinanceSpotOrderDetail> spotOrder(Market market, String orderId) =>
       _nativeFuture(
         () => _handle.binanceSpotOrder(
@@ -737,7 +737,7 @@ extension BinanceAdapterGeneratedMethods on BinanceAdapter {
         ),
       ).then(_binanceSpotOrderFromWire);
 
-  /// Binance 전용 API인 `spot_average_price`를 호출합니다.
+  /// Calls the Binance-specific `spot_average_price` API.
   Future<BinanceSpotAveragePrice> spotAveragePrice(Market market) =>
       _nativeFuture(
         () => _handle.binanceSpotAveragePrice(market: _marketToWire(market)),
@@ -830,24 +830,24 @@ extension BinanceAdapterGeneratedMethods on BinanceAdapter {
     ),
   ).then(_binanceWithdrawHistoryFromWire);
 
-  /// Binance 전용 API인 `mark_price`를 호출합니다.
+  /// Calls the Binance-specific `mark_price` API.
   Future<BinanceMarkPrice> markPrice(Market market) => _nativeFuture(
     () => _handle.binanceMarkPrice(market: _marketToWire(market)),
   ).then(_binanceMarkPriceFromWire);
 
-  /// Binance 전용 API인 `mark_prices`를 호출합니다.
+  /// Calls the Binance-specific `mark_prices` API.
   Future<List<BinanceMarkPrice>> markPrices() =>
       _nativeFuture(_handle.binanceMarkPrices).then(
         (values) =>
             values.map(_binanceMarkPriceFromWire).toList(growable: false),
       );
 
-  /// Binance 전용 API인 `open_interest`를 호출합니다.
+  /// Calls the Binance-specific `open_interest` API.
   Future<BinanceOpenInterest> openInterest(Market market) => _nativeFuture(
     () => _handle.binanceOpenInterest(market: _marketToWire(market)),
   ).then(_binanceOpenInterestFromWire);
 
-  /// Binance 전용 API인 `aggregate_trades`를 호출합니다.
+  /// Calls the Binance-specific `aggregate_trades` API.
   Future<List<BinanceAggregateTrade>> aggregateTrades(
     BinanceAggregateTradesRequest request,
   ) =>
@@ -860,7 +860,7 @@ extension BinanceAdapterGeneratedMethods on BinanceAdapter {
             values.map(_binanceAggregateTradeFromWire).toList(growable: false),
       );
 
-  /// Binance 전용 API인 `account_trades`를 호출합니다.
+  /// Calls the Binance-specific `account_trades` API.
   Future<Page<BinanceAccountTrade>> accountTrades(HistoryRequest request) =>
       _nativeFuture(
         () => _handle.binanceAccountTrades(
@@ -868,7 +868,7 @@ extension BinanceAdapterGeneratedMethods on BinanceAdapter {
         ),
       ).then(_binanceAccountTradePageFromWire);
 
-  /// Binance 전용 API인 `c2c_trade_history`를 호출합니다.
+  /// Calls the Binance-specific `c2c_trade_history` API.
   Future<BinanceC2cTradeHistoryPage> c2cTradeHistory(
     BinanceC2cTradeHistoryRequest request,
   ) => _nativeFuture(
@@ -890,20 +890,20 @@ extension BinanceAdapterGeneratedMethods on BinanceAdapter {
     () => _handle.binanceCancelAllOpenOrders(market: _marketToWire(market)),
   );
 
-  /// Binance 전용 API인 `usd_m_create_listen_key`를 호출합니다.
+  /// Calls the Binance-specific `usd_m_create_listen_key` API.
   Future<BinanceListenKey> usdMCreateListenKey() => _nativeFuture(
     _handle.binanceUsdMCreateListenKey,
   ).then(BinanceListenKey._);
 
-  /// Binance 전용 API인 `usd_m_keepalive_listen_key`를 호출합니다.
+  /// Calls the Binance-specific `usd_m_keepalive_listen_key` API.
   Future<void> usdMKeepaliveListenKey() =>
       _nativeFuture(_handle.binanceUsdMKeepaliveListenKey);
 
-  /// Binance 전용 API인 `usd_m_close_listen_key`를 호출합니다.
+  /// Calls the Binance-specific `usd_m_close_listen_key` API.
   Future<void> usdMCloseListenKey() =>
       _nativeFuture(_handle.binanceUsdMCloseListenKey);
 
-  /// Binance 전용 API인 `placeOrderDetail`를 호출합니다.
+  /// Calls the Binance-specific `placeOrderDetail` API.
   Future<BinanceOrderResponse> placeOrderDetail(OrderRequest request) =>
       _nativeFuture(
         () => _handle.binancePlaceOrderDetail(
@@ -911,7 +911,7 @@ extension BinanceAdapterGeneratedMethods on BinanceAdapter {
         ),
       ).then(_binanceOrderResponseFromWire);
 
-  /// Binance 전용 API인 `cancelOrderDetail`를 호출합니다.
+  /// Calls the Binance-specific `cancelOrderDetail` API.
   Future<BinanceOrderResponse> cancelOrderDetail(
     Market market,
     String orderId,
@@ -922,7 +922,7 @@ extension BinanceAdapterGeneratedMethods on BinanceAdapter {
     ),
   ).then(_binanceOrderResponseFromWire);
 
-  /// Binance 전용 API인 `cancelOrderByClientIdDetail`를 호출합니다.
+  /// Calls the Binance-specific `cancelOrderByClientIdDetail` API.
   Future<BinanceOrderResponse> cancelOrderByClientIdDetail(
     Market market,
     String clientId,
@@ -933,11 +933,11 @@ extension BinanceAdapterGeneratedMethods on BinanceAdapter {
     ),
   ).then(_binanceOrderResponseFromWire);
 
-  /// Binance 원본 필드를 보존하는 시장 스트림을 엽니다.
+  /// Opens a market stream that preserves Binance-native fields.
   Future<BinanceMarketStream> subscribeDetailed(Subscription subscription) =>
       subscribeDetailedWith(subscription, defaultStreamConfig());
 
-  /// Binance 원본 필드를 보존하는 시장 스트림을 엽니다.
+  /// Opens a Binance stream that preserves market-native fields.
   Future<BinanceMarketStream> subscribeDetailedWith(
     Subscription subscription,
     StreamConfig config,
@@ -957,11 +957,11 @@ extension BinanceAdapterGeneratedMethods on BinanceAdapter {
     );
   }
 
-  /// Binance 원본 필드를 보존하는 계정 스트림을 엽니다.
+  /// Opens an account stream that preserves Binance-native fields.
   Future<BinanceAccountStream> subscribeDetailedAccount() =>
       subscribeDetailedAccountWith(defaultStreamConfig());
 
-  /// Binance 원본 필드를 보존하는 계정 스트림을 엽니다.
+  /// Opens a Binance stream that preserves account-native fields.
   Future<BinanceAccountStream> subscribeDetailedAccountWith(
     StreamConfig config,
   ) async {
@@ -981,9 +981,9 @@ extension BinanceAdapterGeneratedMethods on BinanceAdapter {
   }
 }
 
-/// Hyperliquid 전용 API 확장입니다.
+/// Hyperliquid-specific API extension.
 extension HyperliquidAdapterGeneratedMethods on HyperliquidAdapter {
-  /// Hyperliquid 전용 API인 `all_mids`를 호출합니다.
+  /// Calls the Hyperliquid-specific `all_mids` API.
   Future<List<HyperliquidMidPrice>> allMids() =>
       _nativeFuture(_handle.hyperliquidAllMids).then(
         (values) =>
@@ -1041,7 +1041,7 @@ extension HyperliquidAdapterGeneratedMethods on HyperliquidAdapter {
     );
   }
 
-  /// Hyperliquid 전용 API인 `user_fills`를 호출합니다.
+  /// Calls the Hyperliquid-specific `user_fills` API.
   Future<List<HyperliquidUserFill>> userFills(bool aggregateByTime) =>
       _nativeFuture(
         () => _handle.hyperliquidUserFills(aggregateByTime: aggregateByTime),
@@ -1050,7 +1050,7 @@ extension HyperliquidAdapterGeneratedMethods on HyperliquidAdapter {
             values.map(_hyperliquidUserFillFromWire).toList(growable: false),
       );
 
-  /// Hyperliquid 전용 API인 `user_fills_by_time`를 호출합니다.
+  /// Calls the Hyperliquid-specific `user_fills_by_time` API.
   Future<List<HyperliquidUserFill>> userFillsByTime(
     Timestamp from,
     Timestamp? to,
@@ -1069,14 +1069,14 @@ extension HyperliquidAdapterGeneratedMethods on HyperliquidAdapter {
             values.map(_hyperliquidUserFillFromWire).toList(growable: false),
       );
 
-  /// Hyperliquid 전용 API인 `basic_open_orders`를 호출합니다.
+  /// Calls the Hyperliquid-specific `basic_open_orders` API.
   Future<List<HyperliquidOpenOrder>> basicOpenOrders() =>
       _nativeFuture(_handle.hyperliquidBasicOpenOrders).then(
         (values) =>
             values.map(_hyperliquidOpenOrderFromWire).toList(growable: false),
       );
 
-  /// Hyperliquid 전용 API인 `order_status`를 호출합니다.
+  /// Calls the Hyperliquid-specific `order_status` API.
   Future<HyperliquidOrderStatusResponse> orderStatus(
     HyperliquidOrderReference reference,
   ) => _nativeFuture(
@@ -1085,14 +1085,14 @@ extension HyperliquidAdapterGeneratedMethods on HyperliquidAdapter {
     ),
   ).then(_hyperliquidOrderStatusResponseFromWire);
 
-  /// Hyperliquid 전용 API인 `historical_orders`를 호출합니다.
+  /// Calls the Hyperliquid-specific `historical_orders` API.
   Future<List<HyperliquidOrderInfo>> historicalOrders() =>
       _nativeFuture(_handle.hyperliquidHistoricalOrders).then(
         (values) =>
             values.map(_hyperliquidOrderInfoFromWire).toList(growable: false),
       );
 
-  /// Hyperliquid 전용 API인 `non_funding_ledger`를 호출합니다.
+  /// Calls the Hyperliquid-specific `non_funding_ledger` API.
   Future<Page<HyperliquidLedgerEntry>> nonFundingLedger({
     Timestamp? from,
     Timestamp? to,
@@ -1111,7 +1111,7 @@ extension HyperliquidAdapterGeneratedMethods on HyperliquidAdapter {
     ),
   ).then(_hyperliquidLedgerPageFromWire);
 
-  /// Hyperliquid 전용 API인 `asset_context`를 호출합니다.
+  /// Calls the Hyperliquid-specific `asset_context` API.
   Future<HyperliquidAssetContext> assetContext(Market market) => _nativeFuture(
     () => _handle.hyperliquidAssetContext(market: _marketToWire(market)),
   ).then(_hyperliquidAssetContextFromWire);
@@ -1206,27 +1206,27 @@ extension HyperliquidAdapterGeneratedMethods on HyperliquidAdapter {
         _handle.hyperliquidSpotMetaAndAssetContexts,
       ).then(_hyperliquidSpotMetaAndAssetContextsFromWire);
 
-  /// Hyperliquid 전용 API인 `user_rate_limit`를 호출합니다.
+  /// Calls the Hyperliquid-specific `user_rate_limit` API.
   Future<HyperliquidUserRateLimit> userRateLimit() => _nativeFuture(
     _handle.hyperliquidUserRateLimit,
   ).then(_hyperliquidUserRateLimitFromWire);
 
-  /// Hyperliquid 전용 API인 `user_role`를 호출합니다.
+  /// Calls the Hyperliquid-specific `user_role` API.
   Future<HyperliquidUserRole> userRole() => _nativeFuture(
     _handle.hyperliquidUserRole,
   ).then(_hyperliquidUserRoleFromWire);
 
-  /// Hyperliquid 전용 API인 `referral`를 호출합니다.
+  /// Calls the Hyperliquid-specific `referral` API.
   Future<HyperliquidReferral> referral() => _nativeFuture(
     _handle.hyperliquidReferral,
   ).then(_hyperliquidReferralFromWire);
 
-  /// Hyperliquid 전용 API인 `user_fees`를 호출합니다.
+  /// Calls the Hyperliquid-specific `user_fees` API.
   Future<HyperliquidUserFees> userFees() => _nativeFuture(
     _handle.hyperliquidUserFees,
   ).then(_hyperliquidUserFeesFromWire);
 
-  /// Hyperliquid 전용 API인 `portfolio`를 호출합니다.
+  /// Calls the Hyperliquid-specific `portfolio` API.
   Future<List<HyperliquidPortfolioPeriod>> portfolio() =>
       _nativeFuture(_handle.hyperliquidPortfolio).then(
         (values) => values
@@ -1234,49 +1234,49 @@ extension HyperliquidAdapterGeneratedMethods on HyperliquidAdapter {
             .toList(growable: false),
       );
 
-  /// Hyperliquid 전용 API인 `sub_accounts`를 호출합니다.
+  /// Calls the Hyperliquid-specific `sub_accounts` API.
   Future<List<HyperliquidSubAccount>> subAccounts() =>
       _nativeFuture(_handle.hyperliquidSubAccounts).then(
         (values) =>
             values.map(_hyperliquidSubAccountFromWire).toList(growable: false),
       );
 
-  /// Hyperliquid 전용 API인 `user_vault_equities`를 호출합니다.
+  /// Calls the Hyperliquid-specific `user_vault_equities` API.
   Future<List<HyperliquidVaultEquity>> userVaultEquities() =>
       _nativeFuture(_handle.hyperliquidUserVaultEquities).then(
         (values) =>
             values.map(_hyperliquidVaultEquityFromWire).toList(growable: false),
       );
 
-  /// Hyperliquid 전용 API인 `allMidsDetail`를 호출합니다.
+  /// Calls the Hyperliquid-specific `allMidsDetail` API.
   Future<HyperliquidAllMids> allMidsDetail() => _nativeFuture(
     () => _handle.hyperliquidAllMidsDetail(),
   ).then(_hyperliquidAllMidsFromWire);
 
-  /// Hyperliquid 전용 API인 `perpetualMeta`를 호출합니다.
+  /// Calls the Hyperliquid-specific `perpetualMeta` API.
   Future<HyperliquidProviderResponse> perpetualMeta() => _nativeFuture(
     () => _handle.hyperliquidPerpetualMeta(),
   ).then(_hyperliquidProviderResponseFromWire);
 
-  /// Hyperliquid 전용 API인 `perpetualMetaAndAssetContexts`를 호출합니다.
+  /// Calls the Hyperliquid-specific `perpetualMetaAndAssetContexts` API.
   Future<HyperliquidProviderResponse> perpetualMetaAndAssetContexts() =>
       _nativeFuture(
         () => _handle.hyperliquidPerpetualMetaAndAssetContexts(),
       ).then(_hyperliquidProviderResponseFromWire);
 
-  /// Hyperliquid 전용 API인 `clearinghouseStateDetail`를 호출합니다.
+  /// Calls the Hyperliquid-specific `clearinghouseStateDetail` API.
   Future<HyperliquidProviderResponse> clearinghouseStateDetail() =>
       _nativeFuture(
         () => _handle.hyperliquidClearinghouseStateDetail(),
       ).then(_hyperliquidProviderResponseFromWire);
 
-  /// Hyperliquid 전용 API인 `frontendOpenOrdersDetail`를 호출합니다.
+  /// Calls the Hyperliquid-specific `frontendOpenOrdersDetail` API.
   Future<HyperliquidProviderResponse> frontendOpenOrdersDetail() =>
       _nativeFuture(
         () => _handle.hyperliquidFrontendOpenOrdersDetail(),
       ).then(_hyperliquidProviderResponseFromWire);
 
-  /// Hyperliquid 전용 API인 `placeOrderDetail`를 호출합니다.
+  /// Calls the Hyperliquid-specific `placeOrderDetail` API.
   Future<HyperliquidOrderActionResponse> placeOrderDetail(
     OrderRequest request,
   ) => _nativeFuture(
@@ -1285,7 +1285,7 @@ extension HyperliquidAdapterGeneratedMethods on HyperliquidAdapter {
     ),
   ).then(_hyperliquidOrderActionResponseFromWire);
 
-  /// Hyperliquid 전용 API인 `cancelOrderDetail`를 호출합니다.
+  /// Calls the Hyperliquid-specific `cancelOrderDetail` API.
   Future<HyperliquidProviderResponse> cancelOrderDetail(
     Market market,
     String orderId,

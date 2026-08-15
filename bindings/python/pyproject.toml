@@ -44,7 +44,6 @@ dev = [
 [tool.maturin]
 python-source = "python"
 module-name = "maxt._native"
-include = ["examples/**/*.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

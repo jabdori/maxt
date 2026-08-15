@@ -2,6 +2,8 @@
 
 [English](binance.md) | [한국어](binance.ko.md)
 
+Spot, USD-M, 거래소 전용 공개 조회는 [Binance provider 예제](../examples.md#binance-provider)로 실행할 수 있습니다.
+
 ## 거래소와 생성자
 
 `BinanceAdapter` 하나는 Spot 또는 USD-M 무기한 선물에 고정됩니다.

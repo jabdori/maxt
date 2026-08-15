@@ -12,7 +12,7 @@ Rust 1.85 이상이 필요합니다. 스트림 예제는 `futures_util::StreamEx
 
 ```toml
 [dependencies]
-maxt = "0.2.1"
+maxt = "0.3.2"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 futures-util = "0.3"
 ```
@@ -81,8 +81,10 @@ async fn main() -> maxt::Result<()> {
 
 - [거래소 지원](providers.ko.md): 생성자, 인증 정보, 거래소 한도
 - [공통 API 레퍼런스](common-api.ko.md): 요청, 스트림, 오류, 비공개 API
+- [작업 중심 예제](examples.ko.md): 모든 공개 API 시나리오의 실행 가능한 소스
+- [Binance 첫 조회 튜토리얼](tutorials/binance-first-read.ko.md): 모든 언어에서 같은 첫 조회
 - [Python 패키지](../bindings/python/README.ko.md), [Dart / Flutter 패키지](../bindings/dart/README.ko.md), [TypeScript 패키지](../bindings/typescript/README.ko.md): 언어별 설정과 실행 가능한 Binance 예제
-- [실행 가능한 예제](../examples/)
+- [Rust 예제 색인](../examples/README.md)
 
 이 가이드는 의도적으로 공개 호출만 사용합니다. 계좌, 주문, 전송 작업은 `Client`를
 만들기 전에 어댑터를 설정하세요. Hyperliquid의 계좌 조회는 서명 없이 공개 조회 주소를

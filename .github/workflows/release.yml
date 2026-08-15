@@ -90,6 +90,7 @@ jobs:
         run: |
           python -m pip install --force-reinstall bindings/python/dist/*.whl
           python -c "import maxt._native"
+          python -c "from pathlib import Path; from zipfile import ZipFile; wheel = next(Path('bindings/python/dist').glob('*.whl')); assert 'maxt/examples/binance_public_ticker.py' in ZipFile(wheel).namelist()"
       - uses: actions/upload-artifact@v7
         with:
           name: python-wheel-${{ matrix.platform }}
@@ -107,6 +108,7 @@ jobs:
           working-directory: bindings/python
           maturin-version: v1.14.1
           args: --out dist
+      - run: python -c "from pathlib import Path; import tarfile; source = next(Path('bindings/python/dist').glob('*.tar.gz')); assert any(name.endswith('/python/maxt/examples/binance_public_ticker.py') for name in tarfile.open(source).getnames())"
       - uses: actions/upload-artifact@v7
         with:
           name: python-sdist

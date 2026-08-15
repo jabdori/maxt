@@ -38,8 +38,10 @@ console.log(ticker.lastPrice.toString());
 console.log(`${average.minutes}분 평균: ${average.price}`);
 ```
 
-네이티브 모듈을 빌드한 뒤 `node examples/binance-public-ticker.mjs`로 저장소
-예제를 실행할 수 있습니다. 공통 호출은 `Client`, 거래소 전용 호출은
+체크인된 예제는 패키지 archive에도 포함됩니다. 네이티브 모듈을 빌드한 뒤 저장소 또는
+패키지 checkout에서 `node examples/binance-public-ticker.mjs`를 실행하거나 애플리케이션으로
+복사해 사용할 수 있습니다. [예제 색인](examples/README.md)에는 캔들, 스트림, 계좌
+조회, 파생상품, 모든 provider 작업, 브라우저 릴레이 경계 예제가 있습니다. 공통 호출은 `Client`, 거래소 전용 호출은
 `client.adapter`에 둡니다.
 
 ## 지원 상태
@@ -386,7 +388,8 @@ callback을 전달합니다. 브라우저 사용자 정의 어댑터도 Node.js�
 
 ## 문서와 예제
 
-- [실행 가능한 Binance 공개 시세 예제](examples/binance-public-ticker.mjs)
+- [실행 가능한 예제 색인](examples/README.md)
+- [작업 중심 저장소 가이드](../../docs/examples.ko.md)
 - [저장소 시작하기](../../docs/getting-started.ko.md)
 - [거래소 reference](../../docs/providers.ko.md)
 - [생성 endpoint 지원 reference](../common/generated/api.md)

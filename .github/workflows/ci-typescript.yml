@@ -78,3 +78,4 @@ jobs:
           tar -tzf "$tarball" | grep -Fx package/wasm/maxt_wasm_bg.wasm
           tar -tzf "$tarball" | grep -Fx package/wasm/maxt_wasm.js
           tar -tzf "$tarball" | grep -Fx package/wasm/maxt_wasm.d.ts
+          tar -tzf "$tarball" | grep -Fx package/examples/binance-public-ticker.mjs

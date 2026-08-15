@@ -40,7 +40,8 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-저장소 예제는 `python examples/binance_public_ticker.py`로 실행합니다. 거래소
+설치된 예제는 `python -m maxt.examples.binance_public_ticker`로 실행합니다. [예제 색인](python/maxt/examples/README.md)에는
+캔들, 스트림, 계좌 조회, 파생상품, 네 거래소 provider 작업 프로그램도 있습니다. 거래소
 전용 호출은 `client.adapter`, 공통 시장·계정·주문·스트림 호출은 `Client`에서
 사용합니다.
 
@@ -339,7 +340,8 @@ async with await client.subscribe(subscription) as stream:
 
 ## 문서와 예제
 
-- [실행 가능한 Binance 공개 시세 예제](examples/binance_public_ticker.py)
+- [실행 가능한 예제 색인](python/maxt/examples/README.md)
+- [작업 중심 저장소 가이드](../../docs/examples.ko.md)
 - [저장소 시작하기](../../docs/getting-started.ko.md)
 - [거래소 reference](../../docs/providers.ko.md)
 - [생성 endpoint 지원 reference](../common/generated/api.md)

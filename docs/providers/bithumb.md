@@ -2,6 +2,9 @@
 
 [English](bithumb.md) | [한국어](bithumb.ko.md)
 
+Run the [Bithumb provider examples](../examples.md#bithumb-provider) for
+public market metadata before configuring an account key.
+
 ## Venue and constructor
 
 Spot only.

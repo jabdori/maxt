@@ -12,6 +12,7 @@ on:
       - bindings/common/**
       - bindings/codegen/Cargo.toml
       - bindings/codegen/src/main.rs
+      - bindings/codegen/src/examples.rs
       - .github/workflows/ci.yml
   pull_request:
     paths:
@@ -23,6 +24,7 @@ on:
       - bindings/common/**
       - bindings/codegen/Cargo.toml
       - bindings/codegen/src/main.rs
+      - bindings/codegen/src/examples.rs
       - .github/workflows/ci.yml
 
 permissions:

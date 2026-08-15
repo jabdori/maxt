@@ -57,7 +57,8 @@ Future<void> main() async {
 }
 ```
 
-저장소의 [Binance 공개 시세 예제](example/main.dart)를 실행합니다.
+저장소의 [Binance 공개 시세 예제](example/main.dart)는 패키지 archive에도 포함됩니다.
+애플리케이션으로 복사하거나 패키지 checkout에서 실행하세요.
 
 ```sh
 dart run example/main.dart
@@ -65,6 +66,9 @@ dart run example/main.dart
 
 공통 호출은 `Client`, 거래소 전용 호출은 `client.adapter`에서 사용합니다. 정리한
 isolate는 다시 초기화할 수 없습니다.
+
+[예제 색인](example/README.md)에는 캔들, 스트림, 계좌 조회, 파생상품, 모든 provider
+작업, 브라우저 릴레이 경계 예제가 추가로 있습니다.
 
 ## 지원 상태
 
@@ -373,7 +377,8 @@ try {
 
 ## 문서와 예제
 
-- [실행 가능한 Binance 공개 시세 예제](example/main.dart)
+- [실행 가능한 예제 색인](example/README.md)
+- [작업 중심 저장소 가이드](../../docs/examples.ko.md)
 - 로컬 API 문서는 `dart doc`으로 생성합니다.
 - [저장소 시작하기](../../docs/getting-started.ko.md)
 - [거래소 reference](../../docs/providers.ko.md)

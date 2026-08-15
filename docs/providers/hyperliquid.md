@@ -2,6 +2,9 @@
 
 [English](hyperliquid.md) | [한국어](hyperliquid.ko.md)
 
+Run the [Hyperliquid provider examples](../examples.md#hyperliquid-provider)
+for public market data and address-scoped unsigned Info reads.
+
 ## Venue and constructor
 
 | Constructor | Network |

@@ -6,6 +6,9 @@ All built-in adapters expose public market data and market streams without
 account configuration. Use common operations through `Client` and
 exchange-specific operations through `Client::adapter()`.
 
+Start with the [task-oriented examples](examples.md), then use the provider
+pages below for exchange limits and official references.
+
 ## Status
 
 - [x] Binance Spot

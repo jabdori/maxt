@@ -51,4 +51,5 @@ jobs:
           MAXT_REQUIRE_NATIVE_TESTS: "1"
       - run: uv run --frozen mypy python/maxt
       - run: uv build --out-dir dist
+      - run: python -c "from pathlib import Path; from zipfile import ZipFile; wheel = next(Path('dist').glob('*.whl')); assert 'maxt/examples/binance_public_ticker.py' in ZipFile(wheel).namelist()"
       - run: uv run --frozen twine check dist/*

@@ -36,6 +36,20 @@ Binance 테스트넷(testnet) 생성자, Hyperliquid HIP-3 DEX·결과형 자산
 - 공통 기능은 `Client`, 거래소 전용 기능은 타입이 명확한 어댑터를 통해 제공합니다.
 - 하나의 스키마에서 각 언어의 공개 API와 계약을 생성하고, 컴파일된 네이티브 API와의 정합성을 검사합니다.
 
+## 문서 지도
+
+[Binance 첫 조회 튜토리얼](docs/tutorials/binance-first-read.ko.md)부터 시작하세요.
+그 다음에는 목적에 맞는 문서를 선택하면 됩니다.
+
+| 목적 | 문서 |
+| --- | --- |
+| 언어별·작업별 체크인 프로그램 실행 | [예제 안내](docs/examples.ko.md) |
+| 가격, 캔들, 호가, 스트림 읽기 | [시장 데이터와 스트림 가이드](docs/guides/market-data-and-streams.ko.md) |
+| 계좌 조회 또는 금융 요청의 안전한 준비 | [계좌 안전성 가이드](docs/guides/account-safety.ko.md) |
+| Dart Web 또는 TypeScript Browser WebAssembly 배포 | [브라우저 릴레이 가이드](docs/guides/browser-relay.ko.md) |
+| 이식 가능한 호출과 거래소 전용 호출 선택 | [공통 API와 provider 개념](docs/concepts/common-and-provider.ko.md) |
+| 정확한 공개 메서드와 언어별 이름 찾기 | [생성된 바인딩 계약](bindings/common/generated/api.md) |
+
 ## 빠른 시작: Binance 현물
 
 기본 예제는 인증 정보 없이 Binance 현물 `BTC/USDT`를 읽습니다. 공통 API인
@@ -48,7 +62,7 @@ Rust 1.85 이상이 필요합니다.
 
 ```toml
 [dependencies]
-maxt = "0.2.1"
+maxt = "0.3.2"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
@@ -73,23 +87,23 @@ async fn main() -> maxt::Result<()> {
 `ticker()`는 공통 API입니다. `spot_average_price()`는 Binance Spot 전용이며
 `Client::adapter()`를 통해 호출합니다.
 
-공개 REST 예제 실행:
+첫 Binance 공개 조회 실행:
 
 ```sh
-cargo run --example public_rest
+cargo run --example binance_first_read
 ```
 
-코드를 바꾸지 않고 다른 공개 거래소를 살펴보려면 다음처럼 실행하세요.
-`cargo run --example public_rest -- upbit BTC KRW`
+코드를 바꾸지 않고 다른 공개 거래소를 살펴보려면
+`cargo run --example public_rest -- upbit BTC KRW`를 실행하세요.
 
 ## 언어별 패키지
 
-| 언어 | 패키지 안내 | 실행 가능한 Binance 예제 |
+| 언어 | 패키지 안내 | 실행 가능한 예제 |
 | --- | --- | --- |
-| Rust | 이 README와 [시작하기](docs/getting-started.ko.md) | [`examples/public_rest.rs`](examples/public_rest.rs) |
-| Python | [Python 패키지 안내](bindings/python/README.ko.md) | [`bindings/python/examples/binance_public_ticker.py`](bindings/python/examples/binance_public_ticker.py) |
-| Dart / Flutter | [Dart 패키지 안내](bindings/dart/README.ko.md) | [`bindings/dart/example/main.dart`](bindings/dart/example/main.dart) |
-| TypeScript | [TypeScript 패키지 안내](bindings/typescript/README.ko.md) | [`bindings/typescript/examples/binance-public-ticker.mjs`](bindings/typescript/examples/binance-public-ticker.mjs) |
+| Rust | 이 README와 [시작하기](docs/getting-started.ko.md) | [Rust 예제](examples/README.md) |
+| Python | [Python 패키지 안내](bindings/python/README.ko.md) | [Python 예제](bindings/python/python/maxt/examples/README.md) |
+| Dart / Flutter | [Dart 패키지 안내](bindings/dart/README.ko.md) | [Dart 예제](bindings/dart/example/README.md) |
+| TypeScript | [TypeScript 패키지 안내](bindings/typescript/README.ko.md) | [TypeScript 예제](bindings/typescript/examples/README.md) |
 
 Dart 패키지는 Android, iOS, Linux, macOS, Windows, Web을 지원합니다. TypeScript
 패키지는 Node.js와 브라우저 WebAssembly를 지원합니다.
@@ -97,6 +111,12 @@ Dart 패키지는 Android, iOS, Linux, macOS, Windows, Web을 지원합니다. T
 ## 문서
 
 - [시작하기](docs/getting-started.ko.md)
+- [Binance 첫 조회 튜토리얼](docs/tutorials/binance-first-read.ko.md)
+- [작업 중심 예제](docs/examples.ko.md)
+- [시장 데이터와 스트림](docs/guides/market-data-and-streams.ko.md)
+- [계좌 안전성](docs/guides/account-safety.ko.md)
+- [브라우저 릴레이 가이드](docs/guides/browser-relay.ko.md)
+- [공통 API와 provider 개념](docs/concepts/common-and-provider.ko.md)
 - [공통 API](docs/common-api.ko.md)
 - [거래소 지원](docs/providers.ko.md)
 - [endpoint 지원 reference](bindings/common/generated/api.md)

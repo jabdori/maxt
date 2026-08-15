@@ -38,6 +38,20 @@ exchanges or languages should not mean learning another SDK.
 - Access common operations through `Client` and exchange-specific capabilities through typed adapters.
 - Generate language-native public APIs and contracts from one schema, then verify them against the compiled native API.
 
+## Documentation map
+
+Start with the [Binance first-read tutorial](docs/tutorials/binance-first-read.md).
+Then choose the document that matches your goal:
+
+| Need | Read |
+| --- | --- |
+| Run a checked-in program by language or task | [Example guide](docs/examples.md) |
+| Read prices, candles, order books, or streams | [Market-data and streams guide](docs/guides/market-data-and-streams.md) |
+| Read an account or prepare a financial request safely | [Account-safety guide](docs/guides/account-safety.md) |
+| Ship Dart Web or TypeScript Browser WebAssembly | [Browser relay guide](docs/guides/browser-relay.md) |
+| Decide between portable and exchange-specific calls | [Common and provider concept](docs/concepts/common-and-provider.md) |
+| Find an exact public method and language name | [Generated binding contract](bindings/common/generated/api.md) |
+
 ## Quick start: Binance Spot
 
 The default example is a credential-free Binance Spot `BTC/USDT` read. It
@@ -50,7 +64,7 @@ Rust 1.85 or newer is required.
 
 ```toml
 [dependencies]
-maxt = "0.2.1"
+maxt = "0.3.2"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
@@ -75,23 +89,23 @@ async fn main() -> maxt::Result<()> {
 `ticker()` is common. `spot_average_price()` is Binance Spot-specific and is
 available through `Client::adapter()`.
 
-Run the public REST example:
+Run the first public Binance read:
 
 ```sh
-cargo run --example public_rest
+cargo run --example binance_first_read
 ```
 
-Pass another supported public exchange and pair to explore it without changing
-code: `cargo run --example public_rest -- upbit BTC KRW`.
+Use `cargo run --example public_rest -- upbit BTC KRW` to explore another
+supported public exchange without changing code.
 
 ## Language packages
 
-| Language | Package guide | Runnable Binance example |
+| Language | Package guide | Runnable examples |
 | --- | --- | --- |
-| Rust | This README and [Getting started](docs/getting-started.md) | [`examples/public_rest.rs`](examples/public_rest.rs) |
-| Python | [Python package guide](bindings/python/README.md) | [`bindings/python/examples/binance_public_ticker.py`](bindings/python/examples/binance_public_ticker.py) |
-| Dart / Flutter | [Dart package guide](bindings/dart/README.md) | [`bindings/dart/example/main.dart`](bindings/dart/example/main.dart) |
-| TypeScript | [TypeScript package guide](bindings/typescript/README.md) | [`bindings/typescript/examples/binance-public-ticker.mjs`](bindings/typescript/examples/binance-public-ticker.mjs) |
+| Rust | This README and [Getting started](docs/getting-started.md) | [Rust examples](examples/README.md) |
+| Python | [Python package guide](bindings/python/README.md) | [Python examples](bindings/python/python/maxt/examples/README.md) |
+| Dart / Flutter | [Dart package guide](bindings/dart/README.md) | [Dart examples](bindings/dart/example/README.md) |
+| TypeScript | [TypeScript package guide](bindings/typescript/README.md) | [TypeScript examples](bindings/typescript/examples/README.md) |
 
 The Dart package supports Android, iOS, Linux, macOS, Windows, and Web. The
 TypeScript package supports Node.js and browser WebAssembly.
@@ -99,6 +113,12 @@ TypeScript package supports Node.js and browser WebAssembly.
 ## Documentation
 
 - [Getting started](docs/getting-started.md)
+- [Binance first-read tutorial](docs/tutorials/binance-first-read.md)
+- [Task-oriented examples](docs/examples.md)
+- [Market data and streams](docs/guides/market-data-and-streams.md)
+- [Account safety](docs/guides/account-safety.md)
+- [Browser relay guide](docs/guides/browser-relay.md)
+- [Common and provider concepts](docs/concepts/common-and-provider.md)
 - [Common API](docs/common-api.md)
 - [Provider support](docs/providers.md)
 - [Endpoint coverage reference](bindings/common/generated/api.md)

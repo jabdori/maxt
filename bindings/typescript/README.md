@@ -39,10 +39,14 @@ console.log(ticker.lastPrice.toString());
 console.log(`${average.minutes}-minute average: ${average.price}`);
 ```
 
-Run the checked-in version with
-`node examples/binance-public-ticker.mjs` after building the native module.
+The checked-in example is included in the package archive. Copy it into an
+application, or run `node examples/binance-public-ticker.mjs` from a repository
+or package checkout after building the native module.
 Use `client.adapter` only for provider-specific calls; common calls remain on
 `Client`.
+
+The [example index](examples/README.md) adds candles, streams, account reads,
+derivatives, every provider task, and a browser relay boundary example.
 
 ## Support
 
@@ -405,7 +409,8 @@ See the [relay](../../relay/README.md),
 
 ## Documentation and examples
 
-- [Runnable Binance public-ticker example](examples/binance-public-ticker.mjs)
+- [Runnable example index](examples/README.md)
+- [Task-oriented repository guide](../../docs/examples.md)
 - [Repository getting started guide](../../docs/getting-started.md)
 - [Provider reference](../../docs/providers.md)
 - [Generated endpoint coverage reference](../common/generated/api.md)

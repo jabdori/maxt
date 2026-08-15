@@ -57,7 +57,8 @@ Future<void> main() async {
 }
 ```
 
-Run the checked-in [public Binance example](example/main.dart):
+The checked-in [public Binance example](example/main.dart) is included in the
+package archive. Copy it into an application, or run it from a package checkout:
 
 ```sh
 dart run example/main.dart
@@ -65,6 +66,9 @@ dart run example/main.dart
 
 Use `Client` for common calls and `client.adapter` for provider-specific calls.
 A disposed isolate cannot be initialized again.
+
+The [example index](example/README.md) adds candles, streams, account reads,
+derivatives, every provider task, and a browser relay boundary example.
 
 ## Support
 
@@ -391,7 +395,8 @@ See the [common data and pagination contracts](../../docs/common-api.md) and
 
 ## Documentation and examples
 
-- [Runnable Binance public-ticker example](example/main.dart)
+- [Runnable example index](example/README.md)
+- [Task-oriented repository guide](../../docs/examples.md)
 - Generate local API documentation with `dart doc`.
 - [Repository getting started guide](../../docs/getting-started.md)
 - [Provider reference](../../docs/providers.md)

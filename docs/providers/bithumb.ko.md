@@ -2,6 +2,8 @@
 
 [English](bithumb.md) | [한국어](bithumb.ko.md)
 
+계좌 키를 설정하기 전 공개 시장 메타데이터는 [Bithumb provider 예제](../examples.md#bithumb-provider)에서 실행할 수 있습니다.
+
 ## 거래소와 생성자
 
 현물 전용입니다.

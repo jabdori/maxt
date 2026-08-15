@@ -2,6 +2,9 @@
 
 [English](binance.md) | [한국어](binance.ko.md)
 
+Run the [Binance provider examples](../examples.md#binance-provider) for Spot,
+USD-M, and provider-specific public reads.
+
 ## Venue and constructor
 
 One `BinanceAdapter` is fixed to Spot or USD-M perpetual futures.

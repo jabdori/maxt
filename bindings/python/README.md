@@ -41,7 +41,9 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-Run the checked-in version with `python examples/binance_public_ticker.py`.
+Run the installed example with `python -m maxt.examples.binance_public_ticker`.
+The [example index](python/maxt/examples/README.md) adds candles, streams, account reads,
+derivatives, and all four provider task programs.
 For provider-specific calls, use `client.adapter`; all common market, account,
 order, and stream calls stay on `Client`.
 
@@ -359,7 +361,8 @@ See the [common data and pagination contracts](../../docs/common-api.md) and
 
 ## Documentation and examples
 
-- [Runnable Binance public-ticker example](examples/binance_public_ticker.py)
+- [Runnable example index](python/maxt/examples/README.md)
+- [Task-oriented repository guide](../../docs/examples.md)
 - [Repository getting started guide](../../docs/getting-started.md)
 - [Provider reference](../../docs/providers.md)
 - [Generated endpoint coverage reference](../common/generated/api.md)

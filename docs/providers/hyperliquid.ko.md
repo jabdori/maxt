@@ -2,6 +2,8 @@
 
 [English](hyperliquid.md) | [한국어](hyperliquid.ko.md)
 
+공개 시장 데이터와 주소 단위 서명 없는 Info 조회는 [Hyperliquid provider 예제](../examples.md#hyperliquid-provider)에서 실행할 수 있습니다.
+
 ## 거래소와 생성자
 
 | 생성자 | 네트워크(network) |

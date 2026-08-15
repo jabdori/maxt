@@ -12,7 +12,7 @@ exchange account.
 
 ```toml
 [dependencies]
-maxt = "0.2.1"
+maxt = "0.3.2"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 futures-util = "0.3"
 ```
@@ -81,8 +81,10 @@ reconnection, termination, and explicit cleanup.
 
 - [Provider support](providers.md): constructors, credentials, and provider limits
 - [Common API reference](common-api.md): requests, streams, errors, and private calls
+- [Task-oriented examples](examples.md): runnable sources for every public API scenario
+- [Binance first-read tutorial](tutorials/binance-first-read.md): the same first read in every language
 - [Python package](../bindings/python/README.md), [Dart / Flutter package](../bindings/dart/README.md), and [TypeScript package](../bindings/typescript/README.md): language-specific setup and runnable Binance examples
-- [Runnable examples](../examples/)
+- [Rust example index](../examples/README.md)
 
 This guide intentionally uses only public calls. Configure the adapter before
 creating `Client` for account, order, or transfer operations. Hyperliquid

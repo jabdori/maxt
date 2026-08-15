@@ -2,53 +2,194 @@
 
 # Binding contract
 
+See the [example guide](../../../docs/examples.md) for task-oriented, runnable examples.
+
 ## Adapter operations
 
-| Rust / Python | Dart / TypeScript |
-| --- | --- |
-| `markets` | `markets` |
-| `trades` | `trades` |
-| `order_book` | `orderBook` |
-| `ticker` | `ticker` |
-| `candles` | `candles` |
-| `subscribe` | `subscribe` |
-| `balances` | `balances` |
-| `order_rules` | `orderRules` |
-| `asset_networks` | `assetNetworks` |
-| `deposit_addresses` | `depositAddresses` |
-| `deposit_address` | `depositAddress` |
-| `create_deposit_address` | `createDepositAddress` |
-| `prepare_withdrawal` | `prepareWithdrawal` |
-| `withdraw` | `withdraw` |
-| `deposit` | `deposit` |
-| `withdrawal` | `withdrawal` |
-| `cancel_withdrawal` | `cancelWithdrawal` |
-| `deposits` | `deposits` |
-| `withdrawals` | `withdrawals` |
-| `open_orders` | `openOrders` |
-| `order` | `order` |
-| `order_by_client_id` | `orderByClientId` |
-| `orders_by_ids` | `ordersByIds` |
-| `order_history` | `orderHistory` |
-| `subscribe_account` | `subscribeAccount` |
-| `place_order` | `placeOrder` |
-| `cancel_order` | `cancelOrder` |
-| `cancel_order_by_client_id` | `cancelOrderByClientId` |
-| `cancel_orders` | `cancelOrders` |
-| `positions` | `positions` |
-| `margin_summary` | `marginSummary` |
-| `funding_rates` | `fundingRates` |
-| `funding_payments` | `fundingPayments` |
-| `set_margin` | `setMargin` |
+| Rust / Python | Dart / TypeScript | Example |
+| --- | --- | --- |
+| `markets` | `markets` | [Read public market data](../../../docs/examples.md#market-data) |
+| `trades` | `trades` | [Read public market data](../../../docs/examples.md#market-data) |
+| `order_book` | `orderBook` | [Read public market data](../../../docs/examples.md#market-data) |
+| `ticker` | `ticker` | [Read public market data](../../../docs/examples.md#market-data) |
+| `candles` | `candles` | [Read candles and paged history](../../../docs/examples.md#candles-and-history) |
+| `subscribe` | `subscribe` | [Receive public and account streams](../../../docs/examples.md#streams) |
+| `balances` | `balances` | [Read balances, rules, and asset configuration](../../../docs/examples.md#account-and-assets) |
+| `order_rules` | `orderRules` | [Read balances, rules, and asset configuration](../../../docs/examples.md#account-and-assets) |
+| `asset_networks` | `assetNetworks` | [Read balances, rules, and asset configuration](../../../docs/examples.md#account-and-assets) |
+| `deposit_addresses` | `depositAddresses` | [Read balances, rules, and asset configuration](../../../docs/examples.md#account-and-assets) |
+| `deposit_address` | `depositAddress` | [Read balances, rules, and asset configuration](../../../docs/examples.md#account-and-assets) |
+| `create_deposit_address` | `createDepositAddress` | [Inspect transfers and wallet configuration](../../../docs/examples.md#transfers-and-wallet) |
+| `prepare_withdrawal` | `prepareWithdrawal` | [Inspect transfers and wallet configuration](../../../docs/examples.md#transfers-and-wallet) |
+| `withdraw` | `withdraw` | [Inspect transfers and wallet configuration](../../../docs/examples.md#transfers-and-wallet) |
+| `deposit` | `deposit` | [Inspect transfers and wallet configuration](../../../docs/examples.md#transfers-and-wallet) |
+| `withdrawal` | `withdrawal` | [Inspect transfers and wallet configuration](../../../docs/examples.md#transfers-and-wallet) |
+| `cancel_withdrawal` | `cancelWithdrawal` | [Inspect transfers and wallet configuration](../../../docs/examples.md#transfers-and-wallet) |
+| `deposits` | `deposits` | [Read candles and paged history](../../../docs/examples.md#candles-and-history) |
+| `withdrawals` | `withdrawals` | [Read candles and paged history](../../../docs/examples.md#candles-and-history) |
+| `open_orders` | `openOrders` | [Read candles and paged history](../../../docs/examples.md#candles-and-history) |
+| `order` | `order` | [Read candles and paged history](../../../docs/examples.md#candles-and-history) |
+| `order_by_client_id` | `orderByClientId` | [Read candles and paged history](../../../docs/examples.md#candles-and-history) |
+| `orders_by_ids` | `ordersByIds` | [Read candles and paged history](../../../docs/examples.md#candles-and-history) |
+| `order_history` | `orderHistory` | [Read candles and paged history](../../../docs/examples.md#candles-and-history) |
+| `subscribe_account` | `subscribeAccount` | [Receive public and account streams](../../../docs/examples.md#streams) |
+| `place_order` | `placeOrder` | [Inspect and validate order workflows safely](../../../docs/examples.md#orders-and-safety) |
+| `cancel_order` | `cancelOrder` | [Inspect and validate order workflows safely](../../../docs/examples.md#orders-and-safety) |
+| `cancel_order_by_client_id` | `cancelOrderByClientId` | [Inspect and validate order workflows safely](../../../docs/examples.md#orders-and-safety) |
+| `cancel_orders` | `cancelOrders` | [Inspect and validate order workflows safely](../../../docs/examples.md#orders-and-safety) |
+| `positions` | `positions` | [Read balances, rules, and asset configuration](../../../docs/examples.md#account-and-assets) |
+| `margin_summary` | `marginSummary` | [Read balances, rules, and asset configuration](../../../docs/examples.md#account-and-assets) |
+| `funding_rates` | `fundingRates` | [Read candles and paged history](../../../docs/examples.md#candles-and-history) |
+| `funding_payments` | `fundingPayments` | [Read candles and paged history](../../../docs/examples.md#candles-and-history) |
+| `set_margin` | `setMargin` | [Inspect and validate order workflows safely](../../../docs/examples.md#orders-and-safety) |
 
 ## Provider-specific API
 
-| Exchange | Adapter | Python | Dart / TypeScript |
-| --- | --- | --- | --- |
-| upbit | `UpbitAdapter` | `region`, `order_books`, `order_books_at_level`, `tickers`, `tickers_by_quote`, `year_candles`, `orderbook_instruments`, `market_events`, `list_subscriptions`, `test_order`, `order_detail`, `closed_orders`, `deposit_info`, `withdrawal_addresses`, `travel_rule_vasps`, `verify_travel_rule_by_uuid`, `verify_travel_rule_by_txid`, `batch_cancel_open_orders`, `cancel_and_new_order`, `deposit_krw`, `withdraw_krw`, `api_keys`, `list_pockets`, `list_pocket_api_keys`, `sub_pocket_balances`, `universal_transfer`, `universal_transfers`, `sub_pocket_transfer`, `sub_pocket_transfers`, `subscribe_detailed`, `subscribe_detailed_with`, `subscribe_detailed_account`, `subscribe_detailed_account_with`, `test_order_detail`, `place_order_detail`, `cancel_order_detail`, `cancel_order_by_client_id_detail`, `orders_by_ids_detail`, `cancel_orders_detail`, `deposit_detail`, `withdrawal_detail`, `cancel_withdrawal_detail`, `cancel_and_new_order_detail` | `region`, `orderBooks`, `orderBooksAtLevel`, `tickers`, `tickersByQuote`, `yearCandles`, `orderbookInstruments`, `marketEvents`, `listSubscriptions`, `testOrder`, `orderDetail`, `closedOrders`, `depositInfo`, `withdrawalAddresses`, `travelRuleVasps`, `verifyTravelRuleByUuid`, `verifyTravelRuleByTxid`, `batchCancelOpenOrders`, `cancelAndNewOrder`, `depositKrw`, `withdrawKrw`, `apiKeys`, `listPockets`, `listPocketApiKeys`, `subPocketBalances`, `universalTransfer`, `universalTransfers`, `subPocketTransfer`, `subPocketTransfers`, `subscribeDetailed`, `subscribeDetailedWith`, `subscribeDetailedAccount`, `subscribeDetailedAccountWith`, `testOrderDetail`, `placeOrderDetail`, `cancelOrderDetail`, `cancelOrderByClientIdDetail`, `ordersByIdsDetail`, `cancelOrdersDetail`, `depositDetail`, `withdrawalDetail`, `cancelWithdrawalDetail`, `cancelAndNewOrderDetail` |
-| bithumb | `BithumbAdapter` | `market_warnings`, `market_alerts`, `notices`, `transfer_fees`, `api_keys`, `krw_withdrawals`, `withdraw_krw`, `krw_deposits`, `deposit_krw`, `pending_orders`, `closed_orders`, `batch_orders`, `twap_orders`, `create_twap_order`, `cancel_twap_order`, `withdrawal_addresses`, `order_detail`, `order_list`, `order_book_snapshot`, `subscribe_detailed`, `subscribe_detailed_with`, `subscribe_detailed_account`, `subscribe_detailed_account_with`, `orders_by_ids_detail`, `place_order_detail`, `cancel_order_detail`, `cancel_order_by_client_id_detail`, `cancel_orders_detail`, `deposit_detail`, `withdrawal_detail`, `cancel_withdrawal_detail` | `marketWarnings`, `marketAlerts`, `notices`, `transferFees`, `apiKeys`, `krwWithdrawals`, `withdrawKrw`, `krwDeposits`, `depositKrw`, `pendingOrders`, `closedOrders`, `batchOrders`, `twapOrders`, `createTwapOrder`, `cancelTwapOrder`, `withdrawalAddresses`, `orderDetail`, `orderList`, `orderBookSnapshot`, `subscribeDetailed`, `subscribeDetailedWith`, `subscribeDetailedAccount`, `subscribeDetailedAccountWith`, `ordersByIdsDetail`, `placeOrderDetail`, `cancelOrderDetail`, `cancelOrderByClientIdDetail`, `cancelOrdersDetail`, `depositDetail`, `withdrawalDetail`, `cancelWithdrawalDetail` |
-| binance | `BinanceAdapter` | `venue`, `spot_symbol_filters`, `spot_order`, `spot_average_price`, `spot_account_information`, `spot_cancel_all_open_orders`, `spot_exchange_info`, `usd_m_account_information`, `usd_m_exchange_info`, `usd_m_position_information`, `all_coins_information`, `api_key_permissions`, `deposit_history`, `questionnaire_requirements`, `withdraw_address_list`, `withdraw_history`, `mark_price`, `mark_prices`, `open_interest`, `aggregate_trades`, `account_trades`, `c2c_trade_history`, `test_order`, `cancel_all_open_orders`, `usd_m_create_listen_key`, `usd_m_keepalive_listen_key`, `usd_m_close_listen_key`, `place_order_detail`, `cancel_order_detail`, `cancel_order_by_client_id_detail`, `subscribe_detailed`, `subscribe_detailed_with`, `subscribe_detailed_account`, `subscribe_detailed_account_with` | `venue`, `spotSymbolFilters`, `spotOrder`, `spotAveragePrice`, `spotAccountInformation`, `spotCancelAllOpenOrders`, `spotExchangeInfo`, `usdMAccountInformation`, `usdMExchangeInfo`, `usdMPositionInformation`, `allCoinsInformation`, `apiKeyPermissions`, `depositHistory`, `questionnaireRequirements`, `withdrawAddressList`, `withdrawHistory`, `markPrice`, `markPrices`, `openInterest`, `aggregateTrades`, `accountTrades`, `c2cTradeHistory`, `testOrder`, `cancelAllOpenOrders`, `usdMCreateListenKey`, `usdMKeepaliveListenKey`, `usdMCloseListenKey`, `placeOrderDetail`, `cancelOrderDetail`, `cancelOrderByClientIdDetail`, `subscribeDetailed`, `subscribeDetailedWith`, `subscribeDetailedAccount`, `subscribeDetailedAccountWith` |
-| hyperliquid | `HyperliquidAdapter` | `is_testnet`, `all_mids`, `subscribe_detailed`, `subscribe_detailed_with`, `subscribe_detailed_account`, `subscribe_detailed_account_with`, `user_fills`, `user_fills_by_time`, `basic_open_orders`, `order_status`, `historical_orders`, `non_funding_ledger`, `asset_context`, `candle_snapshot`, `l2_book`, `recent_trades`, `funding_history`, `user_funding`, `spot_clearinghouse_state`, `spot_meta`, `spot_meta_and_asset_contexts`, `user_rate_limit`, `user_role`, `referral`, `user_fees`, `portfolio`, `sub_accounts`, `user_vault_equities`, `all_mids_detail`, `perpetual_meta`, `perpetual_meta_and_asset_contexts`, `clearinghouse_state_detail`, `frontend_open_orders_detail`, `place_order_detail`, `cancel_order_detail` | `isTestnet`, `allMids`, `subscribeDetailed`, `subscribeDetailedWith`, `subscribeDetailedAccount`, `subscribeDetailedAccountWith`, `userFills`, `userFillsByTime`, `basicOpenOrders`, `orderStatus`, `historicalOrders`, `nonFundingLedger`, `assetContext`, `candleSnapshot`, `l2Book`, `recentTrades`, `fundingHistory`, `userFunding`, `spotClearinghouseState`, `spotMeta`, `spotMetaAndAssetContexts`, `userRateLimit`, `userRole`, `referral`, `userFees`, `portfolio`, `subAccounts`, `userVaultEquities`, `allMidsDetail`, `perpetualMeta`, `perpetualMetaAndAssetContexts`, `clearinghouseStateDetail`, `frontendOpenOrdersDetail`, `placeOrderDetail`, `cancelOrderDetail` |
+| Exchange | Adapter | Rust / Python | Dart / TypeScript | Example |
+| --- | --- | --- | --- | --- |
+| upbit | `UpbitAdapter` | `region` | `region` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `order_books` | `orderBooks` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `order_books_at_level` | `orderBooksAtLevel` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `tickers` | `tickers` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `tickers_by_quote` | `tickersByQuote` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `year_candles` | `yearCandles` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `orderbook_instruments` | `orderbookInstruments` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `market_events` | `marketEvents` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `list_subscriptions` | `listSubscriptions` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `test_order` | `testOrder` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `order_detail` | `orderDetail` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `closed_orders` | `closedOrders` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `deposit_info` | `depositInfo` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `withdrawal_addresses` | `withdrawalAddresses` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `travel_rule_vasps` | `travelRuleVasps` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `verify_travel_rule_by_uuid` | `verifyTravelRuleByUuid` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `verify_travel_rule_by_txid` | `verifyTravelRuleByTxid` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `batch_cancel_open_orders` | `batchCancelOpenOrders` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `cancel_and_new_order` | `cancelAndNewOrder` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `deposit_krw` | `depositKrw` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `withdraw_krw` | `withdrawKrw` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `api_keys` | `apiKeys` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `list_pockets` | `listPockets` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `list_pocket_api_keys` | `listPocketApiKeys` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `sub_pocket_balances` | `subPocketBalances` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `universal_transfer` | `universalTransfer` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `universal_transfers` | `universalTransfers` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `sub_pocket_transfer` | `subPocketTransfer` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `sub_pocket_transfers` | `subPocketTransfers` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `subscribe_detailed` | `subscribeDetailed` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `subscribe_detailed_with` | `subscribeDetailedWith` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `subscribe_detailed_account` | `subscribeDetailedAccount` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `subscribe_detailed_account_with` | `subscribeDetailedAccountWith` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `test_order_detail` | `testOrderDetail` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `place_order_detail` | `placeOrderDetail` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `cancel_order_detail` | `cancelOrderDetail` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `cancel_order_by_client_id_detail` | `cancelOrderByClientIdDetail` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `orders_by_ids_detail` | `ordersByIdsDetail` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `cancel_orders_detail` | `cancelOrdersDetail` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `deposit_detail` | `depositDetail` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `withdrawal_detail` | `withdrawalDetail` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `cancel_withdrawal_detail` | `cancelWithdrawalDetail` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| upbit | `UpbitAdapter` | `cancel_and_new_order_detail` | `cancelAndNewOrderDetail` | [Use Upbit region and provider-specific APIs](../../../docs/examples.md#upbit-provider) |
+| bithumb | `BithumbAdapter` | `market_warnings` | `marketWarnings` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `market_alerts` | `marketAlerts` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `notices` | `notices` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `transfer_fees` | `transferFees` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `api_keys` | `apiKeys` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `krw_withdrawals` | `krwWithdrawals` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `withdraw_krw` | `withdrawKrw` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `krw_deposits` | `krwDeposits` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `deposit_krw` | `depositKrw` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `pending_orders` | `pendingOrders` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `closed_orders` | `closedOrders` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `batch_orders` | `batchOrders` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `twap_orders` | `twapOrders` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `create_twap_order` | `createTwapOrder` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `cancel_twap_order` | `cancelTwapOrder` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `withdrawal_addresses` | `withdrawalAddresses` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `order_detail` | `orderDetail` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `order_list` | `orderList` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `order_book_snapshot` | `orderBookSnapshot` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `subscribe_detailed` | `subscribeDetailed` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `subscribe_detailed_with` | `subscribeDetailedWith` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `subscribe_detailed_account` | `subscribeDetailedAccount` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `subscribe_detailed_account_with` | `subscribeDetailedAccountWith` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `orders_by_ids_detail` | `ordersByIdsDetail` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `place_order_detail` | `placeOrderDetail` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `cancel_order_detail` | `cancelOrderDetail` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `cancel_order_by_client_id_detail` | `cancelOrderByClientIdDetail` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `cancel_orders_detail` | `cancelOrdersDetail` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `deposit_detail` | `depositDetail` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `withdrawal_detail` | `withdrawalDetail` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| bithumb | `BithumbAdapter` | `cancel_withdrawal_detail` | `cancelWithdrawalDetail` | [Use Bithumb market, KRW, and TWAP APIs](../../../docs/examples.md#bithumb-provider) |
+| binance | `BinanceAdapter` | `venue` | `venue` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `spot_symbol_filters` | `spotSymbolFilters` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `spot_order` | `spotOrder` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `spot_average_price` | `spotAveragePrice` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `spot_account_information` | `spotAccountInformation` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `spot_cancel_all_open_orders` | `spotCancelAllOpenOrders` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `spot_exchange_info` | `spotExchangeInfo` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `usd_m_account_information` | `usdMAccountInformation` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `usd_m_exchange_info` | `usdMExchangeInfo` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `usd_m_position_information` | `usdMPositionInformation` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `all_coins_information` | `allCoinsInformation` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `api_key_permissions` | `apiKeyPermissions` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `deposit_history` | `depositHistory` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `questionnaire_requirements` | `questionnaireRequirements` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `withdraw_address_list` | `withdrawAddressList` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `withdraw_history` | `withdrawHistory` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `mark_price` | `markPrice` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `mark_prices` | `markPrices` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `open_interest` | `openInterest` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `aggregate_trades` | `aggregateTrades` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `account_trades` | `accountTrades` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `c2c_trade_history` | `c2cTradeHistory` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `test_order` | `testOrder` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `cancel_all_open_orders` | `cancelAllOpenOrders` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `usd_m_create_listen_key` | `usdMCreateListenKey` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `usd_m_keepalive_listen_key` | `usdMKeepaliveListenKey` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `usd_m_close_listen_key` | `usdMCloseListenKey` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `place_order_detail` | `placeOrderDetail` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `cancel_order_detail` | `cancelOrderDetail` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `cancel_order_by_client_id_detail` | `cancelOrderByClientIdDetail` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `subscribe_detailed` | `subscribeDetailed` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `subscribe_detailed_with` | `subscribeDetailedWith` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `subscribe_detailed_account` | `subscribeDetailedAccount` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| binance | `BinanceAdapter` | `subscribe_detailed_account_with` | `subscribeDetailedAccountWith` | [Use Binance Spot, USD-M, and wallet APIs](../../../docs/examples.md#binance-provider) |
+| hyperliquid | `HyperliquidAdapter` | `is_testnet` | `isTestnet` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `all_mids` | `allMids` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `subscribe_detailed` | `subscribeDetailed` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `subscribe_detailed_with` | `subscribeDetailedWith` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `subscribe_detailed_account` | `subscribeDetailedAccount` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `subscribe_detailed_account_with` | `subscribeDetailedAccountWith` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `user_fills` | `userFills` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `user_fills_by_time` | `userFillsByTime` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `basic_open_orders` | `basicOpenOrders` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `order_status` | `orderStatus` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `historical_orders` | `historicalOrders` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `non_funding_ledger` | `nonFundingLedger` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `asset_context` | `assetContext` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `candle_snapshot` | `candleSnapshot` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `l2_book` | `l2Book` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `recent_trades` | `recentTrades` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `funding_history` | `fundingHistory` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `user_funding` | `userFunding` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `spot_clearinghouse_state` | `spotClearinghouseState` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `spot_meta` | `spotMeta` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `spot_meta_and_asset_contexts` | `spotMetaAndAssetContexts` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `user_rate_limit` | `userRateLimit` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `user_role` | `userRole` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `referral` | `referral` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `user_fees` | `userFees` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `portfolio` | `portfolio` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `sub_accounts` | `subAccounts` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `user_vault_equities` | `userVaultEquities` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `all_mids_detail` | `allMidsDetail` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `perpetual_meta` | `perpetualMeta` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `perpetual_meta_and_asset_contexts` | `perpetualMetaAndAssetContexts` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `clearinghouse_state_detail` | `clearinghouseStateDetail` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `frontend_open_orders_detail` | `frontendOpenOrdersDetail` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `place_order_detail` | `placeOrderDetail` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
+| hyperliquid | `HyperliquidAdapter` | `cancel_order_detail` | `cancelOrderDetail` | [Use Hyperliquid market and address-scoped Info APIs](../../../docs/examples.md#hyperliquid-provider) |
 
 ## Official API products
 

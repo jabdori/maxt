@@ -19,6 +19,16 @@ jobs:
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: 3.12.2
+      - uses: actions/cache@v5
+        with:
+          path: bindings/dart/.dart_tool/hooks_runner
+          key: ${{ runner.os }}-dart-hooks-${{ hashFiles('bindings/dart/pubspec.lock', 'bindings/dart/pubspec.yaml', 'bindings/dart/rust/Cargo.lock') }}
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/bin/flutter_rust_bridge_codegen
+            ~/.cargo/bin/cargo-expand
+          key: ${{ runner.os }}-frb-tools-2.12.0
       - shell: bash
         run: |
           version="${GITHUB_REF_NAME#dart-v}"
@@ -29,7 +39,7 @@ jobs:
         shell: bash
         run: |
           dart pub get
-          cargo install flutter_rust_bridge_codegen --version 2.12.0 --locked
+          command -v flutter_rust_bridge_codegen >/dev/null || cargo install flutter_rust_bridge_codegen --version 2.12.0 --locked
           flutter_rust_bridge_codegen generate
           find lib/src/rust -name '*.freezed.dart' -exec perl -pi -e 's/[ \t]+$//' {} +
           perl -pi -e 's/[ \t]+$//' rust/src/frb_generated.rs
@@ -40,19 +50,38 @@ jobs:
           dart analyze --fatal-warnings
           dart test --chain-stack-traces
           test -f example/main.dart
-      - working-directory: bindings/dart
-        shell: bash
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bindings/dart
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@1.92.0
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.12.2
+      - uses: actions/cache@v5
+        with:
+          path: bindings/dart/.dart_tool/hooks_runner
+          key: ${{ runner.os }}-dart-hooks-${{ hashFiles('bindings/dart/pubspec.lock', 'bindings/dart/pubspec.yaml', 'bindings/dart/rust/Cargo.lock') }}
+      - uses: actions/cache@v5
+        with:
+          path: ~/.cargo/bin/wasm-pack
+          key: ${{ runner.os }}-wasm-pack-0.15.0
+      - run: dart pub get
+      - shell: bash
         run: |
           rustup toolchain install nightly --profile minimal --component rust-src --target wasm32-unknown-unknown
-          rustup toolchain install stable --profile minimal
-          cargo +stable install wasm-pack --version 0.15.0 --locked
+          command -v wasm-pack >/dev/null || cargo +stable install wasm-pack --version 0.15.0 --locked
           mkdir -p web
           dart run maxt:build_web --release
           dart test -p chrome test/web_runtime_test.dart test/custom_adapter_test.dart test/custom_adapter_full_roundtrip_test.dart --chain-stack-traces --timeout=60s --concurrency=1
       - shell: bash
         run: |
           package="$(mktemp -d)"
-          cp -R bindings/dart/. "$package/"
+          cp -R . "$package/"
           unlink "$package/rust/Cargo.lock"
           unlink "$package/.cargo/config.toml"
           (cd "$package/rust" && cargo check)
@@ -116,7 +145,7 @@ jobs:
         run: ${{ matrix.command }}
 
   publish:
-    needs: [validate, native-loader, flutter-build]
+    needs: [validate, web, native-loader, flutter-build]
     uses: dart-lang/setup-dart/.github/workflows/publish.yml@65eb853c7ba17dde3be364c3d2858773e7144260
     with:
       working-directory: bindings/dart

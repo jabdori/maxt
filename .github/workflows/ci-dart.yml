@@ -65,8 +65,10 @@ jobs:
           key: ${{ runner.os }}-dart-hooks-${{ hashFiles('bindings/dart/pubspec.lock', 'bindings/dart/pubspec.yaml', 'bindings/dart/rust/Cargo.lock') }}
       - uses: actions/cache@v5
         with:
-          path: ~/.cargo/bin/flutter_rust_bridge_codegen
-          key: ${{ runner.os }}-frb-codegen-2.12.0
+          path: |
+            ~/.cargo/bin/flutter_rust_bridge_codegen
+            ~/.cargo/bin/cargo-expand
+          key: ${{ runner.os }}-frb-tools-2.12.0
       - run: cargo run --manifest-path ../codegen/Cargo.toml --no-default-features --features dart --locked -- dart --check
       - run: cargo clippy --manifest-path rust/Cargo.toml --all-targets --locked -- -D warnings
       - run: cargo test --manifest-path rust/Cargo.toml --all-targets --locked

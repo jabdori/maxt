@@ -39,6 +39,7 @@ jobs:
           dart format --output=none --set-exit-if-changed .
           dart analyze --fatal-warnings
           dart test --chain-stack-traces
+          test -f example/main.dart
       - working-directory: bindings/dart
         shell: bash
         run: |

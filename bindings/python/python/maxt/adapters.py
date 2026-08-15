@@ -14,6 +14,12 @@ from ._api import (
     StreamEvent,
 )
 from ._generated_delegate import _GeneratedNativeClientDelegateApi
+from ._generated_provider_methods import (
+    _GeneratedBinanceProviderMethods,
+    _GeneratedBithumbProviderMethods,
+    _GeneratedHyperliquidProviderMethods,
+    _GeneratedUpbitProviderMethods,
+)
 from .models import (
     AccountEvent,
     Balance,
@@ -313,6 +319,36 @@ class _NativeAdapter(_NativeClientDelegate):
     def authenticated(self) -> bool:
         return bool(_attribute(self._handle, "authenticated"))
 
+    def _provider_market_stream(
+        self,
+        source: Any,
+        stream_type: type[Any],
+        decode: Callable[[dict[str, Any]], Any],
+    ) -> Any:
+        return stream_type(
+            _DecodedStream(
+                source,
+                account=False,
+                native=self._native_module,
+                decode=decode,
+            )
+        )
+
+    def _provider_account_stream(
+        self,
+        source: Any,
+        stream_type: type[Any],
+        decode: Callable[[dict[str, Any]], Any],
+    ) -> Any:
+        return stream_type(
+            _DecodedStream(
+                source,
+                account=True,
+                native=self._native_module,
+                decode=decode,
+            )
+        )
+
 
 def _client_delegate(adapter: Adapter) -> Adapter:
     if isinstance(adapter, _NativeAdapter):
@@ -321,7 +357,7 @@ def _client_delegate(adapter: Adapter) -> Adapter:
     return _NativeClientDelegate(native.NativeClient.from_adapter(adapter), native)
 
 
-class UpbitAdapter(_NativeAdapter):
+class UpbitAdapter(_GeneratedUpbitProviderMethods, _NativeAdapter):
     def __init__(
         self,
         *,
@@ -579,7 +615,7 @@ class UpbitAdapter(_NativeAdapter):
         return [_model_from_wire("UpbitPocketTransfer", value) for value in values]
 
 
-class BithumbAdapter(_NativeAdapter):
+class BithumbAdapter(_GeneratedBithumbProviderMethods, _NativeAdapter):
     def __init__(
         self,
         *,
@@ -740,7 +776,7 @@ class BinanceListenKey:
         return "BinanceListenKey(<redacted>)"
 
 
-class BinanceAdapter(_NativeAdapter):
+class BinanceAdapter(_GeneratedBinanceProviderMethods, _NativeAdapter):
     def __init__(
         self,
         *,
@@ -920,7 +956,7 @@ class BinanceAdapter(_NativeAdapter):
         await self._call(self._handle.usd_m_close_listen_key)
 
 
-class HyperliquidAdapter(_NativeAdapter):
+class HyperliquidAdapter(_GeneratedHyperliquidProviderMethods, _NativeAdapter):
     def __init__(
         self,
         *,

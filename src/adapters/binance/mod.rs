@@ -9,8 +9,12 @@ mod wallet;
 #[cfg(test)]
 mod execution_checklist;
 
+use std::fmt;
+use std::pin::Pin;
 use std::sync::OnceLock;
+use std::task::{Context, Poll};
 
+use futures_core::Stream;
 use rust_decimal::Decimal;
 
 use crate::adapter::{Adapter, BoxFuture};
@@ -20,7 +24,7 @@ use crate::request::{
     CandleRequest, DepositAddressRequest, HistoryRequest, MarginRequest, OrderRequest,
     TransferHistoryRequest, WithdrawRequest,
 };
-use crate::stream::{AccountStream, MarketStream};
+use crate::stream::{AccountStream, MarketStream, TypedStream};
 use crate::transport::{HttpRequest, HttpTransport};
 use crate::types::{
     AssetNetwork, Balance, Candle, Cursor, Deposit, DepositAddress, Exchange, FundingPayment,
@@ -32,10 +36,10 @@ use crate::types::{
 #[allow(unused_imports)]
 pub use private::{
     BinanceAccountTrade, BinanceC2cTrade, BinanceC2cTradeHistoryPage, BinanceListenKey,
-    BinanceSpotAccountBalance, BinanceSpotAccountInformation, BinanceSpotCancelAllOpenOrders,
-    BinanceSpotCancelledOrder, BinanceSpotCommissionRates, BinanceSpotOrderDetail,
-    BinanceTestOrder, BinanceUsdMAccountAsset, BinanceUsdMAccountInformation,
-    BinanceUsdMAccountPosition, BinanceUsdMPositionInformation,
+    BinanceOrderResponse, BinanceSpotAccountBalance, BinanceSpotAccountInformation,
+    BinanceSpotCancelAllOpenOrders, BinanceSpotCancelledOrder, BinanceSpotCommissionRates,
+    BinanceSpotOrderDetail, BinanceTestOrder, BinanceUsdMAccountAsset,
+    BinanceUsdMAccountInformation, BinanceUsdMAccountPosition, BinanceUsdMPositionInformation,
 };
 #[allow(unused_imports)]
 pub use rest::{BinanceExchangeInfo, BinanceExchangeSymbol, BinanceSymbolFilters};
@@ -431,9 +435,260 @@ pub struct BinanceAggregateTrade {
     /// Quantity excluding RPI fills when Binance provides the optional `nq`
     /// field.
     pub normal_quantity: Option<Decimal>,
+    /// Spot's optional best-price-match marker (`M`). USD-M does not publish
+    /// this field.
+    pub best_price_match: Option<bool>,
     /// The side that took liquidity. Binance's `m` field identifies the maker
     /// as the buyer, so it is inverted here.
     pub taker_side: Side,
+    /// Complete provider payload for this aggregate trade.
+    pub raw_json: String,
+}
+
+/// A full-fidelity Binance public market subscription.
+///
+/// It keeps the same transport, reconnection, buffering, and close semantics
+/// as [`MarketStream`] while yielding Binance's native event details.
+pub struct BinanceMarketStream {
+    inner: TypedStream<BinanceMarketEvent>,
+}
+
+impl BinanceMarketStream {
+    pub(crate) fn new_with_close<F, Fut>(
+        inner: impl Stream<Item = Result<BinanceMarketEvent>> + Send + 'static,
+        close: F,
+    ) -> Self
+    where
+        F: FnOnce() -> Fut + Send + 'static,
+        Fut: std::future::Future<Output = Result<()>> + Send + 'static,
+    {
+        Self {
+            inner: TypedStream::new_with_close(inner, close),
+        }
+    }
+
+    /// Stops this subscription and waits for its sockets to close.
+    pub async fn close(&mut self) -> Result<()> {
+        self.inner.close().await
+    }
+}
+
+impl Stream for BinanceMarketStream {
+    type Item = Result<BinanceMarketEvent>;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        Pin::new(&mut self.inner).poll_next(cx)
+    }
+}
+
+impl fmt::Debug for BinanceMarketStream {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("BinanceMarketStream")
+            .finish_non_exhaustive()
+    }
+}
+
+/// A full-fidelity Binance private account subscription.
+///
+/// It keeps the same authentication, listen-key refresh, reconnection,
+/// buffering, and close behavior as [`AccountStream`] while retaining events
+/// outside the portable account model. Construct it with
+/// [`BinanceAdapter::subscribe_detailed_account`].
+pub struct BinanceAccountStream {
+    inner: TypedStream<BinanceAccountStreamEvent>,
+}
+
+impl BinanceAccountStream {
+    pub(crate) fn new_with_close<F, Fut>(
+        inner: impl Stream<Item = Result<BinanceAccountStreamEvent>> + Send + 'static,
+        close: F,
+    ) -> Self
+    where
+        F: FnOnce() -> Fut + Send + 'static,
+        Fut: std::future::Future<Output = Result<()>> + Send + 'static,
+    {
+        Self {
+            inner: TypedStream::new_with_close(inner, close),
+        }
+    }
+
+    /// Stops this subscription and waits for its socket and key refresher to close.
+    pub async fn close(&mut self) -> Result<()> {
+        self.inner.close().await
+    }
+}
+
+impl Stream for BinanceAccountStream {
+    type Item = Result<BinanceAccountStreamEvent>;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        Pin::new(&mut self.inner).poll_next(cx)
+    }
+}
+
+impl fmt::Debug for BinanceAccountStream {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("BinanceAccountStream")
+            .finish_non_exhaustive()
+    }
+}
+
+/// One Binance-specific account-stream event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum BinanceAccountStreamEvent {
+    /// One portable balance projection and its provider envelope.
+    Balance(BinanceBalanceStreamEvent),
+    /// One portable order projection and its provider envelope.
+    Order(BinanceOrderStreamEvent),
+    /// A Binance account event with no portable equivalent.
+    Other(BinanceRawAccountEvent),
+    /// The underlying WebSocket reconnected.
+    Reconnected,
+}
+
+/// A Binance account balance event with provider metadata.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceBalanceStreamEvent {
+    /// Portable balance projection.
+    pub common: Balance,
+    /// Binance event name, such as `outboundAccountPosition`.
+    pub event_type: String,
+    /// Provider event time, when present.
+    pub event_time: Option<Timestamp>,
+    /// Provider transaction time, when present.
+    pub transaction_time: Option<Timestamp>,
+    /// Complete provider frame encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A Binance account order event with provider metadata.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceOrderStreamEvent {
+    /// Portable order projection.
+    pub common: Order,
+    /// Binance event name, such as `executionReport`.
+    pub event_type: String,
+    /// Provider event time, when present.
+    pub event_time: Option<Timestamp>,
+    /// Provider transaction time, when present.
+    pub transaction_time: Option<Timestamp>,
+    /// Complete provider frame encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A Binance account event that has no portable account-event projection.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceRawAccountEvent {
+    /// Binance event name.
+    pub event_type: String,
+    /// Provider event time, when present.
+    pub event_time: Option<Timestamp>,
+    /// Provider transaction time, when present.
+    pub transaction_time: Option<Timestamp>,
+    /// Complete provider frame encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A native Binance public market event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum BinanceMarketEvent {
+    /// One individual Spot trade.
+    Trade(BinanceTradeEvent),
+    /// One partial-depth update or snapshot.
+    OrderBook(BinanceOrderBookEvent),
+    /// One 24-hour ticker update.
+    Ticker(BinanceTickerEvent),
+    /// One candlestick update.
+    Candle(BinanceCandleEvent),
+    /// One underlying socket reconnected.
+    Reconnected,
+}
+
+/// A Binance individual Spot trade together with native stream fields.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceTradeEvent {
+    /// Portable trade projection used by the common stream API.
+    pub common: Trade,
+    /// Binance's event timestamp.
+    pub event_time: Option<Timestamp>,
+    /// Binance's execution timestamp.
+    pub trade_time: Option<Timestamp>,
+    /// Whether Binance identifies the buyer as the maker.
+    pub buyer_is_maker: Option<bool>,
+    /// Spot's best-price-match marker.
+    pub best_price_match: Option<bool>,
+    /// Complete provider payload for this event.
+    pub raw_json: String,
+}
+
+/// A Binance depth event together with native update sequencing fields.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceOrderBookEvent {
+    /// Portable order-book projection used by the common stream API.
+    pub common: OrderBook,
+    /// Binance's event timestamp, when emitted by the venue.
+    pub event_time: Option<Timestamp>,
+    /// Binance's transaction timestamp, when emitted by the venue.
+    pub transaction_time: Option<Timestamp>,
+    /// First update identifier in a diff-depth range.
+    pub first_update_id: Option<u64>,
+    /// Final update identifier in a diff-depth range.
+    pub final_update_id: Option<u64>,
+    /// Previous final update identifier in a diff-depth range.
+    pub previous_final_update_id: Option<u64>,
+    /// Spot partial-depth snapshot identifier.
+    pub last_update_id: Option<u64>,
+    /// Complete provider payload for this event.
+    pub raw_json: String,
+}
+
+/// A Binance 24-hour ticker update with native metadata.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceTickerEvent {
+    /// Portable ticker projection used by the common stream API.
+    pub common: Ticker,
+    /// Binance's event timestamp.
+    pub event_time: Option<Timestamp>,
+    /// Close timestamp of the rolling window.
+    pub close_time: Option<Timestamp>,
+    /// First trade identifier in the rolling window.
+    pub first_trade_id: Option<u64>,
+    /// Last trade identifier in the rolling window.
+    pub last_trade_id: Option<u64>,
+    /// Number of trades in the rolling window.
+    pub trade_count: Option<u64>,
+    /// Complete provider payload for this event.
+    pub raw_json: String,
+}
+
+/// A Binance candlestick update with native aggregation fields.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceCandleEvent {
+    /// Portable candle projection used by the common stream API.
+    pub common: Candle,
+    /// Inclusive close timestamp of the candle window.
+    pub close_time: Option<Timestamp>,
+    /// First trade identifier in the candle.
+    pub first_trade_id: Option<u64>,
+    /// Last trade identifier in the candle.
+    pub last_trade_id: Option<u64>,
+    /// Number of trades in the candle.
+    pub trade_count: Option<u64>,
+    /// Taker-buy base volume, when Binance publishes it.
+    pub taker_buy_base_volume: Option<Decimal>,
+    /// Taker-buy quote volume, when Binance publishes it.
+    pub taker_buy_quote_volume: Option<Decimal>,
+    /// Complete provider payload for this event.
+    pub raw_json: String,
 }
 
 /// Binance Spot's current average price for one market.
@@ -753,6 +1008,35 @@ impl BinanceAdapter {
         private::spot_order(self, market, order_id).await
     }
 
+    /// Creates one Binance order and returns its provider-specific response.
+    ///
+    /// [`Adapter::place_order`] keeps the portable order projection. Use this
+    /// method when the Binance-only execution, position, or order-list fields
+    /// from the create response are needed.
+    pub async fn place_order_detail(&self, request: &OrderRequest) -> Result<BinanceOrderResponse> {
+        private::place_order_detail(self, request).await
+    }
+
+    /// Cancels one Binance order by exchange identifier and returns the full
+    /// provider response.
+    pub async fn cancel_order_detail(
+        &self,
+        market: &Market,
+        order_id: &str,
+    ) -> Result<BinanceOrderResponse> {
+        private::cancel_order_detail(self, market, order_id).await
+    }
+
+    /// Cancels one Binance order by client identifier and returns the full
+    /// provider response.
+    pub async fn cancel_order_by_client_id_detail(
+        &self,
+        market: &Market,
+        client_id: &str,
+    ) -> Result<BinanceOrderResponse> {
+        private::cancel_order_by_client_id_detail(self, market, client_id).await
+    }
+
     /// Reads one page of signed account trades for Spot or USD-M.
     ///
     /// Binance supplies an ID-based continuation, but this provider method
@@ -913,6 +1197,40 @@ impl BinanceAdapter {
         request: &BinanceAggregateTradesRequest,
     ) -> Result<Vec<BinanceAggregateTrade>> {
         rest::aggregate_trades(self, request).await
+    }
+
+    /// Subscribes to Binance market data without discarding native stream
+    /// fields such as update ranges, trade counts, and event timestamps.
+    pub async fn subscribe_detailed(
+        &self,
+        subscription: &Subscription,
+    ) -> Result<BinanceMarketStream> {
+        self.subscribe_detailed_with(subscription, &crate::client::default_stream_config())
+            .await
+    }
+
+    /// Subscribes to detailed Binance market data with explicit reconnect and
+    /// buffering policy.
+    pub async fn subscribe_detailed_with(
+        &self,
+        subscription: &Subscription,
+        config: &StreamConfig,
+    ) -> Result<BinanceMarketStream> {
+        stream::subscribe_detailed(self, subscription, config).await
+    }
+
+    /// Subscribes to Binance account updates without discarding native events.
+    pub async fn subscribe_detailed_account(&self) -> Result<BinanceAccountStream> {
+        self.subscribe_detailed_account_with(&crate::client::default_stream_config())
+            .await
+    }
+
+    /// Subscribes to detailed Binance account updates with explicit stream settings.
+    pub async fn subscribe_detailed_account_with(
+        &self,
+        config: &StreamConfig,
+    ) -> Result<BinanceAccountStream> {
+        stream::subscribe_detailed_account(self, config).await
     }
 
     /// Creates or extends the account's USD-M user-data listen key.

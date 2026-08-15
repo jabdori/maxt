@@ -39,6 +39,22 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
       ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeAccountSubscriptionPtr;
 
   CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_NativeBinanceAccountSubscriptionPtr => wire
+      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceAccountSubscriptionPtr;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_NativeBinanceMarketSubscriptionPtr => wire
+      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceMarketSubscriptionPtr;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_NativeBithumbAccountSubscriptionPtr => wire
+      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbAccountSubscriptionPtr;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_NativeBithumbMarketSubscriptionPtr => wire
+      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbMarketSubscriptionPtr;
+
+  CrossPlatformFinalizerArg
   get rust_arc_decrement_strong_count_NativeClientPtr => wire
       ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClientPtr;
 
@@ -53,6 +69,14 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   CrossPlatformFinalizerArg
   get rust_arc_decrement_strong_count_NativeMarketSubscriptionPtr => wire
       ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeMarketSubscriptionPtr;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_NativeUpbitAccountSubscriptionPtr => wire
+      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitAccountSubscriptionPtr;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_NativeUpbitMarketSubscriptionPtr => wire
+      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitMarketSubscriptionPtr;
 
   CrossPlatformFinalizerArg
   get rust_arc_decrement_strong_count_WireBinanceListenKeyPtr => wire
@@ -86,6 +110,30 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  NativeBinanceAccountSubscription
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceAccountSubscription(
+    dynamic raw,
+  );
+
+  @protected
+  NativeBinanceMarketSubscription
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceMarketSubscription(
+    dynamic raw,
+  );
+
+  @protected
+  NativeBithumbAccountSubscription
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbAccountSubscription(
+    dynamic raw,
+  );
+
+  @protected
+  NativeBithumbMarketSubscription
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbMarketSubscription(
+    dynamic raw,
+  );
+
+  @protected
   NativeClient
   dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
     dynamic raw,
@@ -106,6 +154,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   NativeMarketSubscription
   dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeMarketSubscription(
+    dynamic raw,
+  );
+
+  @protected
+  NativeUpbitAccountSubscription
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitAccountSubscription(
+    dynamic raw,
+  );
+
+  @protected
+  NativeUpbitMarketSubscription
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitMarketSubscription(
     dynamic raw,
   );
 
@@ -134,6 +194,30 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  NativeBinanceAccountSubscription
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceAccountSubscription(
+    dynamic raw,
+  );
+
+  @protected
+  NativeBinanceMarketSubscription
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceMarketSubscription(
+    dynamic raw,
+  );
+
+  @protected
+  NativeBithumbAccountSubscription
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbAccountSubscription(
+    dynamic raw,
+  );
+
+  @protected
+  NativeBithumbMarketSubscription
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbMarketSubscription(
+    dynamic raw,
+  );
+
+  @protected
   NativeClient
   dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
     dynamic raw,
@@ -154,6 +238,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   NativeMarketSubscription
   dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeMarketSubscription(
+    dynamic raw,
+  );
+
+  @protected
+  NativeUpbitAccountSubscription
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitAccountSubscription(
+    dynamic raw,
+  );
+
+  @protected
+  NativeUpbitMarketSubscription
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitMarketSubscription(
     dynamic raw,
   );
 
@@ -197,6 +293,30 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  NativeBinanceAccountSubscription
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceAccountSubscription(
+    dynamic raw,
+  );
+
+  @protected
+  NativeBinanceMarketSubscription
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceMarketSubscription(
+    dynamic raw,
+  );
+
+  @protected
+  NativeBithumbAccountSubscription
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbAccountSubscription(
+    dynamic raw,
+  );
+
+  @protected
+  NativeBithumbMarketSubscription
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbMarketSubscription(
+    dynamic raw,
+  );
+
+  @protected
   NativeClient
   dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
     dynamic raw,
@@ -217,6 +337,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   NativeMarketSubscription
   dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeMarketSubscription(
+    dynamic raw,
+  );
+
+  @protected
+  NativeUpbitAccountSubscription
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitAccountSubscription(
+    dynamic raw,
+  );
+
+  @protected
+  NativeUpbitMarketSubscription
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitMarketSubscription(
     dynamic raw,
   );
 
@@ -278,20 +410,60 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireBalance dco_decode_box_autoadd_wire_balance(dynamic raw);
 
   @protected
+  WireBinanceAccountStreamEvent
+  dco_decode_box_autoadd_wire_binance_account_stream_event(dynamic raw);
+
+  @protected
   WireBinanceAggregateTradesRequest
   dco_decode_box_autoadd_wire_binance_aggregate_trades_request(dynamic raw);
+
+  @protected
+  WireBinanceBalanceStreamEvent
+  dco_decode_box_autoadd_wire_binance_balance_stream_event(dynamic raw);
 
   @protected
   WireBinanceC2cTradeHistoryRequest
   dco_decode_box_autoadd_wire_binance_c_2_c_trade_history_request(dynamic raw);
 
   @protected
+  WireBinanceCandleEvent dco_decode_box_autoadd_wire_binance_candle_event(
+    dynamic raw,
+  );
+
+  @protected
   WireBinanceDepositHistoryRequest
   dco_decode_box_autoadd_wire_binance_deposit_history_request(dynamic raw);
 
   @protected
+  WireBinanceMarketEvent dco_decode_box_autoadd_wire_binance_market_event(
+    dynamic raw,
+  );
+
+  @protected
+  WireBinanceOrderBookEvent
+  dco_decode_box_autoadd_wire_binance_order_book_event(dynamic raw);
+
+  @protected
+  WireBinanceOrderStreamEvent
+  dco_decode_box_autoadd_wire_binance_order_stream_event(dynamic raw);
+
+  @protected
+  WireBinanceRawAccountEvent
+  dco_decode_box_autoadd_wire_binance_raw_account_event(dynamic raw);
+
+  @protected
   WireBinanceTestOrderRequest
   dco_decode_box_autoadd_wire_binance_test_order_request(dynamic raw);
+
+  @protected
+  WireBinanceTickerEvent dco_decode_box_autoadd_wire_binance_ticker_event(
+    dynamic raw,
+  );
+
+  @protected
+  WireBinanceTradeEvent dco_decode_box_autoadd_wire_binance_trade_event(
+    dynamic raw,
+  );
 
   @protected
   WireBinanceVenue dco_decode_box_autoadd_wire_binance_venue(dynamic raw);
@@ -299,6 +471,16 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   WireBinanceWithdrawHistoryRequest
   dco_decode_box_autoadd_wire_binance_withdraw_history_request(dynamic raw);
+
+  @protected
+  WireBithumbAccountEvent dco_decode_box_autoadd_wire_bithumb_account_event(
+    dynamic raw,
+  );
+
+  @protected
+  WireBithumbAssetEvent dco_decode_box_autoadd_wire_bithumb_asset_event(
+    dynamic raw,
+  );
 
   @protected
   WireBithumbBatchOrder dco_decode_box_autoadd_wire_bithumb_batch_order(
@@ -334,11 +516,25 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   dco_decode_box_autoadd_wire_bithumb_krw_withdrawals_request(dynamic raw);
 
   @protected
+  WireBithumbMarketEvent dco_decode_box_autoadd_wire_bithumb_market_event(
+    dynamic raw,
+  );
+
+  @protected
+  WireBithumbOrderBookEvent
+  dco_decode_box_autoadd_wire_bithumb_order_book_event(dynamic raw);
+
+  @protected
   WireBithumbOrderDetailRequest
   dco_decode_box_autoadd_wire_bithumb_order_detail_request(dynamic raw);
 
   @protected
   WireBithumbOrderDirection dco_decode_box_autoadd_wire_bithumb_order_direction(
+    dynamic raw,
+  );
+
+  @protected
+  WireBithumbOrderEvent dco_decode_box_autoadd_wire_bithumb_order_event(
     dynamic raw,
   );
 
@@ -357,6 +553,16 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   WireBithumbPendingOrdersRequest
   dco_decode_box_autoadd_wire_bithumb_pending_orders_request(dynamic raw);
+
+  @protected
+  WireBithumbTickerEvent dco_decode_box_autoadd_wire_bithumb_ticker_event(
+    dynamic raw,
+  );
+
+  @protected
+  WireBithumbTradeEvent dco_decode_box_autoadd_wire_bithumb_trade_event(
+    dynamic raw,
+  );
 
   @protected
   WireBithumbTwapOrderDirection
@@ -583,12 +789,24 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireTransferPlan dco_decode_box_autoadd_wire_transfer_plan(dynamic raw);
 
   @protected
+  WireUpbitAccountStreamEvent
+  dco_decode_box_autoadd_wire_upbit_account_stream_event(dynamic raw);
+
+  @protected
+  WireUpbitAssetStreamEvent
+  dco_decode_box_autoadd_wire_upbit_asset_stream_event(dynamic raw);
+
+  @protected
   WireUpbitBatchCancelRequest
   dco_decode_box_autoadd_wire_upbit_batch_cancel_request(dynamic raw);
 
   @protected
   WireUpbitCancelAndNewOrderRequest
   dco_decode_box_autoadd_wire_upbit_cancel_and_new_order_request(dynamic raw);
+
+  @protected
+  WireUpbitCandleStreamEvent
+  dco_decode_box_autoadd_wire_upbit_candle_stream_event(dynamic raw);
 
   @protected
   WireUpbitClosedOrderState
@@ -603,6 +821,14 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   dco_decode_box_autoadd_wire_upbit_krw_transfer_request(dynamic raw);
 
   @protected
+  WireUpbitMarketStreamEvent
+  dco_decode_box_autoadd_wire_upbit_market_stream_event(dynamic raw);
+
+  @protected
+  WireUpbitOrderBookStreamEvent
+  dco_decode_box_autoadd_wire_upbit_order_book_stream_event(dynamic raw);
+
+  @protected
   WireUpbitOrderDetailRequest
   dco_decode_box_autoadd_wire_upbit_order_detail_request(dynamic raw);
 
@@ -610,6 +836,10 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireUpbitOrderDirection dco_decode_box_autoadd_wire_upbit_order_direction(
     dynamic raw,
   );
+
+  @protected
+  WireUpbitOrderStreamEvent
+  dco_decode_box_autoadd_wire_upbit_order_stream_event(dynamic raw);
 
   @protected
   WireUpbitOrderVolume dco_decode_box_autoadd_wire_upbit_order_volume(
@@ -647,6 +877,14 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireUpbitSmpType dco_decode_box_autoadd_wire_upbit_smp_type(dynamic raw);
+
+  @protected
+  WireUpbitTickerStreamEvent
+  dco_decode_box_autoadd_wire_upbit_ticker_stream_event(dynamic raw);
+
+  @protected
+  WireUpbitTradeStreamEvent
+  dco_decode_box_autoadd_wire_upbit_trade_stream_event(dynamic raw);
 
   @protected
   WireWithdrawRequest dco_decode_box_autoadd_wire_withdraw_request(dynamic raw);
@@ -1009,6 +1247,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  List<WireUpbitOrderResponse> dco_decode_list_wire_upbit_order_response(
+    dynamic raw,
+  );
+
+  @protected
   List<WireUpbitPocket> dco_decode_list_wire_upbit_pocket(dynamic raw);
 
   @protected
@@ -1215,6 +1458,16 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireBalance dco_decode_wire_balance(dynamic raw);
 
   @protected
+  WireBinanceAccountStreamEvent dco_decode_wire_binance_account_stream_event(
+    dynamic raw,
+  );
+
+  @protected
+  WireBinanceAccountStreamItem dco_decode_wire_binance_account_stream_item(
+    dynamic raw,
+  );
+
+  @protected
   WireBinanceAccountTrade dco_decode_wire_binance_account_trade(dynamic raw);
 
   @protected
@@ -1237,6 +1490,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireBinanceBalanceStreamEvent dco_decode_wire_binance_balance_stream_event(
+    dynamic raw,
+  );
+
+  @protected
   WireBinanceC2cTrade dco_decode_wire_binance_c_2_c_trade(dynamic raw);
 
   @protected
@@ -1249,6 +1507,9 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireBinanceC2cTradeType dco_decode_wire_binance_c_2_c_trade_type(dynamic raw);
+
+  @protected
+  WireBinanceCandleEvent dco_decode_wire_binance_candle_event(dynamic raw);
 
   @protected
   WireBinanceCoinInformation dco_decode_wire_binance_coin_information(
@@ -1288,11 +1549,37 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireBinanceMarket dco_decode_wire_binance_market(dynamic raw);
 
   @protected
+  WireBinanceMarketEvent dco_decode_wire_binance_market_event(dynamic raw);
+
+  @protected
+  WireBinanceMarketStreamItem dco_decode_wire_binance_market_stream_item(
+    dynamic raw,
+  );
+
+  @protected
   WireBinanceOpenInterest dco_decode_wire_binance_open_interest(dynamic raw);
+
+  @protected
+  WireBinanceOrderBookEvent dco_decode_wire_binance_order_book_event(
+    dynamic raw,
+  );
+
+  @protected
+  WireBinanceOrderResponse dco_decode_wire_binance_order_response(dynamic raw);
+
+  @protected
+  WireBinanceOrderStreamEvent dco_decode_wire_binance_order_stream_event(
+    dynamic raw,
+  );
 
   @protected
   WireBinanceQuestionnaireRequirements
   dco_decode_wire_binance_questionnaire_requirements(dynamic raw);
+
+  @protected
+  WireBinanceRawAccountEvent dco_decode_wire_binance_raw_account_event(
+    dynamic raw,
+  );
 
   @protected
   WireBinanceSpotAccountBalance dco_decode_wire_binance_spot_account_balance(
@@ -1339,6 +1626,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireBinanceTickerEvent dco_decode_wire_binance_ticker_event(dynamic raw);
+
+  @protected
+  WireBinanceTradeEvent dco_decode_wire_binance_trade_event(dynamic raw);
+
+  @protected
   WireBinanceUsdMAccountAsset dco_decode_wire_binance_usd_m_account_asset(
     dynamic raw,
   );
@@ -1378,10 +1671,21 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireBithumbAccountEvent dco_decode_wire_bithumb_account_event(dynamic raw);
+
+  @protected
+  WireBithumbAccountStreamItem dco_decode_wire_bithumb_account_stream_item(
+    dynamic raw,
+  );
+
+  @protected
   WireBithumbAlertStep dco_decode_wire_bithumb_alert_step(dynamic raw);
 
   @protected
   WireBithumbApiKey dco_decode_wire_bithumb_api_key(dynamic raw);
+
+  @protected
+  WireBithumbAssetEvent dco_decode_wire_bithumb_asset_event(dynamic raw);
 
   @protected
   WireBithumbAssetFee dco_decode_wire_bithumb_asset_fee(dynamic raw);
@@ -1410,6 +1714,19 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireBithumbCancelOrderResponse dco_decode_wire_bithumb_cancel_order_response(
+    dynamic raw,
+  );
+
+  @protected
+  WireBithumbCancelOrdersResponse
+  dco_decode_wire_bithumb_cancel_orders_response(dynamic raw);
+
+  @protected
+  WireBithumbCancelWithdrawalResponse
+  dco_decode_wire_bithumb_cancel_withdrawal_response(dynamic raw);
+
+  @protected
   WireBithumbClosedOrder dco_decode_wire_bithumb_closed_order(dynamic raw);
 
   @protected
@@ -1424,6 +1741,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireBithumbClosedOrdersRequest dco_decode_wire_bithumb_closed_orders_request(
+    dynamic raw,
+  );
+
+  @protected
+  WireBithumbDepositResponse dco_decode_wire_bithumb_deposit_response(
     dynamic raw,
   );
 
@@ -1451,6 +1773,14 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireBithumbMarketAlert dco_decode_wire_bithumb_market_alert(dynamic raw);
 
   @protected
+  WireBithumbMarketEvent dco_decode_wire_bithumb_market_event(dynamic raw);
+
+  @protected
+  WireBithumbMarketStreamItem dco_decode_wire_bithumb_market_stream_item(
+    dynamic raw,
+  );
+
+  @protected
   WireBithumbMarketWarning dco_decode_wire_bithumb_market_warning(dynamic raw);
 
   @protected
@@ -1458,6 +1788,16 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireBithumbNotice dco_decode_wire_bithumb_notice(dynamic raw);
+
+  @protected
+  WireBithumbOrderBookEvent dco_decode_wire_bithumb_order_book_event(
+    dynamic raw,
+  );
+
+  @protected
+  WireBithumbOrderBookSnapshot dco_decode_wire_bithumb_order_book_snapshot(
+    dynamic raw,
+  );
 
   @protected
   WireBithumbOrderDetail dco_decode_wire_bithumb_order_detail(dynamic raw);
@@ -1478,6 +1818,9 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireBithumbOrderEvent dco_decode_wire_bithumb_order_event(dynamic raw);
+
+  @protected
   WireBithumbOrderListItem dco_decode_wire_bithumb_order_list_item(dynamic raw);
 
   @protected
@@ -1491,6 +1834,14 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireBithumbOrderResponse dco_decode_wire_bithumb_order_response(dynamic raw);
+
+  @protected
+  WireBithumbOrdersResponse dco_decode_wire_bithumb_orders_response(
+    dynamic raw,
+  );
+
+  @protected
   WireBithumbPendingOrderState dco_decode_wire_bithumb_pending_order_state(
     dynamic raw,
   );
@@ -1498,6 +1849,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   WireBithumbPendingOrdersRequest
   dco_decode_wire_bithumb_pending_orders_request(dynamic raw);
+
+  @protected
+  WireBithumbTickerEvent dco_decode_wire_bithumb_ticker_event(dynamic raw);
+
+  @protected
+  WireBithumbTradeEvent dco_decode_wire_bithumb_trade_event(dynamic raw);
 
   @protected
   WireBithumbTwapOrder dco_decode_wire_bithumb_twap_order(dynamic raw);
@@ -1525,6 +1882,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireBithumbWithdrawalAddress dco_decode_wire_bithumb_withdrawal_address(
+    dynamic raw,
+  );
+
+  @protected
+  WireBithumbWithdrawalResponse dco_decode_wire_bithumb_withdrawal_response(
     dynamic raw,
   );
 
@@ -1614,6 +1976,9 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   dco_decode_wire_hyperliquid_account_stream_item(dynamic raw);
 
   @protected
+  WireHyperliquidAllMids dco_decode_wire_hyperliquid_all_mids(dynamic raw);
+
+  @protected
   WireHyperliquidAssetContext dco_decode_wire_hyperliquid_asset_context(
     dynamic raw,
   );
@@ -1683,6 +2048,10 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireHyperliquidOpenOrder dco_decode_wire_hyperliquid_open_order(dynamic raw);
 
   @protected
+  WireHyperliquidOrderActionResponse
+  dco_decode_wire_hyperliquid_order_action_response(dynamic raw);
+
+  @protected
   WireHyperliquidOrderBookEvent dco_decode_wire_hyperliquid_order_book_event(
     dynamic raw,
   );
@@ -1716,6 +2085,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireHyperliquidPortfolioPoint dco_decode_wire_hyperliquid_portfolio_point(
+    dynamic raw,
+  );
+
+  @protected
+  WireHyperliquidProviderResponse dco_decode_wire_hyperliquid_provider_response(
     dynamic raw,
   );
 
@@ -1926,7 +2300,22 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireUpbitAccountStreamEvent dco_decode_wire_upbit_account_stream_event(
+    dynamic raw,
+  );
+
+  @protected
+  WireUpbitAccountStreamItem dco_decode_wire_upbit_account_stream_item(
+    dynamic raw,
+  );
+
+  @protected
   WireUpbitApiKey dco_decode_wire_upbit_api_key(dynamic raw);
+
+  @protected
+  WireUpbitAssetStreamEvent dco_decode_wire_upbit_asset_stream_event(
+    dynamic raw,
+  );
 
   @protected
   WireUpbitBatchCancelRequest dco_decode_wire_upbit_batch_cancel_request(
@@ -1944,12 +2333,30 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireUpbitCancelAndNewOrderDetailResult
+  dco_decode_wire_upbit_cancel_and_new_order_detail_result(dynamic raw);
+
+  @protected
   WireUpbitCancelAndNewOrderRequest
   dco_decode_wire_upbit_cancel_and_new_order_request(dynamic raw);
 
   @protected
   WireUpbitCancelAndNewOrderResult
   dco_decode_wire_upbit_cancel_and_new_order_result(dynamic raw);
+
+  @protected
+  WireUpbitCancelOrdersResponse dco_decode_wire_upbit_cancel_orders_response(
+    dynamic raw,
+  );
+
+  @protected
+  WireUpbitCancelWithdrawalResponse
+  dco_decode_wire_upbit_cancel_withdrawal_response(dynamic raw);
+
+  @protected
+  WireUpbitCandleStreamEvent dco_decode_wire_upbit_candle_stream_event(
+    dynamic raw,
+  );
 
   @protected
   WireUpbitClosedOrder dco_decode_wire_upbit_closed_order(dynamic raw);
@@ -1966,6 +2373,9 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireUpbitDepositInfo dco_decode_wire_upbit_deposit_info(dynamic raw);
+
+  @protected
+  WireUpbitDepositResponse dco_decode_wire_upbit_deposit_response(dynamic raw);
 
   @protected
   WireUpbitKrwDeposit dco_decode_wire_upbit_krw_deposit(dynamic raw);
@@ -1992,7 +2402,22 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireUpbitMarketEvent dco_decode_wire_upbit_market_event(dynamic raw);
 
   @protected
+  WireUpbitMarketStreamEvent dco_decode_wire_upbit_market_stream_event(
+    dynamic raw,
+  );
+
+  @protected
+  WireUpbitMarketStreamItem dco_decode_wire_upbit_market_stream_item(
+    dynamic raw,
+  );
+
+  @protected
   WireUpbitOrderBookInstrument dco_decode_wire_upbit_order_book_instrument(
+    dynamic raw,
+  );
+
+  @protected
+  WireUpbitOrderBookStreamEvent dco_decode_wire_upbit_order_book_stream_event(
     dynamic raw,
   );
 
@@ -2014,6 +2439,14 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireUpbitOrderReference dco_decode_wire_upbit_order_reference(dynamic raw);
+
+  @protected
+  WireUpbitOrderResponse dco_decode_wire_upbit_order_response(dynamic raw);
+
+  @protected
+  WireUpbitOrderStreamEvent dco_decode_wire_upbit_order_stream_event(
+    dynamic raw,
+  );
 
   @protected
   WireUpbitOrderVolume dco_decode_wire_upbit_order_volume(dynamic raw);
@@ -2080,6 +2513,16 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireUpbitTickerStreamEvent dco_decode_wire_upbit_ticker_stream_event(
+    dynamic raw,
+  );
+
+  @protected
+  WireUpbitTradeStreamEvent dco_decode_wire_upbit_trade_stream_event(
+    dynamic raw,
+  );
+
+  @protected
   WireUpbitTravelRuleVasp dco_decode_wire_upbit_travel_rule_vasp(dynamic raw);
 
   @protected
@@ -2088,6 +2531,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireUpbitWithdrawalAddress dco_decode_wire_upbit_withdrawal_address(
+    dynamic raw,
+  );
+
+  @protected
+  WireUpbitWithdrawalResponse dco_decode_wire_upbit_withdrawal_response(
     dynamic raw,
   );
 
@@ -2140,6 +2588,30 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  NativeBinanceAccountSubscription
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceAccountSubscription(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  NativeBinanceMarketSubscription
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceMarketSubscription(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  NativeBithumbAccountSubscription
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbAccountSubscription(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  NativeBithumbMarketSubscription
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbMarketSubscription(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   NativeClient
   sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
     SseDeserializer deserializer,
@@ -2160,6 +2632,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   NativeMarketSubscription
   sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeMarketSubscription(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  NativeUpbitAccountSubscription
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitAccountSubscription(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  NativeUpbitMarketSubscription
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitMarketSubscription(
     SseDeserializer deserializer,
   );
 
@@ -2188,6 +2672,30 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  NativeBinanceAccountSubscription
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceAccountSubscription(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  NativeBinanceMarketSubscription
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceMarketSubscription(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  NativeBithumbAccountSubscription
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbAccountSubscription(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  NativeBithumbMarketSubscription
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbMarketSubscription(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   NativeClient
   sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
     SseDeserializer deserializer,
@@ -2208,6 +2716,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   NativeMarketSubscription
   sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeMarketSubscription(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  NativeUpbitAccountSubscription
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitAccountSubscription(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  NativeUpbitMarketSubscription
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitMarketSubscription(
     SseDeserializer deserializer,
   );
 
@@ -2245,6 +2765,30 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  NativeBinanceAccountSubscription
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceAccountSubscription(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  NativeBinanceMarketSubscription
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceMarketSubscription(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  NativeBithumbAccountSubscription
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbAccountSubscription(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  NativeBithumbMarketSubscription
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbMarketSubscription(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   NativeClient
   sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
     SseDeserializer deserializer,
@@ -2265,6 +2809,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   NativeMarketSubscription
   sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeMarketSubscription(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  NativeUpbitAccountSubscription
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitAccountSubscription(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  NativeUpbitMarketSubscription
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitMarketSubscription(
     SseDeserializer deserializer,
   );
 
@@ -2336,8 +2892,20 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireBalance sse_decode_box_autoadd_wire_balance(SseDeserializer deserializer);
 
   @protected
+  WireBinanceAccountStreamEvent
+  sse_decode_box_autoadd_wire_binance_account_stream_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireBinanceAggregateTradesRequest
   sse_decode_box_autoadd_wire_binance_aggregate_trades_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBinanceBalanceStreamEvent
+  sse_decode_box_autoadd_wire_binance_balance_stream_event(
     SseDeserializer deserializer,
   );
 
@@ -2348,14 +2916,52 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireBinanceCandleEvent sse_decode_box_autoadd_wire_binance_candle_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireBinanceDepositHistoryRequest
   sse_decode_box_autoadd_wire_binance_deposit_history_request(
     SseDeserializer deserializer,
   );
 
   @protected
+  WireBinanceMarketEvent sse_decode_box_autoadd_wire_binance_market_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBinanceOrderBookEvent
+  sse_decode_box_autoadd_wire_binance_order_book_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBinanceOrderStreamEvent
+  sse_decode_box_autoadd_wire_binance_order_stream_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBinanceRawAccountEvent
+  sse_decode_box_autoadd_wire_binance_raw_account_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireBinanceTestOrderRequest
   sse_decode_box_autoadd_wire_binance_test_order_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBinanceTickerEvent sse_decode_box_autoadd_wire_binance_ticker_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBinanceTradeEvent sse_decode_box_autoadd_wire_binance_trade_event(
     SseDeserializer deserializer,
   );
 
@@ -2367,6 +2973,16 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   WireBinanceWithdrawHistoryRequest
   sse_decode_box_autoadd_wire_binance_withdraw_history_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbAccountEvent sse_decode_box_autoadd_wire_bithumb_account_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbAssetEvent sse_decode_box_autoadd_wire_bithumb_asset_event(
     SseDeserializer deserializer,
   );
 
@@ -2418,6 +3034,17 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireBithumbMarketEvent sse_decode_box_autoadd_wire_bithumb_market_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbOrderBookEvent
+  sse_decode_box_autoadd_wire_bithumb_order_book_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireBithumbOrderDetailRequest
   sse_decode_box_autoadd_wire_bithumb_order_detail_request(
     SseDeserializer deserializer,
@@ -2425,6 +3052,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireBithumbOrderDirection sse_decode_box_autoadd_wire_bithumb_order_direction(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbOrderEvent sse_decode_box_autoadd_wire_bithumb_order_event(
     SseDeserializer deserializer,
   );
 
@@ -2449,6 +3081,16 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   WireBithumbPendingOrdersRequest
   sse_decode_box_autoadd_wire_bithumb_pending_orders_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbTickerEvent sse_decode_box_autoadd_wire_bithumb_ticker_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbTradeEvent sse_decode_box_autoadd_wire_bithumb_trade_event(
     SseDeserializer deserializer,
   );
 
@@ -2741,6 +3383,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireUpbitAccountStreamEvent
+  sse_decode_box_autoadd_wire_upbit_account_stream_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireUpbitAssetStreamEvent
+  sse_decode_box_autoadd_wire_upbit_asset_stream_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireUpbitBatchCancelRequest
   sse_decode_box_autoadd_wire_upbit_batch_cancel_request(
     SseDeserializer deserializer,
@@ -2749,6 +3403,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   WireUpbitCancelAndNewOrderRequest
   sse_decode_box_autoadd_wire_upbit_cancel_and_new_order_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireUpbitCandleStreamEvent
+  sse_decode_box_autoadd_wire_upbit_candle_stream_event(
     SseDeserializer deserializer,
   );
 
@@ -2771,6 +3431,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireUpbitMarketStreamEvent
+  sse_decode_box_autoadd_wire_upbit_market_stream_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireUpbitOrderBookStreamEvent
+  sse_decode_box_autoadd_wire_upbit_order_book_stream_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireUpbitOrderDetailRequest
   sse_decode_box_autoadd_wire_upbit_order_detail_request(
     SseDeserializer deserializer,
@@ -2778,6 +3450,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireUpbitOrderDirection sse_decode_box_autoadd_wire_upbit_order_direction(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireUpbitOrderStreamEvent
+  sse_decode_box_autoadd_wire_upbit_order_stream_event(
     SseDeserializer deserializer,
   );
 
@@ -2829,6 +3507,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireUpbitSmpType sse_decode_box_autoadd_wire_upbit_smp_type(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireUpbitTickerStreamEvent
+  sse_decode_box_autoadd_wire_upbit_ticker_stream_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireUpbitTradeStreamEvent
+  sse_decode_box_autoadd_wire_upbit_trade_stream_event(
     SseDeserializer deserializer,
   );
 
@@ -3263,6 +3953,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  List<WireUpbitOrderResponse> sse_decode_list_wire_upbit_order_response(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<WireUpbitPocket> sse_decode_list_wire_upbit_pocket(
     SseDeserializer deserializer,
   );
@@ -3519,6 +4214,16 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   WireBalance sse_decode_wire_balance(SseDeserializer deserializer);
 
   @protected
+  WireBinanceAccountStreamEvent sse_decode_wire_binance_account_stream_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBinanceAccountStreamItem sse_decode_wire_binance_account_stream_item(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireBinanceAccountTrade sse_decode_wire_binance_account_trade(
     SseDeserializer deserializer,
   );
@@ -3545,6 +4250,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireBinanceBalanceStreamEvent sse_decode_wire_binance_balance_stream_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireBinanceC2cTrade sse_decode_wire_binance_c_2_c_trade(
     SseDeserializer deserializer,
   );
@@ -3563,6 +4273,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireBinanceC2cTradeType sse_decode_wire_binance_c_2_c_trade_type(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBinanceCandleEvent sse_decode_wire_binance_candle_event(
     SseDeserializer deserializer,
   );
 
@@ -3612,13 +4327,43 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireBinanceMarketEvent sse_decode_wire_binance_market_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBinanceMarketStreamItem sse_decode_wire_binance_market_stream_item(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireBinanceOpenInterest sse_decode_wire_binance_open_interest(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBinanceOrderBookEvent sse_decode_wire_binance_order_book_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBinanceOrderResponse sse_decode_wire_binance_order_response(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBinanceOrderStreamEvent sse_decode_wire_binance_order_stream_event(
     SseDeserializer deserializer,
   );
 
   @protected
   WireBinanceQuestionnaireRequirements
   sse_decode_wire_binance_questionnaire_requirements(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBinanceRawAccountEvent sse_decode_wire_binance_raw_account_event(
     SseDeserializer deserializer,
   );
 
@@ -3675,6 +4420,16 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireBinanceTickerEvent sse_decode_wire_binance_ticker_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBinanceTradeEvent sse_decode_wire_binance_trade_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireBinanceUsdMAccountAsset sse_decode_wire_binance_usd_m_account_asset(
     SseDeserializer deserializer,
   );
@@ -3720,12 +4475,27 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireBithumbAccountEvent sse_decode_wire_bithumb_account_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbAccountStreamItem sse_decode_wire_bithumb_account_stream_item(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireBithumbAlertStep sse_decode_wire_bithumb_alert_step(
     SseDeserializer deserializer,
   );
 
   @protected
   WireBithumbApiKey sse_decode_wire_bithumb_api_key(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbAssetEvent sse_decode_wire_bithumb_asset_event(
     SseDeserializer deserializer,
   );
 
@@ -3760,6 +4530,21 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireBithumbCancelOrderResponse sse_decode_wire_bithumb_cancel_order_response(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbCancelOrdersResponse
+  sse_decode_wire_bithumb_cancel_orders_response(SseDeserializer deserializer);
+
+  @protected
+  WireBithumbCancelWithdrawalResponse
+  sse_decode_wire_bithumb_cancel_withdrawal_response(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireBithumbClosedOrder sse_decode_wire_bithumb_closed_order(
     SseDeserializer deserializer,
   );
@@ -3776,6 +4561,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireBithumbClosedOrdersRequest sse_decode_wire_bithumb_closed_orders_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbDepositResponse sse_decode_wire_bithumb_deposit_response(
     SseDeserializer deserializer,
   );
 
@@ -3809,6 +4599,16 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireBithumbMarketEvent sse_decode_wire_bithumb_market_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbMarketStreamItem sse_decode_wire_bithumb_market_stream_item(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireBithumbMarketWarning sse_decode_wire_bithumb_market_warning(
     SseDeserializer deserializer,
   );
@@ -3820,6 +4620,16 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireBithumbNotice sse_decode_wire_bithumb_notice(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbOrderBookEvent sse_decode_wire_bithumb_order_book_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbOrderBookSnapshot sse_decode_wire_bithumb_order_book_snapshot(
     SseDeserializer deserializer,
   );
 
@@ -3844,6 +4654,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireBithumbOrderEvent sse_decode_wire_bithumb_order_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireBithumbOrderListItem sse_decode_wire_bithumb_order_list_item(
     SseDeserializer deserializer,
   );
@@ -3859,6 +4674,16 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireBithumbOrderResponse sse_decode_wire_bithumb_order_response(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbOrdersResponse sse_decode_wire_bithumb_orders_response(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireBithumbPendingOrderState sse_decode_wire_bithumb_pending_order_state(
     SseDeserializer deserializer,
   );
@@ -3866,6 +4691,16 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   WireBithumbPendingOrdersRequest
   sse_decode_wire_bithumb_pending_orders_request(SseDeserializer deserializer);
+
+  @protected
+  WireBithumbTickerEvent sse_decode_wire_bithumb_ticker_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbTradeEvent sse_decode_wire_bithumb_trade_event(
+    SseDeserializer deserializer,
+  );
 
   @protected
   WireBithumbTwapOrder sse_decode_wire_bithumb_twap_order(
@@ -3899,6 +4734,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireBithumbWithdrawalAddress sse_decode_wire_bithumb_withdrawal_address(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireBithumbWithdrawalResponse sse_decode_wire_bithumb_withdrawal_response(
     SseDeserializer deserializer,
   );
 
@@ -4018,6 +4858,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   sse_decode_wire_hyperliquid_account_stream_item(SseDeserializer deserializer);
 
   @protected
+  WireHyperliquidAllMids sse_decode_wire_hyperliquid_all_mids(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireHyperliquidAssetContext sse_decode_wire_hyperliquid_asset_context(
     SseDeserializer deserializer,
   );
@@ -4097,6 +4942,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireHyperliquidOrderActionResponse
+  sse_decode_wire_hyperliquid_order_action_response(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireHyperliquidOrderBookEvent sse_decode_wire_hyperliquid_order_book_event(
     SseDeserializer deserializer,
   );
@@ -4134,6 +4985,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireHyperliquidPortfolioPoint sse_decode_wire_hyperliquid_portfolio_point(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireHyperliquidProviderResponse sse_decode_wire_hyperliquid_provider_response(
     SseDeserializer deserializer,
   );
 
@@ -4380,7 +5236,22 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireUpbitAccountStreamEvent sse_decode_wire_upbit_account_stream_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireUpbitAccountStreamItem sse_decode_wire_upbit_account_stream_item(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireUpbitApiKey sse_decode_wire_upbit_api_key(SseDeserializer deserializer);
+
+  @protected
+  WireUpbitAssetStreamEvent sse_decode_wire_upbit_asset_stream_event(
+    SseDeserializer deserializer,
+  );
 
   @protected
   WireUpbitBatchCancelRequest sse_decode_wire_upbit_batch_cancel_request(
@@ -4398,6 +5269,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireUpbitCancelAndNewOrderDetailResult
+  sse_decode_wire_upbit_cancel_and_new_order_detail_result(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireUpbitCancelAndNewOrderRequest
   sse_decode_wire_upbit_cancel_and_new_order_request(
     SseDeserializer deserializer,
@@ -4406,6 +5283,22 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   WireUpbitCancelAndNewOrderResult
   sse_decode_wire_upbit_cancel_and_new_order_result(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireUpbitCancelOrdersResponse sse_decode_wire_upbit_cancel_orders_response(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireUpbitCancelWithdrawalResponse
+  sse_decode_wire_upbit_cancel_withdrawal_response(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireUpbitCandleStreamEvent sse_decode_wire_upbit_candle_stream_event(
     SseDeserializer deserializer,
   );
 
@@ -4426,6 +5319,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireUpbitDepositInfo sse_decode_wire_upbit_deposit_info(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireUpbitDepositResponse sse_decode_wire_upbit_deposit_response(
     SseDeserializer deserializer,
   );
 
@@ -4460,7 +5358,22 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireUpbitMarketStreamEvent sse_decode_wire_upbit_market_stream_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireUpbitMarketStreamItem sse_decode_wire_upbit_market_stream_item(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireUpbitOrderBookInstrument sse_decode_wire_upbit_order_book_instrument(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireUpbitOrderBookStreamEvent sse_decode_wire_upbit_order_book_stream_event(
     SseDeserializer deserializer,
   );
 
@@ -4486,6 +5399,16 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireUpbitOrderReference sse_decode_wire_upbit_order_reference(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireUpbitOrderResponse sse_decode_wire_upbit_order_response(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireUpbitOrderStreamEvent sse_decode_wire_upbit_order_stream_event(
     SseDeserializer deserializer,
   );
 
@@ -4564,6 +5487,16 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  WireUpbitTickerStreamEvent sse_decode_wire_upbit_ticker_stream_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireUpbitTradeStreamEvent sse_decode_wire_upbit_trade_stream_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   WireUpbitTravelRuleVasp sse_decode_wire_upbit_travel_rule_vasp(
     SseDeserializer deserializer,
   );
@@ -4574,6 +5507,11 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   WireUpbitWithdrawalAddress sse_decode_wire_upbit_withdrawal_address(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  WireUpbitWithdrawalResponse sse_decode_wire_upbit_withdrawal_response(
     SseDeserializer deserializer,
   );
 
@@ -4646,6 +5584,34 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceAccountSubscription(
+    NativeBinanceAccountSubscription self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceMarketSubscription(
+    NativeBinanceMarketSubscription self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbAccountSubscription(
+    NativeBithumbAccountSubscription self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbMarketSubscription(
+    NativeBithumbMarketSubscription self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
   sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
     NativeClient self,
     SseSerializer serializer,
@@ -4669,6 +5635,20 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   void
   sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeMarketSubscription(
     NativeMarketSubscription self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitAccountSubscription(
+    NativeUpbitAccountSubscription self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitMarketSubscription(
+    NativeUpbitMarketSubscription self,
     SseSerializer serializer,
   );
 
@@ -4702,6 +5682,34 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceAccountSubscription(
+    NativeBinanceAccountSubscription self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceMarketSubscription(
+    NativeBinanceMarketSubscription self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbAccountSubscription(
+    NativeBithumbAccountSubscription self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbMarketSubscription(
+    NativeBithumbMarketSubscription self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
   sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
     NativeClient self,
     SseSerializer serializer,
@@ -4725,6 +5733,20 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   void
   sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeMarketSubscription(
     NativeMarketSubscription self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitAccountSubscription(
+    NativeUpbitAccountSubscription self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitMarketSubscription(
+    NativeUpbitMarketSubscription self,
     SseSerializer serializer,
   );
 
@@ -4775,6 +5797,34 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
 
   @protected
   void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceAccountSubscription(
+    NativeBinanceAccountSubscription self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceMarketSubscription(
+    NativeBinanceMarketSubscription self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbAccountSubscription(
+    NativeBithumbAccountSubscription self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbMarketSubscription(
+    NativeBithumbMarketSubscription self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
   sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
     NativeClient self,
     SseSerializer serializer,
@@ -4798,6 +5848,20 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   void
   sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeMarketSubscription(
     NativeMarketSubscription self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitAccountSubscription(
+    NativeUpbitAccountSubscription self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitMarketSubscription(
+    NativeUpbitMarketSubscription self,
     SseSerializer serializer,
   );
 
@@ -4884,8 +5948,20 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_wire_binance_account_stream_event(
+    WireBinanceAccountStreamEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_wire_binance_aggregate_trades_request(
     WireBinanceAggregateTradesRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_binance_balance_stream_event(
+    WireBinanceBalanceStreamEvent self,
     SseSerializer serializer,
   );
 
@@ -4896,14 +5972,56 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_wire_binance_candle_event(
+    WireBinanceCandleEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_wire_binance_deposit_history_request(
     WireBinanceDepositHistoryRequest self,
     SseSerializer serializer,
   );
 
   @protected
+  void sse_encode_box_autoadd_wire_binance_market_event(
+    WireBinanceMarketEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_binance_order_book_event(
+    WireBinanceOrderBookEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_binance_order_stream_event(
+    WireBinanceOrderStreamEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_binance_raw_account_event(
+    WireBinanceRawAccountEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_wire_binance_test_order_request(
     WireBinanceTestOrderRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_binance_ticker_event(
+    WireBinanceTickerEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_binance_trade_event(
+    WireBinanceTradeEvent self,
     SseSerializer serializer,
   );
 
@@ -4916,6 +6034,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_box_autoadd_wire_binance_withdraw_history_request(
     WireBinanceWithdrawHistoryRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_bithumb_account_event(
+    WireBithumbAccountEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_bithumb_asset_event(
+    WireBithumbAssetEvent self,
     SseSerializer serializer,
   );
 
@@ -4968,6 +6098,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_wire_bithumb_market_event(
+    WireBithumbMarketEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_bithumb_order_book_event(
+    WireBithumbOrderBookEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_wire_bithumb_order_detail_request(
     WireBithumbOrderDetailRequest self,
     SseSerializer serializer,
@@ -4976,6 +6118,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_box_autoadd_wire_bithumb_order_direction(
     WireBithumbOrderDirection self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_bithumb_order_event(
+    WireBithumbOrderEvent self,
     SseSerializer serializer,
   );
 
@@ -5000,6 +6148,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_box_autoadd_wire_bithumb_pending_orders_request(
     WireBithumbPendingOrdersRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_bithumb_ticker_event(
+    WireBithumbTickerEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_bithumb_trade_event(
+    WireBithumbTradeEvent self,
     SseSerializer serializer,
   );
 
@@ -5352,6 +6512,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_wire_upbit_account_stream_event(
+    WireUpbitAccountStreamEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_upbit_asset_stream_event(
+    WireUpbitAssetStreamEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_wire_upbit_batch_cancel_request(
     WireUpbitBatchCancelRequest self,
     SseSerializer serializer,
@@ -5360,6 +6532,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_box_autoadd_wire_upbit_cancel_and_new_order_request(
     WireUpbitCancelAndNewOrderRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_upbit_candle_stream_event(
+    WireUpbitCandleStreamEvent self,
     SseSerializer serializer,
   );
 
@@ -5382,6 +6560,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_wire_upbit_market_stream_event(
+    WireUpbitMarketStreamEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_upbit_order_book_stream_event(
+    WireUpbitOrderBookStreamEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_wire_upbit_order_detail_request(
     WireUpbitOrderDetailRequest self,
     SseSerializer serializer,
@@ -5390,6 +6580,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_box_autoadd_wire_upbit_order_direction(
     WireUpbitOrderDirection self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_upbit_order_stream_event(
+    WireUpbitOrderStreamEvent self,
     SseSerializer serializer,
   );
 
@@ -5444,6 +6640,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_box_autoadd_wire_upbit_smp_type(
     WireUpbitSmpType self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_upbit_ticker_stream_event(
+    WireUpbitTickerStreamEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_wire_upbit_trade_stream_event(
+    WireUpbitTradeStreamEvent self,
     SseSerializer serializer,
   );
 
@@ -5982,6 +7190,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_list_wire_upbit_order_response(
+    List<WireUpbitOrderResponse> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_wire_upbit_pocket(
     List<WireUpbitPocket> self,
     SseSerializer serializer,
@@ -6285,6 +7499,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   void sse_encode_wire_balance(WireBalance self, SseSerializer serializer);
 
   @protected
+  void sse_encode_wire_binance_account_stream_event(
+    WireBinanceAccountStreamEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_binance_account_stream_item(
+    WireBinanceAccountStreamItem self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_binance_account_trade(
     WireBinanceAccountTrade self,
     SseSerializer serializer,
@@ -6315,6 +7541,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_wire_binance_balance_stream_event(
+    WireBinanceBalanceStreamEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_binance_c_2_c_trade(
     WireBinanceC2cTrade self,
     SseSerializer serializer,
@@ -6335,6 +7567,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_binance_c_2_c_trade_type(
     WireBinanceC2cTradeType self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_binance_candle_event(
+    WireBinanceCandleEvent self,
     SseSerializer serializer,
   );
 
@@ -6393,14 +7631,50 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_wire_binance_market_event(
+    WireBinanceMarketEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_binance_market_stream_item(
+    WireBinanceMarketStreamItem self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_binance_open_interest(
     WireBinanceOpenInterest self,
     SseSerializer serializer,
   );
 
   @protected
+  void sse_encode_wire_binance_order_book_event(
+    WireBinanceOrderBookEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_binance_order_response(
+    WireBinanceOrderResponse self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_binance_order_stream_event(
+    WireBinanceOrderStreamEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_binance_questionnaire_requirements(
     WireBinanceQuestionnaireRequirements self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_binance_raw_account_event(
+    WireBinanceRawAccountEvent self,
     SseSerializer serializer,
   );
 
@@ -6465,6 +7739,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_wire_binance_ticker_event(
+    WireBinanceTickerEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_binance_trade_event(
+    WireBinanceTradeEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_binance_usd_m_account_asset(
     WireBinanceUsdMAccountAsset self,
     SseSerializer serializer,
@@ -6519,6 +7805,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_wire_bithumb_account_event(
+    WireBithumbAccountEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_bithumb_account_stream_item(
+    WireBithumbAccountStreamItem self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_bithumb_alert_step(
     WireBithumbAlertStep self,
     SseSerializer serializer,
@@ -6527,6 +7825,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_bithumb_api_key(
     WireBithumbApiKey self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_bithumb_asset_event(
+    WireBithumbAssetEvent self,
     SseSerializer serializer,
   );
 
@@ -6567,6 +7871,24 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_wire_bithumb_cancel_order_response(
+    WireBithumbCancelOrderResponse self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_bithumb_cancel_orders_response(
+    WireBithumbCancelOrdersResponse self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_bithumb_cancel_withdrawal_response(
+    WireBithumbCancelWithdrawalResponse self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_bithumb_closed_order(
     WireBithumbClosedOrder self,
     SseSerializer serializer,
@@ -6587,6 +7909,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_bithumb_closed_orders_request(
     WireBithumbClosedOrdersRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_bithumb_deposit_response(
+    WireBithumbDepositResponse self,
     SseSerializer serializer,
   );
 
@@ -6627,6 +7955,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_wire_bithumb_market_event(
+    WireBithumbMarketEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_bithumb_market_stream_item(
+    WireBithumbMarketStreamItem self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_bithumb_market_warning(
     WireBithumbMarketWarning self,
     SseSerializer serializer,
@@ -6641,6 +7981,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_bithumb_notice(
     WireBithumbNotice self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_bithumb_order_book_event(
+    WireBithumbOrderBookEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_bithumb_order_book_snapshot(
+    WireBithumbOrderBookSnapshot self,
     SseSerializer serializer,
   );
 
@@ -6669,6 +8021,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_wire_bithumb_order_event(
+    WireBithumbOrderEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_bithumb_order_list_item(
     WireBithumbOrderListItem self,
     SseSerializer serializer,
@@ -6687,6 +8045,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_wire_bithumb_order_response(
+    WireBithumbOrderResponse self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_bithumb_orders_response(
+    WireBithumbOrdersResponse self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_bithumb_pending_order_state(
     WireBithumbPendingOrderState self,
     SseSerializer serializer,
@@ -6695,6 +8065,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_bithumb_pending_orders_request(
     WireBithumbPendingOrdersRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_bithumb_ticker_event(
+    WireBithumbTickerEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_bithumb_trade_event(
+    WireBithumbTradeEvent self,
     SseSerializer serializer,
   );
 
@@ -6737,6 +8119,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_bithumb_withdrawal_address(
     WireBithumbWithdrawalAddress self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_bithumb_withdrawal_response(
+    WireBithumbWithdrawalResponse self,
     SseSerializer serializer,
   );
 
@@ -6882,6 +8270,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_wire_hyperliquid_all_mids(
+    WireHyperliquidAllMids self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_hyperliquid_asset_context(
     WireHyperliquidAssetContext self,
     SseSerializer serializer,
@@ -6978,6 +8372,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_wire_hyperliquid_order_action_response(
+    WireHyperliquidOrderActionResponse self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_hyperliquid_order_book_event(
     WireHyperliquidOrderBookEvent self,
     SseSerializer serializer,
@@ -7022,6 +8422,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_hyperliquid_portfolio_point(
     WireHyperliquidPortfolioPoint self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_hyperliquid_provider_response(
+    WireHyperliquidProviderResponse self,
     SseSerializer serializer,
   );
 
@@ -7344,8 +8750,26 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_wire_upbit_account_stream_event(
+    WireUpbitAccountStreamEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_upbit_account_stream_item(
+    WireUpbitAccountStreamItem self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_upbit_api_key(
     WireUpbitApiKey self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_upbit_asset_stream_event(
+    WireUpbitAssetStreamEvent self,
     SseSerializer serializer,
   );
 
@@ -7368,6 +8792,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_wire_upbit_cancel_and_new_order_detail_result(
+    WireUpbitCancelAndNewOrderDetailResult self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_upbit_cancel_and_new_order_request(
     WireUpbitCancelAndNewOrderRequest self,
     SseSerializer serializer,
@@ -7376,6 +8806,24 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_upbit_cancel_and_new_order_result(
     WireUpbitCancelAndNewOrderResult self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_upbit_cancel_orders_response(
+    WireUpbitCancelOrdersResponse self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_upbit_cancel_withdrawal_response(
+    WireUpbitCancelWithdrawalResponse self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_upbit_candle_stream_event(
+    WireUpbitCandleStreamEvent self,
     SseSerializer serializer,
   );
 
@@ -7400,6 +8848,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_upbit_deposit_info(
     WireUpbitDepositInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_upbit_deposit_response(
+    WireUpbitDepositResponse self,
     SseSerializer serializer,
   );
 
@@ -7440,8 +8894,26 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_wire_upbit_market_stream_event(
+    WireUpbitMarketStreamEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_upbit_market_stream_item(
+    WireUpbitMarketStreamItem self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_upbit_order_book_instrument(
     WireUpbitOrderBookInstrument self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_upbit_order_book_stream_event(
+    WireUpbitOrderBookStreamEvent self,
     SseSerializer serializer,
   );
 
@@ -7472,6 +8944,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_upbit_order_reference(
     WireUpbitOrderReference self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_upbit_order_response(
+    WireUpbitOrderResponse self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_upbit_order_stream_event(
+    WireUpbitOrderStreamEvent self,
     SseSerializer serializer,
   );
 
@@ -7572,6 +9056,18 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   );
 
   @protected
+  void sse_encode_wire_upbit_ticker_stream_event(
+    WireUpbitTickerStreamEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_upbit_trade_stream_event(
+    WireUpbitTradeStreamEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_wire_upbit_travel_rule_vasp(
     WireUpbitTravelRuleVasp self,
     SseSerializer serializer,
@@ -7586,6 +9082,12 @@ abstract class MaxtRustLibApiImplPlatform extends BaseApiImpl<MaxtRustLibWire> {
   @protected
   void sse_encode_wire_upbit_withdrawal_address(
     WireUpbitWithdrawalAddress self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_wire_upbit_withdrawal_response(
+    WireUpbitWithdrawalResponse self,
     SseSerializer serializer,
   );
 
@@ -7783,6 +9285,142 @@ class MaxtRustLibWire implements BaseWire {
           .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
 
   void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceAccountSubscription(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceAccountSubscription(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceAccountSubscriptionPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_maxt_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceAccountSubscription',
+      );
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceAccountSubscription =
+      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceAccountSubscriptionPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceAccountSubscription(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceAccountSubscription(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceAccountSubscriptionPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_maxt_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceAccountSubscription',
+      );
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceAccountSubscription =
+      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceAccountSubscriptionPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceMarketSubscription(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceMarketSubscription(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceMarketSubscriptionPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_maxt_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceMarketSubscription',
+      );
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceMarketSubscription =
+      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceMarketSubscriptionPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceMarketSubscription(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceMarketSubscription(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceMarketSubscriptionPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_maxt_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceMarketSubscription',
+      );
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceMarketSubscription =
+      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBinanceMarketSubscriptionPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbAccountSubscription(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbAccountSubscription(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbAccountSubscriptionPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_maxt_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbAccountSubscription',
+      );
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbAccountSubscription =
+      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbAccountSubscriptionPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbAccountSubscription(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbAccountSubscription(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbAccountSubscriptionPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_maxt_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbAccountSubscription',
+      );
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbAccountSubscription =
+      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbAccountSubscriptionPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbMarketSubscription(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbMarketSubscription(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbMarketSubscriptionPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_maxt_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbMarketSubscription',
+      );
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbMarketSubscription =
+      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbMarketSubscriptionPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbMarketSubscription(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbMarketSubscription(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbMarketSubscriptionPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_maxt_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbMarketSubscription',
+      );
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbMarketSubscription =
+      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeBithumbMarketSubscriptionPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
   rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeClient(
     ffi.Pointer<ffi.Void> ptr,
   ) {
@@ -7916,6 +9554,74 @@ class MaxtRustLibWire implements BaseWire {
       );
   late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeMarketSubscription =
       _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeMarketSubscriptionPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitAccountSubscription(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitAccountSubscription(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitAccountSubscriptionPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_maxt_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitAccountSubscription',
+      );
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitAccountSubscription =
+      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitAccountSubscriptionPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitAccountSubscription(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitAccountSubscription(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitAccountSubscriptionPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_maxt_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitAccountSubscription',
+      );
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitAccountSubscription =
+      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitAccountSubscriptionPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitMarketSubscription(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitMarketSubscription(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitMarketSubscriptionPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_maxt_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitMarketSubscription',
+      );
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitMarketSubscription =
+      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitMarketSubscriptionPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitMarketSubscription(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitMarketSubscription(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitMarketSubscriptionPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_maxt_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitMarketSubscription',
+      );
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitMarketSubscription =
+      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNativeUpbitMarketSubscriptionPtr
           .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
 
   void

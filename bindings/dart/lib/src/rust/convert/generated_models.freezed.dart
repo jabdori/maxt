@@ -12,6 +12,1212 @@ part of 'generated_models.dart';
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
+mixin _$WireBinanceAccountStreamEvent {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBinanceAccountStreamEvent);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireBinanceAccountStreamEvent()';
+}
+
+
+}
+
+/// @nodoc
+class $WireBinanceAccountStreamEventCopyWith<$Res>  {
+$WireBinanceAccountStreamEventCopyWith(WireBinanceAccountStreamEvent _, $Res Function(WireBinanceAccountStreamEvent) __);
+}
+
+
+/// Adds pattern-matching-related methods to [WireBinanceAccountStreamEvent].
+extension WireBinanceAccountStreamEventPatterns on WireBinanceAccountStreamEvent {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( WireBinanceAccountStreamEvent_Balance value)?  balance,TResult Function( WireBinanceAccountStreamEvent_Order value)?  order,TResult Function( WireBinanceAccountStreamEvent_Other value)?  other,TResult Function( WireBinanceAccountStreamEvent_Reconnected value)?  reconnected,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case WireBinanceAccountStreamEvent_Balance() when balance != null:
+return balance(_that);case WireBinanceAccountStreamEvent_Order() when order != null:
+return order(_that);case WireBinanceAccountStreamEvent_Other() when other != null:
+return other(_that);case WireBinanceAccountStreamEvent_Reconnected() when reconnected != null:
+return reconnected(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( WireBinanceAccountStreamEvent_Balance value)  balance,required TResult Function( WireBinanceAccountStreamEvent_Order value)  order,required TResult Function( WireBinanceAccountStreamEvent_Other value)  other,required TResult Function( WireBinanceAccountStreamEvent_Reconnected value)  reconnected,}){
+final _that = this;
+switch (_that) {
+case WireBinanceAccountStreamEvent_Balance():
+return balance(_that);case WireBinanceAccountStreamEvent_Order():
+return order(_that);case WireBinanceAccountStreamEvent_Other():
+return other(_that);case WireBinanceAccountStreamEvent_Reconnected():
+return reconnected(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( WireBinanceAccountStreamEvent_Balance value)?  balance,TResult? Function( WireBinanceAccountStreamEvent_Order value)?  order,TResult? Function( WireBinanceAccountStreamEvent_Other value)?  other,TResult? Function( WireBinanceAccountStreamEvent_Reconnected value)?  reconnected,}){
+final _that = this;
+switch (_that) {
+case WireBinanceAccountStreamEvent_Balance() when balance != null:
+return balance(_that);case WireBinanceAccountStreamEvent_Order() when order != null:
+return order(_that);case WireBinanceAccountStreamEvent_Other() when other != null:
+return other(_that);case WireBinanceAccountStreamEvent_Reconnected() when reconnected != null:
+return reconnected(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( WireBinanceBalanceStreamEvent field0)?  balance,TResult Function( WireBinanceOrderStreamEvent field0)?  order,TResult Function( WireBinanceRawAccountEvent field0)?  other,TResult Function()?  reconnected,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case WireBinanceAccountStreamEvent_Balance() when balance != null:
+return balance(_that.field0);case WireBinanceAccountStreamEvent_Order() when order != null:
+return order(_that.field0);case WireBinanceAccountStreamEvent_Other() when other != null:
+return other(_that.field0);case WireBinanceAccountStreamEvent_Reconnected() when reconnected != null:
+return reconnected();case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( WireBinanceBalanceStreamEvent field0)  balance,required TResult Function( WireBinanceOrderStreamEvent field0)  order,required TResult Function( WireBinanceRawAccountEvent field0)  other,required TResult Function()  reconnected,}) {final _that = this;
+switch (_that) {
+case WireBinanceAccountStreamEvent_Balance():
+return balance(_that.field0);case WireBinanceAccountStreamEvent_Order():
+return order(_that.field0);case WireBinanceAccountStreamEvent_Other():
+return other(_that.field0);case WireBinanceAccountStreamEvent_Reconnected():
+return reconnected();}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( WireBinanceBalanceStreamEvent field0)?  balance,TResult? Function( WireBinanceOrderStreamEvent field0)?  order,TResult? Function( WireBinanceRawAccountEvent field0)?  other,TResult? Function()?  reconnected,}) {final _that = this;
+switch (_that) {
+case WireBinanceAccountStreamEvent_Balance() when balance != null:
+return balance(_that.field0);case WireBinanceAccountStreamEvent_Order() when order != null:
+return order(_that.field0);case WireBinanceAccountStreamEvent_Other() when other != null:
+return other(_that.field0);case WireBinanceAccountStreamEvent_Reconnected() when reconnected != null:
+return reconnected();case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class WireBinanceAccountStreamEvent_Balance extends WireBinanceAccountStreamEvent {
+  const WireBinanceAccountStreamEvent_Balance(this.field0): super._();
+
+
+ final  WireBinanceBalanceStreamEvent field0;
+
+/// Create a copy of WireBinanceAccountStreamEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireBinanceAccountStreamEvent_BalanceCopyWith<WireBinanceAccountStreamEvent_Balance> get copyWith => _$WireBinanceAccountStreamEvent_BalanceCopyWithImpl<WireBinanceAccountStreamEvent_Balance>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBinanceAccountStreamEvent_Balance&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireBinanceAccountStreamEvent.balance(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireBinanceAccountStreamEvent_BalanceCopyWith<$Res> implements $WireBinanceAccountStreamEventCopyWith<$Res> {
+  factory $WireBinanceAccountStreamEvent_BalanceCopyWith(WireBinanceAccountStreamEvent_Balance value, $Res Function(WireBinanceAccountStreamEvent_Balance) _then) = _$WireBinanceAccountStreamEvent_BalanceCopyWithImpl;
+@useResult
+$Res call({
+ WireBinanceBalanceStreamEvent field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireBinanceAccountStreamEvent_BalanceCopyWithImpl<$Res>
+    implements $WireBinanceAccountStreamEvent_BalanceCopyWith<$Res> {
+  _$WireBinanceAccountStreamEvent_BalanceCopyWithImpl(this._self, this._then);
+
+  final WireBinanceAccountStreamEvent_Balance _self;
+  final $Res Function(WireBinanceAccountStreamEvent_Balance) _then;
+
+/// Create a copy of WireBinanceAccountStreamEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireBinanceAccountStreamEvent_Balance(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireBinanceBalanceStreamEvent,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireBinanceAccountStreamEvent_Order extends WireBinanceAccountStreamEvent {
+  const WireBinanceAccountStreamEvent_Order(this.field0): super._();
+
+
+ final  WireBinanceOrderStreamEvent field0;
+
+/// Create a copy of WireBinanceAccountStreamEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireBinanceAccountStreamEvent_OrderCopyWith<WireBinanceAccountStreamEvent_Order> get copyWith => _$WireBinanceAccountStreamEvent_OrderCopyWithImpl<WireBinanceAccountStreamEvent_Order>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBinanceAccountStreamEvent_Order&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireBinanceAccountStreamEvent.order(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireBinanceAccountStreamEvent_OrderCopyWith<$Res> implements $WireBinanceAccountStreamEventCopyWith<$Res> {
+  factory $WireBinanceAccountStreamEvent_OrderCopyWith(WireBinanceAccountStreamEvent_Order value, $Res Function(WireBinanceAccountStreamEvent_Order) _then) = _$WireBinanceAccountStreamEvent_OrderCopyWithImpl;
+@useResult
+$Res call({
+ WireBinanceOrderStreamEvent field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireBinanceAccountStreamEvent_OrderCopyWithImpl<$Res>
+    implements $WireBinanceAccountStreamEvent_OrderCopyWith<$Res> {
+  _$WireBinanceAccountStreamEvent_OrderCopyWithImpl(this._self, this._then);
+
+  final WireBinanceAccountStreamEvent_Order _self;
+  final $Res Function(WireBinanceAccountStreamEvent_Order) _then;
+
+/// Create a copy of WireBinanceAccountStreamEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireBinanceAccountStreamEvent_Order(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireBinanceOrderStreamEvent,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireBinanceAccountStreamEvent_Other extends WireBinanceAccountStreamEvent {
+  const WireBinanceAccountStreamEvent_Other(this.field0): super._();
+
+
+ final  WireBinanceRawAccountEvent field0;
+
+/// Create a copy of WireBinanceAccountStreamEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireBinanceAccountStreamEvent_OtherCopyWith<WireBinanceAccountStreamEvent_Other> get copyWith => _$WireBinanceAccountStreamEvent_OtherCopyWithImpl<WireBinanceAccountStreamEvent_Other>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBinanceAccountStreamEvent_Other&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireBinanceAccountStreamEvent.other(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireBinanceAccountStreamEvent_OtherCopyWith<$Res> implements $WireBinanceAccountStreamEventCopyWith<$Res> {
+  factory $WireBinanceAccountStreamEvent_OtherCopyWith(WireBinanceAccountStreamEvent_Other value, $Res Function(WireBinanceAccountStreamEvent_Other) _then) = _$WireBinanceAccountStreamEvent_OtherCopyWithImpl;
+@useResult
+$Res call({
+ WireBinanceRawAccountEvent field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireBinanceAccountStreamEvent_OtherCopyWithImpl<$Res>
+    implements $WireBinanceAccountStreamEvent_OtherCopyWith<$Res> {
+  _$WireBinanceAccountStreamEvent_OtherCopyWithImpl(this._self, this._then);
+
+  final WireBinanceAccountStreamEvent_Other _self;
+  final $Res Function(WireBinanceAccountStreamEvent_Other) _then;
+
+/// Create a copy of WireBinanceAccountStreamEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireBinanceAccountStreamEvent_Other(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireBinanceRawAccountEvent,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireBinanceAccountStreamEvent_Reconnected extends WireBinanceAccountStreamEvent {
+  const WireBinanceAccountStreamEvent_Reconnected(): super._();
+
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBinanceAccountStreamEvent_Reconnected);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireBinanceAccountStreamEvent.reconnected()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+mixin _$WireBinanceMarketEvent {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBinanceMarketEvent);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireBinanceMarketEvent()';
+}
+
+
+}
+
+/// @nodoc
+class $WireBinanceMarketEventCopyWith<$Res>  {
+$WireBinanceMarketEventCopyWith(WireBinanceMarketEvent _, $Res Function(WireBinanceMarketEvent) __);
+}
+
+
+/// Adds pattern-matching-related methods to [WireBinanceMarketEvent].
+extension WireBinanceMarketEventPatterns on WireBinanceMarketEvent {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( WireBinanceMarketEvent_Trade value)?  trade,TResult Function( WireBinanceMarketEvent_OrderBook value)?  orderBook,TResult Function( WireBinanceMarketEvent_Ticker value)?  ticker,TResult Function( WireBinanceMarketEvent_Candle value)?  candle,TResult Function( WireBinanceMarketEvent_Reconnected value)?  reconnected,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case WireBinanceMarketEvent_Trade() when trade != null:
+return trade(_that);case WireBinanceMarketEvent_OrderBook() when orderBook != null:
+return orderBook(_that);case WireBinanceMarketEvent_Ticker() when ticker != null:
+return ticker(_that);case WireBinanceMarketEvent_Candle() when candle != null:
+return candle(_that);case WireBinanceMarketEvent_Reconnected() when reconnected != null:
+return reconnected(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( WireBinanceMarketEvent_Trade value)  trade,required TResult Function( WireBinanceMarketEvent_OrderBook value)  orderBook,required TResult Function( WireBinanceMarketEvent_Ticker value)  ticker,required TResult Function( WireBinanceMarketEvent_Candle value)  candle,required TResult Function( WireBinanceMarketEvent_Reconnected value)  reconnected,}){
+final _that = this;
+switch (_that) {
+case WireBinanceMarketEvent_Trade():
+return trade(_that);case WireBinanceMarketEvent_OrderBook():
+return orderBook(_that);case WireBinanceMarketEvent_Ticker():
+return ticker(_that);case WireBinanceMarketEvent_Candle():
+return candle(_that);case WireBinanceMarketEvent_Reconnected():
+return reconnected(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( WireBinanceMarketEvent_Trade value)?  trade,TResult? Function( WireBinanceMarketEvent_OrderBook value)?  orderBook,TResult? Function( WireBinanceMarketEvent_Ticker value)?  ticker,TResult? Function( WireBinanceMarketEvent_Candle value)?  candle,TResult? Function( WireBinanceMarketEvent_Reconnected value)?  reconnected,}){
+final _that = this;
+switch (_that) {
+case WireBinanceMarketEvent_Trade() when trade != null:
+return trade(_that);case WireBinanceMarketEvent_OrderBook() when orderBook != null:
+return orderBook(_that);case WireBinanceMarketEvent_Ticker() when ticker != null:
+return ticker(_that);case WireBinanceMarketEvent_Candle() when candle != null:
+return candle(_that);case WireBinanceMarketEvent_Reconnected() when reconnected != null:
+return reconnected(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( WireBinanceTradeEvent field0)?  trade,TResult Function( WireBinanceOrderBookEvent field0)?  orderBook,TResult Function( WireBinanceTickerEvent field0)?  ticker,TResult Function( WireBinanceCandleEvent field0)?  candle,TResult Function()?  reconnected,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case WireBinanceMarketEvent_Trade() when trade != null:
+return trade(_that.field0);case WireBinanceMarketEvent_OrderBook() when orderBook != null:
+return orderBook(_that.field0);case WireBinanceMarketEvent_Ticker() when ticker != null:
+return ticker(_that.field0);case WireBinanceMarketEvent_Candle() when candle != null:
+return candle(_that.field0);case WireBinanceMarketEvent_Reconnected() when reconnected != null:
+return reconnected();case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( WireBinanceTradeEvent field0)  trade,required TResult Function( WireBinanceOrderBookEvent field0)  orderBook,required TResult Function( WireBinanceTickerEvent field0)  ticker,required TResult Function( WireBinanceCandleEvent field0)  candle,required TResult Function()  reconnected,}) {final _that = this;
+switch (_that) {
+case WireBinanceMarketEvent_Trade():
+return trade(_that.field0);case WireBinanceMarketEvent_OrderBook():
+return orderBook(_that.field0);case WireBinanceMarketEvent_Ticker():
+return ticker(_that.field0);case WireBinanceMarketEvent_Candle():
+return candle(_that.field0);case WireBinanceMarketEvent_Reconnected():
+return reconnected();}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( WireBinanceTradeEvent field0)?  trade,TResult? Function( WireBinanceOrderBookEvent field0)?  orderBook,TResult? Function( WireBinanceTickerEvent field0)?  ticker,TResult? Function( WireBinanceCandleEvent field0)?  candle,TResult? Function()?  reconnected,}) {final _that = this;
+switch (_that) {
+case WireBinanceMarketEvent_Trade() when trade != null:
+return trade(_that.field0);case WireBinanceMarketEvent_OrderBook() when orderBook != null:
+return orderBook(_that.field0);case WireBinanceMarketEvent_Ticker() when ticker != null:
+return ticker(_that.field0);case WireBinanceMarketEvent_Candle() when candle != null:
+return candle(_that.field0);case WireBinanceMarketEvent_Reconnected() when reconnected != null:
+return reconnected();case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class WireBinanceMarketEvent_Trade extends WireBinanceMarketEvent {
+  const WireBinanceMarketEvent_Trade(this.field0): super._();
+
+
+ final  WireBinanceTradeEvent field0;
+
+/// Create a copy of WireBinanceMarketEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireBinanceMarketEvent_TradeCopyWith<WireBinanceMarketEvent_Trade> get copyWith => _$WireBinanceMarketEvent_TradeCopyWithImpl<WireBinanceMarketEvent_Trade>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBinanceMarketEvent_Trade&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireBinanceMarketEvent.trade(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireBinanceMarketEvent_TradeCopyWith<$Res> implements $WireBinanceMarketEventCopyWith<$Res> {
+  factory $WireBinanceMarketEvent_TradeCopyWith(WireBinanceMarketEvent_Trade value, $Res Function(WireBinanceMarketEvent_Trade) _then) = _$WireBinanceMarketEvent_TradeCopyWithImpl;
+@useResult
+$Res call({
+ WireBinanceTradeEvent field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireBinanceMarketEvent_TradeCopyWithImpl<$Res>
+    implements $WireBinanceMarketEvent_TradeCopyWith<$Res> {
+  _$WireBinanceMarketEvent_TradeCopyWithImpl(this._self, this._then);
+
+  final WireBinanceMarketEvent_Trade _self;
+  final $Res Function(WireBinanceMarketEvent_Trade) _then;
+
+/// Create a copy of WireBinanceMarketEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireBinanceMarketEvent_Trade(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireBinanceTradeEvent,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireBinanceMarketEvent_OrderBook extends WireBinanceMarketEvent {
+  const WireBinanceMarketEvent_OrderBook(this.field0): super._();
+
+
+ final  WireBinanceOrderBookEvent field0;
+
+/// Create a copy of WireBinanceMarketEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireBinanceMarketEvent_OrderBookCopyWith<WireBinanceMarketEvent_OrderBook> get copyWith => _$WireBinanceMarketEvent_OrderBookCopyWithImpl<WireBinanceMarketEvent_OrderBook>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBinanceMarketEvent_OrderBook&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireBinanceMarketEvent.orderBook(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireBinanceMarketEvent_OrderBookCopyWith<$Res> implements $WireBinanceMarketEventCopyWith<$Res> {
+  factory $WireBinanceMarketEvent_OrderBookCopyWith(WireBinanceMarketEvent_OrderBook value, $Res Function(WireBinanceMarketEvent_OrderBook) _then) = _$WireBinanceMarketEvent_OrderBookCopyWithImpl;
+@useResult
+$Res call({
+ WireBinanceOrderBookEvent field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireBinanceMarketEvent_OrderBookCopyWithImpl<$Res>
+    implements $WireBinanceMarketEvent_OrderBookCopyWith<$Res> {
+  _$WireBinanceMarketEvent_OrderBookCopyWithImpl(this._self, this._then);
+
+  final WireBinanceMarketEvent_OrderBook _self;
+  final $Res Function(WireBinanceMarketEvent_OrderBook) _then;
+
+/// Create a copy of WireBinanceMarketEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireBinanceMarketEvent_OrderBook(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireBinanceOrderBookEvent,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireBinanceMarketEvent_Ticker extends WireBinanceMarketEvent {
+  const WireBinanceMarketEvent_Ticker(this.field0): super._();
+
+
+ final  WireBinanceTickerEvent field0;
+
+/// Create a copy of WireBinanceMarketEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireBinanceMarketEvent_TickerCopyWith<WireBinanceMarketEvent_Ticker> get copyWith => _$WireBinanceMarketEvent_TickerCopyWithImpl<WireBinanceMarketEvent_Ticker>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBinanceMarketEvent_Ticker&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireBinanceMarketEvent.ticker(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireBinanceMarketEvent_TickerCopyWith<$Res> implements $WireBinanceMarketEventCopyWith<$Res> {
+  factory $WireBinanceMarketEvent_TickerCopyWith(WireBinanceMarketEvent_Ticker value, $Res Function(WireBinanceMarketEvent_Ticker) _then) = _$WireBinanceMarketEvent_TickerCopyWithImpl;
+@useResult
+$Res call({
+ WireBinanceTickerEvent field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireBinanceMarketEvent_TickerCopyWithImpl<$Res>
+    implements $WireBinanceMarketEvent_TickerCopyWith<$Res> {
+  _$WireBinanceMarketEvent_TickerCopyWithImpl(this._self, this._then);
+
+  final WireBinanceMarketEvent_Ticker _self;
+  final $Res Function(WireBinanceMarketEvent_Ticker) _then;
+
+/// Create a copy of WireBinanceMarketEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireBinanceMarketEvent_Ticker(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireBinanceTickerEvent,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireBinanceMarketEvent_Candle extends WireBinanceMarketEvent {
+  const WireBinanceMarketEvent_Candle(this.field0): super._();
+
+
+ final  WireBinanceCandleEvent field0;
+
+/// Create a copy of WireBinanceMarketEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireBinanceMarketEvent_CandleCopyWith<WireBinanceMarketEvent_Candle> get copyWith => _$WireBinanceMarketEvent_CandleCopyWithImpl<WireBinanceMarketEvent_Candle>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBinanceMarketEvent_Candle&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireBinanceMarketEvent.candle(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireBinanceMarketEvent_CandleCopyWith<$Res> implements $WireBinanceMarketEventCopyWith<$Res> {
+  factory $WireBinanceMarketEvent_CandleCopyWith(WireBinanceMarketEvent_Candle value, $Res Function(WireBinanceMarketEvent_Candle) _then) = _$WireBinanceMarketEvent_CandleCopyWithImpl;
+@useResult
+$Res call({
+ WireBinanceCandleEvent field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireBinanceMarketEvent_CandleCopyWithImpl<$Res>
+    implements $WireBinanceMarketEvent_CandleCopyWith<$Res> {
+  _$WireBinanceMarketEvent_CandleCopyWithImpl(this._self, this._then);
+
+  final WireBinanceMarketEvent_Candle _self;
+  final $Res Function(WireBinanceMarketEvent_Candle) _then;
+
+/// Create a copy of WireBinanceMarketEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireBinanceMarketEvent_Candle(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireBinanceCandleEvent,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireBinanceMarketEvent_Reconnected extends WireBinanceMarketEvent {
+  const WireBinanceMarketEvent_Reconnected(): super._();
+
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBinanceMarketEvent_Reconnected);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireBinanceMarketEvent.reconnected()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+mixin _$WireBithumbAccountEvent {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBithumbAccountEvent);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireBithumbAccountEvent()';
+}
+
+
+}
+
+/// @nodoc
+class $WireBithumbAccountEventCopyWith<$Res>  {
+$WireBithumbAccountEventCopyWith(WireBithumbAccountEvent _, $Res Function(WireBithumbAccountEvent) __);
+}
+
+
+/// Adds pattern-matching-related methods to [WireBithumbAccountEvent].
+extension WireBithumbAccountEventPatterns on WireBithumbAccountEvent {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( WireBithumbAccountEvent_Asset value)?  asset,TResult Function( WireBithumbAccountEvent_Order value)?  order,TResult Function( WireBithumbAccountEvent_Reconnected value)?  reconnected,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case WireBithumbAccountEvent_Asset() when asset != null:
+return asset(_that);case WireBithumbAccountEvent_Order() when order != null:
+return order(_that);case WireBithumbAccountEvent_Reconnected() when reconnected != null:
+return reconnected(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( WireBithumbAccountEvent_Asset value)  asset,required TResult Function( WireBithumbAccountEvent_Order value)  order,required TResult Function( WireBithumbAccountEvent_Reconnected value)  reconnected,}){
+final _that = this;
+switch (_that) {
+case WireBithumbAccountEvent_Asset():
+return asset(_that);case WireBithumbAccountEvent_Order():
+return order(_that);case WireBithumbAccountEvent_Reconnected():
+return reconnected(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( WireBithumbAccountEvent_Asset value)?  asset,TResult? Function( WireBithumbAccountEvent_Order value)?  order,TResult? Function( WireBithumbAccountEvent_Reconnected value)?  reconnected,}){
+final _that = this;
+switch (_that) {
+case WireBithumbAccountEvent_Asset() when asset != null:
+return asset(_that);case WireBithumbAccountEvent_Order() when order != null:
+return order(_that);case WireBithumbAccountEvent_Reconnected() when reconnected != null:
+return reconnected(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( WireBithumbAssetEvent field0)?  asset,TResult Function( WireBithumbOrderEvent field0)?  order,TResult Function()?  reconnected,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case WireBithumbAccountEvent_Asset() when asset != null:
+return asset(_that.field0);case WireBithumbAccountEvent_Order() when order != null:
+return order(_that.field0);case WireBithumbAccountEvent_Reconnected() when reconnected != null:
+return reconnected();case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( WireBithumbAssetEvent field0)  asset,required TResult Function( WireBithumbOrderEvent field0)  order,required TResult Function()  reconnected,}) {final _that = this;
+switch (_that) {
+case WireBithumbAccountEvent_Asset():
+return asset(_that.field0);case WireBithumbAccountEvent_Order():
+return order(_that.field0);case WireBithumbAccountEvent_Reconnected():
+return reconnected();}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( WireBithumbAssetEvent field0)?  asset,TResult? Function( WireBithumbOrderEvent field0)?  order,TResult? Function()?  reconnected,}) {final _that = this;
+switch (_that) {
+case WireBithumbAccountEvent_Asset() when asset != null:
+return asset(_that.field0);case WireBithumbAccountEvent_Order() when order != null:
+return order(_that.field0);case WireBithumbAccountEvent_Reconnected() when reconnected != null:
+return reconnected();case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class WireBithumbAccountEvent_Asset extends WireBithumbAccountEvent {
+  const WireBithumbAccountEvent_Asset(this.field0): super._();
+
+
+ final  WireBithumbAssetEvent field0;
+
+/// Create a copy of WireBithumbAccountEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireBithumbAccountEvent_AssetCopyWith<WireBithumbAccountEvent_Asset> get copyWith => _$WireBithumbAccountEvent_AssetCopyWithImpl<WireBithumbAccountEvent_Asset>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBithumbAccountEvent_Asset&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireBithumbAccountEvent.asset(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireBithumbAccountEvent_AssetCopyWith<$Res> implements $WireBithumbAccountEventCopyWith<$Res> {
+  factory $WireBithumbAccountEvent_AssetCopyWith(WireBithumbAccountEvent_Asset value, $Res Function(WireBithumbAccountEvent_Asset) _then) = _$WireBithumbAccountEvent_AssetCopyWithImpl;
+@useResult
+$Res call({
+ WireBithumbAssetEvent field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireBithumbAccountEvent_AssetCopyWithImpl<$Res>
+    implements $WireBithumbAccountEvent_AssetCopyWith<$Res> {
+  _$WireBithumbAccountEvent_AssetCopyWithImpl(this._self, this._then);
+
+  final WireBithumbAccountEvent_Asset _self;
+  final $Res Function(WireBithumbAccountEvent_Asset) _then;
+
+/// Create a copy of WireBithumbAccountEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireBithumbAccountEvent_Asset(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireBithumbAssetEvent,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireBithumbAccountEvent_Order extends WireBithumbAccountEvent {
+  const WireBithumbAccountEvent_Order(this.field0): super._();
+
+
+ final  WireBithumbOrderEvent field0;
+
+/// Create a copy of WireBithumbAccountEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireBithumbAccountEvent_OrderCopyWith<WireBithumbAccountEvent_Order> get copyWith => _$WireBithumbAccountEvent_OrderCopyWithImpl<WireBithumbAccountEvent_Order>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBithumbAccountEvent_Order&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireBithumbAccountEvent.order(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireBithumbAccountEvent_OrderCopyWith<$Res> implements $WireBithumbAccountEventCopyWith<$Res> {
+  factory $WireBithumbAccountEvent_OrderCopyWith(WireBithumbAccountEvent_Order value, $Res Function(WireBithumbAccountEvent_Order) _then) = _$WireBithumbAccountEvent_OrderCopyWithImpl;
+@useResult
+$Res call({
+ WireBithumbOrderEvent field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireBithumbAccountEvent_OrderCopyWithImpl<$Res>
+    implements $WireBithumbAccountEvent_OrderCopyWith<$Res> {
+  _$WireBithumbAccountEvent_OrderCopyWithImpl(this._self, this._then);
+
+  final WireBithumbAccountEvent_Order _self;
+  final $Res Function(WireBithumbAccountEvent_Order) _then;
+
+/// Create a copy of WireBithumbAccountEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireBithumbAccountEvent_Order(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireBithumbOrderEvent,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireBithumbAccountEvent_Reconnected extends WireBithumbAccountEvent {
+  const WireBithumbAccountEvent_Reconnected(): super._();
+
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBithumbAccountEvent_Reconnected);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireBithumbAccountEvent.reconnected()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
 mixin _$WireBithumbBatchOrderOutcome {
 
  Object get field0;
@@ -302,6 +1508,408 @@ as WireBithumbBatchOrderFailure,
 
 
 }
+
+/// @nodoc
+mixin _$WireBithumbMarketEvent {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBithumbMarketEvent);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireBithumbMarketEvent()';
+}
+
+
+}
+
+/// @nodoc
+class $WireBithumbMarketEventCopyWith<$Res>  {
+$WireBithumbMarketEventCopyWith(WireBithumbMarketEvent _, $Res Function(WireBithumbMarketEvent) __);
+}
+
+
+/// Adds pattern-matching-related methods to [WireBithumbMarketEvent].
+extension WireBithumbMarketEventPatterns on WireBithumbMarketEvent {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( WireBithumbMarketEvent_Trade value)?  trade,TResult Function( WireBithumbMarketEvent_OrderBook value)?  orderBook,TResult Function( WireBithumbMarketEvent_Ticker value)?  ticker,TResult Function( WireBithumbMarketEvent_Reconnected value)?  reconnected,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case WireBithumbMarketEvent_Trade() when trade != null:
+return trade(_that);case WireBithumbMarketEvent_OrderBook() when orderBook != null:
+return orderBook(_that);case WireBithumbMarketEvent_Ticker() when ticker != null:
+return ticker(_that);case WireBithumbMarketEvent_Reconnected() when reconnected != null:
+return reconnected(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( WireBithumbMarketEvent_Trade value)  trade,required TResult Function( WireBithumbMarketEvent_OrderBook value)  orderBook,required TResult Function( WireBithumbMarketEvent_Ticker value)  ticker,required TResult Function( WireBithumbMarketEvent_Reconnected value)  reconnected,}){
+final _that = this;
+switch (_that) {
+case WireBithumbMarketEvent_Trade():
+return trade(_that);case WireBithumbMarketEvent_OrderBook():
+return orderBook(_that);case WireBithumbMarketEvent_Ticker():
+return ticker(_that);case WireBithumbMarketEvent_Reconnected():
+return reconnected(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( WireBithumbMarketEvent_Trade value)?  trade,TResult? Function( WireBithumbMarketEvent_OrderBook value)?  orderBook,TResult? Function( WireBithumbMarketEvent_Ticker value)?  ticker,TResult? Function( WireBithumbMarketEvent_Reconnected value)?  reconnected,}){
+final _that = this;
+switch (_that) {
+case WireBithumbMarketEvent_Trade() when trade != null:
+return trade(_that);case WireBithumbMarketEvent_OrderBook() when orderBook != null:
+return orderBook(_that);case WireBithumbMarketEvent_Ticker() when ticker != null:
+return ticker(_that);case WireBithumbMarketEvent_Reconnected() when reconnected != null:
+return reconnected(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( WireBithumbTradeEvent field0)?  trade,TResult Function( WireBithumbOrderBookEvent field0)?  orderBook,TResult Function( WireBithumbTickerEvent field0)?  ticker,TResult Function()?  reconnected,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case WireBithumbMarketEvent_Trade() when trade != null:
+return trade(_that.field0);case WireBithumbMarketEvent_OrderBook() when orderBook != null:
+return orderBook(_that.field0);case WireBithumbMarketEvent_Ticker() when ticker != null:
+return ticker(_that.field0);case WireBithumbMarketEvent_Reconnected() when reconnected != null:
+return reconnected();case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( WireBithumbTradeEvent field0)  trade,required TResult Function( WireBithumbOrderBookEvent field0)  orderBook,required TResult Function( WireBithumbTickerEvent field0)  ticker,required TResult Function()  reconnected,}) {final _that = this;
+switch (_that) {
+case WireBithumbMarketEvent_Trade():
+return trade(_that.field0);case WireBithumbMarketEvent_OrderBook():
+return orderBook(_that.field0);case WireBithumbMarketEvent_Ticker():
+return ticker(_that.field0);case WireBithumbMarketEvent_Reconnected():
+return reconnected();}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( WireBithumbTradeEvent field0)?  trade,TResult? Function( WireBithumbOrderBookEvent field0)?  orderBook,TResult? Function( WireBithumbTickerEvent field0)?  ticker,TResult? Function()?  reconnected,}) {final _that = this;
+switch (_that) {
+case WireBithumbMarketEvent_Trade() when trade != null:
+return trade(_that.field0);case WireBithumbMarketEvent_OrderBook() when orderBook != null:
+return orderBook(_that.field0);case WireBithumbMarketEvent_Ticker() when ticker != null:
+return ticker(_that.field0);case WireBithumbMarketEvent_Reconnected() when reconnected != null:
+return reconnected();case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class WireBithumbMarketEvent_Trade extends WireBithumbMarketEvent {
+  const WireBithumbMarketEvent_Trade(this.field0): super._();
+
+
+ final  WireBithumbTradeEvent field0;
+
+/// Create a copy of WireBithumbMarketEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireBithumbMarketEvent_TradeCopyWith<WireBithumbMarketEvent_Trade> get copyWith => _$WireBithumbMarketEvent_TradeCopyWithImpl<WireBithumbMarketEvent_Trade>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBithumbMarketEvent_Trade&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireBithumbMarketEvent.trade(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireBithumbMarketEvent_TradeCopyWith<$Res> implements $WireBithumbMarketEventCopyWith<$Res> {
+  factory $WireBithumbMarketEvent_TradeCopyWith(WireBithumbMarketEvent_Trade value, $Res Function(WireBithumbMarketEvent_Trade) _then) = _$WireBithumbMarketEvent_TradeCopyWithImpl;
+@useResult
+$Res call({
+ WireBithumbTradeEvent field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireBithumbMarketEvent_TradeCopyWithImpl<$Res>
+    implements $WireBithumbMarketEvent_TradeCopyWith<$Res> {
+  _$WireBithumbMarketEvent_TradeCopyWithImpl(this._self, this._then);
+
+  final WireBithumbMarketEvent_Trade _self;
+  final $Res Function(WireBithumbMarketEvent_Trade) _then;
+
+/// Create a copy of WireBithumbMarketEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireBithumbMarketEvent_Trade(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireBithumbTradeEvent,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireBithumbMarketEvent_OrderBook extends WireBithumbMarketEvent {
+  const WireBithumbMarketEvent_OrderBook(this.field0): super._();
+
+
+ final  WireBithumbOrderBookEvent field0;
+
+/// Create a copy of WireBithumbMarketEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireBithumbMarketEvent_OrderBookCopyWith<WireBithumbMarketEvent_OrderBook> get copyWith => _$WireBithumbMarketEvent_OrderBookCopyWithImpl<WireBithumbMarketEvent_OrderBook>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBithumbMarketEvent_OrderBook&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireBithumbMarketEvent.orderBook(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireBithumbMarketEvent_OrderBookCopyWith<$Res> implements $WireBithumbMarketEventCopyWith<$Res> {
+  factory $WireBithumbMarketEvent_OrderBookCopyWith(WireBithumbMarketEvent_OrderBook value, $Res Function(WireBithumbMarketEvent_OrderBook) _then) = _$WireBithumbMarketEvent_OrderBookCopyWithImpl;
+@useResult
+$Res call({
+ WireBithumbOrderBookEvent field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireBithumbMarketEvent_OrderBookCopyWithImpl<$Res>
+    implements $WireBithumbMarketEvent_OrderBookCopyWith<$Res> {
+  _$WireBithumbMarketEvent_OrderBookCopyWithImpl(this._self, this._then);
+
+  final WireBithumbMarketEvent_OrderBook _self;
+  final $Res Function(WireBithumbMarketEvent_OrderBook) _then;
+
+/// Create a copy of WireBithumbMarketEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireBithumbMarketEvent_OrderBook(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireBithumbOrderBookEvent,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireBithumbMarketEvent_Ticker extends WireBithumbMarketEvent {
+  const WireBithumbMarketEvent_Ticker(this.field0): super._();
+
+
+ final  WireBithumbTickerEvent field0;
+
+/// Create a copy of WireBithumbMarketEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireBithumbMarketEvent_TickerCopyWith<WireBithumbMarketEvent_Ticker> get copyWith => _$WireBithumbMarketEvent_TickerCopyWithImpl<WireBithumbMarketEvent_Ticker>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBithumbMarketEvent_Ticker&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireBithumbMarketEvent.ticker(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireBithumbMarketEvent_TickerCopyWith<$Res> implements $WireBithumbMarketEventCopyWith<$Res> {
+  factory $WireBithumbMarketEvent_TickerCopyWith(WireBithumbMarketEvent_Ticker value, $Res Function(WireBithumbMarketEvent_Ticker) _then) = _$WireBithumbMarketEvent_TickerCopyWithImpl;
+@useResult
+$Res call({
+ WireBithumbTickerEvent field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireBithumbMarketEvent_TickerCopyWithImpl<$Res>
+    implements $WireBithumbMarketEvent_TickerCopyWith<$Res> {
+  _$WireBithumbMarketEvent_TickerCopyWithImpl(this._self, this._then);
+
+  final WireBithumbMarketEvent_Ticker _self;
+  final $Res Function(WireBithumbMarketEvent_Ticker) _then;
+
+/// Create a copy of WireBithumbMarketEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireBithumbMarketEvent_Ticker(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireBithumbTickerEvent,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireBithumbMarketEvent_Reconnected extends WireBithumbMarketEvent {
+  const WireBithumbMarketEvent_Reconnected(): super._();
+
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireBithumbMarketEvent_Reconnected);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireBithumbMarketEvent.reconnected()';
+}
+
+
+}
+
+
+
 
 /// @nodoc
 mixin _$WireHyperliquidAccountEvent {
@@ -2762,6 +4370,336 @@ as String?,
 }
 
 /// @nodoc
+mixin _$WireUpbitAccountStreamEvent {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitAccountStreamEvent);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireUpbitAccountStreamEvent()';
+}
+
+
+}
+
+/// @nodoc
+class $WireUpbitAccountStreamEventCopyWith<$Res>  {
+$WireUpbitAccountStreamEventCopyWith(WireUpbitAccountStreamEvent _, $Res Function(WireUpbitAccountStreamEvent) __);
+}
+
+
+/// Adds pattern-matching-related methods to [WireUpbitAccountStreamEvent].
+extension WireUpbitAccountStreamEventPatterns on WireUpbitAccountStreamEvent {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( WireUpbitAccountStreamEvent_Asset value)?  asset,TResult Function( WireUpbitAccountStreamEvent_Order value)?  order,TResult Function( WireUpbitAccountStreamEvent_Reconnected value)?  reconnected,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case WireUpbitAccountStreamEvent_Asset() when asset != null:
+return asset(_that);case WireUpbitAccountStreamEvent_Order() when order != null:
+return order(_that);case WireUpbitAccountStreamEvent_Reconnected() when reconnected != null:
+return reconnected(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( WireUpbitAccountStreamEvent_Asset value)  asset,required TResult Function( WireUpbitAccountStreamEvent_Order value)  order,required TResult Function( WireUpbitAccountStreamEvent_Reconnected value)  reconnected,}){
+final _that = this;
+switch (_that) {
+case WireUpbitAccountStreamEvent_Asset():
+return asset(_that);case WireUpbitAccountStreamEvent_Order():
+return order(_that);case WireUpbitAccountStreamEvent_Reconnected():
+return reconnected(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( WireUpbitAccountStreamEvent_Asset value)?  asset,TResult? Function( WireUpbitAccountStreamEvent_Order value)?  order,TResult? Function( WireUpbitAccountStreamEvent_Reconnected value)?  reconnected,}){
+final _that = this;
+switch (_that) {
+case WireUpbitAccountStreamEvent_Asset() when asset != null:
+return asset(_that);case WireUpbitAccountStreamEvent_Order() when order != null:
+return order(_that);case WireUpbitAccountStreamEvent_Reconnected() when reconnected != null:
+return reconnected(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( WireUpbitAssetStreamEvent field0)?  asset,TResult Function( WireUpbitOrderStreamEvent field0)?  order,TResult Function()?  reconnected,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case WireUpbitAccountStreamEvent_Asset() when asset != null:
+return asset(_that.field0);case WireUpbitAccountStreamEvent_Order() when order != null:
+return order(_that.field0);case WireUpbitAccountStreamEvent_Reconnected() when reconnected != null:
+return reconnected();case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( WireUpbitAssetStreamEvent field0)  asset,required TResult Function( WireUpbitOrderStreamEvent field0)  order,required TResult Function()  reconnected,}) {final _that = this;
+switch (_that) {
+case WireUpbitAccountStreamEvent_Asset():
+return asset(_that.field0);case WireUpbitAccountStreamEvent_Order():
+return order(_that.field0);case WireUpbitAccountStreamEvent_Reconnected():
+return reconnected();}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( WireUpbitAssetStreamEvent field0)?  asset,TResult? Function( WireUpbitOrderStreamEvent field0)?  order,TResult? Function()?  reconnected,}) {final _that = this;
+switch (_that) {
+case WireUpbitAccountStreamEvent_Asset() when asset != null:
+return asset(_that.field0);case WireUpbitAccountStreamEvent_Order() when order != null:
+return order(_that.field0);case WireUpbitAccountStreamEvent_Reconnected() when reconnected != null:
+return reconnected();case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class WireUpbitAccountStreamEvent_Asset extends WireUpbitAccountStreamEvent {
+  const WireUpbitAccountStreamEvent_Asset(this.field0): super._();
+
+
+ final  WireUpbitAssetStreamEvent field0;
+
+/// Create a copy of WireUpbitAccountStreamEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireUpbitAccountStreamEvent_AssetCopyWith<WireUpbitAccountStreamEvent_Asset> get copyWith => _$WireUpbitAccountStreamEvent_AssetCopyWithImpl<WireUpbitAccountStreamEvent_Asset>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitAccountStreamEvent_Asset&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireUpbitAccountStreamEvent.asset(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireUpbitAccountStreamEvent_AssetCopyWith<$Res> implements $WireUpbitAccountStreamEventCopyWith<$Res> {
+  factory $WireUpbitAccountStreamEvent_AssetCopyWith(WireUpbitAccountStreamEvent_Asset value, $Res Function(WireUpbitAccountStreamEvent_Asset) _then) = _$WireUpbitAccountStreamEvent_AssetCopyWithImpl;
+@useResult
+$Res call({
+ WireUpbitAssetStreamEvent field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireUpbitAccountStreamEvent_AssetCopyWithImpl<$Res>
+    implements $WireUpbitAccountStreamEvent_AssetCopyWith<$Res> {
+  _$WireUpbitAccountStreamEvent_AssetCopyWithImpl(this._self, this._then);
+
+  final WireUpbitAccountStreamEvent_Asset _self;
+  final $Res Function(WireUpbitAccountStreamEvent_Asset) _then;
+
+/// Create a copy of WireUpbitAccountStreamEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireUpbitAccountStreamEvent_Asset(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireUpbitAssetStreamEvent,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireUpbitAccountStreamEvent_Order extends WireUpbitAccountStreamEvent {
+  const WireUpbitAccountStreamEvent_Order(this.field0): super._();
+
+
+ final  WireUpbitOrderStreamEvent field0;
+
+/// Create a copy of WireUpbitAccountStreamEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireUpbitAccountStreamEvent_OrderCopyWith<WireUpbitAccountStreamEvent_Order> get copyWith => _$WireUpbitAccountStreamEvent_OrderCopyWithImpl<WireUpbitAccountStreamEvent_Order>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitAccountStreamEvent_Order&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireUpbitAccountStreamEvent.order(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireUpbitAccountStreamEvent_OrderCopyWith<$Res> implements $WireUpbitAccountStreamEventCopyWith<$Res> {
+  factory $WireUpbitAccountStreamEvent_OrderCopyWith(WireUpbitAccountStreamEvent_Order value, $Res Function(WireUpbitAccountStreamEvent_Order) _then) = _$WireUpbitAccountStreamEvent_OrderCopyWithImpl;
+@useResult
+$Res call({
+ WireUpbitOrderStreamEvent field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireUpbitAccountStreamEvent_OrderCopyWithImpl<$Res>
+    implements $WireUpbitAccountStreamEvent_OrderCopyWith<$Res> {
+  _$WireUpbitAccountStreamEvent_OrderCopyWithImpl(this._self, this._then);
+
+  final WireUpbitAccountStreamEvent_Order _self;
+  final $Res Function(WireUpbitAccountStreamEvent_Order) _then;
+
+/// Create a copy of WireUpbitAccountStreamEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireUpbitAccountStreamEvent_Order(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireUpbitOrderStreamEvent,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireUpbitAccountStreamEvent_Reconnected extends WireUpbitAccountStreamEvent {
+  const WireUpbitAccountStreamEvent_Reconnected(): super._();
+
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitAccountStreamEvent_Reconnected);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireUpbitAccountStreamEvent.reconnected()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
 mixin _$WireUpbitBatchCancelScope {
 
 
@@ -3645,6 +5583,480 @@ $WireUpbitOrderVolumeCopyWith<$Res> get volume {
   });
 }
 }
+
+/// @nodoc
+mixin _$WireUpbitMarketStreamEvent {
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitMarketStreamEvent);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireUpbitMarketStreamEvent()';
+}
+
+
+}
+
+/// @nodoc
+class $WireUpbitMarketStreamEventCopyWith<$Res>  {
+$WireUpbitMarketStreamEventCopyWith(WireUpbitMarketStreamEvent _, $Res Function(WireUpbitMarketStreamEvent) __);
+}
+
+
+/// Adds pattern-matching-related methods to [WireUpbitMarketStreamEvent].
+extension WireUpbitMarketStreamEventPatterns on WireUpbitMarketStreamEvent {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( WireUpbitMarketStreamEvent_Trade value)?  trade,TResult Function( WireUpbitMarketStreamEvent_OrderBook value)?  orderBook,TResult Function( WireUpbitMarketStreamEvent_Ticker value)?  ticker,TResult Function( WireUpbitMarketStreamEvent_Candle value)?  candle,TResult Function( WireUpbitMarketStreamEvent_Reconnected value)?  reconnected,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case WireUpbitMarketStreamEvent_Trade() when trade != null:
+return trade(_that);case WireUpbitMarketStreamEvent_OrderBook() when orderBook != null:
+return orderBook(_that);case WireUpbitMarketStreamEvent_Ticker() when ticker != null:
+return ticker(_that);case WireUpbitMarketStreamEvent_Candle() when candle != null:
+return candle(_that);case WireUpbitMarketStreamEvent_Reconnected() when reconnected != null:
+return reconnected(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( WireUpbitMarketStreamEvent_Trade value)  trade,required TResult Function( WireUpbitMarketStreamEvent_OrderBook value)  orderBook,required TResult Function( WireUpbitMarketStreamEvent_Ticker value)  ticker,required TResult Function( WireUpbitMarketStreamEvent_Candle value)  candle,required TResult Function( WireUpbitMarketStreamEvent_Reconnected value)  reconnected,}){
+final _that = this;
+switch (_that) {
+case WireUpbitMarketStreamEvent_Trade():
+return trade(_that);case WireUpbitMarketStreamEvent_OrderBook():
+return orderBook(_that);case WireUpbitMarketStreamEvent_Ticker():
+return ticker(_that);case WireUpbitMarketStreamEvent_Candle():
+return candle(_that);case WireUpbitMarketStreamEvent_Reconnected():
+return reconnected(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( WireUpbitMarketStreamEvent_Trade value)?  trade,TResult? Function( WireUpbitMarketStreamEvent_OrderBook value)?  orderBook,TResult? Function( WireUpbitMarketStreamEvent_Ticker value)?  ticker,TResult? Function( WireUpbitMarketStreamEvent_Candle value)?  candle,TResult? Function( WireUpbitMarketStreamEvent_Reconnected value)?  reconnected,}){
+final _that = this;
+switch (_that) {
+case WireUpbitMarketStreamEvent_Trade() when trade != null:
+return trade(_that);case WireUpbitMarketStreamEvent_OrderBook() when orderBook != null:
+return orderBook(_that);case WireUpbitMarketStreamEvent_Ticker() when ticker != null:
+return ticker(_that);case WireUpbitMarketStreamEvent_Candle() when candle != null:
+return candle(_that);case WireUpbitMarketStreamEvent_Reconnected() when reconnected != null:
+return reconnected(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( WireUpbitTradeStreamEvent field0)?  trade,TResult Function( WireUpbitOrderBookStreamEvent field0)?  orderBook,TResult Function( WireUpbitTickerStreamEvent field0)?  ticker,TResult Function( WireUpbitCandleStreamEvent field0)?  candle,TResult Function()?  reconnected,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case WireUpbitMarketStreamEvent_Trade() when trade != null:
+return trade(_that.field0);case WireUpbitMarketStreamEvent_OrderBook() when orderBook != null:
+return orderBook(_that.field0);case WireUpbitMarketStreamEvent_Ticker() when ticker != null:
+return ticker(_that.field0);case WireUpbitMarketStreamEvent_Candle() when candle != null:
+return candle(_that.field0);case WireUpbitMarketStreamEvent_Reconnected() when reconnected != null:
+return reconnected();case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( WireUpbitTradeStreamEvent field0)  trade,required TResult Function( WireUpbitOrderBookStreamEvent field0)  orderBook,required TResult Function( WireUpbitTickerStreamEvent field0)  ticker,required TResult Function( WireUpbitCandleStreamEvent field0)  candle,required TResult Function()  reconnected,}) {final _that = this;
+switch (_that) {
+case WireUpbitMarketStreamEvent_Trade():
+return trade(_that.field0);case WireUpbitMarketStreamEvent_OrderBook():
+return orderBook(_that.field0);case WireUpbitMarketStreamEvent_Ticker():
+return ticker(_that.field0);case WireUpbitMarketStreamEvent_Candle():
+return candle(_that.field0);case WireUpbitMarketStreamEvent_Reconnected():
+return reconnected();}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( WireUpbitTradeStreamEvent field0)?  trade,TResult? Function( WireUpbitOrderBookStreamEvent field0)?  orderBook,TResult? Function( WireUpbitTickerStreamEvent field0)?  ticker,TResult? Function( WireUpbitCandleStreamEvent field0)?  candle,TResult? Function()?  reconnected,}) {final _that = this;
+switch (_that) {
+case WireUpbitMarketStreamEvent_Trade() when trade != null:
+return trade(_that.field0);case WireUpbitMarketStreamEvent_OrderBook() when orderBook != null:
+return orderBook(_that.field0);case WireUpbitMarketStreamEvent_Ticker() when ticker != null:
+return ticker(_that.field0);case WireUpbitMarketStreamEvent_Candle() when candle != null:
+return candle(_that.field0);case WireUpbitMarketStreamEvent_Reconnected() when reconnected != null:
+return reconnected();case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class WireUpbitMarketStreamEvent_Trade extends WireUpbitMarketStreamEvent {
+  const WireUpbitMarketStreamEvent_Trade(this.field0): super._();
+
+
+ final  WireUpbitTradeStreamEvent field0;
+
+/// Create a copy of WireUpbitMarketStreamEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireUpbitMarketStreamEvent_TradeCopyWith<WireUpbitMarketStreamEvent_Trade> get copyWith => _$WireUpbitMarketStreamEvent_TradeCopyWithImpl<WireUpbitMarketStreamEvent_Trade>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitMarketStreamEvent_Trade&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireUpbitMarketStreamEvent.trade(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireUpbitMarketStreamEvent_TradeCopyWith<$Res> implements $WireUpbitMarketStreamEventCopyWith<$Res> {
+  factory $WireUpbitMarketStreamEvent_TradeCopyWith(WireUpbitMarketStreamEvent_Trade value, $Res Function(WireUpbitMarketStreamEvent_Trade) _then) = _$WireUpbitMarketStreamEvent_TradeCopyWithImpl;
+@useResult
+$Res call({
+ WireUpbitTradeStreamEvent field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireUpbitMarketStreamEvent_TradeCopyWithImpl<$Res>
+    implements $WireUpbitMarketStreamEvent_TradeCopyWith<$Res> {
+  _$WireUpbitMarketStreamEvent_TradeCopyWithImpl(this._self, this._then);
+
+  final WireUpbitMarketStreamEvent_Trade _self;
+  final $Res Function(WireUpbitMarketStreamEvent_Trade) _then;
+
+/// Create a copy of WireUpbitMarketStreamEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireUpbitMarketStreamEvent_Trade(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireUpbitTradeStreamEvent,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireUpbitMarketStreamEvent_OrderBook extends WireUpbitMarketStreamEvent {
+  const WireUpbitMarketStreamEvent_OrderBook(this.field0): super._();
+
+
+ final  WireUpbitOrderBookStreamEvent field0;
+
+/// Create a copy of WireUpbitMarketStreamEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireUpbitMarketStreamEvent_OrderBookCopyWith<WireUpbitMarketStreamEvent_OrderBook> get copyWith => _$WireUpbitMarketStreamEvent_OrderBookCopyWithImpl<WireUpbitMarketStreamEvent_OrderBook>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitMarketStreamEvent_OrderBook&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireUpbitMarketStreamEvent.orderBook(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireUpbitMarketStreamEvent_OrderBookCopyWith<$Res> implements $WireUpbitMarketStreamEventCopyWith<$Res> {
+  factory $WireUpbitMarketStreamEvent_OrderBookCopyWith(WireUpbitMarketStreamEvent_OrderBook value, $Res Function(WireUpbitMarketStreamEvent_OrderBook) _then) = _$WireUpbitMarketStreamEvent_OrderBookCopyWithImpl;
+@useResult
+$Res call({
+ WireUpbitOrderBookStreamEvent field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireUpbitMarketStreamEvent_OrderBookCopyWithImpl<$Res>
+    implements $WireUpbitMarketStreamEvent_OrderBookCopyWith<$Res> {
+  _$WireUpbitMarketStreamEvent_OrderBookCopyWithImpl(this._self, this._then);
+
+  final WireUpbitMarketStreamEvent_OrderBook _self;
+  final $Res Function(WireUpbitMarketStreamEvent_OrderBook) _then;
+
+/// Create a copy of WireUpbitMarketStreamEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireUpbitMarketStreamEvent_OrderBook(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireUpbitOrderBookStreamEvent,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireUpbitMarketStreamEvent_Ticker extends WireUpbitMarketStreamEvent {
+  const WireUpbitMarketStreamEvent_Ticker(this.field0): super._();
+
+
+ final  WireUpbitTickerStreamEvent field0;
+
+/// Create a copy of WireUpbitMarketStreamEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireUpbitMarketStreamEvent_TickerCopyWith<WireUpbitMarketStreamEvent_Ticker> get copyWith => _$WireUpbitMarketStreamEvent_TickerCopyWithImpl<WireUpbitMarketStreamEvent_Ticker>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitMarketStreamEvent_Ticker&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireUpbitMarketStreamEvent.ticker(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireUpbitMarketStreamEvent_TickerCopyWith<$Res> implements $WireUpbitMarketStreamEventCopyWith<$Res> {
+  factory $WireUpbitMarketStreamEvent_TickerCopyWith(WireUpbitMarketStreamEvent_Ticker value, $Res Function(WireUpbitMarketStreamEvent_Ticker) _then) = _$WireUpbitMarketStreamEvent_TickerCopyWithImpl;
+@useResult
+$Res call({
+ WireUpbitTickerStreamEvent field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireUpbitMarketStreamEvent_TickerCopyWithImpl<$Res>
+    implements $WireUpbitMarketStreamEvent_TickerCopyWith<$Res> {
+  _$WireUpbitMarketStreamEvent_TickerCopyWithImpl(this._self, this._then);
+
+  final WireUpbitMarketStreamEvent_Ticker _self;
+  final $Res Function(WireUpbitMarketStreamEvent_Ticker) _then;
+
+/// Create a copy of WireUpbitMarketStreamEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireUpbitMarketStreamEvent_Ticker(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireUpbitTickerStreamEvent,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireUpbitMarketStreamEvent_Candle extends WireUpbitMarketStreamEvent {
+  const WireUpbitMarketStreamEvent_Candle(this.field0): super._();
+
+
+ final  WireUpbitCandleStreamEvent field0;
+
+/// Create a copy of WireUpbitMarketStreamEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WireUpbitMarketStreamEvent_CandleCopyWith<WireUpbitMarketStreamEvent_Candle> get copyWith => _$WireUpbitMarketStreamEvent_CandleCopyWithImpl<WireUpbitMarketStreamEvent_Candle>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitMarketStreamEvent_Candle&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'WireUpbitMarketStreamEvent.candle(field0: $field0)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WireUpbitMarketStreamEvent_CandleCopyWith<$Res> implements $WireUpbitMarketStreamEventCopyWith<$Res> {
+  factory $WireUpbitMarketStreamEvent_CandleCopyWith(WireUpbitMarketStreamEvent_Candle value, $Res Function(WireUpbitMarketStreamEvent_Candle) _then) = _$WireUpbitMarketStreamEvent_CandleCopyWithImpl;
+@useResult
+$Res call({
+ WireUpbitCandleStreamEvent field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$WireUpbitMarketStreamEvent_CandleCopyWithImpl<$Res>
+    implements $WireUpbitMarketStreamEvent_CandleCopyWith<$Res> {
+  _$WireUpbitMarketStreamEvent_CandleCopyWithImpl(this._self, this._then);
+
+  final WireUpbitMarketStreamEvent_Candle _self;
+  final $Res Function(WireUpbitMarketStreamEvent_Candle) _then;
+
+/// Create a copy of WireUpbitMarketStreamEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(WireUpbitMarketStreamEvent_Candle(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as WireUpbitCandleStreamEvent,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class WireUpbitMarketStreamEvent_Reconnected extends WireUpbitMarketStreamEvent {
+  const WireUpbitMarketStreamEvent_Reconnected(): super._();
+
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WireUpbitMarketStreamEvent_Reconnected);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WireUpbitMarketStreamEvent.reconnected()';
+}
+
+
+}
+
+
+
 
 /// @nodoc
 mixin _$WireUpbitOrderReference {

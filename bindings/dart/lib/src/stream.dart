@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'models.dart';
 
+part 'generated_provider_streams.dart';
+
 /// 스트림에서 전달되는 이벤트 또는 스트림을 종료하지 않는 오류입니다.
 sealed class StreamItem<T> {
   const StreamItem();

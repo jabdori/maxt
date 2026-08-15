@@ -76,10 +76,18 @@ def test_generated_api_inventories_match_public_classes() -> None:
         "hyperliquid": (HyperliquidAdapter, {"testnet"}),
     }
     for exchange, (adapter, factories) in providers.items():
+        provider_layers = (
+            layer
+            for layer in adapter.__mro__
+            if layer is adapter or layer.__name__.endswith("ProviderMethods")
+        )
         members = {
             name
-            for name in adapter.__dict__
-            if not name.startswith("_") and name not in factories
+            for layer in provider_layers
+            for name, value in layer.__dict__.items()
+            if not name.startswith("_")
+            and name not in factories
+            and (iscoroutinefunction(value) or isinstance(value, property))
         }
         assert set(PROVIDER_METHODS[exchange]) == members
 

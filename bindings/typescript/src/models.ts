@@ -72,6 +72,8 @@ export {
   WithdrawalStatus,
 } from "./generated/identifiers.js";
 
+export * from "./generated/provider_models.js";
+
 const MAX_DECIMAL_COEFFICIENT = 79228162514264337593543950335n;
 const MAX_DECIMAL_SCALE = 28;
 const MAX_DECIMAL_POINT_SHIFT = 64;
@@ -1543,7 +1545,10 @@ export const BithumbBatchOrderOutcome = Object.freeze({
 
 export class BithumbBatchOrdersResult {
   readonly outcomes: readonly BithumbBatchOrderOutcome[];
-  constructor(outcomes: readonly BithumbBatchOrderOutcome[]) {
+  constructor(
+    outcomes: readonly BithumbBatchOrderOutcome[],
+    readonly rawJson: string,
+  ) {
     this.outcomes = Object.freeze([...outcomes]);
     freezeRecord(this);
   }
@@ -1752,6 +1757,7 @@ export class BithumbOrderListItem {
     tradesCount: number,
     readonly stpType: string | null,
     readonly timeInForce: string | null,
+    readonly rawJson: string,
   ) {
     this.tradesCount = checkedUnsigned(tradesCount, U32_MAX, "tradesCount");
     freezeRecord(this);
@@ -2220,7 +2226,9 @@ export class BinanceAggregateTrade {
     readonly price: Decimal,
     readonly quantity: Decimal,
     readonly normalQuantity: Decimal | null,
+    readonly bestPriceMatch: boolean | null,
     readonly takerSide: Side,
+    readonly rawJson: string,
   ) {
     this.aggregateId = checkedU64(aggregateId, "aggregateId");
     this.firstTradeId = checkedU64(firstTradeId, "firstTradeId");

@@ -16,6 +16,10 @@ use crate::transport::{Heartbeat, HeartbeatFrame, WsSendHandle};
 use crate::types::{Candle, Feed, Interval, Market, MarketEvent, Subscription, Timestamp};
 
 use super::parse::{self, EXCHANGE, RawStreamCandle};
+use super::{
+    UpbitCandleStreamEvent, UpbitMarketStreamEvent, UpbitOrderBookStreamEvent,
+    UpbitTickerStreamEvent, UpbitTradeStreamEvent,
+};
 
 /// Full-name JSON frame format.
 const FRAME_FORMAT: &str = "DEFAULT";
@@ -498,6 +502,196 @@ impl Decoder {
             .into_iter()
             .chain([MarketEvent::Candle(forming)])
             .collect())
+    }
+}
+
+/// Decodes one public connection while retaining Upbit-specific fields.
+///
+/// Candle completion state mirrors [`Decoder`] so a settled candle keeps the
+/// provider frame that originally described that candle.
+#[derive(Debug, Default)]
+pub(crate) struct DetailedDecoder {
+    latest: HashMap<(Market, Interval), UpbitCandleStreamEvent>,
+    settled: HashMap<(Market, Interval), Timestamp>,
+}
+
+impl DetailedDecoder {
+    pub(crate) fn decode(&mut self, frame: &str) -> Result<Vec<UpbitMarketStreamEvent>> {
+        self.decode_at(frame, Timestamp::now())
+    }
+
+    fn decode_at(&mut self, frame: &str, now: Timestamp) -> Result<Vec<UpbitMarketStreamEvent>> {
+        let object = frame_object(frame)?;
+        if let Some(error) = object.get("error") {
+            return Err(frame_error(error));
+        }
+        if object.get("status").and_then(Value::as_str) == Some("UP") {
+            return Ok(Vec::new());
+        }
+        let Some(frame_type) = object.get("type").and_then(Value::as_str) else {
+            return Err(Error::decode("Upbit frame carries no `type`"));
+        };
+        let frame_type = frame_type.to_owned();
+        let raw_json = reserialize(&object)?;
+        let value = Value::Object(object);
+
+        let event = match frame_type.as_str() {
+            "trade" => {
+                let common = parse::stream_trade(&parse::json(&raw_json)?)?;
+                UpbitMarketStreamEvent::Trade(UpbitTradeStreamEvent {
+                    previous_closing_price: optional_decimal(&value, "prev_closing_price")?,
+                    change: optional_text(&value, "change")?,
+                    change_price: optional_decimal(&value, "change_price")?,
+                    best_ask_price: optional_decimal(&value, "best_ask_price")?,
+                    best_ask_size: optional_decimal(&value, "best_ask_size")?,
+                    best_bid_price: optional_decimal(&value, "best_bid_price")?,
+                    best_bid_size: optional_decimal(&value, "best_bid_size")?,
+                    common,
+                    raw_json,
+                })
+            }
+            "orderbook" => {
+                let common = parse::stream_order_book(&parse::json(&raw_json)?)?;
+                UpbitMarketStreamEvent::OrderBook(UpbitOrderBookStreamEvent {
+                    total_ask_size: optional_decimal(&value, "total_ask_size")?,
+                    total_bid_size: optional_decimal(&value, "total_bid_size")?,
+                    level: optional_decimal(&value, "level")?,
+                    stream_type: optional_text(&value, "stream_type")?,
+                    common,
+                    raw_json,
+                })
+            }
+            "ticker" => {
+                let common = parse::stream_ticker(&parse::json(&raw_json)?)?;
+                UpbitMarketStreamEvent::Ticker(UpbitTickerStreamEvent {
+                    change_direction: optional_text(&value, "change")?,
+                    market_state: optional_text(&value, "market_state")?,
+                    trading_suspended: optional_bool(&value, "is_trading_suspended")?,
+                    delisting_date: optional_text(&value, "delisting_date")?,
+                    market_warning: optional_text(&value, "market_warning")?,
+                    common,
+                    raw_json,
+                })
+            }
+            candle if candle.starts_with("candle.") => {
+                let interval = candle_interval(candle).ok_or_else(|| {
+                    Error::decode(format!("upbit sent an unmapped candle feed `{candle}`"))
+                })?;
+                let raw: RawStreamCandle = parse::json(&raw_json)?;
+                let forming = UpbitCandleStreamEvent {
+                    common: parse::stream_candle(&raw, interval)?,
+                    stream_type: raw.stream_type,
+                    published_at: optional_millis(&value, "timestamp")?,
+                    raw_json,
+                };
+                return self.candle(forming, now);
+            }
+            other => {
+                return Err(Error::decode(format!(
+                    "unexpected Upbit frame type `{other}`"
+                )));
+            }
+        };
+
+        Ok(vec![event])
+    }
+
+    fn candle(
+        &mut self,
+        forming: UpbitCandleStreamEvent,
+        now: Timestamp,
+    ) -> Result<Vec<UpbitMarketStreamEvent>> {
+        let snapshot = forming.stream_type.as_deref() == Some(SNAPSHOT);
+        let key = (forming.common.market.clone(), forming.common.interval);
+
+        if self
+            .settled
+            .get(&key)
+            .is_some_and(|settled| forming.common.open_time <= *settled)
+        {
+            return Ok(Vec::new());
+        }
+        if self
+            .latest
+            .get(&key)
+            .is_some_and(|held| forming.common.open_time < held.common.open_time)
+        {
+            return Ok(Vec::new());
+        }
+
+        if snapshot && parse::has_ended(forming.common.open_time, forming.common.interval, now) {
+            self.latest.remove(&key);
+            self.settled.insert(key, forming.common.open_time);
+            return Ok(vec![UpbitMarketStreamEvent::Candle(
+                UpbitCandleStreamEvent {
+                    common: Candle {
+                        closed: true,
+                        ..forming.common
+                    },
+                    ..forming
+                },
+            )]);
+        }
+
+        let settled = self
+            .latest
+            .insert(key.clone(), forming.clone())
+            .filter(|_| !snapshot)
+            .filter(|held| held.common.open_time < forming.common.open_time)
+            .map(|held| {
+                self.settled.insert(key, held.common.open_time);
+                UpbitMarketStreamEvent::Candle(UpbitCandleStreamEvent {
+                    common: Candle {
+                        closed: true,
+                        ..held.common
+                    },
+                    ..held
+                })
+            });
+
+        Ok(settled
+            .into_iter()
+            .chain([UpbitMarketStreamEvent::Candle(forming)])
+            .collect())
+    }
+}
+
+fn optional_decimal(value: &Value, name: &'static str) -> Result<Option<Decimal>> {
+    match value.get(name) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::Number(number)) => parse::decimal(number, name).map(Some),
+        Some(Value::String(text)) => parse::decimal_text(text, name).map(Some),
+        Some(_) => Err(Error::decode(format!("`{name}` is not a number"))),
+    }
+}
+
+fn optional_millis(value: &Value, name: &'static str) -> Result<Option<Timestamp>> {
+    match value.get(name) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::Number(number)) => number
+            .as_i64()
+            .ok_or_else(|| Error::decode(format!("`{name}` is not an i64 millisecond timestamp")))
+            .and_then(|millis| parse::millis(millis, name))
+            .map(Some),
+        Some(_) => Err(Error::decode(format!(
+            "`{name}` is not a millisecond timestamp"
+        ))),
+    }
+}
+
+fn optional_text(value: &Value, name: &'static str) -> Result<Option<String>> {
+    match value.get(name) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(text)) => Ok(Some(text.clone())),
+        Some(_) => Err(Error::decode(format!("`{name}` is not a string"))),
+    }
+}
+
+fn optional_bool(value: &Value, name: &'static str) -> Result<Option<bool>> {
+    match value.get(name) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::Bool(value)) => Ok(Some(*value)),
+        Some(_) => Err(Error::decode(format!("`{name}` is not a boolean"))),
     }
 }
 
@@ -1289,6 +1483,60 @@ mod tests {
         let wrapped = format!("[{TRADE}]");
 
         assert!(matches!(one(&wrapped), MarketEvent::Trade(_)));
+    }
+
+    #[test]
+    fn detailed_events_keep_native_fields_and_each_candle_owning_frame() {
+        let mut decoder = DetailedDecoder::default();
+
+        let trades = decoder.decode(TRADE).expect("a detailed trade frame");
+        let [UpbitMarketStreamEvent::Trade(trade)] = trades.as_slice() else {
+            panic!("expected one detailed trade");
+        };
+        assert_eq!(trade.change.as_deref(), Some("RISE"));
+        assert_eq!(
+            trade.best_ask_price.expect("best ask").to_string(),
+            "32293000"
+        );
+        assert!(trade.raw_json.contains("best_bid_size"));
+
+        let books = decoder.decode(ORDER_BOOK).expect("a detailed order book");
+        let [UpbitMarketStreamEvent::OrderBook(book)] = books.as_slice() else {
+            panic!("expected one detailed order book");
+        };
+        assert_eq!(
+            book.total_ask_size.expect("ask total").to_string(),
+            "0.68780013"
+        );
+
+        let tickers = decoder.decode(TICKER).expect("a detailed ticker");
+        let [UpbitMarketStreamEvent::Ticker(ticker)] = tickers.as_slice() else {
+            panic!("expected one detailed ticker");
+        };
+        assert_eq!(ticker.market_state.as_deref(), Some("ACTIVE"));
+        assert_eq!(ticker.trading_suspended, Some(false));
+        assert!(ticker.raw_json.contains("highest_52_week_price"));
+
+        let _ = decoder
+            .decode_at(
+                CANDLE_LAST_OF_ITS_MINUTE,
+                Timestamp::from_secs(MINUTE_0746 + 30),
+            )
+            .expect("a first candle");
+        let candles = decoder
+            .decode_at(CANDLE_NEXT_MINUTE, Timestamp::from_secs(MINUTE_0747 + 30))
+            .expect("a later candle");
+        let [
+            UpbitMarketStreamEvent::Candle(settled),
+            UpbitMarketStreamEvent::Candle(forming),
+        ] = candles.as_slice()
+        else {
+            panic!("expected a settled and a forming candle: {candles:?}");
+        };
+        assert!(settled.common.closed);
+        assert!(settled.raw_json.contains("07:46:00"));
+        assert!(!forming.common.closed);
+        assert!(forming.raw_json.contains("07:47:00"));
     }
 
     #[test]

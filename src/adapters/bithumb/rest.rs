@@ -11,7 +11,10 @@ use crate::types::{
     Candle, Interval, Market, MarketInfo, MarketKind, OrderBook, Ticker, Timestamp, Trade,
 };
 
-use super::parse::{self, EXCHANGE};
+use super::{
+    BithumbOrderBookSnapshot,
+    parse::{self, EXCHANGE},
+};
 
 /// Maximum recent trades in one Bithumb response.
 const MAX_TRADE_COUNT: u32 = 500;
@@ -248,11 +251,46 @@ pub(crate) async fn order_book(
     market: &Market,
     depth: Option<u32>,
 ) -> Result<OrderBook> {
+    order_book_snapshot(http, market, depth)
+        .await
+        .map(|snapshot| snapshot.common)
+}
+
+/// Reads one order-book snapshot with Bithumb's provider aggregate fields.
+pub(crate) async fn order_book_snapshot(
+    http: &HttpTransport,
+    market: &Market,
+    depth: Option<u32>,
+) -> Result<BithumbOrderBookSnapshot> {
     let body = send(http, &order_book_request(market, depth)?).await?;
     let entry = only(&body, market)?;
-    let timestamp = parse::millis(entry, "timestamp")?;
+    order_book_snapshot_from_entry(entry, market.clone(), depth)
+}
 
-    parse::order_book(entry, market.clone(), timestamp, depth)
+pub(crate) fn order_book_snapshot_from_entry(
+    entry: &Value,
+    market: Market,
+    depth: Option<u32>,
+) -> Result<BithumbOrderBookSnapshot> {
+    let timestamp = parse::millis(entry, "timestamp")?;
+    let common = parse::order_book(entry, market, timestamp, depth)?;
+    Ok(BithumbOrderBookSnapshot {
+        total_ask_size: optional_decimal(entry, "total_ask_size")?,
+        total_bid_size: optional_decimal(entry, "total_bid_size")?,
+        level: optional_decimal(entry, "level")?,
+        raw_json: serde_json::to_string(entry).map_err(|error| {
+            Error::decode(format!("could not preserve Bithumb order book: {error}"))
+        })?,
+        common,
+    })
+}
+
+fn optional_decimal(entry: &Value, field: &'static str) -> Result<Option<rust_decimal::Decimal>> {
+    entry
+        .get(field)
+        .filter(|value| !value.is_null())
+        .map(|_| parse::dec(entry, field))
+        .transpose()
 }
 
 pub(crate) async fn ticker(http: &HttpTransport, market: &Market) -> Result<Ticker> {
@@ -351,6 +389,35 @@ mod tests {
             ticker_request(&btc_krw()).expect("a market").target(),
             "/v1/ticker?markets=KRW-BTC"
         );
+    }
+
+    #[test]
+    fn order_book_snapshot_keeps_bithumb_aggregate_fields() {
+        let entry = serde_json::json!({
+            "market": "KRW-BTC",
+            "timestamp": 1_785_397_720_965_i64,
+            "total_ask_size": "3.4",
+            "total_bid_size": "5.6",
+            "level": "0",
+            "orderbook_units": [
+                {"ask_price":"101","ask_size":"2","bid_price":"99","bid_size":"3"}
+            ],
+            "futureField": "kept"
+        });
+        let snapshot = order_book_snapshot_from_entry(&entry, btc_krw(), None)
+            .expect("a provider order-book snapshot");
+
+        assert_eq!(
+            snapshot.total_ask_size.expect("ask total").to_string(),
+            "3.4"
+        );
+        assert_eq!(
+            snapshot.total_bid_size.expect("bid total").to_string(),
+            "5.6"
+        );
+        assert_eq!(snapshot.level.expect("level").to_string(), "0");
+        assert_eq!(snapshot.common.bids.len(), 1);
+        assert!(snapshot.raw_json.contains("\"futureField\":\"kept\""));
     }
 
     #[test]

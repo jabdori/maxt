@@ -7562,6 +7562,8 @@ pub(crate) fn timestamp_from_wire(value: &str, field: &str) -> maxt::Result<Time
         })
 }
 
+include!("generated_provider_convert.rs");
+
 #[cfg(test)]
 mod tests {
     use std::fmt::Debug;

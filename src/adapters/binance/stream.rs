@@ -21,7 +21,10 @@ use crate::types::{
 };
 
 use super::{
-    BinanceAdapter, BinanceMarket, EXCHANGE, SPOT_WEBSOCKET_API_URL, SPOT_WEBSOCKET_URL,
+    BinanceAccountStream, BinanceAccountStreamEvent, BinanceAdapter, BinanceBalanceStreamEvent,
+    BinanceCandleEvent, BinanceMarket, BinanceMarketEvent, BinanceMarketStream,
+    BinanceOrderBookEvent, BinanceOrderStreamEvent, BinanceRawAccountEvent, BinanceTickerEvent,
+    BinanceTradeEvent, EXCHANGE, SPOT_WEBSOCKET_API_URL, SPOT_WEBSOCKET_URL,
     USD_M_MARKET_WEBSOCKET_URL, USD_M_PUBLIC_WEBSOCKET_URL, parse, private,
 };
 use crate::transport::{Heartbeat, HeartbeatFrame, WsCommand, WsConnect, connect};
@@ -267,6 +270,133 @@ pub(super) fn decode(
     }))
 }
 
+/// Reads one public frame and preserves the native fields that the common
+/// [`MarketEvent`] projection intentionally does not expose.
+pub(super) fn decode_detailed(
+    markets: &HashMap<String, Market>,
+    frame: &str,
+) -> Result<Option<BinanceMarketEvent>> {
+    let value: Value = serde_json::from_str(frame)
+        .map_err(|err| Error::decode(format!("unreadable binance frame: {err}")))?;
+    let Some(common) = decode(markets, frame)? else {
+        return Ok(None);
+    };
+    let data = value
+        .get("data")
+        .ok_or_else(|| Error::decode("binance frame carries no `data`"))?;
+    let raw_json = serde_json::to_string(data)
+        .map_err(|err| Error::decode(format!("could not preserve binance frame: {err}")))?;
+
+    Ok(Some(match common {
+        MarketEvent::Trade(common) => BinanceMarketEvent::Trade(BinanceTradeEvent {
+            event_time: value_timestamp(data, "E")?,
+            trade_time: value_timestamp(data, "T")?,
+            buyer_is_maker: value_bool(data, "m")?,
+            best_price_match: value_bool(data, "M")?,
+            common,
+            raw_json,
+        }),
+        MarketEvent::OrderBook(common) => BinanceMarketEvent::OrderBook(BinanceOrderBookEvent {
+            event_time: value_timestamp(data, "E")?,
+            transaction_time: value_timestamp(data, "T")?,
+            first_update_id: value_u64(data, "U")?,
+            final_update_id: value_u64(data, "u")?,
+            previous_final_update_id: value_u64(data, "pu")?,
+            last_update_id: value_u64(data, "lastUpdateId")?,
+            common,
+            raw_json,
+        }),
+        MarketEvent::Ticker(common) => BinanceMarketEvent::Ticker(BinanceTickerEvent {
+            event_time: value_timestamp(data, "E")?,
+            close_time: value_timestamp(data, "C")?,
+            first_trade_id: value_u64(data, "F")?,
+            last_trade_id: value_u64(data, "L")?,
+            trade_count: value_u64(data, "n")?,
+            common,
+            raw_json,
+        }),
+        MarketEvent::Candle(common) => {
+            let candle = data
+                .get("k")
+                .ok_or_else(|| Error::decode("binance kline frame carries no `k`"))?;
+            BinanceMarketEvent::Candle(BinanceCandleEvent {
+                close_time: value_timestamp(candle, "T")?,
+                first_trade_id: value_u64(candle, "f")?,
+                last_trade_id: value_u64(candle, "L")?,
+                trade_count: value_u64(candle, "n")?,
+                taker_buy_base_volume: value_decimal(candle, "V")?,
+                taker_buy_quote_volume: value_decimal(candle, "Q")?,
+                common,
+                raw_json,
+            })
+        }
+        MarketEvent::Reconnected => {
+            return Err(Error::decode(
+                "binance text frame cannot decode to a reconnect event",
+            ));
+        }
+    }))
+}
+
+fn value_u64(value: &Value, field: &str) -> Result<Option<u64>> {
+    let Some(value) = value.get(field) else {
+        return Ok(None);
+    };
+    value
+        .as_u64()
+        .or_else(|| value.as_str().and_then(|value| value.parse().ok()))
+        .ok_or_else(|| {
+            Error::decode(format!(
+                "binance field `{field}` is not an unsigned integer"
+            ))
+        })
+        .map(Some)
+}
+
+fn value_timestamp(value: &Value, field: &str) -> Result<Option<Timestamp>> {
+    let Some(value) = value.get(field) else {
+        return Ok(None);
+    };
+    value
+        .as_i64()
+        .or_else(|| value.as_str().and_then(|value| value.parse().ok()))
+        .map(Timestamp::from_millis)
+        .ok_or_else(|| {
+            Error::decode(format!(
+                "binance field `{field}` is not a millisecond timestamp"
+            ))
+        })
+        .map(Some)
+}
+
+fn value_bool(value: &Value, field: &str) -> Result<Option<bool>> {
+    let Some(value) = value.get(field) else {
+        return Ok(None);
+    };
+    value
+        .as_bool()
+        .ok_or_else(|| Error::decode(format!("binance field `{field}` is not a boolean")))
+        .map(Some)
+}
+
+fn value_decimal(value: &Value, field: &str) -> Result<Option<rust_decimal::Decimal>> {
+    let Some(value) = value.get(field) else {
+        return Ok(None);
+    };
+    let text = value
+        .as_str()
+        .map(str::to_owned)
+        .or_else(|| value.as_number().map(ToString::to_string))
+        .ok_or_else(|| Error::decode(format!("binance field `{field}` is not a decimal")))?;
+    text.parse::<rust_decimal::Decimal>()
+        .map_err(|error| {
+            Error::decode(format!(
+                "binance field `{field}` is not an exact decimal: {error}"
+            ))
+        })
+        .map(Some)
+}
+
 fn stream_candle(market: &Market, raw: &RawStreamCandle) -> Result<Candle> {
     let interval = interval_from_code(&raw.k.i).ok_or_else(|| {
         Error::decode(format!(
@@ -361,6 +491,53 @@ pub(super) async fn subscribe(
                     "binance sent an unexpected binary frame",
                 ))),
                 Ok(WsCommand::Reconnected) => Some(Ok(MarketEvent::Reconnected)),
+                Err(error) => Some(Err(error)),
+            };
+            std::future::ready(event)
+        }),
+        move || async move {
+            for result in
+                futures_util::future::join_all(closes.iter().map(|close| close.close())).await
+            {
+                result?;
+            }
+            Ok(())
+        },
+    ))
+}
+
+/// Opens Binance's public streams while preserving the native event fields.
+pub(super) async fn subscribe_detailed(
+    adapter: &BinanceAdapter,
+    subscription: &Subscription,
+    config: &StreamConfig,
+) -> Result<BinanceMarketStream> {
+    let markets = subscribed_markets(adapter, subscription)?;
+    let mut sessions = Vec::new();
+    let mut closes = Vec::new();
+    for (url, frame) in subscribe_frames(adapter, subscription)? {
+        let session = connect(
+            WsConnect {
+                url: url.to_string(),
+                headers: None,
+                subscribe: WsConnect::fixed(vec![frame]),
+                heartbeat: Some(HEARTBEAT),
+            },
+            config,
+        )
+        .await?;
+        closes.push(session.close_handle());
+        sessions.push(session);
+    }
+
+    Ok(BinanceMarketStream::new_with_close(
+        merge_until_any_ends(sessions).filter_map(move |item| {
+            let event = match item {
+                Ok(WsCommand::Text(frame)) => decode_detailed(&markets, &frame).transpose(),
+                Ok(WsCommand::Binary(_)) => Some(Err(Error::decode(
+                    "binance sent an unexpected binary frame",
+                ))),
+                Ok(WsCommand::Reconnected) => Some(Ok(BinanceMarketEvent::Reconnected)),
                 Err(error) => Some(Err(error)),
             };
             std::future::ready(event)
@@ -516,6 +693,65 @@ pub(super) fn decode_account(adapter: &BinanceAdapter, frame: &str) -> Result<Ve
     }
 }
 
+/// Decodes one private frame without dropping native account-event shapes.
+pub(super) fn decode_detailed_account(
+    adapter: &BinanceAdapter,
+    frame: &str,
+) -> Result<Vec<BinanceAccountStreamEvent>> {
+    let common = decode_account(adapter, frame)?;
+    let envelope: Value = parse::json(frame, "user data frame")?;
+    let payload = match adapter.venue() {
+        BinanceMarket::Spot => envelope.get("event"),
+        BinanceMarket::UsdMFutures => Some(&envelope),
+    };
+    let Some(payload) = payload else {
+        return Ok(Vec::new());
+    };
+    let Some(event_type) = payload.get("e").and_then(Value::as_str) else {
+        return Ok(Vec::new());
+    };
+    let event_time = value_timestamp(payload, "E")?;
+    let transaction_time = value_timestamp(payload, "T")?;
+    let raw_json = serde_json::to_string(&envelope)
+        .map_err(|err| Error::decode(format!("could not preserve Binance account frame: {err}")))?;
+
+    if common.is_empty() {
+        return Ok(vec![BinanceAccountStreamEvent::Other(
+            BinanceRawAccountEvent {
+                event_type: event_type.to_owned(),
+                event_time,
+                transaction_time,
+                raw_json,
+            },
+        )]);
+    }
+
+    Ok(common
+        .into_iter()
+        .map(|event| match event {
+            AccountEvent::Balance(common) => {
+                BinanceAccountStreamEvent::Balance(BinanceBalanceStreamEvent {
+                    common,
+                    event_type: event_type.to_owned(),
+                    event_time,
+                    transaction_time,
+                    raw_json: raw_json.clone(),
+                })
+            }
+            AccountEvent::Order(common) => {
+                BinanceAccountStreamEvent::Order(BinanceOrderStreamEvent {
+                    common,
+                    event_type: event_type.to_owned(),
+                    event_time,
+                    transaction_time,
+                    raw_json: raw_json.clone(),
+                })
+            }
+            AccountEvent::Reconnected => BinanceAccountStreamEvent::Reconnected,
+        })
+        .collect())
+}
+
 /// Reads a Spot WebSocket API response or account event.
 /// A refused subscription keeps Binance's HTTP status and exchange code.
 fn decode_spot_account(adapter: &BinanceAdapter, frame: &str) -> Result<Vec<AccountEvent>> {
@@ -638,6 +874,17 @@ pub(super) async fn subscribe_account(
     }
 }
 
+/// Opens a Binance account stream that retains events outside the common model.
+pub(super) async fn subscribe_detailed_account(
+    adapter: &BinanceAdapter,
+    config: &StreamConfig,
+) -> Result<BinanceAccountStream> {
+    match adapter.venue() {
+        BinanceMarket::Spot => subscribe_detailed_spot_account(adapter, config).await,
+        BinanceMarket::UsdMFutures => subscribe_detailed_usd_m_account(adapter, config).await,
+    }
+}
+
 /// Opens a Spot account stream on the WebSocket API.
 /// Spot uses a signed subscription frame and no listen key.
 async fn subscribe_spot_account(
@@ -649,6 +896,19 @@ async fn subscribe_spot_account(
 
     Ok(AccountStream::new_with_close(
         account_events(adapter.clone(), session).boxed(),
+        move || async move { close.close().await },
+    ))
+}
+
+async fn subscribe_detailed_spot_account(
+    adapter: &BinanceAdapter,
+    config: &StreamConfig,
+) -> Result<BinanceAccountStream> {
+    let session = connect(spot_account_connect(adapter)?, config).await?;
+    let close = session.close_handle();
+
+    Ok(BinanceAccountStream::new_with_close(
+        detailed_account_events(adapter.clone(), session).boxed(),
         move || async move { close.close().await },
     ))
 }
@@ -706,6 +966,36 @@ async fn subscribe_usd_m_account(
     ))
 }
 
+async fn subscribe_detailed_usd_m_account(
+    adapter: &BinanceAdapter,
+    config: &StreamConfig,
+) -> Result<BinanceAccountStream> {
+    let key = private::create_listen_key(adapter).await?;
+    let session = connect(
+        WsConnect {
+            url: private::usd_m_user_data_stream_url(&key),
+            headers: None,
+            subscribe: WsConnect::fixed(Vec::new()),
+            heartbeat: Some(HEARTBEAT),
+        },
+        config,
+    )
+    .await?;
+    let close = session.close_handle();
+    let (failures, failed) = mpsc::channel(1);
+    let refresh = tokio::spawn(refresh_listen_key(adapter.clone(), failures));
+    let events = detailed_account_events(adapter.clone(), session).boxed();
+
+    Ok(BinanceAccountStream::new_with_close(
+        with_detailed_refresher_failures(events, failed),
+        move || async move {
+            let (socket, refresh) = tokio::join!(close.close(), stop_refresh_task(refresh));
+            socket?;
+            refresh
+        },
+    ))
+}
+
 /// Reads a private socket's frames as account events.
 fn account_events(
     adapter: BinanceAdapter,
@@ -746,7 +1036,56 @@ fn account_events(
     })
 }
 
+/// Reads a private socket's frames as detailed account events.
+fn detailed_account_events(
+    adapter: BinanceAdapter,
+    session: impl futures_core::Stream<Item = Result<WsCommand>> + Send + 'static,
+) -> impl futures_core::Stream<Item = Result<BinanceAccountStreamEvent>> + Send {
+    let mut session = Box::pin(session);
+    let mut pending = VecDeque::new();
+    let mut terminated = false;
+
+    futures_util::stream::poll_fn(move |cx| {
+        loop {
+            if let Some(event) = pending.pop_front() {
+                return std::task::Poll::Ready(Some(event));
+            }
+            if terminated {
+                return std::task::Poll::Ready(None);
+            }
+
+            let item = match session.as_mut().poll_next(cx) {
+                std::task::Poll::Pending => return std::task::Poll::Pending,
+                std::task::Poll::Ready(None) => return std::task::Poll::Ready(None),
+                std::task::Poll::Ready(Some(item)) => item,
+            };
+            let events = match item {
+                Ok(WsCommand::Text(frame)) => match decode_detailed_account(&adapter, &frame) {
+                    Ok(events) => events.into_iter().map(Ok).collect(),
+                    Err(error) => vec![Err(error)],
+                },
+                Ok(WsCommand::Binary(_)) => vec![Err(Error::decode(
+                    "binance sent an unexpected binary frame",
+                ))],
+                Ok(WsCommand::Reconnected) => vec![Ok(BinanceAccountStreamEvent::Reconnected)],
+                Err(error) => vec![Err(error)],
+            };
+            terminated = events.iter().any(terminates_detailed_account_stream);
+            pending.extend(events);
+        }
+    })
+}
+
 fn terminates_account_stream(event: &Result<AccountEvent>) -> bool {
+    matches!(
+        event,
+        Err(Error::Exchange { exchange, code, .. })
+            if *exchange == EXCHANGE
+                && matches!(code.as_str(), "listenKeyExpired" | "eventStreamTerminated")
+    )
+}
+
+fn terminates_detailed_account_stream(event: &Result<BinanceAccountStreamEvent>) -> bool {
     matches!(
         event,
         Err(Error::Exchange { exchange, code, .. })
@@ -760,6 +1099,20 @@ fn with_refresher_failures(
     events: futures_util::stream::BoxStream<'static, Result<AccountEvent>>,
     failed: mpsc::Receiver<Error>,
 ) -> impl futures_core::Stream<Item = Result<AccountEvent>> + Send {
+    with_refresher_failures_inner(events, failed)
+}
+
+fn with_detailed_refresher_failures(
+    events: futures_util::stream::BoxStream<'static, Result<BinanceAccountStreamEvent>>,
+    failed: mpsc::Receiver<Error>,
+) -> impl futures_core::Stream<Item = Result<BinanceAccountStreamEvent>> + Send {
+    with_refresher_failures_inner(events, failed)
+}
+
+fn with_refresher_failures_inner<T: Send + 'static>(
+    events: futures_util::stream::BoxStream<'static, Result<T>>,
+    failed: mpsc::Receiver<Error>,
+) -> impl futures_core::Stream<Item = Result<T>> + Send {
     futures_util::stream::unfold((events, failed), |(mut events, mut failed)| async move {
         tokio::select! {
             // Report an already queued refresh failure before another frame.
@@ -1151,6 +1504,86 @@ mod tests {
             Market::spot(Exchange::Binance, "BNB", "BTC"),
             frame,
         )
+    }
+
+    #[test]
+    fn detailed_public_events_keep_native_stream_fields() {
+        let market = Market::spot(Exchange::Binance, "BNB", "BTC");
+        let markets = subscribed_markets(&spot(), &subscription(market.clone()))
+            .expect("a valid detailed subscription");
+
+        let trade = decode_detailed(&markets, SPOT_TRADE_FRAME)
+            .expect("a trade frame")
+            .expect("a detailed trade");
+        let BinanceMarketEvent::Trade(trade) = trade else {
+            panic!("expected a detailed trade");
+        };
+        assert_eq!(
+            trade.event_time.expect("event time").as_millis(),
+            1_672_515_782_136
+        );
+        assert_eq!(trade.best_price_match, Some(true));
+        assert!(trade.raw_json.contains("\"M\":true"));
+
+        let depth = decode_detailed(&markets, SPOT_DEPTH_FRAME)
+            .expect("a depth frame")
+            .expect("a detailed book");
+        let BinanceMarketEvent::OrderBook(depth) = depth else {
+            panic!("expected a detailed book");
+        };
+        assert_eq!(depth.last_update_id, Some(160));
+        assert_eq!(depth.common.market, market);
+
+        let candle = decode_detailed(&markets, SPOT_KLINE_FRAME)
+            .expect("a kline frame")
+            .expect("a detailed candle");
+        let BinanceMarketEvent::Candle(candle) = candle else {
+            panic!("expected a detailed candle");
+        };
+        assert_eq!(candle.trade_count, Some(100));
+        assert_eq!(
+            candle
+                .taker_buy_base_volume
+                .expect("taker base")
+                .to_string(),
+            "500"
+        );
+        assert!(candle.raw_json.contains("\"Q\":\"0.500\""));
+    }
+
+    #[test]
+    fn detailed_account_events_keep_known_and_unknown_provider_frames() {
+        let balances = decode_detailed_account(&spot(), SPOT_BALANCE_FRAME)
+            .expect("a detailed spot balance frame");
+        let [BinanceAccountStreamEvent::Balance(balance)] = balances.as_slice() else {
+            panic!("expected one detailed balance: {balances:?}");
+        };
+        assert_eq!(balance.common.asset, "ETH");
+        assert_eq!(balance.event_type, "outboundAccountPosition");
+        assert!(balance.raw_json.contains("subscriptionId"));
+
+        let orders = decode_detailed_account(&perp(), FUTURES_ORDER_UPDATE)
+            .expect("a detailed futures order frame");
+        let [BinanceAccountStreamEvent::Order(order)] = orders.as_slice() else {
+            panic!("expected one detailed order: {orders:?}");
+        };
+        assert_eq!(order.common.id, "8886774");
+        assert_eq!(
+            order.transaction_time,
+            Some(Timestamp::from_millis(1_568_879_465_650))
+        );
+        assert!(order.raw_json.contains("TRAILING_STOP_MARKET"));
+
+        let other = decode_detailed_account(
+            &spot(),
+            r#"{"subscriptionId":0,"event":{"e":"listStatus","E":1,"s":"ETHBTC","future":"kept"}}"#,
+        )
+        .expect("an unmodeled provider event");
+        let [BinanceAccountStreamEvent::Other(other)] = other.as_slice() else {
+            panic!("expected a provider-only event: {other:?}");
+        };
+        assert_eq!(other.event_type, "listStatus");
+        assert!(other.raw_json.contains("future"));
     }
 
     #[tokio::test]

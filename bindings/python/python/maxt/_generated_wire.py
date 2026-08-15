@@ -341,6 +341,94 @@ RECORD_FIELDS = {
         "ticket": "string",
         "subscriptions": "list:named:UpbitListedSubscription",
     },
+    "UpbitOrderResponse": {
+        "common": "named:Order",
+        "order_type": "optional:string",
+        "volume": "optional:decimal",
+        "reserved_fee": "optional:decimal",
+        "remaining_fee": "optional:decimal",
+        "paid_fee": "optional:decimal",
+        "locked": "optional:decimal",
+        "trades_count": "optional:number",
+        "prevented_volume": "optional:decimal",
+        "prevented_locked": "optional:decimal",
+        "time_in_force": "optional:string",
+        "identifier": "optional:string",
+        "smp_type": "optional:string",
+        "raw_json": "string",
+    },
+    "UpbitDepositResponse": {
+        "common": "named:Deposit",
+        "raw_json": "string",
+    },
+    "UpbitWithdrawalResponse": {
+        "common": "named:Withdrawal",
+        "raw_json": "string",
+    },
+    "UpbitCancelWithdrawalResponse": {
+        "withdrawal_id": "string",
+        "raw_json": "string",
+    },
+    "UpbitCancelOrdersResponse": {
+        "common": "named:CancelOrdersResult",
+        "raw_json": "string",
+    },
+    "UpbitCancelAndNewOrderDetailResult": {
+        "common": "named:UpbitCancelAndNewOrderResult",
+        "previous_order": "named:UpbitOrderResponse",
+        "raw_json": "string",
+    },
+    "UpbitTradeStreamEvent": {
+        "common": "named:Trade",
+        "previous_closing_price": "optional:decimal",
+        "change": "optional:string",
+        "change_price": "optional:decimal",
+        "best_ask_price": "optional:decimal",
+        "best_ask_size": "optional:decimal",
+        "best_bid_price": "optional:decimal",
+        "best_bid_size": "optional:decimal",
+        "raw_json": "string",
+    },
+    "UpbitOrderBookStreamEvent": {
+        "common": "named:OrderBook",
+        "total_ask_size": "optional:decimal",
+        "total_bid_size": "optional:decimal",
+        "level": "optional:decimal",
+        "stream_type": "optional:string",
+        "raw_json": "string",
+    },
+    "UpbitTickerStreamEvent": {
+        "common": "named:Ticker",
+        "change_direction": "optional:string",
+        "market_state": "optional:string",
+        "trading_suspended": "optional:boolean",
+        "delisting_date": "optional:string",
+        "market_warning": "optional:string",
+        "raw_json": "string",
+    },
+    "UpbitCandleStreamEvent": {
+        "common": "named:Candle",
+        "stream_type": "optional:string",
+        "published_at": "optional:timestamp",
+        "raw_json": "string",
+    },
+    "UpbitAssetStreamEvent": {
+        "balances": "list:named:Balance",
+        "asset_uuid": "optional:string",
+        "asset_timestamp": "optional:timestamp",
+        "published_at": "optional:timestamp",
+        "raw_json": "string",
+    },
+    "UpbitOrderStreamEvent": {
+        "common": "named:Order",
+        "order_type": "optional:string",
+        "trade_uuid": "optional:string",
+        "time_in_force": "optional:string",
+        "trade_timestamp": "optional:timestamp",
+        "trade_fee": "optional:decimal",
+        "is_maker": "optional:boolean",
+        "raw_json": "string",
+    },
     "UpbitYearCandle": {
         "market": "named:Market",
         "open_time": "timestamp",
@@ -716,6 +804,91 @@ RECORD_FIELDS = {
     },
     "BithumbBatchOrdersResult": {
         "outcomes": "list:named:BithumbBatchOrderOutcome",
+        "raw_json": "string",
+    },
+    "BithumbOrderBookSnapshot": {
+        "common": "named:OrderBook",
+        "total_ask_size": "optional:decimal",
+        "total_bid_size": "optional:decimal",
+        "level": "optional:decimal",
+        "raw_json": "string",
+    },
+    "BithumbOrderResponse": {
+        "common": "named:Order",
+        "raw_json": "string",
+    },
+    "BithumbOrdersResponse": {
+        "common": "list:named:Order",
+        "raw_json": "string",
+    },
+    "BithumbCancelOrderResponse": {
+        "order_id": "string",
+        "raw_json": "string",
+    },
+    "BithumbCancelOrdersResponse": {
+        "common": "named:CancelOrdersResult",
+        "raw_json": "string",
+    },
+    "BithumbDepositResponse": {
+        "common": "named:Deposit",
+        "raw_json": "string",
+    },
+    "BithumbWithdrawalResponse": {
+        "common": "named:Withdrawal",
+        "raw_json": "string",
+    },
+    "BithumbCancelWithdrawalResponse": {
+        "withdrawal_id": "string",
+        "raw_json": "string",
+    },
+    "BithumbTradeEvent": {
+        "common": "named:Trade",
+        "previous_closing_price": "optional:decimal",
+        "change": "optional:string",
+        "change_price": "optional:decimal",
+        "published_at": "optional:timestamp",
+        "stream_type": "optional:string",
+        "raw_json": "string",
+    },
+    "BithumbOrderBookEvent": {
+        "common": "named:OrderBook",
+        "total_ask_size": "optional:decimal",
+        "total_bid_size": "optional:decimal",
+        "level": "optional:decimal",
+        "stream_type": "optional:string",
+        "raw_json": "string",
+    },
+    "BithumbTickerEvent": {
+        "common": "named:Ticker",
+        "change_direction": "optional:string",
+        "market_state": "optional:string",
+        "trading_suspended": "optional:boolean",
+        "market_warning": "optional:string",
+        "stream_type": "optional:string",
+        "raw_json": "string",
+    },
+    "BithumbAssetEvent": {
+        "balances": "list:named:Balance",
+        "asset_timestamp": "optional:timestamp",
+        "published_at": "optional:timestamp",
+        "raw_json": "string",
+    },
+    "BithumbOrderEvent": {
+        "common": "named:Order",
+        "client_order_id": "optional:string",
+        "order_type": "optional:string",
+        "state": "optional:string",
+        "time_in_force": "optional:string",
+        "order_amount": "optional:decimal",
+        "trade_id": "optional:string",
+        "trade_price": "optional:decimal",
+        "trade_quantity": "optional:decimal",
+        "trade_amount": "optional:decimal",
+        "trade_timestamp": "optional:timestamp",
+        "executed_amount": "optional:decimal",
+        "paid_fee": "optional:decimal",
+        "remaining_fee": "optional:decimal",
+        "raw_json": "string",
     },
     "BithumbTwapOrderRequest": {
         "market": "named:Market",
@@ -833,6 +1006,7 @@ RECORD_FIELDS = {
         "trades_count": "number",
         "stp_type": "optional:string",
         "time_in_force": "optional:string",
+        "raw_json": "string",
     },
     "BinanceSymbolFilters": {
         "symbol": "string",
@@ -1144,7 +1318,88 @@ RECORD_FIELDS = {
         "price": "decimal",
         "quantity": "decimal",
         "normal_quantity": "optional:decimal",
+        "best_price_match": "optional:boolean",
         "taker_side": "identifier:Side",
+        "raw_json": "string",
+    },
+    "BinanceOrderResponse": {
+        "order": "named:Order",
+        "client_order_id": "optional:string",
+        "order_list_id": "optional:string",
+        "order_type": "optional:string",
+        "time_in_force": "optional:string",
+        "cumulative_quote_quantity": "optional:decimal",
+        "cumulative_quantity": "optional:decimal",
+        "cumulative_quote": "optional:decimal",
+        "average_price": "optional:decimal",
+        "reduce_only": "optional:boolean",
+        "close_position": "optional:boolean",
+        "position_side": "optional:string",
+        "stop_price": "optional:decimal",
+        "working_type": "optional:string",
+        "price_protect": "optional:boolean",
+        "original_type": "optional:string",
+        "price_match": "optional:string",
+        "self_trade_prevention_mode": "optional:string",
+        "good_till_date": "optional:timestamp",
+        "raw_json": "string",
+    },
+    "BinanceTradeEvent": {
+        "common": "named:Trade",
+        "event_time": "optional:timestamp",
+        "trade_time": "optional:timestamp",
+        "buyer_is_maker": "optional:boolean",
+        "best_price_match": "optional:boolean",
+        "raw_json": "string",
+    },
+    "BinanceOrderBookEvent": {
+        "common": "named:OrderBook",
+        "event_time": "optional:timestamp",
+        "transaction_time": "optional:timestamp",
+        "first_update_id": "optional:unsigned_integer",
+        "final_update_id": "optional:unsigned_integer",
+        "previous_final_update_id": "optional:unsigned_integer",
+        "last_update_id": "optional:unsigned_integer",
+        "raw_json": "string",
+    },
+    "BinanceTickerEvent": {
+        "common": "named:Ticker",
+        "event_time": "optional:timestamp",
+        "close_time": "optional:timestamp",
+        "first_trade_id": "optional:unsigned_integer",
+        "last_trade_id": "optional:unsigned_integer",
+        "trade_count": "optional:unsigned_integer",
+        "raw_json": "string",
+    },
+    "BinanceCandleEvent": {
+        "common": "named:Candle",
+        "close_time": "optional:timestamp",
+        "first_trade_id": "optional:unsigned_integer",
+        "last_trade_id": "optional:unsigned_integer",
+        "trade_count": "optional:unsigned_integer",
+        "taker_buy_base_volume": "optional:decimal",
+        "taker_buy_quote_volume": "optional:decimal",
+        "raw_json": "string",
+    },
+    "BinanceBalanceStreamEvent": {
+        "common": "named:Balance",
+        "event_type": "string",
+        "event_time": "optional:timestamp",
+        "transaction_time": "optional:timestamp",
+        "raw_json": "string",
+    },
+    "BinanceOrderStreamEvent": {
+        "common": "named:Order",
+        "event_type": "string",
+        "event_time": "optional:timestamp",
+        "transaction_time": "optional:timestamp",
+        "raw_json": "string",
+    },
+    "BinanceRawAccountEvent": {
+        "event_type": "string",
+        "event_time": "optional:timestamp",
+        "transaction_time": "optional:timestamp",
+        "raw_json": "string",
     },
     "BinanceAccountTrade": {
         "market": "named:Market",
@@ -1390,6 +1645,17 @@ RECORD_FIELDS = {
     "HyperliquidMidPrice": {
         "market": "named:Market",
         "price": "decimal",
+    },
+    "HyperliquidAllMids": {
+        "mids": "list:named:HyperliquidMidPrice",
+        "raw_json": "string",
+    },
+    "HyperliquidProviderResponse": {
+        "raw_json": "string",
+    },
+    "HyperliquidOrderActionResponse": {
+        "common": "named:Order",
+        "raw_json": "string",
     },
     "HyperliquidAssetContext": {
         "mid_price": "optional:decimal",
@@ -1698,6 +1964,84 @@ UNION_FIELDS = {
         "reconnected": {
         },
     },
+    "UpbitMarketStreamEvent": {
+        "trade": {
+            "value": "named:UpbitTradeStreamEvent",
+        },
+        "order_book": {
+            "value": "named:UpbitOrderBookStreamEvent",
+        },
+        "ticker": {
+            "value": "named:UpbitTickerStreamEvent",
+        },
+        "candle": {
+            "value": "named:UpbitCandleStreamEvent",
+        },
+        "reconnected": {
+        },
+    },
+    "UpbitAccountStreamEvent": {
+        "asset": {
+            "value": "named:UpbitAssetStreamEvent",
+        },
+        "order": {
+            "value": "named:UpbitOrderStreamEvent",
+        },
+        "reconnected": {
+        },
+    },
+    "BithumbMarketEvent": {
+        "trade": {
+            "value": "named:BithumbTradeEvent",
+        },
+        "order_book": {
+            "value": "named:BithumbOrderBookEvent",
+        },
+        "ticker": {
+            "value": "named:BithumbTickerEvent",
+        },
+        "reconnected": {
+        },
+    },
+    "BithumbAccountEvent": {
+        "asset": {
+            "value": "named:BithumbAssetEvent",
+        },
+        "order": {
+            "value": "named:BithumbOrderEvent",
+        },
+        "reconnected": {
+        },
+    },
+    "BinanceMarketEvent": {
+        "trade": {
+            "value": "named:BinanceTradeEvent",
+        },
+        "order_book": {
+            "value": "named:BinanceOrderBookEvent",
+        },
+        "ticker": {
+            "value": "named:BinanceTickerEvent",
+        },
+        "candle": {
+            "value": "named:BinanceCandleEvent",
+        },
+        "reconnected": {
+        },
+    },
+    "BinanceAccountStreamEvent": {
+        "balance": {
+            "value": "named:BinanceBalanceStreamEvent",
+        },
+        "order": {
+            "value": "named:BinanceOrderStreamEvent",
+        },
+        "other": {
+            "value": "named:BinanceRawAccountEvent",
+        },
+        "reconnected": {
+        },
+    },
     "MarketEvent": {
         "trade": {
             "trade": "named:Trade",
@@ -1751,6 +2095,54 @@ UNION_FIELDS = {
     "HyperliquidAccountStreamItem": {
         "event": {
             "event": "named:HyperliquidAccountEvent",
+        },
+        "error": {
+            "error": "named:Error",
+        },
+    },
+    "UpbitMarketStreamItem": {
+        "event": {
+            "event": "named:UpbitMarketStreamEvent",
+        },
+        "error": {
+            "error": "named:Error",
+        },
+    },
+    "UpbitAccountStreamItem": {
+        "event": {
+            "event": "named:UpbitAccountStreamEvent",
+        },
+        "error": {
+            "error": "named:Error",
+        },
+    },
+    "BithumbMarketStreamItem": {
+        "event": {
+            "event": "named:BithumbMarketEvent",
+        },
+        "error": {
+            "error": "named:Error",
+        },
+    },
+    "BithumbAccountStreamItem": {
+        "event": {
+            "event": "named:BithumbAccountEvent",
+        },
+        "error": {
+            "error": "named:Error",
+        },
+    },
+    "BinanceMarketStreamItem": {
+        "event": {
+            "event": "named:BinanceMarketEvent",
+        },
+        "error": {
+            "error": "named:Error",
+        },
+    },
+    "BinanceAccountStreamItem": {
+        "event": {
+            "event": "named:BinanceAccountStreamEvent",
         },
         "error": {
             "error": "named:Error",

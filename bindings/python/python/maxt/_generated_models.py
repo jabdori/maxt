@@ -465,6 +465,288 @@ class UpbitSubscriptionList(WireModel):
 
 
 @dataclass(frozen=True)
+class UpbitOrderResponse(WireModel):
+    common: Order
+    order_type: Optional[str]
+    volume: Optional[Decimal]
+    reserved_fee: Optional[Decimal]
+    remaining_fee: Optional[Decimal]
+    paid_fee: Optional[Decimal]
+    locked: Optional[Decimal]
+    trades_count: Optional[int]
+    prevented_volume: Optional[Decimal]
+    prevented_locked: Optional[Decimal]
+    time_in_force: Optional[str]
+    identifier: Optional[str]
+    smp_type: Optional[str]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class UpbitDepositResponse(WireModel):
+    common: Deposit
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class UpbitWithdrawalResponse(WireModel):
+    common: Withdrawal
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class UpbitCancelWithdrawalResponse(WireModel):
+    withdrawal_id: str
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class UpbitCancelOrdersResponse(WireModel):
+    common: CancelOrdersResult
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class UpbitCancelAndNewOrderDetailResult(WireModel):
+    common: UpbitCancelAndNewOrderResult
+    previous_order: UpbitOrderResponse
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class UpbitTradeStreamEvent(WireModel):
+    common: Trade
+    previous_closing_price: Optional[Decimal]
+    change: Optional[str]
+    change_price: Optional[Decimal]
+    best_ask_price: Optional[Decimal]
+    best_ask_size: Optional[Decimal]
+    best_bid_price: Optional[Decimal]
+    best_bid_size: Optional[Decimal]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class UpbitOrderBookStreamEvent(WireModel):
+    common: OrderBook
+    total_ask_size: Optional[Decimal]
+    total_bid_size: Optional[Decimal]
+    level: Optional[Decimal]
+    stream_type: Optional[str]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class UpbitTickerStreamEvent(WireModel):
+    common: Ticker
+    change_direction: Optional[str]
+    market_state: Optional[str]
+    trading_suspended: Optional[bool]
+    delisting_date: Optional[str]
+    market_warning: Optional[str]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class UpbitCandleStreamEvent(WireModel):
+    common: Candle
+    stream_type: Optional[str]
+    published_at: Optional[Timestamp]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class UpbitAssetStreamEvent(WireModel):
+    balances: list[Balance]
+    asset_uuid: Optional[str]
+    asset_timestamp: Optional[Timestamp]
+    published_at: Optional[Timestamp]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class UpbitOrderStreamEvent(WireModel):
+    common: Order
+    order_type: Optional[str]
+    trade_uuid: Optional[str]
+    time_in_force: Optional[str]
+    trade_timestamp: Optional[Timestamp]
+    trade_fee: Optional[Decimal]
+    is_maker: Optional[bool]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class UpbitMarketStreamEvent(WireModel):
+    _wire_union: ClassVar[bool] = True
+    kind: str
+    value: Optional[Union[UpbitCandleStreamEvent, UpbitOrderBookStreamEvent, UpbitTickerStreamEvent, UpbitTradeStreamEvent]] = None
+
+    @classmethod
+    def trade(cls, value: UpbitTradeStreamEvent) -> UpbitMarketStreamEvent:
+        return cls("trade", value=value)
+
+    @classmethod
+    def order_book(cls, value: UpbitOrderBookStreamEvent) -> UpbitMarketStreamEvent:
+        return cls("order_book", value=value)
+
+    @classmethod
+    def ticker(cls, value: UpbitTickerStreamEvent) -> UpbitMarketStreamEvent:
+        return cls("ticker", value=value)
+
+    @classmethod
+    def candle(cls, value: UpbitCandleStreamEvent) -> UpbitMarketStreamEvent:
+        return cls("candle", value=value)
+
+    @classmethod
+    def reconnected(cls) -> UpbitMarketStreamEvent:
+        return cls("reconnected")
+
+    @classmethod
+    def from_wire(cls, value: dict[str, Any]) -> UpbitMarketStreamEvent:
+        kind = value.get("kind")
+        if kind == "trade":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"UpbitMarketStreamEvent.trade does not accept {key}")
+            return cls.trade(
+                value=_decode_value(UpbitTradeStreamEvent, value["value"]),
+            )
+        if kind == "order_book":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"UpbitMarketStreamEvent.order_book does not accept {key}")
+            return cls.order_book(
+                value=_decode_value(UpbitOrderBookStreamEvent, value["value"]),
+            )
+        if kind == "ticker":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"UpbitMarketStreamEvent.ticker does not accept {key}")
+            return cls.ticker(
+                value=_decode_value(UpbitTickerStreamEvent, value["value"]),
+            )
+        if kind == "candle":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"UpbitMarketStreamEvent.candle does not accept {key}")
+            return cls.candle(
+                value=_decode_value(UpbitCandleStreamEvent, value["value"]),
+            )
+        if kind == "reconnected":
+            for key in value:
+                if key not in {"kind"}:
+                    raise ValueError(f"UpbitMarketStreamEvent.reconnected does not accept {key}")
+            return cls.reconnected(
+            )
+        raise ValueError(f"unknown UpbitMarketStreamEvent kind: {kind}")
+
+    def to_wire(self) -> dict[str, Any]:
+        if self.kind == "trade":
+            if self.value is None:
+                raise ValueError("UpbitMarketStreamEvent.trade requires value")
+            return {
+                "kind": "trade",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "order_book":
+            if self.value is None:
+                raise ValueError("UpbitMarketStreamEvent.order_book requires value")
+            return {
+                "kind": "order_book",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "ticker":
+            if self.value is None:
+                raise ValueError("UpbitMarketStreamEvent.ticker requires value")
+            return {
+                "kind": "ticker",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "candle":
+            if self.value is None:
+                raise ValueError("UpbitMarketStreamEvent.candle requires value")
+            return {
+                "kind": "candle",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "reconnected":
+            if self.value is not None:
+                raise ValueError("UpbitMarketStreamEvent.reconnected does not accept value")
+            return {
+                "kind": "reconnected",
+            }
+        raise ValueError(f"unknown UpbitMarketStreamEvent kind: {self.kind}")
+
+
+@dataclass(frozen=True)
+class UpbitAccountStreamEvent(WireModel):
+    _wire_union: ClassVar[bool] = True
+    kind: str
+    value: Optional[Union[UpbitAssetStreamEvent, UpbitOrderStreamEvent]] = None
+
+    @classmethod
+    def asset(cls, value: UpbitAssetStreamEvent) -> UpbitAccountStreamEvent:
+        return cls("asset", value=value)
+
+    @classmethod
+    def order(cls, value: UpbitOrderStreamEvent) -> UpbitAccountStreamEvent:
+        return cls("order", value=value)
+
+    @classmethod
+    def reconnected(cls) -> UpbitAccountStreamEvent:
+        return cls("reconnected")
+
+    @classmethod
+    def from_wire(cls, value: dict[str, Any]) -> UpbitAccountStreamEvent:
+        kind = value.get("kind")
+        if kind == "asset":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"UpbitAccountStreamEvent.asset does not accept {key}")
+            return cls.asset(
+                value=_decode_value(UpbitAssetStreamEvent, value["value"]),
+            )
+        if kind == "order":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"UpbitAccountStreamEvent.order does not accept {key}")
+            return cls.order(
+                value=_decode_value(UpbitOrderStreamEvent, value["value"]),
+            )
+        if kind == "reconnected":
+            for key in value:
+                if key not in {"kind"}:
+                    raise ValueError(f"UpbitAccountStreamEvent.reconnected does not accept {key}")
+            return cls.reconnected(
+            )
+        raise ValueError(f"unknown UpbitAccountStreamEvent kind: {kind}")
+
+    def to_wire(self) -> dict[str, Any]:
+        if self.kind == "asset":
+            if self.value is None:
+                raise ValueError("UpbitAccountStreamEvent.asset requires value")
+            return {
+                "kind": "asset",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "order":
+            if self.value is None:
+                raise ValueError("UpbitAccountStreamEvent.order requires value")
+            return {
+                "kind": "order",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "reconnected":
+            if self.value is not None:
+                raise ValueError("UpbitAccountStreamEvent.reconnected does not accept value")
+            return {
+                "kind": "reconnected",
+            }
+        raise ValueError(f"unknown UpbitAccountStreamEvent kind: {self.kind}")
+
+
+@dataclass(frozen=True)
 class UpbitYearCandle(WireModel):
     market: Market
     open_time: Timestamp
@@ -1271,6 +1553,269 @@ class BithumbBatchOrderOutcome(WireModel):
 @dataclass(frozen=True)
 class BithumbBatchOrdersResult(WireModel):
     outcomes: list[BithumbBatchOrderOutcome]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BithumbOrderBookSnapshot(WireModel):
+    common: OrderBook
+    total_ask_size: Optional[Decimal]
+    total_bid_size: Optional[Decimal]
+    level: Optional[Decimal]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BithumbOrderResponse(WireModel):
+    common: Order
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BithumbOrdersResponse(WireModel):
+    common: list[Order]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BithumbCancelOrderResponse(WireModel):
+    order_id: str
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BithumbCancelOrdersResponse(WireModel):
+    common: CancelOrdersResult
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BithumbDepositResponse(WireModel):
+    common: Deposit
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BithumbWithdrawalResponse(WireModel):
+    common: Withdrawal
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BithumbCancelWithdrawalResponse(WireModel):
+    withdrawal_id: str
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BithumbTradeEvent(WireModel):
+    common: Trade
+    previous_closing_price: Optional[Decimal]
+    change: Optional[str]
+    change_price: Optional[Decimal]
+    published_at: Optional[Timestamp]
+    stream_type: Optional[str]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BithumbOrderBookEvent(WireModel):
+    common: OrderBook
+    total_ask_size: Optional[Decimal]
+    total_bid_size: Optional[Decimal]
+    level: Optional[Decimal]
+    stream_type: Optional[str]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BithumbTickerEvent(WireModel):
+    common: Ticker
+    change_direction: Optional[str]
+    market_state: Optional[str]
+    trading_suspended: Optional[bool]
+    market_warning: Optional[str]
+    stream_type: Optional[str]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BithumbAssetEvent(WireModel):
+    balances: list[Balance]
+    asset_timestamp: Optional[Timestamp]
+    published_at: Optional[Timestamp]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BithumbOrderEvent(WireModel):
+    common: Order
+    client_order_id: Optional[str]
+    order_type: Optional[str]
+    state: Optional[str]
+    time_in_force: Optional[str]
+    order_amount: Optional[Decimal]
+    trade_id: Optional[str]
+    trade_price: Optional[Decimal]
+    trade_quantity: Optional[Decimal]
+    trade_amount: Optional[Decimal]
+    trade_timestamp: Optional[Timestamp]
+    executed_amount: Optional[Decimal]
+    paid_fee: Optional[Decimal]
+    remaining_fee: Optional[Decimal]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BithumbMarketEvent(WireModel):
+    _wire_union: ClassVar[bool] = True
+    kind: str
+    value: Optional[Union[BithumbOrderBookEvent, BithumbTickerEvent, BithumbTradeEvent]] = None
+
+    @classmethod
+    def trade(cls, value: BithumbTradeEvent) -> BithumbMarketEvent:
+        return cls("trade", value=value)
+
+    @classmethod
+    def order_book(cls, value: BithumbOrderBookEvent) -> BithumbMarketEvent:
+        return cls("order_book", value=value)
+
+    @classmethod
+    def ticker(cls, value: BithumbTickerEvent) -> BithumbMarketEvent:
+        return cls("ticker", value=value)
+
+    @classmethod
+    def reconnected(cls) -> BithumbMarketEvent:
+        return cls("reconnected")
+
+    @classmethod
+    def from_wire(cls, value: dict[str, Any]) -> BithumbMarketEvent:
+        kind = value.get("kind")
+        if kind == "trade":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"BithumbMarketEvent.trade does not accept {key}")
+            return cls.trade(
+                value=_decode_value(BithumbTradeEvent, value["value"]),
+            )
+        if kind == "order_book":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"BithumbMarketEvent.order_book does not accept {key}")
+            return cls.order_book(
+                value=_decode_value(BithumbOrderBookEvent, value["value"]),
+            )
+        if kind == "ticker":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"BithumbMarketEvent.ticker does not accept {key}")
+            return cls.ticker(
+                value=_decode_value(BithumbTickerEvent, value["value"]),
+            )
+        if kind == "reconnected":
+            for key in value:
+                if key not in {"kind"}:
+                    raise ValueError(f"BithumbMarketEvent.reconnected does not accept {key}")
+            return cls.reconnected(
+            )
+        raise ValueError(f"unknown BithumbMarketEvent kind: {kind}")
+
+    def to_wire(self) -> dict[str, Any]:
+        if self.kind == "trade":
+            if self.value is None:
+                raise ValueError("BithumbMarketEvent.trade requires value")
+            return {
+                "kind": "trade",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "order_book":
+            if self.value is None:
+                raise ValueError("BithumbMarketEvent.order_book requires value")
+            return {
+                "kind": "order_book",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "ticker":
+            if self.value is None:
+                raise ValueError("BithumbMarketEvent.ticker requires value")
+            return {
+                "kind": "ticker",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "reconnected":
+            if self.value is not None:
+                raise ValueError("BithumbMarketEvent.reconnected does not accept value")
+            return {
+                "kind": "reconnected",
+            }
+        raise ValueError(f"unknown BithumbMarketEvent kind: {self.kind}")
+
+
+@dataclass(frozen=True)
+class BithumbAccountEvent(WireModel):
+    _wire_union: ClassVar[bool] = True
+    kind: str
+    value: Optional[Union[BithumbAssetEvent, BithumbOrderEvent]] = None
+
+    @classmethod
+    def asset(cls, value: BithumbAssetEvent) -> BithumbAccountEvent:
+        return cls("asset", value=value)
+
+    @classmethod
+    def order(cls, value: BithumbOrderEvent) -> BithumbAccountEvent:
+        return cls("order", value=value)
+
+    @classmethod
+    def reconnected(cls) -> BithumbAccountEvent:
+        return cls("reconnected")
+
+    @classmethod
+    def from_wire(cls, value: dict[str, Any]) -> BithumbAccountEvent:
+        kind = value.get("kind")
+        if kind == "asset":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"BithumbAccountEvent.asset does not accept {key}")
+            return cls.asset(
+                value=_decode_value(BithumbAssetEvent, value["value"]),
+            )
+        if kind == "order":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"BithumbAccountEvent.order does not accept {key}")
+            return cls.order(
+                value=_decode_value(BithumbOrderEvent, value["value"]),
+            )
+        if kind == "reconnected":
+            for key in value:
+                if key not in {"kind"}:
+                    raise ValueError(f"BithumbAccountEvent.reconnected does not accept {key}")
+            return cls.reconnected(
+            )
+        raise ValueError(f"unknown BithumbAccountEvent kind: {kind}")
+
+    def to_wire(self) -> dict[str, Any]:
+        if self.kind == "asset":
+            if self.value is None:
+                raise ValueError("BithumbAccountEvent.asset requires value")
+            return {
+                "kind": "asset",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "order":
+            if self.value is None:
+                raise ValueError("BithumbAccountEvent.order requires value")
+            return {
+                "kind": "order",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "reconnected":
+            if self.value is not None:
+                raise ValueError("BithumbAccountEvent.reconnected does not accept value")
+            return {
+                "kind": "reconnected",
+            }
+        raise ValueError(f"unknown BithumbAccountEvent kind: {self.kind}")
 
 
 @dataclass(frozen=True)
@@ -1428,8 +1973,9 @@ class BithumbOrderListItem(WireModel):
     executed_volume: Decimal
     executed_funds: Decimal
     trades_count: int
-    stp_type: Optional[str] = None
-    time_in_force: Optional[str] = None
+    stp_type: Optional[str]
+    time_in_force: Optional[str]
+    raw_json: str
 
 
 @dataclass(frozen=True)
@@ -1786,7 +2332,292 @@ class BinanceAggregateTrade(WireModel):
     price: Decimal
     quantity: Decimal
     normal_quantity: Optional[Decimal]
+    best_price_match: Optional[bool]
     taker_side: Side
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceOrderResponse(WireModel):
+    order: Order
+    client_order_id: Optional[str]
+    order_list_id: Optional[str]
+    order_type: Optional[str]
+    time_in_force: Optional[str]
+    cumulative_quote_quantity: Optional[Decimal]
+    cumulative_quantity: Optional[Decimal]
+    cumulative_quote: Optional[Decimal]
+    average_price: Optional[Decimal]
+    reduce_only: Optional[bool]
+    close_position: Optional[bool]
+    position_side: Optional[str]
+    stop_price: Optional[Decimal]
+    working_type: Optional[str]
+    price_protect: Optional[bool]
+    original_type: Optional[str]
+    price_match: Optional[str]
+    self_trade_prevention_mode: Optional[str]
+    good_till_date: Optional[Timestamp]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceTradeEvent(WireModel):
+    common: Trade
+    event_time: Optional[Timestamp]
+    trade_time: Optional[Timestamp]
+    buyer_is_maker: Optional[bool]
+    best_price_match: Optional[bool]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceOrderBookEvent(WireModel):
+    common: OrderBook
+    event_time: Optional[Timestamp]
+    transaction_time: Optional[Timestamp]
+    first_update_id: Optional[int]
+    final_update_id: Optional[int]
+    previous_final_update_id: Optional[int]
+    last_update_id: Optional[int]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceTickerEvent(WireModel):
+    common: Ticker
+    event_time: Optional[Timestamp]
+    close_time: Optional[Timestamp]
+    first_trade_id: Optional[int]
+    last_trade_id: Optional[int]
+    trade_count: Optional[int]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceCandleEvent(WireModel):
+    common: Candle
+    close_time: Optional[Timestamp]
+    first_trade_id: Optional[int]
+    last_trade_id: Optional[int]
+    trade_count: Optional[int]
+    taker_buy_base_volume: Optional[Decimal]
+    taker_buy_quote_volume: Optional[Decimal]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceBalanceStreamEvent(WireModel):
+    common: Balance
+    event_type: str
+    event_time: Optional[Timestamp]
+    transaction_time: Optional[Timestamp]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceOrderStreamEvent(WireModel):
+    common: Order
+    event_type: str
+    event_time: Optional[Timestamp]
+    transaction_time: Optional[Timestamp]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceRawAccountEvent(WireModel):
+    event_type: str
+    event_time: Optional[Timestamp]
+    transaction_time: Optional[Timestamp]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class BinanceMarketEvent(WireModel):
+    _wire_union: ClassVar[bool] = True
+    kind: str
+    value: Optional[Union[BinanceCandleEvent, BinanceOrderBookEvent, BinanceTickerEvent, BinanceTradeEvent]] = None
+
+    @classmethod
+    def trade(cls, value: BinanceTradeEvent) -> BinanceMarketEvent:
+        return cls("trade", value=value)
+
+    @classmethod
+    def order_book(cls, value: BinanceOrderBookEvent) -> BinanceMarketEvent:
+        return cls("order_book", value=value)
+
+    @classmethod
+    def ticker(cls, value: BinanceTickerEvent) -> BinanceMarketEvent:
+        return cls("ticker", value=value)
+
+    @classmethod
+    def candle(cls, value: BinanceCandleEvent) -> BinanceMarketEvent:
+        return cls("candle", value=value)
+
+    @classmethod
+    def reconnected(cls) -> BinanceMarketEvent:
+        return cls("reconnected")
+
+    @classmethod
+    def from_wire(cls, value: dict[str, Any]) -> BinanceMarketEvent:
+        kind = value.get("kind")
+        if kind == "trade":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"BinanceMarketEvent.trade does not accept {key}")
+            return cls.trade(
+                value=_decode_value(BinanceTradeEvent, value["value"]),
+            )
+        if kind == "order_book":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"BinanceMarketEvent.order_book does not accept {key}")
+            return cls.order_book(
+                value=_decode_value(BinanceOrderBookEvent, value["value"]),
+            )
+        if kind == "ticker":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"BinanceMarketEvent.ticker does not accept {key}")
+            return cls.ticker(
+                value=_decode_value(BinanceTickerEvent, value["value"]),
+            )
+        if kind == "candle":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"BinanceMarketEvent.candle does not accept {key}")
+            return cls.candle(
+                value=_decode_value(BinanceCandleEvent, value["value"]),
+            )
+        if kind == "reconnected":
+            for key in value:
+                if key not in {"kind"}:
+                    raise ValueError(f"BinanceMarketEvent.reconnected does not accept {key}")
+            return cls.reconnected(
+            )
+        raise ValueError(f"unknown BinanceMarketEvent kind: {kind}")
+
+    def to_wire(self) -> dict[str, Any]:
+        if self.kind == "trade":
+            if self.value is None:
+                raise ValueError("BinanceMarketEvent.trade requires value")
+            return {
+                "kind": "trade",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "order_book":
+            if self.value is None:
+                raise ValueError("BinanceMarketEvent.order_book requires value")
+            return {
+                "kind": "order_book",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "ticker":
+            if self.value is None:
+                raise ValueError("BinanceMarketEvent.ticker requires value")
+            return {
+                "kind": "ticker",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "candle":
+            if self.value is None:
+                raise ValueError("BinanceMarketEvent.candle requires value")
+            return {
+                "kind": "candle",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "reconnected":
+            if self.value is not None:
+                raise ValueError("BinanceMarketEvent.reconnected does not accept value")
+            return {
+                "kind": "reconnected",
+            }
+        raise ValueError(f"unknown BinanceMarketEvent kind: {self.kind}")
+
+
+@dataclass(frozen=True)
+class BinanceAccountStreamEvent(WireModel):
+    _wire_union: ClassVar[bool] = True
+    kind: str
+    value: Optional[Union[BinanceBalanceStreamEvent, BinanceOrderStreamEvent, BinanceRawAccountEvent]] = None
+
+    @classmethod
+    def balance(cls, value: BinanceBalanceStreamEvent) -> BinanceAccountStreamEvent:
+        return cls("balance", value=value)
+
+    @classmethod
+    def order(cls, value: BinanceOrderStreamEvent) -> BinanceAccountStreamEvent:
+        return cls("order", value=value)
+
+    @classmethod
+    def other(cls, value: BinanceRawAccountEvent) -> BinanceAccountStreamEvent:
+        return cls("other", value=value)
+
+    @classmethod
+    def reconnected(cls) -> BinanceAccountStreamEvent:
+        return cls("reconnected")
+
+    @classmethod
+    def from_wire(cls, value: dict[str, Any]) -> BinanceAccountStreamEvent:
+        kind = value.get("kind")
+        if kind == "balance":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"BinanceAccountStreamEvent.balance does not accept {key}")
+            return cls.balance(
+                value=_decode_value(BinanceBalanceStreamEvent, value["value"]),
+            )
+        if kind == "order":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"BinanceAccountStreamEvent.order does not accept {key}")
+            return cls.order(
+                value=_decode_value(BinanceOrderStreamEvent, value["value"]),
+            )
+        if kind == "other":
+            for key in value:
+                if key not in {"kind", "value"}:
+                    raise ValueError(f"BinanceAccountStreamEvent.other does not accept {key}")
+            return cls.other(
+                value=_decode_value(BinanceRawAccountEvent, value["value"]),
+            )
+        if kind == "reconnected":
+            for key in value:
+                if key not in {"kind"}:
+                    raise ValueError(f"BinanceAccountStreamEvent.reconnected does not accept {key}")
+            return cls.reconnected(
+            )
+        raise ValueError(f"unknown BinanceAccountStreamEvent kind: {kind}")
+
+    def to_wire(self) -> dict[str, Any]:
+        if self.kind == "balance":
+            if self.value is None:
+                raise ValueError("BinanceAccountStreamEvent.balance requires value")
+            return {
+                "kind": "balance",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "order":
+            if self.value is None:
+                raise ValueError("BinanceAccountStreamEvent.order requires value")
+            return {
+                "kind": "order",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "other":
+            if self.value is None:
+                raise ValueError("BinanceAccountStreamEvent.other requires value")
+            return {
+                "kind": "other",
+                "value": _model_to_wire(self.value),
+            }
+        if self.kind == "reconnected":
+            if self.value is not None:
+                raise ValueError("BinanceAccountStreamEvent.reconnected does not accept value")
+            return {
+                "kind": "reconnected",
+            }
+        raise ValueError(f"unknown BinanceAccountStreamEvent kind: {self.kind}")
 
 
 @dataclass(frozen=True)
@@ -2254,6 +3085,23 @@ class HyperliquidMidPrice(WireModel):
 
 
 @dataclass(frozen=True)
+class HyperliquidAllMids(WireModel):
+    mids: list[HyperliquidMidPrice]
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidProviderResponse(WireModel):
+    raw_json: str
+
+
+@dataclass(frozen=True)
+class HyperliquidOrderActionResponse(WireModel):
+    common: Order
+    raw_json: str
+
+
+@dataclass(frozen=True)
 class HyperliquidUserRateLimit(WireModel):
     cumulative_volume: Decimal
     requests_used: int
@@ -2706,6 +3554,20 @@ __all__ = [
     "TransferHistoryRequest",
     "UpbitListedSubscription",
     "UpbitSubscriptionList",
+    "UpbitOrderResponse",
+    "UpbitDepositResponse",
+    "UpbitWithdrawalResponse",
+    "UpbitCancelWithdrawalResponse",
+    "UpbitCancelOrdersResponse",
+    "UpbitCancelAndNewOrderDetailResult",
+    "UpbitTradeStreamEvent",
+    "UpbitOrderBookStreamEvent",
+    "UpbitTickerStreamEvent",
+    "UpbitCandleStreamEvent",
+    "UpbitAssetStreamEvent",
+    "UpbitOrderStreamEvent",
+    "UpbitMarketStreamEvent",
+    "UpbitAccountStreamEvent",
     "UpbitYearCandle",
     "UpbitOrderBookInstrument",
     "UpbitOrderDetailRequest",
@@ -2752,6 +3614,21 @@ __all__ = [
     "BithumbBatchOrderFailure",
     "BithumbBatchOrderOutcome",
     "BithumbBatchOrdersResult",
+    "BithumbOrderBookSnapshot",
+    "BithumbOrderResponse",
+    "BithumbOrdersResponse",
+    "BithumbCancelOrderResponse",
+    "BithumbCancelOrdersResponse",
+    "BithumbDepositResponse",
+    "BithumbWithdrawalResponse",
+    "BithumbCancelWithdrawalResponse",
+    "BithumbTradeEvent",
+    "BithumbOrderBookEvent",
+    "BithumbTickerEvent",
+    "BithumbAssetEvent",
+    "BithumbOrderEvent",
+    "BithumbMarketEvent",
+    "BithumbAccountEvent",
     "BithumbTwapOrdersRequest",
     "BithumbTwapOrderRequest",
     "BithumbTwapOrder",
@@ -2790,6 +3667,16 @@ __all__ = [
     "BinanceOpenInterest",
     "BinanceAggregateTradesRequest",
     "BinanceAggregateTrade",
+    "BinanceOrderResponse",
+    "BinanceTradeEvent",
+    "BinanceOrderBookEvent",
+    "BinanceTickerEvent",
+    "BinanceCandleEvent",
+    "BinanceBalanceStreamEvent",
+    "BinanceOrderStreamEvent",
+    "BinanceRawAccountEvent",
+    "BinanceMarketEvent",
+    "BinanceAccountStreamEvent",
     "BinanceAccountTrade",
     "BinanceTestOrderRequest",
     "BinanceTestOrder",
@@ -2820,6 +3707,9 @@ __all__ = [
     "HyperliquidSpotAssetContext",
     "HyperliquidSpotMetaAndAssetContexts",
     "HyperliquidMidPrice",
+    "HyperliquidAllMids",
+    "HyperliquidProviderResponse",
+    "HyperliquidOrderActionResponse",
     "HyperliquidUserRateLimit",
     "HyperliquidUserRole",
     "HyperliquidReferral",

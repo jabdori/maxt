@@ -885,11 +885,6 @@ const fn operation(
     }
 }
 
-const fn partial(mut operation: OperationCoverage) -> OperationCoverage {
-    operation.implementation = Implementation::Partial;
-    operation
-}
-
 const fn planned(mut operation: OperationCoverage) -> OperationCoverage {
     operation.implementation = Implementation::Planned;
     operation
@@ -1058,7 +1053,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Provider("orderbook_instruments"),
         Validation::LiveRead,
     ),
-    partial(operation(
+    operation(
         Exchange::Upbit,
         "quotation",
         "ticker_stream",
@@ -1067,10 +1062,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe"],
+            provider: &["subscribe_detailed"],
+        },
         Validation::LiveRead,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Upbit,
         "quotation",
         "trade_stream",
@@ -1079,10 +1077,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe"],
+            provider: &["subscribe_detailed"],
+        },
         Validation::LiveRead,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Upbit,
         "quotation",
         "orderbook_stream",
@@ -1091,10 +1092,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe"],
+            provider: &["subscribe_detailed"],
+        },
         Validation::LiveRead,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Upbit,
         "quotation",
         "candle_stream",
@@ -1103,9 +1107,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe"],
+            provider: &["subscribe_detailed"],
+        },
         Validation::LiveRead,
-    )),
+    ),
     operation(
         Exchange::Upbit,
         "quotation",
@@ -1142,7 +1149,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("order_rules"),
         Validation::Fixture,
     ),
-    partial(operation(
+    operation(
         Exchange::Upbit,
         "exchange",
         "test_order",
@@ -1151,9 +1158,9 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::Read,
-        OperationMapping::Provider("test_order"),
+        OperationMapping::Provider("test_order_detail"),
         Validation::Fixture,
-    )),
+    ),
     operation(
         Exchange::Upbit,
         "exchange",
@@ -1181,7 +1188,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         },
         Validation::Fixture,
     ),
-    partial(operation(
+    operation(
         Exchange::Upbit,
         "exchange",
         "orders_by_ids",
@@ -1190,9 +1197,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::Read,
-        OperationMapping::Common("orders_by_ids"),
+        OperationMapping::CommonAndProvider {
+            common: &["orders_by_ids"],
+            provider: &["orders_by_ids_detail"],
+        },
         Validation::Fixture,
-    )),
+    ),
     operation(
         Exchange::Upbit,
         "exchange",
@@ -1208,7 +1218,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         },
         Validation::Fixture,
     ),
-    partial(operation(
+    operation(
         Exchange::Upbit,
         "exchange",
         "new_order",
@@ -1217,10 +1227,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::FinancialWrite,
-        OperationMapping::Common("place_order"),
+        OperationMapping::CommonAndProvider {
+            common: &["place_order"],
+            provider: &["place_order_detail"],
+        },
         Validation::Fixture,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Upbit,
         "exchange",
         "cancel_order",
@@ -1229,10 +1242,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::FinancialWrite,
-        OperationMapping::CommonMany(&["cancel_order", "cancel_order_by_client_id"]),
+        OperationMapping::CommonAndProvider {
+            common: &["cancel_order", "cancel_order_by_client_id"],
+            provider: &["cancel_order_detail", "cancel_order_by_client_id_detail"],
+        },
         Validation::Fixture,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Upbit,
         "exchange",
         "cancel_orders_by_ids",
@@ -1241,9 +1257,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::FinancialWrite,
-        OperationMapping::Common("cancel_orders"),
+        OperationMapping::CommonAndProvider {
+            common: &["cancel_orders"],
+            provider: &["cancel_orders_detail"],
+        },
         Validation::Fixture,
-    )),
+    ),
     operation(
         Exchange::Upbit,
         "exchange",
@@ -1256,7 +1275,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Provider("batch_cancel_open_orders"),
         Validation::Fixture,
     ),
-    partial(operation(
+    operation(
         Exchange::Upbit,
         "exchange",
         "cancel_and_new_order",
@@ -1265,10 +1284,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::FinancialWrite,
-        OperationMapping::Provider("cancel_and_new_order"),
+        OperationMapping::Provider("cancel_and_new_order_detail"),
         Validation::Fixture,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Upbit,
         "exchange",
         "my_order_stream",
@@ -1277,10 +1296,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Jwt,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe_account"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe_account"],
+            provider: &["subscribe_detailed_account"],
+        },
         Validation::Fixture,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Upbit,
         "exchange",
         "my_asset_stream",
@@ -1289,9 +1311,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Jwt,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe_account"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe_account"],
+            provider: &["subscribe_detailed_account"],
+        },
         Validation::Fixture,
-    )),
+    ),
     operation(
         Exchange::Upbit,
         "wallet",
@@ -1391,7 +1416,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("withdraw"),
         Validation::Fixture,
     ),
-    partial(operation(
+    operation(
         Exchange::Upbit,
         "wallet",
         "withdrawal",
@@ -1400,10 +1425,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::Read,
-        OperationMapping::Common("withdrawal"),
+        OperationMapping::CommonAndProvider {
+            common: &["withdrawal"],
+            provider: &["withdrawal_detail"],
+        },
         Validation::Fixture,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Upbit,
         "wallet",
         "cancel_withdrawal",
@@ -1412,9 +1440,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::FinancialWrite,
-        OperationMapping::Common("cancel_withdrawal"),
+        OperationMapping::CommonAndProvider {
+            common: &["cancel_withdrawal"],
+            provider: &["cancel_withdrawal_detail"],
+        },
         Validation::Fixture,
-    )),
+    ),
     operation(
         Exchange::Upbit,
         "wallet",
@@ -1427,7 +1458,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("deposits"),
         Validation::Fixture,
     ),
-    partial(operation(
+    operation(
         Exchange::Upbit,
         "wallet",
         "deposit",
@@ -1436,9 +1467,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::Read,
-        OperationMapping::Common("deposit"),
+        OperationMapping::CommonAndProvider {
+            common: &["deposit"],
+            provider: &["deposit_detail"],
+        },
         Validation::Fixture,
-    )),
+    ),
     operation(
         Exchange::Upbit,
         "wallet",
@@ -1733,7 +1767,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("ticker"),
         Validation::LiveRead,
     ),
-    partial(operation(
+    operation(
         Exchange::Bithumb,
         "quotation",
         "orderbook",
@@ -1742,9 +1776,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("order_book"),
+        OperationMapping::CommonAndProvider {
+            common: &["order_book"],
+            provider: &["order_book_snapshot"],
+        },
         Validation::LiveRead,
-    )),
+    ),
     operation(
         Exchange::Bithumb,
         "quotation",
@@ -1781,7 +1818,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Provider("transfer_fees"),
         Validation::LiveRead,
     ),
-    partial(operation(
+    operation(
         Exchange::Bithumb,
         "quotation",
         "ticker_stream",
@@ -1790,10 +1827,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe"],
+            provider: &["subscribe_detailed"],
+        },
         Validation::LiveRead,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Bithumb,
         "quotation",
         "trade_stream",
@@ -1802,10 +1842,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe"],
+            provider: &["subscribe_detailed"],
+        },
         Validation::LiveRead,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Bithumb,
         "quotation",
         "orderbook_stream",
@@ -1814,9 +1857,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe"],
+            provider: &["subscribe_detailed"],
+        },
         Validation::LiveRead,
-    )),
+    ),
     operation(
         Exchange::Bithumb,
         "exchange",
@@ -1841,7 +1887,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("order_rules"),
         Validation::Fixture,
     ),
-    partial(operation(
+    operation(
         Exchange::Bithumb,
         "exchange",
         "orders",
@@ -1855,7 +1901,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
             provider: &["order_list"],
         },
         Validation::Fixture,
-    )),
+    ),
     operation(
         Exchange::Bithumb,
         "exchange",
@@ -1871,7 +1917,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         },
         Validation::Fixture,
     ),
-    partial(operation(
+    operation(
         Exchange::Bithumb,
         "exchange",
         "orders_by_ids",
@@ -1880,9 +1926,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::Read,
-        OperationMapping::Common("orders_by_ids"),
+        OperationMapping::CommonAndProvider {
+            common: &["orders_by_ids"],
+            provider: &["orders_by_ids_detail"],
+        },
         Validation::Fixture,
-    )),
+    ),
     operation(
         Exchange::Bithumb,
         "exchange",
@@ -1910,7 +1959,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         },
         Validation::Fixture,
     ),
-    partial(operation(
+    operation(
         Exchange::Bithumb,
         "exchange",
         "new_order",
@@ -1919,10 +1968,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::FinancialWrite,
-        OperationMapping::Common("place_order"),
+        OperationMapping::CommonAndProvider {
+            common: &["place_order"],
+            provider: &["place_order_detail"],
+        },
         Validation::Fixture,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Bithumb,
         "exchange",
         "batch_orders",
@@ -1933,8 +1985,8 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationRisk::FinancialWrite,
         OperationMapping::Provider("batch_orders"),
         Validation::Fixture,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Bithumb,
         "exchange",
         "cancel_order",
@@ -1943,10 +1995,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::FinancialWrite,
-        OperationMapping::CommonMany(&["cancel_order", "cancel_order_by_client_id"]),
+        OperationMapping::CommonAndProvider {
+            common: &["cancel_order", "cancel_order_by_client_id"],
+            provider: &["cancel_order_detail", "cancel_order_by_client_id_detail"],
+        },
         Validation::Fixture,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Bithumb,
         "exchange",
         "cancel_orders",
@@ -1955,10 +2010,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::FinancialWrite,
-        OperationMapping::Common("cancel_orders"),
+        OperationMapping::CommonAndProvider {
+            common: &["cancel_orders"],
+            provider: &["cancel_orders_detail"],
+        },
         Validation::Fixture,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Bithumb,
         "exchange",
         "my_order_stream",
@@ -1967,10 +2025,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Jwt,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe_account"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe_account"],
+            provider: &["subscribe_detailed_account"],
+        },
         Validation::Fixture,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Bithumb,
         "exchange",
         "my_asset_stream",
@@ -1979,9 +2040,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Jwt,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe_account"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe_account"],
+            provider: &["subscribe_detailed_account"],
+        },
         Validation::Fixture,
-    )),
+    ),
     operation(
         Exchange::Bithumb,
         "wallet",
@@ -2066,7 +2130,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("withdraw"),
         Validation::Fixture,
     ),
-    partial(operation(
+    operation(
         Exchange::Bithumb,
         "wallet",
         "withdrawal",
@@ -2075,10 +2139,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::Read,
-        OperationMapping::Common("withdrawal"),
+        OperationMapping::CommonAndProvider {
+            common: &["withdrawal"],
+            provider: &["withdrawal_detail"],
+        },
         Validation::Fixture,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Bithumb,
         "wallet",
         "cancel_withdrawal",
@@ -2087,9 +2154,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::FinancialWrite,
-        OperationMapping::Common("cancel_withdrawal"),
+        OperationMapping::CommonAndProvider {
+            common: &["cancel_withdrawal"],
+            provider: &["cancel_withdrawal_detail"],
+        },
         Validation::Fixture,
-    )),
+    ),
     operation(
         Exchange::Bithumb,
         "wallet",
@@ -2102,7 +2172,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("deposits"),
         Validation::Fixture,
     ),
-    partial(operation(
+    operation(
         Exchange::Bithumb,
         "wallet",
         "deposit",
@@ -2111,9 +2181,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Jwt,
         OperationRisk::Read,
-        OperationMapping::Common("deposit"),
+        OperationMapping::CommonAndProvider {
+            common: &["deposit"],
+            provider: &["deposit_detail"],
+        },
         Validation::Fixture,
-    )),
+    ),
     operation(
         Exchange::Bithumb,
         "wallet",
@@ -2249,7 +2322,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("trades"),
         Validation::LiveRead,
     ),
-    partial(operation(
+    operation(
         Exchange::Binance,
         "spot",
         "aggregate_trades",
@@ -2260,7 +2333,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationRisk::Read,
         OperationMapping::Provider("aggregate_trades"),
         Validation::Fixture,
-    )),
+    ),
     operation(
         Exchange::Binance,
         "spot",
@@ -2336,7 +2409,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("open_orders"),
         Validation::Fixture,
     ),
-    partial(operation(
+    operation(
         Exchange::Binance,
         "spot",
         "new_order",
@@ -2345,10 +2418,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Hmac,
         OperationRisk::FinancialWrite,
-        OperationMapping::Common("place_order"),
+        OperationMapping::CommonAndProvider {
+            common: &["place_order"],
+            provider: &["place_order_detail"],
+        },
         Validation::Fixture,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Binance,
         "spot",
         "cancel_order",
@@ -2357,9 +2433,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Hmac,
         OperationRisk::FinancialWrite,
-        OperationMapping::CommonMany(&["cancel_order", "cancel_order_by_client_id"]),
+        OperationMapping::CommonAndProvider {
+            common: &["cancel_order", "cancel_order_by_client_id"],
+            provider: &["cancel_order_detail", "cancel_order_by_client_id_detail"],
+        },
         Validation::Fixture,
-    )),
+    ),
     operation(
         Exchange::Binance,
         "spot",
@@ -2408,7 +2487,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Provider("spot_order"),
         Validation::Fixture,
     ),
-    partial(operation(
+    operation(
         Exchange::Binance,
         "spot",
         "trade_stream",
@@ -2417,10 +2496,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe"],
+            provider: &["subscribe_detailed"],
+        },
         Validation::LiveRead,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Binance,
         "spot",
         "partial_book_depth_stream",
@@ -2429,10 +2511,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe"],
+            provider: &["subscribe_detailed"],
+        },
         Validation::LiveRead,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Binance,
         "spot",
         "ticker_stream",
@@ -2441,10 +2526,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe"],
+            provider: &["subscribe_detailed"],
+        },
         Validation::LiveRead,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Binance,
         "spot",
         "kline_stream",
@@ -2453,10 +2541,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe"],
+            provider: &["subscribe_detailed"],
+        },
         Validation::LiveRead,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Binance,
         "spot",
         "user_data_stream_signature",
@@ -2465,9 +2556,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketRequest,
         Authentication::Hmac,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe_account"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe_account"],
+            provider: &["subscribe_detailed_account"],
+        },
         Validation::Fixture,
-    )),
+    ),
     operation(
         Exchange::Binance,
         "usd_m",
@@ -2594,7 +2688,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Common("open_orders"),
         Validation::Fixture,
     ),
-    partial(operation(
+    operation(
         Exchange::Binance,
         "usd_m",
         "new_order",
@@ -2603,10 +2697,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Hmac,
         OperationRisk::FinancialWrite,
-        OperationMapping::Common("place_order"),
+        OperationMapping::CommonAndProvider {
+            common: &["place_order"],
+            provider: &["place_order_detail"],
+        },
         Validation::Fixture,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Binance,
         "usd_m",
         "cancel_order",
@@ -2615,9 +2712,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Hmac,
         OperationRisk::FinancialWrite,
-        OperationMapping::CommonMany(&["cancel_order", "cancel_order_by_client_id"]),
+        OperationMapping::CommonAndProvider {
+            common: &["cancel_order", "cancel_order_by_client_id"],
+            provider: &["cancel_order_detail", "cancel_order_by_client_id_detail"],
+        },
         Validation::Fixture,
-    )),
+    ),
     operation(
         Exchange::Binance,
         "usd_m",
@@ -2753,7 +2853,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Provider("usd_m_close_listen_key"),
         Validation::Fixture,
     ),
-    partial(operation(
+    operation(
         Exchange::Binance,
         "usd_m",
         "aggregate_trades",
@@ -2764,7 +2864,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationRisk::Read,
         OperationMapping::Provider("aggregate_trades"),
         Validation::Fixture,
-    )),
+    ),
     planned(operation(
         Exchange::Binance,
         "usd_m",
@@ -2777,7 +2877,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Provider("aggregate_trades"),
         Validation::Documented,
     )),
-    partial(operation(
+    operation(
         Exchange::Binance,
         "usd_m",
         "partial_book_depth_stream",
@@ -2786,10 +2886,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe"],
+            provider: &["subscribe_detailed"],
+        },
         Validation::LiveRead,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Binance,
         "usd_m",
         "ticker_stream",
@@ -2798,10 +2901,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe"],
+            provider: &["subscribe_detailed"],
+        },
         Validation::LiveRead,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Binance,
         "usd_m",
         "kline_stream",
@@ -2810,9 +2916,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::WebSocketStream,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("subscribe"),
+        OperationMapping::CommonAndProvider {
+            common: &["subscribe"],
+            provider: &["subscribe_detailed"],
+        },
         Validation::LiveRead,
-    )),
+    ),
     operation(
         Exchange::Binance,
         "wallet",
@@ -2942,7 +3051,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Provider("c2c_trade_history"),
         Validation::Fixture,
     ),
-    partial(operation(
+    operation(
         Exchange::Hyperliquid,
         "info",
         "meta",
@@ -2951,9 +3060,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("markets"),
+        OperationMapping::CommonAndProvider {
+            common: &["markets"],
+            provider: &["perpetual_meta"],
+        },
         Validation::LiveRead,
-    )),
+    ),
     operation(
         Exchange::Hyperliquid,
         "info",
@@ -2969,7 +3081,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         },
         Validation::LiveRead,
     ),
-    partial(operation(
+    operation(
         Exchange::Hyperliquid,
         "info",
         "all_mids",
@@ -2978,9 +3090,9 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Provider("all_mids"),
+        OperationMapping::Provider("all_mids_detail"),
         Validation::Fixture,
-    )),
+    ),
     operation(
         Exchange::Hyperliquid,
         "info",
@@ -3041,7 +3153,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Provider("historical_orders"),
         Validation::Fixture,
     ),
-    partial(operation(
+    operation(
         Exchange::Hyperliquid,
         "info",
         "meta_and_asset_contexts",
@@ -3052,10 +3164,10 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationRisk::Read,
         OperationMapping::CommonAndProvider {
             common: &["ticker"],
-            provider: &["asset_context"],
+            provider: &["perpetual_meta_and_asset_contexts"],
         },
         Validation::LiveRead,
-    )),
+    ),
     operation(
         Exchange::Hyperliquid,
         "info",
@@ -3215,7 +3327,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::Provider("user_vault_equities"),
         Validation::Fixture,
     ),
-    partial(operation(
+    operation(
         Exchange::Hyperliquid,
         "info",
         "clearinghouse_state",
@@ -3224,10 +3336,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::CommonMany(&["positions", "margin_summary"]),
+        OperationMapping::CommonAndProvider {
+            common: &["positions", "margin_summary"],
+            provider: &["clearinghouse_state_detail"],
+        },
         Validation::Fixture,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Hyperliquid,
         "info",
         "frontend_open_orders",
@@ -3236,9 +3351,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Public,
         OperationRisk::Read,
-        OperationMapping::Common("open_orders"),
+        OperationMapping::CommonAndProvider {
+            common: &["open_orders"],
+            provider: &["frontend_open_orders_detail"],
+        },
         Validation::Fixture,
-    )),
+    ),
     operation(
         Exchange::Hyperliquid,
         "info",
@@ -3281,7 +3399,7 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         OperationMapping::CommonMany(&["deposits", "withdrawals"]),
         Validation::Fixture,
     ),
-    partial(operation(
+    operation(
         Exchange::Hyperliquid,
         "exchange",
         "order",
@@ -3290,10 +3408,13 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Eip712,
         OperationRisk::FinancialWrite,
-        OperationMapping::Common("place_order"),
+        OperationMapping::CommonAndProvider {
+            common: &["place_order"],
+            provider: &["place_order_detail"],
+        },
         Validation::Fixture,
-    )),
-    partial(operation(
+    ),
+    operation(
         Exchange::Hyperliquid,
         "exchange",
         "cancel",
@@ -3302,9 +3423,12 @@ pub const OPERATIONS: &[OperationCoverage] = &[
         ApiInterface::Http,
         Authentication::Eip712,
         OperationRisk::FinancialWrite,
-        OperationMapping::Common("cancel_order"),
+        OperationMapping::CommonAndProvider {
+            common: &["cancel_order"],
+            provider: &["cancel_order_detail"],
+        },
         Validation::Fixture,
-    )),
+    ),
     operation(
         Exchange::Hyperliquid,
         "exchange",

@@ -525,6 +525,8 @@ fn hyperliquid_account_stream_item(
     }
 }
 
+include!("generated_provider_streams.rs");
+
 impl TryFrom<MarketEvent> for WireMarketEvent {
     type Error = Error;
 

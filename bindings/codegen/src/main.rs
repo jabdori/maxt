@@ -1,7 +1,7 @@
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
-#[cfg(feature = "dart")]
+#[cfg(any(feature = "dart", feature = "python", feature = "typescript"))]
 use std::process::Command;
 
 #[cfg(feature = "rust")]
@@ -23,6 +23,10 @@ mod typescript_api;
 mod typescript_codec;
 #[cfg(feature = "typescript")]
 mod typescript_contract;
+#[cfg(feature = "typescript")]
+mod typescript_models;
+#[cfg(feature = "typescript")]
+mod typescript_native;
 
 fn main() {
     let arguments = env::args().skip(1).collect::<Vec<_>>();
@@ -77,6 +81,26 @@ fn main() {
             "typescript",
             root.join("bindings/typescript/src/generated/api.ts"),
             typescript_api::render(&schema),
+        ),
+        (
+            "typescript",
+            root.join("bindings/typescript/src/generated/provider_models.ts"),
+            typescript_models::render(&schema),
+        ),
+        (
+            "typescript",
+            root.join("bindings/typescript/rust/src/generated_provider_convert.rs"),
+            typescript_native::render_convert(&schema),
+        ),
+        (
+            "typescript",
+            root.join("bindings/typescript/rust/src/generated_provider_native.rs"),
+            typescript_native::render_native(&schema),
+        ),
+        (
+            "typescript",
+            root.join("bindings/typescript/rust/src/generated_version.rs"),
+            typescript_native::render_version(&schema),
         ),
     ]);
     #[cfg(feature = "python")]
@@ -145,6 +169,24 @@ fn main() {
         root.join("bindings/python/src/generated/provider_convert.rs"),
         python::render_rust_provider_convert(&schema),
     ));
+    #[cfg(feature = "python")]
+    outputs.push((
+        "python",
+        root.join("bindings/python/src/generated/provider_native.rs"),
+        python::render_rust_provider_native(&schema),
+    ));
+    #[cfg(feature = "python")]
+    outputs.push((
+        "python",
+        root.join("bindings/python/python/maxt/_generated_provider_methods.py"),
+        python::render_provider_methods(&schema),
+    ));
+    #[cfg(feature = "python")]
+    outputs.push((
+        "python",
+        root.join("bindings/python/python/maxt/_generated_provider_models.py"),
+        python::render_provider_models(&schema),
+    ));
     #[cfg(feature = "dart")]
     outputs.push((
         "dart",
@@ -190,6 +232,12 @@ fn main() {
     #[cfg(feature = "dart")]
     outputs.push((
         "dart",
+        root.join("bindings/dart/lib/src/generated_provider_streams.dart"),
+        dart::render_provider_stream_types(&schema),
+    ));
+    #[cfg(feature = "dart")]
+    outputs.push((
+        "dart",
         root.join("bindings/dart/lib/src/generated_delegate.dart"),
         dart::render_delegate_methods(&schema),
     ));
@@ -204,6 +252,18 @@ fn main() {
         "dart",
         root.join("bindings/dart/rust/src/api/generated_native_client.rs"),
         dart::render_native_client_api(&schema),
+    ));
+    #[cfg(feature = "dart")]
+    outputs.push((
+        "dart",
+        root.join("bindings/dart/rust/src/generated_provider_methods.rs"),
+        dart::render_native_provider_methods(&schema),
+    ));
+    #[cfg(feature = "dart")]
+    outputs.push((
+        "dart",
+        root.join("bindings/dart/rust/src/generated_provider_streams.rs"),
+        dart::render_provider_streams(&schema),
     ));
     #[cfg(feature = "dart")]
     outputs.push((
@@ -233,13 +293,17 @@ fn main() {
         if target != "all" && target != output_target {
             continue;
         }
-        #[cfg(feature = "dart")]
+        #[cfg(any(feature = "dart", feature = "python", feature = "typescript"))]
         let content = if output_target == "dart" {
             match path.extension().and_then(|extension| extension.to_str()) {
                 Some("dart") => format_dart_source(&content),
                 Some("rs") => format_rust_source(&content),
                 _ => content,
             }
+        } else if matches!(output_target, "python" | "typescript")
+            && path.extension().is_some_and(|extension| extension == "rs")
+        {
+            format_rust_source(&content)
         } else {
             content
         };
@@ -257,7 +321,7 @@ fn main() {
     }
 }
 
-#[cfg(feature = "dart")]
+#[cfg(any(feature = "dart", feature = "python", feature = "typescript"))]
 fn format_dart_source(source: &str) -> String {
     let path = env::temp_dir().join(format!("maxt-bindings-codegen-{}.dart", std::process::id()));
     fs::write(&path, source).expect("temporary Dart source must be writable");
@@ -286,7 +350,7 @@ fn format_dart_source(source: &str) -> String {
     format!("{formatted}\n")
 }
 
-#[cfg(feature = "dart")]
+#[cfg(any(feature = "dart", feature = "python", feature = "typescript"))]
 fn format_rust_source(source: &str) -> String {
     let path = env::temp_dir().join(format!("maxt-bindings-codegen-{}.rs", std::process::id()));
     fs::write(&path, source).expect("temporary Rust source must be writable");
@@ -479,7 +543,7 @@ mod tests {
             "| upbit | travel_rule | `travel_rule_vasps` | `GET` | `/v1/travel_rule/vasps` | `http` | JWT | read | Korea or Singapore only |"
         ));
         assert!(
-            output.contains("| upbit | Korea | Deposits and withdrawals | 16 / 16 | Partial |")
+            output.contains("| upbit | Korea | Deposits and withdrawals | 16 / 16 | Complete |")
         );
     }
 
@@ -508,5 +572,45 @@ mod tests {
             python::snake_case("usdMCreateListenKey"),
             "usd_m_create_listen_key"
         );
+    }
+
+    #[cfg(all(feature = "python", feature = "dart", feature = "typescript"))]
+    #[test]
+    fn fixed_provider_bridge_is_emitted_for_every_language() {
+        let schema = binding_schema();
+        let python = python::render_rust_provider_native(&schema);
+        let dart = dart::render_native_provider_methods(&schema);
+        let typescript = typescript_native::render_native(&schema);
+
+        for provider in schema.providers {
+            for method in provider.methods.iter().filter(|method| {
+                maxt_bindings_common::schema::uses_generated_native_provider_bridge(
+                    provider.exchange,
+                    method.rust_name,
+                )
+            }) {
+                assert!(
+                    python.contains(&format!("fn {}<'py>", method.rust_name)),
+                    "Python bridge is missing {}.{}",
+                    provider.exchange,
+                    method.rust_name
+                );
+                assert!(
+                    dart.contains(&format!(
+                        "pub async fn {}_{}",
+                        provider.exchange, method.rust_name
+                    )),
+                    "Dart bridge is missing {}.{}",
+                    provider.exchange,
+                    method.rust_name
+                );
+                assert!(
+                    typescript.contains(&format!("async fn {}", method.rust_name)),
+                    "TypeScript bridge is missing {}.{}",
+                    provider.exchange,
+                    method.rust_name
+                );
+            }
+        }
     }
 }

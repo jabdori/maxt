@@ -9,11 +9,9 @@ impl NativeClient {
     ) -> PyResult<Bound<'py, PyAny>> {
         let kind = crate::convert::market_kind_from_wire(kind)?;
         let core = self.core();
-        operation(
-            py,
-            async move { core.markets(kind).await },
-            |py, values| crate::convert::list_to_wire(py, &values, crate::convert::market_info_to_wire),
-        )
+        operation(py, async move { core.markets(kind).await }, |py, values| {
+            crate::convert::list_to_wire(py, &values, crate::convert::market_info_to_wire)
+        })
     }
 
     #[pyo3(signature = (market, limit=None))]
@@ -101,16 +99,11 @@ impl NativeClient {
         self.subscribe(py, subscription, config)
     }
 
-    fn balances<'py>(
-        &self,
-        py: Python<'py>,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn balances<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let core = self.core();
-        operation(
-            py,
-            async move { core.balances().await },
-            |py, values| crate::convert::list_to_wire(py, &values, crate::convert::balance_to_wire),
-        )
+        operation(py, async move { core.balances().await }, |py, values| {
+            crate::convert::list_to_wire(py, &values, crate::convert::balance_to_wire)
+        })
     }
 
     fn order_rules<'py>(
@@ -127,28 +120,29 @@ impl NativeClient {
         )
     }
 
-    fn asset_networks<'py>(
-        &self,
-        py: Python<'py>,
-        asset: String,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn asset_networks<'py>(&self, py: Python<'py>, asset: String) -> PyResult<Bound<'py, PyAny>> {
         let core = self.core();
         operation(
             py,
             async move { core.asset_networks(&asset).await },
-            |py, values| crate::convert::list_to_wire(py, &values, crate::convert::asset_network_to_wire),
+            |py, values| {
+                crate::convert::list_to_wire(py, &values, crate::convert::asset_network_to_wire)
+            },
         )
     }
 
-    fn deposit_addresses<'py>(
-        &self,
-        py: Python<'py>,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn deposit_addresses<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let core = self.core();
         operation(
             py,
             async move { core.deposit_addresses().await },
-            |py, values| crate::convert::list_to_wire(py, &values, crate::convert::deposit_address_entry_to_wire),
+            |py, values| {
+                crate::convert::list_to_wire(
+                    py,
+                    &values,
+                    crate::convert::deposit_address_entry_to_wire,
+                )
+            },
         )
     }
 
@@ -277,16 +271,11 @@ impl NativeClient {
         )
     }
 
-    fn open_orders<'py>(
-        &self,
-        py: Python<'py>,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn open_orders<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let core = self.core();
-        operation(
-            py,
-            async move { core.open_orders().await },
-            |py, values| crate::convert::list_to_wire(py, &values, crate::convert::order_to_wire),
-        )
+        operation(py, async move { core.open_orders().await }, |py, values| {
+            crate::convert::list_to_wire(py, &values, crate::convert::order_to_wire)
+        })
     }
 
     fn open_orders_on<'py>(
@@ -441,16 +430,11 @@ impl NativeClient {
         )
     }
 
-    fn positions<'py>(
-        &self,
-        py: Python<'py>,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn positions<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let core = self.core();
-        operation(
-            py,
-            async move { core.positions().await },
-            |py, values| crate::convert::list_to_wire(py, &values, crate::convert::position_to_wire),
-        )
+        operation(py, async move { core.positions().await }, |py, values| {
+            crate::convert::list_to_wire(py, &values, crate::convert::position_to_wire)
+        })
     }
 
     fn positions_on<'py>(
@@ -463,14 +447,13 @@ impl NativeClient {
         operation(
             py,
             async move { core.positions_on(&market).await },
-            |py, values| crate::convert::list_to_wire(py, &values, crate::convert::position_to_wire),
+            |py, values| {
+                crate::convert::list_to_wire(py, &values, crate::convert::position_to_wire)
+            },
         )
     }
 
-    fn margin_summary<'py>(
-        &self,
-        py: Python<'py>,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn margin_summary<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let core = self.core();
         operation(
             py,
@@ -520,5 +503,4 @@ impl NativeClient {
             |py, ()| Ok(py.None()),
         )
     }
-
 }

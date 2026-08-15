@@ -410,6 +410,54 @@ struct RawSpotOrderDetail {
     update_time: Option<i64>,
 }
 
+/// A create-or-cancel response shared by Binance Spot and USD-M.
+///
+/// Both venues return the common order fields, while the remaining fields
+/// differ by venue and order type. Optional fields retain that distinction
+/// without making a Spot response pretend to be a futures response.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawProviderOrderResponse {
+    #[serde(flatten)]
+    order: parse::RawOrder,
+    #[serde(default)]
+    client_order_id: Option<String>,
+    #[serde(default)]
+    order_list_id: Option<i64>,
+    #[serde(rename = "type", default)]
+    order_type: Option<String>,
+    #[serde(default)]
+    time_in_force: Option<String>,
+    #[serde(default)]
+    cummulative_quote_qty: Option<String>,
+    #[serde(default)]
+    cum_qty: Option<String>,
+    #[serde(default)]
+    cum_quote: Option<String>,
+    #[serde(default)]
+    avg_price: Option<String>,
+    #[serde(default)]
+    reduce_only: Option<bool>,
+    #[serde(default)]
+    close_position: Option<bool>,
+    #[serde(default)]
+    position_side: Option<String>,
+    #[serde(default)]
+    stop_price: Option<String>,
+    #[serde(default)]
+    working_type: Option<String>,
+    #[serde(default)]
+    price_protect: Option<bool>,
+    #[serde(default)]
+    orig_type: Option<String>,
+    #[serde(default)]
+    price_match: Option<String>,
+    #[serde(default)]
+    self_trade_prevention_mode: Option<String>,
+    #[serde(default)]
+    good_till_date: Option<i64>,
+}
+
 // ---------------------------------------------------------------------------
 // Request building
 // ---------------------------------------------------------------------------
@@ -1888,9 +1936,9 @@ fn cancel_all_open_orders_response(venue: BinanceMarket, body: &str) -> Result<(
 }
 
 pub(super) async fn place_order(adapter: &BinanceAdapter, request: &OrderRequest) -> Result<Order> {
-    let body = adapter.send(place_order_request(adapter, request)?).await?;
-    let raw: parse::RawOrder = parse::json(&body, "order")?;
-    parse::order(&request.market, &raw)
+    place_order_detail(adapter, request)
+        .await
+        .map(|response| response.order)
 }
 
 pub(super) async fn cancel_order(
@@ -1898,11 +1946,30 @@ pub(super) async fn cancel_order(
     market: &Market,
     order_id: &str,
 ) -> Result<()> {
+    cancel_order_detail(adapter, market, order_id)
+        .await
+        .map(drop)
+}
+
+/// Creates an order and keeps Binance's provider-specific response fields.
+pub(super) async fn place_order_detail(
+    adapter: &BinanceAdapter,
+    request: &OrderRequest,
+) -> Result<BinanceOrderResponse> {
+    let body = adapter.send(place_order_request(adapter, request)?).await?;
+    order_response_from_body(&request.market, &body)
+}
+
+/// Cancels one Binance order by exchange identifier and keeps its response.
+pub(super) async fn cancel_order_detail(
+    adapter: &BinanceAdapter,
+    market: &Market,
+    order_id: &str,
+) -> Result<BinanceOrderResponse> {
     let body = adapter
         .send(cancel_order_request(adapter, market, order_id)?)
         .await?;
-    let raw: parse::RawOrder = parse::json(&body, "order")?;
-    parse::order(market, &raw).map(drop)
+    order_response_from_body(market, &body)
 }
 
 pub(super) async fn cancel_order_by_client_id(
@@ -1910,13 +1977,61 @@ pub(super) async fn cancel_order_by_client_id(
     market: &Market,
     client_id: &str,
 ) -> Result<()> {
+    cancel_order_by_client_id_detail(adapter, market, client_id)
+        .await
+        .map(drop)
+}
+
+/// Cancels one Binance order by client identifier and keeps its response.
+pub(super) async fn cancel_order_by_client_id_detail(
+    adapter: &BinanceAdapter,
+    market: &Market,
+    client_id: &str,
+) -> Result<BinanceOrderResponse> {
     let body = adapter
         .send(cancel_order_by_client_id_request(
             adapter, market, client_id,
         )?)
         .await?;
-    let raw: parse::RawOrder = parse::json(&body, "order")?;
-    parse::order(market, &raw).map(drop)
+    order_response_from_body(market, &body)
+}
+
+pub(super) fn order_response_from_body(
+    market: &Market,
+    body: &str,
+) -> Result<BinanceOrderResponse> {
+    let value: serde_json::Value = parse::json(body, "order")?;
+    let raw: RawProviderOrderResponse = serde_json::from_value(value.clone())
+        .map_err(|error| Error::decode(format!("unreadable Binance order response: {error}")))?;
+
+    Ok(BinanceOrderResponse {
+        order: parse::order(market, &raw.order)?,
+        client_order_id: raw.client_order_id,
+        order_list_id: raw.order_list_id.map(|value| value.to_string()),
+        order_type: raw.order_type,
+        time_in_force: raw.time_in_force,
+        cumulative_quote_quantity: decimal_option(
+            raw.cummulative_quote_qty.as_deref(),
+            "cummulativeQuoteQty",
+        )?,
+        cumulative_quantity: decimal_option(raw.cum_qty.as_deref(), "cumQty")?,
+        cumulative_quote: decimal_option(raw.cum_quote.as_deref(), "cumQuote")?,
+        average_price: decimal_option(raw.avg_price.as_deref(), "avgPrice")?,
+        reduce_only: raw.reduce_only,
+        close_position: raw.close_position,
+        position_side: raw.position_side,
+        stop_price: decimal_option(raw.stop_price.as_deref(), "stopPrice")?,
+        working_type: raw.working_type,
+        price_protect: raw.price_protect,
+        original_type: raw.orig_type,
+        price_match: raw.price_match,
+        self_trade_prevention_mode: raw.self_trade_prevention_mode,
+        good_till_date: raw
+            .good_till_date
+            .filter(|value| *value > 0)
+            .map(parse::millis),
+        raw_json: parse::canonical_json(&value, "order")?,
+    })
 }
 
 /// Reads `/fapi/v3/positionRisk`, including Binance's zero-size rows.
@@ -2165,6 +2280,57 @@ pub struct BinanceSpotOrderDetail {
     pub filled_quote_quantity: Decimal,
     /// When Binance last changed the order.
     pub updated_at: Option<Timestamp>,
+}
+
+/// A Binance order response that keeps the normalized order and the
+/// venue-specific response fields returned by create or cancel requests.
+///
+/// Spot and USD-M share the basic order shape but publish different optional
+/// execution and risk fields. The complete response remains available through
+/// [`Self::raw_json`] when Binance introduces additional fields.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinanceOrderResponse {
+    /// The order projected onto maxt's portable order contract.
+    pub order: Order,
+    /// Binance's caller-assigned order identifier, when returned.
+    pub client_order_id: Option<String>,
+    /// Spot's order-list identifier, when this response belongs to one.
+    pub order_list_id: Option<String>,
+    /// Provider order type, including venue-specific values.
+    pub order_type: Option<String>,
+    /// Provider time-in-force value.
+    pub time_in_force: Option<String>,
+    /// Filled quote quantity from Spot's response.
+    pub cumulative_quote_quantity: Option<Decimal>,
+    /// Filled base quantity from USD-M's response.
+    pub cumulative_quantity: Option<Decimal>,
+    /// Filled quote quantity from USD-M's response.
+    pub cumulative_quote: Option<Decimal>,
+    /// USD-M average fill price.
+    pub average_price: Option<Decimal>,
+    /// USD-M reduce-only flag.
+    pub reduce_only: Option<bool>,
+    /// USD-M close-position flag.
+    pub close_position: Option<bool>,
+    /// USD-M position-side value.
+    pub position_side: Option<String>,
+    /// Provider stop price, when the order type has one.
+    pub stop_price: Option<Decimal>,
+    /// USD-M working-price source.
+    pub working_type: Option<String>,
+    /// USD-M price-protection flag.
+    pub price_protect: Option<bool>,
+    /// USD-M original order type.
+    pub original_type: Option<String>,
+    /// USD-M price-match mode.
+    pub price_match: Option<String>,
+    /// Binance self-trade-prevention mode.
+    pub self_trade_prevention_mode: Option<String>,
+    /// USD-M good-till timestamp, when the order uses one.
+    pub good_till_date: Option<Timestamp>,
+    /// Complete provider response object encoded as JSON.
+    pub raw_json: String,
 }
 
 pub(super) async fn spot_order(

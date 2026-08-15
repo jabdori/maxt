@@ -20,15 +20,16 @@ use crate::request::{
 use crate::transport::{HttpRequest, HttpTransport};
 use crate::types::{
     AccountEvent, Balance, CancelOrdersResult, CancelledOrder, Market, Order, OrderCancelFailure,
-    OrderRules, OrderType, Page, Side, Size, TimeInForce,
+    OrderRules, OrderType, Page, Side, Size, TimeInForce, Timestamp,
 };
 
 use super::parse::{self, EXCHANGE};
 use super::{
-    UpbitBatchCancelRequest, UpbitBatchCancelScope, UpbitCancelAndNewOrder,
-    UpbitCancelAndNewOrderRequest, UpbitClosedOrder, UpbitClosedOrdersRequest, UpbitCredentials,
+    UpbitAccountStreamEvent, UpbitAssetStreamEvent, UpbitBatchCancelRequest, UpbitBatchCancelScope,
+    UpbitCancelAndNewOrder, UpbitCancelAndNewOrderDetailResult, UpbitCancelAndNewOrderRequest,
+    UpbitCancelOrdersResponse, UpbitClosedOrder, UpbitClosedOrdersRequest, UpbitCredentials,
     UpbitOrderDetail, UpbitOrderDetailRequest, UpbitOrderDirection, UpbitOrderReference,
-    UpbitOrderVolume, UpbitSmpType, rest, stream,
+    UpbitOrderResponse, UpbitOrderStreamEvent, UpbitOrderVolume, UpbitSmpType, rest, stream,
 };
 
 /// Authentication header used by REST and private WebSocket handshakes.
@@ -1103,6 +1104,17 @@ pub(crate) async fn orders_by_ids(
         .collect()
 }
 
+/// Reads orders by identifier without discarding the provider fields present
+/// in each returned order object.
+pub(crate) async fn orders_by_ids_detail(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    request: &OrderLookupRequest,
+) -> Result<Vec<UpbitOrderResponse>> {
+    let body = rest::send(http, &orders_by_ids_request(credentials, request)?).await?;
+    order_responses(&body)
+}
+
 pub(crate) async fn order_history(
     credentials: &UpbitCredentials,
     http: &HttpTransport,
@@ -1175,8 +1187,19 @@ pub(crate) async fn place_order(
     http: &HttpTransport,
     request: &OrderRequest,
 ) -> Result<Order> {
+    place_order_detail(credentials, http, request)
+        .await
+        .map(|response| response.common)
+}
+
+/// Creates one order and preserves Upbit-specific response fields.
+pub(crate) async fn place_order_detail(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    request: &OrderRequest,
+) -> Result<UpbitOrderResponse> {
     let body = rest::send(http, &place_order_request(credentials, request)?).await?;
-    parse::order(&parse::json::<parse::RawOrder>(&body)?)
+    order_response(&body)
 }
 
 pub(crate) async fn cancel_and_new_order(
@@ -1184,21 +1207,46 @@ pub(crate) async fn cancel_and_new_order(
     http: &HttpTransport,
     request: &UpbitCancelAndNewOrderRequest,
 ) -> Result<super::UpbitCancelAndNewOrderResult> {
+    cancel_and_new_order_detail(credentials, http, request)
+        .await
+        .map(|response| response.common)
+}
+
+/// Executes cancel-and-new while preserving the complete prior-order response.
+pub(crate) async fn cancel_and_new_order_detail(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    request: &UpbitCancelAndNewOrderRequest,
+) -> Result<UpbitCancelAndNewOrderDetailResult> {
     let response = http
         .send(&cancel_and_new_order_request(credentials, request)?)
         .await?;
     if response.status != 201 {
         return Err(parse::exchange_error(response.status, &response.body));
     }
-    cancel_and_new_order_result(&response.body)
+    cancel_and_new_order_detail_result(&response.body)
 }
 
-fn cancel_and_new_order_result(body: &str) -> Result<super::UpbitCancelAndNewOrderResult> {
-    let response = parse::json::<RawCancelAndNewOrder>(body)?;
-    Ok(super::UpbitCancelAndNewOrderResult {
-        previous_order: parse::order(&response.order)?,
+fn cancel_and_new_order_detail_result(body: &str) -> Result<UpbitCancelAndNewOrderDetailResult> {
+    let value: Value = parse::json(body)?;
+    let response: RawCancelAndNewOrder =
+        serde_json::from_value(value.clone()).map_err(|error| {
+            Error::decode(format!("unreadable Upbit cancel-and-new response: {error}"))
+        })?;
+    let previous_order = parse::order_response(&response.order, &value)?;
+    let common = super::UpbitCancelAndNewOrderResult {
+        previous_order: previous_order.common.clone(),
         new_order_uuid: response.new_order_uuid,
         new_order_identifier: response.new_order_identifier,
+    };
+    Ok(UpbitCancelAndNewOrderDetailResult {
+        common,
+        previous_order,
+        raw_json: serde_json::to_string(&value).map_err(|error| {
+            Error::decode(format!(
+                "could not preserve Upbit cancel-and-new response: {error}"
+            ))
+        })?,
     })
 }
 
@@ -1207,8 +1255,19 @@ pub(crate) async fn test_order(
     http: &HttpTransport,
     request: &OrderRequest,
 ) -> Result<Order> {
+    test_order_detail(credentials, http, request)
+        .await
+        .map(|response| response.common)
+}
+
+/// Validates an order and preserves Upbit-specific response fields.
+pub(crate) async fn test_order_detail(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    request: &OrderRequest,
+) -> Result<UpbitOrderResponse> {
     let body = rest::send(http, &test_order_request(credentials, request)?).await?;
-    parse::order(&parse::json::<parse::RawOrder>(&body)?)
+    order_response(&body)
 }
 
 pub(crate) async fn cancel_order(
@@ -1217,8 +1276,20 @@ pub(crate) async fn cancel_order(
     market: &Market,
     order_id: &str,
 ) -> Result<()> {
+    cancel_order_detail(credentials, http, market, order_id)
+        .await
+        .map(drop)
+}
+
+/// Cancels by exchange identifier and preserves Upbit's response fields.
+pub(crate) async fn cancel_order_detail(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    market: &Market,
+    order_id: &str,
+) -> Result<UpbitOrderResponse> {
     let body = rest::send(http, &cancel_order_request(credentials, market, order_id)?).await?;
-    parse::order(&parse::json::<parse::RawOrder>(&body)?).map(drop)
+    order_response(&body)
 }
 
 pub(crate) async fn cancel_order_by_client_id(
@@ -1227,12 +1298,44 @@ pub(crate) async fn cancel_order_by_client_id(
     market: &Market,
     client_id: &str,
 ) -> Result<()> {
+    cancel_order_by_client_id_detail(credentials, http, market, client_id)
+        .await
+        .map(drop)
+}
+
+/// Cancels by client identifier and preserves Upbit's response fields.
+pub(crate) async fn cancel_order_by_client_id_detail(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    market: &Market,
+    client_id: &str,
+) -> Result<UpbitOrderResponse> {
     let body = rest::send(
         http,
         &cancel_order_by_client_id_request(credentials, market, client_id)?,
     )
     .await?;
-    parse::order(&parse::json::<parse::RawOrder>(&body)?).map(drop)
+    order_response(&body)
+}
+
+pub(crate) fn order_response(body: &str) -> Result<UpbitOrderResponse> {
+    let value: Value = parse::json(body)?;
+    let raw: parse::RawOrder = serde_json::from_value(value.clone())
+        .map_err(|error| Error::decode(format!("unreadable Upbit order response: {error}")))?;
+    parse::order_response(&raw, &value)
+}
+
+fn order_responses(body: &str) -> Result<Vec<UpbitOrderResponse>> {
+    let values: Vec<Value> = parse::json(body)?;
+    values
+        .iter()
+        .map(|value| {
+            let raw: parse::RawOrder = serde_json::from_value(value.clone()).map_err(|error| {
+                Error::decode(format!("unreadable Upbit order response: {error}"))
+            })?;
+            parse::order_response(&raw, value)
+        })
+        .collect()
 }
 
 pub(crate) async fn cancel_orders(
@@ -1242,6 +1345,23 @@ pub(crate) async fn cancel_orders(
 ) -> Result<CancelOrdersResult> {
     let body = rest::send(http, &cancel_orders_request(credentials, request)?).await?;
     cancel_orders_result(&body)
+}
+
+/// Cancels several orders while retaining the complete provider response.
+pub(crate) async fn cancel_orders_detail(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    request: &CancelOrdersRequest,
+) -> Result<UpbitCancelOrdersResponse> {
+    let body = rest::send(http, &cancel_orders_request(credentials, request)?).await?;
+    cancel_orders_response(&body)
+}
+
+fn cancel_orders_response(body: &str) -> Result<UpbitCancelOrdersResponse> {
+    Ok(UpbitCancelOrdersResponse {
+        common: cancel_orders_result(body)?,
+        raw_json: body.to_owned(),
+    })
 }
 
 pub(crate) async fn batch_cancel_open_orders(
@@ -1360,6 +1480,100 @@ pub(crate) fn account_events(frame: &str) -> Result<Vec<AccountEvent>> {
         other => Err(Error::decode(format!(
             "unexpected Upbit private frame type `{other}`"
         ))),
+    }
+}
+
+/// Decodes one private WebSocket frame without discarding provider fields.
+pub(crate) fn detailed_account_events(frame: &str) -> Result<Vec<UpbitAccountStreamEvent>> {
+    let object = stream::frame_object(frame)?;
+    if let Some(error) = object.get("error") {
+        return Err(stream::frame_error(error));
+    }
+    if object.get("status").and_then(Value::as_str) == Some("UP") {
+        return Ok(Vec::new());
+    }
+    let Some(frame_type) = object.get("type").and_then(Value::as_str) else {
+        return Err(Error::decode("Upbit private frame carries no `type`"));
+    };
+    let frame_type = frame_type.to_owned();
+    let raw_json = stream::reserialize(&object)?;
+    let value = Value::Object(object);
+
+    match frame_type.as_str() {
+        "myOrder" => {
+            let raw: parse::RawStreamOrder = parse::json(&raw_json)?;
+            Ok(vec![UpbitAccountStreamEvent::Order(
+                UpbitOrderStreamEvent {
+                    order_type: optional_text_value(&value, "order_type")?,
+                    trade_uuid: optional_text_value(&value, "trade_uuid")?,
+                    time_in_force: optional_text_value(&value, "time_in_force")?,
+                    trade_timestamp: optional_millis_value(&value, "trade_timestamp")?,
+                    trade_fee: optional_decimal_value(&value, "trade_fee")?,
+                    is_maker: optional_bool_value(&value, "is_maker")?,
+                    common: parse::stream_order(&raw)?,
+                    raw_json,
+                },
+            )])
+        }
+        "myAsset" => {
+            let raw: parse::RawStreamAssets = parse::json(&raw_json)?;
+            let balances = raw
+                .assets
+                .iter()
+                .map(parse::stream_balance)
+                .collect::<Result<Vec<_>>>()?;
+            Ok(vec![UpbitAccountStreamEvent::Asset(
+                UpbitAssetStreamEvent {
+                    asset_uuid: optional_text_value(&value, "asset_uuid")?,
+                    asset_timestamp: optional_millis_value(&value, "asset_timestamp")?,
+                    published_at: optional_millis_value(&value, "timestamp")?,
+                    balances,
+                    raw_json,
+                },
+            )])
+        }
+        other => Err(Error::decode(format!(
+            "unexpected Upbit private frame type `{other}`"
+        ))),
+    }
+}
+
+fn optional_decimal_value(value: &Value, name: &'static str) -> Result<Option<Decimal>> {
+    match value.get(name) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::Number(number)) => parse::decimal(number, name).map(Some),
+        Some(Value::String(text)) => parse::decimal_text(text, name).map(Some),
+        Some(_) => Err(Error::decode(format!("`{name}` is not a number"))),
+    }
+}
+
+fn optional_millis_value(value: &Value, name: &'static str) -> Result<Option<Timestamp>> {
+    match value.get(name) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::Number(number)) => number
+            .as_i64()
+            .ok_or_else(|| Error::decode(format!("`{name}` is not an i64 millisecond timestamp")))
+            .and_then(|millis| parse::millis(millis, name))
+            .map(Some),
+        Some(_) => Err(Error::decode(format!(
+            "`{name}` is not a millisecond timestamp"
+        ))),
+    }
+}
+
+fn optional_text_value(value: &Value, name: &'static str) -> Result<Option<String>> {
+    match value.get(name) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(text)) => Ok(Some(text.clone())),
+        Some(_) => Err(Error::decode(format!("`{name}` is not a string"))),
+    }
+}
+
+fn optional_bool_value(value: &Value, name: &'static str) -> Result<Option<bool>> {
+    match value.get(name) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::Bool(value)) => Ok(Some(*value)),
+        Some(_) => Err(Error::decode(format!("`{name}` is not a boolean"))),
     }
 }
 
@@ -1751,6 +1965,43 @@ mod tests {
     }
 
     #[test]
+    fn order_response_keeps_provider_fields_and_raw_json() {
+        let response = order_response(
+            r#"{
+                "market":"KRW-BTC",
+                "uuid":"ac2dc2a3-fce9-40a2-a4f6-5987c25c438f",
+                "side":"bid",
+                "ord_type":"limit",
+                "state":"wait",
+                "price":"100000000",
+                "volume":"0.01",
+                "remaining_volume":"0.01",
+                "executed_volume":"0",
+                "reserved_fee":"5000",
+                "remaining_fee":"5000",
+                "paid_fee":"0",
+                "locked":"1005000",
+                "trades_count":0,
+                "prevented_volume":"0",
+                "prevented_locked":"0",
+                "time_in_force":"post_only",
+                "identifier":"strategy-42",
+                "smp_type":"cancel_maker",
+                "created_at":"2025-07-01T00:00:00+00:00",
+                "future_field":"kept"
+            }"#,
+        )
+        .expect("a provider order response");
+
+        assert_eq!(response.order_type.as_deref(), Some("limit"));
+        assert_eq!(response.volume.expect("volume"), Decimal::new(1, 2));
+        assert_eq!(response.reserved_fee.expect("fee"), Decimal::from(5_000));
+        assert_eq!(response.identifier.as_deref(), Some("strategy-42"));
+        assert_eq!(response.smp_type.as_deref(), Some("cancel_maker"));
+        assert!(response.raw_json.contains("\"future_field\":\"kept\""));
+    }
+
+    #[test]
     fn order_detail_rejects_a_fill_count_that_disagrees_with_the_payload() {
         let error = parse::order_detail(
             parse::json::<parse::RawOrderDetail>(
@@ -1898,6 +2149,15 @@ mod tests {
     }
 
     #[test]
+    fn detailed_batch_cancellation_keeps_the_provider_body() {
+        let body = r#"{"success":{"count":0,"orders":[]},"failed":{"count":0,"orders":[]},"provider":"value"}"#;
+        let result = cancel_orders_response(body).expect("a detailed batch result");
+
+        assert_eq!(result.common.cancelled.len(), 0);
+        assert_eq!(result.raw_json, body);
+    }
+
+    #[test]
     fn batch_cancellation_rejects_a_count_that_disagrees_with_the_orders() {
         assert!(matches!(
             cancel_orders_result(
@@ -2028,7 +2288,7 @@ mod tests {
 
     #[test]
     fn cancel_and_new_preserves_a_filled_previous_order_without_claiming_replacement_creation() {
-        let result = cancel_and_new_order_result(
+        let result = cancel_and_new_order_detail_result(
             r#"{
                 "uuid":"old-order",
                 "market":"KRW-BTC",
@@ -2044,10 +2304,13 @@ mod tests {
         )
         .expect("a documented race response");
 
-        assert_eq!(result.previous_order.id, "old-order");
-        assert_eq!(result.previous_order.status, OrderStatus::Filled);
-        assert_eq!(result.previous_order.filled_quantity, Decimal::new(2, 2));
-        assert!(!result.replacement_created());
+        assert_eq!(result.common.previous_order.id, "old-order");
+        assert_eq!(result.common.previous_order.status, OrderStatus::Filled);
+        assert_eq!(
+            result.common.previous_order.filled_quantity,
+            Decimal::new(2, 2)
+        );
+        assert!(!result.common.replacement_created());
     }
 
     #[test]
@@ -2564,6 +2827,34 @@ mod tests {
         assert_eq!(krw.available.to_string(), "1386929.37231066771348207123");
         assert_eq!(btc.asset, "BTC");
         assert_eq!(btc.available, Decimal::new(1, 2));
+    }
+
+    #[test]
+    fn detailed_account_events_keep_provider_metadata_and_the_original_frame() {
+        let assets = detailed_account_events(MY_ASSET).expect("a detailed asset frame");
+        let [UpbitAccountStreamEvent::Asset(asset)] = assets.as_slice() else {
+            panic!("expected one detailed asset event: {assets:?}");
+        };
+        assert_eq!(
+            asset.asset_uuid.as_deref(),
+            Some("00000000-0000-0000-0000-000000000003")
+        );
+        assert_eq!(asset.balances.len(), 2);
+        assert!(asset.raw_json.contains("asset_timestamp"));
+
+        let orders = detailed_account_events(MY_ORDER).expect("a detailed order frame");
+        let [UpbitAccountStreamEvent::Order(order)] = orders.as_slice() else {
+            panic!("expected one detailed order event: {orders:?}");
+        };
+        assert_eq!(order.common.id, ORDER_ID);
+        assert_eq!(order.order_type.as_deref(), Some("limit"));
+        assert_eq!(
+            order.trade_uuid.as_deref(),
+            Some("00000000-0000-0000-0000-000000000002")
+        );
+        assert_eq!(order.trade_fee.expect("trade fee").to_string(), "500.0");
+        assert_eq!(order.is_maker, Some(false));
+        assert!(order.raw_json.contains("executed_funds"));
     }
 
     #[test]

@@ -9,7 +9,10 @@ mod travel_rule;
 mod wallet;
 
 use std::collections::HashMap;
+use std::fmt;
+use std::pin::Pin;
 use std::sync::{Arc, Mutex, Weak};
+use std::task::{Context, Poll};
 
 use futures_core::Stream;
 use futures_util::StreamExt;
@@ -23,13 +26,13 @@ use crate::request::{
     OrderLookupRequest, OrderRequest, TransferHistoryRequest, TransferLookupRequest,
     WithdrawRequest,
 };
-use crate::stream::{AccountStream, MarketStream};
+use crate::stream::{AccountStream, MarketStream, TypedStream};
 use crate::transport::{HttpTransport, WsCommand, WsConnect, WsSession, ws};
 use crate::types::{
     AccountEvent, AssetNetwork, Balance, CancelOrdersResult, Candle, Deposit, DepositAddress,
     DepositAddressEntry, Exchange, Market, MarketEvent, MarketInfo, MarketKind, Network, Order,
-    OrderBook, OrderRules, Page, Side, StreamConfig, Subscription, Ticker, TimeInForce, Trade,
-    TransferDestination, Withdrawal, WithdrawalQuote,
+    OrderBook, OrderRules, Page, Side, StreamConfig, Subscription, Ticker, TimeInForce, Timestamp,
+    Trade, TransferDestination, Withdrawal, WithdrawalQuote,
 };
 
 pub use stream::{
@@ -173,6 +176,234 @@ pub struct UpbitMarketEvent {
     /// The list is empty outside [`UpbitRegion::Korea`], whose payload is the
     /// only regional payload that includes the criteria.
     pub cautions: Vec<String>,
+}
+
+/// Upbit's full-fidelity public market-data stream.
+///
+/// It preserves the connection and control-operation behavior of
+/// [`MarketStream`] while yielding Upbit-specific event structures. Construct
+/// it with [`UpbitAdapter::subscribe_detailed`].
+pub struct UpbitMarketStream {
+    inner: TypedStream<UpbitMarketStreamEvent>,
+}
+
+impl UpbitMarketStream {
+    fn new_with_close<F, Fut>(
+        inner: impl Stream<Item = Result<UpbitMarketStreamEvent>> + Send + 'static,
+        close: F,
+    ) -> Self
+    where
+        F: FnOnce() -> Fut + Send + 'static,
+        Fut: std::future::Future<Output = Result<()>> + Send + 'static,
+    {
+        Self {
+            inner: TypedStream::new_with_close(inner, close),
+        }
+    }
+
+    /// Stops this subscription and waits for the WebSocket to close.
+    pub async fn close(&mut self) -> Result<()> {
+        self.inner.close().await
+    }
+}
+
+impl Stream for UpbitMarketStream {
+    type Item = Result<UpbitMarketStreamEvent>;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        Pin::new(&mut self.inner).poll_next(cx)
+    }
+}
+
+impl fmt::Debug for UpbitMarketStream {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("UpbitMarketStream").finish_non_exhaustive()
+    }
+}
+
+/// Upbit's full-fidelity private account stream.
+///
+/// It preserves the connection behavior of [`AccountStream`] while yielding
+/// Upbit-specific order and asset structures. Construct it with
+/// [`UpbitAdapter::subscribe_detailed_account`].
+pub struct UpbitAccountStream {
+    inner: TypedStream<UpbitAccountStreamEvent>,
+}
+
+impl UpbitAccountStream {
+    fn new_with_close<F, Fut>(
+        inner: impl Stream<Item = Result<UpbitAccountStreamEvent>> + Send + 'static,
+        close: F,
+    ) -> Self
+    where
+        F: FnOnce() -> Fut + Send + 'static,
+        Fut: std::future::Future<Output = Result<()>> + Send + 'static,
+    {
+        Self {
+            inner: TypedStream::new_with_close(inner, close),
+        }
+    }
+
+    /// Stops this subscription and waits for the WebSocket to close.
+    pub async fn close(&mut self) -> Result<()> {
+        self.inner.close().await
+    }
+}
+
+impl Stream for UpbitAccountStream {
+    type Item = Result<UpbitAccountStreamEvent>;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        Pin::new(&mut self.inner).poll_next(cx)
+    }
+}
+
+impl fmt::Debug for UpbitAccountStream {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("UpbitAccountStream").finish_non_exhaustive()
+    }
+}
+
+/// One Upbit-specific public market event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum UpbitMarketStreamEvent {
+    /// A trade and Upbit's best-quote metadata.
+    Trade(UpbitTradeStreamEvent),
+    /// An order-book update and Upbit's aggregate sizes.
+    OrderBook(UpbitOrderBookStreamEvent),
+    /// A ticker update and Upbit's market-state metadata.
+    Ticker(UpbitTickerStreamEvent),
+    /// A candle update and Upbit's stream phase.
+    Candle(UpbitCandleStreamEvent),
+    /// The underlying WebSocket reconnected.
+    Reconnected,
+}
+
+/// One Upbit-specific private account event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum UpbitAccountStreamEvent {
+    /// An account asset snapshot.
+    Asset(UpbitAssetStreamEvent),
+    /// An order lifecycle update.
+    Order(UpbitOrderStreamEvent),
+    /// The underlying WebSocket reconnected.
+    Reconnected,
+}
+
+/// A full Upbit trade stream event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct UpbitTradeStreamEvent {
+    /// Portable trade projection.
+    pub common: Trade,
+    /// Previous close supplied by Upbit.
+    pub previous_closing_price: Option<Decimal>,
+    /// Provider change direction such as `RISE` or `FALL`.
+    pub change: Option<String>,
+    /// Unsigned provider price change.
+    pub change_price: Option<Decimal>,
+    /// Best ask quote present when Upbit supplied it.
+    pub best_ask_price: Option<Decimal>,
+    /// Best ask size present when Upbit supplied it.
+    pub best_ask_size: Option<Decimal>,
+    /// Best bid quote present when Upbit supplied it.
+    pub best_bid_price: Option<Decimal>,
+    /// Best bid size present when Upbit supplied it.
+    pub best_bid_size: Option<Decimal>,
+    /// Complete provider frame encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A full Upbit order-book stream event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct UpbitOrderBookStreamEvent {
+    /// Portable order-book projection.
+    pub common: OrderBook,
+    /// Total resting ask size supplied by Upbit.
+    pub total_ask_size: Option<Decimal>,
+    /// Total resting bid size supplied by Upbit.
+    pub total_bid_size: Option<Decimal>,
+    /// Provider aggregation level, when present.
+    pub level: Option<Decimal>,
+    /// Provider stream phase such as `SNAPSHOT` or `REALTIME`.
+    pub stream_type: Option<String>,
+    /// Complete provider frame encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A full Upbit ticker stream event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct UpbitTickerStreamEvent {
+    /// Portable ticker projection.
+    pub common: Ticker,
+    /// Provider change direction such as `RISE` or `FALL`.
+    pub change_direction: Option<String>,
+    /// Provider market lifecycle state.
+    pub market_state: Option<String>,
+    /// Whether Upbit reports trading as suspended.
+    pub trading_suspended: Option<bool>,
+    /// Provider delisting date, when present.
+    pub delisting_date: Option<String>,
+    /// Provider market warning state.
+    pub market_warning: Option<String>,
+    /// Complete provider frame encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A full Upbit candle stream event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct UpbitCandleStreamEvent {
+    /// Portable candle projection.
+    pub common: Candle,
+    /// Provider stream phase such as `SNAPSHOT` or `REALTIME`.
+    pub stream_type: Option<String>,
+    /// Time at which Upbit published the frame.
+    pub published_at: Option<Timestamp>,
+    /// Complete provider frame encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A full Upbit private asset stream event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct UpbitAssetStreamEvent {
+    /// Portable balance projections.
+    pub balances: Vec<Balance>,
+    /// Upbit asset-snapshot identifier, when present.
+    pub asset_uuid: Option<String>,
+    /// Time at which Upbit assembled the asset snapshot.
+    pub asset_timestamp: Option<Timestamp>,
+    /// Time at which Upbit published the frame.
+    pub published_at: Option<Timestamp>,
+    /// Complete provider frame encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A full Upbit private order stream event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct UpbitOrderStreamEvent {
+    /// Portable order projection.
+    pub common: Order,
+    /// Provider order type.
+    pub order_type: Option<String>,
+    /// Provider execution identifier, when present.
+    pub trade_uuid: Option<String>,
+    /// Provider time-in-force value.
+    pub time_in_force: Option<String>,
+    /// Provider execution time.
+    pub trade_timestamp: Option<Timestamp>,
+    /// Provider fee for the current execution.
+    pub trade_fee: Option<Decimal>,
+    /// Whether Upbit reports this execution as maker-side.
+    pub is_maker: Option<bool>,
+    /// Complete provider frame encoded as JSON.
+    pub raw_json: String,
 }
 
 /// One yearly candle returned by Upbit's quotation API.
@@ -506,6 +737,84 @@ pub struct UpbitOrderDetail {
     pub smp_type: Option<String>,
     /// Individual fills in Upbit's response order.
     pub trades: Vec<UpbitOrderDetailTrade>,
+}
+
+/// An Upbit response from creating, testing, cancelling, or listing orders.
+///
+/// [`Order`] keeps the portable fields used by the common API. This type
+/// retains provider-only order values when the endpoint includes them.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct UpbitOrderResponse {
+    /// The portable order projection.
+    pub common: Order,
+    /// Upbit's raw order-type value.
+    pub order_type: Option<String>,
+    /// Submitted base quantity, when the order type carries one.
+    pub volume: Option<Decimal>,
+    /// Fee Upbit reserved at order creation.
+    pub reserved_fee: Option<Decimal>,
+    /// Reserved fee not yet used.
+    pub remaining_fee: Option<Decimal>,
+    /// Cumulative paid fee.
+    pub paid_fee: Option<Decimal>,
+    /// Funds or quantity still locked by Upbit.
+    pub locked: Option<Decimal>,
+    /// Number of fills Upbit associates with this response.
+    pub trades_count: Option<u32>,
+    /// Quantity affected by self-match prevention.
+    pub prevented_volume: Option<Decimal>,
+    /// Amount unlocked by self-match prevention.
+    pub prevented_locked: Option<Decimal>,
+    /// Provider time-in-force value.
+    pub time_in_force: Option<String>,
+    /// Caller-assigned identifier, when present.
+    pub identifier: Option<String>,
+    /// Provider self-match-prevention value.
+    pub smp_type: Option<String>,
+    /// Complete provider response object encoded as JSON.
+    pub raw_json: String,
+}
+
+/// An Upbit deposit lookup response with its portable projection and original body.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct UpbitDepositResponse {
+    /// Portable deposit projection.
+    pub common: Deposit,
+    /// Complete provider response object encoded as JSON.
+    pub raw_json: String,
+}
+
+/// An Upbit withdrawal lookup response with its portable projection and original body.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct UpbitWithdrawalResponse {
+    /// Portable withdrawal projection.
+    pub common: Withdrawal,
+    /// Complete provider response object encoded as JSON.
+    pub raw_json: String,
+}
+
+/// An Upbit withdrawal-cancellation response.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct UpbitCancelWithdrawalResponse {
+    /// Identifier supplied for the cancellation request.
+    pub withdrawal_id: String,
+    /// Complete provider response object encoded as JSON.
+    pub raw_json: String,
+}
+
+/// An Upbit batch-cancellation response with its portable projection and
+/// complete provider body.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct UpbitCancelOrdersResponse {
+    /// Portable cancellation projection.
+    pub common: CancelOrdersResult,
+    /// Complete provider response object encoded as JSON.
+    pub raw_json: String,
 }
 
 /// Upbit가 반환한 한 자산·네트워크의 입금 가능 정보입니다.
@@ -1226,6 +1535,18 @@ pub struct UpbitCancelAndNewOrderResult {
     pub new_order_identifier: Option<String>,
 }
 
+/// The cancel-and-new result with the provider details of the previous order.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct UpbitCancelAndNewOrderDetailResult {
+    /// The portable result retained for existing callers.
+    pub common: UpbitCancelAndNewOrderResult,
+    /// Provider fields returned for the previous order.
+    pub previous_order: UpbitOrderResponse,
+    /// Complete provider response object encoded as JSON.
+    pub raw_json: String,
+}
+
 impl UpbitCancelAndNewOrderResult {
     /// Whether Upbit reported that a replacement order was created.
     pub fn replacement_created(&self) -> bool {
@@ -1400,6 +1721,85 @@ impl UpbitAdapter {
         rest::market_events(self.http()?).await
     }
 
+    /// Opens an Upbit market stream that retains provider-specific fields.
+    pub async fn subscribe_detailed(
+        &self,
+        subscription: &Subscription,
+    ) -> Result<UpbitMarketStream> {
+        self.subscribe_detailed_with(subscription, &crate::client::default_stream_config())
+            .await
+    }
+
+    /// Opens a detailed Upbit market stream with explicit stream settings.
+    ///
+    /// The returned stream is also eligible for [`Self::list_subscriptions`],
+    /// because that operation is scoped to this exact socket.
+    pub async fn subscribe_detailed_with(
+        &self,
+        subscription: &Subscription,
+        config: &StreamConfig,
+    ) -> Result<UpbitMarketStream> {
+        let frame = stream::subscribe_frame(subscription, &ticket())?;
+        let session = ws::connect(
+            WsConnect {
+                url: self.region.websocket_url().to_string(),
+                headers: None,
+                subscribe: WsConnect::fixed(vec![frame]),
+                heartbeat: Some(stream::HEARTBEAT),
+            },
+            config,
+        )
+        .await?;
+        let close = session.close_handle();
+        let control = Arc::new(stream::SubscriptionControl::new(session.send_handle()));
+        self.active_subscriptions
+            .register(SubscriptionKey::from(subscription), &control);
+
+        Ok(UpbitMarketStream::new_with_close(
+            controlled_detailed_market_events(session, control, stream::DetailedDecoder::default()),
+            move || async move { close.close().await },
+        ))
+    }
+
+    /// Opens an Upbit account stream that retains provider-specific fields.
+    pub async fn subscribe_detailed_account(&self) -> Result<UpbitAccountStream> {
+        self.subscribe_detailed_account_with(&crate::client::default_stream_config())
+            .await
+    }
+
+    /// Opens a detailed Upbit account stream with explicit stream settings.
+    pub async fn subscribe_detailed_account_with(
+        &self,
+        config: &StreamConfig,
+    ) -> Result<UpbitAccountStream> {
+        let credentials = self.credentials()?.clone();
+        let session = ws::connect(
+            WsConnect {
+                url: format!("{}/private", self.region.websocket_url()),
+                headers: Some(Box::new(move || {
+                    Ok(vec![(
+                        private::AUTHORIZATION.to_string(),
+                        private::authorization(&credentials, "")?,
+                    )])
+                })),
+                subscribe: WsConnect::fixed(vec![private::subscribe_frame(&ticket())?]),
+                heartbeat: Some(stream::HEARTBEAT),
+            },
+            config,
+        )
+        .await?;
+        let close = session.close_handle();
+
+        Ok(UpbitAccountStream::new_with_close(
+            events(
+                session,
+                private::detailed_account_events,
+                UpbitAccountStreamEvent::Reconnected,
+            ),
+            move || async move { close.close().await },
+        ))
+    }
+
     /// Reads subscriptions on the one active public connection matching `subscription`.
     ///
     /// Upbit scopes `LIST_SUBSCRIPTIONS` to an existing WebSocket connection.
@@ -1424,6 +1824,62 @@ impl UpbitAdapter {
     /// represent a live order, so it cannot be queried or cancelled.
     pub async fn test_order(&self, request: &OrderRequest) -> Result<Order> {
         private::test_order(self.credentials()?, self.http()?, request).await
+    }
+
+    /// Validates an order and returns Upbit's provider-specific response
+    /// fields alongside the common order projection.
+    pub async fn test_order_detail(&self, request: &OrderRequest) -> Result<UpbitOrderResponse> {
+        private::test_order_detail(self.credentials()?, self.http()?, request).await
+    }
+
+    /// Creates an order and returns Upbit's provider-specific response fields
+    /// alongside the common order projection.
+    pub async fn place_order_detail(&self, request: &OrderRequest) -> Result<UpbitOrderResponse> {
+        private::place_order_detail(self.credentials()?, self.http()?, request).await
+    }
+
+    /// Cancels an order by exchange identifier and returns Upbit's full
+    /// response object.
+    pub async fn cancel_order_detail(
+        &self,
+        market: &Market,
+        order_id: &str,
+    ) -> Result<UpbitOrderResponse> {
+        private::cancel_order_detail(self.credentials()?, self.http()?, market, order_id).await
+    }
+
+    /// Cancels an order by caller-assigned identifier and returns Upbit's full
+    /// response object.
+    pub async fn cancel_order_by_client_id_detail(
+        &self,
+        market: &Market,
+        client_id: &str,
+    ) -> Result<UpbitOrderResponse> {
+        private::cancel_order_by_client_id_detail(
+            self.credentials()?,
+            self.http()?,
+            market,
+            client_id,
+        )
+        .await
+    }
+
+    /// Reads orders by identifier without collapsing Upbit's provider-only
+    /// fields into the common order model.
+    pub async fn orders_by_ids_detail(
+        &self,
+        request: &OrderLookupRequest,
+    ) -> Result<Vec<UpbitOrderResponse>> {
+        private::orders_by_ids_detail(self.credentials()?, self.http()?, request).await
+    }
+
+    /// Cancels orders by identifier without discarding provider failures or
+    /// metadata.
+    pub async fn cancel_orders_detail(
+        &self,
+        request: &CancelOrdersRequest,
+    ) -> Result<UpbitCancelOrdersResponse> {
+        private::cancel_orders_detail(self.credentials()?, self.http()?, request).await
     }
 
     /// Retrieves one Upbit order with its fees, SMP outcome, and fills.
@@ -1465,6 +1921,30 @@ impl UpbitAdapter {
     /// [`Adapter::prepare_withdrawal`] for that purpose.
     pub async fn withdrawal_addresses(&self) -> Result<Vec<UpbitWithdrawalAddress>> {
         wallet::withdrawal_addresses(self.credentials()?, self.http()?).await
+    }
+
+    /// Reads one Upbit deposit without discarding provider fields.
+    pub async fn deposit_detail(
+        &self,
+        request: &TransferLookupRequest,
+    ) -> Result<UpbitDepositResponse> {
+        wallet::deposit_detail(self.credentials()?, self.http()?, request).await
+    }
+
+    /// Reads one Upbit withdrawal without discarding provider fields.
+    pub async fn withdrawal_detail(
+        &self,
+        request: &TransferLookupRequest,
+    ) -> Result<UpbitWithdrawalResponse> {
+        wallet::withdrawal_detail(self.credentials()?, self.http()?, request).await
+    }
+
+    /// Cancels one Upbit withdrawal and preserves the provider response body.
+    pub async fn cancel_withdrawal_detail(
+        &self,
+        withdrawal_id: &str,
+    ) -> Result<UpbitCancelWithdrawalResponse> {
+        wallet::cancel_withdrawal_detail(self.credentials()?, self.http()?, withdrawal_id).await
     }
 
     /// Deposits KRW from the registered account using Upbit Korea's required
@@ -1649,6 +2129,15 @@ impl UpbitAdapter {
         request: &UpbitCancelAndNewOrderRequest,
     ) -> Result<UpbitCancelAndNewOrderResult> {
         private::cancel_and_new_order(self.credentials()?, self.http()?, request).await
+    }
+
+    /// Cancels and replaces an order while retaining the provider fields for
+    /// the previous order in Upbit's response.
+    pub async fn cancel_and_new_order_detail(
+        &self,
+        request: &UpbitCancelAndNewOrderRequest,
+    ) -> Result<UpbitCancelAndNewOrderDetailResult> {
+        private::cancel_and_new_order_detail(self.credentials()?, self.http()?, request).await
     }
 
     pub(crate) fn is_authenticated(&self) -> bool {
@@ -2045,6 +2534,43 @@ fn controlled_market_events(
             Ok(WsCommand::Reconnected) => {
                 control.fail_pending();
                 vec![Ok(MarketEvent::Reconnected)]
+            }
+            Err(err) => {
+                control.fail_pending();
+                vec![Err(err)]
+            }
+        };
+
+        futures_util::stream::iter(items)
+    })
+}
+
+/// Decodes a detailed public Upbit connection while reserving operation replies
+/// for the caller that issued them on that same socket.
+fn controlled_detailed_market_events(
+    session: WsSession,
+    control: Arc<stream::SubscriptionControl>,
+    mut decoder: stream::DetailedDecoder,
+) -> impl Stream<Item = Result<UpbitMarketStreamEvent>> + Send {
+    session.flat_map(move |item| {
+        let items = match item {
+            Ok(WsCommand::Text(text)) => {
+                if control.handle_frame(&text) {
+                    Vec::new()
+                } else {
+                    split(decoder.decode(&text))
+                }
+            }
+            Ok(WsCommand::Binary(bytes)) => match String::from_utf8(bytes) {
+                Ok(text) if control.handle_frame(&text) => Vec::new(),
+                Ok(text) => split(decoder.decode(&text)),
+                Err(err) => vec![Err(Error::decode(format!(
+                    "upbit sent a frame that is not UTF-8: {err}"
+                )))],
+            },
+            Ok(WsCommand::Reconnected) => {
+                control.fail_pending();
+                vec![Ok(UpbitMarketStreamEvent::Reconnected)]
             }
             Err(err) => {
                 control.fail_pending();

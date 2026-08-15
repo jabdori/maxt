@@ -6,7 +6,9 @@ fn bithumb_alert_step_to_wire(value: BithumbAlertStep) -> PyResult<&'static str>
         BithumbAlertStep::Warning => Ok("warning"),
         BithumbAlertStep::Danger => Ok("danger"),
         BithumbAlertStep::Unknown => Ok("unknown"),
-        _ => Err(PyValueError::new_err("maxt binding contract does not map a new BithumbAlertStep variant")),
+        _ => Err(PyValueError::new_err(
+            "maxt binding contract does not map a new BithumbAlertStep variant",
+        )),
     }
 }
 
@@ -23,7 +25,9 @@ fn hyperliquid_ledger_kind_to_wire(value: &HyperliquidLedgerKind) -> PyResult<&s
         HyperliquidLedgerKind::VaultDistribution => Ok("vault_distribution"),
         HyperliquidLedgerKind::Liquidation => Ok("liquidation"),
         HyperliquidLedgerKind::Other(value) => Ok(value),
-        _ => Err(PyValueError::new_err("maxt binding contract does not map a new HyperliquidLedgerKind variant")),
+        _ => Err(PyValueError::new_err(
+            "maxt binding contract does not map a new HyperliquidLedgerKind variant",
+        )),
     }
 }
 
@@ -181,10 +185,7 @@ fn upbit_market_event_to_wire(
     )
 }
 
-fn bithumb_market_warning_to_wire(
-    py: Python<'_>,
-    value: &(Market, String),
-) -> PyResult<Py<PyAny>> {
+fn bithumb_market_warning_to_wire(py: Python<'_>, value: &(Market, String)) -> PyResult<Py<PyAny>> {
     provider_dict!(
         py,
         "market" => market_to_wire(py, &value.0)?,

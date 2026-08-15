@@ -1,6 +1,6 @@
 use maxt_bindings_common::schema::{
     ApiType, Argument, ClientComposition, Operation, Provider, ProviderMethod, ProviderMethodKind,
-    Schema,
+    Schema, uses_generated_native_provider_bridge,
 };
 
 use crate::typescript_contract::{HEADER, lower_camel};
@@ -12,7 +12,7 @@ pub(crate) fn render(schema: &Schema) -> String {
 import {{ AdapterError, MaxtError, UnsupportedError, errorFromWire, errorToWire }} from "../errors.js";
 import * as Model from "../models.js";
 import {{ ensureInitialized, getBackend }} from "../native.js";
-import {{ AccountStream, HyperliquidAccountStream, HyperliquidMarketStream, MarketStream, StreamError }} from "../stream.js";
+import {{ AccountStream, AsyncStream, HyperliquidAccountStream, HyperliquidMarketStream, MarketStream, StreamError, type StreamItem }} from "../stream.js";
 import * as Codec from "./codec.js";
 import type * as Wire from "./contract.js";
 
@@ -136,6 +136,7 @@ export interface NativeClientHandle {
     output.push_str(JSON_BACKEND_HELPERS);
     render_json_backend(&mut output, schema);
     output.push_str(ADAPTER_STREAMS);
+    render_provider_stream_classes(&mut output, schema);
     render_adapter(&mut output, schema);
     output.push_str(CUSTOM_CALLBACKS_PREFIX);
     render_dispatch(&mut output, schema);
@@ -152,6 +153,48 @@ export interface NativeClientHandle {
 
 fn raw_handle_name(provider: &Provider) -> String {
     format!("Raw{}", provider.native_handle)
+}
+
+fn provider_stream_type(event: &str) -> String {
+    let base = event.strip_suffix("Event").unwrap_or(event);
+    if base.ends_with("Stream") {
+        base.to_owned()
+    } else {
+        format!("{base}Stream")
+    }
+}
+
+fn provider_stream_item_wire(event: &str) -> String {
+    format!("{}ItemWire", provider_stream_type(event))
+}
+
+fn generated_provider_stream_types(schema: &Schema) -> Vec<(&'static str, &'static str)> {
+    let mut entries = Vec::new();
+    for provider in schema.providers {
+        for method in provider.methods.iter().filter(|method| {
+            uses_generated_native_provider_bridge(provider.exchange, method.rust_name)
+        }) {
+            let event = match method.result {
+                ApiType::ProviderMarketStream(event) | ApiType::ProviderAccountStream(event) => {
+                    event
+                }
+                _ => continue,
+            };
+            if !entries.iter().any(|(_, existing)| *existing == event) {
+                entries.push((provider.exchange, event));
+            }
+        }
+    }
+    entries
+}
+
+fn render_provider_stream_classes(output: &mut String, schema: &Schema) {
+    for (exchange, event) in generated_provider_stream_types(schema) {
+        let stream = provider_stream_type(event);
+        output.push_str(&format!(
+            "/** Full-fidelity {exchange} subscription events. */\nexport class {stream} extends AsyncStream<StreamItem<Model.{event}>> {{}}\n\n"
+        ));
+    }
 }
 
 fn raw_parameters(arguments: &[Argument]) -> String {
@@ -190,7 +233,7 @@ fn public_type(ty: ApiType) -> String {
         ApiType::MarketStream => "MarketStream".to_owned(),
         ApiType::AccountStream => "AccountStream".to_owned(),
         ApiType::ProviderMarketStream(event) | ApiType::ProviderAccountStream(event) => {
-            format!("{}Stream", event.strip_suffix("Event").unwrap_or(event))
+            provider_stream_type(event)
         }
         ApiType::Unit => "void".to_owned(),
     }
@@ -245,8 +288,8 @@ fn wire_type(ty: ApiType, schema: &Schema) -> String {
         ApiType::AccountStream => "NativeStreamHandle<Wire.AccountStreamItemWire>".to_owned(),
         ApiType::ProviderMarketStream(event) | ApiType::ProviderAccountStream(event) => {
             format!(
-                "NativeStreamHandle<Wire.{}StreamItemWire>",
-                event.strip_suffix("Event").unwrap_or(event)
+                "NativeStreamHandle<Wire.{}>",
+                provider_stream_item_wire(event)
             )
         }
         ApiType::Unit => "null".to_owned(),
@@ -373,10 +416,7 @@ fn render_json_backend(output: &mut String, schema: &Schema) {
                         let item = match method.result {
                             ApiType::ProviderMarketStream(event)
                             | ApiType::ProviderAccountStream(event) => {
-                                format!(
-                                    "Wire.{}StreamItemWire",
-                                    event.strip_suffix("Event").unwrap_or(event)
-                                )
+                                format!("Wire.{}", provider_stream_item_wire(event))
                             }
                             _ => unreachable!(),
                         };
@@ -771,14 +811,14 @@ fn render_provider_method(provider: &Provider, method: &ProviderMethod, schema: 
             "const value = Codec.unwrapOutcome(await {call}); return new {model}(value.id, value.value);"
         ),
         ApiType::ProviderMarketStream(event) => format!(
-            "const handle = Codec.unwrapOutcome(await {call}); return new {}Stream(nativeItems(handle, Codec.{}StreamItemFromWire), async () => {{ Codec.unwrapOutcome(await handle.close()); }});",
-            event.strip_suffix("Event").unwrap_or(event),
-            lower_camel(event.strip_suffix("Event").unwrap_or(event)),
+            "const handle = Codec.unwrapOutcome(await {call}); return new {}(nativeItems(handle, Codec.{}ItemFromWire), async () => {{ Codec.unwrapOutcome(await handle.close()); }});",
+            provider_stream_type(event),
+            lower_camel(&provider_stream_type(event)),
         ),
         ApiType::ProviderAccountStream(event) => format!(
-            "const handle = Codec.unwrapOutcome(await {call}); return new {}Stream(nativeItems(handle, Codec.{}StreamItemFromWire), async () => {{ Codec.unwrapOutcome(await handle.close()); }});",
-            event.strip_suffix("Event").unwrap_or(event),
-            lower_camel(event.strip_suffix("Event").unwrap_or(event)),
+            "const handle = Codec.unwrapOutcome(await {call}); return new {}(nativeItems(handle, Codec.{}ItemFromWire), async () => {{ Codec.unwrapOutcome(await handle.close()); }});",
+            provider_stream_type(event),
+            lower_camel(&provider_stream_type(event)),
         ),
         _ => panic!(
             "unsupported provider result {}.{}",

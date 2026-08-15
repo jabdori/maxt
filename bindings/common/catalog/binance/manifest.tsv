@@ -402,8 +402,8 @@ Futures (USD-M) REST	Http	POST	/fapi/v1/batchOrders	placeMultipleOrders	TRADE	Fi
 Futures (USD-M) REST	Http	DELETE	/fapi/v1/batchOrders	cancelMultipleOrders	TRADE	FinancialWrite	documented_active	provider_typed
 Futures (USD-M) REST	Http	GET	/fapi/v1/order	queryOrder	USER_DATA	Read	documented_active	provider_typed
 Futures (USD-M) REST	Http	PUT	/fapi/v1/order	modifyOrder	TRADE	FinancialWrite	documented_active	provider_typed
-Futures (USD-M) REST	Http	POST	/fapi/v1/order	newOrder	TRADE	FinancialWrite	documented_active	common_existing
-Futures (USD-M) REST	Http	DELETE	/fapi/v1/order	cancelOrder	TRADE	FinancialWrite	documented_active	common_existing
+Futures (USD-M) REST	Http	POST	/fapi/v1/order	newOrder	TRADE	FinancialWrite	documented_active	common_and_provider
+Futures (USD-M) REST	Http	DELETE	/fapi/v1/order	cancelOrder	TRADE	FinancialWrite	documented_active	common_and_provider
 Futures (USD-M) REST	Http	POST	/fapi/v1/leverage	changeInitialLeverage	TRADE	FinancialWrite	documented_active	common_existing
 Futures (USD-M) REST	Http	POST	/fapi/v1/marginType	changeMarginType	TRADE	FinancialWrite	documented_active	common_existing
 Futures (USD-M) REST	Http	GET	/fapi/v1/openAlgoOrders	currentAllAlgoOpenOrders	USER_DATA	Read	documented_active	provider_typed
@@ -487,8 +487,8 @@ Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@composit
 Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{pair}_{contractType}@continuousKline_{interval}	continuousContractKlineCandlestickStreams	Public	Read	documented_active	provider_typed
 Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/!contractInfo	contractInfoStream	Public	Read	documented_active	provider_typed
 Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@miniTicker	individualSymbolMiniTickerStream	Public	Read	documented_active	provider_typed
-Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@ticker	individualSymbolTickerStreams	Public	Read	documented_active	common_existing
-Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@kline_{interval}	klineCandlestickStreams	Public	Read	documented_active	common_existing
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@ticker	individualSymbolTickerStreams	Public	Read	documented_active	common_and_provider
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@kline_{interval}	klineCandlestickStreams	Public	Read	documented_active	common_and_provider
 Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@forceOrder	liquidationOrderStreams	Public	Read	documented_active	provider_typed
 Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@markPrice@{updateSpeed}	markPriceStream	Public	Read	documented_active	provider_typed
 Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/!markPrice@arr@{updateSpeed}	markPriceStreamForAllMarket	Public	Read	documented_active	provider_typed
@@ -497,7 +497,7 @@ Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/tradingSession	tr
 Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/!bookTicker	allBookTickersStream	Public	Read	documented_active	provider_typed
 Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth@{updateSpeed}	diffBookDepthStreams	Public	Read	documented_active	provider_typed
 Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@bookTicker	individualSymbolBookTickerStreams	Public	Read	documented_active	provider_typed
-Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth{levels}@{updateSpeed}	partialBookDepthStreams	Public	Read	documented_active	common_existing
+Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth{levels}@{updateSpeed}	partialBookDepthStreams	Public	Read	documented_active	common_and_provider
 Futures (USD-M) WebSocket Market Streams	WebSocketStream	POST	/{symbol}@rpiDepth@500ms	rpiDiffBookDepthStreams	Public	Read	documented_active	provider_typed
 Discount Buy REST	Http	GET	/sapi/v1/accumulator/product/list	getDiscountBuyProductList	Public	Read	documented_active	provider_typed
 Discount Buy REST	Http	GET	/sapi/v1/accumulator/product/sum-holding	checkDiscountBuyAccounts	USER_DATA	Read	documented_active	provider_typed
@@ -753,8 +753,8 @@ Spot REST	Http	GET	/api/v3/openOrderList	openOrderList	USER_DATA	Read	documented
 Spot REST	Http	GET	/api/v3/order/amendments	orderAmendments	USER_DATA	Read	documented_active	provider_typed
 Spot REST	Http	GET	/api/v3/rateLimit/order	rateLimitOrder	USER_DATA	Read	documented_active	provider_typed
 Spot REST	Http	DELETE	/api/v3/openOrders	deleteOpenOrders	TRADE	FinancialWrite	documented_active	provider_typed
-Spot REST	Http	POST	/api/v3/order	newOrder	TRADE	FinancialWrite	documented_active	common_existing
-Spot REST	Http	DELETE	/api/v3/order	deleteOrder	TRADE	FinancialWrite	documented_active	common_existing
+Spot REST	Http	POST	/api/v3/order	newOrder	TRADE	FinancialWrite	documented_active	common_and_provider
+Spot REST	Http	DELETE	/api/v3/order	deleteOrder	TRADE	FinancialWrite	documented_active	common_and_provider
 Spot REST	Http	DELETE	/api/v3/orderList	deleteOrderList	TRADE	FinancialWrite	documented_active	provider_typed
 Spot REST	Http	PUT	/api/v3/order/amend/keepPriority	orderAmendKeepPriority	TRADE	FinancialWrite	documented_active	provider_typed
 Spot REST	Http	POST	/api/v3/order/cancelReplace	orderCancelReplace	TRADE	FinancialWrite	documented_active	provider_typed
@@ -839,7 +839,7 @@ Spot WebSocket	WebSocketRequest	POST	/sor.order.place	sorOrderPlace	TRADE	Financ
 Spot WebSocket	WebSocketRequest	POST	/sor.order.test	sorOrderTest	TRADE	FinancialWrite	documented_active	provider_typed
 Spot WebSocket	WebSocketRequest	POST	/session.subscriptions	sessionSubscriptions	Public	Read	documented_active	provider_typed
 Spot WebSocket	WebSocketRequest	POST	/userDataStream.subscribe	userDataStreamSubscribe	Public	Read	documented_active	provider_typed
-Spot WebSocket	WebSocketRequest	POST	/userDataStream.subscribe.signature	userDataStreamSubscribeSignature	USER_STREAM	AccountWrite	documented_active	common_existing
+Spot WebSocket	WebSocketRequest	POST	/userDataStream.subscribe.signature	userDataStreamSubscribeSignature	USER_STREAM	AccountWrite	documented_active	common_and_provider
 Spot WebSocket	WebSocketRequest	POST	/userDataStream.unsubscribe	userDataStreamUnsubscribe	Public	Read	documented_active	provider_typed
 Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@aggTrade	aggTrade	Public	Read	documented_active	provider_typed
 Spot WebSocket Market Streams	WebSocketStream	POST	/!ticker_{windowSize}@arr	allMarketRollingWindowTicker	Public	Read	documented_active	provider_typed
@@ -847,14 +847,14 @@ Spot WebSocket Market Streams	WebSocketStream	POST	/!miniTicker@arr	allMiniTicke
 Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@avgPrice	avgPrice	Public	Read	documented_active	provider_typed
 Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@bookTicker	bookTicker	Public	Read	documented_active	provider_typed
 Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth@{updateSpeed}	diffBookDepth	Public	Read	documented_active	provider_typed
-Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@kline_{interval}	kline	Public	Read	documented_active	common_existing
+Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@kline_{interval}	kline	Public	Read	documented_active	common_and_provider
 Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@kline_{interval}@+08:00	klineOffset	Public	Read	documented_active	provider_typed
 Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@miniTicker	miniTicker	Public	Read	documented_active	provider_typed
-Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth{levels}@{updateSpeed}	partialBookDepth	Public	Read	documented_active	common_existing
+Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@depth{levels}@{updateSpeed}	partialBookDepth	Public	Read	documented_active	common_and_provider
 Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@referencePrice	referencePrice	Public	Read	documented_active	provider_typed
 Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@ticker_{windowSize}	rollingWindowTicker	Public	Read	documented_active	provider_typed
-Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@ticker	ticker	Public	Read	documented_active	common_existing
-Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@trade	trade	Public	Read	documented_active	common_existing
+Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@ticker	ticker	Public	Read	documented_active	common_and_provider
+Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@trade	trade	Public	Read	documented_active	common_and_provider
 Spot WebSocket Market Streams	WebSocketStream	POST	/{symbol}@blockTrade	blockTrade	Public	Read	documented_active	provider_typed
 Spot Block Matching REST	Http	POST	/sapi/v1/block-match/order/cancel	orderCancel	TRADE	FinancialWrite	documented_active	provider_typed
 Spot Block Matching REST	Http	POST	/sapi/v1/block-match/order/extend	orderExtend	TRADE	FinancialWrite	documented_active	provider_typed

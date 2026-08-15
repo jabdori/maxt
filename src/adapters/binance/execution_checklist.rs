@@ -57,12 +57,15 @@ fn spot_aggregate_trades_uses_its_rest_contract_and_fixture() {
         "/api/v3/aggTrades?symbol=BTCUSDT&fromId=26129&limit=50"
     );
 
-    let raw: Vec<super::parse::RawAggregateTrade> = super::parse::json(
+    let values: Vec<Value> = super::parse::json(
         r#"[{"a":26129,"p":"0.01633102","q":"4.70443515","f":27781,"l":27784,"T":1498793709153,"m":true,"M":true}]"#,
         "Spot aggregate trades",
     )
     .expect("the official Spot fixture");
-    let trade = super::parse::aggregate_trade(&spot_market(), &raw[0]).expect("an aggregate");
+    let raw = serde_json::from_value::<super::parse::RawAggregateTrade>(values[0].clone())
+        .expect("the Spot aggregate fields");
+    let trade =
+        super::parse::aggregate_trade(&spot_market(), &raw, &values[0]).expect("an aggregate");
     assert_eq!(
         (
             trade.aggregate_id,
@@ -72,7 +75,9 @@ fn spot_aggregate_trades_uses_its_rest_contract_and_fixture() {
         (26_129, 27_781, 27_784)
     );
     assert_eq!(trade.normal_quantity, None);
+    assert_eq!(trade.best_price_match, Some(true));
     assert_eq!(trade.taker_side, Side::Sell);
+    assert!(trade.raw_json.contains("\"M\":true"));
 }
 
 #[test]
@@ -87,16 +92,20 @@ fn usd_m_aggregate_trades_uses_its_rest_contract_and_fixture() {
         "/fapi/v1/aggTrades?symbol=BTCUSDT&startTime=1623319461670&endTime=1623319462670&limit=500"
     );
 
-    let raw: Vec<super::parse::RawAggregateTrade> = super::parse::json(
+    let values: Vec<Value> = super::parse::json(
         r#"[{"a":26130,"p":"0.01633103","q":"1.2","nq":"1.00000000","f":27785,"l":27785,"T":1498793709253,"m":false}]"#,
         "USD-M aggregate trades",
     )
     .expect("the official USD-M fixture");
-    let trade = super::parse::aggregate_trade(&usd_m_market(), &raw[0]).expect("an aggregate");
+    let raw = serde_json::from_value::<super::parse::RawAggregateTrade>(values[0].clone())
+        .expect("the USD-M aggregate fields");
+    let trade =
+        super::parse::aggregate_trade(&usd_m_market(), &raw, &values[0]).expect("an aggregate");
     assert_eq!(
         trade.normal_quantity.expect("normal quantity").to_string(),
         "1.00000000"
     );
+    assert_eq!(trade.best_price_match, None);
     assert_eq!(trade.taker_side, Side::Buy);
 }
 
@@ -180,6 +189,41 @@ fn usd_m_new_order_and_cancel_order_use_the_futures_contract_and_fixtures() {
             expected_status
         );
     }
+}
+
+#[test]
+fn order_detail_responses_keep_venue_specific_fields_and_the_payload() {
+    let spot = private::order_response_from_body(
+        &spot_market(),
+        r#"{"symbol":"BTCUSDT","orderId":28,"orderListId":-1,"clientOrderId":"spot-client","transactTime":1499827319559,"price":"100","origQty":"0.01","executedQty":"0.005","cummulativeQuoteQty":"0.5","status":"PARTIALLY_FILLED","timeInForce":"GTC","type":"LIMIT","side":"BUY","selfTradePreventionMode":"EXPIRE_MAKER","futureField":"kept"}"#,
+    )
+    .expect("a Spot provider response");
+    assert_eq!(spot.client_order_id.as_deref(), Some("spot-client"));
+    assert_eq!(spot.order_list_id.as_deref(), Some("-1"));
+    assert_eq!(
+        spot.cumulative_quote_quantity.expect("quote").to_string(),
+        "0.5"
+    );
+    assert_eq!(
+        spot.self_trade_prevention_mode.as_deref(),
+        Some("EXPIRE_MAKER")
+    );
+    assert!(spot.raw_json.contains("\"futureField\":\"kept\""));
+
+    let futures = private::order_response_from_body(
+        &usd_m_market(),
+        r#"{"symbol":"BTCUSDT","orderId":29,"clientOrderId":"futures-client","price":"100","avgPrice":"99.5","origQty":"0.01","executedQty":"0.005","cumQty":"0.005","cumQuote":"0.4975","status":"PARTIALLY_FILLED","timeInForce":"GTC","type":"LIMIT","reduceOnly":false,"closePosition":false,"side":"SELL","positionSide":"SHORT","stopPrice":"0","workingType":"CONTRACT_PRICE","priceProtect":true,"origType":"LIMIT","priceMatch":"NONE","selfTradePreventionMode":"EXPIRE_TAKER","goodTillDate":1700000000000,"updateTime":1499827319559,"futureField":"kept"}"#,
+    )
+    .expect("a USD-M provider response");
+    assert_eq!(futures.client_order_id.as_deref(), Some("futures-client"));
+    assert_eq!(futures.average_price.expect("average").to_string(), "99.5");
+    assert_eq!(futures.position_side.as_deref(), Some("SHORT"));
+    assert_eq!(futures.price_protect, Some(true));
+    assert_eq!(
+        futures.good_till_date.expect("good till").as_millis(),
+        1_700_000_000_000
+    );
+    assert!(futures.raw_json.contains("\"futureField\":\"kept\""));
 }
 
 #[test]

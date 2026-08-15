@@ -19,6 +19,20 @@ abstract class MarketStreamSink implements RustOpaqueInterface {}
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeAccountSubscription>>
 abstract class NativeAccountSubscription implements RustOpaqueInterface {}
 
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeBinanceAccountSubscription>>
+abstract class NativeBinanceAccountSubscription
+    implements RustOpaqueInterface {}
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeBinanceMarketSubscription>>
+abstract class NativeBinanceMarketSubscription implements RustOpaqueInterface {}
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeBithumbAccountSubscription>>
+abstract class NativeBithumbAccountSubscription
+    implements RustOpaqueInterface {}
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeBithumbMarketSubscription>>
+abstract class NativeBithumbMarketSubscription implements RustOpaqueInterface {}
+
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeHyperliquidAccountSubscription>>
 abstract class NativeHyperliquidAccountSubscription
     implements RustOpaqueInterface {}
@@ -29,6 +43,12 @@ abstract class NativeHyperliquidMarketSubscription
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeMarketSubscription>>
 abstract class NativeMarketSubscription implements RustOpaqueInterface {}
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeUpbitAccountSubscription>>
+abstract class NativeUpbitAccountSubscription implements RustOpaqueInterface {}
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<NativeUpbitMarketSubscription>>
+abstract class NativeUpbitMarketSubscription implements RustOpaqueInterface {}
 
 @freezed
 sealed class AccountStreamItem with _$AccountStreamItem {
@@ -92,6 +112,58 @@ sealed class WireAccountStreamItem with _$WireAccountStreamItem {
 
   /// 계정 스트림의 자연 종료 또는 명시적 close를 나타냅니다.
   const factory WireAccountStreamItem.end() = WireAccountStreamItem_End;
+}
+
+@freezed
+sealed class WireBinanceAccountStreamItem with _$WireBinanceAccountStreamItem {
+  const WireBinanceAccountStreamItem._();
+
+  const factory WireBinanceAccountStreamItem.event(
+    WireBinanceAccountStreamEvent field0,
+  ) = WireBinanceAccountStreamItem_Event;
+  const factory WireBinanceAccountStreamItem.error(NativeError field0) =
+      WireBinanceAccountStreamItem_Error;
+  const factory WireBinanceAccountStreamItem.end() =
+      WireBinanceAccountStreamItem_End;
+}
+
+@freezed
+sealed class WireBinanceMarketStreamItem with _$WireBinanceMarketStreamItem {
+  const WireBinanceMarketStreamItem._();
+
+  const factory WireBinanceMarketStreamItem.event(
+    WireBinanceMarketEvent field0,
+  ) = WireBinanceMarketStreamItem_Event;
+  const factory WireBinanceMarketStreamItem.error(NativeError field0) =
+      WireBinanceMarketStreamItem_Error;
+  const factory WireBinanceMarketStreamItem.end() =
+      WireBinanceMarketStreamItem_End;
+}
+
+@freezed
+sealed class WireBithumbAccountStreamItem with _$WireBithumbAccountStreamItem {
+  const WireBithumbAccountStreamItem._();
+
+  const factory WireBithumbAccountStreamItem.event(
+    WireBithumbAccountEvent field0,
+  ) = WireBithumbAccountStreamItem_Event;
+  const factory WireBithumbAccountStreamItem.error(NativeError field0) =
+      WireBithumbAccountStreamItem_Error;
+  const factory WireBithumbAccountStreamItem.end() =
+      WireBithumbAccountStreamItem_End;
+}
+
+@freezed
+sealed class WireBithumbMarketStreamItem with _$WireBithumbMarketStreamItem {
+  const WireBithumbMarketStreamItem._();
+
+  const factory WireBithumbMarketStreamItem.event(
+    WireBithumbMarketEvent field0,
+  ) = WireBithumbMarketStreamItem_Event;
+  const factory WireBithumbMarketStreamItem.error(NativeError field0) =
+      WireBithumbMarketStreamItem_Error;
+  const factory WireBithumbMarketStreamItem.end() =
+      WireBithumbMarketStreamItem_End;
 }
 
 @freezed
@@ -169,4 +241,29 @@ sealed class WireMarketStreamItem with _$WireMarketStreamItem {
 
   /// 시장 스트림의 자연 종료 또는 명시적 close를 나타냅니다.
   const factory WireMarketStreamItem.end() = WireMarketStreamItem_End;
+}
+
+@freezed
+sealed class WireUpbitAccountStreamItem with _$WireUpbitAccountStreamItem {
+  const WireUpbitAccountStreamItem._();
+
+  const factory WireUpbitAccountStreamItem.event(
+    WireUpbitAccountStreamEvent field0,
+  ) = WireUpbitAccountStreamItem_Event;
+  const factory WireUpbitAccountStreamItem.error(NativeError field0) =
+      WireUpbitAccountStreamItem_Error;
+  const factory WireUpbitAccountStreamItem.end() =
+      WireUpbitAccountStreamItem_End;
+}
+
+@freezed
+sealed class WireUpbitMarketStreamItem with _$WireUpbitMarketStreamItem {
+  const WireUpbitMarketStreamItem._();
+
+  const factory WireUpbitMarketStreamItem.event(
+    WireUpbitMarketStreamEvent field0,
+  ) = WireUpbitMarketStreamItem_Event;
+  const factory WireUpbitMarketStreamItem.error(NativeError field0) =
+      WireUpbitMarketStreamItem_Error;
+  const factory WireUpbitMarketStreamItem.end() = WireUpbitMarketStreamItem_End;
 }

@@ -1,4 +1,4 @@
-use maxt_bindings_common::schema::{Field, Schema, TaggedUnion, Type};
+use maxt_bindings_common::schema::{ApiType, Field, Schema, TaggedUnion, Type};
 
 use crate::typescript_contract::{HEADER, lower_camel};
 
@@ -80,7 +80,47 @@ export function unwrapOutcome<T>(outcome: NativeOutcome<T>): T {
         }
     }
     output.push_str(SPECIAL_CODECS);
+    output.push_str(&render_provider_stream_item_codecs(schema));
+    output.truncate(output.trim_end().len());
+    output.push('\n');
     output
+}
+
+fn render_provider_stream_item_codecs(schema: &Schema) -> String {
+    let mut entries = Vec::new();
+    for provider in schema.providers {
+        for method in provider.methods {
+            let event = match method.result {
+                ApiType::ProviderMarketStream(event) | ApiType::ProviderAccountStream(event) => {
+                    event
+                }
+                _ => continue,
+            };
+            let stream = provider_stream_type(event);
+            if !entries.iter().any(|(existing, _)| *existing == stream) {
+                entries.push((stream, event));
+            }
+        }
+    }
+    entries
+        .into_iter()
+        .map(|(stream, event)| {
+            let function = lower_camel(&stream);
+            format!(
+                "export function {function}ItemFromWire(value: Wire.{stream}ItemWire): StreamItem<Model.{event}> {{\n  return value.kind === \"error\"\n    ? new StreamError(errorFromWire(value.error))\n    : new StreamEvent({}FromWire(value.event));\n}}\n\n",
+                lower_camel(event)
+            )
+        })
+        .collect()
+}
+
+fn provider_stream_type(event: &str) -> String {
+    let base = event.strip_suffix("Event").unwrap_or(event);
+    if base.ends_with("Stream") {
+        base.to_owned()
+    } else {
+        format!("{base}Stream")
+    }
 }
 
 fn render_model(schema: &Schema, name: &str, fields: &[Field]) -> String {
@@ -490,18 +530,6 @@ export function accountStreamItemFromWire(value: Wire.AccountStreamItemWire): St
   return value.kind === "error"
     ? new StreamError(errorFromWire(value.error))
     : new StreamEvent(accountEventFromWire(value.event));
-}
-
-export function hyperliquidMarketStreamItemFromWire(value: Wire.HyperliquidMarketStreamItemWire): StreamItem<Model.HyperliquidMarketEvent> {
-  return value.kind === "error"
-    ? new StreamError(errorFromWire(value.error))
-    : new StreamEvent(hyperliquidMarketEventFromWire(value.event));
-}
-
-export function hyperliquidAccountStreamItemFromWire(value: Wire.HyperliquidAccountStreamItemWire): StreamItem<Model.HyperliquidAccountEvent> {
-  return value.kind === "error"
-    ? new StreamError(errorFromWire(value.error))
-    : new StreamEvent(hyperliquidAccountEventFromWire(value.event));
 }
 
 export function pageFromWire<T, W>(value: Wire.PageWire<W>, decode: (wire: W) => T): Model.Page<T> {

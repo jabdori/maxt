@@ -641,6 +641,7 @@ class FakeNativeBithumbAdapter:
                 "trades_count": 0,
                 "stp_type": None,
                 "time_in_force": "post_only",
+                "raw_json": "{}",
             }
         ]
 

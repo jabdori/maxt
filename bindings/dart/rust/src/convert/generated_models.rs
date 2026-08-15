@@ -1254,6 +1254,306 @@ impl From<maxt::UpbitSubscriptionList> for WireUpbitSubscriptionList {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitOrderResponse {
+    pub common: WireOrder,
+    pub order_type: Option<String>,
+    pub volume: Option<String>,
+    pub reserved_fee: Option<String>,
+    pub remaining_fee: Option<String>,
+    pub paid_fee: Option<String>,
+    pub locked: Option<String>,
+    pub trades_count: Option<u32>,
+    pub prevented_volume: Option<String>,
+    pub prevented_locked: Option<String>,
+    pub time_in_force: Option<String>,
+    pub identifier: Option<String>,
+    pub smp_type: Option<String>,
+    pub raw_json: String,
+}
+
+impl From<maxt::UpbitOrderResponse> for WireUpbitOrderResponse {
+    fn from(value: maxt::UpbitOrderResponse) -> Self {
+        Self {
+            common: value.common.into(),
+            order_type: value.order_type,
+            volume: value.volume.map(decimal_to_wire),
+            reserved_fee: value.reserved_fee.map(decimal_to_wire),
+            remaining_fee: value.remaining_fee.map(decimal_to_wire),
+            paid_fee: value.paid_fee.map(decimal_to_wire),
+            locked: value.locked.map(decimal_to_wire),
+            trades_count: value.trades_count,
+            prevented_volume: value.prevented_volume.map(decimal_to_wire),
+            prevented_locked: value.prevented_locked.map(decimal_to_wire),
+            time_in_force: value.time_in_force,
+            identifier: value.identifier,
+            smp_type: value.smp_type,
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitDepositResponse {
+    pub common: WireDeposit,
+    pub raw_json: String,
+}
+
+impl From<maxt::UpbitDepositResponse> for WireUpbitDepositResponse {
+    fn from(value: maxt::UpbitDepositResponse) -> Self {
+        Self {
+            common: value.common.into(),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitWithdrawalResponse {
+    pub common: WireWithdrawal,
+    pub raw_json: String,
+}
+
+impl From<maxt::UpbitWithdrawalResponse> for WireUpbitWithdrawalResponse {
+    fn from(value: maxt::UpbitWithdrawalResponse) -> Self {
+        Self {
+            common: value.common.into(),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitCancelWithdrawalResponse {
+    pub withdrawal_id: String,
+    pub raw_json: String,
+}
+
+impl From<maxt::UpbitCancelWithdrawalResponse> for WireUpbitCancelWithdrawalResponse {
+    fn from(value: maxt::UpbitCancelWithdrawalResponse) -> Self {
+        Self {
+            withdrawal_id: value.withdrawal_id,
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitCancelOrdersResponse {
+    pub common: WireCancelOrdersResult,
+    pub raw_json: String,
+}
+
+impl From<maxt::UpbitCancelOrdersResponse> for WireUpbitCancelOrdersResponse {
+    fn from(value: maxt::UpbitCancelOrdersResponse) -> Self {
+        Self {
+            common: value.common.into(),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitCancelAndNewOrderDetailResult {
+    pub common: WireUpbitCancelAndNewOrderResult,
+    pub previous_order: WireUpbitOrderResponse,
+    pub raw_json: String,
+}
+
+impl From<maxt::UpbitCancelAndNewOrderDetailResult> for WireUpbitCancelAndNewOrderDetailResult {
+    fn from(value: maxt::UpbitCancelAndNewOrderDetailResult) -> Self {
+        Self {
+            common: value.common.into(),
+            previous_order: value.previous_order.into(),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitTradeStreamEvent {
+    pub common: WireTrade,
+    pub previous_closing_price: Option<String>,
+    pub change: Option<String>,
+    pub change_price: Option<String>,
+    pub best_ask_price: Option<String>,
+    pub best_ask_size: Option<String>,
+    pub best_bid_price: Option<String>,
+    pub best_bid_size: Option<String>,
+    pub raw_json: String,
+}
+
+impl From<maxt::UpbitTradeStreamEvent> for WireUpbitTradeStreamEvent {
+    fn from(value: maxt::UpbitTradeStreamEvent) -> Self {
+        Self {
+            common: value.common.into(),
+            previous_closing_price: value.previous_closing_price.map(decimal_to_wire),
+            change: value.change,
+            change_price: value.change_price.map(decimal_to_wire),
+            best_ask_price: value.best_ask_price.map(decimal_to_wire),
+            best_ask_size: value.best_ask_size.map(decimal_to_wire),
+            best_bid_price: value.best_bid_price.map(decimal_to_wire),
+            best_bid_size: value.best_bid_size.map(decimal_to_wire),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitOrderBookStreamEvent {
+    pub common: WireOrderBook,
+    pub total_ask_size: Option<String>,
+    pub total_bid_size: Option<String>,
+    pub level: Option<String>,
+    pub stream_type: Option<String>,
+    pub raw_json: String,
+}
+
+impl From<maxt::UpbitOrderBookStreamEvent> for WireUpbitOrderBookStreamEvent {
+    fn from(value: maxt::UpbitOrderBookStreamEvent) -> Self {
+        Self {
+            common: value.common.into(),
+            total_ask_size: value.total_ask_size.map(decimal_to_wire),
+            total_bid_size: value.total_bid_size.map(decimal_to_wire),
+            level: value.level.map(decimal_to_wire),
+            stream_type: value.stream_type,
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitTickerStreamEvent {
+    pub common: WireTicker,
+    pub change_direction: Option<String>,
+    pub market_state: Option<String>,
+    pub trading_suspended: Option<bool>,
+    pub delisting_date: Option<String>,
+    pub market_warning: Option<String>,
+    pub raw_json: String,
+}
+
+impl From<maxt::UpbitTickerStreamEvent> for WireUpbitTickerStreamEvent {
+    fn from(value: maxt::UpbitTickerStreamEvent) -> Self {
+        Self {
+            common: value.common.into(),
+            change_direction: value.change_direction,
+            market_state: value.market_state,
+            trading_suspended: value.trading_suspended,
+            delisting_date: value.delisting_date,
+            market_warning: value.market_warning,
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitCandleStreamEvent {
+    pub common: WireCandle,
+    pub stream_type: Option<String>,
+    pub published_at_ns: Option<i64>,
+    pub raw_json: String,
+}
+
+impl From<maxt::UpbitCandleStreamEvent> for WireUpbitCandleStreamEvent {
+    fn from(value: maxt::UpbitCandleStreamEvent) -> Self {
+        Self {
+            common: value.common.into(),
+            stream_type: value.stream_type,
+            published_at_ns: value.published_at.map(timestamp_to_wire),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitAssetStreamEvent {
+    pub balances: Vec<WireBalance>,
+    pub asset_uuid: Option<String>,
+    pub asset_timestamp_ns: Option<i64>,
+    pub published_at_ns: Option<i64>,
+    pub raw_json: String,
+}
+
+impl From<maxt::UpbitAssetStreamEvent> for WireUpbitAssetStreamEvent {
+    fn from(value: maxt::UpbitAssetStreamEvent) -> Self {
+        Self {
+            balances: value.balances.into_iter().map(Into::into).collect(),
+            asset_uuid: value.asset_uuid,
+            asset_timestamp_ns: value.asset_timestamp.map(timestamp_to_wire),
+            published_at_ns: value.published_at.map(timestamp_to_wire),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireUpbitOrderStreamEvent {
+    pub common: WireOrder,
+    pub order_type: Option<String>,
+    pub trade_uuid: Option<String>,
+    pub time_in_force: Option<String>,
+    pub trade_timestamp_ns: Option<i64>,
+    pub trade_fee: Option<String>,
+    pub is_maker: Option<bool>,
+    pub raw_json: String,
+}
+
+impl From<maxt::UpbitOrderStreamEvent> for WireUpbitOrderStreamEvent {
+    fn from(value: maxt::UpbitOrderStreamEvent) -> Self {
+        Self {
+            common: value.common.into(),
+            order_type: value.order_type,
+            trade_uuid: value.trade_uuid,
+            time_in_force: value.time_in_force,
+            trade_timestamp_ns: value.trade_timestamp.map(timestamp_to_wire),
+            trade_fee: value.trade_fee.map(decimal_to_wire),
+            is_maker: value.is_maker,
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WireUpbitMarketStreamEvent {
+    Trade(WireUpbitTradeStreamEvent),
+    OrderBook(WireUpbitOrderBookStreamEvent),
+    Ticker(WireUpbitTickerStreamEvent),
+    Candle(WireUpbitCandleStreamEvent),
+    Reconnected,
+}
+
+impl From<maxt::UpbitMarketStreamEvent> for WireUpbitMarketStreamEvent {
+    fn from(value: maxt::UpbitMarketStreamEvent) -> Self {
+        match value {
+            maxt::UpbitMarketStreamEvent::Trade(value) => Self::Trade(value.into()),
+            maxt::UpbitMarketStreamEvent::OrderBook(value) => Self::OrderBook(value.into()),
+            maxt::UpbitMarketStreamEvent::Ticker(value) => Self::Ticker(value.into()),
+            maxt::UpbitMarketStreamEvent::Candle(value) => Self::Candle(value.into()),
+            maxt::UpbitMarketStreamEvent::Reconnected => Self::Reconnected,
+            _ => unreachable!("new UpbitMarketStreamEvent variant requires a Dart wire variant"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WireUpbitAccountStreamEvent {
+    Asset(WireUpbitAssetStreamEvent),
+    Order(WireUpbitOrderStreamEvent),
+    Reconnected,
+}
+
+impl From<maxt::UpbitAccountStreamEvent> for WireUpbitAccountStreamEvent {
+    fn from(value: maxt::UpbitAccountStreamEvent) -> Self {
+        match value {
+            maxt::UpbitAccountStreamEvent::Asset(value) => Self::Asset(value.into()),
+            maxt::UpbitAccountStreamEvent::Order(value) => Self::Order(value.into()),
+            maxt::UpbitAccountStreamEvent::Reconnected => Self::Reconnected,
+            _ => unreachable!("new UpbitAccountStreamEvent variant requires a Dart wire variant"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireUpbitYearCandle {
     pub market: WireMarket,
     pub open_time_ns: i64,
@@ -3000,12 +3300,14 @@ impl TryFrom<WireBithumbBatchOrderOutcome> for maxt::BithumbBatchOrderOutcome {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireBithumbBatchOrdersResult {
     pub outcomes: Vec<WireBithumbBatchOrderOutcome>,
+    pub raw_json: String,
 }
 
 impl From<maxt::BithumbBatchOrdersResult> for WireBithumbBatchOrdersResult {
     fn from(value: maxt::BithumbBatchOrdersResult) -> Self {
         Self {
             outcomes: value.outcomes.into_iter().map(Into::into).collect(),
+            raw_json: value.raw_json,
         }
     }
 }
@@ -3020,7 +3322,305 @@ impl TryFrom<WireBithumbBatchOrdersResult> for maxt::BithumbBatchOrdersResult {
                 .into_iter()
                 .map(TryInto::try_into)
                 .collect::<Result<_, _>>()?,
+            raw_json: value.raw_json,
         })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbOrderBookSnapshot {
+    pub common: WireOrderBook,
+    pub total_ask_size: Option<String>,
+    pub total_bid_size: Option<String>,
+    pub level: Option<String>,
+    pub raw_json: String,
+}
+
+impl From<maxt::BithumbOrderBookSnapshot> for WireBithumbOrderBookSnapshot {
+    fn from(value: maxt::BithumbOrderBookSnapshot) -> Self {
+        Self {
+            common: value.common.into(),
+            total_ask_size: value.total_ask_size.map(decimal_to_wire),
+            total_bid_size: value.total_bid_size.map(decimal_to_wire),
+            level: value.level.map(decimal_to_wire),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbOrderResponse {
+    pub common: WireOrder,
+    pub raw_json: String,
+}
+
+impl From<maxt::BithumbOrderResponse> for WireBithumbOrderResponse {
+    fn from(value: maxt::BithumbOrderResponse) -> Self {
+        Self {
+            common: value.common.into(),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbOrdersResponse {
+    pub common: Vec<WireOrder>,
+    pub raw_json: String,
+}
+
+impl From<maxt::BithumbOrdersResponse> for WireBithumbOrdersResponse {
+    fn from(value: maxt::BithumbOrdersResponse) -> Self {
+        Self {
+            common: value.common.into_iter().map(Into::into).collect(),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbCancelOrderResponse {
+    pub order_id: String,
+    pub raw_json: String,
+}
+
+impl From<maxt::BithumbCancelOrderResponse> for WireBithumbCancelOrderResponse {
+    fn from(value: maxt::BithumbCancelOrderResponse) -> Self {
+        Self {
+            order_id: value.order_id,
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbCancelOrdersResponse {
+    pub common: WireCancelOrdersResult,
+    pub raw_json: String,
+}
+
+impl From<maxt::BithumbCancelOrdersResponse> for WireBithumbCancelOrdersResponse {
+    fn from(value: maxt::BithumbCancelOrdersResponse) -> Self {
+        Self {
+            common: value.common.into(),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbDepositResponse {
+    pub common: WireDeposit,
+    pub raw_json: String,
+}
+
+impl From<maxt::BithumbDepositResponse> for WireBithumbDepositResponse {
+    fn from(value: maxt::BithumbDepositResponse) -> Self {
+        Self {
+            common: value.common.into(),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbWithdrawalResponse {
+    pub common: WireWithdrawal,
+    pub raw_json: String,
+}
+
+impl From<maxt::BithumbWithdrawalResponse> for WireBithumbWithdrawalResponse {
+    fn from(value: maxt::BithumbWithdrawalResponse) -> Self {
+        Self {
+            common: value.common.into(),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbCancelWithdrawalResponse {
+    pub withdrawal_id: String,
+    pub raw_json: String,
+}
+
+impl From<maxt::BithumbCancelWithdrawalResponse> for WireBithumbCancelWithdrawalResponse {
+    fn from(value: maxt::BithumbCancelWithdrawalResponse) -> Self {
+        Self {
+            withdrawal_id: value.withdrawal_id,
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbTradeEvent {
+    pub common: WireTrade,
+    pub previous_closing_price: Option<String>,
+    pub change: Option<String>,
+    pub change_price: Option<String>,
+    pub published_at_ns: Option<i64>,
+    pub stream_type: Option<String>,
+    pub raw_json: String,
+}
+
+impl From<maxt::BithumbTradeEvent> for WireBithumbTradeEvent {
+    fn from(value: maxt::BithumbTradeEvent) -> Self {
+        Self {
+            common: value.common.into(),
+            previous_closing_price: value.previous_closing_price.map(decimal_to_wire),
+            change: value.change,
+            change_price: value.change_price.map(decimal_to_wire),
+            published_at_ns: value.published_at.map(timestamp_to_wire),
+            stream_type: value.stream_type,
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbOrderBookEvent {
+    pub common: WireOrderBook,
+    pub total_ask_size: Option<String>,
+    pub total_bid_size: Option<String>,
+    pub level: Option<String>,
+    pub stream_type: Option<String>,
+    pub raw_json: String,
+}
+
+impl From<maxt::BithumbOrderBookEvent> for WireBithumbOrderBookEvent {
+    fn from(value: maxt::BithumbOrderBookEvent) -> Self {
+        Self {
+            common: value.common.into(),
+            total_ask_size: value.total_ask_size.map(decimal_to_wire),
+            total_bid_size: value.total_bid_size.map(decimal_to_wire),
+            level: value.level.map(decimal_to_wire),
+            stream_type: value.stream_type,
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbTickerEvent {
+    pub common: WireTicker,
+    pub change_direction: Option<String>,
+    pub market_state: Option<String>,
+    pub trading_suspended: Option<bool>,
+    pub market_warning: Option<String>,
+    pub stream_type: Option<String>,
+    pub raw_json: String,
+}
+
+impl From<maxt::BithumbTickerEvent> for WireBithumbTickerEvent {
+    fn from(value: maxt::BithumbTickerEvent) -> Self {
+        Self {
+            common: value.common.into(),
+            change_direction: value.change_direction,
+            market_state: value.market_state,
+            trading_suspended: value.trading_suspended,
+            market_warning: value.market_warning,
+            stream_type: value.stream_type,
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbAssetEvent {
+    pub balances: Vec<WireBalance>,
+    pub asset_timestamp_ns: Option<i64>,
+    pub published_at_ns: Option<i64>,
+    pub raw_json: String,
+}
+
+impl From<maxt::BithumbAssetEvent> for WireBithumbAssetEvent {
+    fn from(value: maxt::BithumbAssetEvent) -> Self {
+        Self {
+            balances: value.balances.into_iter().map(Into::into).collect(),
+            asset_timestamp_ns: value.asset_timestamp.map(timestamp_to_wire),
+            published_at_ns: value.published_at.map(timestamp_to_wire),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBithumbOrderEvent {
+    pub common: WireOrder,
+    pub client_order_id: Option<String>,
+    pub order_type: Option<String>,
+    pub state: Option<String>,
+    pub time_in_force: Option<String>,
+    pub order_amount: Option<String>,
+    pub trade_id: Option<String>,
+    pub trade_price: Option<String>,
+    pub trade_quantity: Option<String>,
+    pub trade_amount: Option<String>,
+    pub trade_timestamp_ns: Option<i64>,
+    pub executed_amount: Option<String>,
+    pub paid_fee: Option<String>,
+    pub remaining_fee: Option<String>,
+    pub raw_json: String,
+}
+
+impl From<maxt::BithumbOrderEvent> for WireBithumbOrderEvent {
+    fn from(value: maxt::BithumbOrderEvent) -> Self {
+        Self {
+            common: value.common.into(),
+            client_order_id: value.client_order_id,
+            order_type: value.order_type,
+            state: value.state,
+            time_in_force: value.time_in_force,
+            order_amount: value.order_amount.map(decimal_to_wire),
+            trade_id: value.trade_id,
+            trade_price: value.trade_price.map(decimal_to_wire),
+            trade_quantity: value.trade_quantity.map(decimal_to_wire),
+            trade_amount: value.trade_amount.map(decimal_to_wire),
+            trade_timestamp_ns: value.trade_timestamp.map(timestamp_to_wire),
+            executed_amount: value.executed_amount.map(decimal_to_wire),
+            paid_fee: value.paid_fee.map(decimal_to_wire),
+            remaining_fee: value.remaining_fee.map(decimal_to_wire),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WireBithumbMarketEvent {
+    Trade(WireBithumbTradeEvent),
+    OrderBook(WireBithumbOrderBookEvent),
+    Ticker(WireBithumbTickerEvent),
+    Reconnected,
+}
+
+impl From<maxt::BithumbMarketEvent> for WireBithumbMarketEvent {
+    fn from(value: maxt::BithumbMarketEvent) -> Self {
+        match value {
+            maxt::BithumbMarketEvent::Trade(value) => Self::Trade(value.into()),
+            maxt::BithumbMarketEvent::OrderBook(value) => Self::OrderBook(value.into()),
+            maxt::BithumbMarketEvent::Ticker(value) => Self::Ticker(value.into()),
+            maxt::BithumbMarketEvent::Reconnected => Self::Reconnected,
+            _ => unreachable!("new BithumbMarketEvent variant requires a Dart wire variant"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WireBithumbAccountEvent {
+    Asset(WireBithumbAssetEvent),
+    Order(WireBithumbOrderEvent),
+    Reconnected,
+}
+
+impl From<maxt::BithumbAccountEvent> for WireBithumbAccountEvent {
+    fn from(value: maxt::BithumbAccountEvent) -> Self {
+        match value {
+            maxt::BithumbAccountEvent::Asset(value) => Self::Asset(value.into()),
+            maxt::BithumbAccountEvent::Order(value) => Self::Order(value.into()),
+            maxt::BithumbAccountEvent::Reconnected => Self::Reconnected,
+            _ => unreachable!("new BithumbAccountEvent variant requires a Dart wire variant"),
+        }
     }
 }
 
@@ -3491,6 +4091,7 @@ pub struct WireBithumbOrderListItem {
     pub trades_count: u32,
     pub stp_type: Option<String>,
     pub time_in_force: Option<String>,
+    pub raw_json: String,
 }
 
 impl From<maxt::BithumbOrderListItem> for WireBithumbOrderListItem {
@@ -3515,6 +4116,7 @@ impl From<maxt::BithumbOrderListItem> for WireBithumbOrderListItem {
             trades_count: value.trades_count,
             stp_type: value.stp_type,
             time_in_force: value.time_in_force,
+            raw_json: value.raw_json,
         }
     }
 }
@@ -4364,7 +4966,9 @@ pub struct WireBinanceAggregateTrade {
     pub price: String,
     pub quantity: String,
     pub normal_quantity: Option<String>,
+    pub best_price_match: Option<bool>,
     pub taker_side: WireSide,
+    pub raw_json: String,
 }
 
 impl From<maxt::BinanceAggregateTrade> for WireBinanceAggregateTrade {
@@ -4378,7 +4982,9 @@ impl From<maxt::BinanceAggregateTrade> for WireBinanceAggregateTrade {
             price: decimal_to_wire(value.price),
             quantity: decimal_to_wire(value.quantity),
             normal_quantity: value.normal_quantity.map(decimal_to_wire),
+            best_price_match: value.best_price_match,
             taker_side: value.taker_side.into(),
+            raw_json: value.raw_json,
         }
     }
 }
@@ -4401,8 +5007,266 @@ impl TryFrom<WireBinanceAggregateTrade> for maxt::BinanceAggregateTrade {
                 .map(|value| decimal_from_wire(value, "normal_quantity"))
                 .transpose()
                 .map_err(NativeError::from)?,
+            best_price_match: value.best_price_match,
             taker_side: value.taker_side.into(),
+            raw_json: value.raw_json,
         })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBinanceOrderResponse {
+    pub order: WireOrder,
+    pub client_order_id: Option<String>,
+    pub order_list_id: Option<String>,
+    pub order_type: Option<String>,
+    pub time_in_force: Option<String>,
+    pub cumulative_quote_quantity: Option<String>,
+    pub cumulative_quantity: Option<String>,
+    pub cumulative_quote: Option<String>,
+    pub average_price: Option<String>,
+    pub reduce_only: Option<bool>,
+    pub close_position: Option<bool>,
+    pub position_side: Option<String>,
+    pub stop_price: Option<String>,
+    pub working_type: Option<String>,
+    pub price_protect: Option<bool>,
+    pub original_type: Option<String>,
+    pub price_match: Option<String>,
+    pub self_trade_prevention_mode: Option<String>,
+    pub good_till_date_ns: Option<i64>,
+    pub raw_json: String,
+}
+
+impl From<maxt::BinanceOrderResponse> for WireBinanceOrderResponse {
+    fn from(value: maxt::BinanceOrderResponse) -> Self {
+        Self {
+            order: value.order.into(),
+            client_order_id: value.client_order_id,
+            order_list_id: value.order_list_id,
+            order_type: value.order_type,
+            time_in_force: value.time_in_force,
+            cumulative_quote_quantity: value.cumulative_quote_quantity.map(decimal_to_wire),
+            cumulative_quantity: value.cumulative_quantity.map(decimal_to_wire),
+            cumulative_quote: value.cumulative_quote.map(decimal_to_wire),
+            average_price: value.average_price.map(decimal_to_wire),
+            reduce_only: value.reduce_only,
+            close_position: value.close_position,
+            position_side: value.position_side,
+            stop_price: value.stop_price.map(decimal_to_wire),
+            working_type: value.working_type,
+            price_protect: value.price_protect,
+            original_type: value.original_type,
+            price_match: value.price_match,
+            self_trade_prevention_mode: value.self_trade_prevention_mode,
+            good_till_date_ns: value.good_till_date.map(timestamp_to_wire),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBinanceTradeEvent {
+    pub common: WireTrade,
+    pub event_time_ns: Option<i64>,
+    pub trade_time_ns: Option<i64>,
+    pub buyer_is_maker: Option<bool>,
+    pub best_price_match: Option<bool>,
+    pub raw_json: String,
+}
+
+impl From<maxt::BinanceTradeEvent> for WireBinanceTradeEvent {
+    fn from(value: maxt::BinanceTradeEvent) -> Self {
+        Self {
+            common: value.common.into(),
+            event_time_ns: value.event_time.map(timestamp_to_wire),
+            trade_time_ns: value.trade_time.map(timestamp_to_wire),
+            buyer_is_maker: value.buyer_is_maker,
+            best_price_match: value.best_price_match,
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBinanceOrderBookEvent {
+    pub common: WireOrderBook,
+    pub event_time_ns: Option<i64>,
+    pub transaction_time_ns: Option<i64>,
+    pub first_update_id: Option<u64>,
+    pub final_update_id: Option<u64>,
+    pub previous_final_update_id: Option<u64>,
+    pub last_update_id: Option<u64>,
+    pub raw_json: String,
+}
+
+impl From<maxt::BinanceOrderBookEvent> for WireBinanceOrderBookEvent {
+    fn from(value: maxt::BinanceOrderBookEvent) -> Self {
+        Self {
+            common: value.common.into(),
+            event_time_ns: value.event_time.map(timestamp_to_wire),
+            transaction_time_ns: value.transaction_time.map(timestamp_to_wire),
+            first_update_id: value.first_update_id,
+            final_update_id: value.final_update_id,
+            previous_final_update_id: value.previous_final_update_id,
+            last_update_id: value.last_update_id,
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBinanceTickerEvent {
+    pub common: WireTicker,
+    pub event_time_ns: Option<i64>,
+    pub close_time_ns: Option<i64>,
+    pub first_trade_id: Option<u64>,
+    pub last_trade_id: Option<u64>,
+    pub trade_count: Option<u64>,
+    pub raw_json: String,
+}
+
+impl From<maxt::BinanceTickerEvent> for WireBinanceTickerEvent {
+    fn from(value: maxt::BinanceTickerEvent) -> Self {
+        Self {
+            common: value.common.into(),
+            event_time_ns: value.event_time.map(timestamp_to_wire),
+            close_time_ns: value.close_time.map(timestamp_to_wire),
+            first_trade_id: value.first_trade_id,
+            last_trade_id: value.last_trade_id,
+            trade_count: value.trade_count,
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBinanceCandleEvent {
+    pub common: WireCandle,
+    pub close_time_ns: Option<i64>,
+    pub first_trade_id: Option<u64>,
+    pub last_trade_id: Option<u64>,
+    pub trade_count: Option<u64>,
+    pub taker_buy_base_volume: Option<String>,
+    pub taker_buy_quote_volume: Option<String>,
+    pub raw_json: String,
+}
+
+impl From<maxt::BinanceCandleEvent> for WireBinanceCandleEvent {
+    fn from(value: maxt::BinanceCandleEvent) -> Self {
+        Self {
+            common: value.common.into(),
+            close_time_ns: value.close_time.map(timestamp_to_wire),
+            first_trade_id: value.first_trade_id,
+            last_trade_id: value.last_trade_id,
+            trade_count: value.trade_count,
+            taker_buy_base_volume: value.taker_buy_base_volume.map(decimal_to_wire),
+            taker_buy_quote_volume: value.taker_buy_quote_volume.map(decimal_to_wire),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBinanceBalanceStreamEvent {
+    pub common: WireBalance,
+    pub event_type: String,
+    pub event_time_ns: Option<i64>,
+    pub transaction_time_ns: Option<i64>,
+    pub raw_json: String,
+}
+
+impl From<maxt::BinanceBalanceStreamEvent> for WireBinanceBalanceStreamEvent {
+    fn from(value: maxt::BinanceBalanceStreamEvent) -> Self {
+        Self {
+            common: value.common.into(),
+            event_type: value.event_type,
+            event_time_ns: value.event_time.map(timestamp_to_wire),
+            transaction_time_ns: value.transaction_time.map(timestamp_to_wire),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBinanceOrderStreamEvent {
+    pub common: WireOrder,
+    pub event_type: String,
+    pub event_time_ns: Option<i64>,
+    pub transaction_time_ns: Option<i64>,
+    pub raw_json: String,
+}
+
+impl From<maxt::BinanceOrderStreamEvent> for WireBinanceOrderStreamEvent {
+    fn from(value: maxt::BinanceOrderStreamEvent) -> Self {
+        Self {
+            common: value.common.into(),
+            event_type: value.event_type,
+            event_time_ns: value.event_time.map(timestamp_to_wire),
+            transaction_time_ns: value.transaction_time.map(timestamp_to_wire),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireBinanceRawAccountEvent {
+    pub event_type: String,
+    pub event_time_ns: Option<i64>,
+    pub transaction_time_ns: Option<i64>,
+    pub raw_json: String,
+}
+
+impl From<maxt::BinanceRawAccountEvent> for WireBinanceRawAccountEvent {
+    fn from(value: maxt::BinanceRawAccountEvent) -> Self {
+        Self {
+            event_type: value.event_type,
+            event_time_ns: value.event_time.map(timestamp_to_wire),
+            transaction_time_ns: value.transaction_time.map(timestamp_to_wire),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WireBinanceMarketEvent {
+    Trade(WireBinanceTradeEvent),
+    OrderBook(WireBinanceOrderBookEvent),
+    Ticker(WireBinanceTickerEvent),
+    Candle(WireBinanceCandleEvent),
+    Reconnected,
+}
+
+impl From<maxt::BinanceMarketEvent> for WireBinanceMarketEvent {
+    fn from(value: maxt::BinanceMarketEvent) -> Self {
+        match value {
+            maxt::BinanceMarketEvent::Trade(value) => Self::Trade(value.into()),
+            maxt::BinanceMarketEvent::OrderBook(value) => Self::OrderBook(value.into()),
+            maxt::BinanceMarketEvent::Ticker(value) => Self::Ticker(value.into()),
+            maxt::BinanceMarketEvent::Candle(value) => Self::Candle(value.into()),
+            maxt::BinanceMarketEvent::Reconnected => Self::Reconnected,
+            _ => unreachable!("new BinanceMarketEvent variant requires a Dart wire variant"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WireBinanceAccountStreamEvent {
+    Balance(WireBinanceBalanceStreamEvent),
+    Order(WireBinanceOrderStreamEvent),
+    Other(WireBinanceRawAccountEvent),
+    Reconnected,
+}
+
+impl From<maxt::BinanceAccountStreamEvent> for WireBinanceAccountStreamEvent {
+    fn from(value: maxt::BinanceAccountStreamEvent) -> Self {
+        match value {
+            maxt::BinanceAccountStreamEvent::Balance(value) => Self::Balance(value.into()),
+            maxt::BinanceAccountStreamEvent::Order(value) => Self::Order(value.into()),
+            maxt::BinanceAccountStreamEvent::Other(value) => Self::Other(value.into()),
+            maxt::BinanceAccountStreamEvent::Reconnected => Self::Reconnected,
+            _ => unreachable!("new BinanceAccountStreamEvent variant requires a Dart wire variant"),
+        }
     }
 }
 
@@ -5165,6 +6029,49 @@ impl TryFrom<WireHyperliquidMidPrice> for maxt::HyperliquidMidPrice {
             market: value.market.into(),
             price: decimal_from_wire(&value.price, "price").map_err(NativeError::from)?,
         })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidAllMids {
+    pub mids: Vec<WireHyperliquidMidPrice>,
+    pub raw_json: String,
+}
+
+impl From<maxt::HyperliquidAllMids> for WireHyperliquidAllMids {
+    fn from(value: maxt::HyperliquidAllMids) -> Self {
+        Self {
+            mids: value.mids.into_iter().map(Into::into).collect(),
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidProviderResponse {
+    pub raw_json: String,
+}
+
+impl From<maxt::HyperliquidProviderResponse> for WireHyperliquidProviderResponse {
+    fn from(value: maxt::HyperliquidProviderResponse) -> Self {
+        Self {
+            raw_json: value.raw_json,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireHyperliquidOrderActionResponse {
+    pub common: WireOrder,
+    pub raw_json: String,
+}
+
+impl From<maxt::HyperliquidOrderActionResponse> for WireHyperliquidOrderActionResponse {
+    fn from(value: maxt::HyperliquidOrderActionResponse) -> Self {
+        Self {
+            common: value.common.into(),
+            raw_json: value.raw_json,
+        }
     }
 }
 

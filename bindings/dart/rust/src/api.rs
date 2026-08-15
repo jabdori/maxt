@@ -16,6 +16,7 @@ use maxt::{
 };
 
 mod generated_native_client;
+include!("generated_provider_methods.rs");
 
 pub use crate::adapter::{
     AdapterCall, AdapterReply, AdapterResult, DartAdapter, WireFeed, WireOverflow,

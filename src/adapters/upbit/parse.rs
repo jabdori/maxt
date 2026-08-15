@@ -162,11 +162,35 @@ pub(crate) struct RawOrder {
     pub(crate) market: String,
     pub(crate) uuid: String,
     pub(crate) side: String,
+    #[serde(default)]
+    pub(crate) ord_type: Option<String>,
     pub(crate) state: String,
     #[serde(default)]
     pub(crate) price: Option<String>,
+    #[serde(default)]
+    pub(crate) volume: Option<String>,
     pub(crate) remaining_volume: String,
     pub(crate) executed_volume: String,
+    #[serde(default)]
+    pub(crate) reserved_fee: Option<String>,
+    #[serde(default)]
+    pub(crate) remaining_fee: Option<String>,
+    #[serde(default)]
+    pub(crate) paid_fee: Option<String>,
+    #[serde(default)]
+    pub(crate) locked: Option<String>,
+    #[serde(default)]
+    pub(crate) trades_count: Option<u32>,
+    #[serde(default)]
+    pub(crate) prevented_volume: Option<String>,
+    #[serde(default)]
+    pub(crate) prevented_locked: Option<String>,
+    #[serde(default)]
+    pub(crate) time_in_force: Option<String>,
+    #[serde(default)]
+    pub(crate) identifier: Option<String>,
+    #[serde(default)]
+    pub(crate) smp_type: Option<String>,
     #[serde(default)]
     pub(crate) created_at: Option<String>,
 }
@@ -891,6 +915,41 @@ pub(crate) fn order(raw: &RawOrder) -> Result<Order> {
             .transpose()?,
         created_at: raw.created_at.as_deref().map(created_at).transpose()?,
     })
+}
+
+/// Converts a create, test, cancel, or list response without discarding
+/// Upbit-only order fields that the common order model cannot name.
+pub(crate) fn order_response(
+    raw: &RawOrder,
+    raw_json: &serde_json::Value,
+) -> Result<super::UpbitOrderResponse> {
+    Ok(super::UpbitOrderResponse {
+        common: order(raw)?,
+        order_type: raw.ord_type.clone(),
+        volume: optional_order_decimal(raw.volume.as_deref(), "volume")?,
+        reserved_fee: optional_order_decimal(raw.reserved_fee.as_deref(), "reserved_fee")?,
+        remaining_fee: optional_order_decimal(raw.remaining_fee.as_deref(), "remaining_fee")?,
+        paid_fee: optional_order_decimal(raw.paid_fee.as_deref(), "paid_fee")?,
+        locked: optional_order_decimal(raw.locked.as_deref(), "locked")?,
+        trades_count: raw.trades_count,
+        prevented_volume: optional_order_decimal(
+            raw.prevented_volume.as_deref(),
+            "prevented_volume",
+        )?,
+        prevented_locked: optional_order_decimal(
+            raw.prevented_locked.as_deref(),
+            "prevented_locked",
+        )?,
+        time_in_force: raw.time_in_force.clone(),
+        identifier: raw.identifier.clone(),
+        smp_type: raw.smp_type.clone(),
+        raw_json: serde_json::to_string(raw_json)
+            .map_err(|error| Error::decode(format!("could not preserve Upbit order: {error}")))?,
+    })
+}
+
+fn optional_order_decimal(value: Option<&str>, field: &'static str) -> Result<Option<Decimal>> {
+    value.map(|value| decimal_text(value, field)).transpose()
 }
 
 /// Converts the complete single-order payload without discarding Upbit-only

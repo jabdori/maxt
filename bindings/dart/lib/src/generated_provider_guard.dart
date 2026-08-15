@@ -67,6 +67,31 @@ void _generatedProviderGuard({
     _generatedProviderValue<UpbitPocketTransferRequest>(),
   );
   upbit.subPocketTransfers(_generatedProviderValue<UpbitPocketTransferQuery>());
+  upbit.subscribeDetailed(_generatedProviderValue<Subscription>());
+  upbit.subscribeDetailedWith(
+    _generatedProviderValue<Subscription>(),
+    _generatedProviderValue<StreamConfig>(),
+  );
+  upbit.subscribeDetailedAccount();
+  upbit.subscribeDetailedAccountWith(_generatedProviderValue<StreamConfig>());
+  upbit.testOrderDetail(_generatedProviderValue<OrderRequest>());
+  upbit.placeOrderDetail(_generatedProviderValue<OrderRequest>());
+  upbit.cancelOrderDetail(
+    _generatedProviderValue<Market>(),
+    _generatedProviderValue<String>(),
+  );
+  upbit.cancelOrderByClientIdDetail(
+    _generatedProviderValue<Market>(),
+    _generatedProviderValue<String>(),
+  );
+  upbit.ordersByIdsDetail(_generatedProviderValue<OrderLookupRequest>());
+  upbit.cancelOrdersDetail(_generatedProviderValue<CancelOrdersRequest>());
+  upbit.depositDetail(_generatedProviderValue<TransferLookupRequest>());
+  upbit.withdrawalDetail(_generatedProviderValue<TransferLookupRequest>());
+  upbit.cancelWithdrawalDetail(_generatedProviderValue<String>());
+  upbit.cancelAndNewOrderDetail(
+    _generatedProviderValue<UpbitCancelAndNewOrderRequest>(),
+  );
   BithumbAdapter();
   bithumb.marketWarnings();
   bithumb.marketAlerts();
@@ -88,6 +113,28 @@ void _generatedProviderGuard({
   bithumb.withdrawalAddresses();
   bithumb.orderDetail(_generatedProviderValue<BithumbOrderDetailRequest>());
   bithumb.orderList(_generatedProviderValue<BithumbOrderListRequest>());
+  bithumb.orderBookSnapshot(_generatedProviderValue<Market>());
+  bithumb.subscribeDetailed(_generatedProviderValue<Subscription>());
+  bithumb.subscribeDetailedWith(
+    _generatedProviderValue<Subscription>(),
+    _generatedProviderValue<StreamConfig>(),
+  );
+  bithumb.subscribeDetailedAccount();
+  bithumb.subscribeDetailedAccountWith(_generatedProviderValue<StreamConfig>());
+  bithumb.ordersByIdsDetail(_generatedProviderValue<OrderLookupRequest>());
+  bithumb.placeOrderDetail(_generatedProviderValue<OrderRequest>());
+  bithumb.cancelOrderDetail(
+    _generatedProviderValue<Market>(),
+    _generatedProviderValue<String>(),
+  );
+  bithumb.cancelOrderByClientIdDetail(
+    _generatedProviderValue<Market>(),
+    _generatedProviderValue<String>(),
+  );
+  bithumb.cancelOrdersDetail(_generatedProviderValue<CancelOrdersRequest>());
+  bithumb.depositDetail(_generatedProviderValue<TransferLookupRequest>());
+  bithumb.withdrawalDetail(_generatedProviderValue<TransferLookupRequest>());
+  bithumb.cancelWithdrawalDetail(_generatedProviderValue<String>());
   BinanceAdapter.spot();
   BinanceAdapter.usdMFutures();
   binance.venue;
@@ -128,6 +175,22 @@ void _generatedProviderGuard({
   binance.usdMCreateListenKey();
   binance.usdMKeepaliveListenKey();
   binance.usdMCloseListenKey();
+  binance.placeOrderDetail(_generatedProviderValue<OrderRequest>());
+  binance.cancelOrderDetail(
+    _generatedProviderValue<Market>(),
+    _generatedProviderValue<String>(),
+  );
+  binance.cancelOrderByClientIdDetail(
+    _generatedProviderValue<Market>(),
+    _generatedProviderValue<String>(),
+  );
+  binance.subscribeDetailed(_generatedProviderValue<Subscription>());
+  binance.subscribeDetailedWith(
+    _generatedProviderValue<Subscription>(),
+    _generatedProviderValue<StreamConfig>(),
+  );
+  binance.subscribeDetailedAccount();
+  binance.subscribeDetailedAccountWith(_generatedProviderValue<StreamConfig>());
   HyperliquidAdapter();
   HyperliquidAdapter.testnet();
   hyperliquid.isTestnet;
@@ -174,4 +237,14 @@ void _generatedProviderGuard({
   hyperliquid.portfolio();
   hyperliquid.subAccounts();
   hyperliquid.userVaultEquities();
+  hyperliquid.allMidsDetail();
+  hyperliquid.perpetualMeta();
+  hyperliquid.perpetualMetaAndAssetContexts();
+  hyperliquid.clearinghouseStateDetail();
+  hyperliquid.frontendOpenOrdersDetail();
+  hyperliquid.placeOrderDetail(_generatedProviderValue<OrderRequest>());
+  hyperliquid.cancelOrderDetail(
+    _generatedProviderValue<Market>(),
+    _generatedProviderValue<String>(),
+  );
 }

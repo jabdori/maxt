@@ -229,6 +229,7 @@ void main() {
       price: Decimal.parse('50000.25'),
       quantity: Decimal.parse('0.01'),
       takerSide: Side.buy,
+      rawJson: '{}',
     );
 
     expect(replacement.previousOrder, isA<UpbitOrderReferenceUuid>());

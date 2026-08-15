@@ -659,10 +659,10 @@ fn manifest_lifecycle_exposure_and_implementation_axes_remain_separate() {
 #[test]
 fn local_bridge_rows_and_implementation_status_are_not_remaining_work_counts() {
     let expected = [
-        (Exchange::Upbit, 57, 42, 15, 0),
-        (Exchange::Bithumb, 47, 32, 15, 0),
-        (Exchange::Binance, 57, 42, 14, 1),
-        (Exchange::Hyperliquid, 35, 28, 7, 0),
+        (Exchange::Upbit, 57, 57, 0, 0),
+        (Exchange::Bithumb, 47, 47, 0, 0),
+        (Exchange::Binance, 57, 56, 0, 1),
+        (Exchange::Hyperliquid, 35, 35, 0, 0),
     ];
 
     let mut totals = (0, 0, 0, 0);
@@ -692,7 +692,7 @@ fn local_bridge_rows_and_implementation_status_are_not_remaining_work_counts() {
         totals.3 += planned;
     }
 
-    assert_eq!(totals, (196, 144, 51, 1));
+    assert_eq!(totals, (196, 195, 0, 1));
 
     let bridge_rows = [
         ("Upbit", UPBIT_COVERAGE_BRIDGE),
@@ -775,12 +775,12 @@ fn wallet_lookup_and_cancellation_contracts_are_pinned() {
         })
         .collect::<BTreeSet<_>>();
     let expected = [
-        "upbit|wallet|deposit|GET|/v1/deposit|http|Jwt|Read|Partial|Fixture",
-        "upbit|wallet|withdrawal|GET|/v1/withdraw|http|Jwt|Read|Partial|Fixture",
-        "upbit|wallet|cancel_withdrawal|DELETE|/v1/withdraws/coin|http|Jwt|FinancialWrite|Partial|Fixture",
-        "bithumb|wallet|deposit|GET|/v1/deposit|http|Jwt|Read|Partial|Fixture",
-        "bithumb|wallet|withdrawal|GET|/v1/withdraw|http|Jwt|Read|Partial|Fixture",
-        "bithumb|wallet|cancel_withdrawal|DELETE|/v1/withdraws/coin|http|Jwt|FinancialWrite|Partial|Fixture",
+        "upbit|wallet|deposit|GET|/v1/deposit|http|Jwt|Read|Implemented|Fixture",
+        "upbit|wallet|withdrawal|GET|/v1/withdraw|http|Jwt|Read|Implemented|Fixture",
+        "upbit|wallet|cancel_withdrawal|DELETE|/v1/withdraws/coin|http|Jwt|FinancialWrite|Implemented|Fixture",
+        "bithumb|wallet|deposit|GET|/v1/deposit|http|Jwt|Read|Implemented|Fixture",
+        "bithumb|wallet|withdrawal|GET|/v1/withdraw|http|Jwt|Read|Implemented|Fixture",
+        "bithumb|wallet|cancel_withdrawal|DELETE|/v1/withdraws/coin|http|Jwt|FinancialWrite|Implemented|Fixture",
     ]
     .into_iter()
     .map(str::to_owned)
@@ -857,8 +857,11 @@ fn implemented_wallet_endpoint_sets_match_the_current_adapters() {
         ("GET", "/v1/withdraws/chance"),
         ("GET", "/v1/withdraws/coin_addresses"),
         ("POST", "/v1/withdraws/coin"),
+        ("GET", "/v1/deposit"),
         ("GET", "/v1/deposits"),
+        ("GET", "/v1/withdraw"),
         ("GET", "/v1/withdraws"),
+        ("DELETE", "/v1/withdraws/coin"),
     ]);
     let mut upbit = upbit_and_bithumb.clone();
     upbit.insert(("GET", "/v1/deposits/chance/coin"));
@@ -1060,8 +1063,8 @@ fn binance_operation_exposure_is_complete_and_matches_current_coverage() {
             counts
         }),
         BTreeMap::from([
-            ("common_existing", 28),
-            ("common_and_provider", 11),
+            ("common_existing", 16),
+            ("common_and_provider", 23),
             ("provider_typed", 674),
             ("platform_limited", 340),
             ("deprecated_excluded", 2),
@@ -1263,8 +1266,8 @@ fn hyperliquid_operation_exposure_is_complete_and_matches_current_coverage() {
             counts
         }),
         BTreeMap::from([
-            ("common_existing", 7),
-            ("common_and_provider", 15),
+            ("common_existing", 2),
+            ("common_and_provider", 20),
             ("provider_typed", 98),
             ("platform_limited", 97),
             ("deprecated_excluded", 2),

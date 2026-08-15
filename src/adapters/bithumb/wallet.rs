@@ -18,8 +18,9 @@ use crate::types::{
 
 use super::parse::{self, EXCHANGE};
 use super::{
-    BithumbCredentials, BithumbKrwDeposit, BithumbKrwDepositsRequest, BithumbKrwTransferRequest,
-    BithumbKrwWithdrawal, BithumbKrwWithdrawalsRequest, BithumbOrderDirection,
+    BithumbCancelWithdrawalResponse, BithumbCredentials, BithumbDepositResponse, BithumbKrwDeposit,
+    BithumbKrwDepositsRequest, BithumbKrwTransferRequest, BithumbKrwWithdrawal,
+    BithumbKrwWithdrawalsRequest, BithumbOrderDirection, BithumbWithdrawalResponse,
     network_from_provider, private, rest,
 };
 
@@ -350,6 +351,21 @@ pub(crate) async fn deposit(
     parse_deposit(&decode(&body)?)
 }
 
+/// Reads one deposit while preserving Bithumb's provider response body.
+pub(crate) async fn deposit_detail(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    request: &TransferLookupRequest,
+) -> Result<BithumbDepositResponse> {
+    let api_request = lookup_request(credentials, DEPOSIT_PATH, request)?;
+    let body = rest::send(http, &api_request).await?;
+    let raw = decode(&body)?;
+    Ok(BithumbDepositResponse {
+        common: parse_deposit(&raw)?,
+        raw_json: response_json(&body, "deposit lookup")?,
+    })
+}
+
 pub(crate) async fn withdrawal(
     http: &HttpTransport,
     credentials: &BithumbCredentials,
@@ -360,6 +376,21 @@ pub(crate) async fn withdrawal(
     parse_withdrawal(&decode(&body)?)
 }
 
+/// Reads one withdrawal while preserving Bithumb's provider response body.
+pub(crate) async fn withdrawal_detail(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    request: &TransferLookupRequest,
+) -> Result<BithumbWithdrawalResponse> {
+    let api_request = lookup_request(credentials, WITHDRAWAL_PATH, request)?;
+    let body = rest::send(http, &api_request).await?;
+    let raw = decode(&body)?;
+    Ok(BithumbWithdrawalResponse {
+        common: parse_withdrawal(&raw)?,
+        raw_json: response_json(&body, "withdrawal lookup")?,
+    })
+}
+
 pub(crate) async fn cancel_withdrawal(
     http: &HttpTransport,
     credentials: &BithumbCredentials,
@@ -368,6 +399,20 @@ pub(crate) async fn cancel_withdrawal(
     let api_request = cancel_withdrawal_request(credentials, withdrawal_id)?;
     rest::send(http, &api_request).await?;
     Ok(())
+}
+
+/// Cancels one withdrawal while preserving Bithumb's provider response body.
+pub(crate) async fn cancel_withdrawal_detail(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    withdrawal_id: &str,
+) -> Result<BithumbCancelWithdrawalResponse> {
+    let api_request = cancel_withdrawal_request(credentials, withdrawal_id)?;
+    let body = rest::send(http, &api_request).await?;
+    Ok(BithumbCancelWithdrawalResponse {
+        withdrawal_id: withdrawal_id.to_owned(),
+        raw_json: response_json(&body, "withdrawal cancellation")?,
+    })
 }
 
 pub(crate) async fn deposits(
@@ -1308,6 +1353,11 @@ fn decode<T: for<'de> Deserialize<'de>>(value: &Value) -> Result<T> {
         .map_err(|error| Error::decode(format!("invalid Bithumb wallet response: {error}")))
 }
 
+fn response_json(value: &Value, operation: &str) -> Result<String> {
+    serde_json::to_string(value)
+        .map_err(|error| Error::decode(format!("could not preserve Bithumb {operation}: {error}")))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1316,6 +1366,17 @@ mod tests {
 
     fn parsed(raw: &str) -> Value {
         serde_json::from_str(raw).expect("fixture is JSON")
+    }
+
+    #[test]
+    fn detailed_wallet_responses_keep_provider_only_fields() {
+        let raw = serde_json::json!({
+            "uuid": "deposit-1",
+            "provider_status": "PENDING_REVIEW"
+        });
+
+        let json = response_json(&raw, "deposit lookup").expect("preserved JSON");
+        assert!(json.contains("provider_status"));
     }
 
     fn credentials() -> BithumbCredentials {

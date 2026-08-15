@@ -143,7 +143,7 @@ pub(super) struct RawAggregateTrade {
     pub(super) is_buyer_maker: bool,
     /// Spot's best-price-match marker. USD-M does not include this field.
     #[serde(rename = "M", default)]
-    pub(super) _is_best_price_match: Option<bool>,
+    pub(super) best_price_match: Option<bool>,
 }
 
 /// A rolling 24-hour summary, from REST or from a ticker stream.
@@ -367,6 +367,7 @@ pub(super) fn trade(market: &Market, raw: &RawTrade) -> Result<Trade> {
 pub(super) fn aggregate_trade(
     market: &Market,
     raw: &RawAggregateTrade,
+    raw_json: &serde_json::Value,
 ) -> Result<BinanceAggregateTrade> {
     if raw.last_trade_id < raw.first_trade_id {
         return Err(Error::decode(
@@ -387,11 +388,13 @@ pub(super) fn aggregate_trade(
             .as_deref()
             .map(|value| decimal(value, "nq"))
             .transpose()?,
+        best_price_match: raw.best_price_match,
         taker_side: if raw.is_buyer_maker {
             Side::Sell
         } else {
             Side::Buy
         },
+        raw_json: canonical_json(raw_json, "aggregate trade")?,
     })
 }
 

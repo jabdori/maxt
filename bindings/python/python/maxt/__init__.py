@@ -252,6 +252,10 @@ from .models import (
     WithdrawalStatus,
     WithdrawRequest,
 )
+from . import _generated_provider_methods as _generated_provider_methods
+from . import _generated_provider_models as _generated_provider_models
+from ._generated_provider_methods import *  # noqa: F403
+from ._generated_provider_models import *  # noqa: F403
 
 __all__ = [
     "AccountEvent",
@@ -498,3 +502,6 @@ __all__ = [
     "WithdrawalStatus",
     "WithdrawRequest",
 ]
+
+__all__.extend(_generated_provider_methods.__all__)
+__all__.extend(_generated_provider_models.__all__)

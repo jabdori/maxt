@@ -1585,6 +1585,7 @@ impl NativeHyperliquidAdapter {
 }
 
 include!("generated/provider_convert.rs");
+include!("generated/provider_native.rs");
 
 #[cfg(test)]
 mod tests {

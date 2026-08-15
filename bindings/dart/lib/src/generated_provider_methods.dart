@@ -296,6 +296,142 @@ extension UpbitAdapterGeneratedMethods on UpbitAdapter {
         (values) =>
             values.map(_upbitPocketTransferFromWire).toList(growable: false),
       );
+
+  /// Upbit 원본 필드를 보존하는 시장 스트림을 엽니다.
+  Future<UpbitMarketStream> subscribeDetailed(Subscription subscription) =>
+      subscribeDetailedWith(subscription, defaultStreamConfig());
+
+  /// Upbit 원본 필드를 보존하는 시장 스트림을 엽니다.
+  Future<UpbitMarketStream> subscribeDetailedWith(
+    Subscription subscription,
+    StreamConfig config,
+  ) async {
+    validateStreamConfigIntegers(config);
+    final handle = await _nativeFuture(
+      () => _handle.upbitSubscribeDetailedWith(
+        subscription: _subscriptionToWire(subscription),
+        config: _streamConfigToWire(config),
+      ),
+    );
+    return UpbitMarketStream(
+      _nativeUpbitMarketItems(handle),
+      onClose: () => _nativeFuture(
+        () => native.nativeUpbitMarketSubscriptionClose(subscription: handle),
+      ),
+    );
+  }
+
+  /// Upbit 원본 필드를 보존하는 계정 스트림을 엽니다.
+  Future<UpbitAccountStream> subscribeDetailedAccount() =>
+      subscribeDetailedAccountWith(defaultStreamConfig());
+
+  /// Upbit 원본 필드를 보존하는 계정 스트림을 엽니다.
+  Future<UpbitAccountStream> subscribeDetailedAccountWith(
+    StreamConfig config,
+  ) async {
+    validateStreamConfigIntegers(config);
+    final handle = await _nativeFuture(
+      () => _handle.upbitSubscribeDetailedAccountWith(
+        config: _streamConfigToWire(config),
+      ),
+    );
+    return UpbitAccountStream(
+      _nativeUpbitAccountItems(handle),
+      onClose: () => _nativeFuture(
+        () => native.nativeUpbitAccountSubscriptionClose(subscription: handle),
+      ),
+    );
+  }
+
+  /// Upbit 전용 API인 `testOrderDetail`를 호출합니다.
+  Future<UpbitOrderResponse> testOrderDetail(OrderRequest request) =>
+      _nativeFuture(
+        () =>
+            _handle.upbitTestOrderDetail(request: _orderRequestToWire(request)),
+      ).then(_upbitOrderResponseFromWire);
+
+  /// Upbit 전용 API인 `placeOrderDetail`를 호출합니다.
+  Future<UpbitOrderResponse> placeOrderDetail(OrderRequest request) =>
+      _nativeFuture(
+        () => _handle.upbitPlaceOrderDetail(
+          request: _orderRequestToWire(request),
+        ),
+      ).then(_upbitOrderResponseFromWire);
+
+  /// Upbit 전용 API인 `cancelOrderDetail`를 호출합니다.
+  Future<UpbitOrderResponse> cancelOrderDetail(Market market, String orderId) =>
+      _nativeFuture(
+        () => _handle.upbitCancelOrderDetail(
+          market: _marketToWire(market),
+          orderId: orderId,
+        ),
+      ).then(_upbitOrderResponseFromWire);
+
+  /// Upbit 전용 API인 `cancelOrderByClientIdDetail`를 호출합니다.
+  Future<UpbitOrderResponse> cancelOrderByClientIdDetail(
+    Market market,
+    String clientId,
+  ) => _nativeFuture(
+    () => _handle.upbitCancelOrderByClientIdDetail(
+      market: _marketToWire(market),
+      clientId: clientId,
+    ),
+  ).then(_upbitOrderResponseFromWire);
+
+  /// Upbit 전용 API인 `ordersByIdsDetail`를 호출합니다.
+  Future<List<UpbitOrderResponse>> ordersByIdsDetail(
+    OrderLookupRequest request,
+  ) =>
+      _nativeFuture(
+        () => _handle.upbitOrdersByIdsDetail(
+          request: _orderLookupRequestToWire(request),
+        ),
+      ).then(
+        (values) =>
+            values.map(_upbitOrderResponseFromWire).toList(growable: false),
+      );
+
+  /// Upbit 전용 API인 `cancelOrdersDetail`를 호출합니다.
+  Future<UpbitCancelOrdersResponse> cancelOrdersDetail(
+    CancelOrdersRequest request,
+  ) => _nativeFuture(
+    () => _handle.upbitCancelOrdersDetail(
+      request: _cancelOrdersRequestToWire(request),
+    ),
+  ).then(_upbitCancelOrdersResponseFromWire);
+
+  /// Upbit 전용 API인 `depositDetail`를 호출합니다.
+  Future<UpbitDepositResponse> depositDetail(TransferLookupRequest request) =>
+      _nativeFuture(
+        () => _handle.upbitDepositDetail(
+          request: _transferLookupRequestToWire(request),
+        ),
+      ).then(_upbitDepositResponseFromWire);
+
+  /// Upbit 전용 API인 `withdrawalDetail`를 호출합니다.
+  Future<UpbitWithdrawalResponse> withdrawalDetail(
+    TransferLookupRequest request,
+  ) => _nativeFuture(
+    () => _handle.upbitWithdrawalDetail(
+      request: _transferLookupRequestToWire(request),
+    ),
+  ).then(_upbitWithdrawalResponseFromWire);
+
+  /// Upbit 전용 API인 `cancelWithdrawalDetail`를 호출합니다.
+  Future<UpbitCancelWithdrawalResponse> cancelWithdrawalDetail(
+    String withdrawalId,
+  ) => _nativeFuture(
+    () => _handle.upbitCancelWithdrawalDetail(withdrawalId: withdrawalId),
+  ).then(_upbitCancelWithdrawalResponseFromWire);
+
+  /// Upbit 전용 API인 `cancelAndNewOrderDetail`를 호출합니다.
+  Future<UpbitCancelAndNewOrderDetailResult> cancelAndNewOrderDetail(
+    UpbitCancelAndNewOrderRequest request,
+  ) => _nativeFuture(
+    () => _handle.upbitCancelAndNewOrderDetail(
+      request: _upbitCancelAndNewOrderRequestToWire(request),
+    ),
+  ).then(_upbitCancelAndNewOrderDetailResultFromWire);
 }
 
 /// Bithumb 전용 API 확장입니다.
@@ -453,6 +589,135 @@ extension BithumbAdapterGeneratedMethods on BithumbAdapter {
         (values) =>
             values.map(_bithumbOrderListItemFromWire).toList(growable: false),
       );
+
+  /// Bithumb 전용 API인 `orderBookSnapshot`를 호출합니다.
+  Future<BithumbOrderBookSnapshot> orderBookSnapshot(
+    Market market, [
+    int? depth,
+  ]) => _nativeFuture(
+    () => _handle.bithumbOrderBookSnapshot(
+      market: _marketToWire(market),
+      depth: checkedUint32(depth, field: 'depth'),
+    ),
+  ).then(_bithumbOrderBookSnapshotFromWire);
+
+  /// Bithumb 원본 필드를 보존하는 시장 스트림을 엽니다.
+  Future<BithumbMarketStream> subscribeDetailed(Subscription subscription) =>
+      subscribeDetailedWith(subscription, defaultStreamConfig());
+
+  /// Bithumb 원본 필드를 보존하는 시장 스트림을 엽니다.
+  Future<BithumbMarketStream> subscribeDetailedWith(
+    Subscription subscription,
+    StreamConfig config,
+  ) async {
+    validateStreamConfigIntegers(config);
+    final handle = await _nativeFuture(
+      () => _handle.bithumbSubscribeDetailedWith(
+        subscription: _subscriptionToWire(subscription),
+        config: _streamConfigToWire(config),
+      ),
+    );
+    return BithumbMarketStream(
+      _nativeBithumbMarketItems(handle),
+      onClose: () => _nativeFuture(
+        () => native.nativeBithumbMarketSubscriptionClose(subscription: handle),
+      ),
+    );
+  }
+
+  /// Bithumb 원본 필드를 보존하는 계정 스트림을 엽니다.
+  Future<BithumbAccountStream> subscribeDetailedAccount() =>
+      subscribeDetailedAccountWith(defaultStreamConfig());
+
+  /// Bithumb 원본 필드를 보존하는 계정 스트림을 엽니다.
+  Future<BithumbAccountStream> subscribeDetailedAccountWith(
+    StreamConfig config,
+  ) async {
+    validateStreamConfigIntegers(config);
+    final handle = await _nativeFuture(
+      () => _handle.bithumbSubscribeDetailedAccountWith(
+        config: _streamConfigToWire(config),
+      ),
+    );
+    return BithumbAccountStream(
+      _nativeBithumbAccountItems(handle),
+      onClose: () => _nativeFuture(
+        () =>
+            native.nativeBithumbAccountSubscriptionClose(subscription: handle),
+      ),
+    );
+  }
+
+  /// Bithumb 전용 API인 `ordersByIdsDetail`를 호출합니다.
+  Future<BithumbOrdersResponse> ordersByIdsDetail(OrderLookupRequest request) =>
+      _nativeFuture(
+        () => _handle.bithumbOrdersByIdsDetail(
+          request: _orderLookupRequestToWire(request),
+        ),
+      ).then(_bithumbOrdersResponseFromWire);
+
+  /// Bithumb 전용 API인 `placeOrderDetail`를 호출합니다.
+  Future<BithumbOrderResponse> placeOrderDetail(OrderRequest request) =>
+      _nativeFuture(
+        () => _handle.bithumbPlaceOrderDetail(
+          request: _orderRequestToWire(request),
+        ),
+      ).then(_bithumbOrderResponseFromWire);
+
+  /// Bithumb 전용 API인 `cancelOrderDetail`를 호출합니다.
+  Future<BithumbCancelOrderResponse> cancelOrderDetail(
+    Market market,
+    String orderId,
+  ) => _nativeFuture(
+    () => _handle.bithumbCancelOrderDetail(
+      market: _marketToWire(market),
+      orderId: orderId,
+    ),
+  ).then(_bithumbCancelOrderResponseFromWire);
+
+  /// Bithumb 전용 API인 `cancelOrderByClientIdDetail`를 호출합니다.
+  Future<BithumbCancelOrderResponse> cancelOrderByClientIdDetail(
+    Market market,
+    String clientId,
+  ) => _nativeFuture(
+    () => _handle.bithumbCancelOrderByClientIdDetail(
+      market: _marketToWire(market),
+      clientId: clientId,
+    ),
+  ).then(_bithumbCancelOrderResponseFromWire);
+
+  /// Bithumb 전용 API인 `cancelOrdersDetail`를 호출합니다.
+  Future<BithumbCancelOrdersResponse> cancelOrdersDetail(
+    CancelOrdersRequest request,
+  ) => _nativeFuture(
+    () => _handle.bithumbCancelOrdersDetail(
+      request: _cancelOrdersRequestToWire(request),
+    ),
+  ).then(_bithumbCancelOrdersResponseFromWire);
+
+  /// Bithumb 전용 API인 `depositDetail`를 호출합니다.
+  Future<BithumbDepositResponse> depositDetail(TransferLookupRequest request) =>
+      _nativeFuture(
+        () => _handle.bithumbDepositDetail(
+          request: _transferLookupRequestToWire(request),
+        ),
+      ).then(_bithumbDepositResponseFromWire);
+
+  /// Bithumb 전용 API인 `withdrawalDetail`를 호출합니다.
+  Future<BithumbWithdrawalResponse> withdrawalDetail(
+    TransferLookupRequest request,
+  ) => _nativeFuture(
+    () => _handle.bithumbWithdrawalDetail(
+      request: _transferLookupRequestToWire(request),
+    ),
+  ).then(_bithumbWithdrawalResponseFromWire);
+
+  /// Bithumb 전용 API인 `cancelWithdrawalDetail`를 호출합니다.
+  Future<BithumbCancelWithdrawalResponse> cancelWithdrawalDetail(
+    String withdrawalId,
+  ) => _nativeFuture(
+    () => _handle.bithumbCancelWithdrawalDetail(withdrawalId: withdrawalId),
+  ).then(_bithumbCancelWithdrawalResponseFromWire);
 }
 
 /// Binance 전용 API 확장입니다.
@@ -637,6 +902,83 @@ extension BinanceAdapterGeneratedMethods on BinanceAdapter {
   /// Binance 전용 API인 `usd_m_close_listen_key`를 호출합니다.
   Future<void> usdMCloseListenKey() =>
       _nativeFuture(_handle.binanceUsdMCloseListenKey);
+
+  /// Binance 전용 API인 `placeOrderDetail`를 호출합니다.
+  Future<BinanceOrderResponse> placeOrderDetail(OrderRequest request) =>
+      _nativeFuture(
+        () => _handle.binancePlaceOrderDetail(
+          request: _orderRequestToWire(request),
+        ),
+      ).then(_binanceOrderResponseFromWire);
+
+  /// Binance 전용 API인 `cancelOrderDetail`를 호출합니다.
+  Future<BinanceOrderResponse> cancelOrderDetail(
+    Market market,
+    String orderId,
+  ) => _nativeFuture(
+    () => _handle.binanceCancelOrderDetail(
+      market: _marketToWire(market),
+      orderId: orderId,
+    ),
+  ).then(_binanceOrderResponseFromWire);
+
+  /// Binance 전용 API인 `cancelOrderByClientIdDetail`를 호출합니다.
+  Future<BinanceOrderResponse> cancelOrderByClientIdDetail(
+    Market market,
+    String clientId,
+  ) => _nativeFuture(
+    () => _handle.binanceCancelOrderByClientIdDetail(
+      market: _marketToWire(market),
+      clientId: clientId,
+    ),
+  ).then(_binanceOrderResponseFromWire);
+
+  /// Binance 원본 필드를 보존하는 시장 스트림을 엽니다.
+  Future<BinanceMarketStream> subscribeDetailed(Subscription subscription) =>
+      subscribeDetailedWith(subscription, defaultStreamConfig());
+
+  /// Binance 원본 필드를 보존하는 시장 스트림을 엽니다.
+  Future<BinanceMarketStream> subscribeDetailedWith(
+    Subscription subscription,
+    StreamConfig config,
+  ) async {
+    validateStreamConfigIntegers(config);
+    final handle = await _nativeFuture(
+      () => _handle.binanceSubscribeDetailedWith(
+        subscription: _subscriptionToWire(subscription),
+        config: _streamConfigToWire(config),
+      ),
+    );
+    return BinanceMarketStream(
+      _nativeBinanceMarketItems(handle),
+      onClose: () => _nativeFuture(
+        () => native.nativeBinanceMarketSubscriptionClose(subscription: handle),
+      ),
+    );
+  }
+
+  /// Binance 원본 필드를 보존하는 계정 스트림을 엽니다.
+  Future<BinanceAccountStream> subscribeDetailedAccount() =>
+      subscribeDetailedAccountWith(defaultStreamConfig());
+
+  /// Binance 원본 필드를 보존하는 계정 스트림을 엽니다.
+  Future<BinanceAccountStream> subscribeDetailedAccountWith(
+    StreamConfig config,
+  ) async {
+    validateStreamConfigIntegers(config);
+    final handle = await _nativeFuture(
+      () => _handle.binanceSubscribeDetailedAccountWith(
+        config: _streamConfigToWire(config),
+      ),
+    );
+    return BinanceAccountStream(
+      _nativeBinanceAccountItems(handle),
+      onClose: () => _nativeFuture(
+        () =>
+            native.nativeBinanceAccountSubscriptionClose(subscription: handle),
+      ),
+    );
+  }
 }
 
 /// Hyperliquid 전용 API 확장입니다.
@@ -905,4 +1247,170 @@ extension HyperliquidAdapterGeneratedMethods on HyperliquidAdapter {
         (values) =>
             values.map(_hyperliquidVaultEquityFromWire).toList(growable: false),
       );
+
+  /// Hyperliquid 전용 API인 `allMidsDetail`를 호출합니다.
+  Future<HyperliquidAllMids> allMidsDetail() => _nativeFuture(
+    () => _handle.hyperliquidAllMidsDetail(),
+  ).then(_hyperliquidAllMidsFromWire);
+
+  /// Hyperliquid 전용 API인 `perpetualMeta`를 호출합니다.
+  Future<HyperliquidProviderResponse> perpetualMeta() => _nativeFuture(
+    () => _handle.hyperliquidPerpetualMeta(),
+  ).then(_hyperliquidProviderResponseFromWire);
+
+  /// Hyperliquid 전용 API인 `perpetualMetaAndAssetContexts`를 호출합니다.
+  Future<HyperliquidProviderResponse> perpetualMetaAndAssetContexts() =>
+      _nativeFuture(
+        () => _handle.hyperliquidPerpetualMetaAndAssetContexts(),
+      ).then(_hyperliquidProviderResponseFromWire);
+
+  /// Hyperliquid 전용 API인 `clearinghouseStateDetail`를 호출합니다.
+  Future<HyperliquidProviderResponse> clearinghouseStateDetail() =>
+      _nativeFuture(
+        () => _handle.hyperliquidClearinghouseStateDetail(),
+      ).then(_hyperliquidProviderResponseFromWire);
+
+  /// Hyperliquid 전용 API인 `frontendOpenOrdersDetail`를 호출합니다.
+  Future<HyperliquidProviderResponse> frontendOpenOrdersDetail() =>
+      _nativeFuture(
+        () => _handle.hyperliquidFrontendOpenOrdersDetail(),
+      ).then(_hyperliquidProviderResponseFromWire);
+
+  /// Hyperliquid 전용 API인 `placeOrderDetail`를 호출합니다.
+  Future<HyperliquidOrderActionResponse> placeOrderDetail(
+    OrderRequest request,
+  ) => _nativeFuture(
+    () => _handle.hyperliquidPlaceOrderDetail(
+      request: _orderRequestToWire(request),
+    ),
+  ).then(_hyperliquidOrderActionResponseFromWire);
+
+  /// Hyperliquid 전용 API인 `cancelOrderDetail`를 호출합니다.
+  Future<HyperliquidProviderResponse> cancelOrderDetail(
+    Market market,
+    String orderId,
+  ) => _nativeFuture(
+    () => _handle.hyperliquidCancelOrderDetail(
+      market: _marketToWire(market),
+      orderId: orderId,
+    ),
+  ).then(_hyperliquidProviderResponseFromWire);
+}
+
+Stream<StreamItem<UpbitMarketStreamEvent>> _nativeUpbitMarketItems(
+  native_stream.NativeUpbitMarketSubscription subscription,
+) async* {
+  while (true) {
+    final item = await _nativeFuture(
+      () =>
+          native.nativeUpbitMarketSubscriptionNext(subscription: subscription),
+    );
+    switch (item) {
+      case native_stream.WireUpbitMarketStreamItem_Event(:final field0):
+        yield StreamItem.event(_upbitMarketStreamEventFromWire(field0));
+      case native_stream.WireUpbitMarketStreamItem_Error(:final field0):
+        yield StreamItem.error(_nativeError(field0));
+      case native_stream.WireUpbitMarketStreamItem_End():
+        return;
+    }
+  }
+}
+
+Stream<StreamItem<UpbitAccountStreamEvent>> _nativeUpbitAccountItems(
+  native_stream.NativeUpbitAccountSubscription subscription,
+) async* {
+  while (true) {
+    final item = await _nativeFuture(
+      () =>
+          native.nativeUpbitAccountSubscriptionNext(subscription: subscription),
+    );
+    switch (item) {
+      case native_stream.WireUpbitAccountStreamItem_Event(:final field0):
+        yield StreamItem.event(_upbitAccountStreamEventFromWire(field0));
+      case native_stream.WireUpbitAccountStreamItem_Error(:final field0):
+        yield StreamItem.error(_nativeError(field0));
+      case native_stream.WireUpbitAccountStreamItem_End():
+        return;
+    }
+  }
+}
+
+Stream<StreamItem<BithumbMarketEvent>> _nativeBithumbMarketItems(
+  native_stream.NativeBithumbMarketSubscription subscription,
+) async* {
+  while (true) {
+    final item = await _nativeFuture(
+      () => native.nativeBithumbMarketSubscriptionNext(
+        subscription: subscription,
+      ),
+    );
+    switch (item) {
+      case native_stream.WireBithumbMarketStreamItem_Event(:final field0):
+        yield StreamItem.event(_bithumbMarketEventFromWire(field0));
+      case native_stream.WireBithumbMarketStreamItem_Error(:final field0):
+        yield StreamItem.error(_nativeError(field0));
+      case native_stream.WireBithumbMarketStreamItem_End():
+        return;
+    }
+  }
+}
+
+Stream<StreamItem<BithumbAccountEvent>> _nativeBithumbAccountItems(
+  native_stream.NativeBithumbAccountSubscription subscription,
+) async* {
+  while (true) {
+    final item = await _nativeFuture(
+      () => native.nativeBithumbAccountSubscriptionNext(
+        subscription: subscription,
+      ),
+    );
+    switch (item) {
+      case native_stream.WireBithumbAccountStreamItem_Event(:final field0):
+        yield StreamItem.event(_bithumbAccountEventFromWire(field0));
+      case native_stream.WireBithumbAccountStreamItem_Error(:final field0):
+        yield StreamItem.error(_nativeError(field0));
+      case native_stream.WireBithumbAccountStreamItem_End():
+        return;
+    }
+  }
+}
+
+Stream<StreamItem<BinanceMarketEvent>> _nativeBinanceMarketItems(
+  native_stream.NativeBinanceMarketSubscription subscription,
+) async* {
+  while (true) {
+    final item = await _nativeFuture(
+      () => native.nativeBinanceMarketSubscriptionNext(
+        subscription: subscription,
+      ),
+    );
+    switch (item) {
+      case native_stream.WireBinanceMarketStreamItem_Event(:final field0):
+        yield StreamItem.event(_binanceMarketEventFromWire(field0));
+      case native_stream.WireBinanceMarketStreamItem_Error(:final field0):
+        yield StreamItem.error(_nativeError(field0));
+      case native_stream.WireBinanceMarketStreamItem_End():
+        return;
+    }
+  }
+}
+
+Stream<StreamItem<BinanceAccountStreamEvent>> _nativeBinanceAccountItems(
+  native_stream.NativeBinanceAccountSubscription subscription,
+) async* {
+  while (true) {
+    final item = await _nativeFuture(
+      () => native.nativeBinanceAccountSubscriptionNext(
+        subscription: subscription,
+      ),
+    );
+    switch (item) {
+      case native_stream.WireBinanceAccountStreamItem_Event(:final field0):
+        yield StreamItem.event(_binanceAccountStreamEventFromWire(field0));
+      case native_stream.WireBinanceAccountStreamItem_Error(:final field0):
+        yield StreamItem.error(_nativeError(field0));
+      case native_stream.WireBinanceAccountStreamItem_End():
+        return;
+    }
+  }
 }

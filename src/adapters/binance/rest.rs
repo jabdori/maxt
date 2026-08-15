@@ -480,9 +480,14 @@ pub(super) async fn aggregate_trades(
     let body = adapter
         .send(aggregate_trades_request(adapter, request)?)
         .await?;
-    let raw: Vec<parse::RawAggregateTrade> = parse::json(&body, "aggregate trades")?;
-    raw.iter()
-        .map(|trade| parse::aggregate_trade(&request.market, trade))
+    let values: Vec<serde_json::Value> = parse::json(&body, "aggregate trades")?;
+    values
+        .iter()
+        .map(|value| {
+            let raw = serde_json::from_value::<parse::RawAggregateTrade>(value.clone())
+                .map_err(|error| Error::decode(format!("unreadable aggregate trade: {error}")))?;
+            parse::aggregate_trade(&request.market, &raw, value)
+        })
         .collect()
 }
 
@@ -900,33 +905,44 @@ mod tests {
 
     #[test]
     fn aggregate_trades_parse_spot_fields_without_normal_quantity() {
-        let raw: Vec<parse::RawAggregateTrade> = parse::json(
+        let values: Vec<serde_json::Value> = parse::json(
             r#"[{"a":26129,"p":"0.01633102","q":"4.70443515",
                 "f":27781,"l":27784,"T":1498793709153,"m":true,"M":true}]"#,
             "aggregate trades",
         )
         .expect("official aggregate-trade payload");
-        let trade = parse::aggregate_trade(&btc_usdt(), &raw[0]).expect("aggregate trade");
+        let raw = serde_json::from_value::<parse::RawAggregateTrade>(values[0].clone())
+            .expect("aggregate trade fields");
+        let trade = parse::aggregate_trade(&btc_usdt(), &raw, &values[0]).expect("aggregate trade");
 
         assert_eq!(trade.aggregate_id, 26129);
         assert_eq!(trade.first_trade_id, 27781);
         assert_eq!(trade.last_trade_id, 27784);
         assert_eq!(trade.quantity.to_string(), "4.70443515");
         assert_eq!(trade.normal_quantity, None);
+        assert_eq!(trade.best_price_match, Some(true));
         assert_eq!(trade.taker_side, crate::types::Side::Sell);
+        assert_eq!(
+            trade.raw_json,
+            r#"{"a":26129,"p":"0.01633102","q":"4.70443515","f":27781,"l":27784,"T":1498793709153,"m":true,"M":true}"#
+        );
     }
 
     #[test]
     fn aggregate_trades_parse_usd_m_fields_without_spot_marker() {
-        let raw: Vec<parse::RawAggregateTrade> = parse::json(
+        let values: Vec<serde_json::Value> = parse::json(
             r#"[{"a":26130,"p":"0.01633103","q":"1.2","nq":"1.00000000",
                 "f":27785,"l":27785,"T":1498793709253,"m":false}]"#,
             "aggregate trades",
         )
         .expect("official aggregate-trade payload");
-        let trade = parse::aggregate_trade(&btc_usdt_perp(), &raw[0]).expect("aggregate trade");
+        let raw = serde_json::from_value::<parse::RawAggregateTrade>(values[0].clone())
+            .expect("aggregate trade fields");
+        let trade =
+            parse::aggregate_trade(&btc_usdt_perp(), &raw, &values[0]).expect("aggregate trade");
 
         assert_eq!(trade.normal_quantity.expect("nq").to_string(), "1.00000000");
+        assert_eq!(trade.best_price_match, None);
         assert_eq!(trade.taker_side, crate::types::Side::Buy);
 
         let invalid = parse::RawAggregateTrade {
@@ -938,10 +954,10 @@ mod tests {
             last_trade_id: 2,
             time: 0,
             is_buyer_maker: false,
-            _is_best_price_match: None,
+            best_price_match: None,
         };
         assert!(matches!(
-            parse::aggregate_trade(&btc_usdt(), &invalid),
+            parse::aggregate_trade(&btc_usdt(), &invalid, &values[0]),
             Err(Error::Decode { .. })
         ));
     }

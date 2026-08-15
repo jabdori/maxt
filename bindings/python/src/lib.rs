@@ -23,5 +23,11 @@ fn native(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<stream::NativeAccountStream>()?;
     module.add_class::<stream::NativeHyperliquidMarketStream>()?;
     module.add_class::<stream::NativeHyperliquidAccountStream>()?;
+    module.add_class::<stream::NativeUpbitMarketStream>()?;
+    module.add_class::<stream::NativeUpbitAccountStream>()?;
+    module.add_class::<stream::NativeBithumbMarketStream>()?;
+    module.add_class::<stream::NativeBithumbAccountStream>()?;
+    module.add_class::<stream::NativeBinanceMarketStream>()?;
+    module.add_class::<stream::NativeBinanceAccountStream>()?;
     Ok(())
 }

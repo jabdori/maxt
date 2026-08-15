@@ -26,7 +26,10 @@ use super::parse::{self, Asset, EXCHANGE, Universe};
 use super::sign::{
     self, CancelAction, LeverageAction, LimitKind, OrderAction, OrderKind, OrderWire,
 };
-use super::{HyperliquidMidPrice, HyperliquidNetwork};
+use super::{
+    HyperliquidAllMids, HyperliquidNetwork, HyperliquidOrderActionResponse,
+    HyperliquidProviderResponse,
+};
 
 pub(crate) const INFO_PATH: &str = "/info";
 pub(crate) const EXCHANGE_PATH: &str = "/exchange";
@@ -329,14 +332,81 @@ pub(crate) fn markets(universe: &Universe, kind: MarketKind) -> Vec<MarketInfo> 
     universe.of_kind(kind).map(parse::market_info).collect()
 }
 
-/// Reads current mids for the markets represented by this adapter's universe.
-pub(crate) async fn all_mids(
+/// Reads current mids with the complete provider map retained as JSON.
+pub(crate) async fn all_mids_detail(
     http: &HttpTransport,
     universe: &Universe,
-) -> Result<Vec<HyperliquidMidPrice>> {
+) -> Result<HyperliquidAllMids> {
     let body = post(http, &all_mids_request()).await?;
+    let value: Value = parse::json(&body)?;
+    all_mids_detail_from_value(&value, universe)
+}
 
-    parse::all_mids(&parse::json(&body)?, universe)
+pub(crate) fn all_mids_detail_from_value(
+    value: &Value,
+    universe: &Universe,
+) -> Result<HyperliquidAllMids> {
+    Ok(HyperliquidAllMids {
+        mids: parse::all_mids(value, universe)?,
+        raw_json: serde_json::to_string(value).map_err(|error| {
+            Error::decode(format!("could not preserve Hyperliquid allMids: {error}"))
+        })?,
+    })
+}
+
+/// Reads the complete perpetual `meta` response without narrowing its schema.
+pub(crate) async fn perpetual_meta(http: &HttpTransport) -> Result<HyperliquidProviderResponse> {
+    provider_response(http, meta_request(), "meta").await
+}
+
+/// Reads the complete perpetual `metaAndAssetCtxs` response without narrowing it.
+pub(crate) async fn perpetual_meta_and_asset_contexts(
+    http: &HttpTransport,
+) -> Result<HyperliquidProviderResponse> {
+    provider_response(
+        http,
+        asset_contexts_request(MarketKind::Perpetual),
+        "metaAndAssetCtxs",
+    )
+    .await
+}
+
+/// Reads the complete `clearinghouseState` response without narrowing it.
+pub(crate) async fn clearinghouse_state(
+    http: &HttpTransport,
+    user: &str,
+) -> Result<HyperliquidProviderResponse> {
+    provider_response(http, perp_state_request(user), "clearinghouseState").await
+}
+
+/// Reads the complete `frontendOpenOrders` response without narrowing it.
+pub(crate) async fn frontend_open_orders(
+    http: &HttpTransport,
+    user: &str,
+) -> Result<HyperliquidProviderResponse> {
+    provider_response(http, open_orders_request(user), "frontendOpenOrders").await
+}
+
+async fn provider_response(
+    http: &HttpTransport,
+    request: HttpRequest,
+    operation: &str,
+) -> Result<HyperliquidProviderResponse> {
+    let body = post(http, &request).await?;
+    provider_response_from_body(body, operation)
+}
+
+fn provider_response_from_body(
+    body: String,
+    operation: &str,
+) -> Result<HyperliquidProviderResponse> {
+    let _: Value = parse::json(&body)?;
+    if body.trim().is_empty() {
+        return Err(Error::decode(format!(
+            "Hyperliquid {operation} response was empty"
+        )));
+    }
+    Ok(HyperliquidProviderResponse { raw_json: body })
 }
 
 pub(crate) async fn order_book(
@@ -1155,6 +1225,22 @@ pub(crate) async fn place_order(
     request: &OrderRequest,
     nonce: u64,
 ) -> Result<Order> {
+    Ok(
+        place_order_detail(http, universe, private_key, network, request, nonce)
+            .await?
+            .common,
+    )
+}
+
+/// Builds and signs an order while preserving the full action response.
+pub(crate) async fn place_order_detail(
+    http: &HttpTransport,
+    universe: &Universe,
+    private_key: &str,
+    network: HyperliquidNetwork,
+    request: &OrderRequest,
+    nonce: u64,
+) -> Result<HyperliquidOrderActionResponse> {
     let asset = universe.asset(&request.market)?;
     let wire = order_wire(asset, request)?;
     let action = OrderAction::new(wire.clone());
@@ -1164,25 +1250,28 @@ pub(crate) async fn place_order(
     let (id, status) = parse::order_ack_id(&parse::action_response(&response)?)?;
 
     let size = parse::decimal(&wire.s, "size")?;
-    Ok(Order {
-        id,
-        market: request.market.clone(),
-        side: request.side,
-        status,
-        // The acknowledgement exposes only resting versus filled status.
-        filled_quantity: if status == OrderStatus::Filled {
-            size
-        } else {
-            Decimal::ZERO
+    Ok(HyperliquidOrderActionResponse {
+        common: Order {
+            id,
+            market: request.market.clone(),
+            side: request.side,
+            status,
+            // The acknowledgement exposes only resting versus filled status.
+            filled_quantity: if status == OrderStatus::Filled {
+                size
+            } else {
+                Decimal::ZERO
+            },
+            remaining_quantity: if status == OrderStatus::Filled {
+                Decimal::ZERO
+            } else {
+                size
+            },
+            price: request.price,
+            // The acknowledgement has no exchange timestamp.
+            created_at: None,
         },
-        remaining_quantity: if status == OrderStatus::Filled {
-            Decimal::ZERO
-        } else {
-            size
-        },
-        price: request.price,
-        // The acknowledgement has no exchange timestamp.
-        created_at: None,
+        raw_json: response,
     })
 }
 
@@ -1342,6 +1431,29 @@ pub(crate) async fn cancel_order(
     order_id: &str,
     nonce: u64,
 ) -> Result<()> {
+    cancel_order_detail(
+        http,
+        universe,
+        private_key,
+        network,
+        market,
+        order_id,
+        nonce,
+    )
+    .await
+    .map(|_| ())
+}
+
+/// Cancels one order while preserving the full action response.
+pub(crate) async fn cancel_order_detail(
+    http: &HttpTransport,
+    universe: &Universe,
+    private_key: &str,
+    network: HyperliquidNetwork,
+    market: &Market,
+    order_id: &str,
+    nonce: u64,
+) -> Result<HyperliquidProviderResponse> {
     let asset = universe.asset(market)?;
     let oid: u64 = order_id.parse().map_err(|_| {
         Error::invalid_request(
@@ -1354,7 +1466,8 @@ pub(crate) async fn cancel_order(
     let body = sign::signed_body(&action, private_key, nonce, network)?;
     let response = post(http, &HttpRequest::post(EXCHANGE_PATH).json_body(body)).await?;
     let accepted = parse::action_response(&response)?;
-    cancel_ack(&accepted)
+    cancel_ack(&accepted)?;
+    Ok(HyperliquidProviderResponse { raw_json: response })
 }
 
 /// Reads the per-cancel verdict inside a successful action envelope.
@@ -1442,6 +1555,14 @@ mod tests {
     use super::super::parse::tests::{btc_perp, universe};
     use super::*;
     use crate::types::{Exchange, Side};
+
+    #[test]
+    fn provider_response_keeps_unmodeled_fields_verbatim() {
+        let body = r#"{"unmodeled":{"futureField":true}}"#.to_string();
+        let response = provider_response_from_body(body.clone(), "meta").expect("a response");
+
+        assert_eq!(response.raw_json, body);
+    }
 
     /// Spot context fixture whose metadata and context arrays are not aligned.
     const SPOT_ASSET_CTXS: &str = r#"[

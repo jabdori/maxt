@@ -1002,6 +1002,303 @@ wire.WireUpbitSubscriptionList _upbitSubscriptionListToWire(
       .toList(growable: false),
 );
 
+UpbitOrderResponse _upbitOrderResponseFromWire(
+  wire.WireUpbitOrderResponse value,
+) => UpbitOrderResponse(
+  common: _orderFromWire(value.common),
+  orderType: value.orderType,
+  volume: _decimalFromWire(value.volume),
+  reservedFee: _decimalFromWire(value.reservedFee),
+  remainingFee: _decimalFromWire(value.remainingFee),
+  paidFee: _decimalFromWire(value.paidFee),
+  locked: _decimalFromWire(value.locked),
+  tradesCount: value.tradesCount,
+  preventedVolume: _decimalFromWire(value.preventedVolume),
+  preventedLocked: _decimalFromWire(value.preventedLocked),
+  timeInForce: value.timeInForce,
+  identifier: value.identifier,
+  smpType: value.smpType,
+  rawJson: value.rawJson,
+);
+wire.WireUpbitOrderResponse _upbitOrderResponseToWire(
+  UpbitOrderResponse value,
+) => wire.WireUpbitOrderResponse(
+  common: _orderToWire(value.common),
+  orderType: value.orderType,
+  volume: value.volume?.toString(),
+  reservedFee: value.reservedFee?.toString(),
+  remainingFee: value.remainingFee?.toString(),
+  paidFee: value.paidFee?.toString(),
+  locked: value.locked?.toString(),
+  tradesCount: checkedUint32(value.tradesCount, field: 'trades_count'),
+  preventedVolume: value.preventedVolume?.toString(),
+  preventedLocked: value.preventedLocked?.toString(),
+  timeInForce: value.timeInForce,
+  identifier: value.identifier,
+  smpType: value.smpType,
+  rawJson: value.rawJson,
+);
+
+UpbitDepositResponse _upbitDepositResponseFromWire(
+  wire.WireUpbitDepositResponse value,
+) => UpbitDepositResponse(
+  common: _depositFromWire(value.common),
+  rawJson: value.rawJson,
+);
+wire.WireUpbitDepositResponse _upbitDepositResponseToWire(
+  UpbitDepositResponse value,
+) => wire.WireUpbitDepositResponse(
+  common: _depositToWire(value.common),
+  rawJson: value.rawJson,
+);
+
+UpbitWithdrawalResponse _upbitWithdrawalResponseFromWire(
+  wire.WireUpbitWithdrawalResponse value,
+) => UpbitWithdrawalResponse(
+  common: _withdrawalFromWire(value.common),
+  rawJson: value.rawJson,
+);
+wire.WireUpbitWithdrawalResponse _upbitWithdrawalResponseToWire(
+  UpbitWithdrawalResponse value,
+) => wire.WireUpbitWithdrawalResponse(
+  common: _withdrawalToWire(value.common),
+  rawJson: value.rawJson,
+);
+
+UpbitCancelWithdrawalResponse _upbitCancelWithdrawalResponseFromWire(
+  wire.WireUpbitCancelWithdrawalResponse value,
+) => UpbitCancelWithdrawalResponse(
+  withdrawalId: value.withdrawalId,
+  rawJson: value.rawJson,
+);
+wire.WireUpbitCancelWithdrawalResponse _upbitCancelWithdrawalResponseToWire(
+  UpbitCancelWithdrawalResponse value,
+) => wire.WireUpbitCancelWithdrawalResponse(
+  withdrawalId: value.withdrawalId,
+  rawJson: value.rawJson,
+);
+
+UpbitCancelOrdersResponse _upbitCancelOrdersResponseFromWire(
+  wire.WireUpbitCancelOrdersResponse value,
+) => UpbitCancelOrdersResponse(
+  common: _cancelOrdersResultFromWire(value.common),
+  rawJson: value.rawJson,
+);
+wire.WireUpbitCancelOrdersResponse _upbitCancelOrdersResponseToWire(
+  UpbitCancelOrdersResponse value,
+) => wire.WireUpbitCancelOrdersResponse(
+  common: _cancelOrdersResultToWire(value.common),
+  rawJson: value.rawJson,
+);
+
+UpbitCancelAndNewOrderDetailResult _upbitCancelAndNewOrderDetailResultFromWire(
+  wire.WireUpbitCancelAndNewOrderDetailResult value,
+) => UpbitCancelAndNewOrderDetailResult(
+  common: _upbitCancelAndNewOrderResultFromWire(value.common),
+  previousOrder: _upbitOrderResponseFromWire(value.previousOrder),
+  rawJson: value.rawJson,
+);
+wire.WireUpbitCancelAndNewOrderDetailResult
+_upbitCancelAndNewOrderDetailResultToWire(
+  UpbitCancelAndNewOrderDetailResult value,
+) => wire.WireUpbitCancelAndNewOrderDetailResult(
+  common: _upbitCancelAndNewOrderResultToWire(value.common),
+  previousOrder: _upbitOrderResponseToWire(value.previousOrder),
+  rawJson: value.rawJson,
+);
+
+UpbitTradeStreamEvent _upbitTradeStreamEventFromWire(
+  wire.WireUpbitTradeStreamEvent value,
+) => UpbitTradeStreamEvent(
+  common: _tradeFromWire(value.common),
+  previousClosingPrice: _decimalFromWire(value.previousClosingPrice),
+  change: value.change,
+  changePrice: _decimalFromWire(value.changePrice),
+  bestAskPrice: _decimalFromWire(value.bestAskPrice),
+  bestAskSize: _decimalFromWire(value.bestAskSize),
+  bestBidPrice: _decimalFromWire(value.bestBidPrice),
+  bestBidSize: _decimalFromWire(value.bestBidSize),
+  rawJson: value.rawJson,
+);
+wire.WireUpbitTradeStreamEvent _upbitTradeStreamEventToWire(
+  UpbitTradeStreamEvent value,
+) => wire.WireUpbitTradeStreamEvent(
+  common: _tradeToWire(value.common),
+  previousClosingPrice: value.previousClosingPrice?.toString(),
+  change: value.change,
+  changePrice: value.changePrice?.toString(),
+  bestAskPrice: value.bestAskPrice?.toString(),
+  bestAskSize: value.bestAskSize?.toString(),
+  bestBidPrice: value.bestBidPrice?.toString(),
+  bestBidSize: value.bestBidSize?.toString(),
+  rawJson: value.rawJson,
+);
+
+UpbitOrderBookStreamEvent _upbitOrderBookStreamEventFromWire(
+  wire.WireUpbitOrderBookStreamEvent value,
+) => UpbitOrderBookStreamEvent(
+  common: _orderBookFromWire(value.common),
+  totalAskSize: _decimalFromWire(value.totalAskSize),
+  totalBidSize: _decimalFromWire(value.totalBidSize),
+  level: _decimalFromWire(value.level),
+  streamType: value.streamType,
+  rawJson: value.rawJson,
+);
+wire.WireUpbitOrderBookStreamEvent _upbitOrderBookStreamEventToWire(
+  UpbitOrderBookStreamEvent value,
+) => wire.WireUpbitOrderBookStreamEvent(
+  common: _orderBookToWire(value.common),
+  totalAskSize: value.totalAskSize?.toString(),
+  totalBidSize: value.totalBidSize?.toString(),
+  level: value.level?.toString(),
+  streamType: value.streamType,
+  rawJson: value.rawJson,
+);
+
+UpbitTickerStreamEvent _upbitTickerStreamEventFromWire(
+  wire.WireUpbitTickerStreamEvent value,
+) => UpbitTickerStreamEvent(
+  common: _tickerFromWire(value.common),
+  changeDirection: value.changeDirection,
+  marketState: value.marketState,
+  tradingSuspended: value.tradingSuspended,
+  delistingDate: value.delistingDate,
+  marketWarning: value.marketWarning,
+  rawJson: value.rawJson,
+);
+wire.WireUpbitTickerStreamEvent _upbitTickerStreamEventToWire(
+  UpbitTickerStreamEvent value,
+) => wire.WireUpbitTickerStreamEvent(
+  common: _tickerToWire(value.common),
+  changeDirection: value.changeDirection,
+  marketState: value.marketState,
+  tradingSuspended: value.tradingSuspended,
+  delistingDate: value.delistingDate,
+  marketWarning: value.marketWarning,
+  rawJson: value.rawJson,
+);
+
+UpbitCandleStreamEvent _upbitCandleStreamEventFromWire(
+  wire.WireUpbitCandleStreamEvent value,
+) => UpbitCandleStreamEvent(
+  common: _candleFromWire(value.common),
+  streamType: value.streamType,
+  publishedAt: _timestampFromWire(value.publishedAtNs),
+  rawJson: value.rawJson,
+);
+wire.WireUpbitCandleStreamEvent _upbitCandleStreamEventToWire(
+  UpbitCandleStreamEvent value,
+) => wire.WireUpbitCandleStreamEvent(
+  common: _candleToWire(value.common),
+  streamType: value.streamType,
+  publishedAtNs: _optionalTimestampToWire(value.publishedAt),
+  rawJson: value.rawJson,
+);
+
+UpbitAssetStreamEvent _upbitAssetStreamEventFromWire(
+  wire.WireUpbitAssetStreamEvent value,
+) => UpbitAssetStreamEvent(
+  balances: value.balances.map(_balanceFromWire).toList(growable: false),
+  assetUuid: value.assetUuid,
+  assetTimestamp: _timestampFromWire(value.assetTimestampNs),
+  publishedAt: _timestampFromWire(value.publishedAtNs),
+  rawJson: value.rawJson,
+);
+wire.WireUpbitAssetStreamEvent _upbitAssetStreamEventToWire(
+  UpbitAssetStreamEvent value,
+) => wire.WireUpbitAssetStreamEvent(
+  balances: value.balances.map(_balanceToWire).toList(growable: false),
+  assetUuid: value.assetUuid,
+  assetTimestampNs: _optionalTimestampToWire(value.assetTimestamp),
+  publishedAtNs: _optionalTimestampToWire(value.publishedAt),
+  rawJson: value.rawJson,
+);
+
+UpbitOrderStreamEvent _upbitOrderStreamEventFromWire(
+  wire.WireUpbitOrderStreamEvent value,
+) => UpbitOrderStreamEvent(
+  common: _orderFromWire(value.common),
+  orderType: value.orderType,
+  tradeUuid: value.tradeUuid,
+  timeInForce: value.timeInForce,
+  tradeTimestamp: _timestampFromWire(value.tradeTimestampNs),
+  tradeFee: _decimalFromWire(value.tradeFee),
+  isMaker: value.isMaker,
+  rawJson: value.rawJson,
+);
+wire.WireUpbitOrderStreamEvent _upbitOrderStreamEventToWire(
+  UpbitOrderStreamEvent value,
+) => wire.WireUpbitOrderStreamEvent(
+  common: _orderToWire(value.common),
+  orderType: value.orderType,
+  tradeUuid: value.tradeUuid,
+  timeInForce: value.timeInForce,
+  tradeTimestampNs: _optionalTimestampToWire(value.tradeTimestamp),
+  tradeFee: value.tradeFee?.toString(),
+  isMaker: value.isMaker,
+  rawJson: value.rawJson,
+);
+
+UpbitMarketStreamEvent _upbitMarketStreamEventFromWire(
+  wire.WireUpbitMarketStreamEvent value,
+) => switch (value) {
+  wire.WireUpbitMarketStreamEvent_Trade(:final field0) =>
+    UpbitMarketStreamEvent.trade(_upbitTradeStreamEventFromWire(field0)),
+  wire.WireUpbitMarketStreamEvent_OrderBook(:final field0) =>
+    UpbitMarketStreamEvent.orderBook(
+      _upbitOrderBookStreamEventFromWire(field0),
+    ),
+  wire.WireUpbitMarketStreamEvent_Ticker(:final field0) =>
+    UpbitMarketStreamEvent.ticker(_upbitTickerStreamEventFromWire(field0)),
+  wire.WireUpbitMarketStreamEvent_Candle(:final field0) =>
+    UpbitMarketStreamEvent.candle(_upbitCandleStreamEventFromWire(field0)),
+  wire.WireUpbitMarketStreamEvent_Reconnected() =>
+    const UpbitMarketStreamEvent.reconnected(),
+};
+
+wire.WireUpbitMarketStreamEvent _upbitMarketStreamEventToWire(
+  UpbitMarketStreamEvent value,
+) => switch (value) {
+  UpbitMarketStreamEventTrade(:final value) =>
+    wire.WireUpbitMarketStreamEvent.trade(_upbitTradeStreamEventToWire(value)),
+  UpbitMarketStreamEventOrderBook(:final value) =>
+    wire.WireUpbitMarketStreamEvent.orderBook(
+      _upbitOrderBookStreamEventToWire(value),
+    ),
+  UpbitMarketStreamEventTicker(:final value) =>
+    wire.WireUpbitMarketStreamEvent.ticker(
+      _upbitTickerStreamEventToWire(value),
+    ),
+  UpbitMarketStreamEventCandle(:final value) =>
+    wire.WireUpbitMarketStreamEvent.candle(
+      _upbitCandleStreamEventToWire(value),
+    ),
+  UpbitMarketStreamEventReconnected() =>
+    const wire.WireUpbitMarketStreamEvent.reconnected(),
+};
+
+UpbitAccountStreamEvent _upbitAccountStreamEventFromWire(
+  wire.WireUpbitAccountStreamEvent value,
+) => switch (value) {
+  wire.WireUpbitAccountStreamEvent_Asset(:final field0) =>
+    UpbitAccountStreamEvent.asset(_upbitAssetStreamEventFromWire(field0)),
+  wire.WireUpbitAccountStreamEvent_Order(:final field0) =>
+    UpbitAccountStreamEvent.order(_upbitOrderStreamEventFromWire(field0)),
+  wire.WireUpbitAccountStreamEvent_Reconnected() =>
+    const UpbitAccountStreamEvent.reconnected(),
+};
+
+wire.WireUpbitAccountStreamEvent _upbitAccountStreamEventToWire(
+  UpbitAccountStreamEvent value,
+) => switch (value) {
+  UpbitAccountStreamEventAsset(:final value) =>
+    wire.WireUpbitAccountStreamEvent.asset(_upbitAssetStreamEventToWire(value)),
+  UpbitAccountStreamEventOrder(:final value) =>
+    wire.WireUpbitAccountStreamEvent.order(_upbitOrderStreamEventToWire(value)),
+  UpbitAccountStreamEventReconnected() =>
+    const wire.WireUpbitAccountStreamEvent.reconnected(),
+};
+
 UpbitYearCandle _upbitYearCandleFromWire(wire.WireUpbitYearCandle value) =>
     UpbitYearCandle(
       market: _marketFromWire(value.market),
@@ -2113,6 +2410,7 @@ BithumbBatchOrdersResult _bithumbBatchOrdersResultFromWire(
   outcomes: value.outcomes
       .map(_bithumbBatchOrderOutcomeFromWire)
       .toList(growable: false),
+  rawJson: value.rawJson,
 );
 wire.WireBithumbBatchOrdersResult _bithumbBatchOrdersResultToWire(
   BithumbBatchOrdersResult value,
@@ -2120,7 +2418,288 @@ wire.WireBithumbBatchOrdersResult _bithumbBatchOrdersResultToWire(
   outcomes: value.outcomes
       .map(_bithumbBatchOrderOutcomeToWire)
       .toList(growable: false),
+  rawJson: value.rawJson,
 );
+
+BithumbOrderBookSnapshot _bithumbOrderBookSnapshotFromWire(
+  wire.WireBithumbOrderBookSnapshot value,
+) => BithumbOrderBookSnapshot(
+  common: _orderBookFromWire(value.common),
+  totalAskSize: _decimalFromWire(value.totalAskSize),
+  totalBidSize: _decimalFromWire(value.totalBidSize),
+  level: _decimalFromWire(value.level),
+  rawJson: value.rawJson,
+);
+wire.WireBithumbOrderBookSnapshot _bithumbOrderBookSnapshotToWire(
+  BithumbOrderBookSnapshot value,
+) => wire.WireBithumbOrderBookSnapshot(
+  common: _orderBookToWire(value.common),
+  totalAskSize: value.totalAskSize?.toString(),
+  totalBidSize: value.totalBidSize?.toString(),
+  level: value.level?.toString(),
+  rawJson: value.rawJson,
+);
+
+BithumbOrderResponse _bithumbOrderResponseFromWire(
+  wire.WireBithumbOrderResponse value,
+) => BithumbOrderResponse(
+  common: _orderFromWire(value.common),
+  rawJson: value.rawJson,
+);
+wire.WireBithumbOrderResponse _bithumbOrderResponseToWire(
+  BithumbOrderResponse value,
+) => wire.WireBithumbOrderResponse(
+  common: _orderToWire(value.common),
+  rawJson: value.rawJson,
+);
+
+BithumbOrdersResponse _bithumbOrdersResponseFromWire(
+  wire.WireBithumbOrdersResponse value,
+) => BithumbOrdersResponse(
+  common: value.common.map(_orderFromWire).toList(growable: false),
+  rawJson: value.rawJson,
+);
+wire.WireBithumbOrdersResponse _bithumbOrdersResponseToWire(
+  BithumbOrdersResponse value,
+) => wire.WireBithumbOrdersResponse(
+  common: value.common.map(_orderToWire).toList(growable: false),
+  rawJson: value.rawJson,
+);
+
+BithumbCancelOrderResponse _bithumbCancelOrderResponseFromWire(
+  wire.WireBithumbCancelOrderResponse value,
+) => BithumbCancelOrderResponse(orderId: value.orderId, rawJson: value.rawJson);
+wire.WireBithumbCancelOrderResponse _bithumbCancelOrderResponseToWire(
+  BithumbCancelOrderResponse value,
+) => wire.WireBithumbCancelOrderResponse(
+  orderId: value.orderId,
+  rawJson: value.rawJson,
+);
+
+BithumbCancelOrdersResponse _bithumbCancelOrdersResponseFromWire(
+  wire.WireBithumbCancelOrdersResponse value,
+) => BithumbCancelOrdersResponse(
+  common: _cancelOrdersResultFromWire(value.common),
+  rawJson: value.rawJson,
+);
+wire.WireBithumbCancelOrdersResponse _bithumbCancelOrdersResponseToWire(
+  BithumbCancelOrdersResponse value,
+) => wire.WireBithumbCancelOrdersResponse(
+  common: _cancelOrdersResultToWire(value.common),
+  rawJson: value.rawJson,
+);
+
+BithumbDepositResponse _bithumbDepositResponseFromWire(
+  wire.WireBithumbDepositResponse value,
+) => BithumbDepositResponse(
+  common: _depositFromWire(value.common),
+  rawJson: value.rawJson,
+);
+wire.WireBithumbDepositResponse _bithumbDepositResponseToWire(
+  BithumbDepositResponse value,
+) => wire.WireBithumbDepositResponse(
+  common: _depositToWire(value.common),
+  rawJson: value.rawJson,
+);
+
+BithumbWithdrawalResponse _bithumbWithdrawalResponseFromWire(
+  wire.WireBithumbWithdrawalResponse value,
+) => BithumbWithdrawalResponse(
+  common: _withdrawalFromWire(value.common),
+  rawJson: value.rawJson,
+);
+wire.WireBithumbWithdrawalResponse _bithumbWithdrawalResponseToWire(
+  BithumbWithdrawalResponse value,
+) => wire.WireBithumbWithdrawalResponse(
+  common: _withdrawalToWire(value.common),
+  rawJson: value.rawJson,
+);
+
+BithumbCancelWithdrawalResponse _bithumbCancelWithdrawalResponseFromWire(
+  wire.WireBithumbCancelWithdrawalResponse value,
+) => BithumbCancelWithdrawalResponse(
+  withdrawalId: value.withdrawalId,
+  rawJson: value.rawJson,
+);
+wire.WireBithumbCancelWithdrawalResponse _bithumbCancelWithdrawalResponseToWire(
+  BithumbCancelWithdrawalResponse value,
+) => wire.WireBithumbCancelWithdrawalResponse(
+  withdrawalId: value.withdrawalId,
+  rawJson: value.rawJson,
+);
+
+BithumbTradeEvent _bithumbTradeEventFromWire(
+  wire.WireBithumbTradeEvent value,
+) => BithumbTradeEvent(
+  common: _tradeFromWire(value.common),
+  previousClosingPrice: _decimalFromWire(value.previousClosingPrice),
+  change: value.change,
+  changePrice: _decimalFromWire(value.changePrice),
+  publishedAt: _timestampFromWire(value.publishedAtNs),
+  streamType: value.streamType,
+  rawJson: value.rawJson,
+);
+wire.WireBithumbTradeEvent _bithumbTradeEventToWire(BithumbTradeEvent value) =>
+    wire.WireBithumbTradeEvent(
+      common: _tradeToWire(value.common),
+      previousClosingPrice: value.previousClosingPrice?.toString(),
+      change: value.change,
+      changePrice: value.changePrice?.toString(),
+      publishedAtNs: _optionalTimestampToWire(value.publishedAt),
+      streamType: value.streamType,
+      rawJson: value.rawJson,
+    );
+
+BithumbOrderBookEvent _bithumbOrderBookEventFromWire(
+  wire.WireBithumbOrderBookEvent value,
+) => BithumbOrderBookEvent(
+  common: _orderBookFromWire(value.common),
+  totalAskSize: _decimalFromWire(value.totalAskSize),
+  totalBidSize: _decimalFromWire(value.totalBidSize),
+  level: _decimalFromWire(value.level),
+  streamType: value.streamType,
+  rawJson: value.rawJson,
+);
+wire.WireBithumbOrderBookEvent _bithumbOrderBookEventToWire(
+  BithumbOrderBookEvent value,
+) => wire.WireBithumbOrderBookEvent(
+  common: _orderBookToWire(value.common),
+  totalAskSize: value.totalAskSize?.toString(),
+  totalBidSize: value.totalBidSize?.toString(),
+  level: value.level?.toString(),
+  streamType: value.streamType,
+  rawJson: value.rawJson,
+);
+
+BithumbTickerEvent _bithumbTickerEventFromWire(
+  wire.WireBithumbTickerEvent value,
+) => BithumbTickerEvent(
+  common: _tickerFromWire(value.common),
+  changeDirection: value.changeDirection,
+  marketState: value.marketState,
+  tradingSuspended: value.tradingSuspended,
+  marketWarning: value.marketWarning,
+  streamType: value.streamType,
+  rawJson: value.rawJson,
+);
+wire.WireBithumbTickerEvent _bithumbTickerEventToWire(
+  BithumbTickerEvent value,
+) => wire.WireBithumbTickerEvent(
+  common: _tickerToWire(value.common),
+  changeDirection: value.changeDirection,
+  marketState: value.marketState,
+  tradingSuspended: value.tradingSuspended,
+  marketWarning: value.marketWarning,
+  streamType: value.streamType,
+  rawJson: value.rawJson,
+);
+
+BithumbAssetEvent _bithumbAssetEventFromWire(
+  wire.WireBithumbAssetEvent value,
+) => BithumbAssetEvent(
+  balances: value.balances.map(_balanceFromWire).toList(growable: false),
+  assetTimestamp: _timestampFromWire(value.assetTimestampNs),
+  publishedAt: _timestampFromWire(value.publishedAtNs),
+  rawJson: value.rawJson,
+);
+wire.WireBithumbAssetEvent _bithumbAssetEventToWire(BithumbAssetEvent value) =>
+    wire.WireBithumbAssetEvent(
+      balances: value.balances.map(_balanceToWire).toList(growable: false),
+      assetTimestampNs: _optionalTimestampToWire(value.assetTimestamp),
+      publishedAtNs: _optionalTimestampToWire(value.publishedAt),
+      rawJson: value.rawJson,
+    );
+
+BithumbOrderEvent _bithumbOrderEventFromWire(
+  wire.WireBithumbOrderEvent value,
+) => BithumbOrderEvent(
+  common: _orderFromWire(value.common),
+  clientOrderId: value.clientOrderId,
+  orderType: value.orderType,
+  state: value.state,
+  timeInForce: value.timeInForce,
+  orderAmount: _decimalFromWire(value.orderAmount),
+  tradeId: value.tradeId,
+  tradePrice: _decimalFromWire(value.tradePrice),
+  tradeQuantity: _decimalFromWire(value.tradeQuantity),
+  tradeAmount: _decimalFromWire(value.tradeAmount),
+  tradeTimestamp: _timestampFromWire(value.tradeTimestampNs),
+  executedAmount: _decimalFromWire(value.executedAmount),
+  paidFee: _decimalFromWire(value.paidFee),
+  remainingFee: _decimalFromWire(value.remainingFee),
+  rawJson: value.rawJson,
+);
+wire.WireBithumbOrderEvent _bithumbOrderEventToWire(BithumbOrderEvent value) =>
+    wire.WireBithumbOrderEvent(
+      common: _orderToWire(value.common),
+      clientOrderId: value.clientOrderId,
+      orderType: value.orderType,
+      state: value.state,
+      timeInForce: value.timeInForce,
+      orderAmount: value.orderAmount?.toString(),
+      tradeId: value.tradeId,
+      tradePrice: value.tradePrice?.toString(),
+      tradeQuantity: value.tradeQuantity?.toString(),
+      tradeAmount: value.tradeAmount?.toString(),
+      tradeTimestampNs: _optionalTimestampToWire(value.tradeTimestamp),
+      executedAmount: value.executedAmount?.toString(),
+      paidFee: value.paidFee?.toString(),
+      remainingFee: value.remainingFee?.toString(),
+      rawJson: value.rawJson,
+    );
+
+BithumbMarketEvent _bithumbMarketEventFromWire(
+  wire.WireBithumbMarketEvent value,
+) => switch (value) {
+  wire.WireBithumbMarketEvent_Trade(:final field0) => BithumbMarketEvent.trade(
+    _bithumbTradeEventFromWire(field0),
+  ),
+  wire.WireBithumbMarketEvent_OrderBook(:final field0) =>
+    BithumbMarketEvent.orderBook(_bithumbOrderBookEventFromWire(field0)),
+  wire.WireBithumbMarketEvent_Ticker(:final field0) =>
+    BithumbMarketEvent.ticker(_bithumbTickerEventFromWire(field0)),
+  wire.WireBithumbMarketEvent_Reconnected() =>
+    const BithumbMarketEvent.reconnected(),
+};
+
+wire.WireBithumbMarketEvent _bithumbMarketEventToWire(
+  BithumbMarketEvent value,
+) => switch (value) {
+  BithumbMarketEventTrade(:final value) => wire.WireBithumbMarketEvent.trade(
+    _bithumbTradeEventToWire(value),
+  ),
+  BithumbMarketEventOrderBook(:final value) =>
+    wire.WireBithumbMarketEvent.orderBook(_bithumbOrderBookEventToWire(value)),
+  BithumbMarketEventTicker(:final value) => wire.WireBithumbMarketEvent.ticker(
+    _bithumbTickerEventToWire(value),
+  ),
+  BithumbMarketEventReconnected() =>
+    const wire.WireBithumbMarketEvent.reconnected(),
+};
+
+BithumbAccountEvent _bithumbAccountEventFromWire(
+  wire.WireBithumbAccountEvent value,
+) => switch (value) {
+  wire.WireBithumbAccountEvent_Asset(:final field0) =>
+    BithumbAccountEvent.asset(_bithumbAssetEventFromWire(field0)),
+  wire.WireBithumbAccountEvent_Order(:final field0) =>
+    BithumbAccountEvent.order(_bithumbOrderEventFromWire(field0)),
+  wire.WireBithumbAccountEvent_Reconnected() =>
+    const BithumbAccountEvent.reconnected(),
+};
+
+wire.WireBithumbAccountEvent _bithumbAccountEventToWire(
+  BithumbAccountEvent value,
+) => switch (value) {
+  BithumbAccountEventAsset(:final value) => wire.WireBithumbAccountEvent.asset(
+    _bithumbAssetEventToWire(value),
+  ),
+  BithumbAccountEventOrder(:final value) => wire.WireBithumbAccountEvent.order(
+    _bithumbOrderEventToWire(value),
+  ),
+  BithumbAccountEventReconnected() =>
+    const wire.WireBithumbAccountEvent.reconnected(),
+};
 
 BithumbTwapOrdersRequest _bithumbTwapOrdersRequestFromWire(
   wire.WireBithumbTwapOrdersRequest value,
@@ -2440,6 +3019,7 @@ BithumbOrderListItem _bithumbOrderListItemFromWire(
   tradesCount: value.tradesCount,
   stpType: value.stpType,
   timeInForce: value.timeInForce,
+  rawJson: value.rawJson,
 );
 wire.WireBithumbOrderListItem _bithumbOrderListItemToWire(
   BithumbOrderListItem value,
@@ -2463,6 +3043,7 @@ wire.WireBithumbOrderListItem _bithumbOrderListItemToWire(
   tradesCount: checkedRequiredUint32(value.tradesCount, field: 'trades_count'),
   stpType: value.stpType,
   timeInForce: value.timeInForce,
+  rawJson: value.rawJson,
 );
 
 BinanceDepositHistoryRequest _binanceDepositHistoryRequestFromWire(
@@ -3203,7 +3784,9 @@ BinanceAggregateTrade _binanceAggregateTradeFromWire(
   price: Decimal.parse(value.price),
   quantity: Decimal.parse(value.quantity),
   normalQuantity: _decimalFromWire(value.normalQuantity),
+  bestPriceMatch: value.bestPriceMatch,
   takerSide: _sideFromWire(value.takerSide),
+  rawJson: value.rawJson,
 );
 wire.WireBinanceAggregateTrade _binanceAggregateTradeToWire(
   BinanceAggregateTrade value,
@@ -3216,8 +3799,275 @@ wire.WireBinanceAggregateTrade _binanceAggregateTradeToWire(
   price: value.price.toString(),
   quantity: value.quantity.toString(),
   normalQuantity: value.normalQuantity?.toString(),
+  bestPriceMatch: value.bestPriceMatch,
   takerSide: _sideToWire(value.takerSide),
+  rawJson: value.rawJson,
 );
+
+BinanceOrderResponse _binanceOrderResponseFromWire(
+  wire.WireBinanceOrderResponse value,
+) => BinanceOrderResponse(
+  order: _orderFromWire(value.order),
+  clientOrderId: value.clientOrderId,
+  orderListId: value.orderListId,
+  orderType: value.orderType,
+  timeInForce: value.timeInForce,
+  cumulativeQuoteQuantity: _decimalFromWire(value.cumulativeQuoteQuantity),
+  cumulativeQuantity: _decimalFromWire(value.cumulativeQuantity),
+  cumulativeQuote: _decimalFromWire(value.cumulativeQuote),
+  averagePrice: _decimalFromWire(value.averagePrice),
+  reduceOnly: value.reduceOnly,
+  closePosition: value.closePosition,
+  positionSide: value.positionSide,
+  stopPrice: _decimalFromWire(value.stopPrice),
+  workingType: value.workingType,
+  priceProtect: value.priceProtect,
+  originalType: value.originalType,
+  priceMatch: value.priceMatch,
+  selfTradePreventionMode: value.selfTradePreventionMode,
+  goodTillDate: _timestampFromWire(value.goodTillDateNs),
+  rawJson: value.rawJson,
+);
+wire.WireBinanceOrderResponse _binanceOrderResponseToWire(
+  BinanceOrderResponse value,
+) => wire.WireBinanceOrderResponse(
+  order: _orderToWire(value.order),
+  clientOrderId: value.clientOrderId,
+  orderListId: value.orderListId,
+  orderType: value.orderType,
+  timeInForce: value.timeInForce,
+  cumulativeQuoteQuantity: value.cumulativeQuoteQuantity?.toString(),
+  cumulativeQuantity: value.cumulativeQuantity?.toString(),
+  cumulativeQuote: value.cumulativeQuote?.toString(),
+  averagePrice: value.averagePrice?.toString(),
+  reduceOnly: value.reduceOnly,
+  closePosition: value.closePosition,
+  positionSide: value.positionSide,
+  stopPrice: value.stopPrice?.toString(),
+  workingType: value.workingType,
+  priceProtect: value.priceProtect,
+  originalType: value.originalType,
+  priceMatch: value.priceMatch,
+  selfTradePreventionMode: value.selfTradePreventionMode,
+  goodTillDateNs: _optionalTimestampToWire(value.goodTillDate),
+  rawJson: value.rawJson,
+);
+
+BinanceTradeEvent _binanceTradeEventFromWire(
+  wire.WireBinanceTradeEvent value,
+) => BinanceTradeEvent(
+  common: _tradeFromWire(value.common),
+  eventTime: _timestampFromWire(value.eventTimeNs),
+  tradeTime: _timestampFromWire(value.tradeTimeNs),
+  buyerIsMaker: value.buyerIsMaker,
+  bestPriceMatch: value.bestPriceMatch,
+  rawJson: value.rawJson,
+);
+wire.WireBinanceTradeEvent _binanceTradeEventToWire(BinanceTradeEvent value) =>
+    wire.WireBinanceTradeEvent(
+      common: _tradeToWire(value.common),
+      eventTimeNs: _optionalTimestampToWire(value.eventTime),
+      tradeTimeNs: _optionalTimestampToWire(value.tradeTime),
+      buyerIsMaker: value.buyerIsMaker,
+      bestPriceMatch: value.bestPriceMatch,
+      rawJson: value.rawJson,
+    );
+
+BinanceOrderBookEvent _binanceOrderBookEventFromWire(
+  wire.WireBinanceOrderBookEvent value,
+) => BinanceOrderBookEvent(
+  common: _orderBookFromWire(value.common),
+  eventTime: _timestampFromWire(value.eventTimeNs),
+  transactionTime: _timestampFromWire(value.transactionTimeNs),
+  firstUpdateId: value.firstUpdateId,
+  finalUpdateId: value.finalUpdateId,
+  previousFinalUpdateId: value.previousFinalUpdateId,
+  lastUpdateId: value.lastUpdateId,
+  rawJson: value.rawJson,
+);
+wire.WireBinanceOrderBookEvent _binanceOrderBookEventToWire(
+  BinanceOrderBookEvent value,
+) => wire.WireBinanceOrderBookEvent(
+  common: _orderBookToWire(value.common),
+  eventTimeNs: _optionalTimestampToWire(value.eventTime),
+  transactionTimeNs: _optionalTimestampToWire(value.transactionTime),
+  firstUpdateId: value.firstUpdateId,
+  finalUpdateId: value.finalUpdateId,
+  previousFinalUpdateId: value.previousFinalUpdateId,
+  lastUpdateId: value.lastUpdateId,
+  rawJson: value.rawJson,
+);
+
+BinanceTickerEvent _binanceTickerEventFromWire(
+  wire.WireBinanceTickerEvent value,
+) => BinanceTickerEvent(
+  common: _tickerFromWire(value.common),
+  eventTime: _timestampFromWire(value.eventTimeNs),
+  closeTime: _timestampFromWire(value.closeTimeNs),
+  firstTradeId: value.firstTradeId,
+  lastTradeId: value.lastTradeId,
+  tradeCount: value.tradeCount,
+  rawJson: value.rawJson,
+);
+wire.WireBinanceTickerEvent _binanceTickerEventToWire(
+  BinanceTickerEvent value,
+) => wire.WireBinanceTickerEvent(
+  common: _tickerToWire(value.common),
+  eventTimeNs: _optionalTimestampToWire(value.eventTime),
+  closeTimeNs: _optionalTimestampToWire(value.closeTime),
+  firstTradeId: value.firstTradeId,
+  lastTradeId: value.lastTradeId,
+  tradeCount: value.tradeCount,
+  rawJson: value.rawJson,
+);
+
+BinanceCandleEvent _binanceCandleEventFromWire(
+  wire.WireBinanceCandleEvent value,
+) => BinanceCandleEvent(
+  common: _candleFromWire(value.common),
+  closeTime: _timestampFromWire(value.closeTimeNs),
+  firstTradeId: value.firstTradeId,
+  lastTradeId: value.lastTradeId,
+  tradeCount: value.tradeCount,
+  takerBuyBaseVolume: _decimalFromWire(value.takerBuyBaseVolume),
+  takerBuyQuoteVolume: _decimalFromWire(value.takerBuyQuoteVolume),
+  rawJson: value.rawJson,
+);
+wire.WireBinanceCandleEvent _binanceCandleEventToWire(
+  BinanceCandleEvent value,
+) => wire.WireBinanceCandleEvent(
+  common: _candleToWire(value.common),
+  closeTimeNs: _optionalTimestampToWire(value.closeTime),
+  firstTradeId: value.firstTradeId,
+  lastTradeId: value.lastTradeId,
+  tradeCount: value.tradeCount,
+  takerBuyBaseVolume: value.takerBuyBaseVolume?.toString(),
+  takerBuyQuoteVolume: value.takerBuyQuoteVolume?.toString(),
+  rawJson: value.rawJson,
+);
+
+BinanceBalanceStreamEvent _binanceBalanceStreamEventFromWire(
+  wire.WireBinanceBalanceStreamEvent value,
+) => BinanceBalanceStreamEvent(
+  common: _balanceFromWire(value.common),
+  eventType: value.eventType,
+  eventTime: _timestampFromWire(value.eventTimeNs),
+  transactionTime: _timestampFromWire(value.transactionTimeNs),
+  rawJson: value.rawJson,
+);
+wire.WireBinanceBalanceStreamEvent _binanceBalanceStreamEventToWire(
+  BinanceBalanceStreamEvent value,
+) => wire.WireBinanceBalanceStreamEvent(
+  common: _balanceToWire(value.common),
+  eventType: value.eventType,
+  eventTimeNs: _optionalTimestampToWire(value.eventTime),
+  transactionTimeNs: _optionalTimestampToWire(value.transactionTime),
+  rawJson: value.rawJson,
+);
+
+BinanceOrderStreamEvent _binanceOrderStreamEventFromWire(
+  wire.WireBinanceOrderStreamEvent value,
+) => BinanceOrderStreamEvent(
+  common: _orderFromWire(value.common),
+  eventType: value.eventType,
+  eventTime: _timestampFromWire(value.eventTimeNs),
+  transactionTime: _timestampFromWire(value.transactionTimeNs),
+  rawJson: value.rawJson,
+);
+wire.WireBinanceOrderStreamEvent _binanceOrderStreamEventToWire(
+  BinanceOrderStreamEvent value,
+) => wire.WireBinanceOrderStreamEvent(
+  common: _orderToWire(value.common),
+  eventType: value.eventType,
+  eventTimeNs: _optionalTimestampToWire(value.eventTime),
+  transactionTimeNs: _optionalTimestampToWire(value.transactionTime),
+  rawJson: value.rawJson,
+);
+
+BinanceRawAccountEvent _binanceRawAccountEventFromWire(
+  wire.WireBinanceRawAccountEvent value,
+) => BinanceRawAccountEvent(
+  eventType: value.eventType,
+  eventTime: _timestampFromWire(value.eventTimeNs),
+  transactionTime: _timestampFromWire(value.transactionTimeNs),
+  rawJson: value.rawJson,
+);
+wire.WireBinanceRawAccountEvent _binanceRawAccountEventToWire(
+  BinanceRawAccountEvent value,
+) => wire.WireBinanceRawAccountEvent(
+  eventType: value.eventType,
+  eventTimeNs: _optionalTimestampToWire(value.eventTime),
+  transactionTimeNs: _optionalTimestampToWire(value.transactionTime),
+  rawJson: value.rawJson,
+);
+
+BinanceMarketEvent _binanceMarketEventFromWire(
+  wire.WireBinanceMarketEvent value,
+) => switch (value) {
+  wire.WireBinanceMarketEvent_Trade(:final field0) => BinanceMarketEvent.trade(
+    _binanceTradeEventFromWire(field0),
+  ),
+  wire.WireBinanceMarketEvent_OrderBook(:final field0) =>
+    BinanceMarketEvent.orderBook(_binanceOrderBookEventFromWire(field0)),
+  wire.WireBinanceMarketEvent_Ticker(:final field0) =>
+    BinanceMarketEvent.ticker(_binanceTickerEventFromWire(field0)),
+  wire.WireBinanceMarketEvent_Candle(:final field0) =>
+    BinanceMarketEvent.candle(_binanceCandleEventFromWire(field0)),
+  wire.WireBinanceMarketEvent_Reconnected() =>
+    const BinanceMarketEvent.reconnected(),
+};
+
+wire.WireBinanceMarketEvent _binanceMarketEventToWire(
+  BinanceMarketEvent value,
+) => switch (value) {
+  BinanceMarketEventTrade(:final value) => wire.WireBinanceMarketEvent.trade(
+    _binanceTradeEventToWire(value),
+  ),
+  BinanceMarketEventOrderBook(:final value) =>
+    wire.WireBinanceMarketEvent.orderBook(_binanceOrderBookEventToWire(value)),
+  BinanceMarketEventTicker(:final value) => wire.WireBinanceMarketEvent.ticker(
+    _binanceTickerEventToWire(value),
+  ),
+  BinanceMarketEventCandle(:final value) => wire.WireBinanceMarketEvent.candle(
+    _binanceCandleEventToWire(value),
+  ),
+  BinanceMarketEventReconnected() =>
+    const wire.WireBinanceMarketEvent.reconnected(),
+};
+
+BinanceAccountStreamEvent _binanceAccountStreamEventFromWire(
+  wire.WireBinanceAccountStreamEvent value,
+) => switch (value) {
+  wire.WireBinanceAccountStreamEvent_Balance(:final field0) =>
+    BinanceAccountStreamEvent.balance(
+      _binanceBalanceStreamEventFromWire(field0),
+    ),
+  wire.WireBinanceAccountStreamEvent_Order(:final field0) =>
+    BinanceAccountStreamEvent.order(_binanceOrderStreamEventFromWire(field0)),
+  wire.WireBinanceAccountStreamEvent_Other(:final field0) =>
+    BinanceAccountStreamEvent.other(_binanceRawAccountEventFromWire(field0)),
+  wire.WireBinanceAccountStreamEvent_Reconnected() =>
+    const BinanceAccountStreamEvent.reconnected(),
+};
+
+wire.WireBinanceAccountStreamEvent _binanceAccountStreamEventToWire(
+  BinanceAccountStreamEvent value,
+) => switch (value) {
+  BinanceAccountStreamEventBalance(:final value) =>
+    wire.WireBinanceAccountStreamEvent.balance(
+      _binanceBalanceStreamEventToWire(value),
+    ),
+  BinanceAccountStreamEventOrder(:final value) =>
+    wire.WireBinanceAccountStreamEvent.order(
+      _binanceOrderStreamEventToWire(value),
+    ),
+  BinanceAccountStreamEventOther(:final value) =>
+    wire.WireBinanceAccountStreamEvent.other(
+      _binanceRawAccountEventToWire(value),
+    ),
+  BinanceAccountStreamEventReconnected() =>
+    const wire.WireBinanceAccountStreamEvent.reconnected(),
+};
 
 BinanceAccountTrade _binanceAccountTradeFromWire(
   wire.WireBinanceAccountTrade value,
@@ -3920,6 +4770,39 @@ wire.WireHyperliquidMidPrice _hyperliquidMidPriceToWire(
 ) => wire.WireHyperliquidMidPrice(
   market: _marketToWire(value.market),
   price: value.price.toString(),
+);
+
+HyperliquidAllMids _hyperliquidAllMidsFromWire(
+  wire.WireHyperliquidAllMids value,
+) => HyperliquidAllMids(
+  mids: value.mids.map(_hyperliquidMidPriceFromWire).toList(growable: false),
+  rawJson: value.rawJson,
+);
+wire.WireHyperliquidAllMids _hyperliquidAllMidsToWire(
+  HyperliquidAllMids value,
+) => wire.WireHyperliquidAllMids(
+  mids: value.mids.map(_hyperliquidMidPriceToWire).toList(growable: false),
+  rawJson: value.rawJson,
+);
+
+HyperliquidProviderResponse _hyperliquidProviderResponseFromWire(
+  wire.WireHyperliquidProviderResponse value,
+) => HyperliquidProviderResponse(rawJson: value.rawJson);
+wire.WireHyperliquidProviderResponse _hyperliquidProviderResponseToWire(
+  HyperliquidProviderResponse value,
+) => wire.WireHyperliquidProviderResponse(rawJson: value.rawJson);
+
+HyperliquidOrderActionResponse _hyperliquidOrderActionResponseFromWire(
+  wire.WireHyperliquidOrderActionResponse value,
+) => HyperliquidOrderActionResponse(
+  common: _orderFromWire(value.common),
+  rawJson: value.rawJson,
+);
+wire.WireHyperliquidOrderActionResponse _hyperliquidOrderActionResponseToWire(
+  HyperliquidOrderActionResponse value,
+) => wire.WireHyperliquidOrderActionResponse(
+  common: _orderToWire(value.common),
+  rawJson: value.rawJson,
 );
 
 HyperliquidUserRateLimit _hyperliquidUserRateLimitFromWire(

@@ -147,6 +147,190 @@ pub struct ProviderMethod {
     pub result: ApiType,
 }
 
+/// Provider methods whose standard request/response bridge is emitted for every binding.
+///
+/// Framework-specific stream lifetime handling remains handwritten in each binding, but these
+/// method signatures, argument conversion, provider selection, and result conversion all come
+/// from the same schema entry.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GeneratedNativeProviderMethod {
+    pub exchange: &'static str,
+    pub rust_name: &'static str,
+}
+
+pub const GENERATED_NATIVE_PROVIDER_METHODS: &[GeneratedNativeProviderMethod] = &[
+    GeneratedNativeProviderMethod {
+        exchange: "upbit",
+        rust_name: "subscribe_detailed",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "upbit",
+        rust_name: "subscribe_detailed_with",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "upbit",
+        rust_name: "subscribe_detailed_account",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "upbit",
+        rust_name: "subscribe_detailed_account_with",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "upbit",
+        rust_name: "test_order_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "upbit",
+        rust_name: "place_order_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "upbit",
+        rust_name: "cancel_order_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "upbit",
+        rust_name: "cancel_order_by_client_id_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "upbit",
+        rust_name: "orders_by_ids_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "upbit",
+        rust_name: "cancel_orders_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "upbit",
+        rust_name: "deposit_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "upbit",
+        rust_name: "withdrawal_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "upbit",
+        rust_name: "cancel_withdrawal_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "upbit",
+        rust_name: "cancel_and_new_order_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "bithumb",
+        rust_name: "order_book_snapshot",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "bithumb",
+        rust_name: "subscribe_detailed",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "bithumb",
+        rust_name: "subscribe_detailed_with",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "bithumb",
+        rust_name: "subscribe_detailed_account",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "bithumb",
+        rust_name: "subscribe_detailed_account_with",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "bithumb",
+        rust_name: "orders_by_ids_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "bithumb",
+        rust_name: "place_order_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "bithumb",
+        rust_name: "cancel_order_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "bithumb",
+        rust_name: "cancel_order_by_client_id_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "bithumb",
+        rust_name: "cancel_orders_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "bithumb",
+        rust_name: "deposit_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "bithumb",
+        rust_name: "withdrawal_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "bithumb",
+        rust_name: "cancel_withdrawal_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "binance",
+        rust_name: "place_order_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "binance",
+        rust_name: "cancel_order_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "binance",
+        rust_name: "cancel_order_by_client_id_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "binance",
+        rust_name: "subscribe_detailed",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "binance",
+        rust_name: "subscribe_detailed_with",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "binance",
+        rust_name: "subscribe_detailed_account",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "binance",
+        rust_name: "subscribe_detailed_account_with",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "hyperliquid",
+        rust_name: "all_mids_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "hyperliquid",
+        rust_name: "perpetual_meta",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "hyperliquid",
+        rust_name: "perpetual_meta_and_asset_contexts",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "hyperliquid",
+        rust_name: "clearinghouse_state_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "hyperliquid",
+        rust_name: "frontend_open_orders_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "hyperliquid",
+        rust_name: "place_order_detail",
+    },
+    GeneratedNativeProviderMethod {
+        exchange: "hyperliquid",
+        rust_name: "cancel_order_detail",
+    },
+];
+
+pub fn uses_generated_native_provider_bridge(exchange: &str, rust_name: &str) -> bool {
+    GENERATED_NATIVE_PROVIDER_METHODS
+        .iter()
+        .any(|method| method.exchange == exchange && method.rust_name == rust_name)
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProviderOptionValue {
     Argument(&'static str),
@@ -1302,6 +1486,20 @@ const MODELS: &[&str] = &[
     "UpbitMarketEvent",
     "UpbitListedSubscription",
     "UpbitSubscriptionList",
+    "UpbitOrderResponse",
+    "UpbitDepositResponse",
+    "UpbitWithdrawalResponse",
+    "UpbitCancelWithdrawalResponse",
+    "UpbitCancelOrdersResponse",
+    "UpbitCancelAndNewOrderDetailResult",
+    "UpbitTradeStreamEvent",
+    "UpbitOrderBookStreamEvent",
+    "UpbitTickerStreamEvent",
+    "UpbitCandleStreamEvent",
+    "UpbitAssetStreamEvent",
+    "UpbitOrderStreamEvent",
+    "UpbitMarketStreamEvent",
+    "UpbitAccountStreamEvent",
     "UpbitYearCandle",
     "UpbitOrderBookInstrument",
     "UpbitOrderDetailRequest",
@@ -1349,6 +1547,21 @@ const MODELS: &[&str] = &[
     "BithumbBatchOrderFailure",
     "BithumbBatchOrderOutcome",
     "BithumbBatchOrdersResult",
+    "BithumbOrderBookSnapshot",
+    "BithumbOrderResponse",
+    "BithumbOrdersResponse",
+    "BithumbCancelOrderResponse",
+    "BithumbCancelOrdersResponse",
+    "BithumbDepositResponse",
+    "BithumbWithdrawalResponse",
+    "BithumbCancelWithdrawalResponse",
+    "BithumbTradeEvent",
+    "BithumbOrderBookEvent",
+    "BithumbTickerEvent",
+    "BithumbAssetEvent",
+    "BithumbOrderEvent",
+    "BithumbMarketEvent",
+    "BithumbAccountEvent",
     "BithumbTwapOrdersRequest",
     "BithumbTwapOrderRequest",
     "BithumbTwapOrder",
@@ -1389,6 +1602,16 @@ const MODELS: &[&str] = &[
     "BinanceOpenInterest",
     "BinanceAggregateTradesRequest",
     "BinanceAggregateTrade",
+    "BinanceOrderResponse",
+    "BinanceTradeEvent",
+    "BinanceOrderBookEvent",
+    "BinanceTickerEvent",
+    "BinanceCandleEvent",
+    "BinanceBalanceStreamEvent",
+    "BinanceOrderStreamEvent",
+    "BinanceRawAccountEvent",
+    "BinanceMarketEvent",
+    "BinanceAccountStreamEvent",
     "BinanceAccountTrade",
     "BinanceTestOrderRequest",
     "BinanceTestOrder",
@@ -1420,6 +1643,9 @@ const MODELS: &[&str] = &[
     "HyperliquidSpotAssetContext",
     "HyperliquidSpotMetaAndAssetContexts",
     "HyperliquidMidPrice",
+    "HyperliquidAllMids",
+    "HyperliquidProviderResponse",
+    "HyperliquidOrderActionResponse",
     "HyperliquidAssetContext",
     "HyperliquidUserRateLimit",
     "HyperliquidUserRole",
@@ -1915,6 +2141,104 @@ const UPBIT_METHODS: &[ProviderMethod] = &[
         arguments: UPBIT_POCKET_TRANSFER_QUERY,
         result: ApiType::List("UpbitPocketTransfer"),
     },
+    ProviderMethod {
+        rust_name: "subscribe_detailed",
+        name: "subscribeDetailed",
+        kind: ProviderMethodKind::Async,
+        arguments: SUBSCRIPTION,
+        result: ApiType::ProviderMarketStream("UpbitMarketStreamEvent"),
+    },
+    ProviderMethod {
+        rust_name: "subscribe_detailed_with",
+        name: "subscribeDetailedWith",
+        kind: ProviderMethodKind::Async,
+        arguments: SUBSCRIPTION_CONFIG,
+        result: ApiType::ProviderMarketStream("UpbitMarketStreamEvent"),
+    },
+    ProviderMethod {
+        rust_name: "subscribe_detailed_account",
+        name: "subscribeDetailedAccount",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::ProviderAccountStream("UpbitAccountStreamEvent"),
+    },
+    ProviderMethod {
+        rust_name: "subscribe_detailed_account_with",
+        name: "subscribeDetailedAccountWith",
+        kind: ProviderMethodKind::Async,
+        arguments: CONFIG,
+        result: ApiType::ProviderAccountStream("UpbitAccountStreamEvent"),
+    },
+    ProviderMethod {
+        rust_name: "test_order_detail",
+        name: "testOrderDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: ORDER_REQUEST,
+        result: ApiType::Named("UpbitOrderResponse"),
+    },
+    ProviderMethod {
+        rust_name: "place_order_detail",
+        name: "placeOrderDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: ORDER_REQUEST,
+        result: ApiType::Named("UpbitOrderResponse"),
+    },
+    ProviderMethod {
+        rust_name: "cancel_order_detail",
+        name: "cancelOrderDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: CANCEL_ORDER,
+        result: ApiType::Named("UpbitOrderResponse"),
+    },
+    ProviderMethod {
+        rust_name: "cancel_order_by_client_id_detail",
+        name: "cancelOrderByClientIdDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: CANCEL_ORDER_BY_CLIENT_ID,
+        result: ApiType::Named("UpbitOrderResponse"),
+    },
+    ProviderMethod {
+        rust_name: "orders_by_ids_detail",
+        name: "ordersByIdsDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: ORDER_LOOKUP_REQUEST,
+        result: ApiType::List("UpbitOrderResponse"),
+    },
+    ProviderMethod {
+        rust_name: "cancel_orders_detail",
+        name: "cancelOrdersDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: CANCEL_ORDERS_REQUEST,
+        result: ApiType::Named("UpbitCancelOrdersResponse"),
+    },
+    ProviderMethod {
+        rust_name: "deposit_detail",
+        name: "depositDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: TRANSFER_LOOKUP_REQUEST,
+        result: ApiType::Named("UpbitDepositResponse"),
+    },
+    ProviderMethod {
+        rust_name: "withdrawal_detail",
+        name: "withdrawalDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: TRANSFER_LOOKUP_REQUEST,
+        result: ApiType::Named("UpbitWithdrawalResponse"),
+    },
+    ProviderMethod {
+        rust_name: "cancel_withdrawal_detail",
+        name: "cancelWithdrawalDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: WITHDRAWAL_ID,
+        result: ApiType::Named("UpbitCancelWithdrawalResponse"),
+    },
+    ProviderMethod {
+        rust_name: "cancel_and_new_order_detail",
+        name: "cancelAndNewOrderDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: UPBIT_CANCEL_AND_NEW_ORDER_REQUEST,
+        result: ApiType::Named("UpbitCancelAndNewOrderDetailResult"),
+    },
 ];
 const BITHUMB_METHODS: &[ProviderMethod] = &[
     ProviderMethod {
@@ -2042,6 +2366,97 @@ const BITHUMB_METHODS: &[ProviderMethod] = &[
         kind: ProviderMethodKind::Async,
         arguments: BITHUMB_ORDER_LIST_REQUEST,
         result: ApiType::List("BithumbOrderListItem"),
+    },
+    ProviderMethod {
+        rust_name: "order_book_snapshot",
+        name: "orderBookSnapshot",
+        kind: ProviderMethodKind::Async,
+        arguments: MARKET_DEPTH,
+        result: ApiType::Named("BithumbOrderBookSnapshot"),
+    },
+    ProviderMethod {
+        rust_name: "subscribe_detailed",
+        name: "subscribeDetailed",
+        kind: ProviderMethodKind::Async,
+        arguments: SUBSCRIPTION,
+        result: ApiType::ProviderMarketStream("BithumbMarketEvent"),
+    },
+    ProviderMethod {
+        rust_name: "subscribe_detailed_with",
+        name: "subscribeDetailedWith",
+        kind: ProviderMethodKind::Async,
+        arguments: SUBSCRIPTION_CONFIG,
+        result: ApiType::ProviderMarketStream("BithumbMarketEvent"),
+    },
+    ProviderMethod {
+        rust_name: "subscribe_detailed_account",
+        name: "subscribeDetailedAccount",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::ProviderAccountStream("BithumbAccountEvent"),
+    },
+    ProviderMethod {
+        rust_name: "subscribe_detailed_account_with",
+        name: "subscribeDetailedAccountWith",
+        kind: ProviderMethodKind::Async,
+        arguments: CONFIG,
+        result: ApiType::ProviderAccountStream("BithumbAccountEvent"),
+    },
+    ProviderMethod {
+        rust_name: "orders_by_ids_detail",
+        name: "ordersByIdsDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: ORDER_LOOKUP_REQUEST,
+        result: ApiType::Named("BithumbOrdersResponse"),
+    },
+    ProviderMethod {
+        rust_name: "place_order_detail",
+        name: "placeOrderDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: ORDER_REQUEST,
+        result: ApiType::Named("BithumbOrderResponse"),
+    },
+    ProviderMethod {
+        rust_name: "cancel_order_detail",
+        name: "cancelOrderDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: CANCEL_ORDER,
+        result: ApiType::Named("BithumbCancelOrderResponse"),
+    },
+    ProviderMethod {
+        rust_name: "cancel_order_by_client_id_detail",
+        name: "cancelOrderByClientIdDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: CANCEL_ORDER_BY_CLIENT_ID,
+        result: ApiType::Named("BithumbCancelOrderResponse"),
+    },
+    ProviderMethod {
+        rust_name: "cancel_orders_detail",
+        name: "cancelOrdersDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: CANCEL_ORDERS_REQUEST,
+        result: ApiType::Named("BithumbCancelOrdersResponse"),
+    },
+    ProviderMethod {
+        rust_name: "deposit_detail",
+        name: "depositDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: TRANSFER_LOOKUP_REQUEST,
+        result: ApiType::Named("BithumbDepositResponse"),
+    },
+    ProviderMethod {
+        rust_name: "withdrawal_detail",
+        name: "withdrawalDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: TRANSFER_LOOKUP_REQUEST,
+        result: ApiType::Named("BithumbWithdrawalResponse"),
+    },
+    ProviderMethod {
+        rust_name: "cancel_withdrawal_detail",
+        name: "cancelWithdrawalDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: WITHDRAWAL_ID,
+        result: ApiType::Named("BithumbCancelWithdrawalResponse"),
     },
 ];
 const BINANCE_METHODS: &[ProviderMethod] = &[
@@ -2233,6 +2648,55 @@ const BINANCE_METHODS: &[ProviderMethod] = &[
         kind: ProviderMethodKind::Async,
         arguments: &[],
         result: ApiType::Unit,
+    },
+    ProviderMethod {
+        rust_name: "place_order_detail",
+        name: "placeOrderDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: ORDER_REQUEST,
+        result: ApiType::Named("BinanceOrderResponse"),
+    },
+    ProviderMethod {
+        rust_name: "cancel_order_detail",
+        name: "cancelOrderDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: CANCEL_ORDER,
+        result: ApiType::Named("BinanceOrderResponse"),
+    },
+    ProviderMethod {
+        rust_name: "cancel_order_by_client_id_detail",
+        name: "cancelOrderByClientIdDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: CANCEL_ORDER_BY_CLIENT_ID,
+        result: ApiType::Named("BinanceOrderResponse"),
+    },
+    ProviderMethod {
+        rust_name: "subscribe_detailed",
+        name: "subscribeDetailed",
+        kind: ProviderMethodKind::Async,
+        arguments: SUBSCRIPTION,
+        result: ApiType::ProviderMarketStream("BinanceMarketEvent"),
+    },
+    ProviderMethod {
+        rust_name: "subscribe_detailed_with",
+        name: "subscribeDetailedWith",
+        kind: ProviderMethodKind::Async,
+        arguments: SUBSCRIPTION_CONFIG,
+        result: ApiType::ProviderMarketStream("BinanceMarketEvent"),
+    },
+    ProviderMethod {
+        rust_name: "subscribe_detailed_account",
+        name: "subscribeDetailedAccount",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::ProviderAccountStream("BinanceAccountStreamEvent"),
+    },
+    ProviderMethod {
+        rust_name: "subscribe_detailed_account_with",
+        name: "subscribeDetailedAccountWith",
+        kind: ProviderMethodKind::Async,
+        arguments: CONFIG,
+        result: ApiType::ProviderAccountStream("BinanceAccountStreamEvent"),
     },
 ];
 const HYPERLIQUID_METHODS: &[ProviderMethod] = &[
@@ -2435,6 +2899,55 @@ const HYPERLIQUID_METHODS: &[ProviderMethod] = &[
         kind: ProviderMethodKind::Async,
         arguments: &[],
         result: ApiType::List("HyperliquidVaultEquity"),
+    },
+    ProviderMethod {
+        rust_name: "all_mids_detail",
+        name: "allMidsDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::Named("HyperliquidAllMids"),
+    },
+    ProviderMethod {
+        rust_name: "perpetual_meta",
+        name: "perpetualMeta",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::Named("HyperliquidProviderResponse"),
+    },
+    ProviderMethod {
+        rust_name: "perpetual_meta_and_asset_contexts",
+        name: "perpetualMetaAndAssetContexts",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::Named("HyperliquidProviderResponse"),
+    },
+    ProviderMethod {
+        rust_name: "clearinghouse_state_detail",
+        name: "clearinghouseStateDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::Named("HyperliquidProviderResponse"),
+    },
+    ProviderMethod {
+        rust_name: "frontend_open_orders_detail",
+        name: "frontendOpenOrdersDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: &[],
+        result: ApiType::Named("HyperliquidProviderResponse"),
+    },
+    ProviderMethod {
+        rust_name: "place_order_detail",
+        name: "placeOrderDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: ORDER_REQUEST,
+        result: ApiType::Named("HyperliquidOrderActionResponse"),
+    },
+    ProviderMethod {
+        rust_name: "cancel_order_detail",
+        name: "cancelOrderDetail",
+        kind: ProviderMethodKind::Async,
+        arguments: CANCEL_ORDER,
+        result: ApiType::Named("HyperliquidProviderResponse"),
     },
 ];
 
@@ -3025,6 +3538,130 @@ pub fn binding_schema() -> Schema {
             ],
         ),
         record(
+            "UpbitOrderResponseWire",
+            vec![
+                field("common", Type::named("OrderWire")),
+                field("order_type", Type::optional(Type::String)),
+                field("volume", Type::optional(decimal.clone())),
+                field("reserved_fee", Type::optional(decimal.clone())),
+                field("remaining_fee", Type::optional(decimal.clone())),
+                field("paid_fee", Type::optional(decimal.clone())),
+                field("locked", Type::optional(decimal.clone())),
+                field("trades_count", Type::optional(Number)),
+                field("prevented_volume", Type::optional(decimal.clone())),
+                field("prevented_locked", Type::optional(decimal.clone())),
+                field("time_in_force", Type::optional(Type::String)),
+                field("identifier", Type::optional(Type::String)),
+                field("smp_type", Type::optional(Type::String)),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "UpbitDepositResponseWire",
+            vec![
+                field("common", Type::named("DepositWire")),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "UpbitWithdrawalResponseWire",
+            vec![
+                field("common", Type::named("WithdrawalWire")),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "UpbitCancelWithdrawalResponseWire",
+            vec![
+                field("withdrawal_id", Type::String),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "UpbitCancelOrdersResponseWire",
+            vec![
+                field("common", Type::named("CancelOrdersResultWire")),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "UpbitCancelAndNewOrderDetailResultWire",
+            vec![
+                field("common", Type::named("UpbitCancelAndNewOrderResultWire")),
+                field("previous_order", Type::named("UpbitOrderResponseWire")),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "UpbitTradeStreamEventWire",
+            vec![
+                field("common", Type::named("TradeWire")),
+                field("previous_closing_price", Type::optional(decimal.clone())),
+                field("change", Type::optional(Type::String)),
+                field("change_price", Type::optional(decimal.clone())),
+                field("best_ask_price", Type::optional(decimal.clone())),
+                field("best_ask_size", Type::optional(decimal.clone())),
+                field("best_bid_price", Type::optional(decimal.clone())),
+                field("best_bid_size", Type::optional(decimal.clone())),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "UpbitOrderBookStreamEventWire",
+            vec![
+                field("common", Type::named("OrderBookWire")),
+                field("total_ask_size", Type::optional(decimal.clone())),
+                field("total_bid_size", Type::optional(decimal.clone())),
+                field("level", Type::optional(decimal.clone())),
+                field("stream_type", Type::optional(Type::String)),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "UpbitTickerStreamEventWire",
+            vec![
+                field("common", Type::named("TickerWire")),
+                field("change_direction", Type::optional(Type::String)),
+                field("market_state", Type::optional(Type::String)),
+                field("trading_suspended", Type::optional(Boolean)),
+                field("delisting_date", Type::optional(Type::String)),
+                field("market_warning", Type::optional(Type::String)),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "UpbitCandleStreamEventWire",
+            vec![
+                field("common", Type::named("CandleWire")),
+                field("stream_type", Type::optional(Type::String)),
+                field("published_at", Type::optional(timestamp.clone())),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "UpbitAssetStreamEventWire",
+            vec![
+                field("balances", Type::list(Type::named("BalanceWire"))),
+                field("asset_uuid", Type::optional(Type::String)),
+                field("asset_timestamp", Type::optional(timestamp.clone())),
+                field("published_at", Type::optional(timestamp.clone())),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "UpbitOrderStreamEventWire",
+            vec![
+                field("common", Type::named("OrderWire")),
+                field("order_type", Type::optional(Type::String)),
+                field("trade_uuid", Type::optional(Type::String)),
+                field("time_in_force", Type::optional(Type::String)),
+                field("trade_timestamp", Type::optional(timestamp.clone())),
+                field("trade_fee", Type::optional(decimal.clone())),
+                field("is_maker", Type::optional(Boolean)),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
             "UpbitYearCandleWire",
             vec![
                 field("market", market.clone()),
@@ -3578,10 +4215,136 @@ pub fn binding_schema() -> Schema {
         ),
         record(
             "BithumbBatchOrdersResultWire",
-            vec![field(
-                "outcomes",
-                Type::list(Type::named("BithumbBatchOrderOutcomeWire")),
-            )],
+            vec![
+                field(
+                    "outcomes",
+                    Type::list(Type::named("BithumbBatchOrderOutcomeWire")),
+                ),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "BithumbOrderBookSnapshotWire",
+            vec![
+                field("common", Type::named("OrderBookWire")),
+                field("total_ask_size", Type::optional(decimal.clone())),
+                field("total_bid_size", Type::optional(decimal.clone())),
+                field("level", Type::optional(decimal.clone())),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "BithumbOrderResponseWire",
+            vec![
+                field("common", Type::named("OrderWire")),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "BithumbOrdersResponseWire",
+            vec![
+                field("common", Type::list(Type::named("OrderWire"))),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "BithumbCancelOrderResponseWire",
+            vec![
+                field("order_id", Type::String),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "BithumbCancelOrdersResponseWire",
+            vec![
+                field("common", Type::named("CancelOrdersResultWire")),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "BithumbDepositResponseWire",
+            vec![
+                field("common", Type::named("DepositWire")),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "BithumbWithdrawalResponseWire",
+            vec![
+                field("common", Type::named("WithdrawalWire")),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "BithumbCancelWithdrawalResponseWire",
+            vec![
+                field("withdrawal_id", Type::String),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "BithumbTradeEventWire",
+            vec![
+                field("common", Type::named("TradeWire")),
+                field("previous_closing_price", Type::optional(decimal.clone())),
+                field("change", Type::optional(Type::String)),
+                field("change_price", Type::optional(decimal.clone())),
+                field("published_at", Type::optional(timestamp.clone())),
+                field("stream_type", Type::optional(Type::String)),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "BithumbOrderBookEventWire",
+            vec![
+                field("common", Type::named("OrderBookWire")),
+                field("total_ask_size", Type::optional(decimal.clone())),
+                field("total_bid_size", Type::optional(decimal.clone())),
+                field("level", Type::optional(decimal.clone())),
+                field("stream_type", Type::optional(Type::String)),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "BithumbTickerEventWire",
+            vec![
+                field("common", Type::named("TickerWire")),
+                field("change_direction", Type::optional(Type::String)),
+                field("market_state", Type::optional(Type::String)),
+                field("trading_suspended", Type::optional(Boolean)),
+                field("market_warning", Type::optional(Type::String)),
+                field("stream_type", Type::optional(Type::String)),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "BithumbAssetEventWire",
+            vec![
+                field("balances", Type::list(Type::named("BalanceWire"))),
+                field("asset_timestamp", Type::optional(timestamp.clone())),
+                field("published_at", Type::optional(timestamp.clone())),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "BithumbOrderEventWire",
+            vec![
+                field("common", Type::named("OrderWire")),
+                field("client_order_id", Type::optional(Type::String)),
+                field("order_type", Type::optional(Type::String)),
+                field("state", Type::optional(Type::String)),
+                field("time_in_force", Type::optional(Type::String)),
+                field("order_amount", Type::optional(decimal.clone())),
+                field("trade_id", Type::optional(Type::String)),
+                field("trade_price", Type::optional(decimal.clone())),
+                field("trade_quantity", Type::optional(decimal.clone())),
+                field("trade_amount", Type::optional(decimal.clone())),
+                field("trade_timestamp", Type::optional(timestamp.clone())),
+                field("executed_amount", Type::optional(decimal.clone())),
+                field("paid_fee", Type::optional(decimal.clone())),
+                field("remaining_fee", Type::optional(decimal.clone())),
+                field("raw_json", Type::String),
+            ],
         ),
         record(
             "BithumbTwapOrderRequestWire",
@@ -3737,6 +4500,7 @@ pub fn binding_schema() -> Schema {
                 field("trades_count", Number),
                 field("stp_type", Type::optional(Type::String)),
                 field("time_in_force", Type::optional(Type::String)),
+                field("raw_json", Type::String),
             ],
         ),
         record(
@@ -4171,7 +4935,115 @@ pub fn binding_schema() -> Schema {
                 field("price", decimal.clone()),
                 field("quantity", decimal.clone()),
                 field("normal_quantity", Type::optional(decimal.clone())),
+                field("best_price_match", Type::optional(Boolean)),
                 field("taker_side", Type::Identifier("Side")),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "BinanceOrderResponseWire",
+            vec![
+                field("order", Type::named("OrderWire")),
+                field("client_order_id", Type::optional(Type::String)),
+                field("order_list_id", Type::optional(Type::String)),
+                field("order_type", Type::optional(Type::String)),
+                field("time_in_force", Type::optional(Type::String)),
+                field("cumulative_quote_quantity", Type::optional(decimal.clone())),
+                field("cumulative_quantity", Type::optional(decimal.clone())),
+                field("cumulative_quote", Type::optional(decimal.clone())),
+                field("average_price", Type::optional(decimal.clone())),
+                field("reduce_only", Type::optional(Boolean)),
+                field("close_position", Type::optional(Boolean)),
+                field("position_side", Type::optional(Type::String)),
+                field("stop_price", Type::optional(decimal.clone())),
+                field("working_type", Type::optional(Type::String)),
+                field("price_protect", Type::optional(Boolean)),
+                field("original_type", Type::optional(Type::String)),
+                field("price_match", Type::optional(Type::String)),
+                field("self_trade_prevention_mode", Type::optional(Type::String)),
+                field("good_till_date", Type::optional(timestamp.clone())),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "BinanceTradeEventWire",
+            vec![
+                field("common", Type::named("TradeWire")),
+                field("event_time", Type::optional(timestamp.clone())),
+                field("trade_time", Type::optional(timestamp.clone())),
+                field("buyer_is_maker", Type::optional(Boolean)),
+                field("best_price_match", Type::optional(Boolean)),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "BinanceOrderBookEventWire",
+            vec![
+                field("common", Type::named("OrderBookWire")),
+                field("event_time", Type::optional(timestamp.clone())),
+                field("transaction_time", Type::optional(timestamp.clone())),
+                field("first_update_id", Type::optional(Type::UnsignedInteger)),
+                field("final_update_id", Type::optional(Type::UnsignedInteger)),
+                field(
+                    "previous_final_update_id",
+                    Type::optional(Type::UnsignedInteger),
+                ),
+                field("last_update_id", Type::optional(Type::UnsignedInteger)),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "BinanceTickerEventWire",
+            vec![
+                field("common", Type::named("TickerWire")),
+                field("event_time", Type::optional(timestamp.clone())),
+                field("close_time", Type::optional(timestamp.clone())),
+                field("first_trade_id", Type::optional(Type::UnsignedInteger)),
+                field("last_trade_id", Type::optional(Type::UnsignedInteger)),
+                field("trade_count", Type::optional(Type::UnsignedInteger)),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "BinanceCandleEventWire",
+            vec![
+                field("common", Type::named("CandleWire")),
+                field("close_time", Type::optional(timestamp.clone())),
+                field("first_trade_id", Type::optional(Type::UnsignedInteger)),
+                field("last_trade_id", Type::optional(Type::UnsignedInteger)),
+                field("trade_count", Type::optional(Type::UnsignedInteger)),
+                field("taker_buy_base_volume", Type::optional(decimal.clone())),
+                field("taker_buy_quote_volume", Type::optional(decimal.clone())),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "BinanceBalanceStreamEventWire",
+            vec![
+                field("common", Type::named("BalanceWire")),
+                field("event_type", Type::String),
+                field("event_time", Type::optional(timestamp.clone())),
+                field("transaction_time", Type::optional(timestamp.clone())),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "BinanceOrderStreamEventWire",
+            vec![
+                field("common", Type::named("OrderWire")),
+                field("event_type", Type::String),
+                field("event_time", Type::optional(timestamp.clone())),
+                field("transaction_time", Type::optional(timestamp.clone())),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "BinanceRawAccountEventWire",
+            vec![
+                field("event_type", Type::String),
+                field("event_time", Type::optional(timestamp.clone())),
+                field("transaction_time", Type::optional(timestamp.clone())),
+                field("raw_json", Type::String),
             ],
         ),
         record(
@@ -4526,6 +5398,24 @@ pub fn binding_schema() -> Schema {
             vec![
                 field("market", market.clone()),
                 field("price", decimal.clone()),
+            ],
+        ),
+        record(
+            "HyperliquidAllMidsWire",
+            vec![
+                field("mids", Type::list(Type::named("HyperliquidMidPriceWire"))),
+                field("raw_json", Type::String),
+            ],
+        ),
+        record(
+            "HyperliquidProviderResponseWire",
+            vec![field("raw_json", Type::String)],
+        ),
+        record(
+            "HyperliquidOrderActionResponseWire",
+            vec![
+                field("common", Type::named("OrderWire")),
+                field("raw_json", Type::String),
             ],
         ),
         record(
@@ -4964,6 +5854,120 @@ pub fn binding_schema() -> Schema {
             ],
         },
         TaggedUnion {
+            name: "UpbitMarketStreamEventWire",
+            type_parameters: &[],
+            variants: vec![
+                variant(
+                    "trade",
+                    vec![field("value", Type::named("UpbitTradeStreamEventWire"))],
+                ),
+                variant(
+                    "order_book",
+                    vec![field("value", Type::named("UpbitOrderBookStreamEventWire"))],
+                ),
+                variant(
+                    "ticker",
+                    vec![field("value", Type::named("UpbitTickerStreamEventWire"))],
+                ),
+                variant(
+                    "candle",
+                    vec![field("value", Type::named("UpbitCandleStreamEventWire"))],
+                ),
+                variant("reconnected", vec![]),
+            ],
+        },
+        TaggedUnion {
+            name: "UpbitAccountStreamEventWire",
+            type_parameters: &[],
+            variants: vec![
+                variant(
+                    "asset",
+                    vec![field("value", Type::named("UpbitAssetStreamEventWire"))],
+                ),
+                variant(
+                    "order",
+                    vec![field("value", Type::named("UpbitOrderStreamEventWire"))],
+                ),
+                variant("reconnected", vec![]),
+            ],
+        },
+        TaggedUnion {
+            name: "BithumbMarketEventWire",
+            type_parameters: &[],
+            variants: vec![
+                variant(
+                    "trade",
+                    vec![field("value", Type::named("BithumbTradeEventWire"))],
+                ),
+                variant(
+                    "order_book",
+                    vec![field("value", Type::named("BithumbOrderBookEventWire"))],
+                ),
+                variant(
+                    "ticker",
+                    vec![field("value", Type::named("BithumbTickerEventWire"))],
+                ),
+                variant("reconnected", vec![]),
+            ],
+        },
+        TaggedUnion {
+            name: "BithumbAccountEventWire",
+            type_parameters: &[],
+            variants: vec![
+                variant(
+                    "asset",
+                    vec![field("value", Type::named("BithumbAssetEventWire"))],
+                ),
+                variant(
+                    "order",
+                    vec![field("value", Type::named("BithumbOrderEventWire"))],
+                ),
+                variant("reconnected", vec![]),
+            ],
+        },
+        TaggedUnion {
+            name: "BinanceMarketEventWire",
+            type_parameters: &[],
+            variants: vec![
+                variant(
+                    "trade",
+                    vec![field("value", Type::named("BinanceTradeEventWire"))],
+                ),
+                variant(
+                    "order_book",
+                    vec![field("value", Type::named("BinanceOrderBookEventWire"))],
+                ),
+                variant(
+                    "ticker",
+                    vec![field("value", Type::named("BinanceTickerEventWire"))],
+                ),
+                variant(
+                    "candle",
+                    vec![field("value", Type::named("BinanceCandleEventWire"))],
+                ),
+                variant("reconnected", vec![]),
+            ],
+        },
+        TaggedUnion {
+            name: "BinanceAccountStreamEventWire",
+            type_parameters: &[],
+            variants: vec![
+                variant(
+                    "balance",
+                    vec![field("value", Type::named("BinanceBalanceStreamEventWire"))],
+                ),
+                variant(
+                    "order",
+                    vec![field("value", Type::named("BinanceOrderStreamEventWire"))],
+                ),
+                variant(
+                    "other",
+                    vec![field("value", Type::named("BinanceRawAccountEventWire"))],
+                ),
+                variant("reconnected", vec![]),
+            ],
+        },
+        TaggedUnion {
             name: "MarketEventWire",
             type_parameters: &[],
             variants: vec![
@@ -5029,6 +6033,72 @@ pub fn binding_schema() -> Schema {
                 variant(
                     "event",
                     vec![field("event", Type::named("HyperliquidAccountEventWire"))],
+                ),
+                variant("error", vec![field("error", Type::named("ErrorWire"))]),
+            ],
+        },
+        TaggedUnion {
+            name: "UpbitMarketStreamItemWire",
+            type_parameters: &[],
+            variants: vec![
+                variant(
+                    "event",
+                    vec![field("event", Type::named("UpbitMarketStreamEventWire"))],
+                ),
+                variant("error", vec![field("error", Type::named("ErrorWire"))]),
+            ],
+        },
+        TaggedUnion {
+            name: "UpbitAccountStreamItemWire",
+            type_parameters: &[],
+            variants: vec![
+                variant(
+                    "event",
+                    vec![field("event", Type::named("UpbitAccountStreamEventWire"))],
+                ),
+                variant("error", vec![field("error", Type::named("ErrorWire"))]),
+            ],
+        },
+        TaggedUnion {
+            name: "BithumbMarketStreamItemWire",
+            type_parameters: &[],
+            variants: vec![
+                variant(
+                    "event",
+                    vec![field("event", Type::named("BithumbMarketEventWire"))],
+                ),
+                variant("error", vec![field("error", Type::named("ErrorWire"))]),
+            ],
+        },
+        TaggedUnion {
+            name: "BithumbAccountStreamItemWire",
+            type_parameters: &[],
+            variants: vec![
+                variant(
+                    "event",
+                    vec![field("event", Type::named("BithumbAccountEventWire"))],
+                ),
+                variant("error", vec![field("error", Type::named("ErrorWire"))]),
+            ],
+        },
+        TaggedUnion {
+            name: "BinanceMarketStreamItemWire",
+            type_parameters: &[],
+            variants: vec![
+                variant(
+                    "event",
+                    vec![field("event", Type::named("BinanceMarketEventWire"))],
+                ),
+                variant("error", vec![field("error", Type::named("ErrorWire"))]),
+            ],
+        },
+        TaggedUnion {
+            name: "BinanceAccountStreamItemWire",
+            type_parameters: &[],
+            variants: vec![
+                variant(
+                    "event",
+                    vec![field("event", Type::named("BinanceAccountStreamEventWire"))],
                 ),
                 variant("error", vec![field("error", Type::named("ErrorWire"))]),
             ],
@@ -5338,7 +6408,7 @@ pub fn binding_schema() -> Schema {
     ];
 
     Schema {
-        native_api_version: 30,
+        native_api_version: 31,
         exchanges: Exchange::ALL.into_iter().map(Exchange::id).collect(),
         features: Feature::ALL.into_iter().map(Feature::id).collect(),
         identifiers: IDENTIFIERS,

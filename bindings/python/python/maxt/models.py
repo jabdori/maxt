@@ -857,9 +857,11 @@ from ._generated_models import (  # noqa: E402
     WithdrawalQuote,
     WithdrawRequest,
 )
+from . import _generated_provider_models as _generated_provider_models  # noqa: E402
+from ._generated_provider_models import *  # noqa: E402,F403
 
 
-__all__ = [
+__all__: list[str] = [
     "AccountEvent",
     "AssetNetwork",
     "CancelOrdersRequest",
@@ -1088,3 +1090,5 @@ __all__ = [
     "WithdrawalStatus",
     "WithdrawRequest",
 ]
+
+__all__.extend(_generated_provider_models.__all__)

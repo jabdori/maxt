@@ -24,11 +24,13 @@ use super::parse::{self, EXCHANGE};
 use super::rest;
 use super::{
     BithumbApiKey, BithumbBatchOrder, BithumbBatchOrderFailure, BithumbBatchOrderOutcome,
-    BithumbBatchOrdersRequest, BithumbBatchOrdersResult, BithumbClosedOrder,
-    BithumbClosedOrdersRequest, BithumbCredentials, BithumbOrderDetail, BithumbOrderDetailRequest,
-    BithumbOrderDetailTrade, BithumbOrderDirection, BithumbOrderListItem, BithumbOrderListRequest,
-    BithumbOrderListState, BithumbPendingOrderState, BithumbPendingOrdersRequest, BithumbTwapOrder,
-    BithumbTwapOrderDirection, BithumbTwapOrderRequest, BithumbTwapOrdersRequest, BithumbTwapState,
+    BithumbBatchOrdersRequest, BithumbBatchOrdersResult, BithumbCancelOrderResponse,
+    BithumbCancelOrdersResponse, BithumbClosedOrder, BithumbClosedOrdersRequest,
+    BithumbCredentials, BithumbOrderDetail, BithumbOrderDetailRequest, BithumbOrderDetailTrade,
+    BithumbOrderDirection, BithumbOrderListItem, BithumbOrderListRequest, BithumbOrderListState,
+    BithumbOrderResponse, BithumbOrdersResponse, BithumbPendingOrderState,
+    BithumbPendingOrdersRequest, BithumbTwapOrder, BithumbTwapOrderDirection,
+    BithumbTwapOrderRequest, BithumbTwapOrdersRequest, BithumbTwapState,
 };
 
 /// JWT claims sent to Bithumb; query fields are omitted for parameterless calls.
@@ -1296,6 +1298,19 @@ pub(crate) async fn orders_by_ids(
     parse::orders(&body)
 }
 
+/// Reads matching orders while preserving Bithumb's provider response body.
+pub(crate) async fn orders_by_ids_detail(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    request: &OrderLookupRequest,
+) -> Result<BithumbOrdersResponse> {
+    let body = rest::send(http, &orders_by_ids_request(credentials, request)?).await?;
+    Ok(BithumbOrdersResponse {
+        common: parse::orders(&body)?,
+        raw_json: response_json(&body, "order lookup")?,
+    })
+}
+
 pub(crate) async fn order_history(
     http: &HttpTransport,
     credentials: &BithumbCredentials,
@@ -1529,6 +1544,7 @@ fn parse_order_list_item(value: &Value) -> Result<BithumbOrderListItem> {
         trades_count: detail_u32(value, "trades_count")?,
         stp_type: detail_optional_text(value, "stp_type")?,
         time_in_force: detail_optional_text(value, "time_in_force")?,
+        raw_json: response_json(value, "order-list item")?,
     })
 }
 
@@ -1594,6 +1610,27 @@ pub(crate) async fn place_order(
     )
 }
 
+/// Places one order while preserving Bithumb's provider acknowledgement.
+pub(crate) async fn place_order_detail(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    request: &OrderRequest,
+) -> Result<BithumbOrderResponse> {
+    let placed = placed_order(request)?;
+    let body = rest::send(http, &place_order_request(credentials, &placed)?).await?;
+    Ok(BithumbOrderResponse {
+        common: parse::order_ack(
+            &body,
+            request.market.clone(),
+            request.side,
+            OrderStatus::Accepted,
+            placed.remaining_quantity,
+            request.price,
+        )?,
+        raw_json: response_json(&body, "order placement")?,
+    })
+}
+
 pub(crate) async fn batch_orders(
     http: &HttpTransport,
     credentials: &BithumbCredentials,
@@ -1613,7 +1650,10 @@ fn batch_orders_result(body: &Value) -> Result<BithumbBatchOrdersResult> {
         .iter()
         .map(batch_order_outcome)
         .collect::<Result<Vec<_>>>()?;
-    Ok(BithumbBatchOrdersResult { outcomes })
+    Ok(BithumbBatchOrdersResult {
+        outcomes,
+        raw_json: response_json(body, "batch order")?,
+    })
 }
 
 fn batch_order_outcome(entry: &Value) -> Result<BithumbBatchOrderOutcome> {
@@ -1690,6 +1730,18 @@ pub(crate) async fn cancel_order(
     cancel_ack(&body)
 }
 
+/// Cancels one exchange-ID order while preserving Bithumb's response body.
+pub(crate) async fn cancel_order_detail(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    market: &Market,
+    order_id: &str,
+) -> Result<BithumbCancelOrderResponse> {
+    parse::native_symbol(market)?;
+    let body = rest::send(http, &cancel_order_request(credentials, order_id)?).await?;
+    cancel_order_response(&body)
+}
+
 pub(crate) async fn cancel_order_by_client_id(
     http: &HttpTransport,
     credentials: &BithumbCredentials,
@@ -1706,6 +1758,22 @@ pub(crate) async fn cancel_order_by_client_id(
     cancel_ack(&body)
 }
 
+/// Cancels one client-ID order while preserving Bithumb's response body.
+pub(crate) async fn cancel_order_by_client_id_detail(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    market: &Market,
+    client_id: &str,
+) -> Result<BithumbCancelOrderResponse> {
+    parse::native_symbol(market)?;
+    let body = rest::send(
+        http,
+        &cancel_order_by_client_id_request(credentials, client_id)?,
+    )
+    .await?;
+    cancel_order_response(&body)
+}
+
 pub(crate) async fn cancel_orders(
     http: &HttpTransport,
     credentials: &BithumbCredentials,
@@ -1713,6 +1781,19 @@ pub(crate) async fn cancel_orders(
 ) -> Result<CancelOrdersResult> {
     let body = rest::send(http, &cancel_orders_request(credentials, request)?).await?;
     cancel_orders_result(&body)
+}
+
+/// Cancels an order batch while preserving Bithumb's provider response body.
+pub(crate) async fn cancel_orders_detail(
+    http: &HttpTransport,
+    credentials: &BithumbCredentials,
+    request: &CancelOrdersRequest,
+) -> Result<BithumbCancelOrdersResponse> {
+    let body = rest::send(http, &cancel_orders_request(credentials, request)?).await?;
+    Ok(BithumbCancelOrdersResponse {
+        common: cancel_orders_result(&body)?,
+        raw_json: response_json(&body, "batch cancellation")?,
+    })
 }
 
 fn cancel_orders_result(body: &Value) -> Result<CancelOrdersResult> {
@@ -1784,12 +1865,24 @@ fn batch_text(value: &Value, field: &str) -> Result<Option<String>> {
 }
 
 fn cancel_ack(body: &Value) -> Result<()> {
+    cancel_order_response(body).map(|_| ())
+}
+
+fn cancel_order_response(body: &Value) -> Result<BithumbCancelOrderResponse> {
     match body.get("order_id").and_then(Value::as_str) {
-        Some(order_id) if !order_id.is_empty() => Ok(()),
+        Some(order_id) if !order_id.is_empty() => Ok(BithumbCancelOrderResponse {
+            order_id: order_id.to_owned(),
+            raw_json: response_json(body, "order cancellation")?,
+        }),
         _ => Err(Error::decode(
             "bithumb cancel response carries no `order_id`",
         )),
     }
+}
+
+fn response_json(body: &Value, operation: &str) -> Result<String> {
+    serde_json::to_string(body)
+        .map_err(|error| Error::decode(format!("could not preserve Bithumb {operation}: {error}")))
 }
 
 /// Builds a parameterless authorization header for a private WebSocket handshake.
@@ -2064,6 +2157,18 @@ mod tests {
                 b"market=KRW-BTC&client_order_ids[]=client-1&client_order_ids[]=client-2&order_by=desc"
             )
         );
+    }
+
+    #[test]
+    fn detailed_cancel_response_keeps_the_provider_body() {
+        let response = cancel_order_response(&serde_json::json!({
+            "order_id": "order-1",
+            "provider_only": { "reason": "user_cancel" }
+        }))
+        .expect("a cancellation response");
+
+        assert_eq!(response.order_id, "order-1");
+        assert!(response.raw_json.contains("provider_only"));
     }
 
     #[test]

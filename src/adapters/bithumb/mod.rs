@@ -6,6 +6,13 @@ mod rest;
 mod stream;
 mod wallet;
 
+use std::fmt;
+use std::pin::Pin;
+use std::task::{Context, Poll};
+
+use futures_core::Stream;
+use rust_decimal::Decimal;
+
 pub use wallet::BithumbWithdrawalAddress;
 
 use crate::adapter::{Adapter, BoxFuture};
@@ -16,7 +23,7 @@ use crate::request::{
     OrderLookupRequest, OrderRequest, TransferHistoryRequest, TransferLookupRequest,
     WithdrawRequest,
 };
-use crate::stream::{AccountStream, MarketStream};
+use crate::stream::{AccountStream, MarketStream, TypedStream};
 use crate::transport::HttpTransport;
 use crate::types::{
     AssetNetwork, Balance, CancelOrdersResult, Candle, Cursor, Deposit, DepositAddress,
@@ -234,6 +241,317 @@ pub(crate) const REST_BASE_URL: &str = "https://api.bithumb.com";
 pub(crate) const WEBSOCKET_URL: &str = "wss://ws-api.bithumb.com/websocket/v1";
 /// Private account events use a separate v2 WebSocket endpoint.
 pub(crate) const PRIVATE_WEBSOCKET_URL: &str = "wss://ws-api.bithumb.com/websocket/v2/private";
+
+/// A Bithumb order-book snapshot with provider-specific aggregate fields.
+///
+/// [`OrderBook`] carries the portable price levels. This type retains the
+/// totals and aggregation level Bithumb includes around those levels.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BithumbOrderBookSnapshot {
+    /// The portable order-book projection.
+    pub common: OrderBook,
+    /// Total resting ask size reported by Bithumb, when present.
+    pub total_ask_size: Option<Decimal>,
+    /// Total resting bid size reported by Bithumb, when present.
+    pub total_bid_size: Option<Decimal>,
+    /// Provider aggregation level, when Bithumb reports one.
+    pub level: Option<Decimal>,
+    /// Complete provider response object encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A Bithumb order response with its portable projection and original body.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BithumbOrderResponse {
+    /// Portable order projection.
+    pub common: Order,
+    /// Complete provider response object encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A Bithumb order-list response with its portable projections and original body.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BithumbOrdersResponse {
+    /// Portable order projections.
+    pub common: Vec<Order>,
+    /// Complete provider response object encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A Bithumb single-order cancellation response.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BithumbCancelOrderResponse {
+    /// Bithumb order identifier confirmed by the cancellation response.
+    pub order_id: String,
+    /// Complete provider response object encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A Bithumb batch-cancellation response.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BithumbCancelOrdersResponse {
+    /// Portable cancellation projection.
+    pub common: CancelOrdersResult,
+    /// Complete provider response object encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A Bithumb deposit lookup response.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BithumbDepositResponse {
+    /// Portable deposit projection.
+    pub common: Deposit,
+    /// Complete provider response object encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A Bithumb withdrawal lookup response.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BithumbWithdrawalResponse {
+    /// Portable withdrawal projection.
+    pub common: Withdrawal,
+    /// Complete provider response object encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A Bithumb withdrawal-cancellation response.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BithumbCancelWithdrawalResponse {
+    /// Identifier supplied for the cancellation request.
+    pub withdrawal_id: String,
+    /// Complete provider response object encoded as JSON.
+    pub raw_json: String,
+}
+
+/// Bithumb's full-fidelity public market-data stream.
+///
+/// It keeps the same connection, reconnect, buffering, and close behavior as
+/// [`MarketStream`], while yielding Bithumb's provider-specific event types.
+/// Construct it with [`BithumbAdapter::subscribe_detailed`].
+pub struct BithumbMarketStream {
+    inner: TypedStream<BithumbMarketEvent>,
+}
+
+impl BithumbMarketStream {
+    pub(crate) fn new_with_close<F, Fut>(
+        inner: impl Stream<Item = Result<BithumbMarketEvent>> + Send + 'static,
+        close: F,
+    ) -> Self
+    where
+        F: FnOnce() -> Fut + Send + 'static,
+        Fut: std::future::Future<Output = Result<()>> + Send + 'static,
+    {
+        Self {
+            inner: TypedStream::new_with_close(inner, close),
+        }
+    }
+
+    /// Stops this subscription and waits for the WebSocket to close.
+    pub async fn close(&mut self) -> Result<()> {
+        self.inner.close().await
+    }
+}
+
+impl Stream for BithumbMarketStream {
+    type Item = Result<BithumbMarketEvent>;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        Pin::new(&mut self.inner).poll_next(cx)
+    }
+}
+
+impl fmt::Debug for BithumbMarketStream {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("BithumbMarketStream")
+            .finish_non_exhaustive()
+    }
+}
+
+/// Bithumb's full-fidelity private account stream.
+///
+/// It keeps the same connection, reconnect, buffering, and close behavior as
+/// [`AccountStream`], while yielding Bithumb's provider-specific event types.
+/// Construct it with [`BithumbAdapter::subscribe_detailed_account`].
+pub struct BithumbAccountStream {
+    inner: TypedStream<BithumbAccountEvent>,
+}
+
+impl BithumbAccountStream {
+    pub(crate) fn new_with_close<F, Fut>(
+        inner: impl Stream<Item = Result<BithumbAccountEvent>> + Send + 'static,
+        close: F,
+    ) -> Self
+    where
+        F: FnOnce() -> Fut + Send + 'static,
+        Fut: std::future::Future<Output = Result<()>> + Send + 'static,
+    {
+        Self {
+            inner: TypedStream::new_with_close(inner, close),
+        }
+    }
+
+    /// Stops this subscription and waits for the WebSocket to close.
+    pub async fn close(&mut self) -> Result<()> {
+        self.inner.close().await
+    }
+}
+
+impl Stream for BithumbAccountStream {
+    type Item = Result<BithumbAccountEvent>;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        Pin::new(&mut self.inner).poll_next(cx)
+    }
+}
+
+impl fmt::Debug for BithumbAccountStream {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("BithumbAccountStream")
+            .finish_non_exhaustive()
+    }
+}
+
+/// One Bithumb-specific public market event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum BithumbMarketEvent {
+    /// A trade and Bithumb's surrounding change metadata.
+    Trade(BithumbTradeEvent),
+    /// An order-book update and Bithumb's aggregate sizes.
+    OrderBook(BithumbOrderBookEvent),
+    /// A ticker update and Bithumb's market-state metadata.
+    Ticker(BithumbTickerEvent),
+    /// The underlying WebSocket reconnected.
+    Reconnected,
+}
+
+/// One Bithumb-specific private account event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum BithumbAccountEvent {
+    /// A balance update with the provider timestamps retained.
+    Asset(BithumbAssetEvent),
+    /// An order update with provider status and execution metadata retained.
+    Order(BithumbOrderEvent),
+    /// The underlying WebSocket reconnected.
+    Reconnected,
+}
+
+/// A full Bithumb trade event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BithumbTradeEvent {
+    /// Portable trade projection.
+    pub common: Trade,
+    /// Previous close supplied by Bithumb.
+    pub previous_closing_price: Option<Decimal>,
+    /// Provider change direction such as `RISE` or `FALL`.
+    pub change: Option<String>,
+    /// Unsigned provider price change.
+    pub change_price: Option<Decimal>,
+    /// Time at which Bithumb published this frame.
+    pub published_at: Option<Timestamp>,
+    /// Provider stream phase such as `SNAPSHOT` or `REALTIME`.
+    pub stream_type: Option<String>,
+    /// Complete provider frame encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A full Bithumb order-book event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BithumbOrderBookEvent {
+    /// Portable order-book projection.
+    pub common: OrderBook,
+    /// Total resting ask size supplied by Bithumb.
+    pub total_ask_size: Option<Decimal>,
+    /// Total resting bid size supplied by Bithumb.
+    pub total_bid_size: Option<Decimal>,
+    /// Provider aggregation level, when present.
+    pub level: Option<Decimal>,
+    /// Provider stream phase such as `SNAPSHOT` or `REALTIME`.
+    pub stream_type: Option<String>,
+    /// Complete provider frame encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A full Bithumb ticker event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BithumbTickerEvent {
+    /// Portable ticker projection.
+    pub common: Ticker,
+    /// Provider change direction such as `RISE` or `FALL`.
+    pub change_direction: Option<String>,
+    /// Provider market lifecycle state.
+    pub market_state: Option<String>,
+    /// Whether Bithumb reports trading as suspended.
+    pub trading_suspended: Option<bool>,
+    /// Provider market warning state.
+    pub market_warning: Option<String>,
+    /// Provider stream phase such as `SNAPSHOT` or `REALTIME`.
+    pub stream_type: Option<String>,
+    /// Complete provider frame encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A full Bithumb private asset event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BithumbAssetEvent {
+    /// Portable balance projections.
+    pub balances: Vec<Balance>,
+    /// Time at which Bithumb assembled the asset snapshot.
+    pub asset_timestamp: Option<Timestamp>,
+    /// Time at which Bithumb published the frame.
+    pub published_at: Option<Timestamp>,
+    /// Complete provider frame encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A full Bithumb private order event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BithumbOrderEvent {
+    /// Portable order projection.
+    pub common: Order,
+    /// Client-provided order identifier, when present.
+    pub client_order_id: Option<String>,
+    /// Provider order type.
+    pub order_type: Option<String>,
+    /// Provider lifecycle state.
+    pub state: Option<String>,
+    /// Provider time-in-force value.
+    pub time_in_force: Option<String>,
+    /// Original order amount in quote currency, when supplied.
+    pub order_amount: Option<Decimal>,
+    /// Provider execution identifier, when the frame reports a fill.
+    pub trade_id: Option<String>,
+    /// Provider fill price, quantity, and amount.
+    pub trade_price: Option<Decimal>,
+    /// Provider fill quantity.
+    pub trade_quantity: Option<Decimal>,
+    /// Provider fill amount in quote currency.
+    pub trade_amount: Option<Decimal>,
+    /// Provider fill time.
+    pub trade_timestamp: Option<Timestamp>,
+    /// Provider cumulative executed amount in quote currency.
+    pub executed_amount: Option<Decimal>,
+    /// Provider paid and remaining fees.
+    pub paid_fee: Option<Decimal>,
+    /// Provider remaining fee.
+    pub remaining_fee: Option<Decimal>,
+    /// Complete provider frame encoded as JSON.
+    pub raw_json: String,
+}
 
 pub(crate) fn network_from_provider(raw: &str) -> Network {
     match raw.trim().to_ascii_uppercase().as_str() {
@@ -742,6 +1060,8 @@ pub struct BithumbOrderListItem {
     pub stp_type: Option<String>,
     /// Raw time-in-force value, when the order used one.
     pub time_in_force: Option<String>,
+    /// Complete provider order object encoded as JSON.
+    pub raw_json: String,
 }
 
 /// One provider-specific order returned by Bithumb's closed-order endpoint.
@@ -876,6 +1196,8 @@ pub enum BithumbBatchOrderOutcome {
 pub struct BithumbBatchOrdersResult {
     /// Results retain Bithumb's response order.
     pub outcomes: Vec<BithumbBatchOrderOutcome>,
+    /// Complete provider response object encoded as JSON.
+    pub raw_json: String,
 }
 
 /// State filter accepted by Bithumb's TWAP history endpoint.
@@ -1165,6 +1487,48 @@ impl BithumbAdapter {
         rest::transfer_fees(self.http()?, currency).await
     }
 
+    /// Reads one Bithumb order-book snapshot without discarding its aggregate
+    /// provider fields.
+    pub async fn order_book_snapshot(
+        &self,
+        market: &Market,
+        depth: Option<u32>,
+    ) -> Result<BithumbOrderBookSnapshot> {
+        rest::order_book_snapshot(self.http()?, market, depth).await
+    }
+
+    /// Subscribes to Bithumb market data without discarding provider fields.
+    pub async fn subscribe_detailed(
+        &self,
+        subscription: &Subscription,
+    ) -> Result<BithumbMarketStream> {
+        self.subscribe_detailed_with(subscription, &crate::client::default_stream_config())
+            .await
+    }
+
+    /// Subscribes to detailed Bithumb market data with explicit stream settings.
+    pub async fn subscribe_detailed_with(
+        &self,
+        subscription: &Subscription,
+        config: &StreamConfig,
+    ) -> Result<BithumbMarketStream> {
+        stream::subscribe_detailed(subscription, config).await
+    }
+
+    /// Subscribes to Bithumb account updates without discarding provider fields.
+    pub async fn subscribe_detailed_account(&self) -> Result<BithumbAccountStream> {
+        self.subscribe_detailed_account_with(&crate::client::default_stream_config())
+            .await
+    }
+
+    /// Subscribes to detailed Bithumb account updates with explicit stream settings.
+    pub async fn subscribe_detailed_account_with(
+        &self,
+        config: &StreamConfig,
+    ) -> Result<BithumbAccountStream> {
+        stream::subscribe_detailed_account(self.credentials()?, config).await
+    }
+
     /// Returns Bithumb's KRW withdrawal list.
     pub async fn krw_withdrawals(
         &self,
@@ -1229,6 +1593,75 @@ impl BithumbAdapter {
         request: &BithumbOrderDetailRequest,
     ) -> Result<BithumbOrderDetail> {
         private::order_detail(self.http()?, self.credentials()?, request).await
+    }
+
+    /// Looks up Bithumb orders by identifier without discarding the response body.
+    pub async fn orders_by_ids_detail(
+        &self,
+        request: &OrderLookupRequest,
+    ) -> Result<BithumbOrdersResponse> {
+        private::orders_by_ids_detail(self.http()?, self.credentials()?, request).await
+    }
+
+    /// Places one Bithumb order without discarding the provider acknowledgement.
+    pub async fn place_order_detail(&self, request: &OrderRequest) -> Result<BithumbOrderResponse> {
+        private::place_order_detail(self.http()?, self.credentials()?, request).await
+    }
+
+    /// Cancels one Bithumb order by exchange identifier and preserves the response.
+    pub async fn cancel_order_detail(
+        &self,
+        market: &Market,
+        order_id: &str,
+    ) -> Result<BithumbCancelOrderResponse> {
+        private::cancel_order_detail(self.http()?, self.credentials()?, market, order_id).await
+    }
+
+    /// Cancels one Bithumb order by client identifier and preserves the response.
+    pub async fn cancel_order_by_client_id_detail(
+        &self,
+        market: &Market,
+        client_id: &str,
+    ) -> Result<BithumbCancelOrderResponse> {
+        private::cancel_order_by_client_id_detail(
+            self.http()?,
+            self.credentials()?,
+            market,
+            client_id,
+        )
+        .await
+    }
+
+    /// Cancels a Bithumb order batch without discarding provider failures or metadata.
+    pub async fn cancel_orders_detail(
+        &self,
+        request: &CancelOrdersRequest,
+    ) -> Result<BithumbCancelOrdersResponse> {
+        private::cancel_orders_detail(self.http()?, self.credentials()?, request).await
+    }
+
+    /// Reads one Bithumb deposit without discarding provider fields.
+    pub async fn deposit_detail(
+        &self,
+        request: &TransferLookupRequest,
+    ) -> Result<BithumbDepositResponse> {
+        wallet::deposit_detail(self.http()?, self.credentials()?, request).await
+    }
+
+    /// Reads one Bithumb withdrawal without discarding provider fields.
+    pub async fn withdrawal_detail(
+        &self,
+        request: &TransferLookupRequest,
+    ) -> Result<BithumbWithdrawalResponse> {
+        wallet::withdrawal_detail(self.http()?, self.credentials()?, request).await
+    }
+
+    /// Cancels one Bithumb withdrawal and preserves the provider response body.
+    pub async fn cancel_withdrawal_detail(
+        &self,
+        withdrawal_id: &str,
+    ) -> Result<BithumbCancelWithdrawalResponse> {
+        wallet::cancel_withdrawal_detail(self.http()?, self.credentials()?, withdrawal_id).await
     }
 
     /// Returns one legacy Bithumb order-list page without dropping provider fields.

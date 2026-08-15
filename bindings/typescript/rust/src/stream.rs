@@ -1,21 +1,17 @@
 use std::collections::HashMap;
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use futures_core::Stream;
 use futures_util::StreamExt;
-use maxt::{
-    AccountStream, Error, HyperliquidAccountEvent, HyperliquidAccountStream,
-    HyperliquidMarketEvent, HyperliquidMarketStream, MarketStream,
-};
+use maxt::{AccountStream, Error, MarketStream};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use tokio::sync::{Mutex, OnceCell, watch};
 
-use crate::convert::{
-    WireBalance, WireCandle, WireHyperliquidL2Book, WireHyperliquidRecentTrade,
-    WireHyperliquidSpotBalance, WireOrder, WireOrderBook, WireTicker, WireTrade, WireError,
-    account_stream_item, decimal_to_wire, market_stream_item, timestamp_to_wire,
-};
+use crate::convert::{WireError, account_stream_item, market_stream_item};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -53,21 +49,21 @@ impl NativeStreamRegistry {
         self.insert(NativeStream::Account(stream), "account").await
     }
 
-    pub(crate) async fn insert_hyperliquid_market(
+    /// Registers a provider-specific stream without teaching this shared
+    /// runtime about an exchange's event enum.
+    pub(crate) async fn insert_provider<S, E>(
         &self,
-        stream: HyperliquidMarketStream,
-    ) -> maxt::Result<WireStreamHandle> {
-        self.insert(NativeStream::HyperliquidMarket(stream), "hyperliquid_market")
-            .await
-    }
-
-    pub(crate) async fn insert_hyperliquid_account(
-        &self,
-        stream: HyperliquidAccountStream,
-    ) -> maxt::Result<WireStreamHandle> {
+        stream: S,
+        kind: &'static str,
+        item: fn(maxt::Result<E>) -> maxt::Result<Value>,
+    ) -> maxt::Result<WireStreamHandle>
+    where
+        S: Stream<Item = maxt::Result<E>> + ProviderStreamClose + Send + Unpin + 'static,
+        E: Send + 'static,
+    {
         self.insert(
-            NativeStream::HyperliquidAccount(stream),
-            "hyperliquid_account",
+            NativeStream::Provider(Box::new(TypedProviderStream { stream, item })),
+            kind,
         )
         .await
     }
@@ -190,29 +186,12 @@ impl NativeSubscription {
                         Error::adapter(format!("could not serialize stream item: {error}"))
                     })
             }
-            NativeStream::HyperliquidMarket(stream) => {
-                let item = tokio::select! {
+            NativeStream::Provider(stream) => {
+                tokio::select! {
                     biased;
                     _ = closed.changed() => return Ok(None),
                     item = stream.next() => item,
-                };
-                item.map(hyperliquid_market_stream_item)
-                    .transpose()
-                    .map_err(|error| {
-                        Error::adapter(format!("could not serialize Hyperliquid stream item: {error}"))
-                    })
-            }
-            NativeStream::HyperliquidAccount(stream) => {
-                let item = tokio::select! {
-                    biased;
-                    _ = closed.changed() => return Ok(None),
-                    item = stream.next() => item,
-                };
-                item.map(hyperliquid_account_stream_item)
-                    .transpose()
-                    .map_err(|error| {
-                        Error::adapter(format!("could not serialize Hyperliquid stream item: {error}"))
-                    })
+                }
             }
         }?;
         if item.is_none() {
@@ -238,8 +217,7 @@ impl NativeSubscription {
         let result = match inner.as_mut() {
             Some(NativeStream::Market(stream)) => stream.close().await,
             Some(NativeStream::Account(stream)) => stream.close().await,
-            Some(NativeStream::HyperliquidMarket(stream)) => stream.close().await,
-            Some(NativeStream::HyperliquidAccount(stream)) => stream.close().await,
+            Some(NativeStream::Provider(stream)) => stream.close().await,
             None => Ok(()),
         };
         inner.take();
@@ -250,135 +228,72 @@ impl NativeSubscription {
 enum NativeStream {
     Market(MarketStream),
     Account(AccountStream),
-    HyperliquidMarket(HyperliquidMarketStream),
-    HyperliquidAccount(HyperliquidAccountStream),
+    Provider(Box<dyn ProviderStream>),
 }
 
-fn wire_value(value: impl Serialize) -> maxt::Result<Value> {
-    serde_json::to_value(value)
-        .map_err(|error| Error::adapter(format!("could not serialize native stream item: {error}")))
+/// The six exchange-specific detailed stream types all share this one native
+/// lifecycle. Generated code supplies only the strongly typed event converter.
+pub(crate) trait ProviderStreamClose {
+    fn close_provider(
+        &mut self,
+    ) -> Pin<Box<dyn Future<Output = maxt::Result<()>> + Send + '_>>;
+}
+
+trait ProviderStream: Send {
+    fn next(
+        &mut self,
+    ) -> Pin<Box<dyn Future<Output = maxt::Result<Option<Value>>> + Send + '_>>;
+
+    fn close(&mut self) -> Pin<Box<dyn Future<Output = maxt::Result<()>> + Send + '_>>;
+}
+
+struct TypedProviderStream<S, E> {
+    stream: S,
+    item: fn(maxt::Result<E>) -> maxt::Result<Value>,
+}
+
+impl<S, E> ProviderStream for TypedProviderStream<S, E>
+where
+    S: Stream<Item = maxt::Result<E>> + ProviderStreamClose + Send + Unpin + 'static,
+    E: Send + 'static,
+{
+    fn next(
+        &mut self,
+    ) -> Pin<Box<dyn Future<Output = maxt::Result<Option<Value>>> + Send + '_>> {
+        Box::pin(async move {
+            match self.stream.next().await {
+                Some(item) => (self.item)(item).map(Some),
+                None => Ok(None),
+            }
+        })
+    }
+
+    fn close(&mut self) -> Pin<Box<dyn Future<Output = maxt::Result<()>> + Send + '_>> {
+        self.stream.close_provider()
+    }
 }
 
 fn error_item(error: Error) -> Value {
     json!({"kind": "error", "error": WireError::from(error)})
 }
 
-fn hyperliquid_market_stream_item(item: maxt::Result<HyperliquidMarketEvent>) -> maxt::Result<Value> {
+/// Converts a typed provider event into the JSON envelope shared by all
+/// TypeScript detailed streams.
+pub(crate) fn provider_stream_item<E, W>(item: maxt::Result<E>) -> maxt::Result<Value>
+where
+    W: TryFrom<E, Error = Error> + Serialize,
+{
     match item {
-        Ok(event) => hyperliquid_market_event_value(event)
+        Ok(event) => serde_json::to_value(W::try_from(event)?)
             .map(|event| json!({"kind": "event", "event": event}))
-            .or_else(|error| Ok(error_item(error))),
+            .map_err(|error| Error::adapter(format!("could not serialize provider stream item: {error}"))),
         Err(error) => Ok(error_item(error)),
-    }
-}
-
-fn hyperliquid_account_stream_item(
-    item: maxt::Result<HyperliquidAccountEvent>,
-) -> maxt::Result<Value> {
-    match item {
-        Ok(event) => hyperliquid_account_event_value(event)
-            .map(|event| json!({"kind": "event", "event": event}))
-            .or_else(|error| Ok(error_item(error))),
-        Err(error) => Ok(error_item(error)),
-    }
-}
-
-fn hyperliquid_market_event_value(event: HyperliquidMarketEvent) -> maxt::Result<Value> {
-    match event {
-        HyperliquidMarketEvent::Trade(value) => Ok(json!({
-            "kind": "trade",
-            "value": {
-                "common": wire_value(WireTrade::try_from(value.common)?)?,
-                "provider": wire_value(WireHyperliquidRecentTrade::try_from(value.provider)?)?,
-            },
-        })),
-        HyperliquidMarketEvent::OrderBook(value) => Ok(json!({
-            "kind": "order_book",
-            "value": {
-                "common": wire_value(WireOrderBook::try_from(value.common)?)?,
-                "provider": wire_value(WireHyperliquidL2Book::try_from(value.provider)?)?,
-            },
-        })),
-        HyperliquidMarketEvent::Candle(value) => Ok(json!({
-            "kind": "candle",
-            "value": {
-                "common": wire_value(WireCandle::try_from(value.common)?)?,
-                "provider": wire_value(crate::convert::WireHyperliquidCandleSnapshot::try_from(value.provider)?)?,
-            },
-        })),
-        HyperliquidMarketEvent::AssetContext(value) => Ok(json!({
-            "kind": "asset_context",
-            "value": {
-                "common": wire_value(WireTicker::try_from(value.common)?)?,
-                "coin": value.coin,
-                "mid_price": value.mid_price.map(decimal_to_wire),
-                "mark_price": value.mark_price.map(decimal_to_wire),
-                "previous_day_price": value.previous_day_price.map(decimal_to_wire),
-                "day_base_volume": value.day_base_volume.map(decimal_to_wire),
-                "day_notional_volume": value.day_notional_volume.map(decimal_to_wire),
-                "oracle_price": value.oracle_price.map(decimal_to_wire),
-                "funding_rate": value.funding_rate.map(decimal_to_wire),
-                "open_interest": value.open_interest.map(decimal_to_wire),
-                "circulating_supply": value.circulating_supply.map(decimal_to_wire),
-                "total_supply": value.total_supply.map(decimal_to_wire),
-                "raw_json": value.raw_json,
-            },
-        })),
-        HyperliquidMarketEvent::Reconnected => Ok(json!({"kind": "reconnected"})),
-        _ => Err(Error::adapter(
-            "native Hyperliquid market stream returned an unknown event variant",
-        )),
-    }
-}
-
-fn hyperliquid_account_event_value(event: HyperliquidAccountEvent) -> maxt::Result<Value> {
-    match event {
-        HyperliquidAccountEvent::OrderUpdate(value) => Ok(json!({
-            "kind": "order_update",
-            "value": {
-                "common": wire_value(WireOrder::try_from(value.common)?)?,
-                "coin": value.coin,
-                "side": value.side,
-                "limit_price": decimal_to_wire(value.limit_price),
-                "remaining_size": decimal_to_wire(value.remaining_size),
-                "original_size": decimal_to_wire(value.original_size),
-                "order_id": value.order_id.to_string(),
-                "accepted_at": timestamp_to_wire(value.accepted_at),
-                "client_order_id": value.client_order_id,
-                "status": value.status,
-                "status_at": value.status_at.map(timestamp_to_wire),
-                "raw_json": value.raw_json,
-            },
-        })),
-        HyperliquidAccountEvent::SpotState(value) => {
-            let balances = value
-                .balances
-                .into_iter()
-                .map(|balance| {
-                    Ok(json!({
-                        "common": wire_value(WireBalance::try_from(balance.common)?)?,
-                        "provider": wire_value(WireHyperliquidSpotBalance::try_from(balance.provider)?)?,
-                    }))
-                })
-                .collect::<maxt::Result<Vec<_>>>()?;
-            Ok(json!({
-                "kind": "spot_state",
-                "value": {
-                    "user": value.user,
-                    "balances": balances,
-                    "raw_json": value.raw_json,
-                },
-            }))
-        }
-        HyperliquidAccountEvent::Reconnected => Ok(json!({"kind": "reconnected"})),
-        _ => Err(Error::adapter(
-            "native Hyperliquid account stream returned an unknown event variant",
-        )),
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::collections::VecDeque;
     use std::pin::Pin;
     use std::sync::Arc;
     use std::sync::atomic::{AtomicBool, Ordering};
@@ -388,9 +303,71 @@ mod tests {
     use futures_core::Stream;
     use futures_util::stream;
     use maxt::{AccountEvent, AccountStream, Error, MarketEvent, MarketStream};
+    use serde::Serialize;
     use tokio::sync::oneshot;
 
     use super::*;
+
+    struct ProviderFixture {
+        events: VecDeque<maxt::Result<String>>,
+    }
+
+    impl Stream for ProviderFixture {
+        type Item = maxt::Result<String>;
+
+        fn poll_next(
+            mut self: Pin<&mut Self>,
+            _cx: &mut Context<'_>,
+        ) -> Poll<Option<Self::Item>> {
+            Poll::Ready(self.events.pop_front())
+        }
+    }
+
+    impl ProviderStreamClose for ProviderFixture {
+        fn close_provider(
+            &mut self,
+        ) -> Pin<Box<dyn Future<Output = maxt::Result<()>> + Send + '_>> {
+            Box::pin(async { Ok(()) })
+        }
+    }
+
+    #[derive(Serialize)]
+    struct ProviderWire(String);
+
+    impl TryFrom<String> for ProviderWire {
+        type Error = Error;
+
+        fn try_from(value: String) -> Result<Self, Self::Error> {
+            Ok(Self(value))
+        }
+    }
+
+    #[tokio::test]
+    async fn generated_provider_streams_share_one_registry_lifecycle() {
+        let registry = NativeStreamRegistry::default();
+        let handle = registry
+            .insert_provider(
+                ProviderFixture {
+                    events: VecDeque::from([
+                        Ok("first".to_owned()),
+                        Err(Error::Transport {
+                            detail: "temporary".to_owned(),
+                        }),
+                        Ok("last".to_owned()),
+                    ]),
+                },
+                "provider",
+                provider_stream_item::<String, ProviderWire>,
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(handle.kind, "provider");
+        assert_eq!(registry.next(&handle.id).await.unwrap().unwrap()["kind"], "event");
+        assert_eq!(registry.next(&handle.id).await.unwrap().unwrap()["kind"], "error");
+        assert_eq!(registry.next(&handle.id).await.unwrap().unwrap()["kind"], "event");
+        assert!(registry.next(&handle.id).await.unwrap().is_none());
+    }
 
     #[tokio::test]
     async fn registry_keeps_errors_non_terminal_and_removes_natural_end() {

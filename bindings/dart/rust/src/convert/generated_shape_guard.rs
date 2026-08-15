@@ -449,6 +449,132 @@ fn _guard_upbit_subscription_list_wire(value: WireUpbitSubscriptionList) {
     } = value;
 }
 
+fn _guard_upbit_order_response_wire(value: WireUpbitOrderResponse) {
+    let WireUpbitOrderResponse {
+        common: _,
+        order_type: _,
+        volume: _,
+        reserved_fee: _,
+        remaining_fee: _,
+        paid_fee: _,
+        locked: _,
+        trades_count: _,
+        prevented_volume: _,
+        prevented_locked: _,
+        time_in_force: _,
+        identifier: _,
+        smp_type: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_upbit_deposit_response_wire(value: WireUpbitDepositResponse) {
+    let WireUpbitDepositResponse {
+        common: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_upbit_withdrawal_response_wire(value: WireUpbitWithdrawalResponse) {
+    let WireUpbitWithdrawalResponse {
+        common: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_upbit_cancel_withdrawal_response_wire(value: WireUpbitCancelWithdrawalResponse) {
+    let WireUpbitCancelWithdrawalResponse {
+        withdrawal_id: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_upbit_cancel_orders_response_wire(value: WireUpbitCancelOrdersResponse) {
+    let WireUpbitCancelOrdersResponse {
+        common: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_upbit_cancel_and_new_order_detail_result_wire(
+    value: WireUpbitCancelAndNewOrderDetailResult,
+) {
+    let WireUpbitCancelAndNewOrderDetailResult {
+        common: _,
+        previous_order: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_upbit_trade_stream_event_wire(value: WireUpbitTradeStreamEvent) {
+    let WireUpbitTradeStreamEvent {
+        common: _,
+        previous_closing_price: _,
+        change: _,
+        change_price: _,
+        best_ask_price: _,
+        best_ask_size: _,
+        best_bid_price: _,
+        best_bid_size: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_upbit_order_book_stream_event_wire(value: WireUpbitOrderBookStreamEvent) {
+    let WireUpbitOrderBookStreamEvent {
+        common: _,
+        total_ask_size: _,
+        total_bid_size: _,
+        level: _,
+        stream_type: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_upbit_ticker_stream_event_wire(value: WireUpbitTickerStreamEvent) {
+    let WireUpbitTickerStreamEvent {
+        common: _,
+        change_direction: _,
+        market_state: _,
+        trading_suspended: _,
+        delisting_date: _,
+        market_warning: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_upbit_candle_stream_event_wire(value: WireUpbitCandleStreamEvent) {
+    let WireUpbitCandleStreamEvent {
+        common: _,
+        stream_type: _,
+        published_at_ns: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_upbit_asset_stream_event_wire(value: WireUpbitAssetStreamEvent) {
+    let WireUpbitAssetStreamEvent {
+        balances: _,
+        asset_uuid: _,
+        asset_timestamp_ns: _,
+        published_at_ns: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_upbit_order_stream_event_wire(value: WireUpbitOrderStreamEvent) {
+    let WireUpbitOrderStreamEvent {
+        common: _,
+        order_type: _,
+        trade_uuid: _,
+        time_in_force: _,
+        trade_timestamp_ns: _,
+        trade_fee: _,
+        is_maker: _,
+        raw_json: _,
+    } = value;
+}
+
 fn _guard_upbit_year_candle_wire(value: WireUpbitYearCandle) {
     let WireUpbitYearCandle {
         market: _,
@@ -881,7 +1007,133 @@ fn _guard_bithumb_batch_order_failure_wire(value: WireBithumbBatchOrderFailure) 
 }
 
 fn _guard_bithumb_batch_orders_result_wire(value: WireBithumbBatchOrdersResult) {
-    let WireBithumbBatchOrdersResult { outcomes: _ } = value;
+    let WireBithumbBatchOrdersResult {
+        outcomes: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_bithumb_order_book_snapshot_wire(value: WireBithumbOrderBookSnapshot) {
+    let WireBithumbOrderBookSnapshot {
+        common: _,
+        total_ask_size: _,
+        total_bid_size: _,
+        level: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_bithumb_order_response_wire(value: WireBithumbOrderResponse) {
+    let WireBithumbOrderResponse {
+        common: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_bithumb_orders_response_wire(value: WireBithumbOrdersResponse) {
+    let WireBithumbOrdersResponse {
+        common: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_bithumb_cancel_order_response_wire(value: WireBithumbCancelOrderResponse) {
+    let WireBithumbCancelOrderResponse {
+        order_id: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_bithumb_cancel_orders_response_wire(value: WireBithumbCancelOrdersResponse) {
+    let WireBithumbCancelOrdersResponse {
+        common: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_bithumb_deposit_response_wire(value: WireBithumbDepositResponse) {
+    let WireBithumbDepositResponse {
+        common: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_bithumb_withdrawal_response_wire(value: WireBithumbWithdrawalResponse) {
+    let WireBithumbWithdrawalResponse {
+        common: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_bithumb_cancel_withdrawal_response_wire(value: WireBithumbCancelWithdrawalResponse) {
+    let WireBithumbCancelWithdrawalResponse {
+        withdrawal_id: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_bithumb_trade_event_wire(value: WireBithumbTradeEvent) {
+    let WireBithumbTradeEvent {
+        common: _,
+        previous_closing_price: _,
+        change: _,
+        change_price: _,
+        published_at_ns: _,
+        stream_type: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_bithumb_order_book_event_wire(value: WireBithumbOrderBookEvent) {
+    let WireBithumbOrderBookEvent {
+        common: _,
+        total_ask_size: _,
+        total_bid_size: _,
+        level: _,
+        stream_type: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_bithumb_ticker_event_wire(value: WireBithumbTickerEvent) {
+    let WireBithumbTickerEvent {
+        common: _,
+        change_direction: _,
+        market_state: _,
+        trading_suspended: _,
+        market_warning: _,
+        stream_type: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_bithumb_asset_event_wire(value: WireBithumbAssetEvent) {
+    let WireBithumbAssetEvent {
+        balances: _,
+        asset_timestamp_ns: _,
+        published_at_ns: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_bithumb_order_event_wire(value: WireBithumbOrderEvent) {
+    let WireBithumbOrderEvent {
+        common: _,
+        client_order_id: _,
+        order_type: _,
+        state: _,
+        time_in_force: _,
+        order_amount: _,
+        trade_id: _,
+        trade_price: _,
+        trade_quantity: _,
+        trade_amount: _,
+        trade_timestamp_ns: _,
+        executed_amount: _,
+        paid_fee: _,
+        remaining_fee: _,
+        raw_json: _,
+    } = value;
 }
 
 fn _guard_bithumb_twap_order_request_wire(value: WireBithumbTwapOrderRequest) {
@@ -1014,6 +1266,7 @@ fn _guard_bithumb_order_list_item_wire(value: WireBithumbOrderListItem) {
         trades_count: _,
         stp_type: _,
         time_in_force: _,
+        raw_json: _,
     } = value;
 }
 
@@ -1412,7 +1665,112 @@ fn _guard_binance_aggregate_trade_wire(value: WireBinanceAggregateTrade) {
         price: _,
         quantity: _,
         normal_quantity: _,
+        best_price_match: _,
         taker_side: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_order_response_wire(value: WireBinanceOrderResponse) {
+    let WireBinanceOrderResponse {
+        order: _,
+        client_order_id: _,
+        order_list_id: _,
+        order_type: _,
+        time_in_force: _,
+        cumulative_quote_quantity: _,
+        cumulative_quantity: _,
+        cumulative_quote: _,
+        average_price: _,
+        reduce_only: _,
+        close_position: _,
+        position_side: _,
+        stop_price: _,
+        working_type: _,
+        price_protect: _,
+        original_type: _,
+        price_match: _,
+        self_trade_prevention_mode: _,
+        good_till_date_ns: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_trade_event_wire(value: WireBinanceTradeEvent) {
+    let WireBinanceTradeEvent {
+        common: _,
+        event_time_ns: _,
+        trade_time_ns: _,
+        buyer_is_maker: _,
+        best_price_match: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_order_book_event_wire(value: WireBinanceOrderBookEvent) {
+    let WireBinanceOrderBookEvent {
+        common: _,
+        event_time_ns: _,
+        transaction_time_ns: _,
+        first_update_id: _,
+        final_update_id: _,
+        previous_final_update_id: _,
+        last_update_id: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_ticker_event_wire(value: WireBinanceTickerEvent) {
+    let WireBinanceTickerEvent {
+        common: _,
+        event_time_ns: _,
+        close_time_ns: _,
+        first_trade_id: _,
+        last_trade_id: _,
+        trade_count: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_candle_event_wire(value: WireBinanceCandleEvent) {
+    let WireBinanceCandleEvent {
+        common: _,
+        close_time_ns: _,
+        first_trade_id: _,
+        last_trade_id: _,
+        trade_count: _,
+        taker_buy_base_volume: _,
+        taker_buy_quote_volume: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_balance_stream_event_wire(value: WireBinanceBalanceStreamEvent) {
+    let WireBinanceBalanceStreamEvent {
+        common: _,
+        event_type: _,
+        event_time_ns: _,
+        transaction_time_ns: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_order_stream_event_wire(value: WireBinanceOrderStreamEvent) {
+    let WireBinanceOrderStreamEvent {
+        common: _,
+        event_type: _,
+        event_time_ns: _,
+        transaction_time_ns: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_binance_raw_account_event_wire(value: WireBinanceRawAccountEvent) {
+    let WireBinanceRawAccountEvent {
+        event_type: _,
+        event_time_ns: _,
+        transaction_time_ns: _,
+        raw_json: _,
     } = value;
 }
 
@@ -1732,6 +2090,24 @@ fn _guard_hyperliquid_mid_price_wire(value: WireHyperliquidMidPrice) {
     } = value;
 }
 
+fn _guard_hyperliquid_all_mids_wire(value: WireHyperliquidAllMids) {
+    let WireHyperliquidAllMids {
+        mids: _,
+        raw_json: _,
+    } = value;
+}
+
+fn _guard_hyperliquid_provider_response_wire(value: WireHyperliquidProviderResponse) {
+    let WireHyperliquidProviderResponse { raw_json: _ } = value;
+}
+
+fn _guard_hyperliquid_order_action_response_wire(value: WireHyperliquidOrderActionResponse) {
+    let WireHyperliquidOrderActionResponse {
+        common: _,
+        raw_json: _,
+    } = value;
+}
+
 fn _guard_hyperliquid_asset_context_wire(value: WireHyperliquidAssetContext) {
     let WireHyperliquidAssetContext {
         mid_price: _,
@@ -2015,6 +2391,60 @@ fn _guard_hyperliquid_account_event_wire(value: WireHyperliquidAccountEvent) {
         WireHyperliquidAccountEvent::OrderUpdate(_) => {}
         WireHyperliquidAccountEvent::SpotState(_) => {}
         WireHyperliquidAccountEvent::Reconnected => {}
+    }
+}
+
+fn _guard_upbit_market_stream_event_wire(value: WireUpbitMarketStreamEvent) {
+    match value {
+        WireUpbitMarketStreamEvent::Trade(_) => {}
+        WireUpbitMarketStreamEvent::OrderBook(_) => {}
+        WireUpbitMarketStreamEvent::Ticker(_) => {}
+        WireUpbitMarketStreamEvent::Candle(_) => {}
+        WireUpbitMarketStreamEvent::Reconnected => {}
+    }
+}
+
+fn _guard_upbit_account_stream_event_wire(value: WireUpbitAccountStreamEvent) {
+    match value {
+        WireUpbitAccountStreamEvent::Asset(_) => {}
+        WireUpbitAccountStreamEvent::Order(_) => {}
+        WireUpbitAccountStreamEvent::Reconnected => {}
+    }
+}
+
+fn _guard_bithumb_market_event_wire(value: WireBithumbMarketEvent) {
+    match value {
+        WireBithumbMarketEvent::Trade(_) => {}
+        WireBithumbMarketEvent::OrderBook(_) => {}
+        WireBithumbMarketEvent::Ticker(_) => {}
+        WireBithumbMarketEvent::Reconnected => {}
+    }
+}
+
+fn _guard_bithumb_account_event_wire(value: WireBithumbAccountEvent) {
+    match value {
+        WireBithumbAccountEvent::Asset(_) => {}
+        WireBithumbAccountEvent::Order(_) => {}
+        WireBithumbAccountEvent::Reconnected => {}
+    }
+}
+
+fn _guard_binance_market_event_wire(value: WireBinanceMarketEvent) {
+    match value {
+        WireBinanceMarketEvent::Trade(_) => {}
+        WireBinanceMarketEvent::OrderBook(_) => {}
+        WireBinanceMarketEvent::Ticker(_) => {}
+        WireBinanceMarketEvent::Candle(_) => {}
+        WireBinanceMarketEvent::Reconnected => {}
+    }
+}
+
+fn _guard_binance_account_stream_event_wire(value: WireBinanceAccountStreamEvent) {
+    match value {
+        WireBinanceAccountStreamEvent::Balance(_) => {}
+        WireBinanceAccountStreamEvent::Order(_) => {}
+        WireBinanceAccountStreamEvent::Other(_) => {}
+        WireBinanceAccountStreamEvent::Reconnected => {}
     }
 }
 

@@ -1041,7 +1041,9 @@ test("Binance USD-M and Hyperliquid market snapshots preserve provider values", 
     Decimal.parse("100001.25"),
     Decimal.parse("0.01"),
     null,
+    null,
     Side.Sell,
+    "{}",
   );
   assert.deepEqual(
     binanceAggregateTradesRequestToWire(binanceAggregateTradesRequestFromWire(

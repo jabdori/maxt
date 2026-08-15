@@ -8,8 +8,10 @@ use std::task::{Context, Poll};
 
 use futures_core::Stream;
 use maxt::{
-    AccountEvent, AccountStream, HyperliquidAccountEvent, HyperliquidAccountStream,
-    HyperliquidMarketEvent, HyperliquidMarketStream, MarketEvent, MarketStream, Result,
+    AccountEvent, AccountStream, BinanceAccountStream, BinanceMarketStream, BithumbAccountStream,
+    BithumbMarketStream, HyperliquidAccountEvent, HyperliquidAccountStream, HyperliquidMarketEvent,
+    HyperliquidMarketStream, MarketEvent, MarketStream, Result, UpbitAccountStream,
+    UpbitMarketStream,
 };
 use pyo3::exceptions::{PyRuntimeError, PyStopAsyncIteration};
 use pyo3::prelude::*;
@@ -374,6 +376,102 @@ fn is_stop_async_iteration(error: &PyErr) -> bool {
     Python::attach(|py| error.is_instance_of::<PyStopAsyncIteration>(py))
 }
 
+macro_rules! provider_stream {
+    ($native:ident, $stream:ty, $to_wire:ident) => {
+        #[pyclass(module = "maxt._native")]
+        pub(crate) struct $native {
+            state: Arc<NativeStreamState<$stream>>,
+        }
+
+        impl $native {
+            fn new(stream: $stream) -> Self {
+                Self {
+                    state: Arc::new(NativeStreamState::new(stream)),
+                }
+            }
+        }
+
+        #[pymethods]
+        impl $native {
+            fn __aiter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+                slf
+            }
+
+            fn __anext__<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+                let state = Arc::clone(&self.state);
+                pyo3_async_runtimes::tokio::future_into_py(py, async move {
+                    let item = {
+                        let mut guard = state.inner.lock().await;
+                        if state.closed.load(Ordering::Acquire) {
+                            return Err(PyStopAsyncIteration::new_err(()));
+                        }
+                        let Some(stream) = guard.as_mut() else {
+                            return Err(PyStopAsyncIteration::new_err(()));
+                        };
+                        let polled = tokio::select! {
+                            biased;
+                            _ = state.close.notified() => StreamPoll::Closed,
+                            item = poll_fn(|cx| Pin::new(&mut *stream).poll_next(cx)) => StreamPoll::Item(item),
+                        };
+                        match polled {
+                            StreamPoll::Closed => None,
+                            StreamPoll::Item(_) if state.closed.load(Ordering::Acquire) => None,
+                            StreamPoll::Item(Some(item)) => Some(item),
+                            StreamPoll::Item(None) => {
+                                state.closed.store(true, Ordering::Release);
+                                None
+                            }
+                        }
+                    };
+                    match item {
+                        Some(item) => Python::attach(|py| $to_wire(py, item)),
+                        None => Err(PyStopAsyncIteration::new_err(())),
+                    }
+                })
+            }
+
+            fn aclose<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+                let state = Arc::clone(&self.state);
+                pyo3_async_runtimes::tokio::future_into_py(py, async move {
+                    state.close().await.map_err(crate::convert::core_error)?;
+                    Ok(())
+                })
+            }
+        }
+    };
+}
+
+provider_stream!(
+    NativeUpbitMarketStream,
+    UpbitMarketStream,
+    upbit_market_item_to_wire
+);
+provider_stream!(
+    NativeUpbitAccountStream,
+    UpbitAccountStream,
+    upbit_account_item_to_wire
+);
+provider_stream!(
+    NativeBithumbMarketStream,
+    BithumbMarketStream,
+    bithumb_market_item_to_wire
+);
+provider_stream!(
+    NativeBithumbAccountStream,
+    BithumbAccountStream,
+    bithumb_account_item_to_wire
+);
+provider_stream!(
+    NativeBinanceMarketStream,
+    BinanceMarketStream,
+    binance_market_item_to_wire
+);
+provider_stream!(
+    NativeBinanceAccountStream,
+    BinanceAccountStream,
+    binance_account_item_to_wire
+);
+
 #[pyclass(module = "maxt._native")]
 pub(crate) struct NativeMarketStream {
     state: Arc<NativeStreamState<MarketStream>>,
@@ -690,6 +788,35 @@ impl NativeStreamState<HyperliquidAccountStream> {
     }
 }
 
+macro_rules! close_provider_stream_state {
+    ($($stream:ty),+ $(,)?) => {
+        $(
+            impl NativeStreamState<$stream> {
+                async fn close(&self) -> Result<()> {
+                    self.closed.store(true, Ordering::Release);
+                    self.close.notify_one();
+                    let mut guard = self.inner.lock().await;
+                    let result = match guard.as_mut() {
+                        Some(stream) => stream.close().await,
+                        None => Ok(()),
+                    };
+                    guard.take();
+                    result
+                }
+            }
+        )+
+    };
+}
+
+close_provider_stream_state!(
+    UpbitMarketStream,
+    UpbitAccountStream,
+    BithumbMarketStream,
+    BithumbAccountStream,
+    BinanceMarketStream,
+    BinanceAccountStream,
+);
+
 pub(crate) fn market_stream<'py>(
     py: Python<'py>,
     stream: MarketStream,
@@ -716,6 +843,48 @@ pub(crate) fn hyperliquid_account_stream<'py>(
     stream: HyperliquidAccountStream,
 ) -> PyResult<Bound<'py, PyAny>> {
     Bound::new(py, NativeHyperliquidAccountStream::new(stream)).map(Bound::into_any)
+}
+
+pub(crate) fn upbit_market_stream<'py>(
+    py: Python<'py>,
+    stream: UpbitMarketStream,
+) -> PyResult<Bound<'py, PyAny>> {
+    Bound::new(py, NativeUpbitMarketStream::new(stream)).map(Bound::into_any)
+}
+
+pub(crate) fn upbit_account_stream<'py>(
+    py: Python<'py>,
+    stream: UpbitAccountStream,
+) -> PyResult<Bound<'py, PyAny>> {
+    Bound::new(py, NativeUpbitAccountStream::new(stream)).map(Bound::into_any)
+}
+
+pub(crate) fn bithumb_market_stream<'py>(
+    py: Python<'py>,
+    stream: BithumbMarketStream,
+) -> PyResult<Bound<'py, PyAny>> {
+    Bound::new(py, NativeBithumbMarketStream::new(stream)).map(Bound::into_any)
+}
+
+pub(crate) fn bithumb_account_stream<'py>(
+    py: Python<'py>,
+    stream: BithumbAccountStream,
+) -> PyResult<Bound<'py, PyAny>> {
+    Bound::new(py, NativeBithumbAccountStream::new(stream)).map(Bound::into_any)
+}
+
+pub(crate) fn binance_market_stream<'py>(
+    py: Python<'py>,
+    stream: BinanceMarketStream,
+) -> PyResult<Bound<'py, PyAny>> {
+    Bound::new(py, NativeBinanceMarketStream::new(stream)).map(Bound::into_any)
+}
+
+pub(crate) fn binance_account_stream<'py>(
+    py: Python<'py>,
+    stream: BinanceAccountStream,
+) -> PyResult<Bound<'py, PyAny>> {
+    Bound::new(py, NativeBinanceAccountStream::new(stream)).map(Bound::into_any)
 }
 
 fn market_item_to_wire(py: Python<'_>, item: Result<MarketEvent>) -> PyResult<Py<PyAny>> {
@@ -771,6 +940,84 @@ fn hyperliquid_account_item_to_wire(
         Ok(event) => provider_stream_event_wire(
             py,
             crate::convert::hyperliquid_account_event_to_wire(py, &event)?,
+        ),
+        Err(error) => stream_error_wire(py, &error),
+    }
+}
+
+fn upbit_market_item_to_wire(
+    py: Python<'_>,
+    item: Result<maxt::UpbitMarketStreamEvent>,
+) -> PyResult<Py<PyAny>> {
+    match item {
+        Ok(event) => provider_stream_event_wire(
+            py,
+            crate::convert::upbit_market_stream_event_to_wire(py, &event)?,
+        ),
+        Err(error) => stream_error_wire(py, &error),
+    }
+}
+
+fn upbit_account_item_to_wire(
+    py: Python<'_>,
+    item: Result<maxt::UpbitAccountStreamEvent>,
+) -> PyResult<Py<PyAny>> {
+    match item {
+        Ok(event) => provider_stream_event_wire(
+            py,
+            crate::convert::upbit_account_stream_event_to_wire(py, &event)?,
+        ),
+        Err(error) => stream_error_wire(py, &error),
+    }
+}
+
+fn bithumb_market_item_to_wire(
+    py: Python<'_>,
+    item: Result<maxt::BithumbMarketEvent>,
+) -> PyResult<Py<PyAny>> {
+    match item {
+        Ok(event) => provider_stream_event_wire(
+            py,
+            crate::convert::bithumb_market_event_to_wire(py, &event)?,
+        ),
+        Err(error) => stream_error_wire(py, &error),
+    }
+}
+
+fn bithumb_account_item_to_wire(
+    py: Python<'_>,
+    item: Result<maxt::BithumbAccountEvent>,
+) -> PyResult<Py<PyAny>> {
+    match item {
+        Ok(event) => provider_stream_event_wire(
+            py,
+            crate::convert::bithumb_account_event_to_wire(py, &event)?,
+        ),
+        Err(error) => stream_error_wire(py, &error),
+    }
+}
+
+fn binance_market_item_to_wire(
+    py: Python<'_>,
+    item: Result<maxt::BinanceMarketEvent>,
+) -> PyResult<Py<PyAny>> {
+    match item {
+        Ok(event) => provider_stream_event_wire(
+            py,
+            crate::convert::binance_market_event_to_wire(py, &event)?,
+        ),
+        Err(error) => stream_error_wire(py, &error),
+    }
+}
+
+fn binance_account_item_to_wire(
+    py: Python<'_>,
+    item: Result<maxt::BinanceAccountStreamEvent>,
+) -> PyResult<Py<PyAny>> {
+    match item {
+        Ok(event) => provider_stream_event_wire(
+            py,
+            crate::convert::binance_account_stream_event_to_wire(py, &event)?,
         ),
         Err(error) => stream_error_wire(py, &error),
     }

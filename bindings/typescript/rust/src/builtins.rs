@@ -70,7 +70,7 @@ use crate::convert::{
     WireUpbitPocketTransferRequest, WireUpbitPocketUniversalTransferRequest,
     WireUpbitSubscriptionList, WireUpbitTravelRuleVasp, WireUpbitTravelRuleVerification,
     WireUpbitWithdrawalAddress, WireUpbitYearCandle, decimal_from_wire, from_wire_text,
-    network_from_wire, outcome, timestamp_from_wire, WireStreamConfig, WireSubscription,
+    network_from_wire, outcome, timestamp_from_wire,
 };
 use crate::stream::NativeStreamRegistry;
 
@@ -198,6 +198,7 @@ where
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 pub struct NativeUpbit {
     adapter: Arc<UpbitAdapter>,
+    streams: Arc<NativeStreamRegistry>,
 }
 
 #[cfg_attr(
@@ -225,6 +226,7 @@ impl NativeUpbit {
         }
         Ok(Self {
             adapter: Arc::new(adapter),
+            streams: Arc::new(NativeStreamRegistry::default()),
         })
     }
 
@@ -992,6 +994,7 @@ impl Clone for NativeUpbit {
     fn clone(&self) -> Self {
         Self {
             adapter: Arc::clone(&self.adapter),
+            streams: Arc::clone(&self.streams),
         }
     }
 }
@@ -1004,6 +1007,7 @@ pub struct NativeBithumb {
         allow(dead_code, reason = "네이티브 메서드는 테스트 빌드에서 제외됩니다")
     )]
     adapter: Arc<BithumbAdapter>,
+    streams: Arc<NativeStreamRegistry>,
 }
 
 #[cfg_attr(
@@ -1024,6 +1028,7 @@ impl NativeBithumb {
         }
         Ok(Self {
             adapter: Arc::new(adapter),
+            streams: Arc::new(NativeStreamRegistry::default()),
         })
     }
 
@@ -1417,6 +1422,7 @@ impl Clone for NativeBithumb {
     fn clone(&self) -> Self {
         Self {
             adapter: Arc::clone(&self.adapter),
+            streams: Arc::clone(&self.streams),
         }
     }
 }
@@ -1427,6 +1433,7 @@ pub struct NativeBinance {
     adapter: Arc<BinanceAdapter>,
     listen_keys: Arc<Mutex<HashMap<String, BinanceListenKey>>>,
     next_listen_key_id: Arc<AtomicU64>,
+    streams: Arc<NativeStreamRegistry>,
 }
 
 #[cfg_attr(
@@ -1450,6 +1457,7 @@ impl NativeBinance {
             adapter: Arc::new(adapter),
             listen_keys: Arc::new(Mutex::new(HashMap::new())),
             next_listen_key_id: Arc::new(AtomicU64::new(1)),
+            streams: Arc::new(NativeStreamRegistry::default()),
         })
     }
 
@@ -2045,6 +2053,7 @@ impl Clone for NativeBinance {
             adapter: Arc::clone(&self.adapter),
             listen_keys: Arc::clone(&self.listen_keys),
             next_listen_key_id: Arc::clone(&self.next_listen_key_id),
+            streams: Arc::clone(&self.streams),
         }
     }
 }
@@ -2266,79 +2275,6 @@ impl NativeHyperliquid {
         ))
     }
 
-    async fn subscribe_detailed(&self, subscription: maxt::Result<String>) -> Value {
-        let subscription =
-            parse_wire::<maxt::Subscription, WireSubscription>(subscription, "subscription");
-        let result = match subscription {
-            Ok(subscription) => match self.adapter.subscribe_detailed(&subscription).await {
-                Ok(stream) => self.streams.insert_hyperliquid_market(stream).await,
-                Err(error) => Err(error),
-            },
-            Err(error) => Err(error),
-        };
-        outcome(result)
-    }
-
-    async fn subscribe_detailed_with(
-        &self,
-        subscription: maxt::Result<String>,
-        config: maxt::Result<String>,
-    ) -> Value {
-        let subscription =
-            parse_wire::<maxt::Subscription, WireSubscription>(subscription, "subscription");
-        let config = parse_wire::<maxt::StreamConfig, WireStreamConfig>(config, "config");
-        let result = match (subscription, config) {
-            (Ok(subscription), Ok(config)) => {
-                match self
-                    .adapter
-                    .subscribe_detailed_with(&subscription, &config)
-                    .await
-                {
-                    Ok(stream) => self.streams.insert_hyperliquid_market(stream).await,
-                    Err(error) => Err(error),
-                }
-            }
-            (Err(error), _) | (_, Err(error)) => Err(error),
-        };
-        outcome(result)
-    }
-
-    async fn subscribe_detailed_account(&self) -> Value {
-        let result = match self.adapter.subscribe_detailed_account().await {
-            Ok(stream) => self.streams.insert_hyperliquid_account(stream).await,
-            Err(error) => Err(error),
-        };
-        outcome(result)
-    }
-
-    async fn subscribe_detailed_account_with(&self, config: maxt::Result<String>) -> Value {
-        let config = parse_wire::<maxt::StreamConfig, WireStreamConfig>(config, "config");
-        let result = match config {
-            Ok(config) => match self.adapter.subscribe_detailed_account_with(&config).await {
-                Ok(stream) => self.streams.insert_hyperliquid_account(stream).await,
-                Err(error) => Err(error),
-            },
-            Err(error) => Err(error),
-        };
-        outcome(result)
-    }
-
-    async fn stream_next(&self, id: maxt::Result<String>) -> Value {
-        let result = match parse_text::<String>(id, "stream_id") {
-            Ok(id) => self.streams.next(&id).await,
-            Err(error) => Err(error),
-        };
-        outcome(result)
-    }
-
-    async fn stream_close(&self, id: maxt::Result<String>) -> Value {
-        let result = match parse_text::<String>(id, "stream_id") {
-            Ok(id) => self.streams.close(&id).await,
-            Err(error) => Err(error),
-        };
-        outcome(result.map(|()| Value::Null))
-    }
-
     async fn user_rate_limit(&self) -> Value {
         outcome(
             self.adapter
@@ -2470,79 +2406,6 @@ impl NativeHyperliquid {
     #[napi(js_name = "isTestnet")]
     pub fn is_testnet_native(&self) -> bool {
         self.is_testnet()
-    }
-
-    #[napi(js_name = "subscribeDetailed", ts_args_type = "subscription: string")]
-    pub fn subscribe_detailed_native<'env>(
-        &self,
-        env: &'env Env,
-        subscription: NativeJsonText<'env>,
-    ) -> napi::Result<PromiseRaw<'env, Value>> {
-        let this = self.clone();
-        let subscription = native_json_text(subscription, "subscription");
-        spawn_native(env, async move { this.subscribe_detailed(subscription).await })
-    }
-
-    #[napi(
-        js_name = "subscribeDetailedWith",
-        ts_args_type = "subscription: string, config: string"
-    )]
-    pub fn subscribe_detailed_with_native<'env>(
-        &self,
-        env: &'env Env,
-        subscription: NativeJsonText<'env>,
-        config: NativeJsonText<'env>,
-    ) -> napi::Result<PromiseRaw<'env, Value>> {
-        let this = self.clone();
-        let subscription = native_json_text(subscription, "subscription");
-        let config = native_json_text(config, "config");
-        spawn_native(env, async move {
-            this.subscribe_detailed_with(subscription, config).await
-        })
-    }
-
-    #[napi(js_name = "subscribeDetailedAccount")]
-    pub fn subscribe_detailed_account_native<'env>(
-        &self,
-        env: &'env Env,
-    ) -> napi::Result<PromiseRaw<'env, Value>> {
-        let this = self.clone();
-        spawn_native(env, async move { this.subscribe_detailed_account().await })
-    }
-
-    #[napi(js_name = "subscribeDetailedAccountWith", ts_args_type = "config: string")]
-    pub fn subscribe_detailed_account_with_native<'env>(
-        &self,
-        env: &'env Env,
-        config: NativeJsonText<'env>,
-    ) -> napi::Result<PromiseRaw<'env, Value>> {
-        let this = self.clone();
-        let config = native_json_text(config, "config");
-        spawn_native(env, async move {
-            this.subscribe_detailed_account_with(config).await
-        })
-    }
-
-    #[napi(js_name = "streamNext", ts_args_type = "id: string")]
-    pub fn stream_next_native<'env>(
-        &self,
-        env: &'env Env,
-        id: NativeJsonText<'env>,
-    ) -> napi::Result<PromiseRaw<'env, Value>> {
-        let this = self.clone();
-        let id = native_json_text(id, "stream_id");
-        spawn_native(env, async move { this.stream_next(id).await })
-    }
-
-    #[napi(js_name = "streamClose", ts_args_type = "id: string")]
-    pub fn stream_close_native<'env>(
-        &self,
-        env: &'env Env,
-        id: NativeJsonText<'env>,
-    ) -> napi::Result<PromiseRaw<'env, Value>> {
-        let this = self.clone();
-        let id = native_json_text(id, "stream_id");
-        spawn_native(env, async move { this.stream_close(id).await })
     }
 
     #[napi(
@@ -3308,43 +3171,6 @@ impl NativeHyperliquid {
         self.is_testnet()
     }
 
-    #[wasm_bindgen(js_name = "subscribeDetailed")]
-    pub async fn subscribe_detailed_wasm(&self, subscription: String) -> JsValue {
-        crate::web::value(self.subscribe_detailed(Ok(subscription)).await)
-    }
-
-    #[wasm_bindgen(js_name = "subscribeDetailedWith")]
-    pub async fn subscribe_detailed_with_wasm(
-        &self,
-        subscription: String,
-        config: String,
-    ) -> JsValue {
-        crate::web::value(
-            self.subscribe_detailed_with(Ok(subscription), Ok(config))
-                .await,
-        )
-    }
-
-    #[wasm_bindgen(js_name = "subscribeDetailedAccount")]
-    pub async fn subscribe_detailed_account_wasm(&self) -> JsValue {
-        crate::web::value(self.subscribe_detailed_account().await)
-    }
-
-    #[wasm_bindgen(js_name = "subscribeDetailedAccountWith")]
-    pub async fn subscribe_detailed_account_with_wasm(&self, config: String) -> JsValue {
-        crate::web::value(self.subscribe_detailed_account_with(Ok(config)).await)
-    }
-
-    #[wasm_bindgen(js_name = "streamNext")]
-    pub async fn stream_next_wasm(&self, id: String) -> JsValue {
-        crate::web::value(self.stream_next(Ok(id)).await)
-    }
-
-    #[wasm_bindgen(js_name = "streamClose")]
-    pub async fn stream_close_wasm(&self, id: String) -> JsValue {
-        crate::web::value(self.stream_close(Ok(id)).await)
-    }
-
     #[wasm_bindgen(js_name = "nonFundingLedger")]
     pub async fn non_funding_ledger_wasm(
         &self,
@@ -3510,6 +3336,8 @@ pub fn create_binance_wasm(options: String) -> Result<NativeBinance, JsValue> {
 pub fn create_hyperliquid_wasm(options: String) -> Result<NativeHyperliquid, JsValue> {
     NativeHyperliquid::create(Ok(options)).map_err(crate::web::factory_error)
 }
+
+include!("generated_provider_native.rs");
 
 #[cfg(test)]
 mod tests {

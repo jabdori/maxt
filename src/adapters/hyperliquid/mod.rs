@@ -58,6 +58,39 @@ pub struct HyperliquidMidPrice {
     pub price: Decimal,
 }
 
+/// Hyperliquid's complete default-universe `allMids` response.
+///
+/// [`Self::mids`] contains markets modeled by this adapter. [`Self::raw_json`]
+/// preserves the provider map, including entries outside the adapter's default
+/// universe, without treating those entries as supported markets.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct HyperliquidAllMids {
+    /// Prices resolved to the adapter's supported markets.
+    pub mids: Vec<HyperliquidMidPrice>,
+    /// Complete provider response object encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A complete Hyperliquid provider response whose native shape has no stable
+/// portable equivalent.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct HyperliquidProviderResponse {
+    /// Complete provider response encoded as JSON.
+    pub raw_json: String,
+}
+
+/// A Hyperliquid order-action response with its portable order projection.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct HyperliquidOrderActionResponse {
+    /// Portable order projection returned from the action acknowledgement.
+    pub common: Order,
+    /// Complete provider response encoded as JSON.
+    pub raw_json: String,
+}
+
 pub(crate) const MAINNET_REST_BASE_URL: &str = "https://api.hyperliquid.xyz";
 pub(crate) const MAINNET_WEBSOCKET_URL: &str = "wss://api.hyperliquid.xyz/ws";
 pub(crate) const TESTNET_REST_BASE_URL: &str = "https://api.hyperliquid-testnet.xyz";
@@ -650,9 +683,92 @@ impl HyperliquidAdapter {
     /// HIP-3 DEX markets are not included because this adapter's market table
     /// intentionally covers only the default perpetual and spot universes.
     pub async fn all_mids(&self) -> Result<Vec<HyperliquidMidPrice>> {
+        self.all_mids_detail().await.map(|response| response.mids)
+    }
+
+    /// Reads current mids while preserving Hyperliquid's complete provider map.
+    pub async fn all_mids_detail(&self) -> Result<HyperliquidAllMids> {
         let connection = self.connect().await?;
 
-        rest::all_mids(&connection.http, &connection.universe).await
+        rest::all_mids_detail(&connection.http, &connection.universe).await
+    }
+
+    /// Reads the complete perpetual `meta` response without narrowing it to
+    /// the portable market-list contract.
+    pub async fn perpetual_meta(&self) -> Result<HyperliquidProviderResponse> {
+        let connection = self.connect().await?;
+
+        rest::perpetual_meta(&connection.http).await
+    }
+
+    /// Reads the complete perpetual `metaAndAssetCtxs` response without
+    /// narrowing it to portable ticker fields.
+    pub async fn perpetual_meta_and_asset_contexts(&self) -> Result<HyperliquidProviderResponse> {
+        let connection = self.connect().await?;
+
+        rest::perpetual_meta_and_asset_contexts(&connection.http).await
+    }
+
+    /// Reads the complete perpetual clearinghouse state for the configured
+    /// public query address.
+    pub async fn clearinghouse_state_detail(&self) -> Result<HyperliquidProviderResponse> {
+        let user = self.query_address()?;
+        let connection = self.connect().await?;
+
+        rest::clearinghouse_state(&connection.http, &user).await
+    }
+
+    /// Reads the complete `frontendOpenOrders` response for the configured
+    /// public query address.
+    pub async fn frontend_open_orders_detail(&self) -> Result<HyperliquidProviderResponse> {
+        let user = self.query_address()?;
+        let connection = self.connect().await?;
+
+        rest::frontend_open_orders(&connection.http, &user).await
+    }
+
+    /// Places an order while retaining the complete signed action response.
+    pub async fn place_order_detail(
+        &self,
+        request: &OrderRequest,
+    ) -> Result<HyperliquidOrderActionResponse> {
+        let private_key = self.signing_key()?;
+        let connection = self.connect().await?;
+        let _lane = SIGNED_ACTION_LANE.lock().await;
+        let nonce = self.next_nonce(Timestamp::now())?;
+
+        rest::place_order_detail(
+            &connection.http,
+            &connection.universe,
+            private_key,
+            self.network,
+            request,
+            nonce,
+        )
+        .await
+    }
+
+    /// Cancels an order while retaining the complete signed action response.
+    pub async fn cancel_order_detail(
+        &self,
+        market: &Market,
+        order_id: &str,
+    ) -> Result<HyperliquidProviderResponse> {
+        let private_key = self.signing_key()?;
+        let connection = self.connect().await?;
+        let _lane = SIGNED_ACTION_LANE.lock().await;
+        let nonce = self.next_nonce(Timestamp::now())?;
+
+        rest::cancel_order_detail(
+            &connection.http,
+            &connection.universe,
+            private_key,
+            self.network,
+            market,
+            order_id,
+            nonce,
+        )
+        .await
     }
 
     /// Opens a full-fidelity market subscription with default connection settings.

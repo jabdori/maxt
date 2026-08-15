@@ -18,8 +18,9 @@ use crate::types::{
 
 use super::parse::{self, EXCHANGE};
 use super::{
-    UpbitApiKey, UpbitCredentials, UpbitDepositInfo, UpbitKrwDeposit, UpbitKrwTransferRequest,
-    UpbitKrwWithdrawal, private, rest,
+    UpbitApiKey, UpbitCancelWithdrawalResponse, UpbitCredentials, UpbitDepositInfo,
+    UpbitDepositResponse, UpbitKrwDeposit, UpbitKrwTransferRequest, UpbitKrwWithdrawal,
+    UpbitWithdrawalResponse, private, rest,
 };
 
 const WALLET_STATUS_PATH: &str = "/v1/status/wallet";
@@ -447,6 +448,20 @@ pub(crate) async fn deposit(
     parse_deposit(&parse::json(&body)?)
 }
 
+/// Reads one deposit while preserving Upbit's provider response body.
+pub(crate) async fn deposit_detail(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    request: &TransferLookupRequest,
+) -> Result<UpbitDepositResponse> {
+    let response = lookup_request(credentials, DEPOSIT_PATH, request)?;
+    let body = rest::send(http, &response).await?;
+    Ok(UpbitDepositResponse {
+        common: parse_deposit(&parse::json(&body)?)?,
+        raw_json: body,
+    })
+}
+
 pub(crate) async fn withdrawal(
     credentials: &UpbitCredentials,
     http: &HttpTransport,
@@ -457,6 +472,20 @@ pub(crate) async fn withdrawal(
     parse_withdrawal(&parse::json(&body)?)
 }
 
+/// Reads one withdrawal while preserving Upbit's provider response body.
+pub(crate) async fn withdrawal_detail(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    request: &TransferLookupRequest,
+) -> Result<UpbitWithdrawalResponse> {
+    let response = lookup_request(credentials, WITHDRAWAL_PATH, request)?;
+    let body = rest::send(http, &response).await?;
+    Ok(UpbitWithdrawalResponse {
+        common: parse_withdrawal(&parse::json(&body)?)?,
+        raw_json: body,
+    })
+}
+
 pub(crate) async fn cancel_withdrawal(
     credentials: &UpbitCredentials,
     http: &HttpTransport,
@@ -465,6 +494,20 @@ pub(crate) async fn cancel_withdrawal(
     let response = cancel_withdrawal_request(credentials, withdrawal_id)?;
     rest::send(http, &response).await?;
     Ok(())
+}
+
+/// Cancels one withdrawal while preserving Upbit's provider response body.
+pub(crate) async fn cancel_withdrawal_detail(
+    credentials: &UpbitCredentials,
+    http: &HttpTransport,
+    withdrawal_id: &str,
+) -> Result<UpbitCancelWithdrawalResponse> {
+    let response = cancel_withdrawal_request(credentials, withdrawal_id)?;
+    let body = rest::send(http, &response).await?;
+    Ok(UpbitCancelWithdrawalResponse {
+        withdrawal_id: withdrawal_id.to_owned(),
+        raw_json: body,
+    })
 }
 
 pub(crate) async fn deposits(

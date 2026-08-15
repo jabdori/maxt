@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+- Standardized public Rust API documentation comments in English.
+
 ## 0.3.0
 
 - Added full-fidelity provider APIs and generated language bindings for the

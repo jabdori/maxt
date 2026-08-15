@@ -14,8 +14,8 @@ flutter_rust_bridge = "=2.12.0"
 futures-channel = "0.3"
 futures-core = "0.3"
 futures-util = { version = "0.3", default-features = false, features = ["std"] }
-maxt = "=0.3.0"
-maxt-bindings-common = "=0.3.0"
+maxt = "=0.3.1"
+maxt-bindings-common = "=0.3.1"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

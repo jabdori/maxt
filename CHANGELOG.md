@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.3
+
+- Added task-oriented, runnable examples and generated example navigation for
+  the Rust, Python, Dart, and TypeScript packages.
+
 ## 0.3.2
 
 - Removed internal architecture-decision links from published package documentation.

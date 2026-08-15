@@ -64,7 +64,7 @@ Rust 1.85 or newer is required.
 
 ```toml
 [dependencies]
-maxt = "0.3.2"
+maxt = "0.3.3"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 

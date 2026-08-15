@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+- Added packaged, runnable task-oriented examples and example navigation.
+
 ## 0.3.0
 
 - Added generated provider APIs, models, and native dispatch for the fixed

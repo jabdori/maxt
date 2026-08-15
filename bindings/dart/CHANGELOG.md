@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.3
+
+- Added runnable task-oriented examples, including the pub.dev example entry point.
+
 ## 0.4.2
 
 - Made the bundled Binance public-market example perform its documented read on a normal run.

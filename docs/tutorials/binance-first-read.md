@@ -12,7 +12,7 @@ Each checked-in file is an executable version of the same first read.
 
 | Language | Install | Run |
 | --- | --- | --- |
-| Rust | Add `maxt = "0.3.2"` and Tokio to `Cargo.toml` | `cargo run --example binance_first_read` |
+| Rust | Add `maxt = "0.3.3"` and Tokio to `Cargo.toml` | `cargo run --example binance_first_read` |
 | Python | `python -m pip install maxt` | `python -m maxt.examples.binance_public_ticker` |
 | Dart / Flutter | `dart pub add maxt` | `dart run example/main.dart` |
 | TypeScript / Node.js | `npm install @jabdori/maxt` | `node examples/binance-public-ticker.mjs` |

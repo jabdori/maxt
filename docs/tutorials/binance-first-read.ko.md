@@ -12,7 +12,7 @@ Binance 현물 `BTC/USDT`의 공개 가격을 안전하게 한 번 읽는 것입
 
 | 언어 | 설치 | 실행 |
 | --- | --- | --- |
-| Rust | `Cargo.toml`에 `maxt = "0.3.2"`와 Tokio 추가 | `cargo run --example binance_first_read` |
+| Rust | `Cargo.toml`에 `maxt = "0.3.3"`와 Tokio 추가 | `cargo run --example binance_first_read` |
 | Python | `python -m pip install maxt` | `python -m maxt.examples.binance_public_ticker` |
 | Dart / Flutter | `dart pub add maxt` | `dart run example/main.dart` |
 | TypeScript / Node.js | `npm install @jabdori/maxt` | `node examples/binance-public-ticker.mjs` |

@@ -12,7 +12,7 @@ Rust 1.85 이상이 필요합니다. 스트림 예제는 `futures_util::StreamEx
 
 ```toml
 [dependencies]
-maxt = "0.3.2"
+maxt = "0.3.3"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 futures-util = "0.3"
 ```

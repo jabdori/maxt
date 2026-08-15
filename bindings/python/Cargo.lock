@@ -907,7 +907,7 @@ checksum = "0ceec5bc11778974d1bcb055b18002eba7f4b3518b6a0081b3af5f21666da9ad"
 
 [[package]]
 name = "maxt"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "base64",
  "chrono",
@@ -940,14 +940,14 @@ dependencies = [
 
 [[package]]
 name = "maxt-bindings-common"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "maxt",
 ]
 
 [[package]]
 name = "maxt-python"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "futures-core",
  "maxt",

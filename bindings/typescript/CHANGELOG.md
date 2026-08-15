@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+- Added runnable task-oriented examples for Node.js and browser WebAssembly.
+
 ## 0.3.0
 
 - Added generated provider APIs, models, native dispatch, and provider stream
